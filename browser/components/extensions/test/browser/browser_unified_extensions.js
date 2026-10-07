@@ -5,8 +5,6 @@
 
 requestLongerTimeout(2);
 
-/* import-globals-from ../../../../../toolkit/mozapps/extensions/test/browser/head.js */
-
 const { ExtensionPermissions } = ChromeUtils.importESModule(
   "resource://gre/modules/ExtensionPermissions.sys.mjs"
 );

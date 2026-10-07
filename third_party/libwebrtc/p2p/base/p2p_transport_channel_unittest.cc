@@ -104,7 +104,6 @@ namespace {
 using ::testing::_;
 using ::testing::Assign;
 using ::testing::Contains;
-using ::testing::DoAll;
 using ::testing::Eq;
 using ::testing::Gt;
 using ::testing::MockFunction;
@@ -250,7 +249,10 @@ class ResolverFactoryFixture : public MockAsyncDnsResolverFactory {
 
   void SetAddressToReturn(SocketAddress address_to_return) {
     EXPECT_CALL(mock_async_dns_resolver_result_, GetResolvedAddress(_, _))
-        .WillOnce(DoAll(SetArgPointee<1>(address_to_return), Return(true)));
+        .WillOnce([address_to_return](int /*family*/, SocketAddress* addr) {
+          *addr = address_to_return;
+          return true;
+        });
   }
   void DelayResolution() {
     // This function must be called before Create().
@@ -5936,7 +5938,6 @@ TEST_F(P2PTransportChannelTest,
   // ignoring the completion callback.
   auto mock_mdns_responder = std::make_unique<MockMdnsResponder>();
   EXPECT_CALL(*mock_mdns_responder, CreateNameForAddress(_, _))
-      .Times(1)
       .WillOnce(Return());
   GetEndpoint(0)->network_manager().set_mdns_responder(
       std::move(mock_mdns_responder));

@@ -6,6 +6,10 @@
 [android.media.MediaCodecInfo$CodecCapabilities = skip:true]
 <field> = skip:false
 
+# We only use constants from CodecProfileLevel
+[android.media.MediaCodecInfo$CodecProfileLevel = skip:true]
+<field> = skip:false
+
 # We only use constants from KeyStatus
 [android.media.MediaDrm$KeyStatus = skip:true]
 <field> = skip:false

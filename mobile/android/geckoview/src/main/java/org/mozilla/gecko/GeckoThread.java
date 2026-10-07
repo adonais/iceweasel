@@ -4,6 +4,7 @@
 
 package org.mozilla.gecko;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -308,6 +309,7 @@ public class GeckoThread extends Thread {
     setState(State.LIBS_READY);
   }
 
+  @SuppressLint("AppBundleLocaleChanges")
   private static void initGeckoEnvironment() {
     final Context context = GeckoAppShell.getApplicationContext();
     final Locale locale = Locale.getDefault();

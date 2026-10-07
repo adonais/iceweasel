@@ -180,3 +180,8 @@ if CONFIG["OS_TARGET"] == "WINNT":
   ]
 
 FINAL_LIBRARY = 'mozinference'
+
+# Declared here rather than in the shared notice's path list so that the old
+# #ifndef ANDROID guard is kept: this directory only enters DIRS when a llama
+# backend is built, which does not happen on Android.
+LICENSED_UNDER += ["mit"]

@@ -5,8 +5,8 @@ This document explains how to debug Gecko based applications such as
 Firefox, Thunderbird, and SeaMonkey on Windows using the Visual Studio IDE.
 
 If VS and your Gecko application hang shortly after you launch the
-application under the debugger, see [Problems Loading Debug
-Symbols](#problems-loading-debug-symbols).
+application under the debugger, see [Troubleshooting: Symbols will not
+download](/contributing/debugging/stacktrace_windbg.md#troubleshooting-symbols-will-not-download).
 
 ## Ways to start the debugger
 

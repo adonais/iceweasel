@@ -427,6 +427,7 @@ CreateModifiedCRLCopy(PLArenaPool *arena, CERTCertDBHandle *certHandle,
         SECU_PrintError(progName, "fail to allocate memory\n");
         goto loser;
     }
+    signCrl->referenceCount = 1;
 
     rv = SECU_CopyCRL(arena, &signCrl->crl, &modCrl->crl);
     if (rv != SECSuccess) {
@@ -444,7 +445,6 @@ CreateModifiedCRLCopy(PLArenaPool *arena, CERTCertDBHandle *certHandle,
     }
 
     signCrl->arena = arena;
-    signCrl->referenceCount = 1;
 
 loser:
     if (crlDER.data) {
@@ -487,6 +487,7 @@ CreateNewCrl(PLArenaPool *arena, CERTCertDBHandle *certHandle,
         SECU_PrintError(progName, "fail to allocate memory\n");
         return NULL;
     }
+    signCrl->referenceCount = 1;
 
     dummy = SEC_ASN1EncodeInteger(arena, &signCrl->crl.version,
                                   SEC_CRL_VERSION_2);

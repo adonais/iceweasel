@@ -5,9 +5,9 @@
 #ifndef mozilla_dom_MathMLElement_h_
 #define mozilla_dom_MathMLElement_h_
 
-#include "Link.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EnumSet.h"
+#include "mozilla/dom/Link.h"
 #include "nsStyledElement.h"
 
 class nsCSSValue;

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Use counter test for Sanitizer configuration methods</title>
+<style>
+  /* Sentinel use counter to signal that telemetry for this document has been captured */
+  div {
+    marker-mid: initial;
+  }
+</style>
+<div id="host"></div>
+<script>
+  // Building a configuration imperatively must set the same counters as the
+  // equivalent dictionary keys in file_use_counter_sanitizer_config.html.
+  const sanitizer = new Sanitizer();
+
+  // setComments() modifies the configuration without materializing the lazy
+  // default config, so sanitizing right after it must not count as sanitizing
+  // with the default configuration.
+  sanitizer.setComments(true);
+  document.getElementById("host").setHTML("<b>methods</b>", { sanitizer });
+
+  sanitizer.allowElement({ name: "my-widget", removeAttributes: ["lang"] });
+  sanitizer.removeElement("p");
+
+  // Counted because it changes the configuration away from the default. The
+  // removeUnsafe() below resets javascriptURLs again, which must not count a
+  // second time: use counters are per document, not per call.
+  sanitizer.setJavascriptURLs(true);
+  sanitizer.removeUnsafe();
+
+  // Per-element attribute lists are not supported on a remove-list
+  // configuration: this warns to the console and changes nothing, so it must
+  // not count the nested "attributes" key.
+  const removeList = new Sanitizer({ removeElements: ["script"] });
+  removeList.allowElement({ name: "div", attributes: ["id"] });
+</script>

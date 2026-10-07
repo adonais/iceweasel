@@ -709,62 +709,68 @@ void* ChunkCache::Recycle(size_t aSize, size_t aAlignment) {
     return nullptr;
   }
 
-  mMutex.Lock();
-  extent_node_t* node = gChunksBySize.SearchOrNext(alloc_size);
-  if (!node) {
-    mMutex.Unlock();
-    return nullptr;
-  }
-  size_t leadsize = ALIGNMENT_CEILING((uintptr_t)node->mAddr, aAlignment) -
-                    (uintptr_t)node->mAddr;
-  MOZ_ASSERT(node->mSize >= leadsize + aSize);
-  size_t trailsize = node->mSize - leadsize - aSize;
-  void* ret = (void*)((uintptr_t)node->mAddr + leadsize);
+  // new_node is used when splitting node creates a second node, it is
+  // allocated here before taking mMutex to avoid a deadlock.
+  UniqueBaseNode new_node(new (fallible) extent_node_t());
 
-  // All recycled chunks are zeroed (because they're purged) before being
-  // recycled.
-  MOZ_ASSERT(node->mChunkType == ZEROED_CHUNK);
+  // unused_node is used to defer deallocation of the node that described the
+  // recycled range until after mMutex is released.  It can overlap with
+  // new_node so needs to be a separate variable.
+  UniqueBaseNode unused_node;
 
-  // Remove node from the tree.
-  gChunksBySize.Remove(node);
-  gChunksByAddress.Remove(node);
-  if (leadsize != 0) {
-    // Insert the leading space as a smaller chunk.
-    node->mSize = leadsize;
-    gChunksBySize.Insert(node);
-    gChunksByAddress.Insert(node);
-    node = nullptr;
-  }
-  if (trailsize != 0) {
-    // Insert the trailing space as a smaller chunk.
+  void* ret;
+  {
+    MutexAutoLock lock(mMutex);
+    extent_node_t* node = gChunksBySize.SearchOrNext(alloc_size);
     if (!node) {
-      // An additional node is required, but BaseAlloc::alloc() may cause a
-      // new base chunk to be allocated.  Drop mMutex in order to avoid
-      // deadlock, and if node allocation fails, deallocate the result
-      // before returning an error.
-      mMutex.Unlock();
-      node = new (fallible) extent_node_t();
-      if (!node) {
-        base_chunk_dealloc(ret, aSize, ZEROED_CHUNK);
-        return nullptr;
-      }
-      mMutex.Lock();
+      return nullptr;
     }
-    node->mAddr = (void*)((uintptr_t)(ret) + aSize);
-    node->mSize = trailsize;
-    node->mChunkType = ZEROED_CHUNK;
-    gChunksBySize.Insert(node);
-    gChunksByAddress.Insert(node);
-    node = nullptr;
+    size_t lead_size = ALIGNMENT_CEILING((uintptr_t)node->mAddr, aAlignment) -
+                       (uintptr_t)node->mAddr;
+    MOZ_ASSERT(node->mSize >= lead_size + aSize);
+    size_t trail_size = node->mSize - lead_size - aSize;
+    if (lead_size != 0 && trail_size != 0 && !new_node) {
+      // Splitting on both sides requires a second node but
+      // BaseAlloc::alloc() failed to allocate one (although unlikely).
+      // Abort here and maybe the caller can map fresh pages.
+      return nullptr;
+    }
+    ret = (void*)((uintptr_t)node->mAddr + lead_size);
+
+    // All recycled chunks are zeroed (because they're purged) before being
+    // recycled.
+    MOZ_ASSERT(node->mChunkType == ZEROED_CHUNK);
+
+    // Remove node from the tree.
+    gChunksBySize.Remove(node);
+    gChunksByAddress.Remove(node);
+    if (lead_size != 0) {
+      // Insert the leading space as a smaller chunk.
+      node->mSize = lead_size;
+      gChunksBySize.Insert(node);
+      gChunksByAddress.Insert(node);
+      node = nullptr;
+    }
+    if (trail_size != 0) {
+      // Insert the trailing space as a smaller chunk.
+      if (!node) {
+        node = new_node.release();
+      }
+      node->mAddr = (void*)((uintptr_t)(ret) + aSize);
+      node->mSize = trail_size;
+      node->mChunkType = ZEROED_CHUNK;
+      gChunksBySize.Insert(node);
+      gChunksByAddress.Insert(node);
+      node = nullptr;
+    }
+
+    mRecycledSize -= aSize;
+
+    // node will be freed when unused_node goes out of scope, which is after
+    // the lock is released.
+    unused_node.reset(node);
   }
 
-  mRecycledSize -= aSize;
-
-  mMutex.Unlock();
-
-  if (node) {
-    delete node;
-  }
   if (!pages_commit(ret, aSize)) {
     return nullptr;
   }

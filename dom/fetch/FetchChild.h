@@ -79,6 +79,10 @@ class FetchChild final : public PFetchChild, public AbortFollower {
 
   // WorkerPrivate shutdown callback.
   void Shutdown();
+
+  // Rejects mPromise with the AbortSignal's reason. Returns false when there
+  // is no aborted signal to take a reason from.
+  bool MaybeRejectWithAbortReason();
   void ActorDestroy(ActorDestroyReason aReason) override;
 
   RefPtr<ThreadSafeWorkerRef> mWorkerRef;

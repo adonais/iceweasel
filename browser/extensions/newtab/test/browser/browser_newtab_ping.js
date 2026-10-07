@@ -9,9 +9,10 @@ const { ASRouter } = ChromeUtils.importESModule(
 );
 
 let sendTriggerMessageSpy;
+let sandbox;
 
 add_setup(function () {
-  let sandbox = sinon.createSandbox();
+  sandbox = sinon.createSandbox();
   sendTriggerMessageSpy = sandbox.spy(ASRouter, "sendTriggerMessage");
 
   registerCleanupFunction(() => {
@@ -276,6 +277,11 @@ add_task(async function test_newtab_dwell_time_in_ping() {
     AboutNewTab.activityStream.store.feeds.get("feeds.telemetry");
   TelemetryFeed.init();
 
+  // The feed credits dwell only up to its last "active" notification, and
+  // EventStateManager's idle tick fires on a deadline no test controls.
+  let fakeNow = 0;
+  sandbox.stub(TelemetryFeed, "now").callsFake(() => fakeNow);
+
   // Leave the feed's idea of the user idle again, so a later test does not
   // inherit a running stopwatch.
   registerCleanupFunction(() => {
@@ -320,17 +326,19 @@ add_task(async function test_newtab_dwell_time_in_ping() {
         "Expect the newtab open to be recorded"
       );
 
-      // Fire the notification directly rather than waiting out the real
-      // EventStateManager interval.
+      // Notify directly rather than waiting out the real EventStateManager
+      // interval, twice with the clock advanced in between so that an idle tick
+      // landing anywhere in here still has an interval to credit.
       Services.obs.notifyObservers(
         null,
         "user-interaction-active-non-synthesized"
       );
-
-      // A real wait: the tab must stay focused long enough to measure a
-      // non-zero duration.
-      // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
-      await new Promise(resolve => setTimeout(resolve, 100));
+      fakeNow += 100;
+      Services.obs.notifyObservers(
+        null,
+        "user-interaction-active-non-synthesized"
+      );
+      fakeNow += 100;
 
       BrowserTestUtils.removeTab(tab);
     },

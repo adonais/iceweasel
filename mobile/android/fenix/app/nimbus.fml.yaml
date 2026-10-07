@@ -32,22 +32,6 @@ import:
               "ampMobile": false,
               "wikipedia": true,
             }
-  - path: ../../android-components/components/feature/media/media.fml.yaml
-    channel: default
-    features:
-      media-notification-improvements:
-        - channel: developer
-          value:
-            enabled: true
-        - channel: nightly
-          value:
-            enabled: true
-        - channel: beta
-          value:
-            enabled: true
-        - channel: release
-          value:
-            enabled: true
 
 features:
   homescreen:
@@ -61,8 +45,6 @@ features:
           {
             "top-sites": true,
             "jump-back-in": true,
-            "bookmarks": true,
-            "recent-explorations": true,
             "pocket": true,
             "pocket-sponsored-stories": true,
             "synced-tabs": true,
@@ -75,8 +57,6 @@ features:
           "sections-enabled": {
             "top-sites": true,
             "jump-back-in": true,
-            "bookmarks": true,
-            "recent-explorations": true,
             "pocket": true,
             "synced-tabs": true,
             "collections": true,
@@ -696,6 +676,13 @@ features:
           Whether or not to enable homepage as a new tab
         type: Boolean
         default: false
+    defaults:
+      - channel: nightly
+        value:
+          enabled: true
+      - channel: developer
+        value:
+          enabled: true
 
   universal-edge-to-edge-wallpapers:
     description: >
@@ -1140,22 +1127,7 @@ features:
       enabled:
         description: If true, show the expand/collapse buttons on the homepage.
         type: Boolean
-        default: false
-
-  merino-client:
-    description: Feature to enable the Merino Client for users on Firefox on Android.
-    variables:
-      enabled:
-        description: If true, Merino Client is enabled.
-        type: Boolean
-        default: false
-    defaults:
-      - channel: developer
-        value:
-          enabled: true
-      - channel: nightly
-        value:
-          enabled: true
+        default: true
 
   ads-client-for-stories:
     description: Feature to enable the Mozilla Ads Client support for Sponsored Stories for users on Firefox on Android.
@@ -1172,13 +1144,6 @@ features:
         description: If true, Private Mode and Stories Entry Point Experiment is enabled.
         type: Boolean
         default: false
-    defaults:
-      - channel: developer
-        value:
-          enabled: true
-      - channel: nightly
-        value:
-          enabled: true
 
   search-optimization-option:
     description: Feature to enable the Search Optimization cards for users on Firefox on Android.
@@ -1352,6 +1317,23 @@ features:
         type: Boolean
         default: false
 
+  tab-reload-cover:
+    description: >
+      Shows a cached thumbnail cover over the engine view while a tab reloads from session
+      restore, hiding it once the page has repainted. Optionally refreshes the stored thumbnail
+      before backgrounding so the cover reflects the last visible scroll position.
+    variables:
+      enabled:
+        description: If true, the cached thumbnail cover is shown on tab reloads.
+        type: Boolean
+        default: false
+      scroll-aware-capture-enabled:
+        description: >
+          If true, the stored thumbnail is refreshed at the last visible scroll position when the
+          selected tab loses foreground focus. Only meaningful when `enabled` is true.
+        type: Boolean
+        default: false
+
 types:
   objects:
     GleanServerKnobsConfiguration:
@@ -1376,12 +1358,8 @@ types:
       variants:
         top-sites:
           description: The frecency and pinned sites.
-        bookmarks:
-          description: The sites the user has bookmarked.
         jump-back-in:
           description: The tabs the user was looking immediately before being interrupted.
-        recent-explorations:
-          description: The tab groups
         pocket:
           description: The pocket section. This should only be available in the US.
         pocket-sponsored-stories:

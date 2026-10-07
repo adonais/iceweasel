@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { BackupResource } from "resource:///modules/backup/BackupResource.sys.mjs";
-import { MeasurementUtils } from "resource:///modules/backup/MeasurementUtils.sys.mjs";
+import { BackupResource } from "moz-src:///browser/components/backup/resources/BackupResource.sys.mjs";
+import { MeasurementUtils } from "moz-src:///browser/components/backup/MeasurementUtils.sys.mjs";
 
 const lazy = {};
 

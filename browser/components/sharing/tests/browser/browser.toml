@@ -38,7 +38,7 @@ support-files = [ "!/browser/components/places/tests/browser/head.js"]
 ["browser_testSharePanelScreenshot.js"]
 
 ["browser_testSharePanelSendToDevice.js"]
-support-files = ["!/browser/base/content/test/sync/head.js"]
+support-files = ["!/browser/base/content/test/browser-sync/head.js"]
 
 ["browser_testSharePanelTelemetry.js"]
 

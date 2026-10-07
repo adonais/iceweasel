@@ -22,3 +22,7 @@ if not CONFIG["MOZ_WASM_SANDBOXING_WOFF2"]:
     AllowCompilerWarnings()
 
     Library('woff2')
+
+LICENSED_UNDER += [
+    "mit",
+]

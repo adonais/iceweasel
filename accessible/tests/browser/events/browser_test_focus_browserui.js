@@ -24,7 +24,7 @@ async function runTests(browser) {
 
   onFocus = waitForEvent(EVENT_FOCUS, "buttonInputDoc");
   let url = snippetToURL(`<input id="input" type="button" value="button">`, {
-    contentDocBodyAttrs: { id: "buttonInputDoc" },
+    contentDocAttrs: { id: "buttonInputDoc" },
   });
   browser.loadURI(Services.io.newURI(url), {
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),

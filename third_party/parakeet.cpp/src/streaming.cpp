@@ -137,6 +137,17 @@ std::vector<int32_t> StreamingSession::feed_mel_chunk(const std::vector<float>& 
                            &chunk_tokens);
     enc_frame_ += n_valid;
 
+    // Length of the trailing run of blank frames, for blank_seconds(). Frames
+    // the decoder passed over without emitting are what an endpointer counts;
+    // local_frames is in emission order, so its last entry is the latest frame
+    // this chunk produced anything on.
+    if (emitted.empty()) {
+        blank_frames_ += n_valid;
+    } else {
+        blank_frames_ = n_valid - 1 - local_frames.back();
+        tokens_since_boundary_ += emitted.size();
+    }
+
     // 3. Update text + EOU events; refine each new event's absolute frame index
     //    from the per-token local frame the decoder reported.
     const size_t prev_events = events_.size();
@@ -185,8 +196,56 @@ std::vector<int32_t> StreamingSession::feed_mel_chunk(const std::vector<float>& 
         state_.state      = pred_.zero_state();
         state_.last_token = -1;     // SOS sentinel (nothing emitted yet)
         state_.have_token = false;
+        tokens_since_boundary_ = 0;
+        // Drop the encoder cache too, as NeMo's reset_state() does. The comment
+        // above used to reset the decoder only, on the grounds that the cache
+        // made no difference to the decoded tokens; that holds while speech
+        // keeps coming, but not when an utterance is followed by silence. The
+        // cache still carries the utterance's right context, so the joint keeps
+        // scoring its last word over the silence frames and the decoder, back
+        // at SOS, emits that word again on every chunk - one result per chunk,
+        // for as long as the caller stays quiet. The caches only: the caller's
+        // chunk schedule is unchanged, so the step counter keeps running.
+        enc_.reset_caches();
     }
     return emitted;
+}
+
+std::string StreamingSession::end_utterance() {
+    // Nothing has been decoded since the last boundary, so there is no
+    // utterance to close. Return without touching the decoder: a caller
+    // polling blank_seconds() asks for this on every stretch of silence, and
+    // resetting to SOS for nothing throws away whatever the decoder is part
+    // way through - the word of a one-word utterance, in the worst case.
+    if (tokens_since_boundary_ == 0) {
+        blank_frames_ = 0;
+        return {};
+    }
+    // The words close as an <EOU> closes them (see regroup_words): the trailing
+    // one is final now rather than withheld until the next utterance emits a
+    // token, and the high-water mark keeps a later mid-stream regroup from
+    // un-finalizing it.
+    regroup_words(/*flush_all=*/true);
+    eou_closed_words_ = words_.size();
+    // The boundary is taken here, so the run of blanks that justified it is
+    // spent: a caller polling blank_seconds() must not cut again on it.
+    blank_frames_ = 0;
+    tokens_since_boundary_ = 0;
+    // Back to SOS, as feed_mel_chunk does after an <EOU>, and for the same
+    // reason the words above can be closed at all: a word only stops being
+    // extendable once the decoder cannot continue it. Without this a later
+    // token could still extend the word just handed out, whose text can no
+    // longer be revised, and the continuation would be lost.
+    state_.state      = pred_.zero_state();
+    state_.last_token = -1;
+    state_.have_token = false;
+    // Same as the <EOU> path above: without dropping the encoder cache the
+    // utterance's last word is re-decoded over the silence that followed it.
+    // The caches only: the caller's chunk schedule is unchanged, so the step
+    // counter must keep running or the next window's pre-encode overlap would
+    // be decoded a second time instead of dropped.
+    enc_.reset_caches();
+    return take_new_text();
 }
 
 std::string StreamingSession::finalize() {

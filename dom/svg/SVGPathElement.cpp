@@ -82,18 +82,7 @@ NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGPathElement)
 already_AddRefed<SVGPathSegment> SVGPathElement::GetPathSegmentAtLength(
     float aDistance) {
   FlushIfNeeded();
-  RefPtr<SVGPathSegment> segment;
-  if (SVGGeometryProperty::DoForComputedStyle(
-          this, [&](const ComputedStyle* s) {
-            const auto& d = s->StyleSVGReset()->mD;
-            if (d.IsPath()) {
-              segment = SVGPathData::GetPathSegmentAtLength(
-                  this, d.AsPath()._0.AsSpan(), aDistance);
-            }
-          })) {
-    return segment.forget();
-  }
-  return SVGPathData::GetPathSegmentAtLength(this, mD.GetAnimValue().AsSpan(),
+  return SVGPathData::GetPathSegmentAtLength(this, mD.GetBaseValue().AsSpan(),
                                              aDistance);
 }
 
@@ -159,21 +148,15 @@ static void CreatePathSegments(SVGPathElement* aPathElement,
 void SVGPathElement::GetPathData(const SVGPathDataSettings& aOptions,
                                  nsTArray<RefPtr<SVGPathSegment>>& aValues) {
   FlushIfNeeded();
-  if (SVGGeometryProperty::DoForComputedStyle(
-          this, [&](const ComputedStyle* s) {
-            const auto& d = s->StyleSVGReset()->mD;
-            if (d.IsPath()) {
-              CreatePathSegments(this, d.AsPath(), aValues,
-                                 aOptions.mNormalize);
-            }
-          })) {
-    return;
-  }
-  CreatePathSegments(this, mD.GetAnimValue().RawData(), aValues,
+  CreatePathSegments(this, mD.GetBaseValue().RawData(), aValues,
                      aOptions.mNormalize);
 }
 
 void SVGPathElement::SetPathData(const Sequence<SVGPathSegmentInit>& aValues) {
+  if (!mD.FirstSegmentIsValid(aValues)) {
+    UnsetAttr(nsGkAtoms::d, IgnoreErrors());
+    return;
+  }
   AutoChangePathSegListNotifier notifier(this);
   mD.SetBaseValueFromPathSegments(aValues);
 }

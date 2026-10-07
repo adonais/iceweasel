@@ -181,6 +181,13 @@
       }
     },
     "link": {
+      "border": {
+        "radius": {
+          "focus": {
+            "Value": "{border/radius/xsmall}"
+          }
+        }
+      },
       "focus": {
         "outline": {
           "offset": {
@@ -428,11 +435,11 @@
     "color": {
       "accent": {
         "attention": {
-          "Light": "{color/green/40}",
-          "Dark": "{color/green/30}",
+          "Light": "{color/green/50}",
+          "Dark": "{color/green/20}",
           "HCM": "{AccentColor}",
-          "Private": "{color/green/30}",
-          "Smart Light (WIP)": "{color/green/40}"
+          "Private": "{color/green/50}",
+          "Smart Light (WIP)": "{color/green/20}"
         },
         "primary": {
           "Light": "{color/violet/50}",
@@ -796,19 +803,19 @@
           "menu": {
             "Light": "{button/background/color/ghost}",
             "Dark": "{button/background/color/ghost}",
-            "HCM": "{button/background/color}",
+            "HCM": "{Menu}",
             "Private": "{button/background/color/ghost}",
             "hover": {
               "Light": "{button/background/color/ghost/hover}",
               "Dark": "{button/background/color/ghost/hover}",
-              "HCM": "{button/background/color/primary}",
+              "HCM": "{-moz-menuhover}",
               "Private": "{button/background/color/ghost/hover}",
               "Smart Light (WIP)": "{button/background/color/ghost/hover}"
             },
             "active": {
               "Light": "{button/background/color/ghost/active}",
               "Dark": "{button/background/color/ghost/active}",
-              "HCM": "{button/background/color/primary}",
+              "HCM": "{button/background/color/menu/hover}",
               "Private": "{button/background/color/ghost/active}",
               "Smart Light (WIP)": "{button/background/color/ghost/active}"
             },
@@ -1185,19 +1192,19 @@
           "menu": {
             "Light": "{button/text/color/ghost}",
             "Dark": "{button/text/color/ghost}",
-            "HCM": "{button/text/color/ghost}",
+            "HCM": "{MenuText}",
             "Private": "{button/text/color/ghost}",
             "hover": {
               "Light": "{button/text/color/ghost/hover}",
               "Dark": "{button/text/color/hover}",
-              "HCM": "{button/text/color/primary}",
+              "HCM": "{-moz-menuhovertext}",
               "Private": "{button/text/color/hover}",
               "Smart Light (WIP)": "{button/text/color/ghost/hover}"
             },
             "active": {
               "Light": "{button/text/color/ghost/active}",
               "Dark": "{button/text/color/active}",
-              "HCM": "{button/text/color/primary/active}",
+              "HCM": "{button/text/color/menu/hover}",
               "Private": "{button/text/color/active}",
               "Smart Light (WIP)": "{button/text/color/ghost/active}"
             },
@@ -2851,24 +2858,24 @@
           "Private": "{background/color/box}",
           "Smart Light (WIP)": "{background/color/box}",
           "warning": {
-            "Light": "{message-bar/background/color}",
-            "Dark": "{message-bar/background/color}",
-            "HCM": "{message-bar/background/color}",
-            "Private": "{message-bar/background/color}",
+            "Light": "{background/color/box}",
+            "Dark": "{background/color/box}",
+            "HCM": "{background/color/box}",
+            "Private": "{background/color/box}",
             "Smart Light (WIP)": "{message-bar/background/color}"
           },
           "success": {
-            "Light": "{message-bar/background/color}",
-            "Dark": "{message-bar/background/color}",
-            "HCM": "{message-bar/background/color}",
-            "Private": "{message-bar/background/color}",
+            "Light": "{background/color/box}",
+            "Dark": "{background/color/box}",
+            "HCM": "{background/color/box}",
+            "Private": "{background/color/box}",
             "Smart Light (WIP)": "{message-bar/background/color}"
           },
           "critical": {
-            "Light": "{message-bar/background/color}",
-            "Dark": "{message-bar/background/color}",
-            "HCM": "{message-bar/background/color}",
-            "Private": "{message-bar/background/color}",
+            "Light": "{background/color/box}",
+            "Dark": "{background/color/box}",
+            "HCM": "{background/color/box}",
+            "Private": "{background/color/box}",
             "Smart Light (WIP)": "{message-bar/background/color}"
           }
         }

@@ -535,6 +535,119 @@ class AutofillRecords {
   }
 
   /**
+   * The write half of the migration contract. Each of these writes `_data`
+   * directly, so a record keeps the guid, timestamps and sync metadata it was
+   * handed, and none of them notifies or announces anything.
+   *
+   * The derived fields are stripped and recomputed, as _saveRecord() does,
+   * since a record read out of a store that computes them on read arrives with
+   * them already set and this store persists what it is given. Which fields
+   * those are is the subclass's business -- for credit cards the number is
+   * decrypted and re-encrypted on the way through -- so this works for any
+   * collection.
+   */
+  /**
+   * @param {Array<object>} records
+   * @returns {Promise<Array<{guid: string}|{error: string}>>} One entry per
+   *   record, in order.
+   */
+  async addManyWithMeta(records) {
+    const results = [];
+    for (const record of records) {
+      const index = this._findIndexByGUID(record.guid, {
+        includeDeleted: true,
+      });
+      if (index != -1) {
+        if (!this._data[index].deleted) {
+          results.push({ error: `a record with guid ${record.guid} exists` });
+          continue;
+        }
+        // A tombstone here and a live record in the source means the source
+        // has it back, from sync or from the store it was copied to. Unlike a
+        // store with a column per field, this one can drop the tombstone and
+        // take the record.
+        this._data.splice(index, 1);
+      }
+      this._data.push(await this.#recordForMigration(record));
+      results.push({ guid: record.guid });
+    }
+    this._store.saveSoon();
+    return results;
+  }
+
+  /**
+   * @param {Array<object>} records
+   * @returns {Promise<Array<{guid: string}|{error: string}>>}
+   */
+  async updateManyWithMeta(records) {
+    const results = [];
+    for (const record of records) {
+      const index = this._findIndexByGUID(record.guid);
+      if (index == -1) {
+        results.push({ error: `no record with guid ${record.guid}` });
+        continue;
+      }
+      this._data[index] = await this.#recordForMigration(record);
+      results.push({ guid: record.guid });
+    }
+    this._store.saveSoon();
+    return results;
+  }
+
+  /**
+   * Delete by guid, through remove() so that the rule about which deletions
+   * leave a tombstone stays in one place. The one write here that announces
+   * itself, once per record.
+   *
+   * @param {Array<string>} guids
+   * @returns {Promise<Array<{guid: string}|{error: string}>>}
+   */
+  async removeMany(guids) {
+    const results = [];
+    for (const guid of guids) {
+      if (!this._findByGUID(guid)) {
+        results.push({ error: `no record with guid ${guid}` });
+        continue;
+      }
+      this.remove(guid);
+      results.push({ guid });
+    }
+    return results;
+  }
+
+  /**
+   * The record as another store should receive it: the read half of the
+   * migration contract, and the counterpart of #recordForMigration.
+   *
+   * A store that keeps a field encrypted hands it over in the clear here, so
+   * that the store receiving it can encrypt on its own terms rather than having
+   * to understand this one's. Nothing to do for a collection that stores
+   * everything as it reads it.
+   *
+   * Throwing is how a record that cannot be exported is refused: the migrator
+   * counts it as failed and leaves the source untouched, rather than writing a
+   * record whose value it could not recover.
+   *
+   * @param {object} record
+   * @returns {Promise<object>}
+   */
+  async _recordForMigrationExport(record) {
+    return record;
+  }
+
+  async #recordForMigration(record) {
+    // Whatever the record arrives with, including no `_sync` at all: a store
+    // that cannot export its sync metadata leaves the record looking unsynced,
+    // which costs one upload. Keeping the entry this store already had would
+    // cost more -- a counter of 0 from before the other store took over would
+    // suppress the upload of everything done since.
+    const stored = { ...record, version: this.version };
+    await this._stripComputedFields(stored);
+    await this.computeFields(stored);
+    return stored;
+  }
+
+  /**
    * Notifies the storage of the use of the specified record, so we can update
    * the metadata accordingly. This does not bump the Sync change counter, since
    * we don't sync `timesUsed` or `timeLastUsed`.
@@ -1511,10 +1624,7 @@ export class AddressesBase extends AutofillRecords {
   }
 
   _recordReadProcessor(address) {
-    if (address.country && !FormAutofill.countries.has(address.country)) {
-      delete address.country;
-      delete address["country-name"];
-    }
+    AddressRecord.hideCountryWithoutMetaData(address);
   }
 
   _isMigrationNeeded(record) {
@@ -1705,6 +1815,33 @@ export class CreditCardsBase extends AutofillRecords {
     }
 
     return super._computeMigratedRecord(creditCard);
+  }
+
+  /**
+   * Hand a card over with its number in the clear, so the receiving store can
+   * encrypt it under whatever scheme that store uses. Today both use the OS key
+   * store; they will not always.
+   *
+   * Unlike _stripComputedFields, a decrypt failure is not swallowed here. There
+   * it is deliberate, so a card whose number cannot be read can still have its
+   * other fields edited. A migration has no such excuse: re-deriving from a
+   * masked number would encrypt the mask in place of the card, so a record that
+   * will not decrypt has to be refused and reported rather than copied.
+   *
+   * @param {object} record
+   * @returns {Promise<object>}
+   */
+  async _recordForMigrationExport(record) {
+    const exported = { ...record };
+    if (!exported["cc-number-encrypted"]) {
+      return exported;
+    }
+    exported["cc-number"] = await lazy.OSKeyStore.decrypt(
+      exported["cc-number-encrypted"],
+      "formautofill_cc"
+    );
+    delete exported["cc-number-encrypted"];
+    return exported;
   }
 
   async _stripComputedFields(creditCard) {

@@ -15,11 +15,12 @@ if [[ $(uname -o) == "Msys" ]]; then
     popd
 else
     SUFFIX=""
-    BUILD_DIR=b/g
+    BUILD_DIR=b/c
+    export PATH="$MOZ_FETCHES_DIR/clang/bin:$PATH"
     # Replace CR/LF line endings with Unix LF endings
     find . -name "*.mak" -exec sed -i 's/\r$//' {} \;
     pushd CPP/7zip/Bundles/Alone2
-    make -f ../../cmpl_gcc.mak
+    make -f ../../cmpl_clang.mak MY_ARCH="--sysroot=$MOZ_FETCHES_DIR/sysroot-x86_64-linux-gnu" LDFLAGS_STATIC_3=-fuse-ld=lld
     popd
 fi
 

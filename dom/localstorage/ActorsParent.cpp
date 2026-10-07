@@ -1132,6 +1132,13 @@ Result<UsageInfo, nsresult> LoadUsageFile(nsIFile& aUsageFile) {
   QM_TRY_INSPECT(const uint64_t& usage,
                  MOZ_TO_RESULT_INVOKE_MEMBER(binaryStream, Read64));
 
+  // Any negative number (wrapped to an unsigned integer greater than INT64_MAX)
+  // means something went wrong: while we might have transient negative values
+  // during a session, they shouldn't be persisted to disk: this would indicate
+  // a bug.
+  QM_TRY(OkIf(usage < static_cast<uint64_t>(INT64_MAX)),
+         Err(NS_ERROR_FILE_CORRUPTED));
+
   return UsageInfo{DatabaseUsageType(Some(usage))};
 }
 
@@ -3002,6 +3009,51 @@ Result<int64_t, nsresult> GetUsage(mozIStorageConnection& aConnection,
   QM_TRY(OkIf(stmt), Err(NS_ERROR_FAILURE));
 
   QM_TRY_RETURN(MOZ_TO_RESULT_INVOKE_MEMBER(stmt, GetInt64, 0));
+}
+
+// Unlike GetUsage, which returns the running counter maintained by
+// ConnectionWriteOptimizer (`database.usage`), this sums the actual rows and is
+// therefore the ground truth.
+Result<int64_t, nsresult> RecomputeUsage(mozIStorageConnection& aConnection) {
+  MOZ_ASSERT(IsOnIOThread() || IsOnGlobalConnectionThread());
+
+  QM_TRY_INSPECT(const auto& stmt,
+                 CreateAndExecuteSingleStepStatement<
+                     SingleStepResult::ReturnNullIfNoResult>(
+                     aConnection,
+                     "SELECT total(utf16Length(key) + utf16_length) "
+                     "FROM data;"_ns));
+
+  QM_TRY(OkIf(stmt), Err(NS_ERROR_FAILURE));
+
+  QM_TRY_RETURN(MOZ_TO_RESULT_INVOKE_MEMBER(stmt, GetInt64, 0));
+}
+
+// Writes a recomputed usage to both places the flush path derives the next
+// usage from: the `database.usage` running counter (the next FlushOp does
+// `usage = usage + :delta` on top of it) and the usage file (read by
+// QuotaClient::InitOrigin). Fixing only the file would be undone by the next
+// flush.
+nsresult UpdateUsage(mozIStorageConnection& aConnection, nsIFile* aUsageFile,
+                     nsIFile* aUsageJournalFile, int64_t aUsage) {
+  MOZ_ASSERT(IsOnIOThread() || IsOnGlobalConnectionThread());
+  MOZ_ASSERT(aUsage >= 0);
+
+  QM_TRY_INSPECT(
+      const auto& stmt,
+      MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
+          nsCOMPtr<mozIStorageStatement>, aConnection, CreateStatement,
+          "UPDATE database SET usage = :usage;"_ns));
+
+  QM_TRY(MOZ_TO_RESULT(stmt->BindInt64ByName("usage"_ns, aUsage)));
+
+  QM_TRY(MOZ_TO_RESULT(stmt->Execute()));
+
+  QM_TRY(MOZ_TO_RESULT(UpdateUsageFile(aUsageFile, aUsageJournalFile, aUsage)));
+
+  QM_TRY(MOZ_TO_RESULT(aUsageJournalFile->Remove(/*recursive*/ false)));
+
+  return NS_OK;
 }
 
 void ShadowWritesPrefChangedCallback(const char* aPrefName, void* aClosure) {
@@ -8543,14 +8595,15 @@ Result<UsageInfo, nsresult> QuotaClient::InitOrigin(
                                    *file, *usageFile, aOriginMetadata.mOrigin,
                                    [] {}, maybeCipherKey));
 
+                // The usage file is missing or corrupted (which includes a
+                // negative value persisted by a drifted running counter), so
+                // rebuild the usage from the rows rather than from
+                // `database.usage`, which drifts together with the file.
                 QM_TRY_INSPECT(const int64_t& usage,
-                               GetUsage(*connection,
-                                        /* aArchivedOriginScope */ nullptr));
+                               RecomputeUsage(*connection));
 
-                QM_TRY(MOZ_TO_RESULT(
-                    UpdateUsageFile(usageFile, usageJournalFile, usage)));
-
-                QM_TRY(MOZ_TO_RESULT(usageJournalFile->Remove(false)));
+                QM_TRY(MOZ_TO_RESULT(UpdateUsage(*connection, usageFile,
+                                                 usageJournalFile, usage)));
 
                 MOZ_ASSERT(usage >= 0);
                 return UsageInfo{DatabaseUsageType(Some(uint64_t(usage)))};

@@ -11,11 +11,6 @@ are termed "single-locale language repacks". There is another concept of a
 "multi-locale language build", which is more like a regular build and less
 like a re-packaging post-processing step.
 
-:::{note}
-These builds rely on make targets that don't work for
-[artifact builds](https://bugzilla.mozilla.org/show_bug.cgi?id=1387485).
-:::
-
 ### Instructions for single-locale repacks for developers
 
 This assumes that `$AB_CD` is the locale you want to repack with; you
@@ -146,15 +141,16 @@ the packaging build system. The three main entry points above all trigger
 related build flows:
 
 1. Get the localization repository, if needed
-2. Run l10n-merge with a prior clobber of the merge dir
+2. Run `l10n-merge`
 3. Copy l10n files to `dist`, with minor differences here between `l10n-%` and `chrome-%`
 4. Repackage and package
 
 Details on l10n-merge are described in its own section below.
-The copying of files is mainly controlled by `jar.mn`, in the few source
+The copying of files is driven by the `l10n-manifest.json` that the build
+backend emits from `jar.mn` and `LOCALIZED_FILES`, in the few source
 directories that include localizable files. `l10n-%` is used for repacks,
-`chrome-%` for multi-locale packages. The repackaging is dedicated
-Python code in `toolkit/mozapps/installer/l10n-repack.py`, using an existing
+`chrome-%` for multi-locale packages. The repackaging is done by
+`python/mozbuild/mozbuild/action/l10n_repackage.py`, starting from an existing
 package. It strips existing `chrome` l10n resources, and adds localizations
 and metadata.
 

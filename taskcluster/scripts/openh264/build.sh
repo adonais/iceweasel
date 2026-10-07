@@ -134,7 +134,7 @@ for f in "${PLUGIN_FILES[@]}"; do
 done
 : "${LIBRARY_FILE:?No library file found in build output}"
 
-python3 "$GECKO_PATH/testing/mozharness/external_tools/packagesymbols.py" \
+python3 "$GECKO_PATH/python/mozbuild/mozbuild/action/packagesymbols.py" \
     --symbol-zip "$SYMBOL_ZIP" \
     "$DUMP_SYMS" \
     "$LIBRARY_FILE"

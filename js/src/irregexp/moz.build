@@ -67,3 +67,7 @@ if CONFIG["JS_JITSPEW"]:
 # coverage instrumentation in FUZZING mode.
 if CONFIG["FUZZING_INTERFACES"] and CONFIG["LIBFUZZER"]:
     include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+LICENSED_UNDER += [
+    "v8",
+]

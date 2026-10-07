@@ -401,7 +401,7 @@ seconds. When the update timer expires, `UpdateService.notify()` is called,
 initiating an update check.
 
 The Background Update Task is a type of
-[Background Task](../../../../components/backgroundtasks/docs/index.md), which
+[Background Task](/toolkit/components/backgroundtasks/index.md), which
 is basically just a copy of Firefox running in a stripped down, headless mode.
 It is described in detail, [here](BackgroundUpdates.md), but a short summary
 will be provided below.

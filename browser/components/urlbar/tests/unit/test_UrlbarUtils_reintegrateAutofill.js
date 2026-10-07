@@ -75,11 +75,6 @@ add_task(async function returns_and_consumes_the_backspace_block() {
   await triggerBackspaceBlock(PAGE_URL);
 
   let { backspaceBlock } = await UrlbarUtils.reintegrateAutofill(PAGE_URL);
-  Assert.equal(
-    backspaceBlock.level,
-    "url",
-    "The backspace block should be reported at the url level"
-  );
   Assert.greater(backspaceBlock.blockedAt, 0, "blockedAt should be set");
   Assert.ok(
     !UrlbarUtils._backspaceBlocks.has(PAGE_KEY),

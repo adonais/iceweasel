@@ -179,11 +179,11 @@ namespace {
  * thread. So we need to pass it in.
  */
 class GetUserAgentRunnable final : public WorkerMainThreadRunnable {
-  nsString& mUA;
+  nsCString& mUA;
   bool mShouldResistFingerprinting;
 
  public:
-  GetUserAgentRunnable(WorkerPrivate* aWorkerPrivate, nsString& aUA,
+  GetUserAgentRunnable(WorkerPrivate* aWorkerPrivate, nsCString& aUA,
                        bool aShouldResistFingerprinting)
       : WorkerMainThreadRunnable(aWorkerPrivate, "UserAgent getter"_ns),
         mUA(aUA),
@@ -213,7 +213,8 @@ class GetUserAgentRunnable final : public WorkerMainThreadRunnable {
 
 }  // namespace
 
-void WorkerNavigator::GetUserAgent(nsString& aUserAgent, CallerType aCallerType,
+void WorkerNavigator::GetUserAgent(nsCString& aUserAgent,
+                                   CallerType aCallerType,
                                    ErrorResult& aRv) const {
   WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
   MOZ_ASSERT(workerPrivate);

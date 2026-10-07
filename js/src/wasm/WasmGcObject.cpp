@@ -290,7 +290,9 @@ void WasmArrayObject::obj_trace(JSTracer* trc, JSObject* object) {
   for (uint32_t i = 0; i < numElements; i++) {
     AnyRef* elementPtr =
         reinterpret_cast<AnyRef*>(arrayObj.data_ + i * elemSize);
-    TraceManuallyBarrieredEdge(trc, elementPtr, "wasm-array-element");
+    if (!elementPtr->isNull()) {
+      TraceManuallyBarrieredEdge(trc, elementPtr, "wasm-array-element");
+    }
   }
 }
 
@@ -473,7 +475,9 @@ void WasmStructObject::obj_trace(JSTracer* trc, JSObject* object) {
   const auto& structType = structObj.typeDef().structType();
   for (uint32_t offset : structType.inlineTraceOffsets_) {
     AnyRef* fieldPtr = reinterpret_cast<AnyRef*>((uint8_t*)&structObj + offset);
-    TraceManuallyBarrieredEdge(trc, fieldPtr, "wasm-struct-field");
+    if (!fieldPtr->isNull()) {
+      TraceManuallyBarrieredEdge(trc, fieldPtr, "wasm-struct-field");
+    }
   }
   if (MOZ_UNLIKELY(structType.totalSizeOOL_ > 0)) {
     uint8_t** addressOfOOLPtr = structObj.addressOfOOLPointer();
@@ -484,7 +488,9 @@ void WasmStructObject::obj_trace(JSTracer* trc, JSObject* object) {
       uint8_t* oolBase = *addressOfOOLPtr;
       for (uint32_t offset : structType.outlineTraceOffsets_) {
         AnyRef* fieldPtr = reinterpret_cast<AnyRef*>(oolBase + offset);
-        TraceManuallyBarrieredEdge(trc, fieldPtr, "wasm-struct-field");
+        if (!fieldPtr->isNull()) {
+          TraceManuallyBarrieredEdge(trc, fieldPtr, "wasm-struct-field");
+        }
       }
     }
   }

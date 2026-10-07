@@ -11,7 +11,7 @@ import com.google.android.play.core.integrity.StandardIntegrityManager.StandardI
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 import mozilla.components.concept.integrity.IntegrityToken
-import mozilla.components.lib.integrity.googleplay.RequestHashProvider
+import mozilla.components.concept.integrity.RequestHashProvider
 import mozilla.components.lib.integrity.googleplay.TokenProvider
 
 private val StandardIntegrityTokenProvider.tokenProvider

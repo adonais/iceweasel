@@ -261,8 +261,7 @@ void nsNativeAppSupportUnix::DoInteract() {
         do_GetService("@mozilla.org/toolkit/app-startup;1");
 
     if (appService) {
-      bool userAllowedQuit = true;
-      appService->Quit(nsIAppStartup::eForceQuit, 0, &userAllowedQuit);
+      appService->Quit(nsIAppStartup::eForceQuit, 0);
     }
   } else {
     if (mClientState != STATE_SHUTDOWN_CANCELLED) {
@@ -350,8 +349,7 @@ void nsNativeAppSupportUnix::DieCB(SmcConn smc_conn, SmPointer client_data) {
       do_GetService("@mozilla.org/toolkit/app-startup;1");
 
   if (appService) {
-    bool userAllowedQuit = false;
-    appService->Quit(nsIAppStartup::eForceQuit, 0, &userAllowedQuit);
+    appService->Quit(nsIAppStartup::eForceQuit, 0);
   }
   // Quit causes the shutdown to begin but the shutdown process is asynchronous
   // so we can't DisconnectFromSM() yet

@@ -32,7 +32,7 @@ async function registerWord(aTarget, aAutoCompleteController) {
   aTarget.focus();
   aTarget.value = "Mozilla";
 
-  await waitForCondition(() => {
+  await SimpleTest.promiseWaitForCondition(() => {
     if (aAutoCompleteController.searchStatus == aAutoCompleteController.STATUS_NONE ||
         aAutoCompleteController.searchStatus == aAutoCompleteController.STATUS_COMPLETE_NO_MATCH) {
       aAutoCompleteController.startSearch("Mozilla");

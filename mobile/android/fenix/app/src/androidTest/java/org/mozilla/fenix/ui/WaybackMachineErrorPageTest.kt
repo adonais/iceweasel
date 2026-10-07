@@ -32,6 +32,8 @@ import org.mozilla.fenix.ui.robots.navigationToolbar
  */
 class WaybackMachineErrorPageTest {
 
+    private val failingUrl = "ww.example.com"
+
     @get:Rule(order = 0) val fenixTestRule = FenixTestRule()
 
     @get:Rule(order = 1)
@@ -50,9 +52,10 @@ class WaybackMachineErrorPageTest {
     @Test
     fun archivedVersionButtonIsShownOnEligibleErrorPage() {
         navigationToolbar(composeTestRule) {}
-            .enterURLAndEnterToBrowser("ww.example.com".toUri()) {
+            .enterURLAndEnterToBrowser(failingUrl.toUri()) {
                 waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
                 assertUIObjectExists(itemWithResId("viewArchivedButton"))
+                assertUIObjectExists(itemWithResId("archiveDescription"))
             }
     }
 }

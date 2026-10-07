@@ -9,14 +9,13 @@
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/WorkerCommon.h"
+#include "mozilla/dom/WorkerRef.h"
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIStreamLoader.h"
 #include "nsStreamUtils.h"
 
 namespace mozilla::dom {
-
-class ThreadSafeWorkerRef;
 
 namespace workerinternals::loader {
 

@@ -31,7 +31,7 @@ class StaticRange : public AbstractRange {
                                                    ErrorResult& aRv);
 
   /**
-   * The following Create() returns `nsRange` instance which is initialized
+   * The following Create() returns `StaticRange` instance which is initialized
    * only with aNode.  The result is never positioned.
    */
   static already_AddRefed<StaticRange> Create(nsINode* aNode);
@@ -90,7 +90,7 @@ class StaticRange : public AbstractRange {
  protected:
   explicit StaticRange(nsINode* aNode, MutationObserved aIsMutationObserved,
                        TreeKind aBoundaryTreeKind = TreeKind::DOM)
-      : AbstractRange(aNode, /* aIsDynamicRange = */ false, aBoundaryTreeKind),
+      : AbstractRange(aNode, /* aIsRange = */ false, aBoundaryTreeKind),
         mIsMutationObserved(aIsMutationObserved) {}
   virtual ~StaticRange();
 

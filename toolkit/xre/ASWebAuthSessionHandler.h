@@ -8,4 +8,9 @@
 void RegisterASWebAuthSessionHandler();
 void RegisterASWebAuthSessionObservers();
 
+// True when macOS launched this process to handle an
+// ASWebAuthenticationSession request. Only meaningful in the process macOS
+// launched, so it must be read before any relaunch.
+bool WasLaunchedByAuthenticationServices();
+
 #endif  // ASWebAuthSessionHandler_h

@@ -241,6 +241,7 @@
     <ID>HardcodedPaddingUsage:TabCounterButton.kt$(16.dp)</ID>
     <ID>HardcodedPaddingUsage:TextField.kt$(8.dp)</ID>
     <ID>HardcodedPaddingUsage:TrailingIconScope.kt$(8.dp)</ID>
+    <ID>LongMethod:DefaultErrorStringsProvider.kt$DefaultErrorStringsProvider$override fun errorStringsFor(context: Context, errorType: ErrorType, uri: String?): ErrorStrings</ID>
     <ID>LongMethod:ExternalAppBrowserFragment.kt$ExternalAppBrowserFragment$override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View</ID>
     <ID>LongMethod:SitePermissionsDialogFragment.kt$SitePermissionsDialogFragment$@SuppressLint("InflateParams") private fun createContainer(): View</ID>
     <ID>LongMethod:SystemEngineSession.kt$SystemEngineSession$private fun initSettings(webView: WebView, s: WebSettings)</ID>
@@ -263,10 +264,7 @@
     <ID>MaxLineLength:ContextCompatDetector.kt$ContextCompatDetector.Companion$"Using this method can lead to crashes in older Android versions as newer features might not be available"</ID>
     <ID>MaxLineLength:GeckoEngine.kt$GeckoEngine$*</ID>
     <ID>MaxLineLength:VisibleForTestingDetector.kt$VisibleForTestingDetector.Companion$"Other packages such as org.jetbrains.annotations or com.google.common.annotations are not allowed."</ID>
-    <ID>MayBeConst:ConstraintLayoutPerfDetector.kt$private val CUSTOM_VIEW_ISSUE_DESCRIPTION = "Caution regarding custom views extending `ConstraintLayout`"</ID>
-    <ID>MayBeConst:ConstraintLayoutPerfDetector.kt$private val CUSTOM_VIEW_ISSUE_MESSAGE = "Custom views extending `ConstraintLayout` are less " + "efficient because they cannot share other `ConstraintLayout` defined in file."</ID>
     <ID>TooManyFunctions:Engine.kt$Engine : WebExtensionRuntimeTranslationsRuntimeBrowserPreferencesRuntimeAddressStructureRuntimeDataCleanable</ID>
-    <ID>UndocumentedPublicClass:AutoSave.kt$AutoSave</ID>
     <ID>UndocumentedPublicClass:AutoSave.kt$AutoSave$Storage</ID>
     <ID>UndocumentedPublicClass:Base64.kt$Base64</ID>
     <ID>UndocumentedPublicClass:BrowserMenu.kt$BrowserMenu$Orientation</ID>
@@ -560,6 +558,5 @@
     <ID>UndocumentedPublicFunction:Types.kt$fun mozilla.components.concept.sync.Device.into(): Device</ID>
     <ID>UndocumentedPublicFunction:Types.kt$fun mozilla.components.concept.sync.TabData.into(): TabHistoryEntry</ID>
     <ID>UndocumentedPublicFunction:WebAppManifestParser.kt$WebAppManifestParser$fun serialize(manifest: WebAppManifest)</ID>
-    <ID>UndocumentedPublicFunction:WorkManagerSyncManager.kt$fun getLastSynced(context: Context): Long</ID>
   </CurrentIssues>
 </SmellBaseline>

@@ -282,6 +282,38 @@
         await testProperty("aria-expanded", "ariaExpanded");
         await testProperty("aria-pressed", "ariaPressed");
         await testProperty("aria-checked", "ariaChecked");
+        await testProperty("aria-selected", "ariaSelected");
+      });
+
+      add_task(async function testButtonRole() {
+        const button = document.querySelector("moz-button");
+        button.setAttribute("role", "presentation");
+        button.setAttribute("buttonrole", "tab");
+        await button.updateComplete;
+
+        is(
+          button.getAttribute("role"),
+          "presentation",
+          "Host role is preserved"
+        );
+        is(
+          button.buttonEl.getAttribute("role"),
+          "tab",
+          "buttonRole is applied to the inner button"
+        );
+
+        button.buttonRole = null;
+        await button.updateComplete;
+
+        is(
+          button.getAttribute("role"),
+          "presentation",
+          "Host role is preserved after clearing buttonRole"
+        );
+        ok(
+          !button.buttonEl.hasAttribute("role"),
+          "Inner button role is cleared by setting buttonRole"
+        );
       });
 
       add_task(async function testIconButtons() {

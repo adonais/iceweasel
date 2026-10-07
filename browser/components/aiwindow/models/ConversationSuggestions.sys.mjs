@@ -911,6 +911,7 @@ export async function constructConversationToResumeActivity(
     ...(conversationId ? { id: conversationId } : {}),
     title: resumeActivitySuggestion.content.headline,
   });
+  conversation.promptEmbeddedMemories = [resumeActivitySuggestion.memory];
 
   const [
     { prompt: chatSystemPrompt },

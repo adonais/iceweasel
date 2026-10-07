@@ -46,7 +46,7 @@ object TabGroupActionReducer {
                 )
             }
             is TabGroupAction.TabGroupClicked -> processTabGroupClick(state, action.group)
-            is TabGroupAction.TabAddedToGroup -> state
+            is TabGroupAction.TabAddedToExistingTabGroup -> state
             is TabGroupAction.SelectedTabsAddedToGroup ->
                 state.copy(
                     mode = TabsTrayState.Mode.Normal,
@@ -73,12 +73,17 @@ object TabGroupActionReducer {
                 state.copy(backStack = state.backStack.popDeleteTabGroupFlow())
             is TabGroupAction.OnboardingDismissed ->
                 state.copy(config = state.config.copy(tabGroupsOnboardingEnabled = false))
+            is TabGroupAction.CollectionsMigrationCardDismissed ->
+                state.copy(tabGroupState = state.tabGroupState.copy(showCollectionsMigrationCard = false))
             is TabGroupAction.OnboardingShown ->
                 state.copy(tabGroupState = state.tabGroupState.copy(hasRecordedOnboardingImpression = true))
             is TabGroupAction.DragAndDropProcessed ->
                 state.copy(
                     tabGroupState = state.tabGroupState.copy(dragProcessingState = DragProcessingState.COMPLETED)
                 )
+            // No-op actions within the TabsTray
+            TabGroupAction.NavigateBackInvoked -> state
+            is TabGroupAction.TabAddedToNewTabGroup -> state
         }
     }
 

@@ -95,7 +95,7 @@ class WorkerNavigator final : public nsWrapperCache {
     aLanguages = mProperties.mLanguages.Clone();
   }
 
-  void GetUserAgent(nsString& aUserAgent, CallerType aCallerType,
+  void GetUserAgent(nsCString& aUserAgent, CallerType aCallerType,
                     ErrorResult& aRv) const;
 
   bool OnLine() const { return mOnline; }

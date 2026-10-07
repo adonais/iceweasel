@@ -3,11 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 EXPORTS.mozilla.dom = [
+    "ConnectionAllowlistViolationReportBody.h",
     "CrashReport.h",
     "CSPViolationReportBody.h",
     "DeprecationReportBody.h",
-    "FeaturePolicyViolationReportBody.h",
     "IntegrityViolationReportBody.h",
+    "PermissionsPolicyViolationReportBody.h",
     "Report.h",
     "ReportBody.h",
     "ReportDeliver.h",
@@ -20,11 +21,12 @@ EXPORTS.mozilla.dom = [
 ]
 
 UNIFIED_SOURCES += [
+    "ConnectionAllowlistViolationReportBody.cpp",
     "CrashReport.cpp",
     "CSPViolationReportBody.cpp",
     "DeprecationReportBody.cpp",
-    "FeaturePolicyViolationReportBody.cpp",
     "IntegrityViolationReportBody.cpp",
+    "PermissionsPolicyViolationReportBody.cpp",
     "Report.cpp",
     "ReportBody.cpp",
     "ReportDeliver.cpp",

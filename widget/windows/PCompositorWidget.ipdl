@@ -5,10 +5,12 @@
 include protocol PCompositorBridge;
 
 include "mozilla/dom/TabMessageUtils.h";
+include "mozilla/GfxMessageUtils.h";
 include "mozilla/widget/WidgetMessageUtils.h";
 
 using mozilla::gfx::IntSize from "mozilla/gfx/Point.h";
 using mozilla::WindowsHandle from "mozilla/ipc/IPCTypes.h";
+using mozilla::LayoutDeviceIntSize from "Units.h";
 using mozilla::widget::TransparencyMode from "nsIWidget.h";
 using nsSizeMode from "nsIWidget.h";
 
@@ -33,6 +35,7 @@ parent:
   sync LeavePresentLock();
   async NotifyVisibilityUpdated(bool aIsFullyOccluded);
   async UpdateTransparency(TransparencyMode aMode);
+  async NotifyClientSizeChanged(LayoutDeviceIntSize aClientSize);
   async __delete__();
 
 child:

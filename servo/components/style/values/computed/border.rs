@@ -24,7 +24,7 @@ use crate::values::resolved::{Context as ResolvedContext, ToResolvedValue};
 use app_units::Au;
 use thin_vec::ThinVec;
 
-pub use crate::values::specified::border::BorderImageRepeat;
+pub use crate::values::specified::border::{BorderImageRepeat, BoxDecorationBreak, FloatEdge};
 
 /// A computed value for -webkit-text-stroke-width.
 pub type LineWidth = Au;
@@ -68,10 +68,10 @@ impl ToResolvedValue for BorderSideWidth {
         }
         // Only for border widths, a style of none/hidden causes the resolved value to be zero.
         let style = match context.current_longhand.unwrap() {
-            LonghandId::BorderTopWidth => context.style.clone_border_top_style(),
-            LonghandId::BorderRightWidth => context.style.clone_border_right_style(),
-            LonghandId::BorderBottomWidth => context.style.clone_border_bottom_style(),
-            LonghandId::BorderLeftWidth => context.style.clone_border_left_style(),
+            LonghandId::BorderTopWidth => *context.style.get_border_top_style(),
+            LonghandId::BorderRightWidth => *context.style.get_border_right_style(),
+            LonghandId::BorderBottomWidth => *context.style.get_border_bottom_style(),
+            LonghandId::BorderLeftWidth => *context.style.get_border_left_style(),
             _ => {
                 debug_assert!(false, "Expected a physical longhand");
                 return resolved_length;

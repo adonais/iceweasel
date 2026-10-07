@@ -266,7 +266,7 @@ add_task(async function test_aboutwelcome_embedded_migration() {
           string_id: "mr2022-onboarding-import-image-alt",
         },
         background:
-          "url('chrome://activity-stream/content/data/content/assets/mr-import.svg') var(--mr-secondary-position) no-repeat var(--mr-screen-background-color)",
+          "url('chrome://activity-stream/content/data/content/assets/br-migration-fox-juggle.svg') var(--mr-secondary-position) no-repeat var(--mr-screen-background-color)",
         progress_bar: true,
         migrate_start: {
           action: {},
@@ -291,7 +291,7 @@ add_task(async function test_aboutwelcome_embedded_migration() {
         position: "split",
         split_narrow_bkg_position: "-228px",
         background:
-          "url('chrome://activity-stream/content/data/content/assets/mr-gratitude.svg') var(--mr-secondary-position) no-repeat, var(--mr-screen-background-color)",
+          "url('chrome://activity-stream/content/data/content/assets/br-gratitude-fox-rock.svg') var(--mr-secondary-position) no-repeat, var(--mr-screen-background-color)",
         progress_bar: true,
         logo: {},
         title: {

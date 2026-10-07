@@ -14,7 +14,6 @@ import org.mozilla.geckoview.StorageController
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class StorageControllerTest : BaseSessionTest() {
-
     private val storageController
         get() = sessionRule.runtime.storageController
 

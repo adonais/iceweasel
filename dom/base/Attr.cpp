@@ -115,22 +115,6 @@ Element* Attr::GetElement() const {
   return content ? content->AsElement() : nullptr;
 }
 
-nsresult Attr::SetOwnerDocument(Document* aDocument) {
-  NS_ASSERTION(aDocument, "Missing document");
-
-  Document* doc = OwnerDoc();
-  NS_ASSERTION(doc != aDocument, "bad call to Attr::SetOwnerDocument");
-  doc->RemoveAllPropertiesFor(this);
-
-  RefPtr<dom::NodeInfo> newNodeInfo = aDocument->NodeInfoManager()->GetNodeInfo(
-      mNodeInfo->NameAtom(), mNodeInfo->GetPrefixAtom(),
-      mNodeInfo->NamespaceID(), ATTRIBUTE_NODE);
-  NS_ASSERTION(newNodeInfo, "GetNodeInfo lies");
-  mNodeInfo.swap(newNodeInfo);
-
-  return NS_OK;
-}
-
 void Attr::GetName(nsAString& aName) { aName = NodeName(); }
 
 void Attr::GetValue(nsAString& aValue) {

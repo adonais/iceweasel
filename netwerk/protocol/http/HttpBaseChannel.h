@@ -530,6 +530,10 @@ class HttpBaseChannel : public nsHashPropertyBag,
                                    int64_t aContentLength = -1,
                                    bool aSetContentLengthHeader = false);
 
+  void SetUploadStreamIsStreaming(bool aIsStreaming) {
+    StoreUploadStreamIsStreaming(aIsStreaming);
+  }
+
   virtual nsresult SetReferrerHeader(const nsACString& aReferrer,
                                      bool aRespectBeforeConnect = true) {
     if (aRespectBeforeConnect) {
@@ -565,6 +569,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
     Maybe<dom::TimedChannelInfo> timedChannelInfo;
     nsCOMPtr<nsIInputStream> uploadStream;
     uint64_t uploadStreamLength = 0;
+    bool uploadStreamIsStreaming = false;
     Maybe<nsCString> contentType;
     Maybe<nsCString> contentLength;
 
@@ -1014,7 +1019,11 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
     // Indicates whether the user-agent header is outdated and can not be used as
     // a user agent value.
-    (uint32_t, IsUserAgentHeaderOutdated, 1)
+    (uint32_t, IsUserAgentHeaderOutdated, 1),
+
+    // True if the upload stream is from a JS ReadableStream and must not be
+    // normalized, buffered, or cloned.
+    (uint32_t, UploadStreamIsStreaming, 1)
   ))
   // clang-format on
 

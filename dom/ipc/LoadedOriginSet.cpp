@@ -31,7 +31,7 @@ bool LoadedOriginSet::Has(nsIPrincipal* aPrincipal, Level aThreshold,
 
   const OriginAttributes& attrs = aPrincipal->OriginAttributesRef();
   nsAutoCString originNoSuffix;
-  if (aThreshold == Level::SiteOnly) {
+  if (aThreshold <= Level::SiteOnly) {
     MOZ_ALWAYS_SUCCEEDS(aPrincipal->GetSiteOriginNoSuffix(originNoSuffix));
   } else {
     MOZ_ALWAYS_SUCCEEDS(aPrincipal->GetOriginNoSuffix(originNoSuffix));
@@ -50,12 +50,18 @@ bool LoadedOriginSet::Has(nsIPrincipal* aPrincipal, Level aThreshold,
   return false;
 }
 
-LoadedOriginSet::Level LoadedOriginSet::AddInternal(nsIPrincipal* aPrincipal,
-                                                    bool aTentative) {
+bool LoadedOriginSet::AddInternal(nsIPrincipal* aPrincipal, bool aTentative) {
   nsAutoCString originNoSuffix;
   MOZ_ALWAYS_SUCCEEDS(aPrincipal->GetOriginNoSuffix(originNoSuffix));
   nsAutoCString siteOriginNoSuffix;
   MOZ_ALWAYS_SUCCEEDS(aPrincipal->GetSiteOriginNoSuffix(siteOriginNoSuffix));
+
+  nsAutoCString precursorSiteOriginNoSuffix;
+  nsCOMPtr<nsIPrincipal> precursor = aPrincipal->GetPrecursorPrincipal();
+  if (precursor) {
+    MOZ_ALWAYS_SUCCEEDS(
+        precursor->GetSiteOriginNoSuffix(precursorSiteOriginNoSuffix));
+  }
 
   MutexAutoLock lock(mMutex);
 
@@ -71,35 +77,33 @@ LoadedOriginSet::Level LoadedOriginSet::AddInternal(nsIPrincipal* aPrincipal,
         AttributeBucket{.mAttrs = aPrincipal->OriginAttributesRef()});
   }
 
-  Level previous = Level::Unloaded;
+  if (precursor) {
+    OriginEntry& precursorEntry =
+        found->mOrigins.LookupOrInsert(precursorSiteOriginNoSuffix);
+    precursorEntry.mLevel =
+        std::max(precursorEntry.mLevel, Level::PrecursorOnly);
+  }
 
   if (siteOriginNoSuffix != originNoSuffix) {
     OriginEntry& siteEntry = found->mOrigins.LookupOrInsert(siteOriginNoSuffix);
-    previous = std::min(siteEntry.mLevel, Level::SiteOnly);
     siteEntry.mLevel = std::max(siteEntry.mLevel, Level::SiteOnly);
   }
 
   OriginEntry& originEntry = found->mOrigins.LookupOrInsert(originNoSuffix);
-  previous = std::max(previous, originEntry.mLevel);
-  originEntry.mLevel =
-      std::max(originEntry.mLevel, aTentative ? Level::Tentative : Level::Full);
 
-  return previous;
+  Level newLevel = aTentative ? Level::Tentative : Level::Full;
+  if (originEntry.mLevel < newLevel) {
+    originEntry.mLevel = newLevel;
+    return true;
+  }
+  return false;
 }
 
 bool LoadedOriginSet::ValidatePrincipal(
     nsIPrincipal* aPrincipal,
     const EnumSet<ValidatePrincipalOptions>& aOptions) {
-  RemoteType remoteType = GetRemoteType();
-  auto isPrincipalLoaded = [&](nsIPrincipal* prin) {
-    // FIXME: Currently we only match site, and ignore OAs. This is consistent
-    // with ValidatePrincipal behaviour prior to bug 2055554. In the future, we
-    // hope to tighten these checks.
-    return !StaticPrefs::dom_ipc_validatePrincipal_validateSiteLoaded() ||
-           Has(prin, Level::SiteOnly, OriginAttributes::STRIP_ALL);
-  };
   return ValidatePrincipalCouldPotentiallyBeLoadedBy(
-      aPrincipal, remoteType, aOptions, isPrincipalLoaded);
+      aPrincipal, GetRemoteType(), aOptions, this);
 }
 
 }  // namespace mozilla::dom

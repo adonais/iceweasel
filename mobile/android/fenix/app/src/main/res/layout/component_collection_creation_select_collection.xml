@@ -108,63 +108,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <!-- This file is never shown: it is cloned into a ConstraintSet and applied to the layout that
+         is. Only a direct child's id, constraints, visibility, alpha and transform are carried over. -->
+    <View
         android:id="@+id/bottom_button_bar_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:alpha="1.0"
-        android:background="@drawable/add_tabs_to_collection_background"
-        android:clipToPadding="false"
         android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-
-        <ImageButton
-            android:id="@+id/bottom_bar_icon_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:background="?android:attr/selectableItemBackground"
-            android:importantForAccessibility="no"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/mozac_ic_plus_24"
-            app:tint="?attr/colorOnPrimary" />
-
-        <TextView
-            android:id="@+id/bottom_bar_text"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:gravity="center_vertical"
-            android:singleLine="true"
-            android:text="@string/create_collection_add_new_collection"
-            android:textColor="?attr/colorOnPrimary"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/save_button"
-            app:layout_constraintStart_toEndOf="@id/bottom_bar_icon_button"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <Button
-            android:id="@+id/save_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:alpha="0.0"
-            android:background="?android:attr/selectableItemBackground"
-            android:text="@string/create_collection_save"
-            android:textAlignment="center"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Button"
-            android:textColor="?attr/colorOnPrimary"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:ignore="ButtonStyleXmlDetector" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        app:layout_constraintStart_toStartOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

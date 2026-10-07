@@ -32,7 +32,7 @@ const MAX_LOGINS_TO_RESTORE = 10000;
 
 // Continues the rust mirror's telemetry version sequence (last was 8); the
 // rust_migration_status event is shared with the former mirror.
-const telemetryVersion = "9";
+const telemetryVersion = "10";
 
 // Replace an origin's scheme with `moz-pwmngr-fixed-<prefix extracted from
 // login guid>://`.
@@ -186,7 +186,7 @@ export class LoginStorageMigrator {
   async #executeMigration() {
     this.#logger.log("Starting migration...");
 
-    const t0 = Date.now();
+    const t0 = ChromeUtils.now();
     const runId = Services.uuid.generateUUID();
     const attempt = Services.prefs.getIntPref(PREFS.MIGRATION_ATTEMPTS, 0);
     const primaryPasswordSet = lazy.LoginHelper.isPrimaryPasswordSet();
@@ -280,7 +280,7 @@ export class LoginStorageMigrator {
     } finally {
       recordMigrationStatus({
         runId,
-        duration: Date.now() - t0,
+        duration: Math.round(ChromeUtils.now() - t0),
         numberOfLoginsToMigrate,
         numberOfLoginsMigrated,
         numberOfLoginsQuarantined,
@@ -388,6 +388,7 @@ export class LoginStorageMigrator {
     let updated = 0;
     let skipped = 0;
     let failed = 0;
+    let toDelete = 0;
     let fatalError = null;
     // Stays null while there is nothing worth reporting, which is the case for
     // every profile that never had the Rust backend enabled.
@@ -415,6 +416,18 @@ export class LoginStorageMigrator {
       Services.prefs.setIntPref(PREFS.RESTORE_ATTEMPTS, attempt + 1);
 
       const rustLogins = await this.#rustStorage.getAllLogins(false);
+
+      // What carrying the deletions over would cost: the JSON logins Rust no
+      // longer has, which is everything the user deleted while Rust was
+      // primary plus anything the migration failed to copy. Only counted for
+      // now, so that bug 2072278 can decide whether deleting them is safe.
+      const rustGuids = new Set(
+        rustLogins.map(login => login.QueryInterface(Ci.nsILoginMetaInfo).guid)
+      );
+      const jsonLogins = await this.#jsonStorage.getAllLogins(false);
+      toDelete = jsonLogins.filter(
+        login => !rustGuids.has(login.QueryInterface(Ci.nsILoginMetaInfo).guid)
+      ).length;
 
       for (const rustLogin of rustLogins) {
         // Between two logins is the only point where stopping leaves both
@@ -486,7 +499,8 @@ export class LoginStorageMigrator {
       if (endState) {
         this.#logger.log(
           `Restore ${endState}: ${added} added, ${updated} updated, ` +
-            `${skipped} skipped, ${failed} failed`
+            `${skipped} skipped, ${failed} failed, ` +
+            `${toDelete} to delete`
         );
         Glean.pwmgr.rustRestoreStatus.record({
           metric_version: telemetryVersion,
@@ -501,6 +515,7 @@ export class LoginStorageMigrator {
           number_of_logins_updated: updated,
           number_of_logins_skipped: skipped,
           number_of_logins_failed: failed,
+          number_of_logins_to_delete: toDelete,
           primary_password_set: lazy.LoginHelper.isPrimaryPasswordSet(),
           error_message: fatalError
             ? normalizeRustStorageErrorMessage(fatalError)

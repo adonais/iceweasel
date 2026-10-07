@@ -1381,19 +1381,20 @@ bool ContentCacheInParent::OnCompositionEvent(
 
 void ContentCacheInParent::OnSelectionEvent(
     const WidgetSelectionEvent& aSelectionEvent) {
-  MOZ_LOG(sContentCacheLog, LogLevel::Info,
-          ("0x%p OnSelectionEvent(aEvent={ "
-           "mMessage=%s, mOffset=%u, mLength=%u, mReversed=%s, "
-           "mExpandToClusterBoundary=%s }), "
-           "PendingEventsNeedingAck()=%u, WidgetHasComposition()=%s, "
-           "mHandlingCompositions.Length()=%zu, HasPendingCommit()=%s, "
-           "mIsChildIgnoringCompositionEvents=%s",
-           this, ToChar(aSelectionEvent.mMessage), aSelectionEvent.mOffset,
-           aSelectionEvent.mLength, TrueOrFalse(aSelectionEvent.mReversed),
-           TrueOrFalse(aSelectionEvent.mExpandToClusterBoundary),
-           PendingEventsNeedingAck(), TrueOrFalse(WidgetHasComposition()),
-           mHandlingCompositions.Length(), TrueOrFalse(HasPendingCommit()),
-           TrueOrFalse(mIsChildIgnoringCompositionEvents)));
+  MOZ_LOG_FMT(sContentCacheLog, LogLevel::Info,
+              "{} OnSelectionEvent(aEvent={{ "
+              "mMessage={}, mOffset={}, mLength={}, mDirection={}, "
+              "mExpandToClusterBoundary={} }}), "
+              "PendingEventsNeedingAck()={}, WidgetHasComposition()={}, "
+              "mHandlingCompositions.Length()={}, HasPendingCommit()={}, "
+              "mIsChildIgnoringCompositionEvents={}",
+              static_cast<void*>(this), ToChar(aSelectionEvent.mMessage),
+              aSelectionEvent.mOffset, aSelectionEvent.mLength,
+              aSelectionEvent.mDirection,
+              aSelectionEvent.mExpandToClusterBoundary,
+              PendingEventsNeedingAck(), WidgetHasComposition(),
+              mHandlingCompositions.Length(), HasPendingCommit(),
+              mIsChildIgnoringCompositionEvents);
 
 #if MOZ_DIAGNOSTIC_ASSERT_ENABLED && !defined(FUZZING_SNAPSHOT)
   mDispatchedEventMessages.AppendElement(aSelectionEvent.mMessage);
@@ -1404,18 +1405,19 @@ void ContentCacheInParent::OnSelectionEvent(
 
 void ContentCacheInParent::OnContentCommandEvent(
     const WidgetContentCommandEvent& aContentCommandEvent) {
-  MOZ_LOG(sContentCacheLog, LogLevel::Info,
-          ("0x%p OnContentCommandEvent(aEvent={ "
-           "mMessage=%s, mString=\"%s\", mSelection={ mReplaceSrcString=\"%s\" "
-           "mOffset=%u, mPreventSetSelection=%s }, mOnlyEnabledCheck=%s })",
-           this, ToChar(aContentCommandEvent.mMessage),
-           ToString(aContentCommandEvent.mString).c_str(),
-           ToString(aContentCommandEvent.mSelection.mReplaceSrcString).c_str(),
-           aContentCommandEvent.mSelection.mOffset,
-           TrueOrFalse(aContentCommandEvent.mSelection.mPreventSetSelection),
-           TrueOrFalse(aContentCommandEvent.mOnlyEnabledCheck)));
+  MOZ_LOG_FMT(
+      sContentCacheLog, LogLevel::Info,
+      "{} OnContentCommandEvent(aEvent={{ "
+      "mMessage={}, mString=\"{}\", mSelection={{ mReplaceSrcString=\"{}\" "
+      "mOffset={}, mPreventSetSelection={} }}, mOnlyEnabledCheck={} }})",
+      static_cast<void*>(this), ToChar(aContentCommandEvent.mMessage),
+      ToString(aContentCommandEvent.mString),
+      ToString(aContentCommandEvent.mSelection.mReplaceSrcString),
+      aContentCommandEvent.mSelection.mOffset,
+      aContentCommandEvent.mSelection.mPreventSetSelection,
+      aContentCommandEvent.mOnlyEnabledCheck);
 
-  MOZ_ASSERT(!aContentCommandEvent.mOnlyEnabledCheck);
+  MOZ_ASSERT(!aContentCommandEvent.ShouldCheckEnabledOnly());
 
 #if MOZ_DIAGNOSTIC_ASSERT_ENABLED && !defined(FUZZING_SNAPSHOT)
   mDispatchedEventMessages.AppendElement(aContentCommandEvent.mMessage);

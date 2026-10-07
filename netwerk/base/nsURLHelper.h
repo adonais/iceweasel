@@ -13,7 +13,7 @@
 #include "nsTArray.h"
 
 class nsIFile;
-class nsIURLParser;
+class nsBaseURLParser;
 
 //----------------------------------------------------------------------------
 // This module contains some private helper functions related to URL parsing.
@@ -23,9 +23,9 @@ class nsIURLParser;
 void net_ShutdownURLHelper();
 
 /* access URL parsers */
-already_AddRefed<nsIURLParser> net_GetAuthURLParser();
-already_AddRefed<nsIURLParser> net_GetNoAuthURLParser();
-already_AddRefed<nsIURLParser> net_GetStdURLParser();
+already_AddRefed<nsBaseURLParser> net_GetAuthURLParser();
+already_AddRefed<nsBaseURLParser> net_GetNoAuthURLParser();
+already_AddRefed<nsBaseURLParser> net_GetStdURLParser();
 
 /* convert between nsIFile and file:// URL spec
  * net_GetURLSpecFromFile does an extra stat, so callers should

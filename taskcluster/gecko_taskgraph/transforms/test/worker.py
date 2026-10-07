@@ -263,15 +263,10 @@ def set_worker_type(config, tasks):
             elif task.get("suite", "") in ["talos", "raptor"] and not task[
                 "build-platform"
             ].startswith("linux64-ccov"):
-                if test_platform.startswith("linux2404"):
-                    if "browsertime-network-bench" in task.get("test-name"):
-                        task["worker-type"] = "t-linux-netperf-2404"
-                    else:
-                        task["worker-type"] = "t-linux-talos-2404"
-                elif "browsertime-network-bench" in task.get("test-name"):
-                    task["worker-type"] = "t-linux-netperf-1804"
+                if "browsertime-network-bench" in task.get("test-name"):
+                    task["worker-type"] = "t-linux-netperf-2404"
                 else:
-                    task["worker-type"] = "t-linux-talos-1804"
+                    task["worker-type"] = "t-linux-talos-2404"
             else:
                 task["worker-type"] = LINUX_WORKER_TYPES[task["instance-size"]]
         else:

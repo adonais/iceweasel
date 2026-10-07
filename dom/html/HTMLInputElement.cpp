@@ -4637,7 +4637,8 @@ void HTMLInputElement::MaybeDispatchLoginManagerEvents(HTMLFormElement* aForm) {
     } else {
       nsAutoString autocompleteValue;
       GetAutocomplete(autocompleteValue);
-      if (!autocompleteValue.EqualsASCII("username")) {
+      if (!autocompleteValue.EqualsASCII("username") &&
+          !autocompleteValue.EqualsASCII("webauthn")) {
         return;
       }
       target = GetComposedDoc();

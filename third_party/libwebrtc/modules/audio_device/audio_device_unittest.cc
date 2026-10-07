@@ -21,6 +21,7 @@
 #include <span>
 #include <vector>
 
+#include "absl/functional/bind_front.h"
 #include "api/audio/audio_device_defines.h"
 #include "api/audio/create_audio_device_module.h"
 #include "api/environment/environment.h"
@@ -50,7 +51,6 @@
 using ::testing::_;
 using ::testing::AtLeast;
 using ::testing::Ge;
-using ::testing::Invoke;
 using ::testing::Mock;
 using ::testing::NiceMock;
 using ::testing::NotNull;
@@ -352,13 +352,13 @@ class MockAudioTransport : public test::MockAudioTransport {
     num_callbacks_ = num_callbacks;
     if (play_mode()) {
       ON_CALL(*this, NeedMorePlayData(_, _, _, _, _, _, _, _))
-          .WillByDefault(
-              Invoke(this, &MockAudioTransport::RealNeedMorePlayData));
+          .WillByDefault(absl::bind_front(
+              &MockAudioTransport::RealNeedMorePlayData, this));
     }
     if (rec_mode()) {
       ON_CALL(*this, RecordedDataIsAvailable(_, _, _, _, _, _, _, _, _, _))
-          .WillByDefault(
-              Invoke(this, &MockAudioTransport::RealRecordedDataIsAvailable));
+          .WillByDefault(absl::bind_front(
+              &MockAudioTransport::RealRecordedDataIsAvailable, this));
     }
   }
 

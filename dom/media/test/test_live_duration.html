@@ -1,0 +1,110 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Bug 2049797 - Duration of unbounded audio streams</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css">
+</head>
+<body>
+<script>
+async function testLiveDuration(format, expected, tolerance) {
+  info(`Testing ${format}`);
+  const source = `live_duration.sjs?${format}`;
+  const audio = document.createElement("audio");
+  audio.preload = "auto";
+  audio.muted = true;
+  document.body.append(audio);
+  let responseFinished = false;
+  let durationChanges = 0;
+  audio.addEventListener("durationchange", () => ++durationChanges);
+  audio.addEventListener("error", () => {
+    ok(false, `Unexpected ${format} media error: ${audio.error.message}`);
+  });
+
+  try {
+    const metadata = new Promise(resolve => {
+      audio.addEventListener("loadedmetadata", resolve, { once: true });
+    });
+    audio.src = source;
+    await metadata;
+    is(audio.currentTime, 0, "Playback has not started");
+    is(audio.duration, Infinity, "Unbounded duration at loadedmetadata");
+
+    if (format == "mp3") {
+      await SimpleTest.promiseWaitForCondition(
+        () => !!audio.buffered.length,
+        "Initial audio is buffered",
+        100, 100
+      );
+    }
+    const progress = new Promise(resolve => {
+      audio.addEventListener("progress", resolve, { once: true });
+    });
+    const appended = await fetch(`${source}&append`);
+    ok(appended.ok, "Appended more audio without ending the response");
+    await progress;
+    const stalled = new Promise(resolve => {
+      audio.addEventListener("stalled", resolve, { once: true });
+    });
+    // ADTS doesn't expose buffered ranges until the resource length is known.
+    if (format == "mp3") {
+      await SimpleTest.promiseWaitForCondition(
+        () => Math.abs(audio.buffered.end(audio.buffered.length - 1) - expected) <
+          tolerance,
+        "All audio is buffered while the response remains open",
+        100, 100
+      );
+    }
+    ok(audio.paused, "Still paused after buffering more audio");
+    is(audio.currentTime, 0, "Buffering has not started playback");
+    is(audio.duration, Infinity, "Buffer growth must not establish a duration");
+
+    const timeupdate = new Promise(resolve => {
+      audio.addEventListener("timeupdate", resolve, { once: true });
+    });
+    await audio.play();
+    await timeupdate;
+    ok(audio.currentTime > 0, "Playback advances");
+    is(audio.duration, Infinity, "Unbounded duration during playback");
+
+    audio.pause();
+    await stalled;
+    is(audio.duration, Infinity, "A stalled stream still has unbounded duration");
+    is(audio.networkState, audio.NETWORK_LOADING, "The response is still open");
+    const previousDurationChanges = durationChanges;
+    const finished = await fetch(`${source}&finish`);
+    ok(finished.ok, "Finished the response without sending more audio");
+    responseFinished = true;
+    // The final buffered range update and the live stream flag can land in
+    // either order, so wait for the duration to settle rather than for the
+    // first change.
+    await SimpleTest.promiseWaitForCondition(
+      () => durationChanges > previousDurationChanges &&
+        Math.abs(audio.duration - expected) < tolerance,
+      `Download completion announces a duration of approximately ${expected}`
+    );
+    ok(Math.abs(audio.duration - expected) < tolerance,
+       `Completed ${format} duration is approximately ${expected}, got ${audio.duration}`);
+    ok(!audio.ended, "Duration becomes finite before playback reaches the end");
+  } finally {
+    if (!responseFinished) {
+      // Close the server response if an earlier step threw or rejected.
+      await fetch(`${source}&finish`);
+    }
+    audio.pause();
+    audio.removeAttribute("src");
+    audio.load();
+    audio.remove();
+  }
+}
+
+add_task(async function test_live_mp3_duration() {
+  await testLiveDuration("mp3", 30.024, 0.1);
+});
+
+add_task(async function test_live_adts_duration() {
+  await testLiveDuration("adts", 14.789872, 14.789872 * 0.15);
+});
+</script>
+</body>
+</html>

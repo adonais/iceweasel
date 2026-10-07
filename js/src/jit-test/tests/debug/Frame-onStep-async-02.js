@@ -57,7 +57,7 @@ dbg.onEnterFrame = frame => {
         if (frame !== asyncStack[asyncStack.length - 1])
             return;
 
-        let line = frame.script.getOffsetLocation(frame.offset).lineNumber;
+        let line = frame.script.getOffsetMetadata(frame.offset).lineNumber;
         if (previousLine != line) {
             log += line; // We stepped to a new line.
             previousLine = line;

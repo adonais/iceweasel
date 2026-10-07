@@ -73,20 +73,20 @@ request:
 ```
 
 ```
-Herald reviewers (automatically added):
-  #media-playback-reviewers (blocking)
-
 Module reviewer groups (from mots.yaml):
   #media-playback-reviewers (Core: Media Playback)
+
+Herald reviewers (automatically added):
+  #media-playback-reviewers (blocking)
 ```
 
 It reports up to three kinds of suggestion:
 
+- **Module reviewer groups** are the groups of the [modules](/mots/index.md) owning the
+  files, taken from the in-tree `mots.yaml`.
 - **Herald reviewers** are the groups and individuals that Phabricator's Herald rules add
   by themselves once you submit the patch. Those marked `(blocking)` have to accept the
   patch before it can land, so requesting them up front saves a round trip.
-- **Module reviewer groups** are the groups of the [modules](/mots/index.md) owning the
-  files, taken from the in-tree `mots.yaml`.
 - **Recent reviewers** are the reviewers of recent patches touching the files, read from
   the `r=` lines in the version control history. These are only shown when the two sources
   above have nothing to say, since they are a weaker signal: a file may have last been

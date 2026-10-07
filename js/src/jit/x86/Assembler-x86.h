@@ -165,6 +165,10 @@ static constexpr Register RegExpSearcherRegExpReg = CallTempReg0;
 static constexpr Register RegExpSearcherStringReg = CallTempReg2;
 static constexpr Register RegExpSearcherLastIndexReg = CallTempReg3;
 
+// Register used by the bailout tail and bailout stubs during stack
+// reconstruction.
+static constexpr Register BailoutStubHandlerReg = CallTempReg0;
+
 // GCC stack is aligned on 16 bytes. Ion does not maintain this for internal
 // calls. wasm code does.
 #if defined(__GNUC__) && !defined(__MINGW32__)

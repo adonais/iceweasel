@@ -136,7 +136,7 @@ function initialize(toggleProfilerKeyShortcuts) {
   /**
    * This is mutable state that will be shared between panel displays.
    *
-   * @type {import("devtools/client/performance-new/popup/logic.sys.mjs").State}
+   * @type {import("resource://devtools/client/performance-new/popup/logic.sys.mjs").State}
    */
   const panelState = {
     cleanup: [],

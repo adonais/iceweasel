@@ -14,7 +14,6 @@ sys.path.insert(1, os.path.dirname(sys.path[0]))
 from mozharness.base.errors import BaseErrorList, TarErrorList
 from mozharness.base.log import INFO
 from mozharness.base.script import PreScriptAction
-from mozharness.base.transfer import TransferMixin
 from mozharness.base.vcs.vcsbase import MercurialScript
 from mozharness.mozilla.structuredlog import StructuredOutputParser
 from mozharness.mozilla.testing.codecoverage import (
@@ -27,7 +26,7 @@ from mozharness.mozilla.testing.unittest import TestSummaryOutputParserHelper
 from mozharness.mozilla.testing.video_test_recorder import VideoTestRecorder
 
 
-class MarionetteTest(TestingMixin, MercurialScript, TransferMixin, CodeCoverageMixin):
+class MarionetteTest(TestingMixin, MercurialScript, CodeCoverageMixin):
     config_options = (
         [
             [

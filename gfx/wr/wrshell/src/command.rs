@@ -31,6 +31,18 @@ impl<'a> CommandContext<'a> {
     ) -> &str {
         self.args[key].as_str()
     }
+
+    /// The value of an argument, or `None` if it was not supplied.
+    ///
+    /// Commands with parameters must use this rather than `arg_string`: the
+    /// GUI runs commands with no arguments at all, so indexing the map panics
+    /// there even for a parameter the REPL treats as required.
+    pub fn arg_opt(
+        &self,
+        key: &str,
+    ) -> Option<&str> {
+        self.args.get(key).map(String::as_str)
+    }
 }
 
 #[derive(Debug)]

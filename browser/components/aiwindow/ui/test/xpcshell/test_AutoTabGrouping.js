@@ -7,6 +7,11 @@
 const { AutoTabGroupingSuggestions } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/AutoTabGroupingSuggestions.sys.mjs"
 );
+const { NimbusTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/NimbusTestUtils.sys.mjs"
+);
+
+NimbusTestUtils.init(this);
 
 function makeTab({
   url = "https://example.com/",
@@ -45,6 +50,7 @@ function makeCluster(size, cohesion = 0.5) {
 }
 
 add_setup(function () {
+  do_get_profile();
   Services.prefs.setIntPref(
     "browser.smartwindow.autoTabGrouping.minTabsPerGroup",
     2
@@ -104,20 +110,6 @@ add_task(function test_getCandidateTabs_excludesStillLoadingTabs() {
     candidates,
     [loaded],
     "Still-loading and untitled tabs are excluded so clustering sees resolved titles"
-  );
-});
-
-add_task(function test_getCandidateTabs_excludesAlreadyGroupedTabs() {
-  const ungrouped = makeTab({ url: "https://a.example/" });
-  const grouped = makeTab({ url: "https://b.example/", group: { id: "g1" } });
-  const win = makeWin([ungrouped, grouped]);
-
-  const candidates = AutoTabGroupingSuggestions.getCandidateTabs(win);
-
-  Assert.deepEqual(
-    candidates,
-    [ungrouped],
-    "Tabs already in a group are never re-suggested"
   );
 });
 
@@ -418,4 +410,45 @@ add_task(function test_hasEnoughMemory_respectsThreshold() {
     AutoTabGroupingSuggestions.hasEnoughMemory,
     "Turning off the platform memory check turns off this one too"
   );
+});
+
+add_task(async function test_nimbus_overwrites_atg_prefs() {
+  // Proves the `autoTabGrouping` Nimbus feature's setPref variables actually
+  // reach their prefs -- the FeatureManifest name -> pref mapping is not checked
+  // at build time. The variables use branch:default, which Nimbus only reverts on
+  // restart (not this session), so this asserts the override, not restoration.
+  const PREF_MIN_CANDIDATE_TABS =
+    "browser.smartwindow.autoTabGrouping.minCandidateTabs";
+  const PREF_MIN_COHESION = "browser.smartwindow.autoTabGrouping.minCohesion";
+
+  const defaults = Services.prefs.getDefaultBranch("");
+  defaults.setIntPref(PREF_MIN_CANDIDATE_TABS, 2);
+  defaults.setCharPref(PREF_MIN_COHESION, "0.15");
+  Assert.equal(
+    Services.prefs.getIntPref(PREF_MIN_CANDIDATE_TABS),
+    2,
+    "minCandidateTabs starts at its in-tree default"
+  );
+
+  const { cleanup } = await NimbusTestUtils.setupTest();
+  const unenroll = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: "autoTabGrouping",
+    value: { minCandidateTabs: 5, minCohesion: "0.5" },
+  });
+
+  Assert.equal(
+    Services.prefs.getIntPref(PREF_MIN_CANDIDATE_TABS),
+    5,
+    "enrolling overwrites the int pref (minCandidateTabs)"
+  );
+  // minCohesion is a float stored as a string pref; the Nimbus variable is typed
+  // string, so the enrolled value must arrive verbatim in the string pref.
+  Assert.equal(
+    Services.prefs.getCharPref(PREF_MIN_COHESION),
+    "0.5",
+    "enrolling overwrites the float-as-string pref (minCohesion)"
+  );
+
+  await unenroll();
+  await cleanup();
 });

@@ -19,6 +19,7 @@
 #include "HttpConnectionBase.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "nsHttpHandler.h"
+#include "nsHttpTransaction.h"
 #include "nsIClassOfService.h"
 #include "nsIOService.h"
 #include "nsISocketTransport.h"
@@ -36,13 +37,11 @@ HttpConnectionBase::HttpConnectionBase() {
 }
 
 void HttpConnectionBase::BootstrapTimings(TimingStruct times) {
-  mBootstrappedTimingsSet = true;
   mBootstrappedTimings = times;
 }
 
 void HttpConnectionBase::SetDnsBootstrapTimings(TimeStamp domainLookupStart,
                                                 TimeStamp domainLookupEnd) {
-  mBootstrappedTimingsSet = true;
   mBootstrappedTimings.domainLookupStart = domainLookupStart;
   mBootstrappedTimings.domainLookupEnd = domainLookupEnd;
 }
@@ -50,7 +49,6 @@ void HttpConnectionBase::SetDnsBootstrapTimings(TimeStamp domainLookupStart,
 void HttpConnectionBase::SetConnectBootstrapTimings(
     TimeStamp connectStart, TimeStamp tcpConnectEnd,
     TimeStamp secureConnectionStart, TimeStamp connectEnd) {
-  mBootstrappedTimingsSet = true;
   mBootstrappedTimings.connectStart = connectStart;
   if (!tcpConnectEnd.IsNull()) {
     mBootstrappedTimings.tcpConnectEnd = tcpConnectEnd;
@@ -61,6 +59,33 @@ void HttpConnectionBase::SetConnectBootstrapTimings(
   if (!connectEnd.IsNull()) {
     mBootstrappedTimings.connectEnd = connectEnd;
   }
+}
+
+void HttpConnectionBase::HandOffConnectPhase(nsAHttpTransaction* aTrans) {
+  // A null transaction (including a Happy Eyeballs racer that has adopted the
+  // real transaction) doesn't report timings itself.
+  nsHttpTransaction* hTrans =
+      aTrans->IsNullTransaction() ? nullptr : aTrans->QueryHttpTransaction();
+  if (!hTrans) {
+    return;
+  }
+
+  // Whatever connect timings aTrans collected so far describe some other
+  // connection: our own connect events only reach it once it is activated, so
+  // nothing of ours is lost by overwriting them here.
+  if (mConnectPhaseHandedOff) {
+    // Our connect phase belongs to the transaction we were established for.
+    // aTrans reused this connection and reports no connect phase, rather than
+    // the one of a connection attempt it ended up not using (bug 2046698).
+    hTrans->BootstrapTimings(TimingStruct());
+  } else if (!mBootstrappedTimings.connectStart.IsNull()) {
+    hTrans->BootstrapTimings(mBootstrappedTimings);
+  }
+  // Connections without a connect phase of their own (a tunnel, whose connect
+  // phase is the one of the connection carrying it) leave aTrans its timings.
+
+  mConnectPhaseHandedOff = true;
+  mBootstrappedTimings = TimingStruct();
 }
 
 void HttpConnectionBase::SetSecurityCallbacks(

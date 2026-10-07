@@ -1,6 +1,7 @@
 <!doctype html>
 <meta charset=utf-8>
-<title>Bug 1805447: Check that DTLS handshake errors are surfaced</title>
+<meta name="timeout" content="long">
+<title>Bug 1805447: Check that only DTLS handshake errors are surfaced</title>
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 <script src="/webrtc/RTCPeerConnection-helper.js"></script>
@@ -36,7 +37,9 @@ promise_test(async t => {
     const answerer = new RTCPeerConnection();
     t.add_cleanup(() => answerer.close());
     exchangeIceCandidates(offerer, answerer);
-    await exchangeOfferAnswer(offerer, answerer);
+    await answerer.setRemoteDescription(offerer.localDescription);
+    await answerer.setLocalDescription();
+    await offerer.setRemoteDescription(answerer.localDescription);
 
     const answererTransport = answerer.getSenders()[0].transport;
     const answererErrorPromise = new Promise(r => {
@@ -70,5 +73,70 @@ promise_test(async t => {
     assert_equals(offererError.error.name, 'OperationError');
   });
 }, 'DTLS version mismatch results in the correct error events');
+
+// Like exchangeIceCandidates, but rewrites the address of every candidate to
+// one in TEST-NET-1 (RFC 5737), so that every connectivity check fails.
+function exchangeUnreachableIceCandidates(pc1, pc2) {
+  function doExchange(localPc, remotePc) {
+    localPc.addEventListener("icecandidate", event => {
+      let { candidate } = event;
+      if (remotePc.signalingState === "closed") {
+        return;
+      }
+      if (candidate?.candidate) {
+        // candidate:<foundation> <component> <transport> <priority> <address> ...
+        const parts = candidate.candidate.split(" ");
+        parts[4] = "192.0.2.1";
+        candidate = {
+          candidate: parts.join(" "),
+          sdpMid: candidate.sdpMid,
+          sdpMLineIndex: candidate.sdpMLineIndex,
+          usernameFragment: candidate.usernameFragment,
+        };
+      }
+      remotePc.addIceCandidate(candidate);
+    });
+  }
+
+  doExchange(pc1, pc2);
+  doExchange(pc2, pc1);
+}
+
+function failOnDtlsError(t, pc, name) {
+  const transport = pc.getTransceivers()[0].sender.transport;
+  transport.onerror = t.step_func(e => {
+    assert_unreached(
+      `${name} fired error on RTCDtlsTransport: ${e.error.errorDetail}`);
+  });
+  return transport;
+}
+
+promise_test(async t => {
+  const offerer = new RTCPeerConnection();
+  t.add_cleanup(() => offerer.close());
+  const answerer = new RTCPeerConnection();
+  t.add_cleanup(() => answerer.close());
+
+  exchangeUnreachableIceCandidates(offerer, answerer);
+
+  offerer.addTransceiver("audio");
+  await offerer.setLocalDescription();
+  const offererTransport = failOnDtlsError(t, offerer, "offerer");
+
+  await answerer.setRemoteDescription(offerer.localDescription);
+  await answerer.setLocalDescription();
+  const answererTransport = failOnDtlsError(t, answerer, "answerer");
+
+  await offerer.setRemoteDescription(answerer.localDescription);
+
+  // The error event is fired before the statechange event, so once the DTLS
+  // transports are failed any error event would already have failed the test.
+  await Promise.all([
+    waitForState(offererTransport.iceTransport, "failed"),
+    waitForState(answererTransport.iceTransport, "failed"),
+    waitForState(offererTransport, "failed"),
+    waitForState(answererTransport, "failed"),
+  ]);
+}, 'ICE failure does not fire an error event on RTCDtlsTransport');
 
 </script>

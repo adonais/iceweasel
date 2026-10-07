@@ -20,7 +20,7 @@
         '<(DEPTH)/gtests/google_test/google_test.gyp:gtest',
         '<(DEPTH)/lib/util/util.gyp:nssutil3',
         '<(DEPTH)/lib/nss/nss.gyp:nss3',
-        '<(DEPTH)/lib/smime/smime.gyp:smime',
+        '<(DEPTH)/lib/smime/smime.gyp:smime3_deps',
         '<(DEPTH)/lib/ssl/ssl.gyp:ssl3',
       ]
     }

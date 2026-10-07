@@ -11,6 +11,7 @@ development process and source code documentation.
 
 contribution_quickref
 stack_quickref
+reviewable-patch-series
 phabricator_vs_github
 pocket-guide-shipping-firefox
 editor

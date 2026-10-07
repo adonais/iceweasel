@@ -5,10 +5,6 @@
 const PREF_WALLPAPER_LIBRARY_ENABLED =
   "newtabWallpapers.customWallpaper.library.enabled";
 
-// Off by default. A trainhop rollout turns it on without shipping a new
-// add-on, the same way the widgets read their own namespaces.
+// The default that matters is the one in firefox.js, not PREFS_CONFIG.
 export const isWallpaperLibraryEnabled = prefValues =>
-  !!(
-    prefValues?.[PREF_WALLPAPER_LIBRARY_ENABLED] ||
-    prefValues?.trainhopConfig?.customWallpaperLibrary?.enabled
-  );
+  !!prefValues?.[PREF_WALLPAPER_LIBRARY_ENABLED];

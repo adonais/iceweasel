@@ -11,7 +11,7 @@
     <script type="text/javascript">
       "use strict";
       const ws = new WebSocket(
-        "ws://mochi.test:8888/browser/devtools/client/netmonitor/test/file_ws_backend");
+        "ws://mochi.test:8888/browser/devtools/client/netmonitor/test/websockets/file_ws_early_backend");
 
       ws.onopen = () => {
         ws.send("readyState:" + document.readyState);

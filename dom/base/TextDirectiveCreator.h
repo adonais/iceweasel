@@ -13,15 +13,13 @@
 #include "mozilla/Result.h"
 #include "mozilla/dom/fragmentdirectives_ffi_generated.h"
 #include "nsStringFwd.h"
-
-class nsRange;
-
 namespace mozilla {
 class ErrorResult;
 }
 
 namespace mozilla::dom {
 class Document;
+class Range;
 /**
  * @brief Helper class to create a text directive string from a given `Range`.
  *

@@ -65,9 +65,8 @@ The error codes used for failure status can be found
 
     3. Balrog will send an XML document in response. If an update is
        available, it will contain the URL for a [complete
-       MAR](#complete-mar-file). If a [partial
-       MAR](#partial-mar-file) is available, the URL for that will be
-       contained as well.
+       MAR](MarFiles.md#types-of-mars). If a partial MAR is available, the
+       URL for that will be contained as well.
 
 02. If an update is available, Firefox downloads the update MAR file.
 
@@ -179,10 +178,9 @@ The error codes used for failure status can be found
           directory](#update-directory) and, if it indicates that a
           particular URL should be shown after that update, it does so.
 
-    2. On update failure, Firefox checks whether this was a [partial
-       MAR](#partial-mar-file) or a [complete
-       MAR](#complete-mar-file) by checking the "selected" attribute
-       in the XML.
+    2. On update failure, Firefox checks whether this was a [partial or
+       complete MAR](MarFiles.md#types-of-mars) by checking the "selected"
+       attribute in the XML.
 
        1. If it was a partial MAR, Firefox downloads the complete MAR
           and retries the update (i.e. goes back to step 2, but

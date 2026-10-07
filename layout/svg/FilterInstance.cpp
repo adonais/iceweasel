@@ -2012,8 +2012,9 @@ gfxMatrix FilterInstance::GetUserSpaceToFrameSpaceInCSSPxTransform() const {
   if (!mTargetFrame) {
     return gfxMatrix();
   }
-  return gfxMatrix::Translation(
-      -SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(mTargetFrame));
+  CSSPoint toUserSpace =
+      SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(mTargetFrame);
+  return gfxMatrix::Translation(-toUserSpace.x, -toUserSpace.y);
 }
 
 }  // namespace mozilla

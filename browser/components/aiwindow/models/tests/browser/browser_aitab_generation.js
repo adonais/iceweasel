@@ -20,8 +20,11 @@ const { createAITab } = ChromeUtils.importESModule(
 const { AITabStore } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/AITabStore.sys.mjs"
 );
+const { ConversationStore } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/ConversationStore.sys.mjs"
+);
 const { expandUrlTokens } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs"
+  "moz-src:///browser/components/aiwindow/ui/modules/UrlTokenizer.sys.mjs"
 );
 
 const { MockEngineManager } = ChromeUtils.importESModule(
@@ -270,6 +273,183 @@ add_task(async function test_generateAITab_omits_image_for_denied_url() {
   }
 });
 
+// A decodable favicon payload for Places (setFaviconForPage rejects data it
+// cannot decode as an image).
+const FAVICON_DATA_URL =
+  "data:image/svg+xml;base64," +
+  btoa(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="#424e5a"/></svg>`
+  );
+
+add_task(async function test_generateAITab_hydrates_link_favicons() {
+  // Covers the `items` shapes hydration must handle: a literal array
+  // (Header.references), an absolute data-model binding (SourceLinks), and a
+  // relative binding (left alone — validation does not check those). Also
+  // covers that model-supplied favicons are replaced or stripped, never kept.
+  const mockEngine = new MockEngineManager();
+  const { url: GEN_URL, cleanup: stopServing } = servePage();
+  const FAVICON_URL = "https://example.com/favicon.ico";
+  const NO_FAVICON_URL = "https://example.org/never-visited";
+  const MODEL_FAVICON = "https://model.example/injected.ico";
+  await PlacesTestUtils.addVisits(GEN_URL);
+  await PlacesTestUtils.setFaviconForPage(
+    GEN_URL,
+    FAVICON_URL,
+    FAVICON_DATA_URL
+  );
+  try {
+    const genPromise = generateAITab(
+      { urlList: [GEN_URL], focus: "hotels in Lisbon" },
+      newConversation()
+    );
+
+    await mockEngine.respondTo({
+      purpose: MODEL_FEATURES.AITAB,
+      response: JSON.stringify({
+        components: [
+          {
+            id: "root",
+            component: "Page",
+            header: "hdr",
+            children: ["lead", "links", "more"],
+          },
+          {
+            id: "hdr",
+            component: "Header",
+            title: "Hotels in Lisbon",
+            references: {
+              items: [
+                { href: GEN_URL, title: "Hotels", favicon: MODEL_FAVICON },
+                {
+                  href: NO_FAVICON_URL,
+                  title: "Unvisited",
+                  favicon: MODEL_FAVICON,
+                },
+              ],
+            },
+          },
+          {
+            id: "lead",
+            component: "TextBlock",
+            lead: "Budget Central Hostel is $72 / night.",
+          },
+          {
+            id: "links",
+            component: "SourceLinks",
+            items: { path: "/sources" },
+          },
+          {
+            id: "more",
+            component: "SourceLinks",
+            items: { path: "more" },
+          },
+        ],
+        dataModel: {
+          sources: [{ href: GEN_URL, title: "Hotels" }],
+          more: [{ href: GEN_URL, title: "More" }],
+        },
+      }),
+    });
+
+    const result = await genPromise;
+    Assert.ok(!result.error, `generation should succeed: ${result.error}`);
+    const header = result.surface.components.find(
+      c => c.component === "Header"
+    );
+    Assert.equal(
+      header.references.items[0].favicon,
+      FAVICON_URL,
+      "a literal SourceLink item gets its stored favicon URL, replacing the model's"
+    );
+    Assert.ok(
+      !("favicon" in header.references.items[1]),
+      "a model-supplied favicon is stripped when Places has none stored"
+    );
+    Assert.equal(
+      result.surface.dataModel.sources[0].favicon,
+      FAVICON_URL,
+      "an absolutely-bound SourceLink item gets its stored favicon URL"
+    );
+    Assert.ok(
+      !("favicon" in result.surface.dataModel.more[0]),
+      "a relatively-bound array is not resolved, so its items are not touched"
+    );
+  } finally {
+    await stopServing();
+    mockEngine.cleanupMocks();
+    await PlacesUtils.history.clear();
+  }
+});
+
+add_task(async function test_generateAITab_hydrates_favicon_for_denied_url() {
+  // Unlike the og:image path above, favicon hydration is not subject to the
+  // conversation's access-control decision: Places only has favicons for
+  // sites the user has visited, so they already count as seen. A visited
+  // page's favicon hydrates (replacing the model's value) even when the
+  // conversation refuses to read the page itself.
+  const mockEngine = new MockEngineManager();
+  const DENIED_URL = "https://example.com/denied-sourcelink-page";
+  const FAVICON_URL = "https://example.com/denied-favicon.ico";
+  await PlacesTestUtils.addVisits(DENIED_URL);
+  await PlacesTestUtils.setFaviconForPage(
+    DENIED_URL,
+    FAVICON_URL,
+    FAVICON_DATA_URL
+  );
+  const conversation = newConversation();
+  conversation.securityProperties.setPrivateData();
+  conversation.securityProperties.setUntrustedInput();
+  conversation.securityProperties.commit();
+  try {
+    const genPromise = generateAITab({ urlList: [DENIED_URL] }, conversation);
+
+    await mockEngine.respondTo({
+      purpose: MODEL_FEATURES.AITAB,
+      response: JSON.stringify({
+        components: [
+          {
+            id: "root",
+            component: "Page",
+            header: "hdr",
+            children: ["lead", "links"],
+          },
+          { id: "hdr", component: "Header", title: "Hotels in Lisbon" },
+          {
+            id: "lead",
+            component: "TextBlock",
+            lead: "Budget Central Hostel is $72 / night.",
+          },
+          {
+            id: "links",
+            component: "SourceLinks",
+            items: [
+              {
+                href: DENIED_URL,
+                favicon: "https://model.example/injected.ico",
+              },
+            ],
+          },
+        ],
+        dataModel: {},
+      }),
+    });
+
+    const result = await genPromise;
+    Assert.ok(!result.error, `generation should succeed: ${result.error}`);
+    const links = result.surface.components.find(
+      c => c.component === "SourceLinks"
+    );
+    Assert.equal(
+      links.items[0].favicon,
+      FAVICON_URL,
+      "the visited page's stored favicon hydrates despite the content refusal"
+    );
+  } finally {
+    mockEngine.cleanupMocks();
+    await PlacesUtils.history.clear();
+  }
+});
+
 add_task(async function test_generateAITab_rejects_invalid_page() {
   const mockEngine = new MockEngineManager();
   const { url: GEN_URL, cleanup: stopServing } = servePage();
@@ -400,5 +580,82 @@ add_task(async function test_createAITab_link_loads_config_in_a_tab() {
     await stopServing();
     mockEngine.cleanupMocks();
     await SpecialPowers.popPrefEnv();
+  }
+});
+
+/**
+ * Ids of every stored aitab conversation, so a test can tell which row a
+ * generation just created.
+ *
+ * @returns {Promise<Set<string>>}
+ */
+async function storedAITabConvIds() {
+  await ConversationStore.ensureDatabase();
+  const rows = await ConversationStore.connection.execute(
+    "SELECT conv_id FROM conversation WHERE feature = :feature",
+    { feature: "aitab" }
+  );
+  return new Set(rows.map(row => row.getResultByName("conv_id")));
+}
+
+add_task(async function test_generateAITab_persists_its_tool_conversation() {
+  const mockEngine = new MockEngineManager();
+  const { url: GEN_URL, cleanup: stopServing } = servePage();
+
+  const SEEN = "https://parent.example/already-seen";
+  const SERP = "https://parent.example/search-result";
+  const chat = newConversation();
+  chat.addSeenUrls([SEEN]);
+  chat.addSerpUrlsForAnonymousFetch([SERP]);
+
+  const before = await storedAITabConvIds();
+  let convId;
+  try {
+    const genPromise = generateAITab({ urlList: [GEN_URL], focus: "" }, chat);
+    const { respond } = await mockEngine.captureRequest({
+      purpose: MODEL_FEATURES.AITAB,
+    });
+    respond(JSON.stringify(GENERATED_SURFACE));
+    const result = await genPromise;
+    Assert.ok(!result.error, `generation should succeed: ${result.error}`);
+
+    // The save runs in the background, so the row may land after the call
+    // returns.
+    let added = [];
+    await TestUtils.waitForCondition(async () => {
+      const after = await storedAITabConvIds();
+      added = [...after].filter(id => !before.has(id));
+      return added.length;
+    }, "generation stores one tool conversation");
+    Assert.equal(added.length, 1, "exactly one tool conversation is stored");
+    convId = added[0];
+
+    // Nothing here sets the flags or the URLs: generateAITab does. Reading
+    // the row back is what shows it did, and did it before saving.
+    const stored = await ConversationStore.findConversationById(convId);
+    Assert.ok(
+      stored.securityProperties.privateData,
+      "the stored tool conversation is marked as holding private data"
+    );
+    Assert.ok(
+      stored.securityProperties.untrustedInput,
+      "the stored tool conversation is marked as holding untrusted input"
+    );
+    Assert.deepEqual(
+      Array.from(stored.seenUrls),
+      [SEEN],
+      "it inherits the chat's seen URLs and adds none of its own"
+    );
+    Assert.deepEqual(
+      Array.from(stored.serpUrlsForAnonymousFetch),
+      [SERP],
+      "search result URLs come across with their anonymous-fetch exemption"
+    );
+  } finally {
+    if (convId) {
+      await ConversationStore.deleteConversationById(convId);
+    }
+    await stopServing();
+    mockEngine.cleanupMocks();
   }
 });

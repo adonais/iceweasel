@@ -30,6 +30,9 @@ nsMediaEventRunner::nsMediaEventRunner(const char* aName,
       mEventName(aEventName),
       mLoadID(mElement->GetCurrentLoadID()) {}
 
+nsMediaEventRunner::~nsMediaEventRunner() = default;
+
+void nsMediaEventRunner::Cancel() { mElement = nullptr; }
 bool nsMediaEventRunner::IsCancelled() const {
   return !mElement || mElement->GetCurrentLoadID() != mLoadID;
 }

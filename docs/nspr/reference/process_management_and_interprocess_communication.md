@@ -29,9 +29,9 @@ The types defined for process management are:
 The process manipulation function fall into these categories:
 
 - [Setting the Attributes of a New
-  Process](#Setting_the_Attributes_of_a_New_Process)
+  Process](#setting-the-attributes-of-a-new-process)
 - [Creating and Managing
-  Processes](#Creating_and_Managing_Processes)
+  Processes](#creating-and-managing-processes)
 
 (setting-the-attributes-of-a-new-process)=
 

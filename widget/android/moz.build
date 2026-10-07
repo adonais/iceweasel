@@ -183,7 +183,6 @@ generated_bindings = [
     "MessageQueue",
     "MotionEvent",
     "SurfaceTexture",
-    "ViewConfiguration",
 ]
 
 SOURCES += ["!bindings/%s.cpp" % stem for stem in generated_bindings]

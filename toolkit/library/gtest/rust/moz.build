@@ -11,6 +11,7 @@ RustLibrary(
     "gkrust-gtest",
     gkrust_features,
     output_category=None if CONFIG["LINK_GTEST_DURING_COMPILE"] else "gtest",
+    lto=False,
 )
 
 COMPILE_FLAGS["BASE_INCLUDES"] = []

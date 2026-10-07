@@ -11,3 +11,15 @@ XPCSHELL_TESTS_MANIFESTS += ['tests/xpcshell/xpcshell.toml']
 DevToolsModules(
     'validator.js',
 )
+
+LICENSES += ["validator"]
+LICENSES["validator"].title = "Validator License"
+LICENSES["validator"].text = "LICENSE-NOTICE.txt"
+LICENSES["validator"].spdx = "MIT"
+LICENSES["validator"].notice = """
+<p>This license applies to certain files in the directory <code>devtools/shared/storage/vendor/stringvalidator/</code></p>
+"""
+
+LICENSED_UNDER += [
+    "validator",
+]

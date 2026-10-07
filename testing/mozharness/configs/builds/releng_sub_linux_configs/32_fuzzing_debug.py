@@ -5,7 +5,6 @@
 import os
 
 config = {
-    "stage_platform": "linux-fuzzing-debug",
     "debug_build": True,
     #### 32 bit build specific #####
     "env": {

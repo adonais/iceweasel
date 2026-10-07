@@ -189,13 +189,6 @@ const EXPECTED_TRANSCRIPT_BLOCK = [
 
 const EXPECTED_CONTENT = `${EXPECTED_METADATA_BLOCK}\n\n${EXPECTED_TRANSCRIPT_BLOCK}`;
 
-// YouTube extraction is off by default; enable it for the extraction tests.
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.pageextractor.youtube.enabled", true]],
-  });
-});
-
 /**
  * The URL detection should only match youtube.com watch pages with a video id.
  */

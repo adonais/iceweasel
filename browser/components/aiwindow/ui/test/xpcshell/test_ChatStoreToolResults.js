@@ -813,3 +813,53 @@ add_atomic_task(async function test_other_ui_types_no_isRestored_flag() {
     "uiType should be preserved"
   );
 });
+
+add_atomic_task(async function test_group_tabs_confirmation_isRestored_flag() {
+  const conversation = new ChatConversation({});
+  conversation.title = "Test group_tabs isRestored flag";
+  conversation.addUserMessage("Group my tabs", "https://example.com/", 0);
+  conversation.addAssistantMessage("text", "I'll group those tabs");
+
+  const assistant = conversation.messages.at(-1);
+
+  const toolUIData = makeToolUIData({ uiType: "tab-group-confirmation" });
+  toolUIData.properties.actionType = "group_tabs";
+  assistant.toolUIData = toolUIData;
+
+  await gChatStore.updateConversation(conversation);
+
+  const reloaded = await gChatStore.findConversationById(conversation.id);
+  const reloadedAssistant = reloaded.messages.find(m => m.id === assistant.id);
+
+  Assert.ok(
+    reloadedAssistant.isRestored,
+    "group_tabs confirmations should still have isRestored flag set when loaded from DB"
+  );
+});
+
+add_atomic_task(
+  async function test_open_tabs_confirmation_no_isRestored_flag() {
+    const conversation = new ChatConversation({});
+    conversation.title = "Test open_tabs no isRestored flag";
+    conversation.addUserMessage("Open my tabs", "https://example.com/", 0);
+    conversation.addAssistantMessage("text", "I'll open those tabs");
+
+    const assistant = conversation.messages.at(-1);
+
+    const toolUIData = makeToolUIData({ uiType: "tab-group-confirmation" });
+    toolUIData.properties.actionType = "open_tabs";
+    assistant.toolUIData = toolUIData;
+
+    await gChatStore.updateConversation(conversation);
+
+    const reloaded = await gChatStore.findConversationById(conversation.id);
+    const reloadedAssistant = reloaded.messages.find(
+      m => m.id === assistant.id
+    );
+
+    Assert.ok(
+      !reloadedAssistant.isRestored,
+      "open_tabs confirmations should NOT have isRestored flag set when loaded from DB"
+    );
+  }
+);

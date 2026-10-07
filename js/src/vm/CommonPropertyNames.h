@@ -102,6 +102,7 @@
   MACRO_(decodeURI, "decodeURI")                                               \
   MACRO_(decodeURIComponent, "decodeURIComponent")                             \
   MACRO_(default_, "default")                                                  \
+  MACRO_(defer, "defer")                                                       \
   MACRO_(DefineDataProperty, "DefineDataProperty")                             \
   MACRO_(defineProperty, "defineProperty")                                     \
   MACRO_(delete_, "delete")                                                    \
@@ -324,6 +325,7 @@
   MACRO_(missingArguments, "missingArguments")                                 \
   MACRO_(module, "module")                                                     \
   MACRO_(Module, "Module")                                                     \
+  MACRO_(DeferredModule, "Deferred Module")                                    \
   MACRO_(month, "month")                                                       \
   MACRO_(monthCode, "monthCode")                                               \
   MACRO_(months, "months")                                                     \
@@ -456,6 +458,7 @@
   MACRO_(stackTraceLimit, "stackTraceLimit")                                   \
   MACRO_(star_namespace_star_, "*namespace*")                                  \
   MACRO_(star_source_star_, "*source*")                                        \
+  MACRO_(star_deferred_namespace_star_, "*deferred-namespace*")                \
   MACRO_(start, "start")                                                       \
   MACRO_(startRange, "startRange")                                             \
   MACRO_(startTimestamp, "startTimestamp")                                     \

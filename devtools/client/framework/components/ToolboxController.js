@@ -124,6 +124,11 @@ class ToolboxController extends Component {
   }
 
   setCanRender() {
+    // Both callers in Toolbox.open() normally run, and a redundant call would
+    // re-render the whole toolbar on the toolbox opening path.
+    if (this.state.canRender) {
+      return;
+    }
     this.setState({ canRender: true }, this.updateButtonIds);
   }
 

@@ -41,6 +41,7 @@ BufferSurface::SurfaceType BufferSurface::GetSurfaceType() const {
     case GBM_FORMAT_XBGR8888:
     case GBM_FORMAT_BGRX8888:
     case GBM_FORMAT_RGBX8888:
+    case GBM_FORMAT_ABGR2101010:
       return SURFACE_RGBA;
     case VA_FOURCC_P010:
     case VA_FOURCC_P016:
@@ -105,6 +106,7 @@ int BufferSurface::GetFormatBPP() const {
     case GBM_FORMAT_XBGR8888:
     case GBM_FORMAT_BGRX8888:
     case GBM_FORMAT_RGBX8888:
+    case GBM_FORMAT_ABGR2101010:
       return 4;
     default:
       gfxCriticalNoteOnce
@@ -126,6 +128,7 @@ int BufferSurface::GetWLFormat() const {
     case GBM_FORMAT_BGRA8888:
     case GBM_FORMAT_XBGR8888:
     case GBM_FORMAT_BGRX8888:
+    case GBM_FORMAT_ABGR2101010:
     case VA_FOURCC_P010:
     case VA_FOURCC_P016:
     case VA_FOURCC_NV12:
@@ -138,6 +141,40 @@ int BufferSurface::GetWLFormat() const {
       return 0;
   }
 }
+
+int BufferSurface::GetWLColorCoeficients() {
+  if (GetSurfaceType() == SURFACE_RGBA) {
+    return WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_IDENTITY;
+  }
+  switch (mColorSpace) {
+    case gfx::YUVColorSpace::BT601:
+      return WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_BT601;
+    case gfx::YUVColorSpace::BT709:
+      return WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_BT709;
+    case gfx::YUVColorSpace::BT2020:
+      return WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_BT2020;
+    default:
+      MOZ_DIAGNOSTIC_CRASH("Unsupported YUV color space!");
+      return 0;
+  }
+}
+
+#  ifdef MOZ_LOGGING
+const char* BufferSurface::GetWLColorCoeficientsName(int aWLColorCoeficients) {
+  switch (aWLColorCoeficients) {
+    case WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_IDENTITY:
+      return "WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_IDENTITY";
+    case WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_BT601:
+      return "WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_BT601";
+    case WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_BT709:
+      return "WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_BT709";
+    case WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_BT2020:
+      return "WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_BT2020";
+    default:
+      return "Unknow";
+  }
+}
+#  endif
 #endif
 
 size_t BufferSurface::GetUsedMemory(int aWidth, int aHeight) const {

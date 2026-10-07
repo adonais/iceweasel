@@ -18,7 +18,6 @@ Add one line per setting, using the `secretSettings.` prefix followed by the set
 
 ```properties
 secretSettings.pref_key_use_scroll_data_for_dynamic_toolbar=true
-secretSettings.pref_key_enable_merino_client=false
 ```
 
 On every rebuild of the app these values are re-applied, so any change you make manually to these particular settings in the app is reset the next time it starts.

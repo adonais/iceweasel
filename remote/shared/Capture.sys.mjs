@@ -65,6 +65,10 @@ capture.Format = {
  * @param {number=} options.flags
  *     Optional integer representing flags to pass to drawWindow; these
  *     are defined on CanvasRenderingContext2D.
+ * @param {number=} options.maxHeight
+ *     Maximum height of the resulting canvas in pixels.
+ * @param {number=} options.maxWidth
+ *     Maximum width of the resulting canvas in pixels.
  * @param {number=} options.dX
  *     Horizontal offset between the browser window and content area. Defaults to 0.
  * @param {number=} options.dY
@@ -92,6 +96,8 @@ capture.canvas = async function (
   {
     canvas = null,
     flags = null,
+    maxHeight = null,
+    maxWidth = null,
     dX = 0,
     dY = 0,
     readback = false,
@@ -111,10 +117,23 @@ capture.canvas = async function (
 
   // FIXME(bug 1761032): This looks a bit sketchy, overrideDPPX doesn't
   // influence rendering...
-  const scale = browsingContext.overrideDPPX || win.devicePixelRatio;
+  const devicePixelRatio = browsingContext.overrideDPPX || win.devicePixelRatio;
+  let scale = devicePixelRatio;
 
-  const canvasHeight = height * scale;
-  const canvasWidth = width * scale;
+  if (maxWidth !== null) {
+    scale = Math.min(scale, maxWidth / width);
+  }
+  if (maxHeight !== null) {
+    scale = Math.min(scale, maxHeight / height);
+  }
+
+  const isDownscaled = scale < devicePixelRatio;
+  const canvasHeight = isDownscaled
+    ? Math.max(1, Math.round(height * scale))
+    : height * scale;
+  const canvasWidth = isDownscaled
+    ? Math.max(1, Math.round(width * scale))
+    : width * scale;
   const canvasArea = canvasWidth * canvasHeight;
 
   if (canvasWidth > lazy.canvasMaxSize) {
@@ -153,7 +172,11 @@ capture.canvas = async function (
       }
 
       // drawWindow doesn't take scaling into account.
-      ctx.scale(scale, scale);
+      if (isDownscaled) {
+        ctx.scale(canvasWidth / width, canvasHeight / height);
+      } else {
+        ctx.scale(scale, scale);
+      }
       ctx.drawWindow(win, left + dX, top + dY, width, height, BG_COLOUR, flags);
     } else {
       let rect = new DOMRect(left, top, width, height);
@@ -164,7 +187,11 @@ capture.canvas = async function (
         { drawView }
       );
 
-      ctx.drawImage(snapshot, 0, 0);
+      if (isDownscaled) {
+        ctx.drawImage(snapshot, 0, 0, canvasWidth, canvasHeight);
+      } else {
+        ctx.drawImage(snapshot, 0, 0);
+      }
 
       // Bug 1574935 - Huge dimensions can trigger an OOM because multiple copies
       // of the bitmap will exist in memory. Force the removal of the snapshot

@@ -5,13 +5,12 @@
 #ifndef mozilla_intl_l10n_FileSource_h
 #define mozilla_intl_l10n_FileSource_h
 
+#include "nsIGlobalObject.h"
 #include "nsWrapperCache.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/L10nRegistryBinding.h"
 #include "mozilla/dom/FluentBinding.h"
 #include "mozilla/intl/RegistryBindings.h"
-
-class nsIGlobalObject;
 
 namespace mozilla::intl {
 

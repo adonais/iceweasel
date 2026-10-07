@@ -1,7 +1,8 @@
 [DEFAULT]
-skip-if = [
-  "http2",
-  "http3",
+# The http2 and http3 variants upgrade every load to https, which these tests
+# cannot work with.
+run-if = [
+  "!http2 && !http3",
 ]
 
 ["test_bad_cert.html"]

@@ -28,8 +28,8 @@ function makeRepositoryUnusable(persistence) {
   metadataFile.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
 }
 
-async function fillOrigin(principal, size) {
-  let database = getSimpleDatabase(principal);
+async function fillOrigin(principal, size, persistence) {
+  let database = getSimpleDatabase(principal, persistence);
 
   let request = database.open("data");
   await requestFinished(request);

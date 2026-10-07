@@ -365,3 +365,22 @@ include("build/templates.mozbuild")
 
 if CONFIG["OS_TARGET"] == "Linux":
     DIRS += ["ice"]
+
+if CONFIG["MOZ_GENERATE_SBOM"]:
+    # The document covers the whole tree rather than any one directory, and it
+    # reads the licenses.json the backend writes from the tree-wide LICENSES
+    # declarations, so it belongs here. `force` because it also reads every
+    # tracked moz.yaml and Cargo.lock's whole graph: there is no dependency
+    # list short enough to be worth maintaining against the alternative of
+    # regenerating a document only the builds that ask for it produce.
+    GeneratedFile(
+        "sbom.json",
+        script="/python/mozbuild/mozbuild/action/generate_sbom.py",
+        entry_point="generate_file",
+        extra_deps=[
+            "!/licenses.json",
+            "!/.cargo/config.toml",
+            "/Cargo.lock",
+        ],
+        force=True,
+    )

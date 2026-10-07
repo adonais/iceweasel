@@ -34,7 +34,7 @@ export function setBreakableLines(location) {
       // Original sources have a dedicated codepath to fetch locations
       // from the generated source actor and then map them to "positions"
       // in the original source.
-      let promise = getBreakableLines(getState(), location.source.id);
+      let promise = getBreakableLines(getState(), location);
       if (promise) {
         return promise;
       }

@@ -13,7 +13,9 @@ import "chrome://global/content/elements/panel-list.mjs";
  * panels with. The element shows the current panel's name and, on click, lists
  * the other panels to switch to. It hides itself (via CSS) outside that mode.
  *
- * Consumers set the `view` attribute to the command ID of the panel hosting it.
+ * Built-in panels set the `view` attribute to the command ID of the panel
+ * hosting it. Extension panels leave it unset, so they are identified by
+ * whichever panel the sidebar currently has open instead.
  */
 export class SidebarPanelSwitcher extends MozLitElement {
   static properties = {
@@ -41,8 +43,24 @@ export class SidebarPanelSwitcher extends MozLitElement {
       .SidebarController;
   }
 
+  get #currentView() {
+    return this.view || this.#controller.currentID;
+  }
+
   connectedCallback() {
     super.connectedCallback();
+    // Extension panels share a single document which is reused as the user
+    // switches between them, so re-resolve the label whenever a panel is shown.
+    window.addEventListener("SidebarFocused", this);
+    this.#updateLabel();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    window.removeEventListener("SidebarFocused", this);
+  }
+
+  handleEvent() {
     this.#updateLabel();
   }
 
@@ -54,7 +72,8 @@ export class SidebarPanelSwitcher extends MozLitElement {
 
   async #updateLabel() {
     const items = await this.#controller.getRevampSwitcherItems();
-    this.label = items.find(item => item.view === this.view)?.label ?? "";
+    this.label =
+      items.find(item => item.view === this.#currentView)?.label ?? "";
   }
 
   async #onButtonClick(e) {
@@ -66,7 +85,7 @@ export class SidebarPanelSwitcher extends MozLitElement {
   }
 
   #onItemClick(view) {
-    if (view !== this.view) {
+    if (view !== this.#currentView) {
       this.#controller.show(view);
     }
   }
@@ -95,7 +114,7 @@ export class SidebarPanelSwitcher extends MozLitElement {
           item => html`
             <panel-item
               type="checkbox"
-              ?checked=${item.view === this.view}
+              ?checked=${item.view === this.#currentView}
               @click=${() => this.#onItemClick(item.view)}
             >
               ${item.label}

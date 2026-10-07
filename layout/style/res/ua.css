@@ -271,6 +271,9 @@
   align-items: inherit;
   justify-content: inherit;
   justify-items: inherit;
+  /* Text box */
+  text-box-trim: inherit;
+  text-box-edge: inherit;
 }
 
 *|*::-moz-viewport,

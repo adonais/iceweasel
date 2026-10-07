@@ -465,6 +465,10 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
                                                  size_t elementSize);
   static bool IsBufferAlloc(void* alloc);
 
+  static bool MarkBuffer(JSTracer* trc, void** bufferp, const char* name);
+  static bool PromoteBuffer(JSTracer* trc, void** bufferp, const char* name,
+                            mozilla::Maybe<bool> nurseryOwned);
+
   void* alloc(size_t bytes, bool nurseryOwned);
   void* allocInGC(size_t bytes, bool nurseryOwned);
   void* realloc(void* alloc, size_t bytes, bool nurseryOwned);
@@ -485,8 +489,6 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void clearMarkBitsInStolenChunks();
 
   bool isEmpty() const;
-
-  static void* TraceEdge(JSTracer* trc, void** bufferp, const char* name);
 
   bool markTenuredAlloc(void* alloc);
   bool isMarkedBlack(void* alloc);
@@ -541,7 +543,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   BufferAllocatorRuntime* runtime() const;
   friend class AutoLockBufferAllocator;
 
-  void markNurseryOwnedAlloc(void* alloc, bool nurseryOwned);
+  void promoteNurseryOwnedAlloc(void* alloc, bool nurseryOwned);
   friend class js::Nursery;
 
   void maybeMergeSweptData();
@@ -561,8 +563,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void* retrySmallAlloc(size_t requestedBytes, size_t sizeClass,
                         bool nurseryOwned, bool inGC);
   bool allocNewSmallRegion(bool nurseryOwned, bool inGC);
-  void traceSmallAlloc(JSTracer* trc, void* alloc, const char* name);
-  void markSmallNurseryOwnedBuffer(void* alloc, bool nurseryOwned);
+  void promoteSmallNurseryOwnedBuffer(void* alloc, bool nurseryOwned);
   bool markSmallTenuredAlloc(void* alloc);
 
   // Medium allocation methods:
@@ -619,9 +620,8 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   bool canModifyAllocations(BufferChunk* chunk);
   bool isConcurrentMarking() const;
   bool isSweepingChunk(BufferChunk* chunk);
-  void traceMediumAlloc(JSTracer* trc, void* alloc, const char* name);
   bool isMediumBufferNurseryOwned(void* alloc) const;
-  void markMediumNurseryOwnedBuffer(void* alloc, bool nurseryOwned);
+  void promoteMediumNurseryOwnedBuffer(void* alloc, bool nurseryOwned);
   bool markMediumTenuredAlloc(void* alloc);
 
   // Determine whether a size class is for a small or medium allocation.
@@ -649,7 +649,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   static inline bool IsLargeAllocSize(size_t bytes);
   static bool IsLargeAlloc(void* alloc);
-  static void TraceLargeAlloc(JSTracer* trc, void** allocp, const char* name);
+  static LargeBuffer* LookupLargeBuffer(JSTracer* trc, void* alloc);
 
   void* allocLarge(size_t bytes, bool nurseryOwned, bool inGC);
   bool isLargeTenuredMarked(LargeBuffer* buffer);
@@ -657,8 +657,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   bool shrinkLarge(LargeBuffer* buffer, size_t newBytes);
   void unmapLarge(LargeBuffer* buffer, bool isSweeping, MaybeLock& lock);
   void unregisterLarge(LargeBuffer* buffer, bool isSweeping, MaybeLock& lock);
-  void traceLargeBuffer(JSTracer* trc, LargeBuffer* buffer, const char* name);
-  void markLargeNurseryOwnedBuffer(LargeBuffer* buffer, bool nurseryOwned);
+  void promoteLargeNurseryOwnedBuffer(LargeBuffer* buffer, bool nurseryOwned);
   bool markLargeTenuredBuffer(LargeBuffer* buffer);
 
   // Lookup a large buffer by pointer in the map.
@@ -674,6 +673,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   // Testing functions we allow access.
   friend void* TestAllocAligned(JS::Zone* zone, size_t bytes);
   friend size_t TestGetAllocSizeKind(void* alloc);
+  friend bool TestGetAllocTenuredInMixedChunks(JS::Zone* zone);
 
 #ifdef DEBUG
   void checkChunkListsGCStateNotInUse(ChunkLists& chunkLists,

@@ -66,8 +66,6 @@ if (lazy) {
     SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
     UrlbarTokenizer:
       "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
-    UrlbarSearchUtils:
-      "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
     UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
     UrlbarValueFormatter:
       "moz-src:///browser/components/urlbar/UrlbarValueFormatter.sys.mjs",
@@ -153,6 +151,7 @@ export class UrlbarInputBase extends HTMLElement {
                it contains text even when searchmode-switcher-title is hidden. -->
           <span class="urlbar-visually-hidden" aria-hidden="true">a</span>
           <span class="searchmode-switcher-content">
+            <span class="searchmode-switcher-wordmark" aria-hidden="true" />
             <img class="searchmode-switcher-dropmarker"
                  data-l10n-id="urlbar-searchmode-dropmarker2"
                  draggable="false" />
@@ -180,7 +179,7 @@ ${
           <input class="urlbar-input textbox-input"
                  role="combobox"
                  aria-autocomplete="both"
-                 inputmode="mozAwesomebar"
+                 inputmode="search"
                  preserveundohistory=""
                  data-l10n-id="urlbar-placeholder"/>
         </div>
@@ -196,13 +195,9 @@ ${
            role="group"
            tooltip="aHTMLTooltip">
         <div class="urlbarView-background"/>
-        <div class="urlbarView-body-outer">
-          <div class="urlbarView-body-inner">
-            <div class="urlbarView-results"
-                 role="listbox"/>
-          </div>
-        </div>
-        <panel-list class="urlbarView-result-menu"></panel-list>
+        <div class="urlbarView-results"
+             role="listbox"/>
+        <panel-list class="urlbarView-result-menu" accesskey-conflicts-bug="2073892"></panel-list>
         <moz-urlbar-slot name="search-one-offs" />
    </div>`;
   }
@@ -409,16 +404,16 @@ ${
       // out. Elsewhere the field holds free-form text and takes the locale's
       // direction like any other text input.
       this.inputField.dir = "auto";
+      // A chrome-only input mode: it offers the on-screen keyboard's URL keys
+      // without the IME-closing effect that "url" has.
+      this.inputField.inputMode = "mozAwesomebar";
 
       let schemeField = document.createElement("input");
       schemeField.id = "urlbar-scheme";
       schemeField.required = true;
       this.inputField.before(schemeField);
     }
-    if (this.#sapName == "searchbar") {
-      // This adds a native clear button.
-      this.inputField.setAttribute("type", "search");
-    }
+    this.sapInit();
 
     this.controller = new UrlbarChildController({ input: this });
     this.controller.addListener(this);
@@ -470,7 +465,7 @@ ${
     if (this.sapName != "newtab_searchbar") {
       if (this.controller.maybeInitEngineStore()) {
         // Engine store is initialized now and placeholder with
-        // engine name will be set in #connectedCallback.
+        // engine name will be set in connectedCallback.
       } else {
         // This happens on browser startup. We wait a bit before
         // initializing the search service to improve startup times.
@@ -499,18 +494,29 @@ ${
     this.updatePopover();
   }
 
+  /**
+   * Hook for subclass-specific initialization work, called during {@link #init}.
+   * Default no-op.
+   */
+  sapInit() {}
+
+  /**
+   * Hook for subclass-specific context-menu items. Default no-op.
+   */
+  initSapContextMenuItems() {}
+
+  /**
+   * Hook for subclass-specific work at the end of connection. Default no-op.
+   */
+  sapConnectedCallback() {}
+
+  /**
+   * Hook for subclass-specific work at the start of disconnection. Default
+   * no-op.
+   */
+  sapDisconnectedCallback() {}
+
   connectedCallback() {
-    if (
-      this.getAttribute("sap-name") == "searchbar" &&
-      !UrlbarPrefs.get("browser.search.widget.new")
-    ) {
-      return;
-    }
-
-    this.#connectedCallback();
-  }
-
-  #connectedCallback() {
     if (!this.controller) {
       this.#init();
     }
@@ -533,23 +539,6 @@ ${
       return;
     }
     this.toggleAttribute("focused", this.focused);
-
-    if (
-      this.sapName == "searchbar" &&
-      !document.documentElement.hasAttribute("customizing")
-    ) {
-      // Ensure we get persisted widths back, if we've been in the palette:
-      let storedWidth = Services.xulStore.getValue(
-        document.documentURI,
-        this.parentElement.id,
-        "width"
-      );
-      if (storedWidth) {
-        this.parentElement.setAttribute("width", storedWidth);
-        /** @type {XULElement} */ (this.parentElement).style.width =
-          storedWidth + "px";
-      }
-    }
 
     this._initCopyCutController();
 
@@ -602,26 +591,12 @@ ${
     this.updatePopover();
 
     this._addObservers();
+
+    this.sapConnectedCallback();
   }
 
   disconnectedCallback() {
-    if (
-      this.getAttribute("sap-name") == "searchbar" &&
-      !UrlbarPrefs.get("browser.search.widget.new")
-    ) {
-      return;
-    }
-
-    this.#disconnectedCallback();
-  }
-
-  #disconnectedCallback() {
-    if (this.sapName == "searchbar") {
-      // Exit search mode to make sure it doesn't become stale while the
-      // searchbar is invisible. Otherwise, the engine might get deleted
-      // but we don't notice because the search service observer is inactive.
-      this.searchMode = null;
-    }
+    this.sapDisconnectedCallback();
 
     this.searchModeSwitcher.disconnect();
 
@@ -689,9 +664,7 @@ ${
     if (this.#isAddressbar) {
       this._initAutofillDismiss();
     }
-    if (this.sapName == "searchbar") {
-      this.#initClearSearchHistory();
-    }
+    this.initSapContextMenuItems();
     this.#initAddSearchEngines();
   }
 
@@ -700,7 +673,7 @@ ${
    * AddSearchEngineHelper currently owns.
    */
   #initAddSearchEngines() {
-    this.#addContextMenuItems({
+    this.addContextMenuItems({
       createItems: () => {
         let fragment = this.document.createDocumentFragment();
         fragment.appendChild(
@@ -721,7 +694,7 @@ ${
    * @param {object} itemSet
    *   As passed to EditContextMenu.addItems(), minus `matches`.
    */
-  #addContextMenuItems(itemSet) {
+  addContextMenuItems(itemSet) {
     this.#contextMenuItemSets.push(
       this.window.EditContextMenu.addItems({
         ...itemSet,
@@ -780,6 +753,27 @@ ${
   }
 
   /**
+   * Whether this input shows layout variant A. New Tab's registrant sets the
+   * attribute from the urlbar's `newtabVariantA` Nimbus variable.
+   *
+   * @type {boolean}
+   */
+  get variantA() {
+    return this.hasAttribute("variant-a");
+  }
+
+  /**
+   * Whether this input shows layout variant B, with the search engine button on
+   * its own row above the input. New Tab's registrant sets the attribute from
+   * the urlbar's `newtabVariantB` Nimbus variable.
+   *
+   * @type {boolean}
+   */
+  get variantB() {
+    return this.hasAttribute("variant-b");
+  }
+
+  /**
    * Gets the window mode for telemetry.
    *
    * @returns {WindowMode} The window mode.
@@ -805,8 +799,8 @@ ${
     if (val != this.inputField.readOnly) {
       this.inputField.readOnly = val;
       if (this.isConnected) {
-        this.#disconnectedCallback();
-        this.#connectedCallback();
+        this.disconnectedCallback();
+        this.connectedCallback();
       }
     }
   }
@@ -844,17 +838,6 @@ ${
       case "keyword.enabled":
         this.updatePlaceholder();
         break;
-      case "browser.search.widget.new": {
-        if (this.getAttribute("sap-name") == "searchbar" && this.isConnected) {
-          if (UrlbarPrefs.get("browser.search.widget.new")) {
-            // The connectedCallback was skipped. Init now.
-            this.#connectedCallback();
-          } else {
-            // Uninit now, the disconnectedCallback will be skipped.
-            this.#disconnectedCallback();
-          }
-        }
-      }
     }
   }
 
@@ -1512,7 +1495,7 @@ ${
     let url = this.untrimmedValue;
 
     if (!url) {
-      this.#handleEmptyValueNavigation(event);
+      this.handleEmptyValueNavigation(event);
       return;
     }
 
@@ -1625,26 +1608,14 @@ ${
   }
 
   /**
-   * Handles navigation when there is no URL to load. In the searchbar this
-   * opens the search engine page for the active or default engine; elsewhere
-   * it does nothing.
+   * Handles navigation when there is no URL to load. The base does nothing;
+   * subclasses such as the searchbar open the search engine page for the
+   * active or default engine.
    *
-   * @param {Event} [event]
+   * @param {Event} [_event]
    *   The event triggering the open.
    */
-  #handleEmptyValueNavigation(event) {
-    if (this.sapName != "searchbar") {
-      return;
-    }
-    let searchEngine = this.searchMode
-      ? lazy.UrlbarSearchUtils.getEngineByName(this.searchMode.engineName)
-      : lazy.UrlbarSearchUtils.getDefaultEngine(this.isPrivate);
-    this.openSearchEnginePage("", {
-      searchEngine,
-      event,
-      where: this.controller.whereToOpen(event),
-    });
-  }
+  handleEmptyValueNavigation(_event) {}
 
   handleRevert() {
     this.userTypedValue = null;
@@ -1719,13 +1690,12 @@ ${
 
   /**
    * Whether pickResult() implements the result menu's commands for opening a
-   * result in a new tab or window. The container-tab submenu is built by a
-   * chrome window helper, so a bar hosted in a content page can't offer them.
+   * result in a new tab or window.
    *
    * @returns {boolean}
    */
   get handlesOpenInCommands() {
-    return typeof this.window.createUserContextMenu == "function";
+    return true;
   }
 
   /**
@@ -4024,7 +3994,6 @@ ${
     }
 
     let suffix = Services.locale.urlFixupSuffix;
-    Glean.urlfixup.suffix.get("urlbar", suffix).add(1);
     if (!suffix.endsWith("/")) {
       suffix += "/";
     }
@@ -4076,7 +4045,14 @@ ${
     // The autofilled value may be a URL that includes a scheme at the
     // beginning.  Do not allow it to be trimmed.
     this.setValue(value, { untrimmedValue });
-    this.inputField.setSelectionRange(selectionStart, selectionEnd);
+    // Keep the origin in view rather than the tail of the value. A long
+    // autofilled path would otherwise scroll the host out of the view.
+    // TODO (Bug 1566151): scrollLeftMin is the start-of-text edge in both
+    // directions, but an RTL host can never autofill today because the queries
+    // match the typed string against the punycode stored in Places. Revisit
+    // this once IDN hosts autofill, when the RTL case becomes reachable.
+    this.inputField.scrollLeft = this.inputField.scrollLeftMin;
+    this.inputField.setSelectionRange(selectionStart, selectionEnd, "backward");
     this._autofillPlaceholder = {
       value,
       type,
@@ -4446,7 +4422,7 @@ ${
   // The strip-on-share feature will strip known tracking/decorational
   // query params from the URI and copy the stripped version to the clipboard.
   _initStripOnShare() {
-    this.#addContextMenuItems({
+    this.addContextMenuItems({
       after: "edit-contextmenu-copy",
       createItems: () => {
         let fragment = this.document.createDocumentFragment();
@@ -4497,7 +4473,7 @@ ${
   }
 
   _initPasteAndGo() {
-    this.#addContextMenuItems({
+    this.addContextMenuItems({
       after: "edit-contextmenu-paste",
       createItems: () => {
         let fragment = this.document.createDocumentFragment();
@@ -4529,6 +4505,23 @@ ${
         // popover once it's open keeps it from showing (bug 2037468).
         this.view.close();
 
+        // The edit context menu is shared with other inputs in chrome, and
+        // only the items we add here conflict, so mark it for this opening
+        // alone, removing the marker again when closed.
+        let popup = this.window.EditContextMenu.popup;
+        popup.setAttribute("accesskey-conflicts-bug", "2073891");
+        popup.addEventListener(
+          "popuphidden",
+          () => {
+            // An opening that got superseded before it finished still fires
+            // popuphidden while the menu is open.
+            if (popup.state == "closed") {
+              popup.removeAttribute("accesskey-conflicts-bug");
+            }
+          },
+          { once: true }
+        );
+
         let controller =
           this.document.commandDispatcher.getControllerForCommand("cmd_paste");
         let enabled = controller.isCommandEnabled("cmd_paste");
@@ -4544,7 +4537,7 @@ ${
   // Adds "Dismiss" and "Forget this site" entries to the urlbar input context
   // menu, both hidden unless the heuristic result is autofill.
   _initAutofillDismiss() {
-    this.#addContextMenuItems({
+    this.addContextMenuItems({
       after: "edit-contextmenu-select-all",
       createItems: () => {
         let fragment = this.document.createDocumentFragment();
@@ -4658,7 +4651,7 @@ ${
    * This is only shown on the addressbar and only on macOS.
    */
   #initShareURL() {
-    this.#addContextMenuItems({
+    this.addContextMenuItems({
       after: "edit-contextmenu-select-all",
       createItems: () => {
         let fragment = this.document.createDocumentFragment();
@@ -4683,31 +4676,6 @@ ${
         // so it's hidden along with the separator when the menu opens on
         // another input.
         items[1] = separator.nextElementSibling;
-      },
-    });
-  }
-
-  /**
-   * Initializes the clear search history context menu item.
-   * This is only shown on the searchbar.
-   */
-  #initClearSearchHistory() {
-    this.#addContextMenuItems({
-      after: "edit-contextmenu-select-all",
-      createItems: () => {
-        let fragment = this.document.createDocumentFragment();
-        let separator = this.document.createXULElement("menuseparator");
-
-        let clearHistory = this.document.createXULElement("menuitem");
-        clearHistory.setAttribute("anonid", "clear-search-history");
-        this.document.l10n.setAttributes(clearHistory, "clear-search-history");
-        clearHistory.addEventListener("command", () => {
-          lazy.UrlbarUtils.clearFormHistory();
-          this.handleRevert();
-        });
-
-        fragment.append(separator, clearHistory);
-        return fragment;
       },
     });
   }
@@ -5062,7 +5030,8 @@ ${
    * @param {boolean} available If true Unified Search Button will be available.
    */
   setUnifiedSearchButtonAvailability(available) {
-    available ||= UrlbarPrefs.get("unifiedSearchButton.always");
+    available ||=
+      this.isSearchbarSAP || UrlbarPrefs.get("unifiedSearchButton.always");
     const switcher = this.querySelector(".searchmode-switcher");
     switcher.toggleAttribute("offscreen", !available);
     if (available) {
@@ -5398,7 +5367,8 @@ ${
         this._mousedownOnUrlbarDescendant = true;
         if (
           event.target != this.inputField &&
-          event.target != this._inputContainer
+          event.target != this._inputContainer &&
+          event.target != this.inputField.parentNode
         ) {
           break;
         }

@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { act, fireEvent, render } from "@testing-library/react";
+import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import { WrapWithProvider } from "test/jest/test-utils";
 import {
   CollapseToggle,
@@ -489,6 +489,10 @@ describe("<DiscoveryStreamAdminUI>", () => {
     const renderWidgets = (otherPrefs = { "widgets.system.enabled": false }) =>
       renderUI({ otherPrefs });
 
+    afterEach(() => {
+      delete document.l10n;
+    });
+
     it("should flip widgets.system.enabled from the master toggle", () => {
       const { container, dispatch } = renderWidgets();
       fireToggle(container.querySelector("#widgets-system-enabled"), true);
@@ -524,6 +528,47 @@ describe("<DiscoveryStreamAdminUI>", () => {
           '[id="widgets.sportsWidget.celebrations.enabled"]'
         )
       ).not.toBeInTheDocument();
+    });
+
+    it("should sort the toggles A-Z by their customize panel label", async () => {
+      // jsdom has no document.l10n; the labels are attribute-only messages.
+      const labels = {
+        "newtab-custom-widget-clock-toggle": "Clock",
+        "newtab-custom-widget-crossword-toggle": "Crossword",
+        "newtab-custom-widget-lists-toggle": "Lists",
+        "newtab-custom-widget-picture-toggle": "Picture of the day",
+        "newtab-custom-widget-privacy-toggle": "Privacy",
+        "newtab-custom-widget-search-toggle": "Search",
+        "newtab-custom-widget-stocks-toggle": "Stocks",
+        "newtab-custom-widget-timer-toggle": "Timer",
+        "newtab-custom-widget-weather-toggle": "Weather",
+      };
+      document.l10n = {
+        formatMessages: async keys =>
+          keys.map(({ id }) => ({
+            attributes: [{ name: "label", value: labels[id] }],
+          })),
+      };
+
+      const { container } = renderWidgets({ "widgets.system.enabled": true });
+      const order = () =>
+        [...container.querySelectorAll('[id^="widgets.system."]')].map(toggle =>
+          toggle.getAttribute("data-l10n-id")
+        );
+      await waitFor(() => expect(order()).toHaveLength(9));
+
+      // Written by hand so the test does not mirror the sort.
+      expect(order()).toEqual([
+        "newtab-custom-widget-clock-toggle",
+        "newtab-custom-widget-crossword-toggle",
+        "newtab-custom-widget-lists-toggle",
+        "newtab-custom-widget-picture-toggle",
+        "newtab-custom-widget-privacy-toggle",
+        "newtab-custom-widget-search-toggle",
+        "newtab-custom-widget-stocks-toggle",
+        "newtab-custom-widget-timer-toggle",
+        "newtab-custom-widget-weather-toggle",
+      ]);
     });
 
     it("should disable per-widget toggles when the widget system is off", () => {
@@ -675,6 +720,9 @@ describe("<DiscoveryStreamAdminUI> Layouts", () => {
     "side-by-side-widgets-lead-five",
     "spaces-buttons-bottom",
     "spaces-buttons-top",
+    "spaces-thematic-v1",
+    // @experiment(remove) { bug 2069496 }
+    "widgets-ad-large",
   ];
   // Everything isSideBySideActive gates on, so the status line stays quiet.
   const ACTIVE_PREFS = {

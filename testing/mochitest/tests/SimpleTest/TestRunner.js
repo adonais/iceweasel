@@ -219,7 +219,9 @@ TestRunner._checkForHangs = function () {
       ) {
         TestRunner._haltTests = true;
 
-        TestRunner.currentTestURL = "(SimpleTest/TestRunner.js)";
+        // Reported against the test that ran out of time rather than a synthetic
+        // path: currentTestURL is what every later testStatus, assertionCount and
+        // testEnd is logged with, so overwriting it here mis-attributes all of them.
         reportError(
           frameWindow,
           TestRunner.maxTimeouts + " test timeouts, giving up."

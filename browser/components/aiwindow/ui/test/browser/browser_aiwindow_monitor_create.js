@@ -141,10 +141,10 @@ add_task(async function test_dialog_opens() {
       Assert.ok(cancelButton, "Cancel button exists");
       Assert.ok(startButton, "Create alert button exists");
 
-      // Check that start button is initially disabled
+      // Validation runs on submit so it can surface per-field errors.
       Assert.ok(
-        startButton.hasAttribute("disabled"),
-        "Start button is initially disabled"
+        !startButton.hasAttribute("disabled"),
+        "Start button is enabled"
       );
 
       // Close the dialog
@@ -214,40 +214,54 @@ add_task(async function test_form_validation() {
         'moz-button[data-l10n-id="ai-tasks-alert-create-button"]'
       );
 
-      // Start button should be disabled initially
+      const errorIds = () =>
+        [...cardShadow.querySelectorAll(".error-message")]
+          .map(el => el.getAttribute("data-l10n-id"))
+          .sort();
+
+      // Submitting an empty form reveals every missing field error.
       Assert.ok(
-        startButton.hasAttribute("disabled"),
-        "Start button initially disabled"
+        !startButton.hasAttribute("disabled"),
+        "Start button is enabled"
       );
 
-      // Fill in name (optional field)
+      startButton.click();
+      await cardJS.updateComplete;
+
+      Assert.deepEqual(
+        errorIds(),
+        [
+          "ai-tasks-alert-error-condition-required",
+          "ai-tasks-alert-error-name-required",
+          "ai-tasks-alert-error-no-pages",
+        ],
+        "Submitting empty surfaces name, condition and pages errors"
+      );
+      Assert.ok(dialog.open, "Dialog stays open while the form is invalid");
+
+      // Filling each field clears its own error.
       setInputValue(nameInput, "Test Monitor");
       await cardJS.updateComplete;
-
-      // Start button should still be disabled (need alert description and URL)
       Assert.ok(
-        startButton.hasAttribute("disabled"),
-        "Start button still disabled without alert description"
+        !cardShadow.querySelector(
+          "[data-l10n-id='ai-tasks-alert-error-name-required']"
+        ),
+        "Name error clears once a name is entered"
       );
 
-      // Fill in alert description
       setInputValue(alertTextarea, "Watch for price changes");
       await cardJS.updateComplete;
-
-      // Start button should still be disabled (need URL)
       Assert.ok(
-        startButton.hasAttribute("disabled"),
-        "Start button still disabled without URL"
+        !cardShadow.querySelector(
+          "[data-l10n-id='ai-tasks-alert-error-condition-required']"
+        ),
+        "Condition error clears once a description is entered"
       );
 
-      // Add a URL - set value and trigger input event
       setInputValue(pageInput, "https://example.com");
       await cardJS.updateComplete;
-
-      // Click the plus button to add the URL
       addPageButton.click();
 
-      // Wait for URL pill to appear
       await ContentTaskUtils.waitForCondition(
         () => {
           const pills = cardShadow.querySelectorAll(
@@ -270,6 +284,11 @@ add_task(async function test_form_validation() {
       Assert.ok(
         pagePill.getAttribute("label").includes("example.com"),
         "URL pill should display the domain"
+      );
+
+      Assert.ok(
+        !cardShadow.querySelector(".error-message"),
+        "All errors are cleared once the form is complete"
       );
 
       // Now start button should be enabled

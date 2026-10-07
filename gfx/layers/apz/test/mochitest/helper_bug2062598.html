@@ -1,0 +1,135 @@
+<!DOCTYPE HTML>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, minimum-scale=1.0">
+<title>
+  Tests that a fling is not handed off past a scroll container with
+  overscroll-behavior: contain, when three nested scroll containers
+  (root, middle, innermost) have overscroll-behavior = (auto, auto, contain)
+</title>
+<script src="apz_test_utils.js"></script>
+<script src="apz_test_native_event_utils.js"></script>
+<script src="/tests/SimpleTest/paint_listener.js"></script>
+<style>
+  html {
+    overflow-y: scroll;
+  }
+  #middle {
+    width: 500px;
+    height: 450px;
+    overflow-y: scroll;
+  }
+  #innermost {
+    width: 400px;
+    height: 400px;
+    overflow-y: scroll;
+    overscroll-behavior: contain;
+  }
+  #innermost-content {
+    height: 1000px;
+  }
+  #middle-spacer {
+    height: 1000px;
+  }
+  #root-spacer {
+    height: 300vh;
+  }
+</style>
+<div id="middle">
+  <div id="innermost">
+    <div id="innermost-content"></div>
+  </div>
+  <div id="middle-spacer"></div>
+</div>
+<div id="root-spacer"></div>
+<script>
+  SimpleTest.requestFlakyTimeout(
+    "synthesizeNativeTouchForFastFling has to wait for a period of the time where touch events trigger a fast fling"
+  );
+
+  // The information collected above is a snapshot of the current state,
+  // and an overscroll effect only exists while the fling is running, so
+  // collect the information repeatedly. SimpleTest.promiseWaitForCondition()
+  // can't do the sampling: it waits on the window SimpleTest.js was loaded in,
+  // which is the opener, and the opener is in the background while a subtest
+  // runs, so its timers are clamped to dom.min_background_timeout_value, which
+  // the test profile pins at 1s.
+  async function promiseOverscrolledScrollIds(aPredicate) {
+    const overscrolledIds = new Set();
+    const deadline = performance.now() + 3000;
+    do {
+      const apzData =
+        SpecialPowers.DOMWindowUtils.getCompositorAPZTestData().additionalData;
+      for (const data of apzData) {
+        const wrapped = SpecialPowers.wrap(data);
+        if (wrapped.value.split(",").includes("overscrolled")) {
+          overscrolledIds.add(String(wrapped.key));
+        }
+      }
+      if (aPredicate(overscrolledIds)) {
+        break;
+      }
+      await new Promise(resolve => setTimeout(resolve, 10));
+    } while (performance.now() < deadline);
+    return overscrolledIds;
+  }
+
+  function scrollIdOf(aElement) {
+    return String(SpecialPowers.DOMWindowUtils.getViewId(aElement));
+  }
+
+  async function test() {
+    ok(innermost.scrollTopMax > 0,
+       "The innermost scroll container is scrollable");
+
+    innermost.scrollTop = innermost.scrollTopMax;
+
+    await promiseApzFlushedRepaints();
+
+    is(innermost.scrollTop, innermost.scrollTopMax,
+       "The innermost scroll container starts at its bottom edge");
+
+    // Also makes sure the gesture actually reached APZ.
+    const transformEnd = promiseTransformEnd();
+
+    // The fling has to be fast enough that the overscroll it leaves behind is
+    // worth more than one device pixel: Axis::SampleOverscrollAnimation() ends
+    // the animation and clears the overscroll as soon as it drops below that,
+    // which on a 1x display happens right away for a slower fling. The touch
+    // points also have to stay clear of the scrollbars, which take up room on
+    // the platforms without overlay scrollbars.
+    await synthesizeNativeTouchForFastFling(
+      innermost, 200, 300, SpecialPowers.DOMWindowUtils.TOUCH_CONTACT);
+    await synthesizeNativeTouchForFastFling(
+      innermost, 200, 200, SpecialPowers.DOMWindowUtils.TOUCH_CONTACT);
+    await synthesizeNativeTouchForFastFling(
+      innermost, 200, 100, SpecialPowers.DOMWindowUtils.TOUCH_REMOVE);
+
+    // On Android the overscroll effect is handled by the widget,
+    // which never puts the APZC itself into an overscrolled state,
+    // so these checks only work on desktop.
+    if (getPlatform() != "android") {
+      const overscrolledIds = await promiseOverscrolledScrollIds(
+        ids => ids.has(scrollIdOf(innermost)));
+
+      ok(overscrolledIds.has(scrollIdOf(innermost)),
+         "The innermost scroll container took the velocity as an overscroll effect");
+      ok(!overscrolledIds.has(scrollIdOf(middle)),
+         "The middle scroll container was not overscrolled");
+      ok(!overscrolledIds.has(scrollIdOf(document.scrollingElement)),
+         "The root scroll container was not overscrolled");
+    }
+
+    await transformEnd;
+    await promiseApzFlushedRepaints();
+
+    // Check that either the middle or the root doesn't scroll.
+    is(middle.scrollTop, 0,
+       "The middle scroll container did not scroll");
+    is(document.scrollingElement.scrollTop, 0,
+       "The root scroll container did not scroll");
+  }
+
+  waitUntilApzStable()
+  .then(test)
+  .then(subtestDone, subtestFailed);
+</script>

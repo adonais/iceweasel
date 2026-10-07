@@ -72,6 +72,8 @@ projects:
     - components:feature-summarize
     - components:feature-syncedtabs
     - components:feature-tab-collections
+    - components:feature-tabdata-coordinator
+    - components:feature-tabgroups-storage
     - components:feature-tabs
     - components:feature-toolbar
     - components:feature-top-sites

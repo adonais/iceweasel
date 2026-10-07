@@ -32,7 +32,9 @@ nssSlot_Destroy(
     NSSSlot *slot)
 {
     if (slot) {
-        if (PR_ATOMIC_DECREMENT(&slot->base.refCount) == 0) {
+        PRInt32 refCount = PR_ATOMIC_DECREMENT(&slot->base.refCount);
+        PORT_ReleaseAssert(refCount >= 0);
+        if (refCount == 0) {
             PK11_FreeSlot(slot->pk11slot);
             PR_DestroyLock(slot->base.lock);
             PR_DestroyCondVar(slot->isPresentCondition);
@@ -70,7 +72,8 @@ NSS_IMPLEMENT NSSSlot *
 nssSlot_AddRef(
     NSSSlot *slot)
 {
-    PR_ATOMIC_INCREMENT(&slot->base.refCount);
+    PRInt32 refCount = PR_ATOMIC_INCREMENT(&slot->base.refCount);
+    PORT_ReleaseAssert(refCount > 1);
     return slot;
 }
 

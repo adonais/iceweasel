@@ -9,12 +9,6 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const ADDON_ID = "newtab-extension@tests.mozilla.org";
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-});
-
 add_task(async function test_extension_shows_in_newtab_dropdown() {
   let extension = ExtensionTestUtils.loadExtension({
     useAddonManager: "permanent",

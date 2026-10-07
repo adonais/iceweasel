@@ -1,0 +1,86 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  --aitab-timeline-item-gap: 40px;
+  --aitab-timeline-intro-gutter: 50px;
+  --aitab-timeline-date-gutter: 100px;
+  --aitab-timeline-date-eyebrow-color: light-dark(var(--color-gray-50), var(--color-gray-30));
+}
+
+.aitab-timeline {
+  display: grid;
+  align-items: start;
+  row-gap: var(--space-xxlarge);
+}
+
+.aitab-timeline-intro {
+  display: grid;
+  gap: var(--space-xsmall);
+}
+
+.aitab-timeline-items {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  row-gap: var(--aitab-timeline-item-gap);
+  list-style: none;
+}
+
+.aitab-timeline-item {
+  display: grid;
+  row-gap: var(--space-small);
+}
+
+.aitab-timeline-date {
+  display: grid;
+  gap: var(--space-small);
+}
+
+.aitab-timeline-date-label {
+  font-weight: var(--font-weight-bold);
+}
+
+.aitab-timeline-date-eyebrow {
+  color: var(--aitab-timeline-date-eyebrow-color);
+}
+
+.aitab-timeline-entry {
+  display: grid;
+  gap: var(--space-xsmall);
+}
+
+.aitab-timeline-item-description {
+  line-height: 1.5;
+}
+
+@container aitab-page (width >= 900px) {
+  .aitab-timeline {
+    grid-template-columns: max-content max-content 1fr;
+  }
+
+  .aitab-timeline-intro {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    padding-inline-end: var(--aitab-timeline-intro-gutter);
+  }
+
+  .aitab-timeline-items {
+    grid-column-start: 2;
+    grid-column-end: -1;
+    grid-template-columns: subgrid;
+  }
+
+  .aitab-timeline-item {
+    grid-column-start: 1;
+    grid-column-end: -1;
+    align-items: start;
+    grid-template-columns: subgrid;
+  }
+
+  .aitab-timeline-date {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    padding-inline-end: var(--aitab-timeline-date-gutter);
+  }
+}

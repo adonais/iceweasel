@@ -10,6 +10,8 @@ use std::{
 
 use thiserror::Error;
 
+use crate::ProcessHandle;
+
 #[cfg(not(target_os = "windows"))]
 pub(crate) mod unix;
 
@@ -37,13 +39,17 @@ pub enum AppInfoError {
 pub struct ApplicationInfo {
     build_id: String,
     install_time: u64,
+    /// Handle to the process that spawned the crash helper, when available.
+    #[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+    client: Option<ProcessHandle>,
 }
 
 impl ApplicationInfo {
-    pub fn new(build_id: String) -> ApplicationInfo {
-        ApplicationInfo {
+    pub fn new(build_id: String, client: Option<ProcessHandle>) -> Self {
+        Self {
             build_id,
             install_time: Self::compute_install_time(None).unwrap_or(0),
+            client,
         }
     }
 

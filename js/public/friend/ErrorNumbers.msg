@@ -776,6 +776,7 @@ MSG_DEF(JSMSG_BAD_MODULE_TYPE,              0, JSEXN_TYPEERR, "invalid module ty
 MSG_DEF(JSMSG_ABSTRACT_MODULE_SOURCE_CTOR,  0, JSEXN_TYPEERR, "AbstractModuleSource cannot be constructed directly")
 MSG_DEF(JSMSG_MODULE_SOURCE_NOT_AVAILABLE,  0, JSEXN_SYNTAXERR, "Source phase imports not supported for this module type")
 MSG_DEF(JSMSG_WASM_ESM_EVAL_NOT_SUPPORTED, 0, JSEXN_SYNTAXERR, "Evaluation phase imports of wasm modules are unsupported")
+MSG_DEF(JSMSG_MODULE_SYNC_EVALUATION_NOT_READY, 0, JSEXN_TYPEERR, "Deferred module is not ready for synchronous evaluation")
 
 // Import maps
 MSG_DEF(JSMSG_IMPORT_MAPS_PARSE_FAILED, 1, JSEXN_SYNTAXERR, "Failed to parse import map: Invalid JSON format. {0}")

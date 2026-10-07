@@ -171,6 +171,33 @@ def test_build_timeseries_is_incremental_and_prunes(tmpdir):
     assert set(state["days"]) == {"20260402", "20260403"}
 
 
+def test_refill_dates_recomputes_a_day_already_in_state(tmpdir):
+    work = str(tmpdir)
+    _write_profile(work, "20260401", [_row(STACK_A, "20260401", 100.0)])
+    _write_profile(work, "20260402", [_row(STACK_A, "20260402", 10.0)])
+    bhr_timeseries.build_timeseries(
+        input_dir=work, output_dir=work, window_days=2, top_count=10
+    )
+
+    # The day is re-run and its artifact replaced, as a backfill does.
+    _write_profile(work, "20260401", [_row(STACK_A, "20260401", 555.0)])
+
+    # Left to itself the roll-up keeps what the first run produced.
+    published = bhr_timeseries.build_timeseries(
+        input_dir=work, output_dir=work, window_days=2, top_count=10
+    )
+    assert published["signatures"][0]["ms"] == [100.0, 10.0]
+
+    published = bhr_timeseries.build_timeseries(
+        input_dir=work,
+        output_dir=work,
+        window_days=2,
+        top_count=10,
+        refill_dates=["20260401"],
+    )
+    assert published["signatures"][0]["ms"] == [555.0, 10.0]
+
+
 def test_top_count_caps_published_signatures(tmpdir):
     work = str(tmpdir)
     _write_profile(

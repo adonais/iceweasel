@@ -2,9 +2,18 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 add_setup(async function () {
-  await BrowserTestUtils.openNewForegroundTab({
+  const tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     url: "about:logins",
+  });
+  // The synthetic messages below are only meaningful once the page has
+  // applied the login list from AboutLogins:Setup, which replaces it
+  // wholesale and would otherwise discard them.
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.documentElement.classList.contains("initialized"),
+      "Waiting for about:logins to be initialized"
+    );
   });
   registerCleanupFunction(() => {
     BrowserTestUtils.removeTab(gBrowser.selectedTab);

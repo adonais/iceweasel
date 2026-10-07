@@ -179,6 +179,12 @@ class TabDrawerPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
         mozClick(TabDrawerSelectors.ADD_TO_GROUP_THREE_DOT_BUTTON)
     }
 
+    private fun longClickTabAndTapAddToGroup(tabTitle: String) {
+        mozLongClick(TabDrawerSelectors.TAB_ITEM_WITH_TITLE(tabTitle))
+        mozClick(TabDrawerSelectors.TAB_SELECTION_THREE_DOT_BUTTON)
+        mozClick(TabDrawerSelectors.ADD_TO_GROUP_THREE_DOT_BUTTON)
+    }
+
     fun selectTabsAndCreateFirstTabGroup(
         tabTitle: String,
         tabGroupTitle: String = "",
@@ -205,7 +211,7 @@ class TabDrawerPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
         numberOfTabs: Int,
         tabGroupColor: String,
     ): TabDrawerPage {
-        selectTabsAndTapAddToGroup(tabTitle)
+        longClickTabAndTapAddToGroup(tabTitle)
         mozClick(TabDrawerSelectors.TAB_GROUP_ITEM(tabGroupTitle, numberOfTabs, tabGroupColor))
         return this
     }

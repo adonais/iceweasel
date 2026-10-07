@@ -2,6 +2,8 @@
 
 const PAGE_URL =
   "https://example.org/browser/browser/extensions/formautofill/test/fixtures/autocomplete_multiple_emails_checkout.html";
+const SINGLE_EMAIL_PAGE_URL =
+  "https://example.org/browser/browser/extensions/formautofill/test/fixtures/autocomplete_single_email.html";
 
 /**
  * These tests ensure that when a field (like email) is recognized by both
@@ -118,10 +120,6 @@ add_task(async function test_single_email_field_now_shows_address_autofill() {
   await removeAllRecords();
   await setStorage(TEST_ADDRESS_1);
 
-  // To confirm that address autofill is working for a single email field, we use this fixture.
-  const SINGLE_EMAIL_PAGE_URL =
-    "https://example.org/browser/browser/extensions/formautofill/test/fixtures/autocomplete_single_email.html";
-
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: SINGLE_EMAIL_PAGE_URL },
     async function (browser) {
@@ -145,4 +143,32 @@ add_task(async function test_single_email_field_now_shows_address_autofill() {
       await closePopup(browser);
     }
   );
+});
+
+add_task(async function test_single_email_field_shows_each_email_once() {
+  await removeAllRecords();
+  // These three addresses store the same email, so a form that only asks for
+  // an email cannot tell them apart.
+  await setStorage(TEST_ADDRESS_1, TEST_ADDRESS_4, TEST_ADDRESS_CA_1);
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: SINGLE_EMAIL_PAGE_URL },
+    async function (browser) {
+      await openPopupOn(browser, "#email");
+
+      const values = getDisplayedPopupItems(browser).map(item =>
+        getACItemValue(item)
+      );
+
+      Assert.deepEqual(
+        values,
+        [TEST_ADDRESS_1.email, "Manage addresses"],
+        "The shared email address is only suggested once"
+      );
+
+      await closePopup(browser);
+    }
+  );
+
+  await removeAllRecords();
 });

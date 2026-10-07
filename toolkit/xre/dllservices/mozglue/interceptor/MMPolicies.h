@@ -10,6 +10,7 @@
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
+#include "mozilla/StackWalk_windows.h"
 #include "mozilla/WindowsMapRemoteView.h"
 #include "mozilla/WindowsUnwindInfo.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
@@ -541,6 +542,9 @@ class MOZ_EMPTY_BASES MOZ_TRIVIAL_CTOR_DTOR MMPolicyInProcess
 
   bool AddFunctionTable(uintptr_t aFunctionTable, uint32_t aEntryCount,
                         uintptr_t aBaseAddress) const {
+    // RtlAddFunctionTable acquires LdrpMrdataLock and
+    // RtlpDynamicFunctionTableLock, independently.
+    AutoSuppressStackWalking suppress;
     return bool(
         RtlAddFunctionTable(reinterpret_cast<PRUNTIME_FUNCTION>(aFunctionTable),
                             aEntryCount, aBaseAddress));

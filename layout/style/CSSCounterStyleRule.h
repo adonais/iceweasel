@@ -21,8 +21,9 @@ class CSSCounterStyleRule final : public css::Rule {
       : css::Rule(aSheet, aParentRule, aLine, aColumn),
         mRawRule(std::move(aRawRule)) {}
 
- private:
   CSSCounterStyleRule(const CSSCounterStyleRule& aCopy) = delete;
+
+ private:
   ~CSSCounterStyleRule() = default;
 
   template <typename Func>

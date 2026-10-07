@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<title>speculation rules hover source</title>
+<script>
+  const params = new URLSearchParams(location.search);
+  const target = params.get("target");
+  const script = document.createElement("script");
+  script.type = "speculationrules";
+  script.textContent = JSON.stringify({
+    prefetch: [
+      { source: "list", urls: [target], eagerness: params.get("eagerness") },
+    ],
+  });
+  document.head.appendChild(script);
+</script>
+<body>
+  <a id="link" href="">hover me</a>
+  <script>
+    document.getElementById("link").href = target;
+  </script>
+</body>

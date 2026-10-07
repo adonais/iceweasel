@@ -4,6 +4,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+import { expandUrlTokens } from "moz-src:///browser/components/aiwindow/ui/modules/UrlTokenizer.sys.mjs";
+
 // Important! Changing or removing this value requires a security review.
 //
 // Limit the page titles to 100 characters to relax the use of the untrusted content flag
@@ -318,31 +320,6 @@ export function detectTokens(content, regexPattern, key) {
  */
 export function isNewPageUrl(url) {
   return url === "chrome://browser/content/aiwindow/aiWindow.html";
-}
-
-/**
- * Expands URL tokens (e.g. §url_token: GITHUB_COM_1§) in text using the provided
- * mapping. Any token not found in the mapping is left unchanged.
- *
- * @param {string} text
- * @param {Map<string, string>} tokenToUrl
- * @returns {string}
- */
-export function expandUrlTokens(text, tokenToUrl) {
-  return text.replace(/§url_token:\s*([A-Z0-9_]+_\d+)§/g, (match, token) => {
-    return tokenToUrl.get(token) ?? match;
-  });
-}
-
-/**
- * Strips URL tokens that remain after expansion.
- * Any remaining tokens at this point were hallucinated by the model.
- *
- * @param {string} text
- * @returns {string}
- */
-export function stripUnresolvedUrlTokens(text) {
-  return text.replace(/§url_token:\s*[A-Z0-9_]+_\d+§/g, "");
 }
 
 /**

@@ -365,6 +365,8 @@
 
       <menuitem id="context-take-screenshot"
                 data-l10n-id="main-context-menu-take-screenshot"/>
+      <menuitem id="context-use-mini-window"
+                data-l10n-id="main-context-menu-use-mini-window"/>
       <menuseparator id="context-sep-screenshots"/>
       <menuitem id="context-add-engine"
                 data-l10n-id="main-context-menu-add-engine"/>
@@ -373,6 +375,9 @@
       <menuitem id="context-translate-selection"
                 data-l10n-id="main-context-menu-translate-selection"/>
       <menu id="context-ask-chat"/>
+      <menuitem id="context-create-aitab"
+                data-l10n-id="main-context-menu-create-aitab"
+                hidden="true"/>
 
       <menuseparator id="frame-sep"/>
       <menu id="frame" data-l10n-id="main-context-menu-frame">
@@ -411,6 +416,7 @@
 #ifdef NIGHTLY_BUILD
           <menuitem id="context-frameOsPid"
                     label="PID: Unknown"
+                    role="note"
                     disabled="true"/>
 #endif
         </menupopup>
@@ -425,7 +431,7 @@
                 />
       <menu id="spell-dictionaries"
             data-l10n-id="text-action-spell-dictionaries">
-          <menupopup id="spell-dictionaries-menu">
+          <menupopup id="spell-dictionaries-menu" accesskey-conflicts-bug="2073901">
               <menuseparator id="spell-language-separator"/>
               <menuitem id="spell-add-dictionaries"
                         data-l10n-id="text-action-spell-add-dictionaries"

@@ -938,7 +938,7 @@ add_task(async function test_canvas_snapshot_crossorigin() {
     <canvas id="crossorigin" width="200" height="200"></canvas>
     <img
       id="crossorigin-img"
-      src="https://example.com/browser/browser/base/content/test/general/moz.png"
+      src="https://example.com/browser/browser/base/content/test/browser-general/moz.png"
     />
     <script>
       window.drawCrossOriginImage = () => {

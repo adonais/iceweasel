@@ -301,3 +301,12 @@ if CONFIG["CC_TYPE"] in ("clang", "gcc"):
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Gecko Profiler")
+
+LICENSED_UNDER += [
+    "chromium",
+]
+
+LICENSED_UNDER += ["vtune"]
+LICENSED_UNDER["vtune"].paths = [
+    "core/vtune",
+]

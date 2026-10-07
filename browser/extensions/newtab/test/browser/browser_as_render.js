@@ -10,6 +10,9 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.newtab.featureGate", false]],
   });
+  // A preloaded about:newtab is already mounting <moz-urlbar> by the time of
+  // this push, and does not swap it for the handoff bar.
+  NewTabPagePreloading.removePreloadedBrowser(window);
 });
 
 test_newtab({

@@ -166,7 +166,7 @@ Dst WABT_VECTORCALL Bitcast(Src&& value) {
   Dst result;
   memcpy(&result, &value, sizeof(result));
   return result;
-}
+ }
 
 template <typename T>
 void ZeroMemory(T& v) {
@@ -194,6 +194,7 @@ enum class LabelType {
   If,
   Else,
   Try,
+  TryTable,
   Catch,
 
   First = Func,
@@ -208,23 +209,20 @@ struct Location {
   };
 
   Location() : line(0), first_column(0), last_column(0) {}
-  Location(std::string_view filename,
-           int line,
-           int first_column,
-           int last_column)
-      : filename(filename),
-        line(line),
+  Location(unsigned int line,
+           unsigned int first_column,
+           unsigned int last_column)
+      : line(line),
         first_column(first_column),
         last_column(last_column) {}
   explicit Location(size_t offset) : offset(offset) {}
 
-  std::string_view filename;
   union {
     // For text files.
     struct {
-      int line;
-      int first_column;
-      int last_column;
+      unsigned int line;
+      unsigned int first_column;
+      unsigned int last_column;
     };
     // For binary files.
     struct {
@@ -237,6 +235,13 @@ enum class SegmentKind {
   Active,
   Passive,
   Declared,
+};
+
+enum class CatchKind {
+  Catch,
+  CatchRef,
+  CatchAll,
+  CatchAllRef,
 };
 
 // Used in test asserts for special expected values "nan:canonical" and

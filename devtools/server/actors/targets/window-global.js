@@ -446,15 +446,6 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     this._docShellsObserved = false;
     DevToolsUtils.executeSoon(() => this._watchDocshells());
 
-    // The `watchedByDevTools` enables gecko behavior tied to this flag, such as:
-    //  - reporting the contents of HTML loaded in the docshells,
-    //  - or capturing stacks for the network monitor.
-    //
-    // This flag can only be set on top level BrowsingContexts.
-    if (!this.browsingContext.parent) {
-      this.browsingContext.watchedByDevTools = true;
-    }
-
     if (this.sessionContext.type == "webextension") {
       if (
         this.window.location.href.startsWith(lazy.WEBEXTENSION_FALLBACK_DOC_URL)
@@ -835,19 +826,6 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     if (this._touchSimulator) {
       this._touchSimulator.stop();
       this._touchSimulator = null;
-    }
-
-    // The watchedByDevTools flag is only set on top level BrowsingContext
-    // (as it then cascades to all its children),
-    // and when destroying the target, we should tell the platform we no longer
-    // observe this BrowsingContext and set this attribute to false.
-    // Ignore this cleanup if the related BrowsingContext is being destroyed.
-    if (
-      this.browsingContext?.watchedByDevTools &&
-      !this.browsingContext.parent &&
-      !this.browsingContext.isDiscarded
-    ) {
-      this.browsingContext.watchedByDevTools = false;
     }
 
     // Check for `docShell` availability, as it can be already gone during

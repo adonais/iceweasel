@@ -1,0 +1,48 @@
+diff --git a/src/cff_charstring.cc b/src/cff_charstring.cc
+--- a/src/cff_charstring.cc
++++ b/src/cff_charstring.cc
+@@ -25,6 +25,11 @@ const size_t kMaxCharStringLength = 6553
+ const size_t kMaxNumberOfStemHints = 96;
+ const size_t kMaxSubrNesting = 10;
+ 
++// We reject the table if any charstring results in executing too many ops.
++// This should be more than enough for any realistic use case; only a malicious
++// font would run millions of ops for a single glyph.
++const uint32_t kMaxCharStringOps = 1024 * 1024 * 64;
++
+ // |dummy_result| should be a huge positive integer so callsubr and callgsubr
+ // will fail with the dummy value.
+ const int32_t dummy_result = INT_MAX;
+@@ -889,6 +894,11 @@ bool ExecuteCharString(ots::OpenTypeCFF&
+       continue;
+     }
+ 
++    if (++cs_ctx.num_ops > kMaxCharStringOps) {
++      ots::Font* font = cff.GetFont();
++      return OTS_FAILURE_MSG("charstring executes too many ops");
++    }
++
+     // An operator is found. Execute it.
+     if (!ExecuteCharStringOperator(cff,
+                                    operator_or_operand,
+diff --git a/src/cff_charstring.h b/src/cff_charstring.h
+--- a/src/cff_charstring.h
++++ b/src/cff_charstring.h
+@@ -105,14 +105,15 @@ enum HintState {
+ };
+ 
+ struct CharStringContext {
++  size_t num_stems = 0;
++  int32_t vsindex = 0;
++  uint32_t num_ops = 0;
+   bool endchar_seen = false;
+   bool width_seen = false;
+-  size_t num_stems = 0;
+   HintState hint_state = kHs;
+   bool cff2 = false;
+   bool blend_seen = false;
+   bool vsindex_seen = false;
+-  int32_t vsindex = 0;
+ };
+ 
+ }  // namespace ots

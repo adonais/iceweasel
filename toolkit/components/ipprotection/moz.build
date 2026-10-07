@@ -36,7 +36,6 @@ MOZ_SRC_FILES += [
     "IPPAutoStart.sys.mjs",
     "IPPChannelFilter.sys.mjs",
     "IPPEarlyStartupFilter.sys.mjs",
-    "IPPExceptionsManager.sys.mjs",
     "IPPLifecycleHelper.sys.mjs",
     "IPPNetworkErrorObserver.sys.mjs",
     "IPPNetworkUtils.sys.mjs",
@@ -46,6 +45,8 @@ MOZ_SRC_FILES += [
     "IPProtectionServerlist.sys.mjs",
     "IPProtectionService.sys.mjs",
     "IPPSessionPrefManager.sys.mjs",
+    "IPPSiteRuleManager.sys.mjs",
+    "IPPSiteRuleProviders.sys.mjs",
     "IPPStartupCache.sys.mjs",
 ]
 

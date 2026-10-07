@@ -49,7 +49,7 @@ async function runTest(browser, accDoc) {
   let loaded = waitForEvent(EVENT_DOCUMENT_LOAD_COMPLETE, "iframeDoc");
   await invokeContentTask(browser, [], () => {
     content.document.querySelector("iframe").src =
-      'data:text/html,<body id="iframeDoc"><p id="p">hi</p></body>';
+      'data:text/html,<html id="iframeDoc"><body><p id="p">hi</p></body></html>';
   });
 
   const iframeDoc = (await loaded).accessible;

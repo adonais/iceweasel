@@ -23,7 +23,7 @@ add_task(async () => {
     Ci.nsICookie.SCHEME_HTTP
   );
   Assert.equal(cv.result, Ci.nsICookieValidation.eOK, "Valid cookie");
-  Assert.equal(Services.cookies.countCookiesFromHost("a"), 1);
+  Assert.equal(Services.cookies.countCookiesFromHost("a", {}), 1);
 
   CookieXPCShellUtils.createServer({ hosts: ["a"] });
   const cookies =

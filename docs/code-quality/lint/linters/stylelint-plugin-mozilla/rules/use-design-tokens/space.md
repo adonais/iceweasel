@@ -21,6 +21,18 @@ Note that the following properties accept both space and size tokens:
 Use space tokens when these properties represent spacing/positioning offsets, and size tokens
 when they represent element dimensions.
 
+Space tokens are rem-valued, and `rem` is not 16px in chrome. A chrome document's
+root font size is the system UI font size, which is roughly 11px on macOS, 12px on
+Windows and 14 to 15px on Linux; only content documents get 16px. The space scale is
+16px-based, so every space token comes out proportionally shorter in chrome - 25%
+shorter at a 12px root.
+
+A px value and the space token this rule suggests for it are therefore equal only at a
+16px root, autofixed replacements included. Where the quantity must not scale with the
+system font, such as a geometric bleed, an overlay inset or an icon box, use a fixed-px
+token instead: `--size-item-*`, `--icon-size-*`, `--size-image-*` and `--size-layout-*`
+are all literal px.
+
 ## Examples of incorrect code for this rule
 
 ```css

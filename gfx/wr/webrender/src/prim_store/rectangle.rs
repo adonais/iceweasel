@@ -3,21 +3,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use api::{PropertyBinding, ColorF};
-use crate::scene_building::{IsVisible};
 use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
-    PrimKey, InternablePrimitive, PrimitiveStore, PrimitiveKind,
+    InternablePrimitive, PrimitiveStore, PrimitiveKind,
     PrimTemplate, PrimTemplateCommonData,
 };
 use crate::scene::SceneProperties;
 use std::ops;
 
-// `RectanglePrim` now lives in `webrender_api::interned_prims` so content-process
-// interning can hold it. Re-exported to keep existing references working.
-pub use api::interned_prims::RectanglePrim;
-
-pub type RectangleKey = PrimKey<RectanglePrim>;
+// `RectanglePrim` and its key live in `webrender_api::interned_prims` so
+// content-process interning can hold them. Re-exported to keep existing
+// references working.
+pub use api::interned_prims::{RectangleKey, RectanglePrim};
 
 pub type RectangleDataHandle = intern::Handle<RectanglePrim>;
 
@@ -49,16 +47,6 @@ impl InternablePrimitive for RectanglePrim {
         }
     }
 }
-
-impl IsVisible for RectanglePrim {
-    fn is_visible(&self) -> bool {
-        match self.color {
-            PropertyBinding::Value(value) => value.a > 0,
-            PropertyBinding::Binding(..) => true,
-        }
-    }
-}
-
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]

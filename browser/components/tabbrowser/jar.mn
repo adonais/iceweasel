@@ -21,5 +21,5 @@ browser.jar:
    content/browser/tabbrowser/tabgroup.mjs                (content/tabgroup.mjs)
    content/browser/tabbrowser/tabgroup-menu.js            (content/tabgroup-menu.js)
    content/browser/tabbrowser/tabnote-menu.js             (content/tabnote-menu.js)
-   content/browser/tabbrowser/tabs.js                     (content/tabs.js)
+   content/browser/tabbrowser/tabs.mjs                    (content/tabs.mjs)
    content/browser/tabbrowser/tabsplitview.mjs            (content/tabsplitview.mjs)

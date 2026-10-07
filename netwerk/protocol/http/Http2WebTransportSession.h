@@ -83,6 +83,7 @@ class Http2WebTransportSessionImpl final : public WebTransportSessionBase,
   void CloseSession(uint32_t aStatus, const nsACString& aReason) override;
   uint64_t GetStreamId() const override;
   void GetMaxDatagramSize() override;
+  void GetStats() override;
   void SendDatagram(nsTArray<uint8_t>&& aData, uint64_t aTrackingId,
                     uint64_t aSendGroupId, int64_t aSendOrder) override;
   nsresult ExportKeyingMaterial(const nsTArray<uint8_t>& aLabel,

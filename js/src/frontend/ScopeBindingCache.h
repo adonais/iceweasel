@@ -28,6 +28,7 @@ struct CompilationStencil;
 struct ScopeStencilRef;
 struct FakeStencilGlobalScope;
 struct CompilationStencilMerger;
+struct InitialStencilAndDelazifications;
 
 // Generic atom wrapper which provides a way to interpret any Atom given
 // contextual information. Thus, this structure offers the ability to compare

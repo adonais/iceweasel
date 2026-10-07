@@ -41,8 +41,8 @@ class BufferedStunSocketTest : public MtransportTest {
     ASSERT_EQ(0, r);
     dummy_ = std::move(dummy);  // Now owned by test_socket_.
 
-    r = nr_str_port_to_transport_addr((char*)"192.0.2.133", 3333, IPPROTO_TCP,
-                                      &remote_addr_);
+    r = nr_str_port_to_transport_addr((char*)"192.0.2.133", nullptr, 3333,
+                                      IPPROTO_TCP, &remote_addr_);
     ASSERT_EQ(0, r);
 
     r = nr_socket_connect(test_socket_, &remote_addr_);
@@ -143,8 +143,8 @@ TEST_F(BufferedStunSocketTest, TestSendToReject) {
 TEST_F(BufferedStunSocketTest, TestSendToWrongAddr) {
   nr_transport_addr addr;
 
-  int r = nr_str_port_to_transport_addr((char*)"192.0.2.134", 3333, IPPROTO_TCP,
-                                        &addr);
+  int r = nr_str_port_to_transport_addr((char*)"192.0.2.134", nullptr, 3333,
+                                        IPPROTO_TCP, &addr);
   ASSERT_EQ(0, r);
 
   r = nr_socket_sendto(test_socket_, kStunMessage, kStunMessageLen, 0, &addr);

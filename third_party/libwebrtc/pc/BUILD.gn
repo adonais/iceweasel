@@ -955,6 +955,7 @@ rtc_library("data_channel_controller") {
     ":sctp_utils",
     "../api:data_channel_event_observer_interface",
     "../api:data_channel_interface",
+    "../api:peer_connection_interface",
     "../api:priority",
     "../api:rtc_error",
     "../api:scoped_refptr",
@@ -2796,6 +2797,30 @@ if (rtc_include_tests && !build_with_chromium) {
     ]
   }
 
+  rtc_cc_test("peer_connection_tracer_unittest") {
+    sources = [ "peer_connection_tracer_unittest.cc" ]
+    deps = [
+      ":enable_fake_media",
+      ":pc_test_utils",
+      ":peer_connection",
+      ":peerconnection_wrapper",
+      "../api:create_modular_peer_connection_factory",
+      "../api:data_channel_interface",
+      "../api:jsep",
+      "../api:make_ref_counted",
+      "../api:peer_connection_interface",
+      "../api:rtc_error",
+      "../api:scoped_refptr",
+      "../rtc_base:rtc_base_tests_utils",
+      "../rtc_base:threading",
+      "../test:create_test_environment",
+      "../test:run_loop",
+      "../test:test_support",
+      "../test:wait_until",
+      "//third_party/abseil-cpp/absl/strings:string_view",
+    ]
+  }
+
   rtc_cc_test("peer_connection_data_channel_unittest") {
     sources = [ "peer_connection_data_channel_unittest.cc" ]
     deps = [
@@ -3238,6 +3263,7 @@ if (rtc_include_tests && !build_with_chromium) {
       "../api/audio_codecs:builtin_audio_encoder_factory",
       "../api/units:data_rate",
       "../api/video:render_resolution",
+      "../api/video:video_codec_constants",
       "../api/video_codecs:video_codecs_api",
       "../api/video_codecs:video_decoder_factory_template",
       "../api/video_codecs:video_decoder_factory_template_dav1d_adapter",
@@ -4170,6 +4196,7 @@ if (rtc_include_tests && !build_with_chromium) {
       ":peer_connection_rtp_unittest",
       ":peer_connection_signaling_unittest",
       ":peer_connection_simulcast_unittest",
+      ":peer_connection_tracer_unittest",
       ":proxy_unittest",
       ":rtc_stats_collector_unittest",
       ":rtc_stats_traversal_unittest",

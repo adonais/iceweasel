@@ -19,6 +19,7 @@
 
 #include <cstdio>
 #include <limits>
+#include <memory>
 #include <new>
 #include <string>
 
@@ -26,7 +27,9 @@
 // Get EXCEPTION_* constants defined with DWORD type
 #  include <ntstatus.h>
 
-#  include "components/zucchini/exception_filter_helper_win.h"
+#  if defined(HAVE_SEH_EXCEPTIONS)
+#    include "components/zucchini/exception_filter_helper_win.h"
+#  endif  // HAVE_SEH_EXCEPTIONS
 
 #  include <io.h>
 #endif  // BUILDFLAG(IS_WIN)
@@ -34,7 +37,7 @@
 namespace zucchini::mozilla {
 
 #ifdef ENABLE_TESTS
-// Helpers for crash recovery tests.
+// Helpers for crash test scenarios.
 
 static TestOptions gTestOptions;
 
@@ -85,8 +88,8 @@ static void MaybeTriggerTestCheckFailure() {
 
 static LogFunctionPtr gLogFunction = nullptr;
 
-bool LogMessageHandler(int aSeverity, const char* aFile, int aLine,
-                       size_t aMessageStart, const std::string& aStr) {
+static bool LogMessageHandler(int aSeverity, const char* aFile, int aLine,
+                              size_t aMessageStart, const std::string& aStr) {
   if (!gLogFunction) {
     return false;
   }
@@ -99,28 +102,64 @@ void SetLogFunction(LogFunctionPtr aLogFunction) {
   logging::SetLogMessageHandler(LogMessageHandler);
 }
 
-uint32_t ComputeCrc32(const uint8_t* aBuf, size_t aBufSize) {
-  return CalculateCrc32(aBuf, aBuf + aBufSize);
-}
+#if !defined(__cpp_exceptions)
+#  error The zucchini interface code requires compiler support for C++ exceptions.
+#endif  // !cpp_exceptions
 
-// This is zucchini::ApplyBuffer, except that we *assume* that aCheckedOldImage
-// has the correct size and crc32 instead of checking it.
-status::Code ApplyBufferUnsafe(ConstBufferView aCheckedOldImage,
-                               const EnsemblePatchReader& aPatchReader,
-                               MutableBufferView aNewImage) {
-  for (const auto& elementPatch : aPatchReader.elements()) {
-    ElementMatch match = elementPatch.element_match();
-    if (!ApplyElement(match.exe_type(),
-                      aCheckedOldImage[match.old_element.region()],
-                      elementPatch, aNewImage[match.new_element.region()]))
-      return status::kStatusFatal;
+
+// Catch C++ exceptions raised within zucchini code. This lets the updater
+// recover from standard library allocation failures, so it can write an OOM
+// update.status and run post-failure cleanup. We wrap the entire body of
+// every entry point reachable from updater.cpp, making sure we cover all the
+// zucchini code it uses.
+//
+// Every entry point into zucchini thus returns a status code. Running into a
+// C++ std::bad_alloc exception returns kStatusOutOfMemory. Any other C++
+// exception results in kStatusFatal, although that should never happen.
+
+#define BEGIN_ENTRY_POINT() try {
+#define END_ENTRY_POINT()                                                 \
+  }                                                                       \
+  catch (const std::bad_alloc&) {                                         \
+    LOG(ERROR) << "std::bad_alloc caught in zucchini.";                   \
+    return status::kStatusOutOfMemory;                                    \
+  }                                                                       \
+  catch (...) {                                                           \
+    LOG(ERROR) << "unknown exception caught in zucchini; this is a bug."; \
+    return status::kStatusFatal;                                          \
   }
 
-  if (!aPatchReader.CheckNewFile(ConstBufferView(aNewImage))) {
-    LOG(ERROR) << "Invalid aNewImage.";
-    return status::kStatusInvalidNewImage;
-  }
+#if BUILDFLAG(IS_WIN) && defined(HAVE_SEH_EXCEPTIONS)
+// Narrow handler that stays around the code touching the mapped file ranges,
+// where EXCEPTION_IN_PAGE_ERROR can be raised. Usable only within member
+// functions, as it relies on mImpl. This reflects the exception catching
+// present in upstream zucchini::ApplyCommon (zucchini_integration.cc).
+#  define BEGIN_PAGE_ERROR_TRY_EXCEPT() __try {
+#  define END_PAGE_ERROR_TRY_EXCEPT()                                      \
+    }                                                                      \
+    __except (mImpl->mExceptionFilterHelper.FilterPageError(               \
+        GetExceptionInformation()->ExceptionRecord)) {                     \
+      LOG(ERROR) << "EXCEPTION_IN_PAGE_ERROR while "                       \
+                 << (mImpl->mExceptionFilterHelper.is_write()              \
+                         ? "writing to"                                    \
+                         : "reading from")                                 \
+                 << " mapped files; NTSTATUS = "                           \
+                 << mImpl->mExceptionFilterHelper.nt_status();             \
+      return mImpl->mExceptionFilterHelper.nt_status() == STATUS_DISK_FULL \
+                 ? status::kStatusDiskFull                                 \
+                 : status::kStatusIoError;                                 \
+    }
+#else
+#  define BEGIN_PAGE_ERROR_TRY_EXCEPT()
+#  define END_PAGE_ERROR_TRY_EXCEPT()
+#endif  // BUILDFLAG(IS_WIN) && HAVE_SEH_EXCEPTIONS
+
+status::Code ComputeCrc32(const uint8_t* aBuf, size_t aBufSize,
+                          uint32_t& aOutCrc32) {
+  BEGIN_ENTRY_POINT()
+  aOutCrc32 = CalculateCrc32(aBuf, aBuf + aBufSize);
   return status::kStatusSuccess;
+  END_ENTRY_POINT()
 }
 
 class MappedPatchImpl {
@@ -129,98 +168,31 @@ class MappedPatchImpl {
   ~MappedPatchImpl() = default;
   std::optional<MappedFileReader> mFileReader;
   EnsemblePatchReader mPatchReader;
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) && defined(HAVE_SEH_EXCEPTIONS)
   ExceptionFilterHelper mExceptionFilterHelper;
-  DWORD mLastExceptionCode = 0;
-#endif  // BUILDFLAG(IS_WIN)
+#endif  // BUILDFLAG(IS_WIN) && HAVE_SEH_EXCEPTIONS
 };
 
-MappedPatch::MappedPatch() : mImpl(new MappedPatchImpl()) {}
-
-MappedPatch::~MappedPatch() { delete mImpl; }
-
-#if BUILDFLAG(IS_WIN)
-#  if !defined(HAVE_SEH_EXCEPTIONS) || !HAVE_SEH_EXCEPTIONS
-#    error Compiler support for SEH is required to build zucchini on Windows.
-#  endif
-
-static constexpr DWORD kMsvcCppExceptionCode = 0xE06D7363;
-
-// SEH filter for exceptions raised within zucchini code. Without this,
-// recoverable exceptions would crash the updater before it can write
-// update.status, causing SERVICE_STILL_APPLYING_ON_FAILURE errors.
-//
-// We only catch exceptions where the process state is known to be sound:
-// - EXCEPTION_IN_PAGE_ERROR on mapped ranges (I/O failure, process healthy)
-// - EXCEPTION_BREAKPOINT/EXCEPTION_ILLEGAL_INSTRUCTION (deliberate crash from
-//   Chromium CHECK via ImmediateCrash, data validation failure)
-// - 0xE06D7363 (MSVC C++ exception: std::bad_alloc from non-fallible
-//   allocations in zucchini's disassembler. Neither zucchini nor its base shim
-//   contain any explicit throw, so bad_alloc is the only possible C++ exception
-//   observed here. On Windows, operator new allocation failure still surfaces
-//   through SEH with this exception code.)
-//
-// Exceptions indicating corrupt process state (EXCEPTION_ACCESS_VIOLATION,
-// EXCEPTION_STACK_OVERFLOW, etc.) are left unhandled so the process crashes
-// as expected.
-static int FilterZucchiniException(
-    EXCEPTION_RECORD* aExceptionRecord,
-    ExceptionFilterHelper& aPageErrorHelper,
-    DWORD& aOutExceptionCode) {
-  aOutExceptionCode = aExceptionRecord->ExceptionCode;
-
-  // Check if this is a page error on our mapped ranges. This populates
-  // nt_status/is_write for the handler to use in its diagnostic message.
-  int pageResult = aPageErrorHelper.FilterPageError(aExceptionRecord);
-  if (pageResult == EXCEPTION_EXECUTE_HANDLER) {
-    return EXCEPTION_EXECUTE_HANDLER;
-  }
-
-  if (aOutExceptionCode == EXCEPTION_BREAKPOINT ||
-      aOutExceptionCode == EXCEPTION_ILLEGAL_INSTRUCTION ||
-      aOutExceptionCode ==
-          kMsvcCppExceptionCode /* MSVC C++ exception (std::bad_alloc) */) {
-    return EXCEPTION_EXECUTE_HANDLER;
-  }
-
-  return EXCEPTION_CONTINUE_SEARCH;
+status::Code MappedPatch::Initialize() {
+  BEGIN_ENTRY_POINT()
+  mImpl = new MappedPatchImpl();
+  return status::kStatusSuccess;
+  END_ENTRY_POINT()
 }
 
-#  define BEGIN_TRY_EXCEPT() __try {
-#  define END_TRY_EXCEPT()                                                 \
-    }                                                                      \
-    __except (FilterZucchiniException(                                     \
-        GetExceptionInformation()->ExceptionRecord,                        \
-        mImpl->mExceptionFilterHelper, mImpl->mLastExceptionCode)) {       \
-      if (mImpl->mLastExceptionCode == EXCEPTION_IN_PAGE_ERROR) {          \
-        LOG(ERROR) << "EXCEPTION_IN_PAGE_ERROR while "                     \
-                   << (mImpl->mExceptionFilterHelper.is_write()            \
-                           ? "writing to"                                  \
-                           : "reading from")                               \
-                   << " mapped files; NTSTATUS = "                         \
-                   << mImpl->mExceptionFilterHelper.nt_status();           \
-        return mImpl->mExceptionFilterHelper.nt_status() ==                \
-                       STATUS_DISK_FULL                                    \
-                   ? status::kStatusDiskFull                               \
-                   : status::kStatusIoError;                               \
-      }                                                                    \
-      if (mImpl->mLastExceptionCode == kMsvcCppExceptionCode) {            \
-        return status::kStatusOutOfMemory;                                 \
-      }                                                                    \
-      LOG(ERROR) << "CHECK failure (exception 0x" << std::hex              \
-                 << mImpl->mLastExceptionCode                              \
-                 << ") caught in zucchini; this is a bug.";                \
-      return status::kStatusFatal;                                         \
-    }
-#else
-#  define BEGIN_TRY_EXCEPT()
-#  define END_TRY_EXCEPT()
-#endif  // BUILDFLAG(IS_WIN)
+status::Code MappedPatch::Finalize() {
+  BEGIN_ENTRY_POINT()
+  auto* impl = mImpl;
+  mImpl = nullptr;
+  delete impl;
+  return status::kStatusSuccess;
+  END_ENTRY_POINT()
+}
 
 // This corresponds to the first half of zucchini::ApplyCommon.
-status::Code MappedPatch::Load(FILE* aPatchFile, uint32_t* aSourceSize,
-                               uint32_t* aDestinationSize,
-                               uint32_t* aSourceCrc32) {
+status::Code MappedPatch::LoadImpl(FILE* aPatchFile, uint32_t* aSourceSize,
+                                   uint32_t* aDestinationSize,
+                                   uint32_t* aSourceCrc32) {
   base::File patchFile = base::FILEToFile(aPatchFile);
   if (!patchFile.IsValid()) {
     LOG(ERROR) << "Invalid patch file.";
@@ -235,17 +207,11 @@ status::Code MappedPatch::Load(FILE* aPatchFile, uint32_t* aSourceSize,
     }
     return status::kStatusFileReadError;
   }
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) && defined(HAVE_SEH_EXCEPTIONS)
   mImpl->mExceptionFilterHelper.AddRange(
       {fileReader.data(), fileReader.length()});
-#endif
-  BEGIN_TRY_EXCEPT()
-#ifdef ENABLE_TESTS
-  ScopedDestructorMarker destructorTester;
-  MaybeTriggerTestBadAlloc();
-  MaybeTriggerTestCheckFailure();
-#endif  // ENABLE_TESTS
-
+#endif  // BUILDFLAG(IS_WIN) && HAVE_SEH_EXCEPTIONS
+  BEGIN_PAGE_ERROR_TRY_EXCEPT()
   BufferSource source(fileReader.region());
   auto& patchReader = mImpl->mPatchReader;
   if (!patchReader.Initialize(&source)) {
@@ -257,13 +223,55 @@ status::Code MappedPatch::Load(FILE* aPatchFile, uint32_t* aSourceSize,
   *aDestinationSize = header.new_size;
   *aSourceCrc32 = header.old_crc;
   return status::kStatusSuccess;
-  END_TRY_EXCEPT()
+  END_PAGE_ERROR_TRY_EXCEPT()
+}
+
+status::Code MappedPatch::Load(FILE* aPatchFile, uint32_t* aSourceSize,
+                               uint32_t* aDestinationSize,
+                               uint32_t* aSourceCrc32) {
+  if (!mImpl) {
+    return mInitStatus;
+  }
+  BEGIN_ENTRY_POINT()
+  return LoadImpl(aPatchFile, aSourceSize, aDestinationSize, aSourceCrc32);
+  END_ENTRY_POINT()
+}
+
+// This is zucchini::ApplyBuffer, except that we *assume* that aCheckedOldImage
+// has the correct size and crc32 instead of checking it.
+static status::Code ApplyBufferUnsafe(ConstBufferView aCheckedOldImage,
+                                      const EnsemblePatchReader& aPatchReader,
+                                      MutableBufferView aNewImage) {
+#ifdef ENABLE_TESTS
+  // We want updater tests to simulate zucchini failures occurring in the worst
+  // possible location from the updater recovery's point of view. Failing here
+  // simulates a failure in the middle of patch application, with the new image
+  // still open and mapped, which makes recovery quite subtle.
+  ScopedDestructorMarker destructorTester;
+  MaybeTriggerTestBadAlloc();
+  MaybeTriggerTestCheckFailure();
+#endif  // ENABLE_TESTS
+
+  for (const auto& elementPatch : aPatchReader.elements()) {
+    ElementMatch match = elementPatch.element_match();
+    if (!ApplyElement(match.exe_type(),
+                      aCheckedOldImage[match.old_element.region()],
+                      elementPatch, aNewImage[match.new_element.region()]))
+      return status::kStatusFatal;
+  }
+
+  if (!aPatchReader.CheckNewFile(ConstBufferView(aNewImage))) {
+    LOG(ERROR) << "Invalid aNewImage.";
+    return status::kStatusInvalidNewImage;
+  }
+
+  return status::kStatusSuccess;
 }
 
 // This corresponds to the second half of zucchini::ApplyCommon.
-status::Code MappedPatch::ApplyUnsafe(const uint8_t* aCheckedOldImage,
-                                      size_t aCheckedOldImageSize,
-                                      FILE* aNewFile) {
+status::Code MappedPatch::ApplyUnsafeImpl(const uint8_t* aCheckedOldImage,
+                                          size_t aCheckedOldImageSize,
+                                          FILE* aNewFile) {
   ConstBufferView oldImageView(aCheckedOldImage, aCheckedOldImageSize);
 
   base::File newFile = base::FILEToFile(aNewFile);
@@ -272,7 +280,7 @@ status::Code MappedPatch::ApplyUnsafe(const uint8_t* aCheckedOldImage,
     return status::kStatusFileWriteError;
   }
 
-  BEGIN_TRY_EXCEPT()
+  BEGIN_PAGE_ERROR_TRY_EXCEPT()
   PatchHeader header = mImpl->mPatchReader.header();
   base::FilePath name;
   name = name.AppendASCII("old_name");
@@ -286,10 +294,10 @@ status::Code MappedPatch::ApplyUnsafe(const uint8_t* aCheckedOldImage,
     return status::kStatusFileWriteError;
   }
 
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) && defined(HAVE_SEH_EXCEPTIONS)
   mImpl->mExceptionFilterHelper.AddRange(
       {mappedNew.data(), mappedNew.length()});
-#endif
+#endif  // BUILDFLAG(IS_WIN) && HAVE_SEH_EXCEPTIONS
 
   status::Code result =
       ApplyBufferUnsafe(oldImageView, mImpl->mPatchReader, mappedNew.region());
@@ -304,7 +312,18 @@ status::Code MappedPatch::ApplyUnsafe(const uint8_t* aCheckedOldImage,
   }
 
   return status::kStatusSuccess;
-  END_TRY_EXCEPT()
+  END_PAGE_ERROR_TRY_EXCEPT()
+}
+
+status::Code MappedPatch::ApplyUnsafe(const uint8_t* aCheckedOldImage,
+                                      size_t aCheckedOldImageSize,
+                                      FILE* aNewFile) {
+  if (!mImpl) {
+    return mInitStatus;
+  }
+  BEGIN_ENTRY_POINT()
+  return ApplyUnsafeImpl(aCheckedOldImage, aCheckedOldImageSize, aNewFile);
+  END_ENTRY_POINT()
 }
 
 }  // namespace zucchini::mozilla

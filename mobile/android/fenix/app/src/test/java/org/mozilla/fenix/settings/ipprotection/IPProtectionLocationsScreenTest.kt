@@ -9,6 +9,7 @@ package org.mozilla.fenix.settings.ipprotection
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHasNoClickAction
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -42,11 +43,11 @@ class IPProtectionLocationsScreenTest {
 
         setScreen(selectedLocation = JAPAN, isActivating = true) { selections.add(it) }
 
-        composeTestRule.onNodeWithText(JAPAN.displayName(LOCALE)).assertHasNoClickAction()
-        composeTestRule.onNodeWithText(GERMANY.displayName(LOCALE)).assertHasNoClickAction().performClick()
+        composeTestRule.onNodeWithText(JAPAN.displayName(LOCALE)).assertIsNotEnabled()
+        composeTestRule.onNodeWithText(GERMANY.displayName(LOCALE)).assertIsNotEnabled().performClick()
         composeTestRule
             .onNodeWithText(testContext.getString(R.string.ip_protection_location_recommended_label))
-            .assertHasNoClickAction()
+            .assertIsNotEnabled()
 
         assertEquals(emptyList<Location>(), selections)
     }
@@ -62,16 +63,26 @@ class IPProtectionLocationsScreenTest {
         assertEquals(listOf<Location>(GERMANY), selections)
     }
 
+    @Test
+    fun `GIVEN a country is unavailable WHEN the proxy is activating THEN the location has no click action`() {
+        val disabledLocation = Country(countryCode = "gb", available = false)
+        val locations = LOCATIONS + disabledLocation
+        setScreen(selectedLocation = JAPAN, isActivating = false, locations = locations)
+
+        composeTestRule.onNodeWithText(disabledLocation.displayName(LOCALE)).assertHasNoClickAction()
+    }
+
     private fun setScreen(
         selectedLocation: Location,
         isActivating: Boolean,
+        locations: List<Location> = LOCATIONS,
         onLocationSelected: (Location) -> Unit = {},
     ) {
         composeTestRule.setContent {
             FirefoxTheme(theme = Theme.Light) {
                 IPProtectionLocationsScreen(
                     selectedLocation = selectedLocation,
-                    locations = LOCATIONS,
+                    locations = locations,
                     snackbarHostState = SnackbarHostState(),
                     isActivating = isActivating,
                     onNavigateBack = {},

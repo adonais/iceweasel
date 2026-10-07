@@ -5,8 +5,6 @@
 #ifndef mozilla_dom_serviceworkerprivate_h
 #define mozilla_dom_serviceworkerprivate_h
 
-#include <functional>
-
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
@@ -268,11 +266,9 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
   RefPtr<GenericNonExclusivePromise> ShutdownInternal(
       uint32_t aShutdownStateId);
 
-  nsresult ExecServiceWorkerOp(
+  RefPtr<ServiceWorkerOpPromise> ExecServiceWorkerOp(
       ServiceWorkerOpArgs&& aArgs,
-      const ServiceWorkerLifetimeExtension& aLifetimeExtension,
-      std::function<void(ServiceWorkerOpResult&&)>&& aSuccessCallback,
-      std::function<void()>&& aFailureCallback = [] {});
+      const ServiceWorkerLifetimeExtension& aLifetimeExtension);
 
   class PendingFunctionalEvent {
    public:

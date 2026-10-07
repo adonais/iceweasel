@@ -14,6 +14,7 @@ class StaticMutex;
 enum class RemoteMediaIn;
 
 using PEMCreateEncoderPromise = PlatformEncoderModule::CreateEncoderPromise;
+using PEMSupportsEncoderPromise = PlatformEncoderModule::SupportsEncoderPromise;
 
 class PEMFactory final {
  public:
@@ -33,6 +34,13 @@ class PEMFactory final {
 
   media::EncodeSupportSet Supports(const EncoderConfig& aConfig) const;
   media::EncodeSupportSet SupportsCodec(CodecType aCodec) const;
+
+  // Asynchronous variant of Supports() that resolves once the encoder module
+  // which would handle aConfig can report accurate (hardware-inclusive)
+  // support. For remote modules this waits for the relevant process to report
+  // in. Must be called off the main thread.
+  RefPtr<PEMSupportsEncoderPromise> SupportsAsync(
+      const EncoderConfig& aConfig) const;
 
   static media::MediaCodecsSupported Supported(bool aForceRefresh = false);
   static media::EncodeSupportSet SupportsCodec(

@@ -48,6 +48,7 @@ import android.view.ContextThemeWrapper;
 import android.view.Display;
 import android.view.Display.HdrCapabilities;
 import android.view.InputDevice;
+import android.view.ViewConfiguration;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
@@ -469,8 +470,8 @@ public class GeckoAppShell {
   /** The wake-lock is held by a background window. */
   static final int WAKE_LOCK_STATE_LOCKED_BACKGROUND = 2;
 
-  @SuppressLint("Wakelock") // We keep the wake lock independent from the function
-  // scope, so we need to suppress the linter warning.
+  // Gecko acquires and releases these locks in separate calls, for as long as it needs them.
+  @SuppressLint({"Wakelock", "WakelockTimeout"})
   private static void setWakeLockState(final String lock, final int state) {
     if (sWakeLocks == null) {
       sWakeLocks = new SimpleArrayMap<>(WAKE_LOCKS_COUNT);
@@ -987,6 +988,7 @@ public class GeckoAppShell {
   }
 
   private static Context sApplicationContext;
+  private static ViewConfiguration sViewConfiguration;
   private static Boolean sIs24HourFormat = true;
 
   @WrapForJNI
@@ -1545,6 +1547,18 @@ public class GeckoAppShell {
   @WrapForJNI
   public static boolean getIs24HourFormat() {
     return sIs24HourFormat;
+  }
+
+  @WrapForJNI
+  private static int getTextCursorBlinkIntervalMillis() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA
+        || Build.VERSION.SDK_INT_FULL < Build.VERSION_CODES_FULL.BAKLAVA_1) {
+      return 500;
+    }
+    if (sViewConfiguration == null) {
+      sViewConfiguration = ViewConfiguration.get(getApplicationContext());
+    }
+    return sViewConfiguration.getTextCursorBlinkIntervalMillis();
   }
 
   @WrapForJNI

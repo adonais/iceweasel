@@ -174,13 +174,31 @@
         "_lastClosedTabGroupCount": {
           "type": "integer"
         },
+        "args": {
+          "$comment": "Introduced Firefox 156, bug 2066315",
+          "description": "Arguments to supply to nsIWindowWatcher.openWindow in order to restore a window's previous state",
+          "type": "object",
+          "properties": {
+            "web-extension-popup-window": {
+              "description": "Popup window opened by WebExtensions",
+              "type": "boolean"
+            },
+            "chromeless-window": {
+              "description": "Window with minimal chrome UI",
+              "type": "boolean"
+            }
+          }
+        },
         "chromeFlags": {
+          "$comment": "Introduced Firefox 99, bug 1728800",
           "type": "integer"
         },
         "height": {
           "type": "integer"
         },
         "hidden": {
+          "$comment": "Removed Firefox 156, bug 2065228",
+          "deprecated": true,
           "type": "string"
         },
         "isAIWindow": {

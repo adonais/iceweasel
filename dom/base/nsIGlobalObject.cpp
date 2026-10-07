@@ -439,7 +439,7 @@ void nsIGlobalObject::BroadcastReport(Report* aReport) {
 
   const uint32_t maxReportCount =
       mozilla::StaticPrefs::dom_reporting_delivering_maxReports();
-  const nsString& reportType = aReport->Type();
+  nsAtom* reportType = aReport->Type();
 
   for (size_t i = 0u; count > maxReportCount && i < mReportBuffer.Length();) {
     if (mReportBuffer[i]->Type() == reportType) {

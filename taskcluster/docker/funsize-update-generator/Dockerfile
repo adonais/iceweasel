@@ -26,7 +26,8 @@ ENV LANGUAGE en_CA.UTF-8
 ENV LANG_ALL en_CA.UTF-8
 ENV LC_ALL en_CA.UTF-8
 
-RUN ["pip", "install", "--break-system-packages", "-r", "/requirements.txt"]
+RUN ["pip", "install", "--break-system-packages", "--no-deps", "-r", "/requirements.txt"]
+RUN ["pip", "check"]
 
 # scripts
 COPY --chown=worker:worker scripts/* /builds/worker/bin/

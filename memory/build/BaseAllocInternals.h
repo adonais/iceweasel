@@ -8,7 +8,7 @@
 #include "mozilla/DoublyLinkedList.h"
 #include "mozilla/Maybe.h"
 
-#include "BaseAlloc.h"
+#include "RedBlackTree.h"
 
 // Allocation sizes must fit in a 31 bit unsigned integer.
 typedef uint32_t base_alloc_size_t;
@@ -128,6 +128,14 @@ class BaseAllocCell {
     ClearPayload();
   }
 
+  // disable copy, move and new since this class must only be used in-place.
+  BaseAllocCell(const BaseAllocCell&) = delete;
+  void operator=(const BaseAllocCell&) = delete;
+  BaseAllocCell(BaseAllocCell&&) = delete;
+  void operator=(BaseAllocCell&&) = delete;
+  void* operator new(size_t) = delete;
+  void* operator new[](size_t) = delete;
+
   static BaseAllocCell* GetCell(void* aPtr) {
     return reinterpret_cast<BaseAllocCell*>(aPtr);
   }
@@ -216,14 +224,6 @@ class BaseAllocCell {
  private:
   // Decommit pages within this cell cell.
   void DoDecommit(uintptr_t aFirstDecommit, uintptr_t aNBytes);
-
-  // disable copy, move and new since this class must only be used in-place.
-  BaseAllocCell(const BaseAllocCell&) = delete;
-  void operator=(const BaseAllocCell&) = delete;
-  BaseAllocCell(BaseAllocCell&&) = delete;
-  void operator=(BaseAllocCell&&) = delete;
-  void* operator new(size_t) = delete;
-  void* operator new[](size_t) = delete;
 
  public:
   void* operator new(size_t aSize, void* aPtr) {

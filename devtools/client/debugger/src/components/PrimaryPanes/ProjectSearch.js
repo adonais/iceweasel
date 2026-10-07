@@ -43,14 +43,6 @@ export const statusType = {
   error: "ERROR",
 };
 
-function getFilePath(item, index) {
-  return item.type === "RESULT"
-    ? `${item.location.source.id}-${index || "$"}`
-    : `${item.location.source.id}-${item.location.line}-${
-        item.location.column
-      }-${index || "$"}`;
-}
-
 export class ProjectSearch extends Component {
   constructor(props) {
     super(props);
@@ -230,7 +222,12 @@ export class ProjectSearch extends Component {
 
   renderFile = (file, focused, expanded) => {
     const matchesLength = file.matches.length;
-    const matches = ` (${matchesLength} match${matchesLength > 1 ? "es" : ""})`;
+    const localizedMatchCount = PluralForm.get(
+      matchesLength,
+      L10N.getStr("projectTextSearch.results.matchCount")
+    ).replace("#1", matchesLength);
+    const matches = ` (${localizedMatchCount})`;
+
     return div(
       {
         className: classnames("file-result", {
@@ -342,7 +339,6 @@ export class ProjectSearch extends Component {
         autoExpandDepth: 1,
         autoExpandNodeChildrenLimit: 100,
         getParent: () => null,
-        getPath: getFilePath,
         renderItem: this.renderItem,
         focused: this.state.focusedItem,
         onFocus: this.onFocus,
@@ -365,7 +361,10 @@ export class ProjectSearch extends Component {
           });
         },
         preventBlur: true,
-        getKey: getFilePath,
+        getKey: item =>
+          item.type === "RESULT"
+            ? `${item.location.source.id}`
+            : `${item.location.source.id}-${item.location.line}-${item.location.column}`,
       });
     }
     const msg =

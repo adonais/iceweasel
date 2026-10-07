@@ -203,14 +203,14 @@ nsresult Estimate(nsIPrincipal* aPrincipal, nsIQuotaCallback* aCallback,
   MOZ_ASSERT(aCallback);
   MOZ_ASSERT(aRequest);
 
-  // Firefox and Quota Manager have always used the schemeless origin group
-  // (https://storage.spec.whatwg.org/#schemeless-origin-group) for quota limit
-  // purposes. This has been to prevent a site/eTLD+1 from claiming more than
-  // its fair share of storage through the use of sub-domains. Because the limit
-  // is at the group level and the usage needs to make sense in the context of
-  // that limit, we also expose the group usage. Bug 1374970 reflects this
-  // reality and bug 1305665 tracks our plan to eliminate our use of groups for
-  // this.
+  // Firefox and Quota Manager have always used the group (all origins sharing
+  // the same eTLD+1, i.e. a site) for quota limit purposes. This has been to
+  // prevent a site from claiming more than its fair share of storage through
+  // the use of sub-domains. The reported usage is the origin's own usage
+  // (https://storage.spec.whatwg.org/#storage-usage), while the reported quota
+  // is still the group limit, which is an allowed implementation-defined
+  // conservative estimate (https://storage.spec.whatwg.org/#storage-quota).
+  // Bug 1305665 tracks our plan to eliminate our use of groups for this.
 
   nsCOMPtr<nsIQuotaManagerService> qms = QuotaManagerService::GetOrCreate();
   if (NS_WARN_IF(!qms)) {

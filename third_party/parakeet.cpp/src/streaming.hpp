@@ -81,6 +81,19 @@ public:
     std::vector<int32_t> feed_mel_chunk(const std::vector<float>& mel_chunk,
                                         int n_frames, bool is_last = false);
 
+    // Firefox-local: close the utterance in progress without ending the stream,
+    // for a model with no <EOU> piece. Every word decoded so far becomes final
+    // and the decoder restarts, so nothing can extend them.
+    std::string end_utterance();
+
+    // Whether the model marks utterance boundaries itself, i.e. has an <EOU>.
+    bool has_eou() const { return eou_id_ >= 0; }
+
+    // Firefox-local: audio decoded since the RNN-T last emitted a token. The
+    // endpointing signal for a host with no <EOU>, and it needs no noise-floor
+    // tuning: the model has already told speech from background.
+    double blank_seconds() const { return blank_frames_ * frame_sec_; }
+
     // Flush the end-of-stream tail. Mirrors NeMo's final-chunk keep_all_outputs:
     // re-feeds the LAST buffered mel chunk (if the caller did not already mark it
     // is_last) so the trailing encoder frames complete, decoding any remaining
@@ -155,6 +168,13 @@ private:
     std::vector<int32_t> non_special_;  // non-special tokens, for detokenize
     std::string text_;
     size_t text_taken_ = 0;        // byte offset of text_ already returned
+
+    // Encoder frames since the last emitted token; see blank_seconds().
+    int64_t blank_frames_ = 0;
+    // Tokens emitted since the last utterance boundary. end_utterance() is a
+    // no-op while this is zero: there is nothing to close, and resetting the
+    // decoder for nothing can only discard a decode in progress.
+    size_t tokens_since_boundary_ = 0;
 
     bool last_chunk_had_eou_ = false;
     std::vector<EouEvent> events_;

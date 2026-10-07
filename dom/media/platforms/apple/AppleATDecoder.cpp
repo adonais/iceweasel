@@ -162,7 +162,7 @@ AppleATDecoder::AppleATDecoder(const AudioInfo& aConfig)
       }
 
       mEncoderDelay = aacCodecSpecificData.mEncoderDelayFrames;
-      mTotalMediaFrames = aacCodecSpecificData.mMediaFrameCount;
+      mTotalMediaFrames = aacCodecSpecificData.mMediaFrameCount.valueOr(0);
       LOG("AppleATDecoder (aac), found encoder delay ({}) and total frame "
           "count ({}) in codec-specific side data",
           mEncoderDelay, mTotalMediaFrames);

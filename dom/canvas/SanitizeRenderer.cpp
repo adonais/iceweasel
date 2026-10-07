@@ -24,8 +24,8 @@ static bool Contains(const std::string& str, const std::string& part) {
  */
 static std::optional<std::string> ChooseDeviceReplacement(
     const std::string& str) {
-  if (str.find("llvmpipe") == 0) return "llvmpipe";
-  if (str.find("Apple") == 0) return "Apple M1";
+  if (str.starts_with("llvmpipe")) return "llvmpipe";
+  if (str.starts_with("Apple")) return "Apple M1";
 
   std::smatch m;
 
@@ -177,7 +177,7 @@ static std::optional<std::string> ChooseDeviceReplacement(
     });
     // On ANGLE: NVIDIA GeForce RTX 3070...
     // On WGL: GeForce RTX 3070...
-    if (str.find("NVIDIA") == 0) {
+    if (str.starts_with("NVIDIA")) {
       ret = "NVIDIA " + ret;
     }
     return ret;

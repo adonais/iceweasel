@@ -9,7 +9,6 @@
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/RefMessageBodyService.h"
 #include "mozilla/dom/SharedMessageBody.h"
-#include "mozilla/dom/quota/CheckedUnsafePtr.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "nsTArray.h"
 
@@ -42,9 +41,7 @@ class MessagePortService::MessagePortServiceData final {
   explicit MessagePortServiceData(const nsID& aDestinationUUID)
       : mDestinationUUID(aDestinationUUID),
         mSequenceID(1),
-        mParent(nullptr)
         // By default we don't know the next parent.
-        ,
         mWaitingForNewParent(true),
         mNextStepCloseAll(false) {
     MOZ_COUNT_CTOR(MessagePortServiceData);
@@ -58,7 +55,7 @@ class MessagePortService::MessagePortServiceData final {
   nsID mDestinationUUID;
 
   uint32_t mSequenceID;
-  CheckedUnsafePtr<MessagePortParent> mParent;
+  RefPtr<MessagePortParent> mParent;
 
   FallibleTArray<NextParent> mNextParents;
   nsTArray<NotNull<RefPtr<SharedMessageBody>>> mMessages;
@@ -197,7 +194,7 @@ bool MessagePortService::DisentanglePort(
 
   // If we don't have a parent, we have to store the pending messages and wait.
   uint32_t index = 0;
-  MessagePortParent* nextParent = nullptr;
+  RefPtr<MessagePortParent> nextParent;
   for (; index < data->mNextParents.Length(); ++index) {
     if (data->mNextParents[index].mSequenceID == data->mSequenceID) {
       nextParent = data->mNextParents[index].mParent;

@@ -187,7 +187,6 @@ FRAME_CLASSES = [
     AbstractFrame("nsIPercentBSizeObserver"),
     AbstractFrame("nsIPopupContainer"),
     AbstractFrame("nsIScrollbarMediator"),
-    AbstractFrame("nsIStatefulFrame"),
     AbstractFrame("ISVGDisplayableFrame"),
     AbstractFrame("ISVGSVGFrame"),
     AbstractFrame("nsITableCellLayout"),

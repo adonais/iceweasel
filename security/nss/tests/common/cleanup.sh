@@ -12,6 +12,10 @@ if [ -z "${CLEANUP}" -o "${CLEANUP}" = "${SCRIPTNAME}" ]; then
         BUILD_OPT=1;
     fi
 
+    # Last chance to spot a core dumped since the previous rate-limited scan,
+    # and it has to happen before the counts below are taken.
+    html_detect_core_force "end of test core detection"
+
     echo
     echo "SUMMARY:"
     echo "========"

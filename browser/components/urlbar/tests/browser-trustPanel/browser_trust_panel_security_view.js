@@ -204,7 +204,7 @@ add_task(async function test_2_qwac() {
   const tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     opening:
-      "https://bound-by-2-qwac.example.com/browser/browser/base/content/test/siteIdentity/2-qwac.html",
+      "https://bound-by-2-qwac.example.com/browser/browser/base/content/test/browser-siteIdentity/2-qwac.html",
     waitForLoad: true,
   });
 

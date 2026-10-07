@@ -2,6 +2,10 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
+const { Region } = ChromeUtils.importESModule(
+  "resource://gre/modules/Region.sys.mjs"
+);
+
 async function waitForAIWindow(browser) {
   await SpecialPowers.spawn(browser, [], async () => {
     await ContentTaskUtils.waitForCondition(
@@ -92,6 +96,79 @@ add_task(async function test_aichat_browser_tabbable_when_chat_active() {
     if (win) {
       await BrowserTestUtils.closeWindow(win);
     }
+    restoreSignIn();
+    await restore();
+  }
+});
+
+// An agent command (e.g. /watch) renders the monitor card inside the chat
+// browser, so it too must switch the layout to chat-active and put the browser
+// back in the tab order. Previously this only happened in fullpage, so in the
+// sidebar the whole "Create a task" panel was skipped by Tab/Shift+Tab until a
+// click focused it (bug 2073449).
+add_task(async function test_aichat_browser_tabbable_after_sidebar_command() {
+  const restoreSignIn = skipSignIn();
+  const { restore } = await stubEngineNetworkBoundaries();
+
+  const originalRegion = Region.home;
+  Region._setHomeRegion("US", false);
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.agent.enabled", true],
+      ["browser.smartwindow.agent.supportedRegions", "US"],
+    ],
+  });
+
+  let win;
+  let sidebarBrowser;
+  try {
+    ({ win, sidebarBrowser } = await openAIWindowWithSidebar());
+
+    await SpecialPowers.spawn(sidebarBrowser, [], async () => {
+      const aiWindow = content.document.querySelector("ai-window");
+      Assert.ok(
+        !aiWindow.classList.contains("chat-active"),
+        "Sidebar starts without the chat layout active"
+      );
+      const aichatBrowser = await ContentTaskUtils.waitForCondition(
+        () => aiWindow.shadowRoot?.querySelector("#aichat-browser"),
+        "Wait for #aichat-browser"
+      );
+      Assert.equal(
+        aichatBrowser.getAttribute("tabindex"),
+        "-1",
+        "#aichat-browser is out of tab order before a command runs"
+      );
+    });
+
+    await typeInSmartbar(sidebarBrowser, "/watch");
+    await waitForPanelOpen(sidebarBrowser);
+
+    await SpecialPowers.spawn(sidebarBrowser, [], async () => {
+      const aiWindow = content.document.querySelector("ai-window");
+      const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+      smartbar.inputField.view.focus();
+      EventUtils.synthesizeKey("KEY_Enter", {}, content);
+
+      await ContentTaskUtils.waitForCondition(
+        () => aiWindow.classList.contains("chat-active"),
+        "Running /watch switches the sidebar into the chat view"
+      );
+
+      const aichatBrowser =
+        aiWindow.shadowRoot.querySelector("#aichat-browser");
+      Assert.equal(
+        aichatBrowser.getAttribute("tabindex"),
+        null,
+        "#aichat-browser rejoins tab order so keyboard users can reach the task panel"
+      );
+    });
+  } finally {
+    if (win) {
+      await BrowserTestUtils.closeWindow(win);
+    }
+    await SpecialPowers.popPrefEnv();
+    Region._setHomeRegion(originalRegion, false);
     restoreSignIn();
     await restore();
   }

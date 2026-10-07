@@ -346,13 +346,15 @@ class MochiRemoteIos(MochitestDesktop):
         # finalize output handler
         outputHandler.finish()
 
-        lastTestSeen = currentManifest or "Main app process exited normally"
+        # mozcrash records this verbatim as the crash's `test`, so it has to be the
+        # test that was running; a manifest path can never be matched back to one.
+        lastTestSeen = self.lastTestSeen or currentManifest
 
         crashed = self.check_for_crashes(symbolsPath, lastTestSeen)
         if crashed:
             status = 1
 
-        return status, lastTestSeen
+        return status, lastTestSeen or "Main app process exited normally"
 
     def check_for_crashes(self, symbols_path, last_test_seen):
         """

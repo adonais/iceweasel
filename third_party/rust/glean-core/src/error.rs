@@ -9,6 +9,9 @@ use std::result;
 
 use rkv::StoreError;
 
+#[cfg(feature = "sqlite")]
+use crate::database::sqlite::{OpenError, SchemaError};
+
 /// A specialized [`Result`] type for this crate's operations.
 ///
 /// This is generally used to avoid writing out [`Error`] directly and
@@ -65,6 +68,14 @@ pub enum ErrorKind {
 
     /// Parsing a UUID from a string failed
     UuidError(uuid::Error),
+
+    /// Database/SQLite error
+    #[cfg(feature = "sqlite")]
+    SQLite(rusqlite::Error),
+
+    /// Schema error
+    #[cfg(feature = "sqlite")]
+    Schema(SchemaError),
 }
 
 /// A specialized [`Error`] type for this crate's operations.
@@ -121,6 +132,10 @@ impl Display for Error {
                 s / 1024
             ),
             UuidError(e) => write!(f, "Failed to parse UUID: {}", e),
+            #[cfg(feature = "sqlite")]
+            SQLite(e) => write!(f, "SQLite error: {}", e),
+            #[cfg(feature = "sqlite")]
+            Schema(e) => write!(f, "Schema error: {}", e),
         }
     }
 }
@@ -151,6 +166,31 @@ impl From<serde_json::error::Error> for Error {
     fn from(error: serde_json::error::Error) -> Error {
         Error {
             kind: ErrorKind::Json(error),
+        }
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl From<rusqlite::Error> for Error {
+    fn from(error: rusqlite::Error) -> Error {
+        Error {
+            kind: ErrorKind::SQLite(error),
+        }
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl From<OpenError> for Error {
+    fn from(error: OpenError) -> Error {
+        match error {
+            OpenError::IncompatibleVersion(v) => Error {
+                kind: ErrorKind::Schema(SchemaError::UnsupportedSchemaVersion(v)),
+            },
+            OpenError::Corrupt => Error {
+                kind: ErrorKind::NotInitialized,
+            },
+            OpenError::SqlError(error) => error.into(),
+            OpenError::RecoveryError(error) => error.into(),
         }
     }
 }

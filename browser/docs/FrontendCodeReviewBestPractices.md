@@ -136,7 +136,7 @@ This section covers some frontend-specific aspects of patches that reviewers are
 * For new code, use fluent. For modifying older code, use what the old code uses (but consider switching to fluent if it’s straightforward, as it provides better translation primitives in other languages).
 * When writing experimental features that need strings for en-US only that are not final yet, use fluent and put the ftl file in a `content` rather than `locale` directory and package it accordingly. When strings are final, move them to a regular `locale` directory and include them as normal but make sure to do so outside string freeze and while allowing reasonable time for our (largely volunteer) localisers to submit translations - don’t just dump dozens of strings into `locale` a day before string freeze.
 * If the meaning of a string changes, or \[in fluent\] you add/remove attributes, **you must update the message identifier**.
-* More detailed [fluent review guidelines](/l10n/fluent/review.md#guidelines-for-fluent-reviewers) are available separately.
+* More detailed [fluent review guidelines](/l10n/fluent/review.md#guidelines-for-working-with-fluent-files) are available separately.
 
 ### Accessibility {#accessibility}
 

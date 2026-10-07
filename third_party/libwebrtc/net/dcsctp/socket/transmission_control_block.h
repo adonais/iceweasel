@@ -146,8 +146,10 @@ class TransmissionControlBlock : public Context {
 
   HandoverReadinessStatus GetHandoverReadiness() const;
 
-  void AddHandoverState(DcSctpSocketHandoverState& state);
-  void RestoreFromState(const DcSctpSocketHandoverState& handover_state);
+  void AddHandoverState(webrtc::Timestamp now,
+                        DcSctpSocketHandoverState& state);
+  void RestoreFromState(webrtc::Timestamp now,
+                        const DcSctpSocketHandoverState& handover_state);
 
  private:
   // Will be called when the retransmission timer (t3-rtx) expires.

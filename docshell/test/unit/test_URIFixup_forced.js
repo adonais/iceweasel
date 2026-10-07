@@ -145,12 +145,12 @@ add_task(function test_default_https_pref() {
       Assert.equal(
         fixupChangedProtocol,
         !item.noProtocolFixup,
-        `fixupChangedProtocol should be ${!item.noProtocolFixup}`
+        `fixupChangedProtocol should be ${!item.noAlternateURI}`
       );
       Assert.equal(
         fixupCreatedAlternateURI,
         !item.noAlternateURI,
-        `fixupCreatedAlternateURI should be ${!item.noAlternateURI}`
+        `fixupCreatedAlternateURI should be ${!item.limitedFixup}`
       );
     }
   }

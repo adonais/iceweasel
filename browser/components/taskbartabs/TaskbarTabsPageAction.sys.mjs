@@ -10,6 +10,7 @@ let lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
   TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
   TaskbarTabsUtils: "resource:///modules/taskbartabs/TaskbarTabsUtils.sys.mjs",
 });
@@ -125,6 +126,15 @@ function initVisibilityChanges(aWindow, aElement) {
 
   const shouldShow = aLocation => {
     if (!isTaskbarTabsEnabled) {
+      return false;
+    }
+
+    // Technically, we should also observe this, but since it's probably being
+    // set on an about page it wouldn't show there anyways.
+    if (
+      AppConstants.platform === "linux" &&
+      !lazy.ShellService.desktopEntryApi
+    ) {
       return false;
     }
 

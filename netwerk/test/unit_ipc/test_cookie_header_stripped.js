@@ -56,7 +56,7 @@ function run_test() {
   do_await_remote_message("check-cookie-count").then(() => {
     do_send_remote_message(
       "check-cookie-count-done",
-      Services.cookies.countCookiesFromHost(TEST_DOMAIN)
+      Services.cookies.countCookiesFromHost(TEST_DOMAIN, {})
     );
   });
 
@@ -66,7 +66,7 @@ function run_test() {
   do_await_remote_message("second-check-cookie-count").then(() => {
     do_send_remote_message(
       "second-check-cookie-count-done",
-      Services.cookies.countCookiesFromHost(TEST_DOMAIN)
+      Services.cookies.countCookiesFromHost(TEST_DOMAIN, {})
     );
   });
 

@@ -641,6 +641,17 @@ def rust_simd(value, target):
 set_config("MOZ_RUST_SIMD", rust_simd)
 set_define("MOZ_RUST_SIMD", rust_simd)
 
+
+@depends(rust_simd)
+def rustc_bootstrap_default(rust_simd):
+    crates = ["mozglue_static", "qcms"]
+    if rust_simd:
+        crates += ["encoding_rs", "any_all_workaround"]
+    return ",".join(crates)
+
+
+set_config("MOZ_RUSTC_BOOTSTRAP_DEFAULT", rustc_bootstrap_default)
+
 # Telemetry to measure compile time and generated-code runtime
 # ============================================================
 

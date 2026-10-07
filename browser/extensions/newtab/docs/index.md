@@ -48,7 +48,7 @@ To build assets and run Firefox, run the following from the root of the mozilla-
 
 ## Continuous development / debugging
 
-For near real-time reloading, run the following commands in **two separate terminals** to automatically rebuild bundled files whenever JSX or SCSS files change. After making a change, [restart your local instance](/devtools-user/browser_console/index.html#controlling-the-browser) to apply the updates. Run the following terminal commands:
+For near real-time reloading, run the following commands in **two separate terminals** to automatically rebuild bundled files whenever JSX or SCSS files change. After making a change, [restart your local instance](/devtools-user/browser_console/index.md#controlling-the-browser) to apply the updates. Run the following terminal commands:
 
 ```shell
 ./mach newtab watch

@@ -96,9 +96,6 @@ fail-if = [
 ["browser_markup_display_node_02.js"]
 
 ["browser_markup_dom_mutation_breakpoints.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_markup_dragdrop_autoscroll_01.js"]
 

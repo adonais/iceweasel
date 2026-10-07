@@ -114,7 +114,7 @@ You can also use the example app for native debugging, follow the
 Once you’ve successfully built GV, you can run tests from the GeckoView
 JUnit test suite with `./mach geckoview-junit`. For further examples
 (eg running individual tests, repeating tests, etc.), consult the [quick
-start guide](geckoview-quick-start.md#running-tests-locally).
+start guide](geckoview-quick-start.md#running-tests-and-linter-locally).
 
 #### Fenix and other GV-based Apps
 

@@ -290,8 +290,6 @@ module.exports = function (config) {
               path.resolve("../newtab"),
               path.resolve("modules/ASRouterTargeting.sys.mjs"),
               path.resolve("modules/ASRouterTriggerListeners.sys.mjs"),
-              path.resolve("modules/CFRMessageProvider.sys.mjs"),
-              path.resolve("modules/CFRPageActions.sys.mjs"),
               path.resolve("modules/OnboardingMessageProvider.sys.mjs"),
             ],
           },

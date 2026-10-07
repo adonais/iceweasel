@@ -18,7 +18,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/FeaturePolicy.h"
+#include "mozilla/dom/PermissionsPolicy.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/net/CookieJarSettings.h"
@@ -311,7 +311,8 @@ StorageAccessAPIHelper::AllowAccessForHelper(
 StorageAccessAPIHelper::AllowAccessForOnParentProcess(
     nsIPrincipal* aPrincipal, dom::BrowsingContext* aParentContext,
     ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
-    const StorageAccessAPIHelper::PerformPermissionGrant& aPerformFinalChecks) {
+    const StorageAccessAPIHelper::PerformPermissionGrant& aPerformFinalChecks,
+    const Maybe<bool>& aHadPriorUserInteraction) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(aParentContext);
 
@@ -330,14 +331,15 @@ StorageAccessAPIHelper::AllowAccessForOnParentProcess(
 
   return StorageAccessAPIHelper::CompleteAllowAccessForOnParentProcess(
       aParentContext, topLevelWindowId, trackingPrincipal, trackingOrigin,
-      behavior, aReason, aPerformFinalChecks);
+      behavior, aReason, aPerformFinalChecks, aHadPriorUserInteraction);
 }
 
 /* static */ RefPtr<StorageAccessAPIHelper::StorageAccessPermissionGrantPromise>
 StorageAccessAPIHelper::AllowAccessForOnChildProcess(
     nsIPrincipal* aPrincipal, dom::BrowsingContext* aParentContext,
     ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
-    const StorageAccessAPIHelper::PerformPermissionGrant& aPerformFinalChecks) {
+    const StorageAccessAPIHelper::PerformPermissionGrant& aPerformFinalChecks,
+    const Maybe<bool>& aHadPriorUserInteraction) {
   MOZ_ASSERT(XRE_IsContentProcess());
   MOZ_ASSERT(aParentContext);
 
@@ -373,7 +375,7 @@ StorageAccessAPIHelper::AllowAccessForOnChildProcess(
         !isThirdParty) {
       return StorageAccessAPIHelper::CompleteAllowAccessForOnChildProcess(
           aParentContext, topLevelWindowId, trackingPrincipal, trackingOrigin,
-          behavior, aReason, aPerformFinalChecks);
+          behavior, aReason, aPerformFinalChecks, aHadPriorUserInteraction);
     }
   }
 
@@ -389,7 +391,7 @@ StorageAccessAPIHelper::AllowAccessForOnChildProcess(
   return cc
       ->SendCompleteAllowAccessFor(aParentContext, topLevelWindowId,
                                    trackingPrincipal, trackingOrigin, behavior,
-                                   aReason)
+                                   aReason, aHadPriorUserInteraction)
       ->Then(GetCurrentSerialEventTarget(), __func__,
              [bc, trackingOrigin, behavior,
               aReason](const ContentChild::CompleteAllowAccessForPromise::
@@ -449,7 +451,8 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnParentProcess(
     nsIPrincipal* aTrackingPrincipal, const nsACString& aTrackingOrigin,
     uint32_t aCookieBehavior,
     ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
-    const PerformPermissionGrant& aPerformFinalChecks) {
+    const PerformPermissionGrant& aPerformFinalChecks,
+    const Maybe<bool>& aHadPriorUserInteraction) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(aParentContext);
 
@@ -486,6 +489,9 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnParentProcess(
   //
   // For ePrivilegeStorageAccessForOriginAPI, we explicitly don't check the user
   // interaction for the tracking origin.
+  //
+  // If the user-interaction state is available via aHadPriorUserInteraction,
+  // we use that value with a fallback to getting the current interaction state
 
   bool isInPrefList = false;
   trackingPrincipal->IsURIInPrefList(
@@ -493,8 +499,9 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnParentProcess(
       "userInteractionRequiredForHosts",
       &isInPrefList);
   if (aReason != ContentBlockingNotifier::ePrivilegeStorageAccessForOriginAPI &&
-      isInPrefList &&
-      !ContentBlockingUserInteraction::Exists(trackingPrincipal)) {
+      isInPrefList && !aHadPriorUserInteraction.valueOrFrom([&] {
+        return ContentBlockingUserInteraction::Exists(trackingPrincipal);
+      })) {
     LOG_PRIN(("Tracking principal (%s) hasn't been interacted with before, "
               "refusing to add a first-party storage permission to access it",
               _spec),
@@ -691,7 +698,8 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnChildProcess(
     nsIPrincipal* aTrackingPrincipal, const nsACString& aTrackingOrigin,
     uint32_t aCookieBehavior,
     ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
-    const PerformPermissionGrant& aPerformFinalChecks) {
+    const PerformPermissionGrant& aPerformFinalChecks,
+    const Maybe<bool>& aHadPriorUserInteraction) {
   MOZ_ASSERT_IF(XRE_IsContentProcess(), aParentContext->IsInProcess());
   MOZ_ASSERT(XRE_IsContentProcess());
   MOZ_ASSERT(aParentContext);
@@ -720,9 +728,11 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnChildProcess(
       "privacy.restrict3rdpartystorage."
       "userInteractionRequiredForHosts",
       &isInPrefList);
+  // See the comment in CompleteAllowAccessForOnParentProcess.
   if (aReason != ContentBlockingNotifier::ePrivilegeStorageAccessForOriginAPI &&
-      isInPrefList &&
-      !ContentBlockingUserInteraction::Exists(aTrackingPrincipal)) {
+      isInPrefList && !aHadPriorUserInteraction.valueOrFrom([&] {
+        return ContentBlockingUserInteraction::Exists(aTrackingPrincipal);
+      })) {
     LOG_PRIN(("Tracking principal (%s) hasn't been interacted with before, "
               "refusing to add a first-party storage permission to access it",
               _spec),
@@ -1171,7 +1181,7 @@ Maybe<bool> StorageAccessAPIHelper::CheckCallingContextDecidesStorageAccessAPI(
 
   if (aRequestingStorageAccess) {
     // Perform a Permission Policy Request
-    dom::FeaturePolicy* policy = aDocument->FeaturePolicy();
+    dom::PermissionsPolicy* policy = aDocument->PermissionsPolicy();
     MOZ_ASSERT(policy);
 
     if (!policy->AllowsFeature(u"storage-access"_ns,

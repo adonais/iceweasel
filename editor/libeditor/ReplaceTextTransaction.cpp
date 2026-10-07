@@ -85,12 +85,11 @@ NS_IMETHODIMP ReplaceTextTransaction::DoTransaction() {
 
   const OwningNonNull<EditorBase> editorBase = *mEditorBase;
 
-  IgnoredErrorResult error;
-  editorBase->DoReplaceText(*textNode, mOffset, mStringToBeReplaced.Length(),
-                            mStringToInsert, error);
-  if (MOZ_UNLIKELY(error.Failed())) {
+  nsresult rv = editorBase->DoReplaceText(
+      *textNode, mOffset, mStringToBeReplaced.Length(), mStringToInsert);
+  if (NS_FAILED(rv)) [[unlikely]] {
     NS_WARNING("EditorBase::DoReplaceText() failed");
-    return error.StealNSResult();
+    return rv;
   }
   // XXX What should we do if mutation event listener changed the node?
   editorBase->RangeUpdaterRef().SelAdjReplaceText(*textNode, mOffset,
@@ -131,11 +130,11 @@ NS_IMETHODIMP ReplaceTextTransaction::UndoTransaction() {
 
   const OwningNonNull<EditorBase> editorBase = *mEditorBase;
 
-  editorBase->DoReplaceText(*textNode, mOffset, mStringToInsert.Length(),
-                            mStringToBeReplaced, error);
-  if (MOZ_UNLIKELY(error.Failed())) {
+  nsresult rv = editorBase->DoReplaceText(
+      *textNode, mOffset, mStringToInsert.Length(), mStringToBeReplaced);
+  if (NS_FAILED(rv)) [[unlikely]] {
     NS_WARNING("EditorBase::DoReplaceText() failed");
-    return error.StealNSResult();
+    return rv;
   }
   // XXX What should we do if mutation event listener changed the node?
   editorBase->RangeUpdaterRef().SelAdjReplaceText(*textNode, mOffset,
@@ -192,11 +191,11 @@ NS_IMETHODIMP ReplaceTextTransaction::RedoTransaction() {
   }
 
   const OwningNonNull<EditorBase> editorBase = *mEditorBase;
-  editorBase->DoReplaceText(*textNode, mOffset, mStringToBeReplaced.Length(),
-                            mStringToInsert, error);
-  if (MOZ_UNLIKELY(error.Failed())) {
+  nsresult rv = editorBase->DoReplaceText(
+      *textNode, mOffset, mStringToBeReplaced.Length(), mStringToInsert);
+  if (NS_FAILED(rv)) [[unlikely]] {
     NS_WARNING("EditorBase::DoReplaceText() failed");
-    return error.StealNSResult();
+    return rv;
   }
   // XXX What should we do if mutation event listener changed the node?
   editorBase->RangeUpdaterRef().SelAdjReplaceText(*textNode, mOffset,

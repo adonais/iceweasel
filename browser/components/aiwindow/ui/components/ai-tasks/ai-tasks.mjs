@@ -21,7 +21,7 @@ import "chrome://global/content/elements/panel-list.mjs";
 
 // Default constants - will be overridden by values from the actor
 const DEFAULT_CONSTANTS = {
-  TOTAL_NUM_MONITORS: 5,
+  TOTAL_NUM_MONITORS: 15,
   TOTAL_NUM_URLS_IN_MONITOR: 5,
   SCHEDULE_TYPES: {
     DAILY: "daily",
@@ -224,12 +224,14 @@ export class AITasks extends MozLitElement {
   // ===== Getters =====
 
   /**
-   * Checks if the maximum number of monitors has been reached.
+   * Checks if the maximum number of active monitors has been reached.
+   * Paused monitors do not count toward the limit.
    *
-   * @returns {boolean} True if max monitors reached, false otherwise
+   * @returns {boolean} True if max active monitors reached, false otherwise
    */
   get isMaxMonitorsReached() {
-    return this.monitors.length >= this._constants.TOTAL_NUM_MONITORS;
+    const activeCount = this.monitors.filter(monitor => monitor.enabled).length;
+    return activeCount >= this._constants.TOTAL_NUM_MONITORS;
   }
 
   /**
@@ -542,6 +544,7 @@ export class AITasks extends MozLitElement {
                 .monitors=${this.monitors}
                 .scheduleTypes=${this._constants.SCHEDULE_TYPES}
                 .weekdays=${WEEKDAYS}
+                .canResume=${!this.isMaxMonitorsReached}
               ></monitors-display>
             </div>
           </div>`}

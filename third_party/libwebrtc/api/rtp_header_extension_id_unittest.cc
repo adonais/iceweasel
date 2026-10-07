@@ -11,6 +11,7 @@
 #include "api/rtp_header_extension_id.h"
 
 #include <cstdint>
+#include <optional>
 
 #include "test/gtest.h"
 
@@ -38,6 +39,18 @@ TEST(RtpHeaderExtensionId, AppropriateConstructorsChosen) {
   (void)t2;
   (void)t3;
   (void)t4;
+}
+
+TEST(RtpHeaderExtensionId, Create) {
+  EXPECT_EQ(RtpHeaderExtensionId::Create(-1), std::nullopt);
+  EXPECT_EQ(RtpHeaderExtensionId::Create(0), std::nullopt);
+
+  EXPECT_EQ(RtpHeaderExtensionId::Create(1), RtpHeaderExtensionId(1));
+  EXPECT_EQ(RtpHeaderExtensionId::Create(15), RtpHeaderExtensionId(15));
+  EXPECT_EQ(RtpHeaderExtensionId::Create(255), RtpHeaderExtensionId(255));
+
+  EXPECT_EQ(RtpHeaderExtensionId::Create(256), std::nullopt);
+  EXPECT_EQ(RtpHeaderExtensionId::Create(257), std::nullopt);
 }
 
 }  // namespace

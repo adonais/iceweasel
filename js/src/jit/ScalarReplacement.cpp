@@ -291,9 +291,6 @@ static bool IsObjectEscaped(MDefinition* ins, MInstruction* newObject,
         JitSpewDef(JitSpew_Escape, "is escaped by\n", def);
         return true;
 
-      case MDefinition::Opcode::PostWriteBarrier:
-        break;
-
       case MDefinition::Opcode::Slots: {
         // Ensure MSlots is only used by MStoreDynamicSlot and MLoadDynamicSlot.
         MSlots* slots = def->toSlots();
@@ -440,10 +437,6 @@ static bool IsObjectEscaped(MDefinition* ins, MInstruction* newObject,
       case MDefinition::Opcode::ConstantProto:
         break;
 
-      // We definitely don't need barriers for objects that don't exist.
-      case MDefinition::Opcode::AssertCanElidePostWriteBarrier:
-        break;
-
       default:
         JitSpewDef(JitSpew_Escape, "is escaped by\n", def);
         return true;
@@ -502,7 +495,6 @@ class ObjectMemoryView : public MDefinitionVisitorDefaultNoop {
   void visitGuardBoundFunctionIsConstructor(
       MGuardBoundFunctionIsConstructor* ins);
   void visitGuardObjectIdentity(MGuardObjectIdentity* ins);
-  void visitPostWriteBarrier(MPostWriteBarrier* ins);
   void visitStoreDynamicSlot(MStoreDynamicSlot* ins);
   void visitLoadDynamicSlot(MLoadDynamicSlot* ins);
   void visitGuardShape(MGuardShape* ins);
@@ -518,8 +510,6 @@ class ObjectMemoryView : public MDefinitionVisitorDefaultNoop {
   void visitCompare(MCompare* ins);
   void visitConstantProto(MConstantProto* ins);
   void visitIsObject(MIsObject* ins);
-  void visitAssertCanElidePostWriteBarrier(
-      MAssertCanElidePostWriteBarrier* ins);
 };
 
 /* static */ const char ObjectMemoryView::phaseName[] =
@@ -808,16 +798,6 @@ void ObjectMemoryView::visitGuardObjectIdentity(MGuardObjectIdentity* ins) {
   ins->block()->discard(ins);
 }
 
-void ObjectMemoryView::visitPostWriteBarrier(MPostWriteBarrier* ins) {
-  // Skip loads made on other objects.
-  if (ins->object() != obj_) {
-    return;
-  }
-
-  // Remove original instruction.
-  ins->block()->discard(ins);
-}
-
 void ObjectMemoryView::visitStoreDynamicSlot(MStoreDynamicSlot* ins) {
   // Skip stores made on other objects.
   MSlots* slots = ins->slots()->toSlots();
@@ -1079,15 +1059,6 @@ void ObjectMemoryView::visitIsObject(MIsObject* ins) {
   ins->replaceAllUsesWith(cst);
 
   // Remove original instruction.
-  ins->block()->discard(ins);
-}
-
-void ObjectMemoryView::visitAssertCanElidePostWriteBarrier(
-    MAssertCanElidePostWriteBarrier* ins) {
-  if (ins->object() != obj_) {
-    return;
-  }
-
   ins->block()->discard(ins);
 }
 
@@ -1361,10 +1332,6 @@ static bool IsArrayEscaped(MInstruction* ins, MInstruction* newArray) {
         break;
       }
 
-      case MDefinition::Opcode::PostWriteBarrier:
-      case MDefinition::Opcode::PostWriteElementBarrier:
-        break;
-
       // This instruction is a no-op used to verify that scalar replacement
       // is working as expected in jit-test.
       case MDefinition::Opcode::AssertRecoveredOnBailout:
@@ -1558,8 +1525,6 @@ class ArrayMemoryView : public GenericArrayReplacer {
   void visitSetInitializedLength(MSetInitializedLength* ins);
   void visitInitializedLength(MInitializedLength* ins);
   void visitArrayLength(MArrayLength* ins);
-  void visitPostWriteBarrier(MPostWriteBarrier* ins);
-  void visitPostWriteElementBarrier(MPostWriteElementBarrier* ins);
   void visitApplyArray(MApplyArray* ins);
   void visitConstructArray(MConstructArray* ins);
 };
@@ -1831,27 +1796,6 @@ void ArrayMemoryView::visitArrayLength(MArrayLength* ins) {
 
   // Remove original instruction.
   discardInstruction(ins, elements);
-}
-
-void ArrayMemoryView::visitPostWriteBarrier(MPostWriteBarrier* ins) {
-  // Skip barriers on other objects.
-  if (ins->object() != arr_) {
-    return;
-  }
-
-  // Remove original instruction.
-  ins->block()->discard(ins);
-}
-
-void ArrayMemoryView::visitPostWriteElementBarrier(
-    MPostWriteElementBarrier* ins) {
-  // Skip barriers on other objects.
-  if (ins->object() != arr_) {
-    return;
-  }
-
-  // Remove original instruction.
-  ins->block()->discard(ins);
 }
 
 void ArrayMemoryView::visitApplyArray(MApplyArray* ins) {
@@ -2547,12 +2491,10 @@ MNewArrayObject* ArgumentsReplacer::inlineArgsArray(MInstruction* ins,
       ins->block()->insertBefore(ins, index);
 
       MDefinition* arg = actualArgs->getArg(begin + i);
-      auto* store = MStoreElement::NewUnbarriered(alloc(), elements, index, arg,
-                                                  /* needsHoleCheck = */ false);
+      auto* store =
+          MStoreElement::NewNoPreBarrier(alloc(), elements, index, arg,
+                                         /* needsHoleCheck = */ false);
       ins->block()->insertBefore(ins, store);
-
-      auto* barrier = MPostWriteBarrier::New(alloc(), newArray, arg);
-      ins->block()->insertBefore(ins, barrier);
     }
 
     auto* initLength =

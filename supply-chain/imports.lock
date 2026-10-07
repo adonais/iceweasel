@@ -1,10 +1,6 @@
 
 # cargo-vet imports lock
 
-[[unpublished.cssparser]]
-version = "0.38.0"
-audited_as = "0.37.0"
-
 [[publisher.aho-corasick]]
 version = "1.1.0"
 when = "2023-09-18"
@@ -272,15 +268,22 @@ user-login = "jrmuizel"
 user-name = "Jeff Muizelaar"
 
 [[publisher.glean]]
-version = "68.0.1"
-when = "2026-07-07"
+version = "70.2.0"
+when = "2026-09-21"
 user-id = 48
 user-login = "badboy"
 user-name = "Jan-Erik Rediger"
 
 [[publisher.glean-core]]
-version = "68.0.1"
-when = "2026-07-07"
+version = "70.2.0"
+when = "2026-09-21"
+user-id = 48
+user-login = "badboy"
+user-name = "Jan-Erik Rediger"
+
+[[publisher.glean-sym]]
+version = "70.0.0"
+when = "2026-08-20"
 user-id = 48
 user-login = "badboy"
 user-name = "Jan-Erik Rediger"
@@ -368,6 +371,13 @@ user-id = 359
 user-login = "seanmonstar"
 user-name = "Sean McArthur"
 
+[[publisher.indexmap]]
+version = "2.14.1"
+when = "2026-08-28"
+user-id = 539
+user-login = "cuviper"
+user-name = "Josh Stone"
+
 [[publisher.inherent]]
 version = "1.0.7"
 when = "2023-03-25"
@@ -408,6 +418,11 @@ when = "2022-09-20"
 user-id = 2915
 user-login = "Amanieu"
 user-name = "Amanieu d'Antras"
+
+[[publisher.mach2]]
+version = "0.6.0"
+when = "2025-11-16"
+trusted-publisher = "github:JohnTitor/mach2"
 
 [[publisher.macho-unwind-info]]
 version = "0.5.0"
@@ -758,8 +773,8 @@ user-login = "Darksonn"
 user-name = "Alice Ryhl"
 
 [[publisher.toml]]
-version = "0.9.8"
-when = "2025-10-09"
+version = "1.1.5+spec-1.1.0"
+when = "2026-09-02"
 user-id = 6743
 user-login = "epage"
 user-name = "Ed Page"
@@ -772,15 +787,15 @@ user-login = "epage"
 user-name = "Ed Page"
 
 [[publisher.toml_parser]]
-version = "1.0.4"
-when = "2025-10-09"
+version = "1.1.3+spec-1.1.0"
+when = "2026-07-27"
 user-id = 6743
 user-login = "epage"
 user-name = "Ed Page"
 
 [[publisher.toml_writer]]
-version = "1.0.4"
-when = "2025-10-09"
+version = "1.1.2+spec-1.1.0"
+when = "2026-07-14"
 user-id = 6743
 user-login = "epage"
 user-name = "Ed Page"
@@ -788,13 +803,6 @@ user-name = "Ed Page"
 [[publisher.typeid]]
 version = "1.0.3"
 when = "2025-03-04"
-user-id = 3618
-user-login = "dtolnay"
-user-name = "David Tolnay"
-
-[[publisher.unicode-ident]]
-version = "1.0.6"
-when = "2022-12-17"
 user-id = 3618
 user-login = "dtolnay"
 user-name = "David Tolnay"
@@ -807,71 +815,71 @@ user-login = "Manishearth"
 user-name = "Manish Goregaokar"
 
 [[publisher.uniffi]]
-version = "0.31.0"
-when = "2026-01-14"
+version = "0.32.0"
+when = "2026-06-30"
 user-id = 111105
 user-login = "mhammond"
 user-name = "Mark Hammond"
 
 [[publisher.uniffi_bindgen]]
-version = "0.31.0"
-when = "2026-01-14"
+version = "0.32.0"
+when = "2026-06-30"
 user-id = 111105
 user-login = "mhammond"
 user-name = "Mark Hammond"
 
 [[publisher.uniffi_build]]
-version = "0.31.0"
-when = "2026-01-14"
+version = "0.32.0"
+when = "2026-06-30"
 user-id = 111105
 user-login = "mhammond"
 user-name = "Mark Hammond"
 
 [[publisher.uniffi_core]]
-version = "0.31.0"
-when = "2026-01-14"
+version = "0.32.0"
+when = "2026-06-30"
 user-id = 111105
 user-login = "mhammond"
 user-name = "Mark Hammond"
 
 [[publisher.uniffi_internal_macros]]
-version = "0.31.0"
-when = "2026-01-14"
+version = "0.32.0"
+when = "2026-06-30"
 user-id = 111105
 user-login = "mhammond"
 user-name = "Mark Hammond"
 
 [[publisher.uniffi_macros]]
-version = "0.31.0"
-when = "2026-01-14"
+version = "0.32.0"
+when = "2026-06-30"
 user-id = 111105
 user-login = "mhammond"
 user-name = "Mark Hammond"
 
 [[publisher.uniffi_meta]]
-version = "0.31.0"
-when = "2026-01-14"
+version = "0.32.0"
+when = "2026-06-30"
 user-id = 111105
 user-login = "mhammond"
 user-name = "Mark Hammond"
 
 [[publisher.uniffi_pipeline]]
-version = "0.31.0"
-when = "2026-01-14"
+version = "0.32.0"
+when = "2026-06-30"
 user-id = 111105
 user-login = "mhammond"
 user-name = "Mark Hammond"
 
 [[publisher.uniffi_testing]]
-version = "0.31.0"
-when = "2026-01-14"
+version = "0.32.0"
+when = "2026-06-30"
 user-id = 111105
 user-login = "mhammond"
 user-name = "Mark Hammond"
 
 [[publisher.uniffi_udl]]
-version = "0.31.0"
-when = "2026-01-14"
+version = "0.32.0"
+when = "2026-06-30"
 user-id = 111105
 user-login = "mhammond"
 user-name = "Mark Hammond"
@@ -1210,12 +1218,6 @@ delta = "0.9.0 -> 0.10.2"
 who = "Pat Hickey <phickey@fastly.com>"
 criteria = "safe-to-deploy"
 version = "1.1.4"
-
-[[audits.bytecode-alliance.audits.cargo-platform]]
-who = "Pat Hickey <phickey@fastly.com>"
-criteria = "safe-to-deploy"
-version = "0.1.2"
-notes = "no build, no ambient capabilities, no unsafe"
 
 [[audits.bytecode-alliance.audits.cargo_metadata]]
 who = "Pat Hickey <phickey@fastly.com>"
@@ -2549,31 +2551,6 @@ version = "2.0.0-beta2"
 notes = "Does not contain any unsafe code"
 aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
 
-[[audits.google.audits.indexmap]]
-who = "Lukasz Anforowicz <lukasza@chromium.org>"
-criteria = "safe-to-deploy"
-version = "2.7.1"
-notes = '''
-Grepped for `-i cipher`, `-i crypto`, `'\bfs\b'`, `'\bnet\b'`
-and there were no hits.
-
-There is a little bit of `unsafe` Rust code - the audit can be found at
-https://chromium-review.googlesource.com/c/chromium/src/+/6187726/2
-'''
-aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
-
-[[audits.google.audits.indexmap]]
-who = "Lukasz Anforowicz <lukasza@chromium.org>"
-criteria = "safe-to-deploy"
-delta = "2.7.1 -> 2.8.0"
-notes = """
-No `unsafe` introduced or affected in:
-* `indexmap_with_default!` and `indexset_with_default!` macros
-* New `PartialEq` implementations
-* `fn slice_eq` in `util.rs`
-"""
-aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
-
 [[audits.google.audits.itoa]]
 who = "Lukasz Anforowicz <lukasza@chromium.org>"
 criteria = "safe-to-deploy"
@@ -2625,30 +2602,30 @@ notes = "No unsafe"
 aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
 
 [[audits.google.audits.jxl]]
-who = "Łukasz Anforowicz <lukasza@chromium.org>"
+who = "Luca Versari <veluca@chromium.org>"
 criteria = "safe-to-deploy"
-version = "0.6.0"
-notes = "Delta review from v0.5.1"
+version = "0.7.4"
+notes = "Delta review from v0.7.3: no unsafe-relevant changes"
 aggregated-from = "https://raw.githubusercontent.com/google/rust-crate-audits/main/manual-sources/additional-audits.toml"
 
 [[audits.google.audits.jxl_macros]]
 who = "Luca Versari <veluca@chromium.org>"
 criteria = "safe-to-deploy"
-version = "0.6.0"
+version = "0.7.4"
 notes = "No unsafe code, no fs access"
 aggregated-from = "https://raw.githubusercontent.com/google/rust-crate-audits/main/manual-sources/additional-audits.toml"
 
 [[audits.google.audits.jxl_simd]]
-who = "Łukasz Anforowicz <lukasza@chromium.org>"
+who = "Luca Versari <veluca@chromium.org>"
 criteria = "safe-to-deploy"
-version = "0.6.0"
-notes = "Delta review from v0.5.1"
+version = "0.7.4"
+notes = "Delta review from v0.7.3: no unsafe-relevant changes"
 aggregated-from = "https://raw.githubusercontent.com/google/rust-crate-audits/main/manual-sources/additional-audits.toml"
 
 [[audits.google.audits.jxl_transforms]]
 who = "Luca Versari <veluca@chromium.org>"
 criteria = "safe-to-deploy"
-version = "0.6.0"
+version = "0.7.4"
 notes = "No unsafe code, no fs access"
 aggregated-from = "https://raw.githubusercontent.com/google/rust-crate-audits/main/manual-sources/additional-audits.toml"
 
@@ -3470,6 +3447,22 @@ criteria = "safe-to-run"
 version = "0.3.2"
 aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
 
+[[audits.google.audits.unicode-ident]]
+who = "Lukasz Anforowicz <lukasza@chromium.org>"
+criteria = "safe-to-deploy"
+version = "1.0.12"
+notes = '''
+I grepped for \"crypt\", \"cipher\", \"fs\", \"net\" - there were no hits.
+
+All two functions from the public API of this crate use `unsafe` to avoid bound
+checks for an array access.  Cross-module analysis shows that the offsets can
+be statically proven to be within array bounds.  More details can be found in
+the unsafe review CL at https://crrev.com/c/5350386.
+
+This crate has been added to Chromium in https://crrev.com/c/3891618.
+'''
+aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
+
 [[audits.google.audits.version_check]]
 who = "George Burgess IV <gbiv@google.com>"
 criteria = "safe-to-deploy"
@@ -3813,72 +3806,7 @@ who = "Ameer Ghani <inahga@letsencrypt.org>"
 criteria = "safe-to-deploy"
 delta = "0.5.1 -> 0.5.2"
 
-[[audits.mozilla.wildcard-audits.uniffi]]
-who = "Jan-Erik Rediger <jrediger@mozilla.com>"
-criteria = "safe-to-deploy"
-user-id = 111105 # Mark Hammond (mhammond)
-start = "2021-11-22"
-end = "2027-01-08"
-aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
-
-[[audits.mozilla.wildcard-audits.uniffi_bindgen]]
-who = "Jan-Erik Rediger <jrediger@mozilla.com>"
-criteria = "safe-to-deploy"
-user-id = 111105 # Mark Hammond (mhammond)
-start = "2021-11-22"
-end = "2027-01-08"
-aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
-
-[[audits.mozilla.wildcard-audits.uniffi_build]]
-who = "Jan-Erik Rediger <jrediger@mozilla.com>"
-criteria = "safe-to-deploy"
-user-id = 111105 # Mark Hammond (mhammond)
-start = "2021-11-22"
-end = "2027-01-08"
-aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
-
-[[audits.mozilla.wildcard-audits.uniffi_core]]
-who = "Jan-Erik Rediger <jrediger@mozilla.com>"
-criteria = "safe-to-deploy"
-user-id = 111105 # Mark Hammond (mhammond)
-start = "2023-11-20"
-end = "2027-01-08"
-aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
-
-[[audits.mozilla.wildcard-audits.uniffi_macros]]
-who = "Jan-Erik Rediger <jrediger@mozilla.com>"
-criteria = "safe-to-deploy"
-user-id = 111105 # Mark Hammond (mhammond)
-start = "2021-11-22"
-end = "2027-01-08"
-aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
-
-[[audits.mozilla.wildcard-audits.uniffi_meta]]
-who = "Jan-Erik Rediger <jrediger@mozilla.com>"
-criteria = "safe-to-deploy"
-user-id = 111105 # Mark Hammond (mhammond)
-start = "2023-11-20"
-end = "2027-01-08"
-aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
-
-[[audits.mozilla.wildcard-audits.uniffi_pipeline]]
-who = "Jan-Erik Rediger <jrediger@mozilla.com>"
-criteria = "safe-to-deploy"
-user-id = 111105 # Mark Hammond (mhammond)
-start = "2025-10-08"
-end = "2027-01-14"
-notes = "Maintained by the Glean and Application Services teams"
-aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
-
 [[audits.mozilla.wildcard-audits.uniffi_testing]]
-who = "Jan-Erik Rediger <jrediger@mozilla.com>"
-criteria = "safe-to-deploy"
-user-id = 111105 # Mark Hammond (mhammond)
-start = "2023-11-20"
-end = "2027-01-08"
-aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
-
-[[audits.mozilla.wildcard-audits.uniffi_udl]]
 who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 111105 # Mark Hammond (mhammond)
@@ -3940,6 +3868,19 @@ who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
 delta = "2.4.0 -> 2.4.1"
 notes = "Only allowing new clippy lints"
+aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.camino]]
+who = "Jan-Erik Rediger <jrediger@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "1.1.4 -> 1.1.9"
+notes = "No new unsafe code, some cleanup and a new function added"
+aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.camino]]
+who = "Jan-Erik Rediger <jrediger@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "1.1.9 -> 1.2.3"
 aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
 
 [[audits.mozilla.audits.cc]]
@@ -4059,6 +4000,18 @@ delta = "0.19.0 -> 0.20.0"
 notes = "Removed all LMDB-specific code, added malloc_size_of integration"
 aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
 
+[[audits.mozilla.audits.rmp]]
+who = "Jan-Erik Rediger <jrediger@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "0.8.14 -> 0.8.15"
+aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.rmp-serde]]
+who = "Jan-Erik Rediger <jrediger@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "1.3.0 -> 1.3.1"
+aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
+
 [[audits.mozilla.audits.rustc_version]]
 who = "Nika Layzell <nika@thelayzells.com>"
 criteria = "safe-to-deploy"
@@ -4165,5 +4118,12 @@ aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-c
 who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
 delta = "1.3.0 -> 1.4.0"
+notes = "Maintained by me. I have written or reviewed all of the code."
+aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.xshell-venv]]
+who = "Jan-Erik Rediger <jrediger@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "1.4.0 -> 2.0.0"
 notes = "Maintained by me. I have written or reviewed all of the code."
 aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"

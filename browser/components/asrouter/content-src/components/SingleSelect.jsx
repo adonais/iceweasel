@@ -124,6 +124,17 @@ export const SingleSelect = ({
                   activeSingleSelectSelections[singleSelectId] === value);
               const valOrObj = val => (typeof val === "object" ? val : {});
 
+              const iconStyle = MultiStageUtils.getValidStyle(
+                icon,
+                CONFIGURABLE_STYLES
+              );
+              if (icon?.darkModeBackground) {
+                iconStyle["--single-select-icon-background"] = icon.background;
+                iconStyle["--single-select-icon-background-dark"] =
+                  icon.darkModeBackground;
+                delete iconStyle.background;
+              }
+
               const handleClick = evt => {
                 if (isSingleSelect) {
                   setActiveSingleSelectSelection(value, singleSelectId); // Update selection for the specific component
@@ -147,7 +158,7 @@ export const SingleSelect = ({
                   {/* eslint-disable jsx-a11y/label-has-associated-control */}
                   {/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */}
                   <label
-                    className={`select-item ${type}`}
+                    className={`select-item ${type} ${selected ? " selected" : ""}`}
                     onKeyDown={e => handleKeyDown(e)}
                     style={{
                       ...MultiStageUtils.getValidStyle(
@@ -178,11 +189,8 @@ export const SingleSelect = ({
                       />
                     </Localized>
                     <div
-                      className={`icon ${selected ? " selected" : ""} ${value}`}
-                      style={MultiStageUtils.getValidStyle(
-                        icon,
-                        CONFIGURABLE_STYLES
-                      )}
+                      className={`icon ${icon?.darkModeBackground ? " has-dark-background" : ""} ${selected ? " selected" : ""} ${value}`}
+                      style={iconStyle}
                     />
                     <Localized text={label}>
                       <div className="text label-text" />

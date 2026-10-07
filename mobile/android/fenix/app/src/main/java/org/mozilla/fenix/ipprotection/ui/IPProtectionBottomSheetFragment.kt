@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
@@ -18,9 +19,8 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import java.time.LocalDate
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
-import org.mozilla.fenix.R
+import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
-import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ipprotection.helpers.IsoPromoDeadline
 import org.mozilla.fenix.ipprotection.helpers.formatPromoDateOrCatch
@@ -29,6 +29,7 @@ import org.mozilla.fenix.ipprotection.store.IPProtectionPromptPreferencesMiddlew
 import org.mozilla.fenix.ipprotection.store.IPProtectionPromptState
 import org.mozilla.fenix.ipprotection.store.IPProtectionPromptStore
 import org.mozilla.fenix.ipprotection.store.IPProtectionPromptTelemetryMiddleware
+import org.mozilla.fenix.ipprotection.store.Surface
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -108,13 +109,11 @@ class IPProtectionBottomSheetFragment : BottomSheetDialogFragment() {
                     onGetStartedClicked = {
                         ipProtectionPromptStore.dispatch(IPProtectionPromptAction.OnGetStartedClicked(args.surface))
                         findNavController()
-                            .nav(
-                                R.id.ipProtectionOnboardingDialogFragment,
-                                IPProtectionBottomSheetFragmentDirections
-                                    .actionIpProtectionOnboardingDialogFragmentToIpProtectionFragment(
-                                        startAuthFlow = true,
-                                        entrypoint = FenixFxAEntryPoint.IPProtectionOnboarding,
-                                    ),
+                            .navigate(
+                                NavGraphDirections.actionGlobalIpProtectionFragment(
+                                    startAuthFlow = true,
+                                    entrypoint = FenixFxAEntryPoint.IPProtectionOnboarding,
+                                )
                             )
                         dismiss()
                     },
@@ -151,5 +150,22 @@ class IPProtectionBottomSheetFragment : BottomSheetDialogFragment() {
 
     companion object {
         private const val IS_ALREADY_SHOW_KEY = "is_already_showing"
+        private const val TAG = "IPProtectionBottomSheetFragment"
+
+        /**
+         * Shows the IP Protection onboarding prompt for [surface], unless it is already shown.
+         *
+         * @param fragment The [Fragment] whose fragment manager shows the prompt.
+         * @param surface The [Surface] the prompt is shown on.
+         */
+        fun showPrompt(fragment: Fragment, surface: Surface) {
+            if (fragment.parentFragmentManager.findFragmentByTag(TAG) != null) {
+                return
+            }
+
+            IPProtectionBottomSheetFragment()
+                .apply { arguments = IPProtectionBottomSheetFragmentArgs(surface).toBundle() }
+                .showNow(fragment.parentFragmentManager, TAG)
+        }
     }
 }

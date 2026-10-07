@@ -5,7 +5,7 @@
 #include "nsWebBrowserFind.h"
 
 // Only need this for NS_FIND_CONTRACTID,
-// else we could use nsRange.h and nsIFind.h.
+// else we could use mozilla/dom/Range.h and nsIFind.h.
 #include "nsFind.h"
 
 #include "mozilla/dom/ScriptSettings.h"
@@ -24,10 +24,10 @@
 #include "nsFind.h"
 #include "nsError.h"
 #include "nsFocusManager.h"
-#include "nsRange.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/Services.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
@@ -299,7 +299,7 @@ nsWebBrowserFind::SetMatchDiacritics(bool aMatchDiacritics) {
 }
 
 already_AddRefed<Selection> nsWebBrowserFind::UpdateSelection(
-    nsPIDOMWindowOuter* aWindow, nsRange* aRange) {
+    nsPIDOMWindowOuter* aWindow, mozilla::dom::Range* aRange) {
   RefPtr<Document> doc = aWindow->GetDoc();
   if (!doc) {
     return nullptr;
@@ -357,10 +357,9 @@ already_AddRefed<Selection> nsWebBrowserFind::UpdateSelection(
   return selection.forget();
 }
 
-nsresult nsWebBrowserFind::SetRangeAroundDocument(nsRange* aSearchRange,
-                                                  nsRange* aStartPt,
-                                                  nsRange* aEndPt,
-                                                  Document* aDoc) {
+nsresult nsWebBrowserFind::SetRangeAroundDocument(
+    mozilla::dom::Range* aSearchRange, mozilla::dom::Range* aStartPt,
+    mozilla::dom::Range* aEndPt, Document* aDoc) {
   NS_ENSURE_ARG_POINTER(aDoc);
   uint32_t childCount = aDoc->GetChildCount();
 
@@ -378,8 +377,9 @@ nsresult nsWebBrowserFind::SetRangeAroundDocument(nsRange* aSearchRange,
 // Set the range to go from the end of the current selection to the end of the
 // document (forward), or beginning to beginning (reverse). or around the whole
 // document if there's no selection.
-nsresult nsWebBrowserFind::GetSearchLimits(nsRange* aSearchRange,
-                                           nsRange* aStartPt, nsRange* aEndPt,
+nsresult nsWebBrowserFind::GetSearchLimits(mozilla::dom::Range* aSearchRange,
+                                           mozilla::dom::Range* aStartPt,
+                                           mozilla::dom::Range* aEndPt,
                                            Document* aDoc, Selection* aSel,
                                            bool aWrap) {
   NS_ENSURE_ARG_POINTER(aSel);
@@ -397,13 +397,13 @@ nsresult nsWebBrowserFind::GetSearchLimits(nsRange* aSearchRange,
   // There are four possible range endpoints we might use:
   // DocumentStart, SelectionStart, SelectionEnd, DocumentEnd.
 
-  RefPtr<const nsRange> range;
+  RefPtr<const mozilla::dom::Range> range;
   nsCOMPtr<nsINode> node;
   uint32_t offset;
 
-  // Prevent the security checks in nsRange from getting into effect for the
-  // purposes of determining the search range. These ranges will never be
-  // exposed to content.
+  // Prevent the security checks in mozilla::dom::Range from getting into
+  // effect for the purposes of determining the search range. These ranges will
+  // never be exposed to content.
   mozilla::dom::AutoNoJSAPI nojsapi;
 
   // Forward, not wrapping: SelEnd to DocEnd
@@ -606,11 +606,11 @@ nsresult nsWebBrowserFind::SearchInFrame(nsPIDOMWindowOuter* aWindow,
   RefPtr<Selection> sel = GetFrameSelection(aWindow);
   NS_ENSURE_ARG_POINTER(sel);
 
-  RefPtr<nsRange> searchRange = nsRange::Create(theDoc);
-  RefPtr<nsRange> startPt = nsRange::Create(theDoc);
-  RefPtr<nsRange> endPt = nsRange::Create(theDoc);
+  RefPtr<mozilla::dom::Range> searchRange = mozilla::dom::Range::Create(theDoc);
+  RefPtr<mozilla::dom::Range> startPt = mozilla::dom::Range::Create(theDoc);
+  RefPtr<mozilla::dom::Range> endPt = mozilla::dom::Range::Create(theDoc);
 
-  RefPtr<nsRange> foundRange;
+  RefPtr<mozilla::dom::Range> foundRange;
 
   rv = GetSearchLimits(searchRange, startPt, endPt, theDoc, sel, aWrapping);
   NS_ENSURE_SUCCESS(rv, rv);

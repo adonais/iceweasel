@@ -12,6 +12,8 @@ run-sequentially = ["true"] # bug 1784963 - beacon-handler shares state
 
 ["test_beaconContentPolicy.html"]
 
+["test_beaconDisabled.html"]
+
 ["test_beaconFrame.html"]
 skip-if = [
   "http2",

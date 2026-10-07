@@ -745,6 +745,7 @@ export const URILoadingHelper = {
     if (
       top.document.documentElement.getAttribute("windowtype") ==
         "navigator:browser" &&
+      !top.document.documentElement.hasAttribute("mini-window") &&
       (!skipPopups || top.toolbar.visible) &&
       (!skipTaskbarTabs ||
         !top.document.documentElement.hasAttribute("taskbartab")) &&

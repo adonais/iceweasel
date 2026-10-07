@@ -4,7 +4,7 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
 const { MiscDataBackupResource } = ChromeUtils.importESModule(
-  "resource:///modules/backup/MiscDataBackupResource.sys.mjs"
+  "moz-src:///browser/components/backup/resources/MiscDataBackupResource.sys.mjs"
 );
 
 const { ASRouterStorage } = ChromeUtils.importESModule(

@@ -205,7 +205,7 @@ Tests involving Event Telemetry often follow this three-step form:
 
 - Firefox 54: Added child process events ([bug 1313326](https://bugzilla.mozilla.org/show_bug.cgi?id=1313326)).
 
-- Firefox 56: Added support for recording new probes from add-ons ([bug 1302681](bughttps://bugzilla.mozilla.org/show_bug.cgi?id=1302681)).
+- Firefox 56: Added support for recording new probes from add-ons ([bug 1302681](https://bugzilla.mozilla.org/show_bug.cgi?id=1302681)).
 
 - Firefox 58:
 

@@ -16,7 +16,7 @@ urlbar:
     description: Recorded when the user abandons a search (blurring the urlbar).
     extra_keys:
       abandonment_type:
-        description: >
+        description: |
           Records how the search session ended. `blur` is recorded when the
           input lost focus, `tab_switch` when a tab switch left the input
           focused. Only the address bar can stay focused across a tab switch,
@@ -25,22 +25,22 @@ urlbar:
           the input and so records `blur`.
         type: string
       sap:
-        description: >
+        description: |
           `sap` is the meaning of `search access point`. It records where the
           user started the search action from. The possible values are: `urlbar`
           , `handoff`, `urlbar_newtab`, `urlbar_addonpage`, `newtab_searchbar`,
           and `searchbar`.
         type: string
       location:
-        description: >
+        description: |
           Which input was used: fullpage, sidebar, or urlbar.
         type: string
       window_mode:
-        description: >
+        description: |
           The window mode: classic, private, or smartwindow.
         type: string
       interaction:
-        description: >
+        description: |
           How the user started the search action. The possible values are:
           `typed`, `pasted`, `topsite_search` (clicked on a topsite search
           shortcut), `topsites` (selected a topsite result with empty search
@@ -58,7 +58,7 @@ urlbar:
           modified the string).
         type: string
       search_mode:
-        description: >
+        description: |
           If the urlbar is in search mode, thus restricting results to a
           specific search engine or local source, this is set to the search mode
           source. The possible sources are: `actions`, `bookmarks`, `history`,
@@ -67,30 +67,30 @@ urlbar:
           search mode is not active, this will be an empty string.
         type: string
       search_engine_default_id:
-        description: >
+        description: |
           The telemetry id of the search engine.
           Reflects `search.engine.default.engine_id`.
         type: string
       n_chars:
-        description: >
+        description: |
           The length of string used for the search. It includes whitespaces.
         type: quantity
       n_words:
-        description: >
+        description: |
           The length of words used for the search. The words are made by
           splitting the search string by whitespaces, thus this doesn’t support
           CJK languages. For performance reasons a maximum of 255 characters are
           considered when splitting.
         type: quantity
       n_results:
-        description: >
+        description: |
           The number of results shown to the user. If this is high the results
           list below may be truncated due to technical limitations. Also note in
           that case not all the results may be physically visible due to the
           screen size limitation.
         type: quantity
       groups:
-        description: >
+        description: |
           Comma separated list of result groups in the order they were shown to
           the user. The groups may be repeated, since the list will match 1:1
           the results list, so we can link each result to a group. The possible
@@ -103,7 +103,7 @@ urlbar:
           this will be `unknown` and a bug should be filed to investigate it.
         type: string
       results:
-        description: >
+        description: |
           Comma separated list of result types in the order they were shown to
           the user. The `unknown` type should not occur and indicates a bug. The
           possible types are:
@@ -179,7 +179,7 @@ urlbar:
           `weather`
         type: string
       actions:
-        description: >
+        description: |
           Comma separated list of actions keys in the order they were shown to
           the user. Possible keys are: `addons`, `bookmarks`, `clear`, `downloads`,
           `extensions`, `inspect`, `logins`, `print`, `private`,
@@ -188,24 +188,24 @@ urlbar:
           If there is no action shown in a position that is denoted with `none`.
         type: string
       available_semantic_sources:
-        description: >
+        description: |
           Comma separated list of semantic sources that were available to search.
           This indicates general availability of the source, not whether it was
           queried.
           The possible values are: `history`, `none`.
         type: string
       chat_id: &chat_id
-        description: >
+        description: |
           UUID for this smart window session. Unique identifier for each chat
           conversation. Only set when sap is `smartbar`.
         type: string
       intent: &intent
-        description: >
+        description: |
           What was the detected intent for the request: navigate, search,
           chat, or empty string. Only set when sap is `smartbar`.
         type: string
       model: &model
-        description: >
+        description: |
           Model selected by the user. Only set when sap is `smartbar`.
         type: string
     bugs:
@@ -235,22 +235,22 @@ urlbar:
     description: Recorded when the user leaves a page loaded by picking an address bar result and they spent less than 10s on it.
     extra_keys:
       sap:
-        description: >
+        description: |
           `sap` is the meaning of `search access point`. It records where the
           user started the search action from. The possible values are: `urlbar`
           , `handoff`, `urlbar_newtab`, `urlbar_addonpage`, `newtab_searchbar`,
           and `searchbar`.
         type: string
       location:
-        description: >
+        description: |
           Which input was used: fullpage, sidebar, or urlbar.
         type: string
       window_mode:
-        description: >
+        description: |
           The window mode: classic, private, or smartwindow.
         type: string
       interaction:
-        description: >
+        description: |
           How the user started the search action. The possible values are:
           `typed`, `pasted`, `topsite_search` (clicked on a topsite search
           shortcut), `topsites` (selected a topsite result with empty search
@@ -268,7 +268,7 @@ urlbar:
           modified the string).
         type: string
       search_mode:
-        description: >
+        description: |
           If the urlbar is in search mode, thus restricting results to a
           specific search engine or local source, this is set to the search mode
           source. The possible sources are: `actions`, `bookmarks`, `history`,
@@ -277,40 +277,40 @@ urlbar:
           search mode is not active, this will be an empty string.
         type: string
       search_engine_default_id:
-        description: >
+        description: |
           The telemetry id of the search engine.
           Reflects `search.engine.default.engine_id`.
         type: string
       n_chars:
-        description: >
+        description: |
           The length of string used for the search. It includes whitespaces.
         type: quantity
       n_words:
-        description: >
+        description: |
           The length of words used for the search. The words are made by
           splitting the search string by whitespaces, thus this doesn’t support
           CJK languages. For performance reasons a maximum of 255 characters are
           considered when splitting.
         type: quantity
       n_results:
-        description: >
+        description: |
           The number of results shown to the user. If this is high the results
           list below may be truncated due to technical limitations. Also note in
           that case not all the results may be physically visible due to the
           screen size limitation.
         type: quantity
       selected_result:
-        description: >
+        description: |
           The type of the result the user selected. This is to be set as the
           selected_result value of the last engagement event.
         type: string
       selected_position:
-        description: >
+        description: |
           The 1-based index of the result the user selected. If user searched
           without selection, 0 will be recorded.
         type: quantity
       provider:
-        description: >
+        description: |
           The name of the `UrlbarProvider` that provided the selected result.
           The possible values are: `AboutPages`, `AliasEngines`, `Autofill`,
           `BookmarkKeywords`, `calculator`, `UrlbarProviderContextualSearch`,
@@ -327,22 +327,22 @@ urlbar:
           this will be the provider name specified by the add-on.
         type: string
       engagement_type:
-        description: >
+        description: |
           Records how the user selected the result. The possible values are the same
           as those defined for the engagement event engagement_type property.
         type: string
       results:
-        description: >
+        description: |
           Comma separated list of result types in the order they were shown to
           the user. The `unknown` type should not occur and indicates a bug. The
           types are one of the values defined for the engagement event results property.
         type: string
       view_time:
-        description: >
+        description: |
           The number of seconds the user spent on the page.
         type: quantity
       threshold:
-        description: >
+        description: |
           The view time threshold for bounce detection, in seconds.
         type: quantity
       chat_id: *chat_id
@@ -365,29 +365,29 @@ urlbar:
 
   disable:
     type: event
-    description: >
+    description: |
       Recorded after a search containing a Suggest result is engaged
       or abandoned. Number of seconds is controlled by hidden
       browser.urlbar.disableSuggestEvent.maxSecondsFromLastSearch pref.
       Reported values refer to the last search.
     extra_keys:
       sap:
-        description: >
+        description: |
           `sap` is the meaning of `search access point`. It records where the
           user started the search action from. The possible values are: `urlbar`
           , `handoff`, `urlbar_newtab`, `urlbar_addonpage`, `newtab_searchbar`,
           and `searchbar`.
         type: string
       location:
-        description: >
+        description: |
           Which input was used: fullpage, sidebar, or urlbar.
         type: string
       window_mode:
-        description: >
+        description: |
           The window mode: classic, private, or smartwindow.
         type: string
       interaction:
-        description: >
+        description: |
           How the user started the search action. The possible values are:
           `typed`, `pasted`, `topsite_search` (clicked on a topsite search
           shortcut), `topsites` (selected a topsite result with empty search
@@ -405,7 +405,7 @@ urlbar:
           modified the string).
         type: string
       search_mode:
-        description: >
+        description: |
           If the urlbar is in search mode, thus restricting results to a
           specific search engine or local source, this is set to the search mode
           source. The possible sources are: `actions`, `bookmarks`, `history`,
@@ -414,42 +414,42 @@ urlbar:
           search mode is not active, this will be an empty string.
         type: string
       search_engine_default_id:
-        description: >
+        description: |
           The telemetry id of the search engine.
           Reflects `search.engine.default.engine_id`.
         type: string
       n_chars:
-        description: >
+        description: |
           The length of string used for the search. It includes whitespaces.
         type: quantity
       n_words:
-        description: >
+        description: |
           The length of words used for the search. The words are made by
           splitting the search string by whitespaces, thus this doesn’t support
           CJK languages. For performance reasons a maximum of 255 characters are
           considered when splitting.
         type: quantity
       n_results:
-        description: >
+        description: |
           The number of results shown to the user. If this is high the results
           list below may be truncated due to technical limitations. Also note in
           that case not all the results may be physically visible due to the
           screen size limitation.
         type: quantity
       selected_result:
-        description: >
+        description: |
           The type of the result the user selected. If the last search was an engagement,
           it will be set to the selected_result value of the engagement event, otherwise in
           the case of the abandonment event, it will be set to `none`.
         type: string
       results:
-        description: >
+        description: |
           Comma separated list of result types in the order they were shown to
           the user. The `unknown` type should not occur and indicates a bug. The
           types are one of the values defined for the engagement event results property.
         type: string
       feature:
-        description: >
+        description: |
           The specific feature that is being disabled. The possible types are:
           `suggest`
           More values may be added in the future.
@@ -476,22 +476,22 @@ urlbar:
     description: Recorded when the user executes an action on a result.
     extra_keys:
       sap:
-        description: >
+        description: |
           `sap` is the meaning of `search access point`. It records where the
           user started the search action from. The possible values are: `urlbar`
           , `handoff`, `urlbar_newtab`, `urlbar_addonpage`, `newtab_searchbar`,
           and `searchbar`.
         type: string
       location:
-        description: >
+        description: |
           Which input was used: fullpage, sidebar, or urlbar.
         type: string
       window_mode:
-        description: >
+        description: |
           The window mode: classic, private, or smartwindow.
         type: string
       interaction:
-        description: >
+        description: |
           How the user started the search action. The possible values are:
           `typed`, `pasted`, `topsite_search` (clicked on a topsite search
           shortcut), `topsites` (selected a topsite result with empty search
@@ -509,7 +509,7 @@ urlbar:
           modified the string).
         type: string
       search_mode:
-        description: >
+        description: |
           If the urlbar is in search mode, thus restricting results to a
           specific search engine or local source, this is set to the search mode
           source. The possible sources are: `actions`, `bookmarks`, `history`,
@@ -518,30 +518,30 @@ urlbar:
           search mode is not active, this will be an empty string.
         type: string
       search_engine_default_id:
-        description: >
+        description: |
           The telemetry id of the search engine.
           Reflects `search.engine.default.engine_id`.
         type: string
       n_chars:
-        description: >
+        description: |
           The length of string used for the search. It includes whitespaces.
         type: quantity
       n_words:
-        description: >
+        description: |
           The length of words used for the search. The words are made by
           splitting the search string by whitespaces, thus this doesn’t support
           CJK languages. For performance reasons a maximum of 255 characters are
           considered when splitting.
         type: quantity
       n_results:
-        description: >
+        description: |
           The number of results shown to the user. If this is high the results
           list below may be truncated due to technical limitations. Also note in
           that case not all the results may be physically visible due to the
           screen size limitation.
         type: quantity
       selected_result:
-        description: >
+        description: |
           The type of the result the user selected. The `unknown` type should
           not occur and indicates a bug. The possible types are:
           `action`,
@@ -625,12 +625,12 @@ urlbar:
           documented in the actions field.
         type: string
       selected_position:
-        description: >
+        description: |
           The 1-based index of the result the user selected. If user searched
           without selection, 0 will be recorded.
         type: quantity
       provider:
-        description: >
+        description: |
           The name of the `UrlbarProvider` that provided the selected result.
           The possible values are: `AboutPages`, `AliasEngines`, `Autofill`,
           `BookmarkKeywords`, `calculator`, `UrlbarProviderContextualSearch`,
@@ -647,7 +647,7 @@ urlbar:
            this will be the provider name specified by the add-on.
         type: string
       engagement_type:
-        description: >
+        description: |
           Records how the user selected the result. The possible values are:
           `ask_button`,
           `click`,
@@ -667,7 +667,7 @@ urlbar:
           `show_less_frequently`
         type: string
       modifiers:
-        description: >
+        description: |
           Comma separated list of the modifier keys the user held while
           selecting the result, always in the order `accel`, `alt`,
           `altgraph`, `shift`.
@@ -680,7 +680,7 @@ urlbar:
           `SHIFT`. When no modifier, this will be empty string.
         type: string
       groups:
-        description: >
+        description: |
           Comma separated list of result groups in the order they were shown to
           the user. The groups may be repeated, since the list will match 1:1
           the results list, so we can link each result to a group. The possible
@@ -695,7 +695,7 @@ urlbar:
           are shown.
         type: string
       results:
-        description: >
+        description: |
           Comma separated list of result types in the order they were shown to
           the user. The `unknown` type should not occur and indicates a bug. The
           possible types are:
@@ -771,7 +771,7 @@ urlbar:
           `weather`
         type: string
       actions:
-        description: >
+        description: |
           Comma separated list of actions keys in the order they were shown to
           the user. Possible keys are: `addons`, `bookmarks`, `clear`, `downloads`,
           `extensions`, `inspect`, `logins`, `print`, `private`,
@@ -780,7 +780,7 @@ urlbar:
           If there is no action shown in a position that is denoted with `none`.
         type: string
       available_semantic_sources:
-        description: >
+        description: |
           Comma separated list of semantic sources that were available to search.
           This indicates general availability of the source, not whether it was
           queried.
@@ -815,7 +815,7 @@ urlbar:
 
   heuristic_result_missing:
     type: rate
-    description: >
+    description: |
       A uint recording the number of times the address bar handleCommand fallback
       path is hit.
     bugs:
@@ -830,15 +830,15 @@ urlbar:
 
   exposure:
     type: event
-    description: >
+    description: |
       Recorded when client is exposed to urlbar experiment results.
     extra_keys:
       results:
-        description: >
+        description: |
           Comma separated list of results that were exposed to the user.
         type: string
       terminal:
-        description: >
+        description: |
           Comma separated list of booleans that indicates whether the results
           were present at the end of the urlbar session. This list is parallel
           to the `results` list. i.e., the boolean at index i is true if the
@@ -850,7 +850,7 @@ urlbar:
         type: string
       sap:
         type: string
-        description: >
+        description: |
           The search access point. It records where the exposure happened.
           The possible values are: `urlbar`, `handoff`, `urlbar_newtab`,
           `urlbar_addonpage`, `newtab_searchbar`, and `searchbar`.
@@ -867,7 +867,7 @@ urlbar:
 
   keyword_exposure:
     type: event
-    description: >
+    description: |
       When keyword exposures are enabled, this event is recorded in the
       `urlbar-keyword-exposure` ping, which is submitted at the end of urlbar
       sessions during which one or more exposure results are matched. The ping
@@ -877,22 +877,22 @@ urlbar:
     extra_keys:
       result:
         type: string
-        description: >
+        description: |
           The type of result that was matched.
       keyword:
         type: string
-        description: >
+        description: |
           The keyword that matched the result.
       terminal:
         type: boolean
-        description: >
+        description: |
           Whether the matched result and keyword were present at the end of the
           urlbar session. If true, the session ended with them. If false, the
           result and keyword were matched at some point during the session but
           the session did not end with them.
       sap:
         type: string
-        description: >
+        description: |
           The search access point. It records where the exposure happened.
           The possible values are: `urlbar`, `handoff`, `urlbar_newtab`,
           `urlbar_addonpage`, `newtab_searchbar`, and `searchbar`.
@@ -914,7 +914,7 @@ urlbar:
     lifetime: application
     type: quantity
     unit: integer
-    description: >
+    description: |
       Maximum results to show in the Address Bar.
       Corresponds to the value of the `browser.urlbar.maxRichResults` pref.
     bugs:
@@ -934,7 +934,7 @@ urlbar:
   pref_suggest_all:
     lifetime: application
     type: boolean
-    description: >
+    description: |
       Whether Suggest results are shown in the urlbar.
       Corresponds to the value of the
       `browser.urlbar.suggest.quicksuggest.all` pref.
@@ -955,7 +955,7 @@ urlbar:
   pref_suggest_online_available:
     lifetime: application
     type: boolean
-    description: >
+    description: |
       Whether online Suggest is available to the user.
       Corresponds to the Nimbus variable `quickSuggestOnlineAvailable` and its
       fallback pref `browser.urlbar.quicksuggest.online.available`.
@@ -978,7 +978,7 @@ urlbar:
   pref_suggest_online_enabled:
     lifetime: application
     type: boolean
-    description: >
+    description: |
       This pref is true for all users by default! You probably want to use this
       in conjunction with pref_suggest_online_available and/or restrict your
       analysis to user populations where you know online Suggest is available.
@@ -1002,7 +1002,7 @@ urlbar:
   pref_suggest_sponsored:
     lifetime: application
     type: boolean
-    description: >
+    description: |
       Whether sponsored quick suggest results are shown in the urlbar.
       Corresponds to the value of the
       `browser.urlbar.suggest.quicksuggest.sponsored` pref.
@@ -1024,7 +1024,7 @@ urlbar:
   pref_suggest_topsites:
     lifetime: application
     type: boolean
-    description: >
+    description: |
       Whether topsite results are enabled in the urlbar.
       Corresponds to the value of the `browser.urlbar.suggest.topsites` pref.
     bugs:
@@ -1043,7 +1043,7 @@ urlbar:
 
   autofill_deletion:
     type: counter
-    description: >
+    description: |
       A uint recording the deletion count for autofilled string in the
       urlbar. This occurs when the user deletes whole autofilled string by
       BACKSPACE or DELETE key while the autofilled string is selected.
@@ -1060,7 +1060,7 @@ urlbar:
 
   autocomplete_first_result_time:
     type: timing_distribution
-    description: >
+    description: |
       PLACES: Time for first autocomplete result if > 50ms (ms)
 
       This metric was generated to correspond to the Legacy Telemetry
@@ -1078,7 +1078,7 @@ urlbar:
 
   autocomplete_sixth_result_time:
     type: timing_distribution
-    description: >
+    description: |
       PLACES: Time for the 6 first autocomplete results (ms)
 
       This metric was generated to correspond to the Legacy Telemetry
@@ -1098,7 +1098,7 @@ urlbar:
 quick_suggest:
   ping_type:
     type: string
-    description: >
+    description: |
       The ping's type. In other situations might be designated by an event's
       name or an interaction field. E.g. "quicksuggest-impression",
       "quicksuggest-block", "quicksuggest-click".
@@ -1116,7 +1116,7 @@ quick_suggest:
 
   country:
     type: string
-    description: >
+    description: |
       Records the home region of the user as determined by `Region.sys.mjs` and
       the `browser.search.region` pref.
     bugs:
@@ -1136,7 +1136,7 @@ quick_suggest:
   position:
     type: quantity
     unit: QuickSuggest position
-    description: >
+    description: |
       The position (1-based) of the QuickSuggest item being interatcted with.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1836283
@@ -1152,7 +1152,7 @@ quick_suggest:
 
   suggested_index:
     type: string
-    description: >
+    description: |
       A stringified integer value that is the intended index of the suggestion
       being interacted with. If `suggested_index_relative_to_group` is true, the
       index is relative to the "Firefox Suggest" group; otherwise the index is
@@ -1173,7 +1173,7 @@ quick_suggest:
 
   suggested_index_relative_to_group:
     type: boolean
-    description: >
+    description: |
       Whether `suggested_index` is relative to the "Firefox Suggest" group. If
       false, it is relative to the entire list of suggestions.
     bugs:
@@ -1190,7 +1190,7 @@ quick_suggest:
 
   source:
     type: string
-    description: >
+    description: |
       The source of the interaction. E.g. "urlbar".
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1836283
@@ -1206,7 +1206,7 @@ quick_suggest:
 
   match_type:
     type: string
-    description: >
+    description: |
       Whether this was a best/top match or not. Either "best-match" or
       "firefox-suggest".
     bugs:
@@ -1223,7 +1223,7 @@ quick_suggest:
 
   block_id:
     type: string
-    description: >
+    description: |
       A unique identifier for the suggestion (a.k.a. a keywords block).
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1836283
@@ -1239,7 +1239,7 @@ quick_suggest:
 
   improve_suggest_experience:
     type: boolean
-    description: >
+    description: |
       Whether online Suggest is available to the user and enabled.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1836283
@@ -1257,7 +1257,7 @@ quick_suggest:
 
   advertiser:
     type: string
-    description: >
+    description: |
       The name of the advertiser providing the sponsored TopSite.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1836283
@@ -1274,7 +1274,7 @@ quick_suggest:
 
   request_id:
     type: string
-    description: >
+    description: |
       A request identifier for each API request to
       [Merino](https://mozilla-services.github.io/merino/).
       Only present for suggestions provided by Merino.
@@ -1293,7 +1293,7 @@ quick_suggest:
 
   is_clicked:
     type: boolean
-    description: >
+    description: |
       Whether this quicksuggest-impression ping was for an item that was
       clicked.
     bugs:
@@ -1310,7 +1310,7 @@ quick_suggest:
 
   reporting_url:
     type: url
-    description: >
+    description: |
       The url to report this interaction to.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1836283
@@ -1327,7 +1327,7 @@ quick_suggest:
   context_id:
     disabled: true
     type: uuid
-    description: >
+    description: |
       An identifier to identify users for Contextual Services user interaction pings.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1836283
@@ -1348,7 +1348,7 @@ quick_suggest:
 
   iab_category:
     type: string
-    description: >
+    description: |
       The suggestion's category. Either "22 - Shopping" or "5 - Educational".
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1836283
@@ -1365,7 +1365,7 @@ quick_suggest:
 
   suggestion_id:
     type: string
-    description: >
+    description: |
       The suggestion ID from MARS/Merino.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2050684
@@ -1464,7 +1464,7 @@ suggest:
 suggest_relevance:
   status:
     type: labeled_counter
-    description: >
+    description: |
       Count the successful / failed attempts of relevance scoring in
       Firefox Suggest.
     labels:
@@ -1477,12 +1477,12 @@ suggest_relevance:
     notification_emails:
       - disco-team@mozilla.com
       - najiang@mozilla.com
-    expires: 160
+    expires: 170
     data_sensitivity:
       - technical
   outcome:
     type: labeled_counter
-    description: >
+    description: |
       For each successful scoring, count whether the relevance score gets
       boosted or decreased over the original score. Note that given how the
       score is calculated, it's practically impossible to have the two scores
@@ -1497,14 +1497,14 @@ suggest_relevance:
     notification_emails:
       - disco-team@mozilla.com
       - najiang@mozilla.com
-    expires: 160
+    expires: 170
     data_sensitivity:
       - technical
 
 urlbar.trending:
   block:
     type: counter
-    description: >
+    description: |
       User has blocked seeing trending results.
       This metric was generated to correspond to the Legacy Telemetry
       scalar urlbar.trending.block.
@@ -1520,7 +1520,7 @@ urlbar.trending:
 urlbar.persistedsearchterms:
   revert_by_popup_count:
     type: counter
-    description: >
+    description: |
       The count of the number of times search terms were removed from the
       urlbar due to a shown PopupNotification. This event can happen when
       a user loads a SERP and a PopupNotification is shown, as well as
@@ -1539,7 +1539,7 @@ urlbar.persistedsearchterms:
 
   view_count:
     type: counter
-    description: >
+    description: |
       The count of the number of times search terms persisted in the
       Urlbar. This gets recorded after a user loads a SERP that persists
       search terms, or switches back to an existing tab that should be
@@ -1559,7 +1559,7 @@ urlbar.persistedsearchterms:
 urlbar.zeroprefix2:
   abandonment:
     type: labeled_counter
-    description: >
+    description: |
       Counts how many times the zero-prefix results view was abandoned,
       labeled by the search access point it was shown for.
     labels:
@@ -1581,7 +1581,7 @@ urlbar.zeroprefix2:
 
   engagement:
     type: labeled_counter
-    description: >
+    description: |
       Counts how many times a result was picked in the zero-prefix results
       view, labeled by the search access point it was shown for.
     labels:
@@ -1603,7 +1603,7 @@ urlbar.zeroprefix2:
 
   exposure:
     type: labeled_counter
-    description: >
+    description: |
       Counts how many times the zero-prefix results view was shown to the
       user, labeled by the search access point it was shown for.
     labels:
@@ -1626,7 +1626,7 @@ urlbar.zeroprefix2:
 urlbar.quickaction:
   picked:
     type: labeled_counter
-    description: >
+    description: |
       Counts how many times quickaction results were selected. The key is
       the in the form "actionkey-N" where N is the number of characters
       the user typed to be shown the action.
@@ -1644,7 +1644,7 @@ urlbar.quickaction:
 urlbar.unifiedsearchbutton:
   opened:
     type: counter
-    description: >
+    description: |
       Counts how many times Unified Search Button popup is opened.
       This metric was generated to correspond to the Legacy Telemetry
       scalar urlbar.unifiedsearchbutton.opened.
@@ -1659,7 +1659,7 @@ urlbar.unifiedsearchbutton:
 
   picked:
     type: labeled_counter
-    description: >
+    description: |
       Counts how many times Unified Search Button items were selected.
       The key is followings.
       * builtin_search: Builtin search engine.
@@ -1680,7 +1680,7 @@ urlbar.unifiedsearchbutton:
 urlbar.searchmode:
   url_like_query:
     type: rate
-    description: >
+    description: |
       A rate recording the fraction of search-mode engagements whose typed
       string parses as a URL (per nsIURIFixup, the same check the heuristic
       providers use to decide whether a string should navigate). The
@@ -1694,19 +1694,21 @@ urlbar.searchmode:
       Temporary decision-making probe.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2042945
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072847
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2042945
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072847
     notification_emails:
       - fx-search-telemetry@mozilla.com
       - dong@mozilla.com
-    expires: 160
+    expires: 172
     data_sensitivity:
       - interaction
 
 urlbar.autofill:
   reintegration:
     type: labeled_counter
-    description: >
+    description: |
       Counts how many times a blocked autofill result was reintegrated
       (unblocked) because the user picked the same URL as a non-autofill
       history result.
@@ -1725,7 +1727,7 @@ urlbar.autofill:
 
   input_context_menu_dismissal:
     type: labeled_counter
-    description: >
+    description: |
       Counts how many times the user dismissed a heuristic autofill result
       via the urlbar input's right-click context menu. Labeled by which
       menu item was used: `dismiss` only blocks the autofill pairing,
@@ -1745,7 +1747,7 @@ urlbar.autofill:
 
   reintegration_after_backspace:
     type: labeled_timing_distribution
-    description: >
+    description: |
       Time elapsed between a backspace-induced autofill block and the user
       re-integrating the same destination by picking it as a non-autofill
       history result in the same session. Only samples re-integrations of
@@ -1770,7 +1772,7 @@ urlbar.autofill:
 urlbar.merino:
   latency_by_response_status:
     type: labeled_timing_distribution
-    description: >
+    description: |
       Duration from when the client sends a request to Merino to when the client
       receives a response, labeled by response status code. Labels are dynamic.
       For non-OHTTP requests, labels are simply the numeric status code, e.g.,

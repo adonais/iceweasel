@@ -25,6 +25,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/EditContext.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "nsAtom.h"
 #include "nsContentUtils.h"
@@ -37,7 +38,6 @@
 #include "nsIWeakReferenceUtils.h"
 #include "nsIWidget.h"
 #include "nsPresContext.h"
-#include "nsRange.h"
 #include "nsRefreshDriver.h"
 #include "nsString.h"
 
@@ -324,7 +324,7 @@ Element* IMEContentObserver::ComputeRootElement(PresShell* aPresShell) const {
 
   // If there is a selection range, we should compute our root element from the
   // first range.
-  if (const nsRange* selRange = selection->GetRangeAt(0)) {
+  if (const dom::Range* selRange = selection->GetRangeAt(0)) {
     MOZ_ASSERT(!mIsTextControl);
     if (NS_WARN_IF(!selRange->GetStartContainer())) {
       return nullptr;
@@ -913,14 +913,14 @@ nsresult IMEContentObserver::MaybeHandleSelectionEvent(
                  "Selection cache has not been updated yet");
   }
 
-  MOZ_LOG(sIMECOLog, LogLevel::Debug,
-          ("0x%p MaybeHandleSelectionEvent(aEvent={ "
-           "mMessage=%s, mOffset=%u, mLength=%u, mReversed=%s, "
-           "mExpandToClusterBoundary=%s }), "
-           "mSelectionData=%s",
-           this, ToChar(aEvent->mMessage), aEvent->mOffset, aEvent->mLength,
-           ToChar(aEvent->mReversed), ToChar(aEvent->mExpandToClusterBoundary),
-           ToString(mSelectionData).c_str()));
+  MOZ_LOG_FMT(sIMECOLog, LogLevel::Debug,
+              "{} MaybeHandleSelectionEvent(aEvent={{ "
+              "mMessage={}, mOffset={}, mLength={}, mDirection={}, "
+              "mExpandToClusterBoundary={} }}), "
+              "mSelectionData={}",
+              static_cast<void*>(this), ToChar(aEvent->mMessage),
+              aEvent->mOffset, aEvent->mLength, aEvent->mDirection,
+              aEvent->mExpandToClusterBoundary, ToString(mSelectionData));
 
   // When we have Selection cache, and the caller wants to set same selection
   // range, we shouldn't try to compute same range because it may be impossible
@@ -932,7 +932,7 @@ nsresult IMEContentObserver::MaybeHandleSelectionEvent(
       mSelectionData.HasRange() &&
       mSelectionData.StartOffset() == aEvent->mOffset &&
       mSelectionData.Length() == aEvent->mLength &&
-      mSelectionData.mReversed == aEvent->mReversed) {
+      mSelectionData.mReversed == aEvent->IsReversed()) {
     if (RefPtr<Selection> selection = GetSelection()) {
       selection->ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION);
     }

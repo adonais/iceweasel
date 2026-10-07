@@ -506,9 +506,9 @@ interface nsIAccessibleRole : nsISupports
   const unsigned long ROLE_MATHML_TEXT = 83;
 
   /**
-   * A MathML string literal (ms in MathML).
+   * An empty container group in MathML (mprescripts, mspace, none).
    */
-  const unsigned long ROLE_MATHML_STRING_LITERAL = 84;
+  const unsigned long ROLE_MATHML_EMPTY_GROUP = 84;
 
   /**
    * A MathML glyph (mglyph in MathML).
@@ -602,9 +602,9 @@ interface nsIAccessibleRole : nsISupports
   const unsigned long ROLE_MATHML_CELL = 102;
 
   /**
-   * A MathML interactive element (maction in MathML).
-   */
-  const unsigned long ROLE_MATHML_ACTION = 103;
+  * A MathML link (a in MathML).
+  */
+  const unsigned long ROLE_MATHML_LINK = 103;
 
   /**
    * A MathML error message (merror in MathML).

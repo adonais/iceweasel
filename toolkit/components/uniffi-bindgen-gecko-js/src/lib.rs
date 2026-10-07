@@ -11,14 +11,15 @@ use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
-use uniffi_bindgen::pipeline::initial;
+use uniffi_bindgen::{pipeline::initial, GlobalConfig};
 use uniffi_pipeline::PrintOptions;
 
 mod bindgen_paths;
+pub mod filters;
 pub mod pipeline;
 
 use bindgen_paths::gecko_js_bindgen_paths;
-use pipeline::{gecko_js_pipeline, GeckoPipeline};
+use pipeline::{gecko_js_pipeline, nodes::*, GeckoPipeline};
 use uniffi_pipeline::Node;
 
 #[derive(Debug, Parser)]
@@ -81,7 +82,7 @@ struct PipelineArgs {
 }
 
 /// Configuration for a single Component
-#[derive(Clone, Debug, Deserialize, Serialize, Node)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize, Node)]
 pub struct Config {
     #[serde(default)]
     pub async_wrappers: IndexMap<String, ConcurrencyMode>,
@@ -90,7 +91,7 @@ pub struct Config {
 }
 
 /// Callable sync/async configuration, from `config.toml.`
-#[derive(Clone, Debug, Deserialize, Serialize, Node, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize, Node, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub enum ConcurrencyMode {
     /// Sync function that will remain synchronous, running on the main thread.
@@ -155,14 +156,14 @@ fn run_generate(
     args: GenerateArgs,
 ) -> Result<()> {
     let root = pipeline.execute(root)?;
-    render(&args.cpp_path, root.cpp_scaffolding)?;
-    for namespace in root.namespaces.values() {
-        let dir = if namespace.fixture {
+    render(&args.cpp_path, CppScaffolding { root: &root })?;
+    for namespace in root.namespaces() {
+        let dir = if namespace.is_fixture() {
             &args.fixture_js_dir
         } else {
             &args.js_dir
         };
-        render(&dir.join(&namespace.js_filename), namespace)?;
+        render(&dir.join(&namespace.js_filename()), namespace)?;
     }
     for entry in fs::read_dir(&args.docs_path)? {
         let path = entry?.path();
@@ -194,9 +195,11 @@ fn root_and_pipeline(
     library_path: Utf8PathBuf,
     fixtures_library_path: Utf8PathBuf,
 ) -> Result<(initial::Root, GeckoPipeline)> {
-    let root = initial::Root::from_library(gecko_js_bindgen_paths()?, &library_path, None)?;
+    let bindgen_paths = gecko_js_bindgen_paths()?;
+    let config = GlobalConfig::default();
+    let root = initial::Root::from_library(&bindgen_paths, &config, &library_path, None)?;
     let fixtures_root =
-        initial::Root::from_library(gecko_js_bindgen_paths()?, &fixtures_library_path, None)?;
+        initial::Root::from_library(&bindgen_paths, &config, &fixtures_library_path, None)?;
     let root = initial::Root {
         namespaces: root
             .namespaces
@@ -207,4 +210,10 @@ fn root_and_pipeline(
     };
     let pipeline = gecko_js_pipeline(toml::from_str(include_str!("../config.toml"))?);
     Ok((root, pipeline))
+}
+
+#[derive(Debug, Clone, Template)]
+#[template(path = "cpp/UniFFIScaffolding.cpp", escape = "none")]
+struct CppScaffolding<'a> {
+    root: &'a pipeline::Root,
 }

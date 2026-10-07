@@ -86,6 +86,52 @@ TEST(Atoms, ShortStringCacheCorrectness)
   }
 }
 
+static constexpr nsLiteralCString kShortCacheTestUTF8Strings[] = {
+    ""_ns,
+    "abcdefgh"_ns,
+    "a"_ns,
+    "ab"_ns,
+    "\0"_ns,
+    "abcdefg"_ns,
+    "a\0"_ns,
+    "\0a"_ns,
+    "\u00ff"_ns,
+    "\u0100"_ns,
+    "abc\u00ff"_ns,
+    "\u0100abc"_ns,
+    "abcdef\0"_ns,
+    "abcdef\u0100"_ns,
+    "a much longer string"_ns,
+    "a much longer string with \u00ff\u0100\U0001f600"_ns,
+};
+
+TEST(Atoms, ShortStringCacheCorrectnessUTF8)
+{
+  for (const auto& str : kShortCacheTestUTF8Strings) {
+    RefPtr<nsAtom> uncached = NS_Atomize(str);
+    RefPtr<nsAtom> miss = NS_AtomizeMainThread(str);
+    RefPtr<nsAtom> hit = NS_AtomizeMainThread(str);
+
+    EXPECT_EQ(uncached, miss);
+    EXPECT_EQ(miss, hit);
+    EXPECT_TRUE(hit->Equals(NS_ConvertUTF8toUTF16(str)));
+  }
+}
+
+TEST(Atoms, MainThreadCacheUTF8vs16)
+{
+  for (const auto& str : kShortCacheTestUTF8Strings) {
+    NS_ConvertUTF8toUTF16 str16(str);
+    RefPtr<nsAtom> atom16 = NS_AtomizeMainThread(str16);
+    RefPtr<nsAtom> atom8 = NS_AtomizeMainThread(str);
+    EXPECT_EQ(atom16, atom8);
+    RefPtr<nsAtom> atom8Again = NS_AtomizeMainThread(str);
+    EXPECT_EQ(atom8, atom8Again);
+    RefPtr<nsAtom> atom16Again = NS_AtomizeMainThread(str16);
+    EXPECT_EQ(atom8, atom16Again);
+  }
+}
+
 TEST(Atoms, ShortStringCacheEviction)
 {
   const uint64_t kCount = TestGetShortAtomCacheSize() + 10;
@@ -100,6 +146,25 @@ TEST(Atoms, ShortStringCacheEviction)
       RefPtr<nsAtom> atom = NS_AtomizeMainThread(str);
       RefPtr<nsAtom> atom2 = NS_Atomize(str);
       EXPECT_TRUE(atom->Equals(str));
+      EXPECT_EQ(atom, atom2);
+    }
+  }
+}
+
+TEST(Atoms, ShortStringCacheEvictionUTF8)
+{
+  const uint64_t kCount = TestGetShortAtomCacheSize() + 10;
+
+  constexpr size_t len = 2;
+  ASSERT_LE(kCount, uint64_t(1) << (len * 7));
+
+  for (uint64_t pass = 0; pass < 2; ++pass) {
+    for (uint64_t i = 0; i < kCount; ++i) {
+      char buf[len] = {char(i & 0x7f), char((i >> 7) & 0x7f)};
+      nsDependentCSubstring str(buf, len);
+      RefPtr<nsAtom> atom = NS_AtomizeMainThread(str);
+      RefPtr<nsAtom> atom2 = NS_Atomize(str);
+      EXPECT_TRUE(atom->Equals(NS_ConvertUTF8toUTF16(str)));
       EXPECT_EQ(atom, atom2);
     }
   }

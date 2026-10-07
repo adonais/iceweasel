@@ -44,6 +44,9 @@ function getClipboardCacheFDCount() {
 
     // Path from nsAnonymousTemporaryFile.cpp, GetTempDir.
     dir.initWithPath(PathUtils.join(PathUtils.tempDir, "mozilla-temp-files"));
+    if (!dir.exists()) {
+      return 0;
+    }
   } else {
     dir.initWithPath("/dev/fd");
   }

@@ -86,6 +86,20 @@ const MAX_SNIPPET_LENGTH = 2000;
 const MIN_SNIPPET_LENGTH = 25;
 
 /**
+ * Canonical values for the `error` extra on the search_the_web Glean event
+ * that the fast path decides for itself. A retrieval failure instead reports
+ * the provider's `searchErrorCategory`, falling back to RETRIEVAL_FAILED.
+ *
+ * @type {object}
+ */
+const SEARCH_TELEMETRY_ERRORS = {
+  INVALID_QUERY: "invalid_query",
+  RETRIEVAL_FAILED: "retrieval_failed",
+  NO_RESULTS: "no_results",
+  INTERNAL_ERROR: "internal_error",
+};
+
+/**
  * JSON schema describing the structured answer the model emits. Used both as
  * the model's response format and as the contract validateSearchAnswer checks.
  *
@@ -174,6 +188,21 @@ const GET_PAGE_CONTENT_TOOL = {
  */
 
 /**
+ * Stage measurements for one run of the fast path, accumulated in a single
+ * mutable object so whatever completed before a failure is still reported.
+ *
+ * @typedef {object} FastSearchStats
+ * @property {number} retrieval - Provider call to results returned, in ms.
+ * @property {number} processing - Filtering, sanitizing and bookkeeping, in ms.
+ * @property {number} retrieved - Usable results the provider returned.
+ * @property {number} returned - Results handed to the assistant.
+ * @property {number} snippetChars - Snippet characters handed to the assistant.
+ * @property {number} snippetCharsDropped - Snippet characters cut by the cap.
+ * @property {number} httpStatus - Exa HTTP status, 0 when no response arrived.
+ * @property {string} error - Canonical failure reason, empty on success.
+ */
+
+/**
  * Stable id shown to the model for the result at `index` (result_1, …). Shared
  * by the rendered results and the id->URL map so the two stay aligned.
  *
@@ -191,17 +220,24 @@ function resultIdFor(index) {
  * get_page_content model instead — bound the length and rely on the security
  * flags, which this flow always sets.
  *
+ * Reports the characters dropped by the cap alongside the text so the flow can
+ * measure how much snippet content the assistant does not see.
+ *
  * @param {unknown} text
- * @returns {string}
+ * @returns {{text: string, droppedChars: number}}
  */
 function normalizeAndTruncateText(text) {
   if (typeof text !== "string" || !text) {
-    return "";
+    return { text: "", droppedChars: 0 };
   }
   const collapsed = text.replace(/\s+/g, " ").trim();
-  return collapsed.length > MAX_SNIPPET_LENGTH
-    ? collapsed.slice(0, MAX_SNIPPET_LENGTH) + "\u2026"
-    : collapsed;
+  if (collapsed.length <= MAX_SNIPPET_LENGTH) {
+    return { text: collapsed, droppedChars: 0 };
+  }
+  return {
+    text: collapsed.slice(0, MAX_SNIPPET_LENGTH) + "\u2026",
+    droppedChars: collapsed.length - MAX_SNIPPET_LENGTH,
+  };
 }
 
 /**
@@ -467,12 +503,45 @@ function shouldCallSearchHandoff(conversation) {
  * @param {string} [toolParams.context] - Optional caller-supplied context.
  * @param {ChatConversation} conversation - Originating conversation.
  * @param {AbortSignal} [signal] - Cancels the in-flight answer generation.
+ * @param {string} [mode] - Surface the tool ran on, for telemetry.
  * @returns {Promise<SearchWorkflowResult|FastSearchWorkflowResult>}
  */
-export async function runSearchTheWeb(toolParams, conversation, signal) {
+export async function runSearchTheWeb(toolParams, conversation, signal, mode) {
   return Services.prefs.getBoolPref(SEARCH_THE_WEB_FAST_PREF, true)
-    ? runFastSearch(toolParams, conversation)
+    ? runFastSearch(toolParams, conversation, mode)
     : runGroundedSearch(toolParams, conversation, signal);
+}
+
+/**
+ * Records the smart_window.search_the_web Glean event once per run of the fast
+ * path, including on failure, so a stage that never ran is reported as 0.
+ *
+ * @param {object} options
+ * @param {ChatConversation} options.conversation
+ * @param {string} [options.mode] - Surface the flow ran on.
+ * @param {FastSearchStats} options.stats
+ * @param {number} options.totalDuration - Whole flow, in ms.
+ */
+function recordFastSearchTelemetry({
+  conversation,
+  mode,
+  stats,
+  totalDuration,
+}) {
+  Glean.smartWindow.searchTheWeb.record({
+    location: mode ?? "",
+    chat_id: conversation.id,
+    message_seq: conversation.messageCount,
+    total_duration: Math.round(totalDuration),
+    retrieval_duration: Math.round(stats.retrieval),
+    processing_duration: Math.round(stats.processing),
+    results_retrieved: stats.retrieved,
+    results_returned: stats.returned,
+    snippet_chars_returned: stats.snippetChars,
+    snippet_chars_truncated: stats.snippetCharsDropped,
+    http_status: stats.httpStatus,
+    error: stats.error,
+  });
 }
 
 /**
@@ -481,79 +550,160 @@ export async function runSearchTheWeb(toolParams, conversation, signal) {
  * results rather than thrown, so the assistant can fall back to the Google
  * handoff.
  *
+ * Telemetry is recorded in a `finally` so every early return in the flow is
+ * covered without repeating the call at each one.
+ *
  * @param {object} toolParams
  * @param {string} toolParams.query - Search query (may be rewritten by the assistant).
  * @param {ChatConversation} conversation - Originating conversation; owns the
  *   anonymous-fetch ledger and security state a follow-up page read depends on.
+ * @param {string} [mode] - Surface the tool ran on, for telemetry.
  * @returns {Promise<FastSearchWorkflowResult>}
  */
-async function runFastSearch(toolParams, conversation) {
+async function runFastSearch(toolParams, conversation, mode) {
+  // The handoff retrieves nothing of its own and is covered by search_handoff.
   if (shouldCallSearchHandoff(conversation)) {
     return {
       requiresSearchHandoff: true,
     };
   }
 
+  /** @type {FastSearchStats} */
+  const stats = {
+    retrieval: 0,
+    processing: 0,
+    retrieved: 0,
+    returned: 0,
+    snippetChars: 0,
+    snippetCharsDropped: 0,
+    httpStatus: 0,
+    error: "",
+  };
+  const flowStart = ChromeUtils.now();
+  try {
+    return await runFastSearchFlow(toolParams, conversation, stats);
+  } catch (e) {
+    // The flow returns its failures, so reaching here is a bug in it. Mark it
+    // rather than let the event record a zero-result success.
+    stats.error = SEARCH_TELEMETRY_ERRORS.INTERNAL_ERROR;
+    throw e;
+  } finally {
+    // These durations are the tool's own cost, not what the user waited for:
+    // the assistant composes the user-facing reply in a later turn.
+    recordFastSearchTelemetry({
+      conversation,
+      mode,
+      stats,
+      totalDuration: ChromeUtils.now() - flowStart,
+    });
+  }
+}
+
+/**
+ * Runs the fast path itself, populating `stats` as each stage closes.
+ *
+ * @param {object} toolParams
+ * @param {ChatConversation} conversation
+ * @param {FastSearchStats} stats - Mutated in place as the flow progresses.
+ * @returns {Promise<FastSearchWorkflowResult>}
+ */
+async function runFastSearchFlow(toolParams, conversation, stats) {
   const query = toolParams?.query;
   if (typeof query !== "string" || !query.trim()) {
+    stats.error = SEARCH_TELEMETRY_ERRORS.INVALID_QUERY;
     return fastFailure("a non-empty query is required");
   }
   conversation._searchTheWebTurn = conversation.currentTurnIndex();
 
   let retrieved;
+  const retrievalStart = ChromeUtils.now();
   try {
     const provider = new ExaSearchProvider();
     const response = await provider.search(query.trim(), {
       maxResults: MAX_RESULTS_RETRIEVED,
     });
     retrieved = response.results;
+    stats.httpStatus = response.status;
   } catch (e) {
     lazy.console.error("retrieval failed:", e);
+    // Anything the provider did not categorize falls to the catch-all.
+    stats.error =
+      e?.searchErrorCategory ?? SEARCH_TELEMETRY_ERRORS.RETRIEVAL_FAILED;
+    stats.httpStatus = e?.httpStatus ?? 0;
     return fastFailure(e.message);
+  } finally {
+    stats.retrieval = ChromeUtils.now() - retrievalStart;
+    ChromeUtils.addProfilerMarker(
+      "SmartWindow",
+      { startTime: retrievalStart },
+      "searchTheWeb-retrieval"
+    );
   }
 
-  const kept = retrieved
-    .filter(
-      item =>
-        isValidHttpUrl(item?.url) && item?.snippet?.length > MIN_SNIPPET_LENGTH
-    )
-    .slice(0, MAX_RESULTS_RETURNED);
+  const processingStart = ChromeUtils.now();
+  try {
+    stats.retrieved = retrieved.length;
 
-  if (!kept.length) {
-    return fastFailure("no search results");
+    const kept = retrieved
+      .filter(
+        item =>
+          isValidHttpUrl(item?.url) &&
+          item?.snippet?.length > MIN_SNIPPET_LENGTH
+      )
+      .slice(0, MAX_RESULTS_RETURNED);
+
+    if (!kept.length) {
+      stats.error = SEARCH_TELEMETRY_ERRORS.NO_RESULTS;
+      return fastFailure("no search results");
+    }
+    stats.returned = kept.length;
+
+    const urls = kept.map(item => item.url);
+
+    // Record the results as seen and add them to the anonymous-fetch ledger so a
+    // follow-up get_page_content is allowed, then mark the conversation as having
+    // seen private + untrusted content.
+    conversation.addSeenUrls(urls);
+    conversation.addSerpUrlsForAnonymousFetch(urls);
+    conversation.securityProperties.setPrivateData();
+    conversation.securityProperties.setUntrustedInput();
+
+    // The snippets are excerpts of these pages, so they ground the answer the
+    // same way a full page read does on the grounded path.
+    conversation.addCitations(
+      kept.map(item =>
+        item.title ? { url: item.url, title: item.title } : { url: item.url }
+      )
+    );
+
+    const results = kept.map(item => {
+      const snippet = normalizeAndTruncateText(item.snippet);
+      stats.snippetChars += snippet.text.length;
+      stats.snippetCharsDropped += snippet.droppedChars;
+      return {
+        title: sanitizeUntrustedContent(item.title || ""),
+        url: item.url,
+        snippet: snippet.text,
+      };
+    });
+
+    lazy.console.log("[Tool] searchTheWeb (fast)", {
+      query,
+      returned: kept.length,
+    });
+
+    return {
+      results,
+      requiresSearchHandoff: false,
+    };
+  } finally {
+    stats.processing = ChromeUtils.now() - processingStart;
+    ChromeUtils.addProfilerMarker(
+      "SmartWindow",
+      { startTime: processingStart },
+      "searchTheWeb-processing"
+    );
   }
-
-  const urls = kept.map(item => item.url);
-
-  // Record the results as seen and add them to the anonymous-fetch ledger so a
-  // follow-up get_page_content is allowed, then mark the conversation as having
-  // seen private + untrusted content.
-  conversation.addSeenUrls(urls);
-  conversation.addSerpUrlsForAnonymousFetch(urls);
-  conversation.securityProperties.setPrivateData();
-  conversation.securityProperties.setUntrustedInput();
-
-  // The snippets are excerpts of these pages, so they ground the answer the
-  // same way a full page read does on the grounded path.
-  conversation.addCitations(
-    kept.map(item =>
-      item.title ? { url: item.url, title: item.title } : { url: item.url }
-    )
-  );
-
-  lazy.console.log("[Tool] searchTheWeb (fast)", {
-    query,
-    returned: kept.length,
-  });
-
-  return {
-    results: kept.map(item => ({
-      title: sanitizeUntrustedContent(item.title || ""),
-      url: item.url,
-      snippet: normalizeAndTruncateText(item.snippet),
-    })),
-    requiresSearchHandoff: false,
-  };
 }
 
 /**

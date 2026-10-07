@@ -166,6 +166,163 @@ addAsyncAnimTest(async function() {
   done_scroller();
 });
 
+// The scroll-driven animation with a percentage animation-range.
+addAsyncAnimTest(async function() {
+  let scroller = await new_scroller();
+  new_div("animation: transform_anim 1s linear; " +
+          "animation-timeline: --scroll_timeline; " +
+          "animation-range: 25% 75%;");
+  await waitForPaintsFlushed();
+
+  scroller.scrollTop = 25;
+  await waitForPaintsFlushed();
+
+  omta_is_approx("transform", { tx: 50 }, 0.1, RunningOn.Compositor,
+                 "scroll animation with animation-range at range start");
+
+  scroller.scrollTop = 50;
+  await waitForPaintsFlushed();
+
+  omta_is_approx("transform", { tx: 100 }, 0.1, RunningOn.Compositor,
+                 "scroll animation with animation-range at 50% of the range");
+
+  scroller.scrollTop = 70;
+  await waitForPaintsFlushed();
+
+  omta_is_approx("transform", { tx: 140 }, 0.1, RunningOn.Compositor,
+                 "scroll animation with animation-range at 90% of the range");
+
+  // Scroll on the compositor only, from scrollTop 70 to an effective 45, i.e.
+  // 40% of the range. The main thread never sees this offset, so this checks
+  // the compositor's own sampling of the animation range.
+  let utils = SpecialPowers.wrap(window).windowUtils;
+  utils.setAsyncScrollOffset(scroller, 0, -25);
+
+  let compositorStr =
+    SpecialPowers.DOMWindowUtils.getOMTAStyle(gDiv, "transform");
+  ok(compositorStr === "matrix(1, 0, 0, 1, 90, 0)",
+     `compositor-only scroll samples the animation range, got ` +
+     `"${compositorStr}"`);
+
+  done_div();
+  done_scroller();
+});
+
+// The scroll-driven animation with a pixel-based animation-range, including a
+// change to the scroll range.
+addAsyncAnimTest(async function() {
+  let scroller = await new_scroller();
+  new_div("animation: transform_anim 1s linear; " +
+          "animation-timeline: --scroll_timeline; " +
+          "animation-range: 20px 80px;");
+  await waitForPaintsFlushed();
+
+  scroller.scrollTop = 50;
+  await waitForPaintsFlushed();
+
+  omta_is_approx("transform", { tx: 100 }, 0.1, RunningOn.Compositor,
+                 "scroll animation with a pixel-based animation-range");
+
+  // Growing the content changes the scroll range (100px -> 300px). The range
+  // still resolves to [20px, 80px], but as fractions of the timeline (which is
+  // what we send to the compositor) it changes from [0.2, 0.8] to
+  // [1/15, 4/15], so those fractions must be re-sent. The scroll position is
+  // unchanged, so the expected transform is unchanged too; stale fractions
+  // would place scrollTop 50 before the range.
+  scroller.firstChild.style.paddingBlockEnd = "300px";
+  await waitForPaintsFlushed();
+
+  omta_is_approx("transform", { tx: 100 }, 0.1, RunningOn.Compositor,
+                 "scroll animation with a pixel-based animation-range after " +
+                 "the scroll range changed");
+
+  done_div();
+  done_scroller();
+});
+
+// The scroll-driven animation with only animation-range-start.
+addAsyncAnimTest(async function() {
+  let scroller = await new_scroller();
+  new_div("animation: transform_anim 1s linear; " +
+          "animation-timeline: --scroll_timeline; " +
+          "animation-range: 50%;");
+  await waitForPaintsFlushed();
+
+  scroller.scrollTop = 75;
+  await waitForPaintsFlushed();
+
+  omta_is_approx("transform", { tx: 100 }, 0.1, RunningOn.Compositor,
+                 "scroll animation with animation-range-start only");
+
+  done_div();
+  done_scroller();
+});
+
+// The scroll-driven animation with animation-range, sampled outside the range
+// (before phase and exactly at the range end).
+addAsyncAnimTest(async function() {
+  let scroller = await new_scroller();
+  new_div("animation: transform_anim 1s linear; " +
+          "animation-timeline: --scroll_timeline; " +
+          "animation-range: 25% 75%; " +
+          "transform: translate(25px);");
+  await waitForPaintsFlushed();
+
+  scroller.scrollTop = 10;
+  await waitForPaintsFlushed();
+
+  // NOTE: getOMTAStyle() can't detect the animation is running on the
+  // compositor during the delay phase.
+  omta_is_approx("transform", { tx: 25 }, 0.1, RunningOn.Either,
+                 "scroll animation before the animation range uses the " +
+                 "underlying style");
+
+  scroller.scrollTop = 50;
+  await waitForPaintsFlushed();
+
+  omta_is_approx("transform", { tx: 100 }, 0.1, RunningOn.Compositor,
+                 "scroll animation inside the animation range");
+
+  // Exactly at the range end the timeline time is at the maximum timeline
+  // time, so this is an at-boundary position: the animation stays in the
+  // active phase and holds the end keyframe value (bug 2047776).
+  scroller.scrollTop = 75;
+  await waitForPaintsFlushed();
+
+  // NOTE: getOMTAStyle() can't detect the animation on the compositor here
+  // because the animation is finished at the range end.
+  omta_is_approx("transform", { tx: 150 }, 0.1, RunningOn.Either,
+                 "scroll animation at the end of the animation range holds " +
+                 "the end value");
+
+  done_div();
+  done_scroller();
+});
+
+// Changing animation-range on a running scroll-driven animation.
+addAsyncAnimTest(async function() {
+  let scroller = await new_scroller();
+  new_div("animation: transform_anim 1s linear; " +
+          "animation-timeline: --scroll_timeline; " +
+          "animation-range: 25% 75%;");
+  await waitForPaintsFlushed();
+
+  scroller.scrollTop = 50;
+  await waitForPaintsFlushed();
+
+  omta_is_approx("transform", { tx: 100 }, 0.1, RunningOn.Compositor,
+                 "scroll animation with the initial animation-range");
+
+  gDiv.style.animationRange = "40% 90%";
+  await waitForPaintsFlushed();
+
+  omta_is_approx("transform", { tx: 70 }, 0.1, RunningOn.Compositor,
+                 "scroll animation with the updated animation-range");
+
+  done_div();
+  done_scroller();
+});
+
 
 // The scroll-driven animation with an underlying value and make it go from the
 // active phase to the before phase.

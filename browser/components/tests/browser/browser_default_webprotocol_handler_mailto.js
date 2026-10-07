@@ -10,7 +10,7 @@ const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
 const WebProtocolHandlerRegistrar = ChromeUtils.importESModule(
-  "resource:///modules/WebProtocolHandlerRegistrar.sys.mjs"
+  "moz-src:///browser/components/protocolhandler/WebProtocolHandlerRegistrar.sys.mjs"
 ).WebProtocolHandlerRegistrar.prototype;
 
 add_setup(async () => {

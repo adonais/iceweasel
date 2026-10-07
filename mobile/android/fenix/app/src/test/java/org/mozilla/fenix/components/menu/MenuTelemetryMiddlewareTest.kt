@@ -5,6 +5,8 @@
 package org.mozilla.fenix.components.menu
 
 import kotlin.test.assertNotNull
+import mozilla.components.compose.menu.store.MenuState as CustomizableMenuState
+import mozilla.components.compose.menu.store.MenuStore as CustomizableMenuStore
 import mozilla.components.feature.addons.Addon
 import mozilla.components.service.fxa.manager.AccountState
 import mozilla.components.support.test.robolectric.testContext
@@ -26,6 +28,7 @@ import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.MenuStore
 import org.mozilla.fenix.helpers.FenixGleanTestRule
+import org.mozilla.fenix.tabgroups.flow.TabGroupFlowEntryPoint
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
@@ -43,11 +46,25 @@ class MenuTelemetryMiddlewareTest {
     }
 
     @Test
+    fun `GIVEN middleware is registered to the customizable menu store WHEN an action is dispatched THEN record telemetry`() {
+        val store =
+            CustomizableMenuStore(
+                initialState = CustomizableMenuState(emptyList()),
+                middleware = listOf(MenuTelemetryMiddleware(accessPoint = MenuAccessPoint.Browser)),
+            )
+        assertNull(Events.browserMenuAction.testGetValue())
+
+        store.dispatch(MenuAction.AddBookmark)
+
+        assertTelemetryRecorded(Events.browserMenuAction, item = "add_bookmark")
+    }
+
+    @Test
     fun `WHEN navigating to edit a bookmark THEN record the edit bookmark browser menu telemetry`() {
         val store = createStore()
         assertNull(Events.browserMenuAction.testGetValue())
 
-        store.dispatch(MenuAction.Navigate.EditBookmark)
+        store.dispatch(MenuAction.Navigate.EditBookmark())
 
         assertTelemetryRecorded(Events.browserMenuAction, item = "edit_bookmark")
     }
@@ -503,6 +520,18 @@ class MenuTelemetryMiddlewareTest {
         store.dispatch(MenuAction.Navigate.WebCompatReporter)
 
         assertTelemetryRecorded(Events.browserMenuAction, item = "report_broken_site")
+    }
+
+    @Test
+    fun `WHEN adding a tab to a group THEN record the group flow telemetry`() {
+        val store = createStore()
+        assertNull(Events.browserMenuAction.testGetValue())
+
+        store.dispatch(
+            MenuAction.Navigate.OpenTabGroupFlow(entryPoint = TabGroupFlowEntryPoint.AddTabToGroup(tabId = "123"))
+        )
+
+        assertTelemetryRecorded(Events.browserMenuAction, item = "add_to_group")
     }
 
     private fun assertTelemetryRecorded(

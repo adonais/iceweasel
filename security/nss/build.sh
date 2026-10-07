@@ -135,7 +135,7 @@ while [ $# -gt 0 ]; do
         --no-zdefs) gyp_params+=(-Dno_zdefs=1) ;;
         --static) static_libs=1; gyp_params+=(-Dstatic_libs=1) ;;
         --ct-verif) gyp_params+=(-Dct_verif=1) ;;
-        --nspr) nspr_clean; rebuild_nspr=1 ;;
+        --nspr) rebuild_nspr=1 ;;
         --nspr-test-build) build_nspr_tests=1 ;;
         --nspr-test-run) run_nspr_tests=1 ;;
         --nspr-only) exit_after_nspr=1 ;;
@@ -263,7 +263,8 @@ fi
 if check_config "$nspr_config" \
                  nspr_cflags="$(Q "$nspr_cflags")" \
                  nspr_cxxflags="$(Q "$nspr_cxxflags")" \
-                 nspr_ldflags="$(Q "$nspr_ldflags")"; then
+                 nspr_ldflags="$(Q "$nspr_ldflags")" \
+                 nspr_opt="$(Q "$nspr_opt")"; then
     rebuild_nspr=1
 fi
 

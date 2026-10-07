@@ -3129,9 +3129,10 @@ nsresult NS_ShouldSecureUpgrade(
     aShouldUpgrade = false;
     return NS_OK;
   }
-  // If it is a mixed content trustworthy loopback, then we shouldn't upgrade
-  // it.
-  if (nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(aURI)) {
+  // If the target is already considered potentially trustworthy (loopback, a
+  // host on `dom.securecontext.allowlist`, or a .onion address), then it is
+  // not served over https and we shouldn't upgrade it.
+  if (nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aURI)) {
     aShouldUpgrade = false;
     return NS_OK;
   }

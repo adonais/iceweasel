@@ -90,6 +90,10 @@ class MainMenuPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRul
      * for the later removal step.
      */
     fun installFirstRecommendedExtension(): String {
+        // The recommendation list is fetched from AMO asynchronously, so wait for at least one row to
+        // render before scanning the allowlist by name - otherwise the scan can race the fetch and find
+        // nothing, which getRecommendedExtensionTitle reports as "No add-on found".
+        mozVerify(MainMenuSelectors.RECOMMENDED_ADDON_ITEM)
         val addonTitle = getRecommendedExtensionTitle(composeRule)
         mozClick(MainMenuSelectors.RECOMMENDED_ADDON_INSTALL_BUTTON(addonTitle))
         mozVerify(SettingsAddonsManagerSelectors.ADDON_PERMISSION_PROMPT_TITLE(addonTitle), timeout = waitingTimeLong)

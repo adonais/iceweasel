@@ -1510,6 +1510,7 @@ impl LineClamp {
     }
 
     /// Serializes the legacy `-webkit-line-clamp` syntax.
+    #[cfg_attr(feature = "servo", allow(unused))]
     pub(crate) fn to_css_legacy<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: fmt::Write,
@@ -1963,6 +1964,7 @@ pub enum Appearance {
 
 impl Appearance {
     /// Parses a `-moz-appearance` value.
+    #[cfg_attr(feature = "servo", allow(unused))]
     pub(crate) fn parse_legacy(
         context: &ParserContext,
         input: &mut Parser,
@@ -2223,3 +2225,394 @@ impl Zoom {
 }
 
 pub use crate::values::generics::box_::PositionProperty;
+
+/// Whether an element lives in the top layer. Set by UA sheets.
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum TopLayer {
+    None,
+    Auto,
+}
+
+/// https://drafts.csswg.org/cssom-view/#propdef-scroll-behavior
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum ScrollBehavior {
+    Auto,
+    Smooth,
+}
+
+/// https://drafts.fxtf.org/compositing/#isolation
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum Isolation {
+    Auto,
+    Isolate,
+}
+
+/// https://drafts.csswg.org/css-transforms/#backface-visibility-property
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum BackfaceVisibility {
+    Visible,
+    Hidden,
+}
+
+/// Nonstandard (https://developer.mozilla.org/en-US/docs/Web/CSS/-moz-orient)
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum Orient {
+    Inline,
+    Block,
+    Horizontal,
+    Vertical,
+}
+
+/// https://drafts.csswg.org/css-box/#propdef-visibility
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum Visibility {
+    Visible,
+    Hidden,
+    Collapse,
+}
+
+/// Whether flexbox visibility: collapse items use legacy -moz-box behavior or not.
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum BoxCollapse {
+    Flex,
+    Legacy,
+}
+
+/// https://drafts.csswg.org/css-writing-modes/#propdef-text-orientation
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum TextOrientation {
+    Mixed,
+    Upright,
+    #[cfg_attr(feature = "gecko", parse(aliases = "sideways-right"))]
+    Sideways,
+}
+
+/// https://drafts.csswg.org/css-images/#propdef-image-orientation
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum ImageOrientation {
+    FromImage,
+    None,
+}
+
+/// Nonstandard (https://developer.mozilla.org/en-US/docs/Web/CSS/box-align)
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum BoxAlign {
+    Stretch,
+    Start,
+    Center,
+    Baseline,
+    End,
+}
+
+/// Nonstandard (https://developer.mozilla.org/en-US/docs/Web/CSS/box-direction)
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum BoxDirection {
+    Normal,
+    Reverse,
+}
+
+/// Nonstandard (https://developer.mozilla.org/en-US/docs/Web/CSS/box-orient)
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum BoxOrient {
+    #[cfg_attr(feature = "gecko", parse(aliases = "inline-axis"))]
+    Horizontal,
+    #[cfg_attr(feature = "gecko", parse(aliases = "block-axis"))]
+    Vertical,
+}
+
+/// Nonstandard (https://developer.mozilla.org/en-US/docs/Web/CSS/box-pack)
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum BoxPack {
+    Start,
+    Center,
+    End,
+    Justify,
+}
+
+/// https://drafts.csswg.org/css-writing-modes/#propdef-direction
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum DirectionProperty {
+    Ltr,
+    Rtl,
+}

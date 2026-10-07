@@ -533,7 +533,7 @@ void SetUpReadableStreamDefaultController(
   // Step 10.
   RefPtr<Promise> startPromise =
       Promise::CreateInfallible(aStream->GetParentObject());
-  startPromise->MaybeResolve(startResult);
+  startPromise->MaybeSafeResolve(startResult);
 
   // Step 11 & 12:
   startPromise->AddCallbacksWithCycleCollectedArgs(

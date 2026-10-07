@@ -49,6 +49,7 @@ AntiTracking._createTask({
   errorMessageDomains: [
     "https://tracking.example.org",
     "https://tracking.example.org",
+    "https://tracking.example.org",
   ],
   extraPrefs: [
     // Enable SA heuristics for trackers because the test depends on it.

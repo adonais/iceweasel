@@ -7,7 +7,6 @@ package mozilla.components.feature.media.ext
 import android.support.v4.media.session.PlaybackStateCompat
 import mozilla.components.browser.state.state.MediaSessionState
 import mozilla.components.concept.engine.mediasession.MediaSession
-import mozilla.components.feature.media.MediaNimbus
 
 /**
  * The number of milliseconds in a second, used to convert the seconds-based media session positions to the milliseconds
@@ -21,23 +20,19 @@ internal const val MS_PER_SECOND = 1000.0
  * @param resetPosition when true, reports a position of 0 instead of the value from [positionState].
  */
 internal fun MediaSessionState.toPlaybackState(resetPosition: Boolean = false): PlaybackStateCompat {
-    val improvementsEnabled = MediaNimbus.features.mediaNotificationImprovements.value().enabled
     return PlaybackStateCompat.Builder()
-        .setActions(playbackActions(improvementsEnabled))
+        .setActions(playbackActions())
         .setState(
             playbackStateCompat(),
-            playbackPositionMs(improvementsEnabled, resetPosition),
-            playbackSpeed(improvementsEnabled),
+            playbackPositionMs(resetPosition),
+            playbackSpeed(),
         )
         .build()
 }
 
-private fun MediaSessionState.playbackActions(improvementsEnabled: Boolean): Long {
+private fun MediaSessionState.playbackActions(): Long {
     var actions =
         PlaybackStateCompat.ACTION_PLAY_PAUSE or PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PAUSE
-    if (!improvementsEnabled) {
-        return actions
-    }
     if (features.contains(MediaSession.Feature.NEXT_TRACK)) {
         actions = actions or PlaybackStateCompat.ACTION_SKIP_TO_NEXT
     }
@@ -58,18 +53,18 @@ private fun MediaSessionState.playbackStateCompat(): Int =
         else -> PlaybackStateCompat.STATE_NONE
     }
 
-private fun MediaSessionState.playbackPositionMs(improvementsEnabled: Boolean, resetPosition: Boolean): Long =
-    when {
-        !improvementsEnabled -> PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN
-        resetPosition -> 0L
-        else -> (positionState.position * MS_PER_SECOND).toLong()
+private fun MediaSessionState.playbackPositionMs(resetPosition: Boolean): Long =
+    if (resetPosition) {
+        0L
+    } else {
+        (positionState.position * MS_PER_SECOND).toLong()
     }
 
-private fun MediaSessionState.playbackSpeed(improvementsEnabled: Boolean): Float =
-    when {
-        playbackState != MediaSession.PlaybackState.PLAYING -> 0.0f
-        !improvementsEnabled -> 1.0f
-        else -> positionState.playbackRate.toFloat().takeIf { it != 0f } ?: 1.0f
+private fun MediaSessionState.playbackSpeed(): Float =
+    if (playbackState != MediaSession.PlaybackState.PLAYING) {
+        0.0f
+    } else {
+        positionState.playbackRate.toFloat().takeIf { it != 0f } ?: 1.0f
     }
 
 /** If this state is [MediaSession.PlaybackState.PLAYING] then return true, else return false. */

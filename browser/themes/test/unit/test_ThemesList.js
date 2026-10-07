@@ -516,3 +516,50 @@ add_task(async function test_updateThemeState_installListener() {
   await addon.uninstall();
   Services.prefs.clearUserPref("extensions.getAddons.get.url");
 });
+
+add_task(async function test_getThemePreviewLinkParameters() {
+  const manager = await getThemesList({
+    installSource: TEST_INSTALL_SOURCE,
+  });
+
+  Assert.equal(
+    manager.getThemePreviewLinkParameters("default-theme@mozilla.org"),
+    null,
+    "built-in themes have no preview link-parameters"
+  );
+  Assert.equal(
+    manager.getThemePreviewLinkParameters("unknown-theme@mozilla.org"),
+    null,
+    "unmanaged themes have no preview link-parameters"
+  );
+
+  for (const { id } of manager.getThemesInfo()) {
+    if (manager.isBuiltIn(id)) {
+      continue;
+    }
+    const linkParameters = manager.getThemePreviewLinkParameters(id);
+    Assert.ok(
+      linkParameters?.startsWith("param(--tabbar-background, light-dark("),
+      `${id} has preview link-parameters starting with the tabbar background`
+    );
+    for (const name of [
+      "--text-color",
+      "--icon-color",
+      "--active-tab-stroke",
+    ]) {
+      Assert.ok(
+        linkParameters.includes(`param(${name}, light-dark(`),
+        `${id} preview link-parameters include ${name}`
+      );
+    }
+  }
+
+  // nova-sun is the only theme with a plain color dark variant, make sure it
+  // is turned into a gradient so that it can be part of a light-dark() image.
+  Assert.ok(
+    manager
+      .getThemePreviewLinkParameters("nova-sun@mozilla.org")
+      .includes("linear-gradient(#270F00, #270F00)"),
+    "plain color picker variants are turned into gradients"
+  );
+});

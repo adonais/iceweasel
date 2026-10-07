@@ -8,6 +8,12 @@
 #error "Compiler option is invalid"
 #endif
 
+#ifdef _MSC_VER
+#define SHA_ALIGN16 __declspec(align(16))
+#else
+#define SHA_ALIGN16 __attribute__((aligned(16)))
+#endif
+
 #ifdef FREEBL_NO_DEPEND
 #include "stubs.h"
 #endif
@@ -21,7 +27,7 @@
 #include <arm_neon.h>
 
 /* SHA-256 constants, K256. */
-static const PRUint32 __attribute__((aligned(16))) K256[64] = {
+static const SHA_ALIGN16 PRUint32 K256[64] = {
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
     0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,

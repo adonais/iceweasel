@@ -36,3 +36,13 @@ if CONFIG['CC_TYPE'] in ('clang', 'clang-cl'):
 
 for k, v in expat_defines:
     DEFINES[k] = v
+
+LICENSES += ["expat"]
+LICENSES["expat"].title = "Expat License"
+LICENSES["expat"].notice = """
+<p>This license applies to certain files in the directory <code>parser/expat/</code>.</p>
+"""
+
+LICENSED_UNDER += [
+    "expat",
+]

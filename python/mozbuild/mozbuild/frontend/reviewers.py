@@ -175,6 +175,13 @@ def known_review_groups(rules_data=None, mots_config=None):
                 if reviewer.get("is_group"):
                     names.add(reviewer["target"])
 
+    return names | mots_review_groups(mots_config)
+
+
+def mots_review_groups(mots_config):
+    """Return the set of review_group names declared by mots modules."""
+    names = set()
+
     def walk(modules):
         for module in modules or []:
             group = module.get("meta", {}).get("review_group")
@@ -183,7 +190,6 @@ def known_review_groups(rules_data=None, mots_config=None):
             walk(module.get("submodules"))
 
     walk((mots_config or {}).get("modules"))
-
     return names
 
 

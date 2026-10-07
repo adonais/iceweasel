@@ -7,3 +7,24 @@ DevToolsModules(
     "pretty-print-worker.js",
     "search-worker.js",
 )
+
+LICENSES += ["babel"]
+LICENSES["babel"].title = "Babel License"
+LICENSES["babel"].text = "LICENSE-NOTICE-babel.txt"
+LICENSES["babel"].spdx = "MIT"
+LICENSES["babel"].notice = """
+<p>This license applies to file bundled in <code>devtools/client/debugger/dist</code>.</p>
+"""
+
+LICENSES += ["babylon"]
+LICENSES["babylon"].title = "Babylon License"
+LICENSES["babylon"].text = "LICENSE-NOTICE-babylon.txt"
+LICENSES["babylon"].spdx = "MIT"
+LICENSES["babylon"].notice = """
+<p>This license applies to file bundled in <code>devtools/client/debugger/dist</code>.</p>
+"""
+
+LICENSED_UNDER += [
+    "babel",
+    "babylon",
+]

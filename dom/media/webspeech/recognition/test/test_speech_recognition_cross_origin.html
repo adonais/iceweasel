@@ -1,0 +1,79 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: a cross-origin track is fed as silence</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="head.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div id="content"></div>
+<pre id="test">
+<script>
+"use strict";
+
+// The same speech as test_parakeet_e2e.html, loaded from another origin.
+
+const SERVER_PORT = 8766;
+const LANG = "en-US";
+const CROSS_ORIGIN =
+  "https://example.org/tests/dom/media/webspeech/recognition/test/";
+const LISTEN_DURATION_MS = 15000;
+
+SimpleTest.requestFlakyTimeout("waiting for parakeet inference to complete");
+
+add_setup(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.webspeech.recognition.enable", true],
+      ["browser.ml.modelHubRootUrl", `http://localhost:${SERVER_PORT}/`],
+      ["media.webspeech.recognition.model-download.prompt.testing", true],
+      ["media.navigator.permission.disabled", true],
+    ],
+  });
+});
+
+add_task(async function cross_origin_track_is_blanked() {
+  ok(await ensureModelInstalled([LANG]), "Model installed successfully");
+
+  const audio = await loadTestAudio(CROSS_ORIGIN + "kennedy-appolo.opus");
+  const track = audio.mozCaptureStreamUntilEnded().getAudioTracks()[0];
+  ok(track, "Got audio track");
+
+  audio.currentTime = 0;
+  await audio.play();
+
+  const sr = new SpeechRecognition();
+  sr.continuous = true;
+  sr.lang = LANG;
+
+  let speechstartFired = false;
+  sr.onspeechstart = () => {
+    speechstartFired = true;
+  };
+
+  const transcript = await new Promise((resolve, reject) => {
+    let text = "";
+    sr.onresult = e => {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          text += " " + e.results[i][0].transcript;
+        }
+      }
+    };
+    sr.onerror = e => reject(new Error(e.error));
+    sr.onend = () => resolve(text.trim());
+    sr.start(track);
+    setTimeout(() => sr.stop(), LISTEN_DURATION_MS);
+  });
+
+  audio.pause();
+
+  is(transcript, "", "A cross-origin track produces no transcript");
+  ok(!speechstartFired, "No speech is detected in a cross-origin track");
+});
+</script>
+</pre>
+</body>
+</html>

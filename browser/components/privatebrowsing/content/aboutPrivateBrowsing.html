@@ -35,6 +35,10 @@
     ></script>
     <script
       type="module"
+      src="chrome://browser/content/private-browsing-mask-intro.mjs"
+    ></script>
+    <script
+      type="module"
       src="chrome://global/content/elements/moz-promo.mjs"
     ></script>
     <script
@@ -82,6 +86,10 @@
     <div class="showPrivate showSearch container">
       <div class="logo-and-wordmark">
         <div id="about-private-browsing-logo" class="logo"></div>
+        <private-browsing-mask-intro
+          id="about-private-browsing-mask-intro"
+          hidden
+        ></private-browsing-mask-intro>
         <div class="wordmark"></div>
       </div>
       <p
@@ -109,6 +117,12 @@
             id="private-browsing-myths"
             data-l10n-id="about-private-browsing-felt-privacy-v1-info-link"
             target="_blank"
+          ></a>
+          <a
+            id="private-window-basics"
+            href="#"
+            data-l10n-id="about-private-browsing-private-window-basics-link"
+            hidden
           ></a>
         </div>
       </div>

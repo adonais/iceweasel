@@ -11,8 +11,6 @@ support-files = [
   "head.js",
   "head-common.js",
   "addons/pl-dictionary.xpi",
-  "addons/set_homepage.xpi",
-  "addons/set_newtab.xpi",
 ]
 tags = "os_integration"
 
@@ -41,8 +39,6 @@ run-if = ["updater"]
 support-files = [
   "browser_bug1184989_prevent_scrolling_when_preferences_flipped.xhtml",
 ]
-
-["browser_bug1579418.js"]
 
 ["browser_colors_dialog_xul.js"]
 

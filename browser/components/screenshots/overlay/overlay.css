@@ -156,6 +156,11 @@
   content: url("chrome://browser/skin/downloads/downloads.svg");
 }
 
+#pop > img {
+  /* TODO: update this image to a more appropriate one further down the stack */
+  content: url("chrome://global/skin/icons/open-in-new.svg");
+}
+
 #face-container {
   position: relative;
 

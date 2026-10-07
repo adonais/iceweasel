@@ -81,9 +81,7 @@ using ::testing::A;
 using ::testing::AllOf;
 using ::testing::An;
 using ::testing::AnyNumber;
-using ::testing::ByRef;
 using ::testing::Combine;
-using ::testing::DoAll;
 using ::testing::Each;
 using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
@@ -94,8 +92,6 @@ using ::testing::Mock;
 using ::testing::NiceMock;
 using ::testing::Return;
 using ::testing::SafeMatcherCast;
-using ::testing::SaveArgPointee;
-using ::testing::SetArgPointee;
 using ::testing::SizeIs;
 using ::testing::TypedEq;
 using ::testing::UnorderedElementsAreArray;
@@ -2519,10 +2515,10 @@ TEST_F(TestVp9Impl, ScalesInputToActiveResolution) {
         return VPX_CODEC_OK;
       }));
   ON_CALL(*vpx, codec_enc_config_default)
-      .WillByDefault(DoAll(WithArg<1>([](vpx_codec_enc_cfg_t* cfg) {
-                             memset(cfg, 0, sizeof(vpx_codec_enc_cfg_t));
-                           }),
-                           Return(VPX_CODEC_OK)));
+      .WillByDefault(WithArg<1>([](vpx_codec_enc_cfg_t* cfg) {
+        memset(cfg, 0, sizeof(vpx_codec_enc_cfg_t));
+        return VPX_CODEC_OK;
+      }));
 
   vpx_codec_priv_output_cx_pkt_cb_pair_t callback_pointer = {};
   EXPECT_CALL(*vpx, codec_control(_, VP9E_REGISTER_CX_CALLBACK, A<void*>()))
@@ -2839,10 +2835,10 @@ TEST(Vp9SpeedSettingsTrialsTest, NoSvcUsesGlobalSpeedFromTl0InLayerConfig) {
 
   ON_CALL(*vpx, img_wrap).WillByDefault(GetWrapImageFunction(&img));
   ON_CALL(*vpx, codec_enc_config_default)
-      .WillByDefault(DoAll(WithArg<1>([](vpx_codec_enc_cfg_t* cfg) {
-                             memset(cfg, 0, sizeof(vpx_codec_enc_cfg_t));
-                           }),
-                           Return(VPX_CODEC_OK)));
+      .WillByDefault(WithArg<1>([](vpx_codec_enc_cfg_t* cfg) {
+        memset(cfg, 0, sizeof(vpx_codec_enc_cfg_t));
+        return VPX_CODEC_OK;
+      }));
   EXPECT_CALL(*vpx, codec_control(_, _, An<int>())).Times(AnyNumber());
 
   EXPECT_CALL(*vpx, codec_control(_, VP9E_SET_SVC_PARAMETERS,
@@ -2884,10 +2880,10 @@ TEST(Vp9SpeedSettingsTrialsTest,
 
   ON_CALL(*vpx, img_wrap).WillByDefault(GetWrapImageFunction(&img));
   ON_CALL(*vpx, codec_enc_config_default)
-      .WillByDefault(DoAll(WithArg<1>([](vpx_codec_enc_cfg_t* cfg) {
-                             memset(cfg, 0, sizeof(vpx_codec_enc_cfg_t));
-                           }),
-                           Return(VPX_CODEC_OK)));
+      .WillByDefault(WithArg<1>([](vpx_codec_enc_cfg_t* cfg) {
+        memset(cfg, 0, sizeof(vpx_codec_enc_cfg_t));
+        return VPX_CODEC_OK;
+      }));
   EXPECT_CALL(*vpx, codec_control(_, _, An<int>())).Times(AnyNumber());
 
   // Speed settings not populated when 'use_per_layer_speed' flag is absent.
@@ -2963,10 +2959,10 @@ TEST(Vp9SpeedSettingsTrialsTest, DefaultPerLayerFlagsWithSvc) {
         return VPX_CODEC_OK;
       }));
   ON_CALL(*vpx, codec_enc_config_default)
-      .WillByDefault(DoAll(WithArg<1>([](vpx_codec_enc_cfg_t* cfg) {
-                             memset(cfg, 0, sizeof(vpx_codec_enc_cfg_t));
-                           }),
-                           Return(VPX_CODEC_OK)));
+      .WillByDefault(WithArg<1>([](vpx_codec_enc_cfg_t* cfg) {
+        memset(cfg, 0, sizeof(vpx_codec_enc_cfg_t));
+        return VPX_CODEC_OK;
+      }));
   EXPECT_CALL(
       *vpx, codec_control(_, VP9E_SET_SVC_PARAMETERS,
                           SafeMatcherCast<vpx_svc_extra_cfg_t*>(
@@ -3018,12 +3014,16 @@ TEST(Vp9SpeedSettingsTrialsTest, DefaultPerLayerFlagsWithSvc) {
   vpx_svc_ref_frame_config_t stored_refs = {};
   ON_CALL(*vpx, codec_control(_, VP9E_SET_SVC_REF_FRAME_CONFIG,
                               A<vpx_svc_ref_frame_config_t*>()))
-      .WillByDefault(
-          DoAll(SaveArgPointee<2>(&stored_refs), Return(VPX_CODEC_OK)));
+      .WillByDefault(WithArg<2>([&stored_refs](void* ptr) {
+        stored_refs = *reinterpret_cast<vpx_svc_ref_frame_config_t*>(ptr);
+        return VPX_CODEC_OK;
+      }));
   ON_CALL(*vpx, codec_control(_, VP9E_GET_SVC_REF_FRAME_CONFIG,
                               A<vpx_svc_ref_frame_config_t*>()))
-      .WillByDefault(
-          DoAll(SetArgPointee<2>(ByRef(stored_refs)), Return(VPX_CODEC_OK)));
+      .WillByDefault(WithArg<2>([&stored_refs](void* ptr) {
+        *reinterpret_cast<vpx_svc_ref_frame_config_t*>(ptr) = stored_refs;
+        return VPX_CODEC_OK;
+      }));
 
   // First frame is keyframe.
   encoded_data.data.frame.flags = VPX_FRAME_IS_KEY;

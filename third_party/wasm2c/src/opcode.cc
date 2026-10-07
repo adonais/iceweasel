@@ -22,18 +22,33 @@ namespace wabt {
 
 // static
 Opcode::Info Opcode::infos_[] = {
-#define WABT_OPCODE(rtype, type1, type2, type3, mem_size, prefix, code, Name, \
-                    text, decomp)                                             \
-  {text,     decomp, Type::rtype, {Type::type1, Type::type2, Type::type3},    \
-   mem_size, prefix, code,        PrefixCode(prefix, code)},
+#define WABT_OPCODE(rtype, rtype2, type1, type2, type3, mem_size, prefix, \
+                    code, Name, text, decomp)                             \
+  {text,                                                                  \
+   decomp,                                                                \
+   Type::rtype,                                                           \
+   Type::rtype2,                                                          \
+   {Type::type1, Type::type2, Type::type3},                               \
+   mem_size,                                                              \
+   prefix,                                                                \
+   code,                                                                  \
+   PrefixCode(prefix, code)},
 #include "wabt/opcode.def"
 #undef WABT_OPCODE
 
-  {"<invalid>", "", Type::Void, {Type::Void, Type::Void, Type::Void}, 0, 0, 0, 0},
+    {"<invalid>",
+     "",
+     Type::Void,
+     Type::Void,
+     {Type::Void, Type::Void, Type::Void},
+     0,
+     0,
+     0,
+     0},
 };
 
-#define WABT_OPCODE(rtype, type1, type2, type3, mem_size, prefix, code, Name, \
-                    text, decomp)                                             \
+#define WABT_OPCODE(rtype, rtype2, type1, type2, type3, mem_size, prefix, \
+                    code, Name, text, decomp)                             \
   /* static */ Opcode Opcode::Name##_Opcode(Opcode::Name);
 #include "wabt/opcode.def"
 #undef WABT_OPCODE
@@ -67,6 +82,8 @@ bool Opcode::IsEnabled(const Features& features) const {
     case Opcode::Catch:
     case Opcode::Delegate:
     case Opcode::Throw:
+    case Opcode::ThrowRef:
+    case Opcode::TryTable:
     case Opcode::Rethrow:
       return features.exceptions_enabled();
 
@@ -358,6 +375,10 @@ bool Opcode::IsEnabled(const Features& features) const {
       return features.reference_types_enabled();
 
     case Opcode::CallRef:
+    case Opcode::ReturnCallRef:
+    case Opcode::BrOnNonNull:
+    case Opcode::BrOnNull:
+    case Opcode::RefAsNonNull:
       return features.function_references_enabled();
 
     // Interpreter opcodes are never "enabled".

@@ -334,6 +334,16 @@ class CharacterDataBuffer final {
    */
   [[nodiscard]] bool BufferEquals(const CharacterDataBuffer& aOther) const;
 
+  /**
+   * Return true if aString matches with the data.
+   */
+  [[nodiscard]] bool Equals(const nsAString& aString) const;
+
+  /**
+   * Return true if aString matches with the data.
+   */
+  [[nodiscard]] bool Equals(const nsACString& aString) const;
+
   // FYI: FragmentBits::mLength is only 29 bits.  Therefore, UINT32_MAX won't
   // be valid offset in the data.
   constexpr static uint32_t kNotFound = UINT32_MAX;

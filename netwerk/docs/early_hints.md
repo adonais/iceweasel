@@ -5,7 +5,7 @@ This is used to send [Link headers](https://developer.mozilla.org/en-US/docs/Web
 
 This document is about the implementation details of Early Hints in Firefox.
 We focus on the `preload` feature, as it is the main feature interacting with classes.
-For Early Hint `preconnect` the Early Hints specific code is rather small and only touches the code path on [`103 Early Hints` responses](#early-hints-response-on-main-document-load).
+For Early Hint `preconnect` the Early Hints specific code is rather small and only touches the code path on [`103 Early Hints` responses](#103-early-hints-response-on-main-document-load).
 
 ```{mermaid}
 sequenceDiagram

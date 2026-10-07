@@ -709,11 +709,31 @@ bool CacheEntry::InvokeCallbacks(bool aReadOnly) MOZ_REQUIRES(mLock) {
     }
     if (!mIsDoomed && (mState == WRITING || (!mCallbacks[i].mReadAlways &&
                                              mState == REVALIDATING))) {
-      if (!mBypassWriterLock) {
+      uint32_t timeout = StaticPrefs::network_cache_entry_wait_timeout_ms();
+      TimeDuration elapsed = mRevalidatingSince.IsNull()
+                                 ? TimeDuration()
+                                 : TimeStamp::NowLoRes() - mRevalidatingSince;
+      if (mState == REVALIDATING && timeout && !mRevalidatingSince.IsNull() &&
+          elapsed >= TimeDuration::FromMilliseconds(timeout)) {
+        // The revalidating writer has been gone long enough that it is never
+        // coming back to call OnHandleClosed/SetValid (e.g. it was cancelled
+        // or crashed without releasing its handle). Self-heal so callbacks
+        // queued behind it (and future ones) don't each have to wait out
+        // their own backstop timer to notice the same thing.
+        LOG(
+            ("  revalidation wedged for %.0fms (timeout %ums), reverting to "
+             "state READY",
+             elapsed.ToMilliseconds(), timeout));
+        mState = READY;
+        mRevalidatingSince = TimeStamp();
+      } else if (!mBypassWriterLock) {
         LOG(("  entry is being written/revalidated"));
         return false;
+      } else {
+        LOG(
+            ("  entry is being written/revalidated but bypassing writer "
+             "lock"));
       }
-      LOG(("  entry is being written/revalidated but bypassing writer lock"));
     }
 
     bool recreate;
@@ -864,6 +884,7 @@ bool CacheEntry::InvokeCallback(Callback& aCallback) MOZ_REQUIRES(mLock) {
           case ENTRY_NEEDS_REVALIDATION:
             LOG(("  will be holding callbacks until entry is revalidated"));
             mState = REVALIDATING;
+            mRevalidatingSince = TimeStamp::NowLoRes();
             break;
 
           case ENTRY_NOT_WANTED:
@@ -1088,6 +1109,7 @@ void CacheEntry::OnHandleClosed(CacheEntryHandle const* aHandle) {
   } else if (mState == REVALIDATING) {
     LOG(("  reverting to state READY - reval failed"));
     mState = READY;
+    mRevalidatingSince = TimeStamp();
   }
 
   if (mState == READY && !mHasData) {
@@ -1619,6 +1641,7 @@ nsresult CacheEntry::SetValid() {
 
     mState = READY;
     mHasData = true;
+    mRevalidatingSince = TimeStamp();
 
     // Reset bypass flag when transitioning to READY state
     if (mBypassWriterLock) {
@@ -1864,13 +1887,13 @@ void CacheEntry::DoomAlreadyRemoved() {
   // Remove from DictionaryCache immediately, to ensure the removal is
   // synchronous
   LOG(("DoomAlreadyRemoved [entry=%p removed]", this));
-  // These are keyed on the same ascii spec the entry itself is keyed on.
   nsAutoCString uriSpec;
   mURI->GetAsciiSpec(uriSpec);
+  nsCOMPtr<nsILoadContextInfo> lci = CacheFileUtils::ParseKey(mStorageID);
   if (mEnhanceID.EqualsLiteral("dict:")) {
-    DictionaryCache::RemoveOriginFor(uriSpec);
+    DictionaryCache::RemoveOriginFor(uriSpec, lci);
   } else {
-    DictionaryCache::RemoveDictionaryOMT(uriSpec);
+    DictionaryCache::RemoveDictionaryOMT(uriSpec, lci);
   }
 
   // Pretend pinning is know.  This entry is now doomed for good, so don't

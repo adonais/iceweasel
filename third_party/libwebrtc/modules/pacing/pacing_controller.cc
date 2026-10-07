@@ -117,14 +117,14 @@ void PacingController::Pause() {
   if (!paused_)
     RTC_LOG(LS_INFO) << "PacedSender paused.";
   paused_ = true;
-  packet_queue_.SetPauseState(true, CurrentTime());
+  packet_queue_.SetPauseState(paused_ || congested_, CurrentTime());
 }
 
 void PacingController::Resume() {
   if (paused_)
     RTC_LOG(LS_INFO) << "PacedSender resumed.";
   paused_ = false;
-  packet_queue_.SetPauseState(false, CurrentTime());
+  packet_queue_.SetPauseState(paused_ || congested_, CurrentTime());
 }
 
 bool PacingController::IsPaused() const {
@@ -136,6 +136,7 @@ void PacingController::SetCongested(bool congested) {
     UpdateBudgetWithElapsedTime(UpdateTimeAndGetElapsed(CurrentTime()));
   }
   congested_ = congested;
+  packet_queue_.SetPauseState(paused_ || congested_, CurrentTime());
 }
 
 void PacingController::SetCircuitBreakerThreshold(int num_iterations) {

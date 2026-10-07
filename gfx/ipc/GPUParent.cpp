@@ -48,6 +48,7 @@
 #include "mozilla/layers/APZInputBridgeParent.h"
 #include "mozilla/layers/APZPublicUtils.h"  // for apz::InitializeGlobalState
 #include "mozilla/layers/APZThreadUtils.h"
+#include "mozilla/layers/CompositeProcessFencesHolderMap.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorManagerParent.h"
 #include "mozilla/layers/CompositorThread.h"
@@ -77,7 +78,6 @@
 #  include "gfxDWriteFonts.h"
 #  include "gfxWindowsPlatform.h"
 #  include "mozilla/gfx/DeviceManagerDx.h"
-#  include "mozilla/layers/CompositeProcessFencesHolderMap.h"
 #  include "mozilla/layers/GpuProcessD3D11TextureMap.h"
 #  include "mozilla/layers/TextureD3D11.h"
 #  include "mozilla/widget/WinCompositorWindowThread.h"
@@ -197,12 +197,15 @@ bool GPUParent::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
 #if defined(XP_WIN)
   gfxWindowsPlatform::InitMemoryReportersForGPUProcess();
   DeviceManagerDx::Init();
-  CompositeProcessFencesHolderMap::Init();
   GpuProcessD3D11TextureMap::Init();
   auto rv = wmf::MediaFoundationInitializer::HasInitialized();
   if (!rv) {
     NS_WARNING("Failed to init Media Foundation in the GPU process");
   }
+#endif
+
+#if defined(XP_WIN) || defined(XP_MACOSX)
+  CompositeProcessFencesHolderMap::Init();
 #endif
 
   CompositorThreadHolder::Start();
@@ -806,9 +809,13 @@ void GPUParent::ActorDestroy(ActorDestroyReason aWhy) {
 
 #if defined(XP_WIN)
         GpuProcessD3D11TextureMap::Shutdown();
-        CompositeProcessFencesHolderMap::Shutdown();
         DeviceManagerDx::Shutdown();
 #endif
+
+#if defined(XP_WIN) || defined(XP_MACOSX)
+        CompositeProcessFencesHolderMap::Shutdown();
+#endif
+
         LayerTreeOwnerTracker::Shutdown();
         gfxVars::Shutdown();
         gfxConfig::Shutdown();

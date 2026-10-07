@@ -30,7 +30,8 @@ function makeTab(url, { userContextId = 0, label = "Tab" } = {}) {
     label,
     permanentKey: { id: ++gPermanentKeySeq },
     linkedBrowser: {
-      currentURI: { spec: url },
+      // A real nsIURI: AIWindow's chat-tab check compares URIs, not strings.
+      currentURI: Services.io.newURI(url),
     },
   };
 }
@@ -44,6 +45,11 @@ function makeWindow(tabs, selectedTab = null) {
       documentElement: { hasAttribute: name => name === "ai-window" },
     },
   };
+  // Real tabs know which window they are in, and the grouping checks rely on
+  // it.
+  tabs.forEach(tab => {
+    tab.documentGlobal = win;
+  });
   gMockWindows.push(win);
   return win;
 }
@@ -256,7 +262,7 @@ add_task(async function test_handleUpdate_confirmation_success() {
   };
 
   // Create a mock tab and register its token -> permanentKey selection.
-  const mockTab = makeTab("https://example.com", { label: "Test Tab" });
+  const mockTab = makeTab("https://example.com/", { label: "Test Tab" });
   const mockWindow = makeWindow([mockTab]);
 
   const { selectedTabs } = registerSelection(originalToolCallId, [mockTab]);
@@ -341,7 +347,7 @@ add_task(async function test_handleUpdate_confirmation_resolves_tool_action() {
     };
   };
 
-  const mockTab = makeTab("https://example.com", { label: "Test Tab" });
+  const mockTab = makeTab("https://example.com/", { label: "Test Tab" });
   const mockWindow = makeWindow([mockTab]);
 
   const { selectedTabs } = registerSelection(originalToolCallId, [mockTab]);
@@ -372,7 +378,7 @@ add_task(async function test_handleUpdate_confirmation_resolves_tool_action() {
   );
   Assert.deepEqual(
     toolMessage.content.body.selectedTabs,
-    [{ url: "https://example.com", title: "Test Tab" }],
+    [{ url: "https://example.com/", title: "Test Tab" }],
     "Resolved tool message body should include the acted-upon tabs"
   );
 });
@@ -445,7 +451,7 @@ add_task(async function test_handleUpdate_confirmation_no_window() {
     selectedTabs: [
       {
         linkedPanel: "panel-1",
-        url: "https://example.com",
+        url: "https://example.com/",
         title: "Test Tab",
       },
     ],
@@ -490,7 +496,7 @@ add_task(async function test_handleUpdate_undo_tab_close_success() {
         selectedTabs: [
           {
             linkedPanel: "panel-1",
-            url: "https://example.com",
+            url: "https://example.com/",
             title: "Test Tab",
           },
         ],
@@ -526,7 +532,7 @@ add_task(async function test_handleUpdate_undo_tab_close_success() {
         selectedTabs: [
           {
             linkedPanel: "panel-1",
-            url: "https://example.com",
+            url: "https://example.com/",
             title: "Test Tab",
           },
         ],
@@ -659,7 +665,7 @@ add_task(async function test_closeSelectedTabs_partial_match() {
 
   // One selection resolves to a live tab
   // the other's token points at a tab that is no longer open
-  const liveTab = makeTab("https://example.com", { label: "Test Tab 1" });
+  const liveTab = makeTab("https://example.com/", { label: "Test Tab 1" });
   const mockWindow = makeWindow([liveTab]);
 
   const tokenToKey = new Map();
@@ -676,12 +682,12 @@ add_task(async function test_closeSelectedTabs_partial_match() {
         selectedTabs: [
           {
             token: "tok-live",
-            url: "https://example.com",
+            url: "https://example.com/",
             title: "Test Tab 1",
           },
           {
             token: "tok-stale",
-            url: "https://mozilla.org",
+            url: "https://mozilla.org/",
             title: "Test Tab 2",
           },
         ],
@@ -701,7 +707,7 @@ add_task(async function test_closeSelectedTabs_partial_match() {
   Assert.equal(closedTabs.length, 1, "Should only close the resolvable tab");
   Assert.equal(
     closedTabs[0].linkedBrowser.currentURI.spec,
-    "https://example.com",
+    "https://example.com/",
     "Should close the correct tab"
   );
 });
@@ -738,8 +744,8 @@ add_task(async function test_closeSelectedTabs_unloaded_tabs() {
   };
 
   // Unloaded/lazy tabs still retain a linkedBrowser with a permanentKey.
-  const tabA = makeTab("https://example.com", { label: "Example" });
-  const tabB = makeTab("https://mozilla.org", { label: "Mozilla" });
+  const tabA = makeTab("https://example.com/", { label: "Example" });
+  const tabB = makeTab("https://mozilla.org/", { label: "Mozilla" });
   const mockWindow = makeWindow([tabA, tabB]);
 
   const { selectedTabs } = registerSelection("test-tool-123", [tabA, tabB]);
@@ -761,7 +767,7 @@ add_task(async function test_closeSelectedTabs_unloaded_tabs() {
   Assert.equal(closedTabs.length, 2, "Both unloaded tabs should resolve");
   Assert.deepEqual(
     closedTabs.map(t => t.linkedBrowser.currentURI.spec).sort(),
-    ["https://example.com", "https://mozilla.org"],
+    ["https://example.com/", "https://mozilla.org/"],
     "Each selection resolves to its own unloaded tab"
   );
 });
@@ -799,8 +805,8 @@ add_task(async function test_closeSelectedTabs_duplicate_unloaded_tabs() {
   };
 
   // Two tabs at the same URL and container, distinguished only by permanentKey.
-  const tab1 = makeTab("https://example.com", { label: "Example" });
-  const tab2 = makeTab("https://example.com", { label: "Example" });
+  const tab1 = makeTab("https://example.com/", { label: "Example" });
+  const tab2 = makeTab("https://example.com/", { label: "Example" });
   const mockWindow = makeWindow([tab1, tab2]);
 
   const { selectedTabs } = registerSelection("test-tool-123", [tab1, tab2]);
@@ -862,8 +868,8 @@ add_task(
 
     // Two tabs share the same URL.
     // selecting one by its token must resolve to exactly that tab (permanentKey)
-    const otherTab = makeTab("https://example.com", { label: "Example" });
-    const targetTab = makeTab("https://example.com", { label: "Example" });
+    const otherTab = makeTab("https://example.com/", { label: "Example" });
+    const targetTab = makeTab("https://example.com/", { label: "Example" });
     const mockWindow = makeWindow([otherTab, targetTab]);
 
     const { selectedTabs } = registerSelection("test-tool-123", [targetTab]);
@@ -941,7 +947,7 @@ add_task(async function test_closeSelectedTabs_no_matches() {
         selectedTabs: [
           {
             linkedPanel: "panel-1",
-            url: "https://example.com",
+            url: "https://example.com/",
             title: "Test Tab",
           },
         ],
@@ -1034,8 +1040,8 @@ add_task(async function test_closeSelectedTabs_public_method() {
     };
   };
 
-  const tabA = makeTab("https://example.com", { label: "Example Tab" });
-  const tabB = makeTab("https://mozilla.org", { label: "Mozilla Tab" });
+  const tabA = makeTab("https://example.com/", { label: "Example Tab" });
+  const tabB = makeTab("https://mozilla.org/", { label: "Mozilla Tab" });
   const mockWindow = makeWindow([tabA, tabB]);
 
   const { selectedTabs, tokenToKey } = registerSelection("public-method", [
@@ -1070,7 +1076,7 @@ add_task(async function test_closeSelectedTabs_public_method() {
   );
   Assert.deepEqual(
     passedTabs.map(t => t.linkedBrowser.currentURI.spec),
-    ["https://example.com", "https://mozilla.org"],
+    ["https://example.com/", "https://mozilla.org/"],
     "Should pass the resolved tabs in selection order"
   );
 });
@@ -1082,7 +1088,7 @@ add_task(async function test_closeSelectedTabs_no_window() {
   const selectedTabsData = [
     {
       linkedPanel: "panel-1",
-      url: "https://example.com",
+      url: "https://example.com/",
       title: "Example Tab",
     },
   ];
@@ -1098,7 +1104,7 @@ add_task(async function test_closeSelectedTabs_no_window() {
 add_task(async function test_closeSelectedTabs_no_valid_tabs() {
   // Window has no tabs, so the selection's token resolves to nothing.
   const mockWindow = makeWindow([]);
-  const missingTab = makeTab("https://example.com", { label: "Example Tab" });
+  const missingTab = makeTab("https://example.com/", { label: "Example Tab" });
   const { selectedTabs, tokenToKey } = registerSelection("no-valid", [
     missingTab,
   ]);
@@ -1127,12 +1133,12 @@ add_task(async function test_undo_updates_ui_correctly() {
   const originalSelectedTabs = [
     {
       linkedPanel: "panel-1",
-      url: "https://example.com",
+      url: "https://example.com/",
       title: "Example Tab",
     },
     {
       linkedPanel: "panel-2",
-      url: "https://mozilla.org",
+      url: "https://mozilla.org/",
       title: "Mozilla Tab",
     },
   ];
@@ -1708,8 +1714,8 @@ add_task(async function test_closeSelectedTabs_tags_active_tab_source() {
     return { operationId: "op-active", requestedCount: 2, failedTabs: [] };
   };
 
-  const activeTab = makeTab("https://example.com", { label: "Active" });
-  const otherTab = makeTab("https://mozilla.org", { label: "Other" });
+  const activeTab = makeTab("https://example.com/", { label: "Active" });
+  const otherTab = makeTab("https://mozilla.org/", { label: "Other" });
   const mockWindow = makeWindow([activeTab, otherTab], activeTab);
 
   const { selectedTabs, tokenToKey } = registerSelection("tags-active", [
@@ -1739,9 +1745,9 @@ add_task(async function test_closeSelectedTabs_tags_active_tab_source() {
  * Test a selection spanning multiple windows closing each tab in the owning window.
  */
 add_task(async function test_closeSelectedTabs_spans_multiple_windows() {
-  const tabA = makeTab("https://example.com", { label: "Example" });
+  const tabA = makeTab("https://example.com/", { label: "Example" });
   const windowA = makeWindow([tabA]);
-  const tabB = makeTab("https://mozilla.org", { label: "Mozilla" });
+  const tabB = makeTab("https://mozilla.org/", { label: "Mozilla" });
   const windowB = makeWindow([tabB]);
   const tabC = makeTab("https://example.org", { label: "Example Org" });
   const windowC = makeWindow([tabC]);
@@ -1795,8 +1801,8 @@ add_task(async function test_closeSelectedTabs_spans_multiple_windows() {
  */
 add_task(async function test_createTabGroup_selects_owning_window() {
   const interactingWindow = makeWindow([]);
-  const tabA = makeTab("https://example.com", { label: "Example" });
-  const tabB = makeTab("https://mozilla.org", { label: "Mozilla" });
+  const tabA = makeTab("https://example.com/", { label: "Example" });
+  const tabB = makeTab("https://mozilla.org/", { label: "Mozilla" });
   const ownerWindow = makeWindow([tabA, tabB]);
   const tabC = makeTab("https://example.org", { label: "Example Org" });
   // A competing window owns a selected tab
@@ -1982,7 +1988,7 @@ add_task(async function test_undo_tab_group_uses_operation_ids() {
   const ungroupedIds = [];
   tabManagementService.ungroupTabs = async function ({ groupId }) {
     ungroupedIds.push(groupId);
-    return { success: true, ungroupedTabs: [{ url: "https://example.com" }] };
+    return { success: true, ungroupedTabs: [{ url: "https://example.com/" }] };
   };
 
   const result = await ToolUI.handleUpdate(
@@ -2100,7 +2106,7 @@ add_task(async function test_openAndGroupTabs_merges_mergedCount() {
   const originalResolve = tabManagementService.resolveOrOpenTabs;
   const originalCreateGroup = tabManagementService.createTabGroup;
   tabManagementService.resolveOrOpenTabs = async () => ({
-    resolvedTabs: [makeTab("https://example.com")],
+    resolvedTabs: [makeTab("https://example.com/")],
     mergedCount: 1,
     failedUrls: [],
   });
@@ -2113,7 +2119,7 @@ add_task(async function test_openAndGroupTabs_merges_mergedCount() {
   let result;
   try {
     result = await ToolUI.openAndGroupTabs({
-      tabs: [{ url: "https://example.com" }],
+      tabs: [{ url: "https://example.com/" }],
       window: mockWindow,
       label: "L",
     });
@@ -2130,12 +2136,220 @@ add_task(async function test_openAndGroupTabs_merges_mergedCount() {
   );
 });
 
+// Calls openAndGroupTabs with the tab services stubbed out, and gives back both
+// the tabs it tried to group and the result.
+async function captureGroupedTabs({ resolvedTabs, ...options }) {
+  const originalResolve = tabManagementService.resolveOrOpenTabs;
+  const originalCreateGroup = tabManagementService.createTabGroup;
+  let groupedTabs = null;
+
+  tabManagementService.resolveOrOpenTabs = async () => ({
+    resolvedTabs,
+    mergedCount: 0,
+    failedUrls: [],
+  });
+  tabManagementService.createTabGroup = async ({ tabs }) => {
+    groupedTabs = tabs;
+    return {
+      success: true,
+      group: { id: "g1", label: "L", color: "blue", tabCount: tabs.length },
+      failedTabs: [],
+    };
+  };
+
+  try {
+    const result = await ToolUI.openAndGroupTabs(options);
+    return { groupedTabs, result };
+  } finally {
+    tabManagementService.resolveOrOpenTabs = originalResolve;
+    tabManagementService.createTabGroup = originalCreateGroup;
+  }
+}
+
+/**
+ * Test ToolUI.openAndGroupTabs puts the originating chat tab in the group it
+ * creates, ahead of the tabs that were just opened (bug 2068714)
+ */
+add_task(async function test_openAndGroupTabs_includes_origin_tab() {
+  const openedTab = makeTab("https://example.com/");
+  const chatTab = makeTab("chrome://browser/content/aiwindow/aiWindow.html", {
+    label: "Smart Window",
+  });
+  const win = makeWindow([chatTab, openedTab], chatTab);
+
+  const { groupedTabs, result } = await captureGroupedTabs({
+    resolvedTabs: [openedTab],
+    tabs: [{ url: "https://example.com/" }],
+    window: win,
+    label: "L",
+    originTab: chatTab,
+  });
+
+  Assert.deepEqual(
+    groupedTabs,
+    [chatTab, openedTab],
+    "Should group the chat tab ahead of the opened tab"
+  );
+  Assert.equal(
+    result.mergedCount,
+    0,
+    "Should not count the chat tab as a merged tab"
+  );
+});
+
+/**
+ * Test ToolUI.openAndGroupTabs leaves the group untouched when there is no
+ * originating tab, which is the case for sidebar conversations
+ */
+add_task(async function test_openAndGroupTabs_without_origin_tab() {
+  const openedTab = makeTab("https://example.com/");
+
+  const { groupedTabs } = await captureGroupedTabs({
+    resolvedTabs: [openedTab],
+    tabs: [{ url: "https://example.com/" }],
+    window: makeWindow([]),
+    label: "L",
+  });
+
+  Assert.deepEqual(
+    groupedTabs,
+    [openedTab],
+    "Should group only the opened tab when there is no origin tab"
+  );
+});
+
+/**
+ * Test ToolUI.openAndGroupTabs does not add the originating tab twice when it
+ * is already among the resolved tabs
+ */
+add_task(async function test_openAndGroupTabs_origin_tab_not_duplicated() {
+  const openedTab = makeTab("https://example.com/");
+  const win = makeWindow([openedTab]);
+  openedTab.documentGlobal = win;
+
+  const { groupedTabs } = await captureGroupedTabs({
+    resolvedTabs: [openedTab],
+    tabs: [{ url: "https://example.com/" }],
+    window: win,
+    label: "L",
+    originTab: openedTab,
+  });
+
+  Assert.deepEqual(
+    groupedTabs,
+    [openedTab],
+    "Should not duplicate a resolved tab that is also the origin tab"
+  );
+});
+
+/**
+ * Test a chat tab that is half of a split view is left out, since grouping it
+ * would move the whole split view and drag in its partner tab
+ */
+add_task(async function test_openAndGroupTabs_skips_split_view_origin_tab() {
+  const openedTab = makeTab("https://example.com/");
+  const chatTab = makeTab("chrome://browser/content/aiwindow/aiWindow.html");
+  const win = makeWindow([chatTab, openedTab], chatTab);
+  chatTab.splitview = { id: "split-1" };
+
+  const { groupedTabs } = await captureGroupedTabs({
+    resolvedTabs: [openedTab],
+    tabs: [{ url: "https://example.com/" }],
+    window: win,
+    label: "L",
+    originTab: chatTab,
+  });
+
+  Assert.deepEqual(
+    groupedTabs,
+    [openedTab],
+    "Should not group a chat tab that is in a split view"
+  );
+});
+
+/**
+ * Test the originating tab passed to handleUpdate reaches the created group,
+ * covering the plumbing from ai-window through to the grouping service
+ */
+add_task(async function test_handleUpdate_open_tabs_groups_origin_tab() {
+  const toolCallId = "test-open-tabs-origin";
+  const { conversation, assistantMessage } =
+    makeOpenTabsConfirmation(toolCallId);
+
+  const chatTab = makeTab("chrome://browser/content/aiwindow/aiWindow.html");
+  const mockWindow = makeWindow([chatTab], chatTab);
+  const selectedTabs = [
+    { url: "https://example.com/", title: "Example" },
+    { url: "https://mozilla.org/", title: "Mozilla" },
+  ];
+
+  const originalResolve = tabManagementService.resolveOrOpenTabs;
+  const originalCreateGroup = tabManagementService.createTabGroup;
+  const originalFindChatTab = ToolUI.findChatTab;
+  let groupedTabs = null;
+  // The real lookup needs a live tab-state manager, which mock tabs cannot
+  // provide; browser_smartwindow_manage_tabs_tool.js covers it for real.
+  ToolUI.findChatTab = () => chatTab;
+  tabManagementService.resolveOrOpenTabs = async () => {
+    // resolveOrOpenTabs hands back tabs that are in the window
+    const opened = [makeTab(selectedTabs[0].url), makeTab(selectedTabs[1].url)];
+    opened.forEach(tab => {
+      tab.documentGlobal = mockWindow;
+    });
+    return { resolvedTabs: opened, mergedCount: 0, failedUrls: [] };
+  };
+  tabManagementService.createTabGroup = async ({ tabs }) => {
+    groupedTabs = tabs;
+    return {
+      success: true,
+      group: { id: "group-1", label: "Trip", color: "blue", tabCount: 3 },
+      failedTabs: [],
+    };
+  };
+
+  let result;
+  try {
+    result = await ToolUI.handleUpdate(
+      {
+        messageId: assistantMessage.id,
+        toolCallId,
+        updateType: "confirm-open-and-group-tabs-selection",
+        updateData: { selectedTabs, tabGroupLabel: "Trip" },
+      },
+      conversation,
+      mockWindow,
+      "fullpage"
+    );
+  } finally {
+    tabManagementService.resolveOrOpenTabs = originalResolve;
+    tabManagementService.createTabGroup = originalCreateGroup;
+    ToolUI.findChatTab = originalFindChatTab;
+  }
+
+  Assert.equal(result, true, "Should return true on success");
+  Assert.equal(groupedTabs.length, 3, "Should group the chat tab as well");
+  Assert.equal(
+    groupedTabs[0],
+    chatTab,
+    "Should lead the group with the chat tab"
+  );
+
+  // The card should still only mention the tabs the user picked, so adding the
+  // chat tab does not change the numbers they see.
+  const confirmedData = assistantMessage.toolUIData.properties.confirmedData;
+  Assert.equal(
+    confirmedData.selectedTabs.length,
+    2,
+    "Should leave the user's selection untouched"
+  );
+});
+
 /**
  * Test ToolUI.openOrSwitchToTab switches to an already-open tab without
  * navigating
  */
 add_task(async function test_openOrSwitchToTab_switches_when_open() {
-  const existingTab = makeTab("https://example.com");
+  const existingTab = makeTab("https://example.com/");
   const mockWindow = makeWindow([existingTab]);
 
   const originalFind = tabManagementService.findOpenTab;
@@ -2149,7 +2363,7 @@ add_task(async function test_openOrSwitchToTab_switches_when_open() {
   let result;
   try {
     result = await ToolUI.openOrSwitchToTab({
-      tab: { url: "https://example.com" },
+      tab: { url: "https://example.com/" },
       window: mockWindow,
     });
   } finally {
@@ -2172,7 +2386,7 @@ add_task(async function test_openOrSwitchToTab_switches_when_open() {
 add_task(
   async function test_openOrSwitchToTab_opens_and_switches_when_not_open() {
     const mockWindow = makeWindow([]);
-    const newTab = makeTab("https://example.com");
+    const newTab = makeTab("https://example.com/");
 
     const originalFind = tabManagementService.findOpenTab;
     const originalOpen = tabManagementService.openTabs;
@@ -2182,7 +2396,7 @@ add_task(
     tabManagementService.openTabs = ({ urls }) => {
       Assert.deepEqual(
         urls,
-        ["https://example.com"],
+        ["https://example.com/"],
         "Should open the tab's URL"
       );
       return { openedTabs: [newTab], failedUrls: [] };
@@ -2194,7 +2408,7 @@ add_task(
     let result;
     try {
       result = await ToolUI.openOrSwitchToTab({
-        tab: { url: "https://example.com" },
+        tab: { url: "https://example.com/" },
         window: mockWindow,
       });
     } finally {
@@ -2224,13 +2438,13 @@ add_task(
     tabManagementService.findOpenTab = () => null;
     tabManagementService.openTabs = () => ({
       openedTabs: [],
-      failedUrls: [{ url: "https://example.com", reason: "boom" }],
+      failedUrls: [{ url: "https://example.com/", reason: "boom" }],
     });
 
     let result;
     try {
       result = await ToolUI.openOrSwitchToTab({
-        tab: { url: "https://example.com" },
+        tab: { url: "https://example.com/" },
         window: mockWindow,
       });
     } finally {
@@ -2257,8 +2471,8 @@ add_task(async function test_handleUpdate_open_tabs_multi_success() {
 
   const mockWindow = makeWindow([]);
   const selectedTabs = [
-    { url: "https://example.com", title: "Example" },
-    { url: "https://mozilla.org", title: "Mozilla" },
+    { url: "https://example.com/", title: "Example" },
+    { url: "https://mozilla.org/", title: "Mozilla" },
   ];
 
   const originalResolve = tabManagementService.resolveOrOpenTabs;
@@ -2325,9 +2539,9 @@ add_task(async function test_handleUpdate_open_tabs_single_switches() {
   const { conversation, assistantMessage } =
     makeOpenTabsConfirmation(toolCallId);
 
-  const existingTab = makeTab("https://example.com", { label: "Example" });
+  const existingTab = makeTab("https://example.com/", { label: "Example" });
   const mockWindow = makeWindow([existingTab]);
-  const selectedTabs = [{ url: "https://example.com", title: "Example" }];
+  const selectedTabs = [{ url: "https://example.com/", title: "Example" }];
 
   const originalFind = tabManagementService.findOpenTab;
   const originalSwitch = tabManagementService.switchToTab;
@@ -2385,8 +2599,8 @@ add_task(async function test_handleUpdate_open_tabs_single_opens_new_tab() {
     makeOpenTabsConfirmation(toolCallId);
 
   const mockWindow = makeWindow([]);
-  const selectedTabs = [{ url: "https://example.com", title: "Example" }];
-  const newTab = makeTab("https://example.com");
+  const selectedTabs = [{ url: "https://example.com/", title: "Example" }];
+  const newTab = makeTab("https://example.com/");
 
   const originalFind = tabManagementService.findOpenTab;
   const originalOpen = tabManagementService.openTabs;
@@ -2428,4 +2642,210 @@ add_task(async function test_handleUpdate_open_tabs_single_opens_new_tab() {
     false,
     "Should not be marked as switched"
   );
+});
+
+/**
+ * Test a tab that goes away between the confirmation card and the confirm is
+ * not counted as grouped. It is dropped before grouping and never reaches
+ * failedTabs, so counting the selection would report it as a success.
+ */
+add_task(async function test_confirm_tab_group_skips_a_closed_tab() {
+  const toolCallId = "group-closed-tab";
+  const conversation = new ChatConversation({});
+  conversation.addAssistantMessage("text", "Confirm?");
+  const message = conversation.messages.find(
+    m => m.role === 1 && m.content?.type === "text"
+  );
+  message.toolUIData = {
+    toolCallId,
+    uiType: "tab-group-confirmation",
+    properties: { actionType: "group_tabs" },
+  };
+  conversation.stashPendingBrowserActionTelemetry(toolCallId, {
+    action: "group_tabs",
+  });
+
+  const tabA = makeTab("https://example.com/a");
+  const tabB = makeTab("https://example.com/b");
+  const closedTab = makeTab("https://example.com/c");
+  const mockWindow = makeWindow([tabA, tabB, closedTab]);
+  const { selectedTabs } = registerSelection(toolCallId, [
+    tabA,
+    tabB,
+    closedTab,
+  ]);
+
+  // The third tab is gone by the time the user confirms.
+  mockWindow.gBrowser.tabs = [tabA, tabB];
+
+  const originalCreateGroup = tabManagementService.createTabGroup;
+  const originalRecord = ToolUITelemetry.recordBrowserActionComplete;
+  let complete = null;
+  tabManagementService.createTabGroup = async ({ tabs }) => ({
+    success: true,
+    group: { id: "g1", label: "L", color: "blue", tabCount: tabs.length },
+    failedTabs: [],
+  });
+  ToolUITelemetry.recordBrowserActionComplete = data => (complete = data);
+
+  try {
+    await ToolUI.handleUpdate(
+      {
+        messageId: message.id,
+        toolCallId,
+        updateType: "confirm-tab-group-selection",
+        updateData: { selectedTabs, tabGroupLabel: "L" },
+      },
+      conversation,
+      mockWindow,
+      "fullpage"
+    );
+  } finally {
+    tabManagementService.createTabGroup = originalCreateGroup;
+    ToolUITelemetry.recordBrowserActionComplete = originalRecord;
+  }
+
+  Assert.equal(
+    complete.tabs_affected,
+    2,
+    "Only the tabs that made it into the group are counted"
+  );
+  Assert.equal(
+    complete.result,
+    "partial_success",
+    "A tab that went away is not reported as a success"
+  );
+});
+
+/**
+ * Test the chat tab is left out when none of the requested tabs can be
+ * grouped, so we do not end up creating a group that holds only the chat tab
+ */
+add_task(async function test_openAndGroupTabs_skips_chat_tab_when_none_group() {
+  const pinnedTab = makeTab("https://example.com/pinned");
+  const chatTab = makeTab("chrome://browser/content/aiwindow/aiWindow.html");
+  const win = makeWindow([chatTab, pinnedTab], chatTab);
+  pinnedTab.pinned = true;
+
+  const { groupedTabs } = await captureGroupedTabs({
+    resolvedTabs: [pinnedTab],
+    tabs: [{ url: "https://example.com/pinned" }],
+    window: win,
+    label: "L",
+    originTab: chatTab,
+  });
+
+  Assert.deepEqual(
+    groupedTabs,
+    [pinnedTab],
+    "Should not add the chat tab when no requested tab can be grouped"
+  );
+});
+
+/**
+ * Test the chat tab still joins when only some of the requested tabs can be
+ * grouped
+ */
+add_task(async function test_openAndGroupTabs_adds_chat_tab_when_some_group() {
+  const pinnedTab = makeTab("https://example.com/pinned");
+  const openTab = makeTab("https://example.com/ok");
+  const chatTab = makeTab("chrome://browser/content/aiwindow/aiWindow.html");
+  const win = makeWindow([chatTab, pinnedTab, openTab], chatTab);
+  pinnedTab.pinned = true;
+
+  const { groupedTabs } = await captureGroupedTabs({
+    resolvedTabs: [pinnedTab, openTab],
+    tabs: [{ url: "https://example.com/ok" }],
+    window: win,
+    label: "L",
+    originTab: chatTab,
+  });
+
+  Assert.deepEqual(
+    groupedTabs,
+    [chatTab, pinnedTab, openTab],
+    "Should add the chat tab when at least one requested tab can be grouped"
+  );
+});
+
+/**
+ * Test a group is not created out of the chat tab alone when every other tab
+ * the user confirmed turns out to be ungroupable
+ */
+add_task(async function test_createTabGroup_drops_a_lone_chat_tab() {
+  const groupedTab = makeTab("https://example.com/a");
+  const chatTab = makeTab("chrome://browser/content/aiwindow/aiWindow.html");
+  const win = makeWindow([chatTab, groupedTab]);
+  // The tab the user asked for is already in another group.
+  groupedTab.group = { id: "other" };
+
+  const { selectedTabs, tokenToKey } = registerSelection("lone-chat", [
+    groupedTab,
+    chatTab,
+  ]);
+  selectedTabs.at(-1).isChatTab = true;
+
+  const originalCreateTabGroup = tabManagementService.createTabGroup;
+  let createCall = null;
+  tabManagementService.createTabGroup = async function ({ tabs }) {
+    createCall = tabs;
+    return { success: false, group: null, failedTabs: [], error: "none" };
+  };
+
+  try {
+    await ToolUI.createTabGroup({
+      tabs: selectedTabs,
+      tokenToKey,
+      window: win,
+      label: "L",
+    });
+  } finally {
+    tabManagementService.createTabGroup = originalCreateTabGroup;
+  }
+
+  Assert.ok(
+    !createCall.includes(chatTab),
+    "Should not group the chat tab on its own"
+  );
+});
+
+/**
+ * Test the chat tab is still grouped when at least one of the tabs the user
+ * confirmed can be grouped
+ */
+add_task(async function test_createTabGroup_keeps_chat_tab_with_others() {
+  const openTab = makeTab("https://example.com/a");
+  const chatTab = makeTab("chrome://browser/content/aiwindow/aiWindow.html");
+  const win = makeWindow([chatTab, openTab]);
+
+  const { selectedTabs, tokenToKey } = registerSelection("with-others", [
+    openTab,
+    chatTab,
+  ]);
+  selectedTabs.at(-1).isChatTab = true;
+
+  const originalCreateTabGroup = tabManagementService.createTabGroup;
+  let createCall = null;
+  tabManagementService.createTabGroup = async function ({ tabs }) {
+    createCall = tabs;
+    return {
+      success: true,
+      group: { id: "g1", tabCount: tabs.length },
+      failedTabs: [],
+    };
+  };
+
+  try {
+    await ToolUI.createTabGroup({
+      tabs: selectedTabs,
+      tokenToKey,
+      window: win,
+      label: "L",
+    });
+  } finally {
+    tabManagementService.createTabGroup = originalCreateTabGroup;
+  }
+
+  Assert.ok(createCall.includes(chatTab), "Should still group the chat tab");
+  Assert.equal(createCall.length, 2, "Both tabs go into the group");
 });

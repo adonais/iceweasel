@@ -18,7 +18,6 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 task-defaults:
-    run-on-repo-type: [hg]
     run-on-projects: []
     shipping-phase: build
     treeherder:
@@ -32,7 +31,6 @@ task-defaults:
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
     use-python: default
     run:
-        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         script: mozharness/scripts/fx_desktop_build.py
@@ -472,7 +470,6 @@ tasks:
                 - builds/releng_base_firefox.py
                 - builds/releng_base_linux_64_builds.py
             extra-config:
-                stage_platform: win32
                 mozconfig_platform: win32
         fetches:
             toolchain:
@@ -511,7 +508,6 @@ tasks:
                 - builds/releng_base_firefox.py
                 - builds/releng_base_linux_64_builds.py
             extra-config:
-                stage_platform: win64
                 mozconfig_platform: win64
                 extra_mozconfig_content:
                     - ac_add_options --as-milestone=release
@@ -553,7 +549,6 @@ tasks:
                 - builds/releng_base_firefox.py
                 - builds/releng_base_linux_64_builds.py
             extra-config:
-                stage_platform: win64
                 mozconfig_platform: win64
         fetches:
             toolchain:
@@ -593,7 +588,6 @@ tasks:
                 - builds/releng_base_firefox.py
                 - builds/releng_base_linux_64_builds.py
             extra-config:
-                stage_platform: win64-aarch64
                 mozconfig_platform: win64-aarch64
         fetches:
             toolchain:

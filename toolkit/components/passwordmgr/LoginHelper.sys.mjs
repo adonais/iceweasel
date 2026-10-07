@@ -1355,7 +1355,7 @@ export const LoginHelper = {
     const expr = /username/i;
 
     let ac = element.getAutocompleteInfo()?.fieldName;
-    if (ac && ac == "username") {
+    if (ac && (ac == "username" || ac == "webauthn")) {
       return true;
     }
 
@@ -1752,6 +1752,14 @@ export const LoginHelper = {
       gPrimaryPasswordReauthDepth--;
     }
     isAuthorized = token.isLoggedIn;
+    // NSS keeps re-prompting until the password is right or the user gives up,
+    // so a single event can stand for more than one dialog, and a dismissal is
+    // indistinguishable from an internal failure.
+    Glean.pwmgr.primaryPasswordPrompt.record({
+      source: "reauth",
+      trigger: reason ?? "",
+      result: isAuthorized ? "success" : "cancel",
+    });
     telemetryEvent = {
       name: "reauthenticateMasterPassword",
       value: isAuthorized ? "success" : "fail",
@@ -1760,6 +1768,26 @@ export const LoginHelper = {
       isAuthorized,
       telemetryEvent,
     };
+  },
+
+  /**
+   * Records the event returned by `requestReauth`. There is none when the
+   * re-authentication was not attempted, for example because a primary
+   * password prompt was already open.
+   *
+   * @param {?object} telemetryEvent
+   *        The `telemetryEvent` of a `requestReauth` result.
+   */
+  recordReauthTelemetryEvent(telemetryEvent) {
+    if (!telemetryEvent) {
+      return;
+    }
+
+    let { name, extra = {}, value = null } = telemetryEvent;
+    if (value) {
+      extra.value = value;
+    }
+    Glean.pwmgr[name].record(extra);
   },
 
   /**

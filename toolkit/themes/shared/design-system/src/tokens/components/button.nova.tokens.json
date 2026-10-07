@@ -52,18 +52,6 @@
             "default": "{button.background.color.@base}"
           }
         },
-        "active": {
-          "value": {
-            "nativeTheme": "color-mix(in srgb, currentColor 30%, transparent)",
-            "default": "{button.background.color.active}"
-          }
-        },
-        "hover": {
-          "value": {
-            "nativeTheme": "color-mix(in srgb, currentColor 17%, transparent)",
-            "default": "{button.background.color.hover}"
-          }
-        },
         "selected": {
           "value": "{button.background.color.selected}"
         }
@@ -100,14 +88,6 @@
           "value": {
             "default": "{button.background.color.muted.active}",
             "forcedColors": "{button.background.color.ghost.active}"
-          }
-        }
-      },
-      "menu": {
-        "@base": {
-          "value": {
-            "default": "{button.background.color.ghost.@base}",
-            "forcedColors": "{button.background.color.@base}"
           }
         }
       },
@@ -320,6 +300,13 @@
             "light": "{button.text.color.ghost.disabled}",
             "dark": "{button.text.color.disabled}",
             "forcedColors": "{button.text.color.disabled}"
+          }
+        },
+        "hover": {
+          "value": {
+            "light": "{button.text.color.ghost.hover}",
+            "dark": "{button.text.color.hover}",
+            "forcedColors": "-moz-menuhovertext"
           }
         },
         "selected": {

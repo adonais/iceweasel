@@ -119,19 +119,12 @@ internal fun ContentRecommendation.toImpressions() =
     )
 
 /**
- * Maps the [Locale] to the [CuratedRecommendationLocale] to request. Falls back to the language when the region is
- * unsupported, or null when the locale is unsupported.
+ * Maps the [Locale] to the [CuratedRecommendationLocale] to request, or null when the language and region combination
+ * is unsupported. A locale without a region is unsupported, e.g. `en` is not served while `en-US` is.
  */
-internal fun Locale.toCuratedRecommendationLocale(): CuratedRecommendationLocale? =
-    findCuratedRecommendationLocale("${language}_$country") ?: findCuratedRecommendationLocale(language)
-
-/**
- * Returns the [CuratedRecommendationLocale] whose name matches the provided language and region, or null if it is
- * unsupported.
- */
-private fun findCuratedRecommendationLocale(name: String): CuratedRecommendationLocale? {
-    val uppercaseName = name.uppercase()
-    return CuratedRecommendationLocale.entries.firstOrNull { it.name == uppercaseName }
+internal fun Locale.toCuratedRecommendationLocale(): CuratedRecommendationLocale? {
+    val name = "${language}_$country".uppercase()
+    return CuratedRecommendationLocale.entries.firstOrNull { it.name == name }
 }
 
 /**

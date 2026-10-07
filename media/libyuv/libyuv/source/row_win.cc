@@ -21,6 +21,9 @@
 #include <emmintrin.h>
 #include <immintrin.h>  // For AVX2 intrinsics
 #include <tmmintrin.h>  // For _mm_maddubs_epi16
+#if defined(_MSC_VER) && !defined(__clang__)
+#include <intrin.h>
+#endif
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -762,6 +765,53 @@ void ARGBToUVMatrixRow_AVX2(const uint8_t* src_argb,
 }
 #endif  // HAS_ARGBTOUVMATRIXROW_AVX2
 
+#ifdef HAS_CONVERT8TO16ROW_AVX2
+LIBYUV_TARGET_AVX2
+void Convert8To16Row_AVX2(const uint8_t* src_y,
+                          uint16_t* dst_y,
+                          int bits,
+                          int width) {
+  const int shift = 16 - bits;
+  __m128i shift128 = _mm_cvtsi32_si128(shift);
+  do {
+    __m256i ymm0 = _mm256_loadu_si256((const __m256i*)src_y);
+    ymm0 = _mm256_permute4x64_epi64(ymm0, 0xd8);
+    __m256i row0 = _mm256_unpacklo_epi8(ymm0, ymm0);
+    __m256i row1 = _mm256_unpackhi_epi8(ymm0, ymm0);
+    row0 = _mm256_srl_epi16(row0, shift128);
+    row1 = _mm256_srl_epi16(row1, shift128);
+    _mm256_storeu_si256((__m256i*)dst_y, row0);
+    _mm256_storeu_si256((__m256i*)(dst_y + 16), row1);
+    src_y += 32;
+    dst_y += 32;
+    width -= 32;
+  } while (width > 0);
+  _mm256_zeroupper();
+}
+#endif  // HAS_CONVERT8TO16ROW_AVX2
+
+#ifdef HAS_MULTIPLYROW_16_AVX2
+LIBYUV_TARGET_AVX2
+void MultiplyRow_16_AVX2(const uint16_t* src_y,
+                         uint16_t* dst_y,
+                         int scale,
+                         int width) {
+  __m256i scale256 = _mm256_set1_epi16((short)scale);
+  do {
+    __m256i ymm0 = _mm256_loadu_si256((const __m256i*)src_y);
+    __m256i ymm1 = _mm256_loadu_si256((const __m256i*)(src_y + 16));
+    ymm0 = _mm256_mullo_epi16(ymm0, scale256);
+    ymm1 = _mm256_mullo_epi16(ymm1, scale256);
+    _mm256_storeu_si256((__m256i*)dst_y, ymm0);
+    _mm256_storeu_si256((__m256i*)(dst_y + 16), ymm1);
+    src_y += 32;
+    dst_y += 32;
+    width -= 32;
+  } while (width > 0);
+  _mm256_zeroupper();
+}
+#endif  // HAS_MULTIPLYROW_16_AVX2
+
 #ifdef HAS_MERGEUVROW_AVX2
 LIBYUV_TARGET_AVX2
 void MergeUVRow_AVX2(const uint8_t* src_u,
@@ -823,6 +873,26 @@ void MirrorUVRow_AVX2(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
   _mm256_zeroupper();
 }
 #endif  // HAS_MIRRORUVROW_AVX2
+
+#ifdef HAS_SWAPUVROW_AVX2
+LIBYUV_TARGET_AVX2
+void SwapUVRow_AVX2(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
+  __m256i ymm_shuf = _mm256_broadcastsi128_si256(
+      _mm_setr_epi8(1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14));
+  while (width > 0) {
+    __m256i ymm0 = _mm256_loadu_si256((const __m256i*)src_uv);
+    __m256i ymm1 = _mm256_loadu_si256((const __m256i*)(src_uv + 32));
+    ymm0 = _mm256_shuffle_epi8(ymm0, ymm_shuf);
+    ymm1 = _mm256_shuffle_epi8(ymm1, ymm_shuf);
+    _mm256_storeu_si256((__m256i*)dst_vu, ymm0);
+    _mm256_storeu_si256((__m256i*)(dst_vu + 32), ymm1);
+    src_uv += 64;
+    dst_vu += 64;
+    width -= 32;
+  }
+  _mm256_zeroupper();
+}
+#endif  // HAS_SWAPUVROW_AVX2
 
 #ifdef HAS_MIRRORSPLITUVROW_AVX2
 LIBYUV_TARGET_AVX2
@@ -1516,13 +1586,9 @@ void I422ToAR30Row_AVX2(const uint8_t* src_y,
   __m256i ymm_kUVToG = _mm256_loadu_si256((const __m256i*)yuvconstants->kUVToG);
   __m256i ymm_kUVToR = _mm256_loadu_si256((const __m256i*)yuvconstants->kUVToR);
   __m256i ymm_kYToRgb = _mm256_loadu_si256((const __m256i*)yuvconstants->kYToRgb);
-#if defined(LIBYUV_UNBIASED_DATA)
   __m256i ymm_kYBiasToRgb = _mm256_sub_epi16(
       _mm256_loadu_si256((const __m256i*)yuvconstants->kYBiasToRgb),
       _mm256_set1_epi16(24));
-#else
-  __m256i ymm_kYBiasToRgb = _mm256_loadu_si256((const __m256i*)yuvconstants->kYBiasToRgb);
-#endif
   __m256i ymm_128 = _mm256_set1_epi8((char)0x80);
   __m256i ymm_3ff0 = _mm256_set1_epi16((short)0x3ff0);
   __m256i ymm_c000 = _mm256_set1_epi16((short)0xc000);
@@ -2072,13 +2138,9 @@ void I422ToAR30Row_AVX512BW(const uint8_t* src_y,
   __m512i zmm_kUVToG = _mm512_broadcast_i32x4(_mm_loadu_si128((const __m128i*)yuvconstants->kUVToG));
   __m512i zmm_kUVToR = _mm512_broadcast_i32x4(_mm_loadu_si128((const __m128i*)yuvconstants->kUVToR));
   __m512i zmm_kYToRgb = _mm512_broadcast_i32x4(_mm_loadu_si128((const __m128i*)yuvconstants->kYToRgb));
-#if defined(LIBYUV_UNBIASED_DATA)
   __m512i zmm_kYBiasToRgb = _mm512_sub_epi16(
       _mm512_broadcast_i32x4(_mm_loadu_si128((const __m128i*)yuvconstants->kYBiasToRgb)),
       _mm512_set1_epi16(24));
-#else
-  __m512i zmm_kYBiasToRgb = _mm512_broadcast_i32x4(_mm_loadu_si128((const __m128i*)yuvconstants->kYBiasToRgb));
-#endif
   __m512i zmm_128 = _mm512_set1_epi8((char)0x80);
   __m512i zmm_3ff0 = _mm512_set1_epi16((short)0x3ff0);
   __m512i zmm_fc00 = _mm512_set1_epi16((short)0xfc00);

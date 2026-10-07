@@ -419,6 +419,14 @@ struct BaseRect {
     aSub -= aSize;
     return aSub;
   }
+  friend Sub operator+(Sub aSub, const MarginT& aMargin) {
+    aSub.Inflate(aMargin);
+    return aSub;
+  }
+  friend Sub operator-(Sub aSub, const MarginT& aMargin) {
+    aSub.Deflate(aMargin);
+    return aSub;
+  }
   Sub& operator+=(const Point& aPoint) {
     MoveBy(aPoint);
     return *static_cast<Sub*>(this);
@@ -435,6 +443,14 @@ struct BaseRect {
   Sub& operator-=(const SizeT& aSize) {
     width -= aSize.width;
     height -= aSize.height;
+    return *static_cast<Sub*>(this);
+  }
+  Sub& operator+=(const MarginT& aMargin) {
+    Inflate(aMargin);
+    return *static_cast<Sub*>(this);
+  }
+  Sub& operator-=(const MarginT& aMargin) {
+    Deflate(aMargin);
     return *static_cast<Sub*>(this);
   }
   // Find difference as a Margin
@@ -507,14 +523,14 @@ struct BaseRect {
   MOZ_ALWAYS_INLINE T Height() const { return height; }
 
   MOZ_ALWAYS_INLINE T XMost() const {
-    if constexpr (std::is_integral<T>::value) {
+    if constexpr (std::is_integral_v<T>) {
       return (Saturate<T>(x) + width).value();
     } else {
       return x + width;
     }
   }
   MOZ_ALWAYS_INLINE T YMost() const {
-    if constexpr (std::is_integral<T>::value) {
+    if constexpr (std::is_integral_v<T>) {
       return (Saturate<T>(y) + height).value();
     } else {
       return y + height;

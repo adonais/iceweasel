@@ -635,6 +635,50 @@ html {
     position: relative;
   }
 
+  // Corner image for every layout except fullscreen center-large, which anchors
+  // to the window instead and is styled under
+  // `:has([pos='center-large'][fullscreen])` above. Here the container is a
+  // child of .section-main so the offsets resolve against the card.
+  .section-main:has(> .corner-image-container) {
+    position: relative;
+
+    > .corner-image-container {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+
+      .brand-logo {
+        margin-block: 0;
+        display: block;
+      }
+
+      .corner-image {
+        position: absolute;
+
+        &.bottom-left {
+          bottom: 0;
+          left: 0;
+        }
+
+        &.bottom-right {
+          bottom: 0;
+          right: 0;
+        }
+
+        &.top-left {
+          top: 0;
+          left: 0;
+        }
+
+        &.top-right {
+          top: 0;
+          right: 0;
+        }
+      }
+    }
+  }
+
   .main-content {
     background-color: var(--background-color-canvas);
     // Fallback value can be removed after Nova has reached release
@@ -811,6 +855,46 @@ html {
             box-shadow: -12px -12px 70px 0 light-dark(#E7D9FF, rgba(99, 47, 200, 80%)),
               10px 10px 70px 0 light-dark(#FFD3B7, rgba(255, 138, 87, 80%));
             transition: var(--transition);
+          }
+        }
+      }
+
+      @media (not (prefers-contrast)) and (-moz-pref('browser.privateWindowRedesign.enabled')) {
+        &.PRIVATE_WINDOW_BASICS_SCREEN {
+          // Reduced backdrop opacity
+          background-color: rgba(0, 0, 0, 40%);
+
+          // Private window redesign gradient border
+          &.zap-border {
+            .main-content {
+              background: linear-gradient(95.54deg, #B89CFF 20.68%, #764EDD 79.34%) border-box border-area, image(var(--background-color-box)) padding-box;
+              border: 1px solid transparent;
+            }
+          }
+
+          // Private window redesign gradient shadow with glow scrim
+          &.zap-shadow {
+            .section-main::before {
+              content: '';
+              position: absolute;
+              z-index: -1;
+              inset: 7px;
+              border-radius: 60px;
+              backdrop-filter: blur(100px);
+              box-shadow: -60px -60px 160px 0 rgba(184, 156, 255, 50%),
+                60px 60px 160px 0 rgba(118, 78, 221, 50%);
+              transition: var(--transition);
+            }
+          }
+        }
+      }
+
+      @media (prefers-contrast) and (-moz-pref('browser.privateWindowRedesign.enabled')) {
+        &.PRIVATE_WINDOW_BASICS_SCREEN {
+          &.zap-border {
+            .main-content {
+              border: 1px solid;
+            }
           }
         }
       }
@@ -1013,7 +1097,7 @@ html {
       }
     }
 
-    &:not([pos='split'], [pos='center-large']) {
+    &:not([pos='split'], [pos='center-large'], [pos='card-stack']) {
       .secondary-cta {
         .secondary {
           @include text-link-styles;
@@ -1059,6 +1143,200 @@ html {
       .welcome-text {
         &:empty {
           margin: 0;
+        }
+      }
+    }
+
+    // Base layout for the HNT card stack
+    &[pos='card-stack'] {
+      --card-stack-color-1: light-dark(var(--color-violet-0), var(--color-violet-90));
+      --card-stack-color-2: light-dark(var(--color-violet-10), var(--color-violet-70));
+      --card-stack-color-3: light-dark(var(--color-violet-20), var(--color-violet-80));
+      --card-stack-flare: light-dark(var(--color-violet-20), var(--color-violet-70));
+      --card-stack-secondary-width: 318px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+      --card-stack-secondary-height: 150px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+      --card-stack-flare-x: calc(var(--card-stack-secondary-width) / 2);
+      --card-stack-border: 1px solid var(--card-border-color); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+
+      background-color: color-mix(in srgb, var(--background-color-box) 40%, var(--card-stack-color-1));
+      background-image: radial-gradient(circle 100px at var(--card-stack-flare-x) center, var(--card-stack-flare) 0%, transparent 100%); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+      background-repeat: no-repeat;
+      border: var(--card-stack-border);
+      border-radius: var(--border-radius-medium);
+      box-sizing: border-box;
+      height: 204px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+      min-height: 204px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+      position: relative;
+      overflow: visible;
+
+      &:dir(rtl) {
+        background-image: radial-gradient(circle 100px at calc(100% - var(--card-stack-flare-x)) center, var(--card-stack-flare) 0%, transparent 100%); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+      }
+
+      @media only screen and (width <= 960px) {
+        --card-stack-flare-x: calc(var(--card-stack-secondary-width) / 3)
+      }
+
+      @media only screen and (width <= 890px) {
+        background-position-y: calc(var(--card-stack-secondary-height) / -2);
+        background-image: radial-gradient(circle 100px at center, var(--card-stack-flare) 0%, transparent 100%);
+      }
+
+      &::before,
+      &::after {
+        content: '';
+        position: absolute;
+        inset-block-start: 0;
+        block-size: 100%;
+        box-sizing: border-box;
+        border: var(--card-stack-border);
+        border-radius: var(--border-radius-medium);
+        z-index: -1;
+      }
+
+      &::before {
+        inset-inline: 18px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+        background-color: var(--card-stack-color-2);
+        transform: translateY(8px); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+      }
+
+      &::after {
+        inset-inline: 42px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+        background-color: var(--card-stack-color-3);
+        transform: translateY(16px); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+        z-index: -2;
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        &::before,
+        &::after {
+          transition: transform 150ms ease;
+        }
+      }
+
+      &:hover::before {
+        transform: translateY(12px); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+      }
+
+      &:hover::after {
+        transform: translateY(24px); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+      }
+
+      @media only screen and (width <= 890px) {
+        height: auto;
+        flex-flow: column;
+      }
+
+      .section-secondary,
+      .section-main {
+        height: 100%;
+      }
+
+      .section-secondary {
+        flex: 0 0 auto;
+        width: var(--card-stack-secondary-width);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+        border-start-start-radius: var(--border-radius-medium);
+        border-end-start-radius: var(--border-radius-medium);
+        border-start-end-radius: 0;
+        border-end-end-radius: 0;
+        overflow: hidden;
+
+        @media only screen and (width < 960px) {
+          width: 180px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+          margin-inline-start: 12px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+        }
+
+        @media only screen and (width <= 890px) {
+          height: var(--card-stack-secondary-height);
+          margin-block: 12px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+          margin-inline: auto;
+        }
+      }
+
+      .section-main {
+        flex: 1;
+        flex-direction: row;
+        display: block;
+        margin: 0;
+
+        @media only screen and (width <= 890px) {
+          width: 100%;
+        }
+
+        .main-content {
+          background-color: transparent;
+          border-start-start-radius: 0;
+          border-end-start-radius: 0;
+          border-start-end-radius: var(--border-radius-medium);
+          border-end-end-radius: var(--border-radius-medium);
+          overflow: hidden;
+          box-shadow: none;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding-inline-start: var(--space-xxlarge);
+          padding-inline-end: var(--space-xxlarge);
+          padding-block: var(--space-xxlarge);
+          width: auto;
+
+          .main-content-inner {
+            justify-content: center;
+
+            @media only screen and (width <= 890px) {
+              align-items: center;
+            }
+          }
+        }
+      }
+
+      .welcome-text {
+        align-items: flex-start;
+        text-align: start;
+        margin: 0;
+        gap: var(--space-small);
+
+        @media only screen and (width <= 890px) {
+          align-items: unset;
+          text-align: unset;
+        }
+
+        h1,
+        h2 {
+          margin: 0;
+          line-height: 1;
+          letter-spacing: normal;
+        }
+
+        h1 {
+          font-size: var(--font-size-heading-medium);
+          font-weight: var(--font-weight-semibold);
+        }
+
+        h2 {
+          font-size: var(--font-size-small);
+          font-weight: var(--font-weight);
+        }
+      }
+
+      .action-buttons {
+        display: flex;
+        align-items: center;
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: var(--space-small);
+        padding: 0;
+        margin-block-start: var(--space-xlarge);
+
+        .primary,
+        .secondary,
+        .additional-cta {
+          font-size: var(--font-size-root);
+          font-weight: var(--font-weight-semibold);
+          line-height: 1;
         }
       }
     }
@@ -2532,6 +2810,92 @@ html {
             margin-inline-start: var(--space-small);
             margin-inline-end: 20px;
             text-align: start;
+          }
+        }
+
+        &.carousel-card {
+          align-items: stretch;
+          text-align: start;
+          padding: 0;
+          overflow: hidden;
+          cursor: default;
+          background-color: var(--background-color-canvas);
+          border: 1px solid var(--border-color-interactive);
+
+          &:hover {
+            background-color: var(--background-color-canvas);
+          }
+
+          .icon {
+            width: 100%;
+            min-height: 130px;
+            aspect-ratio: 24 / 9;
+            border-radius: var(--border-radius-small) var(--border-radius-small) 0 0;
+
+            &.has-dark-background {
+              background: var(--single-select-icon-background);
+
+              @media (prefers-color-scheme: dark) {
+                background: var(--single-select-icon-background-dark);
+              }
+            }
+          }
+
+          .text {
+            margin-block: 0;
+            padding-inline: 16px;
+          }
+
+          .label-text {
+            padding-block: 16px 7px;
+            font-size: 17px;
+            font-weight: 590;
+          }
+
+          .body-text {
+            padding-block: 0 7px;
+            font-size: var(--font-size-root);
+            font-weight: 590;
+            color: var(--text-color-deemphasized);
+          }
+
+          .tile-button {
+            align-self: start;
+            margin-inline: 16px;
+            margin-block: 0 16px;
+            padding-inline: 12px;
+            padding-block: 2px;
+            font-size: 11px;
+            font-weight: var(--font-weight-normal);
+            min-height: 24px;
+          }
+
+          &:has(.selected) {
+            outline: 4px solid var(--border-color-selected);
+            border: 0;
+
+            .text {
+              padding-inline: 18px;
+            }
+
+            .label-text {
+              padding-block: 18px 16px;
+              font-size: 22px;
+            }
+
+            .body-text {
+              padding-block: 0 16px;
+            }
+
+            .tile-button {
+              margin-inline: 18px;
+              margin-block: 0 18px;
+              padding-inline: 16px;
+              padding-block: 4px;
+              font-size: var(--font-size-root);
+              font-weight: 590;
+              min-height: 32px;
+            }
           }
         }
       }

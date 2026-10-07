@@ -27,6 +27,7 @@ finally:
 **config** is a dict with the following options:
 
 - **playback_tool**: name of the backend. can be "mitmproxy", "mitmproxy-android"
+- **playback_mode**: "proxy" (default) or "direct". See [Playback modes](#playback-modes)
 - **playback_version**: playback tool version
 - **playback_files**: playback recording path/manifest/URL
 - **binary**: path of the browser binary
@@ -36,6 +37,23 @@ finally:
 - **app**: tested app. Can be "firefox", "geckoview", "refbrow", "fenix" or "firefox"
 - **host**: hostname for the policies.json file
 - **local_profile_dir**: profile dir
+
+## Playback modes
+
+In the default **proxy** mode mitmproxy runs as an HTTP proxy and the browser
+must be routed through it (proxy preferences or an enterprise policy).
+
+In **direct** mode mitmproxy instead serves the recording as a reverse proxy
+on two dedicated ports, exposed as `http_port` and `https_port` on the
+playback object. Nothing is proxied and no elevated privileges are needed;
+the harness points the browser at those ports directly (for Firefox the
+`network.dns.forceResolve` and `network.socket.forcePort` preferences, for
+Chromium `--host-resolver-rules`) and replay matching ignores the recorded
+port. Direct mode requires mitmproxy >= 9 for multiple `--mode` listen
+specs; the supported in-tree versions are 11.0.0 and 12.2.1, so recordings
+pinned to 8.1.1 must stay in proxy mode.
+
+HTTP/3 is not supported in either mode.
 
 Supported environment variables:
 

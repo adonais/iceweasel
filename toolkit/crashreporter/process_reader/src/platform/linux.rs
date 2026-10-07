@@ -223,7 +223,10 @@ impl ProcessReader {
     }
 
     pub fn copy_array<T>(&self, src: usize, num: usize) -> Result<Vec<T>, ReadError> {
-        let mut array = Vec::<MaybeUninit<T>>::with_capacity(num);
+        let mut array = Vec::<MaybeUninit<T>>::new();
+        array
+            .try_reserve_exact(num)
+            .map_err(|_| ReadError::TooLarge)?;
         let num_bytes = num * size_of::<T>();
         let mut array_buffer = array.as_mut_ptr() as *mut u8;
         let mut index = 0;

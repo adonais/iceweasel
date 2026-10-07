@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
-import { BackupResource } from "resource:///modules/backup/BackupResource.sys.mjs";
+import { BackupResource } from "moz-src:///browser/components/backup/resources/BackupResource.sys.mjs";
 
 const lazy = {};
 

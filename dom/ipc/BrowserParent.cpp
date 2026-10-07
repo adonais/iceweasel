@@ -325,8 +325,6 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
       mHasPresented(false),
       mIsReadyToHandleInputEvents(false),
       mIsMouseEnterIntoWidgetEventSuppressed(false),
-      mLockedNativePointer(false),
-      mWaitingForNativeMouseMoveAfterUnlock(false),
       mShowingTooltip(false) {
   MOZ_ASSERT(aManager);
 
@@ -713,7 +711,6 @@ void BrowserParent::Deactivated() {
     // Reuse the normal tooltip hiding method.
     (void)RecvHideTooltip();
   }
-  UnlockNativePointer();
   UnsetTopLevelWebFocus(this);
   if (sFocus == this) {
     sFocus = sTopLevelWebFocus;
@@ -820,7 +817,7 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
 
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
   if (cpm) {
-    cpm->UnregisterRemoteFrame(mTabId);
+    cpm->UnregisterRemoteFrame(this);
   }
 
   if (mRemoteLayerTreeOwner.IsInitialized()) {
@@ -1927,14 +1924,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvSynthesizeNativeMouseEvent(
 
 mozilla::ipc::IPCResult BrowserParent::RecvSynthesizeNativeMouseMove(
     const LayoutDeviceIntPoint& aPoint, const Maybe<uint64_t>& aCallbackId) {
-  NS_ENSURE_TRUE(
-      xpc::IsInAutomation()
-          // This is used by pointer lock API.  So, even if it's not
-          // in the automation mode, we need to accept the request.
-          || (mLockedNativePointer || mWaitingForNativeMouseMoveAfterUnlock),
-      IPC_FAIL(this, "Unexpected event"));
+  NS_ENSURE_TRUE(xpc::IsInAutomation(), IPC_FAIL(this, "Unexpected event"));
 
-  mWaitingForNativeMouseMoveAfterUnlock = false;
   nsCOMPtr<nsISynthesizedEventCallback> callback =
       SynthesizedEventCallback::MaybeCreate(this, aCallbackId);
   if (nsCOMPtr<nsIWidget> widget = GetWidget()) {
@@ -2042,42 +2033,6 @@ mozilla::ipc::IPCResult BrowserParent::RecvSynthesizeNativeTouchpadPan(
     widget->SynthesizeNativeTouchpadPan(aEventPhase, aPoint, aDeltaX, aDeltaY,
                                         aModifierFlags, callback);
   }
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult BrowserParent::RecvLockNativePointer(
-    const nsIWidget::NativePointerLockMode& aNativePointerLockMode) {
-  // XXX(edgar): LockNativePointer IPC message can be removed if pointer lock
-  // is handled mainly from parent process.
-  NS_ENSURE_TRUE(
-      !StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled(),
-      IPC_FAIL(this, "Unexpected request"));
-
-  if (nsCOMPtr<nsIWidget> widget = GetWidget()) {
-    mLockedNativePointer = true;
-    widget->LockNativePointer(aNativePointerLockMode);
-  }
-  return IPC_OK();
-}
-
-void BrowserParent::UnlockNativePointer() {
-  if (!mLockedNativePointer) {
-    return;
-  }
-  if (nsCOMPtr<nsIWidget> widget = GetWidget()) {
-    widget->UnlockNativePointer();
-    mLockedNativePointer = false;
-    mWaitingForNativeMouseMoveAfterUnlock = true;
-  }
-}
-
-mozilla::ipc::IPCResult BrowserParent::RecvUnlockNativePointer() {
-  // XXX(edgar): LockNativePointer IPC message can be removed if pointer lock
-  // is handled mainly from parent process.
-  NS_ENSURE_TRUE(
-      !StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled(),
-      IPC_FAIL(this, "Unexpected request"));
-  UnlockNativePointer();
   return IPC_OK();
 }
 
@@ -3704,6 +3659,16 @@ void BrowserParent::PreserveLayers(bool aPreserveLayers) {
   (void)SendPreserveLayers(aPreserveLayers);
 }
 
+void BrowserParent::TransferLayerState(bool aRenderLayers, bool aPreserveLayers,
+                                       bool aPriorityHint) {
+  PreserveLayers(aPreserveLayers);
+  if (mRenderLayers != aRenderLayers) {
+    mRenderLayers = aRenderLayers;
+    SetRenderLayersInternal(aRenderLayers);
+  }
+  SetPriorityHint(aPriorityHint);
+}
+
 void BrowserParent::NotifyResolutionChanged() {
   if (mIsDestroyed) {
     return;
@@ -3853,6 +3818,11 @@ void BrowserParent::LayerTreeUpdate(bool aActive) {
   }
 
   if (mIsDestroyed) {
+    return;
+  }
+
+  // The frame element shows another page while this one sits in the bfcache.
+  if (mBrowsingContext->IsInBFCache()) {
     return;
   }
 

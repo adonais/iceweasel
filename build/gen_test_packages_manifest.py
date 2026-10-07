@@ -84,7 +84,7 @@ def parse_args():
     for harness in PACKAGE_SPECIFIED_HARNESSES:
         parser.add_argument(
             "--%s" % harness,
-            required=True,
+            required=False,
             action="store",
             dest=harness,
             help="Name of the %s zip." % harness,
@@ -118,17 +118,28 @@ def generate_package_data(args):
     jsshell = args.jsshell
 
     harness_requirements = dict([(k, [tests_common]) for k in ALL_HARNESSES])
-    harness_requirements["jittest"].append(jsshell)
-    harness_requirements["jsreftest"].append(args.reftest)
-    harness_requirements["common"].append("target.condprof.tests.tar.zst")
+
+    condprof = args.condprof
+    trainhop = args.trainhop
+
+    if args.jittest:
+        harness_requirements["jittest"].append(jsshell)
+
+    if args.jsreftest and args.reftest:
+        harness_requirements["jsreftest"].append(args.reftest)
+
+    if condprof:
+        harness_requirements["common"].append(condprof)
+
     for harness in PACKAGE_SPECIFIED_HARNESSES + OPTIONAL_PACKAGES:
         pkg_name = getattr(args, harness, None)
         if pkg_name is None:
             continue
         harness_requirements[harness].append(pkg_name)
-        harness_requirements[harness].append("target.condprof.tests.tar.zst")
-        if harness in HARNESSES_NEEDING_TRAINHOP:
-            harness_requirements[harness].append("target.trainhop.tests.tar.zst")
+        if condprof:
+            harness_requirements[harness].append(condprof)
+        if harness in HARNESSES_NEEDING_TRAINHOP and trainhop:
+            harness_requirements[harness].append(trainhop)
     return harness_requirements
 
 

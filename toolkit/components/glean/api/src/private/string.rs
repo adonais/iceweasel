@@ -27,7 +27,7 @@ use crate::ipc::need_ipc;
 ///         category: "browser".into(),
 ///         lifetime: Lifetime::Ping,
 ///         disabled: false,
-///         dynamic_label: None
+///         label: None
 ///     }));
 /// }
 /// ```

@@ -19,3 +19,43 @@ include("/tools/fuzzing/libfuzzer-config.mozbuild")
 
 if CONFIG["FUZZING_INTERFACES"]:
     TEST_DIRS += ["fuzztest"]
+
+LICENSED_UNDER += ["libjingle"]
+LICENSED_UNDER["libjingle"].paths = [
+    "sigslot.h",
+]
+
+LICENSED_UNDER += ["nicer"]
+LICENSED_UNDER["nicer"].paths = [
+    "third_party/nICEr",
+]
+
+LICENSED_UNDER += ["nrappkit"]
+LICENSED_UNDER["nrappkit"].paths = [
+    "third_party/nrappkit",
+]
+
+LICENSED_UNDER += ["nrappkit-cont-1"]
+LICENSED_UNDER["nrappkit-cont-1"].paths = [
+    "third_party/nrappkit",
+]
+
+LICENSED_UNDER += ["nrappkit-cont-2"]
+LICENSED_UNDER["nrappkit-cont-2"].paths = [
+    "third_party/nrappkit/src/port/generic/include/sys/queue.h",
+]
+
+LICENSED_UNDER += ["nrappkit-cont-3"]
+LICENSED_UNDER["nrappkit-cont-3"].paths = [
+    "third_party/nrappkit/src/util/util.cpp",
+]
+
+LICENSED_UNDER += ["praton1"]
+LICENSED_UNDER["praton1"].paths = [
+    "third_party/nrappkit/src/util/util.cpp",
+]
+
+LICENSED_UNDER += ["ucal"]
+LICENSED_UNDER["ucal"].paths = [
+    "third_party/nICEr/src/stun/addrs.cpp",
+]

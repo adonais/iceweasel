@@ -149,15 +149,36 @@ export class FormHistoryParent extends JSWindowActorParent {
     // Removals must be scoped to a specific, allowed fieldname so the
     // fieldname always constrains the query.
     if (!inputName || !lazy.FormHistory.isAllowedFieldname(inputName)) {
-      return;
+      return Promise.resolve();
     }
 
-    lazy.FormHistory.update({
+    this.previousSearchString = null;
+    this.previousSearchResult = null;
+
+    return lazy.FormHistory.update({
       op: "remove",
       fieldname: inputName,
       value,
       guid,
     });
+  }
+
+  async onAutoCompleteEntrySelected(message, data) {
+    switch (message) {
+      case "FormHistory:RemoveEntry": {
+        await this.#onRemoveEntry(data);
+        this.#repopulateAutocompletePopup();
+        break;
+      }
+    }
+  }
+
+  #repopulateAutocompletePopup() {
+    if (!this.manager || this.manager.isClosed) {
+      return;
+    }
+
+    this.sendAsyncMessage("FormHistory:RepopulateAutocompletePopup");
   }
 
   async searchAutoCompleteEntries(searchString, data) {

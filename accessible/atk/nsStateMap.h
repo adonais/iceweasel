@@ -112,7 +112,7 @@ static const AtkStateMap
                                              // clang-format on
 };
 
-static const auto gAtkStateMapLen = std::extent<decltype(gAtkStateMap)>::value;
+static const auto gAtkStateMapLen = std::extent_v<decltype(gAtkStateMap)>;
 
 static_assert(((uint64_t)0x1) << (gAtkStateMapLen - 1) ==
                   mozilla::a11y::states::LAST_ENTRY,

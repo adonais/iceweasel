@@ -58,7 +58,7 @@ interface nsIPrintDialogService : nsISupports
    * @return A promise with the same resolve/reject semantics as
    *         showPrintDialog above.
    */
-  [implicit_jscontext]
+  [can_run_script, implicit_jscontext]
   Promise showPageSetupDialog(in mozIDOMWindowProxy aParent,
                               in nsIPrintSettings aPrintSettings);
 };

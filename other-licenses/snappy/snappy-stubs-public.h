@@ -38,8 +38,8 @@
 #include <cstddef>
 
 #define SNAPPY_MAJOR 1
-#define SNAPPY_MINOR 2
-#define SNAPPY_PATCHLEVEL 2
+#define SNAPPY_MINOR 3
+#define SNAPPY_PATCHLEVEL 0
 #define SNAPPY_VERSION \
     ((SNAPPY_MAJOR << 16) | (SNAPPY_MINOR << 8) | SNAPPY_PATCHLEVEL)
 

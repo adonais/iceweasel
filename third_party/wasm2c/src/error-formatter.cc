@@ -32,13 +32,13 @@ std::string FormatError(const Error& error,
   result += color.MaybeBoldCode();
 
   const Location& loc = error.loc;
-  if (!loc.filename.empty()) {
-    result += loc.filename;
+  if (!error.filename.empty()) {
+    result += error.filename;
     result += ":";
   }
 
   if (location_type == Location::Type::Text) {
-    result += StringPrintf("%d:%d: ", loc.line, loc.first_column);
+    result += StringPrintf("%u:%u: ", loc.line, loc.first_column);
   } else if (loc.offset != kInvalidOffset) {
     result += StringPrintf("%07" PRIzx ": ", loc.offset);
   }
@@ -53,7 +53,8 @@ std::string FormatError(const Error& error,
 
   LexerSourceLineFinder::SourceLine source_line;
   if (line_finder) {
-    line_finder->GetSourceLine(loc, source_line_max_length, &source_line);
+    // TODO: how should we handle errors?
+    (void)line_finder->GetSourceLine(loc, source_line_max_length, &source_line);
   }
 
   if (!source_line.line.empty()) {

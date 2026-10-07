@@ -55,6 +55,9 @@ class RTCCertificate final : public nsISupports, public nsWrapperCache {
                  CERTCertificate* aCertificate, SSLKEAType aAuthType,
                  PRTime aExpires);
 
+  void operator=(const RTCCertificate&) = delete;
+  RTCCertificate(const RTCCertificate&) = delete;
+
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
@@ -77,8 +80,6 @@ class RTCCertificate final : public nsISupports, public nsWrapperCache {
 
  private:
   ~RTCCertificate() = default;
-  void operator=(const RTCCertificate&) = delete;
-  RTCCertificate(const RTCCertificate&) = delete;
 
   bool ReadCertificate(JSStructuredCloneReader* aReader);
   bool ReadPrivateKey(JSStructuredCloneReader* aReader);

@@ -28,7 +28,7 @@ same as partner repacks.
 
 `release_partner_config` is a dictionary of configuration data which drives the task generation
 logic. It's usually looked up during the release promotion action task, using the Github
-GraphQL API in the [get_partner_config_by_url()](python/taskgraph.util.html#taskgraph.util.partners.get_partner_config_by_url) function, with the
+GraphQL API in the `gecko_taskgraph.util.partners.get_partner_config_by_url()` function, with the
 url defined in [taskcluster/config.yml](https://searchfox.org/mozilla-central/search?q=partner-urls&path=taskcluster%2Fconfig.yml&case=true&regexp=false&redirect=true).
 
 `release_partner_build_number` is an integer used to create unique upload paths in the firefox

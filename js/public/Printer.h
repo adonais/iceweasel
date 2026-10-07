@@ -307,7 +307,7 @@ class JS_PUBLIC_API Sprinter : public StringPrinter {
  public:
   explicit Sprinter(JSContext* maybeCx = nullptr, bool shouldReportOOM = true)
       : StringPrinter(js::MallocArena, maybeCx, shouldReportOOM) {}
-  ~Sprinter() {}
+  ~Sprinter() = default;
 
   JS::UniqueChars release() { return releaseChars(); }
 };
@@ -316,7 +316,7 @@ class JS_PUBLIC_API JSSprinter : public StringPrinter {
  public:
   explicit JSSprinter(JSContext* cx)
       : StringPrinter(js::StringBufferArena, cx, true) {}
-  ~JSSprinter() {}
+  ~JSSprinter() = default;
 
   JSString* release(JSContext* cx) { return releaseJS(cx); }
 };
@@ -376,7 +376,7 @@ class JS_PUBLIC_API Fprinter final : public GenericPrinter {
 // else just stderr).
 class SEprinter final : public GenericPrinter {
  public:
-  constexpr SEprinter() {}
+  SEprinter() = default;
 
   // Puts |len| characters from |s| at the current position. Ignores errors.
   virtual void put(const char* s, size_t len) override {
@@ -443,7 +443,7 @@ class JS_PUBLIC_API EscapePrinter final : public GenericPrinter {
 
  public:
   EscapePrinter(Delegate& out, Escape& esc) : out(out), esc(esc) {}
-  ~EscapePrinter() {}
+  ~EscapePrinter() = default;
 
   using GenericPrinter::put;
   void put(const char* s, size_t len) override {

@@ -22,11 +22,8 @@ using mozilla::gfx::PrintEndDocumentPromise;
 
 float nsIDeviceContextSpec::GetPrintingScale() {
 #ifdef XP_WIN
-  if (mPrintSettings->GetOutputFormat() != nsIPrintSettings::kOutputFormatPDF
-#  ifdef MOZ_ENABLE_SKIA_PDF
-      && !mPrintViaSkPDF
-#  endif
-  ) {
+  if (mPrintSettings->GetOutputFormat() != nsIPrintSettings::kOutputFormatPDF &&
+      !mPrintViaSkPDF) {
     // The print settings will have the resolution stored from the real device.
     int32_t resolution;
     mPrintSettings->GetResolution(&resolution);

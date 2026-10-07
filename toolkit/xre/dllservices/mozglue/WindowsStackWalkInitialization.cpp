@@ -9,6 +9,8 @@
 #include "mozilla/NativeNt.h"
 #include "mozilla/StackWalk_windows.h"
 #include "mozilla/WindowsDiagnostics.h"
+#include "mozilla/WindowsProcessMitigations.h"
+#include "mozilla/glue/Debug.h"
 
 namespace mozilla {
 
@@ -43,6 +45,37 @@ static PVOID WINAPI patched_LdrResolveDelayLoadedAPI(
                                        ThunkAddress, Flags);
 }
 
+MFBT_API
+bool InstallStackWalkSuppressionHooks() {
+  static const bool sHooksInstalled = []() {
+    NtDllIntercept.Init("ntdll.dll");
+
+    bool installedAll = true;
+    if (!stub_LdrUnloadDll.Set(NtDllIntercept, "LdrUnloadDll",
+                               &patched_LdrUnloadDll)) {
+#  ifdef DEBUG
+      printf_stderr("LdrUnloadDll stack walk suppression hook failed\n");
+#  endif
+      installedAll = false;
+    }
+    if (!stub_LdrResolveDelayLoadedAPI.Set(NtDllIntercept,
+                                           "LdrResolveDelayLoadedAPI",
+                                           &patched_LdrResolveDelayLoadedAPI)) {
+#  ifdef DEBUG
+      printf_stderr(
+          "LdrResolveDelayLoadedAPI stack walk suppression hook failed\n");
+#  endif
+      installedAll = false;
+    }
+
+    MOZ_ASSERT(installedAll);
+
+    return installedAll;
+  }();
+
+  return sHooksInstalled;
+}
+
 void WindowsStackWalkInitialization() {
   // This function could be called by both profilers, but we only want to run
   // it once.
@@ -63,7 +96,6 @@ void WindowsStackWalkInitialization() {
 
     if (locksArePlausible) {
       InitializeStackWalkLocks(stackWalkLocks);
-      return;
     }
   }
 
@@ -72,10 +104,7 @@ void WindowsStackWalkInitialization() {
   // known to acquire the locks exclusively. Some of these calls, e.g.
   // LdrLoadDll, are already hooked by other parts of our code base; in this
   // case the stack walk suppressions are already added there directly.
-  NtDllIntercept.Init("ntdll.dll");
-  stub_LdrUnloadDll.Set(NtDllIntercept, "LdrUnloadDll", &patched_LdrUnloadDll);
-  stub_LdrResolveDelayLoadedAPI.Set(NtDllIntercept, "LdrResolveDelayLoadedAPI",
-                                    &patched_LdrResolveDelayLoadedAPI);
+  InstallStackWalkSuppressionHooks();
 }
 
 [[clang::optnone]] void UnoptimizedLookup() {

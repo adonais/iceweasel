@@ -1,6 +1,7 @@
 FROM $DOCKER_IMAGE_PARENT
 MAINTAINER Mozilla Releng <release@mozilla.com>
 
+VOLUME /builds/worker/checkouts
 VOLUME /builds/worker/workspace
 
 ARG TASKCLUSTER_ROOT_URL

@@ -1,0 +1,39 @@
+From bf07de38b05e4c952beb4009aa15060d0e4f7cc7 Mon Sep 17 00:00:00 2001
+From: Fangrui Song <i@maskray.me>
+Date: Thu, 2 Feb 2023 15:13:04 -0800
+Subject: [PATCH] libRemarks.{so,dylib}: remove Remarks.dylib.exports
+
+Remarks.exports is only intended for NOT (BUILD_SHARED_LIBS OR LLVM_LINK_LLVM_DYLIB)
+builds.
+
+For (unintended use case) BUILD_SHARED_LIBS OR LLVM_LINK_LLVM_DYLIB (the latter
+is used by some Linux distros), the library defines just one symbol on ELF.
+There is no need to use a version script.
+
+I think this is a more proper solution than D139932 and fixes `symbol not
+defined` errors after lld default change D135402.
+
+(The hunk removing llvm/tools/remarks-shlib/Remarks.dylib.exports is
+dropped, as D139932 was never applied here.)
+---
+ llvm/tools/remarks-shlib/CMakeLists.txt | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/llvm/tools/remarks-shlib/CMakeLists.txt b/llvm/tools/remarks-shlib/CMakeLists.txt
+index f22cedd9ead7..bc4bd67e2c9e 100644
+--- a/llvm/tools/remarks-shlib/CMakeLists.txt
++++ b/llvm/tools/remarks-shlib/CMakeLists.txt
+@@ -9,7 +9,9 @@ if(LLVM_ENABLE_PIC)
+     libremarks.cpp
+     )
+ 
+-  set(LLVM_EXPORTED_SYMBOL_FILE ${CMAKE_CURRENT_SOURCE_DIR}/Remarks.exports)
++  if (NOT (BUILD_SHARED_LIBS OR LLVM_LINK_LLVM_DYLIB))
++    set(LLVM_EXPORTED_SYMBOL_FILE ${CMAKE_CURRENT_SOURCE_DIR}/Remarks.exports)
++  endif()
+ 
+   add_llvm_library(Remarks SHARED INSTALL_WITH_TOOLCHAIN ${SOURCES})
+ 
+-- 
+2.47.3
+

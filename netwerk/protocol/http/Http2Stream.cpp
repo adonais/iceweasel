@@ -120,7 +120,16 @@ nsresult Http2Stream::GenerateHeaders(nsCString& aCompressedData,
   int64_t clVal = session->Compressor()->GetParsedContentLength();
   if (clVal != -1) {
     mRequestBodyLenRemaining = clVal;
+  } else if (nsHttpTransaction* trans = HttpTransaction();
+             trans && trans->RequestBodyIsStreaming()) {
+    // A streaming upload has no Content-Length, so its length is unknown up
+    // front; END_STREAM will be driven by the 0-byte read that ends the body.
+    // Only streaming uploads take this path: for every other
+    // Content-Length-less request (CONNECT tunnels in particular)
+    // mRequestBodyLenRemaining keeps its previous meaning.
+    mRequestBodyLenRemaining = -1;
   }
+  // Otherwise leave mRequestBodyLenRemaining at its default 0 (no body).
 
   // Determine whether to put the fin bit on the header frame or whether
   // to wait for a data packet to put it on.

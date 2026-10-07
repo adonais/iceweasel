@@ -145,9 +145,8 @@ static bool CreateBadModuleTypeError(JSContext* aCx,
 // https://html.spec.whatwg.org/#hostloadimportedmodule
 // static
 bool ModuleLoaderBase::HostLoadImportedModule(
-    JSContext* aCx, Handle<JSScript*> aReferrer,
-    Handle<JSObject*> aModuleRequest, Handle<Value> aHostDefined,
-    Handle<Value> aPayload, uint32_t aLineNumber,
+    JSContext* aCx, Handle<Value> aReferrer, Handle<JSObject*> aModuleRequest,
+    Handle<Value> aHostDefined, Handle<Value> aPayload, uint32_t aLineNumber,
     JS::ColumnNumberOneOrigin aColumnNumber) {
   Rooted<JSObject*> object(aCx);
   if (aPayload.isObject()) {
@@ -269,8 +268,9 @@ bool ModuleLoaderBase::HostLoadImportedModule(
 
   LOG(
       ("ModuleLoaderBase::HostLoadImportedModule loader (%p) uri %s referrer "
-       "(%p) request (%p)",
-       loader.get(), uri->GetSpecOrDefault().get(), aReferrer.get(),
+       "%s request (%p)",
+       loader.get(), uri->GetSpecOrDefault().get(),
+       fetchReferrer ? fetchReferrer->GetSpecOrDefault().get() : "(null)",
        request.get()));
 
   request->SetImport(aReferrer, aModuleRequest, aPayload);
@@ -326,7 +326,7 @@ bool ModuleLoaderBase::FinishLoadingImportedModule(
   }
   MOZ_ASSERT(module);
 
-  Rooted<JSScript*> referrer(aCx, aRequest->mReferrerScript);
+  Rooted<Value> referrer(aCx, aRequest->mReferrerValue);
   Rooted<JSObject*> moduleReqObj(aCx, aRequest->mModuleRequestObj);
   Rooted<Value> payload(aCx, aRequest->mPayload);
 
@@ -550,12 +550,8 @@ ModuleLoaderBase* ModuleLoaderBase::GetCurrentModuleLoader(JSContext* aCx) {
 
 // static
 ScriptFetchInfo* ModuleLoaderBase::GetScriptFetchInfoOrNull(
-    Handle<JSScript*> aReferrer) {
-  if (!aReferrer) {
-    return nullptr;
-  }
-
-  Value value = GetScriptPrivate(aReferrer);
+    Handle<Value> aReferrer) {
+  Value value = JS::GetReferrerPrivate(aReferrer);
   if (value.isUndefined()) {
     return nullptr;
   }

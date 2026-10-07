@@ -12,6 +12,7 @@ use api::{DebugFlags, RenderBackendId, TextureCacheCategory};
 use api::debugger::{DebuggerMessage, SetDebugFlagsMessage, ProfileCounterDescriptor};
 use api::debugger::{FrameLogMessage, InitProfileCountersMessage, ProfileCounterId};
 use api::debugger::{CompositorDebugInfo, CompositorDebugTile, RenderDocReply, SceneDebugOverride};
+use api::debugger::{SetShaderSourceRequest, ShaderDiagnostic, ShaderReloadReply};
 use std::thread;
 use base64::prelude::*;
 use sha1::{Sha1, Digest};
@@ -72,6 +73,14 @@ pub enum DebugQueryKind {
     Textures { category: Option<TextureCacheCategory> },
     /// Query the picture / primitive tree of the current built scene
     Scene {},
+    /// Query the list of shader sources and the variants built from them
+    Shaders {},
+    /// Query the source of one shader. With `features`, the preprocessed
+    /// source of that variant; without, the raw `.glsl` file.
+    ShaderSource {
+        name: String,
+        features: Option<Vec<String>>,
+    },
 }
 
 /// Details about the debug query being requested
@@ -151,6 +160,7 @@ impl Debugger {
         debug_flags: DebugFlags,
         profiler: &Profiler,
         command_log: &Option<RenderCommandLog>,
+        shader_errors: &[ShaderDiagnostic],
     ) {
         let mut clients_to_keep = Vec::new();
 
@@ -171,9 +181,19 @@ impl Debugger {
                 render_commands,
             };
 
-            if client.send_msg(DebuggerMessage::UpdateFrameLog(msg)) {
-                clients_to_keep.push(client);
+            if !client.send_msg(DebuggerMessage::UpdateFrameLog(msg)) {
+                continue;
             }
+
+            if !shader_errors.is_empty()
+                && !client.send_msg(DebuggerMessage::ShaderCompileErrors(
+                    shader_errors.to_vec(),
+                ))
+            {
+                continue;
+            }
+
+            clients_to_keep.push(client);
         }
 
         self.clients = clients_to_keep;
@@ -338,6 +358,76 @@ async fn handle_request(
                 }
             }
         }
+        "/shader-source" => {
+            // Read or replace the GLSL source of one shader file.
+            match request.method() {
+                &hyper::Method::GET => {
+                    let name = match args.get("name") {
+                        Some(name) => name.clone(),
+                        None => {
+                            return Ok(string_response("Missing 'name' parameter"));
+                        }
+                    };
+                    // The presence of `features` selects the preprocessed
+                    // source of one variant rather than the raw file. An empty
+                    // value is the featureless variant, not an absent one.
+                    let features = args.get("features").map(|features| {
+                        features
+                            .split(',')
+                            .filter(|feature| !feature.is_empty())
+                            .map(|feature| feature.to_string())
+                            .collect()
+                    });
+
+                    let (tx, rx) = unbounded_channel();
+                    let query = DebugQuery {
+                        result: tx,
+                        kind: DebugQueryKind::ShaderSource { name, features },
+                    };
+                    api.send_debug_cmd(DebugCommand::Query(query));
+                    let result = match rx.recv() {
+                        Ok(result) => result,
+                        Err(..) => "No response received from WR".into(),
+                    };
+                    Ok(string_response(result))
+                }
+                &hyper::Method::POST => {
+                    let content = request_to_string(request).await.unwrap();
+                    let request: SetShaderSourceRequest = match serde_json::from_str(&content) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            let reply = ShaderReloadReply::Error(
+                                format!("Invalid shader source request: {}", err)
+                            );
+                            return Ok(string_response(serde_json::to_string(&reply).unwrap()));
+                        }
+                    };
+
+                    let (tx, rx) = unbounded_channel();
+                    api.send_debug_cmd(DebugCommand::SetShaderSource(
+                        request.name,
+                        request.source,
+                        tx,
+                    ));
+                    let reply = match rx.recv() {
+                        Ok(reply) => reply,
+                        Err(..) => {
+                            ShaderReloadReply::Error("No response received from WR".into())
+                        }
+                    };
+
+                    // Only a successful swap changes what would be drawn.
+                    if matches!(reply, ShaderReloadReply::Ok { .. }) {
+                        api.send_debug_cmd(DebugCommand::GenerateFrame);
+                    }
+
+                    Ok(string_response(serde_json::to_string(&reply).unwrap()))
+                }
+                _ => {
+                    Ok(status_response(403))
+                }
+            }
+        }
         "/renderdoc-capture" => {
             // Capture the next composited frame with RenderDoc, replying with
             // the path of the written .rdc (or an error message).
@@ -374,6 +464,7 @@ async fn handle_request(
                 Some("tile-textures") => DebugQueryKind::Textures { category: Some(TextureCacheCategory::PictureTile) },
                 Some("standalone-textures") => DebugQueryKind::Textures { category: Some(TextureCacheCategory::Standalone) },
                 Some("scene") => DebugQueryKind::Scene {},
+                Some("shaders") => DebugQueryKind::Shaders {},
                 _ => {
                     return Ok(string_response("Unknown query"));
                 }

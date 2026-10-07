@@ -34,9 +34,18 @@ const { RustAutofillStore } = ChromeUtils.importESModule(
 const { SqlError } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAutofill.sys.mjs"
 );
-const { AddressStorageMigrator } = ChromeUtils.importESModule(
-  "resource://autofill/AddressStorageMigrator.sys.mjs"
+const { AddressStorageMigrator, AutofillStorageMigrator } =
+  ChromeUtils.importESModule(
+    "resource://autofill/AutofillStorageMigrator.sys.mjs"
+  );
+const { FormAutofill } = ChromeUtils.importESModule(
+  "resource://autofill/FormAutofill.sys.mjs"
 );
+
+// A region ICU can name, so it survives normalization on write, but one with no
+// bundled address metadata, so it is absent from FormAutofill.countries and
+// neither store reports it on read.
+const UNSUPPORTED_COUNTRY = "XK";
 
 // The prefs are global but the storage singleton is per-process, so it would
 // migrate its own empty store alongside the throwaway ones these tests create,
@@ -1462,6 +1471,45 @@ add_task(async function test_a_round_trip_keeps_a_field_rust_cannot_hold() {
   await s._finalize();
 });
 
+add_task(async function test_a_copy_back_keeps_an_unsupported_country() {
+  const { s, json, rust } = await nowipeSetup("mig-country-back.json", []);
+  Assert.ok(
+    !FormAutofill.countries.has(UNSUPPORTED_COUNTRY),
+    `${UNSUPPORTED_COUNTRY} has no bundled address metadata`
+  );
+
+  // A record only Rust holds, so the copy back inserts it: what the source
+  // read reports is the whole of what reaches the disk. Hiding the code on
+  // read must not lose it here -- the record would come back holding no
+  // country at all, and the next edit would stamp it with the default region.
+  const guid = await rust.add({
+    name: "Blerim Gashi",
+    "street-address": "Rruga C 7",
+    "address-level2": "Prizren",
+    country: UNSUPPORTED_COUNTRY,
+  });
+  Assert.equal(
+    (await rust._get(await rust._store(), guid)).country,
+    UNSUPPORTED_COUNTRY,
+    "Rust holds the code"
+  );
+  Assert.ok(
+    !("country" in (await rust.get(guid))),
+    "and does not report it on read"
+  );
+
+  const migrator = new AddressStorageMigrator(rust, json);
+  Assert.ok(await migrator.maybeRun({ wipe: false }), "the copy completed");
+
+  Assert.equal(
+    json._data.find(record => record.guid == guid).country,
+    UNSUPPORTED_COUNTRY,
+    "the code reached the disk on the other side"
+  );
+
+  await s._finalize();
+});
+
 add_task(async function test_a_record_with_the_same_timestamp_is_left_alone() {
   const { s, guids, json, rust } = await nowipeSetup("mig-sametime.json", [
     "Same Time",
@@ -1633,8 +1681,8 @@ add_task(async function test_a_reporting_failure_still_counts_the_attempt() {
 
   // Telemetry must not decide the outcome. Stubbed at the migrator, since
   // Glean's own metrics cannot be replaced from a test.
-  const orig = AddressStorageMigrator.prototype._report;
-  AddressStorageMigrator.prototype._report = () => {
+  const orig = AutofillStorageMigrator.prototype._report;
+  AutofillStorageMigrator.prototype._report = () => {
     throw new Error("injected telemetry failure");
   };
 
@@ -1648,7 +1696,7 @@ add_task(async function test_a_reporting_failure_still_counts_the_attempt() {
     );
     Assert.equal(getInt(ATTEMPTS_PREF), 0, "and nothing held against it");
   } finally {
-    AddressStorageMigrator.prototype._report = orig;
+    AutofillStorageMigrator.prototype._report = orig;
   }
 
   await s._finalize();
@@ -1657,8 +1705,8 @@ add_task(async function test_a_reporting_failure_still_counts_the_attempt() {
 add_task(async function test_a_reporting_failure_still_ends_the_dry_run() {
   let { s } = await setupStorageWithRecords("mig-noreport-dry.json", ["One"]);
 
-  const orig = AddressStorageMigrator.prototype._report;
-  AddressStorageMigrator.prototype._report = () => {
+  const orig = AutofillStorageMigrator.prototype._report;
+  AutofillStorageMigrator.prototype._report = () => {
     throw new Error("injected telemetry failure");
   };
 
@@ -1673,7 +1721,7 @@ add_task(async function test_a_reporting_failure_still_ends_the_dry_run() {
     );
     Assert.ok(!getBool(ACTIVE_PREF), "and did not switch the profile");
   } finally {
-    AddressStorageMigrator.prototype._report = orig;
+    AutofillStorageMigrator.prototype._report = orig;
   }
 
   await s._finalize();

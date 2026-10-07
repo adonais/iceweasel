@@ -517,11 +517,13 @@ prefs = ["browser.cache.disk.encryption.enabled=true"]
 
 ["test_cache2-43-purge-residual-folder.js"]
 
-["test_cache2-44-no-rewrite-unchanged-metadata.js"]
-
 ["test_cache2-44-clear-origin-context-evictor.js"]
 
+["test_cache2-44-no-rewrite-unchanged-metadata.js"]
+
 ["test_cache2-45-clear-base-domain-context-evictor.js"]
+
+["test_cache2-44-no_cache_revalidating_hang.js"]
 
 ["test_cache2_clear_with_principal.js"]
 run-sequentially = ["true"] # httpd server
@@ -585,6 +587,8 @@ prefs = [
 ["test_connection_coalescing.js"]
 
 ["test_connection_coalescing_hash_collision.js"]
+
+["test_connection_reuse_timings.js"]
 
 ["test_content_decoding_error_telemetry.js"]
 run-sequentially = ["true"]
@@ -658,6 +662,9 @@ prefs = ["content.cors.use_triggering_principal=true"] # See bug 1982916.
 ["test_dictionary_compression_dcb.js"]
 run-sequentially = ["true"]
 
+["test_dictionary_oa_isolation.js"]
+run-sequentially = ["true"]
+
 ["test_dictionary_replacement.js"]
 run-sequentially = ["true"]
 
@@ -668,6 +675,8 @@ run-sequentially = ["true"]
 run-sequentially = ["true"]
 
 ["test_dns_by_type_resolve.js"]
+
+["test_dns_cache_miss_telemetry.js"]
 
 ["test_dns_cancel.js"]
 skip-if = [
@@ -684,6 +693,12 @@ skip-if = [
 
 ["test_dns_localredirect.js"]
 
+["test_dns_negative_grace.js"]
+skip-if = [
+  "os == 'android'",
+  "os == 'win' && msix",
+]
+
 ["test_dns_negative_refresh_on_use.js"]
 
 ["test_dns_offline.js"]
@@ -695,6 +710,8 @@ skip-if = [
 ["test_dns_override.js"]
 
 ["test_dns_override_for_localhost.js"]
+
+["test_dns_prefetch_family.js"]
 
 ["test_dns_proxy_bypass.js"]
 
@@ -756,6 +773,13 @@ run-if = [
 
 ["test_extract_charset_from_content_type.js"]
 
+["test_fetch_streaming_upload.js"]
+run-sequentially = ["true"] # http3server + node servers
+prefs = ["dom.fetch.streaming_upload=true"] # nightly-only by default
+skip-if = [
+  "os == 'win' && msix",
+]
+
 ["test_file_protocol.js"]
 
 ["test_file_root.js"]
@@ -772,6 +796,9 @@ skip-if = [
 ["test_getHost.js"]
 
 ["test_gre_resources.js"]
+
+["test_h2_unclean_shutdown_retry.js"]
+prefs = ["network.http.speculative-parallel-limit=0"]
 
 ["test_h2proxy_connection_limit.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
@@ -888,6 +915,8 @@ skip-if = [
   "os == 'android'",
   "os == 'win' && msix",
 ]
+
+["test_happy_eyeballs_negative_optimistic_dns.js"]
 
 ["test_happy_eyeballs_optimistic_dns.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well

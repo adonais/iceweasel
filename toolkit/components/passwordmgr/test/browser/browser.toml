@@ -298,6 +298,11 @@ support-files = ["browser_relay_utils.js"]
 ["browser_relay_use.js"]
 support-files = ["browser_relay_utils.js"]
 
+["browser_rust_storage_primary_password.js"]
+skip-if = [
+  "os == 'android'", # The Rust storage backend only runs on desktop
+]
+
 ["browser_telemetry_SignUpFormRuleset.js"]
 
 ["browser_test_changeContentInputValue.js"]

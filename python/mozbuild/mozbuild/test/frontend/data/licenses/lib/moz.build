@@ -1,0 +1,8 @@
+LICENSES += ["mylib"]
+LICENSES["mylib"].title = "mylib License"
+LICENSES["mylib"].text = "notice.txt"
+LICENSES["mylib"].notice = "Copyright 2026 Somebody."
+LICENSES["mylib"].paths = ["extra/path"]
+
+LICENSED_UNDER += ["MIT"]
+LICENSED_UNDER["MIT"].paths = ["vendor/dep.js", "vendor/other*"]

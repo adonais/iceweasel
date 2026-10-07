@@ -244,20 +244,6 @@ All properties of *query* are optional. Passing an empty object returns all debu
 
 Note that the result may include {doc}`Debugger.Script <../debugger.script/index>` instances for scripts that can no longer ever be used by the debuggee, say, those for eval code that has finished running, or unreachable functions. Whether such scripts appear can be affected by the garbage collector’s behavior, so this function’s behavior is not entirely deterministic.
 
-`findObjects([query])`
-
-Return an array of {doc}`Debugger.Object <../debugger.object/index>` instances referring to each live object allocated in the scope of the debuggee globals that matches *query*. Each instance appears only once in the array. *Query* is an object whose properties restrict which objects are returned; an object must meet all the criteria given by *query* to be returned. If *query* is omitted, we return the {doc}`Debugger.Object <../debugger.object/index>` instances for all objects allocated in the scope of debuggee globals.
-
-The *query* object may have the following properties:
-
-`class`
-
-: If present, only return objects whose internal `[[Class]]`’s name matches the given string. Note that in some cases, the prototype object for a given constructor has the same `[[Class]]` as the instances that refer to it, but cannot itself be used as a valid instance of the class. Code gathering objects by class name may need to examine them further before trying to use them.
-
-All properties of *query* are optional. Passing an empty object returns all objects in debuggee globals.
-
-Unlike `findScripts`, this function is deterministic and will never return \<a href="Debugger.Object">\`\`Debugger.Object\`\`s\</a> referring to previously unreachable objects that had not been collected yet.
-
 `clearBreakpoint(handler)`
 
 Remove all breakpoints set in this `Debugger` instance that use *handler* as their handler. Note that, if breakpoints using other handler objects are set at the same location(s) as *handler*, they remain in place.

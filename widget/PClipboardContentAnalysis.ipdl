@@ -39,6 +39,17 @@ parent:
     sync GetAllClipboardDataSync(nsCString[] aTypes, ClipboardType aWhichClipboard,
                                  uint64_t aRequestingWindowContextId)
         returns (IPCTransferableDataOrError transferableDataOrError);
+
+    // Writes data to the clipboard once content analysis has allowed the copy.
+    // Unlike PContent::SetClipboard this is sync, so that the copy is complete
+    // (or blocked) by the time the content process's call to
+    // nsIClipboard::setData returns.
+    // aSettingWindowContextId is the ID of the window doing the copy, which is
+    // used for content analysis.
+    sync SetClipboard(IPCTransferable aTransferable,
+                      ClipboardType aWhichClipboard,
+                      uint64_t aSettingWindowContextId)
+        returns (nsresult rv);
 };
 
 }

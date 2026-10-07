@@ -18,6 +18,10 @@ tasks:
             copy-attributes: true
             with-attributes:
                 certs: [true]
+                # No cert-using test runs on legacy-db or make-FIPS builds, so
+                # nothing would fetch these certs.
+                dbm: [false]
+                make-fips: [false]
         run:
             using: run-task
             checkout:

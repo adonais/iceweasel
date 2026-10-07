@@ -2,7 +2,7 @@ schema: 1
 
 bugzilla:
   product: Core
-  component: Graphics
+  component: "Graphics: ANGLE"
 
 origin:
   name: angle
@@ -15,6 +15,7 @@ origin:
   revision: 464fd3e879d6bb72fe8210b3e58b59836f711951
 
   license: BSD-3-Clause
+  license-file: LICENSE
 
 updatebot:
   maintainer-phab: ahale

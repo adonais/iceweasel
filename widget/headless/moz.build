@@ -18,6 +18,11 @@ LOCAL_INCLUDES += [
     "/widget/%s" % widget_dir,
 ]
 
+EXPORTS.mozilla.widget += [
+    "HeadlessCompositorWidget.h",
+    "HeadlessWidget.h",
+]
+
 UNIFIED_SOURCES += [
     "HeadlessClipboard.cpp",
     "HeadlessClipboardData.cpp",
@@ -26,6 +31,15 @@ UNIFIED_SOURCES += [
     "HeadlessSound.cpp",
     "HeadlessWidget.cpp",
 ]
+
+if CONFIG["MOZ_WIDGET_TOOLKIT"] != "uikit":
+    EXPORTS.mozilla.widget += [
+        "HeadlessCompositorWidgetParent.h",
+    ]
+
+    UNIFIED_SOURCES += [
+        "HeadlessCompositorWidgetParent.cpp",
+    ]
 
 if widget_dir == "gtk":
     UNIFIED_SOURCES += [

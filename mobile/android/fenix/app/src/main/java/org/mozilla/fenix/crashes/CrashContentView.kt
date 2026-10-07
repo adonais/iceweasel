@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.crashes
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
 import android.view.LayoutInflater
@@ -42,6 +43,9 @@ constructor(
     fun show(controller: CrashReporterController) {
         this.controller = controller
         inflateViewIfNecessary()
+        // Update the checkbox state on every show(), so that the preference does not
+        // go stale for multiple crashes in the same session.
+        bindCheckboxState()
         visibility = VISIBLE
     }
 
@@ -60,6 +64,9 @@ constructor(
         bindViews()
     }
 
+    // Inflating a merge would bind against this view rather than a root of its own, and the tests hand it a
+    // spy of itself with nothing to find. It inflates once, when a tab crashes, so it is not worth that.
+    @SuppressLint("MozConstraintLayoutInflatesConstraintLayout")
     @VisibleForTesting
     internal fun inflate() {
         binding = ViewCrashReporterBinding.inflate(LayoutInflater.from(context), this, true)
@@ -81,6 +88,13 @@ constructor(
             setOnClickListener {
                 controller.handleCloseAndRemove(binding.sendCrashCheckbox.isChecked)
             }
+        }
+    }
+
+    private fun bindCheckboxState() {
+        binding.sendCrashCheckbox.apply {
+            visibility = if (controller.isCrashReportCheckboxVisible()) VISIBLE else GONE
+            isChecked = controller.isCrashReportCheckboxInitiallyChecked()
         }
     }
 

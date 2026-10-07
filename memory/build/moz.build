@@ -75,3 +75,15 @@ TEST_DIRS += ["test"]
 
 if CONFIG["NIGHTLY_BUILD"]:
     DEFINES["MOZJEMALLOC_PROFILING_CALLBACKS"] = True
+
+LICENSES += ["jemalloc"]
+LICENSES["jemalloc"].title = "jemalloc License"
+LICENSES["jemalloc"].text = "LICENSE-NOTICE.txt"
+LICENSES["jemalloc"].spdx = "BSD-2-Clause"
+LICENSES["jemalloc"].notice = """
+<p>This license applies to portions of the files in the directory <code>memory/build/</code>.</p>
+"""
+
+LICENSED_UNDER += [
+    "jemalloc",
+]

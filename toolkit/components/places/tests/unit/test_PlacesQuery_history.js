@@ -384,6 +384,112 @@ add_task(async function test_sort_by_last_visited() {
   await PlacesUtils.history.clear();
 });
 
+add_task(async function test_sort_by_most_visited() {
+  const today = new Date();
+  const yesterday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() - 1
+  );
+  const twoDaysAgo = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() - 2
+  );
+  const lastYear = new Date(
+    today.getFullYear() - 1,
+    today.getMonth(),
+    today.getDate()
+  );
+  const lastYearPlusOneDay = new Date(
+    today.getFullYear() - 1,
+    today.getMonth(),
+    today.getDate() + 1
+  );
+
+  info("Insert pages with different visit counts.");
+  await PlacesUtils.history.insertMany([
+    {
+      url: "https://www.example.com/",
+      title: "Most Visited Example",
+      visits: [
+        { date: lastYear },
+        { date: lastYearPlusOneDay },
+        { date: today },
+      ],
+    },
+    {
+      url: "https://www.reddit.com/",
+      title: "Most Visited Reddit",
+      visits: [{ date: twoDaysAgo }],
+    },
+    {
+      url: "https://www.wikipedia.org/",
+      title: "Most Visited Wikipedia",
+      visits: [{ date: yesterday }],
+    },
+  ]);
+
+  let history = await placesQuery.getHistory({ sortBy: "mostvisited" });
+  Assert.deepEqual(
+    history.map(({ url, visitCount }) => [url, visitCount]),
+    [
+      ["https://www.example.com/", 3],
+      ["https://www.wikipedia.org/", 1],
+      ["https://www.reddit.com/", 1],
+    ],
+    "History is sorted by all-time visit count, with ties sorted by recency."
+  );
+
+  info("Visit a page again.");
+  history = await waitForUpdateHistoryTask(() =>
+    PlacesUtils.history.insert({
+      url: "https://www.reddit.com/",
+      visits: [{ date: new Date() }],
+    })
+  );
+  Assert.deepEqual(
+    history.map(({ url, visitCount }) => [url, visitCount]),
+    [
+      ["https://www.example.com/", 3],
+      ["https://www.reddit.com/", 2],
+      ["https://www.wikipedia.org/", 1],
+    ],
+    "A page visited again moves to its new position and is deduped."
+  );
+
+  info("Visit a new page.");
+  history = await waitForUpdateHistoryTask(() =>
+    PlacesUtils.history.insert({
+      url: "https://www.youtube.com/",
+      visits: [{ date: new Date() }],
+    })
+  );
+  Assert.deepEqual(
+    history.map(({ url }) => url),
+    [
+      "https://www.example.com/",
+      "https://www.reddit.com/",
+      "https://www.youtube.com/",
+      "https://www.wikipedia.org/",
+    ],
+    "A new page is placed above older pages with the same visit count."
+  );
+
+  const results = await placesQuery.searchHistory("Most Visited");
+  Assert.deepEqual(
+    results.map(({ url, visitCount }) => [url, visitCount]),
+    [
+      ["https://www.example.com/", 3],
+      ["https://www.reddit.com/", 2],
+      ["https://www.wikipedia.org/", 1],
+    ],
+    "Search results are sorted by all-time visit count."
+  );
+
+  await PlacesUtils.history.clear();
+});
+
 add_task(async function test_page_title_changed() {
   let now = new Date();
   await PlacesUtils.history.insert({

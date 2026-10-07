@@ -3,10 +3,10 @@
 
 "use strict";
 
-async function openAboutPDF() {
+async function openAboutPDF(hash = "") {
   const tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
-    opening: "about:pdf",
+    opening: "about:pdf" + hash,
     waitForLoad: true,
   });
   // The load event can fire before painting is unsuppressed, making synthesized
@@ -42,6 +42,10 @@ function promisePickerShown() {
       resolve();
     };
   });
+}
+
+function resetPdfNotificationPrefs() {
+  Services.prefs.clearUserPref("pdfjs.featuresNotificationImpressionCount");
 }
 
 function getAboutPDFActor(tab) {

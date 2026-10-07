@@ -1,4 +1,4 @@
-// |reftest| skip -- import-defer is not supported
+// |reftest| shell-option(--enable-defer-import-eval) skip-if(release_or_beta||!xulRuntime.shell) -- import-defer is not released yet, requires shell-options
 // This file was procedurally generated from the following sources:
 // - src/dynamic-import/import-defer-script-code-valid.case
 // - src/dynamic-import/syntax/valid/nested-arrow-assignment-expression.template

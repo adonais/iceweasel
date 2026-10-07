@@ -152,10 +152,13 @@ function countCookies(aBaseDomain, aHost) {
   // confirm the count using countCookiesFromHost and getCookiesFromHost.
   let result = cookies.length;
   Assert.equal(
-    Services.cookies.countCookiesFromHost(aBaseDomain),
+    Services.cookies.countCookiesFromHost(aBaseDomain, {}),
     cookies.length
   );
-  Assert.equal(Services.cookies.countCookiesFromHost(aHost), cookies.length);
+  Assert.equal(
+    Services.cookies.countCookiesFromHost(aHost, {}),
+    cookies.length
+  );
 
   for (let cookie of Services.cookies.getCookiesFromHost(aHost, {})) {
     if (

@@ -30,6 +30,9 @@ class MOZ_RAII AutoLockGC {
 
   LockGuard<Mutex>& guard() { return lockGuard_.ref(); }
 
+  AutoLockGC(const AutoLockGC&) = delete;
+  AutoLockGC& operator=(const AutoLockGC&) = delete;
+
  protected:
   void lock() {
     MOZ_ASSERT(lockGuard_.isNothing());
@@ -45,9 +48,6 @@ class MOZ_RAII AutoLockGC {
 
  private:
   mozilla::Maybe<LockGuard<Mutex>> lockGuard_;
-
-  AutoLockGC(const AutoLockGC&) = delete;
-  AutoLockGC& operator=(const AutoLockGC&) = delete;
 
   friend class UnlockGuard<AutoLockGC>;  // For lock/unlock.
 };

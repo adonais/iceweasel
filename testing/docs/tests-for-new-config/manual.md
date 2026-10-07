@@ -108,7 +108,7 @@ timeout, crash, failure, etc. In the end you might end up with:
 dom/html/test/test_fullscreen-api.html, scrollbar
 gfx/layers/apz/test/mochitest/test_group_hittest.html, scrollbar
 image/test/mochitest/test_animSVGImage.html, timeout
-browser/base/content/test/general/browser_restore_isAppTab.js, crashed
+browser/base/content/test/browser-general/browser_restore_isAppTab.js, crashed
 ```
 
 ## Disable Tests in the Manifest Files
@@ -122,10 +122,10 @@ First you need to add a keyword to be available in the manifest (e.g. `skip-if
 There are many exceptions, the bulk of the work will fall into one of 4
 categories:
 
-1. [manifestparser](mochitest_xpcshell_manifest_keywords): \*.toml (mochitest\*,
+1. [manifestparser](/testing/automated-testing/manifest-sandbox.md#adding-context-to-manifestparser-based-manifests): \*.toml (mochitest\*,
    firefox-ui, marionette, xpcshell) easy to edit by adding a `skip-if =
    windows_1903 # <comment>`, a few exceptions here
-2. [reftest](reftest_manifest_keywords): \*.list (reftest, crashtest) need to
+2. [reftest](/testing/automated-testing/manifest-sandbox.md#adding-a-context-to-reftest-style-manifests): \*.list (reftest, crashtest) need to
    add a `fuzzy-if(windows_1903, A, B)`, this is more specific
 3. web-platform-test: testing/web-platform/meta/\*\*.ini (wpt, wpt-reftest,
    etc.) need to edit/add testing/web-platform/meta/\<path>/\<testname>.ini, and add

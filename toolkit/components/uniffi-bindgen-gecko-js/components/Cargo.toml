@@ -20,6 +20,7 @@ uniffi = { workspace = true }
 
 ads-client = "0.1"
 autofill = "0.1"
+fxcontainers = "0.1"
 context_id = "0.1"
 filter_adult = "0.1"
 tabs = "0.1"
@@ -32,6 +33,7 @@ tracing-support = "0.1"
 logins = { version = "0.1", features = ["keydb", "allow_empty_passwords", "ignore_form_action_origin_validation_errors", "perform_additional_origin_fixups", "fixup_invalid_guids"] }
 init_rust_components = { version = "0.1", features = ["keydb"] }
 breach-alerts = { version = "0.1" }
+db-crypto = { version = "0.1", features = ["keydb"] }
 
 rc_crypto = { path = "../../../../third_party/application-services/components/support/rc_crypto", optional = true }
 

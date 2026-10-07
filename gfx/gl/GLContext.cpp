@@ -41,6 +41,7 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/BuildConstants.h"
 #include "mozilla/layers/TextureForwarder.h"  // for LayersIPCChannel
+#include "nsCharSeparatedTokenizer.h"
 #include "nsPrintfCString.h"
 #include "nsThreadUtils.h"
 #include "prenv.h"
@@ -111,6 +112,7 @@ static const char* const sExtensionNames[] = {
     "GL_ARB_map_buffer_range",
     "GL_ARB_occlusion_query2",
     "GL_ARB_pixel_buffer_object",
+    "GL_ARB_polygon_offset_clamp",
     "GL_ARB_provoking_vertex",
     "GL_ARB_robust_buffer_access_behavior",
     "GL_ARB_robustness",
@@ -154,6 +156,7 @@ static const char* const sExtensionNames[] = {
     "GL_EXT_multisampled_render_to_texture",
     "GL_EXT_occlusion_query_boolean",
     "GL_EXT_packed_depth_stencil",
+    "GL_EXT_polygon_offset_clamp",
     "GL_EXT_provoking_vertex",
     "GL_EXT_read_format_bgra",
     "GL_EXT_robustness",
@@ -530,7 +533,7 @@ bool GLContext::InitImpl() {
   }
 
   const std::string versionStr = versionRawStr;
-  if (versionStr.find("OpenGL ES") == 0) {
+  if (versionStr.starts_with("OpenGL ES")) {
     mProfile = ContextProfile::OpenGLES;
   }
 
@@ -1544,6 +1547,14 @@ void GLContext::LoadMoreSymbols(const SymbolLoader& loader) {
                                       }}},
                                      END_SYMBOLS};
     fnLoadForFeature(symbols, GLFeature::provoking_vertex);
+  }
+
+  if (IsSupported(GLFeature::polygon_offset_clamp)) {
+    const SymLoadStruct symbols[] = {
+        {(PRFuncPtr*)&mSymbols.fPolygonOffsetClamp,
+         {{"glPolygonOffsetClamp", "glPolygonOffsetClampEXT"}}},
+        END_SYMBOLS};
+    fnLoadForFeature(symbols, GLFeature::polygon_offset_clamp);
   }
 
   if (IsExtensionSupported(EXT_semaphore)) {

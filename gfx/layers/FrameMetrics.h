@@ -730,18 +730,8 @@ struct FrameMetrics {
   // Please add new fields above this comment.
 };
 
-// clang-format off
-MOZ_DEFINE_ENUM_CLASS_WITH_BASE(
-  OverscrollBehavior, uint8_t, (
-    Auto,
-    Contain,
-    Chain,
-    None
-));
-// clang-format on
-
 std::ostream& operator<<(std::ostream& aStream,
-                         const OverscrollBehavior& aBehavior);
+                         const StyleOverscrollBehavior& aBehavior);
 
 struct OverscrollBehaviorInfo final {
   OverscrollBehaviorInfo();
@@ -756,8 +746,8 @@ struct OverscrollBehaviorInfo final {
 
   auto MutTiedFields() { return std::tie(mBehaviorX, mBehaviorY); }
 
-  OverscrollBehavior mBehaviorX;
-  OverscrollBehavior mBehaviorY;
+  StyleOverscrollBehavior mBehaviorX;
+  StyleOverscrollBehavior mBehaviorY;
 };
 
 struct OverflowInfo final {

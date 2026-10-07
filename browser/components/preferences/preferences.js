@@ -4,7 +4,6 @@
 
 // Import globals from the files imported by the .xul files.
 /* import-globals-from main.js */
-/* import-globals-from home.js */
 /* import-globals-from search.js */
 /* import-globals-from privacy.js */
 /* import-globals-from sync.js */
@@ -343,7 +342,6 @@ const CONFIG_PANES = Object.freeze({
     iconSrc: "chrome://browser/skin/home.svg",
     groupIds: ["defaultBrowserHome", "startupHome", "homepage", "home"],
     module: "chrome://browser/content/preferences/config/home-startup.mjs",
-    replaces: "home",
   },
   languages: {
     l10nId: "preferences-languages-header3",
@@ -559,7 +557,6 @@ function init_all() {
     document.getElementById("category-general").hidden = false;
     document.getElementById("nav-separator").hidden = true;
   }
-  register_module("paneHome", gHomePane);
   register_module("paneSearch", gSearchPane);
   register_module("panePrivacy", gPrivacyPane);
 
@@ -599,23 +596,14 @@ function init_all() {
     SettingPaneManager.registerPane(id, config);
   }
 
-  // customHomepage is registered separately because its groups are set up by
-  // AboutPreferences.observe(), which only fires in the redesign path.
+  SettingPaneManager.registerPane("customHomepage", {
+    parent: "home",
+    l10nId: "home-custom-homepage-subpage",
+    groupIds: ["customHomepage"],
+    module: "chrome://browser/content/preferences/config/home-startup.mjs",
+  });
+
   if (redesignEnabled) {
-    SettingPaneManager.registerPane("customHomepage", {
-      parent: "home",
-      l10nId: "home-custom-homepage-subpage",
-      groupIds: ["customHomepage"],
-      module: "chrome://browser/content/preferences/config/home-startup.mjs",
-    });
-
-    SettingPaneManager.registerPane("iceweasel", {
-      l10nId: "iceweasel-header3",
-      iconSrc: "chrome://browser/skin/preferences/category-iceweasel.svg",
-      groupIds: AppConstants.platform === "win" ? ["icefeatures", "icelibportable", "icefooter"] : ["icefeatures", "icelibportable_linux", "icefooter"],
-      module: "chrome://browser/content/preferences/config/about-iceweasel.mjs",
-    });
-
     if (
       AppConstants.platform == "win" &&
       Services.prefs.getBoolPref("browser.shell.customIcon.enabled", false) &&
@@ -629,6 +617,13 @@ function init_all() {
         module: "chrome://browser/content/preferences/config/browser-icon.mjs",
       });
     }
+
+    SettingPaneManager.registerPane("iceweasel", {
+      l10nId: "iceweasel-header3",
+      iconSrc: "chrome://browser/skin/preferences/category-iceweasel.svg",
+      groupIds: AppConstants.platform === "win" ? ["icefeatures", "icelibportable", "icefooter"] : ["icefeatures", "icelibportable_linux", "icefooter"],
+      module: "chrome://browser/content/preferences/config/about-iceweasel.mjs",
+    });
 
     SettingPaneManager.registerPane("permissionsData", {
       l10nId: "permissions-data-section",

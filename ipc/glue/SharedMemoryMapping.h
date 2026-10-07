@@ -56,6 +56,9 @@ class MappingBase {
    */
   explicit operator bool() const { return (bool)mMemory; }
 
+  MappingBase(const MappingBase&) = delete;
+  MappingBase& operator=(const MappingBase&) = delete;
+
  protected:
   /**
    * Create an empty Mapping.
@@ -72,9 +75,6 @@ class MappingBase {
         mSize(std::exchange(aOther.mSize, 0)) {}
 
   MappingBase& operator=(MappingBase&& aOther);
-
-  MappingBase(const MappingBase&) = delete;
-  MappingBase& operator=(const MappingBase&) = delete;
 
   bool Map(const HandleBase& aHandle, void* aFixedAddress, bool aReadOnly);
   bool MapSubregion(const HandleBase& aHandle, uint64_t aOffset, size_t aSize,

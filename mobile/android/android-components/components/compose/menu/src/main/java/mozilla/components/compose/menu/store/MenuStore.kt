@@ -4,6 +4,7 @@
 
 package mozilla.components.compose.menu.store
 
+import mozilla.components.compose.menu.store.MenuAction.Init
 import mozilla.components.compose.menu.store.MenuAction.Update
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
@@ -17,10 +18,16 @@ class MenuStore(
         initialState = initialState,
         reducer = ::reduce,
         middleware = middleware,
-    )
+    ) {
+
+    init {
+        dispatch(Init)
+    }
+}
 
 private fun reduce(state: MenuState, action: MenuAction): MenuState =
     when (action) {
         is Update -> state.copy(menuGroups = action.items)
+        is Init,
         is MenuEvent -> state
     }

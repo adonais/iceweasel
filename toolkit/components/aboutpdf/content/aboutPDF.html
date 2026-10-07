@@ -14,75 +14,231 @@
     <link rel="stylesheet" href="chrome://global/content/aboutPDF.css" />
     <link rel="localization" href="branding/brand.ftl" />
     <link rel="localization" href="toolkit/about/aboutPDF.ftl" />
+    <link rel="localization" href="toolkit/about/pdfFeaturesNotification.ftl" />
+    <link rel="localization" href="toolkit/global/mozMessageBar.ftl" />
     <script
       type="module"
       src="chrome://global/content/elements/moz-button.mjs"
     ></script>
     <script
       type="module"
+      src="chrome://global/content/elements/moz-card.mjs"
+    ></script>
+    <script
+      type="module"
       src="chrome://global/content/elements/moz-promo.mjs"
+    ></script>
+    <script
+      type="module"
+      src="chrome://global/content/elements/moz-message-bar.mjs"
     ></script>
     <script type="module" src="chrome://global/content/aboutPDF.mjs"></script>
   </head>
   <body>
-    <div id="container">
-      <div id="col-left" aria-hidden="true"></div>
-      <div id="col-mid">
-        <div id="logo-lockup">
-          <div id="logo-row">
-            <img
-              id="firefox-logo"
-              src="chrome://branding/content/icon32.png"
-              alt=""
-              role="presentation"
-              width="24"
-              height="24"
-            />
-            <h1 data-l10n-id="about-pdf-header"></h1>
+    <moz-message-bar
+      id="pdf-notification"
+      type="info"
+      role="region"
+      aria-live="polite"
+      dismissable
+      hidden
+      data-l10n-id="pdf-features-notification"
+    >
+      <span slot="message" data-l10n-id="pdf-features-notification-message">
+        <a href="about:pdf#features" data-l10n-name="features-link"></a>
+      </span>
+    </moz-message-bar>
+    <div id="scroll-container">
+      <main id="container">
+        <div id="col-left">
+          <moz-button
+            id="features-back"
+            iconsrc="chrome://global/skin/icons/arrow-left.svg"
+            data-l10n-id="about-pdf-features-back"
+          ></moz-button>
+        </div>
+        <div id="col-mid">
+          <div id="main-view">
+            <div class="logo-lockup">
+              <div class="logo-row">
+                <img
+                  class="firefox-logo"
+                  src="chrome://branding/content/icon32.png"
+                  alt=""
+                  role="presentation"
+                />
+                <h1
+                  id="main-heading"
+                  tabindex="-1"
+                  data-l10n-id="about-pdf-header"
+                ></h1>
+                <moz-button
+                  id="features-cta"
+                  iconsrc="chrome://global/skin/icons/shaft-arrow-right.svg"
+                  iconposition="end"
+                  data-l10n-id="about-pdf-features-cta"
+                ></moz-button>
+              </div>
+              <p id="tagline" data-l10n-id="about-pdf-tagline"></p>
+            </div>
+            <div id="dropzone" data-l10n-id="about-pdf-dropzone">
+              <div id="dropzone-content">
+                <p id="dropzone-error" role="alert" hidden></p>
+                <p
+                  id="dropzone-hint"
+                  class="heading-medium"
+                  data-l10n-id="about-pdf-dropzone-hint"
+                ></p>
+                <moz-button
+                  id="browse-files"
+                  type="primary"
+                  data-l10n-id="about-pdf-browse-files"
+                ></moz-button>
+                <p
+                  id="dropzone-privacy-hint"
+                  data-l10n-id="about-pdf-dropzone-privacy-hint"
+                ></p>
+              </div>
+            </div>
           </div>
-          <p id="tagline" data-l10n-id="about-pdf-tagline"></p>
-        </div>
-        <div id="dropzone" data-l10n-id="about-pdf-dropzone">
-          <div id="dropzone-content">
-            <p id="dropzone-error" role="alert" hidden></p>
-            <p
-              id="dropzone-hint"
-              class="heading-medium"
-              data-l10n-id="about-pdf-dropzone-hint"
-            ></p>
-            <moz-button
-              id="browse-files"
-              type="primary"
-              data-l10n-id="about-pdf-browse-files"
-            ></moz-button>
-            <p
-              id="dropzone-privacy-hint"
-              data-l10n-id="about-pdf-dropzone-privacy-hint"
-            ></p>
+          <div id="features-view">
+            <div class="logo-lockup">
+              <div class="logo-row">
+                <img
+                  class="firefox-logo"
+                  src="chrome://branding/content/icon32.png"
+                  alt=""
+                  role="presentation"
+                />
+                <h1
+                  id="features-heading"
+                  tabindex="-1"
+                  data-l10n-id="about-pdf-features-header"
+                ></h1>
+              </div>
+              <p
+                id="features-intro"
+                data-l10n-id="about-pdf-features-intro"
+              ></p>
+            </div>
+            <moz-card id="feature-card">
+              <ul id="feature-grid">
+                <li class="feature">
+                  <span class="feature-icon feature-icon-organize"></span>
+                  <div class="feature-text">
+                    <h2
+                      class="heading-medium"
+                      data-l10n-id="about-pdf-feature-organize-heading"
+                    ></h2>
+                    <p
+                      data-l10n-id="about-pdf-feature-organize-description"
+                    ></p>
+                  </div>
+                </li>
+                <li class="feature">
+                  <span class="feature-icon feature-icon-signatures"></span>
+                  <div class="feature-text">
+                    <h2
+                      class="heading-medium"
+                      data-l10n-id="about-pdf-feature-signatures-heading"
+                    ></h2>
+                    <p
+                      data-l10n-id="about-pdf-feature-signatures-description"
+                    ></p>
+                  </div>
+                </li>
+                <li class="feature">
+                  <span class="feature-icon feature-icon-comments"></span>
+                  <div class="feature-text">
+                    <h2
+                      class="heading-medium"
+                      data-l10n-id="about-pdf-feature-comments-heading"
+                    ></h2>
+                    <p
+                      data-l10n-id="about-pdf-feature-comments-description"
+                    ></p>
+                  </div>
+                </li>
+                <li class="feature">
+                  <span class="feature-icon feature-icon-annotate"></span>
+                  <div class="feature-text">
+                    <h2
+                      class="heading-medium"
+                      data-l10n-id="about-pdf-feature-annotate-heading"
+                    ></h2>
+                    <p
+                      data-l10n-id="about-pdf-feature-annotate-description"
+                    ></p>
+                  </div>
+                </li>
+                <li class="feature">
+                  <span class="feature-icon feature-icon-images"></span>
+                  <div class="feature-text">
+                    <h2
+                      class="heading-medium"
+                      data-l10n-id="about-pdf-feature-images-heading"
+                    ></h2>
+                    <p data-l10n-id="about-pdf-feature-images-description"></p>
+                  </div>
+                </li>
+                <li class="feature">
+                  <span class="feature-icon feature-icon-view"></span>
+                  <div class="feature-text">
+                    <h2
+                      class="heading-medium"
+                      data-l10n-id="about-pdf-feature-view-heading"
+                    ></h2>
+                    <p data-l10n-id="about-pdf-feature-view-description"></p>
+                  </div>
+                </li>
+                <li class="feature">
+                  <span class="feature-icon feature-icon-presentation"></span>
+                  <div class="feature-text">
+                    <h2
+                      class="heading-medium"
+                      data-l10n-id="about-pdf-feature-presentation-heading"
+                    ></h2>
+                    <p
+                      data-l10n-id="about-pdf-feature-presentation-description"
+                    ></p>
+                  </div>
+                </li>
+                <li class="feature">
+                  <span class="feature-icon feature-icon-details"></span>
+                  <div class="feature-text">
+                    <h2
+                      class="heading-medium"
+                      data-l10n-id="about-pdf-feature-details-heading"
+                    ></h2>
+                    <p data-l10n-id="about-pdf-feature-details-description"></p>
+                  </div>
+                </li>
+              </ul>
+            </moz-card>
+          </div>
+          <div id="promo-row">
+            <moz-promo
+              id="promo"
+              hidden
+              data-l10n-id="about-pdf-promo"
+              imagesrc="chrome://global/skin/illustrations/kit-in-circle.svg"
+              imagealignment="start"
+            >
+              <moz-button
+                id="set-default"
+                slot="actions"
+                data-l10n-id="about-pdf-set-default"
+              ></moz-button>
+              <moz-button
+                id="dismiss-promo"
+                slot="actions"
+                data-l10n-id="about-pdf-dismiss"
+              ></moz-button>
+            </moz-promo>
           </div>
         </div>
-        <div id="promo-row">
-          <moz-promo
-            id="promo"
-            hidden
-            data-l10n-id="about-pdf-promo"
-            imagesrc="chrome://global/skin/illustrations/kit-in-circle.svg"
-            imagealignment="start"
-          >
-            <moz-button
-              id="set-default"
-              slot="actions"
-              data-l10n-id="about-pdf-set-default"
-            ></moz-button>
-            <moz-button
-              id="dismiss-promo"
-              slot="actions"
-              data-l10n-id="about-pdf-dismiss"
-            ></moz-button>
-          </moz-promo>
-        </div>
-      </div>
-      <div id="col-right" aria-hidden="true"></div>
+        <div id="col-right" aria-hidden="true"></div>
+      </main>
     </div>
   </body>
 </html>

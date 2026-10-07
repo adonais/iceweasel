@@ -8,11 +8,12 @@ import {
   getViewport,
   getSelectedSource,
   getSelectedSourceTextContent,
-  getBreakpointPositionsForSource,
+  getBreakpointPositionsForLocationSource,
 } from "./index";
+// Handle a conflict with utils getSelectedLocation
+import * as actions from "./index";
 import { getVisibleBreakpoints } from "./visibleBreakpoints";
 import { getSelectedLocation } from "../utils/selected-location";
-import { sortSelectedLocations } from "../utils/location";
 import { getLineText } from "../utils/source";
 
 function contains(location, range) {
@@ -122,11 +123,11 @@ export function getColumnBreakpoints(
 }
 
 function getVisibleBreakpointPositions(state) {
-  const source = getSelectedSource(state);
-  if (!source) {
+  const selectedLocation = actions.getSelectedLocation(state);
+  if (!selectedLocation) {
     return null;
   }
-  return getBreakpointPositionsForSource(state, source.id);
+  return getBreakpointPositionsForLocationSource(state, selectedLocation);
 }
 
 export const visibleColumnBreakpoints = createSelector(
@@ -137,17 +138,3 @@ export const visibleColumnBreakpoints = createSelector(
   getSelectedSourceTextContent,
   getColumnBreakpoints
 );
-
-export function getFirstBreakpointPosition(state, location) {
-  const positions = getBreakpointPositionsForSource(state, location.source.id);
-  if (!positions) {
-    return null;
-  }
-
-  const breakpointPositionsForLine = positions[location.line];
-  if (!breakpointPositionsForLine) {
-    return null;
-  }
-
-  return sortSelectedLocations(breakpointPositionsForLine, location.source)[0];
-}

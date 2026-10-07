@@ -9,8 +9,8 @@ use wgpu_core_remote_types::encoders::{
 };
 use wgpu_core_remote_types::pipelines::{ComputePipelineDescriptor, RenderPipelineDescriptor};
 use wgpu_core_remote_types::{
-    BufferDescriptor, DeviceDescriptor, Label, PipelineLayoutDescriptor, QuerySetDescriptor,
-    RequestAdapterOptions, SamplerDescriptor, TextureDescriptor, TextureViewDescriptor, id,
+    id, BufferDescriptor, DeviceDescriptor, Label, PipelineLayoutDescriptor, QuerySetDescriptor,
+    RequestAdapterOptions, SamplerDescriptor, TextureDescriptor, TextureViewDescriptor,
 };
 
 pub mod client;
@@ -262,7 +262,7 @@ pub(crate) enum Message<'a> {
         desc: DeviceDescriptor<'a>,
     },
     Device(id::DeviceId, DeviceAction<'a>),
-    Texture(id::DeviceId, id::TextureId, TextureAction<'a>),
+    Texture(id::TextureId, TextureAction<'a>),
     RenderBundleEncoder(id::RenderBundleEncoderId, RenderBundleEncoderCommand<'a>),
     CommandEncoder(id::CommandEncoderId, CommandEncoderCommand<'a>),
     RenderPassEncoder(id::RenderPassEncoderId, RenderPassEncoderCommand),
@@ -407,6 +407,7 @@ pub struct ShaderModuleCompilationMessage {
     pub utf16_offset: u64,
     pub utf16_length: u64,
     pub message: String,
+    pub message_type: wgt::CompilationMessageType,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]

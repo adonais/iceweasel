@@ -15,6 +15,8 @@ XPIDL_SOURCES += [
     "nsIClientAuthRememberService.idl",
     "nsIContentSignatureVerifier.idl",
     "nsICryptoHash.idl",
+    "nsICtapCableChannel.idl",
+    "nsICtapCableHandshake.idl",
     "nsIDataStorage.idl",
     "nsIFIPSUtils.idl",
     "nsINSSComponent.idl",

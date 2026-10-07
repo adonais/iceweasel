@@ -185,6 +185,19 @@ TEST(SnappyStream, UncompressCorruptCompressedDataContent)
   TestUncompressCorrupt(data, dataLength);
 }
 
+TEST(SnappyStream, UncompressCorruptCompressedDataLengthTooSmall)
+{
+  // A CompressedData chunk that declares a data length smaller than the
+  // 4-byte CRC field.  Without a lower-bound check, ParseCompressedData
+  // underflows size_t when subtracting kCRCLength and hands snappy a
+  // ~2^64 source length.
+  static const char data[] =
+      "\xff\x06\x00\x00sNaPpY"  // stream identifier
+      "\x00\x03\x00\x00xyz";    // CompressedData chunk, declared length 3
+  static const uint32_t dataLength = (sizeof(data) / sizeof(const char)) - 1;
+  TestUncompressCorrupt(data, dataLength);
+}
+
 TEST(SnappyStream, UncompressCorruptCompressDataLengthTooLarge)
 {
   uint32_t compressedBufferLength =

@@ -93,6 +93,8 @@ public:
     // The underlying loaded GGUF. Exposed so the streaming C-API can build a
     // pk::StreamingSession (and a MelFrontend) over the same load-once model.
     const ModelLoader& loader() const { return loader_; }
+    // Bytes the loaded weights occupy, for memory reporting.
+    size_t weights_bytes() const { return loader_.weights_bytes(); }
 
     // Non-copyable (owns the GGUF mapping).
     Model(const Model&) = delete;

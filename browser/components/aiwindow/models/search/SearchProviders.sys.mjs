@@ -25,6 +25,39 @@ const DEFAULT_SEARCH_QUERY_ENDPOINT =
 const REQUEST_TIMEOUT_MS = 15000;
 
 /**
+ * Categories for a failed search request, attached to the thrown error as
+ * `searchErrorCategory`. The error message embeds part of the response body,
+ * so it must never be used as a telemetry value.
+ *
+ * @type {object}
+ */
+const SEARCH_ERROR_CATEGORY = {
+  CONFIG: "config_error",
+  TIMEOUT: "timeout",
+  HTTP: "http_error",
+  NETWORK: "network_error",
+};
+
+/**
+ * Attaches the machine-readable fields a caller reports in telemetry, leaving
+ * the message untouched. A non-object rejection reason is wrapped so the
+ * annotation has somewhere to live.
+ *
+ * @param {unknown} error - Error to annotate.
+ * @param {?string} category - One of SEARCH_ERROR_CATEGORY, or null when the
+ *   failure has no category of its own.
+ * @param {number} [httpStatus] - Status when a response was received, else 0.
+ * @returns {Error} The annotated error, for use in a throw expression.
+ */
+function annotateSearchError(error, category, httpStatus = 0) {
+  const annotated =
+    error && typeof error === "object" ? error : new Error(String(error));
+  annotated.searchErrorCategory = category;
+  annotated.httpStatus = httpStatus;
+  return annotated;
+}
+
+/**
  * A normalized search result.
  *
  * @typedef {object} SearchResult
@@ -75,9 +108,11 @@ export class ExaSearchProvider extends SearchProvider {
    * @param {number} [options.maxResults] - Number of results to request,
    *   clamped to [1, ExaSearchProvider.MAX_RESULTS]. Defaults to
    *   ExaSearchProvider.MAX_RESULTS.
-   * @returns {Promise<{results: SearchResult[], raw: object}>}
-   *   Normalized result list and the raw MLPA JSON response.
-   * @throws {Error} On non-2xx response, network failure, or timeout.
+   * @returns {Promise<{results: SearchResult[], raw: object, status: number}>}
+   *   Normalized result list, the raw MLPA JSON response, and the HTTP status.
+   * @throws {Error} On missing configuration, non-2xx response, network
+   *   failure, or timeout; those errors carry `searchErrorCategory` and
+   *   `httpStatus`. Also throws on an empty query, which carries neither.
    */
   async search(query, options = {}) {
     if (typeof query !== "string" || !query.trim()) {
@@ -91,7 +126,10 @@ export class ExaSearchProvider extends SearchProvider {
       DEFAULT_SEARCH_QUERY_ENDPOINT
     );
     if (!endpoint) {
-      throw new Error("ExaSearchProvider.search: endpoint pref is empty");
+      throw annotateSearchError(
+        new Error("ExaSearchProvider.search: endpoint pref is empty"),
+        SEARCH_ERROR_CATEGORY.CONFIG
+      );
     }
 
     const requestedMax = Number.isInteger(options.maxResults)
@@ -106,7 +144,10 @@ export class ExaSearchProvider extends SearchProvider {
       Services.prefs.getStringPref(SEARCH_QUERY_APIKEY_PREF, "") ||
       (await openAIEngine.getFxAccountToken());
     if (!token) {
-      throw new Error("ExaSearchProvider.search: auth token unavailable");
+      throw annotateSearchError(
+        new Error("ExaSearchProvider.search: auth token unavailable"),
+        SEARCH_ERROR_CATEGORY.CONFIG
+      );
     }
 
     const controller = new AbortController();
@@ -130,11 +171,15 @@ export class ExaSearchProvider extends SearchProvider {
       });
     } catch (err) {
       if (err?.name === "AbortError") {
-        throw new Error(
-          `ExaSearchProvider.search: request timed out after ${REQUEST_TIMEOUT_MS}ms`
+        throw annotateSearchError(
+          new Error(
+            `ExaSearchProvider.search: request timed out after ${REQUEST_TIMEOUT_MS}ms`
+          ),
+          SEARCH_ERROR_CATEGORY.TIMEOUT
         );
       }
-      throw err;
+      // A failure below the HTTP layer has no status to report.
+      throw annotateSearchError(err, SEARCH_ERROR_CATEGORY.NETWORK);
     } finally {
       lazy.clearTimeout(timeoutId);
     }
@@ -144,17 +189,29 @@ export class ExaSearchProvider extends SearchProvider {
       try {
         body = await response.text();
       } catch (_e) {}
-      throw new Error(
-        `ExaSearchProvider.search: ${response.status} ${response.statusText}${
-          body ? ` — ${body.slice(0, 500)}` : ""
-        }`
+      throw annotateSearchError(
+        new Error(
+          `ExaSearchProvider.search: ${response.status} ${response.statusText}${
+            body ? ` — ${body.slice(0, 500)}` : ""
+          }`
+        ),
+        SEARCH_ERROR_CATEGORY.HTTP,
+        response.status
       );
     }
 
-    const raw = await response.json();
+    let raw;
+    try {
+      raw = await response.json();
+    } catch (err) {
+      // A 2xx with an unparseable body has no category of its own. The status
+      // is preserved so it is not read as a request that got no response.
+      throw annotateSearchError(err, null, response.status);
+    }
     return {
       results: ExaSearchProvider._normalizeResults(raw),
       raw,
+      status: response.status,
     };
   }
 

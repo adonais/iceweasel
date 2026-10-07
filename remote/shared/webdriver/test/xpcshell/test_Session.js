@@ -22,7 +22,7 @@ function createSession(options = {}) {
     flags.add("http");
   }
 
-  return new WebDriverSession(capabilities, flags, connection);
+  return new WebDriverSession(capabilities, flags, { connection });
 }
 
 // Has to run before the other tasks, which leave sessions behind and would
@@ -149,6 +149,26 @@ add_task(function test_WebDriverSession_setters() {
 
   session.timeouts = timeouts;
   equal(session.timeouts, session.capabilities.get("timeouts"));
+});
+
+add_task(function test_WebDriverSession_userContext() {
+  const session = createSession();
+  equal(session.userContext, null, "Sessions are unrestricted by default");
+  ok(
+    !session.capabilities.has("moz:userContext"),
+    "Unrestricted sessions don't expose the moz:userContext capability"
+  );
+  session.destroy();
+
+  // Sessions restricted to the remote control container need a browser
+  // profile, they are covered by browser_WebDriverBiDi.js.
+
+  // moz:userContext can only be returned, never requested.
+  Assert.throws(
+    () =>
+      createSession({ capabilities: { "moz:userContext": "user-context" } }),
+    /SessionNotCreatedError/
+  );
 });
 
 add_task(function test_getWebDriverSessionById() {

@@ -10,18 +10,18 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/Range.h"
 #include "nsCOMPtr.h"
 #include "nsDirection.h"
 #include "nsINode.h"
-#include "nsRange.h"
 #include "nsTArray.h"
 #include "nscore.h"
 
 class nsCycleCollectionTraversalCallback;
-class nsRange;
 namespace mozilla {
 namespace dom {
 class Element;
+class Range;
 class Selection;
 class Text;
 }  // namespace dom
@@ -37,7 +37,7 @@ struct RangeItem final {
   ~RangeItem() = default;
 
  public:
-  void StoreRange(const nsRange& aRange);
+  void StoreRange(const dom::Range& aRange);
   void StoreRange(const EditorRawDOMPoint& aStartPoint,
                   const EditorRawDOMPoint& aEndPoint) {
     MOZ_ASSERT(aStartPoint.IsSet());
@@ -51,7 +51,7 @@ struct RangeItem final {
     mStartContainer = mEndContainer = nullptr;
     mStartOffset = mEndOffset = 0;
   }
-  already_AddRefed<nsRange> GetRange() const;
+  already_AddRefed<dom::Range> GetRange() const;
 
   // Same as the API of dom::AbstractRange
   [[nodiscard]] nsINode* GetRoot() const;
@@ -440,7 +440,8 @@ class MOZ_STACK_CLASS AutoTrackDOMRange final {
     mEndPointTracker.emplace(aRangeUpdater,
                              const_cast<EditorDOMPoint*>(&aRange->EndRef()));
   }
-  AutoTrackDOMRange(RangeUpdater& aRangeUpdater, const RefPtr<nsRange>* aRange)
+  AutoTrackDOMRange(RangeUpdater& aRangeUpdater,
+                    const RefPtr<dom::Range>* aRange)
       : mStartPoint((*aRange)->StartRef()),
         mEndPoint((*aRange)->EndRef()),
         mRangeRefPtr(aRange),
@@ -449,7 +450,7 @@ class MOZ_STACK_CLASS AutoTrackDOMRange final {
     mEndPointTracker.emplace(aRangeUpdater, &mEndPoint);
   }
   AutoTrackDOMRange(RangeUpdater& aRangeUpdater,
-                    const OwningNonNull<nsRange>* aRange)
+                    const OwningNonNull<dom::Range>* aRange)
       : mStartPoint((*aRange)->StartRef()),
         mEndPoint((*aRange)->EndRef()),
         mRangeRefPtr(nullptr),
@@ -523,8 +524,8 @@ class MOZ_STACK_CLASS AutoTrackDOMRange final {
   Maybe<AutoTrackDOMPoint> mEndPointTracker;
   EditorDOMPoint mStartPoint;
   EditorDOMPoint mEndPoint;
-  const RefPtr<nsRange>* mRangeRefPtr;
-  const OwningNonNull<nsRange>* mRangeOwningNonNull;
+  const RefPtr<dom::Range>* mRangeRefPtr;
+  const OwningNonNull<dom::Range>* mRangeOwningNonNull;
 };
 
 class MOZ_STACK_CLASS AutoTrackDOMMoveNodeResult final {

@@ -22,6 +22,7 @@ import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.lib.crash.prompt.CrashReporterActivity.Companion.PREFERENCE_KEY_SEND_REPORT
 import mozilla.components.lib.crash.prompt.CrashReporterActivity.Companion.SHARED_PREFERENCES_NAME
 import mozilla.components.lib.crash.service.CrashReporterService
+import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
@@ -68,7 +69,10 @@ class CrashReporterActivityTest {
             testScheduler.advanceUntilIdle()
 
             // Then
-            verify(service).report(crash)
+            val captor = argumentCaptor<Crash.UncaughtExceptionCrash>()
+            verify(service).report(captor.capture())
+            assertEquals(crash.uuid, captor.value.uuid)
+            assertEquals(crash.throwable.message, captor.value.throwable.message)
         }
 
     @Test
@@ -95,7 +99,10 @@ class CrashReporterActivityTest {
             testScheduler.advanceUntilIdle()
 
             // Then
-            verify(service).report(crash)
+            val captor = argumentCaptor<Crash.UncaughtExceptionCrash>()
+            verify(service).report(captor.capture())
+            assertEquals(crash.uuid, captor.value.uuid)
+            assertEquals(crash.throwable.message, captor.value.throwable.message)
         }
 
     @Test

@@ -70,6 +70,14 @@ class nsIWidgetListener {
    */
   virtual void SizeModeChanged(nsSizeMode aSizeMode) {}
 
+  /**
+   * Called when a fullscreen change the widget started is not going to happen,
+   * for instance when macOS refuses to run a native fullscreen transition.
+   * aInFullscreen is the widget's fullscreen state, which has not changed, so
+   * no SizeModeChanged() call reports it.
+   */
+  virtual void FullscreenChangeFailed(bool aInFullscreen) {}
+
   virtual void DynamicToolbarMaxHeightChanged(mozilla::ScreenIntCoord aHeight) {
   }
   virtual void DynamicToolbarOffsetChanged(mozilla::ScreenIntCoord aOffset) {}

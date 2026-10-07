@@ -5,7 +5,7 @@
 use api::{ColorF, ImageBufferKind, YuvFormat, YuvRangedColorSpace};
 use api::units::*;
 
-use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState, PatternKind, PatternShaderInput, PatternTextureInput};
+use crate::pattern::{Pattern, PatternBuilder, PatternBuilderState, PatternKind, PatternShaderInput, PatternTextureInput};
 use crate::render_task_graph::RenderTaskId;
 use crate::renderer::BlendMode;
 use crate::util::pack_as_float;
@@ -154,9 +154,7 @@ pub struct YuvPattern {
 impl PatternBuilder for YuvPattern {
     fn build(
         &self,
-        _sub_rect: Option<DeviceRect>,
-        _offset: LayoutVector2D,
-        _ctx: &PatternBuilderContext,
+        _pattern_rect: &LayoutRect,
         state: &mut PatternBuilderState,
     ) -> Pattern {
         let mat = YuvColorMatrix::new(self.channel_bit_depth, self.color_space, self.format);

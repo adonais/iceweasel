@@ -1703,6 +1703,11 @@ add_task(async function testGraduateFirefoxLabsAutoPip() {
       is_first_startup: "false",
       success: "true",
     },
+    {
+      migration_id: "graduate-firefox-labs-jpeg-xl-all-channels",
+      success: "true",
+      is_first_startup: "false",
+    },
   ]);
 
   Assert.deepEqual(
@@ -1764,6 +1769,11 @@ add_task(async function testSeparateRolloutOptOut() {
           migration_id: "bug-2054546-mitigation",
           is_first_startup: "false",
           success: "true",
+        },
+        {
+          migration_id: "graduate-firefox-labs-jpeg-xl-all-channels",
+          success: "true",
+          is_first_startup: "false",
         },
       ]);
 
@@ -1891,6 +1901,11 @@ add_task(async function testGraduateFirefoxLabsJPEGXL() {
       is_first_startup: "false",
       success: "true",
     },
+    {
+      migration_id: "graduate-firefox-labs-jpeg-xl-all-channels",
+      success: "true",
+      is_first_startup: "false",
+    },
   ]);
   Assert.deepEqual(
     Glean.nimbusEvents.unenrollment
@@ -1906,8 +1921,111 @@ add_task(async function testGraduateFirefoxLabsJPEGXL() {
     ]
   );
 
-  Services.prefs.setBoolPref(ENABLED_PREF, false);
   await cleanup();
+
+  Services.prefs.clearUserPref(ENABLED_PREF);
+});
+
+add_task(async function testGraduateFirefoxLabsAllChannelsJPEGXL() {
+  const slugs = [
+    "firefox-labs-jpeg-xl-beta",
+    "firefox-labs-jpeg-xl-deved",
+    "firefox-labs-jpeg-xl-release",
+  ];
+
+  const ENABLED_PREF = getEnabledPrefForFeature("jpeg-xl");
+  Services.prefs.setBoolPref(ENABLED_PREF, true);
+
+  for (const slug of slugs) {
+    const recipe = NimbusTestUtils.factories.recipe.withFeatureConfig(
+      slug,
+      {
+        featureId: "jpeg-xl",
+        value: { enabled: true },
+      },
+      {
+        isFirefoxLabsOptIn: true,
+        isRollout: true,
+      }
+    );
+    const { cleanup, manager } = await NimbusTestUtils.setupTest({
+      clearTelemetry: true,
+      init: false,
+      storePath: await NimbusTestUtils.createStoreWith(store => {
+        NimbusTestUtils.addEnrollmentForRecipe(recipe, {
+          store,
+          extra: {
+            prefs: [
+              {
+                name: ENABLED_PREF,
+                featureId: "jpeg-xl",
+                variable: "enabled",
+                branch: "user",
+                originalValue: false,
+              },
+            ],
+          },
+        });
+      }),
+      migrationState: NimbusTestUtils.migrationState.PREFFLIPS_RESTORED,
+    });
+
+    await GleanPings.nimbusTargetingContext.testSubmission(
+      () => {
+        Assert.deepEqual(
+          Glean.nimbusEvents.enrollmentStatus
+            .testGetValue("nimbus-targeting-context")
+            .map(event => event.extra),
+          [
+            {
+              slug,
+              branch: "control",
+              status: "WasEnrolled",
+              reason: "Migration",
+              migration: "graduate-firefox-labs-jpeg-xl-all-channels",
+            },
+          ]
+        );
+      },
+      () => ExperimentAPI.init()
+    );
+    const enrollment = manager.store.get(slug);
+
+    Assert.ok(!enrollment.active, "Enrollment is not active");
+    Assert.deepEqual(enrollment.featureIds, ["jpeg-xl"]);
+    Assert.equal(enrollment.unenrollReason, "migration");
+
+    Assert.equal(
+      Services.prefs.getBoolPref(ENABLED_PREF),
+      true,
+      "Pref is still set"
+    );
+
+    Assert.deepEqual(getMigrationEvents(), [
+      {
+        migration_id: "graduate-firefox-labs-jpeg-xl-all-channels",
+        success: "true",
+        is_first_startup: "false",
+      },
+    ]);
+    Assert.deepEqual(
+      Glean.nimbusEvents.unenrollment
+        .testGetValue("events")
+        .map(event => event.extra),
+      [
+        {
+          experiment: slug,
+          branch: "control",
+          reason: "migration",
+          migration: "graduate-firefox-labs-jpeg-xl-all-channels",
+        },
+      ]
+    );
+
+    await cleanup();
+  }
+
+  Services.prefs.clearUserPref(ENABLED_PREF);
 });
 
 add_task(async function testFirstStartup() {

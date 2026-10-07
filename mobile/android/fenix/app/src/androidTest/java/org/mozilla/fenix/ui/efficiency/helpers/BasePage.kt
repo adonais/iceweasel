@@ -588,6 +588,54 @@ abstract class BasePage(protected val composeRule: AndroidComposeTestRule<HomeAc
             predicate = { Relations.hasCheckedSiblingNamed(it, siblingResName) },
         )
 
+    /**
+     * Assert the switch belonging to a preference row is on/off. [optionSelector] must name the row's title (unique by
+     * text); the row's switch is reached as its cousin, so this addresses one row's toggle even though every row shares
+     * the `switchWidget` id. Toggle a row by clicking the same title selector.
+     */
+    fun mozVerifyOptionSwitchIsChecked(optionSelector: Selector) =
+        require(
+            verb = "verify_option_switch_checked",
+            selector = optionSelector,
+            expectation = "has a checked switch",
+            dumpOnFailure = false,
+            predicate = { Relations.hasCousinSwitch(it, checked = true) },
+        )
+
+    fun mozVerifyOptionSwitchIsNotChecked(optionSelector: Selector) =
+        require(
+            verb = "verify_option_switch_not_checked",
+            selector = optionSelector,
+            expectation = "has an unchecked switch",
+            dumpOnFailure = false,
+            predicate = { Relations.hasCousinSwitch(it, checked = false) },
+        )
+
+    /**
+     * Assert [upper] renders above [lower] on screen, comparing their vertical positions. For ordered lists whose rows
+     * are not one queryable collection - the History screen's UiAutomator RecyclerView - where the collection verbs
+     * cannot express "A comes before B". Both elements must be present first; this waits for each before comparing.
+     */
+    fun mozVerifyElementIsAbove(upper: Selector, lower: Selector): BasePage {
+        mozVerify(upper)
+        mozVerify(lower)
+        return reportAround(
+            "verify_element_is_above",
+            "Verifying '${upper.description}' is above '${lower.description}'",
+            dumpOnFailure = true,
+        ) {
+            val upperElement = resolveForOrdering(upper)
+            val lowerElement = resolveForOrdering(lower)
+            if (!Relations.isAbove(upperElement, lowerElement)) {
+                assertionFailure("'${upper.description}' is not above '${lower.description}'")
+            }
+        }
+    }
+
+    private fun resolveForOrdering(selector: Selector): UiElement =
+        (locate(selector, applyPreconditions = false) as? ElementResolution.Found)?.element
+            ?: assertionFailure("'${selector.description}' not found for vertical-order comparison")
+
     // --- Verbs: all the matches at once ------------------------------------------
 
     fun mozVerifyElementCount(

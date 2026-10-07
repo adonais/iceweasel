@@ -781,6 +781,10 @@
           margin-block: 0;
           width: 100%;
           color: var(--fc-button-background);
+
+          @media (-moz-pref('browser.nova.enabled')) {
+            color: var(--fc-button-background-active);
+          }
         }
 
         .action-checklist-progress-bar-container {

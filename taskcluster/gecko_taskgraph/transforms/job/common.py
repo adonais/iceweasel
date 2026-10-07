@@ -134,6 +134,7 @@ def support_vcs_checkout(config, job, taskdesc, repo_configs):
     # Re-write repo configs to point to head_git_repository / head_git_rev if requested
     # and available
     clone_with = clone_type(config, job)
+    taskdesc.setdefault("attributes", {})["clone_with"] = clone_with
     if config.params["repository_type"] == "hg" and clone_with == "git":
         repo_configs = _rewrite_repo_configs_for_git_mirror(config, repo_configs)
 

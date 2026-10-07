@@ -3,19 +3,31 @@
  * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 import { getEditor } from "../../utils/editor/index";
+import { getBreakpointPositionsKeyForLocation } from "../../selectors/index";
+import { createLocation } from "../../utils/location";
 
 export function removeSources(
   sources,
   actors,
   { resetSelectedLocation = true } = {}
 ) {
-  return async ({ parserWorker, dispatch, sourceMapLoader }) => {
+  return async ({ parserWorker, dispatch, sourceMapLoader, getState }) => {
+    let keys = [];
+    for (const source of sources) {
+      keys = keys.concat(
+        getBreakpointPositionsKeyForLocation(
+          getState(),
+          createLocation({ source })
+        )
+      );
+    }
     // Remove the sources from the reducers first, and most importantly before any async work
     // as we may otherwise remove the source at an unexpected time.
     dispatch({
       type: "REMOVE_SOURCES",
       sources,
       actors,
+      keys,
       resetSelectedLocation,
     });
 

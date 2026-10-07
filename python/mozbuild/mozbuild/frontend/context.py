@@ -429,26 +429,19 @@ class AsmFlags(BaseCompileFlags):
         BaseCompileFlags.__init__(self, context)
 
     def _debug_flags(self):
-        debug_flags = []
-        if self._context.config.substs.get(
+        if not self._context.config.substs.get(
             "MOZ_DEBUG"
-        ) or self._context.config.substs.get("MOZ_DEBUG_SYMBOLS"):
-            if self._context.get("USE_NASM"):
-                if self._context.config.substs.get("OS_ARCH") == "WINNT":
-                    debug_flags += ["-F", "cv8"]
-                elif self._context.config.substs.get("OS_ARCH") != "Darwin":
-                    debug_flags += ["-F", "dwarf"]
-            elif self._context.config.substs.get("CC_TYPE") == "clang-cl":
-                if self._context.config.substs.get("TARGET_CPU") == "aarch64":
-                    # armasm64 accepts a paucity of options compared to ml/ml64.
-                    pass
-                else:
-                    # Unintuitively, -Zi for ml/ml64 is equivalent to -Z7 for cl.exe.
-                    # -Zi for cl.exe has a different purpose, so this is only used here.
-                    debug_flags += ["-Zi"]
-            else:
-                debug_flags += self._context.config.substs.get("MOZ_DEBUG_FLAGS", [])
-        return debug_flags
+        ) and not self._context.config.substs.get("MOZ_DEBUG_SYMBOLS"):
+            return []
+
+        if self._context.get("USE_NASM"):
+            if self._context.config.substs.get("OS_ARCH") == "Darwin":
+                return []
+            if self._context.config.substs.get("OS_ARCH") == "WINNT":
+                return ["-F", "cv8"]
+            return ["-F", "dwarf"]
+
+        return self._context.config.substs.get("MOZ_DEBUG_ASFLAGS", [])
 
 
 class LinkFlags(BaseCompileFlags):
@@ -1225,6 +1218,18 @@ GeneratedFilesList = StrictOrderingOnAppendListWithFlagsFactory({
     "flags": list,
 })
 
+LicensesList = StrictOrderingOnAppendListWithFlagsFactory({
+    "title": str,
+    "text": str,
+    "notice": str,
+    "spdx": str,
+    "url": str,
+    "paths": list,
+    "subcomponent": bool,
+})
+
+LicensedUnderList = StrictOrderingOnAppendListWithFlagsFactory({"paths": list})
+
 
 class Files(SubContext):
     """Metadata attached to files.
@@ -1494,6 +1499,45 @@ VARIABLES = {
 
         This variable should not be used directly; you should be using the
         HostRustLibrary template instead.
+        """,
+    ),
+    "RUST_LIBRARY_CARGO_PROFILE_SUFFIX": (
+        str,
+        str,
+        """Suffix of the Cargo profile this library is built with.
+
+        Cargo builds the library with the ``dev-`` or ``release-`` profile
+        carrying this suffix, and writes its artifacts to a directory of the
+        same name. Leave it unset to use Cargo's own ``dev`` and ``release``
+        profiles. Cargo's own ``dev`` profile writes to ``debug`` instead.
+
+        This variable should not be used directly; you should be using the
+        RustLibrary template instead.
+        """,
+    ),
+    "RUST_LIBRARY_CARGO_CRATE_TYPE": (
+        str,
+        str,
+        """The single crate type Cargo builds for this library.
+
+        Set this when the crate declares more crate types in its Cargo.toml
+        than the build needs, for instance because it is also built outside
+        the tree. Only ``staticlib`` is accepted.
+
+        This variable should not be used directly; you should be using the
+        RustLibrary template instead.
+        """,
+    ),
+    "RUST_LIBRARY_NO_LTO": (
+        bool,
+        bool,
+        """Whether to build this library without link time optimization.
+
+        Set this when a build that enables link time optimization for Rust
+        libraries must not apply it to this one.
+
+        This variable should not be used directly; you should be using the
+        RustLibrary template instead.
         """,
     ),
     "RUST_PROGRAM_FEATURES": (
@@ -1919,6 +1963,118 @@ VARIABLES = {
 
         This variable works like DEFINES, except that declarations apply to all
         libraries that link into this library via FINAL_LIBRARY.
+        """,
+    ),
+    "LICENSES": (
+        LicensesList,
+        list,
+        """Third-party license notices that must be reproduced in the product.
+
+        Each entry declares one license notice, identified by a short id that is
+        also its ``about:license`` anchor. Declare it in the directory that owns
+        the code, or in ``toolkit/content/licenses/moz.build`` for a shared
+        license text such as MPL-2.0 or MIT::
+
+           LICENSES += ["harfbuzz"]
+           LICENSES["harfbuzz"].title = "HarfBuzz License"
+           LICENSES["harfbuzz"].text = "LICENSE-NOTICE.txt"
+
+        The recognized fields are:
+
+        ``title``
+           Heading shown in ``about:license``. Required.
+
+        ``text``
+           Path, relative to the declaring ``moz.build``, of a file holding the
+           verbatim notice text.
+
+           Leave it unset for a vendored library whose ``moz.yaml`` names the
+           shipped license file in ``origin.license-file``: the notice is read
+           from there, so the two cannot come to name different files. One of
+           the two is required.
+
+        ``notice``
+           Optional prose rendered above the path list, for facts that cannot be
+           derived, such as a list of copyright holders and date ranges.
+
+        ``spdx``
+           Optional SPDX license expression, used by the generated SBOM. The
+           ``license-declarations`` linter validates it against the SPDX
+           license list.
+
+           Leave it unset for a vendored library whose ``moz.yaml`` already
+           declares ``origin.license``: that field is where the SBOM reads the
+           component's license from, so repeating it here is a second copy to
+           keep in sync. The ``license-declarations`` linter reports the
+           duplicate.
+
+        ``subcomponent``
+           Set to ``True`` when the notice covers code whose license differs
+           from the license of the vendored library it sits inside -- the
+           MySpell files under ``extensions/spellcheck/hunspell``, say, whose
+           ``moz.yaml`` declares the MPL. Such a declaration keeps its own
+           ``spdx`` field, and this field is what tells the
+           ``license-declarations`` linter the two are not duplicates.
+
+        ``url``
+           Optional canonical URL for the license.
+
+        ``paths``
+           Optional extra paths this notice covers, listed under its heading in
+           ``about:license`` alongside whatever ``LICENSED_UNDER`` attributes to
+           the same id. Entries may be globs, and a directory means the whole
+           subtree.
+
+           **These are relative to the top source directory**, not to the
+           declaring ``moz.build``, which is the opposite of
+           ``LICENSED_UNDER["x"].paths``. The two differ because this field
+           exists for the shared notices in ``toolkit/content/licenses/``,
+           declared far from every directory they cover::
+
+              # in toolkit/content/licenses/moz.build
+              LICENSES["apache"].paths = ["third_party/perfetto"]
+
+           So prefer ``LICENSED_UNDER``, declared next to the code, and reach
+           for this field only when the code has no built ``moz.build`` anywhere
+           near it.
+        """,
+    ),
+    "LICENSED_UNDER": (
+        LicensedUnderList,
+        list,
+        """Ids of the licenses that cover the code in this directory.
+
+        Each id must be declared by a ``LICENSES`` entry somewhere in the tree.
+        The generated ``about:license`` page lists this directory under every
+        license named here::
+
+           LICENSED_UNDER += ["MIT"]
+
+        The one recognized attribute is:
+
+        ``paths``
+           Optional list of the individual files or subdirectories the license
+           covers, narrowing the attribution from the whole directory. Leaving
+           it unset attributes the declaring directory itself, which is the
+           common case; setting it attributes only the entries listed, and
+           nothing else in the directory::
+
+              LICENSED_UNDER += ["MIT"]
+              LICENSED_UNDER["MIT"].paths = ["vendor/lodash.js", "vendor/react*"]
+
+           **Entries are relative to this** ``moz.build`` (unlike
+           ``LICENSES["x"].paths``, which is topsrcdir-relative), may be globs,
+           and a directory covers its whole subtree. They do not have to be
+           part of the build, which is how code the build system never
+           traverses, such as a crate under ``third_party/rust``, is attributed
+           from its nearest built ancestor::
+
+              # in a moz.build whose subtree has no moz.build of its own
+              LICENSED_UNDER["unicode"].paths = ["src/unicode"]
+
+           Whatever is listed here is joined onto the declaring directory and
+           shown, topsrcdir-relative, under the license's heading in
+           ``about:license``.
         """,
     ),
     "LIBRARY_NAME": (

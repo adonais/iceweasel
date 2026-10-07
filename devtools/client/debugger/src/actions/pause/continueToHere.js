@@ -3,7 +3,7 @@
  * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 import {
-  getSelectedSource,
+  getSelectedLocation,
   getSelectedFrame,
   getClosestBreakpointPosition,
   getBreakpoint,
@@ -18,10 +18,10 @@ import { resume } from "./commands";
 export function continueToHere(location) {
   return async function ({ dispatch, getState }) {
     const { line, column } = location;
-    const selectedSource = getSelectedSource(getState());
+    const selectedLocation = getSelectedLocation(getState());
     const selectedFrame = getSelectedFrame(getState());
 
-    if (!selectedFrame || !selectedSource) {
+    if (!selectedFrame || !selectedLocation) {
       return;
     }
 
@@ -52,7 +52,8 @@ export function continueToHere(location) {
       await dispatch(
         addHiddenBreakpoint(
           createLocation({
-            source: selectedSource,
+            source: selectedLocation.source,
+            sourceActor: selectedLocation.sourceActor,
             line: pauseLocation.line,
             column: pauseLocation.column,
           })

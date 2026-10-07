@@ -99,20 +99,6 @@ class VCSMixin:
         self.chdir(orig_dir)
         return revision_dict
 
-    def vcs_query_pushinfo(self, repository, revision, vcs=None):
-        """Query the pushid/pushdate of a repository/revision
-        Returns a namedtuple with "pushid" and "pushdate" elements
-        """
-        vcs_class = self._get_vcs_class(vcs)
-        if not vcs_class:
-            raise VCSException("No VCS set in vcs_query_pushinfo!")
-        vcs_obj = vcs_class(
-            log_obj=self.log_obj,
-            config=self.config,
-            script_obj=self,
-        )
-        return vcs_obj.query_pushinfo(repository, revision)
-
 
 class VCSScript(VCSMixin, BaseScript):
     def __init__(self, **kwargs):

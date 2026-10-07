@@ -347,7 +347,8 @@ TEST(TimestampExtrapolatorTest, SetsValidConfig) {
             "alarm_threshold:123,"
             "acc_drift:456,"
             "acc_max_error:789,"
-            "reset_full_cov_on_alarm:true/"));
+            "reset_full_cov_on_alarm:true,"
+            "p00:0.0001/"));
   // clang-format on
 
   TimestampExtrapolator::Config config = ts_extrapolator.GetConfigForTest();
@@ -362,6 +363,7 @@ TEST(TimestampExtrapolatorTest, SetsValidConfig) {
   EXPECT_EQ(config.acc_drift, 456);
   EXPECT_EQ(config.acc_max_error, 789);
   EXPECT_TRUE(config.reset_full_cov_on_alarm);
+  EXPECT_DOUBLE_EQ(config.p00, 0.0001);
 }
 
 TEST(TimestampExtrapolatorTest, DoesNotSetInvalidConfig) {
@@ -378,7 +380,8 @@ TEST(TimestampExtrapolatorTest, DoesNotSetInvalidConfig) {
             "outlier_rejection_stddev:-1,"
             "alarm_threshold:-123,"
             "acc_drift:-456,"
-            "acc_max_error:-789/"));
+            "acc_max_error:-789,"
+            "p00:-1.0/"));
   // clang-format on
 
   TimestampExtrapolator::Config config = ts_extrapolator.GetConfigForTest();
@@ -392,6 +395,7 @@ TEST(TimestampExtrapolatorTest, DoesNotSetInvalidConfig) {
   EXPECT_EQ(config.alarm_threshold, 60000);
   EXPECT_EQ(config.acc_drift, 6600);
   EXPECT_EQ(config.acc_max_error, 7000);
+  EXPECT_DOUBLE_EQ(config.p00, 1.0);
 }
 
 TEST(TimestampExtrapolatorTest, ExtrapolationNotAffectedByRtpTimestampJump) {

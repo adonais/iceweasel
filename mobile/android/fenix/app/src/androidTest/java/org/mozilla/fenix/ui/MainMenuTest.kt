@@ -1016,30 +1016,6 @@ class MainMenuTest {
             }
     }
 
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2937926
-    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=2053348")
-    @Test
-    fun verifyThatTheBrokenSiteFormSubmissionCanBeCanceledTest() {
-        val defaultWebPage = mockWebServer.getGenericAsset(1)
-
-        navigationToolbar(composeTestRule) {}
-            .enterURLAndEnterToBrowser(defaultWebPage.url) {}
-            .openThreeDotMenu {
-                clickTheMoreButton()
-            }
-            .clickReportBrokenSiteButton {
-                verifyWebCompatReporterViewItems(defaultWebPage.url.toString())
-                clickSiteDoesNotLoadReason(composeTestRule)
-                clickBrokenSiteFormCancelButton(composeTestRule)
-            }
-            .openThreeDotMenu {
-                clickTheMoreButton()
-            }
-            .clickReportBrokenSiteButton {
-                verifyWhatIsBrokenField(composeTestRule)
-            }
-    }
-
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2937927
     @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=2053348")
     @Test

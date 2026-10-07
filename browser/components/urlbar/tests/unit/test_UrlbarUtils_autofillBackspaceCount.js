@@ -375,7 +375,6 @@ add_task(async function getBackspaceBlock_returns_and_consumes_blocked_entry() {
 
   let entry = UrlbarUtils.getBackspaceBlock(url);
   Assert.greater(entry.blockedAt, 0, "Returns blockedAt timestamp");
-  Assert.equal(entry.level, "origin", "Level is origin for root URL");
 
   Assert.equal(
     UrlbarUtils.getBackspaceBlock(url),

@@ -68,7 +68,7 @@
     <attr name="awesomeBarIndicatorColor" format="reference|color"/>
     <attr name="awesomeBarIndicatorBookmarkColor" format="reference|color"/>
 
-    <declare-styleable name="TrackingProtectionCategory">
+    <declare-styleable name="TrackingProtectionCategoryItem">
         <attr name="categoryItemTitle" format="reference" />
         <attr name="categoryItemDescription" format="reference" />
     </declare-styleable>

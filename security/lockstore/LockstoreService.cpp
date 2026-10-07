@@ -20,6 +20,7 @@
 #include "nsIFile.h"
 #include "nsIGlobalObject.h"
 #include "nsIObserverService.h"
+#include "nsNSSComponent.h"
 #include "nsProxyRelease.h"
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
@@ -60,6 +61,12 @@ nsresult LockstoreService::Init() {
     MutexAutoLock lock(mMutex);
     mShutdown = true;
     return NS_OK;
+  }
+
+  // nss-rs does not initialize NSS properly so we must ensure it is
+  // initialized before attempting to use it.
+  if (!EnsureNSSInitializedChromeOrContent()) {
+    return NS_ERROR_FAILURE;
   }
 
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
@@ -353,6 +360,14 @@ LockstoreService::IsKekUnlocked(const nsACString& aKekRef, bool* aOut) {
   MutexAutoLock lock(mMutex);                                      \
   MOZ_TRY(EnsureOpenLocked())
 
+Result<bool, nsresult> LockstoreService::DoKekExists(
+    const nsACString& aKekRef) {
+  LOCKSTORE_SYNC_PREAMBLE;
+  bool out = false;
+  MOZ_TRY(keystore_kek_exists(mKeystore, &aKekRef, &out));
+  return out;
+}
+
 nsresult LockstoreService::DoUnlockKek(const nsACString& aKekRef,
                                        const nsACString& aSecret,
                                        uint64_t aTimeoutMs) {
@@ -396,6 +411,14 @@ Result<bool, nsresult> LockstoreService::DoIsDekExtractable(
   return out;
 }
 
+Result<bool, nsresult> LockstoreService::DoDekExists(
+    const nsACString& aDekName) {
+  LOCKSTORE_SYNC_PREAMBLE;
+  bool out = false;
+  MOZ_TRY(keystore_dek_exists(mKeystore, &aDekName, &out));
+  return out;
+}
+
 nsresult LockstoreService::DoDeleteDek(const nsACString& aDekName) {
   LOCKSTORE_SYNC_PREAMBLE;
   return keystore_delete_dek(mKeystore, &aDekName);
@@ -419,6 +442,12 @@ nsresult LockstoreService::DoSwitchKek(const nsACString& aDekName,
                                        const nsACString& aNewKekRef) {
   LOCKSTORE_SYNC_PREAMBLE;
   return keystore_switch_kek(mKeystore, &aDekName, &aOldKekRef, &aNewKekRef);
+}
+
+nsresult LockstoreService::DoMigrateDeks(const nsACString& aFromKekRef,
+                                         const nsACString& aToKekRef) {
+  LOCKSTORE_SYNC_PREAMBLE;
+  return keystore_migrate_deks(mKeystore, &aFromKekRef, &aToKekRef);
 }
 
 Result<nsTArray<nsCString>, nsresult> LockstoreService::DoListDeks() {
@@ -464,6 +493,14 @@ Result<nsTArray<uint8_t>, nsresult> LockstoreService::DoGetDek(
   return out;
 }
 
+Result<nsTArray<uint8_t>, nsresult> LockstoreService::DoGetDekAutomatic(
+    const nsACString& aDekName) {
+  LOCKSTORE_SYNC_PREAMBLE;
+  nsTArray<uint8_t> out;
+  MOZ_TRY(keystore_get_dek_automatic(mKeystore, &aDekName, &out));
+  return out;
+}
+
 Result<nsCString, nsresult> LockstoreService::DoCreateKek(
     const nsACString& aKekType, const nsACString& aIdentifier,
     const nsACString& aSecret, uint64_t aCacheTimeoutMs) {
@@ -472,6 +509,14 @@ Result<nsCString, nsresult> LockstoreService::DoCreateKek(
   MOZ_TRY(keystore_create_kek(mKeystore, &aKekType, &aIdentifier, &aSecret,
                               aCacheTimeoutMs, &out));
   return out;
+}
+
+nsresult LockstoreService::DoChangeKekPassword(const nsACString& aKekRef,
+                                               const nsACString& aOldSecret,
+                                               const nsACString& aNewSecret) {
+  LOCKSTORE_SYNC_PREAMBLE;
+  return keystore_change_kek_password(mKeystore, &aKekRef, &aOldSecret,
+                                      &aNewSecret);
 }
 
 nsresult LockstoreService::DoDeleteKek(const nsACString& aKekRef) {
@@ -499,6 +544,13 @@ NS_IMETHODIMP
 LockstoreService::LockKek(const nsACString& aKekRef, JSContext* aCx,
                           Promise** aPromise) {
   return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoLockKek,
+                         nsCString{aKekRef});
+}
+
+NS_IMETHODIMP
+LockstoreService::KekExists(const nsACString& aKekRef, JSContext* aCx,
+                            Promise** aPromise) {
+  return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoKekExists,
                          nsCString{aKekRef});
 }
 
@@ -537,6 +589,13 @@ LockstoreService::IsDekExtractable(const nsACString& aDekName, JSContext* aCx,
 }
 
 NS_IMETHODIMP
+LockstoreService::DekExists(const nsACString& aDekName, JSContext* aCx,
+                            Promise** aPromise) {
+  return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoDekExists,
+                         nsCString{aDekName});
+}
+
+NS_IMETHODIMP
 LockstoreService::DeleteDek(const nsACString& aDekName, JSContext* aCx,
                             Promise** aPromise) {
   return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoDeleteDek,
@@ -569,6 +628,14 @@ LockstoreService::SwitchKek(const nsACString& aDekName,
   return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoSwitchKek,
                          nsCString{aDekName}, nsCString{aOldKekRef},
                          nsCString{aNewKekRef});
+}
+
+NS_IMETHODIMP
+LockstoreService::MigrateDeks(const nsACString& aFromKekRef,
+                              const nsACString& aToKekRef, JSContext* aCx,
+                              Promise** aPromise) {
+  return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoMigrateDeks,
+                         nsCString{aFromKekRef}, nsCString{aToKekRef});
 }
 
 NS_IMETHODIMP
@@ -609,6 +676,14 @@ LockstoreService::GetDek(const nsACString& aDekName, const nsACString& aKekRef,
 }
 
 NS_IMETHODIMP
+LockstoreService::GetDekAutomatic(const nsACString& aDekName, JSContext* aCx,
+                                  Promise** aPromise) {
+  return ImplXpcomMethod(this, aCx, aPromise,
+                         &LockstoreService::DoGetDekAutomatic,
+                         nsCString{aDekName});
+}
+
+NS_IMETHODIMP
 LockstoreService::CreateKek(const nsACString& aKekType,
                             const nsACString& aIdentifier,
                             const nsACString& aSecret, uint64_t aCacheTimeoutMs,
@@ -616,6 +691,16 @@ LockstoreService::CreateKek(const nsACString& aKekType,
   return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoCreateKek,
                          nsCString{aKekType}, nsCString{aIdentifier},
                          ZeroizingCString{aSecret}, aCacheTimeoutMs);
+}
+
+NS_IMETHODIMP
+LockstoreService::ChangeKekPassword(const nsACString& aKekRef,
+                                    const nsACString& aOldSecret,
+                                    const nsACString& aNewSecret,
+                                    JSContext* aCx, Promise** aPromise) {
+  return ImplXpcomMethod(
+      this, aCx, aPromise, &LockstoreService::DoChangeKekPassword,
+      nsCString{aKekRef}, nsCString{aOldSecret}, nsCString{aNewSecret});
 }
 
 NS_IMETHODIMP

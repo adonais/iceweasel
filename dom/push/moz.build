@@ -47,6 +47,7 @@ XPCSHELL_TESTS_MANIFESTS += [
 ]
 
 EXPORTS.mozilla.dom += [
+    "Declarative.h",
     "PushManager.h",
     "PushNotifier.h",
     "PushSubscription.h",
@@ -54,6 +55,7 @@ EXPORTS.mozilla.dom += [
 ]
 
 UNIFIED_SOURCES += [
+    "Declarative.cpp",
     "PushManager.cpp",
     "PushNotifier.cpp",
     "PushSubscription.cpp",
@@ -68,5 +70,14 @@ LOCAL_INCLUDES += [
     "../base",
     "../ipc",
 ]
+
+if CONFIG["COMPILE_ENVIRONMENT"]:
+    CbindgenHeader(
+        "dom_push_rust_generated.h",
+        inputs=["/dom/push/rust"],
+    )
+    EXPORTS.mozilla.dom += [
+        "!dom_push_rust_generated.h",
+    ]
 
 FINAL_LIBRARY = "xul"

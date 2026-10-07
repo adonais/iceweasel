@@ -862,6 +862,29 @@ export class AsyncTabSwitcher {
     this.lastVisibleTab = null;
   }
 
+  onTabDiscarded(tab) {
+    this.handleEvent({ type: "tabDiscarded", tab });
+  }
+
+  // Called when a tab's browser has been discarded. The tab keeps its
+  // browser element as a lazy browser, so preActions won't drop it and
+  // its state has to be reset here.
+  onTabDiscardedImpl(tab) {
+    this.logState(`onTabDiscarded(${tab.index})`);
+    if (this.loadingTab === tab) {
+      this.maybeClearLoadTimer("onTabDiscarded");
+    }
+    this.unwarmTab(tab);
+    let cacheIndex = this.tabLayerCache.indexOf(tab);
+    if (cacheIndex != -1) {
+      this.tabLayerCache.splice(cacheIndex, 1);
+    }
+    this.setTabStateNoAction(tab, this.STATE_UNLOADED);
+    if (this.lastVisibleTab === tab) {
+      this.lastVisibleTab = null;
+    }
+  }
+
   onVisibilityChange() {
     if (this.windowHidden) {
       for (let [tab, state] of this.tabState) {
@@ -1123,6 +1146,9 @@ export class AsyncTabSwitcher {
           break;
         case "tabRemoved":
           this.onTabRemovedImpl();
+          break;
+        case "tabDiscarded":
+          this.onTabDiscardedImpl(event.tab);
           break;
         case "MozLayerTreeReady": {
           let browser = event.originalTarget;

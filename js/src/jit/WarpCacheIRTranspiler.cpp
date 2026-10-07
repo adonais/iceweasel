@@ -443,6 +443,11 @@ const JSClass* WarpCacheIRTranspiler::classForGuardClassKind(
     case GuardClassKind::Map:
     case GuardClassKind::BoundFunction:
     case GuardClassKind::Date:
+    case GuardClassKind::Duration:
+    case GuardClassKind::PlainTime:
+    case GuardClassKind::PlainDateTime:
+    case GuardClassKind::Instant:
+    case GuardClassKind::ZonedDateTime:
     case GuardClassKind::WeakMap:
     case GuardClassKind::WeakSet:
       return ClassFor(kind);
@@ -1970,9 +1975,6 @@ bool WarpCacheIRTranspiler::emitStoreFixedSlotFromOffset(
   MDefinition* offset = getOperand(offsetId);
   MDefinition* rhs = getOperand(rhsId);
 
-  auto* barrier = MPostWriteBarrier::New(alloc(), obj, rhs);
-  add(barrier);
-
   auto* store =
       MStoreFixedSlotFromOffset::NewBarriered(alloc(), obj, offset, rhs);
   addEffectful(store);
@@ -1985,9 +1987,6 @@ bool WarpCacheIRTranspiler::emitStoreDynamicSlotFromOffset(
   MDefinition* obj = getOperand(objId);
   MDefinition* offset = getOperand(offsetId);
   MDefinition* rhs = getOperand(rhsId);
-
-  auto* barrier = MPostWriteBarrier::New(alloc(), obj, rhs);
-  add(barrier);
 
   auto* slots = MSlots::New(alloc(), obj);
   add(slots);
@@ -3069,9 +3068,6 @@ bool WarpCacheIRTranspiler::emitStoreDynamicSlot(ObjOperandId objId,
   size_t slotIndex = NativeObject::getDynamicSlotIndexFromOffset(offset);
   MDefinition* rhs = getOperand(rhsId);
 
-  auto* barrier = MPostWriteBarrier::New(alloc(), obj, rhs);
-  add(barrier);
-
   auto* slots = MSlots::New(alloc(), obj);
   add(slots);
 
@@ -3089,9 +3085,6 @@ bool WarpCacheIRTranspiler::emitStoreFixedSlot(ObjOperandId objId,
   size_t slotIndex = NativeObject::getFixedSlotIndexFromOffset(offset);
   MDefinition* rhs = getOperand(rhsId);
 
-  auto* barrier = MPostWriteBarrier::New(alloc(), obj, rhs);
-  add(barrier);
-
   auto* store = MStoreFixedSlot::NewBarriered(alloc(), obj, slotIndex, rhs);
   addEffectful(store);
   return resumeAfter(store);
@@ -3104,9 +3097,6 @@ bool WarpCacheIRTranspiler::emitStoreFixedSlotUndefinedResult(
   MDefinition* obj = getOperand(objId);
   size_t slotIndex = NativeObject::getFixedSlotIndexFromOffset(offset);
   MDefinition* rhs = getOperand(rhsId);
-
-  auto* barrier = MPostWriteBarrier::New(alloc(), obj, rhs);
-  add(barrier);
 
   auto* store = MStoreFixedSlot::NewBarriered(alloc(), obj, slotIndex, rhs);
   addEffectful(store);
@@ -3125,9 +3115,6 @@ bool WarpCacheIRTranspiler::emitAddAndStoreSlotShared(
 
   MDefinition* obj = getOperand(objId);
   MDefinition* rhs = getOperand(rhsId);
-
-  auto* barrier = MPostWriteBarrier::New(alloc(), obj, rhs);
-  add(barrier);
 
   auto* addAndStore = MAddAndStoreSlot::New(alloc(), obj, rhs, kind, offset,
                                             shape, preserveWrapper);
@@ -3166,9 +3153,6 @@ bool WarpCacheIRTranspiler::emitAllocateAndStoreDynamicSlot(
   MDefinition* obj = getOperand(objId);
   MDefinition* rhs = getOperand(rhsId);
 
-  auto* barrier = MPostWriteBarrier::New(alloc(), obj, rhs);
-  add(barrier);
-
   auto* allocateAndStore = MAllocateAndStoreSlot::New(
       alloc(), obj, rhs, offset, shape, numNewSlots, preserveWrapper);
   addEffectful(allocateAndStore);
@@ -3197,12 +3181,10 @@ bool WarpCacheIRTranspiler::emitStoreDenseElement(ObjOperandId objId,
     add(guardPacked);
   }
 
-  auto* barrier = MPostWriteElementBarrier::New(alloc(), obj, rhs, index);
-  add(barrier);
-
   bool needsHoleCheck = !expectPackedElements;
   auto* store = MStoreElement::NewBarriered(alloc(), elements, index, rhs,
                                             needsHoleCheck);
+  store->setCanUseElementPostBarrier();
   addEffectful(store);
   return resumeAfter(store);
 }
@@ -3228,12 +3210,11 @@ bool WarpCacheIRTranspiler::emitStoreDenseElementHole(ObjOperandId objId,
 
     index = addBoundsCheck(index, length);
 
-    auto* barrier = MPostWriteElementBarrier::New(alloc(), obj, rhs, index);
-    add(barrier);
-
     bool needsHoleCheck = false;
-    store = MStoreElement::NewBarriered(alloc(), elements, index, rhs,
-                                        needsHoleCheck);
+    auto* storeElem = MStoreElement::NewBarriered(alloc(), elements, index, rhs,
+                                                  needsHoleCheck);
+    storeElem->setCanUseElementPostBarrier();
+    store = storeElem;
   }
   addEffectful(store);
 
@@ -6014,6 +5995,40 @@ bool WarpCacheIRTranspiler::emitNewDateObjectResult(
   return true;
 }
 
+bool WarpCacheIRTranspiler::emitUnpackTimeResult(ValOperandId packedValId,
+                                                 uint32_t shiftImm,
+                                                 uint32_t maskImm) {
+  MDefinition* packedVal = getOperand(packedValId);
+
+  auto* ins = MUnpackTime::New(alloc(), packedVal, shiftImm, maskImm);
+  add(ins);
+
+  pushResult(ins);
+  return true;
+}
+
+bool WarpCacheIRTranspiler::emitEpochMillisecondsResult(
+    ObjOperandId objId, uint32_t secondsOffset, uint32_t nanosecondsOffset) {
+  MDefinition* obj = getOperand(objId);
+
+  auto* seconds = MLoadFixedSlot::New(
+      alloc(), obj, NativeObject::getFixedSlotIndexFromOffset(secondsOffset));
+  seconds->setResultType(MIRType::Double);
+  add(seconds);
+
+  auto* nanoseconds = MLoadFixedSlot::New(
+      alloc(), obj,
+      NativeObject::getFixedSlotIndexFromOffset(nanosecondsOffset));
+  nanoseconds->setResultType(MIRType::Int32);
+  add(nanoseconds);
+
+  auto* ins = MEpochMilliseconds::New(alloc(), seconds, nanoseconds);
+  add(ins);
+
+  pushResult(ins);
+  return true;
+}
+
 bool WarpCacheIRTranspiler::emitTruthyResult(OperandId inputId) {
   MDefinition* input = getOperand(inputId);
 
@@ -6858,12 +6873,11 @@ bool WarpCacheIRTranspiler::emitSpecializedBindFunctionResult(
   MOZ_ASSERT(numBoundArgs <= BoundFunctionObject::MaxInlineBoundArgs);
 
   auto initSlot = [&](size_t slot, MDefinition* value) {
-#ifdef DEBUG
-    // Assert we can elide the post write barrier. See also the comment in
+    // No post barrier is needed here. See the comment in
     // WarpBuilder::buildNamedLambdaEnv.
-    add(MAssertCanElidePostWriteBarrier::New(alloc(), bound, value));
-#endif
-    addUnchecked(MStoreFixedSlot::NewUnbarriered(alloc(), bound, slot, value));
+    auto* store = MStoreFixedSlot::NewNoPreBarrier(alloc(), bound, slot, value);
+    store->setNeedsPostBarrier(false);
+    addUnchecked(store);
   };
 
   initSlot(BoundFunctionObject::targetSlot(), target);
@@ -7258,9 +7272,9 @@ bool WarpCacheIRTranspiler::emitAssertRecoveredOnBailoutResult(
   return true;
 }
 
-bool WarpCacheIRTranspiler::emitGuardNoAllocationMetadataBuilder(
+bool WarpCacheIRTranspiler::emitAssertNoAllocationMetadataBuilder(
     uint32_t builderAddrOffset) {
-  // This is a no-op because we discard all JIT code when set an allocation
+  // This is a no-op because we discard all JIT code when we set an allocation
   // metadata callback.
   return true;
 }

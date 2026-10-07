@@ -131,7 +131,6 @@ class SerialPort final : public DOMEventTargetHelper {
   void SettleClosePromise(nsresult aResult);
   MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> CloseStreams(
       StreamCloseMode aMode);
-  void NotifySharingStateChanged(bool aConnected);
   void UpdateWorkerRef();
 
   RefPtr<Serial> mSerial;

@@ -3975,12 +3975,15 @@ metrics:
       - drag_and_drop
       - menu
       - fab
+      - browser_menu
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2047039
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061543
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2047039
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061543
     data_sensitivity:
       - interaction
     notification_emails:
@@ -14027,6 +14030,21 @@ fx_suggest:
     send_in_pings:
       - fx-suggest-api
     unit: integer
+  suggestion_id:
+    type: uuid
+    description: |
+      The suggestion ID from MARS/Merino
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2070953
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D325460
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    send_in_pings:
+      - fx-suggest
 debug_drawer:
   debug_drawer_enabled:
     type: boolean
@@ -17206,6 +17224,50 @@ pdf_viewer:
     data_sensitivity:
       - interaction
     expires: never
+  sign_dialog_add_completed:
+    type: event
+    description: |
+      A signature the user typed in the PDF viewer's "add a signature" dialog was
+      passed to the PDF viewer successfully.
+    extra_keys:
+      signature_type:
+        description: |
+          How the signature was created. Possible values are: `typed`.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069504
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D325530
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - interaction
+    expires: never
+  sign_dialog_add_failure:
+    type: event
+    description: |
+      A signature the user typed in the PDF viewer's "add a signature" dialog could
+      not be passed to the PDF viewer, so it was not placed on the document. An unexpected
+      error occured.
+    extra_keys:
+      signature_type:
+        description: |
+          How the signature was created. Possible values are: `typed`.
+        type: string
+      reason:
+        description: |
+          Why the signature could not be handed to the PDF viewer. Possible values
+          are: `no_engine_session` and `engine_error`.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069504
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D325530
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - technical
+    expires: never
   sign_dialog_close_tapped:
     type: event
     description: |
@@ -17226,6 +17288,42 @@ pdf_viewer:
       - interaction
     expires: never
 
+browser_engine:
+  full_page_capture_attempted:
+    type: counter
+    description: |
+      Increments on every EngineView.captureFullPage() call, emitted from
+      GeckoEngineView in engine-gecko. Serves as the denominator for the
+      full-page screenshot failure rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2057685
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D327498
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - technical
+    expires: never
+  full_page_capture_result:
+    type: labeled_counter
+    description: |
+      Outcome of each full-page screenshot capture. `succeeded` = the engine
+      returned a bitmap; `failed` = the capture was rejected or returned no
+      bitmap. Combined with full_page_capture_attempted this gives the
+      full-page screenshot failure rate.
+    labels:
+      - succeeded
+      - failed
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2057685
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D327498
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - technical
+    expires: never
+
 browser_thumbnails:
   capture_attempted:
     type: labeled_counter
@@ -17238,6 +17336,7 @@ browser_thumbnails:
       - load_completed
       - tab_counter_click
       - swipe_to_switch_tabs
+      - tab_backgrounded
       - external_request
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066
@@ -17311,6 +17410,73 @@ browser_thumbnails:
       - android-probes@mozilla.com
     data_sensitivity:
       - technical
+    expires: never
+    metadata:
+      tags:
+        - Tabs
+
+tab_reload_cover:
+  shown:
+    type: counter
+    description: |
+      Number of times the tab reload cover was actually placed over the
+      engine view (a cached thumbnail was found and the cover ImageView
+      flipped to VISIBLE). Baseline for the feature's engagement, and
+      a cross-check against `exited` event count — a gap would indicate
+      the process died while a cover was up.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066678
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066678
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - interaction
+    expires: never
+    metadata:
+      tags:
+        - Tabs
+  exited:
+    type: event
+    description: |
+      Emitted once each time a tab reload cover was torn down after
+      being shown. Carries the exit-path reason and the wall-clock
+      duration in one signal, so slicing duration by reason is a
+      single group-by query. Event count should equal the `shown`
+      counter (any gap indicates the process died mid-cover). Query
+      patterns: `COUNT(*) GROUP BY extras.hide_reason` for the exit-
+      path breakdown; `APPROX_QUANTILES(CAST(extras.visible_duration_ms
+      AS INT64), 100) GROUP BY extras.hide_reason` for per-reason
+      p50/p95.
+    extra_keys:
+      hide_reason:
+        description: |
+          Terminal exit path for the cover. One of: `fcp` (natural
+          reveal after FCP + post-FCP hold), `safety_timeout` (pre-FCP
+          safety fired without an FCP), `stopped` (fragment lifecycle
+          tore down), `user_dismissed` (user tapped before FCP fired —
+          gave up on a still-loading page; low duration here means the
+          cover isn't providing value), `user_dismissed_after_fcp`
+          (user tapped during the post-FCP hold — page is effectively
+          live and they skipped the fade; low duration here means the
+          hold is too long), `offline` (device had no validated internet
+          connection at reveal time; the paint is likely an error page
+          or cached content, so the "live page" toast is suppressed).
+        type: string
+      visible_duration_ms:
+        description: |
+          Wall-clock milliseconds the cover was on screen, from the
+          moment the ImageView flipped to VISIBLE to the moment the
+          exit path ran.
+        type: quantity
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066678
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066678
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - interaction
     expires: never
     metadata:
       tags:

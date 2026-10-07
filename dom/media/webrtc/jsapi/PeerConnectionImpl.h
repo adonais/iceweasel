@@ -821,10 +821,11 @@ class PeerConnectionImpl final
   void RestoreStateForRollback();
   std::set<RefPtr<dom::RTCDtlsTransport>> GetActiveTransports() const;
 
-  // Activate ICE transports at the conclusion of offer/answer,
-  // or when rollback occurs.
-  nsresult UpdateTransports(const JsepSession& aSession,
-                            const bool forceIceTcp);
+  // Activate ICE transports at the conclusion of offer/answer, or when
+  // rollback occurs. A provisional answer activates its transports too, but
+  // does not remove the ones it leaves unused.
+  nsresult UpdateTransports(const JsepSession& aSession, const bool forceIceTcp,
+                            const bool aProvisional);
 
   void ResetStunAddrsForIceRestart() { mStunAddrs.Clear(); }
 
@@ -925,9 +926,9 @@ class PeerConnectionImpl final
   // web-compat stopgap
   bool mAllowOldSetParameters = false;
 
-  // Used to store the mDNS hostnames that we have queried
+  // For candidates that require an mDNS query before they can be used.
   struct PendingIceCandidate {
-    std::vector<std::string> mTokenizedCandidate;
+    std::string mCandidate;
     std::string mTransportId;
     std::string mUfrag;
   };

@@ -51,6 +51,7 @@ support-files = ["file_test_clipboard_getDataSnapshot.js"]
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'x86_64' && debug", # Bug 1982951
   "os == 'android' && os_version == '14' && arch == 'x86_64' && opt", # Bug 1982951
+  "os == 'android' && os_version == '14' && arch == 'x86_64' && ccov", # Bug 1982951
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1879835
 ]
 
@@ -59,12 +60,12 @@ support-files = "file_test_clipboard_getDataSnapshotSync.js"
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'x86_64' && debug", # Bug 1982951
   "os == 'android' && os_version == '14' && arch == 'x86_64' && opt", # Bug 1982951
+  "os == 'android' && os_version == '14' && arch == 'x86_64' && ccov", # Bug 1982951
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1879835
 ]
 
 ["test_clipboard_pngPreservesTransparency.html"]
 skip-if = [
-  "headless", # Clipboard call to get PNG data fails (bug 1878643)
   "os == 'android'", # Android cannot copy image contents (bug 1299578)
 ]
 support-files = "file_test_clipboard_pngPreservesTransparency.js"

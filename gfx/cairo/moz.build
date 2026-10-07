@@ -4,3 +4,34 @@
 
 DIRS += ['cairo/src']
 
+
+LICENSES += ["cairo"]
+LICENSES["cairo"].title = "Cairo Component Licenses"
+LICENSES["cairo"].text = "LICENSE-NOTICE.txt"
+LICENSES["cairo"].notice = """
+<p>This license, with different copyright holders, applies to certain files in the directory <code>gfx/cairo/</code>.
+            The copyright holders and the applicable ranges of dates are as follows:</p>
+            <ul>
+              <li>2004 Richard D. Worth
+              <li>2004, 2005 Red Hat, Inc.
+              <li>2003 USC, Information Sciences Institute
+              <li>2004 David Reveman
+              <li>2005 Novell, Inc.
+              <li>2004 David Reveman, Peter Nilsson
+              <li>2000 Keith Packard, member of The XFree86 Project, Inc.
+              <li>2005 Lars Knoll &amp; Zack Rusin, Trolltech
+              <li>1998, 2000, 2002, 2004 Keith Packard
+              <li>2004 Nicholas Miell
+              <li>2005 Trolltech AS
+              <li>2000 SuSE, Inc.
+              <li>2003 Carl Worth
+              <li>1987, 1988, 1989, 1998 The Open Group
+              <li>1987, 1988, 1989 Digital Equipment Corporation, Maynard, Massachusetts.
+              <li>1998 Keith Packard
+              <li>2003 Richard Henderson
+            </ul>
+"""
+
+LICENSED_UNDER += [
+    "cairo",
+]

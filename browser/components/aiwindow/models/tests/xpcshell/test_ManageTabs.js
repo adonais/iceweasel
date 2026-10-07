@@ -338,6 +338,111 @@ add_task(async function test_manageTabsAction_direct_group_path() {
   }
 });
 
+// When you type a grouping command in a fullpage chat, the chat tab is offered
+// as one of the tabs in the confirmation card, so the user can see it is going
+// into the group and can untick it (bug 2068714).
+add_task(async function test_manageTabsAction_offers_the_chat_tab() {
+  const sb = sinon.createSandbox();
+  try {
+    const url1 = "https://example.com/a";
+    const targetTab1 = createFakeTab(url1, "Example A", {
+      linkedPanel: "panel-1",
+    });
+    const chatTab = createFakeTab(
+      "chrome://browser/content/aiwindow/aiWindow.html",
+      "Smart Window"
+    );
+    setupBrowserWindowTracker(
+      sb,
+      createFakeWindow([chatTab, targetTab1], { selectedTab: chatTab })
+    );
+    sb.stub(ToolUI, "findChatTab").returns(chatTab);
+    const registerTabKeys = sb.stub(ToolUI, "registerTabKeys");
+
+    const { uiData } = await manageTabsAction(
+      {
+        action: GROUP_TABS,
+        validUrls: new Set([url1]),
+        ask_confirmation: true,
+        label: "Bears",
+        toolCallId: "tool-call-1",
+      },
+      makeConversation()
+    );
+
+    Assert.equal(
+      uiData.properties.tabs.length,
+      2,
+      "The card offers the matched tab and the chat tab"
+    );
+    const chatRow = uiData.properties.tabs.at(-1);
+    Assert.equal(
+      chatRow.title,
+      sanitizeUntrustedContent("Smart Window"),
+      "The chat tab is the row that was added"
+    );
+    Assert.ok(chatRow.checked, "The chat tab starts ticked");
+
+    const [, tokenToKey] = registerTabKeys.firstCall.args;
+    Assert.equal(
+      tokenToKey.get(chatRow.token),
+      chatTab.permanentKey,
+      "The chat tab's token resolves back to it when the user confirms"
+    );
+  } finally {
+    sb.restore();
+  }
+});
+
+// Without a card, the chat tab still goes into the group.
+add_task(async function test_manageTabsAction_direct_group_includes_chat_tab() {
+  const sb = sinon.createSandbox();
+  try {
+    const url1 = "https://example.com/a";
+    const targetTab1 = createFakeTab(url1, "Example A", {
+      linkedPanel: "panel-1",
+    });
+    const chatTab = createFakeTab(
+      "chrome://browser/content/aiwindow/aiWindow.html",
+      "Smart Window"
+    );
+    // An unrelated active tab, so none of the confirmation overrides fire.
+    const otherTab = createFakeTab("https://example.com/c", "Other");
+    setupBrowserWindowTracker(
+      sb,
+      createFakeWindow([chatTab, targetTab1, otherTab], {
+        selectedTab: otherTab,
+      })
+    );
+    sb.stub(ToolUI, "findChatTab").returns(chatTab);
+
+    const createTabGroup = sb.stub(ToolUI, "createTabGroup").resolves({
+      operationId: "op-1",
+      failedTabs: [],
+      group: { id: "op-1", label: "Bears", color: "blue", tabCount: 2 },
+    });
+
+    await manageTabsAction(
+      {
+        action: GROUP_TABS,
+        validUrls: new Set([url1]),
+        ask_confirmation: false,
+        label: "Bears",
+      },
+      makeConversation()
+    );
+
+    const args = createTabGroup.firstCall.args[0];
+    Assert.equal(args.tabs.length, 2, "The chat tab is grouped as well");
+    Assert.ok(
+      [...args.tokenToKey.values()].includes(chatTab.permanentKey),
+      "The chat tab is resolvable by its token"
+    );
+  } finally {
+    sb.restore();
+  }
+});
+
 add_task(async function test_manageTabsAction_marks_failed_tabs() {
   const sb = sinon.createSandbox();
   try {

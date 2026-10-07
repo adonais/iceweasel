@@ -683,14 +683,21 @@ void SipccSdpAttributeList::LoadFmtp(sdp_t* sdp, const uint16_t level) {
         parameters = std::move(h264Parameters);
       } break;
       case RTP_AV1: {
-        auto av1Parameters = MakeUnique<SdpFmtpAttributeList::Av1Parameters>();
-        if (fmtp->profile > 0 && fmtp->profile <= UINT8_MAX) {
-          av1Parameters->profile = Some(static_cast<uint8_t>(fmtp->profile));
+        // The valid ranges are from
+        // https://aomediacodec.github.io/av1-rtp-spec/#sdp-parameters. Like
+        // sipcc does for other out-of-range fmtp parameters, values outside
+        // them are ignored rather than made to fail the parse.
+        using Av1Parameters = SdpFmtpAttributeList::Av1Parameters;
+        auto av1Parameters = MakeUnique<Av1Parameters>();
+        if (fmtp->av1_has_profile &&
+            fmtp->av1_profile <= Av1Parameters::kMaxProfile) {
+          av1Parameters->profile = Some(fmtp->av1_profile);
         }
-        if (fmtp->av1_has_level_idx) {
-          av1Parameters->profile = Some(fmtp->av1_level_idx);
+        if (fmtp->av1_has_level_idx &&
+            fmtp->av1_level_idx <= Av1Parameters::kMaxLevelIdx) {
+          av1Parameters->levelIdx = Some(fmtp->av1_level_idx);
         }
-        if (fmtp->av1_has_tier) {
+        if (fmtp->av1_has_tier && fmtp->av1_tier <= Av1Parameters::kMaxTier) {
           av1Parameters->tier = Some(fmtp->av1_tier);
         }
         parameters = std::move(av1Parameters);

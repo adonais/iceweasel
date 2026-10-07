@@ -103,23 +103,30 @@ def test_ml_services_allowlist_format():
 
 
 def test_ml_services_layer_properties():
-    mach_cmd, metadata, env = get_running_env(flavor="eval-mochitest")
+    cases = (
+        ({"flavor": "mochitest"}, False),
+        ({"flavor": "mochitest", "ml_services": True}, True),
+        ({"flavor": "eval-mochitest"}, True),
+    )
 
-    try:
-        system_layers = env.layers[SYSTEM]
+    for options, expected in cases:
+        mach_cmd, metadata, env = get_running_env(**options)
 
-        ml_services_layer = None
-        for layer in system_layers.layers:
-            if isinstance(layer, MLServices):
-                ml_services_layer = layer
-                break
+        try:
+            system_layers = env.layers[SYSTEM]
 
-        assert ml_services_layer is not None
-        assert ml_services_layer.name == "ml-services"
-        assert ml_services_layer.activated is True
+            ml_services_layer = None
+            for layer in system_layers.layers:
+                if isinstance(layer, MLServices):
+                    ml_services_layer = layer
+                    break
 
-    finally:
-        shutil.rmtree(mach_cmd._mach_context.state_dir)
+            assert (ml_services_layer is not None) is expected
+            if ml_services_layer:
+                assert ml_services_layer.name == "ml-services"
+
+        finally:
+            shutil.rmtree(mach_cmd._mach_context.state_dir)
 
 
 def test_ml_services_returns_metadata():

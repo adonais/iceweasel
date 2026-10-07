@@ -217,9 +217,7 @@ class FFSetup:
         if self.test_config.get("gecko_profile") and not upload_dir:
             LOG.critical("Profiling ignored because MOZ_UPLOAD_DIR was not set")
         if upload_dir and self.test_config.get("gecko_profile"):
-            self.gecko_profile = GeckoProfile(
-                upload_dir, self.browser_config, self.test_config
-            )
+            self.gecko_profile = GeckoProfile(upload_dir, self.test_config)
             self.gecko_profile.update_env(self.env)
 
     def clean(self):

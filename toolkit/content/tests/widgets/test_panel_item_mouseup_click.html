@@ -99,6 +99,33 @@
         });
       });
 
+      add_task(async function test_pressAnchorAndReleaseOverItem() {
+        panelList.clickOnMouseup = true;
+
+        let openOnMousedown = event => panelList.toggle(event);
+        anchorButton.addEventListener("mousedown", openOnMousedown);
+
+        let clickTargets = [];
+        let recordClick = event => clickTargets.push(event.target);
+        document.addEventListener("click", recordClick);
+
+        synthesizeMouseAtCenter(anchorButton, { type: "mousedown" });
+        await BrowserTestUtils.waitForEvent(panelList, "shown");
+        synthesizeMouseAtCenter(item1, { type: "mouseup" });
+        await BrowserTestUtils.waitForEvent(panelList, "hidden");
+
+        is(clickTargets.length, 1, "The release produces one click");
+        is(
+          clickTargets[0],
+          item1,
+          "The click goes to the item released over, not to its common " +
+            "ancestor with the anchor"
+        );
+
+        anchorButton.removeEventListener("mousedown", openOnMousedown);
+        document.removeEventListener("click", recordClick);
+      });
+
       add_task(async function test_eventData() {
         panelList.clickOnMouseup = true;
 

@@ -143,14 +143,14 @@ class NativeThenHandler<ResolveCallback, RejectCallback, std::tuple<Args...>,
         mOnReject(std::forward<Maybe<RejectCallback>>(aOnReject)),
         mArgs(std::forward<decltype(aArgs)>(aArgs)),
         mJSArgs(std::forward<decltype(aJSArgs)>(aJSArgs)) {
-    if constexpr (std::tuple_size<decltype(mJSArgs)>::value > 0) {
+    if constexpr (std::tuple_size_v<decltype(mJSArgs)> > 0) {
       mozilla::HoldJSObjects(this);
     }
   }
 
  protected:
   ~NativeThenHandler() override {
-    if constexpr (std::tuple_size<decltype(mJSArgs)>::value > 0) {
+    if constexpr (std::tuple_size_v<decltype(mJSArgs)> > 0) {
       mozilla::DropJSObjects(this);
     }
   }

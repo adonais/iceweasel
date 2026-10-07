@@ -382,7 +382,7 @@ add_task(async function test_invalid_cookie_fix() {
   await promise;
 
   // Assert inserted cookies are in the db and correctly handled by services.
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com"), 7);
+  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 7);
 
   // Close the profile.
   await promise_close_profile();

@@ -25,32 +25,9 @@ class CodeGeneratorARM : public CodeGeneratorShared {
   CodeGeneratorARM(MIRGenerator* gen, LIRGraph* graph, MacroAssembler* masm,
                    const wasm::CodeMetadata* wasmCodeMeta);
 
-  NonAssertingLabel deoptLabel_;
-
   MoveOperand toMoveOperand(LAllocation a) const;
 
   void bailoutIf(Assembler::Condition condition, LSnapshot* snapshot);
-  void bailoutFrom(Label* label, LSnapshot* snapshot);
-  void bailout(LSnapshot* snapshot);
-
-  template <typename T1, typename T2>
-  void bailoutCmpPtr(Assembler::Condition c, T1 lhs, T2 rhs,
-                     LSnapshot* snapshot) {
-    masm.cmpPtr(lhs, rhs);
-    bailoutIf(c, snapshot);
-  }
-  template <typename T1, typename T2>
-  void bailoutCmp32(Assembler::Condition c, T1 lhs, T2 rhs,
-                    LSnapshot* snapshot) {
-    masm.cmp32(lhs, rhs);
-    bailoutIf(c, snapshot);
-  }
-  template <typename T1, typename T2>
-  void bailoutTest32(Assembler::Condition c, T1 lhs, T2 rhs,
-                     LSnapshot* snapshot) {
-    masm.test32(lhs, rhs);
-    bailoutIf(c, snapshot);
-  }
   void bailoutIfFalseBool(Register reg, LSnapshot* snapshot) {
     masm.test32(reg, Imm32(0xFF));
     bailoutIf(Assembler::Zero, snapshot);

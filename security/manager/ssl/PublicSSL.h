@@ -5,6 +5,8 @@
 #ifndef mozilla_SSL_h
 #define mozilla_SSL_h
 
+#include "ErrorList.h"
+
 namespace mozilla {
 namespace psm {
 

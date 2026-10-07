@@ -160,6 +160,9 @@ Function PrepareTelemetryPing
     ${EndIf}
   ${EndIf}
 
+  nsJSON::Set /tree ping "Data" "notification_helper_stop_exit_code" \
+    /value '"$NotificationHelperStopExitCode"'
+
   ; $PostSigningData should only be empty if we didn't try to copy the
   ; postSigningData file at all. If we did try and the file was missing
   ; or empty, this will be "0", and for consistency with the stub we will

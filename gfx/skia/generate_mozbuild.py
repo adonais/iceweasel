@@ -188,11 +188,11 @@ def generate_platform_sources():
     if output:
       sources[key].update(parse_sources(output))
 
-  deps = {':pdf' : 'pdf'}
+  deps = {':pdf' : 'common'}
   for dep, key in deps.items():
     output = subprocess.check_output('cd skia && bin/gn desc out/linux {} sources'.format(dep), shell=True)
     if output:
-      sources[key] = parse_sources(output)
+      sources[key].update(parse_sources(output))
 
   sources.update(generate_opt_sources())
   return sources
@@ -280,7 +280,6 @@ def generate_separated_sources(platform_sources):
     'arm': set(),
     'arm64': set(),
     'none': set(),
-    'pdf': set()
   })
 
   for plat in platform_sources.keys():
@@ -419,9 +418,6 @@ def write_mozbuild(sources):
 
   write_sources(f, sources['common'], 0)
   write_cflags(f, sources['common'], opt_allowlist, 'skia_opt_flags', 0)
-
-  f.write("if CONFIG['MOZ_ENABLE_SKIA_PDF']:\n")
-  write_sources(f, sources['pdf'], 4)
 
   f.write("if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'android':\n")
   write_sources(f, sources['android'], 4)

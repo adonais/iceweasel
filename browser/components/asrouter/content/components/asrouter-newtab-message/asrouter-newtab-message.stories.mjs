@@ -133,6 +133,17 @@ BlockOnSecondaryButton.args = {
   },
 };
 
+export const WithoutButtons = Template.bind({});
+WithoutButtons.args = {
+  messageData: {
+    ...BASE_MESSAGE,
+    content: {
+      ...BASE_MESSAGE.content,
+      primaryButton: undefined,
+    },
+  },
+};
+
 export const NoImage = Template.bind({});
 NoImage.args = {
   messageData: {

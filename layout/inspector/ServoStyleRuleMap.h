@@ -6,6 +6,7 @@
 #define mozilla_ServoStyleRuleMap_h
 
 #include "mozilla/WeakPtr.h"
+#include "mozilla/css/Rule.h"
 #include "nsTHashMap.h"
 
 struct StyleLockedStyleRule;
@@ -15,9 +16,6 @@ class ServoCSSRuleList;
 class StyleSheet;
 class ServoStyleSet;
 struct StyleLockedDeclarationBlock;
-namespace css {
-class Rule;
-}  // namespace css
 namespace dom {
 class ShadowRoot;
 }

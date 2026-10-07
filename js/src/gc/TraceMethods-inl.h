@@ -422,8 +422,8 @@ template <uint32_t opts>
 void js::gc::MarkingTracerT<opts>::eagerlyMarkChildren(PropMap* map) {
   MOZ_ASSERT(map->isMarkedAny());
   do {
-    for (uint32_t i = 0; i < PropMap::Capacity; i++) {
-      PropertyKey key = map->keys_[i].getForTracing();
+    for (auto& mkey : map->keys_) {
+      PropertyKey key = mkey.getForTracing();
       if (!key.isVoid()) {
         markAndTraverseEdge(map, key);
       }

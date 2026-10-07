@@ -79,7 +79,5 @@
   padding: 0 !important;
   margin: var(--panel-separator-padding) !important;
   border: none !important;
-  /* The border draws the separator, so the separator token applies. */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border-block-start: var(--border-width) solid var(--panel-separator-color) !important;
 }

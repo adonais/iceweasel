@@ -11,17 +11,19 @@
 
 namespace mozilla {
 
+extern LazyLogModule gMediaDecoderLog;
+
 #define INIT_MIRROR(name, val) \
   name(mTaskQueue, val, "MediaDecoderStateMachineBase::" #name " (Mirror)")
 #define INIT_CANONICAL(name, val) \
   name(mTaskQueue, val, "MediaDecoderStateMachineBase::" #name " (Canonical)")
 #define FMT(x, ...) "Decoder=%p " x, mDecoderID, ##__VA_ARGS__
-#define LOG(x, ...)                                                 \
-  DDMOZ_LOG_FMT(gMediaDecoderLog, LogLevel::Debug, "Decoder={} " x, \
-                fmt::ptr(mDecoderID), ##__VA_ARGS__)
-#define LOGV(x, ...)                                                  \
-  DDMOZ_LOG_FMT(gMediaDecoderLog, LogLevel::Verbose, "Decoder={} " x, \
-                fmt::ptr(mDecoderID), ##__VA_ARGS__)
+#define LOG(x, ...)                                               \
+  MOZ_LOG_FMT(gMediaDecoderLog, LogLevel::Debug, "Decoder={} " x, \
+              fmt::ptr(mDecoderID), ##__VA_ARGS__)
+#define LOGV(x, ...)                                                \
+  MOZ_LOG_FMT(gMediaDecoderLog, LogLevel::Verbose, "Decoder={} " x, \
+              fmt::ptr(mDecoderID), ##__VA_ARGS__)
 #define LOGW(x, ...) NS_WARNING(nsPrintfCString(FMT(x, ##__VA_ARGS__)).get())
 #define LOGE(x, ...)                                                   \
   NS_DebugBreak(NS_DEBUG_WARNING,                                      \
@@ -182,7 +184,14 @@ RefPtr<SetCDMPromise> MediaDecoderStateMachineBase::SetCDMProxy(
 }
 
 void MediaDecoderStateMachineBase::SetIsLiveStream(bool aIsLiveStream) {
+  if (mIsLiveStream == aIsLiveStream) {
+    return;
+  }
+  LOG("SetIsLiveStream: {} -> {}", IsLiveStream(), aIsLiveStream);
   mIsLiveStream = aIsLiveStream;
+  if (!aIsLiveStream) {
+    BufferedRangeUpdated();
+  }
 }
 
 bool MediaDecoderStateMachineBase::IsLiveStream() const {

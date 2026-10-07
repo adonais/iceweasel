@@ -30,7 +30,6 @@ sandbox:
       - jld@mozilla.com
       - gcp@mozilla.com
     expires: never
-    telemetry_mirror: h#SANDBOX_REJECTED_SYSCALLS
 
   failed_launch_keyed:
     type: labeled_custom_distribution

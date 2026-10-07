@@ -44,7 +44,7 @@ class StickyScrollContainer final {
    */
   static StickyScrollContainer* GetForFrame(const nsIFrame*);
 
-  void AddFrame(nsIFrame* aFrame) { mFrames.Add(aFrame); }
+  void AddFrame(nsIFrame* aFrame);
   void RemoveFrame(nsIFrame* aFrame) { mFrames.Remove(aFrame); }
 
   ScrollContainerFrame* ScrollContainer() const {
@@ -59,6 +59,19 @@ class StickyScrollContainer final {
    * stored in its properties along with our scroll frame and scroll position.
    */
   nsPoint ComputePosition(nsIFrame* aFrame) const;
+
+  /**
+   * Same as above, but as if our scroll position were zero, so that the result
+   * is independent of the current scroll position.
+   */
+  nsPoint ComputePositionIgnoringScrolling(nsIFrame* aFrame) const;
+
+  /**
+   * The translation by which sticky positioning shifts aFrame from its normal
+   * position to its sticky position, computed as if our scroll position were
+   * zero. All continuations of a sticky frame are shifted by the same amount.
+   */
+  nsPoint ComputeTranslationIgnoringScrolling(const nsIFrame* aFrame) const;
 
   /**
    * Compute where a frame should not scroll with the page, represented by the
@@ -145,25 +158,33 @@ class StickyScrollContainer final {
 
  private:
   /**
-   * Whether ComputeStickyLimits() positions its aStick outparam (the
-   * sticky-limits rectangle) relative to the current scroll position, or as
-   * if the scroll position were zero (in which case the result is independent
-   * of the current scroll position).
+   * Whether ComputeStickyLimits() positions its returned StickyLimits::mStick
+   * rectangle relative to the current scroll position, or as if the scroll
+   * position were zero (in which case the result is independent of the current
+   * scroll position).
    */
   enum class StickyLimitSpace : uint8_t {
     RelativeToCurrentScroll,
     IgnoreCurrentScroll,
   };
 
+  struct StickyLimits {
+    // Based on the scroll container.
+    nsRect mStick;
+    // Based on the containing block.
+    nsRect mContain;
+  };
+
   /**
-   * Compute two rectangles that determine sticky positioning: |aStick|, based
-   * on the scroll container, and |aContain|, based on the containing block.
-   * Sticky positioning keeps the frame position (its upper-left corner) always
-   * within |aContain| and secondarily within |aStick|.
+   * Compute the two rectangles that determine sticky positioning. Sticky
+   * positioning keeps the frame position (its upper-left corner) always within
+   * |mContain| and secondarily within |mStick|.
    */
-  void ComputeStickyLimits(nsIFrame* aFrame, nsRect* aStick, nsRect* aContain,
-                           StickyLimitSpace aSpace =
-                               StickyLimitSpace::RelativeToCurrentScroll) const;
+  StickyLimits ComputeStickyLimits(
+      nsIFrame* aFrame, StickyLimitSpace aSpace =
+                            StickyLimitSpace::RelativeToCurrentScroll) const;
+
+  nsPoint DoComputePosition(nsIFrame* aFrame, StickyLimitSpace aSpace) const;
 
   ScrollContainerFrame* const mScrollContainerFrame;
   DepthOrderedFrameList mFrames;

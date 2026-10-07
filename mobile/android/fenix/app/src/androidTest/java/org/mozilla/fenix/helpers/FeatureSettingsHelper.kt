@@ -6,6 +6,7 @@ package org.mozilla.fenix.helpers
 
 import androidx.test.platform.app.InstrumentationRegistry
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
+import mozilla.components.lib.crash.store.CrashReportOption
 import org.mozilla.fenix.ext.components
 
 /** Helper for querying the status and modifying various features and settings in the application. */
@@ -15,6 +16,12 @@ interface FeatureSettingsHelper {
 
     /** Whether the onboarding dialog for choosing wallpapers should be shown or not. */
     var isWallpaperOnboardingEnabled: Boolean
+
+    /** Whether the "Bookmarks" home screen section is enabled or not. It can show up to 8 bookmarks. */
+    var isBookmarksHomeFeatureEnabled: Boolean
+
+    /** Whether the homepage as a new tab feature is enabled or not. */
+    var isHomepageAsNewTabEnabled: Boolean
 
     /**
      * Whether the "Continue" homescreen section is enabled or not. It shows the last visited tab on this device and on
@@ -96,6 +103,14 @@ interface FeatureSettingsHelper {
 
     /** Whether the current URL is shown separate from the addressbar when tapped. */
     var showAddressBarInFocusMode: Boolean
+
+    /**
+     * The crash reporting preference, between the following options:
+     * - Ask before sending
+     * - Send automatically
+     * - Never send
+     */
+    var crashReportOption: CrashReportOption
 
     /** Enable or disable the translations prompt after a page that can be translated is loaded. */
     fun enableOrDisablePageLoadTranslationsPrompt(enableTranslationsPrompt: Boolean) {

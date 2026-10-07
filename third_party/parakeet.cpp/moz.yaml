@@ -41,3 +41,8 @@ vendoring:
     - parakeet-stream-words.patch # typed per-word drain (timing + confidence)
     - parakeet-no-exceptions.patch # include moz-overrides.h, to build with -fno-exceptions
     - parakeet-move-mel-batch.patch # move, don't copy, the mel buffer into the 1-item MelBatch
+    - parakeet-weights-bytes.patch # expose the weights' size, for about:memory
+    - parakeet-free-host-weights.patch # drop the host weights once uploaded
+    - parakeet-chunk-samples.patch # expose the encoder chunk length, to feed one at a time
+    - parakeet-end-utterance.patch # let the host close an utterance (models with no <EOU>)
+    - parakeet-eou-reset-encoder.patch # drop the encoder cache at an <EOU>, as NeMo does

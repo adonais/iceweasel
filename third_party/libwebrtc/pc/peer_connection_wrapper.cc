@@ -84,6 +84,13 @@ PeerConnection* PeerConnectionWrapper::GetInternalPeerConnection() {
   return static_cast<PeerConnection*>(pci->internal());
 }
 
+const PeerConnection* PeerConnectionWrapper::GetInternalPeerConnection() const {
+  const auto* pci = static_cast<
+      const PeerConnectionProxyWithInternal<PeerConnectionInterface>*>(
+      pc_.get());
+  return static_cast<const PeerConnection*>(pci->internal());
+}
+
 std::unique_ptr<SessionDescriptionInterface>
 PeerConnectionWrapper::CreateOffer() {
   return CreateOffer(RTCOfferAnswerOptions());

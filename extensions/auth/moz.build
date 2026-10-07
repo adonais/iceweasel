@@ -35,3 +35,8 @@ with Files("**"):
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
 
 include("/ipc/chromium/chromium-config.mozbuild")
+
+LICENSED_UNDER += ["openvision"]
+LICENSED_UNDER["openvision"].paths = [
+    "gssapi.h",
+]

@@ -17,7 +17,30 @@ import "chrome://global/content/elements/moz-button.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/monitor-icon.mjs";
 // eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/monitor-status-chip.mjs";
+// eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/ai-website-chip.mjs";
+import { monitorErrorL10nId } from "chrome://browser/content/aiwindow/components/monitor-error-copy.mjs";
+
+// What a finished check can say about the condition. A run that failed reports
+// neither met nor not-met: it never got to compare anything.
+const RESULT_STATES = Object.freeze({
+  MET: "met",
+  NOT_MET: "not-met",
+  COULD_NOT_CHECK: "could-not-check",
+});
+
+const RESULT_BADGE_L10N_IDS = Object.freeze({
+  [RESULT_STATES.MET]: "ai-tasks-alert-condition-met",
+  [RESULT_STATES.NOT_MET]: "ai-tasks-alert-condition-not-met",
+  [RESULT_STATES.COULD_NOT_CHECK]: "ai-tasks-alert-condition-could-not-check",
+});
+
+const LAST_RESULT_L10N_IDS = Object.freeze({
+  [RESULT_STATES.MET]: "ai-tasks-alert-last-result-met",
+  [RESULT_STATES.NOT_MET]: "ai-tasks-alert-last-result-not-met",
+  [RESULT_STATES.COULD_NOT_CHECK]: "ai-tasks-alert-last-result-could-not-check",
+});
 
 const SCHEDULE_TYPES = Object.freeze({
   DAILY: "daily",
@@ -118,8 +141,6 @@ const WEEKDAYS = [
  *                               // hostname for URLs
  *    faviconText?: string,      // 1-2 char fallback favicon glyph
  *    faviconColor?: string,     // fallback favicon background
- *    value?: string,            // current value, e.g. "$278"
- *    valueMeta?: string,        // e.g. "checked 2:14 PM · was $299"
  *    condition?: string,        // e.g. "the price drops below $270"
  *    conditionPresets?: string[],
  *    status?: { label: string, kind?: "watching"|"paused" },
@@ -144,6 +165,14 @@ const WEEKDAYS = [
  * @property {boolean} editing - Whether the editable condition field is shown
  * @property {boolean} showLastResult - Whether to show the last check result chip (defaults to false)
  * @property {number} maxWatchUrls - How many pages one monitor may watch
+ * @property {boolean} selfContained - Whether the card stands on its own
+ *  (defaults to true). A self-contained card draws its own frame and states its
+ *  own title. Hosts that already frame and title it - a panel with a header, say
+ *  - set this to false and get just the contents.
+ * @property {boolean} canResume - Whether a paused monitor may be resumed
+ *  (defaults to true). Hosts that cap how many monitors run at once set this to
+ *  false once the cap is reached, so Resume reads as unavailable rather than
+ *  failing after the user presses it. Pausing is never blocked.
  */
 export class AgentMonitorItem extends MozLitElement {
   static properties = {
@@ -154,13 +183,20 @@ export class AgentMonitorItem extends MozLitElement {
     editing: { type: Boolean, reflect: true },
     showLastResult: { type: Boolean },
     maxWatchUrls: { type: Number },
+    selfContained: {
+      type: Boolean,
+      reflect: true,
+      attribute: "self-contained",
+    },
+    canResume: { type: Boolean },
     checkFrequency: { type: String, state: true },
     scheduleTime: { type: String, state: true },
     scheduleWeekday: { type: Number, state: true },
     alertDescription: { type: String, state: true },
     pageUrls: { type: Array, state: true },
     pendingUrl: { type: String, state: true },
-    pendingUrlError: { type: String, state: true },
+    pendingUrlError: { type: Object, state: true },
+    fieldErrors: { type: Object, state: true },
   };
 
   constructor() {
@@ -172,13 +208,16 @@ export class AgentMonitorItem extends MozLitElement {
     this.editing = false;
     this.showLastResult = false;
     this.maxWatchUrls = DEFAULT_MAX_WATCH_URLS;
+    this.selfContained = true;
+    this.canResume = true;
     this.checkFrequency = SCHEDULE_TYPES.DAILY;
     this.scheduleTime = nextTimeOption();
     this.scheduleWeekday = 1;
     this.alertDescription = "";
     this.pageUrls = [];
     this.pendingUrl = "";
-    this.pendingUrlError = "";
+    this.pendingUrlError = null;
+    this.fieldErrors = { name: null, condition: null, pages: null };
     this.#draftName = null;
   }
 
@@ -215,7 +254,8 @@ export class AgentMonitorItem extends MozLitElement {
     this.pageUrls = seededUrls.filter(u => u?.trim().length);
     this.alertDescription = condition ?? "";
     this.pendingUrl = "";
-    this.pendingUrlError = "";
+    this.pendingUrlError = null;
+    this.fieldErrors = { name: null, condition: null, pages: null };
 
     // If the agent data includes an expanded state, apply it
     if (expanded !== undefined) {
@@ -335,14 +375,69 @@ export class AgentMonitorItem extends MozLitElement {
     return this.#draftName ?? this.agent?.monitorName ?? "";
   }
 
-  get #isFormValid() {
-    const hasDescription = this.alertDescription?.trim().length > 0;
-    const hasValidUrl = !!this.pageUrls.length;
-    return hasDescription && hasValidUrl && !this.pendingUrlError;
+  focusName() {
+    this.shadowRoot?.querySelector(".monitor-name-input")?.focus();
+  }
+
+  /**
+   * moz-select renders its own popover-based list as soon as any option has an
+   * icon, and a popover goes in the document's top layer - which is the wrong
+   * place when the host is a XUL panel, because the panel is its own widget. So
+   * a hosted card drops the option icons to keep the native <select>, whose
+   * dropdown the platform positions correctly over a panel.
+   *
+   * @param {string} icon
+   * @returns {string|nothing}
+   */
+  #optionIcon(icon) {
+    return this.selfContained ? icon : nothing;
+  }
+
+  // Fields the form checks on submit, in the order errors are surfaced and
+  // focused. Returns the keys that failed.
+  #validateForm() {
+    // A URL left in the input has to be committed before submit, so a valid one
+    // isn't silently dropped and an invalid one sets pendingUrlError.
+    if (this.pendingUrl.trim()) {
+      this.#addUrl();
+    }
+    const errors = { name: null, condition: null, pages: null };
+    if (this.mode === "create" && !this.#monitorName.trim()) {
+      errors.name = { id: "ai-tasks-alert-error-name-required" };
+    }
+    if (!this.alertDescription?.trim()) {
+      errors.condition = { id: "ai-tasks-alert-error-condition-required" };
+    }
+    if (!this.pageUrls.length) {
+      errors.pages = { id: "ai-tasks-alert-error-no-pages" };
+    }
+    this.fieldErrors = errors;
+    const invalid = ["name", "condition", "pages"].filter(key => errors[key]);
+
+    if (this.pendingUrlError && !invalid.includes("pages")) {
+      invalid.push("pages");
+    }
+    return invalid;
+  }
+
+  #clearFieldError(key) {
+    if (this.fieldErrors[key]) {
+      this.fieldErrors = { ...this.fieldErrors, [key]: null };
+    }
+  }
+
+  #focusField(key) {
+    const selector = {
+      name: ".monitor-name-input",
+      condition: ".monitor-condition-input",
+      pages: ".page-url-input",
+    }[key];
+    this.shadowRoot.querySelector(selector)?.focus();
   }
 
   #onNameInput(event) {
     this.#draftName = event.target.value;
+    this.#clearFieldError("name");
     // Typing coalesces, a change (blur) flushes right away
     this.#persistDraft({ debounce: event.type === "input" });
   }
@@ -373,69 +468,83 @@ export class AgentMonitorItem extends MozLitElement {
 
   #onConditionInput(event) {
     this.alertDescription = event.target.value;
+    this.#clearFieldError("condition");
     this.#persistDraft({ debounce: event.type === "input" });
   }
 
   #onPresetClick(preset) {
     this.alertDescription = preset;
+    this.#clearFieldError("condition");
     this.#persistDraft();
   }
 
-  // TODO: Bug 2054529 - share this URL validation with about:tools' create form
-  async #validateUrl(url) {
+  // Normalize a user-entered address to a watchable http(s) URL. A value with
+  // no scheme (e.g. "cnn.com") is watched over https so the user doesn't have
+  // to type it. Returns the normalized URL as entered.
+  #normalizeUrl(url) {
     const value = url.trim();
     if (!value) {
-      return { valid: true, error: "" };
+      return "";
     }
+    const candidate = value.includes("://") ? value : `https://${value}`;
     try {
-      const { protocol } = new URL(value);
-      if (protocol !== "http:" && protocol !== "https:") {
-        const error = await document.l10n.formatValue(
-          "ai-tasks-alert-error-http-only"
-        );
-        return { valid: false, error };
+      const { protocol, hostname } = new URL(candidate);
+      if ((protocol === "http:" || protocol === "https:") && hostname) {
+        return new URL(candidate).href;
       }
-      return { valid: true, error: "" };
+    } catch {}
+    return "";
+  }
+
+  // Whether two watch URLs point at the same page, comparing canonical forms so
+  // "cnn.com", "CNN.com" and "https://cnn.com/" count as one.
+  #isSameUrl(a, b) {
+    try {
+      return new URL(a).href === new URL(b).href;
     } catch {
-      const error = await document.l10n.formatValue(
-        "ai-tasks-alert-error-invalid-url"
-      );
-      return { valid: false, error };
+      return a === b;
     }
   }
 
-  async #validatePendingUrl() {
-    this.pendingUrlError = this.pendingUrl.trim()
-      ? (await this.#validateUrl(this.pendingUrl)).error
-      : "";
+  // Returns the { id } Fluent error descriptor and the url to store.
+  #validateAndNormalizeURL(url) {
+    const normalized = this.#normalizeUrl(url);
+    if (!normalized) {
+      return {
+        valid: false,
+        error: { id: "ai-tasks-alert-error-invalid-url" },
+        normalized: "",
+      };
+    }
+    return { valid: true, error: null, normalized };
   }
 
-  async #addUrl() {
-    const url = this.pendingUrl.trim();
-    if (!url) {
+  #addUrl() {
+    if (!this.pendingUrl.trim()) {
       return;
     }
-    const { valid, error } = await this.#validateUrl(url);
+    const { valid, error, normalized } = this.#validateAndNormalizeURL(
+      this.pendingUrl
+    );
     if (!valid) {
       this.pendingUrlError = error;
       return;
     }
-    if (this.pageUrls.includes(url)) {
-      this.pendingUrlError = await document.l10n.formatValue(
-        "ai-tasks-alert-error-duplicate-url"
-      );
+    if (this.pageUrls.some(existing => this.#isSameUrl(existing, normalized))) {
+      this.pendingUrlError = { id: "ai-tasks-alert-error-duplicate-url" };
       return;
     }
     if (this.pageUrls.length >= this.maxWatchUrls) {
-      this.pendingUrlError = await document.l10n.formatValue(
-        "ai-tasks-alert-error-max-urls",
-        { maxUrls: this.maxWatchUrls }
-      );
+      this.pendingUrlError = {
+        id: "ai-tasks-alert-error-max-urls",
+        args: { maxUrls: this.maxWatchUrls },
+      };
       return;
     }
-    this.pageUrls = [...this.pageUrls, url];
+    this.pageUrls = [...this.pageUrls, normalized];
     this.pendingUrl = "";
-    this.pendingUrlError = "";
+    this.pendingUrlError = null;
+    this.#clearFieldError("pages");
     this.#persistDraft();
   }
 
@@ -454,7 +563,9 @@ export class AgentMonitorItem extends MozLitElement {
 
   #onPendingUrlInput(event) {
     this.pendingUrl = event.target.value;
-    this.#validatePendingUrl();
+    if (this.pendingUrlError) {
+      this.pendingUrlError = null;
+    }
     this.#persistDraft({ debounce: true });
   }
 
@@ -473,8 +584,11 @@ export class AgentMonitorItem extends MozLitElement {
     this.#dispatch("agent-monitor-item:cancel", {});
   }
 
-  #onSubmit() {
-    if (!this.#isFormValid) {
+  async #onSubmit() {
+    const invalidFields = this.#validateForm();
+    if (invalidFields.length) {
+      await this.updateComplete;
+      this.#focusField(invalidFields[0]);
       return;
     }
     // The host drops the draft as it commits the form, so make sure a coalesced
@@ -502,40 +616,38 @@ export class AgentMonitorItem extends MozLitElement {
   }
 
   #renderStatusChip() {
-    const statusInfo = this.agent?.status;
-    if (!statusInfo?.kind) {
-      return nothing;
-    }
-    const l10nId =
-      statusInfo.kind === "watching"
-        ? "ai-tasks-alert-status-watching"
-        : "ai-tasks-alert-status-paused";
-
-    return html`
-      <span
-        class="status-chip ${statusInfo.kind}"
-        data-kind=${statusInfo.kind}
-        data-l10n-id=${l10nId}
-      >
-      </span>
-    `;
+    return html`<monitor-status-chip
+      kind=${this.agent?.status?.kind ?? nothing}
+    ></monitor-status-chip>`;
   }
 
   #renderLastCheckedCondition() {
-    // Get the most recent history item (first in array) to show its condition status
-    const historyItems = this.agent?.history ?? [];
-    const mostRecentItem = historyItems.length ? historyItems[0] : null;
+    // Get the most recent history item (first in array) to show its condition
+    // status. It goes through the same transform as the history rows so a
+    // failed run reads the same status in both places.
+    const [mostRecentItem] = this.agent?.history ?? [];
+    const normalizedItem = mostRecentItem
+      ? this.#transformHistoryItem(mostRecentItem)
+      : null;
 
-    return html`
-      ${mostRecentItem && mostRecentItem.conditionMet !== undefined
-        ? html`<span
-            class="status-chip"
-            data-l10n-id=${mostRecentItem.conditionMet
-              ? "ai-tasks-alert-last-result-met"
-              : "ai-tasks-alert-last-result-not-met"}
-          ></span>`
-        : nothing}
-    `;
+    if (!normalizedItem) {
+      return nothing;
+    }
+
+    return html`<span
+      class="last-result ${mostRecentItem.conditionMet ? "match" : "not-match"}"
+      data-l10n-id=${LAST_RESULT_L10N_IDS[normalizedItem.resultState]}
+    ></span>`;
+  }
+
+  #renderFieldError(error) {
+    return error
+      ? html`<div
+          class="error-message"
+          data-l10n-id=${error.id}
+          data-l10n-args=${error.args ? JSON.stringify(error.args) : nothing}
+        ></div>`
+      : nothing;
   }
 
   #renderConditionField() {
@@ -546,10 +658,13 @@ export class AgentMonitorItem extends MozLitElement {
           class="monitor-condition-input"
           data-l10n-id="ai-tasks-alert-alert"
           data-l10n-attrs="placeholder,label,description"
+          required
+          ?invalid=${!!this.fieldErrors.condition}
           .value=${this.alertDescription}
           @input=${this.#onConditionInput}
           @change=${this.#onConditionInput}
         ></moz-textarea>
+        ${this.#renderFieldError(this.fieldErrors.condition)}
         ${presets.length
           ? html`<div class="chip-row">
               ${presets.map(
@@ -574,9 +689,9 @@ export class AgentMonitorItem extends MozLitElement {
         <div class="pages-container">
           <div class="page-input-row">
             <moz-input-url
-              class="form-input page-url-input ${this.pendingUrlError
-                ? "error"
-                : ""}"
+              class="form-input page-url-input"
+              required
+              ?invalid=${!!this.pendingUrlError || !!this.fieldErrors.pages}
               data-l10n-id="ai-tasks-alert-pages"
               data-l10n-attrs="placeholder,label"
               data-l10n-args=${JSON.stringify({
@@ -585,7 +700,6 @@ export class AgentMonitorItem extends MozLitElement {
               .value=${this.pendingUrl}
               @input=${this.#onPendingUrlInput}
               @keydown=${this.#onPendingUrlKeydown}
-              @blur=${() => this.#validatePendingUrl()}
             ></moz-input-url>
             <moz-button
               size="small"
@@ -597,9 +711,9 @@ export class AgentMonitorItem extends MozLitElement {
               @click=${() => this.#addUrl()}
             ></moz-button>
           </div>
-          ${this.pendingUrlError
-            ? html`<div class="error-message">${this.pendingUrlError}</div>`
-            : nothing}
+          ${this.#renderFieldError(
+            this.pendingUrlError ?? this.fieldErrors.pages
+          )}
           ${this.pageUrls.length
             ? html`<div class="page-pills-row">
                 ${this.pageUrls.map(
@@ -643,13 +757,15 @@ export class AgentMonitorItem extends MozLitElement {
         hour12: true,
       });
 
-    // Handle error status
+    // A failed run has no comparison to report, so the badge says so and the
+    // note explains the failure. resultExplanation holds the raw error message
+    // for a failed run, so it is deliberately not shown to the user.
     if (item.status === "error") {
       return {
         when: displayTime,
-        conditionMet: undefined,
-        note: item.resultExplanation || "",
-        noteL10nId: "smartwindow-agent-monitor-history-check-failed",
+        resultState: RESULT_STATES.COULD_NOT_CHECK,
+        note: "",
+        noteL10nId: monitorErrorL10nId(item.errorCode),
         status: item.status,
         low: true,
       };
@@ -659,7 +775,7 @@ export class AgentMonitorItem extends MozLitElement {
     if (item.conditionMet) {
       return {
         when: displayTime,
-        conditionMet: true,
+        resultState: RESULT_STATES.MET,
         note: item.resultExplanation || "",
         status: item.status,
         low: false,
@@ -669,7 +785,7 @@ export class AgentMonitorItem extends MozLitElement {
     // Handle condition not met
     return {
       when: displayTime,
-      conditionMet: false,
+      resultState: RESULT_STATES.NOT_MET,
       note: item.resultExplanation || "",
       noteL10nId: item.resultExplanation
         ? null
@@ -701,16 +817,10 @@ export class AgentMonitorItem extends MozLitElement {
 
           return html`<div class="history-item">
             <span class="when">${normalizedItem.when}</span>
-            ${normalizedItem.conditionMet !== undefined
-              ? html`<span
-                  class="condition-badge ${normalizedItem.conditionMet
-                    ? "met"
-                    : "not-met"}"
-                  data-l10n-id=${normalizedItem.conditionMet
-                    ? "ai-tasks-alert-condition-met"
-                    : "ai-tasks-alert-condition-not-met"}
-                ></span>`
-              : html`<span>-</span>`}
+            <span
+              class="condition-badge ${normalizedItem.resultState}"
+              data-l10n-id=${RESULT_BADGE_L10N_IDS[normalizedItem.resultState]}
+            ></span>
             ${(() => {
               if (normalizedItem.noteL10nId) {
                 return html`<span
@@ -799,6 +909,7 @@ export class AgentMonitorItem extends MozLitElement {
         class="form-label"
         data-l10n-id="ai-tasks-alert-time-label"
       ></label>
+
       <moz-select
         class="form-select"
         .value=${this.scheduleTime}
@@ -809,7 +920,7 @@ export class AgentMonitorItem extends MozLitElement {
             html`<moz-option
               value=${opt.value}
               label=${opt.label}
-              iconsrc=${TIME_ICON}
+              iconsrc=${this.#optionIcon(TIME_ICON)}
             ></moz-option>`
         )}
       </moz-select>
@@ -833,12 +944,12 @@ export class AgentMonitorItem extends MozLitElement {
               <moz-option
                 value=${SCHEDULE_TYPES.DAILY}
                 data-l10n-id="ai-tasks-alert-schedule-daily"
-                iconsrc=${SCHEDULE_ICON}
+                iconsrc=${this.#optionIcon(SCHEDULE_ICON)}
               ></moz-option>
               <moz-option
                 value=${SCHEDULE_TYPES.WEEKLY}
                 data-l10n-id="ai-tasks-alert-schedule-weekly"
-                iconsrc=${SCHEDULE_ICON}
+                iconsrc=${this.#optionIcon(SCHEDULE_ICON)}
               ></moz-option>
             </moz-select>
           </div>
@@ -858,7 +969,7 @@ export class AgentMonitorItem extends MozLitElement {
                       html`<moz-option
                         value=${day.value}
                         data-l10n-id=${day.ftlId}
-                        iconsrc=${SCHEDULE_ICON}
+                        iconsrc=${this.#optionIcon(SCHEDULE_ICON)}
                       ></moz-option>`
                   )}
                 </moz-select>
@@ -871,38 +982,39 @@ export class AgentMonitorItem extends MozLitElement {
   }
 
   #renderCreate() {
-    const agent = this.agent ?? {};
     return html`
       <div class="monitor-card">
-        <div class="title-container">
-          <monitor-icon size="small"></monitor-icon>
-          <h2
-            class="monitor-card-state-title"
-            data-l10n-id="ai-tasks-alert-modal-title"
-          ></h2>
-        </div>
+        ${this.selfContained
+          ? html`<div class="title-container">
+              <monitor-icon size="small"></monitor-icon>
+              <h2
+                class="monitor-card-state-title"
+                data-l10n-id="ai-tasks-alert-modal-title"
+              ></h2>
+            </div>`
+          : nothing}
         <div class="monitor-card-head">
           <div class="monitor-name-field">
             <moz-input-text
               class="monitor-name-input"
               data-l10n-id="ai-tasks-alert-name"
               data-l10n-attrs="label"
+              required
+              ?invalid=${!!this.fieldErrors.name}
               .value=${this.#monitorName}
               @input=${this.#onNameInput}
               @change=${this.#onNameInput}
             ></moz-input-text>
+            ${this.#renderFieldError(this.fieldErrors.name)}
           </div>
         </div>
-        ${agent.value
-          ? html`<div class="monitor-value">
-              <span class="now">${agent.value}</span>
-              ${agent.valueMeta
-                ? html`<span class="from">${agent.valueMeta}</span>`
-                : nothing}
-            </div>`
-          : nothing}
         ${this.#renderConditionField()} ${this.#renderPagesField()}
         ${this.#renderScheduler()}
+
+        <p
+          class="required-note"
+          data-l10n-id="ai-tasks-alert-required-note"
+        ></p>
 
         <div class="monitor-card-actions">
           <span class="spacer"></span>
@@ -917,7 +1029,6 @@ export class AgentMonitorItem extends MozLitElement {
             type="primary"
             data-l10n-id="ai-tasks-alert-create-button"
             data-l10n-attrs="label"
-            ?disabled=${!this.#isFormValid}
             @click=${this.#onSubmit}
           ></moz-button>
         </div>
@@ -959,14 +1070,6 @@ export class AgentMonitorItem extends MozLitElement {
     const agent = this.agent ?? {};
     return html`
       <div class="watch-expand" @click=${e => e.stopPropagation()}>
-        ${agent.value
-          ? html`<div class="monitor-value">
-              <span class="now">${agent.value}</span>
-              ${agent.valueMeta
-                ? html`<span class="from">${agent.valueMeta}</span>`
-                : nothing}
-            </div>`
-          : nothing}
         ${this.editing
           ? html`${this.#renderConditionField()} ${this.#renderPagesField()}
             ${this.#renderScheduler()}`
@@ -1012,7 +1115,10 @@ export class AgentMonitorItem extends MozLitElement {
                   data-l10n-attrs="label"
                 ></moz-button>
                 <moz-button
+                  id="pause-button"
                   type="default"
+                  ?disabled=${agent.status?.kind === "paused" &&
+                  !this.canResume}
                   @click=${() => {
                     const isPaused = agent.status?.kind === "paused";
                     this.#dispatch("agent-monitor-item:pause", {

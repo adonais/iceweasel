@@ -5,7 +5,7 @@
 #include "mozilla/dom/DigitalCredentialHandler.h"
 
 #include "mozilla/dom/DigitalCredentialChild.h"
-#include "mozilla/dom/FeaturePolicyUtils.h"
+#include "mozilla/dom/PermissionsPolicyUtils.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "nsCycleCollectionParticipant.h"
 

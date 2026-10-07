@@ -23,62 +23,49 @@ using namespace mozilla;
 
 namespace geckoprofiler::markers {
 
-struct CSSAnimationMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("CSSAnimation");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   const nsCString& aName,
-                                   const nsCString& aTarget,
-                                   const nsCString& aProperties,
-                                   const nsCString& aOnCompositor) {
-    aWriter.StringProperty("Name", aName);
-    aWriter.StringProperty("Target", aTarget);
-    aWriter.StringProperty("properties", aProperties);
-    aWriter.StringProperty("oncompositor", aOnCompositor);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyFormat("Name", MS::Format::String);
-    schema.AddKeyLabelFormat("properties", "Animated Properties",
-                             MS::Format::String);
-    schema.AddKeyLabelFormat("oncompositor", "Can Run on Compositor",
-                             MS::Format::String);
-    schema.AddKeyFormat("Target", MS::Format::String);
-    schema.SetChartLabel("{marker.data.Name}");
-    schema.SetTableLabel("{marker.data.Name}: {marker.data.properties}");
-    return schema;
-  }
+struct CSSAnimationMarker : public BaseMarkerType<CSSAnimationMarker> {
+  static constexpr const char* Name = "CSSAnimation";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"Name", MS::InputType::CString},
+      {"Target", MS::InputType::CString},
+      {"properties", MS::InputType::CString, "Animated Properties"},
+      {"oncompositor", MS::InputType::CString, "Can Run on Compositor"},
+  };
+  static constexpr const char* ChartLabel = "{marker.data.Name}";
+  static constexpr const char* TableLabel =
+      "{marker.data.Name}: {marker.data.properties}";
+  // The name tells an animation apart from one of its iterations.
+  static constexpr bool ETWStoreName = true;
 };
 
-struct CSSTransitionMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("CSSTransition");
-  }
+struct CSSTransitionMarker : public BaseMarkerType<CSSTransitionMarker> {
+  static constexpr const char* Name = "CSSTransition";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"Target", MS::InputType::CString},
+      {"property", MS::InputType::CString, "Animated Property"},
+      {"oncompositor", MS::InputType::Boolean, "Can Run on Compositor"},
+      {"Canceled", MS::InputType::Boolean},
+  };
+  static constexpr const char* ChartLabel = "{marker.data.property}";
+  static constexpr const char* TableLabel = "{marker.data.property}";
   static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   const nsCString& aTarget,
-                                   const nsCString& aProperty,
+                                   const ProfilerString8View& aTarget,
+                                   const ProfilerString8View& aProperty,
                                    bool aOnCompositor, bool aCanceled) {
-    aWriter.StringProperty("Target", aTarget);
-    aWriter.StringProperty("property", aProperty);
-    aWriter.BoolProperty("oncompositor", aOnCompositor);
+    StreamJSONMarkerDataImpl(aWriter, aTarget, aProperty, aOnCompositor);
     if (aCanceled) {
       aWriter.BoolProperty("Canceled", aCanceled);
     }
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormat("property", "Animated Property",
-                             MS::Format::String);
-    schema.AddKeyLabelFormat("oncompositor", "Can Run on Compositor",
-                             MS::Format::String);
-    schema.AddKeyFormat("Canceled", MS::Format::String);
-    schema.AddKeyFormat("Target", MS::Format::String);
-    schema.SetChartLabel("{marker.data.property}");
-    schema.SetTableLabel("{marker.data.property}");
-    return schema;
   }
 };
 

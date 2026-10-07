@@ -38,7 +38,7 @@ async function checkTiltXTiltY() {
       is(e.tiltY, 0, "check tiltY");
       is(e.altitudeAngle, Math.PI/4, "check computed altitudeAngle");
       is(e.azimuthAngle, 0, "check computed azimuthAngle");
-      resolve(e);
+      target.addEventListener("pointerup", resolve, { once: true });
     }, { once: true });
   });
   synthesizeTouchAtCenter(target, { tiltX: 45, tiltY: 0 });
@@ -53,7 +53,7 @@ async function checkAltitudeAzimuth() {
       is(e.azimuthAngle, 6, "check azimuthAngle");
       is(e.tiltX, 20, "check computed tiltX");
       is(e.tiltY, -6, "check computed tiltY");
-      resolve(e);
+      target.addEventListener("pointerup", resolve, { once: true });
     }, { once: true });
   });
   synthesizeTouchAtCenter(target, { altitudeAngle: 1.2, azimuthAngle: 6 });

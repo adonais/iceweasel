@@ -458,9 +458,6 @@ async function cleanupPlaces() {
  * @param {boolean} [options.isSponsored]
  *   Whether the result is sponsored. Relevant to results from
  *   UrlbarProviderTopSites.
- * @param {boolean} [options.sendAttributionRequest]
- *   The result's sendAttributionRequest. Relevant to results from
- *   UrlbarProviderTopSites.
  * @param {string} [options.providerName]
  *   The name of the provider offering this result. The test suite will not
  *   check which provider offered a result unless this option is specified.
@@ -479,7 +476,6 @@ function makeBookmarkResult(
     lastVisit = undefined,
     isPinned = undefined,
     isSponsored = undefined,
-    sendAttributionRequest = undefined,
     providerName = undefined,
   }
 ) {
@@ -513,9 +509,6 @@ function makeBookmarkResult(
   }
   if (isSponsored !== undefined) {
     payload.isSponsored = isSponsored;
-  }
-  if (sendAttributionRequest !== undefined) {
-    payload.sendAttributionRequest = sendAttributionRequest;
   }
 
   return new UrlbarResult({
@@ -936,9 +929,6 @@ function makeSearchResult(
  * @param {boolean} [options.isSponsored]
  *   Whether the result is sponsored. Relevant to results from
  *   UrlbarProviderTopSites.
- * @param {boolean} [options.sendAttributionRequest]
- *   The result's sendAttributionRequest. Relevant to results from
- *   UrlbarProviderTopSites.
  * @returns {UrlbarResult}
  */
 function makeVisitResult(
@@ -956,7 +946,6 @@ function makeVisitResult(
     lastVisit = undefined,
     isPinned = undefined,
     isSponsored = undefined,
-    sendAttributionRequest = undefined,
   }
 ) {
   let payload = {
@@ -977,9 +966,6 @@ function makeVisitResult(
   }
   if (isSponsored !== undefined) {
     payload.isSponsored = isSponsored;
-  }
-  if (sendAttributionRequest !== undefined) {
-    payload.sendAttributionRequest = sendAttributionRequest;
   }
 
   if (
@@ -1097,10 +1083,9 @@ function makeGlobalActionsResult({
  * @param {string} [options.completed]
  *   The value that would be filled if the autofill result was confirmed.
  *   Has no effect if `autofilled` is not specified.
- * @param {object} [options.conditionalPayloadProperties]
- *   An object mapping payload property names to objects
- *   { optional, ignore, custom }.
- *   See the code below.
+ * @param {object} [options.payloadRules]
+ *   An object mapping payload keys to validation rules. Each rule is an object
+ *   `{ optional, ignore, validate }`. See the code below.
  * @param {Array} options.matches
  *   An array of UrlbarResults.
  */
@@ -1110,7 +1095,7 @@ async function check_results({
   autofilled,
   completed,
   matches = [],
-  conditionalPayloadProperties = {},
+  payloadRules = {},
 } = {}) {
   if (!context) {
     return;
@@ -1198,7 +1183,7 @@ async function check_results({
   // expected date is zero, the actual date is asserted to be falsey.
   let optionalDateValidator = {
     optional: true,
-    custom(resultIndex, actualResult, payloadKey) {
+    validate(resultIndex, actualResult, payloadKey) {
       if (matches[resultIndex].payload[payloadKey] === 0) {
         Assert.ok(
           !actualResult.payload[payloadKey],
@@ -1210,23 +1195,29 @@ async function check_results({
     },
   };
 
-  // Payload properties to conditionally check. Properties not specified here
-  // will always be checked. For each entry in this object, the key is the
-  // payload property name and the value is a validator object that can have the
-  // following keys, each optional:
+  // Payload validation rules. Payload properties not specified here will be
+  // validated in a default manner. For each entry in this object, the key is
+  // the payload key and the value is a validation rule, which is an object that
+  // can have the following optional keys:
   //
-  // {Function} custom
-  //   A function called to validate the payload property. It will be called
-  //   like: `custom(resultIndex, actualResult, payloadKey)`
-  //   It will be called before any other validation is performed for the given
-  //   payload property. It should return true if validation should stop or
-  //   false if it should continue as usual.
+  // {Function} validate
+  //   A validation function. It will be called before any other validation is
+  //   performed for the given payload property, like this:
+  //
+  //   ```
+  //   validate(resultIndex, actualResult, payloadKey)
+  //   ```
+  //
+  //   It should return true if the function handled the validation, and in that
+  //   case no other validation will be performed for the property. Otherwise it
+  //   should return false, and in that case validation will continue as usual
+  //   for the property.
   // {boolean} ignore
   //   Whether the payload property should always be ignored.
   // {boolean} optional
   //   When true, the payload property will be ignored if it's not in the
   //   payload of the expected result.
-  conditionalPayloadProperties = {
+  payloadRules = {
     bookmarkDateMs: optionalDateValidator,
     frecency: { optional: true },
     lastVisit: optionalDateValidator,
@@ -1238,7 +1229,18 @@ async function check_results({
     // Set by the providers manager on dynamic results, not by their provider.
     viewTemplate: { optional: true },
     viewUpdate: { optional: true },
-    ...conditionalPayloadProperties,
+    icon: {
+      validate(resultIndex, actualResult, _payloadKey) {
+        let actualIcon = actualResult.payload.icon;
+        let expectedIcon = matches[resultIndex].payload.icon;
+        if (!actualIcon || !expectedIcon) {
+          return false;
+        }
+        UrlbarTestUtils.checkImageUrl(actualIcon, expectedIcon);
+        return true;
+      },
+    },
+    ...payloadRules,
   };
 
   for (let i = 0; i < matches.length; i++) {
@@ -1296,16 +1298,16 @@ async function check_results({
       let actualKeys = new Set(Object.keys(actual.payload));
 
       for (let key of actualKeys.union(expectedKeys)) {
-        let condition = conditionalPayloadProperties[key];
+        let rule = payloadRules[key];
 
-        if (condition?.custom?.(i, actual, key)) {
-          // The custom assertion consumed this assertion.
+        if (rule?.validate?.(i, actual, key)) {
+          // The function consumed this validation.
           continue;
         }
 
         if (
-          condition?.ignore ||
-          (condition?.optional && !expected.payload.hasOwnProperty(key))
+          rule?.ignore ||
+          (rule?.optional && !expected.payload.hasOwnProperty(key))
         ) {
           continue;
         }

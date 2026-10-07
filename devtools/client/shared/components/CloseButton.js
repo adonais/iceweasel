@@ -26,7 +26,8 @@ function CloseButton({ handleClick, buttonClass, tooltip }) {
 CloseButton.propTypes = {
   buttonClass: PropTypes.string,
   handleClick: PropTypes.func.isRequired,
-  tooltip: PropTypes.string,
+  // The button has no text, so the tooltip is its only accessible name.
+  tooltip: PropTypes.string.isRequired,
 };
 
 module.exports = CloseButton;

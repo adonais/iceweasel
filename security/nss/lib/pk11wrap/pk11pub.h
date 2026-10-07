@@ -9,6 +9,7 @@
 #include "secdert.h"
 #include "keythi.h"
 #include "certt.h"
+#include "blapit.h"
 #include "pk11hpke.h"
 #include "pkcs11t.h"
 #include "secmodt.h"

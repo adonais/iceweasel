@@ -842,6 +842,9 @@ class BuildReader:
             "testing/mozbase/moztest/tests/data",
             # Ignore object directories.
             "obj*",
+            # Ignore scratch directories that can hold whole checkouts.
+            "artifacts",
+            ".claude/worktrees",
         }
 
         # Also ignore any other directories that could be objdirs, but don't

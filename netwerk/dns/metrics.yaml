@@ -87,6 +87,53 @@ dns:
       - necko@mozilla.com
     expires: never
 
+  cache_miss_reason:
+    type: dual_labeled_counter
+    description: >
+      Why a DNS lookup missed the in-memory cache and had to hit the network,
+      keyed by record family. Categories: absent (no entry), expired (entry
+      existed but its TTL had lapsed), refresh (entry still valid but bypassed,
+      e.g. a cache-bypass/refresh flag).
+    dual_labels:
+      key:
+        description: "Record family: ipv4, ipv6, unspec, https, txt, or other."
+      category:
+        labels:
+          - absent
+          - expired
+          - refresh
+        description: Cache miss reason.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072119
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072119
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
+  negative_eviction:
+    type: dual_labeled_counter
+    description: >
+      Negative (empty/NODATA or failed) DNS records evicted from the cache on
+      reaching network.dnsCacheEntries, keyed by record family. The category is
+      whether the record was still within its lifetime (premature) or had already
+      expired when evicted.
+    dual_labels:
+      key:
+        description: "Record family: ipv4, ipv6, unspec, https, txt, or other."
+      category:
+        labels:
+          - premature
+          - expired
+        description: Whether the evicted negative record was still valid.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072119
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072119
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
   trr_lookup_time:
     type: labeled_timing_distribution
     description: >

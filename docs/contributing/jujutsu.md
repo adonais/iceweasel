@@ -162,7 +162,7 @@ onto autoland or beta or other bookmarks if you want.
 ### Dropping/pruning/removing obsolete commits
 
 (Note: you may want to look at the [previous
-tip](<#rebasing-work-in-progress-(and-automatically-drop-changes-that-have-landed)>)!)
+tip](#rebasing-work-in-progress-and-automatically-drop-changes-that-have-landed)!)
 
 You can use any of:
 

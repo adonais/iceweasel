@@ -1,7 +1,7 @@
 [DEFAULT]
 head = ""
-skip-if = [
-  "os == 'android'",
+run-if = [
+  "os != 'android'", # the Android crash reporter needs the embedding app's crash handler
 ]
 support-files = [
   "!/toolkit/crashreporter/test/unit/crasher_subprocess_head.js",

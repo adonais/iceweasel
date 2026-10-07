@@ -8,6 +8,7 @@
 #include "MediaMetadata.h"
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtils.h"
+#include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/BindingIPCUtils.h"
 #include "mozilla/dom/DOMTypes.h"

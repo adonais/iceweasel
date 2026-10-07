@@ -14,6 +14,9 @@ class RemoteProcessMonitor:
     dump its log file, and wait for it to end.
     """
 
+    # Placeholder for last_test_seen until the first test_start arrives.
+    NO_TEST = "RemoteProcessMonitor"
+
     def __init__(
         self,
         app_name,
@@ -32,7 +35,8 @@ class RemoteProcessMonitor:
         self.counts["pass"] = 0
         self.counts["fail"] = 0
         self.counts["todo"] = 0
-        self.last_test_seen = "RemoteProcessMonitor"
+        self.last_test_seen = self.NO_TEST
+        self.suite_finished = False
         self.message_logger = message_logger
         if self.device.is_file(self.remote_log_file):
             self.device.rm(self.remote_log_file)
@@ -82,6 +86,36 @@ class RemoteProcessMonitor:
             return 0
         return pids[0]
 
+    @property
+    def test_in_flight(self):
+        """
+        The test to attribute a crash or abort to, or None if none ever started.
+        """
+        return None if self.last_test_seen == self.NO_TEST else self.last_test_seen
+
+    def log_test_end(self, status, message):
+        """
+        Report a harness-level abort as a structured result for the test that was
+        running, so consumers that only look at test results see it attributed to
+        that test; the matching log line carries no test or status. Does nothing
+        when no test is in flight, since last_test_seen then holds a sentinel
+        rather than a test.
+        """
+        if not getattr(self.message_logger, "is_test_running", False):
+            return False
+        self.message_logger.process_message({
+            "action": "test_end",
+            "status": status,
+            "expected": "PASS",
+            "thread": None,
+            "pid": None,
+            "source": "mozdevice",
+            "time": int(time.time() * 1000),
+            "test": self.last_test_seen,
+            "message": message,
+        })
+        return True
+
     def read_stdout(self):
         """
         Fetch the full remote log file, log any new content and return True if new
@@ -94,7 +128,9 @@ class RemoteProcessMonitor:
         except ADBTimeoutError:
             raise
         except Exception as e:
-            self.log.error(f"{self.last_test_seen} | exception reading log: {str(e)}")
+            message = f"exception reading log: {str(e)}"
+            self.log.error(f"{self.last_test_seen} | {message}")
+            self.log_test_end("ERROR", message)
             return False
         if not new_log_content:
             return False
@@ -130,12 +166,10 @@ class RemoteProcessMonitor:
 
             for message in parsed_messages:
                 if isinstance(message, dict):
-                    if message.get("action") == "test_start":
+                    if message.get("action") in ("test_start", "test_end"):
                         self.last_test_seen = message["test"]
-                    elif message.get("action") == "test_end":
-                        self.last_test_seen = "{} (finished)".format(message["test"])
                     elif message.get("action") == "suite_end":
-                        self.last_test_seen = "Last test finished"
+                        self.suite_finished = True
                     elif message.get("action") == "log":
                         stripped_message = message["message"].strip()
                         m = re.match(r".*:\s*(\d*)", stripped_message)
@@ -144,7 +178,7 @@ class RemoteProcessMonitor:
                                 val = int(m.group(1))
                                 if "Passed:" in stripped_message:
                                     self.counts["pass"] += val
-                                    self.last_test_seen = "Last test finished"
+                                    self.suite_finished = True
                                 elif "Failed:" in stripped_message:
                                     self.counts["fail"] += val
                                 elif "Todo:" in stripped_message:
@@ -211,10 +245,14 @@ class RemoteProcessMonitor:
                             )
                             break
                         else:
+                            message = (
+                                "application failed to get top activity and stdout"
+                            )
                             self.log.error(
                                 f"TEST-UNEXPECTED-FAIL | {self.last_test_seen} | "
-                                f"application failed to get top activity and stdout"
+                                f"{message}"
                             )
+                            self.log_test_end("ERROR", message)
                             return 0
 
         # Flush anything added to stdout during the sleep
@@ -224,17 +262,20 @@ class RemoteProcessMonitor:
             self.log.info("%s unexpectedly found running. Killing..." % self.app_name)
             self.kill()
         if not status:
-            self.log.error(
-                "TEST-UNEXPECTED-FAIL | %s | "
-                "application timed out after %d seconds with no output"
-                % (self.last_test_seen, int(timeout))
+            message = "application timed out after %d seconds with no output" % int(
+                timeout
             )
+            self.log.error(
+                "TEST-UNEXPECTED-FAIL | %s | %s" % (self.last_test_seen, message)
+            )
+            self.log_test_end("TIMEOUT", message)
             return status
-        if self.last_test_seen != "Last test finished":
+        if not self.suite_finished:
+            message = "incomplete after application is no longer top"
             self.log.error(
-                "TEST-UNEXPECTED-FAIL | %s | incomplete after application is no longer top"
-                % self.last_test_seen
+                "TEST-UNEXPECTED-FAIL | %s | %s" % (self.last_test_seen, message)
             )
+            self.log_test_end("ERROR", message)
             return False
         return True
 

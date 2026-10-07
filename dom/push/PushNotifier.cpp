@@ -8,6 +8,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/dom/BodyUtil.h"
+#include "mozilla/dom/Declarative.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
@@ -35,6 +36,13 @@ PushNotifier::NotifyPushWithData(const nsACString& aScope,
                                  const nsAString& aMessageId,
                                  const nsTArray<uint8_t>& aData) {
   NS_ENSURE_ARG(aPrincipal);
+  // Check for Declarative Web Push
+  if (StaticPrefs::dom_push_declarative_enabled() &&
+      ParseDeclarativePushAndShowNotification(Span(aData), aPrincipal,
+                                              aScope)) {
+    return NS_OK;
+  }
+
   // We still need to do this copying business, if we want the copy to be
   // fallible.  Just passing Some(aData) would do an infallible copy at the
   // point where the Some() call happens.

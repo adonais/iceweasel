@@ -11,7 +11,13 @@
 }
 
 .threads-list > .thread {
-  font-size: inherit;
+  appearance: none;
+  background: none;
+  border: none;
+  margin: 0;
+  width: 100%;
+  text-align: start;
+  font: inherit;
   color: var(--theme-text-color-strong);
   padding: 2px 6px;
   padding-inline-start: 20px;
@@ -26,7 +32,7 @@
     background-color: var(--search-overlays-semitransparent);
   }
 
-  &.selected {
+  &[aria-pressed="true"] {
     background: var(--theme-selection-background);
     color: var(--theme-selection-color);
 
@@ -35,7 +41,7 @@
     }
   }
 
-  &.paused:not(.selected) {
+  &.paused:not([aria-pressed="true"]) {
     background-color: var(--paused-background-color);
     color: var(--paused-color);
   }

@@ -795,6 +795,71 @@ add_task(async function test_is_dek_extractable_missing_rejected() {
   );
 });
 
+add_task(async function test_dek_exists_round_trip() {
+  const ls = getService();
+  Assert.ok(
+    !(await ls.dekExists("exists-rt")),
+    "dekExists resolves false before the DEK is created"
+  );
+
+  await ls.createDek("exists-rt", KEK_LOCAL, false, 32);
+  Assert.ok(
+    await ls.dekExists("exists-rt"),
+    "dekExists resolves true once the DEK is created"
+  );
+
+  await ls.deleteDek("exists-rt");
+  Assert.ok(
+    !(await ls.dekExists("exists-rt")),
+    "dekExists resolves false again after the DEK is deleted"
+  );
+});
+
+add_task(async function test_dek_exists_missing_resolves_false() {
+  const ls = getService();
+  // Unlike isDekExtractable / getDek, a missing DEK is not an error here:
+  // callers use this to decide whether creating one is safe.
+  Assert.ok(
+    !(await ls.dekExists("never-existed-dekName")),
+    "dekExists on a missing dekName resolves false rather than rejecting"
+  );
+});
+
+add_task(async function test_dek_exists_with_locked_kek() {
+  const ls = getService();
+  const kekRef = await mintPasswordKek(PW);
+  await ls.unlockKek(kekRef, PW, 60000);
+  await ls.createDek("exists-locked", kekRef, true, 32);
+
+  await ls.lockKek(kekRef);
+  Assert.ok(
+    !ls.isKekUnlocked(kekRef),
+    "the wrapping KEK is locked for this check"
+  );
+
+  await Assert.rejects(
+    ls.getDek("exists-locked", kekRef),
+    /NS_ERROR_NOT_AVAILABLE/,
+    "getDek cannot read the DEK while its KEK is locked"
+  );
+  Assert.ok(
+    await ls.dekExists("exists-locked"),
+    "dekExists reports the DEK even though no wrapping KEK is unlocked"
+  );
+
+  await ls.unlockKek(kekRef, PW, 60000);
+  await ls.deleteDek("exists-locked");
+});
+
+add_task(async function test_dek_exists_empty_rejected() {
+  const ls = getService();
+  await Assert.rejects(
+    ls.dekExists(""),
+    INVALID_ARG_RE,
+    "dekExists on an empty dekName rejects"
+  );
+});
+
 add_task(async function test_switch_kek_round_trip() {
   const ls = getService();
   if (!ls.isKekUnlocked(KEK_PASSWORD)) {
@@ -867,6 +932,76 @@ add_task(async function test_switch_kek_missing_dekName_rejected() {
     ls.switchKek("never-existed", KEK_LOCAL, KEK_PASSWORD),
     /NS_ERROR_NOT_AVAILABLE/,
     "switchKek on a missing dekName rejects"
+  );
+});
+
+// ---------------------------------------------------------------------------
+// migrateDeks
+// ---------------------------------------------------------------------------
+
+add_task(async function test_migrate_deks_round_trip() {
+  const ls = getService();
+  // Ephemeral source/target/bystander KEKs so the migration can't disturb
+  // the shared KEK_LOCAL / KEK_PASSWORD records the rest of the suite uses.
+  const from = await mintLocalKek("migrate-from");
+  const to = await mintLocalKek("migrate-to");
+  const other = await mintLocalKek("migrate-other");
+
+  await ls.createDek("migrate-a", from, false, 32);
+  await ls.createDek("migrate-b", from, false, 32);
+  await ls.createDek("migrate-c", other, false, 32);
+  const ct = await ls.encrypt("migrate-a", from, bytes("preserved"));
+
+  await ls.migrateDeks(from, to);
+
+  Assert.deepEqual(
+    await ls.listKeks("migrate-a"),
+    [to],
+    "collection a is wrapped only by the target after migrate"
+  );
+  Assert.deepEqual(
+    await ls.listKeks("migrate-b"),
+    [to],
+    "collection b is wrapped only by the target after migrate"
+  );
+  Assert.deepEqual(
+    await ls.listKeks("migrate-c"),
+    [other],
+    "a collection not wrapped by the source is left untouched"
+  );
+  Assert.equal(
+    str(await ls.decrypt("migrate-a", to, ct)),
+    "preserved",
+    "ciphertext decrypts under the target kekRef (DEK bytes preserved)"
+  );
+  Assert.ok(
+    await ls.kekExists(from),
+    "source KEK record outlives the migration; deleting it is the caller's job"
+  );
+  Assert.ok(await ls.kekExists(to), "target KEK record still exists");
+
+  await ls.deleteKek(from);
+  Assert.ok(
+    !(await ls.kekExists(from)),
+    "a drained source KEK can be deleted once nothing wraps under it"
+  );
+
+  await ls.deleteDek("migrate-a");
+  await ls.deleteDek("migrate-b");
+  await ls.deleteDek("migrate-c");
+});
+
+add_task(async function test_migrate_deks_empty_args_rejected() {
+  const ls = getService();
+  await Assert.rejects(
+    ls.migrateDeks("", KEK_LOCAL),
+    INVALID_ARG_RE,
+    "migrateDeks with empty fromKekRef rejects"
+  );
+  await Assert.rejects(
+    ls.migrateDeks(KEK_LOCAL, ""),
+    INVALID_ARG_RE,
+    "migrateDeks with empty toKekRef rejects"
   );
 });
 

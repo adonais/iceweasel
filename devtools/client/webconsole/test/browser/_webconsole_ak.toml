@@ -232,27 +232,18 @@ skip-if = [
 
 ["browser_webconsole_click_function_to_mapped_source.js"]
 https_first_disabled = true
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
 
 ["browser_webconsole_click_function_to_prettyprinted_source.js"]
 https_first_disabled = true
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
 
 ["browser_webconsole_click_function_to_source.js"]
 https_first_disabled = true
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
@@ -280,9 +271,6 @@ skip-if = [
 ["browser_webconsole_console_dir_uninspectable.js"]
 
 ["browser_webconsole_console_error_expand_object.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_webconsole_console_group.js"]
 
@@ -297,9 +285,6 @@ skip-if = [
 
 ["browser_webconsole_console_table.js"]
 https_first_disabled = true
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
@@ -372,24 +357,12 @@ skip-if = [
 ]
 
 ["browser_webconsole_css_error_impacted_elements.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_webconsole_custom_formatters.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_webconsole_custom_formatters_errors.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_webconsole_deprecation_warning.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_webconsole_document_focus.js"]
 
@@ -413,9 +386,6 @@ fail-if = [
 ["browser_webconsole_errors_after_page_reload.js"]
 
 ["browser_webconsole_eval_error.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_webconsole_eval_in_debugger_stackframe.js"]
 
@@ -485,9 +455,6 @@ skip-if = [
 ]
 
 ["browser_webconsole_inspect_cross_domain_object.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_webconsole_json_mime.js"]
 

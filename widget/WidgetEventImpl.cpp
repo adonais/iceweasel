@@ -55,7 +55,7 @@ const char* ToChar(EventMessage aEventMessage) {
   case aMessage:                   \
     return #aMessage;
 
-#include "mozilla/EventMessageList.h"
+#include "mozilla/EventMessageList.inc"
 
 #undef NS_EVENT_MESSAGE
     default:

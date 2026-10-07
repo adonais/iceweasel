@@ -49,7 +49,7 @@ In the {ref}`markup view  <page-inspector-ui-tour-html-pane>`:
 - Press {kbd}`Backspace` or {kbd}`Del` with a node selected to delete it.
 - {kbd}`Alt` + click on a node to expand or collapse it and all its descendants.
 - Click on the last {ref}`breadcrumb button <page-inspector-how-to-examine-and-edit-html-breadcrumbs>` to scroll the selection into view in the inspector.
-- Click the "ev" icon besides a node to {doc}`see all event listeners attached to it <../page_inspector/examine_event_listeners/index>`.
+- Click the "ev" icon besides a node to {doc}`see all event listeners attached to it <../page_inspector/how_to/examine_event_listeners/index>`.
 - Press {kbd}`S` with a node selected to see it in the page (same as right-click a node and click {ref}`Scroll Into View  <page-inspector-how-to-examine-and-edit-scroll-into-view>`).
 - Right-click a node and click {ref}`Use in Console <page-inspector-how-to-examine-and-edit-html-use-in-console>` to {doc}`command line <../web_console/the_command_line_interpreter/index>` as `tempN` variable.
 

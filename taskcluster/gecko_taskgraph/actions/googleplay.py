@@ -22,13 +22,15 @@ logger = logging.getLogger(__name__)
     schema={"type": "object", "properties": {}},
     permission="googleplay",
 )
-def add_push_bundle(parameters, graph_config, input, task_group_id, task_id):
+def add_push_android(parameters, graph_config, input, task_group_id, task_id):
     decision_task_id, full_task_graph, label_to_taskid, _ = fetch_graph_and_labels(
         parameters, graph_config
     )
 
     def filter(task):
-        if task.kind != "push-bundle":
+        if task.kind != "push-android":
+            return False
+        if task.attributes["target-store"] != "google":
             return False
         return task.attributes["build-type"] in ("fenix-nightly", "focus-nightly")
 
@@ -42,4 +44,4 @@ def add_push_bundle(parameters, graph_config, input, task_group_id, task_id):
         parameters,
         decision_task_id,
     )
-    logger.info(f"Scheduled {len(to_run)} push-bundle tasks")
+    logger.info(f"Scheduled {len(to_run)} push-android tasks")

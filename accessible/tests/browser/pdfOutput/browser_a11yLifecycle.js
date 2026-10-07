@@ -13,10 +13,10 @@ async function assertHasStructTree(pdf) {
   ok(tree.children && tree.children.length, "PDF struct tree has children");
 }
 
-function snippetBodyId(variant) {
+function snippetDocId(variant) {
   return variant.iframe || variant.remoteIframe
-    ? DEFAULT_IFRAME_DOC_BODY_ID
-    : DEFAULT_CONTENT_DOC_BODY_ID;
+    ? DEFAULT_IFRAME_DOC_ID
+    : DEFAULT_CONTENT_DOC_ID;
 }
 
 /**
@@ -33,7 +33,7 @@ addPdfTabTask(
     CommonUtils.addAccServiceShutdownObserver();
     let docLoaded = waitForEvent(
       EVENT_DOCUMENT_LOAD_COMPLETE,
-      snippetBodyId(ctx.variant)
+      snippetDocId(ctx.variant)
     );
     await loadPdfTestDoc(ctx, DOC);
     await docLoaded;
@@ -180,7 +180,7 @@ addPdfTabTask(
     CommonUtils.addAccServiceShutdownObserver();
     let docLoaded = waitForEvent(
       EVENT_DOCUMENT_LOAD_COMPLETE,
-      snippetBodyId(ctx.variant)
+      snippetDocId(ctx.variant)
     );
     await loadPdfTestDoc(
       ctx,

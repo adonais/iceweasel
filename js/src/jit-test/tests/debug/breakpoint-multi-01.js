@@ -10,7 +10,7 @@ dbg.onDebuggerStatement = function (frame) {
     }
     var f = frame.eval("f").return;
     var s = f.script;
-    var offs = s.getLineOffsets(g.line0 + 2);
+    var offs = s.getPossibleBreakpointOffsets({ line: g.line0 + 2 });
     for (var i = 0; i < 10; i++) {
         var bp = handler(i);
         for (var j = 0; j < offs.length; j++)

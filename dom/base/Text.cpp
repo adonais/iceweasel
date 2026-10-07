@@ -35,9 +35,9 @@ already_AddRefed<Text> Text::SplitText(uint32_t aOffset, ErrorResult& aRv) {
   MOZ_ASSERT(clone && clone->IsText());
   RefPtr<Text> newContent = static_cast<Text*>(clone.get());
 
-  // nsRange expects the CharacterDataChanged notification is followed
+  // Range expects the CharacterDataChanged notification is followed
   // by an insertion of |newContent|. If you change this code,
-  // make sure you make the appropriate changes in nsRange.
+  // make sure you make the appropriate changes in Range.
   newContent->SetText(cutText, true);  // XXX should be false?
 
   CharacterDataChangeInfo::Details details = {

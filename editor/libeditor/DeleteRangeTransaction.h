@@ -14,11 +14,12 @@
 
 #include "mozilla/RefPtr.h"
 
+#include "mozilla/dom/Range.h"
+
 #include "nsCycleCollectionParticipant.h"
 #include "nsID.h"
 #include "nsIEditor.h"
 #include "nsISupportsImpl.h"
-#include "nsRange.h"
 #include "nscore.h"
 
 class nsINode;
@@ -31,7 +32,7 @@ namespace mozilla {
 class DeleteRangeTransaction final : public EditAggregateTransaction {
  protected:
   DeleteRangeTransaction(EditorBase& aEditorBase,
-                         const nsRange& aRangeToDelete);
+                         const dom::Range& aRangeToDelete);
 
  public:
   /**
@@ -41,7 +42,7 @@ class DeleteRangeTransaction final : public EditAggregateTransaction {
    * @param aRangeToDelete      The range to delete.
    */
   static already_AddRefed<DeleteRangeTransaction> Create(
-      EditorBase& aEditorBase, const nsRange& aRangeToDelete) {
+      EditorBase& aEditorBase, const dom::Range& aRangeToDelete) {
     RefPtr<DeleteRangeTransaction> transaction =
         new DeleteRangeTransaction(aEditorBase, aRangeToDelete);
     return transaction.forget();
@@ -77,10 +78,10 @@ class DeleteRangeTransaction final : public EditAggregateTransaction {
    *   "one  [two]" -> "one [ two]" -> "one "
    *
    * @param aRange  [inout] The range that is about to be deleted.
-   * @return                NS_OK, unless nsRange::SetStart / ::SetEnd fails.
+   * @return                NS_OK, unless Range::SetStart / ::SetEnd fails.
    */
   nsresult MaybeExtendDeletingRangeWithSurroundingWhitespace(
-      nsRange& aRange) const;
+      dom::Range& aRange) const;
 
   /**
    * AppendTransactionsToDeleteIn() creates a DeleteTextTransaction or some
@@ -142,7 +143,7 @@ class DeleteRangeTransaction final : public EditAggregateTransaction {
 
   // P1 in the range.  This is only non-null until DoTransaction is called and
   // we convert it into child transactions.
-  RefPtr<nsRange> mRangeToDelete;
+  RefPtr<dom::Range> mRangeToDelete;
 
   EditorDOMPoint mPointToPutCaret;
 };

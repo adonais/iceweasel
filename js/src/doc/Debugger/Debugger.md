@@ -430,40 +430,6 @@ have been created in any debuggee realm.  The array will have one entry for
 each source, so may have duplicates.  The URLs for the realms are
 occasionally purged and the returned array might not be complete.
 
-### `findObjects([query])`
-Return an array of [`Debugger.Object`][object] instances referring to each
-live object allocated in the scope of the debuggee globals that matches
-*query*. Each instance appears only once in the array. *Query* is an object
-whose properties restrict which objects are returned; an object must meet
-all the criteria given by *query* to be returned. If *query* is omitted, we
-return the [`Debugger.Object`][object] instances for all objects allocated
-in the scope of debuggee globals.
-
-The *query* object may have the following properties:
-
-* `class`
-
-  If present with a string value, only return objects whose internal
-  `[[Class]]`'s name matches the given string. Note that in some cases,
-  the prototype object for a given constructor has the same `[[Class]]` as
-  the instances that refer to it, but cannot itself be used as a valid instance
-  of the class. Code gathering objects by class name may need to examine them
-  further before trying to use them.
-
-  If present with a [`Debugger.Object`][object] value, only return objects
-  which has given object as constructor or prototype in the prototype chain.
-  Note that objects with dynamic prototype (e.g. `Proxy`) cannot be matched with
-  this query, given accessing the prototype for such object can have some
-  side effects. Also note that, currently an object with `null` prototype
-  cannot be matched with this query.
-
-All properties of *query* are optional. Passing an empty object returns all
-objects in debuggee globals.
-
-Unlike `findScripts`, this function is deterministic and will never return
-[`Debugger.Object`s][object] referring to previously unreachable objects
-that had not been collected yet.
-
 ### `clearBreakpoint(handler)`
 Remove all breakpoints set in this `Debugger` instance that use
 <i>handler</i> as their handler. Note that, if breakpoints using other

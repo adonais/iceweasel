@@ -5,7 +5,6 @@
 import os
 
 config = {
-    "stage_platform": "linux64-fuzzing-tsan",
     #### 64 bit build specific #####
     "env": {
         "MOZBUILD_STATE_PATH": os.path.join(os.getcwd(), ".mozbuild"),

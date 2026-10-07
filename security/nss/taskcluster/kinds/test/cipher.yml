@@ -1,16 +1,20 @@
 task-defaults:
     worker:
         env:
-            TC_PARENT_TASK_ID: {task-reference: "<certs>"}
+            TC_PARENT_TASK_ID: {task-reference: "<build>"}
             NSS_TESTS: cipher
         max-run-time: 7200
+    # cipher.sh only drives bltest/pk11gcmtest, so it needs no certificates.
     from-deps:
-        kinds: [certs]
+        kinds: [build]
         with-attributes:
             nspr: [false]
             dbm: [false]
             cc: [false]
+            modular: [false]
             make-fips: [false]
+            fuzz: [false]
+            tsan: [false]
 
 cipher:
     description: Cipher tests

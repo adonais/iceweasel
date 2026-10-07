@@ -1,0 +1,49 @@
+[package]
+name = "etp_engine"
+version = "0.1.0"
+edition = "2021"
+
+description = "Network filter matching engine for Enhanced Tracking Protection, forked from brave/adblock-rust"
+license = "MPL-2.0"
+readme = "README.md"
+
+[dependencies]
+url = "2.5"
+percent-encoding = "2.1"
+once_cell = "1.8"
+regex = "1.12.2"
+bitflags = { version = "2.10.0", features = ["serde"] }
+itertools = "0.13"
+idna = "1.0.3"
+serde = { version = "1.0.228", features = ["derive", "rc"] }
+serde_json = "1.0.145"
+seahash = "4.1.0"
+# rustc-hash v1.1.0 provides a better performance than 2.x, chromium pins the same version.
+rustc-hash = { version = "1.1.0", default-features = false }
+memchr = "2.7"
+base64 = "0.22"
+arrayvec = "0.7"
+precomputed-hash = "0.1"
+thiserror = "1.0"
+flatbuffers = { version = "25.9.23" }
+malloc_size_of = { path = "../../../../gfx/wr/wr_malloc_size_of", package = "wr_malloc_size_of", default-features = false, optional = true }
+
+[lib]
+bench = false
+
+[features]
+default = ["full-regex-handling", "single-thread"]
+full-regex-handling = []
+single-thread = [] # disables `Send` and `Sync` on `Engine`.
+debug-info = []
+# Reports the engine's heap usage to about:memory. Optional so that the crate
+# still builds without the Gecko support crates in scope.
+malloc-size-of = ["dep:malloc_size_of"]
+css-validation = []
+content-blocking = []
+embedded-domain-resolver = []
+resource-assembler = []
+
+[lints.clippy]
+len_zero = "allow"
+uninlined_format_args = "warn"

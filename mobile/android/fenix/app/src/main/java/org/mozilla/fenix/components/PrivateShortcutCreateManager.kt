@@ -54,7 +54,7 @@ class DefaultPendingIntentFactory : PendingIntentFactory {
  * Manages the creation of pinned shortcuts for private browsing mode.
  *
  * This class provides functionality to create a shortcut on the device's home screen that directly opens the app in
- * private browsing mode with the search bar focused.
+ * private browsing mode.
  *
  * @param shortcutManagerWrapper A wrapper around [ShortcutManagerCompat] used for interacting with the system's
  *   shortcut manager.
@@ -72,7 +72,7 @@ class PrivateShortcutCreateManager(
      * - A unique ID generated using [UUID.randomUUID].
      * - Short and long labels derived from string resources.
      * - An icon loaded from a mipmap resource.
-     * - An intent that launches [HomeActivity] in private browsing mode and opens the search bar.
+     * - An intent that launches [HomeActivity] in private browsing mode.
      *
      * After creating the shortcut, it requests the system to pin it. The `intentSender` for the pin request is
      * configured to open the home screen.
@@ -114,7 +114,7 @@ class PrivateShortcutCreateManager(
     }
 
     /**
-     * Creates an [Intent] to launch [HomeActivity] in private browsing mode with the search bar focused.
+     * Creates an [Intent] to launch [HomeActivity] in private browsing mode.
      *
      * The intent is configured with the following properties:
      * - `action`: [Intent.ACTION_VIEW]

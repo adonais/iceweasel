@@ -1,19 +1,120 @@
-From e1ad88a798617a42e1ed20c3c8360c10555cb8e8 Mon Sep 17 00:00:00 2001
+From a9765b58139715f0fdd1b6a11b3e34c8e7ded50a Mon Sep 17 00:00:00 2001
 From: serge-sans-paille <sguelton@mozilla.com>
 Date: Tue, 13 May 2025 12:15:57 +0200
-Subject: [PATCH 3/5] Replace exception throwing code by abort, and remove
+Subject: [PATCH 3/7] Replace exception throwing code by abort, and remove
  try/catch
 
 ---
- .../core/optimizer/stft_decomposition.cc      |  3 +-
- .../core/session/provider_bridge_ort.cc       | 44 ++++---------------
- 2 files changed, 10 insertions(+), 37 deletions(-)
+ .../core/framework/graph_partitioner.cc       |   8 +-
+ .../core/optimizer/attention_fusion.cc        |   4 +-
+ .../core/optimizer/constant_folding.cc        |  20 +-
+ .../core/optimizer/stft_decomposition.cc      |   3 +-
+ .../model_package/model_package_context.cc    |  20 +-
+ .../session/plugin_ep/ep_library_plugin.cc    |   8 +-
+ .../core/session/provider_bridge_ort.cc       | 175 +++++-------------
+ 7 files changed, 87 insertions(+), 151 deletions(-)
 
+diff --git a/onnxruntime/core/framework/graph_partitioner.cc b/onnxruntime/core/framework/graph_partitioner.cc
+index 0896bec..90d1d84 100644
+--- a/onnxruntime/core/framework/graph_partitioner.cc
++++ b/onnxruntime/core/framework/graph_partitioner.cc
+@@ -1164,7 +1164,7 @@ static Status CreateEpContextModel(const ExecutionProviders& execution_providers
+   {
+     const GraphViewer graph_viewer(ep_graph);
+     for (const auto& ep : execution_providers) {
+-      try {
++      ORT_TRY {
+         // Generate the compatibility string for this EP
+         std::string compatibility_string = ep->GetCompiledModelCompatibilityInfo(graph_viewer);
+         if (!compatibility_string.empty()) {
+@@ -1180,8 +1180,10 @@ static Status CreateEpContextModel(const ExecutionProviders& execution_providers
+           }
+           LOGS(logger, VERBOSE) << "Added EP compatibility info for " << ep->Type() << " with key: " << metadata_key;
+         }
+-      } catch (const std::exception& ex) {
+-        LOGS(logger, WARNING) << "Failed to generate compatibility string for EP " << ep->Type() << ": " << ex.what();
++      } ORT_CATCH(const std::exception& ex) {
++        ORT_HANDLE_EXCEPTION([&]() {
++          LOGS(logger, WARNING) << "Failed to generate compatibility string for EP " << ep->Type() << ": " << ex.what();
++        });
+       }
+     }
+   }
+diff --git a/onnxruntime/core/optimizer/attention_fusion.cc b/onnxruntime/core/optimizer/attention_fusion.cc
+index 955fad7..b9ddacc 100644
+--- a/onnxruntime/core/optimizer/attention_fusion.cc
++++ b/onnxruntime/core/optimizer/attention_fusion.cc
+@@ -142,9 +142,9 @@ static bool TryGetMobileClipQkvReshapeInfo(const Graph& graph, const Node& qkv_r
+   num_heads = reshape_dims[3];
+   head_size = reshape_dims[4];
+ 
+-  try {
++  ORT_TRY {
+     hidden_size = SafeInt<int64_t>(num_heads) * head_size;
+-  } catch (const OnnxRuntimeException&) {
++  } ORT_CATCH(const OnnxRuntimeException&) {
+     return false;
+   }
+ 
+diff --git a/onnxruntime/core/optimizer/constant_folding.cc b/onnxruntime/core/optimizer/constant_folding.cc
+index 78d1f45..ff014ce 100644
+--- a/onnxruntime/core/optimizer/constant_folding.cc
++++ b/onnxruntime/core/optimizer/constant_folding.cc
+@@ -487,9 +487,9 @@ Status ConstantFolding::ApplyImpl(Graph& graph, bool& modified, int graph_level,
+       // This prevents malicious models from causing excessive memory allocation during constant folding.
+       if (max_output_size > 0) {
+         int64_t estimated_size = -1;
+-        try {
++        ORT_TRY {
+           estimated_size = EstimateNodeOutputSizeInBytes(*node, graph);
+-        } catch (const std::exception&) {
++        } ORT_CATCH(const std::exception&) {
+           // SafeInt overflow means the size is astronomically large - definitely skip
+           LOGS(logger, WARNING) << "Integer overflow while estimating output size of "
+                                 << node->OpType() << " node '" << node->Name()
+@@ -595,12 +595,14 @@ Status ConstantFolding::ApplyImpl(Graph& graph, bool& modified, int graph_level,
+       // Skip the current node if Compute fails so one bad constant-fold candidate does not abort
+       // the entire constant folding pass.
+       Status compute_status = Status::OK();
+-      try {
++      ORT_TRY {
+         compute_status = kernel->Compute(&op_kernel_context);
+-      } catch (const std::exception& ex) {
+-        LOGS(logger, WARNING) << "Exception during constant folding of " << node->OpType()
+-                              << " node '" << node->Name() << "': " << ex.what()
+-                              << ". Skipping constant folding for this node.";
++      } ORT_CATCH(const std::exception& ex) {
++        ORT_HANDLE_EXCEPTION([&]() {
++          LOGS(logger, WARNING) << "Exception during constant folding of " << node->OpType()
++                                << " node '" << node->Name() << "': " << ex.what()
++                                << ". Skipping constant folding for this node.";
++        });
+         continue;
+       }
+ 
+@@ -622,7 +624,7 @@ Status ConstantFolding::ApplyImpl(Graph& graph, bool& modified, int graph_level,
+       if (max_output_size > 0) {
+         SafeInt<int64_t> actual_total_size = 0;
+         bool size_exceeded = false;
+-        try {
++        ORT_TRY {
+           for (size_t fetch_idx = 0; fetch_idx < fetches.size(); ++fetch_idx) {
+             if (fetches[fetch_idx].IsAllocated() && fetches[fetch_idx].IsTensor()) {
+               const auto& tensor = fetches[fetch_idx].Get<Tensor>();
+@@ -630,7 +632,7 @@ Status ConstantFolding::ApplyImpl(Graph& graph, bool& modified, int graph_level,
+             }
+           }
+           size_exceeded = actual_total_size > max_output_size;
+-        } catch (const std::exception&) {
++        } ORT_CATCH(const std::exception&) {
+           // SafeInt overflow means total size is astronomically large
+           size_exceeded = true;
+         }
 diff --git a/onnxruntime/core/optimizer/stft_decomposition.cc b/onnxruntime/core/optimizer/stft_decomposition.cc
-index 5c09e5225a..7d8c75025d 100644
+index 713cbcc..e8ea48a 100644
 --- a/onnxruntime/core/optimizer/stft_decomposition.cc
 +++ b/onnxruntime/core/optimizer/stft_decomposition.cc
-@@ -31,7 +31,8 @@ constexpr static ONNX_NAMESPACE::TensorProto_DataType GetDataType() {
+@@ -33,7 +33,8 @@ constexpr static ONNX_NAMESPACE::TensorProto_DataType GetDataType() {
    } else if constexpr (std::is_same<T, int64_t>::value) {
      return ONNX_NAMESPACE::TensorProto_DataType_INT64;
    } else {
@@ -23,44 +124,334 @@ index 5c09e5225a..7d8c75025d 100644
    }
  }
  
+diff --git a/onnxruntime/core/session/model_package/model_package_context.cc b/onnxruntime/core/session/model_package/model_package_context.cc
+index 6a3eecd..45c8616 100644
+--- a/onnxruntime/core/session/model_package/model_package_context.cc
++++ b/onnxruntime/core/session/model_package/model_package_context.cc
+@@ -417,11 +417,13 @@ ModelPackageContext::ModelPackageContext(const std::filesystem::path& package_ro
+       if (const ::ModelExecutorInfoEntry* ei =
+               ::ModelVariantInfo_FindExecutorInfo(variant, "ort")) {
+         if (ei->json != nullptr && ei->json[0] != '\0') {
+-          try {
++          ORT_TRY {
+             ort_obj = json::parse(ei->json);
+-          } catch (const std::exception& e) {
+-            ORT_THROW("Failed to parse executor_info[\"ort\"] JSON for variant '",
+-                      ort_variant.variant_name, "' in component '", component_name, "': ", e.what());
++          } ORT_CATCH(const std::exception& e) {
++            ORT_HANDLE_EXCEPTION([&]() {
++              ORT_THROW("Failed to parse executor_info[\"ort\"] JSON for variant '",
++                        ort_variant.variant_name, "' in component '", component_name, "': ", e.what());
++            });
+           }
+         }
+       }
+@@ -505,11 +507,13 @@ ModelPackageContext::ModelPackageContext(const std::filesystem::path& package_ro
+ 
+       // Variant-scope additional_metadata.
+       if (variant->additional_metadata_json != nullptr) {
+-        try {
++        ORT_TRY {
+           ort_variant.consumer_metadata = json::parse(variant->additional_metadata_json);
+-        } catch (const std::exception& e) {
+-          ORT_THROW("Failed to parse additional_metadata JSON for variant '", ort_variant.variant_name,
+-                    "' in component '", component_name, "': ", e.what());
++        } ORT_CATCH(const std::exception& e) {
++          ORT_HANDLE_EXCEPTION([&]() {
++            ORT_THROW("Failed to parse additional_metadata JSON for variant '", ort_variant.variant_name,
++                      "' in component '", component_name, "': ", e.what());
++          });
+         }
+       }
+ 
+diff --git a/onnxruntime/core/session/plugin_ep/ep_library_plugin.cc b/onnxruntime/core/session/plugin_ep/ep_library_plugin.cc
+index 5197035..6d98e29 100644
+--- a/onnxruntime/core/session/plugin_ep/ep_library_plugin.cc
++++ b/onnxruntime/core/session/plugin_ep/ep_library_plugin.cc
+@@ -71,7 +71,7 @@ Status EpLibraryPlugin::Unload() {
+   // Current implementation assumes any error is permanent so does not leave pieces around to re-attempt Unload.
+   if (handle_) {
+     if (!factories_.empty()) {
+-      try {
++      ORT_TRY {
+         for (size_t idx = 0, end = factories_.size(); idx < end; ++idx) {
+           auto* factory = factories_[idx];
+           if (factory == nullptr) {
+@@ -89,8 +89,10 @@ Status EpLibraryPlugin::Unload() {
+         }
+ 
+         factories_.clear();
+-      } catch (const std::exception& ex) {
+-        LOGS_DEFAULT(ERROR) << "Failed releasing EP factories from " << library_path_ << ": " << ex.what();
++      } ORT_CATCH(const std::exception& ex) {
++        ORT_HANDLE_EXCEPTION([&]() {
++          LOGS_DEFAULT(ERROR) << "Failed releasing EP factories from " << library_path_ << ": " << ex.what();
++        });
+       }
+     }
+ 
 diff --git a/onnxruntime/core/session/provider_bridge_ort.cc b/onnxruntime/core/session/provider_bridge_ort.cc
-index 042598535e..9bed2cfcbc 100644
+index c45d216..442c396 100644
 --- a/onnxruntime/core/session/provider_bridge_ort.cc
 +++ b/onnxruntime/core/session/provider_bridge_ort.cc
-@@ -1701,11 +1701,9 @@ struct ProviderSharedLibrary {
+@@ -1566,14 +1566,14 @@ struct ProviderHostImpl : ProviderHost {
+ 
+   void* Initializer__mutable_data(Initializer& initializer, int data_type) override {
+     if (data_type != initializer.data_type()) {
+-      throw std::invalid_argument("Initializer mutable data type mismatch");
++      ORT_THROW("Initializer mutable data type mismatch");
+     }
+     return initializer.mutable_data_raw();
+   }
+ 
+   const void* Initializer__data(const Initializer& initializer, int data_type) override {
+     if (data_type != initializer.data_type()) {
+-      throw std::invalid_argument("Initializer data type mismatch");
++      ORT_THROW("Initializer data type mismatch");
+     }
+     return initializer.data_raw();
+   }
+@@ -1928,11 +1928,9 @@ struct ProviderSharedLibrary {
  
  static ProviderSharedLibrary s_library_shared;
  
 -bool InitProvidersSharedLibrary() try {
 +bool InitProvidersSharedLibrary() {
-   s_library_shared.Ensure();
+   ORT_THROW_IF_ERROR(s_library_shared.Initialize());
    return true;
 -} catch (const std::exception&) {
 -  return false;
  }
  
- struct ProviderLibrary {
-@@ -1716,7 +1714,6 @@ struct ProviderLibrary {
- 
-   Provider& Get() {
-     std::lock_guard<std::mutex> lock{mutex_};
--    try {
-       if (!provider_) {
-         s_library_shared.Ensure();
- 
-@@ -1730,10 +1727,6 @@ struct ProviderLibrary {
-         provider_->Initialize();
-       }
-       return *provider_;
--    } catch (const std::exception&) {
--      Unload();  // If anything fails we unload the library and rethrow
--      throw;
--    }
+ ProviderLibrary::ProviderLibrary(const ORTCHAR_T* filename, bool unload, ProviderLibraryPathType pathType)
+@@ -1948,58 +1946,48 @@ Status ProviderLibrary::Load() {
+     return Status::OK();
    }
  
-   void Unload() {
-@@ -2050,11 +2043,8 @@ ProviderInfo_OpenVINO* GetProviderInfo_OpenVINO() {
+-  try {
+-    std::lock_guard<std::mutex> lock{mutex_};
+-    if (!provider_) {
+-      ORT_RETURN_IF_ERROR(s_library_shared.Initialize());
+-
+-      if (absolute_) {
+-        // If filename_ is not absolute it should not be loaded.
+-        if (!std::filesystem::path{filename_}.is_absolute()) {
+-          return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "An absolute path must be specified.");
+-        }
+-        ORT_RETURN_IF_ERROR(Env::Default().LoadDynamicLibrary(filename_, false, &handle_));
+-      } else {
+-        auto full_path = Env::Default().GetRuntimePath() + filename_;
+-        ORT_RETURN_IF_ERROR(Env::Default().LoadDynamicLibrary(full_path, false, &handle_));
+-      }
++  std::lock_guard<std::mutex> lock{mutex_};
++  if (!provider_) {
++    ORT_RETURN_IF_ERROR(s_library_shared.Initialize());
+ 
+-      Provider* (*PGetProvider)();
+-      auto status = Env::Default().GetSymbolFromLibrary(handle_, "GetProvider", (void**)&PGetProvider);
+-      if (!status.IsOK()) {
+-        Unload();
+-        return status;
++    if (absolute_) {
++      // If filename_ is not absolute it should not be loaded.
++      if (!std::filesystem::path{filename_}.is_absolute()) {
++        return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "An absolute path must be specified.");
+       }
++      ORT_RETURN_IF_ERROR(Env::Default().LoadDynamicLibrary(filename_, false, &handle_));
++    } else {
++      auto full_path = Env::Default().GetRuntimePath() + filename_;
++      ORT_RETURN_IF_ERROR(Env::Default().LoadDynamicLibrary(full_path, false, &handle_));
++    }
+ 
+-      provider_ = PGetProvider();
++    Provider* (*PGetProvider)();
++    auto status = Env::Default().GetSymbolFromLibrary(handle_, "GetProvider", (void**)&PGetProvider);
++    if (!status.IsOK()) {
++      Unload();
++      return status;
+     }
+-  } catch (const std::exception&) {
+-    Unload();  // If anything fails we unload the library and rethrow
+-    throw;
++
++    provider_ = PGetProvider();
+   }
+ 
+   return Status::OK();
+ }
+ 
+ Provider& ProviderLibrary::Get() {
+-  try {
+-    if (!initialized_) {
+-      if (!provider_) {
+-        ORT_THROW_IF_ERROR(Load());
+-      }
+-
+-      std::lock_guard<std::mutex> lock{mutex_};
+-      if (!initialized_) {
+-        provider_->Initialize();
+-      }
+-      initialized_ = true;
++  if (!initialized_) {
++    if (!provider_) {
++      ORT_THROW_IF_ERROR(Load());
+     }
+ 
+-    return *provider_;
+-  } catch (const std::exception&) {
+-    Unload();  // If anything fails we unload the library and rethrow
+-    throw;
++    std::lock_guard<std::mutex> lock{mutex_};
++    if (!initialized_) {
++      provider_->Initialize();
++    }
++    initialized_ = true;
+   }
++
++  return *provider_;
+ }
+ 
+ void ProviderLibrary::Unload() {
+@@ -2129,22 +2117,14 @@ OrtCUDAProviderOptionsV2 OrtCUDAProviderOptionsToOrtCUDAProviderOptionsV2(const
+ }
+ 
+ std::shared_ptr<IExecutionProviderFactory> CudaProviderFactoryCreator::Create(
+-    const OrtCUDAProviderOptions* provider_options) try {
++    const OrtCUDAProviderOptions* provider_options) {
+   OrtCUDAProviderOptionsV2 cuda_options_converted = onnxruntime::OrtCUDAProviderOptionsToOrtCUDAProviderOptionsV2(provider_options);
+   return s_library_cuda.Get().CreateExecutionProviderFactory(&cuda_options_converted);
+-} catch (const std::exception& exception) {
+-  // Will get an exception when fail to load EP library.
+-  LOGS_DEFAULT(ERROR) << exception.what();
+-  return nullptr;
+ }
+ 
+ std::shared_ptr<IExecutionProviderFactory> CudaProviderFactoryCreator::Create(
+-    const OrtCUDAProviderOptionsV2* provider_options) try {
++    const OrtCUDAProviderOptionsV2* provider_options) {
+   return s_library_cuda.Get().CreateExecutionProviderFactory(provider_options);
+-} catch (const std::exception& exception) {
+-  // Will get an exception when fail to load EP library.
+-  LOGS_DEFAULT(ERROR) << exception.what();
+-  return nullptr;
+ }
+ 
+ std::shared_ptr<IExecutionProviderFactory>
+@@ -2209,43 +2189,27 @@ OrtTensorRTProviderOptionsV2 OrtTensorRTProviderOptionsToOrtTensorRTProviderOpti
+   return trt_options_converted;
+ }
+ 
+-std::shared_ptr<IExecutionProviderFactory> TensorrtProviderFactoryCreator::Create(int device_id) try {
++std::shared_ptr<IExecutionProviderFactory> TensorrtProviderFactoryCreator::Create(int device_id) {
+   return s_library_tensorrt.Get().CreateExecutionProviderFactory(device_id);
+-} catch (const std::exception& exception) {
+-  // Will get an exception when fail to load EP library.
+-  LOGS_DEFAULT(ERROR) << exception.what();
+-  return nullptr;
+ }
+ 
+ std::shared_ptr<IExecutionProviderFactory> TensorrtProviderFactoryCreator::Create(
+-    const OrtTensorRTProviderOptions* provider_options) try {
++    const OrtTensorRTProviderOptions* provider_options) {
+   OrtTensorRTProviderOptionsV2 trt_options_converted = onnxruntime::OrtTensorRTProviderOptionsToOrtTensorRTProviderOptionsV2(provider_options);
+   return s_library_tensorrt.Get().CreateExecutionProviderFactory(&trt_options_converted);
+-} catch (const std::exception& exception) {
+-  // Will get an exception when fail to load EP library.
+-  LOGS_DEFAULT(ERROR) << exception.what();
+-  return nullptr;
+ }
+ 
+ std::shared_ptr<IExecutionProviderFactory> TensorrtProviderFactoryCreator::Create(
+-    const OrtTensorRTProviderOptionsV2* provider_options) try {
++    const OrtTensorRTProviderOptionsV2* provider_options) {
+   return s_library_tensorrt.Get().CreateExecutionProviderFactory(provider_options);
+-} catch (const std::exception& exception) {
+-  // Will get an exception when fail to load EP library.
+-  LOGS_DEFAULT(ERROR) << exception.what();
+-  return nullptr;
+ }
+ 
+-std::shared_ptr<IExecutionProviderFactory> NvProviderFactoryCreator::Create(int device_id) try {
++std::shared_ptr<IExecutionProviderFactory> NvProviderFactoryCreator::Create(int device_id) {
+   return s_library_nv.Get().CreateExecutionProviderFactory(device_id);
+-} catch (const std::exception& exception) {
+-  // Will get an exception when fail to load EP library.
+-  LOGS_DEFAULT(ERROR) << exception.what();
+-  return nullptr;
+ }
+ 
+ std::shared_ptr<IExecutionProviderFactory> NvProviderFactoryCreator::Create(
+-    const ProviderOptions& provider_options, const SessionOptions* session_options) try {
++    const ProviderOptions& provider_options, const SessionOptions* session_options) {
+   const ConfigOptions* config_options = nullptr;
+   if (session_options != nullptr) {
+     config_options = &session_options->config_options;
+@@ -2254,10 +2218,6 @@ std::shared_ptr<IExecutionProviderFactory> NvProviderFactoryCreator::Create(
+   std::array<const void*, 2> configs_array = {&provider_options, config_options};
+   const void* arg = reinterpret_cast<const void*>(&configs_array);
+   return s_library_nv.Get().CreateExecutionProviderFactory(arg);
+-} catch (const std::exception& exception) {
+-  // Will get an exception when fail to load EP library.
+-  LOGS_DEFAULT(ERROR) << exception.what();
+-  return nullptr;
+ }
+ 
+ std::shared_ptr<IExecutionProviderFactory> MIGraphXProviderFactoryCreator::Create(const ProviderOptions& provider_options) {
+@@ -2309,7 +2269,7 @@ ProviderOptions OrtOpenVINOProviderOptionsToOrtOpenVINOProviderOptionsV2(const O
+ 
+ #if !BUILD_QNN_EP_STATIC_LIB
+ std::shared_ptr<IExecutionProviderFactory> QNNProviderFactoryCreator::Create(
+-    const ProviderOptions& provider_options_map, const SessionOptions* session_options) try {
++    const ProviderOptions& provider_options_map, const SessionOptions* session_options) {
+   const ConfigOptions* config_options = nullptr;
+   if (session_options != nullptr) {
+     config_options = &session_options->config_options;
+@@ -2318,15 +2278,11 @@ std::shared_ptr<IExecutionProviderFactory> QNNProviderFactoryCreator::Create(
+   std::array<const void*, 2> configs_array = {&provider_options_map, config_options};
+   const void* arg = reinterpret_cast<const void*>(&configs_array);
+   return s_library_qnn.Get().CreateExecutionProviderFactory(arg);
+-} catch (const std::exception& exception) {
+-  // Will get an exception when fail to load EP library.
+-  LOGS_DEFAULT(ERROR) << exception.what();
+-  return nullptr;
+ }
+ #endif  // !BUILD_QNN_EP_STATIC_LIB
+ 
+ std::shared_ptr<IExecutionProviderFactory> OpenVINOProviderFactoryCreator::Create(
+-    const ProviderOptions* provider_options_map, const SessionOptions* session_options) try {
++    const ProviderOptions* provider_options_map, const SessionOptions* session_options) {
+   // Append session options applicable for EP to EP Provider options.
+   const ConfigOptions* config_options = nullptr;
+   if (session_options != nullptr) {
+@@ -2336,10 +2292,6 @@ std::shared_ptr<IExecutionProviderFactory> OpenVINOProviderFactoryCreator::Creat
+   std::array<const void*, 2> configs_array = {provider_options_map, config_options};
+   const void* arg = reinterpret_cast<const void*>(&configs_array);
+   return s_library_openvino.Get().CreateExecutionProviderFactory(arg);
+-} catch (const std::exception& exception) {
+-  // Will get an exception when fail to load EP library.
+-  LOGS_DEFAULT(ERROR) << exception.what();
+-  return nullptr;
+ }
+ 
+ std::shared_ptr<IExecutionProviderFactory> DnnlProviderFactoryCreator::Create(const OrtDnnlProviderOptions* dnnl_options) {
+@@ -2347,25 +2299,16 @@ std::shared_ptr<IExecutionProviderFactory> DnnlProviderFactoryCreator::Create(co
+ }
+ 
+ std::shared_ptr<IExecutionProviderFactory> VitisAIProviderFactoryCreator::Create(
+-    const ProviderOptions& provider_options) try {
++    const ProviderOptions& provider_options) {
+   return s_library_vitisai.Get().CreateExecutionProviderFactory(&provider_options);
+-} catch (const std::exception& exception) {
+-  LOGS_DEFAULT(ERROR) << exception.what();
+-  return nullptr;
+ }
+ 
+-ProviderInfo_OpenVINO* TryGetProviderInfo_OpenVINO() try {
++ProviderInfo_OpenVINO* TryGetProviderInfo_OpenVINO() {
    return reinterpret_cast<ProviderInfo_OpenVINO*>(s_library_openvino.Get().GetInfo());
+-} catch (const std::exception& exception) {
+-  LOGS_DEFAULT(ERROR) << exception.what();
+-  return nullptr;
  }
  
 -ProviderInfo_TensorRT* TryGetProviderInfo_TensorRT() try {
@@ -72,8 +463,21 @@ index 042598535e..9bed2cfcbc 100644
  }
  
  ProviderInfo_TensorRT& GetProviderInfo_TensorRT() {
-@@ -2064,11 +2054,8 @@ ProviderInfo_TensorRT& GetProviderInfo_TensorRT() {
+@@ -2375,11 +2318,8 @@ ProviderInfo_TensorRT& GetProviderInfo_TensorRT() {
    ORT_THROW("TensorRT Provider not available, can't get interface for it");
+ }
+ 
+-ProviderInfo_Nv* TryGetProviderInfo_Nv() try {
++ProviderInfo_Nv* TryGetProviderInfo_Nv() {
+   return reinterpret_cast<ProviderInfo_Nv*>(s_library_nv.Get().GetInfo());
+-} catch (const std::exception& exception) {
+-  LOGS_DEFAULT(ERROR) << exception.what();
+-  return nullptr;
+ }
+ 
+ ProviderInfo_Nv& GetProviderInfo_Nv() {
+@@ -2389,11 +2329,8 @@ ProviderInfo_Nv& GetProviderInfo_Nv() {
+   ORT_THROW("NV Provider not available, can't get interface for it");
  }
  
 -ProviderInfo_CUDA* TryGetProviderInfo_CUDA() try {
@@ -85,7 +489,7 @@ index 042598535e..9bed2cfcbc 100644
  }
  
  ProviderInfo_CUDA& GetProviderInfo_CUDA() {
-@@ -2078,11 +2065,8 @@ ProviderInfo_CUDA& GetProviderInfo_CUDA() {
+@@ -2403,11 +2340,8 @@ ProviderInfo_CUDA& GetProviderInfo_CUDA() {
    ORT_THROW("CUDA Provider not available, can't get interface for it");
  }
  
@@ -98,7 +502,7 @@ index 042598535e..9bed2cfcbc 100644
  }
  
  ProviderInfo_CUDA& GetProviderInfo_CUDA_Test() {
-@@ -2092,11 +2076,8 @@ ProviderInfo_CUDA& GetProviderInfo_CUDA_Test() {
+@@ -2417,11 +2351,8 @@ ProviderInfo_CUDA& GetProviderInfo_CUDA_Test() {
    ORT_THROW("CUDA Provider not available, can't get interface for it");
  }
  
@@ -111,7 +515,7 @@ index 042598535e..9bed2cfcbc 100644
  }
  
  ProviderInfo_CANN& GetProviderInfo_CANN() {
-@@ -2106,11 +2087,8 @@ ProviderInfo_CANN& GetProviderInfo_CANN() {
+@@ -2431,11 +2362,8 @@ ProviderInfo_CANN& GetProviderInfo_CANN() {
    ORT_THROW("CANN Provider not available, can't get interface for it");
  }
  
@@ -124,21 +528,8 @@ index 042598535e..9bed2cfcbc 100644
  }
  
  ProviderInfo_Dnnl& GetProviderInfo_Dnnl() {
-@@ -2120,11 +2098,8 @@ ProviderInfo_Dnnl& GetProviderInfo_Dnnl() {
+@@ -2445,11 +2373,8 @@ ProviderInfo_Dnnl& GetProviderInfo_Dnnl() {
    ORT_THROW("oneDNN Provider not available, can't get interface for it");
- }
- 
--ProviderInfo_ROCM* TryGetProviderInfo_ROCM() try {
-+ProviderInfo_ROCM* TryGetProviderInfo_ROCM() {
-   return reinterpret_cast<ProviderInfo_ROCM*>(s_library_rocm.Get().GetInfo());
--} catch (const std::exception& exception) {
--  LOGS_DEFAULT(ERROR) << exception.what();
--  return nullptr;
- }
- 
- ProviderInfo_ROCM& GetProviderInfo_ROCM() {
-@@ -2134,11 +2109,8 @@ ProviderInfo_ROCM& GetProviderInfo_ROCM() {
-   ORT_THROW("ROCM Provider not available, can't get interface for it");
  }
  
 -ProviderInfo_MIGraphX* TryGetProviderInfo_MIGraphX() try {
@@ -151,5 +542,5 @@ index 042598535e..9bed2cfcbc 100644
  
  ProviderInfo_MIGraphX& GetProviderInfo_MIGraphX() {
 -- 
-2.49.0
+2.55.0
 

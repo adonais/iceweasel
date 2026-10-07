@@ -50,10 +50,10 @@ class ScreamV2 {
   DataRate pacing_rate() const {
     if (received_rate_.IsFinite()) {
       return std::max(
-          target_rate_ * params_.pacing_factor.Get(),
+          target_rate() * params_.pacing_factor.Get(),
           params_.pacing_rate_received_factor.Get() * received_rate_);
     }
-    return target_rate_ * params_.pacing_factor.Get();
+    return target_rate() * params_.pacing_factor.Get();
   }
 
   TimeDelta rtt() const { return delay_based_congestion_control_.rtt(); }
@@ -170,7 +170,7 @@ class ScreamV2 {
   DataSize max_data_in_flight_prev_rtt_ = DataSize::Zero();
   DataRate received_rate_ = DataRate::Zero();
   DataSize accumulated_received_bytes_ = DataSize::Zero();
-  Timestamp last_received_rate_update_time_ = Timestamp::MinusInfinity();
+  Timestamp last_window_receive_time_ = Timestamp::MinusInfinity();
 
   // `last_reaction_to_congestion_time` is called
   // `last_congestion_detected_time` in 4.2.2. Reference Window Update.

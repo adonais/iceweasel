@@ -819,7 +819,7 @@ sftk_forceAttribute(SFTKObject *object, CK_ATTRIBUTE_TYPE type,
                         attribute->attrib.ulValueLen);
         }
         if (attribute->freeData) {
-            PORT_Assert(attribute->attrib.pValue != att_val);
+            PORT_ReleaseAssert(attribute->attrib.pValue != att_val);
             PORT_Free(attribute->attrib.pValue);
         }
         attribute->freeData = PR_FALSE;
@@ -1180,14 +1180,13 @@ sftk_GetObjectFromList(PRBool *hasLocks, PRBool optimizeSpace,
         }
         PR_Unlock(list->lock);
         if (object) {
-            // As a safeguard against misuse of the library, ensure we don't
-            // hand out live objects that somehow land in the free list.
-            PORT_Assert(object->refCount == 0);
-            if (object->refCount == 0) {
-                object->next = object->prev = NULL;
-                *hasLocks = PR_TRUE;
-                return object;
-            }
+            /* A live object on the free list means it was destroyed
+             * twice; some other thread still holds a pointer to it and
+             * will corrupt it if it is handed out again. */
+            PORT_ReleaseAssert(object->refCount == 0);
+            object->next = object->prev = NULL;
+            *hasLocks = PR_TRUE;
+            return object;
         }
     }
     size = isSessionObject ? sizeof(SFTKSessionObject) + hashSize * sizeof(SFTKAttribute *) : sizeof(SFTKTokenObject);
@@ -1369,11 +1368,19 @@ sftk_DestroySessionObjectData(SFTKSessionObject *so)
     for (i = 0; i < MAX_OBJS_ATTRS; i++) {
         unsigned char *value = so->attrList[i].attrib.pValue;
         if (value) {
+            /* An attribute value lives in the attribute's inline space
+             * unless the attribute owns a heap allocation for it. Anything
+             * else means this object was already destroyed and its memory
+             * reused; abort rather than zeroize through a wild pointer. */
+            PORT_ReleaseAssert(so->attrList[i].freeData ||
+                               (value == so->attrList[i].space &&
+                                so->attrList[i].attrib.ulValueLen <= ATTR_SPACE));
             PORT_Memset(value, 0, so->attrList[i].attrib.ulValueLen);
             if (so->attrList[i].freeData) {
                 PORT_Free(value);
             }
             so->attrList[i].attrib.pValue = NULL;
+            so->attrList[i].attrib.ulValueLen = 0;
             so->attrList[i].freeData = PR_FALSE;
         }
     }
@@ -1421,7 +1428,9 @@ void
 sftk_ReferenceObject(SFTKObject *object)
 {
     PR_Lock(object->refLock);
-    PORT_Assert(object->refCount > 0);
+    /* A zero count means this object has already been destroyed; abort
+     * before the new reference is used to operate on freed memory. */
+    PORT_ReleaseAssert(object->refCount > 0);
     object->refCount++;
     PR_Unlock(object->refLock);
 }
@@ -1468,6 +1477,10 @@ sftk_FreeObject(SFTKObject *object)
     CK_RV crv;
 
     PR_Lock(object->refLock);
+    /* A zero count means this object has already been destroyed. Abort,
+     * like an allocator that detects a double free, rather than tear the
+     * object down a second time. */
+    PORT_ReleaseAssert(object->refCount > 0);
     if (object->refCount == 1)
         destroy = PR_TRUE;
     object->refCount--;
@@ -1514,33 +1527,61 @@ sftk_getNextHandle(SFTKSlot *slot)
 }
 
 /*
- * add an object to a slot and session queue. These two functions
- * adopt the object.
+ * Claim the right to remove a session object from the slot's object hash.
+ * Must be called with slot->objectLock held.
+ *
+ * Several threads can reach the same object: handles are slot-global, so any
+ * session can resolve one through sftk_ObjectFromHandle, and
+ * sftk_ClearSession claims removals too when the owning session is closed.
+ * Only the thread that finds the object still queued unlinks it; without that,
+ * each would unlink again and drop the queues' reference a second time.
+ *
+ * Returns PR_TRUE if this caller owns the removal, and with it the reference
+ * the queues held. Drop that reference with sftk_FreeObject() after releasing
+ * slot->objectLock.
  */
-void
-sftk_AddSlotObject(SFTKSlot *slot, SFTKObject *object)
+static PRBool
+sftk_ClaimObjectRemovalLocked(SFTKSlot *slot, SFTKObject *object)
 {
     PRUint32 index = sftk_hash(object->handle, slot->sessObjHashSize);
-    sftkqueue_init_element(object);
-    PR_Lock(slot->objectLock);
-    sftkqueue_add2(object, object->handle, index, slot->sessObjHashTable);
-    PR_Unlock(slot->objectLock);
+
+    if (!object->next && !object->prev &&
+        slot->sessObjHashTable[index] != object) {
+        return PR_FALSE;
+    }
+    sftkqueue_delete2(object, object->handle, index, slot->sessObjHashTable);
+    /* sftkqueue_delete2 patches the neighbours but leaves object->next/prev
+     * pointing at them. Clear them here so the next thread to take the lock
+     * sees an unqueued object and does not re-claim the removal. */
+    sftkqueue_clear_deleted_element(object);
+    return PR_TRUE;
 }
 
+/*
+ * add an object to the slot's object hash and to its session's object list
+ */
 void
 sftk_AddObject(SFTKSession *session, SFTKObject *object)
 {
     SFTKSlot *slot = sftk_SlotFromSession(session);
     SFTKSessionObject *so = sftk_narrowToSessionObject(object);
+    PRUint32 index = sftk_hash(object->handle, slot->sessObjHashSize);
 
-    if (so) {
-        PR_Lock(session->objectLock);
-        sftkqueue_add(&so->sessionList, 0, session->objects, 0);
-        so->session = session;
-        PR_Unlock(session->objectLock);
-    }
-    sftk_AddSlotObject(slot, object);
+    /* the reference the queues hold, taken before the object is reachable */
     sftk_ReferenceObject(object);
+
+    /* Both queues are linked under slot->objectLock in one critical section.
+     * That gives the invariant the teardown paths depend on: a session object
+     * is on its owning session's list if and only if it is in the slot's
+     * object hash. See sftk_DeleteObject(). */
+    sftkqueue_init_element(object);
+    PR_Lock(slot->objectLock);
+    if (so) {
+        so->session = session;
+        sftkqueue_add(&so->sessionList, 0, session->objects, 0);
+    }
+    sftkqueue_add2(object, object->handle, index, slot->sessObjHashTable);
+    PR_Unlock(slot->objectLock);
 }
 
 /*
@@ -1552,39 +1593,28 @@ sftk_DeleteObject(SFTKSession *session, SFTKObject *object)
     SFTKSlot *slot = sftk_SlotFromSession(session);
     SFTKSessionObject *so = sftk_narrowToSessionObject(object);
     CK_RV crv = CKR_OK;
-    PRUint32 index = sftk_hash(object->handle, slot->sessObjHashSize);
 
     /* Handle Token case */
     if (so && so->session) {
-        /* Atomically claim the right to remove this object. Two threads
-         * can race here via NSC_DestroyObject after both succeed in
-         * sftk_ObjectFromHandle; without the claim each would unlink
-         * the queue entry and drop the queue's reference, leading to a
-         * double sftk_FreeObject (and on the second pass, a use-after-
-         * free when sftk_FreeObject reads object->refLock). */
-        PRBool ownsRemove = PR_FALSE;
+        PRBool ownsRemove;
+
+        /* so->session is the session that created the object; it need not be
+         * the caller's session, and we hold no reference on it. Winning the
+         * claim is what makes it safe to touch: the object was still in the
+         * slot hash, so by the invariant in sftk_AddObject() it is still on
+         * so->session's list, so sftk_ClearSession() has not run for that
+         * session and the session has not been freed. */
         PR_Lock(slot->objectLock);
-        if (object->next || object->prev ||
-            slot->sessObjHashTable[index] == object) {
-            sftkqueue_delete2(object, object->handle, index,
-                              slot->sessObjHashTable);
-            /* sftkqueue_delete2 patches the neighbour pointers but
-             * leaves object->next/prev pointing at their old neighbours.
-             * Clear them inside the slot lock so a racing thread that
-             * acquires the lock next sees an empty-looking object and
-             * doesn't re-claim ownership, which would lead to a double
-             * sftk_FreeObject of the queue's reference. */
-            sftkqueue_clear_deleted_element(object);
-            ownsRemove = PR_TRUE;
+        ownsRemove = sftk_ClaimObjectRemovalLocked(slot, object);
+        if (ownsRemove) {
+            PORT_Assert(sftkqueue_is_queued(&so->sessionList, 0,
+                                            so->session->objects, 0));
+            sftkqueue_delete(&so->sessionList, 0, so->session->objects, 0);
         }
         PR_Unlock(slot->objectLock);
 
         if (ownsRemove) {
-            session = so->session;
-            PR_Lock(session->objectLock);
-            sftkqueue_delete(&so->sessionList, 0, session->objects, 0);
-            PR_Unlock(session->objectLock);
-            sftk_FreeObject(object); /* drop the queue's reference */
+            sftk_FreeObject(object); /* drop the queues' reference */
         }
     } else {
         SFTKDBHandle *handle = sftk_getDBForTokenObject(slot, object->handle);
@@ -2223,10 +2253,8 @@ sftk_InitSession(SFTKSession *session, SFTKSlot *slot, CK_SLOT_ID slotID,
     session->hash_context = NULL;
     session->search = NULL;
     session->objectIDCount = 1;
-    session->objectLock = PR_NewLock();
-    if (session->objectLock == NULL) {
-        return CKR_HOST_MEMORY;
-    }
+    /* session->objects[] is protected by slot->objectLock, not by a
+     * per-session lock -- see the lock notes on SFTKSlotStr. */
     session->objects[0] = NULL;
 
     session->slot = slot;
@@ -2271,18 +2299,49 @@ sftk_NewSession(CK_SLOT_ID slotID, CK_NOTIFY notify, CK_VOID_PTR pApplication,
 void
 sftk_ClearSession(SFTKSession *session)
 {
+    SFTKSlot *slot = sftk_SlotFromSession(session);
     SFTKObjectList *op, *next;
+    SFTKObjectList *toFree = NULL;
 
-    /* clean out the attributes */
-    /* since no one is referencing us, it's safe to walk the chain
-     * without a lock */
+    /* Detach every object this session still owns.
+     *
+     * No one references the session any more, but that does not make it safe
+     * to walk this chain unlocked: object handles are slot-global, so a
+     * C_DestroyObject on any other session may be removing one of these
+     * objects right now. slot->objectLock arbitrates both queues and belongs
+     * to the slot, which outlives every session on it.
+     */
+    PR_Lock(slot->objectLock);
     for (op = session->objects[0]; op != NULL; op = next) {
         next = op->next;
-        /* paranoia */
+        /* Unlink by hand: we are discarding the whole list, so there is no
+         * point patching neighbours. */
         op->next = op->prev = NULL;
-        sftk_DeleteObject(session, op->parent);
+        /* Everything on this list is still in the slot hash -- a claimant
+         * unlinks it from both under this lock -- so the claim normally
+         * succeeds. The test guards against a path that ever removes an
+         * object from only one queue. */
+        if (sftk_ClaimObjectRemovalLocked(slot, op->parent)) {
+            /* We own the queues' reference, so the object stays alive until
+             * we drop it; chain the unlinked element up and free below. */
+            op->next = toFree;
+            toFree = op;
+        }
     }
-    PR_DestroyLock(session->objectLock);
+    session->objects[0] = NULL;
+    PR_Unlock(slot->objectLock);
+
+    /* An object that outlives us -- because another thread still holds a
+     * reference -- keeps a stale so->session pointing here. That is safe:
+     * so->session is only dereferenced under slot->objectLock by a thread
+     * that has just won the removal claim, and the claim can no longer
+     * succeed for an object we have already pulled out of the slot hash. */
+    for (op = toFree; op != NULL; op = next) {
+        next = op->next;
+        op->next = NULL;
+        sftk_FreeObject(op->parent); /* drop the queues' reference */
+    }
+
     if (session->enc_context) {
         sftk_FreeContext(session->enc_context);
         session->enc_context = NULL;
@@ -2302,7 +2361,7 @@ sftk_ClearSession(SFTKSession *session)
 static void
 sftk_DestroySession(SFTKSession *session)
 {
-    PORT_Assert(session->refCount == 0);
+    PORT_ReleaseAssert(session->refCount == 0);
     sftk_ClearSession(session);
     PORT_Free(session);
 }
@@ -2347,7 +2406,7 @@ sftk_FreeSession(SFTKSession *session)
     PRLock *lock = SFTK_SESSION_LOCK(slot, session->handle);
 
     PR_Lock(lock);
-    PORT_Assert(session->refCount > 0);
+    PORT_ReleaseAssert(session->refCount > 0);
     if (session->refCount == 1)
         destroy = PR_TRUE;
     session->refCount--;

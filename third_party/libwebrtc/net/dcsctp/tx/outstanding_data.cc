@@ -646,6 +646,14 @@ void OutstandingData::AddHandoverState(webrtc::Timestamp now,
     msg.time_since_sent_ms = (now - item.time_sent()).ms<int32_t>();
     msg.retransmission_count = item.num_retransmissions();
     msg.acked = item.is_acked();
+    msg.is_abandoned = item.is_abandoned();
+    msg.is_nacked = item.is_nacked();
+    // Forcefully retransmit any actively in-flight (outstanding) chunks.
+    // Since the old network path is severed during handover, waiting for
+    // their ACKs can cause a multi-second T3-rtx timeout stall.
+    // Chunks already scheduled for retransmission remain so.
+    msg.is_to_be_retransmitted =
+        item.should_be_retransmitted() || item.is_outstanding();
     msg.message_id = item.message_id().value();
     state.tx.outstanding_data.push_back(msg);
   }
@@ -660,17 +668,14 @@ void OutstandingData::RestoreFromState(webrtc::Timestamp now,
   unacked_packet_bytes_ = 0;
   unacked_items_ = 0;
 
+  UnwrappedTSN tsn = last_cumulative_tsn_ack;
   for (const DcSctpSocketHandoverState::OutstandingData& msg :
        state.tx.outstanding_data) {
+    tsn.Increment();
     Data data(StreamID(msg.stream_id), SSN(msg.ssn), MID(msg.mid), FSN(msg.fsn),
               PPID(msg.ppid), msg.payload, Data::IsBeginning(msg.is_beginning),
               Data::IsEnd(msg.is_end), IsUnordered(msg.is_unordered));
     size_t chunk_size = GetSerializedChunkSize(data);
-    if (!msg.acked) {
-      unacked_payload_bytes_ += data.size();
-      unacked_packet_bytes_ += chunk_size;
-      ++unacked_items_;
-    }
     Item& item = outstanding_data_.emplace_back(
         OutgoingMessageId(msg.message_id), std::move(data),
         now - webrtc::TimeDelta::Millis(msg.time_since_sent_ms),
@@ -681,7 +686,21 @@ void OutstandingData::RestoreFromState(webrtc::Timestamp now,
         LifecycleId(msg.lifecycle_id), msg.retransmission_count);
     if (msg.acked) {
       item.Ack();
+    } else if (msg.is_abandoned) {
+      item.Abandon();
+    } else if (msg.is_to_be_retransmitted) {
+      item.MarkAsToBeRetransmitted();
+      to_be_retransmitted_.insert(tsn);
+    } else if (msg.is_nacked) {
+      item.MarkAsNacked();
+    }
+
+    if (item.is_outstanding()) {
+      unacked_payload_bytes_ += item.data().size();
+      unacked_packet_bytes_ += chunk_size;
+      ++unacked_items_;
     }
   }
+  RTC_DCHECK(IsConsistent());
 }
 }  // namespace dcsctp

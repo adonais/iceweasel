@@ -29,7 +29,8 @@ def _find_moz_phab(tool_dir: Path) -> Optional[Path]:
     "--force",
     "-f",
     action="store_true",
-    help="Force installation even if already installed.",
+    help="Force installation even if already installed. This also recreates the "
+    "tool environment, which is needed after a Python version upgrade.",
 )
 def install_moz_phab(command_context, force=False):
     import logging
@@ -64,7 +65,7 @@ def install_moz_phab(command_context, force=False):
 
     install_cmd = ["uv", "tool", "install", "MozPhab"]
     if force:
-        install_cmd.append("--force")
+        install_cmd.extend(["--force", "--reinstall"])
 
     result = subprocess.run(install_cmd, check=False, text=True)
 

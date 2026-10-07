@@ -5,7 +5,7 @@ var dbg = Debugger(g);
 var hits;
 dbg.onDebuggerStatement = function (frame) {
     var knownLine = frame.eval("line").return;
-    assertEq(frame.script.getOffsetLocation(frame.offset).lineNumber, knownLine);
+    assertEq(frame.script.getOffsetMetadata(frame.offset).lineNumber, knownLine);
     hits++;
 };
 

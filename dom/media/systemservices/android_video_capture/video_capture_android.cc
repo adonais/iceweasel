@@ -140,8 +140,7 @@ void VideoCaptureAndroid::OnIncomingFrame(
                                           : kVideoRotation_0;  // Impossible.
 
   // Historically, we have ignored captureTime. Why?
-  VideoFrame captureFrame(I420Buffer::Rotate(*buffer, rotation), 0,
-                          webrtc::TimeMillis(), rotation);
+  VideoFrame captureFrame(std::move(buffer), 0, webrtc::TimeMillis(), rotation);
 
   DeliverCapturedFrame(captureFrame);
 }

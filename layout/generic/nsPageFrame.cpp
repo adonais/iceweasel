@@ -27,6 +27,9 @@
 #include "nsPageSequenceFrame.h"  // for nsSharedPageData
 #include "nsPresContext.h"
 #include "nsTextFormatter.h"  // for page number localization formatting
+#ifdef ACCESSIBILITY
+#  include "mozilla/a11y/PdfStructTreeBuilder.h"
+#endif
 extern mozilla::LazyLogModule gLayoutPrintingLog;
 #define PR_PL(_p1) MOZ_LOG(gLayoutPrintingLog, mozilla::LogLevel::Debug, _p1)
 
@@ -504,13 +507,6 @@ class nsDisplayHeaderFooter final : public nsPaintedDisplayItem {
 #ifdef DEBUG
     nsPageFrame* pageFrame = do_QueryFrame(mFrame);
     MOZ_ASSERT(pageFrame, "We should have an nsPageFrame");
-#endif
-#ifdef ACCESSIBILITY
-    // There will likely have been a prior AccessibleId item to associate all
-    // subsequent items  with a node in the accessibility tree. However, this
-    // header/footer isn't part of that accessibility node. An AccessibleId of
-    // (0, 0) disassociates subsequent content from any accessibility node.
-    aCtx->GetDrawTarget()->AccessibleId(0, 0);
 #endif
     static_cast<nsPageFrame*>(mFrame)->PaintHeaderFooter(
         *aCtx, ToReferenceFrame(), false);
@@ -993,6 +989,10 @@ void nsPageFrame::PaintHeaderFooter(gfxContext& aRenderingContext, nsPoint aPt,
   mPD->mPrintSettings->GetHeaderStrLeft(headerLeft);
   mPD->mPrintSettings->GetHeaderStrCenter(headerCenter);
   mPD->mPrintSettings->GetHeaderStrRight(headerRight);
+#ifdef ACCESSIBILITY
+  aRenderingContext.GetDrawTarget()->AccessibleId(
+      0, a11y::PdfStructTreeBuilder::SpecialId::PageHeader);
+#endif
   DrawHeaderFooter(aRenderingContext, *fontMet, eHeader, headerLeft,
                    headerCenter, headerRight, rect, ascent, visibleHeight);
 
@@ -1000,6 +1000,10 @@ void nsPageFrame::PaintHeaderFooter(gfxContext& aRenderingContext, nsPoint aPt,
   mPD->mPrintSettings->GetFooterStrLeft(footerLeft);
   mPD->mPrintSettings->GetFooterStrCenter(footerCenter);
   mPD->mPrintSettings->GetFooterStrRight(footerRight);
+#ifdef ACCESSIBILITY
+  aRenderingContext.GetDrawTarget()->AccessibleId(
+      0, a11y::PdfStructTreeBuilder::SpecialId::PageFooter);
+#endif
   DrawHeaderFooter(aRenderingContext, *fontMet, eFooter, footerLeft,
                    footerCenter, footerRight, rect, ascent, visibleHeight);
 }

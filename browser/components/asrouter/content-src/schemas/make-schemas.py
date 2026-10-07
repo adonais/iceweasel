@@ -71,12 +71,6 @@ SCHEMAS = [
             "BookmarksBarButton": (
                 SCHEMA_DIR / "OnboardingMessage" / "BookmarksBarButton.schema.json"
             ),
-            "CFRUrlbarChiclet": (
-                SCHEMA_DIR / "CFR" / "templates" / "CFRUrlbarChiclet.schema.json"
-            ),
-            "ExtensionDoorhanger": (
-                SCHEMA_DIR / "CFR" / "templates" / "ExtensionDoorhanger.schema.json"
-            ),
             "InfoBar": SCHEMA_DIR / "InfoBar" / "InfoBar.schema.json",
             "MenuMessage": (
                 SCHEMA_DIR / "OnboardingMessage" / "MenuMessage.schema.json"
@@ -108,7 +102,6 @@ SCHEMAS = [
         test_corpus={
             "ReachExperiments": Path("corpus", "ReachExperiments.messages.json"),
             # These are generated via extract-test-corpus.js
-            "CFRMessageProvider": Path("corpus", "CFRMessageProvider.messages.json"),
             "OnboardingMessageProvider": Path(
                 "corpus", "OnboardingMessageProvider.messages.json"
             ),

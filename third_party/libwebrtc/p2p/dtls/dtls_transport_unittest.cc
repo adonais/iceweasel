@@ -1905,6 +1905,18 @@ std::vector<std::tuple<EndpointConfig, EndpointConfig>> AllEndpointVariants() {
              }) {
           for (auto dtls_in_stun1 : {false, true}) {
             for (auto dtls_in_stun2 : {false, true}) {
+              // The endpoint receiving the remote certificate directly (callee)
+              // knows if the caller supports dtls_in_stun. Skip cases where the
+              // callee has dtls_in_stun enabled but the caller does not.
+              bool caller_dtls_in_stun = (ice_role == ICEROLE_CONTROLLING)
+                                             ? dtls_in_stun1
+                                             : dtls_in_stun2;
+              bool callee_dtls_in_stun = (ice_role == ICEROLE_CONTROLLING)
+                                             ? dtls_in_stun2
+                                             : dtls_in_stun1;
+              if (!caller_dtls_in_stun && callee_dtls_in_stun) {
+                continue;
+              }
               v.push_back(std::make_tuple(
                   EndpointConfig{
                       .max_protocol_version = version1,

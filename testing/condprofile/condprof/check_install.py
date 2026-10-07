@@ -11,7 +11,6 @@ import os
 import subprocess
 import sys
 
-PY3 = sys.version_info.major == 3
 TOPDIR = os.path.join(os.path.dirname(__file__), "..")
 
 
@@ -27,12 +26,10 @@ def install_reqs():
         # that was decompressed from target.condprof.tests.tar.zst
         run_in_ci = os.path.exists(os.path.join(TOPDIR, "mozfile"))
 
-        # On Python 2 we only install what's required for condprof.client
-        # On Python 3 it's the full thing
         if not run_in_ci:
-            req_files = PY3 and ["base.txt", "local.txt"] or ["local-client.txt"]
+            req_files = ["base.txt", "local.txt"]
         else:
-            req_files = PY3 and ["base.txt", "ci.txt"] or ["ci-client.txt"]
+            req_files = ["base.txt", "ci.txt"]
 
         for req_file in req_files:
             req_file = os.path.join(TOPDIR, "requirements", req_file)

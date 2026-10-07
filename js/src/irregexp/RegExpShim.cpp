@@ -216,6 +216,12 @@ const void* ExternalReference::TopOfRegexpStack(Isolate* isolate) {
 }
 
 /* static */
+const void* ExternalReference::RegexpStackPointer(Isolate* isolate) {
+  return reinterpret_cast<const void*>(
+      isolate->regexp_stack()->stack_pointer_address());
+}
+
+/* static */
 size_t ExternalReference::SizeOfExcludingThis(
     mozilla::MallocSizeOf mallocSizeOf, regexp::Stack* regexpStack) {
   if (regexpStack->thread_local_.owns_memory_) {

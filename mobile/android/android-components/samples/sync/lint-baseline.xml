@@ -1,15 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <issues format="6" by="lint 9.2.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.2.1)" variant="all" version="9.2.1">
 
-    <issue
-        id="UselessParent"
-        message="This `ScrollView` layout or its `RelativeLayout` parent is unnecessary"
-        errorLine1="    &lt;ScrollView"
-        errorLine2="     ~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/activity_main.xml"
-            line="14"
-            column="6"/>
-    </issue>
-
 </issues>

@@ -183,7 +183,8 @@ If a `videoWrapperScriptPath` is detected while initializing the Picture-in-Pict
 
 #### API
 
-See the full list of methods at [API References](#toolkit-actors-pictureinpicturechild-jsm).
+See the full list of methods on `PictureInPictureChildVideoWrapper` in
+{searchfox}`toolkit/actors/PictureInPictureChild.sys.mjs`.
 
 #### Sandbox
 

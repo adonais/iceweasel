@@ -31,22 +31,13 @@
     "deemphasized": {
       "@base": {
         "value": {
-          "brand": {
-            "light": "{color.gray.30}",
-            "dark": "{color.gray.70}"
-          },
-          "platform": {
-            "default": "color-mix(in srgb, currentColor 24%, transparent)"
-          },
+          "default": "color-mix(in srgb, currentColor 24%, transparent)",
           "prefersContrast": "currentColor",
           "forcedColors": "ButtonText",
           "nova": {
-            "comment": "Maintain the brand/platform split",
+            "comment": "Nova only changes forcedColors; Figma exports a missing color-mix as transparent",
             "value": {
-              "brand": {
-                "light": "{color.gray.20}",
-                "dark": "{color.gray.50}"
-              },
+              "default": "color-mix(in srgb, currentColor 24%, transparent)",
               "forcedColors": "CanvasText"
             }
           }

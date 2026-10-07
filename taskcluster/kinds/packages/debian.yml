@@ -81,32 +81,37 @@ deb8-gcc-8:
             echo OFFLOAD_BUILD_DEP= >> debian/rules.conf &&
             debian/rules control NT=
 
-deb8-gcc-10:
-    description: "gcc 10 for Debian jessie"
+deb8-gcc-11:
+    description: "gcc 11 for Debian jessie"
     treeherder:
-        symbol: Deb8(gcc-10)
+        symbol: Deb8(gcc-11)
     worker:
         max-run-time: 3600
         env:
             DEB_BUILD_OPTIONS: nocheck
             WITH_BOOTSTRAP: 'off'
-            WITHOUT_LANG: ada brig cilkrts fortran d go objc obj-c++ asan lsan tsan ubsan jit nvptx
+            WITHOUT_LANG: ada brig cilkrts fortran d go m2 objc obj-c++ asan lsan tsan ubsan jit nvptx
     run:
         using: debian-package
         dist: jessie
         dsc:
-            url: https://snapshot.debian.org/archive/debian/20240328T144713Z/pool/main/g/gcc-10/gcc-10_10.5.0-4.dsc
-            sha256: 4fd04f9b3c06959f5f9ccf8f0f17ce1ea3e78f49eab4b2fb59ec823949ffa91f
+            url: https://snapshot.debian.org/archive/debian/20260329T202916Z/pool/main/g/gcc-11/gcc-11_11.5.0-11.dsc
+            sha256: 40b863c7b4f91f483d4b3280f64aa8c48e41d6f468cda082d54a464138a2cebd
         # autoconf and quilt necessary to run the `debian/rules control` command to
         # generate an updated debian/control.
         # removing the libzstd-dev build dependency that doesn't exist in jessie.
+        # removing `Rules-Requires-Root` that is unknown to jessie's dpkg-dev.
         # uncommenting `with_common_libs` makes the packaging create the libstdc++6 package.
+        # overriding `offload_targets` and with_offload_gcn to disable offload compilers,
+        # which gcc-10 disabled on everything older than stretch but gcc-11 doesn't
+        # (and jessie's binutils can't assemble amdgcn).
         # `libstdcxx_abi = new` overrides the default that disables the new ABI on jessie
         # `BINUTILSBDV=2.25-3~` and `ISL_BUILD_DEP=libisl-dev,` override wrong versions
         # in build dependencies for jessie.
         # `OFFLOAD_BUILD_DEP=` overrides the dependency on nvptx, which is not available
         # in jessie.
         # autoconf2.69 is available in jessie, but as autoconf, not autoconf2.69.
+        # we downgrade the debhelper compat to 9, which is the version jessie has.
         # we relax the libc6 requirements to be compatible with jessie.
         # the removal of debhelper/generated lines from debian/rules2 works around
         # an issue that arises from triggers not being generated for the libgcc-s1 package
@@ -119,14 +124,18 @@ deb8-gcc-10:
         pre-build-command: >-
             apt install autoconf quilt &&
             sed -i 's/libzstd-dev,//' debian/control.m4 &&
+            sed -i '/^Rules-Requires-Root:/d' debian/control.m4 &&
             sed -i 's/#with_common_libs/with_common_libs/' debian/rules.defs &&
+            sed -i 's/^#with_offload_gcn := not yet built for GCC 11/offload_targets :=\nwith_offload_gcn :=/' debian/rules.defs &&
             echo libstdcxx_abi = new >> debian/rules.defs &&
             echo BINUTILSBDV=2.25-3~ >> debian/rules.conf &&
             echo ISL_BUILD_DEP=libisl-dev, >> debian/rules.conf &&
             echo OFFLOAD_BUILD_DEP= >> debian/rules.conf &&
             sed -i 's/autoconf_version = 2.69/autoconf_version =/' debian/rules.conf debian/rules.patch &&
+            sed -i 's/debhelper (>= 11)/debhelper (>= 9)/' debian/rules.conf &&
+            echo 9 > debian/compat &&
             sed -i 's/libc_ver := 2.23/libc_ver := 2.19/' debian/rules.conf &&
-            sed -i 's/libc_dev_ver := 2.30-1~/libc_dev_ver := 2.19/' debian/rules.conf &&
+            sed -i 's/libc_dev_ver := 2.23-1~/libc_dev_ver := 2.19/' debian/rules.conf &&
             sed -i '/debhelper\/generated/d' debian/rules2 &&
             debian/rules control NT= biarchx32archs= &&
             sed -i 's/lib32gcc-s1 \[[^,]*, //' debian/control
@@ -158,62 +167,67 @@ deb8-32-gcc-8:
             debian/rules control NT=
         arch: i386
 
-deb8-32-gcc-10:
-    description: "gcc 10 for Debian jessie"
+deb8-32-gcc-11:
+    description: "gcc 11 for Debian jessie"
     treeherder:
-        symbol: Deb8-32(gcc-10)
+        symbol: Deb8-32(gcc-11)
     worker:
         max-run-time: 3600
         env:
             DEB_BUILD_OPTIONS: nocheck
             WITH_BOOTSTRAP: 'off'
-            WITHOUT_LANG: ada biarch brig cilkrts fortran d go objc obj-c++ asan lsan tsan ubsan jit nvptx
+            WITHOUT_LANG: ada biarch brig cilkrts fortran d go m2 objc obj-c++ asan lsan tsan ubsan jit nvptx
     run:
         using: debian-package
         dist: jessie
         dsc:
-            url: https://snapshot.debian.org/archive/debian/20240328T144713Z/pool/main/g/gcc-10/gcc-10_10.5.0-4.dsc
-            sha256: 4fd04f9b3c06959f5f9ccf8f0f17ce1ea3e78f49eab4b2fb59ec823949ffa91f
+            url: https://snapshot.debian.org/archive/debian/20260329T202916Z/pool/main/g/gcc-11/gcc-11_11.5.0-11.dsc
+            sha256: 40b863c7b4f91f483d4b3280f64aa8c48e41d6f468cda082d54a464138a2cebd
         pre-build-command: >-
             apt install autoconf quilt &&
             sed -i 's/libzstd-dev,//' debian/control.m4 &&
+            sed -i '/^Rules-Requires-Root:/d' debian/control.m4 &&
             sed -i 's/#with_common_libs/with_common_libs/' debian/rules.defs &&
+            sed -i 's/^#with_offload_gcn := not yet built for GCC 11/offload_targets :=\nwith_offload_gcn :=/' debian/rules.defs &&
             echo libstdcxx_abi = new >> debian/rules.defs &&
             echo GCC_MULTILIB_BUILD_DEP='$(DPKG_BUILD_DEP)' >> debian/rules.conf &&
             echo BINUTILSBDV=2.25-3~ >> debian/rules.conf &&
             echo ISL_BUILD_DEP=libisl-dev, >> debian/rules.conf &&
             echo OFFLOAD_BUILD_DEP= >> debian/rules.conf &&
             sed -i 's/autoconf_version = 2.69/autoconf_version =/' debian/rules.conf debian/rules.patch &&
+            sed -i 's/debhelper (>= 11)/debhelper (>= 9)/' debian/rules.conf &&
+            echo 9 > debian/compat &&
             sed -i 's/libc_ver := 2.23/libc_ver := 2.19/' debian/rules.conf &&
-            sed -i 's/libc_dev_ver := 2.30-1~/libc_dev_ver := 2.19/' debian/rules.conf &&
+            sed -i 's/libc_dev_ver := 2.23-1~/libc_dev_ver := 2.19/' debian/rules.conf &&
             sed -i '/debhelper\/generated/d' debian/rules2 &&
             debian/rules control NT= biarchx32archs= &&
             sed -i 's/lib64gcc-s1 \[[^,]*, //' debian/control
         arch: i386
 
-deb10-arm64-gcc-10:
-    description: "gcc 10 for Debian buster"
+deb10-arm64-gcc-11:
+    description: "gcc 11 for Debian buster"
     worker-type: b-linux-aarch64
     treeherder:
-        symbol: Deb10a64(gcc-10)
+        symbol: Deb10a64(gcc-11)
     worker:
-        max-run-time: 3600
+        max-run-time: 5400
         env:
             DEB_BUILD_OPTIONS: nocheck
             WITH_BOOTSTRAP: 'off'
-            WITHOUT_LANG: ada biarch brig cilkrts fortran d go objc obj-c++ asan lsan tsan ubsan jit nvptx
+            WITHOUT_LANG: ada biarch brig cilkrts fortran d go m2 objc obj-c++ asan lsan tsan ubsan jit nvptx
     run:
         using: debian-package
         dist: buster
         dsc:
-            url: https://snapshot.debian.org/archive/debian/20240328T144713Z/pool/main/g/gcc-10/gcc-10_10.5.0-4.dsc
-            sha256: 4fd04f9b3c06959f5f9ccf8f0f17ce1ea3e78f49eab4b2fb59ec823949ffa91f
+            url: https://snapshot.debian.org/archive/debian/20260329T202916Z/pool/main/g/gcc-11/gcc-11_11.5.0-11.dsc
+            sha256: 40b863c7b4f91f483d4b3280f64aa8c48e41d6f468cda082d54a464138a2cebd
         pre-build-command: >-
             apt install autoconf quilt &&
             sed -i 's/#with_common_libs/with_common_libs/' debian/rules.defs &&
             echo BINUTILSBDV=2.31 >> debian/rules.conf &&
-            sed -i 's/libc_dev_ver := 2.30-1~/libc_dev_ver := 2.28/' debian/rules.conf &&
+            sed -i 's/libc_dev_ver := 2.23-1~/libc_dev_ver := 2.28/' debian/rules.conf &&
             sed -i '/debhelper\/generated/d' debian/rules2 &&
+            sed -i 's/dwz/: dwz/' debian/rules2 &&
             debian/rules control NT=
         arch: arm64
 

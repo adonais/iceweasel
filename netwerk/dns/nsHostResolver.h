@@ -269,7 +269,8 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   // Resolve the host from the DNS cache.
   already_AddRefed<nsHostRecord> FromCache(nsHostRecord* aRec,
                                            const nsACString& aHost,
-                                           uint16_t aType, nsresult& aStatus)
+                                           uint16_t aType, nsresult& aStatus,
+                                           bool& aFromStaleCache)
       MOZ_REQUIRES(mDBLock) MOZ_REQUIRES(mQueue.mLock);
   // Called when the host name is an IP address and has been passed.
   already_AddRefed<nsHostRecord> FromCachedIPLiteral(nsHostRecord* aRec);
@@ -280,8 +281,8 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   already_AddRefed<nsHostRecord> FromUnspecEntry(
       nsHostRecord* aRec, const nsACString& aHost, const nsACString& aTrrServer,
       const nsACString& aOriginSuffix, uint16_t aType,
-      nsIDNSService::DNSFlags aFlags, uint16_t af, bool aPb, nsresult& aStatus)
-      MOZ_REQUIRES(mDBLock) MOZ_REQUIRES(mQueue.mLock);
+      nsIDNSService::DNSFlags aFlags, uint16_t af, bool aPb, nsresult& aStatus,
+      bool& aFromStaleCache) MOZ_REQUIRES(mDBLock) MOZ_REQUIRES(mQueue.mLock);
 
   bool OtherFamilyHasUsablePositiveResult(const nsHostKey& aKey, uint16_t aAf,
                                           const mozilla::TimeStamp& aNow,

@@ -2,6 +2,6 @@
 
 function test(a, b, c, d, e, {} = "zmi") {
     var r = 0
-    r += Math.min(a, b, c, r.script.getLineOffsets(g.line0 + 3), e);
+    r += Math.min(a, b, c, r.script.getPossibleBreakpointOffsets({ line: g.line0 + 3 }), e);
 }
 test();

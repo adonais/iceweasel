@@ -43,13 +43,17 @@ function isRtl() {
  * unmounting instead would re-fire impressions on every return.
  *
  * @param {object} props
- * @param {Array<{id: string, content: React.ReactNode}>} props.spaces - populated
- *   spaces, in tablist order
+ * @param {Array<{id: string, content: React.ReactNode, label?: string,
+ *   icon?: string, iconFamily?: string}>} props.spaces - populated spaces, in
+ *   tablist order. label, icon and iconFamily are set for config-driven spaces
+ *   and absent for the V1 ones.
+ * @param {string} [props.defaultId] - space to open on, when that is not the
+ *   leftmost one. Defaults to the leftmost.
  * @param {Function} props.dispatch - Redux dispatch, for switch telemetry
  */
-export function Spaces({ spaces, dispatch }) {
+export function Spaces({ spaces, defaultId, dispatch }) {
   // By id, not index: turning a space off shifts the indices after it.
-  const [activeId, setActiveId] = useState(spaces[0]?.id);
+  const [activeId, setActiveId] = useState(defaultId ?? spaces[0]?.id);
   // Falls back to the leftmost space when the active one is turned off.
   const activeIndex = Math.max(
     spaces.findIndex(space => space.id === activeId),
@@ -214,12 +218,23 @@ export function Spaces({ spaces, dispatch }) {
                   tabIndex={isActive ? 0 : -1}
                   onClick={() => switchTo(index, "tab")}
                 >
-                  <img
-                    className="spaces-tab-icon"
-                    src={SPACE_META[space.id].iconsrc}
-                    alt=""
-                  />
-                  <span data-l10n-id={SPACE_META[space.id].l10nId} />
+                  {/* A thematic space carries its own label and icon from
+                  the layout config; SPACE_META covers the V1 spaces, whose
+                  labels are localized. An icon the config got wrong is simply
+                  absent, and the label still names the tab. */}
+                  {(space.icon ?? SPACE_META[space.id]?.iconsrc) && (
+                    <img
+                      className="spaces-tab-icon"
+                      src={space.icon ?? SPACE_META[space.id].iconsrc}
+                      data-icon-family={space.iconFamily}
+                      alt=""
+                    />
+                  )}
+                  {space.label ? (
+                    <span>{space.label}</span>
+                  ) : (
+                    <span data-l10n-id={SPACE_META[space.id].l10nId} />
+                  )}
                 </button>
               );
             })}

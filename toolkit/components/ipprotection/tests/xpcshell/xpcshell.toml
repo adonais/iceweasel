@@ -21,17 +21,23 @@ prefs = ["browser.ipProtection.override.serverlist=[]"]
 
 ["test_IPPEnterpriseAuthProvider.js"]
 
-["test_IPPExceptionsManager.js"]
-
 ["test_IPPFxaActivateAuthProvider.js"]
 
 ["test_IPPGpiAuthProvider.js"]
 
+["test_IPPInfrastructureRuleProvider.js"]
+
 ["test_IPPLifecycleHelper.js"]
+
+["test_IPPPermissionRuleProvider.js"]
+
+["test_IPPProxyableRuleProvider.js"]
 
 ["test_IPPSessionPrefManager.js"]
 
 ["test_IPPSignInWatcher.js"]
+
+["test_IPPSiteRuleManager.js"]
 
 ["test_IPPStartupCache.js"]
 
@@ -42,3 +48,7 @@ prefs = ["browser.ipProtection.override.serverlist=[]"]
 ["test_IPProtectionStates.js"]
 
 ["test_IPProxyManager.js"]
+
+["test_MatchPatternPrefRule.js"]
+
+["test_SiteRuleManager.js"]

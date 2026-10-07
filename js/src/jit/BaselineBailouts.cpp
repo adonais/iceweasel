@@ -213,7 +213,7 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   bool isPrologueBailout();
   bool isGeneratorResumePrologueBailout();
   jsbytecode* getResumePC();
-  void* getStubReturnAddress();
+  uint8_t* getBailoutStubAddr();
 
   uint32_t exprStackSlots() const { return exprStackSlots_; }
 
@@ -256,6 +256,17 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
     return resumeMode() == ResumeMode::InlinedAccessor;
   }
 
+  // Helpers for the stub info entries immediately following the header.
+  size_t stubInfoBytes() {
+    return header_->numStubInfos * sizeof(BailoutStubInfo);
+  }
+
+  uint8_t* stubInfoBegin() {
+    return reinterpret_cast<uint8_t*>(info()) + sizeof(BaselineBailoutInfo);
+  }
+
+  uint8_t* stubInfoEnd() { return stubInfoBegin() + stubInfoBytes(); }
+
   [[nodiscard]] bool enlarge() {
     MOZ_ASSERT(header_ != nullptr);
     size_t newSize;
@@ -274,11 +285,11 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
     //
     //   Before:
     //
-    //     [ Header | .. | Payload ]
+    //     [ Header | StubInfo | .. | Payload ]
     //
     //   After:
     //
-    //     [ Header | ............... | Payload ]
+    //     [ Header | StubInfo | ............... | Payload ]
     //
     // Size of Payload is |bufferUsed_|.
     //
@@ -287,14 +298,34 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
     //
     // We also need to update |copyStackBottom| and |copyStackTop| because these
     // fields point to the Payload's start and end, respectively.
+    //
+    // We also need to copy the bailout stub information to the new buffer.
     using BailoutInfoPtr = UniquePtr<BaselineBailoutInfo>;
     BailoutInfoPtr newHeader(new (newBufferRaw) BaselineBailoutInfo(*header_));
     newHeader->copyStackTop = newBufferRaw + newSize;
     newHeader->copyStackBottom = newHeader->copyStackTop - bufferUsed_;
     memcpy(newHeader->copyStackBottom, header_->copyStackBottom, bufferUsed_);
+    memcpy(newBufferRaw + sizeof(BaselineBailoutInfo), stubInfoBegin(),
+           stubInfoBytes());
     bufferTotal_ = newSize;
-    bufferAvail_ = newSize - (sizeof(BaselineBailoutInfo) + bufferUsed_);
+    size_t totalUsed =
+        sizeof(BaselineBailoutInfo) + stubInfoBytes() + bufferUsed_;
+    bufferAvail_ = newSize - totalUsed;
     header_ = std::move(newHeader);
+    return true;
+  }
+
+  [[nodiscard]] bool writeBailoutStubInfo(const BailoutStubInfo& info) {
+    if (sizeof(info) > bufferAvail_ && !enlarge()) {
+      return false;
+    }
+
+    memcpy(stubInfoEnd(), &info, sizeof(info));
+    JitSpew(JitSpew_BaselineBailouts,
+            "      BAILOUT_STUB_INFO  frameBoundary=%p bailoutStub=%p at=%p",
+            info.frameBoundary, info.bailoutStub, stubInfoEnd());
+    header_->numStubInfos++;
+    bufferAvail_ -= sizeof(info);
     return true;
   }
 
@@ -990,8 +1021,16 @@ bool BaselineStackBuilder::finishOuterFrame() {
     return false;
   }
 
-  uint8_t* retAddr = baselineInterp.retAddrForIC(op_);
-  return writePtr(retAddr, "ReturnAddr");
+  uint8_t* frameBoundary = virtualPointerAtStackOffset(0);
+  uint8_t* bailoutStub = baselineInterp.bailoutStubAddrForIC(op_);
+  if (!writeBailoutStubInfo({frameBoundary, bailoutStub})) {
+    return false;
+  }
+
+  // Push nullptr in the return address stack frame slot.
+  // The real return address is pushed by the bailout stub.
+  // See the [SMDOC] comment IonMonkey Bailouts in Bailouts.h for details.
+  return writePtr(static_cast<void*>(nullptr), "ReturnAddr");
 }
 
 template <typename GetSlot>
@@ -1166,10 +1205,16 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
     return false;
   }
 
-  // Push return address into ICCall_Scripted stub, immediately after the call.
-  void* baselineCallReturnAddr = getStubReturnAddress();
-  MOZ_ASSERT(baselineCallReturnAddr);
-  if (!writePtr(baselineCallReturnAddr, "ReturnAddr")) {
+  uint8_t* frameBoundary = virtualPointerAtStackOffset(0);
+  uint8_t* bailoutStub = getBailoutStubAddr();
+  if (!writeBailoutStubInfo({frameBoundary, bailoutStub})) {
+    return false;
+  }
+
+  // Push nullptr in the return address stack frame slot.
+  // The real return address is pushed by the bailout stub.
+  // See the [SMDOC] comment IonMonkey Bailouts in Bailouts.h for details.
+  if (!writePtr(static_cast<void*>(nullptr), "ReturnAddr")) {
     return false;
   }
 
@@ -1212,6 +1257,11 @@ bool BaselineStackBuilder::finishLastFrame() {
   }
   setResumeAddr(resumeAddr);
   JitSpew(JitSpew_BaselineBailouts, "      Set resumeAddr=%p", resumeAddr);
+
+  uint8_t* stackPointer = virtualPointerAtStackOffset(0);
+  if (!writeBailoutStubInfo({stackPointer, nullptr})) {
+    return false;
+  }
 
   if (cx_->runtime()->geckoProfiler().enabled()) {
     // Register bailout with profiler.
@@ -1342,26 +1392,25 @@ bool BaselineStackBuilder::validateFrame() {
 }
 #endif
 
-void* BaselineStackBuilder::getStubReturnAddress() {
+uint8_t* BaselineStackBuilder::getBailoutStubAddr() {
   const BaselineICFallbackCode& code =
       cx_->runtime()->jitRuntime()->baselineICFallbackCode();
 
   if (IsGetPropOp(op_)) {
-    return code.bailoutReturnAddr(BailoutReturnKind::GetProp);
+    return code.bailoutStubAddr(BailoutReturnKind::GetProp);
   }
   if (IsSetPropOp(op_)) {
-    return code.bailoutReturnAddr(BailoutReturnKind::SetProp);
+    return code.bailoutStubAddr(BailoutReturnKind::SetProp);
   }
   if (IsGetElemOp(op_)) {
-    return code.bailoutReturnAddr(BailoutReturnKind::GetElem);
+    return code.bailoutStubAddr(BailoutReturnKind::GetElem);
   }
 
-  // This should be a call op of some kind, now.
   MOZ_ASSERT(IsInvokeOp(op_) && !IsSpreadOp(op_));
   if (IsConstructOp(op_)) {
-    return code.bailoutReturnAddr(BailoutReturnKind::New);
+    return code.bailoutStubAddr(BailoutReturnKind::New);
   }
-  return code.bailoutReturnAddr(BailoutReturnKind::Call);
+  return code.bailoutStubAddr(BailoutReturnKind::Call);
 }
 
 static inline jsbytecode* GetNextNonLoopHeadPc(jsbytecode* pc) {

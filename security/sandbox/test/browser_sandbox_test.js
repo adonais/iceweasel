@@ -7,7 +7,7 @@
 function test() {
   waitForExplicitFinish();
 
-  // Types of processes to test, taken from GeckoProcessTypes.h
+  // Types of processes to test, taken from GeckoProcessTypes.inc
   // GPU process might not run depending on the platform, so we need it to be
   // the last one of the list to allow the remainingTests logic below to work
   // as expected.

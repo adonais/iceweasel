@@ -797,10 +797,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_library("audio_coding_modules_tests") {
-    testonly = true
-    visibility += webrtc_default_visibility
-
+  rtc_cc_test("audio_coding_modules_tests") {
     sources = [
       "test/Channel.cc",
       "test/Channel.h",
@@ -857,6 +854,10 @@ if (rtc_include_tests) {
       "//third_party/abseil-cpp/absl/strings",
       "//third_party/abseil-cpp/absl/strings:string_view",
     ]
+    data_deps = [ "../../resources:modules_tests_data" ]
+    if (is_ios) {
+      deps += [ "../../resources:modules_tests_bundle_data" ]
+    }
     defines = audio_coding_defines
   }
 

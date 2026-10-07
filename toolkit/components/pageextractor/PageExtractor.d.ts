@@ -42,6 +42,7 @@ export type DOMExtractionResult = {
   text: string;
   links: string[];
   canvases: HTMLCanvasElement[];
+  siteStrategy: string | null;
 };
 
 export type ExtractionResult = {
@@ -51,6 +52,9 @@ export type ExtractionResult = {
 };
 
 export type ExtractionStrategy = Partial<{
+  // Identifies the site-specific strategy ("google-search", "youtube"), or
+  // null for the default one.
+  name: string | null;
   // A CSS selector for elements to exclude from extraction.
   filterSelector: string;
   // Whether to format blocks that are inside anchors as markdown links.

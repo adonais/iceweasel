@@ -141,10 +141,7 @@ class SourcePreview extends Component {
   };
 
   componentDidMount() {
-    this.shortcuts = new KeyShortcuts({
-      window,
-      target: this.editorRowContainer,
-    });
+    this.shortcuts = new KeyShortcuts(this.editorRowContainer);
 
     this.setState({ shortcutsReady: true });
     this.loadEditor();

@@ -336,6 +336,10 @@ class FakeVideoReceiveStream final : public VideoReceiveStreamInterface {
         std::move(associated_payload_types);
   }
 
+  void SetDecoders(std::vector<Decoder> decoders) override {
+    config_.decoders = std::move(decoders);
+  }
+
   void SetRawPayloadTypes(std::set<int> raw_payload_types) override {
     config_.rtp.raw_payload_types = std::move(raw_payload_types);
   }

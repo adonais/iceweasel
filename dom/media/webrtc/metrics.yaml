@@ -481,7 +481,7 @@ webrtcdtls:
     notification_emails:
       - webrtc-telemetry-alerts@mozilla.com
       - seceng-telemetry@mozilla.com
-    expires: 158
+    expires: 164
 
   srtp_cipher:
     type: labeled_counter
@@ -1281,6 +1281,34 @@ webrtc:
       - webrtc-telemetry-alerts@mozilla.com
     expires: never
     telemetry_mirror: WEBRTC_GET_USER_MEDIA_TYPE
+
+  get_user_media_source_granted:
+    type: labeled_counter
+    description: >
+      Counts the media source actually granted for a getUserMedia() call,
+      keyed by MediaSourceEnum value. Recorded once the request is granted,
+      using the concrete device that was allocated, so it reflects the true
+      display surface chosen for display-capture requests (screen, a
+      specific window, or a browser tab) rather than the pre-selection
+      request hint that get_user_media_type records.
+    labels:
+      - camera
+      - screen
+      - application
+      - window
+      - browser
+      - microphone
+      - audiocapture
+      - other
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063642
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063642
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - webrtc-telemetry-alerts@mozilla.com
+    expires: never
 
   renegotiations:
     type: custom_distribution

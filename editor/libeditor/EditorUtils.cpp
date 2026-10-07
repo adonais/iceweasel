@@ -12,6 +12,7 @@
 #include "mozilla/ComputedStyle.h"  // for ComputedStyle
 #include "mozilla/IntegerRange.h"   // for IntegerRange
 #include "mozilla/dom/Document.h"   // for dom::Document
+#include "mozilla/dom/Range.h"      // for Range
 #include "mozilla/dom/Selection.h"  // for dom::Selection
 #include "mozilla/dom/Text.h"       // for dom::Text
 
@@ -23,7 +24,6 @@
 #include "nsIContent.h"               // for nsIContent
 #include "nsINode.h"                  // for nsINode
 #include "nsITransferable.h"          // for nsITransferable
-#include "nsRange.h"                  // for nsRange
 #include "nsStyleConsts.h"            // for StyleWhiteSpace
 #include "nsStyleStruct.h"            // for nsStyleText, etc
 

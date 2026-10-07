@@ -22,6 +22,15 @@ interface nsIFOG : nsISupports
   void initializeFOG([optional] in AUTF8String aDataPathOverride, [optional] in AUTF8String aAppIdOverride, [optional] in boolean aDisableInternalPings);
 
   /**
+   * Whether FOG has been initialized.
+   *
+   * Recording metrics beforehand is safe because it is buffered, but the
+   * blocking test APIs (e.g. `testGetValue`) deadlock the calling thread if
+   * used before this is true. Tests that read metrics early should wait on it.
+   */
+  readonly attribute boolean initialized;
+
+  /**
    * Register custom pings.
    *
    * Ensure all custom pings are registered with Glean.

@@ -815,7 +815,7 @@ add_task(async function test_shouldProxy_system_principal() {
 });
 
 add_task(async function test_shouldProxy_ipp_exception() {
-  IPPExceptionsManager.init();
+  IPPSiteRuleManager.init();
 
   const filter = IPPChannelFilter.create();
   filter.proxyInfo = {};
@@ -831,7 +831,7 @@ add_task(async function test_shouldProxy_ipp_exception() {
       {}
     );
 
-  IPPExceptionsManager.addExclusion(excludedPrincipal);
+  IPPPermissionRules.setRule(excludedPrincipal, IPPPrincipalRules.EXCLUDED);
 
   // Channel with an excluded loadingPrincipal should not be proxied.
   const excludedChannel = NetUtil.newChannel({
@@ -890,7 +890,7 @@ add_task(async function test_shouldProxy_ipp_exception() {
   );
 
   // After removing the exclusion, the channel should be proxied again.
-  IPPExceptionsManager.removeExclusion(excludedPrincipal);
+  IPPPermissionRules.setRule(excludedPrincipal, IPPPrincipalRules.DEFAULT);
 
   const afterRemovalChannel = NetUtil.newChannel({
     uri: "http://cdn.example.com/file.bin",
@@ -902,7 +902,7 @@ add_task(async function test_shouldProxy_ipp_exception() {
     filter.shouldProxy(afterRemovalChannel),
     "Channel should be proxied after removing the exclusion"
   );
-  IPPExceptionsManager.uninit();
+  IPPSiteRuleManager.uninit();
   Services.perms.removeByType("ipp-vpn");
 });
 

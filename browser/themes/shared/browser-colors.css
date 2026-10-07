@@ -5,10 +5,6 @@
 @import url("chrome://global/skin/design-system/toolbar.css");
 
 :root {
-  --short-notification-background: #0250bb;
-  --short-notification-gradient: #9059ff;
-  --warning-icon-bgcolor: light-dark(#ffa436, #ffbd4f);
-
   --content-area-shadow: var(--card-box-shadow);
   --chrome-content-separator-color: var(--card-border-color);
 

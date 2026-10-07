@@ -11,10 +11,17 @@ import {
   isSideBySideAssigned,
   isSpacesActive,
   isSpacesAssigned,
+  isSpacesThematicAssigned,
   isAutoMinimizeWidgetsAssigned,
   resolveAutoMinimizeDelayMs,
   resolvePageLayoutVariant,
   resolvePopulatedSpaces,
+  resolveThematicDefaultSpace,
+  resolveThematicSpaceSections,
+  normalizeSpacesConfig,
+  resolveSpacesConfigFrom,
+  resolveThematicSpacesConfig,
+  resolveThematicSpaceWidgets,
   sideBySideBandClasses,
   spacesBandClasses,
 } from "common/PageLayoutVariants.mjs";
@@ -31,6 +38,18 @@ const WIDGETS_ON = {
   "widgets.system.lists.enabled": true,
   "widgets.lists.enabled": true,
 };
+
+// isSpacesActive derives the section keys itself, so these need the shape the
+// feed actually delivers rather than a bare list.
+const feedState = (...sectionKeys) => ({
+  feeds: {
+    data: {
+      "https://example.com/feed": {
+        data: { sections: sectionKeys.map(sectionKey => ({ sectionKey })) },
+      },
+    },
+  },
+});
 
 const sideBySide = {
   "pageLayouts.variant": PAGE_LAYOUT_VARIANTS.SIDE_BY_SIDE_CONTENT_LEAD,
@@ -479,6 +498,466 @@ describe("isSpacesActive", () => {
   });
 });
 
+describe("the thematic spaces variant", () => {
+  // There is no built-in config, so every thematic case has to supply one. This
+  // mirrors the shape devtools seeds and a recipe ships.
+  const RAW_CONFIG = {
+    order: ["games", "home", "living"],
+    default: "home",
+    spaces: {
+      home: {
+        label: "Home",
+        icon: "chrome://browser/skin/home.svg",
+        sections: ["top_stories_section", "politics"],
+        widgets: ["pictureOfTheDay"],
+      },
+      games: {
+        label: "Games & Entertainment",
+        icon: "chrome://browser/skin/home.svg",
+        sections: ["entertainment", "sports"],
+        widgets: ["crossword"],
+      },
+      living: {
+        label: "Living",
+        icon: "chrome://browser/skin/home.svg",
+        sections: ["food", "health"],
+        widgets: ["lists", "focusTimer"],
+      },
+    },
+  };
+  const CONFIG = normalizeSpacesConfig(RAW_CONFIG);
+  const thematic = {
+    ...spaces,
+    "pageLayouts.variant": PAGE_LAYOUT_VARIANTS.SPACES_THEMATIC_V1,
+    trainhopConfig: { spaces: RAW_CONFIG },
+  };
+
+  it("is assigned by pref and by trainhop", () => {
+    expect(isSpacesThematicAssigned(thematic)).toBe(true);
+    expect(
+      isSpacesThematicAssigned({
+        trainhopConfig: {
+          pageLayouts: {
+            variant: PAGE_LAYOUT_VARIANTS.SPACES_THEMATIC_V1,
+          },
+        },
+      })
+    ).toBe(true);
+    expect(isSpacesThematicAssigned(spaces)).toBe(false);
+  });
+
+  it("is one of the spaces variants, and reuses the buttons-bottom control", () => {
+    expect(isSpacesAssigned(thematic)).toBe(true);
+    expect(spacesBandClasses(thematic)).toEqual([
+      "spaces",
+      "spaces-buttons-bottom",
+      "spaces-thematic",
+    ]);
+  });
+
+  it("populates all three thematic spaces, not the feature-type ones", () => {
+    expect(resolvePopulatedSpaces(thematic)).toEqual([
+      "games",
+      "home",
+      "living",
+    ]);
+    expect(
+      isSpacesActive(thematic, feedState("top_stories_section", "arts", "food"))
+    ).toBe(true);
+  });
+
+  it("populates none of them without the side-by-side pair", () => {
+    // Stories but no widget to sit beside them, so there is no pair to put in a
+    // space and nothing to navigate between.
+    const noWidgets = {
+      "nova.enabled": true,
+      "pageLayouts.variant": PAGE_LAYOUT_VARIANTS.SPACES_THEMATIC_V1,
+      ...STORIES_ON,
+    };
+    expect(resolvePopulatedSpaces(noWidgets)).toEqual([]);
+    expect(isSpacesActive(noWidgets)).toBe(false);
+  });
+
+  it("leaves the side-by-side variants alone", () => {
+    expect(isSideBySideActive(thematic)).toBe(false);
+    expect(isSideBySideActive(sideBySide)).toBe(true);
+  });
+
+  // The V1 enrollment control, which the thematic gate has to honour too: the
+  // feeds already revive stories for an enrolled profile that had them off, so a
+  // gate reading the raw pref would refuse to render what they prepared.
+  describe("the V1 space overrides", () => {
+    const storiesOff = {
+      ...thematic,
+      "feeds.section.topstories": false,
+      trainhopConfig: {
+        ...thematic.trainhopConfig,
+        stories: { enabled: true },
+      },
+    };
+
+    it("renders for a profile that had stories off", () => {
+      expect(resolvePopulatedSpaces(storiesOff)).toEqual([
+        "games",
+        "home",
+        "living",
+      ]);
+      expect(
+        isSpacesActive(
+          storiesOff,
+          feedState("top_stories_section", "arts", "food")
+        )
+      ).toBe(true);
+    });
+
+    it("stops once that profile opts out again", () => {
+      expect(
+        isSpacesActive(
+          { ...storiesOff, "spaces.storiesOptOut": true },
+          feedState("top_stories_section", "arts", "food")
+        )
+      ).toBe(false);
+    });
+
+    it("renders for a profile that had the widgets container off", () => {
+      const widgetsOff = {
+        ...thematic,
+        "widgets.enabled": false,
+        trainhopConfig: {
+          ...thematic.trainhopConfig,
+          widgets: { enabled: true },
+        },
+      };
+      expect(
+        isSpacesActive(
+          widgetsOff,
+          feedState("top_stories_section", "arts", "food")
+        )
+      ).toBe(true);
+      expect(
+        isSpacesActive(
+          { ...widgetsOff, "spaces.widgetsOptOut": true },
+          feedState("top_stories_section", "arts", "food")
+        )
+      ).toBe(false);
+    });
+
+    // The overrides are scoped to a spaces variant, so these layouts are
+    // unaffected by them.
+    // Widgets.jsx asks without the feed, and a false here would show the size
+    // toggle in the header where the add button belongs.
+    it("is true without the feed state, which asks only about the layout", () => {
+      expect(isSpacesActive(thematic)).toBe(true);
+    });
+
+    it("leaves the side-by-side layouts reading the plain prefs", () => {
+      expect(
+        isSideBySideActive({ ...sideBySide, "feeds.section.topstories": false })
+      ).toBe(false);
+    });
+  });
+
+  describe("normalizeSpacesConfig", () => {
+    const VALID = {
+      order: ["a", "b"],
+      default: "b",
+      spaces: {
+        a: {
+          label: "A",
+          icon: "chrome://browser/skin/home.svg",
+          sections: ["food"],
+          widgets: ["lists"],
+        },
+        b: { label: "B" },
+      },
+    };
+
+    it("keeps the order and the named default", () => {
+      const config = normalizeSpacesConfig(VALID);
+      expect(config.order).toEqual(["a", "b"]);
+      expect(config.default).toBe("b");
+      expect(config.spaces.a.sections).toEqual(["food"]);
+    });
+
+    // about:newtab makes no third-party requests, so an https icon is dropped.
+    it("takes a chrome icon URL and drops anything else", () => {
+      const config = normalizeSpacesConfig({
+        order: ["a", "b"],
+        spaces: {
+          a: {
+            label: "A",
+            icon: "chrome://browser/content/profiles/assets/16_soccer.svg",
+          },
+          b: { label: "B", icon: "https://example.com/icon.svg" },
+        },
+      });
+      expect(config.spaces.a.icon).toBe(
+        "chrome://browser/content/profiles/assets/16_soccer.svg"
+      );
+      expect(config.spaces.b.icon).toBeUndefined();
+    });
+
+    // The two families need opposite fill and stroke, so the path decides.
+    it("tags the icon family from its path", () => {
+      const config = normalizeSpacesConfig({
+        order: ["a", "b", "c"],
+        spaces: {
+          a: {
+            label: "A",
+            icon: "chrome://browser/content/profiles/assets/16_soccer.svg",
+          },
+          b: { label: "B", icon: "chrome://browser/skin/home.svg" },
+          c: { label: "C" },
+        },
+      });
+      expect(config.spaces.a.iconFamily).toBe("avatar");
+      expect(config.spaces.b.iconFamily).toBe("glyph");
+      expect(config.spaces.c.iconFamily).toBeUndefined();
+    });
+
+    // Silent degrade: the rest of the config still renders.
+    it("drops a space with no label, keeping the others", () => {
+      const config = normalizeSpacesConfig({
+        order: ["a", "b"],
+        spaces: {
+          a: { label: "A" },
+          b: { icon: "chrome://browser/skin/home.svg" },
+        },
+      });
+      expect(config.order).toEqual(["a"]);
+    });
+
+    it("gives the leftmost space both roles when the default did not survive", () => {
+      const config = normalizeSpacesConfig({
+        order: ["a"],
+        default: "b",
+        spaces: { a: { label: "A" } },
+      });
+      expect(config.default).toBe("a");
+    });
+
+    // Nothing is merged and nothing falls back, so a broken config kills the
+    // layout rather than half-applying.
+    it("is null for a config missing order, spaces, or every space", () => {
+      // Rejecting logs, so whoever wrote the config can see why.
+      const error = jest.spyOn(console, "error").mockImplementation(() => {});
+      for (const raw of [
+        undefined,
+        null,
+        { spaces: { a: { label: "A" } } },
+        { order: ["a"] },
+        { order: [], spaces: {} },
+        { order: ["a"], spaces: { a: {} } },
+      ]) {
+        expect(normalizeSpacesConfig(raw)).toBeNull();
+      }
+      expect(error).toHaveBeenCalledTimes(6);
+      error.mockRestore();
+    });
+  });
+
+  describe("resolveSpacesConfigFrom", () => {
+    const VALID = { order: ["a"], spaces: { a: { label: "A" } } };
+
+    it("takes a trainhop payload over the pref", () => {
+      const config = resolveSpacesConfigFrom(
+        { spaces: normalizeSpacesConfig(VALID) },
+        JSON.stringify({ order: ["z"], spaces: { z: { label: "Z" } } })
+      );
+      expect(config.order).toEqual(["a"]);
+    });
+
+    it("parses the pref when there is no trainhop payload", () => {
+      expect(resolveSpacesConfigFrom({}, JSON.stringify(VALID)).order).toEqual([
+        "a",
+      ]);
+    });
+
+    it("is null with neither, and does not complain about it", () => {
+      const error = jest.spyOn(console, "error").mockImplementation(() => {});
+      expect(resolveSpacesConfigFrom(undefined, "")).toBeNull();
+      expect(error).not.toHaveBeenCalled();
+      error.mockRestore();
+    });
+
+    it("is null for an unparseable pref, and says so", () => {
+      const error = jest.spyOn(console, "error").mockImplementation(() => {});
+      expect(resolveSpacesConfigFrom({}, "not json")).toBeNull();
+      expect(error).toHaveBeenCalledTimes(1);
+      error.mockRestore();
+    });
+  });
+
+  describe("resolveThematicSpacesConfig", () => {
+    it("resolves from the recipe, then the pref, then nothing", () => {
+      expect(resolveThematicSpacesConfig(thematic)).toEqual(CONFIG);
+      expect(
+        resolveThematicSpacesConfig({
+          "pageLayouts.spacesConfig": JSON.stringify(RAW_CONFIG),
+        })
+      ).toEqual(CONFIG);
+      expect(resolveThematicSpacesConfig({})).toBeNull();
+    });
+  });
+
+  describe("tablist order and the default space", () => {
+    it("puts Home in the middle", () => {
+      expect(resolvePopulatedSpaces(thematic)).toEqual([
+        "games",
+        "home",
+        "living",
+      ]);
+    });
+
+    // The whole point of HNT-3317: the page opens on Home even though Home is
+    // not the leftmost space.
+    it("opens on Home rather than the leftmost space", () => {
+      expect(
+        resolveThematicDefaultSpace(CONFIG, resolvePopulatedSpaces(thematic))
+      ).toBe("home");
+    });
+
+    it("falls back to the first surviving space when Home is dropped", () => {
+      const populated = resolvePopulatedSpaces(thematic, ["food", "sports"]);
+      expect(populated).toEqual(["games", "living"]);
+      expect(resolveThematicDefaultSpace(CONFIG, populated)).toBe("games");
+    });
+
+    it("has no default when no space survives", () => {
+      expect(resolveThematicDefaultSpace(CONFIG, [])).toBeUndefined();
+    });
+  });
+
+  describe("resolveThematicSpaceSections", () => {
+    const KEYS = [
+      "top_stories_section",
+      "entertainment",
+      "food",
+      "sports",
+      "health",
+      "an_unlisted_key",
+    ];
+
+    it("gives each space only its own sections, in delivery order", () => {
+      expect(resolveThematicSpaceSections(CONFIG, "games", KEYS)).toEqual([
+        "entertainment",
+        "sports",
+      ]);
+      expect(resolveThematicSpaceSections(CONFIG, "living", KEYS)).toEqual([
+        "food",
+        "health",
+      ]);
+    });
+
+    it("gives Home its own sections plus whatever is left over", () => {
+      expect(resolveThematicSpaceSections(CONFIG, "home", KEYS)).toEqual([
+        "top_stories_section",
+        "an_unlisted_key",
+      ]);
+    });
+
+    it("is empty for a space with none of its sections delivered", () => {
+      expect(resolveThematicSpaceSections(CONFIG, "games", ["food"])).toEqual(
+        []
+      );
+    });
+
+    it("is empty for every space before the feed arrives", () => {
+      for (const id of ["home", "games", "living"]) {
+        expect(resolveThematicSpaceSections(CONFIG, id, [])).toEqual([]);
+      }
+    });
+  });
+
+  describe("resolvePopulatedSpaces with the feed's sections", () => {
+    it("drops a space that has no sections of its own", () => {
+      expect(
+        resolvePopulatedSpaces(thematic, ["top_stories_section", "food"])
+      ).toEqual(["home", "living"]);
+    });
+
+    // Below two spaces there is nowhere to navigate, so the band falls back.
+    it("turns spaces off when only Home has sections", () => {
+      expect(resolvePopulatedSpaces(thematic, ["top_stories_section"])).toEqual(
+        ["home"]
+      );
+      expect(isSpacesActive(thematic, feedState("top_stories_section"))).toBe(
+        false
+      );
+    });
+
+    it("turns spaces off before the feed arrives, and back on after", () => {
+      expect(resolvePopulatedSpaces(thematic, [])).toEqual([]);
+      expect(isSpacesActive(thematic, feedState())).toBe(false);
+      expect(
+        isSpacesActive(thematic, feedState("top_stories_section", "food"))
+      ).toBe(true);
+    });
+
+    it("keeps every space when no section keys are given", () => {
+      expect(resolvePopulatedSpaces(thematic)).toEqual([
+        "games",
+        "home",
+        "living",
+      ]);
+    });
+  });
+
+  describe("resolveThematicSpaceWidgets", () => {
+    // Every widget the assignment names, plus two it does not.
+    const ALL_ON = {
+      "widgets.enabled": true,
+      "widgets.system.pictureOfTheDay.enabled": true,
+      "widgets.pictureOfTheDay.enabled": true,
+      "widgets.system.crossword.enabled": true,
+      "widgets.crossword.enabled": true,
+      "widgets.system.lists.enabled": true,
+      "widgets.lists.enabled": true,
+      "widgets.system.focusTimer.enabled": true,
+      "widgets.focusTimer.enabled": true,
+      "widgets.system.stocks.enabled": true,
+      "widgets.stocks.enabled": true,
+      "widgets.system.clocks.enabled": true,
+      "widgets.clocks.enabled": true,
+    };
+
+    it("gives each space the widgets assigned to it", () => {
+      expect(resolveThematicSpaceWidgets(CONFIG, "games", ALL_ON)).toEqual([
+        "crossword",
+      ]);
+      expect(resolveThematicSpaceWidgets(CONFIG, "living", ALL_ON)).toEqual([
+        "lists",
+        "focusTimer",
+      ]);
+    });
+
+    // So turning a widget on from the customize menu is never invisible.
+    it("adds the unassigned widgets to Home", () => {
+      expect(resolveThematicSpaceWidgets(CONFIG, "home", ALL_ON)).toEqual([
+        "pictureOfTheDay",
+        "clocks",
+        "stocks",
+      ]);
+    });
+
+    it("drops widgets that are turned off", () => {
+      expect(
+        resolveThematicSpaceWidgets(CONFIG, "games", {
+          ...ALL_ON,
+          "widgets.crossword.enabled": false,
+        })
+      ).toEqual([]);
+    });
+
+    it("is empty for every space when the master toggle is off", () => {
+      const off = { ...ALL_ON, "widgets.enabled": false };
+      for (const id of ["home", "games", "living"]) {
+        expect(resolveThematicSpaceWidgets(CONFIG, id, off)).toEqual([]);
+      }
+    });
+  });
+});
+
 // @experiment(remove) { bug 2066527 }
 describe("auto-minimize widgets variant", () => {
   const assigned = {
@@ -525,5 +1004,33 @@ describe("auto-minimize widgets variant", () => {
     expect(
       resolveAutoMinimizeDelayMs({ "pageLayouts.autoMinimizeDelayMs": -1 })
     ).toBe(3000);
+  });
+});
+
+// @experiment(remove) { bug 2069496 }
+describe("widgets row ad variant", () => {
+  const assigned = {
+    "pageLayouts.variant": PAGE_LAYOUT_VARIANTS.WIDGETS_AD_LARGE,
+  };
+
+  it("resolves by pref and by trainhop", () => {
+    expect(resolvePageLayoutVariant(assigned)).toBe("widgets-ad-large");
+    expect(
+      resolvePageLayoutVariant({
+        trainhopConfig: {
+          pageLayouts: { variant: PAGE_LAYOUT_VARIANTS.WIDGETS_AD_LARGE },
+        },
+      })
+    ).toBe("widgets-ad-large");
+  });
+
+  // It lays out as plain Nova, so it must not pick up another variant's band
+  // classes or count as one of them.
+  it("takes no band classes and is neither side-by-side nor spaces", () => {
+    expect(sideBySideBandClasses(assigned)).toEqual([]);
+    expect(spacesBandClasses(assigned)).toEqual([]);
+    expect(isSideBySideAssigned(assigned)).toBe(false);
+    expect(isSpacesAssigned(assigned)).toBe(false);
+    expect(isAutoMinimizeWidgetsAssigned(assigned)).toBe(false);
   });
 });

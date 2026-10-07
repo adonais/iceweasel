@@ -68,6 +68,12 @@ add_task(async function switcherEntersSearchMode() {
 
   await NewtabSearchbarTestUtils.spawn(tab.linkedBrowser, [], async () => {
     let utils = NewtabSearchbarContentTestUtils;
+    let bar = utils.getUrlbar(content);
+    let viewOpened = false;
+    let observer = new content.MutationObserver(() => {
+      viewOpened ||= bar.view.isOpen;
+    });
+    observer.observe(bar, { attributeFilter: ["open"] });
     await utils.activateSearchModeSwitcherItem(
       content,
       "panel-item[data-engine-id=engine2]"
@@ -79,11 +85,12 @@ add_task(async function switcherEntersSearchMode() {
       isGeneralPurposeEngine: true,
     });
 
-    utils
-      .getUrlbar(content)
-      .querySelector(".searchmode-switcher-close")
-      .click();
-    await utils.assertSearchMode(content, null);
+    await utils.exitSearchMode(content, { waitForSearch: false });
+    observer.disconnect();
+    Assert.ok(
+      !viewOpened,
+      "The view never opened, since the engine had no results to show"
+    );
   });
 
   BrowserTestUtils.removeTab(tab);
@@ -222,6 +229,11 @@ add_task(async function test_icon() {
     name: "Engine with icon",
     url: "https://example.com/user?q={searchTerms}",
   });
+  // A new user engine looks up its origin's favicon and clears its icon when
+  // there is none, so let that lookup finish before setting the icon.
+  await PlacesUtils.favicons.getFaviconForPage(
+    Services.io.newURI("https://example.com")
+  );
   await engine.changeIcon(icon);
   await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
@@ -251,3 +263,32 @@ function assertIcon(tab, expectedIcon) {
     }
   );
 }
+
+add_task(async function pressAndReleaseChoosesAnEngine() {
+  let tab = await NewtabSearchbarTestUtils.openNewTabPage();
+
+  await NewtabSearchbarTestUtils.spawn(tab.linkedBrowser, [], async () => {
+    let utils = NewtabSearchbarContentTestUtils;
+    let button = utils.getUrlbar(content).querySelector(".searchmode-switcher");
+    let popup = await utils.openSearchModeSwitcher(content, () =>
+      EventUtils.synthesizeMouseAtCenter(button, { type: "mousedown" }, content)
+    );
+
+    let closed = utils.searchModeSwitcherPopupClosed(content);
+    EventUtils.synthesizeMouseAtCenter(
+      popup.querySelector("panel-item[data-engine-id=engine2]"),
+      { type: "mouseup" },
+      content
+    );
+    await closed;
+
+    await utils.assertSearchMode(content, {
+      engineName: "engine2",
+      entry: "searchbutton",
+      source: 3,
+      isGeneralPurposeEngine: true,
+    });
+  });
+
+  BrowserTestUtils.removeTab(tab);
+});

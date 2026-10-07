@@ -394,6 +394,8 @@ void CookieStoreParent::GetRequestOnMainThread(
   bool hasBothPartitionedAndUnpartitioned =
       aPartitionedOriginAttributes.isSome();
 
+  [[maybe_unused]] int64_t currentTimeInMSec = PR_Now() / PR_USEC_PER_MSEC;
+
   for (const OriginAttributes& attrs : attrsList) {
     nsTArray<RefPtr<Cookie>> cookies;
     service->GetCookiesFromHost(baseDomain, attrs, cookies);
@@ -406,6 +408,7 @@ void CookieStoreParent::GetRequestOnMainThread(
       if (cookie->IsHttpOnly()) {
         continue;
       }
+      MOZ_DIAGNOSTIC_ASSERT(!cookie->IsExpired(currentTimeInMSec));
 
       if (aThirdPartyContext &&
           !CookieCommons::ShouldIncludeCrossSiteCookie(
@@ -580,8 +583,12 @@ bool CookieStoreParent::DeleteRequestOnMainThread(
   nsAutoCString hostName;
   nsContentUtils::GetHostOrIPv6WithBrackets(aCookieURI, hostName);
 
+  // A cookie set without a domain attribute is host-only; one set with a domain
+  // attribute never is, even when the attribute equals the host.
+  const bool hostOnly = aDomain.IsEmpty();
+
   nsAutoCString cookiesForDomain;
-  if (aDomain.IsEmpty()) {
+  if (hostOnly) {
     cookiesForDomain = std::move(hostName);
   } else {
     cookiesForDomain = NS_ConvertUTF16toUTF8(aDomain);
@@ -602,16 +609,24 @@ bool CookieStoreParent::DeleteRequestOnMainThread(
   NS_ConvertUTF16toUTF8 matchName(aName);
   NS_ConvertUTF16toUTF8 matchPath(aPath);
 
+  [[maybe_unused]] int64_t currentTimeInMSec = PR_Now() / PR_USEC_PER_MSEC;
+
   nsTArray<RefPtr<Cookie>> cookies;
   OriginAttributes attrs(aOriginAttributes);
   service->GetCookiesFromHost(baseDomain, attrs, cookies);
 
   for (Cookie* cookie : cookies) {
     MOZ_ASSERT(cookie);
+    MOZ_DIAGNOSTIC_ASSERT(!cookie->IsExpired(currentTimeInMSec));
     if (!matchName.Equals(cookie->Name())) {
       continue;
     }
-    if (!CookieCommons::DomainMatches(cookie, cookiesForDomain)) {
+    // "Delete a cookie" is defined as "set a cookie" with a max-age of 0, so
+    // the target is the single cookie the storage model identifies by name,
+    // domain, host-only-flag and path.
+    const bool cookieIsHostOnly = !cookie->IsDomain();
+    if (cookieIsHostOnly != hostOnly ||
+        !cookie->RawHost().Equals(cookiesForDomain)) {
       continue;
     }
 

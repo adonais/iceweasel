@@ -11,112 +11,109 @@ with Files("docs/**"):
 with Files("pageinfo/**"):
     BUG_COMPONENT = ("Firefox", "Page Info Window")
 
-with Files("test/about/**"):
+with Files("test/browser-about/**"):
     BUG_COMPONENT = ("Firefox", "General")
 
-with Files("test/alerts/**"):
+with Files("test/browser-alerts/**"):
     BUG_COMPONENT = ("Toolkit", "Alerts Service")
 
-with Files("test/captivePortal/**"):
+with Files("test/browser-captivePortal/**"):
     BUG_COMPONENT = ("Firefox", "General")
 
 with Files("test/chrome/**"):
     BUG_COMPONENT = ("Firefox", "General")
 
-with Files("test/contextMenu/**"):
+with Files("test/browser-contextMenu/**"):
     BUG_COMPONENT = ("Firefox", "Menus")
 
-with Files("test/forms/**"):
+with Files("test/browser-forms/**"):
     BUG_COMPONENT = ("Core", "Layout: Form Controls")
 
-with Files("test/historySwipeAnimation/**"):
+with Files("test/browser-historySwipeAnimation/**"):
     BUG_COMPONENT = ("Core", "Widget: Cocoa")
 
-with Files("test/keyboard/**"):
+with Files("test/browser-keyboard/**"):
     BUG_COMPONENT = ("Firefox", "Keyboard Navigation")
 
-with Files("test/outOfProcess/**"):
+with Files("test/browser-outOfProcess/**"):
     BUG_COMPONENT = ("Firefox", "General")
 
-with Files("test/pageActions*/**"):
+with Files("test/browser-pageActions*/**"):
     BUG_COMPONENT = ("Firefox", "Toolbars and Customization")
 
-with Files("test/pageinfo/**"):
+with Files("test/browser-pageinfo/**"):
     BUG_COMPONENT = ("Firefox", "Page Info Window")
 
-with Files("test/performance/**"):
+with Files("test/browser-performance/**"):
     BUG_COMPONENT = ("Toolkit", "Performance Monitoring")
 
-with Files("test/performance/browser_appmenu.js"):
+with Files("test/browser-performance/browser_appmenu.js"):
     BUG_COMPONENT = ("Firefox", "Menus")
 
-with Files("test/permissions/**"):
+with Files("test/browser-permissions/**"):
     BUG_COMPONENT = ("Firefox", "Site Permissions")
 
-with Files("test/plugins/**"):
+with Files("test/browser-plugins/**"):
     BUG_COMPONENT = ("Core", "Audio/Video: GMP")
 
-with Files("test/popupNotifications/**"):
+with Files("test/browser-popupNotifications/**"):
     BUG_COMPONENT = ("Toolkit", "PopupNotifications and Notification Bars")
 
-with Files("test/popups/**"):
+with Files("test/browser-popups/**"):
     BUG_COMPONENT = ("Firefox", "Site Permissions")
 
-with Files("test/referrer/**"):
+with Files("test/browser-referrer/**"):
     BUG_COMPONENT = ("Core", "DOM: Navigation")
 
-with Files("test/sanitize/**"):
+with Files("test/browser-sanitize/**"):
     BUG_COMPONENT = ("Toolkit", "Data Sanitization")
 
-with Files("test/scroll-to-text-fragment/**"):
+with Files("test/browser-scroll-to-text-fragment/**"):
     BUG_COMPONENT = ("Core", "DOM: Navigation")
 
-with Files("test/siteIdentity/**"):
+with Files("test/browser-siteIdentity/**"):
     BUG_COMPONENT = ("Firefox", "Site Identity")
 
-with Files("test/sidebar/**"):
+with Files("test/browser-startup/**"):
     BUG_COMPONENT = ("Firefox", "General")
 
-with Files("test/startup/**"):
+with Files("test/browser-static/**"):
     BUG_COMPONENT = ("Firefox", "General")
 
-with Files("test/static/**"):
-    BUG_COMPONENT = ("Firefox", "General")
-
-with Files("test/sync/**"):
+with Files("test/browser-sync/**"):
     BUG_COMPONENT = ("Firefox", "Sync")
 
-with Files("test/tabdialogs/**"):
+with Files("test/browser-tabdialogs/**"):
     BUG_COMPONENT = ("Firefox", "Tabbed Browser")
 
-with Files("test/notificationbox/**"):
+with Files("test/browser-notificationbox/**"):
     BUG_COMPONENT = ("Firefox", "Tabbed Browser")
 
-with Files("test/tabPrompts/**"):
+with Files("test/browser-tabPrompts/**"):
     BUG_COMPONENT = ("Firefox", "Tabbed Browser")
 
-with Files("test/tabcrashed/**"):
+with Files("test/browser-tabcrashed/**"):
     BUG_COMPONENT = ("Firefox", "Tabbed Browser")
 
-with Files("test/touch/**"):
+with Files("test/browser-touch/**"):
     BUG_COMPONENT = ("Firefox", "General")
 
-with Files("test/utilityOverlay/**"):
+with Files("test/browser-utilityOverlay/**"):
     BUG_COMPONENT = ("Firefox", "Tabbed Browser")
 
-with Files("test/protectionsUI/**"):
+with Files("test/browser-protectionsUI/**"):
     BUG_COMPONENT = ("Firefox", "Protections UI")
 
-with Files("test/webextensions/**"):
+with Files("test/browser-webextensions/**"):
     BUG_COMPONENT = ("WebExtensions", "Untriaged")
 
-with Files("test/webrtc/**"):
+with Files("test/browser-webrtc/**"):
     BUG_COMPONENT = ("Core", "WebRTC")
 
-with Files("test/zoom/**"):
+with Files("test/browser-zoom/**"):
     BUG_COMPONENT = ("Firefox", "General")
 
-with Files("test/caps/**"):
+with Files("test/browser-caps/**"):
     BUG_COMPONENT = ("Firefox", "Security")
 
 with Files("blockedSite.xhtml"):

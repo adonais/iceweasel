@@ -60,9 +60,7 @@ class VisualViewport final : public mozilla::DOMEventTargetHelper {
 
   MOZ_CAN_RUN_SCRIPT void FireScrollEvent();
   MOZ_CAN_RUN_SCRIPT void FireScrollEndEvent();
-
-  RefPtr<VisualViewportScrollEvent> mScrollEvent;
-  RefPtr<VisualViewportScrollEndEvent> mScrollEndEvent;
+  uint32_t mScrollEventGeneration = 0;
 };
 
 }  // namespace dom

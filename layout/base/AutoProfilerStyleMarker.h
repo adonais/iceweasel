@@ -33,39 +33,6 @@ class MOZ_RAII AutoProfilerStyleMarker {
       return;
     }
 
-    struct StyleMarker {
-      static constexpr mozilla::Span<const char> MarkerTypeName() {
-        return mozilla::MakeStringSpan("Styles");
-      }
-      static void StreamJSONMarkerData(
-          baseprofiler::SpliceableJSONWriter& aWriter,
-          uint32_t aElementsTraversed, uint32_t aElementsStyled,
-          uint32_t aElementsMatched, uint32_t aStylesShared,
-          uint32_t aStylesReused) {
-        aWriter.IntProperty("elementsTraversed", aElementsTraversed);
-        aWriter.IntProperty("elementsStyled", aElementsStyled);
-        aWriter.IntProperty("elementsMatched", aElementsMatched);
-        aWriter.IntProperty("stylesShared", aStylesShared);
-        aWriter.IntProperty("stylesReused", aStylesReused);
-      }
-      static MarkerSchema MarkerTypeDisplay() {
-        using MS = MarkerSchema;
-        MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable,
-                  MS::Location::TimelineOverview};
-        schema.AddKeyLabelFormat("elementsTraversed", "Elements traversed",
-                                 MS::Format::Integer);
-        schema.AddKeyLabelFormat("elementsStyled", "Elements styled",
-                                 MS::Format::Integer);
-        schema.AddKeyLabelFormat("elementsMatched", "Elements matched",
-                                 MS::Format::Integer);
-        schema.AddKeyLabelFormat("stylesShared", "Styles shared",
-                                 MS::Format::Integer);
-        schema.AddKeyLabelFormat("stylesReused", "Styles reused",
-                                 MS::Format::Integer);
-        return schema;
-      }
-    };
-
     ServoTraversalStatistics::sSingleton = mPreviousSingleton;
     profiler_add_marker("Styles", geckoprofiler::category::LAYOUT,
                         {MarkerTiming::IntervalUntilNowFrom(mStartTime),
@@ -77,6 +44,29 @@ class MOZ_RAII AutoProfilerStyleMarker {
   }
 
  private:
+  struct StyleMarker : public BaseMarkerType<StyleMarker> {
+    static constexpr const char* Name = "Styles";
+    using MS = MarkerSchema;
+    static constexpr MS::Location Locations[] = {
+        MS::Location::MarkerChart,
+        MS::Location::MarkerTable,
+        MS::Location::TimelineOverview,
+    };
+    static constexpr MS::PayloadField PayloadFields[] = {
+        {"elementsTraversed", MS::InputType::Uint32, "Elements traversed",
+         MS::Format::Integer},
+        {"elementsStyled", MS::InputType::Uint32, "Elements styled",
+         MS::Format::Integer},
+        {"elementsMatched", MS::InputType::Uint32, "Elements matched",
+         MS::Format::Integer},
+        {"stylesShared", MS::InputType::Uint32, "Styles shared",
+         MS::Format::Integer},
+        {"stylesReused", MS::InputType::Uint32, "Styles reused",
+         MS::Format::Integer},
+    };
+    static constexpr bool IsStackBased = true;
+  };
+
   bool mActive;
   TimeStamp mStartTime;
   UniquePtr<ProfileChunkedBuffer> mCause;

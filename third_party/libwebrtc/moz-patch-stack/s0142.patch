@@ -1929,7 +1929,7 @@ index beadd8cc63..b5485d4edb 100644
 +      long nativeVideoEncoderWrapper, EncodedImage frame);
  }
 diff --git a/sdk/android/src/java/org/webrtc/audio/WebRtcAudioRecord.java b/sdk/android/src/java/org/webrtc/audio/WebRtcAudioRecord.java
-index 26a1bfa4a9..43542ddb2b 100644
+index 2a59e364d7..c484103fcc 100644
 --- a/sdk/android/src/java/org/webrtc/audio/WebRtcAudioRecord.java
 +++ b/sdk/android/src/java/org/webrtc/audio/WebRtcAudioRecord.java
 @@ -23,6 +23,7 @@ import android.os.Build;
@@ -1976,7 +1976,7 @@ index 26a1bfa4a9..43542ddb2b 100644
  
      // Get the minimum buffer size required for the successful creation of
      // an AudioRecord object, in byte units.
-@@ -523,14 +522,10 @@ class WebRtcAudioRecord {
+@@ -528,14 +527,10 @@ class WebRtcAudioRecord {
      return (channels == 1 ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO);
    }
  

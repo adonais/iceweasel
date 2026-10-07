@@ -17,14 +17,19 @@ const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 class Menu extends EventEmitter {
   /**
    * @param {object} options
-   * @param {string} options.id (non standard)
+   * @param {string} [options.id] (non standard)
    *        Needed so tests can confirm the XUL implementation is working
+   * @param {number} [options.accesskeyConflictsBug]
+   *        The bug tracking this menu's known accesskey conflicts. It is set as
+   *        the popup's accesskey-conflicts-bug attribute, which makes the
+   *        automation check skip the menu.
    */
-  constructor({ id = null } = {}) {
+  constructor({ id = null, accesskeyConflictsBug = null } = {}) {
     super();
 
     this.menuitems = [];
     this.id = id;
+    this.accesskeyConflictsBug = accesskeyConflictsBug;
   }
 
   get items() {
@@ -131,6 +136,9 @@ class Menu extends EventEmitter {
     popup.setAttribute("menu-api", "true");
     popup.setAttribute("consumeoutsideclicks", "false");
     popup.setAttribute("escapecontentshell", "true");
+    if (this.accesskeyConflictsBug) {
+      popup.setAttribute("accesskey-conflicts-bug", this.accesskeyConflictsBug);
+    }
 
     if (this.id) {
       popup.id = this.id;
@@ -188,6 +196,12 @@ class Menu extends EventEmitter {
       if (item.submenu) {
         const menupopup = doc.createXULElement("menupopup");
         menupopup.setAttribute("escapecontentshell", "true");
+        if (item.submenu.accesskeyConflictsBug) {
+          menupopup.setAttribute(
+            "accesskey-conflicts-bug",
+            item.submenu.accesskeyConflictsBug
+          );
+        }
 
         item.submenu.#createMenuItems(menupopup, signal);
 

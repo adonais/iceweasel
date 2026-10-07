@@ -14,7 +14,7 @@ class PictureInPictureVideoWrapper {
         if (mutationList.length) {
           let changed = false;
           for (const mutation of mutationList) {
-            if (mutation.target.matches?.(".subtitles-text")) {
+            if (mutation.target.matches?.(".subtitles_placeholder")) {
               changed = true;
               break;
             }
@@ -25,18 +25,14 @@ class PictureInPictureVideoWrapper {
           }
         }
 
-        let textNodeList = container
-          .querySelector(".subtitles")
-          ?.querySelectorAll("div");
+        let text = container.querySelector(".subtitles_placeholder")?.innerText;
 
-        if (!textNodeList?.length) {
+        if (!text) {
           updateCaptionsFunction("");
           return;
         }
 
-        updateCaptionsFunction(
-          Array.from(textNodeList, x => x.innerText).join("\n")
-        );
+        updateCaptionsFunction(text);
       };
 
       // immediately invoke the callback function to add subtitles to the PiP window

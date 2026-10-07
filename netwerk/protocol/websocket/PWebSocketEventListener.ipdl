@@ -30,14 +30,17 @@ child:
                                   uint16_t aMessageType);
 
   async WebSocketClosed(uint32_t awebSocketSerialID,
+                        uint64_t aHttpChannelId,
                         bool aWasClean,
                         uint16_t aCode,
                         nsString aReason);
 
   async FrameReceived(uint32_t aWebSocketSerialID,
+                      uint64_t aHttpChannelId,
                       WebSocketFrameData aFrameData);
 
   async FrameSent(uint32_t aWebSocketSerialID,
+                  uint64_t aHttpChannelId,
                   WebSocketFrameData aFrameData);
 
   async __delete__();

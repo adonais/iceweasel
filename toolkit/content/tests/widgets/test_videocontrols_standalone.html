@@ -60,7 +60,7 @@
             boundingRect.height == videoHeight
           );
         };
-        waitForCondition(
+        SimpleTest.waitForCondition(
           condition,
           function () {
             var boundingRect = aVideo.getBoundingClientRect();
@@ -118,7 +118,7 @@
           var boundingRect = aAudio.getBoundingClientRect();
           return boundingRect.height == expectedHeight;
         };
-        waitForCondition(
+        SimpleTest.waitForCondition(
           condition,
           function () {
             var boundingRect = aAudio.getBoundingClientRect();
@@ -150,7 +150,7 @@
 
       function afterKeyPause(aAudio) {
         ok(true, "successfully caused audio to pause");
-        waitForCondition(
+        SimpleTest.waitForCondition(
           function () {
             return aAudio.paused;
           },

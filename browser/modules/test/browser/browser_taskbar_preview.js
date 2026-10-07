@@ -6,7 +6,7 @@ function test() {
   } catch (ex) {}
 
   is(
-    !!Win7Features,
+    Win7Features.available,
     isWin7OrHigher,
     "Win7Features available when it should be"
   );

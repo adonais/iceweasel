@@ -6,12 +6,12 @@ fuzzy(0-1,0-1000000) == blur.svg blur-ref.svg
 == blur-calc.html blur-calc-ref.html
 == blur-calc-negative.html blur-calc-negative-ref.html
 fuzzy-if(cocoaWidget,0-1,0-2) skip-if(winWidget) == blur-cap-large-radius-on-software.html blur-cap-large-radius-on-software-ref.html
-fuzzy-if(!useDrawSnapshot,2-7,4764-8300) == blur-clip-rect.html ../feGaussianBlur-4-ref.svg
+== blur-clip-rect.html ../feGaussianBlur-4-ref.svg
 fuzzy(0-1,0-1000000) == blur-em-radius.html blur-em-radius-ref.html
 == blur-invalid-radius.html blur-invalid-radius-ref.html
 fuzzy(0-1,0-1000000) == blur-rem-radius.html blur-rem-radius-ref.html
 == blur-zero-radius.html blur-zero-radius-ref.html
-fails-if(useDrawSnapshot) fuzzy-if(gfxSVGFEGaussianBlur,0-2,0-1000000) == blur-zoomed-page.html blur-zoomed-page-ref.html
+fuzzy-if(gfxSVGFEGaussianBlur,0-2,0-1000000) == blur-zoomed-page.html blur-zoomed-page-ref.html
 == brightness.html brightness-ref.html
 == brightness-darken.html brightness-darken-ref.html
 == brightness-extreme.html brightness-extreme-ref.html

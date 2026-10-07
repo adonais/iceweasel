@@ -200,7 +200,7 @@ class SettingsSubMenuAddonsManagerRobot(private val composeTestRule: ComposeTest
         Log.i(TAG, "verifyAddonIsInstalled: Trying to verify that the $addonDisplayName add-on was installed")
         onView(
                 allOf(
-                    withId(R.id.add_button),
+                    withId(addonsR.id.add_button),
                     isDescendantOfA(withId(addonsR.id.add_on_item)),
                     hasSibling(hasDescendant(withText(addonDisplayName))),
                 )
@@ -221,7 +221,7 @@ class SettingsSubMenuAddonsManagerRobot(private val composeTestRule: ComposeTest
 
     fun verifyAddonsItems() {
         Log.i(TAG, "verifyAddonsItems: Trying to verify that the \"Recommended\" heading is visible")
-        onView(allOf(withId(R.id.title), withText("Recommended")))
+        onView(allOf(withId(addonsR.id.title), withText("Recommended")))
             .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyAddonsItems: Verified that the \"Recommended\" heading is visible")
         Log.i(TAG, "verifyAddonsItems: Trying to verify that all uBlock Origin items are completely displayed")
@@ -237,11 +237,11 @@ class SettingsSubMenuAddonsManagerRobot(private val composeTestRule: ComposeTest
                             hasDescendant(
                                 withText("Finally, an efficient wide-spectrum content blocker. Easy on CPU and memory.")
                             ),
-                            hasDescendant(withId(R.id.rating)),
-                            hasDescendant(withId(R.id.review_count)),
+                            hasDescendant(withId(addonsR.id.rating)),
+                            hasDescendant(withId(addonsR.id.review_count)),
                         )
                     ),
-                    hasDescendant(withId(R.id.add_button)),
+                    hasDescendant(withId(addonsR.id.add_button)),
                 )
             )
             .check(matches(isCompletelyDisplayed()))
@@ -254,7 +254,7 @@ class SettingsSubMenuAddonsManagerRobot(private val composeTestRule: ComposeTest
         Log.i(TAG, "verifyAddonCanBeInstalled: Trying to verify that the install $addonName button is visible")
         onView(
                 allOf(
-                    withId(R.id.add_button),
+                    withId(addonsR.id.add_button),
                     hasSibling(
                         hasDescendant(
                             allOf(

@@ -10,8 +10,8 @@ origin:
 
   url: https://github.com/PLSysSec/rlbox
 
-  release: ba8a24ec9d2d418d400bcf584da5031f20fff453 (2025-03-18T17:13:42Z).
-  revision: ba8a24ec9d2d418d400bcf584da5031f20fff453
+  release: b0157dc84f86ffbe4549e32ed5cbdfad79c17f43 (2026-07-04T05:28:44Z).
+  revision: b0157dc84f86ffbe4549e32ed5cbdfad79c17f43
 
   license: MIT
 
@@ -31,11 +31,6 @@ vendoring:
     - action: move-dir
       from: '{vendor_dir}/code/include'
       to: '{vendor_dir}/include'
-
-  patches:
-    - fix-includes.patch
-    - crash-reporting-messages.patch
-    - unaligned-transfer-buffers.patch
 
 updatebot:
   maintainer-phab: shravanrn

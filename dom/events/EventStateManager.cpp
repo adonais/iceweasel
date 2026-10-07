@@ -72,6 +72,7 @@
 #include "mozilla/dom/PopoverData.h"
 #include "mozilla/dom/Record.h"
 #include "mozilla/dom/Selection.h"
+#include "mozilla/dom/SpeculationRules.h"
 #include "mozilla/dom/UIEvent.h"
 #include "mozilla/dom/UIEventBinding.h"
 #include "mozilla/dom/UserActivation.h"
@@ -1042,10 +1043,32 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
 #endif
   // Store last known screenPoint and clientPoint so pointer lock
   // can use these values as constants.
-  if (aEvent->IsTrusted() &&
-      ((mouseEvent && mouseEvent->IsReal()) ||
-       aEvent->mClass == eWheelEventClass) &&
-      !PointerLockManager::IsLocked()) {
+  const bool shouldStoreLastKnownPoints = [&]() {
+    if (!aEvent->IsTrusted()) {
+      return false;
+    }
+    if (PointerLockManager::IsLocked()) {
+      return false;
+    }
+    if (mouseEvent) {
+      if (!mouseEvent->IsReal()) {
+        return false;
+      }
+      // An event with a movement delta was either generated while the native
+      // pointer was locked, or is the synthesized repositioning mousemove. In
+      // either case, we should not update the last known position.
+      // We need this check because the initial synthesized mousemove might
+      // arrive in the content process before the pointer lock request is
+      // resolved.
+      if (mouseEvent->mMovement) {
+        return false;
+      }
+      return true;
+    }
+    return aEvent->mClass == eWheelEventClass;
+  }();
+
+  if (shouldStoreLastKnownPoints) {
     // XXX Probably doesn't matter much, but storing these in CSS pixels instead
     // of device pixels means behavior can be a bit odd if you zoom while
     // pointer-locked.
@@ -1427,8 +1450,8 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
                                                            wheelEvent);
     } break;
     case eSetSelection: {
-      RefPtr<Element> focuedElement = GetFocusedElement();
-      IMEStateManager::HandleSelectionEvent(aPresContext, focuedElement,
+      const RefPtr<Element> focusedElement = GetFocusedElement();
+      IMEStateManager::HandleSelectionEvent(aPresContext, focusedElement,
                                             aEvent->AsSelectionEvent());
       break;
     }
@@ -5330,6 +5353,7 @@ static UniquePtr<WidgetMouseEvent> CreateMouseOrPointerWidgetEvent(
   newEvent->mModifiers = aMouseEvent->mModifiers;
   newEvent->mInputSource = aMouseEvent->mInputSource;
   newEvent->pointerId = aMouseEvent->pointerId;
+  newEvent->mMovement = aMouseEvent->mMovement;
   // NOTE: If you need to change this if-expression, you need to update
   // WidgetMouseEventBase::ComputeMouseButtonPressure() too.
   if (!aMouseEvent->mFlags.mDispatchedAtLeastOnce &&
@@ -5766,22 +5790,7 @@ void EventStateManager::UpdateLastRefPointOfMouseEvent(
   // Mouse movement is reported on the MouseEvent.movement{X,Y} fields.
   // Movement is calculated in UIEvent::GetMovementPoint() as:
   //   previous_mousemove_mRefPoint - current_mousemove_mRefPoint.
-  //
-  // When the pref is enabled, not every mousemove event causes a synthetic
-  // re-centering event to be dispatched, so we should not forcibly set
-  // mLastRefPoint to the center point.
-  if (PointerLockManager::ShouldResetPointer() && aMouseEvent->mWidget &&
-      !StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled()) {
-    // The pointer is locked. If the pointer is not located at the center of
-    // the window, dispatch a synthetic mousemove to return the pointer there.
-    // Doing this between "real" pointer moves gives the impression that the
-    // (locked) pointer can continue moving and won't stop at the screen
-    // boundary. We cancel the synthetic event so that we don't end up
-    // dispatching the centering move event to content.
-    aMouseEvent->mLastRefPoint =
-        GetWindowClientSizeAndCenterPoint(aMouseEvent->mWidget).second;
-
-  } else if (lastRefPoint == kInvalidRefPoint) {
+  if (lastRefPoint == kInvalidRefPoint) {
     // We don't have a valid previous mousemove mRefPoint. This is either
     // the first move we've encountered, or the mouse has just re-entered
     // the application window. We should report (0,0) movement for this
@@ -5814,11 +5823,8 @@ void EventStateManager::RequestLockPointer(nsIWidget* aWidget,
     return;
   }
 
-  // When the dom.pointer-lock.reset-to-center-from-parent pref is enabled,
-  // resetting pointer should only happen in the parent process.
-  MOZ_ASSERT_IF(
-      StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled(),
-      XRE_IsParentProcess());
+  // Resetting pointer should only happen in the parent process.
+  MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(sPreLockScreenPoint == kInvalidRefPoint);
   MOZ_ASSERT(sSynthCenteringPoint == kInvalidRefPoint);
 
@@ -5837,12 +5843,7 @@ void EventStateManager::RequestLockPointer(nsIWidget* aWidget,
   // doesn't report any movement.
   sLastRefPoint = sLastRefPointOfRawUpdate =
       GetWindowClientSizeAndCenterPoint(aWidget).second;
-
-  // Only do this when repositioning happens in the parent process, so we don't
-  // change the original behavior.
-  if (StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled()) {
-    sSynthCenteringPoint = sLastRefPoint;
-  }
+  sSynthCenteringPoint = sLastRefPoint;
 
   aWidget->SynthesizeNativeMouseMove(
       sLastRefPoint + aWidget->WidgetToScreenOffset(), nullptr);
@@ -5857,11 +5858,8 @@ void EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
     return;
   }
 
-  // When the dom.pointer-lock.reset-to-center-from-parent pref is enabled,
-  // pointer repositioning should be triggered from the parent process.
-  MOZ_ASSERT_IF(
-      StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled(),
-      XRE_IsParentProcess());
+  // Pointer repositioning should be triggered from the parent process.
+  MOZ_ASSERT(XRE_IsParentProcess());
 
   if ((aMouseEvent->mMessage != ePointerRawUpdate &&
        aMouseEvent->mMessage != eMouseMove &&
@@ -5880,17 +5878,11 @@ void EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
 
     auto [size, center] =
         GetWindowClientSizeAndCenterPoint(aMouseEvent->mWidget);
-    if (!StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled()) {
-      if (aMouseEvent->mRefPoint != center) {
-        return Some(center);
-      }
-      return Nothing();
-    }
 
     // The pointer cannot be move outside the browser window boundary, as each
     // platform now use a native API to "lock" the pointer Therefore, we do not
     // need to reposition it to the center on every mousemove event. However, we
-    // still need to recenter it once it moves too close the the boundary;
+    // still need to recenter it once it moves too close to the boundary;
     // otherwise, the pointer may become stuck at the boundary and no longer be
     // able to move in certain directions. The boundary buffer is currently
     // 25% of the window size.
@@ -5922,20 +5914,6 @@ void EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
     aMouseEvent->mWidget->SynthesizeNativeMouseMove(
         sSynthCenteringPoint + aMouseEvent->mWidget->WidgetToScreenOffset(),
         nullptr);
-    return;
-  }
-
-  if (!StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled()) {
-    if (aMouseEvent->mRefPoint == sSynthCenteringPoint) {
-      // This is the "synthetic native" event we dispatched to re-center the
-      // pointer. Cancel it so we don't expose the centering move to content.
-      aMouseEvent->StopPropagation();
-      // Clear sSynthCenteringPoint so we don't cancel other events
-      // targeted at the center.
-      if (updateSynthCenteringPoint) {
-        sSynthCenteringPoint = kInvalidRefPoint;
-      }
-    }
     return;
   }
 
@@ -5976,11 +5954,8 @@ void EventStateManager::ReleaseLockedPointer(nsIWidget* aWidget) {
     return;
   }
 
-  // When the dom.pointer-lock.reset-to-center-from-parent pref is enabled,
-  // resetting pointer should only happen in the parent process.
-  MOZ_ASSERT_IF(
-      StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled(),
-      XRE_IsParentProcess());
+  // Resetting pointer should only happen in the parent process.
+  MOZ_ASSERT(XRE_IsParentProcess());
 
   // Reset sSynthCenteringPoint to invalid so that next time we start
   // locking pointer, it has its initial value.
@@ -6629,7 +6604,7 @@ nsresult EventStateManager::HandleMiddleClickPaste(
       return NS_ERROR_FAILURE;
     }
 
-    const nsRange* range = selection->GetRangeAt(0);
+    const dom::Range* range = selection->GetRangeAt(0);
     if (range) {
       nsINode* target = range->GetStartContainer();
       if (target && target->OwnerDoc()->IsInChromeDocShell()) {
@@ -6693,7 +6668,7 @@ nsresult EventStateManager::HandleMiddleClickPaste(
 
   // The selection may have been modified during reflow.  Therefore, we
   // should adjust event target to pass IsAcceptableInputEvent().
-  const nsRange* range = selection->GetRangeAt(0);
+  const dom::Range* range = selection->GetRangeAt(0);
   if (!range) {
     return NS_OK;
   }
@@ -6920,6 +6895,7 @@ bool EventStateManager::SetContentState(nsIContent* aContent,
       if (newHover != mHoverContent) {
         notifyContent1 = newHover;
         notifyContent2 = mHoverContent;
+        NotifySpeculationRulesOfHover(newHover);
         mHoverContent = newHover;
       }
     }
@@ -6982,6 +6958,20 @@ bool EventStateManager::SetContentState(nsIContent* aContent,
   }
 
   return true;
+}
+
+// Hovering a link is a signal of user interest that can enact a speculation
+// rules prefetch candidate. This is notified on hover chain changes rather than
+// from mouseover/mouseout so that moving the cursor between the children of a
+// link doesn't read as leaving and re-entering the link itself.
+void EventStateManager::NotifySpeculationRulesOfHover(nsIContent* aNewHover) {
+  nsIContent* content = aNewHover ? aNewHover : mHoverContent.get();
+  if (!content) {
+    return;
+  }
+  if (auto* speculationRules = content->OwnerDoc()->GetSpeculationRules()) {
+    speculationRules->HoverContentChanged(aNewHover);
+  }
 }
 
 void EventStateManager::RemoveNodeFromChainIfNeeded(ElementState aState,
@@ -7224,6 +7214,8 @@ bool EventStateManager::IsShellVisible(nsIDocShell* aShell) {
 
 nsresult EventStateManager::DoContentCommandEvent(
     WidgetContentCommandEvent* aEvent) {
+  MOZ_DIAGNOSTIC_ASSERT(aEvent->DispatchedByValidDispatcher());
+
   EnsureDocument(mPresContext);
   NS_ENSURE_TRUE(mDocument, NS_ERROR_FAILURE);
   nsCOMPtr<nsPIDOMWindowOuter> window(mDocument->GetWindow());
@@ -7269,7 +7261,7 @@ nsresult EventStateManager::DoContentCommandEvent(
   }
   if (XRE_IsParentProcess() && maybeNeedToHandleInRemote) {
     if (BrowserParent* remote = BrowserParent::GetFocused()) {
-      if (!aEvent->mOnlyEnabledCheck) {
+      if (!aEvent->ShouldCheckEnabledOnly()) {
         remote->SendSimpleContentCommandEvent(*aEvent);
       }
       // XXX The command may be disabled in the parent process.  Perhaps, we
@@ -7296,7 +7288,7 @@ nsresult EventStateManager::DoContentCommandEvent(
     rv = controller->IsCommandEnabled(cmd, &canDoIt);
     NS_ENSURE_SUCCESS(rv, rv);
     aEvent->mIsEnabled = canDoIt;
-    if (canDoIt && !aEvent->mOnlyEnabledCheck) {
+    if (canDoIt && !aEvent->ShouldCheckEnabledOnly()) {
       switch (aEvent->mMessage) {
         case eContentCommandPasteTransferable: {
           BrowserParent* remote = BrowserParent::GetFocused();
@@ -7359,6 +7351,7 @@ nsresult EventStateManager::DoContentCommandInsertTextEvent(
     WidgetContentCommandEvent* aEvent) {
   MOZ_ASSERT(aEvent);
   MOZ_ASSERT(aEvent->mMessage == eContentCommandInsertText);
+  MOZ_DIAGNOSTIC_ASSERT(aEvent->DispatchedByValidDispatcher());
   MOZ_DIAGNOSTIC_ASSERT(aEvent->mString.isSome());
   MOZ_DIAGNOSTIC_ASSERT(!aEvent->mString.ref().IsEmpty());
 
@@ -7370,7 +7363,7 @@ nsresult EventStateManager::DoContentCommandInsertTextEvent(
   if (XRE_IsParentProcess()) {
     // Handle it in focused content process if there is.
     if (BrowserParent* remote = BrowserParent::GetFocused()) {
-      if (!aEvent->mOnlyEnabledCheck) {
+      if (!aEvent->ShouldCheckEnabledOnly()) {
         remote->SendInsertText(*aEvent);
       }
       // XXX The remote process may be not editable right now.  Therefore, this
@@ -7400,6 +7393,7 @@ nsresult EventStateManager::DoContentCommandReplaceTextEvent(
     WidgetContentCommandEvent* aEvent) {
   MOZ_ASSERT(aEvent);
   MOZ_ASSERT(aEvent->mMessage == eContentCommandReplaceText);
+  MOZ_DIAGNOSTIC_ASSERT(aEvent->DispatchedByValidDispatcher());
   MOZ_DIAGNOSTIC_ASSERT(aEvent->mString.isSome());
   MOZ_DIAGNOSTIC_ASSERT(!aEvent->mString.ref().IsEmpty());
 
@@ -7411,7 +7405,7 @@ nsresult EventStateManager::DoContentCommandReplaceTextEvent(
   if (XRE_IsParentProcess()) {
     // Handle it in focused content process if there is.
     if (BrowserParent* remote = BrowserParent::GetFocused()) {
-      if (!aEvent->mOnlyEnabledCheck) {
+      if (!aEvent->ShouldCheckEnabledOnly()) {
         (void)remote->SendReplaceText(*aEvent);
       }
       // XXX The remote process may be not editable right now.  Therefore, this
@@ -7447,7 +7441,7 @@ nsresult EventStateManager::DoContentCommandReplaceTextEvent(
   }
 
   ContentEventHandler handler(mPresContext);
-  RefPtr<nsRange> range = handler.GetRangeFromFlatTextOffset(
+  RefPtr<dom::Range> range = handler.GetRangeFromFlatTextOffset(
       aEvent, aEvent->mSelection.mOffset,
       aEvent->mSelection.mReplaceSrcString.Length());
   if (NS_WARN_IF(!range)) {
@@ -7471,9 +7465,7 @@ nsresult EventStateManager::DoContentCommandReplaceTextEvent(
   rv = activeEditor->ReplaceTextAsAction(
       aEvent->mString.ref(), range,
       TextEditor::AllowBeforeInputEventCancelable::Yes,
-      aEvent->mSelection.mPreventSetSelection
-          ? EditorBase::PreventSetSelection::Yes
-          : EditorBase::PreventSetSelection::No);
+      aEvent->mSelection.mPreventSetSelection);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aEvent->mSucceeded = false;
     return NS_OK;
@@ -7517,7 +7509,7 @@ nsresult EventStateManager::DoContentCommandScrollEvent(
                                                 sf, 0, aEvent->mScroll.mAmount))
          : false;
 
-  if (!aEvent->mIsEnabled || aEvent->mOnlyEnabledCheck) {
+  if (!aEvent->mIsEnabled || aEvent->ShouldCheckEnabledOnly()) {
     return NS_OK;
   }
 

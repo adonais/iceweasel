@@ -843,6 +843,7 @@ package org.mozilla.geckoview {
 
   public class GeckoDisplay {
     ctor protected GeckoDisplay(GeckoSession);
+    method @NonNull @UiThread public GeckoResult<Bitmap> captureFullPage();
     method @NonNull @UiThread public GeckoResult<Bitmap> capturePixels();
     method @UiThread public void safeAreaInsetsChanged(int, int, int, int);
     method @UiThread public void screenOriginChanged(int, int);
@@ -863,6 +864,7 @@ package org.mozilla.geckoview {
     method @AnyThread @NonNull public GeckoDisplay.ScreenshotBuilder aspectPreservingSize(int);
     method @AnyThread @NonNull public GeckoDisplay.ScreenshotBuilder bitmap(@Nullable Bitmap);
     method @NonNull @UiThread public GeckoResult<Bitmap> capture();
+    method @NonNull @UiThread public GeckoResult<Bitmap> captureFullPage();
     method @AnyThread @NonNull public GeckoDisplay.ScreenshotBuilder scale(float);
     method @AnyThread @NonNull public GeckoDisplay.ScreenshotBuilder size(int, int);
     method @AnyThread @NonNull public GeckoDisplay.ScreenshotBuilder source(int, int, int, int);
@@ -2207,6 +2209,7 @@ package org.mozilla.geckoview {
     ctor public GeckoView(Context);
     ctor public GeckoView(Context, AttributeSet);
     method @UiThread public void addWindowInsetsListener(@NonNull String, @Nullable OnApplyWindowInsetsListener);
+    method @NonNull @UiThread public GeckoResult<Bitmap> captureFullPage();
     method @NonNull @UiThread public GeckoResult<Bitmap> capturePixels();
     method public void coverUntilFirstPaint(int);
     method public void dispatchDraw(@Nullable Canvas);

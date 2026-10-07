@@ -45,6 +45,10 @@ const SEARCH_CTA_ENABLED = RPMGetBoolPref(
   "browser.netError.searchCTA.enabled",
   false
 );
+const ILLUSTRATION_ENABLED = RPMGetBoolPref(
+  "browser.netError.illustration.enabled",
+  true
+);
 // The only value of the parent's action vocabulary this page has to recognize,
 // meaning no CTA. It is duplicated rather than imported because the vocabulary
 // lives in URLKeywordAnalyzer, which is chrome-only, and this module runs in the
@@ -1421,9 +1425,11 @@ export class NetErrorCard extends MozLitElement {
         aria-labelledby="error-title"
         aria-describedby="error-intro whatCanYouDo"
       >
-        <div class="img-container">
-          <img src=${src} class=${ifDefined(className)} alt=${alt} />
-        </div>
+        ${ILLUSTRATION_ENABLED
+          ? html`<div class="img-container">
+              <img src=${src} class=${ifDefined(className)} alt=${alt} />
+            </div>`
+          : null}
         <div class="container">${this.containerContentTemplate(title)}</div>
       </article>`;
   }

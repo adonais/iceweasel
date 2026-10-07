@@ -303,7 +303,16 @@ add_task(async function browseraction_theme_icons_overflow_panel() {
   });
 });
 
-add_task(async function browseraction_theme_icons_dynamic_theme() {
+async function testDynamicTheme({ systemUsesDarkTheme }) {
+  // Force a specific OS color scheme, because with no extension theme
+  // installed the default theme follows it and would pick different
+  // theme_icons depending on the system running the test (see Bug 2007944).
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.systemUsesDarkTheme", systemUsesDarkTheme ? 1 : 0]],
+  });
+
+  const expectedIcon = systemUsesDarkTheme ? DARK_THEME_ICON : LIGHT_THEME_ICON;
+
   const themeExtension = ExtensionTestUtils.loadExtension({
     manifest: {
       permissions: ["theme"],
@@ -346,7 +355,7 @@ add_task(async function browseraction_theme_icons_dynamic_theme() {
   await extension.startup();
 
   // Confirm that the browser action has the default icon before a theme is set.
-  await testBrowserAction(extension, LIGHT_THEME_ICON);
+  await testBrowserAction(extension, expectedIcon);
 
   // Update the theme to a light theme.
   themeExtension.sendMessage("update-theme", LIGHT_THEME_COLORS);
@@ -365,8 +374,19 @@ add_task(async function browseraction_theme_icons_dynamic_theme() {
   // Unload the theme.
   await themeExtension.unload();
 
-  // Confirm that the light icon is used when the theme is unloaded.
-  await testBrowserAction(extension, LIGHT_THEME_ICON);
+  // Confirm that the icon matching the system color scheme is used when the
+  // theme is unloaded.
+  await testBrowserAction(extension, expectedIcon);
 
   await extension.unload();
+
+  await SpecialPowers.popPrefEnv();
+}
+
+add_task(async function browseraction_theme_icons_dynamic_theme_light_system() {
+  await testDynamicTheme({ systemUsesDarkTheme: false });
+});
+
+add_task(async function browseraction_theme_icons_dynamic_theme_dark_system() {
+  await testDynamicTheme({ systemUsesDarkTheme: true });
 });

@@ -690,10 +690,11 @@ ImgDrawResult nsImageRenderer::BuildWebRenderDisplayItems(
           LayoutDeviceRect::FromAppUnits(aFill, appUnitsPerDevPixel);
       auto stretchSize = wr::ToLayoutSize(destRect.Size());
 
+      bool rasterizedForDest = false;
       gfx::IntSize decodeSize =
           nsLayoutUtils::ComputeImageContainerDrawingParameters(
               mImageContainer, mForFrame, destRect, clipRect, aSc,
-              containerFlags, svgContext, region);
+              containerFlags, svgContext, region, &rasterizedForDest);
 
       RefPtr<image::WebRenderImageProvider> provider;
       drawResult = mImageContainer->GetImageProvider(
@@ -719,7 +720,8 @@ ImgDrawResult nsImageRenderer::BuildWebRenderDisplayItems(
         // The image is not repeating. Just push as a regular image.
         aBuilder.PushImage(dest, clip, !aItem->BackfaceIsHidden(), false,
                            rendering, key.value(), true,
-                           wr::ColorF{1.0f, 1.0f, 1.0f, aOpacity});
+                           wr::ColorF{1.0f, 1.0f, 1.0f, aOpacity}, false, false,
+                           rasterizedForDest);
       } else {
         nsPoint firstTilePos = nsLayoutUtils::GetBackgroundFirstTilePos(
             aDest.TopLeft(), aFill.TopLeft(), aRepeatSize);

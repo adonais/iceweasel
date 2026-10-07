@@ -100,6 +100,7 @@ class SharingUtilsCls {
 
     let menu = document.createXULElement("menu");
     let menuPopup = document.createXULElement("menupopup");
+    menuPopup.setAttribute("accesskey-conflicts-bug", "2073899");
     menuPopup.addEventListener("popupshowing", this);
     menu.appendChild(menuPopup);
 

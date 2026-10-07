@@ -24,6 +24,7 @@
 #include "mozpkix/pkixcheck.h"
 #include "mozpkix/pkixnss.h"
 #include "mozpkix/pkixutil.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsNSSComponent.h"
 #include "nsNetCID.h"
 #include "nsPromiseFlatString.h"

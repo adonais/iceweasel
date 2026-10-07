@@ -37,7 +37,7 @@ using namespace dom;
 using EditorType = EditorUtils::EditorType;
 
 DeleteRangeTransaction::DeleteRangeTransaction(EditorBase& aEditorBase,
-                                               const nsRange& aRangeToDelete)
+                                               const dom::Range& aRangeToDelete)
     : mEditorBase(&aEditorBase), mRangeToDelete(aRangeToDelete.CloneRange()) {}
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(DeleteRangeTransaction,
@@ -54,7 +54,7 @@ void DeleteRangeTransaction::AppendChild(
 
 nsresult
 DeleteRangeTransaction::MaybeExtendDeletingRangeWithSurroundingWhitespace(
-    nsRange& aRange) const {
+    dom::Range& aRange) const {
   if (!mEditorBase->mEditActionData->SelectionCreatedByDoubleclick() ||
       !StaticPrefs::
           editor_word_select_delete_space_after_doubleclick_selection()) {
@@ -123,7 +123,7 @@ NS_IMETHODIMP DeleteRangeTransaction::DoTransaction() {
   // out on return from this function.  Once this function returns, we no longer
   // need mRangeToDelete, and keeping it alive in the long term slows down all
   // DOM mutations because it's observing them.
-  RefPtr<nsRange> rangeToDelete;
+  RefPtr<dom::Range> rangeToDelete;
   rangeToDelete.swap(mRangeToDelete);
 
   MaybeExtendDeletingRangeWithSurroundingWhitespace(*rangeToDelete);

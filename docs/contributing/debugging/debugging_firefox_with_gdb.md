@@ -120,9 +120,8 @@ mechanism.
 
 If you need to attach to a Firefox process live on a machine, and this Firefox
 was built by Mozilla, or by certain Linux distros, it's possible to get symbols
-and sources using the Mozilla symbol server, see {ref}`this section <Downloading
-symbols on Linux / Mac OS X>` for setup instructions, it's just a matter of
-sourcing a python script in `.gdbinit`.
+and sources using the Mozilla symbol server: it's just a matter of sourcing a
+python script in `.gdbinit`.
 
 Debugging then works as usual, except the build probably has a very high
 optimization level.

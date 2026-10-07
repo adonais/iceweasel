@@ -17,6 +17,7 @@
 #include "nsUnicharUtils.h"
 #include "nsURLHelper.h"
 #include "nsNetUtil.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "mozilla/dom/StripOnShareRuleBinding.h"
 
 namespace {

@@ -20,7 +20,7 @@ $ pandoc -t gfm https://github.com/mdn/archived-content/tree/main/files/en-us/mo
 
 4. In the new doc.md, identify the images and wget/curl them into `img/`.
 5. Verify the syntax using [./mach lint -l md]
-6) If relevant, remove unbreakable spaces (rendered with a "!" on Phabricator)
+6. If relevant, remove unbreakable spaces (rendered with a "!" on Phabricator)
 
 ```shell
 sed -i -e 's/\xc2\xa0/ /g' doc.md

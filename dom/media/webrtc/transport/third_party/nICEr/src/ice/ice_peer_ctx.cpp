@@ -43,7 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ice_reg.h"
 
 static void nr_ice_peer_ctx_parse_stream_attributes_int(nr_ice_peer_ctx *pctx, nr_ice_media_stream *stream, nr_ice_media_stream *pstream, char **attrs, int attr_ct);
-static int nr_ice_ctx_parse_candidate(nr_ice_peer_ctx *pctx, nr_ice_media_stream *pstream, char *candidate, int trickled, const char *mdns_addr);
+static int nr_ice_ctx_parse_candidate(nr_ice_peer_ctx *pctx, nr_ice_media_stream *pstream, char *candidate, int trickled, const char *resolved_address);
 static void nr_ice_peer_ctx_start_trickle_timer(nr_ice_peer_ctx *pctx);
 
 int nr_ice_peer_ctx_create(nr_ice_ctx *ctx, nr_ice_handler *handler,char *label, nr_ice_peer_ctx **pctxp)
@@ -179,25 +179,18 @@ static void nr_ice_peer_ctx_parse_stream_attributes_int(nr_ice_peer_ctx *pctx, n
     /* Doesn't fail because we just skip errors */
   }
 
-static int nr_ice_ctx_parse_candidate(nr_ice_peer_ctx *pctx, nr_ice_media_stream *pstream, char *candidate, int trickled, const char *mdns_addr)
+static int nr_ice_ctx_parse_candidate(nr_ice_peer_ctx *pctx, nr_ice_media_stream *pstream, char *candidate, int trickled, const char *resolved_address)
   {
     nr_ice_candidate *cand=0;
     nr_ice_component *comp;
     int j;
     int r, _status;
 
-    if(r=nr_ice_peer_candidate_from_attribute(pctx->ctx,candidate,pstream,&cand))
+    if(r=nr_ice_peer_candidate_from_attribute(pctx->ctx,candidate,pstream,resolved_address,&cand))
       ABORT(r);
 
     /* set the trickled flag on the candidate */
     cand->trickled = trickled;
-
-    if (mdns_addr) {
-      cand->mdns_addr = strdup(mdns_addr);
-      if (!cand->mdns_addr) {
-        ABORT(R_NO_MEMORY);
-      }
-    }
 
     /* Not the fastest way to find a component, but it's what we got */
     j=1;
@@ -276,18 +269,30 @@ int nr_ice_peer_ctx_remove_pstream(nr_ice_peer_ctx *pctx, nr_ice_media_stream **
   {
     int r,_status;
 
+    /* Update pctx->active_streams, which paces the check timers. Not
+       done through nr_ice_media_stream_set_state(), since there is no state
+       that means "gone". */
+    if((*pstreamp)->ice_state == NR_ICE_MEDIA_STREAM_CHECKS_ACTIVE) {
+      pctx->active_streams--;
+      r_log(LOG_ICE,LOG_DEBUG,"ICE-PEER(%s): removing stream %s while it is checking; %d active streams",pctx->label,(*pstreamp)->label,pctx->active_streams);
+    }
+
     STAILQ_REMOVE(&pctx->peer_streams,*pstreamp,nr_ice_media_stream_,entry);
 
     if(r=nr_ice_media_stream_destroy(pstreamp)) {
       ABORT(r);
     }
 
+    /* The removed stream may have been the one the others were frozen
+       behind, or the last one holding up completion. */
+    nr_ice_peer_ctx_react_to_stream_change(pctx);
+
     _status=0;
  abort:
     return(_status);
   }
 
-int nr_ice_peer_ctx_parse_trickle_candidate(nr_ice_peer_ctx *pctx, nr_ice_media_stream *stream, char *candidate, const char *mdns_addr)
+int nr_ice_peer_ctx_parse_trickle_candidate(nr_ice_peer_ctx *pctx, nr_ice_media_stream *stream, char *candidate, const char *resolved_address)
   {
     nr_ice_media_stream *pstream;
     int r,_status;
@@ -315,7 +320,7 @@ int nr_ice_peer_ctx_parse_trickle_candidate(nr_ice_peer_ctx *pctx, nr_ice_media_
         break;
     }
 
-    if(r=nr_ice_ctx_parse_candidate(pctx,pstream,candidate,1,mdns_addr)){
+    if(r=nr_ice_ctx_parse_candidate(pctx,pstream,candidate,1,resolved_address)){
       ABORT(r);
     }
 
@@ -498,23 +503,55 @@ int nr_ice_peer_ctx_pair_new_trickle_candidate(nr_ice_ctx *ctx, nr_ice_peer_ctx 
     *pctxp=0;
   }
 
-/* Start the checks for the first media stream (S 5.7)
-   The rest remain FROZEN */
-int nr_ice_peer_ctx_start_checks(nr_ice_peer_ctx *pctx)
+/* Unless some stream is already checking, unfreeze and start the first
+   frozen stream that has a check list (RFC 5245 S 5.7, S 7.1.3.2.3).
+   Returns R_NOT_FOUND if there was nothing to start.
+
+   RFC 5245 only does this at startup, and unfreezes the rest by foundation
+   as checks succeed. Here it also runs whenever a stream reaches a final
+   state (see nr_ice_peer_ctx_react_to_stream_change), so that a stream that fails or
+   is removed before any of its pairs succeed does not strand the streams
+   frozen behind it. RFC 8445 avoids the problem differently, by running
+   every checklist from the start (S 6.1.4.2). */
+static int nr_ice_peer_ctx_start_next_stream(nr_ice_peer_ctx *pctx)
   {
-    return nr_ice_peer_ctx_start_checks2(pctx, 0);
+    int r;
+    nr_ice_media_stream *str;
+    nr_ice_media_stream *first_frozen = nullptr;
+
+    str=STAILQ_FIRST(&pctx->peer_streams);
+    while(str){
+      if(!str->local_stream->obsolete){
+        if(str->ice_state == NR_ICE_MEDIA_STREAM_CHECKS_ACTIVE)
+          return R_NOT_FOUND;
+
+        if(!first_frozen &&
+            str->ice_state == NR_ICE_MEDIA_STREAM_CHECKS_FROZEN &&
+           !TAILQ_EMPTY(&str->check_list)) {
+          first_frozen = str;
+        }
+      }
+      str=STAILQ_NEXT(str,entry);
+    }
+
+    if(!first_frozen)
+      return R_NOT_FOUND;
+
+    r_log(LOG_ICE,LOG_INFO,"ICE-PEER(%s): starting checks for stream %s",pctx->label,first_frozen->label);
+    if(r=nr_ice_media_stream_unfreeze_pairs(pctx,first_frozen))
+      return r;
+    if(r=nr_ice_media_stream_start_checks(pctx,first_frozen))
+      return r;
+
+    return 0;
   }
 
-/* Start checks for some media stream.
-
-   If allow_non_first == 0, then we only look at the first stream,
-   which is 5245-complaint.
-
-   If allow_non_first == 1 then we find the first non-empty stream
-   This is not compliant with RFC 5245 but is necessary to make trickle ICE
-   work plausibly
-*/
-int nr_ice_peer_ctx_start_checks2(nr_ice_peer_ctx *pctx, int allow_non_first)
+/* Start checks. Only the first frozen stream with a check list is started;
+   the rest are unfrozen as checks succeed, or as streams reach a final
+   state. In the trickle case there may be nothing to start yet, in which
+   case this returns R_NOT_FOUND; streams are then started as their
+   candidates arrive. */
+int nr_ice_peer_ctx_start_checks(nr_ice_peer_ctx *pctx)
   {
     int r,_status;
     nr_ice_media_stream *stream;
@@ -530,59 +567,20 @@ int nr_ice_peer_ctx_start_checks2(nr_ice_peer_ctx *pctx, int allow_non_first)
     pctx->connected_cb_timer = 0;
     pctx->checks_started = 0;
 
-    nr_ice_peer_ctx_check_if_connected(pctx);
-
-    if (pctx->reported_connected) {
+    if(nr_ice_peer_ctx_react_to_stream_change(pctx)){
+      ++started;
+    }
+    else if(pctx->reported_connected){
       r_log(LOG_ICE,LOG_ERR,"ICE(%s): peer (%s) in %s all streams were done",pctx->ctx->label,pctx->label,__FUNCTION__);
       return (0);
     }
-
-    stream=STAILQ_FIRST(&pctx->peer_streams);
-    if(!stream)
-      ABORT(R_FAILED);
-
-    while (stream) {
-      if(!stream->local_stream->obsolete) {
-        assert(stream->ice_state != NR_ICE_MEDIA_STREAM_UNPAIRED);
-
-        if (stream->ice_state == NR_ICE_MEDIA_STREAM_CHECKS_FROZEN) {
-          if(!TAILQ_EMPTY(&stream->check_list))
-            break;
-
-          if(!allow_non_first){
-            /* This test applies if:
-
-               1. allow_non_first is 0 (i.e., non-trickle ICE)
-               2. the first stream has an empty check list.
-
-               But in the non-trickle ICE case, the other side should have provided
-               some candidates or ICE is pretty much not going to work and we're
-               just going to fail. Hence R_FAILED as opposed to R_NOT_FOUND and
-               immediate termination here.
-            */
-            r_log(LOG_ICE,LOG_ERR,"ICE(%s): peer (%s) first stream has empty check list",pctx->ctx->label,pctx->label);
-            ABORT(R_FAILED);
-          }
-        }
-      }
-
-      stream=STAILQ_NEXT(stream, entry);
-    }
-
-    if (!stream) {
-      /*
-         We fail above if we aren't doing trickle, and this is not all that
-         unusual in the trickle case.
-       */
+    else{
+      /* Not all that unusual in the trickle case. */
       r_log(LOG_ICE,LOG_NOTICE,"ICE(%s): peer (%s) no streams with non-empty check lists",pctx->ctx->label,pctx->label);
     }
-    else if (stream->ice_state == NR_ICE_MEDIA_STREAM_CHECKS_FROZEN) {
-      if(r=nr_ice_media_stream_unfreeze_pairs(pctx,stream))
-        ABORT(r);
-      if(r=nr_ice_media_stream_start_checks(pctx,stream))
-        ABORT(r);
-      ++started;
-    }
+
+    if(STAILQ_EMPTY(&pctx->peer_streams))
+      ABORT(R_FAILED);
 
     stream=STAILQ_FIRST(&pctx->peer_streams);
     while (stream) {
@@ -692,10 +690,13 @@ static void nr_ice_peer_ctx_fire_connected(NR_SOCKET s, int how, void *cb_arg)
     nr_ice_peer_ctx_connected(pctx);
   }
 
-/* Examine all the streams to see if we're
-   maybe miraculously connected */
-void nr_ice_peer_ctx_check_if_connected(nr_ice_peer_ctx *pctx)
+/* A stream reached a final state (connected, failed, or removed), or a stream
+ * has been added and needs to start checks. If every stream is done, report
+ * it; otherwise make sure some stream is still checking. Returns 1 if it
+ * started checks on a stream. */
+int nr_ice_peer_ctx_react_to_stream_change(nr_ice_peer_ctx *pctx)
   {
+    int r;
     nr_ice_media_stream *str;
     int failed=0;
     int succeeded=0;
@@ -716,27 +717,39 @@ void nr_ice_peer_ctx_check_if_connected(nr_ice_peer_ctx *pctx)
       str=STAILQ_NEXT(str,entry);
     }
 
-    if(str)
-      return;  /* Something isn't done */
+    if (!str) {
+      /* OK, we're finished, one way or another */
+      r_log(LOG_ICE,LOG_INFO,"ICE-PEER(%s): all checks completed success=%d fail=%d",pctx->label,succeeded,failed);
 
-    /* OK, we're finished, one way or another */
-    r_log(LOG_ICE,LOG_INFO,"ICE-PEER(%s): all checks completed success=%d fail=%d",pctx->label,succeeded,failed);
+      /* Make sure grace period timer is cancelled */
+      if(pctx->trickle_grace_period_timer) {
+        r_log(LOG_ICE,LOG_INFO,"ICE(%s): peer (%s) cancelling grace period timer",pctx->ctx->label,pctx->label);
+        NR_async_timer_cancel(pctx->trickle_grace_period_timer);
+        pctx->trickle_grace_period_timer=0;
+      }
 
-    /* Make sure grace period timer is cancelled */
-    if(pctx->trickle_grace_period_timer) {
-      r_log(LOG_ICE,LOG_INFO,"ICE(%s): peer (%s) cancelling grace period timer",pctx->ctx->label,pctx->label);
-      NR_async_timer_cancel(pctx->trickle_grace_period_timer);
-      pctx->trickle_grace_period_timer=0;
+      /* Schedule a connected notification for the first connected event.
+         IMPORTANT: This is done in a callback because we expect destructors
+         of various kinds to be fired from here */
+      if (!pctx->reported_connected && !failed) {
+        pctx->reported_connected = 1;
+        assert(!pctx->connected_cb_timer);
+        NR_ASYNC_TIMER_SET(0,nr_ice_peer_ctx_fire_connected,pctx,&pctx->connected_cb_timer);
+      }
+    } else {
+      /* Something isn't done. Whatever was checking may just have finished,
+         failed, or been removed; don't leave the rest frozen behind it.
+         (Before checks are first started nothing is FROZEN yet, so this is a
+         no-op then.) */
+      r=nr_ice_peer_ctx_start_next_stream(pctx);
+      if(!r)
+        return 1;
+      if(r!=R_NOT_FOUND){
+        r_log(LOG_ICE,LOG_ERR,"ICE-PEER(%s): couldn't start checks for next stream, error=%d",pctx->label,r);
+      }
     }
 
-    /* Schedule a connected notification for the first connected event.
-       IMPORTANT: This is done in a callback because we expect destructors
-       of various kinds to be fired from here */
-    if (!pctx->reported_connected) {
-      pctx->reported_connected = 1;
-      assert(!pctx->connected_cb_timer);
-      NR_ASYNC_TIMER_SET(0,nr_ice_peer_ctx_fire_connected,pctx,&pctx->connected_cb_timer);
-    }
+    return 0;
   }
 
 

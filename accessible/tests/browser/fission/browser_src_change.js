@@ -20,7 +20,7 @@ addAccessibleTask(
     info("Replace src URL for the IFRAME with one with different origin.");
     const onDocLoad = waitForEvent(
       EVENT_DOCUMENT_LOAD_COMPLETE,
-      DEFAULT_IFRAME_DOC_BODY_ID
+      DEFAULT_IFRAME_DOC_ID
     );
 
     await SpecialPowers.spawn(

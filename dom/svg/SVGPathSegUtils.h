@@ -28,10 +28,11 @@ template <typename T>
 using StyleCurveControlPoint = StyleControlPoint<StyleGenericPosition<T, T>, T>;
 
 // Shape Command
-template <typename Angle, typename Position, typename LP>
+template <typename Angle, typename AxisPosition, typename Position, typename LP>
 struct StyleGenericShapeCommand;
 using StylePathCommand =
-    StyleGenericShapeCommand<float, StyleGenericPosition<float, float>, float>;
+    StyleGenericShapeCommand<float, float, StyleGenericPosition<float, float>,
+                             float>;
 
 /**
  * Code that works with path segments can use an instance of this class to

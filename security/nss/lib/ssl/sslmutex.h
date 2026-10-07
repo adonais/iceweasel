@@ -36,12 +36,7 @@
 
 typedef struct {
     PRBool isMultiProcess;
-#ifdef WINNT
-    /* on WINNT we need both the PRLock and the Win32 mutex for fibers */
-    struct {
-#else
     union {
-#endif
         PRLock *sslLock;
         HANDLE sslMutx;
     } u;
@@ -117,12 +112,6 @@ extern SECStatus sslMutex_Destroy(sslMutex *sem, PRBool processLocal);
 extern SECStatus sslMutex_Unlock(sslMutex *sem);
 
 extern SECStatus sslMutex_Lock(sslMutex *sem);
-
-#ifdef WINNT
-
-extern SECStatus sslMutex_2LevelInit(sslMutex *sem);
-
-#endif
 
 SEC_END_PROTOS
 

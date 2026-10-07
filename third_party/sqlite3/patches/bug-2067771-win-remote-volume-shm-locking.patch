@@ -1,0 +1,85 @@
+Use the single-handle *-shm locking scheme on Windows network volumes.
+
+SQLite 3.50 split WAL shared-memory locking across two file handles, which
+does not work on network filesystems; 3.51.0 added bUseSharedLockHandle to
+restore the single-handle scheme, but selects it with winIsUNCPath(), which
+cannot recognize a drive letter mapped to an SMB share. This asks the OS
+instead. See bug 2067771.
+
+Upstream check-in: https://sqlite.org/src/info/52ed3b490a4d03ef
+  "On Windows, use the GetDriveTypeW() interface to detect network
+   filesystems and always use a single shared file handle for the -shm
+   files on such filesystems."  (drh, 2026-09-03)
+  Git mirror: sqlite/sqlite@28fe5623286bdb4eaf543e7be4dddee5762ee51b
+
+Ported to the amalgamation: upstream's aSyscall[] has 59 entries
+(cygwin_conv_path at 58), ours has 81 (at 80), so GetDriveTypeW is index 81
+here and the ArraySize() assertion moves 81 -> 82.
+
+Deviates from upstream in one place: the osGetDriveTypeW cast keeps WINAPI.
+GetDriveTypeW is __stdcall, so calling it through a __cdecl pointer drifts
+ESP by 4 bytes per call on win32 builds.
+
+Remove this file once we vendor a SQLite release containing the upstream
+check-in.
+
+diff --git a/sqlite3.c b/sqlite3.c
+index 0644a39f8734..f474acb2c2ff 100644
+--- a/sqlite3.c
++++ b/sqlite3.c
+@@ -49927,6 +49927,9 @@ static struct win_syscall {
+ #define osCygwin_conv_path ((size_t(*)(unsigned int, \
+     const void *, void *, size_t))aSyscall[80].pCurrent)
+ 
++  { "GetDriveTypeW",            (SYSCALL)GetDriveTypeW,          0 },
++#define osGetDriveTypeW ((UINT(WINAPI*)(LPCWSTR))aSyscall[81].pCurrent)
++
+ }; /* End of the overrideable system calls */
+ 
+ /*
+@@ -53054,6 +53057,23 @@ static int winIsUNCPath(const char *zFile){
+   return sqlite3_win_test_unc_locking;
+ }
+ 
++/*
++** Return true if the string passed in is the name of a file on a
++** remote (network-mounted) volume.
++*/
++static int winIsRemoteVolume(const char *zFile){
++  WCHAR zRoot[4];
++  if( strncmp(zFile, "\\\\?\\",4)==0 ) zFile += 4;
++  if( !sqlite3Isalpha(zFile[0]) ) return 0;
++  if( zFile[1]!=':' ) return 0;
++  if( !winIsDirSep(zFile[2]) ) return 0;
++  zRoot[0] = (WCHAR)zFile[0];
++  zRoot[1] = ':';
++  zRoot[2] = '\\';
++  zRoot[3] = 0;
++  return osGetDriveTypeW(zRoot)==DRIVE_REMOTE;
++}
++
+ /*
+ ** Open the shared-memory area associated with database file pDbFd.
+ */
+@@ -53079,7 +53099,11 @@ static int winOpenSharedMemory(winFile *pDbFd){
+   pNew->zFilename = (char*)&pNew[1];
+   pNew->hSharedShm = INVALID_HANDLE_VALUE;
+   pNew->isUnlocked = 1;
+-  pNew->bUseSharedLockHandle = winIsUNCPath(pDbFd->zPath);
++  if( winIsUNCPath(pDbFd->zPath) || winIsRemoteVolume(pDbFd->zPath) ){
++    pNew->bUseSharedLockHandle = 1;
++  }else{
++    pNew->bUseSharedLockHandle = 0;
++  }
+   sqlite3_snprintf(nName+15, pNew->zFilename, "%s-shm", pDbFd->zPath);
+   sqlite3FileSuffix3(pDbFd->zPath, pNew->zFilename);
+ 
+@@ -55261,7 +55285,7 @@ SQLITE_API int sqlite3_os_init(void){
+ 
+   /* Double-check that the aSyscall[] array has been constructed
+   ** correctly.  See ticket [bb3a86e890c8e96ab] */
+-  assert( ArraySize(aSyscall)==81 );
++  assert( ArraySize(aSyscall)==82 );
+   assert( strcmp(aSyscall[0].zName,"AreFileApisANSI")==0 );
+   assert( strcmp(aSyscall[20].zName,"GetFileAttributesA")==0 );
+   assert( strcmp(aSyscall[40].zName,"HeapReAlloc")==0 );

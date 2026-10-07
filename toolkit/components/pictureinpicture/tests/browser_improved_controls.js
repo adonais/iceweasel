@@ -8,12 +8,6 @@ const TEST_PAGE_LONG = TEST_ROOT + "test-video-selection.html";
 const IMPROVED_CONTROLS_ENABLED_PREF =
   "media.videocontrols.picture-in-picture.improved-video-controls.enabled";
 
-async function getVideoCurrentTime(browser, videoID) {
-  return SpecialPowers.spawn(browser, [videoID], async videoID => {
-    return content.document.getElementById(videoID).currentTime;
-  });
-}
-
 async function getVideoDuration(browser, videoID) {
   return SpecialPowers.spawn(browser, [videoID], async videoID => {
     return content.document.getElementById(videoID).duration;

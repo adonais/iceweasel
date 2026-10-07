@@ -22,7 +22,7 @@ add_task(async function () {
   info("Add a get watchpoint at b");
   await toggleScopeNode(dbg, 3);
   const addedWatchpoint = waitForDispatch(dbg.store, "SET_WATCHPOINT");
-  await rightClickScopeNode(dbg, 5);
+  rightClickScopeNode(dbg, 5);
   let popup = await waitForContextMenu(dbg);
   let submenu = await openContextMenuSubmenu(dbg, selectors.watchpointsSubmenu);
   const getWatchpointItem = document.querySelector(selectors.addGetWatchpoint);
@@ -32,13 +32,15 @@ add_task(async function () {
 
   await resume(dbg);
   await waitForPaused(dbg);
-  await waitForState(dbg, () => dbg.selectors.getSelectedInlinePreviews());
-  assertPausedAtSourceAndLine(dbg, sourceId, 17);
+  await assertPausedAtSourceAndLine(dbg, sourceId, 17);
   is(await getScopeNodeValue(dbg, 5), "3");
   const whyPaused = await waitFor(
     () => dbg.win.document.querySelector(".why-paused")?.innerText
   );
-  is(whyPaused, `Paused on property get\nobj.b`);
+  is(
+    whyPaused,
+    `Paused on property get\n(global) - doc-watchpoints.html:17:16\nobj.b`
+  );
 
   info("Resume and wait to pause at the access to b in the first `obj.b;`");
   await resume(dbg);
@@ -67,7 +69,7 @@ add_task(async function () {
   info("Add a get watchpoint to b");
   await toggleScopeNode(dbg, 4);
   const addedWatchpoint2 = waitForDispatch(dbg.store, "SET_WATCHPOINT");
-  await rightClickScopeNode(dbg, 6);
+  rightClickScopeNode(dbg, 6);
   popup = await waitForContextMenu(dbg);
   submenu = await openContextMenuSubmenu(dbg, selectors.watchpointsSubmenu);
   const getWatchpointItem2 = document.querySelector(selectors.addGetWatchpoint);
@@ -97,7 +99,7 @@ add_task(async function () {
 
   info("Add back the get watchpoint on b");
   const addedWatchpoint3 = waitForDispatch(dbg.store, "SET_WATCHPOINT");
-  await rightClickScopeNode(dbg, 5);
+  rightClickScopeNode(dbg, 5);
   popup = await waitForContextMenu(dbg);
   submenu = await openContextMenuSubmenu(dbg, selectors.watchpointsSubmenu);
   const getWatchpointItem3 = document.querySelector(selectors.addGetWatchpoint);

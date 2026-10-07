@@ -38,7 +38,7 @@ class GenerateTestBackup(BackupTestBase):
         version = self.run_code(
             """
             const { ArchiveUtils } = ChromeUtils.importESModule(
-                "resource:///modules/backup/ArchiveUtils.sys.mjs"
+                "moz-src:///browser/components/backup/ArchiveUtils.sys.mjs"
             );
             return ArchiveUtils.SCHEMA_VERSION;
             """
@@ -178,7 +178,7 @@ class GenerateTestBackup(BackupTestBase):
                 "resource://gre/modules/OSKeyStore.sys.mjs"
             );
             const { BackupService } = ChromeUtils.importESModule(
-                "resource:///modules/backup/BackupService.sys.mjs"
+                "moz-src:///browser/components/backup/BackupService.sys.mjs"
             );
             let [destPath, recoveryCode] = arguments;
 

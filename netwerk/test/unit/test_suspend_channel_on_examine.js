@@ -52,7 +52,7 @@ add_test(function testAsyncCancel() {
     Assert.ok(!data, "no response");
 
     Assert.equal(
-      Services.cookies.countCookiesFromHost("localhost"),
+      Services.cookies.countCookiesFromHost("localhost", {}),
       0,
       "no cookies set"
     );

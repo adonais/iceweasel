@@ -10,6 +10,7 @@
 #include "mozilla/Services.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerRef.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
 #include "nsNetUtil.h"

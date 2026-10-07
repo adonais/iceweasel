@@ -2864,6 +2864,28 @@ ImmutableArrayBufferObject* ImmutableArrayBufferObject::createZeroed(
   return buffer;
 }
 
+FixedLengthArrayBufferObject* ArrayBufferObject::createCopied(
+    JSContext* cx, mozilla::Span<const uint8_t> src,
+    HandleObject proto /* = nullptr */) {
+  size_t nbytes = src.LengthBytes();
+  if (!CheckArrayBufferTooLarge(cx, nbytes)) {
+    MOZ_DIAGNOSTIC_ASSERT(!cx->brittleMode, "buffer too large");
+    return nullptr;
+  }
+
+  AutoSetNewObjectMetadata metadata(cx);
+  auto [buffer, toFill] = createBufferAndData<FixedLengthArrayBufferObject,
+                                              FillContents::Uninitialized>(
+      cx, nbytes, metadata, proto);
+  if (!buffer) {
+    return nullptr;
+  }
+  if (nbytes > 0) {
+    memcpy(toFill, src.data(), nbytes);
+  }
+  return buffer;
+}
+
 FixedLengthArrayBufferObject* ArrayBufferObject::createEmpty(JSContext* cx) {
   AutoSetNewObjectMetadata metadata(cx);
   auto* obj = NewArrayBufferObject(cx);
@@ -3708,6 +3730,14 @@ JS_PUBLIC_API JSObject* JS::NewArrayBuffer(JSContext* cx, size_t nbytes) {
   return ArrayBufferObject::createZeroed(cx, nbytes);
 }
 
+JS_PUBLIC_API JSObject* JS::NewArrayBuffer(
+    JSContext* cx, mozilla::Span<const uint8_t> source) {
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
+
+  return ArrayBufferObject::createCopied(cx, source);
+}
+
 JS_PUBLIC_API JSObject* JS::NewArrayBufferWithContents(
     JSContext* cx, size_t nbytes,
     mozilla::UniquePtr<void, JS::FreePolicy> contents) {
@@ -3926,6 +3956,13 @@ const JSClass* const JS::ArrayBuffer::GrowableSharedClass =
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
   return JS::ArrayBuffer(ArrayBufferObject::createZeroed(cx, nbytes));
+}
+
+/* static */ JS::ArrayBuffer JS::ArrayBuffer::create(
+    JSContext* cx, mozilla::Span<const uint8_t> src) {
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
+  return JS::ArrayBuffer(ArrayBufferObject::createCopied(cx, src));
 }
 
 mozilla::Span<uint8_t> JS::ArrayBuffer::getData(

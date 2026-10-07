@@ -104,8 +104,8 @@ class TurnClient : public MtransportTest {
       net_socket_ = real_socket_;
     }
 
-    r = nr_str_port_to_transport_addr(turn_server_.c_str(), 3478, protocol_,
-                                      &addr);
+    r = nr_str_port_to_transport_addr(turn_server_.c_str(), nullptr, 3478,
+                                      protocol_, &addr);
     ASSERT_EQ(0, r);
 
     std::vector<unsigned char> password_vec(turn_password_.begin(),
@@ -208,8 +208,8 @@ class TurnClient : public MtransportTest {
     ASSERT_EQ(res.ec, std::errc{});
     ASSERT_EQ(res.ptr, port.data() + port.size());
 
-    r = nr_str_port_to_transport_addr(host.c_str(), port_val, IPPROTO_UDP,
-                                      &addr);
+    r = nr_str_port_to_transport_addr(host.c_str(), nullptr, port_val,
+                                      IPPROTO_UDP, &addr);
     ASSERT_EQ(0, r);
 
     r = nr_turn_client_ensure_perm(turn_ctx_, &addr);
@@ -297,8 +297,8 @@ class TurnClient : public MtransportTest {
     ASSERT_EQ(res.ec, std::errc{});
     ASSERT_EQ(res.ptr, port.data() + port.size());
 
-    r = nr_str_port_to_transport_addr(host.c_str(), port_val, IPPROTO_UDP,
-                                      &addr);
+    r = nr_str_port_to_transport_addr(host.c_str(), nullptr, port_val,
+                                      IPPROTO_UDP, &addr);
     ASSERT_EQ(0, r);
 
     unsigned char test[100];

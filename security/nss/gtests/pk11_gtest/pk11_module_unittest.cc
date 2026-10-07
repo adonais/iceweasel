@@ -15,6 +15,10 @@
 #include "gtest/gtest.h"
 #include "databuffer.h"
 
+#if defined(_WIN32)
+#include <windows.h>
+#endif
+
 namespace nss_test {
 
 class Pkcs11ModuleTest : public ::testing::Test {
@@ -115,7 +119,6 @@ TEST_F(Pkcs11ModuleTest, PublicCertificatesTokenLookupNoMatch) {
 }
 
 #if defined(_WIN32)
-#include <windows.h>
 
 class Pkcs11NonAsciiTest : public ::testing::Test {
   WCHAR nonAsciiModuleName[MAX_PATH];

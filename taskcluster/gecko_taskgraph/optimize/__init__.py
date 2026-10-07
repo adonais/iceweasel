@@ -14,6 +14,12 @@ See ``taskcluster/docs/optimization.rst`` for more information.
 from taskgraph.optimize.base import Alias, All, Any, Not, register_strategy
 from taskgraph.util.python_path import import_sibling_modules
 
+from gecko_taskgraph.optimize.backstop import SkipUnlessPushInterval
+from gecko_taskgraph.optimize.perf_batching import (
+    SkipUnlessTimeSinceLastBatch,
+    perf_batch_overrides,
+)
+
 # Trigger registration in sibling modules.
 import_sibling_modules()
 
@@ -55,6 +61,17 @@ register_strategy(
     args=("skip-unless-missing", "skip-unless-changed"),
     kwargs={"split_args": lambda args, _: (args[0], args[1])},
 )(All)
+
+# Pass-through aliases through which performance tasks are optimized, so
+# their cadence can be overridden (e.g. by the perf batching shadow
+# schedulers) without affecting the builds and unit tests that share the
+# underlying strategies.
+register_strategy(
+    "perf-cadence-android", args=("skip-unless-android-perftest-backstop",)
+)(Alias)
+register_strategy("perf-cadence-backstop", args=("skip-unless-backstop",))(Alias)
+register_strategy("perf-cadence-default", args=("test",))(Alias)
+register_strategy("perf-cadence-expanded", args=("skip-unless-expanded",))(Alias)
 
 
 # Strategy overrides used to tweak the default strategies. These are referenced
@@ -218,6 +235,15 @@ class experimental:
     }
     """Choose configs selected by bugbug, medium confidence threshold with reduced tasks."""
 
+    bugbug_reduced_manifests_config_selection_high = {
+        "test": Any(
+            "skip-unless-schedules",
+            "bugbug-reduced-manifests-config-selection-high",
+            split_args=split_bugbug_arg,
+        ),
+    }
+    """Choose configs selected by bugbug, medium confidence threshold with reduced tasks."""
+
     bugbug_disperse_medium_no_unseen = {
         "test": Any(
             "skip-unless-schedules",
@@ -268,6 +294,88 @@ class experimental:
         "test": Any("skip-unless-schedules", "skip-unless-has-relevant-tests"),
     }
     """Runs task containing tests in the same directories as modified files."""
+
+    perf_fixed_batch_10 = perf_batch_overrides(
+        project.autoland, SkipUnlessPushInterval(10)
+    )
+    """Runs all performance tests every 10 pushes, other tasks as on autoland."""
+
+    perf_fixed_batch_20 = perf_batch_overrides(
+        project.autoland, SkipUnlessPushInterval(20)
+    )
+    """Runs all performance tests every 20 pushes, other tasks as on autoland."""
+
+    perf_fixed_batch_30 = perf_batch_overrides(
+        project.autoland, SkipUnlessPushInterval(30)
+    )
+    """Runs all performance tests every 30 pushes, other tasks as on autoland."""
+
+    perf_fixed_batch_40 = perf_batch_overrides(
+        project.autoland, SkipUnlessPushInterval(40)
+    )
+    """Runs all performance tests every 40 pushes, other tasks as on autoland."""
+
+    perf_fixed_batch_50 = perf_batch_overrides(
+        project.autoland, SkipUnlessPushInterval(50)
+    )
+    """Runs all performance tests every 50 pushes, other tasks as on autoland."""
+
+    perf_fixed_batch_60 = perf_batch_overrides(
+        project.autoland, SkipUnlessPushInterval(60)
+    )
+    """Runs all performance tests every 60 pushes, other tasks as on autoland."""
+
+    perf_time_batch_3h = perf_batch_overrides(
+        project.autoland, SkipUnlessTimeSinceLastBatch(3, "perf_time_batch_3h")
+    )
+    """Runs all performance tests when 3 hours have passed since the last batch."""
+
+    perf_time_batch_4h = perf_batch_overrides(
+        project.autoland, SkipUnlessTimeSinceLastBatch(4, "perf_time_batch_4h")
+    )
+    """Runs all performance tests when 4 hours have passed since the last batch."""
+
+    perf_time_batch_5h = perf_batch_overrides(
+        project.autoland, SkipUnlessTimeSinceLastBatch(5, "perf_time_batch_5h")
+    )
+    """Runs all performance tests when 5 hours have passed since the last batch."""
+
+    perf_time_batch_5_5h = perf_batch_overrides(
+        project.autoland, SkipUnlessTimeSinceLastBatch(5.5, "perf_time_batch_5_5h")
+    )
+    """Runs all performance tests when 5.5 hours have passed since the last batch."""
+
+    perf_time_batch_6h = perf_batch_overrides(
+        project.autoland, SkipUnlessTimeSinceLastBatch(6, "perf_time_batch_6h")
+    )
+    """Runs all performance tests when 6 hours have passed since the last batch."""
+
+    perf_time_batch_6_5h = perf_batch_overrides(
+        project.autoland, SkipUnlessTimeSinceLastBatch(6.5, "perf_time_batch_6_5h")
+    )
+    """Runs all performance tests when 6.5 hours have passed since the last batch."""
+
+    perf_time_batch_7h = perf_batch_overrides(
+        project.autoland, SkipUnlessTimeSinceLastBatch(7, "perf_time_batch_7h")
+    )
+    """Runs all performance tests when 7 hours have passed since the last batch."""
+
+
+def _mirror_test_strategy(overrides):
+    """talos/awsy are optimized through `perf-cadence-default`, an alias of
+    `test`; wherever `test` is overridden, mirror the override so they keep
+    being judged identically to the other test tasks."""
+    if "test" in overrides and "perf-cadence-default" not in overrides:
+        overrides["perf-cadence-default"] = overrides["test"]
+
+
+for _overrides in (
+    project.autoland,
+    project.beta,
+    project.pull_request,
+    *(value for value in vars(experimental).values() if isinstance(value, dict)),
+):
+    _mirror_test_strategy(_overrides)
 
 
 class ExperimentalOverride:

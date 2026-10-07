@@ -469,9 +469,9 @@ add_task(async function dedupeAgainstURL_timestamps() {
         ],
         histories,
         context,
-        conditionalPayloadProperties: {
+        payloadRules: {
           url: {
-            custom: (index, result) => {
+            validate: (index, result) => {
               if (index != ampResultIndex) {
                 return false;
               }
@@ -483,7 +483,7 @@ add_task(async function dedupeAgainstURL_timestamps() {
             },
           },
           sponsoredClickUrl: {
-            custom: (index, result) => {
+            validate: (index, result) => {
               if (index != ampResultIndex) {
                 return false;
               }
@@ -743,9 +743,9 @@ add_task(async function dismissResult() {
           providers: [UrlbarProviderQuickSuggest.name],
           isPrivate: false,
         }),
-        conditionalPayloadProperties: {
+        payloadRules: {
           url: {
-            custom: (_index, result) => {
+            validate: (_index, result) => {
               QuickSuggestTestUtils.assertTimestampsReplaced(result, {
                 url: TIMESTAMP_SUGGESTION_URL,
               });
@@ -753,7 +753,7 @@ add_task(async function dismissResult() {
             },
           },
           sponsoredClickUrl: {
-            custom: (_index, result) => {
+            validate: (_index, result) => {
               QuickSuggestTestUtils.assertTimestampsReplaced(result, {
                 sponsoredClickUrl: TIMESTAMP_SUGGESTION_CLICK_URL,
               });
@@ -1263,7 +1263,9 @@ add_task(async function online_disabled() {
           QuickSuggestTestUtils.ampResult({
             source: "merino",
             provider: "adm",
-            icon: "https://example.com/amp-icon",
+            icon: UrlbarTestUtils.makeMozRemoteImageUrl(
+              "https://example.com/amp-icon"
+            ),
             iabCategory: "22 - Shopping",
             requestId: "request_id",
             suggestedIndex: -1,
@@ -1315,7 +1317,7 @@ add_task(async function online_enabled() {
   let expected = {
     source: "merino",
     provider: "adm",
-    icon: "https://example.com/amp-icon",
+    icon: UrlbarTestUtils.makeMozRemoteImageUrl("https://example.com/amp-icon"),
     iabCategory: "22 - Shopping",
     requestId: "request_id",
     suggestedIndex: -1,
@@ -1655,7 +1657,9 @@ async function doOnlineTopPickTest({ searchString, suggestion, expected }) {
             // Usual properties
             source: "merino",
             provider: "adm",
-            icon: "https://example.com/amp-icon",
+            icon: UrlbarTestUtils.makeMozRemoteImageUrl(
+              "https://example.com/amp-icon"
+            ),
             iabCategory: "22 - Shopping",
             requestId: "request_id",
           }),

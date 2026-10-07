@@ -204,5 +204,5 @@ eslint/enabling-rules
 [patterns in .eslintrc.js]: https://searchfox.org/mozilla-central/rev/9399e5832979755cd340383f4ca4069dd5fc7774/.eslintrc.js#24-38
 [prettier]: https://prettier.io/
 [prettier ignore docs]: https://prettier.io/docs/en/ignore.html
-[seek help]: ../index.html#getting-help
+[seek help]: /code-quality/lint/index.md#getting-help
 [usage guide]: ../usage.md

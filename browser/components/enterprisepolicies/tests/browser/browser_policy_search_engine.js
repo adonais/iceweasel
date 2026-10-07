@@ -118,7 +118,7 @@ add_task(async function test_prevent_install_context_menu() {
   // offered when installing search engines is disabled.
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    "https://example.com/browser/browser/base/content/test/contextMenu/subtst_contextmenu_add_search_engine.html"
+    "https://example.com/browser/browser/base/content/test/browser-contextMenu/subtst_contextmenu_add_search_engine.html"
   );
 
   let contextMenu = document.getElementById("contentAreaContextMenu");

@@ -125,25 +125,21 @@ using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::dom::ipc;
 
-struct FrameMessageMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("FrameMessage");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   const ProfilerString16View& aMessageName,
-                                   bool aIsSync) {
-    aWriter.UniqueStringProperty("name", NS_ConvertUTF16toUTF8(aMessageName));
-    aWriter.BoolProperty("sync", aIsSync);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormat("name", "Message Name", MS::Format::UniqueString);
-    schema.AddKeyLabelFormat("sync", "Sync", MS::Format::String);
-    schema.SetTooltipLabel("FrameMessage - {marker.name}");
-    schema.SetTableLabel("{marker.data.name}");
-    return schema;
-  }
+struct FrameMessageMarker : public BaseMarkerType<FrameMessageMarker> {
+  static constexpr const char* Name = "FrameMessage";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"name", MS::InputType::String, "Message Name", MS::Format::UniqueString},
+      {"sync", MS::InputType::Boolean, "Sync"},
+  };
+  static constexpr const char* TooltipLabel = "FrameMessage - {marker.name}";
+  static constexpr const char* TableLabel = "{marker.data.name}";
+  // The name distinguishes the send/receive direction and the message kind.
+  static constexpr bool ETWStoreName = true;
 };
 
 #define CACHE_PREFIX(type) "mm/" type

@@ -526,7 +526,8 @@ int64_t ChannelMediaResource::CalculateStreamLength() const {
 
   nsCOMPtr<nsIHttpChannel> hc = do_QueryInterface(mChannel);
   if (!hc) {
-    return -1;
+    int64_t length = -1;
+    return NS_SUCCEEDED(mChannel->GetContentLength(&length)) ? length : -1;
   }
 
   bool succeeded = false;

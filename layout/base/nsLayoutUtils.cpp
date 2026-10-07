@@ -3981,7 +3981,7 @@ already_AddRefed<nsFontMetrics> nsLayoutUtils::GetFontMetricsForComputedStyle(
   WritingMode wm(aComputedStyle);
   const nsStyleFont* styleFont = aComputedStyle->StyleFont();
   nsFontMetrics::Params params;
-  params.language = styleFont->mLanguage;
+  params.language = styleFont->GetLangAtom();
   params.explicitLanguage = styleFont->mExplicitLanguage;
   params.orientation =
       !aForceHorizontalMetrics && wm.IsVertical() && !wm.IsSideways()
@@ -6552,7 +6552,8 @@ IntSize nsLayoutUtils::ComputeImageContainerDrawingParameters(
     imgIContainer* aImage, nsIFrame* aForFrame,
     const LayoutDeviceRect& aDestRect, const LayoutDeviceRect& aFillRect,
     const StackingContextHelper& aSc, uint32_t aFlags,
-    SVGImageContext& aSVGContext, Maybe<ImageIntRegion>& aRegion) {
+    SVGImageContext& aSVGContext, Maybe<ImageIntRegion>& aRegion,
+    bool* aRasterizedForDest) {
   MOZ_ASSERT(aImage);
   MOZ_ASSERT(aForFrame);
 
@@ -6571,6 +6572,13 @@ IntSize nsLayoutUtils::ComputeImageContainerDrawingParameters(
 
   const gfx::Matrix& itm = aSc.GetInheritedTransform();
   LayerIntRect destRect = SnapRectForImage(itm, scaleFactors, aDestRect);
+  const IntSize snappedDestSize = destRect.Size().ToUnknownSize();
+  auto setRasterizedForDest = [&](const IntSize& aSize) {
+    if (aRasterizedForDest) {
+      *aRasterizedForDest = aSize == snappedDestSize;
+    }
+    return aSize;
+  };
 
   // Since we always decode entire raster images, we only care about the
   // ImageIntRegion for vector images when we are recording blobs, for which we
@@ -6591,9 +6599,9 @@ IntSize nsLayoutUtils::ComputeImageContainerDrawingParameters(
       destRect.height = scaleHeight;
     }
 
-    return aImage->OptimalImageSizeForDest(
+    return setRasterizedForDest(aImage->OptimalImageSizeForDest(
         gfxSize(destRect.Width(), destRect.Height()),
-        imgIContainer::FRAME_CURRENT, samplingFilter, aFlags);
+        imgIContainer::FRAME_CURRENT, samplingFilter, aFlags));
   }
 
   // We only use the region rect with blob recordings. This is because when we
@@ -6627,7 +6635,7 @@ IntSize nsLayoutUtils::ComputeImageContainerDrawingParameters(
 
   // VectorImage::OptimalImageSizeForDest will just round up, but we already
   // have an integer size.
-  return destRect.Size().ToUnknownSize();
+  return setRasterizedForDest(destRect.Size().ToUnknownSize());
 }
 
 /* static */
@@ -7739,10 +7747,10 @@ static void AddFontsFromTextRun(gfxTextRun* aTextRun, nsTextFrame* aFrame,
       end = std::min(end, contentLimit);
 
       if (end > start) {
-        RefPtr<nsRange> range =
-            nsRange::Create(content, start, content, end, IgnoreErrors());
+        RefPtr<dom::Range> range =
+            dom::Range::Create(content, start, content, end, IgnoreErrors());
         NS_WARNING_ASSERTION(range,
-                             "nsRange::Create() failed to create valid range");
+                             "Range::Create() failed to create valid range");
         if (range) {
           fontFace->AddRange(range);
         }
@@ -9287,8 +9295,8 @@ nsRect nsLayoutUtils::GetSelectionBoundingRect(const Selection* aSel) {
     const uint32_t rangeCount = aSel->RangeCount();
     for (const uint32_t idx : IntegerRange(rangeCount)) {
       MOZ_ASSERT(aSel->RangeCount() == rangeCount);
-      nsRange* range = aSel->GetRangeAt(idx);
-      nsRange::CollectClientRectsAndText(
+      dom::Range* range = aSel->GetRangeAt(idx);
+      dom::Range::CollectClientRectsAndText(
           &accumulator, nullptr, range, range->GetStartContainer(),
           range->StartOffset(), range->GetEndContainer(), range->EndOffset(),
           true, false);
@@ -9789,13 +9797,10 @@ nsPoint nsLayoutUtils::ComputeOffsetToUserSpace(nsDisplayListBuilder* aBuilder,
   // if we want "ctx" to be in user space, we first need to subtract the
   // frame's position so that SVG painting can later add it again and the
   // frame is painted in the right place.
-  gfxPoint toUserSpaceGfx =
-      SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(aFrame);
-  nsPoint toUserSpace =
-      nsPoint(nsPresContext::CSSPixelsToAppUnits(float(toUserSpaceGfx.x)),
-              nsPresContext::CSSPixelsToAppUnits(float(toUserSpaceGfx.y)));
+  nsPoint toUserSpace = CSSPoint::ToAppUnits(
+      SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(aFrame));
 
-  return (offsetToBoundingBox - toUserSpace);
+  return offsetToBoundingBox - toUserSpace;
 }
 
 /* static */
@@ -9807,7 +9812,7 @@ already_AddRefed<nsFontMetrics> nsLayoutUtils::GetMetricsFor(
   gfxFont::Orientation orientation =
       aIsVertical ? nsFontMetrics::eVertical : nsFontMetrics::eHorizontal;
   nsFontMetrics::Params params;
-  params.language = aStyleFont->mLanguage;
+  params.language = aStyleFont->GetLangAtom();
   params.explicitLanguage = aStyleFont->mExplicitLanguage;
   params.orientation = orientation;
   params.userFontSet =

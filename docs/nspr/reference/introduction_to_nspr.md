@@ -40,7 +40,7 @@ structure of type `PRThread`. A thread is created by an explicit
 client request and remains a valid, independent execution entity until
 it returns from its root function or the process abnormally terminates.
 ({ref}`PRThread` and functions for creating and manipulating threads are
-described in detail in [Threads](Threads).)
+described in detail in [Threads](threads.md).)
 
 NSPR threads are lightweight in the sense that they are cheaper than
 full-blown processes, but they are not free. They achieve the cost
@@ -72,7 +72,7 @@ away.
 Priorities for NSPR threads are based loosely on hints provided by the
 client and sometimes constrained by the underlying operating system.
 Therefore, priorities are not rigidly defined. For more information, see
-[Thread Scheduling](#Thread_Scheduling).
+[Thread Scheduling](#thread-scheduling).
 
 In general, it's preferable to create local user threads with normal
 priority and let NSPR take care of the details as appropriate for each
@@ -85,7 +85,7 @@ Threads can also have "per-thread-data" attached to them. Each thread
 has a built-in per-thread error number and error string that are updated
 when NSPR operations fail. It's also possible for NSPR clients to define
 their own per-thread-data. For details, see [Controlling Per-Thread
-Private Data](Threads#Controlling_Per-Thread_Private_Data).
+Private Data](threads.md#controlling-per-thread-private-data).
 
 (thread-scheduling)=
 
@@ -95,12 +95,12 @@ NSPR threads are scheduled by priority and can be preempted or
 interrupted. The sections that follow briefly introduce the NSPR
 approach to these three aspects of thread scheduling.
 
-- [Setting Thread Priorities](#Setting_Thread_Priorities)
-- [Preempting Threads](#Preempting_Threads)
-- [Interrupting Threads](#Interrupting_Threads)
+- [Setting Thread Priorities](#setting-thread-priorities)
+- [Preempting Threads](#preempting-threads)
+- [Interrupting Threads](#interrupting-threads)
 
 For reference information on the NSPR API used for thread scheduling,
-see [Threads](Threads).
+see [Threads](threads.md).
 
 (setting-thread-priorities)=
 
@@ -117,7 +117,7 @@ amount of CPU time that a higher-priority thread might expect relative
 to a lower-priority thread. This preference is still subject to resource
 availability, and must not be used in place of proper synchronization.
 For more information on thread synchronization, see [NSPR Thread
-Synchronization](#NSPR_Thread_Synchronization).
+Synchronization](#nspr-thread-synchronization).
 
 The issue is further muddied by inconsistent offerings from OS vendors
 regarding the priority of their kernel-supported threads. NSPR assumes

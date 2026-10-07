@@ -100,7 +100,10 @@ export async function getFilename(filenameTitle, browser) {
   ).toISOString();
   const filenameDate = currentDateTime.substring(0, 10);
   const filenameTime = currentDateTime.substring(11, 19).replace(/:/g, "-");
-  let clipFilename = `Screenshot ${filenameDate} at ${filenameTime} ${filenameTitle}`;
+  let clipFilename = `Screenshot ${filenameDate} at ${filenameTime}`;
+  if (filenameTitle.length) {
+    clipFilename += " " + filenameTitle;
+  }
 
   // allow space for a potential ellipsis and the extension
   let maxNameStemLength = maxFilenameLength - "[...].png".length;

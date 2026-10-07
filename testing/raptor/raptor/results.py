@@ -234,10 +234,7 @@ class PerftestResultsHandler(metaclass=ABCMeta):
             )
             return False
 
-        external_tools_path = os.environ["EXTERNALTOOLSPATH"]
-        schema_path = os.path.join(
-            external_tools_path, "performance-artifact-schema.json"
-        )
+        schema_path = os.environ["PERFHERDER_SCHEMA_PATH"]
         LOG.info(f"Validating PERFHERDER_DATA against {schema_path}")
         try:
             with builtins.open(schema_path, encoding="utf-8") as f:

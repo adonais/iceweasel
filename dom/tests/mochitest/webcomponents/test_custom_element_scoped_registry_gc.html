@@ -1,0 +1,93 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Scoped custom element registries are collected with their nodes</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<script>
+"use strict";
+
+async function forceGC() {
+  for (let i = 0; i < 3; i++) {
+    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise(resolve => SpecialPowers.exactGC(resolve));
+  }
+}
+
+// An expando preserves the registry's wrapper, so the wrapper stays alive
+// exactly as long as the native registry does and the weak reference tracks
+// the registry itself rather than a wrapper the GC is free to drop.
+function weakRegistry(registry) {
+  registry.__preserveWrapper = true;
+  return SpecialPowers.Cu.getWeakReference(registry);
+}
+
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.scoped-custom-element-registries.enabled", true]],
+  });
+});
+
+add_task(async function weak_reference_sanity() {
+  let registry = new CustomElementRegistry();
+  let weak = weakRegistry(registry);
+  await forceGC();
+  ok(weak.get(), "registry stays alive while referenced");
+  registry = null;
+  await forceGC();
+  ok(!weak.get(), "registry is collected once unreferenced");
+});
+
+add_task(async function document_initialize() {
+  let weak = (() => {
+    let registry = new CustomElementRegistry();
+    registry.initialize(document.implementation.createHTMLDocument("x"));
+    return weakRegistry(registry);
+  })();
+  await forceGC();
+  ok(!weak.get(), "registry of an initialized document is collected with it");
+});
+
+add_task(async function shadow_root_registry() {
+  let weak = (() => {
+    let registry = new CustomElementRegistry();
+    let host = document.createElement("div");
+    // The constructor closes over the host: registry -> constructor -> host
+    // -> shadow root -> registry is a cycle only the cycle collector can
+    // break, and only if it can see the shadow root's edge to the registry.
+    registry.define("x-shadow-cycle", class extends HTMLElement {
+      constructor() {
+        super();
+        this.host = host;
+      }
+    });
+    host.attachShadow({ mode: "open", customElementRegistry: registry });
+    return weakRegistry(registry);
+  })();
+  await forceGC();
+  ok(!weak.get(), "registry of a shadow root is collected with its host");
+});
+
+add_task(async function element_registry() {
+  let weak = (() => {
+    let registry = new CustomElementRegistry();
+    let element = document.createElement("div", {
+      customElementRegistry: registry,
+    });
+    registry.define("x-element-cycle", class extends HTMLElement {
+      constructor() {
+        super();
+        this.element = element;
+      }
+    });
+    return weakRegistry(registry);
+  })();
+  await forceGC();
+  ok(!weak.get(), "registry of an element is collected with the element");
+});
+</script>
+</body>
+</html>

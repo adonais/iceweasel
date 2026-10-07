@@ -11,8 +11,7 @@
 use api::{ExtendMode, GradientStop};
 use api::units::*;
 use crate::pattern::gradient::{conic_gradient_pattern};
-use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState};
-use crate::scene_building::IsVisible;
+use crate::pattern::{Pattern, PatternBuilder, PatternBuilderState};
 use crate::intern::{Internable, InternDebug, Handle as InternHandle};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{PrimitiveKind, PrimitiveOpacity};
@@ -40,7 +39,7 @@ impl InternDebug for ConicGradientKey {}
 pub struct ConicGradientTemplate {
     pub common: PrimTemplateCommonData,
     pub extend_mode: ExtendMode,
-    pub center: LayoutPoint,
+    pub center: LayoutVector2D,
     pub params: ConicGradientParams,
     /// Per-axis fraction of `common.prim_size` covered by one tile of the
     /// gradient pattern. Multiply by `common.prim_size` at use to recover the
@@ -55,18 +54,11 @@ pub struct ConicGradientTemplate {
 impl PatternBuilder for ConicGradientTemplate {
     fn build(
         &self,
-        _sub_rect: Option<DeviceRect>,
-        offset: LayoutVector2D,
-        ctx: &PatternBuilderContext,
+        pattern_rect: &LayoutRect,
         state: &mut PatternBuilderState,
     ) -> Pattern {
-        // ConicGradientTemplate stores the center point relative to the primitive
-        // origin, but the shader works with start/end points in "proper" layout
-        // coordinates (relative to the primitive's spatial node).
-        let center = self.center + ctx.prim_origin.to_vector() + offset;
-
         conic_gradient_pattern(
-            center,
+            pattern_rect.min + self.center,
             self.params.angle,
             self.params.start_offset,
             self.params.end_offset,
@@ -144,12 +136,6 @@ impl InternablePrimitive for ConicGradient {
         PrimitiveKind::ConicGradient {
             data_handle,
         }
-    }
-}
-
-impl IsVisible for ConicGradient {
-    fn is_visible(&self) -> bool {
-        true
     }
 }
 

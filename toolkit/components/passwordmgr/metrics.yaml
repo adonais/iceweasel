@@ -416,6 +416,57 @@ pwmgr:
           The result of the OS Authentication.
         type: string
 
+  primary_password_prompt:
+    type: event
+    description: >
+      Recorded every time the password manager asks the user for their Primary
+      Password, together with the outcome of that prompt.
+      Possible sources, meaning the code path that put the dialog on screen, are:
+        "reauth" for the explicit re-authentication gate used by about:logins,
+          the contextual password manager and about:preferences.
+        "crypto_sdr" when the JSON store had to unlock the NSS key to encrypt
+          or decrypt a login.
+        "rust_storage" when the Rust store had to unlock the NSS key.
+      Possible results are:
+        "success" when the user entered the correct password.
+        "cancel" when the user dismissed the dialog.
+        "wrong_password" when the user entered an incorrect password and is
+          prompted again.
+        "error" when an unexpected exception was encountered.
+      Only "rust_storage" reports "wrong_password", because on the other two
+      paths NSS re-prompts internally without notifying us: an unlock in which
+      the user mistyped their password before succeeding or giving up is
+      recorded there as a single event holding the final outcome. For the same
+      reason "reauth" never reports "error", since NSS surfaces a dismissed
+      dialog and an internal failure identically. On "crypto_sdr", "error" can
+      also mean that the operation failed before a dialog was shown.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2070108
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2070108
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - passwords-dev@mozilla.org
+    expires: never
+    extra_keys:
+      source:
+        description: >
+          The code path that showed the prompt.
+        type: string
+      trigger:
+        description: >
+          For "reauth", which user interaction required the re-authentication,
+          using the same values as `prompt_shown_os_reauth.trigger`. For
+          "crypto_sdr", the operation that needed the key, "encrypt" or
+          "decrypt". Not set for "rust_storage", which does not know what the
+          key is used for.
+        type: string
+      result:
+        description: >
+          The outcome of the prompt.
+        type: string
+
   require_os_reauth_toggle:
     type: event
     description: >
@@ -948,8 +999,10 @@ pwmgr:
       any fatal error.
     bugs:
       - https://bugzil.la/2065593
+      - https://bugzil.la/2072278
     data_reviews:
       - https://bugzil.la/2065593
+      - https://bugzil.la/2072278
     data_sensitivity:
       - technical
     notification_emails:
@@ -1010,6 +1063,15 @@ pwmgr:
           Number of logins that could not be restored. The Rust store is kept
           instead of wiped when this is non-zero, so the next startup retries.
         type: quantity
+      number_of_logins_to_delete:
+        description: >
+          Number of logins the JSON store holds that the Rust store no longer
+          has, which is what carrying the deletions made under the Rust
+          backend over to the JSON store would delete. The restore deletes
+          nothing, and the number still includes any login the migration
+          failed to copy; telling those two apart is what it is collected for.
+          Absent from records written before bug 2072278.
+        type: quantity
       end_state:
         description: >
           Outcome of the run: "Restored" when every login made it into the JSON
@@ -1055,6 +1117,83 @@ pwmgr:
         description: >
           The error message or exception string from the failure.
         type: string
+
+  storage_operation_time:
+    type: event
+    description: >
+      One record per login storage operation performed through LoginManager,
+      with the backend that served it and how long the caller waited. Not
+      recorded when the operation fails, so event counts are not success rates.
+      The duration includes a primary password prompt when the operation
+      triggered one; those samples can be excluded in analysis using
+      pwmgr.primary_password_prompt events that overlap the operation window.
+    bugs:
+      - https://bugzil.la/2070146
+    data_reviews:
+      - https://bugzil.la/2070146
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - passwords-dev@mozilla.org
+    expires: never
+    extra_keys:
+      backend:
+        type: string
+        description: >
+          The storage backend that served the call: "json", "rust" or
+          "geckoview".
+      operation:
+        type: string
+        description: >
+          "search", "list", "count" or "record_password_use".
+      duration_ms:
+        type: quantity
+        description: >
+          Duration of the call as seen by the caller, measured in LoginManager
+          around the delegation to the active backend.
+
+  rust_init_status:
+    type: event
+    description: >
+      One record per login storage initialization, with the duration of each
+      phase, the backend the migrator selected and any fatal error. Migration
+      traffic has its own event, rust_migration_status.
+    bugs:
+      - https://bugzil.la/2070152
+    data_reviews:
+      - https://bugzil.la/2070152
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - passwords-dev@mozilla.org
+    expires: never
+    extra_keys:
+      init_rust_components_ms:
+        type: quantity
+        description: Duration of initializing the shared Rust components.
+      create_rust_store_ms:
+        type: quantity
+        description: >
+          Duration of creating/opening the Rust login store, including opening
+          the SQLite database and running schema initialization.
+      total_ms:
+        type: quantity
+        description: Duration of the complete initialization.
+      backend:
+        type: string
+        description: >
+          The backend the migrator selected as active for this session, "json"
+          or "rust". Both stores are initialized on every startup; this also
+          says which store number_of_logins was counted from.
+      result:
+        type: string
+        description: >
+          "ok", or "error" when initialization aborted with a fatal error.
+      error_kind:
+        type: string
+        description: >
+          Name of the error that aborted initialization, or empty when it
+          completed.
 
   saving_enabled:
     type: boolean
@@ -1248,16 +1387,22 @@ form_autocomplete:
   show_logins:
     type: event
     description: >
-      An content form autocomplete popup was shown. Details on the timing
-      and context are provided.
+      A login autocomplete popup was shown, with the time from the start of
+      the search until the popup appeared and details on its contents.
+      Since bug 2070466 this is recorded once per input element per page
+      load, on the first opening of its popup, for all search string lengths;
+      before, it was recorded on every result update while the popup was
+      open, capped to search strings of length 0 and 1.
       This event was generated to correspond to the Legacy Telemetry event
       form_autocomplete.show#logins.
     bugs:
       - https://bugzil.la/1619498
       - https://bugzil.la/1628849
+      - https://bugzil.la/2070466
     data_reviews:
       - https://bugzil.la/1619498
       - https://bugzil.la/1628849
+      - https://bugzil.la/2070466
     notification_emails:
       - passwords-dev@mozilla.org
     expires: never

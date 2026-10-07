@@ -178,7 +178,6 @@ struct DocShellLoadStateInit
   // responsible for causing the load to occur.
   uint32_t TriggeringSandboxFlags;
   uint64_t TriggeringWindowId;
-  bool TriggeringStorageAccess;
   ClassificationFlags TriggeringClassificationFlags;
   int32_t? CancelContentJSEpoch;
 
@@ -260,6 +259,7 @@ struct ReplacementChannelConfigInit
   TimedChannelInfo? timedChannelInfo;
   nullable RemoteLazyInputStream uploadStream;
   uint64_t uploadStreamLength;
+  bool uploadStreamIsStreaming;
   nsCString? contentType;
   nsCString? contentLength;
 };

@@ -11,12 +11,12 @@
 //! interning in the `DisplayListBuilder`; `webrender` re-exports them from their
 //! former homes. Not part of the public API surface.
 
-use crate::units::{LayoutRect, LayoutSize, LayoutPoint, LayoutVector2D, RectExt};
+use crate::units::{LayoutRect, LayoutSize, LayoutVector2D, RectExt};
 use crate::{ColorU, ExtendMode};
 use crate::interned_prims::{ConicGradient, LinearGradient, RadialGradient};
 use crate::key_types::{
     ConicGradientParams, EdgeMask, GradientStopKey, NinePatchDescriptor,
-    RadialGradientParams,
+    RadialGradientParams, StretchSizeKey,
 };
 use euclid::{vec2, size2};
 use euclid::approxeq::ApproxEq;
@@ -37,6 +37,27 @@ pub fn simplify_repeated_primitive(
     if stride.height >= prim_rect.height() {
         tile_spacing.height = 0.0;
         prim_rect.max.y = f32::min(prim_rect.min.y + stretch_size.height, prim_rect.max.y);
+    }
+}
+
+/// Encode an image's tile size for its intern key. Per-axis: a `repeat_size`
+/// extent within an epsilon of the prim rect's is recorded as filling the
+/// prim, with the stored size normalised to zero so that images filling both
+/// axes share a key whatever their displayed size; anything further away is
+/// kept verbatim. Same fuzzy comparison as `resolve_tile_size`, for the same
+/// reason.
+pub fn image_stretch_size(prim_rect: &LayoutRect, repeat_size: LayoutSize) -> StretchSizeKey {
+    const EPSILON: f32 = 0.001;
+    let fills_width = repeat_size.width.approx_eq_eps(&prim_rect.width(), &EPSILON);
+    let fills_height = repeat_size.height.approx_eq_eps(&prim_rect.height(), &EPSILON);
+    let stored = LayoutSize::new(
+        if fills_width { 0.0 } else { repeat_size.width },
+        if fills_height { 0.0 } else { repeat_size.height },
+    );
+    StretchSizeKey {
+        size: stored.into(),
+        fills_width,
+        fills_height,
     }
 }
 
@@ -163,8 +184,8 @@ pub fn optimize_linear_gradient(
     tile_size: &mut LayoutSize,
     mut tile_spacing: LayoutSize,
     clip_rect: &LayoutRect,
-    start: &mut LayoutPoint,
-    end: &mut LayoutPoint,
+    start: &mut LayoutVector2D,
+    end: &mut LayoutVector2D,
 ) {
     simplify_repeated_primitive(&tile_size, &mut tile_spacing, prim_rect);
 
@@ -212,7 +233,7 @@ pub fn optimize_linear_gradient(
 pub fn optimize_radial_gradient(
     prim_rect: &mut LayoutRect,
     stretch_size: &mut LayoutSize,
-    center: &mut LayoutPoint,
+    center: &mut LayoutVector2D,
     tile_spacing: &mut LayoutSize,
     aa_mask: &mut EdgeMask,
     clip_rect: &LayoutRect,
@@ -236,8 +257,8 @@ pub fn optimize_radial_gradient(
     }
 
     // Bounding box of the "interesting" part of the gradient.
-    let min = prim_rect.min + center.to_vector() - radius.to_vector() * end_offset;
-    let max = prim_rect.min + center.to_vector() + radius.to_vector() * end_offset;
+    let min = prim_rect.min + *center - radius.to_vector() * end_offset;
+    let max = prim_rect.min + *center + radius.to_vector() * end_offset;
 
     // The (non-repeated) gradient primitive rect.
     let gradient_rect = LayoutRect::from_origin_and_size(
@@ -394,8 +415,8 @@ pub fn optimize_radial_gradient(
 /// rather than the simplified rect - both as the scene builder had it.
 pub fn linear_gradient_prim(
     prim_rect: LayoutRect,
-    start_point: LayoutPoint,
-    end_point: LayoutPoint,
+    start_point: LayoutVector2D,
+    end_point: LayoutVector2D,
     stops: Vec<GradientStopKey>,
     extend_mode: ExtendMode,
     stretch_size: LayoutSize,
@@ -455,7 +476,7 @@ pub fn linear_gradient_prim(
 /// the two quirks this preserves.
 pub fn conic_gradient_prim(
     prim_rect: LayoutRect,
-    center: LayoutPoint,
+    center: LayoutVector2D,
     angle: f32,
     start_offset: f32,
     end_offset: f32,
@@ -486,7 +507,7 @@ pub fn conic_gradient_prim(
 /// the two quirks this preserves.
 pub fn radial_gradient_prim(
     prim_rect: LayoutRect,
-    center: LayoutPoint,
+    center: LayoutVector2D,
     start_radius: f32,
     end_radius: f32,
     ratio_xy: f32,

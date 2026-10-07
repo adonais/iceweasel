@@ -49,6 +49,8 @@ class WastLexer {
 
   Token GetToken();
 
+  std::string_view Filename() const { return filename_; }
+
   // TODO(binji): Move this out of the lexer.
   std::unique_ptr<LexerSourceLineFinder> MakeLineFinder() {
     return std::make_unique<LexerSourceLineFinder>(source_->Clone());
@@ -89,7 +91,7 @@ class WastLexer {
     return ReadReservedChars() == ReservedChars::None;
   }
   void ReadSign();
-  Token GetStringToken();
+  Token GetStringToken(TokenType);
   Token GetNumberToken(TokenType);
   Token GetHexNumberToken(TokenType);
   Token GetInfToken();

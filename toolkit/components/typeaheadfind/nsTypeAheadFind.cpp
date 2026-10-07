@@ -34,11 +34,11 @@
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLTextAreaElement.h"
 #include "mozilla/dom/Link.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/RangeBinding.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "nsLayoutUtils.h"
-#include "nsRange.h"
 
 #include "nsTypeAheadFind.h"
 
@@ -332,7 +332,7 @@ nsresult nsTypeAheadFind::FindItNow(uint32_t aMode, bool aIsLinksOnly,
   bool useSelection = (aMode != FIND_FIRST && aMode != FIND_LAST) &&
                       (!aIsFirstVisiblePreferred || mStartFindRange);
 
-  RefPtr<nsRange> returnRange;
+  RefPtr<dom::Range> returnRange;
   if (NS_FAILED(GetSearchContainers(
           currentContainer, useSelection ? selectionController.get() : nullptr,
           aIsFirstVisiblePreferred, findPrev, getter_AddRefs(presShell),
@@ -341,7 +341,7 @@ nsresult nsTypeAheadFind::FindItNow(uint32_t aMode, bool aIsLinksOnly,
   }
 
   if (!mStartPointRange) {
-    mStartPointRange = nsRange::Create(presShell->GetDocument());
+    mStartPointRange = dom::Range::Create(presShell->GetDocument());
   }
 
   // XXXbz Should this really be ignoring errors?
@@ -659,26 +659,26 @@ nsresult nsTypeAheadFind::GetSearchContainers(
   if (!doc) return NS_ERROR_FAILURE;
 
   if (!mSearchRange) {
-    mSearchRange = nsRange::Create(doc);
+    mSearchRange = dom::Range::Create(doc);
   }
   nsCOMPtr<nsINode> searchRootNode(doc);
 
   mSearchRange->SelectNodeContents(*searchRootNode, IgnoreErrors());
 
   if (!mStartPointRange) {
-    mStartPointRange = nsRange::Create(doc);
+    mStartPointRange = dom::Range::Create(doc);
   }
   mStartPointRange->SetStartAndEnd(searchRootNode, 0, searchRootNode, 0);
 
   if (!mEndPointRange) {
-    mEndPointRange = nsRange::Create(doc);
+    mEndPointRange = dom::Range::Create(doc);
   }
   mEndPointRange->SetStartAndEnd(searchRootNode, searchRootNode->Length(),
                                  searchRootNode, searchRootNode->Length());
 
   // Consider current selection as null if
   // it's not in the currently focused document
-  RefPtr<const nsRange> currentSelectionRange;
+  RefPtr<const dom::Range> currentSelectionRange;
   RefPtr<Document> selectionDocument = GetDocument();
   if (aSelectionController && selectionDocument && selectionDocument == doc) {
     RefPtr<Selection> selection = aSelectionController->GetSelection(
@@ -712,7 +712,7 @@ nsresult nsTypeAheadFind::GetSearchContainers(
   return NS_OK;
 }
 
-void nsTypeAheadFind::RangeStartsInsideLink(nsRange* aRange,
+void nsTypeAheadFind::RangeStartsInsideLink(dom::Range* aRange,
                                             bool* aIsInsideLink,
                                             bool* aIsStartingLink) {
   *aIsInsideLink = false;
@@ -944,7 +944,7 @@ nsresult nsTypeAheadFind::FindInternal(uint32_t aMode,
 
       mStartFindRange = nullptr;
       if (selection) {
-        RefPtr<const nsRange> startFindRange = selection->GetRangeAt(0);
+        RefPtr<const dom::Range> startFindRange = selection->GetRangeAt(0);
         if (startFindRange) {
           mStartFindRange = startFindRange->CloneRange();
         }
@@ -986,7 +986,7 @@ void nsTypeAheadFind::GetSelection(PresShell* aPresShell,
 }
 
 NS_IMETHODIMP
-nsTypeAheadFind::GetFoundRange(nsRange** aFoundRange) {
+nsTypeAheadFind::GetFoundRange(dom::Range** aFoundRange) {
   NS_ENSURE_ARG_POINTER(aFoundRange);
   if (mFoundRange == nullptr) {
     *aFoundRange = nullptr;
@@ -998,13 +998,13 @@ nsTypeAheadFind::GetFoundRange(nsRange** aFoundRange) {
 }
 
 NS_IMETHODIMP
-nsTypeAheadFind::IsRangeVisible(nsRange* aRange, bool aMustBeInViewPort,
+nsTypeAheadFind::IsRangeVisible(dom::Range* aRange, bool aMustBeInViewPort,
                                 bool* aResult) {
   *aResult = IsRangeVisible(aRange, aMustBeInViewPort, false, nullptr);
   return NS_OK;
 }
 
-bool nsTypeAheadFind::IsRangeVisible(nsRange* aRange, bool aMustBeInViewPort,
+bool nsTypeAheadFind::IsRangeVisible(dom::Range* aRange, bool aMustBeInViewPort,
                                      bool aGetTopVisibleLeaf,
                                      bool* aUsesIndependentSelection) {
   // We need to know if the range start is visible.
@@ -1034,12 +1034,12 @@ bool nsTypeAheadFind::IsRangeVisible(nsRange* aRange, bool aMustBeInViewPort,
 }
 
 NS_IMETHODIMP
-nsTypeAheadFind::IsRangeRendered(nsRange* aRange, bool* aResult) {
+nsTypeAheadFind::IsRangeRendered(dom::Range* aRange, bool* aResult) {
   *aResult = IsRangeRendered(aRange);
   return NS_OK;
 }
 
-bool nsTypeAheadFind::IsRangeRendered(nsRange* aRange) {
+bool nsTypeAheadFind::IsRangeRendered(dom::Range* aRange) {
   using FrameForPointOption = nsLayoutUtils::FrameForPointOption;
   nsCOMPtr<nsIContent> content =
       nsIContent::FromNodeOrNull(aRange->GetClosestCommonInclusiveAncestor());
@@ -1060,7 +1060,7 @@ bool nsTypeAheadFind::IsRangeRendered(nsRange* aRange) {
   // viewport. Do a hit-test to determine that quickly and properly.
   AutoTArray<nsIFrame*, 8> frames;
   nsIFrame* rootFrame = frame->PresShell()->GetRootFrame();
-  RefPtr<nsRange> range = static_cast<nsRange*>(aRange);
+  RefPtr<dom::Range> range = static_cast<dom::Range*>(aRange);
 
   // NOTE(emilio): This used to flush layout, _after_ checking style above.
   // Instead, don't flush.

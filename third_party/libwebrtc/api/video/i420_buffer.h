@@ -27,6 +27,7 @@ namespace webrtc {
 class RTC_EXPORT I420Buffer : public I420BufferInterface {
  public:
   static scoped_refptr<I420Buffer> Create(int width, int height);
+  static scoped_refptr<I420Buffer> CreateOrNull(int width, int height);
   static scoped_refptr<I420Buffer> Create(int width,
                                           int height,
                                           int stride_y,

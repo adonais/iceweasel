@@ -5,7 +5,7 @@
 import os
 import sys
 
-__all__ = ["read_ini", "combine_fields"]
+__all__ = ["read_ini", "combine_fields", "combine_run_if"]
 
 
 class IniParseError(Exception):
@@ -178,6 +178,27 @@ def read_ini(
     return sections, defaults, None
 
 
+def combine_run_if(global_value, local_value):
+    """
+    Combine a `[DEFAULT]` `run-if` with a per-test `run-if`.
+
+    The conditions of a single `run-if` are OR'd together (the test runs if any
+    of them holds), but the manifest default and the per-test value both have to
+    hold, so the combination is the `&&` cross product of the two condition
+    lists. Each condition is parenthesized because `&&` binds tighter than `||`
+    in manifestparser.expression.
+    """
+    global_conditions = [c.strip() for c in global_value.splitlines() if c.strip()]
+    local_conditions = [c.strip() for c in local_value.splitlines() if c.strip()]
+    if not global_conditions:
+        return local_value
+    if not local_conditions:
+        return global_value
+    return "\n".join(
+        f"({gc}) && ({lc})" for gc in global_conditions for lc in local_conditions
+    )
+
+
 def combine_fields(global_vars, local_vars):
     """
     Combine the given manifest entries according to the semantics of specific fields.
@@ -196,6 +217,10 @@ def combine_fields(global_vars, local_vars):
     }
     final_mapping = global_vars.copy()
     for field_name, value in local_vars.items():
+        # `run-if` needs an && cross product rather than a string template.
+        if field_name == "run-if" and field_name in global_vars:
+            final_mapping[field_name] = combine_run_if(global_vars[field_name], value)
+            continue
         if field_name not in field_patterns or field_name not in global_vars:
             final_mapping[field_name] = value
             continue

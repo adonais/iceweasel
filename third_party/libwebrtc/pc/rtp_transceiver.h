@@ -449,7 +449,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
     return *codec_lookup_helper_->GetCodecVendor();
   }
   std::vector<Codec> GetSendCodecs();
-  void OnFirstPacketReceived(uint32_t ssrc);
+  void OnFirstPacketReceived_s(uint32_t ssrc);
   void OnPacketReceived(uint32_t ssrc,
                         scoped_refptr<PendingTaskSafetyFlag> safety)
       RTC_RUN_ON(context()->network_thread());

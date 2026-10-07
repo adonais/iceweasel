@@ -72,14 +72,14 @@ DllMain(HMODULE, DWORD, LPVOID) {
 }
 ```
 
-8. Modify `$SRCDIR/toolkit/mozapps/installer/windows/nsis/makensis.mk` as follows:
+8. Add the plugin to `NSIS_CUSTOM_PLUGINS` in `$SRCDIR/python/mozbuild/mozbuild/nsis.py`:
 
-```text
-CUSTOM_NSIS_PLUGINS = \
-    ... \
-    MyPlugin.dll \
-    ... \
-    $(NULL)
+```python
+NSIS_CUSTOM_PLUGINS = (
+    ...,
+    "MyPlugin.dll",
+    ...,
+)
 ```
 
 09. **NSIS only works with 32-bit plugins so ensure your Visual Studio build configuration is set to x86.** Compile your new plugin. `exp` and `lib` files will also be generated but they can safely be deleted.

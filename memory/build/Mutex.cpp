@@ -12,7 +12,7 @@ bool Mutex::TryLock() {
   MOZ_ASSERT(mInitialised);
 
 #if defined(XP_WIN)
-  return !!TryEnterCriticalSection(mMutex.addr());
+  return mozilla::detail::MutexImpl::tryLock();
 #elif defined(XP_DARWIN)
   return os_unfair_lock_trylock(&mMutex);
 #else

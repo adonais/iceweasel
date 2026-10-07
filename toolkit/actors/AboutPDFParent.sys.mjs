@@ -2,7 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { PdfJsFeaturesNotification } from "resource://pdf.js/PdfJsFeaturesNotification.sys.mjs";
+
 const PDF_HEADER = "%PDF-";
+const NOTIFICATION_COUNT_PREF = PdfJsFeaturesNotification.IMPRESSION_COUNT_PREF;
 
 let ShellService = null;
 try {
@@ -22,18 +25,84 @@ ChromeUtils.defineLazyGetter(
 
 export class AboutPDFParent extends JSWindowActorParent {
   #filePickerOpenPromise = null;
+  #notificationObserver = null;
 
   receiveMessage(message) {
     switch (message.name) {
       case "AboutPDF:CanSetDefaultPDFHandler":
         return this.#canSetDefaultPDFHandler();
+      case "AboutPDF:GoBack":
+        return this.#goBack();
       case "AboutPDF:PickFile":
         return this.#pickFile();
       case "AboutPDF:SetDefaultPDFHandler":
         return this.#setDefaultPDFHandler();
+      case "AboutPDF:ObserveNotificationPref":
+        return this.#observeNotificationPref();
+      case "AboutPDF:NotificationEligible":
+        return this.#notificationEligible();
+      case "AboutPDF:DismissNotification":
+        return PdfJsFeaturesNotification.consume();
     }
 
     return undefined;
+  }
+
+  // Granting eligibility claims an impression.
+  #notificationEligible() {
+    if (!PdfJsFeaturesNotification.isEligible()) {
+      return false;
+    }
+    PdfJsFeaturesNotification.recordImpression();
+    return true;
+  }
+
+  // Return whether a Back navigation was requested.
+  #goBack() {
+    const { browsingContext } = this;
+    if (browsingContext !== browsingContext.top) {
+      return false;
+    }
+    const browser = browsingContext.embedderElement;
+    if (!browser?.canGoBack) {
+      return false;
+    }
+    browser.goBack();
+    return true;
+  }
+
+  #observeNotificationPref() {
+    if (!this.#notificationObserver) {
+      this.#notificationObserver = {
+        // addObserver also observes descendants of this preference.
+        observe: (_subject, _topic, prefName) => {
+          if (prefName === NOTIFICATION_COUNT_PREF) {
+            this.#hideNotificationIfConsumed();
+          }
+        },
+      };
+      Services.prefs.addObserver(
+        NOTIFICATION_COUNT_PREF,
+        this.#notificationObserver
+      );
+    }
+    this.#hideNotificationIfConsumed();
+  }
+
+  #hideNotificationIfConsumed() {
+    if (PdfJsFeaturesNotification.isConsumed()) {
+      this.sendAsyncMessage("PDF:HideFeaturesNotification");
+    }
+  }
+
+  didDestroy() {
+    if (this.#notificationObserver) {
+      Services.prefs.removeObserver(
+        NOTIFICATION_COUNT_PREF,
+        this.#notificationObserver
+      );
+      this.#notificationObserver = null;
+    }
   }
 
   #canSetDefaultPDFHandler() {

@@ -32,7 +32,7 @@ void WebGLChild::ActorDestroy(ActorDestroyReason why) {
 
 // -
 
-Maybe<Range<uint8_t>> WebGLChild::AllocPendingCmdBytes(
+Maybe<mozilla::Range<uint8_t>> WebGLChild::AllocPendingCmdBytes(
     const size_t size, const size_t fyiAlignmentOverhead) {
   if (!mPendingCmdsShmem.Size()) {
     size_t capacity = mDefaultCmdsShmemSize;
@@ -55,7 +55,7 @@ Maybe<Range<uint8_t>> WebGLChild::AllocPendingCmdBytes(
     }
   }
 
-  const auto range = Range<uint8_t>{mPendingCmdsShmem.AsSpan()};
+  const auto range = mozilla::Range<uint8_t>{mPendingCmdsShmem.AsSpan()};
 
   auto itr = range.begin() + mPendingCmdsPos;
   const auto offset = AlignmentOffset(kUniversalAlignment, itr.get());
@@ -67,10 +67,11 @@ Maybe<Range<uint8_t>> WebGLChild::AllocPendingCmdBytes(
     return AllocPendingCmdBytes(size, fyiAlignmentOverhead);
   }
   itr = range.begin() + mPendingCmdsPos;
-  const auto remaining = Range<uint8_t>{itr, range.end()};
+  const auto remaining = mozilla::Range<uint8_t>{itr, range.end()};
   mPendingCmdsPos += size;
   mPendingCmdsAlignmentOverhead += fyiAlignmentOverhead;
-  return Some(Range<uint8_t>{remaining.begin(), remaining.begin() + size});
+  return Some(
+      mozilla::Range<uint8_t>{remaining.begin(), remaining.begin() + size});
 }
 
 void WebGLChild::FlushPendingCmds() {

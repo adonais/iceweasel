@@ -20,7 +20,7 @@ on these domains should be blocked.
 The source lists contain multiple categories, we use **Advertising**, **Social**, **Analytics**, **Content** (aka. "other content trackers").
 We use some items from the **Disconnect** list, those items are moved into the **Social** list when parsing. We ignore **Legacy Disconnect** and
 **Legacy Social**. You can see the code parsing these lists at
-[BlockListProcessor.java](../app/src/webkit/java/org/mozilla/focus/webkit/matcher/BlocklistProcessor.java).
+`BlocklistProcessor.java`.
 
 The google_mapping is similar to the main list - these items are simply addded to the existing categories mentioned above. (The google entries
 in the main **Disconnect** list are discarded since we use those from google_mapping.json.)
@@ -36,7 +36,7 @@ we unblock "googleapis.com". This is done in the entitylist: for every domain th
 ## Implementation
 
 WebView calls the WebViewClient.shouldInterceptRequest() callback every time a resource is to be loaded - this permits us to intercept resource loading, and is how we
-can perform content blocking on Android. (See [BlockListProcessor.java](../app/src/webkit/java/org/mozilla/focus/webkit/TrackingProtectionWebViewClient.java) ).
+can perform content blocking on Android. (See `TrackingProtectionWebViewClient.java` ).
 
 We then just need to verify every resource URL to determine whether it can be loaded in that callback: we use a custom trie-based domain matching implementation for
 Focus for Android. This is different from Focus iOS: Focus for iOS was originally a content blocking safari plugin, and used the iOS content blocking API
@@ -49,7 +49,7 @@ over that list to check whether a given resource URL matches. That approach mean
 
 As mentioned, Focus for Android uses a custom Trie implementation instead of iterating over regexes. This does mean that we aren't reusing iOS's blocklist
 format, but it also permits for ~140x faster domain lookup when compared to a port of the iOS domain lookup implementation. The entitylist is similar,
-and we use extended versions of the same Trie for the domain overrides. See [UrlMatcher](../app/src/webkit/java/org/mozilla/focus/webkit/matcher/UrlMatcher.java) for
+and we use extended versions of the same Trie for the domain overrides. See `UrlMatcher.java` for
 the actual matcher implementation.
 
 ## Miscellaneous notes

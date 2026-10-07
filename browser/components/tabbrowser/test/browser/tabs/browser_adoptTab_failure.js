@@ -73,7 +73,7 @@ add_task(async function test_on_drop() {
   is(gBrowser2.tabs[1].label, "selectedTab", "selectedTab became tab 1");
   is(gBrowser2.tabs[2], initialTab, "initialTab became tab 2");
   is(gBrowser2.selectedTab, gBrowser2.tabs[1], "Tab 1 is selected");
-  is(gBrowser2.multiSelectedTabsCount, 2, "Three multiselected tabs");
+  is(gBrowser2.multiSelectedTabsCount, 2, "Two multiselected tabs");
   ok(gBrowser2.tabs[0].multiselected, "Tab 0 is multiselected");
   ok(gBrowser2.tabs[1].multiselected, "Tab 1 is multiselected");
   ok(!gBrowser2.tabs[2].multiselected, "Tab 2 is not multiselected");

@@ -95,9 +95,13 @@ class CrossProcessMutex {
  private:
   friend struct IPC::ParamTraits<CrossProcessMutex>;
 
+  // Prevent clang-tidy from thinking those are unimplemented constructors when
+  // analyzing only headers.
+  // NOLINTBEGIN(modernize-use-equals-delete)
   CrossProcessMutex();
   CrossProcessMutex(const CrossProcessMutex&);
   CrossProcessMutex& operator=(const CrossProcessMutex&);
+  // NOLINTEND(modernize-use-equals-delete)
 
 #if defined(XP_WIN)
   HANDLE mMutex;

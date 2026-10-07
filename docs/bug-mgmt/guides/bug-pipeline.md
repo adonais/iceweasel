@@ -4,7 +4,7 @@ For Firefox quality, Mozilla has different processes to report defects. In paral
 
 ```{mermaid}
 graph TD
-    classDef tool fill:#f96;
+    classDef tool fill:#f96,color:#1a1a1a;
 
     Community --> B(bugzilla.mozilla.org)
     QA --> B

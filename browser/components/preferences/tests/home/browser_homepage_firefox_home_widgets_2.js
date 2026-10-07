@@ -45,7 +45,7 @@ add_task(async function test_widgets_children_disabled_when_parent_disabled() {
 
   // Child controls (lists and timer) should remain visible but be disabled
   let listsWrapper = await settingControlRenders("lists", win);
-  let timerWrapper = await settingControlRenders("timer", win);
+  let timerWrapper = await settingControlRenders("focusTimer", win);
 
   ok(listsWrapper, "Lists control exists");
   ok(timerWrapper, "Timer control exists");
@@ -88,7 +88,7 @@ add_task(async function test_widgets_children_enabled_when_parent_enabled() {
 
   // Child controls (lists and timer) should be enabled
   let listsWrapper = await settingControlRenders("lists", win);
-  let timerWrapper = await settingControlRenders("timer", win);
+  let timerWrapper = await settingControlRenders("focusTimer", win);
 
   ok(listsWrapper, "Lists control exists");
   ok(timerWrapper, "Timer control exists");

@@ -19,7 +19,7 @@ To run all the things, here's the tl;dr:
 && ./mach rusttests && ./mach gtest "FOG*"
 && python3 ./mach python-test toolkit/components/glean/tests/pytest
 && ./mach test toolkit/components/glean/tests/xpcshell
-&& ./mach telemetry-tests-client toolkit/components/telemetry/tests/marionette/tests/client/test_fog* --gecko-log "-"
+&& ./mach telemetry-tests-client --tag client --gecko-log "-"
 && ./mach test toolkit/components/glean/tests/browser --headless
 `
 
@@ -222,23 +222,22 @@ To run FOG's browser chrome tests, run:
 To test pings (See [bug 1681742](https://bugzilla.mozilla.org/show_bug.cgi?id=1681742))
 or anything that requires one or more full browsers running,
 we use the `telemetry-tests-client` suite in
-[`toolkit/components/telemetry/tests/marionette/tests/client/`](https://hg.mozilla.org/mozilla-central/file/tip/toolkit/components/telemetry/tests/marionette/tests/client/).
+{searchfox}`toolkit/components/telemetry/tests/marionette/tests/client/`.
 
 For more information on this suite, look to
-[Firefox Telemetry's Test Documentation](https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/internals/tests.html#integration-tests-telemetry-tests-client-and-telemetry-integration-tests)
+[the telemetry-tests-client documentation](/toolkit/components/telemetry/internals/integration_tests/index.md)
 and
 [Marionette's Documentation](/remote/marionette/Testing.md).
 
 To run these integration tests, run:
-`./mach telemetry-tests-client toolkit/components/telemetry/tests/marionette/tests/client/`
+`./mach telemetry-tests-client --tag client`
 
-To capture the Firefox under test's logs, use the `--gecko-log` parameter.
-For example, to echo to stdout:
-`./mach telemetry-tests-client toolkit/components/telemetry/tests/marionette/tests/client/test_fog* --gecko-log "-"`
+There is no FOG-specific manifest tag, so this runs the complete client suite.
+To narrow the run to FOG test files, use:
+`./mach telemetry-tests-client toolkit/components/telemetry/tests/marionette/tests/client/test_fog*`
 
-**Note:** Running the `tt(c)` suite in this way ignored skip directives in the manifest.
-This means that you might run tests that are not expected to succeed on your platform.
-Check {searchfox}`toolkit/components/telemetry/tests/marionette/tests/client/manifest.toml` for details.
+Passing test files directly bypasses manifest skip conditions. See the suite
+documentation linked above for details and other runner options.
 
 ## Artifact-build-only failures -- testing JOG
 

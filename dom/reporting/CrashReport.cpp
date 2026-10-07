@@ -23,8 +23,7 @@ bool CrashReport::Deliver(nsIPrincipal* aPrincipal, bool aIsOOM) {
   // endpoints in the parent process using both Reporting-Endpoints and
   // Report-To headers and maps origins to a list of endpoints which suits
   // crashes better, as they take down the whole process.
-  ReportingHeader::GetEndpointForReport(u"default"_ns, aPrincipal,
-                                        endpoint_url);
+  ReportingHeader::GetEndpointForReport("default"_ns, aPrincipal, endpoint_url);
   if (endpoint_url.IsEmpty()) {
     return false;
   }
@@ -33,9 +32,9 @@ bool CrashReport::Deliver(nsIPrincipal* aPrincipal, bool aIsOOM) {
   aPrincipal->GetExposableSpec(safe_origin_spec);
 
   ReportDeliver::ReportData data;
-  data.mType = u"crash"_ns;
-  data.mGroupName = u"default"_ns;
-  CopyUTF8toUTF16(safe_origin_spec, data.mURL);
+  data.mType = "crash"_ns;
+  data.mGroupName = "default"_ns;
+  data.mURL = safe_origin_spec;
   data.mCreationTime = TimeStamp::Now();
 
   Navigator::GetUserAgent(nullptr, nullptr, Nothing(), data.mUserAgent);

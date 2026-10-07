@@ -146,8 +146,6 @@ class AudioContext final : public DOMEventTargetHelper,
 
   nsIGlobalObject* GetParentObject() const { return GetRelevantGlobal(); }
 
-  nsISerialEventTarget* GetMainThread() const;
-
   void DisconnectFromOwner() override;
 
   void OnWindowDestroy();  // idempotent
@@ -340,6 +338,7 @@ class AudioContext final : public DOMEventTargetHelper,
   void RegisterNode(AudioNode* aNode);
   void UnregisterNode(AudioNode* aNode);
 
+  void QueueOnStateChanged(void* aPromise, AudioContextState aNewState);
   void OnStateChanged(void* aPromise, AudioContextState aNewState);
 
   BasicWaveFormCache* GetBasicWaveFormCache();

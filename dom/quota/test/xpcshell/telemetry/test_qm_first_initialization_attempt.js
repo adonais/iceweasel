@@ -6,15 +6,35 @@
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
 
 const storageDirName = "storage";
 const storageFileName = "storage.sqlite";
 const indexedDBDirName = "indexedDB";
 const persistentStorageDirName = "storage/persistent";
-const histogramName = "QM_FIRST_INITIALIZATION_ATTEMPT";
+
+// Every key that can be recorded in the first_initialization_attempt metric,
+// see StringGenerator::GetString in dom/quota/InitializationTypes.cpp.
+const allKeys = [
+  "Storage",
+  "TemporaryStorage",
+  "DefaultRepository",
+  "TemporaryRepository",
+  "UpgradeStorageFrom0_0To1_0",
+  "UpgradeStorageFrom1_0To2_0",
+  "UpgradeStorageFrom2_0To2_1",
+  "UpgradeStorageFrom2_1To2_2",
+  "UpgradeStorageFrom2_2To2_3",
+  "UpgradeStorageFrom2_3To2_4",
+  "UpgradeFromIndexedDBDirectory",
+  "UpgradeFromPersistentStorageDirectory",
+  "PersistentRepository",
+  "PersistentGroup",
+  "TemporaryGroup",
+  "PersistentOrigin",
+  "TemporaryOrigin",
+];
+
+const allCategories = ["false", "true"];
 
 const testcases = [
   {
@@ -32,13 +52,15 @@ const testcases = [
       initFailure: {
         // mainKey
         Storage: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
       },
       initFailureThenSuccess: {
         // mainKey
         Storage: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
       },
     },
@@ -65,32 +87,40 @@ const testcases = [
       const expectedSnapshotsInNightly = {
         initFailure: {
           Storage: {
-            values: [0, 1, 0],
+            false: 0,
+            true: 1,
           },
           TemporaryRepository: {
-            values: [1, 0],
+            false: 1,
+            true: 0,
           },
           DefaultRepository: {
-            values: [1, 0],
+            false: 1,
+            true: 0,
           },
           // mainKey
           TemporaryStorage: {
-            values: [1, 0],
+            false: 1,
+            true: 0,
           },
         },
         initFailureThenSuccess: {
           Storage: {
-            values: [0, 2, 0],
+            false: 0,
+            true: 2,
           },
           TemporaryRepository: {
-            values: [1, 1, 0],
+            false: 1,
+            true: 1,
           },
           DefaultRepository: {
-            values: [1, 1, 0],
+            false: 1,
+            true: 1,
           },
           // mainKey
           TemporaryStorage: {
-            values: [1, 1, 0],
+            false: 1,
+            true: 1,
           },
         },
       };
@@ -98,29 +128,36 @@ const testcases = [
       const expectedSnapshotsInOthers = {
         initFailure: {
           Storage: {
-            values: [0, 1, 0],
+            false: 0,
+            true: 1,
           },
           TemporaryRepository: {
-            values: [1, 0],
+            false: 1,
+            true: 0,
           },
           // mainKey
           TemporaryStorage: {
-            values: [1, 0],
+            false: 1,
+            true: 0,
           },
         },
         initFailureThenSuccess: {
           Storage: {
-            values: [0, 2, 0],
+            false: 0,
+            true: 2,
           },
           TemporaryRepository: {
-            values: [1, 1, 0],
+            false: 1,
+            true: 1,
           },
           DefaultRepository: {
-            values: [0, 1, 0],
+            false: 0,
+            true: 1,
           },
           // mainKey
           TemporaryStorage: {
-            values: [1, 1, 0],
+            false: 1,
+            true: 1,
           },
         },
       };
@@ -147,32 +184,40 @@ const testcases = [
     expectedSnapshots: {
       initFailure: {
         Storage: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         TemporaryRepository: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         // mainKey
         DefaultRepository: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
         TemporaryStorage: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
       },
       initFailureThenSuccess: {
         Storage: {
-          values: [0, 2, 0],
+          false: 0,
+          true: 2,
         },
         TemporaryRepository: {
-          values: [0, 2, 0],
+          false: 0,
+          true: 2,
         },
         // mainKey
         DefaultRepository: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
         TemporaryStorage: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
       },
     },
@@ -195,32 +240,40 @@ const testcases = [
       const expectedSnapshotsInNightly = {
         initFailure: {
           Storage: {
-            values: [0, 1, 0],
+            false: 0,
+            true: 1,
           },
           // mainKey
           TemporaryRepository: {
-            values: [1, 0],
+            false: 1,
+            true: 0,
           },
           DefaultRepository: {
-            values: [0, 1, 0],
+            false: 0,
+            true: 1,
           },
           TemporaryStorage: {
-            values: [1, 0],
+            false: 1,
+            true: 0,
           },
         },
         initFailureThenSuccess: {
           Storage: {
-            values: [0, 2, 0],
+            false: 0,
+            true: 2,
           },
           // mainKey
           TemporaryRepository: {
-            values: [1, 1, 0],
+            false: 1,
+            true: 1,
           },
           DefaultRepository: {
-            values: [0, 2, 0],
+            false: 0,
+            true: 2,
           },
           TemporaryStorage: {
-            values: [1, 1, 0],
+            false: 1,
+            true: 1,
           },
         },
       };
@@ -228,29 +281,36 @@ const testcases = [
       const expectedSnapshotsInOthers = {
         initFailure: {
           Storage: {
-            values: [0, 1, 0],
+            false: 0,
+            true: 1,
           },
           // mainKey
           TemporaryRepository: {
-            values: [1, 0],
+            false: 1,
+            true: 0,
           },
           TemporaryStorage: {
-            values: [1, 0],
+            false: 1,
+            true: 0,
           },
         },
         initFailureThenSuccess: {
           Storage: {
-            values: [0, 2, 0],
+            false: 0,
+            true: 2,
           },
           // mainKey
           TemporaryRepository: {
-            values: [1, 1, 0],
+            false: 1,
+            true: 1,
           },
           DefaultRepository: {
-            values: [0, 1, 0],
+            false: 0,
+            true: 1,
           },
           TemporaryStorage: {
-            values: [1, 1, 0],
+            false: 1,
+            true: 1,
           },
         },
       };
@@ -275,34 +335,43 @@ const testcases = [
       initFailure: {
         // mainKey
         UpgradeStorageFrom0_0To1_0: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
         Storage: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
       },
       initFailureThenSuccess: {
         // mainKey
         UpgradeStorageFrom0_0To1_0: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
         UpgradeStorageFrom1_0To2_0: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_0To2_1: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_1To2_2: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_2To2_3: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_3To2_4: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         Storage: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
       },
     },
@@ -322,31 +391,39 @@ const testcases = [
       initFailure: {
         // mainKey
         UpgradeStorageFrom1_0To2_0: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
         Storage: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
       },
       initFailureThenSuccess: {
         // mainKey
         UpgradeStorageFrom1_0To2_0: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
         UpgradeStorageFrom2_0To2_1: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_1To2_2: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_2To2_3: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_3To2_4: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         Storage: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
       },
     },
@@ -366,28 +443,35 @@ const testcases = [
       initFailure: {
         // mainKey
         UpgradeStorageFrom2_0To2_1: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
         Storage: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
       },
       initFailureThenSuccess: {
         // mainKey
         UpgradeStorageFrom2_0To2_1: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
         UpgradeStorageFrom2_1To2_2: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_2To2_3: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_3To2_4: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         Storage: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
       },
     },
@@ -407,25 +491,31 @@ const testcases = [
       initFailure: {
         // mainKey
         UpgradeStorageFrom2_1To2_2: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
         Storage: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
       },
       initFailureThenSuccess: {
         // mainKey
         UpgradeStorageFrom2_1To2_2: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
         UpgradeStorageFrom2_2To2_3: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_3To2_4: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         Storage: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
       },
     },
@@ -448,22 +538,27 @@ const testcases = [
       initFailure: {
         // mainKey
         UpgradeStorageFrom2_2To2_3: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
         Storage: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
       },
       initFailureThenSuccess: {
         // mainKey
         UpgradeStorageFrom2_2To2_3: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
         UpgradeStorageFrom2_3To2_4: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         Storage: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
       },
     },
@@ -487,40 +582,51 @@ const testcases = [
       initFailure: {
         // mainKey
         UpgradeFromIndexedDBDirectory: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
         Storage: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
       },
       initFailureThenSuccess: {
         // mainKey
         UpgradeFromIndexedDBDirectory: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
         UpgradeFromPersistentStorageDirectory: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom0_0To1_0: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom1_0To2_0: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_0To2_1: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_1To2_2: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_2To2_3: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_3To2_4: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         Storage: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
       },
     },
@@ -545,37 +651,47 @@ const testcases = [
       initFailure: {
         // mainKey
         UpgradeFromPersistentStorageDirectory: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
         Storage: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
       },
       initFailureThenSuccess: {
         // mainKey
         UpgradeFromPersistentStorageDirectory: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
         UpgradeStorageFrom0_0To1_0: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom1_0To2_0: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_0To2_1: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_1To2_2: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_2To2_3: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         UpgradeStorageFrom2_3To2_4: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         Storage: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
       },
     },
@@ -625,44 +741,56 @@ const testcases = [
     expectedSnapshots: {
       initFailure: {
         Storage: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         TemporaryRepository: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         DefaultRepository: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         TemporaryStorage: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         // mainKey
         PersistentOrigin: {
-          values: [2, 0],
+          false: 2,
+          true: 0,
         },
         TemporaryOrigin: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
       },
       initFailureThenSuccess: {
         Storage: {
-          values: [0, 2, 0],
+          false: 0,
+          true: 2,
         },
         TemporaryRepository: {
-          values: [0, 2, 0],
+          false: 0,
+          true: 2,
         },
         DefaultRepository: {
-          values: [0, 2, 0],
+          false: 0,
+          true: 2,
         },
         TemporaryStorage: {
-          values: [0, 2, 0],
+          false: 0,
+          true: 2,
         },
         // mainKey
         PersistentOrigin: {
-          values: [2, 2, 0],
+          false: 2,
+          true: 2,
         },
         TemporaryOrigin: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
       },
     },
@@ -726,44 +854,56 @@ const testcases = [
     expectedSnapshots: {
       initFailure: {
         Storage: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         TemporaryRepository: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         DefaultRepository: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         TemporaryStorage: {
-          values: [0, 1, 0],
+          false: 0,
+          true: 1,
         },
         PersistentOrigin: {
-          values: [1, 0],
+          false: 1,
+          true: 0,
         },
         // mainKey
         TemporaryOrigin: {
-          values: [2, 0],
+          false: 2,
+          true: 0,
         },
       },
       initFailureThenSuccess: {
         Storage: {
-          values: [0, 2, 0],
+          false: 0,
+          true: 2,
         },
         TemporaryRepository: {
-          values: [0, 2, 0],
+          false: 0,
+          true: 2,
         },
         DefaultRepository: {
-          values: [0, 2, 0],
+          false: 0,
+          true: 2,
         },
         TemporaryStorage: {
-          values: [0, 2, 0],
+          false: 0,
+          true: 2,
         },
         PersistentOrigin: {
-          values: [1, 1, 0],
+          false: 1,
+          true: 1,
         },
         // mainKey
         TemporaryOrigin: {
-          values: [2, 2, 0],
+          false: 2,
+          true: 2,
         },
       },
     },
@@ -772,62 +912,43 @@ const testcases = [
 
 loadScript("dom/quota/test/xpcshell/common/utils.js");
 
-function verifyHistogram(histogram, mainKey, expectedSnapshot) {
-  const snapshot = histogram.snapshot();
+function verifyMetric(mainKey, expectedSnapshot) {
+  const metric = Glean.domQuota.firstInitializationAttempt;
 
   ok(
-    mainKey in snapshot,
-    `The histogram ${histogram.name()} must contain the main key ${mainKey}`
+    metric.get(mainKey, "false").testGetValue() != null ||
+      metric.get(mainKey, "true").testGetValue() != null,
+    `The metric must contain the main key ${mainKey}`
   );
 
-  const keys = Object.keys(snapshot);
+  for (const key of allKeys) {
+    for (const category of allCategories) {
+      const value = metric.get(key, category).testGetValue() ?? 0;
+      const expectedValue = expectedSnapshot[key]?.[category] ?? 0;
 
-  is(
-    keys.length,
-    Object.keys(expectedSnapshot).length,
-    `The number of keys must match the expected number of keys for ` +
-      `${histogram.name()}`
-  );
-
-  for (const key of keys) {
-    ok(
-      key in expectedSnapshot,
-      `The key ${key} must match the expected keys for ${histogram.name()}`
-    );
-
-    const values = Object.entries(snapshot[key].values);
-    const expectedValues = expectedSnapshot[key].values;
-
-    is(
-      values.length,
-      expectedValues.length,
-      `The number of values should match the expected number of values for ` +
-        `${histogram.name()}`
-    );
-
-    for (let [i, val] of values) {
       is(
-        val,
-        expectedValues[i],
-        `Expected counts should match for ${histogram.name()} at index ${i}`
+        value,
+        expectedValue,
+        `Expected counts should match for key ${key} and category ${category}`
       );
     }
   }
 }
 
 async function testSteps() {
+  Services.fog.initializeFOG();
+
   let request;
   for (const testcase of testcases) {
     const mainKey = testcase.mainKey;
 
-    info(`Verifying ${histogramName} histogram for the main key ${mainKey}`);
+    info(`Verifying first_initialization_attempt for the main key ${mainKey}`);
 
-    const histogram =
-      TelemetryTestUtils.getAndClearKeyedHistogram(histogramName);
+    Services.fog.testResetFOG();
 
     for (const expectedInitResult of [false, true]) {
       info(
-        `Verifying the histogram when the initialization ` +
+        `Verifying the metric when the initialization ` +
           `${expectedInitResult ? "failed and then succeeds" : "fails"}`
       );
 
@@ -870,9 +991,9 @@ async function testSteps() {
         ? expectedSnapshots.initFailureThenSuccess
         : expectedSnapshots.initFailure;
 
-      verifyHistogram(histogram, mainKey, expectedSnapshot);
+      verifyMetric(mainKey, expectedSnapshot);
 
-      // The first initialization attempt has been reported in the histogram
+      // The first initialization attempt has been reported in the metric
       // and any new attemps wouldn't be reported if we didn't reset or clear
       // the storage here. We need a clean profile for the next iteration
       // anyway.

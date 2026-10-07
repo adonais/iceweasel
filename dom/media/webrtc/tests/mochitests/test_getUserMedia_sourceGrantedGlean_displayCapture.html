@@ -1,0 +1,95 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <script type="application/javascript" src="mediaStreamPlayback.js"></script>
+</head>
+<body>
+<pre id="test">
+<script type="application/javascript">
+  createHTML({
+    bug: "2063642",
+    title: "getUserMedia records the actually granted display-capture source, not just the requested one",
+  });
+
+  const Services = SpecialPowers.Services;
+
+  async function gleanResetTestValues() {
+    return SpecialPowers.spawnChrome([], async () => {
+      await Services.fog.testFlushAllChildren();
+      Services.fog.testResetFOG();
+    });
+  }
+
+  async function grantedCountFor(label) {
+    await SpecialPowers.spawnChrome([], async () => {
+      await Services.fog.testFlushAllChildren();
+    });
+    return (
+      (await GleanTest.webrtc.getUserMediaSourceGranted[label].testGetValue()) ??
+      0
+    );
+  }
+
+  async function checkGrant(constraints, label, description) {
+    const before = await grantedCountFor(label);
+    SpecialPowers.wrap(document).notifyUserGestureActivation();
+    const stream = await getUserMedia(constraints);
+    const after = await grantedCountFor(label);
+    is(after, before + 1, description);
+    for (const track of stream.getTracks()) {
+      track.stop();
+    }
+  }
+
+  // getDisplayMedia() always requests mediaSource "screen" internally
+  // (MediaDevices::GetDisplayMedia), so this exercises the same "screen"
+  // label as the checkGrant() call below it, but through the actual
+  // getDisplayMedia() entry point instead of getUserMedia() with an
+  // explicit mediaSource constraint.
+  async function checkGrantDisplayMedia(description) {
+    const label = "screen";
+    const before = await grantedCountFor(label);
+    SpecialPowers.wrap(document).notifyUserGestureActivation();
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: true,
+    });
+    const after = await grantedCountFor(label);
+    is(after, before + 1, description);
+    for (const track of stream.getTracks()) {
+      track.stop();
+    }
+  }
+
+  runTest(async () => {
+    await gleanResetTestValues();
+
+    await checkGrantDisplayMedia(
+      "Granting a getDisplayMedia request should record a screen grant"
+    );
+
+    await checkGrant(
+      { video: { mediaSource: "screen" } },
+      "screen",
+      "Granting a screen-sharing gUM request should record a screen grant"
+    );
+
+    await checkGrant(
+      { video: { mediaSource: "window" } },
+      "window",
+      "Granting a window-sharing gUM request should record a window grant"
+    );
+
+    // Tab sharing is Nightly-only by default (media.getusermedia.browser.enabled
+    // is set to @IS_NIGHTLY_BUILD@ in StaticPrefList.yaml), so force it on here
+    // to exercise this path on all channels.
+    await pushPrefs(["media.getusermedia.browser.enabled", true]);
+    await checkGrant(
+      { video: { mediaSource: "browser" } },
+      "browser",
+      "Granting a tab-sharing gUM request should record a browser grant"
+    );
+  });
+</script>
+</pre>
+</body>
+</html>

@@ -249,22 +249,6 @@ reference  should be kept to the decoded certificate, which would then be
 accessed by  a type-specific API (e.g., NSSX509_GetSubjectName).</li>
  
 </ol>
- <br>
- <a href="http://lxr.mozilla.org/mozilla/ident?i=NSSUserCertificate">NSSUserCertificate</a>
- <br>
- 
-<ol>
-   <li>Should this be a typedef of NSSCertificate?&nbsp; This implies  that 
- any function that requires an   NSSUserCertificate   would fail when  called 
- with a certificate lacking a private key. </li>
- 
-</ol>
- <a href="http://lxr.mozilla.org/mozilla/ident?i=NSSPrivateKey">NSSPrivateKey</a>
- <br>
- <a href="http://lxr.mozilla.org/mozilla/ident?i=NSSPublicKey">NSSPublicKey</a>
- <br>
- <a href="http://lxr.mozilla.org/mozilla/ident?i=NSSSymmetricKey">NSSSymmetricKey</a>
- <br>
  <a href="http://lxr.mozilla.org/mozilla/ident?i=NSSTrustDomain">NSSTrustDomain</a>
  <br>
                     A trust domain is "the field in which certificates may

@@ -200,7 +200,8 @@ Toolbar.args = {
 export const Badged = Template.bind({});
 Badged.args = {
   ...Icon.args,
-  type: "icon",
+  type: "icon ghost",
+  iconSrc: "chrome://global/skin/icons/settings.svg",
   attention: true,
 };
 export const MenuButton = Template.bind({});

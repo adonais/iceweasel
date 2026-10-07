@@ -20,6 +20,7 @@
 #include "mozilla/Result.h"                   // for Result<>
 #include "mozilla/dom/Element.h"              // for dom::Element
 #include "mozilla/dom/HTMLBRElement.h"        // for dom::HTMLBRElement
+#include "mozilla/dom/Range.h"                // for dom::Range
 #include "mozilla/dom/Selection.h"            // for dom::Selection
 #include "mozilla/dom/Text.h"                 // for dom::Text
 #include "mozilla/intl/BidiEmbeddingLevel.h"  // for BidiEmbeddingLevel
@@ -28,7 +29,6 @@
 #include "nsDirection.h"       // for nsDirection
 #include "nsError.h"           // for NS_SUCCESS_* and NS_ERROR_*
 #include "nsFrameSelection.h"  // for nsFrameSelection
-#include "nsRange.h"           // for nsRange
 
 namespace mozilla {
 
@@ -44,7 +44,7 @@ class MOZ_STACK_CLASS AutoClonedRangeArray {
   explicit AutoClonedRangeArray(const EditorDOMRangeBase<PointType>& aRange);
   template <typename PT, typename CT>
   explicit AutoClonedRangeArray(const EditorDOMPointBase<PT, CT>& aPoint);
-  explicit AutoClonedRangeArray(const nsRange& aRange);
+  explicit AutoClonedRangeArray(const dom::Range& aRange);
   // The copy constructor copies everything except saved ranges.
   explicit AutoClonedRangeArray(const AutoClonedRangeArray& aOther);
 
@@ -58,7 +58,7 @@ class MOZ_STACK_CLASS AutoClonedRangeArray {
     if (mRanges.IsEmpty()) {
       return false;
     }
-    for (const OwningNonNull<nsRange>& range : mRanges) {
+    for (const OwningNonNull<dom::Range>& range : mRanges) {
       if (MOZ_UNLIKELY(!range->IsPositioned() || !range->GetStartContainer() ||
                        !range->GetStartContainer()->IsContent() ||
                        !range->GetEndContainer() ||
@@ -134,7 +134,7 @@ class MOZ_STACK_CLASS AutoClonedRangeArray {
   [[nodiscard]] bool
   IsAtLeastOneContainerOfRangeBoundariesInclusiveDescendantOf(
       const nsIContent& aContent) const {
-    for (const OwningNonNull<nsRange>& range : mRanges) {
+    for (const OwningNonNull<dom::Range>& range : mRanges) {
       nsINode* startContainer = range->GetStartContainer();
       if (startContainer &&
           startContainer->IsInclusiveDescendantOf(&aContent)) {
@@ -153,14 +153,16 @@ class MOZ_STACK_CLASS AutoClonedRangeArray {
 
   [[nodiscard]] auto& Ranges() { return mRanges; }
   [[nodiscard]] const auto& Ranges() const { return mRanges; }
-  [[nodiscard]] OwningNonNull<nsRange>& FirstRangeRef() { return mRanges[0]; }
-  [[nodiscard]] const OwningNonNull<nsRange>& FirstRangeRef() const {
+  [[nodiscard]] OwningNonNull<dom::Range>& FirstRangeRef() {
+    return mRanges[0];
+  }
+  [[nodiscard]] const OwningNonNull<dom::Range>& FirstRangeRef() const {
     return mRanges[0];
   }
 
   template <template <typename> typename StrongPtrType>
-  [[nodiscard]] AutoTArray<StrongPtrType<nsRange>, 8> CloneRanges() const {
-    AutoTArray<StrongPtrType<nsRange>, 8> ranges;
+  [[nodiscard]] AutoTArray<StrongPtrType<dom::Range>, 8> CloneRanges() const {
+    AutoTArray<StrongPtrType<dom::Range>, 8> ranges;
     for (const auto& range : mRanges) {
       ranges.AppendElement(range->CloneRange());
     }
@@ -185,7 +187,7 @@ class MOZ_STACK_CLASS AutoClonedRangeArray {
   nsresult SelectNode(nsINode& aNode) {
     mRanges.Clear();
     if (!mAnchorFocusRange) {
-      mAnchorFocusRange = nsRange::Create(&aNode);
+      mAnchorFocusRange = dom::Range::Create(&aNode);
       if (!mAnchorFocusRange) {
         return NS_ERROR_FAILURE;
       }
@@ -229,8 +231,8 @@ class MOZ_STACK_CLASS AutoClonedRangeArray {
     mRanges.Clear();
     if (!mAnchorFocusRange) {
       ErrorResult error;
-      mAnchorFocusRange = nsRange::Create(aPoint.ToRawRangeBoundary(),
-                                          aPoint.ToRawRangeBoundary(), error);
+      mAnchorFocusRange = dom::Range::Create(
+          aPoint.ToRawRangeBoundary(), aPoint.ToRawRangeBoundary(), error);
       if (error.Failed()) {
         mAnchorFocusRange = nullptr;
         return error.StealNSResult();
@@ -253,8 +255,8 @@ class MOZ_STACK_CLASS AutoClonedRangeArray {
     mRanges.Clear();
     if (!mAnchorFocusRange) {
       ErrorResult error;
-      mAnchorFocusRange = nsRange::Create(aStart.ToRawRangeBoundary(),
-                                          aEnd.ToRawRangeBoundary(), error);
+      mAnchorFocusRange = dom::Range::Create(aStart.ToRawRangeBoundary(),
+                                             aEnd.ToRawRangeBoundary(), error);
       if (error.Failed()) {
         mAnchorFocusRange = nullptr;
         return error.StealNSResult();
@@ -281,7 +283,7 @@ class MOZ_STACK_CLASS AutoClonedRangeArray {
     return aAnchor.EqualsOrIsBefore(aFocus) ? SetStartAndEnd(aAnchor, aFocus)
                                             : SetStartAndEnd(aFocus, aAnchor);
   }
-  [[nodiscard]] const nsRange* GetAnchorFocusRange() const {
+  [[nodiscard]] const dom::Range* GetAnchorFocusRange() const {
     return mAnchorFocusRange;
   }
   [[nodiscard]] nsDirection GetDirection() const { return mDirection; }
@@ -350,11 +352,11 @@ class MOZ_STACK_CLASS AutoClonedRangeArray {
       const dom::Element& aEditingHost);
 
   /**
-   * CreateRangeExtendedToHardLineStartAndEnd() creates an nsRange instance
-   * which may be expanded to start/end of hard line at both edges of the given
-   * range.  If this fails handling something, returns nullptr.
+   * CreateRangeExtendedToHardLineStartAndEnd() creates a dom::Range
+   * instance which may be expanded to start/end of hard line at both edges of
+   * the given range.  If this fails handling something, returns nullptr.
    */
-  static already_AddRefed<nsRange>
+  static already_AddRefed<dom::Range>
   CreateRangeWrappingStartAndEndLinesContainingBoundaries(
       const EditorDOMRange& aRange, EditSubAction aEditSubAction,
       BlockInlineCheck aBlockInlineCheck, const dom::Element& aEditingHost) {
@@ -365,14 +367,14 @@ class MOZ_STACK_CLASS AutoClonedRangeArray {
         aRange.StartRef(), aRange.EndRef(), aEditSubAction, aBlockInlineCheck,
         aEditingHost);
   }
-  static already_AddRefed<nsRange>
+  static already_AddRefed<dom::Range>
   CreateRangeWrappingStartAndEndLinesContainingBoundaries(
       const EditorDOMPoint& aStartPoint, const EditorDOMPoint& aEndPoint,
       EditSubAction aEditSubAction, BlockInlineCheck aBlockInlineCheck,
       const dom::Element& aEditingHost) {
-    RefPtr<nsRange> range =
-        nsRange::Create(aStartPoint.ToRawRangeBoundary(),
-                        aEndPoint.ToRawRangeBoundary(), IgnoreErrors());
+    RefPtr<dom::Range> range =
+        dom::Range::Create(aStartPoint.ToRawRangeBoundary(),
+                           aEndPoint.ToRawRangeBoundary(), IgnoreErrors());
     if (MOZ_UNLIKELY(!range)) {
       return nullptr;
     }
@@ -439,15 +441,15 @@ class MOZ_STACK_CLASS AutoClonedRangeArray {
   AutoClonedRangeArray() = default;
 
   static nsresult ExtendRangeToWrapStartAndEndLinesContainingBoundaries(
-      nsRange& aRange, EditSubAction aEditSubAction,
+      dom::Range& aRange, EditSubAction aEditSubAction,
       BlockInlineCheck aBlockInlineCheck, const dom::Element& aEditingHost);
 
   using InterlinePosition = dom::Selection::InterlinePosition;
   virtual void SetNewCaretAssociationHint(
       const RawRangeBoundary& aPoint, InterlinePosition aInterlinePosition) {}
 
-  AutoTArray<mozilla::OwningNonNull<nsRange>, 8> mRanges;
-  RefPtr<nsRange> mAnchorFocusRange;
+  AutoTArray<mozilla::OwningNonNull<dom::Range>, 8> mRanges;
+  RefPtr<dom::Range> mAnchorFocusRange;
   nsDirection mDirection = nsDirection::eDirNext;
 };
 
@@ -474,7 +476,8 @@ class MOZ_STACK_CLASS AutoClonedSelectionRangeArray final
       const EditorDOMPointBase<PT, CT>& aPoint,
       const LimitersAndCaretData& aLimitersAndCaretData);
   AutoClonedSelectionRangeArray(
-      const nsRange& aRange, const LimitersAndCaretData& aLimitersAndCaretData);
+      const dom::Range& aRange,
+      const LimitersAndCaretData& aLimitersAndCaretData);
   // The copy constructor copies everything except saved ranges.
   explicit AutoClonedSelectionRangeArray(
       const AutoClonedSelectionRangeArray& aOther);
@@ -494,7 +497,7 @@ class MOZ_STACK_CLASS AutoClonedSelectionRangeArray final
     }
     for (const uint32_t i : IntegerRange(aSelection.RangeCount())) {
       MOZ_ASSERT(aSelection.GetRangeAt(i));
-      const nsRange* const range = aSelection.GetRangeAt(i);
+      const dom::Range* const range = aSelection.GetRangeAt(i);
       if (!RangeIsInLimiters(*range)) {
         continue;
       }
@@ -532,7 +535,7 @@ class MOZ_STACK_CLASS AutoClonedSelectionRangeArray final
     MOZ_ASSERT(!aSelection.RangeCount());
     aSelection.SetDirection(mDirection);
     IgnoredErrorResult error;
-    for (const OwningNonNull<nsRange>& range : mRanges) {
+    for (const OwningNonNull<dom::Range>& range : mRanges) {
       // MOZ_KnownLive(range) due to bug 1622253
       aSelection.AddRangeAndSelectFramesAndNotifyListeners(MOZ_KnownLive(range),
                                                            error);

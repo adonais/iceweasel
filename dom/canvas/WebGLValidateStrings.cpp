@@ -178,7 +178,7 @@ Maybe<webgl::ErrorInfo> CheckGLSLVariableName(const bool webgl2,
     }
   }
 
-  if (name.find("webgl_") == 0 || name.find("_webgl_") == 0) {
+  if (name.starts_with("webgl_") || name.starts_with("_webgl_")) {
     return Some(webgl::ErrorInfo{
         LOCAL_GL_INVALID_OPERATION,
         "String matches reserved GLSL prefix pattern /_?webgl_/."});

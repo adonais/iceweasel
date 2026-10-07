@@ -14,9 +14,6 @@ namespace widget {
 
 class PlatformCompositorWidgetDelegate : public CompositorWidgetDelegate {
  public:
-  virtual void NotifyClientSizeChanged(
-      const LayoutDeviceIntSize& aClientSize) = 0;
-
   // CompositorWidgetDelegate Overrides
   PlatformCompositorWidgetDelegate* AsPlatformSpecificDelegate() override {
     return this;

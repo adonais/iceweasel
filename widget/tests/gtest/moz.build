@@ -13,7 +13,9 @@ UNIFIED_SOURCES = [
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
     UNIFIED_SOURCES += [
+        "TestCocoaStaleDragSession.mm",
         "TestNativeKeyBindings.cpp",
+        "TestPiPWindowSpaceBehavior.mm",
     ]
 
 if CONFIG["OS_ARCH"] == "WINNT":
@@ -41,6 +43,10 @@ LOCAL_INCLUDES += [
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
     LOCAL_INCLUDES += [
+        # The paths that widget/cocoa headers expect, see widget/cocoa/moz.build.
+        "/layout/base",
+        "/layout/generic",
+        "/layout/style",
         "/widget/cocoa",
     ]
 

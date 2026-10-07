@@ -92,7 +92,10 @@ function createContextMenu(event, message, webConsoleWrapper) {
 
   const { source, request, messageId } = message || {};
 
-  const menu = new Menu({ id: "webconsole-menu" });
+  const menu = new Menu({
+    id: "webconsole-menu",
+    accesskeyConflictsBug: 2073896,
+  });
 
   // Copy URL.
   menu.append(

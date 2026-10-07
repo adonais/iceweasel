@@ -7,6 +7,7 @@
 
 #include "Http3StreamBase.h"
 #include "WebTransportSessionBase.h"
+#include "mozilla/dom/PWebTransport.h"
 #include "mozilla/net/NeqoHttp3Conn.h"
 #include "nsIWebTransport.h"
 
@@ -92,8 +93,13 @@ class Http3WebTransportSession final : public WebTransportSessionBase,
   void Close(nsresult aResult) override;
 
   void CloseSession(uint32_t aStatus, const nsACString& aReason) override;
+  bool CloseSessionAndGetStats(uint32_t aStatus, const nsACString& aReason,
+                               mozilla::dom::WebTransportStatsData& aStats);
   void OnSessionClosed(bool aCleanly, uint32_t aStatus,
                        const nsACString& aReason);
+  void OnSessionClosedWithStats(
+      bool aCleanly, uint32_t aStatus, const nsACString& aReason,
+      const mozilla::dom::WebTransportStatsData& aStats);
   void OnSessionDraining();
 
   uint64_t GetStreamId() const override;
@@ -120,6 +126,8 @@ class Http3WebTransportSession final : public WebTransportSessionBase,
                                 const nsTArray<uint8_t>& aContext,
                                 nsTArray<uint8_t>& aKeyingMaterial) override;
 
+  void GetStats() override;
+
   nsresult RegisterSendGroup(uint64_t aGroupId) override;
 
   void GetNegotiatedProtocol(nsACString& aProtocol) override;
@@ -141,6 +149,9 @@ class Http3WebTransportSession final : public WebTransportSessionBase,
   nsTArray<RefPtr<Http3WebTransportStream>> mStreams;
   uint32_t mStatus{0};
   nsCString mReason;
+
+  // Cached stats for passing to OnSessionClosed
+  mozilla::dom::WebTransportStatsData mCachedStats;
 };
 
 }  // namespace mozilla::net

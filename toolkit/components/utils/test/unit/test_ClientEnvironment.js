@@ -117,8 +117,8 @@ add_task(async function testLiveTelemetry() {
   await TelemetryController.testSetup();
 
   equal(
-    ClientEnvironmentBase.liveTelemetry.main.environment.build.displayVersion,
-    AppConstants.MOZ_APP_VERSION_DISPLAY,
+    ClientEnvironmentBase.liveTelemetry.main.environment.system.os.name,
+    Services.sysinfo.getProperty("name"),
     "Telemetry data is available"
   );
 

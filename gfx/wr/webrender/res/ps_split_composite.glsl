@@ -73,16 +73,16 @@ void main(void) {
     vec2 local_pos = bilerp(geometry.local[0], geometry.local[1],
                             geometry.local[3], geometry.local[2],
                             aPosition.y, aPosition.x);
-    vec4 world_pos = transform.m * vec4(local_pos, 0.0, 1.0);
+    vec4 raster_pos = transform.m * vec4(local_pos, 0.0, 1.0);
 
     vec4 final_pos = vec4(
-        dest_origin * world_pos.w + world_pos.xy * dest_task.device_pixel_scale,
-        world_pos.w * ci.z,
-        world_pos.w
+        dest_origin * raster_pos.w + raster_pos.xy * dest_task.device_pixel_scale,
+        raster_pos.w * ci.z,
+        raster_pos.w
     );
 
     write_clip(
-        world_pos,
+        raster_pos,
         clip_area,
         dest_task
     );

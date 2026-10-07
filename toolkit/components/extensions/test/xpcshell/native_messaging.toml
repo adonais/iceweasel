@@ -1,9 +1,8 @@
 [DEFAULT]
 head = "head.js head_native_messaging.js head_telemetry.js"
 firefox-appdir = "browser"
-skip-if = [
-  "appname == 'thunderbird'",
-  "os == 'android'",
+run-if = [
+  "os != 'android' && appname != 'thunderbird'",
 ]
 subprocess = true
 support-files = ["data/**"]

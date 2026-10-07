@@ -81,6 +81,21 @@ class GooglePlayIntegrityClientTest {
         }
 
     @Test
+    fun `GIVEN a forConsumer view WHEN warmUp is called THEN it shares the underlying client's tokenProvider`() =
+        runTest {
+            val tokenProvider = TokenProvider { _ -> Result.success(IntegrityToken("test-token")) }
+            val client =
+                GooglePlayIntegrityClient(
+                    { Result.success(tokenProvider) },
+                    { "test-hash" },
+                )
+
+            assertTrue(client.tokenProvider == null)
+            client.forConsumer(IntegrityConsumer.Summarize).warmUp()
+            assertEquals(Result.success(tokenProvider), client.tokenProvider)
+        }
+
+    @Test
     fun `GIVEN an expired tokenProvider WHEN request is called THEN we get a tokenProvider from the factory`() =
         runTest {
             val exception: StandardIntegrityException = mock {

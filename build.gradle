@@ -36,6 +36,16 @@ plugins {
     alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.ksp)
+    id 'idea'
+}
+
+idea {
+    module {
+        def indexedDirs = ['gradle', 'mobile', 'taskcluster', 'widget']
+        excludeDirs += projectDir.listFiles().findAll {
+            it.isDirectory() && !indexedDirs.contains(it.name)
+        }
+    }
 }
 
 def tryInt = { string ->

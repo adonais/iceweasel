@@ -5,12 +5,6 @@
 
 const HOMEPAGE_PREF = "browser.startup.homepage";
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-});
-
 add_task(
   async function test_unknown_extension_url_falls_back_to_raw_in_custom_list() {
     let url = "moz-extension://fake-no-policy-id/page.html";

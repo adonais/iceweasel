@@ -4,6 +4,7 @@
 
 #include "fmt/format.h"
 #include "gtest/gtest.h"
+#include "mozilla/MaybeFmt.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
@@ -322,6 +323,84 @@ TEST(FormattingAndStreaming, mozilla_StaticRefPtr)
                           ToString(sFormattableAndStreamable.get())))
         << ": streamed formattable and streamable object";
     sFormattableAndStreamable = nullptr;
+  }
+}
+
+TEST(FormattingAndStreaming, mozilla_Maybe_Nothing)
+{
+  const Maybe<bool> maybe;
+  EXPECT_EQ(fmt::format("{}", maybe), "<Nothing>") << ": formatted Nothing";
+  EXPECT_EQ(fmt::format("{}", ToString(maybe)), "<Nothing>")
+      << ": streamed Nothing";
+}
+
+TEST(FormattingAndStreaming, mozilla_Maybe_Primitive)
+{
+  {
+    const Maybe<bool> maybe = Some(true);
+    EXPECT_EQ(fmt::format("{}", maybe), fmt::format("{}", *maybe))
+        << ": formatted Maybe<bool>";
+    EXPECT_EQ(fmt::format("{}", ToString(maybe)),
+              fmt::format("{}", ToString(*maybe)))
+        << ": streamed Maybe<bool>";
+  }
+  {
+    const Maybe<uint32_t> maybe = Some(UINT32_MAX);
+    EXPECT_EQ(fmt::format("{}", maybe), fmt::format("{}", *maybe))
+        << ": formatted Maybe<bool>";
+    EXPECT_EQ(fmt::format("{}", ToString(maybe)),
+              fmt::format("{}", ToString(*maybe)))
+        << ": streamed Maybe<uint32_t>";
+  }
+  {
+    const Maybe<float> maybe = Some(std::numeric_limits<float>::max());
+    EXPECT_EQ(fmt::format("{}", maybe), fmt::format("{}", *maybe))
+        << ": formatted Maybe<float>";
+    EXPECT_EQ(fmt::format("{}", ToString(maybe)),
+              fmt::format("{}", ToString(*maybe)))
+        << ": streamed Maybe<float>";
+  }
+}
+
+TEST(FormattingAndStreaming, mozilla_Maybe_RefPtr)
+{
+  {
+    RefPtr<OnlyFormattable> data = MakeRefPtr<OnlyFormattable>("Foo");
+    const Maybe<RefPtr<OnlyFormattable>> onlyFormattable = Some(data.forget());
+    EXPECT_EQ(fmt::format("{}", onlyFormattable),
+              fmt::format("{} @ {}", *onlyFormattable->get(),
+                          ToString(onlyFormattable->get())))
+        << ": formatted only formattable object";
+    EXPECT_EQ(fmt::format("{}", ToString(onlyFormattable)),
+              fmt::format("{} @ {}", *onlyFormattable->get(),
+                          ToString(onlyFormattable->get())))
+        << ": streamed only formattable object";
+  }
+  {
+    RefPtr<OnlyStreamable> data = MakeRefPtr<OnlyStreamable>("Bar");
+    const Maybe<RefPtr<OnlyStreamable>> onlyStreamable = Some(data.forget());
+    EXPECT_EQ(fmt::format("{}", onlyStreamable),
+              fmt::format("{} @ {}", ToString(*onlyStreamable->get()),
+                          ToString(onlyStreamable->get())))
+        << ": formatted only streamable object";
+    EXPECT_EQ(fmt::format("{}", ToString(onlyStreamable)),
+              fmt::format("{} @ {}", ToString(*onlyStreamable->get()),
+                          ToString(onlyStreamable->get())))
+        << ": streamed only streamable object";
+  }
+  {
+    RefPtr<FormattableAndStreamable> data =
+        MakeRefPtr<FormattableAndStreamable>("Baz");
+    const Maybe<RefPtr<FormattableAndStreamable>> formattableAndStreamable =
+        Some(data.forget());
+    EXPECT_EQ(fmt::format("{}", formattableAndStreamable),
+              fmt::format("{} @ {}", *formattableAndStreamable->get(),
+                          ToString(formattableAndStreamable->get())))
+        << ": formatted formattable and streamable object";
+    EXPECT_EQ(fmt::format("{}", ToString(formattableAndStreamable)),
+              fmt::format("{} @ {}", *formattableAndStreamable->get(),
+                          ToString(formattableAndStreamable->get())))
+        << ": streamed formattable and streamable object";
   }
 }
 

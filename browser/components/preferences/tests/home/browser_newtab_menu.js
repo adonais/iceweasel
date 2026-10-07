@@ -1,38 +1,27 @@
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+"use strict";
+
 add_task(async function newtabPreloaded() {
-  await openPreferencesViaOpenPreferencesAPI("paneHome", { leaveOpen: true });
+  // pushPrefEnv so the harness restores the pref even if an assertion below
+  // fails part way through, leaving the rest of the manifest unaffected.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.newtabpage.enabled", true]],
+  });
 
-  const { contentDocument: doc, contentWindow } = gBrowser;
-  function dispatchMenuItemCommand(menuItem) {
-    const cmdEvent = doc.createEvent("xulcommandevent");
-    cmdEvent.initCommandEvent(
-      "command",
-      true,
-      true,
-      contentWindow,
-      0,
-      false,
-      false,
-      false,
-      false,
-      0,
-      null,
-      0
-    );
-    menuItem.dispatchEvent(cmdEvent);
-  }
+  let { win, tab } = await openHomePreferences();
+  registerCleanupFunction(() => BrowserTestUtils.removeTab(tab));
 
-  const menuHome = doc.querySelector(`#newTabMode menuitem[value="0"]`);
-  const menuBlank = doc.querySelector(`#newTabMode menuitem[value="1"]`);
-  ok(menuHome.selected, "The first item, Home (default), is selected.");
+  let control = await settingControlRenders("homepageNewTabs", win);
+  let select = control.controlEl;
+
+  is(select.inputEl.value, "home", "New tabs start on Firefox Home.");
   ok(NewTabPagePreloading.enabled, "Default Home allows preloading.");
 
-  dispatchMenuItemCommand(menuBlank);
-  ok(menuBlank.selected, "The second item, Blank, is selected.");
+  await changeMozSelectValue(select, "blank");
   ok(!NewTabPagePreloading.enabled, "Non-Home prevents preloading.");
 
-  dispatchMenuItemCommand(menuHome);
-  ok(menuHome.selected, "The first item, Home, is selected again.");
+  await changeMozSelectValue(select, "home");
   ok(NewTabPagePreloading.enabled, "Default Home allows preloading again.");
-
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

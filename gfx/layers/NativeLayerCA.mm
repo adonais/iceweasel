@@ -903,7 +903,7 @@ void NativeLayerCA::AttachExternalImage(wr::RenderTextureHost* aExternalImage) {
   });
 }
 
-GpuFence* NativeLayerCA::GetGpuFence() {
+RefPtr<GpuFence> NativeLayerCA::GetGpuFence() {
   if (!mTextureHost) {
     return nullptr;
   }

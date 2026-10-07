@@ -4,6 +4,7 @@
 
 #include "TelemetryScalar.h"
 
+#include "ETWTools.h"
 #include "ipc/TelemetryIPCAccumulator.h"
 #include "js/Array.h"               // JS::GetArrayLength, JS::IsArrayObject
 #include "js/PropertyAndElement.h"  // JS_DefineProperty, JS_DefineUCProperty, JS_Enumerate, JS_GetElement, JS_GetProperty, JS_GetPropertyById, JS_HasProperty
@@ -58,10 +59,31 @@ namespace TelemetryIPCAccumulator = mozilla::TelemetryIPCAccumulator;
 
 namespace geckoprofiler::markers {
 
-struct ScalarMarker {
-  static constexpr mozilla::Span<const char> MarkerTypeName() {
-    return mozilla::MakeStringSpan("Scalar");
-  }
+struct ScalarMarker : public mozilla::BaseMarkerType<ScalarMarker> {
+  static constexpr const char* Name = "Scalar";
+  // Only the name tells "Scalar::Set" from "Scalar::Add", and either of them
+  // from their "ChildScalar::" counterparts.
+  static constexpr bool ETWStoreName = true;
+  using MS = mozilla::MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"id", MS::InputType::CString, "Scalar Name", MS::Format::UniqueString},
+      {"key", MS::InputType::CString, "Key", MS::Format::String},
+      {"scalarType", MS::InputType::CString, "Type", MS::Format::UniqueString},
+      // "val" is a uint, a string or a bool depending on the scalar's type, so
+      // this InputType should be CString for ETW to carry all of them. That
+      // isn't possible yet, see bug 2072225; in the meantime use Uint64, which
+      // is only meaningful for uint and bool scalars.
+      {"val", MS::InputType::Uint64, "Value", MS::Format::String},
+  };
+  static constexpr const char* TooltipLabel =
+      "{marker.data.id}[{marker.data.key}] {marker.data.val}";
+  static constexpr const char* TableLabel =
+      "{marker.data.id}[{marker.data.key}]: "
+      "{marker.data.val}";
   static void StreamJSONMarkerData(
       mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
       const mozilla::ProfilerString8View& aName, const uint32_t& aKind,
@@ -70,32 +92,47 @@ struct ScalarMarker {
     if (!aKey.IsEmpty()) {
       aWriter.StringProperty("key", mozilla::MakeStringSpan(aKey.get()));
     }
+    aWriter.UniqueStringProperty("scalarType", ScalarTypeToString(aKind));
     if (aKind == nsITelemetry::SCALAR_TYPE_COUNT) {
-      aWriter.UniqueStringProperty("scalarType", "uint");
       aWriter.IntProperty("val", aValue.as<uint32_t>());
     } else if (aKind == nsITelemetry::SCALAR_TYPE_STRING) {
-      aWriter.UniqueStringProperty("scalarType", "string");
       aWriter.StringProperty(
           "val", mozilla::MakeStringSpan(
                      NS_ConvertUTF16toUTF8(aValue.as<nsString>()).get()));
     } else {
-      aWriter.UniqueStringProperty("scalarType", "bool");
       aWriter.BoolProperty("val", aValue.as<bool>());
     }
   }
-  using MS = mozilla::MarkerSchema;
-  static MS MarkerTypeDisplay() {
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormat("id", "Scalar Name", MS::Format::UniqueString);
-    schema.AddKeyLabelFormat("key", "Key", MS::Format::String);
-    schema.AddKeyLabelFormat("scalarType", "Type", MS::Format::UniqueString);
-    schema.AddKeyLabelFormat("val", "Value", MS::Format::String);
-    schema.SetTooltipLabel(
-        "{marker.data.id}[{marker.data.key}] {marker.data.val}");
-    schema.SetTableLabel(
-        "{marker.data.id}[{marker.data.key}]: "
-        "{marker.data.val}");
-    return schema;
+
+  static void TranslateMarkerInputToSchema(
+      void* aContext, const mozilla::ProfilerString8View& aName,
+      const uint32_t& aKind, const nsCString& aKey,
+      const ScalarVariant& aValue) {
+    ETW::OutputMarkerSchema(
+        aContext, ScalarMarker{}, aName, mozilla::ProfilerString8View(aKey),
+        ScalarTypeToString(aKind), ScalarValueToUint64(aKind, aValue));
+  }
+
+ private:
+  static mozilla::ProfilerString8View ScalarTypeToString(uint32_t aKind) {
+    if (aKind == nsITelemetry::SCALAR_TYPE_COUNT) {
+      return "uint";
+    }
+    if (aKind == nsITelemetry::SCALAR_TYPE_STRING) {
+      return "string";
+    }
+    return "bool";
+  }
+
+  static uint64_t ScalarValueToUint64(uint32_t aKind,
+                                      const ScalarVariant& aValue) {
+    if (aKind == nsITelemetry::SCALAR_TYPE_COUNT) {
+      return aValue.as<uint32_t>();
+    }
+    if (aKind == nsITelemetry::SCALAR_TYPE_STRING) {
+      return 0;
+    }
+    return aValue.as<bool>() ? 1 : 0;
   }
 };
 

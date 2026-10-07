@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<script>
+  const worker = new Worker("worker.js");
+
+  async function pageProbe() {
+    const result = { controlled: !!navigator.serviceWorker.controller };
+    try {
+      const response = await fetch("probe?" + Math.random());
+      result.status = response.status;
+      result.body = await response.text();
+    } catch (e) {
+      result.error = e.message;
+    }
+    return result;
+  }
+
+  function workerProbe() {
+    return new Promise(resolve => {
+      worker.addEventListener("message", e => resolve(e.data), { once: true });
+      worker.postMessage("probe");
+    });
+  }
+
+  window.addEventListener("message", async function () {
+    // Run the two probes sequentially so that neither can mask a failure of
+    // the other by keeping the service worker alive.
+    const page = await pageProbe();
+    const workerResult = await workerProbe();
+    parent.postMessage({ page, worker: workerResult }, "*");
+  });
+</script>

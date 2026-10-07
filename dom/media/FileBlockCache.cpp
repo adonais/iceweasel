@@ -315,12 +315,21 @@ nsresult FileBlockCache::MoveBlockInFile(int32_t aSourceBlockIndex,
 }
 
 void FileBlockCache::PerformBlockIOs() {
+  void* fd = nullptr;
+  bool logEnabled = MOZ_LOG_TEST(gFileBlockCacheLog, LogLevel::Debug);
+  if (logEnabled) {
+    MutexAutoLock lock(mFileMutex);
+    fd = mFD;
+  }
+
   MutexAutoLock mon(mDataMutex);
   MOZ_ASSERT(mBackgroundET->IsOnCurrentThread());
   NS_ASSERTION(mIsWriteScheduled, "Should report write running or scheduled.");
 
-  LOG("Run() mFD={} mBackgroundET={}", fmt::ptr(mFD),
-      fmt::ptr(mBackgroundET.get()));
+  if (logEnabled) {
+    LOG("PerformBlockIOs() mFD={} mBackgroundET={}", fmt::ptr(fd),
+        fmt::ptr(mBackgroundET.get()));
+  }
 
   while (!mChangeIndexList.empty()) {
     if (!mBackgroundET) {

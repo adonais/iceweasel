@@ -27,7 +27,7 @@ nsRefreshTimer::nsRefreshTimer(nsDocShell* aDocShell, nsIURI* aURI,
 
 nsRefreshTimer::~nsRefreshTimer() = default;
 
-NS_IMETHODIMP
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
 nsRefreshTimer::Notify(nsITimer* aTimer) {
   NS_ASSERTION(mDocShell, "DocShell is somehow null");
 

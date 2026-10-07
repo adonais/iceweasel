@@ -341,11 +341,19 @@ object SettingsSelectors : SelectorContainer {
             groups = setOf(Group.DEFAULT_VALUES),
         )
 
-    val DOWNLOADS_BUTTON =
+    val DOWNLOAD_SETTINGS_BUTTON =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
-            value = "Downloads",
-            description = "the Downloads button",
+            value = getStringResource(R.string.preferences_downloads_2),
+            description = "the Download settings button",
+            groups = setOf(Group.ADVANCED_SETTINGS_SECTION, Group.DEFAULT_VALUES),
+        )
+
+    val REMOTE_IMPROVEMENTS_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
+            value = getStringResource(R.string.preferences_remote_improvements),
+            description = "the Remote improvements button",
             groups = setOf(Group.ADVANCED_SETTINGS_SECTION, Group.DEFAULT_VALUES),
         )
 

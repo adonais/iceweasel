@@ -353,6 +353,7 @@ class MarkingTracerT
 
   template <typename T>
   bool onEdge(T** thingp, const char* name);
+  bool onBufferEdge(void** bufferp, const char* name) override;
   friend class GenericTracerImpl<MarkingTracerT<markingOptions>>;
 
   GCMarker* gcMarker();

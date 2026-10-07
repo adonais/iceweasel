@@ -302,7 +302,7 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       break;
 
     case IntID::CaretBlinkTime:
-      aResult = 500;
+      aResult = java::GeckoAppShell::GetTextCursorBlinkIntervalMillis();
       break;
 
     case IntID::CaretBlinkCount:

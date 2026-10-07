@@ -114,6 +114,40 @@ function swm_lookup_reg(swDesc) {
 }
 
 /**
+ * Count the ServiceWorker registrations whose principal matches `origin`, which
+ * must not have a trailing slash.  Useful to assert that a data-clearing or
+ * purging operation removed an origin's registrations, or spared them.
+ *
+ * Origin attributes are ignored: partitioned and container registrations for
+ * the origin count too, which callers asserting a full clear depend on.
+ */
+function countRegistrationsForOrigin(origin) {
+  let count = 0;
+  let regs = SWM.getAllRegistrations();
+  for (let i = 0; i < regs.length; i++) {
+    let reg = regs.queryElementAt(i, Ci.nsIServiceWorkerRegistrationInfo);
+    if (reg.principal.originNoSuffix === origin) {
+      count++;
+    }
+  }
+  return count;
+}
+
+/**
+ * Return the names of an origin's chrome-namespace Cache API caches, which is
+ * where ServiceWorkerScriptCache stores worker scripts.  A script cache is not
+ * visible to the quota-usage helpers above: it stays under the
+ * is_minimum_origin_usage() threshold, so asserting that a clear removed it
+ * takes looking it up by name.
+ *
+ * The caller has to read nsIServiceWorkerInfo.cacheName before clearing, since
+ * the registration's activeWorker is gone afterwards.
+ */
+async function get_sw_script_cache_names(origin) {
+  return new CacheStorage("chrome", getPrincipal(origin)).keys();
+}
+
+/**
  * Install a ServiceWorker according to the provided descriptor by opening a
  * fresh tab that waits for the installed worker to be active and then closes
  * the tab.  Returns the`nsIServiceWorkerRegistrationInfo` corresponding to the

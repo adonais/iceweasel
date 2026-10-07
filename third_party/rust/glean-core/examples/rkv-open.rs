@@ -56,6 +56,8 @@ fn main() {
         session_mode: glean_core::SessionMode::Auto,
         session_sample_rate: 1.0,
         session_inactivity_timeout_ms: 1_800_000,
+        events_ping_acceleration_factor: None,
+        enable_store_submitted_pings: false,
     };
 
     let client_info = ClientInfoMetrics::unknown();

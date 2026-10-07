@@ -49,6 +49,10 @@ typedef double f64;
 
 #define TRAP(x) wasm_rt_trap(WASM_RT_TRAP_##x)
 
+#if WABT_BIG_ENDIAN
+#error "WABT_BIG_ENDIAN is currently not supported"
+#endif
+
 #define WASI_MEMACCESS(mem, a) ((void*)&(mem->data[a]))
 
 #define WASI_MEMCHECK_SIZE(mem, a, sz)                                         \

@@ -1343,6 +1343,34 @@ pub unsafe extern "C" fn sfv_inner_list_get_item_at(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn sfv_inner_list_get_param_token(
+    inner_list: *const SFVInnerListHandle,
+    key: *const nsACString,
+    output: *mut nsACString,
+) -> nsresult {
+    if inner_list.is_null() || key.is_null() || output.is_null() {
+        return NS_ERROR_NULL_POINTER;
+    }
+
+    let inner_list = &*inner_list;
+    let key = &*key;
+    let output = &mut *output;
+
+    let key_str = key.to_utf8();
+    let Some(param) = inner_list.inner_list.params.get(key_str.as_ref()) else {
+        return NS_ERROR_UNEXPECTED;
+    };
+
+    match param {
+        BareItem::Token(token) => {
+            output.assign(token.as_str());
+            NS_OK
+        }
+        _ => NS_ERROR_UNEXPECTED,
+    }
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn sfv_inner_list_free(inner_list: *mut SFVInnerListHandle) {
     if !inner_list.is_null() {
         drop(Box::from_raw(inner_list));

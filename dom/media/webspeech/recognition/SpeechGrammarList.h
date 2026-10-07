@@ -47,11 +47,9 @@ class SpeechGrammarList final : public nsISupports, public nsWrapperCache {
 
   already_AddRefed<SpeechGrammar> Item(uint32_t aIndex);
 
-  void AddFromURI(const nsAString& aSrc, const Optional<float>& aWeight,
-                  ErrorResult& aRv);
+  void AddFromUri(const nsAString& aSrc, const Optional<float>& aWeight);
 
-  void AddFromString(const nsAString& aString, const Optional<float>& aWeight,
-                     ErrorResult& aRv);
+  void AddFromString(const nsAString& aString, const Optional<float>& aWeight);
 
   already_AddRefed<SpeechGrammar> IndexedGetter(uint32_t aIndex,
                                                 bool& aPresent);

@@ -428,3 +428,57 @@ impl Parse for BorderImageRepeat {
         ))
     }
 }
+
+/// https://drafts.csswg.org/css-break/#propdef-box-decoration-break
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum BoxDecorationBreak {
+    Slice,
+    Clone,
+}
+
+/// Nonstandard (https://developer.mozilla.org/en-US/docs/Web/CSS/-moz-float-edge)
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum FloatEdge {
+    ContentBox,
+    MarginBox,
+}

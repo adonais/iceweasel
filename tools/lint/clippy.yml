@@ -98,11 +98,11 @@ clippy:
         - toolkit/crashreporter/mozwer-rust/
         - toolkit/crashreporter/process_reader/
         - toolkit/crashreporter/rust_minidump_writer_linux/
+        - toolkit/crashreporter/win32_process_mitigations/
         # - toolkit/library/buildid_reader/
         - toolkit/library/buildid_reader/ffi/
         - toolkit/library/gtest/rust/
         - toolkit/library/rust/
-        - toolkit/xre/detect_win32k_conflicts/
         - tools/fuzzing/rust/
         - tools/lint/mozcheck/
         - widget/windows/rust/
@@ -117,6 +117,8 @@ clippy:
         # (`toolkit/library/rust/`). These have the form of
         # [crate-name]: [crate-dir]
         #
+        # They are checked with `mach cargo -p [crate-name] clippy`, so they
+        # must be members of the top-level Cargo workspace.
         # Make sure to include the crate dir in `includes` as well.
         uniffi-bindgen-gecko-js: toolkit/components/uniffi-bindgen-gecko-js/
     exclude:

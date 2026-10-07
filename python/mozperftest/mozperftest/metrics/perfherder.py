@@ -24,7 +24,7 @@ from mozperftest.metrics.utils import has_callable_method, is_number, write_json
 from mozperftest.utils import strtobool
 
 PERFHERDER_SCHEMA = pathlib.Path(
-    "testing", "mozharness", "external_tools", "performance-artifact-schema.json"
+    "testing", "performance", "common", "performance-artifact-schema.json"
 )
 
 

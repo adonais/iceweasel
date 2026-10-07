@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/functional/bind_front.h"
 #include "api/environment/environment.h"
 #include "api/priority.h"
 #include "api/rtc_error.h"
@@ -45,7 +46,6 @@ using ::testing::ByMove;
 using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
 using ::testing::InSequence;
-using ::testing::Invoke;
 using ::testing::NiceMock;
 using ::testing::Return;
 using ::testing::ReturnPointee;
@@ -103,7 +103,6 @@ class Peer {
     auto mock_dcsctp_socket_factory =
         std::make_unique<dcsctp::MockDcSctpSocketFactory>();
     EXPECT_CALL(*mock_dcsctp_socket_factory, Create)
-        .Times(1)
         .WillOnce(Return(ByMove(std::move(socket_ptr))));
 
     sctp_transport_ = std::make_unique<DcSctpTransport>(
@@ -128,9 +127,8 @@ TEST(DcSctpTransportTest, OpenSequence) {
   peer_a.fake_dtls_transport_.SetWritable(true);
 
   EXPECT_CALL(*peer_a.socket_, Connect)
-      .Times(1)
-      .WillOnce(Invoke(peer_a.sctp_transport_.get(),
-                       &dcsctp::DcSctpSocketCallbacks::OnConnected));
+      .WillOnce(absl::bind_front(&dcsctp::DcSctpSocketCallbacks::OnConnected,
+                                 peer_a.sctp_transport_.get()));
   EXPECT_CALL(peer_a.sink_, OnReadyToSend);
   EXPECT_CALL(peer_a.sink_, OnConnected);
   EXPECT_CALL(peer_a.sink_, OnMaxMessageSize(32 * 1024));

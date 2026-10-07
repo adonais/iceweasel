@@ -30,6 +30,7 @@
 @import url("chrome://browser/skin/sidebar.css");
 @import url("chrome://browser/skin/aiWindowSidebar.css");
 @import url("chrome://browser/skin/smartwindowGroupTabs.css");
+@import url("chrome://browser/skin/smartwindowMonitor.css");
 @import url("chrome://browser/skin/customizableui/customizeMode.css");
 @import url("chrome://browser/skin/UITour.css");
 @import url("chrome://browser/skin/formautofill-notification.css");
@@ -74,7 +75,7 @@ body {
     direction: rtl;
   }
 
-  &:not([popup-window]) {
+  &:not([popup-window], [mini-window]) {
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     min-width: var(--window-min-width);
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
@@ -146,6 +147,22 @@ body {
     --toolbox-background-repeat: no-repeat, var(--lwt-background-tiling);
     --toolbox-background-position: right top, var(--lwt-background-alignment);
     --toolbox-background-size: auto, var(--lwt-background-size);
+  }
+
+  /* A mini window is a small always-on-top window. */
+  &[mini-window] {
+    @media not (forced-colors) {
+      --mini-window-toolbar-background: light-dark(var(--color-white), var(--color-gray-70));
+
+      --toolbox-background-image: none;
+      --toolbox-background-color: var(--mini-window-toolbar-background);
+      --toolbox-background-color-inactive: var(--mini-window-toolbar-background);
+    }
+
+    --mini-window-slide-duration: 180ms;
+    --mini-window-fade-duration: 140ms;
+    --mini-window-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+    --mini-window-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
   --ext-theme-background-transition: background-color 0.1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
@@ -226,6 +243,61 @@ body {
     /* Variables defined in browser-colors.css will be updated to use design tokens, see bug 1952566. */
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     border-bottom-color: var(--chrome-content-separator-color);
+  }
+
+  /* Mini window: the toolbar is pinned to the top of the window and slides in/out
+   * of it.
+   *
+   * MiniWindow watches the top few pixels via MousePosTracker to reveal the bar. CSS
+   * holds the bar open under the pointer or keyboard focus; JS toggles mini-window-revealed
+   * for the timed reveals. */
+  :root[mini-window] & {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    transform: translateY(-100%);
+    opacity: 0;
+
+    @media (prefers-reduced-motion: no-preference) {
+      transition:
+        transform var(--mini-window-slide-duration) var(--mini-window-ease-emphasized),
+        opacity var(--mini-window-fade-duration) var(--mini-window-ease-standard);
+    }
+
+    @media (prefers-reduced-motion) {
+      transition: opacity 80ms var(--mini-window-ease-standard);
+    }
+
+    &:is(.mini-window-revealed, :hover, :focus-within) {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+/* The page is pushed down while the bar is shown so the bar never covers it,
+ * and takes the whole window back when it hides.
+ *
+ * This moves the page rather than resizing it: a margin would change the remote
+ * browser's height, reflowing the page and running its resize handlers every
+ * time the bar comes and goes, where a transform costs a composite. The page
+ * keeps the window's full height throughout, so while the bar is up its last
+ * few rows sit below the bottom of the window. */
+:root[mini-window] {
+  #navigator-toolbox:is(.mini-window-revealed, :hover, :focus-within) ~ #browser {
+    /* 0 until the bar has been measured, which happens before it is first revealed. */
+    transform: translateY(var(--mini-window-toolbar-height, 0));
+  }
+
+  #browser {
+    @media (prefers-reduced-motion: no-preference) {
+      transition: transform var(--mini-window-slide-duration) var(--mini-window-ease-emphasized);
+    }
+  }
+
+  /* Set for the frame in which the bar is first revealed. */
+  &[mini-window-first-open] :is(#navigator-toolbox, #browser) {
+    transition: none;
   }
 }
 
@@ -426,12 +498,43 @@ body {
   }
 }
 
-/* Popup windows hide all of the browser chrome. Taskbar tabs hide the same
- * thing except for the navigation buttons, which have their own allowlist in
- * toolbarbuttons.css */
+/* Popup windows hide all of the browser chrome. Taskbar tabs and Mini
+ * windows hide the same thing except for the navigation buttons; taskbar tabs
+ * keep theirs via an allowlist in toolbarbuttons.css, mini windows via the
+ * rule below. */
 :root[popup-window] :is(#toolbar-menubar, #PersonalToolbar, .chromeclass-toolbar-additional, .chromeclass-extrachrome),
-:root[taskbartab] :is(#toolbar-menubar, #PersonalToolbar, .chromeclass-extrachrome) {
+:root:is([taskbartab], [mini-window]) :is(#toolbar-menubar, #PersonalToolbar, .chromeclass-extrachrome) {
   display: none;
+}
+
+/* A Mini window is a focused, single-tab utility window (like a taskbar tab):
+ * it keeps only back/forward/reload, the address bar, and the two mini-window
+ * controls. Everything else in the bar goes. */
+:root[mini-window] {
+  .chromeclass-toolbar-additional:not(
+    #back-button,
+    #forward-button,
+    #stop-reload-button,
+    #mini-window-audio-button,
+    #mini-window-restore-button,
+    #mini-window-close-button
+  ) {
+    display: none;
+  }
+
+  /* The app menu and page-action buttons expose tab/window management, add-on
+     and page tools that don't apply to a single popped-out tab. */
+  #PanelUI-button,
+  #page-action-buttons {
+    display: none;
+  }
+
+  /* The reused nav-bar acts as the titlebar here, so there are no window
+     controls or titlebar drag spacers to show. */
+  .titlebar-buttonbox-container,
+  .titlebar-spacer {
+    display: none;
+  }
 }
 
 /* Menu bar */
@@ -632,9 +735,13 @@ toolbarpaletteitem > #personal-bookmarks > #PlacesToolbar,
   flex-direction: column;
 
   @media -moz-pref("browser.nova.enabled") {
-    --info-bar-margin-block-start: 0;
-    --info-bar-margin-inline: 0;
+    --info-bar-margin: 0;
   }
+}
+
+:root[mini-window] notification-message .notification-button-container {
+  /* Mini Window's can be quite small, so we need to wrap the buttons */
+  flex-wrap: wrap;
 }
 
 .bookmark-item[cutting] {
@@ -984,302 +1091,6 @@ menupopup::part(drop-indicator) {
       }
     }
   }
-}
-
-/* Contextual Feature Recommendation popup-notification */
-
-#cfr-notification-header {
-  width: 100%;
-  display: block;
-  text-align: center;
-  box-shadow: var(--box-shadow-level-1);
-}
-
-#cfr-notification-header-stack {
-  width: 100%;
-}
-
-#cfr-notification-header-label {
-  margin: var(--space-small);
-  font-weight: var(--font-weight-semibold);
-}
-
-#cfr-notification-header-link {
-  margin: var(--space-small);
-  color: inherit;
-  cursor: default;
-  justify-self: end;
-}
-
-#cfr-notification-header-image {
-  width: var(--icon-size-medium);
-  height: var(--icon-size-medium);
-  padding: var(--space-xxsmall);
-  -moz-context-properties: fill, fill-opacity;
-  fill: currentColor;
-  fill-opacity: var(--opacity-deemphasized-strong);
-  list-style-image: url(chrome://global/skin/icons/help.svg);
-
-  &:hover {
-    --header-image-background-color: oklch(from var(--color-gray-50) l c h / 20%);
-
-    background-color: var(--header-image-background-color);
-    border-radius: var(--border-radius-xsmall);
-  }
-}
-
-#contextual-feature-recommendation-notification {
-  width: var(--size-layout-large);
-
-  .popup-notification-icon {
-    margin-inline-end: var(--space-xsmall);
-  }
-
-  .cfr-doorhanger-large-icon {
-    width: var(--size-image-large);
-    height: var(--size-image-large);
-    margin-inline-end: var(--space-medium);
-  }
-
-  .cfr-doorhanger-medium-icon {
-    width: var(--size-image-small);
-    height: var(--size-image-small);
-    margin-inline-end: var(--space-medium);
-  }
-
-  .popup-notification-body-container {
-    width: 100%;
-    padding-bottom: var(--space-xxsmall);
-  }
-
-  popupnotificationcontent {
-    margin-top: 0;
-  }
-
-  description {
-    margin-bottom: 0;
-  }
-
-  &[data-notification-bucket="CFR_MILESTONE_MESSAGE"] {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    background: radial-gradient(circle farthest-side at top right, var(--short-notification-gradient), var(--short-notification-background));
-    width: unset;
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    max-width: 700px;
-    overflow-wrap: break-word;
-    padding: var(--space-xsmall);
-
-    &:-moz-locale-dir(rtl) {
-      background: radial-gradient(circle farthest-side at top left, var(--short-notification-gradient), var(--short-notification-background));
-    }
-
-    .popup-notification-body-container,
-    .popup-notification-footer-container,
-    #cfr-notification-header-link {
-      display: none;
-    }
-
-    #cfr-notification-header {
-      box-shadow: none;
-    }
-
-    description {
-      font-weight: normal;
-      margin: unset;
-      margin-inline: var(--space-medium);
-    }
-
-    .panel-footer,
-    .popup-notification-header-container {
-      display: inline-flex;
-    }
-
-    .panel-footer {
-      float: inline-end;
-      background-color: transparent;
-      flex-direction: row-reverse;
-      /* Override doorhanger default styles that increase the size of the button */
-      margin: 0;
-    }
-
-    .popup-notification-primary-button {
-      --popup-button-background-color: oklch(from var(--color-gray-20) l c h / 20%);
-
-      background-color: var(--popup-button-background-color);
-      color: white;
-      border: none;
-      border-radius: var(--border-radius-xsmall);
-      margin: var(--space-xsmall);
-      padding: var(--space-xsmall) var(--space-medium);
-      flex: 1;
-      min-height: var(--size-item-medium);
-
-      &::after {
-        content: url(chrome://global/skin/icons/arrow-left-12.svg);
-        -moz-context-properties: fill;
-        fill: currentColor;
-        transform: translateY(2px);
-        float: inline-end;
-      }
-
-      &:-moz-locale-dir(ltr)::after {
-        content: url(chrome://global/skin/icons/arrow-right-12.svg);
-      }
-
-      &:hover {
-        --popup-button-background-color: oklch(from var(--color-gray-20) l c h / 40%);
-      }
-
-      &:hover:active {
-        --popup-button-background-color: oklch(from var(--color-gray-20) l c h / 50%);
-      }
-    }
-
-    .popup-notification-secondary-button {
-      --popup-button-background-color: transparent;
-
-      margin: var(--space-xsmall);
-      border: none;
-      border-radius: var(--border-radius-xsmall);
-      background-image: url(chrome://global/skin/icons/close.svg);
-      background-color: var(--popup-button-background-color);
-      background-repeat: no-repeat;
-      background-position: center;
-      background-size: 10px;
-      -moz-context-properties: fill;
-      fill: white;
-      min-height: var(--size-item-medium);
-      width: var(--size-item-medium);
-      padding: 0;
-      align-self: center;
-      flex: none;
-
-      &:hover {
-        --popup-button-background-color: oklch(from var(--color-gray-20) l c h / 40%);
-      }
-    }
-
-    .popup-notification-header-container {
-      color: white;
-      max-width: unset;
-    }
-  }
-
-  &[data-notification-bucket="CFR_SOCIAL_TRACKING_PROTECTION"] {
-    /* TODO: determine whether this is still needed, see bug 2032531 */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    width: 386px;
-  }
-
-  &[data-notification-category="addon_recommendation"] {
-    .popup-notification-description > b {
-      padding-inline-start: var(--space-xsmall);
-    }
-
-    #cfr-notification-footer-learn-more-link {
-      margin-inline-start: var(--space-xsmall);
-    }
-
-    #cfr-notification-feature-steps,
-    #cfr-notification-header-image {
-      display: none;
-    }
-
-    #cfr-notification-header-label {
-      margin-block-end: var(--space-small);
-    }
-  }
-
-  &[data-notification-category="icon_and_message"] {
-    /*
-     * `icon_and_message` CFR doorhanger with: icon, title and subtitle.
-     * No panel header is shown
-     */
-    #cfr-notification-header,
-    .popup-notification-footer-container {
-      display: none;
-    }
-
-    .popup-notification-description {
-      font-weight: var(--font-weight-semibold);
-      margin-bottom: var(--space-large);
-    }
-
-    popupnotificationcontent {
-      display: block; /* This forces the subtitle content to wrap */
-    }
-  }
-}
-
-#cfr-notification-footer-text-and-addon-info {
-  display: block;
-  /* Panel variables will be tokenized in bug 2017979 */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  padding: var(--space-small) var(--panel-padding);
-}
-
-#cfr-notification-feature-steps {
-  display: flex;
-  flex-direction: column;
-  margin-top: var(--space-small);
-
-  li {
-    margin-inline-start: var(--space-small);
-    position: relative;
-    display: list-item;
-
-    &:not(:last-child) {
-      margin-bottom: var(--space-xsmall);
-    }
-  }
-}
-
-#cfr-notification-footer-text,
-#cfr-notification-footer-users,
-#cfr-notification-footer-learn-more-link {
-  margin: 0;
-}
-
-#cfr-notification-footer-addon-info {
-  align-items: center;
-  display: flex;
-  margin-block: var(--space-medium) var(--space-small);
-}
-
-#cfr-notification-footer-filled-stars,
-#cfr-notification-footer-empty-stars {
-  -moz-context-properties: fill, fill-opacity;
-  background-image: url(chrome://browser/skin/bookmark.svg);
-  fill: currentColor;
-  fill-opacity: 0.7;
-  height: var(--size-item-small);
-}
-
-#cfr-notification-footer-filled-stars:-moz-locale-dir(rtl),
-#cfr-notification-footer-empty-stars {
-  background-position-x: right;
-}
-
-#cfr-notification-footer-filled-stars,
-#cfr-notification-footer-empty-stars:-moz-locale-dir(rtl) {
-  background-position-x: left;
-}
-
-#cfr-notification-footer-empty-stars[tooltiptext] {
-  margin-inline-end: var(--space-small);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- to be addressed in 2033919 */
-  opacity: 0.3;
-}
-
-#cfr-notification-footer-users {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- to be addressed in 2033919 */
-  opacity: 0.7;
-}
-
-#cfr-notification-footer-spacer {
-  flex-grow: 1;
 }
 
 /* Sharing tabs warning */

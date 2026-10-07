@@ -12,6 +12,8 @@
 #ifndef mozilla_layout_generic_Visibility_h
 #define mozilla_layout_generic_Visibility_h
 
+#include <cstdint>
+
 namespace mozilla {
 
 // Visibility states for frames.

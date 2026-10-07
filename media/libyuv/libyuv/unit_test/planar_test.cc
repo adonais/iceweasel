@@ -171,14 +171,14 @@ static int TestAttenuateI(int width,
   }
   const int kBpp = 4;
   const int kStride = width * kBpp;
-  align_buffer_page_end(src_argb, kStride * height + off);
-  align_buffer_page_end(dst_argb_c, kStride * height);
-  align_buffer_page_end(dst_argb_opt, kStride * height);
-  for (int i = 0; i < kStride * height; ++i) {
+  align_buffer_page_end(src_argb, (size_t)kStride * height + off);
+  align_buffer_page_end(dst_argb_c, (size_t)kStride * height);
+  align_buffer_page_end(dst_argb_opt, (size_t)kStride * height);
+  for (size_t i = 0; i < (size_t)kStride * height; ++i) {
     src_argb[i + off] = (fastrand() & 0xff);
   }
-  memset(dst_argb_c, 0, kStride * height);
-  memset(dst_argb_opt, 0, kStride * height);
+  memset(dst_argb_c, 0, (size_t)kStride * height);
+  memset(dst_argb_opt, 0, (size_t)kStride * height);
 
   MaskCpuFlags(disable_cpu_flags);
   ARGBAttenuate(src_argb + off, kStride, dst_argb_c, kStride, width,
@@ -189,7 +189,7 @@ static int TestAttenuateI(int width,
                   invert * height);
   }
   int max_diff = 0;
-  for (int i = 0; i < kStride * height; ++i) {
+  for (size_t i = 0; i < (size_t)kStride * height; ++i) {
     int abs_diff = abs(static_cast<int>(dst_argb_c[i]) -
                        static_cast<int>(dst_argb_opt[i]));
     if (abs_diff > max_diff) {
@@ -243,16 +243,16 @@ static int TestUnattenuateI(int width,
   }
   const int kBpp = 4;
   const int kStride = width * kBpp;
-  align_buffer_page_end(src_argb, kStride * height + off);
-  align_buffer_page_end(dst_argb_c, kStride * height);
-  align_buffer_page_end(dst_argb_opt, kStride * height);
-  for (int i = 0; i < kStride * height; ++i) {
+  align_buffer_page_end(src_argb, (size_t)kStride * height + off);
+  align_buffer_page_end(dst_argb_c, (size_t)kStride * height);
+  align_buffer_page_end(dst_argb_opt, (size_t)kStride * height);
+  for (size_t i = 0; i < (size_t)kStride * height; ++i) {
     src_argb[i + off] = (fastrand() & 0xff);
   }
   ARGBAttenuate(src_argb + off, kStride, src_argb + off, kStride, width,
                 height);
-  memset(dst_argb_c, 0, kStride * height);
-  memset(dst_argb_opt, 0, kStride * height);
+  memset(dst_argb_c, 0, (size_t)kStride * height);
+  memset(dst_argb_opt, 0, (size_t)kStride * height);
 
   MaskCpuFlags(disable_cpu_flags);
   ARGBUnattenuate(src_argb + off, kStride, dst_argb_c, kStride, width,
@@ -263,7 +263,7 @@ static int TestUnattenuateI(int width,
                     invert * height);
   }
   int max_diff = 0;
-  for (int i = 0; i < kStride * height; ++i) {
+  for (size_t i = 0; i < (size_t)kStride * height; ++i) {
     int abs_diff = abs(static_cast<int>(dst_argb_c[i]) -
                        static_cast<int>(dst_argb_opt[i]));
     if (abs_diff > max_diff) {
@@ -1741,10 +1741,11 @@ TEST_F(LibYUVPlanarTest, TestDetileSplitUVPlane_Correctness) {
   int i, j;
 
   // orig is tiled.  Allocate enough memory for tiles.
-  int tile_width = (benchmark_width_ + 15) & ~15;
+  int uv_width = (benchmark_width_ + 1) & ~1;
+  int tile_width = (uv_width + 15) & ~15;
   int tile_height = (benchmark_height_ + 15) & ~15;
   int tile_plane_size = tile_width * tile_height;
-  int uv_plane_size = ((benchmark_width_ + 1) / 2) * benchmark_height_;
+  int uv_plane_size = (uv_width / 2) * benchmark_height_;
   align_buffer_page_end(tile_uv, tile_plane_size);
   align_buffer_page_end(detiled_uv, tile_plane_size);
   align_buffer_page_end(dst_u_two_stage, uv_plane_size);
@@ -1759,17 +1760,17 @@ TEST_F(LibYUVPlanarTest, TestDetileSplitUVPlane_Correctness) {
   memset(dst_v_two_stage, 0, uv_plane_size);
   memset(dst_v_opt, 0, uv_plane_size);
 
-  DetileSplitUVPlane(tile_uv, tile_width, dst_u_opt, (benchmark_width_ + 1) / 2,
-                     dst_v_opt, (benchmark_width_ + 1) / 2, benchmark_width_,
+  DetileSplitUVPlane(tile_uv, tile_width, dst_u_opt, uv_width / 2,
+                     dst_v_opt, uv_width / 2, uv_width,
                      benchmark_height_, 16);
 
   // Benchmark 2 step conversion for comparison.
   for (j = 0; j < benchmark_iterations_; j++) {
-    DetilePlane(tile_uv, tile_width, detiled_uv, benchmark_width_,
-                benchmark_width_, benchmark_height_, 16);
-    SplitUVPlane(detiled_uv, tile_width, dst_u_two_stage,
-                 (benchmark_width_ + 1) / 2, dst_v_two_stage,
-                 (benchmark_width_ + 1) / 2, (benchmark_width_ + 1) / 2,
+    DetilePlane(tile_uv, tile_width, detiled_uv, uv_width,
+                uv_width, benchmark_height_, 16);
+    SplitUVPlane(detiled_uv, uv_width, dst_u_two_stage,
+                 uv_width / 2, dst_v_two_stage,
+                 uv_width / 2, uv_width / 2,
                  benchmark_height_);
   }
 
@@ -1790,10 +1791,11 @@ TEST_F(LibYUVPlanarTest, TestDetileSplitUVPlane_Benchmark) {
   int i, j;
 
   // orig is tiled.  Allocate enough memory for tiles.
-  int tile_width = (benchmark_width_ + 15) & ~15;
+  int uv_width = (benchmark_width_ + 1) & ~1;
+  int tile_width = (uv_width + 15) & ~15;
   int tile_height = (benchmark_height_ + 15) & ~15;
   int tile_plane_size = tile_width * tile_height;
-  int uv_plane_size = ((benchmark_width_ + 1) / 2) * benchmark_height_;
+  int uv_plane_size = (uv_width / 2) * benchmark_height_;
   align_buffer_page_end(tile_uv, tile_plane_size);
   align_buffer_page_end(dst_u_c, uv_plane_size);
   align_buffer_page_end(dst_u_opt, uv_plane_size);
@@ -1809,8 +1811,8 @@ TEST_F(LibYUVPlanarTest, TestDetileSplitUVPlane_Benchmark) {
   // Disable all optimizations.
   MaskCpuFlags(disable_cpu_flags_);
 
-  DetileSplitUVPlane(tile_uv, tile_width, dst_u_c, (benchmark_width_ + 1) / 2,
-                     dst_v_c, (benchmark_width_ + 1) / 2, benchmark_width_,
+  DetileSplitUVPlane(tile_uv, tile_width, dst_u_c, uv_width / 2,
+                     dst_v_c, uv_width / 2, uv_width,
                      benchmark_height_, 16);
 
   // Enable optimizations.
@@ -1818,8 +1820,8 @@ TEST_F(LibYUVPlanarTest, TestDetileSplitUVPlane_Benchmark) {
 
   for (j = 0; j < benchmark_iterations_; j++) {
     DetileSplitUVPlane(
-        tile_uv, tile_width, dst_u_opt, (benchmark_width_ + 1) / 2, dst_v_opt,
-        (benchmark_width_ + 1) / 2, benchmark_width_, benchmark_height_, 16);
+        tile_uv, tile_width, dst_u_opt, uv_width / 2, dst_v_opt,
+        uv_width / 2, uv_width, benchmark_height_, 16);
   }
 
   for (i = 0; i < uv_plane_size; ++i) {
@@ -1846,16 +1848,16 @@ static int TestMultiply(int width,
   }
   const int kBpp = 4;
   const int kStride = width * kBpp;
-  align_buffer_page_end(src_argb_a, kStride * height + off);
-  align_buffer_page_end(src_argb_b, kStride * height + off);
-  align_buffer_page_end(dst_argb_c, kStride * height);
-  align_buffer_page_end(dst_argb_opt, kStride * height);
-  for (int i = 0; i < kStride * height; ++i) {
+  align_buffer_page_end(src_argb_a, (size_t)kStride * height + off);
+  align_buffer_page_end(src_argb_b, (size_t)kStride * height + off);
+  align_buffer_page_end(dst_argb_c, (size_t)kStride * height);
+  align_buffer_page_end(dst_argb_opt, (size_t)kStride * height);
+  for (size_t i = 0; i < (size_t)kStride * height; ++i) {
     src_argb_a[i + off] = (fastrand() & 0xff);
     src_argb_b[i + off] = (fastrand() & 0xff);
   }
-  memset(dst_argb_c, 0, kStride * height);
-  memset(dst_argb_opt, 0, kStride * height);
+  memset(dst_argb_c, 0, (size_t)kStride * height);
+  memset(dst_argb_opt, 0, (size_t)kStride * height);
 
   MaskCpuFlags(disable_cpu_flags);
   ARGBMultiply(src_argb_a + off, kStride, src_argb_b + off, kStride, dst_argb_c,
@@ -1866,7 +1868,7 @@ static int TestMultiply(int width,
                  dst_argb_opt, kStride, width, invert * height);
   }
   int max_diff = 0;
-  for (int i = 0; i < kStride * height; ++i) {
+  for (size_t i = 0; i < (size_t)kStride * height; ++i) {
     int abs_diff = abs(static_cast<int>(dst_argb_c[i]) -
                        static_cast<int>(dst_argb_opt[i]));
     if (abs_diff > max_diff) {
@@ -1920,16 +1922,16 @@ static int TestAdd(int width,
   }
   const int kBpp = 4;
   const int kStride = width * kBpp;
-  align_buffer_page_end(src_argb_a, kStride * height + off);
-  align_buffer_page_end(src_argb_b, kStride * height + off);
-  align_buffer_page_end(dst_argb_c, kStride * height);
-  align_buffer_page_end(dst_argb_opt, kStride * height);
-  for (int i = 0; i < kStride * height; ++i) {
+  align_buffer_page_end(src_argb_a, (size_t)kStride * height + off);
+  align_buffer_page_end(src_argb_b, (size_t)kStride * height + off);
+  align_buffer_page_end(dst_argb_c, (size_t)kStride * height);
+  align_buffer_page_end(dst_argb_opt, (size_t)kStride * height);
+  for (size_t i = 0; i < (size_t)kStride * height; ++i) {
     src_argb_a[i + off] = (fastrand() & 0xff);
     src_argb_b[i + off] = (fastrand() & 0xff);
   }
-  memset(dst_argb_c, 0, kStride * height);
-  memset(dst_argb_opt, 0, kStride * height);
+  memset(dst_argb_c, 0, (size_t)kStride * height);
+  memset(dst_argb_opt, 0, (size_t)kStride * height);
 
   MaskCpuFlags(disable_cpu_flags);
   ARGBAdd(src_argb_a + off, kStride, src_argb_b + off, kStride, dst_argb_c,
@@ -1940,7 +1942,7 @@ static int TestAdd(int width,
             kStride, width, invert * height);
   }
   int max_diff = 0;
-  for (int i = 0; i < kStride * height; ++i) {
+  for (size_t i = 0; i < (size_t)kStride * height; ++i) {
     int abs_diff = abs(static_cast<int>(dst_argb_c[i]) -
                        static_cast<int>(dst_argb_opt[i]));
     if (abs_diff > max_diff) {
@@ -1994,16 +1996,16 @@ static int TestSubtract(int width,
   }
   const int kBpp = 4;
   const int kStride = width * kBpp;
-  align_buffer_page_end(src_argb_a, kStride * height + off);
-  align_buffer_page_end(src_argb_b, kStride * height + off);
-  align_buffer_page_end(dst_argb_c, kStride * height);
-  align_buffer_page_end(dst_argb_opt, kStride * height);
-  for (int i = 0; i < kStride * height; ++i) {
+  align_buffer_page_end(src_argb_a, (size_t)kStride * height + off);
+  align_buffer_page_end(src_argb_b, (size_t)kStride * height + off);
+  align_buffer_page_end(dst_argb_c, (size_t)kStride * height);
+  align_buffer_page_end(dst_argb_opt, (size_t)kStride * height);
+  for (size_t i = 0; i < (size_t)kStride * height; ++i) {
     src_argb_a[i + off] = (fastrand() & 0xff);
     src_argb_b[i + off] = (fastrand() & 0xff);
   }
-  memset(dst_argb_c, 0, kStride * height);
-  memset(dst_argb_opt, 0, kStride * height);
+  memset(dst_argb_c, 0, (size_t)kStride * height);
+  memset(dst_argb_opt, 0, (size_t)kStride * height);
 
   MaskCpuFlags(disable_cpu_flags);
   ARGBSubtract(src_argb_a + off, kStride, src_argb_b + off, kStride, dst_argb_c,
@@ -2014,7 +2016,7 @@ static int TestSubtract(int width,
                  dst_argb_opt, kStride, width, invert * height);
   }
   int max_diff = 0;
-  for (int i = 0; i < kStride * height; ++i) {
+  for (size_t i = 0; i < (size_t)kStride * height; ++i) {
     int abs_diff = abs(static_cast<int>(dst_argb_c[i]) -
                        static_cast<int>(dst_argb_opt[i]));
     if (abs_diff > max_diff) {
@@ -2068,15 +2070,15 @@ static int TestSobel(int width,
   }
   const int kBpp = 4;
   const int kStride = width * kBpp;
-  align_buffer_page_end(src_argb_a, kStride * height + off);
-  align_buffer_page_end(dst_argb_c, kStride * height);
-  align_buffer_page_end(dst_argb_opt, kStride * height);
-  memset(src_argb_a, 0, kStride * height + off);
-  for (int i = 0; i < kStride * height; ++i) {
+  align_buffer_page_end(src_argb_a, (size_t)kStride * height + off);
+  align_buffer_page_end(dst_argb_c, (size_t)kStride * height);
+  align_buffer_page_end(dst_argb_opt, (size_t)kStride * height);
+  memset(src_argb_a, 0, (size_t)kStride * height + off);
+  for (size_t i = 0; i < (size_t)kStride * height; ++i) {
     src_argb_a[i + off] = (fastrand() & 0xff);
   }
-  memset(dst_argb_c, 0, kStride * height);
-  memset(dst_argb_opt, 0, kStride * height);
+  memset(dst_argb_c, 0, (size_t)kStride * height);
+  memset(dst_argb_opt, 0, (size_t)kStride * height);
 
   MaskCpuFlags(disable_cpu_flags);
   ARGBSobel(src_argb_a + off, kStride, dst_argb_c, kStride, width,
@@ -2087,7 +2089,7 @@ static int TestSobel(int width,
               invert * height);
   }
   int max_diff = 0;
-  for (int i = 0; i < kStride * height; ++i) {
+  for (size_t i = 0; i < (size_t)kStride * height; ++i) {
     int abs_diff = abs(static_cast<int>(dst_argb_c[i]) -
                        static_cast<int>(dst_argb_opt[i]));
     if (abs_diff > max_diff) {
@@ -2214,15 +2216,15 @@ static int TestSobelXY(int width,
   }
   const int kBpp = 4;
   const int kStride = width * kBpp;
-  align_buffer_page_end(src_argb_a, kStride * height + off);
-  align_buffer_page_end(dst_argb_c, kStride * height);
-  align_buffer_page_end(dst_argb_opt, kStride * height);
-  memset(src_argb_a, 0, kStride * height + off);
-  for (int i = 0; i < kStride * height; ++i) {
+  align_buffer_page_end(src_argb_a, (size_t)kStride * height + off);
+  align_buffer_page_end(dst_argb_c, (size_t)kStride * height);
+  align_buffer_page_end(dst_argb_opt, (size_t)kStride * height);
+  memset(src_argb_a, 0, (size_t)kStride * height + off);
+  for (size_t i = 0; i < (size_t)kStride * height; ++i) {
     src_argb_a[i + off] = (fastrand() & 0xff);
   }
-  memset(dst_argb_c, 0, kStride * height);
-  memset(dst_argb_opt, 0, kStride * height);
+  memset(dst_argb_c, 0, (size_t)kStride * height);
+  memset(dst_argb_opt, 0, (size_t)kStride * height);
 
   MaskCpuFlags(disable_cpu_flags);
   ARGBSobelXY(src_argb_a + off, kStride, dst_argb_c, kStride, width,
@@ -2233,7 +2235,7 @@ static int TestSobelXY(int width,
                 invert * height);
   }
   int max_diff = 0;
-  for (int i = 0; i < kStride * height; ++i) {
+  for (size_t i = 0; i < (size_t)kStride * height; ++i) {
     int abs_diff = abs(static_cast<int>(dst_argb_c[i]) -
                        static_cast<int>(dst_argb_opt[i]));
     if (abs_diff > max_diff) {
@@ -2287,16 +2289,16 @@ static int TestBlur(int width,
   }
   const int kBpp = 4;
   const int kStride = width * kBpp;
-  align_buffer_page_end(src_argb_a, kStride * height + off);
-  align_buffer_page_end(dst_cumsum, width * height * 16);
-  align_buffer_page_end(dst_argb_c, kStride * height);
-  align_buffer_page_end(dst_argb_opt, kStride * height);
-  for (int i = 0; i < kStride * height; ++i) {
+  align_buffer_page_end(src_argb_a, (size_t)kStride * height + off);
+  align_buffer_page_end(dst_cumsum, (size_t)width * height * 16);
+  align_buffer_page_end(dst_argb_c, (size_t)kStride * height);
+  align_buffer_page_end(dst_argb_opt, (size_t)kStride * height);
+  for (size_t i = 0; i < (size_t)kStride * height; ++i) {
     src_argb_a[i + off] = (fastrand() & 0xff);
   }
-  memset(dst_cumsum, 0, width * height * 16);
-  memset(dst_argb_c, 0, kStride * height);
-  memset(dst_argb_opt, 0, kStride * height);
+  memset(dst_cumsum, 0, (size_t)width * height * 16);
+  memset(dst_argb_c, 0, (size_t)kStride * height);
+  memset(dst_argb_opt, 0, (size_t)kStride * height);
 
   MaskCpuFlags(disable_cpu_flags);
   ARGBBlur(src_argb_a + off, kStride, dst_argb_c, kStride,
@@ -2309,7 +2311,7 @@ static int TestBlur(int width,
              invert * height, radius);
   }
   int max_diff = 0;
-  for (int i = 0; i < kStride * height; ++i) {
+  for (size_t i = 0; i < (size_t)kStride * height; ++i) {
     int abs_diff = abs(static_cast<int>(dst_argb_c[i]) -
                        static_cast<int>(dst_argb_opt[i]));
     if (abs_diff > max_diff) {
@@ -3766,11 +3768,12 @@ TEST_F(LibYUVPlanarTest, MergeUVRow_16_Opt) {
 }
 #endif
 
-// TODO(fbarchard): Improve test for more platforms.
-#ifdef HAS_MULTIPLYROW_16_AVX2
+#if defined(HAS_MULTIPLYROW_16_AVX512BW) || defined(HAS_MULTIPLYROW_16_AVX2) || \
+    defined(HAS_MULTIPLYROW_16_NEON) || defined(HAS_MULTIPLYROW_16_SME) ||      \
+    defined(HAS_MULTIPLYROW_16_RVV)
 TEST_F(LibYUVPlanarTest, MultiplyRow_16_Opt) {
-  // Round count up to multiple of 32
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 31) & ~31;
+  // Round count up to multiple of 64
+  const int kPixels = (benchmark_width_ * benchmark_height_ + 63) & ~63;
 
   align_buffer_page_end(src_pixels_y, kPixels * 2);
   align_buffer_page_end(dst_pixels_y_opt, kPixels * 2);
@@ -3783,13 +3786,59 @@ TEST_F(LibYUVPlanarTest, MultiplyRow_16_Opt) {
   MultiplyRow_16_C(reinterpret_cast<const uint16_t*>(src_pixels_y),
                    reinterpret_cast<uint16_t*>(dst_pixels_y_c), 64, kPixels);
 
+#if defined(HAS_MULTIPLYROW_16_AVX512BW)
+  int has_avx512 = TestCpuFlag(kCpuHasAVX512BW);
+#endif
+#if defined(HAS_MULTIPLYROW_16_AVX2)
   int has_avx2 = TestCpuFlag(kCpuHasAVX2);
+#endif
+#if defined(HAS_MULTIPLYROW_16_NEON)
+  int has_neon = TestCpuFlag(kCpuHasNEON);
+#endif
+#if defined(HAS_MULTIPLYROW_16_SME)
+  int has_sme = TestCpuFlag(kCpuHasSME);
+#endif
+#if defined(HAS_MULTIPLYROW_16_RVV)
+  int has_rvv = TestCpuFlag(kCpuHasRVV);
+#endif
+
   for (int i = 0; i < benchmark_iterations_; ++i) {
+#if defined(HAS_MULTIPLYROW_16_AVX512BW)
+    if (has_avx512) {
+      MultiplyRow_16_AVX512BW(reinterpret_cast<const uint16_t*>(src_pixels_y),
+                              reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64,
+                              kPixels);
+    } else
+#endif
+#if defined(HAS_MULTIPLYROW_16_AVX2)
     if (has_avx2) {
       MultiplyRow_16_AVX2(reinterpret_cast<const uint16_t*>(src_pixels_y),
                           reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64,
                           kPixels);
-    } else {
+    } else
+#endif
+#if defined(HAS_MULTIPLYROW_16_SME)
+    if (has_sme) {
+      MultiplyRow_16_SME(reinterpret_cast<const uint16_t*>(src_pixels_y),
+                         reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64,
+                         kPixels);
+    } else
+#endif
+#if defined(HAS_MULTIPLYROW_16_NEON)
+    if (has_neon) {
+      MultiplyRow_16_NEON(reinterpret_cast<const uint16_t*>(src_pixels_y),
+                          reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64,
+                          kPixels);
+    } else
+#endif
+#if defined(HAS_MULTIPLYROW_16_RVV)
+    if (has_rvv) {
+      MultiplyRow_16_RVV(reinterpret_cast<const uint16_t*>(src_pixels_y),
+                         reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64,
+                         kPixels);
+    } else
+#endif
+    {
       MultiplyRow_16_C(reinterpret_cast<const uint16_t*>(src_pixels_y),
                        reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64,
                        kPixels);
@@ -3804,7 +3853,73 @@ TEST_F(LibYUVPlanarTest, MultiplyRow_16_Opt) {
   free_aligned_buffer_page_end(dst_pixels_y_opt);
   free_aligned_buffer_page_end(dst_pixels_y_c);
 }
-#endif  // HAS_MULTIPLYROW_16_AVX2
+
+#if defined(HAS_MULTIPLYROW_16_AVX512BW) || defined(HAS_MULTIPLYROW_16_AVX2) || \
+    defined(HAS_MULTIPLYROW_16_NEON)
+TEST_F(LibYUVPlanarTest, MultiplyRow_16_Any) {
+  const int kMaxPixels = 256;
+  align_buffer_page_end(src_pixels_y, kMaxPixels * 2);
+  align_buffer_page_end(dst_pixels_y_opt, kMaxPixels * 2);
+  align_buffer_page_end(dst_pixels_y_c, kMaxPixels * 2);
+
+  for (int i = 0; i < kMaxPixels; ++i) {
+    reinterpret_cast<uint16_t*>(src_pixels_y)[i] = fastrand() & 1023;
+  }
+
+#if defined(HAS_MULTIPLYROW_16_AVX512BW)
+  int has_avx512 = TestCpuFlag(kCpuHasAVX512BW);
+#endif
+#if defined(HAS_MULTIPLYROW_16_AVX2)
+  int has_avx2 = TestCpuFlag(kCpuHasAVX2);
+#endif
+#if defined(HAS_MULTIPLYROW_16_NEON)
+  int has_neon = TestCpuFlag(kCpuHasNEON);
+#endif
+
+  for (int width = 1; width <= 129; ++width) {
+    memset(dst_pixels_y_opt, 0, kMaxPixels * 2);
+    memset(dst_pixels_y_c, 1, kMaxPixels * 2);
+
+    MultiplyRow_16_C(reinterpret_cast<const uint16_t*>(src_pixels_y),
+                     reinterpret_cast<uint16_t*>(dst_pixels_y_c), 64, width);
+
+#if defined(HAS_MULTIPLYROW_16_AVX512BW)
+    if (has_avx512) {
+      MultiplyRow_16_Any_AVX512BW(reinterpret_cast<const uint16_t*>(src_pixels_y),
+                                  reinterpret_cast<uint16_t*>(dst_pixels_y_opt),
+                                  64, width);
+    } else
+#endif
+#if defined(HAS_MULTIPLYROW_16_AVX2)
+    if (has_avx2) {
+      MultiplyRow_16_Any_AVX2(reinterpret_cast<const uint16_t*>(src_pixels_y),
+                              reinterpret_cast<uint16_t*>(dst_pixels_y_opt),
+                              64, width);
+    } else
+#endif
+#if defined(HAS_MULTIPLYROW_16_NEON)
+    if (has_neon) {
+      MultiplyRow_16_Any_NEON(reinterpret_cast<const uint16_t*>(src_pixels_y),
+                              reinterpret_cast<uint16_t*>(dst_pixels_y_opt),
+                              64, width);
+    } else
+#endif
+    {
+      MultiplyRow_16_C(reinterpret_cast<const uint16_t*>(src_pixels_y),
+                       reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64, width);
+    }
+
+    for (int i = 0; i < width * 2; ++i) {
+      ASSERT_EQ(dst_pixels_y_opt[i], dst_pixels_y_c[i]);
+    }
+  }
+
+  free_aligned_buffer_page_end(src_pixels_y);
+  free_aligned_buffer_page_end(dst_pixels_y_opt);
+  free_aligned_buffer_page_end(dst_pixels_y_c);
+}
+#endif  // HAS_MULTIPLYROW_16_AVX512BW || HAS_MULTIPLYROW_16_AVX2 || HAS_MULTIPLYROW_16_NEON
+#endif  // HAS_MULTIPLYROW_16_...
 
 TEST_F(LibYUVPlanarTest, Convert16To8Plane) {
   const int kPixels = benchmark_width_ * benchmark_height_;
@@ -4157,7 +4272,7 @@ TEST_F(LibYUVPlanarTest, Convert8To16Plane) {
   MaskCpuFlags(disable_cpu_flags_);
   Convert8To16Plane(src_pixels_y, benchmark_width_,
                     reinterpret_cast<uint16_t*>(dst_pixels_y_c),
-                    benchmark_width_, 1024, benchmark_width_,
+                    benchmark_width_, 10, benchmark_width_,
                     benchmark_height_);
   MaskCpuFlags(benchmark_cpu_info_);
 
@@ -4179,9 +4294,9 @@ TEST_F(LibYUVPlanarTest, Convert8To16Plane) {
 
 #ifdef ENABLE_ROW_TESTS
 // TODO(fbarchard): Improve test for more platforms.
-#ifdef HAS_CONVERT8TO16ROW_AVX2
+#if defined(HAS_CONVERT8TO16ROW_AVX512BW) || defined(HAS_CONVERT8TO16ROW_AVX2)
 TEST_F(LibYUVPlanarTest, Convert8To16Row_Opt) {
-  const int kPixels = (benchmark_width_ * benchmark_height_ + 31) & ~31;
+  const int kPixels = (benchmark_width_ * benchmark_height_ + 63) & ~63;
   align_buffer_page_end(src_pixels_y, kPixels);
   align_buffer_page_end(dst_pixels_y_opt, kPixels * 2);
   align_buffer_page_end(dst_pixels_y_c, kPixels * 2);
@@ -4191,22 +4306,32 @@ TEST_F(LibYUVPlanarTest, Convert8To16Row_Opt) {
   memset(dst_pixels_y_c, 1, kPixels * 2);
 
   Convert8To16Row_C(src_pixels_y, reinterpret_cast<uint16_t*>(dst_pixels_y_c),
-                    1024, kPixels);
+                    10, kPixels);
 
+#if defined(HAS_CONVERT8TO16ROW_AVX512BW)
+  int has_avx512 = TestCpuFlag(kCpuHasAVX512BW);
+#endif
   int has_avx2 = TestCpuFlag(kCpuHasAVX2);
   int has_sse2 = TestCpuFlag(kCpuHasSSE2);
   for (int i = 0; i < benchmark_iterations_; ++i) {
+#if defined(HAS_CONVERT8TO16ROW_AVX512BW)
+    if (has_avx512) {
+      Convert8To16Row_AVX512BW(src_pixels_y,
+                               reinterpret_cast<uint16_t*>(dst_pixels_y_opt),
+                               10, kPixels);
+    } else
+#endif
     if (has_avx2) {
       Convert8To16Row_AVX2(src_pixels_y,
-                           reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 1024,
+                           reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 10,
                            kPixels);
     } else if (has_sse2) {
       Convert8To16Row_SSE2(src_pixels_y,
-                           reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 1024,
+                           reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 10,
                            kPixels);
     } else {
       Convert8To16Row_C(src_pixels_y,
-                        reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 1024,
+                        reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 10,
                         kPixels);
     }
   }
@@ -4219,7 +4344,7 @@ TEST_F(LibYUVPlanarTest, Convert8To16Row_Opt) {
   free_aligned_buffer_page_end(dst_pixels_y_opt);
   free_aligned_buffer_page_end(dst_pixels_y_c);
 }
-#endif  // HAS_CONVERT8TO16ROW_AVX2
+#endif  // HAS_CONVERT8TO16ROW_AVX512BW || HAS_CONVERT8TO16ROW_AVX2
 
 float TestScaleMaxSamples(int benchmark_width,
                           int benchmark_height,
@@ -4669,6 +4794,22 @@ TEST_F(LibYUVPlanarTest, SwapUVRow) {
   MemRandomize(src_pixels_vu, kPixels * 2);
   memset(dst_pixels_uv, 1, kPixels * 2);
 
+#if defined(HAS_SWAPUVROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    SwapUVRow = SwapUVRow_Any_SSSE3;
+    if (IS_ALIGNED(kPixels, 16)) {
+      SwapUVRow = SwapUVRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_SWAPUVROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    SwapUVRow = SwapUVRow_Any_AVX2;
+    if (IS_ALIGNED(kPixels, 32)) {
+      SwapUVRow = SwapUVRow_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_SWAPUVROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     SwapUVRow = SwapUVRow_Any_NEON;

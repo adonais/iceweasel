@@ -11,7 +11,7 @@ The following is a high-level overview of the technologies associated with Trans
     - [Technology](#technology-1)
     - [Models](#models-1)
 - [Remote Settings](#remote-settings)
-    - [Enabling Translations](#enabling-translations)
+- [Using Translations](#using-translations)
     - [Translating Web Pages](#translating-web-pages)
     - [about:translations](#abouttranslations)
 

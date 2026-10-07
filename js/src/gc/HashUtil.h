@@ -53,6 +53,10 @@ struct DependentAddPtr {
   const Entry& operator*() const { return *addPtr; }
   const Entry* operator->() const { return &*addPtr; }
 
+  DependentAddPtr() = delete;
+  DependentAddPtr(const DependentAddPtr&) = delete;
+  DependentAddPtr& operator=(const DependentAddPtr&) = delete;
+
  private:
   AddPtr addPtr;
   const uint64_t originalGcNumber;
@@ -64,10 +68,6 @@ struct DependentAddPtr {
       addPtr = table.lookupForAdd(key);
     }
   }
-
-  DependentAddPtr() = delete;
-  DependentAddPtr(const DependentAddPtr&) = delete;
-  DependentAddPtr& operator=(const DependentAddPtr&) = delete;
 };
 
 template <typename T, typename Lookup>

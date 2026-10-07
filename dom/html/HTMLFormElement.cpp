@@ -49,6 +49,7 @@
 #include "mozilla/StaticPrefs_prompts.h"
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/FormDataEvent.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/SubmitEvent.h"
 #include "mozilla/glean/DomSecurityMetrics.h"
 #include "mozilla/intl/Localization.h"
@@ -62,7 +63,6 @@
 #include "nsISecurityUITelemetry.h"
 #include "nsISimpleEnumerator.h"
 #include "nsNetUtil.h"
-#include "nsRange.h"
 
 // radio buttons
 #include "RadioNodeList.h"

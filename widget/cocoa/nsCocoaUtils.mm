@@ -940,7 +940,7 @@ static const KeyConversionData gKeyConversions[] = {
     KEYCODE_ENTRY(VK_7, '7'),
     KEYCODE_ENTRY(VK_8, '8'),
     KEYCODE_ENTRY(VK_9, '9'),
-    KEYCODE_ENTRY(VK_SEMICOLON, ':'),
+    KEYCODE_ENTRY(VK_SEMICOLON, ';'),
     KEYCODE_ENTRY(VK_EQUALS, '='),
     KEYCODE_ENTRY(VK_A, 'A'),
     KEYCODE_ENTRY(VK_B, 'B'),
@@ -1193,22 +1193,44 @@ static NSString* ActionOnDoubleClickSystemPref() {
   return nil;
 }
 
-@interface NSWindow (NSWindowShouldZoomOnDoubleClick)
+@interface NSWindow (TitlebarDoubleClickAction)
 + (BOOL)_shouldZoomOnDoubleClick;  // present on 10.7 and above
++ (BOOL)_shouldFillOnDoubleClick;  // present on macOS 15 and above
+- (void)_zoomFill:(id)aSender;     // present on macOS 15 and above
 @end
 
-bool nsCocoaUtils::ShouldZoomOnTitlebarDoubleClick() {
+static bool ShouldZoomOnTitlebarDoubleClick() {
   if ([NSWindow respondsToSelector:@selector(_shouldZoomOnDoubleClick)]) {
     return [NSWindow _shouldZoomOnDoubleClick];
   }
   return [ActionOnDoubleClickSystemPref() isEqualToString:@"Maximize"];
 }
 
-bool nsCocoaUtils::ShouldMinimizeOnTitlebarDoubleClick() {
+static bool ShouldMinimizeOnTitlebarDoubleClick() {
   // Check the system preferences.
   // We could also check -[NSWindow _shouldMiniaturizeOnDoubleClick]. It's not
   // clear to me which approach would be preferable; neither is public API.
   return [ActionOnDoubleClickSystemPref() isEqualToString:@"Minimize"];
+}
+
+// "Fill" is the window tiling action that macOS 15 added as a third choice
+// next to "Zoom" and "Minimize".
+static bool ShouldFillOnTitlebarDoubleClick() {
+  if ([NSWindow respondsToSelector:@selector(_shouldFillOnDoubleClick)]) {
+    return [NSWindow _shouldFillOnDoubleClick];
+  }
+  return [ActionOnDoubleClickSystemPref() isEqualToString:@"Fill"];
+}
+
+void nsCocoaUtils::PerformTitlebarDoubleClickAction(NSWindow* aWindow) {
+  if (ShouldZoomOnTitlebarDoubleClick()) {
+    [aWindow performZoom:nil];
+  } else if (ShouldMinimizeOnTitlebarDoubleClick()) {
+    [aWindow performMiniaturize:nil];
+  } else if (ShouldFillOnTitlebarDoubleClick() &&
+             [aWindow respondsToSelector:@selector(_zoomFill:)]) {
+    [aWindow _zoomFill:nil];
+  }
 }
 
 static const char* AVMediaTypeToString(AVMediaType aType) {

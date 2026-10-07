@@ -36,25 +36,36 @@ def lastweek():
 
 
 # Given a set of build ids, fetch the repository base URL for each id.
+# Returns the git commit for each id, where hg.mozilla.org knows it.
 def fetchBuildRevisions(buildids):
     buildhub_url = "https://buildhub.moz.tools/api/search"
     delids = {}
+    gitcommits = {}
     for bid in buildids:
         info(f"Fetching revision for build {bid}.")
         body = {"size": 1, "query": {"term": {"build.id": bid}}}
         resp = requests.post(url=buildhub_url, json=body)
         hits = resp.json()["hits"]["hits"]
         if len(hits) > 0:
-            buildids[bid] = (
-                hits[0]["_source"]["source"]["repository"]
-                + "/annotate/"
-                + hits[0]["_source"]["source"]["revision"]
-            )
+            source = hits[0]["_source"]["source"]
+            buildids[bid] = source["repository"] + "/annotate/" + source["revision"]
+            gitcommits[bid] = fetchGitCommit(source["repository"], source["revision"])
         else:
             warning(f"No revision for build.id {bid}")
             delids[bid] = "x"
     for bid in delids:
         buildids.pop(bid)
+    return gitcommits
+
+
+# hg.mozilla.org mirrors the git repository and records the git commit of
+# each changeset, which Searchfox permalinks need.
+def fetchGitCommit(repository, revision):
+    resp = requests.get(url=f"{repository}/json-rev/{revision}")
+    if resp.ok:
+        return resp.json().get("git_commit")
+    warning(f"No changeset information for {revision}")
+    return None
 
 
 def readExecutionFile(workdir):

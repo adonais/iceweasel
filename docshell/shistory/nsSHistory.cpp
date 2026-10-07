@@ -1398,7 +1398,8 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
     // browser.navigation.requireUserInteraction is still
     // disabled everywhere.
 
-    frameLoaderOwner->RestoreFrameLoaderFromBFCache(aFrameLoader);
+    bool layersChanged =
+        frameLoaderOwner->RestoreFrameLoaderFromBFCache(aFrameLoader);
     // EvictOutOfRangeDocumentViewers is called here explicitly to
     // possibly evict the now in the bfcache document.
     // HistoryCommitIndexAndLength might not have evicted that before the
@@ -1412,6 +1413,10 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
     }
 
     loadingBC->ReactivateDocuments(aEntry, currentSHEntry);
+
+    if (layersChanged) {
+      frameLoaderOwner->DispatchLayerTreeEvent();
+    }
 
     // We need to call this after we've restored the page from BFCache (see
     // ReactivateDocuments above), so that the page is not frozen anymore and
@@ -1755,20 +1760,6 @@ nsresult nsSHistory::Reload(uint32_t aReloadFlags,
                             nsTArray<LoadEntryResult>& aLoadResults) {
   MOZ_ASSERT(aLoadResults.IsEmpty());
 
-  uint32_t loadType;
-  if (aReloadFlags & nsIWebNavigation::LOAD_FLAGS_BYPASS_PROXY &&
-      aReloadFlags & nsIWebNavigation::LOAD_FLAGS_BYPASS_CACHE) {
-    loadType = LOAD_RELOAD_BYPASS_PROXY_AND_CACHE;
-  } else if (aReloadFlags & nsIWebNavigation::LOAD_FLAGS_BYPASS_PROXY) {
-    loadType = LOAD_RELOAD_BYPASS_PROXY;
-  } else if (aReloadFlags & nsIWebNavigation::LOAD_FLAGS_BYPASS_CACHE) {
-    loadType = LOAD_RELOAD_BYPASS_CACHE;
-  } else if (aReloadFlags & nsIWebNavigation::LOAD_FLAGS_CHARSET_CHANGE) {
-    loadType = LOAD_RELOAD_CHARSET_CHANGE;
-  } else {
-    loadType = LOAD_RELOAD_NORMAL;
-  }
-
   // We are reloading. Send Reload notifications.
   // nsDocShellLoadFlagType is not public, where as nsIWebNavigation
   // is public. So send the reload notifications with the
@@ -1778,6 +1769,13 @@ nsresult nsSHistory::Reload(uint32_t aReloadFlags,
   if (!canNavigate) {
     return NS_OK;
   }
+
+  if (mIndex < 0) {
+    // We can't reload if we don't have entries, see bug 2074418.
+    return NS_ERROR_FAILURE;
+  }
+
+  uint32_t loadType = PrepareReloadEntry(mEntries[mIndex], aReloadFlags);
 
   nsresult rv =
       LoadEntry(/* aSourceBrowsingContext */ nullptr, mIndex, loadType,
@@ -2251,6 +2249,28 @@ void nsSHistory::RemoveEntries(nsTArray<nsID>& aIDs, int32_t aStartIndex,
   }
 }
 
+uint32_t nsSHistory::PrepareReloadEntry(nsISHEntry* aEntry,
+                                        uint32_t aReloadFlags) {
+  uint32_t loadType;
+  if (aReloadFlags & nsIWebNavigation::LOAD_FLAGS_BYPASS_PROXY &&
+      aReloadFlags & nsIWebNavigation::LOAD_FLAGS_BYPASS_CACHE) {
+    loadType = LOAD_RELOAD_BYPASS_PROXY_AND_CACHE;
+  } else if (aReloadFlags & nsIWebNavigation::LOAD_FLAGS_BYPASS_PROXY) {
+    loadType = LOAD_RELOAD_BYPASS_PROXY;
+  } else if (aReloadFlags & nsIWebNavigation::LOAD_FLAGS_BYPASS_CACHE) {
+    loadType = LOAD_RELOAD_BYPASS_CACHE;
+  } else if (aReloadFlags & nsIWebNavigation::LOAD_FLAGS_CHARSET_CHANGE) {
+    loadType = LOAD_RELOAD_CHARSET_CHANGE;
+  } else {
+    loadType = LOAD_RELOAD_NORMAL;
+  }
+  aEntry->SetLoadType(loadType);
+  if (IsForceReloadType(loadType)) {
+    RemoveFrameEntries(aEntry);
+  }
+  return loadType;
+}
+
 void nsSHistory::RemoveFrameEntries(nsISHEntry* aEntry) {
   auto* entry = aEntry->GetAsSessionHistoryEntry();
   int32_t count = entry->GetChildCount();
@@ -2263,6 +2283,10 @@ void nsSHistory::RemoveFrameEntries(nsISHEntry* aEntry) {
     }
   }
   RemoveEntries(ids, mIndex);
+  if (MOZ_UNLIKELY(mIndex < 0)) {
+    // With max_entries=0, aEntry isn't reachable from mEntries.
+    RemoveFromSessionHistoryEntry(entry, ids);
+  }
 }
 
 void nsSHistory::RemoveDynEntries(int32_t aIndex, nsISHEntry* aEntry) {

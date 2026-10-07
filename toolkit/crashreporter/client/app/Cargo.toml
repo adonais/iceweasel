@@ -62,7 +62,7 @@ features = [
 
 [features]
 # Required for tests
-mock = []
+mock = ["glean/mozbuild-rustlib"]
 
 [build-dependencies]
 bindgen = { version = "0.73", default-features = false, features = ["runtime"] }

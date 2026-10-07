@@ -85,8 +85,53 @@ async function installAddon(file, temporary, allowPrivateBrowsing) {
   return addon;
 }
 
-/** Installs addons by path and uninstalls by ID. */
+/** Lists addon information, installs by path or base64, and uninstalls by ID. */
 export class Addon {
+  /**
+   * Get information about installed addons.
+   *
+   * @param {string?} type
+   *     Addon type to retrieve, or null (default) for all types.
+   * @param {object=} options
+   * @param {boolean=} options.includeHidden
+   *     Whether to include hidden addons. Defaults to false.
+   *
+   * @returns {Promise<Array<object>>}
+   *     Objects containing addon details.
+   */
+  static async getAddons(type = null, options = {}) {
+    const { includeHidden = false } = options;
+    const addons = await lazy.AddonManager.getAddonsByTypes(
+      type === null ? null : [type]
+    );
+
+    return addons
+      .filter(addon => includeHidden || !addon.hidden)
+      .map(addon => {
+        const policy = WebExtensionPolicy.getByID(addon.id);
+
+        return {
+          id: addon.id,
+          name: addon.name,
+          version: addon.version,
+          manifestVersion: addon.manifestVersion,
+          isActive: addon.isActive,
+          isSystem: addon.isSystem,
+          hidden: addon.hidden,
+          temporarilyInstalled: addon.temporarilyInstalled,
+          sourceURL: addon.sourceURI?.spec ?? null,
+          policy: policy
+            ? {
+                uuid: policy.mozExtensionHostname,
+                baseURL: policy.baseURL,
+                extensionURL: policy.getURL(""),
+                backgroundScripts: policy.extension?.backgroundScripts || [],
+              }
+            : null,
+        };
+      });
+  }
+
   /**
    * Install a Firefox addon with provided base64 string representation.
    *

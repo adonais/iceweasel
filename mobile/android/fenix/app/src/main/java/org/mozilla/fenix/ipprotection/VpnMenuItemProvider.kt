@@ -1,0 +1,115 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+package org.mozilla.fenix.ipprotection
+
+import androidx.compose.ui.semantics.Role
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import mozilla.components.compose.base.text.Text
+import mozilla.components.compose.menu.data.MenuItem
+import mozilla.components.compose.menu.data.MenuItemActionButton
+import mozilla.components.compose.menu.data.MenuItemBadge
+import mozilla.components.compose.menu.data.MenuItemSummary
+import mozilla.components.compose.menu.data.StandardMenuItem
+import mozilla.components.compose.menu.ui.MenuItemIconRes
+import mozilla.components.compose.menu.ui.MenuItemState
+import mozilla.components.feature.ipprotection.store.IPProtectionStore
+import mozilla.components.feature.ipprotection.store.state.IPProtectionState
+import mozilla.components.feature.ipprotection.store.state.isEligible
+import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.fenix.R
+import org.mozilla.fenix.components.menu.MenuItemProvider
+import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
+import org.mozilla.fenix.components.menu.store.IPProtectionMenuStatus
+import org.mozilla.fenix.components.menu.store.MenuAction
+import org.mozilla.fenix.components.menu.toMenuState
+
+/**
+ * [MenuItemProvider] for the menu item allowing to toggle IP protection, or to open its settings.
+ *
+ * Shown only to users eligible for the feature, and kept in sync with the connection status so that the menu can stay
+ * open while connecting.
+ *
+ * @param ipProtectionStore [IPProtectionStore] with information about the current VPN functionality.
+ * @param scope [CoroutineScope] used to keep the item up to date for as long as it can be shown.
+ */
+class VpnMenuItemProvider(
+    ipProtectionStore: IPProtectionStore,
+    scope: CoroutineScope,
+) : MenuItemProvider {
+    override val itemFlow: StateFlow<MenuItem?> =
+        ipProtectionStore.stateFlow
+            .map { it.ipProtectionMenuItem() }
+            .stateIn(
+                scope = scope,
+                started = SharingStarted.Eagerly,
+                initialValue = ipProtectionStore.state.ipProtectionMenuItem(),
+            )
+
+    /** IP protection is only offered to the users that are eligible for it. */
+    private fun IPProtectionState.ipProtectionMenuItem() =
+        when (isEligible) {
+            true -> toMenuState().toMenuItem()
+            else -> null
+        }
+}
+
+private fun IPProtectionMenuState.toMenuItem() =
+    StandardMenuItem(
+        title = Text.Resource(R.string.ip_protection_toggle_label),
+        icon = MenuItemIconRes(iconsR.drawable.mozac_ic_globe_24),
+        // Only a toggle while it can actually be toggled - otherwise tapping it opens the VPN settings instead.
+        role =
+            when (status) {
+                IPProtectionMenuStatus.AuthRequired -> Role.Button
+                else -> Role.Switch
+            },
+        onClickEvent = MenuAction.IPProtectionToggle,
+        summary = dataLimitSummary,
+        badge = MenuItemBadge(text = Text.Resource(status.badgeTextRes), state = status.badgeState),
+        actionButton =
+            MenuItemActionButton(
+                icon = iconsR.drawable.mozac_ic_chevron_right_24,
+                contentDescription = Text.Resource(R.string.ip_protection_navigate_settings),
+                onClickEvent = MenuAction.Navigate.IPProtectionSettings,
+                showDivider = true,
+            ),
+    )
+
+private val IPProtectionMenuState.dataLimitSummary: MenuItemSummary?
+    get() =
+        when {
+            status == IPProtectionMenuStatus.DataLimitReached && dataLimitGb > 0 ->
+                MenuItemSummary(
+                    text = Text.Resource(R.string.ip_protection_menu_limit_reached, listOf(dataLimitGb)),
+                    state = MenuItemState.WARNING,
+                )
+            else -> null
+        }
+
+private val IPProtectionMenuStatus.badgeTextRes: Int
+    get() =
+        when (this) {
+            IPProtectionMenuStatus.Disabled -> R.string.preferences_ip_protection_off
+            IPProtectionMenuStatus.Enabled -> R.string.preferences_ip_protection_on
+            IPProtectionMenuStatus.Activating -> R.string.ip_protection_menu_connecting
+            IPProtectionMenuStatus.DataLimitReached -> R.string.ip_protection_menu_paused
+            IPProtectionMenuStatus.ConnectionError -> R.string.ip_protection_menu_error
+            IPProtectionMenuStatus.AuthRequired -> R.string.ip_protection_menu_try_vpn_cta
+        }
+
+private val IPProtectionMenuStatus.badgeState: MenuItemState
+    get() =
+        when (this) {
+            IPProtectionMenuStatus.Enabled,
+            IPProtectionMenuStatus.Activating -> MenuItemState.ACTIVE
+            IPProtectionMenuStatus.ConnectionError -> MenuItemState.WARNING
+            IPProtectionMenuStatus.DataLimitReached -> MenuItemState.DISABLED
+            IPProtectionMenuStatus.Disabled,
+            IPProtectionMenuStatus.AuthRequired -> MenuItemState.DEFAULT
+        }

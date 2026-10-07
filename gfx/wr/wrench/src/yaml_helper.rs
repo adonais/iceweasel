@@ -1094,7 +1094,7 @@ impl YamlHelper for Yaml {
             ExtendMode::Clamp
         };
 
-        dl.create_gradient(start, end, stops, extend_mode)
+        dl.create_gradient(start.to_vector(), end.to_vector(), stops, extend_mode)
     }
 
     fn as_radial_gradient(&self, dl: &mut DisplayListBuilder) -> (RadialGradient, Vec<GradientStop>) {
@@ -1121,7 +1121,7 @@ impl YamlHelper for Yaml {
             ExtendMode::Clamp
         };
 
-        dl.create_radial_gradient(center, radius, stops, extend_mode)
+        dl.create_radial_gradient(center.to_vector(), radius, stops, extend_mode)
     }
 
     fn as_conic_gradient(&self, dl: &mut DisplayListBuilder) -> (ConicGradient, Vec<GradientStop>) {
@@ -1148,7 +1148,7 @@ impl YamlHelper for Yaml {
             ExtendMode::Clamp
         };
 
-        dl.create_conic_gradient(center, angle, stops, extend_mode)
+        dl.create_conic_gradient(center.to_vector(), angle, stops, extend_mode)
     }
 
     fn as_complex_clip_regions(&self) -> Vec<ComplexClipRegion> {

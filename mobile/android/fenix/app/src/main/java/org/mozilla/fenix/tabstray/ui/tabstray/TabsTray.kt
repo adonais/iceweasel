@@ -37,8 +37,8 @@ import mozilla.components.compose.base.snackbar.Snackbar
 import mozilla.components.compose.base.snackbar.SnackbarVisuals
 import mozilla.components.compose.base.snackbar.displaySnackbar
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
-import org.mozilla.fenix.tabstray.controller.NoOpTabInteractionHandler
-import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
+import org.mozilla.fenix.tabstray.controller.ItemInteractionHandler
+import org.mozilla.fenix.tabstray.controller.NoOpItemInteractionHandler
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
@@ -97,7 +97,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
  *   banner.
  * @param onTabAutoCloseBannerDismiss Invoked when the user clicks to dismiss the auto close banner.
  * @param onTabAutoCloseBannerShown Invoked when the auto close banner has been shown to the user.
- * @param tabInteractionHandler Handlers tab interactions such as moves and drag and drop.
+ * @param itemInteractionHandler Handles tab interactions such as moves and drag and drop.
  * @param onInactiveTabsCFRShown Invoked when the inactive tabs CFR is displayed.
  * @param onInactiveTabsCFRClick Invoked when the inactive tabs CFR is clicked.
  * @param onInactiveTabsCFRDismiss Invoked when the inactive tabs CFR is dismissed.
@@ -146,7 +146,7 @@ fun TabsTray(
     onTabsTrayPbmLockedDismiss: () -> Unit,
     onTabAutoCloseBannerDismiss: () -> Unit,
     onTabAutoCloseBannerShown: () -> Unit,
-    tabInteractionHandler: TabInteractionHandler,
+    itemInteractionHandler: ItemInteractionHandler,
     onInactiveTabsCFRShown: () -> Unit,
     onInactiveTabsCFRClick: () -> Unit,
     onInactiveTabsCFRDismiss: () -> Unit,
@@ -252,7 +252,7 @@ fun TabsTray(
                             onEnableInactiveTabAutoCloseClick = onEnableInactiveTabAutoCloseClick,
                             onInactiveTabClick = onInactiveTabClick,
                             onInactiveTabClose = onInactiveTabClose,
-                            tabInteractionHandler = tabInteractionHandler,
+                            itemInteractionHandler = itemInteractionHandler,
                             shouldShowInactiveTabsCFR = state.inactiveTabs.showCFR,
                             onInactiveTabsCFRShown = onInactiveTabsCFRShown,
                             onInactiveTabsCFRClick = onInactiveTabsCFRClick,
@@ -289,7 +289,7 @@ fun TabsTray(
                             onTabClose = onTabClose,
                             onItemClick = onItemClick,
                             onItemLongClick = onItemLongClick,
-                            tabInteractionHandler = tabInteractionHandler,
+                            itemInteractionHandler = itemInteractionHandler,
                             onUnlockPbmClick = onUnlockPbmClick,
                         )
                     }
@@ -318,6 +318,9 @@ fun TabsTray(
                             onShareTabGroupClick = onShareTabGroupClick,
                             onDeleteTabGroupClick = { group ->
                                 onAction(TabGroupAction.DeleteClicked(group))
+                            },
+                            onCollectionsMigrationCardDismiss = {
+                                onAction(TabGroupAction.CollectionsMigrationCardDismissed)
                             },
                         )
                     }
@@ -386,7 +389,7 @@ private fun TabsTrayPreview(
             onTabPageClick = { page ->
                 store.dispatch(TabsTrayAction.PageSelected(page))
             },
-            tabInteractionHandler = NoOpTabInteractionHandler,
+            itemInteractionHandler = NoOpItemInteractionHandler,
             onTabClose = { _ ->
                 scope.launch {
                     snackbarHostState.displaySnackbar(visuals = SnackbarVisuals(message = "Tab closed"))

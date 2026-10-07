@@ -8,9 +8,13 @@ support-files = [
   "autoconfig-no-sandbox-check.cfg",
   "autoconfig.js",
   "autoconfig-no-sandbox.js",
+  "autoconfig-admin.cfg",
+  "autoconfig-admin-pref.cfg",
+  "autoconfig-admin-url-pref.cfg",
+  "autoconfig-remote.jsc",
 ]
 run-if = [
-  "!msix", # Does not work in MSIX builds.
+  "!msix", # AutoConfig is not supported in MSIX builds (bug 1807926)
 ]
 
 ["test_autoconfig.js"]
@@ -38,6 +42,14 @@ skip-if = [
 run-sequentially = ["true"] # fails 70% of the time in parallel
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'x86_64' && debug && !fission", # Bug 1982954
+]
+
+["test_autoconfig_profile_prefs.js"]
+run-sequentially = ["true"] # shares GreD/autoconfig.cfg with the other tests
+skip-if = [
+  # resetPrefs() does not restore the defaults that GeckoView ships in the APK,
+  # which trips the debug-only `once` mirror check in InitOncePrefs.
+  "os == 'android'",
 ]
 
 ["test_autoconfig_sysconfd.js"]

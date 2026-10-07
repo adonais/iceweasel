@@ -770,7 +770,7 @@ void nr_ice_media_stream_set_disconnected(nr_ice_media_stream *stream, int disco
                                                     stream->local_stream);
         }
       }
-      nr_ice_peer_ctx_check_if_connected(stream->pctx);
+      nr_ice_peer_ctx_react_to_stream_change(stream->pctx);
     }
   }
 
@@ -833,7 +833,7 @@ void nr_ice_media_stream_component_nominated(nr_ice_media_stream *stream,nr_ice_
     }
 
     /* Now tell the peer_ctx that we're connected */
-    nr_ice_peer_ctx_check_if_connected(stream->pctx);
+    nr_ice_peer_ctx_react_to_stream_change(stream->pctx);
   }
 
 void nr_ice_media_stream_component_failed(nr_ice_media_stream *stream,nr_ice_component *component)
@@ -852,7 +852,7 @@ void nr_ice_media_stream_component_failed(nr_ice_media_stream *stream,nr_ice_com
     }
 
     /* Now tell the peer_ctx that we've failed */
-    nr_ice_peer_ctx_check_if_connected(stream->pctx);
+    nr_ice_peer_ctx_react_to_stream_change(stream->pctx);
   }
 
 

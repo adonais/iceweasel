@@ -58,7 +58,8 @@ parent: // HWInference
   // end-of-stream tail and sent every result that flush produced.
   // anyFinalResult is false when the session finalized nothing at all, which
   // is what makes the content process fire "nomatch" before "end".
-  async Stop() returns (bool anyFinalResult);
+  // The perf counters are the session's total, for getPerfStats().
+  async Stop() returns (bool anyFinalResult, double fedAudioMs, double inferenceMs);
 
 child: // Content process
   // Speech recognition results

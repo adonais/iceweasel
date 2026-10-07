@@ -3,8 +3,8 @@
 % <https://raw.githubusercontent.com/mozilla/treeherder/HEAD/ui/helpers/constants.js>
 % awk -e /thPlatformMap = {/,/};/ constants.js |grep ""|cut -d: -f2|sed -e s/^/   /|sed -e "s/$/ ,, /g"
 % TODO:
-%    * Leverage verify_docs - <https://bugzilla.mozilla.org/show_bug.cgi?id=1636400>
-%    * Add a new column (when executed ? ie always, rarely, etc)
+%    - Leverage verify_docs - <https://bugzilla.mozilla.org/show_bug.cgi?id=1636400>
+%    - Add a new column (when executed ? ie always, rarely, etc)
 
 ## Build Platforms
 

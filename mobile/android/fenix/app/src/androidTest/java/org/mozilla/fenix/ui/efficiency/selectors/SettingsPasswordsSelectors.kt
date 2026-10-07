@@ -30,20 +30,13 @@ object SettingsPasswordsSelectors : SelectorContainer {
             description = "Passwords toolbar title",
         )
 
-    val SAVE_PASSWORDS_TOGGLE =
-        Selector(
-            strategy = SelectorStrategy.ESPRESSO_BY_ID,
-            value = "save_passwords_toggle",
-            description = "Save Passwords Toggle",
-            groups = setOf(Group.PASSWORD_SETTINGS),
-        )
-
     val SAVE_PASSWORDS_OPTION =
         Selector(
             strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
             value = "Save passwords",
             description = "Save Passwords Option",
             readiness = PageReadinessProfiles.READY_CONTENT,
+            groups = setOf(Group.PASSWORD_SETTINGS),
         )
 
     val SAVED_PASSWORDS_OPTION =
@@ -52,5 +45,38 @@ object SettingsPasswordsSelectors : SelectorContainer {
             value = "Saved passwords",
             description = "Saved Passwords Option",
             readiness = PageReadinessProfiles.READY_CONTENT,
+            groups = setOf(Group.PASSWORD_SETTINGS),
+        )
+
+    val AUTOFILL_IN_FIREFOX_OPTION =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.preferences_passwords_autofill2),
+            description = "Autofill in Firefox Option",
+            groups = setOf(Group.PASSWORD_SETTINGS),
+        )
+
+    val AUTOFILL_IN_OTHER_APPS_OPTION =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.preferences_android_autofill),
+            description = "Autofill in other apps Option",
+            groups = setOf(Group.PASSWORD_SETTINGS),
+        )
+
+    val SYNC_PASSWORDS_OPTION =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.preferences_passwords_sync_logins_across_devices_2),
+            description = "Sync passwords across devices Option",
+            groups = setOf(Group.PASSWORD_SETTINGS),
+        )
+
+    val EXCEPTIONS_OPTION =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.preferences_passwords_exceptions),
+            description = "Login Exceptions Option",
+            groups = setOf(Group.PASSWORD_SETTINGS),
         )
 }

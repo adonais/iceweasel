@@ -820,6 +820,15 @@ WebGLRenderingContext includes WebGLRenderingContextBase;
 ////////////////////////////////////////
 // specific extension interfaces
 
+// https://registry.khronos.org/webgl/extensions/EXT_polygon_offset_clamp/
+[LegacyNoInterfaceObject,
+ Exposed=(Window,Worker)]
+interface EXT_polygon_offset_clamp {
+    const GLenum POLYGON_OFFSET_CLAMP_EXT = 0x8E1B;
+
+    undefined polygonOffsetClampEXT(GLfloat factor, GLfloat units, GLfloat clamp);
+};
+
 [LegacyNoInterfaceObject,
  Exposed=(Window,Worker)]
 interface EXT_texture_compression_bptc {

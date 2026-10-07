@@ -8,18 +8,18 @@
 #include "mozilla/TimeStamp.h"
 #include "nsTArray.h"
 
-class nsRange;
 struct TextDirective;
 namespace mozilla::dom {
 
 class Document;
+class Range;
 
 /**
  * @brief Finds one or more `TextDirective`s in a `Document`.
  *
  * This class is designed to consume the `TextDirective`s.
  * Every `TextDirective` which is found is removed from the list of uninvoked
- * text directives, and is returned as an `nsRange`.
+ * text directives, and is returned as an `Range`.
  *
  * Internally, finding a text directive in a document uses Gecko's find-in-page
  * implementation `nsFind`.
@@ -34,7 +34,7 @@ class TextDirectiveFinder final {
    *
    * This method is the main entry point of this class.
    */
-  nsTArray<RefPtr<nsRange>> FindTextDirectivesInDocument();
+  nsTArray<RefPtr<Range>> FindTextDirectivesInDocument();
 
   /**
    * Returns true if there are text directives left which were not yet found in
@@ -45,8 +45,7 @@ class TextDirectiveFinder final {
   /**
    * Finds a range for _one_ text directive.
    */
-  RefPtr<nsRange> FindRangeForTextDirective(
-      const TextDirective& aTextDirective);
+  RefPtr<Range> FindRangeForTextDirective(const TextDirective& aTextDirective);
 
  private:
   friend class FragmentDirective;

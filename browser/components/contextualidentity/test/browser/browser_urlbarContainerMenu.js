@@ -53,7 +53,7 @@ add_task(async function test_context_menu_structure() {
   let contextMenu = await openContainerIndicatorMenu();
 
   let manageItem = contextMenu.querySelector(
-    "[data-l10n-id='user-context-manage-containers']"
+    "[data-l10n-id='user-context-manage-containers2']"
   );
   ok(manageItem, "Manage Containers item exists");
   ok(!manageItem.hidden, "Manage Containers item is visible");

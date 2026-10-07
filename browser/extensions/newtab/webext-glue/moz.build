@@ -24,15 +24,21 @@ FINAL_TARGET_FILES["webext-glue"] += [
 ]
 
 # Bug 2057616: Generate New Tab's runtime Glean metrics/pings for train-hop
-# compatibility by diffing the local metrics.yaml/pings.yaml against the Beta
-# and Release channels, then package the result into the XPI.
+# compatibility by diffing the local metrics.yaml/pings.yaml against each older
+# Firefox version the XPI can land on, then package the result into the XPI.
 # See metrics/gen_runtime_metrics.py.
+#
+# Bug 2067207: the offsets cover every version that can be a host while central
+# is at MOZ_APP_VERSION. Beta is one behind, and stays one further behind for a
+# day or so after merge day until its first build of the new cycle. Release is
+# two behind, and stays three behind between merge day and the release that
+# follows it. Covering a version nobody runs costs a few KB; missing one loses
+# the whole New Tab ping on that host, so the range errs wide.
 if CONFIG["MOZ_APP_VERSION"]:
     newtab_major_version = int(CONFIG["MOZ_APP_VERSION"].split(".")[0])
-    for channel, version_offset in (("beta", 1), ("release", 2)):
-        runtime_metrics_file = "runtime-metrics-%d.json" % (
-            newtab_major_version - version_offset
-        )
+    for version_offset in (1, 2, 3):
+        target_version = newtab_major_version - version_offset
+        runtime_metrics_file = "runtime-metrics-%d.json" % target_version
         GENERATED_FILES += [runtime_metrics_file]
         GENERATED_FILES[
             runtime_metrics_file
@@ -41,7 +47,7 @@ if CONFIG["MOZ_APP_VERSION"]:
             "/browser/components/newtab/metrics.yaml",
             "/browser/components/newtab/pings.yaml",
         ]
-        GENERATED_FILES[runtime_metrics_file].flags = [channel]
+        GENERATED_FILES[runtime_metrics_file].flags = ["%d" % target_version]
         FINAL_TARGET_FILES["webext-glue"].metrics += ["!" + runtime_metrics_file]
 else:
     warning("New Tab runtime metrics not generated: MOZ_APP_VERSION is unavailable.")

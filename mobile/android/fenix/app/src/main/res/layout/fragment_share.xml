@@ -27,12 +27,15 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/sharingLayout"/>
 
+    <!-- The sheet paints its own background over the scrim that fills the root, so it has to be a view of
+         its own rather than the constraints of one. -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/sharingLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/bottom_sheet_dialog_fragment_background"
-        app:layout_constraintBottom_toBottomOf="parent">
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:ignore="MozMultipleConstraintLayouts">
 
         <FrameLayout
             android:id="@+id/devicesShareLayout"

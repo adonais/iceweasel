@@ -785,6 +785,7 @@ add_task(async function test_registerDevice() {
 add_task(async function test_updateDevice() {
   const DEVICE_ID = "some other id";
   const DEVICE_NAME = "some other name";
+  const DEVICE_TYPE = "some other type";
   const ERROR_ID = "test that the client promise rejects";
 
   const server = httpd_setup({
@@ -796,8 +797,8 @@ add_task(async function test_updateDevice() {
       if (
         !body.id ||
         !body.name ||
-        body.type ||
-        Object.keys(body).length !== 2
+        !body.type ||
+        Object.keys(body).length !== 3
       ) {
         response.setStatusLine(request.httpVersion, 400, "Invalid request");
         response.bodyOutputStream.write("{}", 2);
@@ -821,16 +822,23 @@ add_task(async function test_updateDevice() {
   const result = await client.updateDevice(
     FAKE_SESSION_TOKEN,
     DEVICE_ID,
-    DEVICE_NAME
+    DEVICE_NAME,
+    DEVICE_TYPE
   );
 
   Assert.ok(result);
-  Assert.equal(Object.keys(result).length, 2);
+  Assert.equal(Object.keys(result).length, 3);
   Assert.equal(result.id, DEVICE_ID);
   Assert.equal(result.name, DEVICE_NAME);
+  Assert.equal(result.type, DEVICE_TYPE);
 
   try {
-    await client.updateDevice(FAKE_SESSION_TOKEN, ERROR_ID, DEVICE_NAME);
+    await client.updateDevice(
+      FAKE_SESSION_TOKEN,
+      ERROR_ID,
+      DEVICE_NAME,
+      DEVICE_TYPE
+    );
     do_throw("Expected to catch an exception");
   } catch (unexpectedError) {
     Assert.equal(unexpectedError.code, 500);

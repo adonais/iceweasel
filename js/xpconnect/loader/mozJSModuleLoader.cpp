@@ -640,6 +640,9 @@ nsresult mozJSModuleLoader::CreateTextModuleFromSource(
 
   auto str = JS_NewStringCopyUTF8N(
       aCx, JS::UTF8Chars(aSource.Data(), aSource.Length()));
+  if (!str) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
   JS::RootedValue defaultExport(aCx, JS::StringValue(str));
   JSObject* module = JS::CreateDefaultExportSyntheticModule(aCx, defaultExport);
   if (!module) {

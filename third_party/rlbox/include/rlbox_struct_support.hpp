@@ -138,7 +138,7 @@ struct markerStruct
       MaybeConst)                                                              \
                                                                                \
       inline tainted<MaybeConst T*, T_Sbx>                                     \
-      operator&() const noexcept                                               \
+      operator&() MaybeConst noexcept                                          \
     {                                                                          \
       auto ref_cast =                                                          \
         reinterpret_cast<MaybeConst T*>(&get_sandbox_value_ref());             \
@@ -146,7 +146,10 @@ struct markerStruct
       return ret;                                                              \
     }                                                                          \
                                                                                \
-    inline auto UNSAFE_unverified() const { return get_raw_value(); }          \
+    inline auto UNSAFE_unverified() const                                      \
+    {                                                                          \
+      return get_raw_value();                                                  \
+    }                                                                          \
     inline auto UNSAFE_sandboxed(rlbox_sandbox<T_Sbx>& sandbox) const          \
     {                                                                          \
       return get_raw_sandbox_value(sandbox);                                   \
@@ -247,7 +250,10 @@ struct markerStruct
       return *reinterpret_cast<tainted_opaque<MaybeConst T, T_Sbx>*>(this);    \
     }                                                                          \
                                                                                \
-    inline auto UNSAFE_unverified() const { return get_raw_value(); }          \
+    inline auto UNSAFE_unverified() const                                      \
+    {                                                                          \
+      return get_raw_value();                                                  \
+    }                                                                          \
     inline auto UNSAFE_sandboxed(rlbox_sandbox<T_Sbx>& sandbox) const          \
     {                                                                          \
       return get_raw_sandbox_value(sandbox);                                   \

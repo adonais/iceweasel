@@ -232,7 +232,7 @@ kill_selfserv()
   echo "selfserv with PID ${PID} killed at `date`"
 
   rm ${SERVERPID}
-  html_detect_core "kill_selfserv core detection step"
+  html_detect_core_force "kill_selfserv core detection step"
 }
 
 ########################### start_selfserv #############################

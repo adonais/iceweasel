@@ -244,6 +244,7 @@ export class HistoryController {
         this.#setTodaysDate();
         return this.#getVisitsForDateSite(historyMap);
       case "lastvisited":
+      case "mostvisited":
         return this.#getVisitsForLastVisited(historyMap);
       default:
         return [];

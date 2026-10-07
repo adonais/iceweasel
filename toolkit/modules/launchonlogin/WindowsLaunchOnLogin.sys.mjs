@@ -45,7 +45,9 @@ export var WindowsLaunchOnLogin = {
   },
 
   /**
-   * Safely creates a Windows launch on login registry key
+   * Safely creates a Windows launch on login registry key. Also garbage
+   * collects values left behind by other installs of this application whose
+   * executable no longer exists (bug 2049951).
    */
   async createLaunchOnLoginRegistryKey() {
     try {
@@ -62,6 +64,14 @@ export var WindowsLaunchOnLogin = {
           );
         } catch (e) {
           console.error("Could not write value to registry", e);
+        }
+        try {
+          await this._removeLaunchOnLoginValuesForMissingExecutables(wrk);
+        } catch (e) {
+          console.error(
+            "Could not clean up launch on login values for missing executables",
+            e
+          );
         }
       });
     } catch (e) {
@@ -121,6 +131,92 @@ export var WindowsLaunchOnLogin = {
       // We should only end up here if we fail to open the registry
       console.error("Failed to open Windows registry", e);
     }
+  },
+
+  /**
+   * Removes launch on login values written by other installs of this
+   * application whose executable no longer exists. Builds that are run from a
+   * throwaway location and then deleted without being uninstalled (for
+   * example each build of a mozregression bisection) otherwise leave a
+   * "Mozilla-Firefox-<hash>" value pointing at a missing executable behind
+   * forever, and Windows keeps showing each one under Settings > Apps >
+   * Startup.
+   *
+   * Only values whose executable lives on a local drive that is still present
+   * are removed; a value pointing at a missing drive is kept because that
+   * drive may simply be a removable one that is unplugged right now.
+   *
+   * @param {nsIWindowsRegKey} wrk
+   *        The open `...\CurrentVersion\Run` key.
+   */
+  async _removeLaunchOnLoginValuesForMissingExecutables(wrk) {
+    let prefix = this.getLaunchOnLoginRegistryNamePrefix();
+    let ownName = this.getLaunchOnLoginRegistryName();
+    let namesToRemove = [];
+    for (let i = 0; i < wrk.valueCount; i++) {
+      let name = wrk.getValueName(i);
+      if (
+        name == ownName ||
+        !name.startsWith(prefix) ||
+        wrk.getValueType(name) != wrk.TYPE_STRING
+      ) {
+        continue;
+      }
+      let exePath = this._getExecutablePathFromCommand(
+        wrk.readStringValue(name)
+      );
+      if (exePath && (await this._isExecutableMissing(exePath))) {
+        namesToRemove.push(name);
+      }
+    }
+    for (let name of namesToRemove) {
+      try {
+        wrk.removeValue(name);
+      } catch (e) {
+        console.error("Failed to remove Windows registry value", e);
+      }
+    }
+    return namesToRemove;
+  },
+
+  /**
+   * Extracts the executable path from a Run value command line of the shape
+   * written by createLaunchOnLoginRegistryKey, either `"C:\path\firefox.exe"
+   * -os-autostart` or `C:\path\firefox.exe -os-autostart`.
+   *
+   * @param {string} command
+   * @returns {string | null}
+   *          The executable path, or null if the command could not be parsed.
+   */
+  _getExecutablePathFromCommand(command) {
+    command = command.trimStart();
+    if (command.startsWith('"')) {
+      let end = command.indexOf('"', 1);
+      return end > 1 ? command.slice(1, end) : null;
+    }
+    let end = command.search(/\s/);
+    let exePath = end == -1 ? command : command.slice(0, end);
+    return exePath || null;
+  },
+
+  /**
+   * Whether an executable that a Run value points at is missing.
+   *
+   * @param {string} exePath
+   * @returns {Promise<bool>}
+   *          True only for an absolute local drive path whose drive exists but
+   *          whose file does not. Any other path (UNC, relative, missing
+   *          drive) is reported as not missing so it is left alone.
+   */
+  async _isExecutableMissing(exePath) {
+    let drive = /^[A-Za-z]:\\/.exec(exePath);
+    if (!drive) {
+      return false;
+    }
+    if (!(await IOUtils.exists(drive[0]))) {
+      return false;
+    }
+    return !(await IOUtils.exists(exePath));
   },
 
   /**
@@ -331,6 +427,14 @@ export var WindowsLaunchOnLogin = {
   },
 
   /**
+   * The part of the registry name shared by every install of the current
+   * application, like "Mozilla-Firefox-".
+   */
+  getLaunchOnLoginRegistryNamePrefix() {
+    return `${Services.appinfo.vendor}-${Services.appinfo.name}-`;
+  },
+
+  /**
    * Generates a unique registry name for the current application
    * like "Mozilla-Firefox-71AE18FE3142402B".
    */
@@ -338,9 +442,9 @@ export var WindowsLaunchOnLogin = {
     let xreDirProvider = Cc["@mozilla.org/xre/directory-provider;1"].getService(
       Ci.nsIXREDirProvider
     );
-    let registryName = `${Services.appinfo.vendor}-${
-      Services.appinfo.name
-    }-${xreDirProvider.getInstallHash()}`;
-    return registryName;
+    return (
+      this.getLaunchOnLoginRegistryNamePrefix() +
+      xreDirProvider.getInstallHash()
+    );
   },
 };

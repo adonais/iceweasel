@@ -17,7 +17,7 @@ interface SVGPathSegment {
 
 dictionary SVGPathSegmentInit {
   required DOMString type;
-  required sequence<float> values;
+  required sequence<unrestricted float> values;
 };
 
 dictionary SVGPathDataSettings {

@@ -885,6 +885,17 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
   }
 
   /**
+   * Whether a security code came with the card that is about to be saved. The
+   * code is only part of the record once CVV capture is enabled, and is empty
+   * when the form asked for one but was submitted without it.
+   *
+   * @returns {boolean}
+   */
+  get hasSubmittedSecurityCode() {
+    return !!this.newRecord["cc-csc"];
+  }
+
+  /**
    * We have not yet sync address and credit card design. After syncing,
    * we should be able to use the same "class"
    */

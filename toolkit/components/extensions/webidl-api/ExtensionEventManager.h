@@ -8,6 +8,7 @@
 #include "js/GCHashTable.h"  // for JS::GCHashMap
 #include "js/TypeDecls.h"    // for JS::Handle, JSContext, JSObject, ...
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/extensions/ExtensionBrowser.h"
 #include "mozilla/ErrorResult.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsCOMPtr.h"
@@ -28,7 +29,6 @@ class Function;
 
 namespace extensions {
 
-class ExtensionBrowser;
 class ExtensionEventListener;
 
 class ExtensionEventManager final : public nsISupports,

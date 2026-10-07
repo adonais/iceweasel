@@ -18,7 +18,7 @@ namespace mozilla {
 template <typename T>
 class Range {
   template <typename U>
-  friend class Range;
+  friend class ::mozilla::Range;
 
   // Reassignment of RangedPtrs is so (subtly) restrictive that we just make
   // Range immutable.

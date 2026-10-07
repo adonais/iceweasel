@@ -27,6 +27,7 @@
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Try.h"
+#include "nsThread.h"
 
 #include "GeckoProfiler.h"
 #include "prprf.h"
@@ -313,8 +314,7 @@ nsAppStartup::Run(void) {
   // Make sure that the appropriate quit notifications have been dispatched
   // regardless of whether the event loop has spun or not. Note that this call
   // is a no-op if Quit has already been called previously.
-  bool userAllowedQuit = true;
-  Quit(eForceQuit, 0, &userAllowedQuit);
+  Quit(eForceQuit, 0);
 
   nsresult retval = NS_OK;
   if (mozilla::AppShutdown::IsRestarting()) {
@@ -325,18 +325,13 @@ nsAppStartup::Run(void) {
 }
 
 NS_IMETHODIMP
-nsAppStartup::Quit(uint32_t aMode, int aExitCode, bool* aUserAllowedQuit) {
+nsAppStartup::Quit(uint32_t aMode, int aExitCode) {
   if ((aMode & eSilently) != 0 && (aMode & eRestart) == 0) {
     // eSilently is only valid when combined with eRestart.
     return NS_ERROR_INVALID_ARG;
   }
 
   uint32_t ferocity = (aMode & 0xF);
-
-  // If the shutdown was cancelled due to a hidden window or
-  // because one of the windows was not permitted to be closed,
-  // return NS_OK with |aUserAllowedQuit| = false.
-  *aUserAllowedQuit = false;
 
   // Quit the application. We will asynchronously call the appshell's
   // Exit() method via nsAppExitEvent to allow one last pass
@@ -409,7 +404,6 @@ nsAppStartup::Quit(uint32_t aMode, int aExitCode, bool* aUserAllowedQuit) {
     PROFILER_MARKER_UNTYPED("Shutdown start", OTHER);
     mozilla::RecordShutdownStartTimeStamp();
 
-    *aUserAllowedQuit = true;
     mShuttingDown = true;
     auto shutdownMode = ((aMode & eRestart) != 0)
                             ? mozilla::AppShutdownMode::Restart
@@ -586,6 +580,22 @@ nsAppStartup::SetImpendingShutdown() {
   return NS_OK;
 }
 
+namespace mozilla {
+
+void CollectShutdownHangAnnotations() {
+#ifdef NS_THREAD_SHUTDOWN_ANNOTATIONS_ENABLED
+  nsThread::CollectShutdownHangAnnotation();
+#endif
+}
+
+}  // namespace mozilla
+
+NS_IMETHODIMP
+nsAppStartup::CollectShutdownHangAnnotations() {
+  mozilla::CollectShutdownHangAnnotations();
+  return NS_OK;
+}
+
 void nsAppStartup::CloseAllWindows() {
   nsCOMPtr<nsIWindowMediator> mediator(
       do_GetService(NS_WINDOWMEDIATOR_CONTRACTID));
@@ -621,13 +631,11 @@ nsAppStartup::ExitLastWindowClosingSurvivalArea(void) {
   --mConsiderQuitStopper;
 
   if (mRunning) {
-    bool userAllowedQuit = false;
-
     // A previous call to Quit may have told all windows to close and then
     // bailed out waiting for that to happen. This is how we get back into Quit
     // after each window closes so the exit process can continue when ready.
     // Make sure to pass along the exit code that was initially passed to Quit.
-    Quit(eConsiderQuit, mozilla::AppShutdown::GetExitCode(), &userAllowedQuit);
+    Quit(eConsiderQuit, mozilla::AppShutdown::GetExitCode());
   }
 
   return NS_OK;
@@ -1084,8 +1092,7 @@ nsAppStartup::TrackStartupCrashEnd() {
 NS_IMETHODIMP
 nsAppStartup::RestartInSafeMode(uint32_t aQuitMode) {
   PR_SetEnv("MOZ_SAFE_MODE_RESTART=1");
-  bool userAllowedQuit = false;
-  this->Quit(aQuitMode | nsIAppStartup::eRestart, 0, &userAllowedQuit);
+  this->Quit(aQuitMode | nsIAppStartup::eRestart, 0);
 
   return NS_OK;
 }

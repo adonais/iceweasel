@@ -17,7 +17,6 @@
 
     /** border **/
     --border-color: light-dark(var(--color-gray-50), var(--color-gray-70));
-    --border-color-deemphasized: light-dark(var(--color-gray-30), var(--color-gray-70));
     --border-color-interactive: light-dark(var(--color-gray-60), var(--color-gray-50));
 
     /** button **/
@@ -75,9 +74,11 @@
 
       /** border **/
       --border-color: light-dark(var(--color-gray-30), var(--color-gray-40));
-      --border-color-deemphasized: light-dark(var(--color-gray-20), var(--color-gray-50));
 
       /** button **/
+      --button-background-color-hover: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-50));
+      --button-background-color-active: light-dark(var(--color-violet-desaturated-30), var(--color-violet-desaturated-40));
+      --button-text-color-ghost: var(--button-text-color);
       --button-text-color-ghost-disabled: var(--button-text-color-ghost);
 
       /** table **/

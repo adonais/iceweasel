@@ -886,15 +886,15 @@ class GarbageCollectionEvent {
   // The set of garbage collection slices that made up this GC cycle.
   mozilla::Vector<Collection> collections;
 
-  GarbageCollectionEvent(const GarbageCollectionEvent& rhs) = delete;
-  GarbageCollectionEvent& operator=(const GarbageCollectionEvent& rhs) = delete;
-
  public:
   explicit GarbageCollectionEvent(uint64_t majorGCNum)
       : majorGCNumber_(majorGCNum),
         reason(nullptr),
         nonincrementalReason(nullptr),
         collections() {}
+
+  GarbageCollectionEvent(const GarbageCollectionEvent& rhs) = delete;
+  GarbageCollectionEvent& operator=(const GarbageCollectionEvent& rhs) = delete;
 
   using Ptr = js::UniquePtr<GarbageCollectionEvent>;
   static Ptr Create(JSRuntime* rt, ::js::gcstats::Statistics& stats,

@@ -19,6 +19,7 @@
 #include "nsAttrValueInlines.h"
 #include "nsCExternalHandlerService.h"
 #include "nsCOMPtr.h"
+#include "nsCRTGlue.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
 #include "nsDirectoryServiceDefs.h"

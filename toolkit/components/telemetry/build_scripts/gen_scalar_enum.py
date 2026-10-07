@@ -19,6 +19,7 @@ banner = """/* This file is auto-generated, see gen_scalar_enum.py.  */
 file_header = """\
 #ifndef mozilla_TelemetryScalarEnums_h
 #define mozilla_TelemetryScalarEnums_h
+#include <cstdint>
 namespace mozilla {
 namespace Telemetry {
 enum class ScalarID : uint32_t {\

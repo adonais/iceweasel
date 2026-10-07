@@ -56,7 +56,6 @@
 #  endif
 #  include <stdexcept>     // std::runtime_error
 #  include <string>        // std::string
-#  include <system_error>  // std::system_error
 
 // Checking FMT_CPLUSPLUS for warning suppression in MSVC.
 #  if FMT_HAS_INCLUDE(<bit>) && FMT_CPLUSPLUS > 201703L

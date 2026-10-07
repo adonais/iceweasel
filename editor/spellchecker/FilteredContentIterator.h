@@ -15,13 +15,13 @@
 
 class nsAtom;
 class nsINode;
-class nsRange;
 
 namespace mozilla {
 
 namespace dom {
 class AbstractRange;
-}
+class Range;
+}  // namespace dom
 
 class FilteredContentIterator final {
  public:
@@ -70,7 +70,7 @@ class FilteredContentIterator final {
   PreContentIterator mPreIterator;
 
   UniquePtr<nsComposeTxtSrvFilter> mFilter;
-  RefPtr<nsRange> mRange;
+  RefPtr<dom::Range> mRange;
   bool mDidSkip;
   bool mIsOutOfRange;
   eDirectionType mDirection;

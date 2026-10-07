@@ -2,17 +2,17 @@ This chapter describes the most common NSPR types. Other chapters
 describe more specialized types when describing the functions that use
 them.
 
-- [Calling Convention Types](#Calling_Convention_Types) are used for
+- [Calling Convention Types](#calling-convention-types) are used for
   externally visible functions and globals.
-- [Algebraic Types](#Algebraic_Types) of various lengths are used
+- [Algebraic Types](#algebraic-types) of various lengths are used
   for integer algebra.
-- [Miscellaneous Types](#Miscellaneous_Types) are used for
+- [Miscellaneous Types](#miscellaneous-types) are used for
   representing size, pointer difference, Boolean values, and return
   values.
 
 For information on naming conventions for NSPR types, functions, and
 macros, see [NSPR Naming
-Conventions](Introduction_to_NSPR#NSPR_Naming_Conventions).
+Conventions](introduction_to_nspr.md#nspr-naming-conventions).
 
 (calling-convention-types)=
 
@@ -62,14 +62,14 @@ NSPR provides the following type definitions with unambiguous bit widths
 for algebraic operations:
 
 - [8-, 16-, and 32-bit Integer
-  Types](#8-,_16-,_and_32-bit_Integer_Types)
+  Types](#8--16--and-32-bit-integer-types)
 - [64-bit Integer Types](#nspr-types-64-bit-integer-types)
-- [Floating-Point Number Type](#Floating-Point_Number_Type)
+- [Floating-Point Number Type](#floating-point-number-type)
 
 For convenience, NSPR also provides type definitions with
 platform-dependent bit widths:
 
-- [Native OS Integer Types](#Native_OS_Integer_Types)
+- [Native OS Integer Types](#native-os-integer-types)
 
 (c-16-2c-and-32-bit-integer-types)=
 
@@ -131,10 +131,10 @@ are never valid for fields of a structure.
 
 # Miscellaneous Types
 
-- [Size Type](#Size_Type)
-- [Pointer Difference Types](#Pointer_Difference_Types)
-- [Boolean Types](#Boolean_Types)
-- [Status Type for Return Values](#Status_Type_for_Return_Values)
+- [Size Type](#size-type)
+- [Pointer Difference Types](#pointer-difference-types)
+- [Boolean Types](#boolean-types)
+- [Status Type for Return Values](#status-type-for-return-values)
 
 (size-type)=
 

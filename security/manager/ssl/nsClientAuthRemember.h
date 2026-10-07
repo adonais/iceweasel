@@ -8,6 +8,7 @@
 
 #include "mozilla/DataMutex.h"
 #include "mozilla/ReentrantMonitor.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsIClientAuthRememberService.h"
 #include "nsIDataStorage.h"
 #include "nsIObserver.h"

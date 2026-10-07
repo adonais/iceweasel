@@ -6,6 +6,7 @@
 #define mozilla_ClearOnShutdown_h
 
 #include <functional>
+#include <source_location>
 
 #include "MainThreadUtils.h"
 #include "ShutdownPhase.h"
@@ -57,14 +58,20 @@ namespace ClearOnShutdown_Internal {
 
 class ShutdownObserver : public LinkedListElement<ShutdownObserver> {
  public:
+  explicit ShutdownObserver(const std::source_location& aLocation)
+      : mLocation(aLocation) {}
   virtual void Shutdown() = 0;
   virtual ~ShutdownObserver() = default;
+
+  // Where ClearOnShutdown or RunOnShutdown was called, for profile attribution.
+  const std::source_location mLocation;
 };
 
 template <class SmartPtr>
 class PointerClearer : public ShutdownObserver {
  public:
-  explicit PointerClearer(SmartPtr* aPtr) : mPtr(aPtr) {}
+  PointerClearer(SmartPtr* aPtr, const std::source_location& aLocation)
+      : ShutdownObserver(aLocation), mPtr(aPtr) {}
 
   virtual void Shutdown() override {
     if (mPtr) {
@@ -79,8 +86,9 @@ class PointerClearer : public ShutdownObserver {
 class FunctionInvoker : public ShutdownObserver {
  public:
   template <typename CallableT>
-  explicit FunctionInvoker(CallableT&& aCallable)
-      : mCallable(std::forward<CallableT>(aCallable)) {}
+  FunctionInvoker(CallableT&& aCallable, const std::source_location& aLocation)
+      : ShutdownObserver(aLocation),
+        mCallable(std::forward<CallableT>(aCallable)) {}
 
   virtual void Shutdown() override {
     if (!mCallable) {
@@ -107,26 +115,29 @@ extern ShutdownPhase sCurrentClearOnShutdownPhase;
 
 template <class SmartPtr>
 inline void ClearOnShutdown(
-    SmartPtr* aPtr, ShutdownPhase aPhase = ShutdownPhase::XPCOMShutdownFinal) {
+    SmartPtr* aPtr, ShutdownPhase aPhase = ShutdownPhase::XPCOMShutdownFinal,
+    const std::source_location& aLocation = std::source_location::current()) {
   using namespace ClearOnShutdown_Internal;
 
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aPhase != ShutdownPhase::ShutdownPhase_Length);
 
-  InsertIntoShutdownList(new PointerClearer<SmartPtr>(aPtr), aPhase);
+  InsertIntoShutdownList(new PointerClearer<SmartPtr>(aPtr, aLocation), aPhase);
 }
 
 template <typename CallableT>
 inline void RunOnShutdown(
     CallableT&& aCallable,
-    ShutdownPhase aPhase = ShutdownPhase::XPCOMShutdownFinal) {
+    ShutdownPhase aPhase = ShutdownPhase::XPCOMShutdownFinal,
+    const std::source_location& aLocation = std::source_location::current()) {
   using namespace ClearOnShutdown_Internal;
 
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aPhase != ShutdownPhase::ShutdownPhase_Length);
 
   InsertIntoShutdownList(
-      new FunctionInvoker(std::forward<CallableT>(aCallable)), aPhase);
+      new FunctionInvoker(std::forward<CallableT>(aCallable), aLocation),
+      aPhase);
 }
 
 inline bool PastShutdownPhase(ShutdownPhase aPhase) {

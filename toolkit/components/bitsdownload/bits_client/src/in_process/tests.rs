@@ -397,6 +397,69 @@ test! {
 }
 
 test! {
+    fn monitor_keeps_one_connection(name: &str, tmp_dir: &TempDir) {
+        let file_path = tmp_dir.path().join(name);
+
+        let mut server = mock_http_server(name, HttpServerResponses {
+            body: name.to_owned().into_boxed_str().into_boxed_bytes(),
+            delay: 500,
+        });
+
+        let mut client = InProcessClient::new(format_job_name(name), format_dir_prefix(tmp_dir)).unwrap();
+
+        let no_progress_timeout_secs = 60;
+        let interval = 100;
+        let timeout = 10_000;
+
+        let (StartJobSuccess { guid }, mut monitor) =
+            client.start_job(
+                server.format_url(name),
+                name.into(),
+                BitsProxyUsage::Preconfig,
+                no_progress_timeout_secs,
+                interval,
+                "\r\n".into(),
+                ).unwrap();
+
+        let start = Instant::now();
+
+        // The connection obtained by the first poll must serve every following one and be
+        // released once the job reaches a final state.
+        let mut first: Option<BackgroundCopyManager> = None;
+        let mut polls = 0;
+        loop {
+            let status = monitor.get_status(timeout).expect("monitor should stay connected").unwrap();
+            match BitsJobState::from(status.state) {
+                BitsJobState::Queued | BitsJobState::Connecting | BitsJobState::Transferring => {
+                    let kept = &monitor.connection.as_ref().expect("connection kept between polls").bcm;
+                    match &first {
+                        Some(first) => assert!(first.ptr_eq(kept), "monitor reconnected"),
+                        None => first = Some((**kept).clone()),
+                    }
+                    polls += 1;
+                }
+                BitsJobState::Transferred => {
+                    assert!(monitor.connection.is_none(), "connection kept past the final state");
+                    break;
+                }
+                state => panic!("{:?}", state),
+            }
+
+            // Timeout to prevent waiting forever
+            assert!(start.elapsed() < Duration::from_millis(60_000));
+        }
+        assert!(polls > 1, "transfer finished before a second poll could reuse the connection");
+
+        client.complete_job(guid).unwrap();
+
+        let _ = fs::remove_file(file_path);
+
+        // Save this for last to ensure the file is removed.
+        server.shutdown();
+    }
+}
+
+test! {
     fn async_transferred_notification(name: &str, tmp_dir: &TempDir) {
         let mut server = mock_http_server(name, HttpServerResponses {
             body: name.to_owned().into_boxed_str().into_boxed_bytes(),

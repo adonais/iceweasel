@@ -1,0 +1,21 @@
+[DEFAULT]
+prefs = [
+  "browser.newtabpage.enabled=false",
+  "browser.newtabpage.activity-stream.widgets.pictureOfTheDay.enabled=false",
+  "browser.ml.enable=true",
+  "browser.search.suggest.enabled=false",
+  # Contextual embeddings are only selected on mac and Windows; Linux stays on
+  # static embeddings regardless of this pref.
+  "places.semanticHistory.embeddingType=contextual",
+  "browser.urlbar.quicksuggest.enabled=true",
+  "browser.urlbar.suggest.quicksuggest.all=true",
+  "browser.urlbar.suggest.quicksuggest.sponsored=true",
+  "browser.urlbar.yelp.featureGate=true",
+  "browser.urlbar.yelp.mlEnabled=true",
+]
+
+["browser_quicksuggest_ml_perf.js"]
+disabled = "Disabled since we want to run this only as perftest, not in regular CI."
+
+["browser_urlbar_semantic_history_perf.js"]
+disabled = "Disabled since we want to run this only as perftest, not in regular CI."

@@ -1,0 +1,101 @@
+From 929d5f84f439c5252f9bea524ea3ae8ad134533a Mon Sep 17 00:00:00 2001
+From: Ryan VanderMeulen <rvandermeulen@mozilla.com>
+Date: Mon, 27 Jul 2026 08:59:54 -0400
+Subject: [PATCH 7/7] Avoid exceptions in the standalone model_package library
+
+v1.28.0 adds a top-level model_package static library that ORT links into
+onnxruntime_session. It deliberately has no ORT dependency, so the ORT_TRY /
+ORT_CATCH macros are unavailable, and its four raw try/catch blocks break the
+--disable_exceptions build.
+
+Use the non-throwing forms instead: nlohmann's parse(..., allow_exceptions =
+false) with an is_discarded() check, and std::from_chars for the digits-only
+schema_version parse. This also avoids nlohmann aborting the process on
+malformed JSON, which is what its throwing parse would do once it detects
+-fno-exceptions.
+---
+ model_package/src/authoring.cc       |  7 +++----
+ model_package/src/manifest_parser.cc | 24 +++++++++---------------
+ 2 files changed, 12 insertions(+), 19 deletions(-)
+
+diff --git a/model_package/src/authoring.cc b/model_package/src/authoring.cc
+index 4c7a9e9..2af5650 100644
+--- a/model_package/src/authoring.cc
++++ b/model_package/src/authoring.cc
+@@ -37,11 +37,10 @@ ModelPackageStatus* NullArg(const char* name) {
+ }
+ 
+ ModelPackageStatus* ParseJsonString(const char* json, const char* where, ordered_json* out) {
+-  try {
+-    *out = ordered_json::parse(json);
+-  } catch (const ordered_json::parse_error& e) {
++  *out = ordered_json::parse(json, nullptr, /*allow_exceptions*/ false);
++  if (out->is_discarded()) {
+     return MakeStatus(MODEL_PACKAGE_ERR_SCHEMA,
+-                      std::string(where) + ": JSON parse error: " + e.what());
++                      std::string(where) + ": JSON parse error.");
+   }
+   return nullptr;
+ }
+diff --git a/model_package/src/manifest_parser.cc b/model_package/src/manifest_parser.cc
+index 2aff63e..c08bbad 100644
+--- a/model_package/src/manifest_parser.cc
++++ b/model_package/src/manifest_parser.cc
+@@ -6,6 +6,7 @@
+ #include <algorithm>
+ #include <array>
+ #include <cerrno>
++#include <charconv>
+ #include <cstring>
+ #include <fstream>
+ #include <set>
+@@ -99,11 +100,10 @@ ModelPackageStatus* ReadFileToString(const fs::path& path, std::string* out) {
+ ModelPackageStatus* ParseJsonFile(const fs::path& path, ordered_json* out) {
+   std::string contents;
+   if (auto* s = ReadFileToString(path, &contents)) return s;
+-  try {
+-    *out = ordered_json::parse(contents);
+-  } catch (const ordered_json::parse_error& e) {
++  *out = ordered_json::parse(contents, nullptr, /*allow_exceptions*/ false);
++  if (out->is_discarded()) {
+     return MakeStatus(MODEL_PACKAGE_ERR_SCHEMA,
+-                      "Failed to parse JSON at '" + path.string() + "': " + e.what());
++                      "Failed to parse JSON at '" + path.string() + "'.");
+   }
+   return nullptr;
+ }
+@@ -450,12 +450,9 @@ ModelPackageStatus* ParseSchemaVersion(ModelPackage* pkg) {
+     const std::string minor_str = (dot == std::string::npos) ? std::string("0") : sv.substr(dot + 1);
+     auto parse_part = [](const std::string& s, int64_t* out) -> bool {
+       if (s.empty() || s.find_first_not_of("0123456789") != std::string::npos) return false;
+-      try {
+-        *out = std::stoll(s);
+-      } catch (const std::exception&) {
+-        return false;
+-      }
+-      return true;
++      const char* const end = s.data() + s.size();
++      const auto res = std::from_chars(s.data(), end, *out);
++      return res.ec == std::errc{} && res.ptr == end;
+     };
+     if (dot != std::string::npos && minor_str.find('.') != std::string::npos) {
+       return MakeStatus(MODEL_PACKAGE_ERR_SCHEMA,
+@@ -628,13 +625,10 @@ ModelPackageStatus* ResolveExecutorInfoEntry(const ModelPackage* pkg,
+     std::ostringstream buf;
+     buf << f.rdbuf();
+     std::string contents = buf.str();
+-    try {
+-      auto _ = ordered_json::parse(contents);
+-      (void)_;
+-    } catch (const std::exception& e) {
++    if (ordered_json::parse(contents, nullptr, /*allow_exceptions*/ false).is_discarded()) {
+       return MakeStatus(MODEL_PACKAGE_ERR_SCHEMA,
+                         std::string("Failed to parse executor_info JSON at '") +
+-                            resolved.string() + "': " + e.what());
++                            resolved.string() + "'.");
+     }
+     *dst_json = std::move(contents);
+     return nullptr;
+-- 
+2.55.0
+

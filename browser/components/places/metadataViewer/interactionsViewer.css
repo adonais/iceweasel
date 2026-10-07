@@ -12,14 +12,8 @@ body {
   display: none;
 }
 
-.message-bar {
+#enabledWarning {
   flex: 0 0 100%;
-}
-
-.message-bar-icon {
-  vertical-align: middle;
-  -moz-context-properties: fill;
-  fill: #ffbf00;
 }
 
 #categories {

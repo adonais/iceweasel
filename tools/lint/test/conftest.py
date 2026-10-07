@@ -254,7 +254,8 @@ def create_temp_file(tmpdir):
     def inner(contents, name=None):
         name = name or "temp.py"
         path = tmpdir.join(name)
-        path.write(contents)
+        with open(path.strpath, "w", newline="\n") as fh:
+            fh.write(contents)
         return path.strpath
 
     return inner

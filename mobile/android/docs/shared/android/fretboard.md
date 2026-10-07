@@ -4,7 +4,7 @@ This getting started guide is designed to introduce you to adding A/B experiment
 
 - [What is Fretboard](#what-is-fretboard)
 - [Integrating Fretboard Into A Project](#integrating-fretboard-into-a-project)
-- [Setting Up An Experiment Source](#experiment-source)
+- [Setting Up An Experiment Source](#setting-up-an-experiment-source)
 - [Synchronizing Experiments from the Source](#synchronizing-experiments-from-the-source)
 - [Experiment Filters](#experiment-filters)
 - [Experiment Overrides](#experiment-overrides)

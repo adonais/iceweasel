@@ -129,7 +129,7 @@ class Shmem final {
   }
 
   template <typename T>
-  Range<T> Range() const {
+  mozilla::Range<T> Range() const {
     return {get<T>(), Size<T>()};
   }
 

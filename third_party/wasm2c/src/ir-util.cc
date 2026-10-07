@@ -104,6 +104,9 @@ ModuleContext::Arities ModuleContext::GetExprArity(const Expr& expr) const {
     case ExprType::TableGrow:
       return {2, 1};
 
+    case ExprType::Quaternary:
+      return {4, 2};
+
     case ExprType::AtomicStore:
     case ExprType::Store:
     case ExprType::TableSet:
@@ -117,6 +120,16 @@ ModuleContext::Arities ModuleContext::GetExprArity(const Expr& expr) const {
 
     case ExprType::BrIf: {
       Index arity = GetLabelArity(cast<BrIfExpr>(&expr)->var);
+      return {arity + 1, arity};
+    }
+
+    case ExprType::BrOnNonNull: {
+      Index arity = GetLabelArity(cast<BrOnNonNullExpr>(&expr)->var);
+      return {arity + 1, arity};
+    }
+
+    case ExprType::BrOnNull: {
+      Index arity = GetLabelArity(cast<BrOnNullExpr>(&expr)->var);
       return {arity + 1, arity};
     }
 
@@ -140,7 +153,7 @@ ModuleContext::Arities ModuleContext::GetExprArity(const Expr& expr) const {
     }
 
     case ExprType::CallRef: {
-      const Var& var = cast<CallRefExpr>(&expr)->function_type_index;
+      const Var& var = cast<CallRefExpr>(&expr)->sig_type;
       return {GetFuncParamCount(var) + 1, GetFuncResultCount(var)};
     }
 
@@ -148,6 +161,11 @@ ModuleContext::Arities ModuleContext::GetExprArity(const Expr& expr) const {
       const auto* rci_expr = cast<ReturnCallIndirectExpr>(&expr);
       return {rci_expr->decl.GetNumParams() + 1, rci_expr->decl.GetNumResults(),
               true};
+    }
+
+    case ExprType::ReturnCallRef: {
+      const Var& var = cast<CallRefExpr>(&expr)->sig_type;
+      return {GetFuncParamCount(var) + 1, GetFuncResultCount(var), true};
     }
 
     case ExprType::Const:
@@ -186,6 +204,7 @@ ModuleContext::Arities ModuleContext::GetExprArity(const Expr& expr) const {
     case ExprType::RefIsNull:
     case ExprType::LoadSplat:
     case ExprType::LoadZero:
+    case ExprType::RefAsNonNull:
       return {1, 1};
 
     case ExprType::Drop:
@@ -223,8 +242,15 @@ ModuleContext::Arities ModuleContext::GetExprArity(const Expr& expr) const {
       return {operand_count, 0, true};
     }
 
+    case ExprType::ThrowRef: {
+      return {1, 1, true};
+    }
+
     case ExprType::Try:
       return {0, cast<TryExpr>(&expr)->block.decl.sig.GetNumResults()};
+
+    case ExprType::TryTable:
+      return {0, cast<TryTableExpr>(&expr)->block.decl.sig.GetNumResults()};
 
     case ExprType::Ternary:
       return {3, 1};
@@ -259,9 +285,10 @@ ModuleContext::Arities ModuleContext::GetExprArity(const Expr& expr) const {
     }
 
     case ExprType::SimdLoadLane:
-    case ExprType::SimdStoreLane: {
       return {2, 1};
-    }
+
+    case ExprType::SimdStoreLane:
+      return {2, 0};
 
     case ExprType::SimdShuffleOp:
       return {2, 1};

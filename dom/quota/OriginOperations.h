@@ -25,6 +25,7 @@ class OriginAttributesPattern;
 namespace dom::quota {
 
 struct ClientMetadata;
+class EstimateGroupUsageParams;
 class EstimateParams;
 class GetFullOriginMetadataParams;
 class NormalOriginOperationBase;
@@ -184,6 +185,10 @@ RefPtr<QuotaRequestBase> CreatePersistOp(
 RefPtr<QuotaRequestBase> CreateEstimateOp(
     MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
     const EstimateParams& aParams);
+
+RefPtr<QuotaRequestBase> CreateEstimateGroupUsageOp(
+    MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
+    const EstimateGroupUsageParams& aParams);
 
 RefPtr<ResolvableNormalOriginOp<CStringArray, /* IsExclusive */ true>>
 CreateListOriginsOp(MovingNotNull<RefPtr<QuotaManager>> aQuotaManager);

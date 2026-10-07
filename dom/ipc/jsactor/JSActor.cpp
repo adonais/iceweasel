@@ -26,25 +26,22 @@
 
 namespace mozilla::dom {
 
-struct JSActorMessageMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("JSActorMessage");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   const ProfilerString8View& aActorName,
-                                   const ProfilerString16View& aMessageName) {
-    aWriter.StringProperty("actor", aActorName);
-    aWriter.StringProperty("name", NS_ConvertUTF16toUTF8(aMessageName));
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormat("actor", "Actor Name", MS::Format::String);
-    schema.AddKeyLabelFormat("name", "Message Name", MS::Format::String);
-    schema.SetTooltipLabel("JSActor - {marker.name}");
-    schema.SetTableLabel("[{marker.data.actor}] {marker.data.name}");
-    return schema;
-  }
+struct JSActorMessageMarker : public BaseMarkerType<JSActorMessageMarker> {
+  static constexpr const char* Name = "JSActorMessage";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"actor", MS::InputType::CString, "Actor Name"},
+      {"name", MS::InputType::String, "Message Name"},
+  };
+  static constexpr const char* TooltipLabel = "JSActor - {marker.name}";
+  static constexpr const char* TableLabel =
+      "[{marker.data.actor}] {marker.data.name}";
+  // The name distinguishes the send/receive direction and the message kind.
+  static constexpr bool ETWStoreName = true;
 };
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(JSActor)

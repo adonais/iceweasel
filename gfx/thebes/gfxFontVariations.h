@@ -5,11 +5,14 @@
 #ifndef GFX_FONT_VARIATIONS_H
 #define GFX_FONT_VARIATIONS_H
 
-#include "mozilla/gfx/FontVariation.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "nsString.h"
 #include "nsTArray.h"
 
-typedef mozilla::gfx::FontVariation gfxFontVariation;
+// An OpenType variation tag and value pair, shared with the style system
+// (font-variation-settings). Note that this is layout-compatible with, but
+// distinct from, mozilla::gfx::FontVariation used by the Moz2D API.
+using gfxFontVariation = mozilla::StyleVariationValue<float>;
 
 // Structure that describes a single axis of variation in an
 // OpenType Variation or Multiple-Master font.

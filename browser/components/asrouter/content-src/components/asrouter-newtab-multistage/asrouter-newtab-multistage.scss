@@ -51,6 +51,18 @@ $split-screen-min-height: 280px;
   min-width: var(--size-layout-large);
   margin-inline: auto;
 
+  // The card stack should be as wide as the rest of the New Tab content
+  // (such as the search bar), so it stays in sync across breakpoints
+  &:has(.screen[pos='card-stack']) {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+
+    @media only screen and (width <= 890px) and (width >= 788px) {
+      width: 80%;
+    }
+  }
+
   > moz-button {
     position: absolute;
     inset-block-start: var(--space-medium);

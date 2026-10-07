@@ -11,7 +11,11 @@ const sandbox = sinon.createSandbox();
 add_setup(async function () {
   await ASRouter.resetMessageState();
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.promo.pin.enabled", true]],
+    set: [
+      ["browser.promo.pin.enabled", true],
+      ["browser.privateWindowRedesign.enabled", false],
+      ["browser.nova.enabled", false],
+    ],
   });
   await ASRouter.onPrefChange();
   // Stub out the doesAppNeedPin to true so that Pin Promo targeting evaluates true

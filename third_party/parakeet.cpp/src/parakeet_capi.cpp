@@ -31,7 +31,13 @@
 //     Added stream_drain_events / free_events (typed per-event records) and
 //     the "events" array in the stream_feed_json / stream_finalize_json
 //     documents.
-#define PARAKEET_CAPI_ABI_VERSION 5
+// v6: parakeet_capi_stream_chunk_samples, the audio one encoder chunk spans.
+//     Additive.
+// v7: parakeet_capi_stream_has_eou / parakeet_capi_stream_blank_seconds /
+//     parakeet_capi_stream_end_utterance, for a host that has to decide
+//     utterance boundaries itself on a model whose vocab has no <EOU> piece.
+//     Additive.
+#define PARAKEET_CAPI_ABI_VERSION 7
 
 // The opaque context: a loaded model plus a buffer for the last error message.
 struct parakeet_ctx {
@@ -223,6 +229,11 @@ extern "C" parakeet_ctx* parakeet_capi_load(const char* gguf_path) {
         // Never let an exception cross the boundary.
         return nullptr;
     }
+}
+
+extern "C" size_t parakeet_capi_weights_bytes(const parakeet_ctx* ctx) {
+    if (!ctx || !ctx->model) return 0;
+    return ctx->model->weights_bytes();
 }
 
 // Firefox-local: load from an already-open fd (sandboxed host).
@@ -546,6 +557,32 @@ extern "C" parakeet_stream* parakeet_capi_stream_begin_lang(parakeet_ctx* ctx,
     }
 }
 
+extern "C" int parakeet_capi_stream_has_eou(parakeet_stream* s) {
+    if (!s || !s->sess) return -1;
+    return s->sess->has_eou() ? 1 : 0;
+}
+
+extern "C" double parakeet_capi_stream_blank_seconds(parakeet_stream* s) {
+    if (!s || !s->sess) return -1.0;
+    return s->sess->blank_seconds();
+}
+
+extern "C" char* parakeet_capi_stream_end_utterance(parakeet_stream* s) {
+    if (!s || !s->sess) return nullptr;
+    if (!s->ctx || !s->ctx->model) return nullptr;
+    try {
+        std::string delta = s->sess->end_utterance();
+        s->ctx->last_error.clear();
+        char* out = dup_to_c(delta);
+        if (!out) { s->ctx->last_error = "out of memory"; return nullptr; }
+        return out;
+    } catch (const std::exception& e) {
+        s->ctx->last_error = e.what(); return nullptr;
+    } catch (...) {
+        s->ctx->last_error = "unknown error"; return nullptr;
+    }
+}
+
 extern "C" parakeet_stream* parakeet_capi_stream_begin(parakeet_ctx* ctx) {
     // Delegate with the model default language.
     return parakeet_capi_stream_begin_lang(ctx, nullptr);
@@ -614,6 +651,14 @@ extern "C" char* parakeet_capi_stream_finalize(parakeet_stream* s) {
         s->ctx->last_error = "unknown error";
         return nullptr;
     }
+}
+
+extern "C" int parakeet_capi_stream_chunk_samples(parakeet_stream* s) {
+    if (!s || !s->sess) return -1;
+    if (!s->ctx || !s->ctx->model) return -1;
+    // A mid-stream chunk is chunk_size() mel frames, each hop_length samples of
+    // audio (the first one is chunk_size_first(), which is smaller).
+    return s->sess->chunk_size() * (int)s->ctx->model->config().hop_length;
 }
 
 extern "C" int parakeet_capi_stream_drain_events(parakeet_stream* s,

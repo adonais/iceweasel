@@ -24,3 +24,8 @@ DevToolsModules(
     "sort-utils.js",
     "tooltips.js",
 )
+
+LICENSED_UNDER += ["google-bsd"]
+LICENSED_UNDER["google-bsd"].paths = [
+    "filter-text-utils.js",
+]

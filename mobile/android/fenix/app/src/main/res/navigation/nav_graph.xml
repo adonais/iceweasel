@@ -58,11 +58,6 @@
         app:launchSingleTop="true" />
 
     <action
-      android:id="@+id/action_global_ip_protection_dialog"
-      app:destination="@+id/ipProtectionOnboardingDialogFragment"
-      app:launchSingleTop="true" />
-
-    <action
       android:id="@+id/action_global_ip_protection_unavailable_dialog"
       app:destination="@+id/ipProtectionUnavailableDialogFragment"
       app:launchSingleTop="true" />
@@ -191,7 +186,7 @@
         app:destination="@id/tabsSettingsFragment" />
     <action
         android:id="@+id/action_global_menuDialogFragment"
-        app:destination="@id/menu_graph" />
+        app:destination="@id/menu_dialog_graph" />
     <action
         android:id="@+id/action_global_trustPanelFragment"
         app:destination="@id/trust_panel_graph" />
@@ -237,6 +232,14 @@
             android:id="@+id/action_tabManagementFragment_to_global_protections_dashboard"
             app:destination="@id/global_protections_dashboard" />
     </fragment>
+
+    <dialog
+        android:id="@+id/tabGroupFlowFragment"
+        android:name="org.mozilla.fenix.tabgroups.flow.TabGroupFlowFragment">
+        <argument
+            android:name="entryPoint"
+            app:argType="org.mozilla.fenix.tabgroups.flow.TabGroupFlowEntryPoint" />
+    </dialog>
 
     <fragment
         android:id="@+id/startupFragment"
@@ -367,9 +370,6 @@
     <dialog
         android:id="@+id/ipProtectionOnboardingDialogFragment"
         android:name="org.mozilla.fenix.ipprotection.ui.IPProtectionBottomSheetFragment">
-        <action
-           android:id="@+id/action_ipProtectionOnboardingDialogFragment_to_ipProtectionFragment"
-           app:destination="@id/ipProtectionFragment" />
         <argument
             android:name="surface"
             app:argType="org.mozilla.fenix.ipprotection.store.Surface"
@@ -437,6 +437,9 @@
             app:popUpTo="@id/storiesFragment"
             app:popUpToInclusive="false"
             app:launchSingleTop="true" />
+        <action
+          android:id="@+id/action_browserFragment_to_menuFragment"
+          app:destination="@id/menu_graph" />
     </fragment>
 
     <fragment
@@ -1767,7 +1770,7 @@
     </navigation>
 
     <navigation
-        android:id="@+id/menu_graph"
+        android:id="@+id/menu_dialog_graph"
         app:startDestination="@id/menuDialogFragment">
         <argument
             android:name="accesspoint"
@@ -1826,8 +1829,36 @@
             <action
                 android:id="@+id/action_menuDialogFragment_to_ipProtectionFragment"
                 app:destination="@id/ipProtectionFragment" />
+            <action
+                android:id="@+id/action_menuDialogFragment_to_tabGroupFlowFragment"
+                app:destination="@id/tabGroupFlowFragment" />
         </dialog>
     </navigation>
+
+  <navigation
+    android:id="@+id/menu_graph"
+    app:startDestination="@id/menuFragment">
+    <dialog
+      android:id="@+id/menuFragment"
+      android:name="org.mozilla.fenix.components.menu.MenuFragment">
+
+      <action
+        android:id="@+id/action_menuFragment_to_translationsDialogFragment"
+        app:destination="@id/translationsDialogFragment" />
+
+      <action
+        android:id="@+id/action_menuFragment_to_summarizationFragment"
+        app:destination="@id/summarizationFragment" />
+
+      <action
+        android:id="@+id/action_menuFragment_to_webCompatReporterFragment"
+        app:destination="@id/webCompatReporterFragment" />
+
+      <action
+        android:id="@+id/action_menuFragment_to_createShortcutFragment"
+        app:destination="@id/createShortcutFragment" />
+    </dialog>
+  </navigation>
 
     <navigation
         android:id="@+id/trust_panel_graph"

@@ -64,7 +64,8 @@ Assembler::Assembler(const Environment& env,
                                   &nack_periodic_processor_,
                                   /*complete_frame_callback=*/this,
                                   /*frame_decryptor=*/nullptr,
-                                  /*frame_transformer=*/nullptr),
+                                  /*frame_transformer=*/nullptr,
+                                  /*on_first_packet=*/nullptr),
       observer_(*observer),
       assembled_frame_cb_(*assembled_frame_cb) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);

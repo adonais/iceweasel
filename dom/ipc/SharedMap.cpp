@@ -208,7 +208,7 @@ Result<Ok, nsresult> SharedMap::MaybeRebuild() {
   }
   mHandle = nullptr;
 
-  Range<const uint8_t> inputRange(mMapping.DataAsSpan<uint8_t>());
+  mozilla::Range<const uint8_t> inputRange(mMapping.DataAsSpan<uint8_t>());
   InputBuffer buffer(inputRange);
 
   uint32_t count;

@@ -9,8 +9,8 @@ dupe-manifest = true
 tags = "condprof"
 # GeckoView overwrites cookieBehavior 0 preferences in ContentBlocking.java.
 # Therefore we need to skip these tests on android.
-skip-if = [
-  "os == 'android'",
+run-if = [
+  "os != 'android'",
 ]
 
 ["include:mochitest-common.toml"]

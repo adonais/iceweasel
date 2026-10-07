@@ -13,8 +13,8 @@ namespace mozilla {
 // generate 1k sine wave per second
 template <typename Sample>
 class SineWaveGenerator {
-  static_assert(std::is_same<Sample, int16_t>::value ||
-                std::is_same<Sample, float>::value);
+  static_assert(std::is_same_v<Sample, int16_t> ||
+                std::is_same_v<Sample, float>);
 
  public:
   static const int bytesPerSample = sizeof(Sample);
@@ -42,7 +42,7 @@ class SineWaveGenerator {
 
   static float Amplitude() {
     // Set volume to -20db.
-    if (std::is_same<Sample, int16_t>::value) {
+    if (std::is_same_v<Sample, int16_t>) {
       return 3276.8;  // 32768.0 * 10^(-20/20) = 3276.8
     }
     return 0.1f;  // 1.0 * 10^(-20/20) = 0.1

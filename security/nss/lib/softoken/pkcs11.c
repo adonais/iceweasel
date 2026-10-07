@@ -4629,11 +4629,24 @@ NSC_InitToken(CK_SLOT_ID slotID, CK_CHAR_PTR pPin,
              * because we know that we are freeing all the sessions, we can
              * do more efficient processing */
             if (object) {
+                SFTKSessionObject *so = sftk_narrowToSessionObject(object);
+
                 slot->sessObjHashTable[i] = object->next;
 
                 if (object->next)
                     object->next->prev = NULL;
                 object->next = object->prev = NULL;
+                /* Keep the two queues in agreement: sftk_ClearSession()
+                 * relies on an object being on a session's list only while it
+                 * is still in the slot hash. Leaving it linked would let that
+                 * walk touch this object after we drop the queues' reference
+                 * below. */
+                if (so && so->session) {
+                    PORT_Assert(sftkqueue_is_queued(&so->sessionList, 0,
+                                                    so->session->objects, 0));
+                    sftkqueue_delete(&so->sessionList, 0,
+                                     so->session->objects, 0);
+                }
             }
             if (object)
                 sftk_FreeObject(object);
@@ -4949,7 +4962,7 @@ NSC_CloseSession(CK_SESSION_HANDLE hSession)
         sftkqueue_delete(session, hSession, slot->head, slot->sessHashSize);
         /* Drop the bucket's reference. We still hold the reference taken
          * by sftk_SessionFromHandle, so refCount cannot reach 0 here. */
-        PORT_Assert(session->refCount > 1);
+        PORT_ReleaseAssert(session->refCount > 1);
         session->refCount--;
     }
     PR_Unlock(lock);

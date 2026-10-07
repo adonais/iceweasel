@@ -96,7 +96,7 @@ add_task(async () => {
   }, Cr.NS_ERROR_NOT_AVAILABLE);
 
   do_check_throws(function () {
-    Services.cookies.countCookiesFromHost("foo.com");
+    Services.cookies.countCookiesFromHost("foo.com", {});
   }, Cr.NS_ERROR_NOT_AVAILABLE);
 
   do_check_throws(function () {

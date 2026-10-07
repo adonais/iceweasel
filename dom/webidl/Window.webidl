@@ -396,6 +396,10 @@ dictionary SynthesizeMouseEventData : SynthesizeEventData {
   short inputSource = 1;
   // Modifiers pressed, using constants defined as MODIFIER_* in nsIDOMWindowUtils.
   long modifiers = 0;
+  // Raw movement delta, standing in for the raw delta a platform widget
+  // reports while the native pointer is locked. Must be specified together.
+  long movementX;
+  long movementY;
 };
 
 // Mozilla-specific stuff

@@ -7,9 +7,10 @@
 #include "AnnexB.h"
 #include "H264.h"
 #include "ImageContainer.h"
+#include "ImageConversion.h"
 #include "MediaData.h"
 #include "MediaInfo.h"
-#include "libyuv/convert_from.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/Logging.h"
 #include "nsThreadUtils.h"
 
@@ -57,6 +58,71 @@ static const char* MimeTypeOf(CodecType aCodec) {
   }
 }
 
+static int32_t ToAndroidAVCProfile(H264_PROFILE aProfile) {
+  using CodecProfileLevel = java::sdk::MediaCodecInfo::CodecProfileLevel;
+  switch (aProfile) {
+    case H264_PROFILE_BASE:
+      return CodecProfileLevel::AVCProfileBaseline;
+    case H264_PROFILE_MAIN:
+      return CodecProfileLevel::AVCProfileMain;
+    case H264_PROFILE_EXTENDED:
+      return CodecProfileLevel::AVCProfileExtended;
+    case H264_PROFILE_HIGH:
+      return CodecProfileLevel::AVCProfileHigh;
+    case H264_PROFILE_UNKNOWN:
+      break;
+  }
+  return 0;
+}
+
+static int32_t ToAndroidAVCLevel(H264_LEVEL aLevel) {
+  using CodecProfileLevel = java::sdk::MediaCodecInfo::CodecProfileLevel;
+  switch (aLevel) {
+    case H264_LEVEL::H264_LEVEL_1:
+      return CodecProfileLevel::AVCLevel1;
+    case H264_LEVEL::H264_LEVEL_1_1:
+      // H264_LEVEL_1_b has the same value as H264_LEVEL_1_1, while
+      // AVCLevel1b and AVCLevel11 differ. Since we can't tell the
+      // difference, we just ignore the 1_b case.
+      return CodecProfileLevel::AVCLevel11;
+    case H264_LEVEL::H264_LEVEL_1_2:
+      return CodecProfileLevel::AVCLevel12;
+    case H264_LEVEL::H264_LEVEL_1_3:
+      return CodecProfileLevel::AVCLevel13;
+    case H264_LEVEL::H264_LEVEL_2:
+      return CodecProfileLevel::AVCLevel2;
+    case H264_LEVEL::H264_LEVEL_2_1:
+      return CodecProfileLevel::AVCLevel21;
+    case H264_LEVEL::H264_LEVEL_2_2:
+      return CodecProfileLevel::AVCLevel22;
+    case H264_LEVEL::H264_LEVEL_3:
+      return CodecProfileLevel::AVCLevel3;
+    case H264_LEVEL::H264_LEVEL_3_1:
+      return CodecProfileLevel::AVCLevel31;
+    case H264_LEVEL::H264_LEVEL_3_2:
+      return CodecProfileLevel::AVCLevel32;
+    case H264_LEVEL::H264_LEVEL_4:
+      return CodecProfileLevel::AVCLevel4;
+    case H264_LEVEL::H264_LEVEL_4_1:
+      return CodecProfileLevel::AVCLevel41;
+    case H264_LEVEL::H264_LEVEL_4_2:
+      return CodecProfileLevel::AVCLevel42;
+    case H264_LEVEL::H264_LEVEL_5:
+      return CodecProfileLevel::AVCLevel5;
+    case H264_LEVEL::H264_LEVEL_5_1:
+      return CodecProfileLevel::AVCLevel51;
+    case H264_LEVEL::H264_LEVEL_5_2:
+      return CodecProfileLevel::AVCLevel52;
+    case H264_LEVEL::H264_LEVEL_6:
+      return CodecProfileLevel::AVCLevel6;
+    case H264_LEVEL::H264_LEVEL_6_1:
+      return CodecProfileLevel::AVCLevel61;
+    case H264_LEVEL::H264_LEVEL_6_2:
+      return CodecProfileLevel::AVCLevel62;
+  }
+  return 0;
+}
+
 using FormatResult = Result<java::sdk::MediaFormat::LocalRef, MediaResult>;
 
 FormatResult ToMediaFormat(const EncoderConfig& aConfig) {
@@ -100,6 +166,23 @@ FormatResult ToMediaFormat(const EncoderConfig& aConfig) {
   NS_ENSURE_SUCCESS(rv,
                     FormatResult(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                                              "fail to set I-frame interval")));
+
+  if (aConfig.mCodec == CodecType::H264 &&
+      aConfig.mCodecSpecific.is<H264Specific>()) {
+    const auto& h264 = aConfig.mCodecSpecific.as<H264Specific>();
+    if (int32_t profile = ToAndroidAVCProfile(h264.mProfile)) {
+      rv = format->SetInteger(java::sdk::MediaFormat::KEY_PROFILE, profile);
+      NS_ENSURE_SUCCESS(rv,
+                        FormatResult(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                                                 "fail to set profile")));
+    }
+    if (int32_t level = ToAndroidAVCLevel(h264.mLevel)) {
+      rv = format->SetInteger(java::sdk::MediaFormat::KEY_LEVEL, level);
+      NS_ENSURE_SUCCESS(rv,
+                        FormatResult(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                                                 "fail to set level")));
+    }
+  }
 
   return format;
 }
@@ -176,38 +259,59 @@ RefPtr<MediaDataEncoder::EncodePromise> AndroidDataEncoder::Encode(
                      });
 }
 
-static jni::ByteBuffer::LocalRef ConvertI420ToNV12Buffer(
+static decltype(auto) CeilingOfHalf(decltype(gfx::IntSize::width) aValue) {
+  MOZ_ASSERT(aValue >= 0);
+  return aValue - aValue / 2;
+}
+
+// Convert the sample into the NV12 layout the codec was configured for,
+// scaling it when its size differs from aDestSize.
+static Result<jni::ByteBuffer::LocalRef, MediaResult> ConvertToNV12Buffer(
     RefPtr<const VideoData>& aSample, RefPtr<MediaByteBuffer>& aYUVBuffer,
-    int aStride, int aYPlaneHeight) {
-  const layers::PlanarYCbCrImage* image = aSample->mImage->AsPlanarYCbCrImage();
-  MOZ_ASSERT(image);
-  const layers::PlanarYCbCrData* yuv = image->GetData();
-  auto ySize = yuv->YDataSize();
-  auto cbcrSize = yuv->CbCrDataSize();
+    const gfx::IntSize& aDestSize, int aStride, int aYPlaneHeight) {
+  if (aDestSize.IsEmpty()) {
+    return Err(MediaResult(NS_ERROR_INVALID_ARG, "destination size is empty"));
+  }
+
   // If we have a stride or height passed in from the Codec we need to use
   // those.
-  auto yStride = aStride != 0 ? aStride : yuv->mYStride;
-  auto height = aYPlaneHeight != 0 ? aYPlaneHeight : ySize.height;
-  size_t yLength = yStride * height;
-  size_t length =
-      yLength + yStride * (cbcrSize.height - 1) + cbcrSize.width * 2;
-
-  if (!aYUVBuffer || aYUVBuffer->Capacity() < length) {
-    aYUVBuffer = MakeRefPtr<MediaByteBuffer>(length);
-    aYUVBuffer->SetLength(length);
-  } else {
-    MOZ_ASSERT(aYUVBuffer->Length() >= length);
+  const int yStride = aStride != 0 ? aStride : aDestSize.width;
+  const int sliceHeight = aYPlaneHeight != 0 ? aYPlaneHeight : aDestSize.height;
+  if (yStride < aDestSize.width || sliceHeight < aDestSize.height) {
+    return Err(MediaResult(NS_ERROR_INVALID_ARG,
+                           "stride or slice height is too small"));
   }
 
-  if (libyuv::I420ToNV12(yuv->mYChannel, yuv->mYStride, yuv->mCbChannel,
-                         yuv->mCbCrStride, yuv->mCrChannel, yuv->mCbCrStride,
-                         aYUVBuffer->Elements(), yStride,
-                         aYUVBuffer->Elements() + yLength, yStride, ySize.width,
-                         ySize.height) != 0) {
-    return nullptr;
+  const int chromaWidth = CeilingOfHalf(aDestSize.width);
+  const int chromaHeight = CeilingOfHalf(aDestSize.height);
+  CheckedInt<size_t> yLength = CheckedInt<size_t>(yStride) * sliceHeight;
+  CheckedInt<size_t> length = yLength +
+                              CheckedInt<size_t>(yStride) * (chromaHeight - 1) +
+                              CheckedInt<size_t>(chromaWidth) * 2;
+  if (!length.isValid()) {
+    return Err(MediaResult(NS_ERROR_INVALID_ARG,
+                           "calculated buffer length is invalid"));
   }
 
-  return jni::ByteBuffer::New(aYUVBuffer->Elements(), aYUVBuffer->Length());
+  if (!aYUVBuffer || aYUVBuffer->Capacity() < length.value()) {
+    aYUVBuffer = MakeRefPtr<MediaByteBuffer>(length.value());
+  }
+  aYUVBuffer->SetLength(length.value());
+
+  nsresult r = ConvertToNV12(aSample->mImage, aYUVBuffer->Elements(), yStride,
+                             aYUVBuffer->Elements() + yLength.value(), yStride,
+                             aDestSize);
+  if (NS_FAILED(r)) {
+    return Err(MediaResult(r, "conversion to NV12 failed"));
+  }
+
+  jni::ByteBuffer::LocalRef buffer =
+      jni::ByteBuffer::New(aYUVBuffer->Elements(), aYUVBuffer->Length());
+  if (!buffer) {
+    return Err(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                           "failed to create Java byte buffer"));
+  }
+  return buffer;
 }
 
 RefPtr<MediaDataEncoder::EncodePromise> AndroidDataEncoder::ProcessEncode(
@@ -227,13 +331,14 @@ RefPtr<MediaDataEncoder::EncodePromise> AndroidDataEncoder::ProcessEncode(
 
     // Bug 1789846: Check with the Encoder if MediaCodec has a stride or height
     // value to use.
-    jni::ByteBuffer::LocalRef buffer = ConvertI420ToNV12Buffer(
-        sample, mYUVBuffer, mJavaEncoder->GetInputFormatStride(),
-        mJavaEncoder->GetInputFormatYPlaneHeight());
-    if (!buffer) {
-      return EncodePromise::CreateAndReject(NS_ERROR_ILLEGAL_INPUT, __func__);
+    auto r = ConvertToNV12Buffer(sample, mYUVBuffer, mConfig.mSize,
+                                 mJavaEncoder->GetInputFormatStride(),
+                                 mJavaEncoder->GetInputFormatYPlaneHeight());
+    if (r.isErr()) {
+      return EncodePromise::CreateAndReject(r.unwrapErr(), __func__);
     }
-
+    jni::ByteBuffer::LocalRef buffer = r.unwrap();
+    MOZ_ASSERT(buffer);
     if (s->mKeyframe) {
       mInputBufferInfo->Set(0, AssertedCast<int32_t>(mYUVBuffer->Length()),
                             s->mTime.ToMicroseconds(),

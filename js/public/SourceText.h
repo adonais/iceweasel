@@ -136,6 +136,9 @@ class SourceText final {
     }
   }
 
+  SourceText(const SourceText&) = delete;
+  void operator=(const SourceText&) = delete;
+
  private:
   template <typename ContextT>
   [[nodiscard]] MOZ_IS_CLASS_INIT bool initImpl(ContextT* context,
@@ -341,10 +344,6 @@ class SourceText final {
    * than units.
    */
   CharT* takeChars() { return reinterpret_cast<CharT*>(takeUnits()); }
-
- private:
-  SourceText(const SourceText&) = delete;
-  void operator=(const SourceText&) = delete;
 };
 
 }  // namespace JS

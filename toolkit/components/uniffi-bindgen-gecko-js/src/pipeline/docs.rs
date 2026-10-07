@@ -4,16 +4,13 @@
 
 use super::*;
 
-pub fn pass(root: &mut Root) -> Result<()> {
+pub fn api_module_docs(namespaces: &[Namespace]) -> Result<Vec<ApiModuleDocs>> {
     let mut module_docs = vec![];
-    root.visit_mut(|namespace: &mut Namespace| {
-        if namespace.fixture {
-            return;
-        }
+    for namespace in namespaces {
         let mut docs = ApiModuleDocs {
             filename: format!("{}.md", namespace.name),
-            jsdoc_module_name: format!("{}.sys", namespace.js_name),
-            module_name: format!("{}.sys.mjs", namespace.js_name),
+            jsdoc_module_name: format!("{}.sys", namespace.js_name()),
+            module_name: format!("{}.sys.mjs", namespace.js_name()),
             classes: vec![],
             functions: vec![],
         };
@@ -53,13 +50,11 @@ pub fn pass(root: &mut Root) -> Result<()> {
             }
         });
         namespace.visit(|func: &Function| {
-            docs.functions.push(func.name.clone());
+            docs.functions.push(func.callable.name.clone());
         });
         docs.classes.sort();
         docs.functions.sort();
         module_docs.push(docs);
-    });
-    root.module_docs = module_docs;
-
-    Ok(())
+    }
+    Ok(module_docs)
 }

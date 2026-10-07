@@ -9,10 +9,11 @@ RustLibrary("gkrust", gkrust_features, is_gkrust=True)
 for feature in gkrust_features:
     # We don't want to enable refcount logging during rusttests, since the
     # relevant FFI symbols wouldn't be found.
-    # Nor do we want Glean to assume there are Gecko symbols.
+    # Nor do we want Glean or Noise to assume there are Gecko symbols.
     if feature not in (
         "gkrust-shared/gecko_refcount_logging",
         "gkrust-shared/glean_with_gecko",
+        "gkrust-shared/noise_xpcom",
     ):
         RUST_TEST_FEATURES.append(feature)
 
@@ -23,6 +24,7 @@ RUST_TESTS = [
     "crash_helper_common",
     "firefox-on-glean",
     "l10nregistry",
+    "noise",
     "rsclientcerts-util",
     "selectors",
     "servo_arc",
@@ -34,8 +36,18 @@ RUST_TESTS = [
 
 if CONFIG["MOZ_CRASHREPORTER"] and CONFIG["TARGET_OS"] in ("WINNT", "OSX"):
     RUST_TESTS += ["nmhproxy"]
+if CONFIG["TARGET_OS"] == "WINNT":
+    RUST_TESTS += ["win32_process_mitigations"]
+else:
+    # Windows linker pulls in FFI symbols despite them not being relevant for the tests.
+    RUST_TESTS += ["crash_helper_server"]
+
+if CONFIG["TARGET_OS"] == "WINNT":
+    RUST_TESTS += ["pushnotificationhelper"]
 
 RUST_TEST_FEATURES.append("crashreporter/mock")
+RUST_TEST_FEATURES.append("crashping/gecko_tests")
+RUST_TEST_FEATURES.append("firefox-on-glean/gecko_tests")
 
 # Code coverage builds link a bunch of Gecko bindings code from the style
 # crate, which is not used by our tests but would cause link errors.
@@ -51,6 +63,8 @@ if not CONFIG["MOZ_CODE_COVERAGE"]:
         # dom_fragmentdirectives depends on nsstring which has Gecko FFI symbols.
         # The tests don't use these symbols, but Windows linker pulls them in anyway.
         RUST_TESTS += ["dom_fragmentdirectives"]
+        # Likewise for dom_speculationrules.
+        RUST_TESTS += ["dom_speculationrules"]
 
 # Code coverage builds time out when executing the crashping tests on windows
 # (see bug 2010162), and it's more consistent to simply disable for all
@@ -72,17 +86,21 @@ if CONFIG["MOZ_BITS_DOWNLOAD"]:
 if not CONFIG["MOZ_CODE_COVERAGE"] and CONFIG["OS_TARGET"] != "WINNT":
     RUST_TESTS += ["lockstore_rs"]
 
-# The `lockstore` tests link NSS, and the `tools/rusttests` project has no
-# `compile` tier that would otherwise build it. These USE_LIBS are only for
-# build ordering; Cargo does the linking, through the `mozbuild` crate.
-# USE_LIBS also applies to `gkrust` above, so restrict it to the project that
-# runs the tests rather than making every Rust compilation in a Firefox build
-# wait on NSS.
+# The `lockstore` tests link NSS and the Glean tests link SQLite, and the
+# `tools/rusttests` project has no `compile` tier that would otherwise build
+# them. These USE_LIBS are only for build ordering; Cargo does the linking,
+# through the `mozbuild` crate. USE_LIBS also applies to `gkrust` above, so
+# restrict it to the project that runs the tests rather than making every Rust
+# compilation in a Firefox build wait on NSS.
 if CONFIG["MOZ_BUILD_APP"] == "tools/rusttests":
     USE_LIBS += [
         "mozglue",
         "nss",
     ]
+
+    # When folding libraries, SQLite is part of nss. Otherwise it's mozsqlite3.
+    if not CONFIG["MOZ_FOLD_LIBS"]:
+        USE_LIBS += ["sqlite"]
 
     # NSS loads these dynamically while initializing, so the tests need them in
     # dist/bin even though nothing links against them.

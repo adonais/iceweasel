@@ -11,6 +11,8 @@
 namespace mozilla {
 namespace gl {
 
+RefPtr<GLContext> DepthAndStencilBuffer::gl() const { return mWeakGL.get(); };
+
 static void DeleteByTarget(GLContext* const gl, const GLenum target,
                            const GLuint name) {
   if (target == LOCAL_GL_RENDERBUFFER) {

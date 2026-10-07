@@ -77,6 +77,7 @@
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/HTMLAnchorElement.h"
 #include "mozilla/dom/Link.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "nsBidiPresUtils.h"
 #include "nsBidiUtils.h"
@@ -87,7 +88,6 @@
 #include "nsIContent.h"
 #include "nsIURIMutator.h"
 #include "nsLayoutUtils.h"
-#include "nsRange.h"
 #include "nsStyleStructInlines.h"
 
 using namespace mozilla;
@@ -2189,17 +2189,19 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
 
       SVGImageContext svgContext;
       Maybe<ImageIntRegion> region;
+      bool rasterizedForDest = false;
       IntSize decodeSize =
           nsLayoutUtils::ComputeImageContainerDrawingParameters(
-              imgCon, this, destRect, destRect, aSc, aFlags, svgContext,
-              region);
+              imgCon, this, destRect, destRect, aSc, aFlags, svgContext, region,
+              &rasterizedForDest);
       RefPtr<image::WebRenderImageProvider> provider;
       result = imgCon->GetImageProvider(aManager->LayerManager(), decodeSize,
                                         svgContext, region, aFlags,
                                         getter_AddRefs(provider));
       if (provider) {
         bool wrResult = aManager->CommandBuilder().PushImageProvider(
-            aItem, provider, result, aBuilder, aResources, destRect, bounds);
+            aItem, provider, result, aBuilder, aResources, destRect, bounds,
+            rasterizedForDest && !region);
         result &= wrResult ? ImgDrawResult::SUCCESS : ImgDrawResult::NOT_READY;
       } else {
         // We don't use &= here because we want the result to be NOT_READY so
@@ -2224,7 +2226,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
       auto borderWidths = wr::ToBorderWidths(1.0, 1.0, 1.0, 1.0);
       wr::BorderSide side = {color, wr::BorderStyle::Solid};
       wr::BorderSide sides[4] = {side, side, side, side};
-      Range<const wr::BorderSide> sidesRange(sides, 4);
+      mozilla::Range<const wr::BorderSide> sidesRange(sides, 4);
       aBuilder.PushBorder(dest, wrBounds, isBackfaceVisible, borderWidths,
                           sidesRange, wr::EmptyBorderRadius());
 
@@ -2495,8 +2497,10 @@ WebRenderCommandsResult nsDisplayImage::CreateWebRenderCommands(
 
   SVGImageContext svgContext;
   Maybe<ImageIntRegion> region;
+  bool rasterizedForDest = false;
   IntSize decodeSize = nsLayoutUtils::ComputeImageContainerDrawingParameters(
-      image, mFrame, destRect, destRect, aSc, flags, svgContext, region);
+      image, mFrame, destRect, destRect, aSc, flags, svgContext, region,
+      &rasterizedForDest);
 
   RefPtr<image::WebRenderImageProvider> provider;
   ImgDrawResult drawResult =
@@ -2572,7 +2576,8 @@ WebRenderCommandsResult nsDisplayImage::CreateWebRenderCommands(
   // failure will be due to resource constraints and fallback is unlikely to
   // help us. Hence we can ignore the return value from PushImage.
   aManager->CommandBuilder().PushImageProvider(
-      this, provider, drawResult, aBuilder, aResources, destRect, destRect);
+      this, provider, drawResult, aBuilder, aResources, destRect, destRect,
+      rasterizedForDest && !region);
   return Ok();
 }
 

@@ -13,6 +13,8 @@
 #include "nsRegion.h"
 #include "nsTArray.h"
 
+class DMABufSurfaceRGBA;
+
 namespace mozilla::wr {
 class RenderDMABUFTextureHost;
 }  // namespace mozilla::wr
@@ -118,6 +120,7 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
   NativeLayerWaylandRender* GetLayerForSnapshot();
 
   void SetGLContext(gl::GLContext* aGL) { mGL = aGL; }
+  gl::GLContext* gl() { return mGL; }
 
  private:
   ~NativeLayerRootWayland();
@@ -220,7 +223,7 @@ class NativeLayerWayland : public NativeLayer {
 
   void RenderLayer(double aScale);
   // TODO
-  GpuFence* GetGpuFence() override { return nullptr; }
+  RefPtr<GpuFence> GetGpuFence() override { return nullptr; }
 
   RefPtr<widget::WaylandSurface> GetWaylandSurface() { return mSurface; }
 

@@ -1,3 +1,20 @@
+diff --git a/include/fmt/format.h b/include/fmt/format.h
+--- a/include/fmt/format.h
++++ b/include/fmt/format.h
+@@ -52,11 +52,10 @@
+ #  if defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI)
+ // Workaround for pre gcc 5 libstdc++.
+ #    include <memory>  // std::allocator_traits
+ #  endif
+ #  include <stdexcept>     // std::runtime_error
+ #  include <string>        // std::string
+-#  include <system_error>  // std::system_error
+ 
+ // Checking FMT_CPLUSPLUS for warning suppression in MSVC.
+ #  if FMT_HAS_INCLUDE(<bit>) && FMT_CPLUSPLUS > 201703L
+ #    include <bit>  // std::bit_cast
+ #  endif
+ 
 diff --git a/include/fmt/format-inl.h b/include/fmt/format-inl.h
 --- a/include/fmt/format-inl.h
 +++ b/include/fmt/format-inl.h

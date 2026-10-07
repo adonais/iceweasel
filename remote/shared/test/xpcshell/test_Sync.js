@@ -474,7 +474,7 @@ add_task(async function test_PollPromise_zeroTimeout() {
       ++nevals;
       reject();
     },
-    { timeout: 0 }
+    { timeout: 0, throws: null }
   );
   let end = new Date().getTime();
   equal(1, nevals);
@@ -489,11 +489,28 @@ add_task(async function test_PollPromise_timeoutElapse() {
       ++nevals;
       reject();
     },
-    { timeout: 100 }
+    { timeout: 100, throws: null }
   );
   let end = new Date().getTime();
   lessOrEqual(nevals, 11);
   greaterOrEqual(end - start, 100);
+});
+
+add_task(async function test_PollPromise_timeout() {
+  const errorMessage = "PollingFailed";
+  let err;
+
+  try {
+    await new PollPromise(
+      (resolve, reject) => {
+        reject();
+      },
+      { timeout: 100, errorMessage }
+    );
+  } catch (e) {
+    err = e;
+  }
+  equal(err.message, "PollingFailed after 100 ms");
 });
 
 add_task(async function test_PollPromise_interval() {
@@ -503,7 +520,7 @@ add_task(async function test_PollPromise_interval() {
       ++nevals;
       reject();
     },
-    { timeout: 100, interval: 100 }
+    { timeout: 100, interval: 100, throws: null }
   );
   equal(2, nevals);
 });
@@ -529,7 +546,7 @@ add_task(async function test_PollPromise_resolve() {
     (resolve, reject) => {
       reject();
     },
-    { timeout, errorMessage: "PollingFailed" }
+    { timeout, errorMessage: "PollingFailed", throws: null }
   );
   Assert.equal(appender.messages.length, 1);
   Assert.equal(appender.messages[0].level, Log.Level.Warn);

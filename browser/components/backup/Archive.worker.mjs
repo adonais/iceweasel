@@ -7,9 +7,9 @@ import { PromiseWorker } from "resource://gre/modules/workers/PromiseWorker.mjs"
 // The ArchiveUtils module is designed to be imported in both worker and
 // main thread contexts.
 /* eslint-disable mozilla/reject-import-system-module-from-non-system */
-import { ArchiveUtils } from "resource:///modules/backup/ArchiveUtils.sys.mjs";
-import { ArchiveEncryptor } from "resource:///modules/backup/ArchiveEncryption.sys.mjs";
-import { BackupError } from "resource:///modules/backup/BackupError.mjs";
+import { ArchiveUtils } from "moz-src:///browser/components/backup/ArchiveUtils.sys.mjs";
+import { ArchiveEncryptor } from "moz-src:///browser/components/backup/ArchiveEncryption.sys.mjs";
+import { BackupError } from "moz-src:///browser/components/backup/BackupError.mjs";
 import { ERRORS } from "chrome://browser/content/backup/backup-constants.mjs";
 
 /**

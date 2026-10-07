@@ -106,7 +106,8 @@ class XPCOMThreadWrapper final : public AbstractThread,
   }
 
   NS_IMETHOD_(FeatureFlags) GetFeatures() override {
-    return mThread->GetFeatures();
+    return mThread->GetFeatures() |
+           (SupportsTailDispatch() ? SUPPORTS_TAIL_DISPATCH : SUPPORTS_BASE);
   }
 
   bool IsCurrentThreadIn() const override {

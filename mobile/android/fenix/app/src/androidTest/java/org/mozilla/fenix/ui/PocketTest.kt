@@ -6,6 +6,7 @@ package org.mozilla.fenix.ui
 
 import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.helpers.AppAndSystemHelper.isNetworkConnected
@@ -21,6 +22,7 @@ import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.homeScreen
 
 /** Tests for verifying the presence of the Pocket section and its elements */
+@Ignore("Bug 2075240: stories section was removed from homepage in 2072025")
 class PocketTest {
     @get:Rule(order = 0) val fenixTestRule: FenixTestRule = FenixTestRule()
 

@@ -94,13 +94,12 @@ test_newtab({
     );
     customizeButton.click();
 
-    let defaultPos = "matrix(1, 0, 0, 1, 0, 0)";
     await ContentTaskUtils.waitForCondition(
       () =>
-        content.getComputedStyle(
-          content.document.querySelector(".customize-menu")
-        ).transform === defaultPos,
-      "Customize Menu should be visible on screen"
+        content.document
+          .querySelector(".customize-menu")
+          .classList.contains("customize-animate-enter-done"),
+      "Customize Menu should have finished opening"
     );
 
     // Test that clicking the shortcuts toggle will make the section
@@ -218,13 +217,12 @@ test_newtab({
     );
     customizeButton.click();
 
-    let defaultPos = "matrix(1, 0, 0, 1, 0, 0)";
     await ContentTaskUtils.waitForCondition(
       () =>
-        content.getComputedStyle(
-          content.document.querySelector(".customize-menu")
-        ).transform === defaultPos,
-      "Customize Menu should be visible on screen"
+        content.document
+          .querySelector(".customize-menu")
+          .classList.contains("customize-animate-enter-done"),
+      "Customize Menu should have finished opening"
     );
 
     // @nova-cleanup(remove-conditional): Remove novaEnabled guard; always open the widgets sub-panel
@@ -246,14 +244,14 @@ test_newtab({
     // Wait for the weather toggle to be present in the DOM (it is unmounted
     // until the sub-panel opens).
     await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector("#weather-section moz-toggle"),
+      () => content.document.querySelector("#weather-toggle"),
       "Weather section toggle should be present"
     );
 
     // We waive XRay wrappers because we want to call the click()
     // method defined on the toggle from this context.
     let weatherSwitch = Cu.waiveXrays(
-      content.document.querySelector("#weather-section moz-toggle")
+      content.document.querySelector("#weather-toggle")
     );
     Assert.ok(
       !Services.prefs.getBoolPref(WEATHER_PREF),
@@ -301,13 +299,12 @@ test_newtab({
     );
     customizeButton.click();
 
-    let defaultPos = "matrix(1, 0, 0, 1, 0, 0)";
     await ContentTaskUtils.waitForCondition(
       () =>
-        content.getComputedStyle(
-          content.document.querySelector(".customize-menu")
-        ).transform === defaultPos,
-      "Customize Menu should be visible on screen"
+        content.document
+          .querySelector(".customize-menu")
+          .classList.contains("customize-animate-enter-done"),
+      "Customize Menu should have finished opening"
     );
 
     await ContentTaskUtils.waitForCondition(
@@ -329,11 +326,8 @@ test_newtab({
     let closeButton = content.document.querySelector("#close-button");
     closeButton.click();
     await ContentTaskUtils.waitForCondition(
-      () =>
-        content.getComputedStyle(
-          content.document.querySelector(".customize-menu")
-        ).transform !== defaultPos,
-      "Customize Menu should not be visible anymore"
+      () => !content.document.querySelector(".customize-menu").open,
+      "Customize Menu should have closed"
     );
 
     await ContentTaskUtils.waitForCondition(
@@ -361,41 +355,79 @@ test_newtab({
     customizeButton.click();
     await ContentTaskUtils.waitForCondition(
       () =>
-        content.getComputedStyle(
-          content.document.querySelector(".customize-menu")
-        ).transform === defaultPos,
-      "Customize Menu should be visible on screen now"
+        content.document
+          .querySelector(".customize-menu")
+          .classList.contains("customize-animate-enter-done"),
+      "Customize Menu should have finished opening again"
     );
 
     // Test closing with esc key.
     EventUtils.synthesizeKey("VK_ESCAPE", {}, content);
     await ContentTaskUtils.waitForCondition(
-      () =>
-        content.getComputedStyle(
-          content.document.querySelector(".customize-menu")
-        ).transform !== defaultPos,
-      "Customize Menu should not be visible anymore"
+      () => !content.document.querySelector(".customize-menu").open,
+      "Customize Menu should have closed"
     );
 
     // Reopen the customize menu
     customizeButton.click();
     await ContentTaskUtils.waitForCondition(
       () =>
-        content.getComputedStyle(
-          content.document.querySelector(".customize-menu")
-        ).transform === defaultPos,
-      "Customize Menu should be visible on screen now"
+        content.document
+          .querySelector(".customize-menu")
+          .classList.contains("customize-animate-enter-done"),
+      "Customize Menu should have finished opening again"
     );
 
     // Test closing with external click. With the dialog element, clicking outside
     // the panel content fires on the dialog element itself, so we click it directly.
     content.document.querySelector(".customize-menu").click();
     await ContentTaskUtils.waitForCondition(
-      () =>
-        content.getComputedStyle(
-          content.document.querySelector(".customize-menu")
-        ).transform !== defaultPos,
-      "Customize Menu should not be visible anymore"
+      () => !content.document.querySelector(".customize-menu").open,
+      "Customize Menu should have closed"
     );
+  },
+});
+
+test_newtab({
+  async before({ pushPrefs }) {
+    // The transition this test is about is only declared under
+    // (prefers-reduced-motion: no-preference).
+    await pushPrefs(["ui.prefersReducedMotion", 0]);
+  },
+  test: async function test_focus_customizeMenuOnEnter() {
+    let dialog = content.document.querySelector(".customize-menu");
+    let closeButton = content.document.querySelector("#close-button");
+
+    // Drive the panel the way CustomizeMenu does, but with no style flush
+    // during the enter phase: react-transition-group resolves style once with
+    // only customize-animate-enter applied, then adds the class that makes the
+    // panel visible, and onEntered focuses the close button. Transitioning
+    // visibility on the way in makes that first resolution the transition's
+    // first sample, which still computes hidden, and focus() on a hidden
+    // subtree is a silent no-op.
+    for (let visibleClass of [
+      "customize-animate-enter-active",
+      "customize-animate-enter-done",
+    ]) {
+      dialog.showModal();
+      dialog.classList.add("customize-animate-enter");
+      dialog.getBoundingClientRect();
+      dialog.classList.add(visibleClass);
+      closeButton.focus();
+
+      Assert.equal(
+        content.getComputedStyle(dialog).visibility,
+        "visible",
+        `Panel is visible as soon as ${visibleClass} is applied`
+      );
+      Assert.equal(
+        content.document.activeElement.id,
+        "close-button",
+        `Close button is focusable with ${visibleClass} applied`
+      );
+
+      dialog.classList.remove("customize-animate-enter", visibleClass);
+      dialog.close();
+    }
   },
 });

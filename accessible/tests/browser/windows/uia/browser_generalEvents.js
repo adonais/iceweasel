@@ -10,7 +10,7 @@
 addAccessibleTask(``, async function testAsyncContentLoaded(browser) {
   info("Loading new document");
   await setUpWaitForUiaEvent("AsyncContentLoaded", "uiaTestDoc");
-  const encoded = encodeURIComponent('<body id="uiaTestDoc">test');
+  const encoded = encodeURIComponent('<html id="uiaTestDoc"><body>test');
   browser.loadURI(Services.io.newURI(`data:text/html,${encoded}`), {
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
   });

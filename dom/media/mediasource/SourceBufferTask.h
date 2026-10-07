@@ -7,6 +7,7 @@
 
 #include <utility>
 
+#include "MediaContainerType.h"
 #include "MediaResult.h"
 #include "SourceBufferAttributes.h"
 #include "TimeUnits.h"

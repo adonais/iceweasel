@@ -595,7 +595,8 @@ Object.assign(Chat, {
             result = await featureGatedHandler(
               toolParams,
               conversation,
-              signal
+              signal,
+              mode
             );
             /**
              * On the first invocation of search_the_web, SearchProvider-powered
@@ -650,6 +651,18 @@ Object.assign(Chat, {
             content.name = toolName;
           }
           conversation.updateToolCallMessage(pendingToolMessage, content);
+        }
+
+        // A failed search returns an error-bearing result rather than
+        // throwing, which would otherwise count as a success. The precise
+        // category is on the search_the_web event.
+        if (
+          !toolCallError &&
+          !isSearchHandoff &&
+          toolName === SEARCH_THE_WEB &&
+          result?.error
+        ) {
+          toolCallError = "execution_failed";
         }
 
         recordToolCallEvent({

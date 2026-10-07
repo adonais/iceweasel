@@ -174,6 +174,8 @@ async function initialize() {
     return;
   }
 
+  document.subDialogSetDefaultFocus = () => reviewBrowser.focus();
+
   reviewActor = reviewBrowser.browsingContext.currentWindowGlobal.getActor(
     "SmartFormFillReview"
   );

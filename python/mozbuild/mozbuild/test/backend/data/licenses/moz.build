@@ -1,0 +1,7 @@
+DIRS += ["lib"]
+
+LICENSES += ["MIT"]
+LICENSES["MIT"].title = "MIT License"
+LICENSES["MIT"].text = "mit.txt"
+LICENSES["MIT"].spdx = "MIT"
+LICENSES["MIT"].paths = ["third_party/rust/byteorder"]

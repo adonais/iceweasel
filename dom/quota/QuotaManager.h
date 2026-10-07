@@ -723,6 +723,9 @@ class QuotaManager final : public BackgroundThreadObject {
   std::pair<uint64_t, uint64_t> GetUsageAndLimitForEstimate(
       const OriginMetadata& aOriginMetadata);
 
+  std::pair<uint64_t, uint64_t> GetGroupUsageAndLimitForEstimate(
+      const OriginMetadata& aOriginMetadata);
+
   uint64_t GetOriginUsage(const PrincipalMetadata& aPrincipalMetadata);
 
   Maybe<FullOriginMetadata> GetFullOriginMetadata(

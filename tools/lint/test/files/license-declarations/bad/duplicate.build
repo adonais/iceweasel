@@ -1,0 +1,5 @@
+LICENSES += ["spdx-typo"]
+LICENSES["spdx-typo"].title = "Duplicate Typo License"
+LICENSES["spdx-typo"].text = "typo.txt"
+
+LICENSES += ["spdx-typo"]

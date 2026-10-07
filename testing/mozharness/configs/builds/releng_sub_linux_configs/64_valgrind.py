@@ -6,11 +6,9 @@ import os
 
 config = {
     "default_actions": [
-        "clobber",
         "build",
         "valgrind-test",
     ],
-    "stage_platform": "linux64-valgrind",
     #### 64 bit build specific #####
     "env": {
         "MOZBUILD_STATE_PATH": os.path.join(os.getcwd(), ".mozbuild"),

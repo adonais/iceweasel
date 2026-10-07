@@ -3,7 +3,15 @@
  * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 import { prefs } from "../../utils/prefs";
-import { getSourceActorsForSource } from "../../selectors/index";
+import {
+  getSourceActorsForSource,
+  getSelectedSource,
+  getSourceActor,
+} from "../../selectors/index";
+import {
+  removeGeneratedSourceText,
+  forceRefreshGeneratedSourceText,
+} from "./loadSourceText";
 
 const telemetryPingsPerSource = new Map();
 
@@ -49,5 +57,21 @@ export function setStyleSheetAtRules(actorId, atRules) {
       id: actorId,
       atRules,
     });
+  };
+}
+
+// Indicates that the stylesheet has been modified
+export function styleSheetHasChanged(actorId) {
+  return async ({ dispatch, getState }) => {
+    const sourceActor = getSourceActor(getState(), actorId);
+    const selectedSource = getSelectedSource(getState());
+    // if the source is the selected source, reload the source text to make sure the changes are reflected immediately,
+    // otherwise the source text will be updated when the user focuses or selects source or with the source editor in the debugger.
+    if (selectedSource && selectedSource.id === sourceActor.sourceObject.id) {
+      await dispatch(forceRefreshGeneratedSourceText(sourceActor));
+    } else {
+      // Remove the source text for the generated source so that the next time the user selects the source, it will be reloaded from the server.
+      await dispatch(removeGeneratedSourceText(actorId));
+    }
   };
 }

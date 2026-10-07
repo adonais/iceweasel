@@ -299,6 +299,14 @@ export class NewTabContentPing {
     if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "157.0a1") < 0) {
       delete result.layout_name;
     }
+    // @backward-compat { version 157 } variant_id and source_section_id were
+    // added as extra_keys to the newtab_content impression/click events in 157.
+    // A train-hopped XPI can run on older platform builds whose schema lacks
+    // them, which would throw a Glean error, so drop them below 157.
+    if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "157.0a1") < 0) {
+      delete result.variant_id;
+      delete result.source_section_id;
+    }
     // Bug 2067937: section_position can't be kept consistent for randomized
     // (DP-noised) content, so it is not collected on the impression and click
     // events of the newtab_content ping.

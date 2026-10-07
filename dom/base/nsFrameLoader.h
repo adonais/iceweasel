@@ -140,7 +140,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
   NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
   nsresult CheckForRecursiveLoad(nsIURI* aURI);
-  nsresult ReallyStartLoading();
+  MOZ_CAN_RUN_SCRIPT nsresult ReallyStartLoading();
   void StartDestroy(bool aForProcessSwitch);
   void DestroyDocShell();
   void DestroyComplete();
@@ -458,6 +458,8 @@ class nsFrameLoader final : public nsStubMutationObserver,
    *        null, in which case the node principal of the owner content is used.
    */
   nsresult CheckURILoad(nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal);
+
+  MOZ_CAN_RUN_SCRIPT
   nsresult ReallyStartLoadingInternal();
 
   // Returns true if we have a remote browser or else attempts to create a

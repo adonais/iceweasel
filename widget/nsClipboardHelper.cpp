@@ -106,6 +106,8 @@ nsClipboardHelper::CopyString(
   // copy to the global clipboard. it's bad if this fails in any way.
   rv = CopyStringToClipboard(aString, nsIClipboard::kGlobalClipboard,
                              aSettingWindowContext, aSensitive);
+  // Note that a copy denied by content analysis does not surface here: in the
+  // parent process the check is asynchronous.
   NS_ENSURE_SUCCESS(rv, rv);
 
   // unix also needs us to copy to the selection clipboard. this will

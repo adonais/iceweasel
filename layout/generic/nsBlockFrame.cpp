@@ -1208,7 +1208,8 @@ class MOZ_RAII LineClampLineIterator {
       : mCur(aFrame->LinesBegin()),
         mEnd(aFrame->LinesEnd()),
         mCurrentFrame(mCur == mEnd ? nullptr : aFrame),
-        mLastFrameToExit(aLastFrameToExit) {
+        mLastFrameToExit(aLastFrameToExit),
+        mEnteredLastFrameToExit(aFrame == aLastFrameToExit) {
     if (mCur != mEnd && !mCur->IsInline()) {
       Advance();
     }
@@ -1231,6 +1232,8 @@ class MOZ_RAII LineClampLineIterator {
     Advance();
   }
 
+  bool IsLastFrameOrDescendant() { return mEnteredLastFrameToExit; }
+
  private:
   void Advance() {
     for (;;) {
@@ -1252,6 +1255,9 @@ class MOZ_RAII LineClampLineIterator {
         mEnd = mCurrentFrame->LinesEnd();
       } else if (mCur->IsBlock()) {
         if (nsBlockFrame* child = GetAsLineClampDescendant(mCur->mFirstChild)) {
+          if (child == mLastFrameToExit) {
+            mEnteredLastFrameToExit = true;
+          }
           nsBlockFrame::LineIterator next = mCur;
           ++next;
           mStack.AppendElement(std::tuple(mCurrentFrame, next,
@@ -1307,6 +1313,9 @@ class MOZ_RAII LineClampLineIterator {
   nscoord mAccumulatedBEndBP = 0;
 
   WritingMode mWm = mLastFrameToExit->GetWritingMode();
+
+  // Used to check if we are in the last frame or one of its descendants.
+  bool mEnteredLastFrameToExit;
 
   // Stack of mCurrentFrame and mEnd values that we push and pop as we enter and
   // exist blocks.
@@ -2132,8 +2141,9 @@ nsReflowStatus nsBlockFrame::TrialReflow(nsPresContext* aPresContext,
   // descendants when applying line-clamp.
   if (IsLineClampRoot(this)) {
     ClearLineClampEllipsis();
-    SetLineClampRootMaxHeight(std::min(aReflowInput.ComputedMaxBSize(),
-                                       aReflowInput.ComputedBSize()) +
+    nscoord rootMaxBSize =
+        aReflowInput.ApplyMinMaxBSize(aReflowInput.ComputedBSize());
+    SetLineClampRootMaxHeight(rootMaxBSize +
                               GetLogicalUsedBorderAndPadding(GetWritingMode())
                                   .BStartEnd(GetWritingMode()));
   }
@@ -2347,25 +2357,57 @@ Maybe<nsBlockFrame::LineClampTarget> nsBlockFrame::FindLineClampAutoTarget(
                          GetLogicalUsedBorderAndPadding(wm).BEnd(wm) -
                          aCollapsingBEndMargin;
 
+  nscoord thisMinBSize = aReflowInput.ComputedMinBSize();
+
   nsLineBox* prevLine = nullptr;
   nsBlockFrame* prevFrame = nullptr;
   nscoord prevBEdge = 0;
   for (LineClampLineIterator iter(aLineClampRoot, this);
        nsLineBox* line = iter.GetCurrentLine(); iter.Next()) {
-    if (line->IsEmpty() && line->BSize() == 0) {
-      continue;
-    }
-
     nsBlockFrame* frame = iter.GetCurrentFrame();
 
+    const bool isNewFrame = frame != prevFrame && line == frame->LinesBegin();
+
+    // - If this frame has an ancestor that we know doesn't fit (due to
+    // min-height or height), this frame has no clamp point.
+    // - If this frame has a definite height that we know fits, we do not have a
+    // clamp point.
+    // - If this frame has a min-height that is satsfied, but does not have a
+    // definite height, we may have a clamp point, and should continue iterating
+    // as usual.
+    const bool bSizeIsConstrained =
+        !frame->StylePosition()
+             ->MinBSize(wm, AnchorPosResolutionParams::From(frame))
+             ->IsAuto();
+
+    if (isNewFrame && bSizeIsConstrained) {
+      const nscoord sizeToCheck = frame == this ? thisMinBSize : frame->BSize();
+      if (sizeToCheck + prevBEdge > rootMaxBSize) {
+        // The current frame does not fit due to its min-height.
+        if (iter.IsLastFrameOrDescendant() && frame != this) {
+          // The current frame is in this frame's subtree and affects clamping.
+          return Some(
+              nsBlockFrame::LineClampTarget{prevFrame, prevLine, prevBEdge});
+        }
+        // The current frame is a this frame, or a constrained size parent of
+        // this frame, so this frame does not need a clamp point.
+        return Nothing();
+      }
+    }
+
     const bool bSizeIsDefinite =
-        frame && !frame->StylePosition()
-                      ->BSize(wm, AnchorPosResolutionParams::From(frame))
-                      ->IsAuto();
-    // We are stepping into a new frame of a definite size that isn't a
+        !frame->StylePosition()
+             ->BSize(wm, AnchorPosResolutionParams::From(frame))
+             ->IsAuto();
+    // We are stepping into a new frame of a constrained size that isn't a
     // placeholder.
-    if (bSizeIsDefinite && frame != prevFrame && frame != aLineClampRoot &&
+    if (bSizeIsDefinite && isNewFrame && frame != aLineClampRoot &&
         !frame->IsPlaceholderFrame()) {
+      // We are a child of a fixed size container and do not affect BSize.
+      if (!iter.IsLastFrameOrDescendant()) {
+        return Nothing();
+      }
+
       // If the next frame has a fixed size and doesn't fit, clamp it
       if (frame->BSize() + prevBEdge > rootMaxBSize) {
         return Some(
@@ -2390,11 +2432,20 @@ Maybe<nsBlockFrame::LineClampTarget> nsBlockFrame::FindLineClampAutoTarget(
       for (nsLineBox* lineCatchup = nullptr; lineCatchup != nextLine;
            lineCatchup = iter.GetCurrentLine()) {
         iter.Next();
+        if (!iter.GetCurrentLine()) {
+          // If we run out of iterator, then the clamp point is in a
+          // constrained-size parent of this frame.
+          return Nothing();
+        }
       }
 
       prevLine = nextLine;
       prevFrame = nextFrame;
       prevBEdge = frame->BSize() + prevBEdge;
+      continue;
+    }
+
+    if (line->IsEmpty() && line->BSize() == 0) {
       continue;
     }
 

@@ -71,6 +71,10 @@ using namespace sandbox::bpf_dsl;
 #  define MADV_FREE 8
 #endif
 
+#ifndef MADV_COLLAPSE
+#  define MADV_COLLAPSE 25
+#endif
+
 #ifndef PR_SET_PTRACER
 #  define PR_SET_PTRACER 0x59616d61
 #endif
@@ -1916,6 +1920,9 @@ class GMPSandboxPolicy : public SandboxPolicyCommon {
       case __NR_sched_get_priority_min:
       case __NR_sched_get_priority_max:
         return Allow();
+      // The OpenH264 plugin needs sched_getaffinity() in multithreaded mode;
+      // bug 2071378.
+      case __NR_sched_getaffinity:
       case __NR_sched_getparam:
       case __NR_sched_getscheduler:
       case __NR_sched_setscheduler: {
@@ -1976,6 +1983,40 @@ UniquePtr<sandbox::bpf_dsl::Policy> GetMediaSandboxPolicy(
 // a plugin file).  However, it does directly create shared memory
 // segments, so it may need file brokering.
 class RDDSandboxPolicy final : public SandboxPolicyCommon {
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+  static bool IsCudaUvmFdBindAddr(const sockaddr* aAddr, socklen_t aLen) {
+    static constexpr char kPrefix[] = "cuda-uvmfd-";
+    static constexpr size_t kPrefixLen = sizeof(kPrefix) - 1;
+    if (!aAddr || aAddr->sa_family != AF_UNIX) {
+      return false;
+    }
+    const size_t minLen = offsetof(sockaddr_un, sun_path) + 1 + kPrefixLen;
+    if (static_cast<size_t>(aLen) < minLen) {
+      return false;
+    }
+    const auto* un = reinterpret_cast<const sockaddr_un*>(aAddr);
+    return un->sun_path[0] == '\0' &&
+           memcmp(un->sun_path + 1, kPrefix, kPrefixLen) == 0;
+  }
+
+  static intptr_t CudaUvmFdTrap(ArgsRef aArgs, void* aux) {
+    switch (aArgs.nr) {
+      case __NR_bind:
+        return IsCudaUvmFdBindAddr(
+                   reinterpret_cast<const sockaddr*>(aArgs.args[1]),
+                   static_cast<socklen_t>(aArgs.args[2]))
+                   ? 0
+                   : -EPERM;
+      case __NR_listen:
+        return 0;
+      case __NR_accept4:
+        return -EAGAIN;
+      default:
+        return -ENOSYS;
+    }
+  }
+#endif
+
  public:
   explicit RDDSandboxPolicy(SandboxBrokerClient* aBroker) {
     mBroker = aBroker;
@@ -2030,12 +2071,14 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         return Some(Allow());
 
 #ifdef MOZ_ENABLE_VULKAN_VIDEO
-      // GPU drivers may call bind() while probing display sockets; this does
-      // not enable any connections (no MAY_CONNECT targets in RDD policy) and
-      // is not needed for Vulkan video decode — only avoids seccomp noise
-      // (bug 2021722).
+      // GPU drivers may call bind() while probing display sockets; those
+      // still get EPERM (bug 2021722). ICDs may also load CUDA, which we
+      // do not need for Vulkan video: stub cuda-uvmfd bind/listen/accept4
+      // so init does not SIGSYS, without enabling a real socket.
       case SYS_BIND:
-        return Some(Error(EPERM));
+      case SYS_LISTEN:
+      case SYS_ACCEPT4:
+        return Some(Trap(CudaUvmFdTrap, nullptr));
       // Some Vulkan ICDs may also load CUDA, which calls setsockopt.
       case SYS_GETSOCKOPT:
       case SYS_SETSOCKOPT:
@@ -2100,6 +2143,10 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         // export.
         static constexpr unsigned long kUdmabufType =
             static_cast<unsigned long>('u') << _IOC_TYPESHIFT;
+        // NVIDIA UVM ioctl cmds: INIT/DEINIT plus unencoded 0..2047.
+        static constexpr unsigned long kNvidiaUvmInitialize = 0x30000001ul;
+        static constexpr unsigned long kNvidiaUvmDeinitialize = 0x30000002ul;
+        static constexpr unsigned long kNvidiaUvmUnencodedMask = ~0x7FFul;
 #endif
         // nvidia non-tegra uses some ioctls from this range (but not actual
         // fbdev ioctls; nvidia uses values >= 200 for the NR field
@@ -2122,6 +2169,10 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
 #ifdef MOZ_ENABLE_VULKAN_VIDEO
             .ElseIf(shifted_type == kNvidiaRmType, Allow())
             .ElseIf(shifted_type == kUdmabufType, Allow())
+            .ElseIf(AnyOf(request == kNvidiaUvmInitialize,
+                          request == kNvidiaUvmDeinitialize,
+                          (request & kNvidiaUvmUnencodedMask) == 0),
+                    Allow())
 #endif
 #ifdef MOZ_ENABLE_V4L2
             .ElseIf(shifted_type == kVideoType, Allow())
@@ -2193,8 +2244,33 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         return Error(ENOSYS);
 #endif
 #ifdef MOZ_ENABLE_VULKAN_VIDEO
+      CASES_FOR_getrlimit:
       CASES_FOR_getresuid:
       CASES_FOR_getresgid:
+        return Allow();
+
+      case __NR_prlimit64: {
+        // Allow only the getrlimit() use case.  (glibc seems to use
+        // only pid 0 to indicate the current process; pid == getpid()
+        // is equivalent and could also be allowed if needed.)
+        Arg<pid_t> pid(0);
+        // This is really a const struct ::rlimit*, but Arg<> doesn't
+        // work with pointers, only integer types.
+        Arg<uintptr_t> new_limit(2);
+        return If(AllOf(pid == 0, new_limit == 0), Allow())
+            .Else(InvalidSyscall());
+      }
+
+      case __NR_madvise: {
+        Arg<int> advice(2);
+        return If(advice == MADV_COLLAPSE, Allow())
+            .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
+      }
+
+      // CUDA timerfd during vkCreateDevice; default action kills RDD.
+      case __NR_timerfd_create:
+      case __NR_timerfd_settime:
+      case __NR_timerfd_gettime:
         return Allow();
       CASES_FOR_fcntl: {
         Arg<int> cmd(1);

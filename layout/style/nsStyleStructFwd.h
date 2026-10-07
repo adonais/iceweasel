@@ -9,6 +9,8 @@
 #ifndef nsStyleStructFwd_h_
 #define nsStyleStructFwd_h_
 
+#include <cstdint>
+
 #include "nsStyleStructList.h"
 
 namespace mozilla {

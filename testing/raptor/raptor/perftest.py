@@ -537,6 +537,40 @@ class Perftest(metaclass=ABCMeta):
         if test.get("preferences") is not None and self.config["app"] in FIREFOX_APPS:
             self.set_browser_test_prefs(test["preferences"])
 
+        if (
+            self.playback is not None
+            and self.playback.playback_mode == "direct"
+            and self.config["app"] in FIREFOX_APPS
+        ):
+            self.set_browser_test_prefs({
+                "network.dns.forceResolve": self.playback.host,
+                "network.socket.forcePort": (
+                    f"80={self.playback.http_port};443={self.playback.https_port}"
+                ),
+            })
+
+    def playback_chrome_args(self):
+        """Chrome cmd-line args pointing the browser at the playback server."""
+        if self.playback.playback_mode == "direct":
+            resolver_rules = (
+                f"MAP *:80 {self.playback.host}:{self.playback.http_port},"
+                f"MAP *:443 {self.playback.host}:{self.playback.https_port},"
+                "EXCLUDE localhost"
+            )
+            return [
+                f"--host-resolver-rules={resolver_rules}",
+                "--ignore-certificate-errors",
+            ]
+
+        pb_args = [
+            f"--proxy-server={self.playback.host}:{self.playback.port}",
+            "--proxy-bypass-list=localhost;127.0.0.1",
+            "--ignore-certificate-errors",
+        ]
+        if not self.is_localhost:
+            pb_args[0] = pb_args[0].replace("127.0.0.1", self.config["host"])
+        return pb_args
+
     @abstractmethod
     def setup_chrome_args(self):
         pass
@@ -676,6 +710,7 @@ class Perftest(metaclass=ABCMeta):
 
         self.config.update({
             "playback_tool": test.get("playback"),
+            "playback_mode": test.get("playback_mode", "proxy"),
             "playback_version": test.get("playback_version", "8.1.1"),
             "playback_files": playback_files,
             "verbose": self.config.get("verbose", False)
@@ -846,8 +881,12 @@ class PerftestAndroid(Perftest):
     def set_reverse_ports(self):
         if self.is_localhost:
             if self.playback:
-                LOG.info("making the raptor playback server port available to device")
-                self.set_reverse_port(self.playback.port)
+                LOG.info("making the raptor playback server ports available to device")
+                ports = [self.playback.port]
+                if self.playback.playback_mode == "direct":
+                    ports = [self.playback.http_port, self.playback.https_port]
+                for port in ports:
+                    self.set_reverse_port(port)
 
             if self.benchmark:
                 LOG.info("making the raptor benchmarks server port available to device")
@@ -930,16 +969,7 @@ class PerftestDesktop(Perftest):
         chrome_args = ["--use-mock-keychain", "--no-default-browser-check"]
 
         if test.get("playback", False):
-            pb_args = [
-                f"--proxy-server={self.playback.host}:{self.playback.port}",
-                "--proxy-bypass-list=localhost;127.0.0.1",
-                "--ignore-certificate-errors",
-            ]
-
-            if not self.is_localhost:
-                pb_args[0] = pb_args[0].replace("127.0.0.1", self.config["host"])
-
-            chrome_args.extend(pb_args)
+            chrome_args.extend(self.playback_chrome_args())
 
         if self.debug_mode:
             chrome_args.extend(["--auto-open-devtools-for-tabs"])

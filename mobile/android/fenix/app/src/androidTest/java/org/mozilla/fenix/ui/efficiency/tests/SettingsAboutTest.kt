@@ -5,6 +5,7 @@
 package org.mozilla.fenix.ui.efficiency.tests
 
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsAboutSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
@@ -33,6 +34,7 @@ class SettingsAboutTest : BaseTest() {
     }
 
     // TestRail: https://mozilla.testrail.io/index.php?/cases/view/3132639
+    @Critical
     @Test
     fun verifyAboutFirefoxMenuAppDetailsItemTest() {
         on.settingsAbout.navigateToPage().mozVerifyElementsByGroup(SettingsAboutSelectors.Group.ABOUT_INFO)

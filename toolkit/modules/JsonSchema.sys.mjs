@@ -33,6 +33,17 @@ Cu.exportFunction(
   { defineAs: "moz-url-format" }
 );
 
+/**
+ * A JSON Schema string format for URLs accepted by the URL parser.
+ */
+Cu.exportFunction(
+  function validateMozUrl(input) {
+    return URL.canParse(input);
+  },
+  sandbox.fastFormat,
+  { defineAs: "moz-url" }
+);
+
 // initialBaseURI defaults to github.com/cfworker, which will be confusing.
 Cu.evalInSandbox(
   `this.initialBaseURI = initialBaseURI = new URL("http://mozilla.org");`,

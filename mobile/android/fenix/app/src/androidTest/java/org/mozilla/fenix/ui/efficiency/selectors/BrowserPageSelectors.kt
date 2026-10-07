@@ -315,6 +315,20 @@ object BrowserPageSelectors : SelectorContainer {
             description = "Save-login prompt: confirm (Save/Update) button",
         )
 
+    val SAVE_LOGIN_PROMPT_NEVER_SAVE_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR2_BY_RES,
+            value = "save_cancel",
+            description = "Save-login prompt: never save button",
+        )
+
+    val SAVE_LOGIN_PROMPT_FAVICON =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR2_BY_RES,
+            value = "host_icon",
+            description = "Save-login prompt: accessed domain favicon",
+        )
+
     // --- Address autofill on a web form (GeckoView content + the app's autofill prompt) ---
 
     // Web DOM ids on the address form page. Not Compose tags — GeckoView exposes web element ids

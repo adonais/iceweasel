@@ -74,6 +74,8 @@ run-if = [
   "false", # Requires elevated priviledges. See bug 1707853 and comments in test
 ]
 
+["test_jar_protocol_flags.js"]
+
 ["test_jarchannel.js"]
 
 ["test_jarinput_stream_zipreader_reference.js"]

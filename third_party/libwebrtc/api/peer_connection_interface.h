@@ -154,6 +154,12 @@ namespace webrtc {
 // MediaFactory class definition is not part of the api.
 class MediaFactory;
 
+// Forward-declared so PeerConnectionDependencies can hold a
+// std::unique_ptr<PeerConnectionTracerInterface> without including
+// api/peer_connection_tracer_interface.h (which itself includes this
+// header).
+class PeerConnectionTracerInterface;
+
 // IWYU pragma: end_keep
 // MediaStream container interface.
 class StreamCollectionInterface : public RefCountInterface {
@@ -1415,6 +1421,14 @@ struct RTC_EXPORT PeerConnectionDependencies final {
   // Optional field trials to use.
   // Overrides those from PeerConnectionFactoryDependencies.
   std::unique_ptr<FieldTrialsView> trials;
+
+  // Optional passive observer of PeerConnection lifecycle and operation
+  // events, intended for diagnostics / trace surfaces such as
+  // chrome://webrtc-internals. See api/peer_connection_tracer_interface.h.
+  // Convention: set once at construction; the PeerConnection owns the tracer
+  // for its entire lifetime. Not intended to be shared across multiple
+  // PeerConnections.
+  std::unique_ptr<PeerConnectionTracerInterface> tracer;
 };
 
 // PeerConnectionFactoryDependencies holds all of the PeerConnectionFactory

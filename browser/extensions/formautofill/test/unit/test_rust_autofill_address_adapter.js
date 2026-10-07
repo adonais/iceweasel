@@ -15,6 +15,9 @@ const { RustAutofillAddressesAdapter } = ChromeUtils.importESModule(
 const { Store } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAutofill.sys.mjs"
 );
+const { FormAutofill } = ChromeUtils.importESModule(
+  "resource://autofill/FormAutofill.sys.mjs"
+);
 
 const TEST_RECORD = {
   name: "Jane Doe",
@@ -228,4 +231,57 @@ add_task(async function test_get_distinguishes_missing_from_unreadable() {
     /database is locked/,
     "a failure to read propagates rather than reading as not-found"
   );
+});
+
+add_task(async function test_read_suppresses_country_without_metadata() {
+  // A region ICU can name, so AddressRecord.normalizeFields keeps it on write,
+  // but one with no bundled address metadata, so it is absent from
+  // FormAutofill.countries. AddressesBase._recordReadProcessor drops such a
+  // code on every read, and this store has to agree: a profile that migrates
+  // must not start exposing a code the JSON store hid.
+  const UNSUPPORTED_COUNTRY = "XK";
+  Assert.ok(
+    !FormAutofill.countries.has(UNSUPPORTED_COUNTRY),
+    `${UNSUPPORTED_COUNTRY} has no bundled address metadata`
+  );
+
+  const dbPath = FileTestUtils.getTempFile(
+    "autofill-adapter-country.sqlite"
+  ).path;
+  const adapter = new RustAutofillAddressesAdapter(await Store.init(dbPath));
+
+  const guid = await adapter.add({
+    ...TEST_RECORD,
+    "address-level1": "",
+    "address-level2": "Pristina",
+    "postal-code": "10000",
+    country: UNSUPPORTED_COUNTRY,
+  });
+
+  const stored = await adapter._get(await adapter._store(), guid);
+  Assert.equal(
+    stored.country,
+    UNSUPPORTED_COUNTRY,
+    "the code is persisted, as the JSON store persists it"
+  );
+
+  const fetched = await adapter.get(guid);
+  Assert.ok(
+    !("country" in fetched),
+    "get() does not report a country with no address metadata"
+  );
+  Assert.ok(
+    !("country-name" in fetched),
+    "get() does not report a country-name for it either"
+  );
+
+  const [all] = await adapter.getAll();
+  Assert.ok(
+    !("country" in all),
+    "getAll() does not report a country with no address metadata"
+  );
+
+  // Only the country is hidden: the rest of the record reads back intact.
+  Assert.equal(fetched["address-level2"], "Pristina", "other fields are kept");
+  Assert.equal(fetched["postal-code"], "10000", "other fields are kept");
 });

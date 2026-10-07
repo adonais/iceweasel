@@ -26,6 +26,7 @@ internal class NativeCrashTools {
             context: Context,
             buildId: String?,
             displayVersion: String?,
+            serverEndpoint: String? = null,
             pingUploadEnabled: Boolean = true,
         ): NativeCrashTools? {
             if (loaded) {
@@ -42,6 +43,7 @@ internal class NativeCrashTools {
                             context.packageName,
                             buildId,
                             displayVersion,
+                            serverEndpoint,
                             pingUploadEnabled,
                         )
                         instance = NativeCrashTools()
@@ -88,6 +90,7 @@ internal class NativeCrashTools {
             appId: String,
             buildId: String?,
             displayVersion: String?,
+            serverEndpoint: String?,
             pingUploadEnabled: Boolean,
         )
     }

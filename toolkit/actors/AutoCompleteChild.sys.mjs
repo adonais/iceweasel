@@ -369,6 +369,20 @@ export class AutoCompleteChild extends JSWindowActorChild {
     this._secondaryActionFocused = false;
     return result.length == 1 && result[0];
   }
+
+  maybeLeaveSecondaryAction() {
+    if (!this._secondaryActionFocused) {
+      return false;
+    }
+    let result = Services.cpmm.sendSyncMessage(
+      "AutoComplete:MaybeLeaveSecondaryAction",
+      {
+        browsingContext: this.browsingContext,
+      }
+    );
+    this._secondaryActionFocused = false;
+    return result.length == 1 && result[0];
+  }
 }
 
 AutoCompleteChild.prototype.QueryInterface = ChromeUtils.generateQI([

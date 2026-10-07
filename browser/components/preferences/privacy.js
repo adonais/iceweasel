@@ -71,7 +71,7 @@ ChromeUtils.defineESModuleGetters(this, {
   AppUpdater: "resource://gre/modules/AppUpdater.sys.mjs",
   DoHConfigController: "moz-src:///toolkit/components/doh/DoHConfig.sys.mjs",
   PreferencesBackupResource:
-    "resource:///modules/backup/PreferencesBackupResource.sys.mjs",
+    "moz-src:///browser/components/backup/resources/PreferencesBackupResource.sys.mjs",
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
   SelectableProfileService:
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",

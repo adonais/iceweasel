@@ -19,6 +19,7 @@ DIRS += [
     "inspector",
     "reftests",
     "painting",
+    "printing",
 ]
 
 
@@ -29,9 +30,6 @@ IPDL_SOURCES = [
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
-
-if CONFIG["NS_PRINTING"]:
-    DIRS += ["printing"]
 
 TEST_DIRS += [
     "tools/reftest",

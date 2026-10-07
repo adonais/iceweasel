@@ -1858,7 +1858,7 @@ SECKEY_ConvertToPublicKey(SECKEYPrivateKey *privk)
     CERTCertificate *cert;
     SECStatus rv;
     CK_OBJECT_HANDLE pubKeyHandle;
-    SECItem decodedPoint;
+    SECItem decodedPoint = { siBuffer, NULL, 0 };
     SECItem *point;
     unsigned int fieldLen;
 

@@ -7,11 +7,9 @@ package mozilla.components.service.pocket.recommendations
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
-import mozilla.components.concept.fetch.Client
 import mozilla.components.service.pocket.ContentRecommendationsRequestConfig
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
 import mozilla.components.service.pocket.helpers.PocketTestResources
-import mozilla.components.service.pocket.recommendations.api.ContentRecommendationsEndpoint
 import mozilla.components.service.pocket.recommendations.api.ContentRecommendationsProvider
 import mozilla.components.service.pocket.recommendations.api.MerinoContentRecommendationsProvider
 import mozilla.components.service.pocket.stories.api.PocketResponse
@@ -32,12 +30,10 @@ import org.mockito.Mockito.verify
 @RunWith(AndroidJUnit4::class)
 class ContentRecommendationsUseCasesTest {
 
-    private val client: Client = mock()
     private val useCases =
         spy(
             ContentRecommendationsUseCases(
                 appContext = testContext,
-                client = client,
                 config = ContentRecommendationsRequestConfig(),
             )
         )
@@ -46,7 +42,7 @@ class ContentRecommendationsUseCasesTest {
 
     @Before
     fun setup() {
-        doReturn(provider).`when`(useCases).getContentRecommendationsProvider(any(), any())
+        doReturn(provider).`when`(useCases).getContentRecommendationsProvider(any())
         doReturn(repository).`when`(useCases).getContentRecommendationsRepository(any())
     }
 
@@ -102,23 +98,11 @@ class ContentRecommendationsUseCasesTest {
         }
 
     @Test
-    fun `GIVEN the Merino client is disabled WHEN the content recommendations provider is retrieved THEN return the endpoint`() {
-        val config = ContentRecommendationsRequestConfig(useMerinoClient = false)
-        val useCases = ContentRecommendationsUseCases(appContext = testContext, client = client, config = config)
+    fun `WHEN the content recommendations provider is retrieved THEN return the Merino provider`() {
+        val config = ContentRecommendationsRequestConfig()
+        val useCases = ContentRecommendationsUseCases(appContext = testContext, config = config)
 
-        val provider = useCases.getContentRecommendationsProvider(client, config)
-
-        assertIs<ContentRecommendationsEndpoint>(provider)
-    }
-
-    @Test
-    fun `GIVEN the Merino client is enabled WHEN the content recommendations provider is retrieved THEN return the Merino provider`() {
-        val config = ContentRecommendationsRequestConfig(useMerinoClient = true)
-        val useCases = ContentRecommendationsUseCases(appContext = testContext, client = client, config = config)
-
-        val provider = useCases.getContentRecommendationsProvider(client, config)
-
-        assertIs<MerinoContentRecommendationsProvider>(provider)
+        assertIs<MerinoContentRecommendationsProvider>(useCases.getContentRecommendationsProvider(config))
     }
 
     private fun getSuccessContentRecommendationsResponse() =

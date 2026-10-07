@@ -1850,6 +1850,28 @@ add_setup(function () {
   OSKeyStoreTestUtils.setup();
 });
 
+// rust/browser.toml runs these tests a second time with the Rust address store
+// serving, which it asks for with rust.enabled and pins with rust.active.
+// Checked after the test rather than before it: FormAutofillStorage.getAddresses()
+// follows rust.active, so a test that leaves it cleared hands every test after
+// it the JSON store, and they would pass having never touched Rust.
+if (
+  Services.prefs.getBoolPref(
+    "extensions.formautofill.addresses.storage.rust.enabled",
+    false
+  )
+) {
+  registerCleanupFunction(function rust_served_the_addresses() {
+    Assert.ok(
+      Services.prefs.getBoolPref(
+        "extensions.formautofill.addresses.storage.rust.active",
+        false
+      ),
+      "the Rust store served addresses, so this run exercised it"
+    );
+  });
+}
+
 registerCleanupFunction(async () => {
   await removeAllRecords();
   await OSKeyStoreTestUtils.cleanup();

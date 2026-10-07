@@ -420,7 +420,7 @@ static void CollectVariationsFromDictionary(const void* aKey,
                                             void* aContext) {
   auto keyPtr = static_cast<const CFTypeRef>(aKey);
   auto valuePtr = static_cast<const CFTypeRef>(aValue);
-  auto outVariations = static_cast<std::vector<FontVariation>*>(aContext);
+  auto outVariations = static_cast<std::vector<wr::FontVariation>*>(aContext);
   if (CFGetTypeID(keyPtr) == CFNumberGetTypeID() &&
       CFGetTypeID(valuePtr) == CFNumberGetTypeID()) {
     uint64_t t;
@@ -429,13 +429,13 @@ static void CollectVariationsFromDictionary(const void* aKey,
                          &t) &&
         CFNumberGetValue(static_cast<CFNumberRef>(valuePtr),
                          kCFNumberDoubleType, &v)) {
-      outVariations->push_back(FontVariation{uint32_t(t), float(v)});
+      outVariations->push_back(wr::FontVariation{uint32_t(t), float(v)});
     }
   }
 }
 
-static bool GetVariationsForCTFont(CTFontRef aCTFont,
-                                   std::vector<FontVariation>* aOutVariations) {
+static bool GetVariationsForCTFont(
+    CTFontRef aCTFont, std::vector<wr::FontVariation>* aOutVariations) {
   if (!aCTFont) {
     return true;
   }
@@ -452,7 +452,7 @@ static bool GetVariationsForCTFont(CTFontRef aCTFont,
 bool ScaledFontMac::GetFontInstanceData(FontInstanceDataOutput aCb,
                                         void* aBaton) {
   // Collect any variation settings that were incorporated into the CTFont.
-  std::vector<FontVariation> variations;
+  std::vector<wr::FontVariation> variations;
   if (!GetVariationsForCTFont(mCTFont, &variations)) {
     return false;
   }
@@ -466,7 +466,7 @@ bool ScaledFontMac::GetFontInstanceData(FontInstanceDataOutput aCb,
 bool ScaledFontMac::GetWRFontInstanceOptions(
     Maybe<wr::FontInstanceOptions>* aOutOptions,
     Maybe<wr::FontInstancePlatformOptions>* aOutPlatformOptions,
-    std::vector<FontVariation>* aOutVariations) {
+    std::vector<wr::FontVariation>* aOutVariations) {
   GetVariationsForCTFont(mCTFont, aOutVariations);
 
   wr::FontInstanceOptions options = {};
@@ -508,7 +508,7 @@ ScaledFontMac::InstanceData::InstanceData(
 
 static CFDictionaryRef CreateVariationDictionaryOrNull(
     CGFontRef aCGFont, CFArrayRef& aCGAxesCache, CFArrayRef& aCTAxesCache,
-    uint32_t aVariationCount, const FontVariation* aVariations) {
+    uint32_t aVariationCount, const wr::FontVariation* aVariations) {
   if (!aCGAxesCache) {
     aCGAxesCache = CGFontCopyVariationAxes(aCGFont);
     if (!aCGAxesCache) {
@@ -593,8 +593,8 @@ static CFDictionaryRef CreateVariationDictionaryOrNull(
 
     double value = defDouble;
     for (uint32_t j = 0; j < aVariationCount; ++j) {
-      if (aVariations[j].mTag == tagLong) {
-        value = std::clamp<double>(aVariations[j].mValue, minDouble, maxDouble);
+      if (aVariations[j].tag == tagLong) {
+        value = std::clamp<double>(aVariations[j].value, minDouble, maxDouble);
         if (value != defDouble) {
           allDefaultValues = false;
         }
@@ -617,7 +617,7 @@ static CFDictionaryRef CreateVariationDictionaryOrNull(
 
 static CFDictionaryRef CreateVariationTagDictionaryOrNull(
     CTFontRef aCTFont, uint32_t aVariationCount,
-    const FontVariation* aVariations) {
+    const wr::FontVariation* aVariations) {
   AutoRelease<CFArrayRef> axes(CTFontCopyVariationAxes(aCTFont));
   CFIndex axisCount = CFArrayGetCount(axes);
 
@@ -675,8 +675,8 @@ static CFDictionaryRef CreateVariationTagDictionaryOrNull(
 
     double value = defDouble;
     for (uint32_t j = 0; j < aVariationCount; ++j) {
-      if (aVariations[j].mTag == tagLong) {
-        value = std::clamp<double>(aVariations[j].mValue, minDouble, maxDouble);
+      if (aVariations[j].tag == tagLong) {
+        value = std::clamp<double>(aVariations[j].value, minDouble, maxDouble);
         if (value != defDouble) {
           allDefaultValues = false;
         }
@@ -700,7 +700,7 @@ static CFDictionaryRef CreateVariationTagDictionaryOrNull(
 /* static */
 CGFontRef UnscaledFontMac::CreateCGFontWithVariations(
     CGFontRef aFont, CFArrayRef& aCGAxesCache, CFArrayRef& aCTAxesCache,
-    uint32_t aVariationCount, const FontVariation* aVariations) {
+    uint32_t aVariationCount, const wr::FontVariation* aVariations) {
   if (!aVariationCount) {
     return nullptr;
   }
@@ -717,7 +717,7 @@ CGFontRef UnscaledFontMac::CreateCGFontWithVariations(
 
 already_AddRefed<ScaledFont> UnscaledFontMac::CreateScaledFont(
     Float aGlyphSize, const uint8_t* aInstanceData,
-    uint32_t aInstanceDataLength, const FontVariation* aVariations,
+    uint32_t aInstanceDataLength, const wr::FontVariation* aVariations,
     uint32_t aNumVariations)
 
 {
@@ -771,7 +771,7 @@ already_AddRefed<ScaledFont> UnscaledFontMac::CreateScaledFont(
 already_AddRefed<ScaledFont> UnscaledFontMac::CreateScaledFontFromWRFont(
     Float aGlyphSize, const wr::FontInstanceOptions* aOptions,
     const wr::FontInstancePlatformOptions* aPlatformOptions,
-    const FontVariation* aVariations, uint32_t aNumVariations) {
+    const wr::FontVariation* aVariations, uint32_t aNumVariations) {
   ScaledFontMac::InstanceData instanceData(aOptions, aPlatformOptions);
   return CreateScaledFont(aGlyphSize, reinterpret_cast<uint8_t*>(&instanceData),
                           sizeof(instanceData), aVariations, aNumVariations);

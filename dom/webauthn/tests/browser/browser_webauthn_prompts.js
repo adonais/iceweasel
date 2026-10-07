@@ -10,7 +10,8 @@ XPCOMUtils.defineLazyScriptGetter(
   "chrome://browser/content/browser-fullScreenAndPointerLock.js"
 );
 
-const TEST_URL = "https://example.com/";
+const TEST_URL =
+  "https://example.com/browser/dom/webauthn/tests/browser/tab_login_form.html";
 var gAuthenticatorId;
 
 /**
@@ -45,6 +46,7 @@ add_task(test_register);
 add_task(test_register_escape);
 add_task(test_sign);
 add_task(test_sign_escape);
+add_task(test_sign_password_manager);
 add_task(test_tab_switching);
 add_task(test_window_switching);
 add_task(async function test_setup_softtoken() {
@@ -209,6 +211,82 @@ async function test_sign_escape() {
 
   // Close tab.
   await BrowserTestUtils.removeTab(tab);
+}
+
+// Test password manager prompts do not interrupt WebAuthn.
+// https://bugzilla.mozilla.org/show_bug.cgi?id=2068858
+async function test_sign_password_manager() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["signon.rememberSignons", true],
+      ["signon.testOnlyUserHasInteractedByPrefValue", true],
+      ["signon.testOnlyUserHasInteractedWithDocument", true],
+      ["toolkit.telemetry.ipcBatchTimeout", 0],
+    ],
+  });
+
+  let formProcessed = listenForTestNotification("FormProcessed");
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
+  info("Waiting for page to load");
+  await formProcessed;
+
+  info("Submitting the login form");
+  let formSubmitted = listenForTestNotification([
+    "FormProcessed",
+    "ShowDoorhanger",
+  ]);
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    content.document.getElementById("form-basic").submit();
+  });
+
+  // We should have a password manager prompt showing.
+  info("Waiting for password manager prompt");
+  await formSubmitted;
+
+  // Create a new credential from the page. This simulates a website that
+  // authenticates a user with a password and a WebAuthn credential.
+  let notificationPromise = promiseNotification("webauthn-prompt-presence");
+  let active = true;
+  let request = promiseWebAuthnGetAssertion(tab)
+    .then(arrivingHereIsBad)
+    .catch(e => {
+      // We should arrive here after cancelling the prompt with NotAllowedError:
+      // "The request is not allowed by the user agent or the platform in the
+      // current context, possibly because the user denied permission."
+      is(e.name, "NotAllowedError", "error is NotAllowedError");
+      isnot(
+        e.message.indexOf("user denied permission"),
+        -1,
+        `error message includes 'user denied permission': ${e.message}`
+      );
+
+      // When the window *doesn't* have focus, the Promise resolves immediately
+      // with NotAllowedError: "CredentialsContainer request is not allowed",
+      // and the "remember password" prompt should linger.
+      is(
+        e.message.indexOf("CredentialsContainer"),
+        -1,
+        `error message does not include 'CredentialsContainer': ${e.message}`
+      );
+    })
+    .then(() => (active = false));
+
+  // Wait for WebAuthn notification.
+  info("Waiting for WebAuthn notification");
+  await notificationPromise;
+
+  // Cancel the WebAuthn prompt.
+  ok(active, "WebAuthn prompt should still be active");
+  PopupNotifications.panel.firstElementChild.button.click();
+  await request;
+
+  // Make sure we cancelled the WebAuthn prompt, rather than the password
+  // manager prompt.
+  ok(!active, "WebAuthn prompt should now be inactive");
+
+  // Close tab.
+  await BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
 }
 
 // Add two tabs, open WebAuthn in the first, switch, assert the prompt is

@@ -54,6 +54,12 @@ function update(state = initialSourcesContentState(), action) {
       }
       return updateSourceTextContent(state, action);
 
+    case "REMOVE_GENERATED_SOURCE_TEXT":
+      state.mutableGeneratedSourceTextContentMapBySourceActorId.delete(
+        action.actorId
+      );
+      return { ...state };
+
     case "REMOVE_SOURCES":
       return removeAllSourceTextContentForSourcesAndActors(state, action);
   }

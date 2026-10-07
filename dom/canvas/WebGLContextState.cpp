@@ -405,6 +405,15 @@ Maybe<double> WebGLContext::GetParameter(const GLenum pname) {
       return Some(f);
     }
 
+    case LOCAL_GL_POLYGON_OFFSET_CLAMP_EXT: {
+      if (!IsExtensionEnabled(WebGLExtensionID::EXT_polygon_offset_clamp)) {
+        break;
+      }
+      GLfloat f = 0.f;
+      gl->fGetFloatv(pname, &f);
+      return Some(f);
+    }
+
     // bool
     case LOCAL_GL_DEPTH_TEST:
       return Some((bool)mDepthTestEnabled);

@@ -177,6 +177,9 @@ struct TestConfig {
     std::vector<TestConfig> out;
     for (auto cc : kEndpointVariants) {
       for (auto sc : kEndpointVariants) {
+        if (!cc.dtls_in_stun && sc.dtls_in_stun) {
+          continue;
+        }
         for (auto use_ice_lite : {false, true}) {
           for (auto cic : {true, false}) {
             for (auto p : {SSL_PROTOCOL_DTLS_12, SSL_PROTOCOL_DTLS_13}) {

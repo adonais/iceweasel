@@ -829,7 +829,8 @@ class FakeVoiceEngine : public VoiceEngineInterface {
       Call* call,
       const MediaConfig& config,
       const AudioOptions& options,
-      const CryptoOptions& crypto_options) override;
+      const CryptoOptions& crypto_options,
+      absl::AnyInvocable<void(uint32_t ssrc)> on_first_packet) override;
 
   // TODO(ossu): For proper testing, These should either individually settable
   //             or the voice engine should reference mockable factories.
@@ -957,7 +958,8 @@ class FakeVideoEngine : public VideoEngineInterface {
       const Environment& env,
       Call* call,
       const MediaConfig& config,
-      const CryptoOptions& crypto_options) override;
+      const CryptoOptions& crypto_options,
+      absl::AnyInvocable<void(uint32_t ssrc)> on_first_packet) override;
   FakeVideoMediaSendChannel* GetSendChannel(size_t index);
   FakeVideoMediaReceiveChannel* GetReceiveChannel(size_t index);
 

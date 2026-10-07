@@ -45,6 +45,7 @@ class GleanCrashReporterService(
     private val appChannel: String? = null,
     private val appVersion: String? = null,
     private val appBuildId: String? = null,
+    private val serverEndpoint: String? = null,
     private val isUploadEnabled: Boolean = true,
 ) : CrashTelemetryService {
     companion object {
@@ -250,7 +251,14 @@ class GleanCrashReporterService(
         }
     }
 
-    private fun getNativeCrashTools() = NativeCrashTools.load(context, appBuildId, appVersion, isUploadEnabled)
+    private fun getNativeCrashTools() =
+        NativeCrashTools.load(
+            context,
+            appBuildId,
+            appVersion,
+            serverEndpoint = serverEndpoint,
+            pingUploadEnabled = isUploadEnabled,
+        )
 
     private fun getExtrasJson(path: String): JsonObject? {
         val extrasFile = File(path)

@@ -51,3 +51,23 @@ pub fn link_nss_rustlib() {
     println!("cargo:rustc-link-lib=static=mozpkix");
     println!("cargo:rustc-link-lib=static=pure_virtual");
 }
+
+pub fn link_sqlite() {
+    let dist = PathBuf::from(TOPOBJDIR).join("dist");
+    println!(
+        "cargo:rustc-link-search=native={}",
+        dist.join("bin").display()
+    );
+    if std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "windows" {
+        println!(
+            "cargo:rustc-link-search=native={}",
+            dist.join("lib").display()
+        );
+    }
+
+    if config::MOZ_FOLD_LIBS {
+        println!("cargo:rustc-link-lib=dylib=nss3");
+    } else {
+        println!("cargo:rustc-link-lib=dylib=mozsqlite3");
+    }
+}

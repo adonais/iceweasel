@@ -173,6 +173,7 @@ class BasePrincipal : public nsJSPrincipals {
   NS_IMETHOD IsThirdPartyChannel(nsIChannel* aChannel, bool* aRes) override;
   NS_IMETHOD GetIsOriginPotentiallyTrustworthy(bool* aResult) override;
   NS_IMETHOD GetIsLoopbackHost(bool* aResult) override;
+  NS_IMETHOD GetIsSecureContextAllowlistedHost(bool* aResult) override;
   NS_IMETHOD IsSameOrigin(nsIURI* aURI, bool* aRes) override;
   NS_IMETHOD GetPrefLightCacheKey(nsIURI* aURI, bool aWithCredentials,
                                   const OriginAttributes& aOriginAttributes,

@@ -1,0 +1,9 @@
+{
+  "border": {
+    "radius": {
+      "focus": {
+        "value": "{border.radius.xsmall}"
+      }
+    }
+  }
+}

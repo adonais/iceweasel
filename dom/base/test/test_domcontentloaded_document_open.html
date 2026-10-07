@@ -1,0 +1,22 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Test document.open() from a DOMContentLoaded listener</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css">
+</head>
+<body>
+<iframe id="f"></iframe>
+<script>
+SimpleTest.waitForExplicitFinish();
+
+window.addEventListener("message", event => {
+  is(event.data, "reopened",
+     "the content written from a DOMContentLoaded listener was parsed");
+  SimpleTest.finish();
+});
+
+document.getElementById("f").src = "file_domcontentloaded_document_open.html";
+</script>
+</body>
+</html>

@@ -70,12 +70,9 @@ gViewController.defineView("list", async type => {
     filterFn: disabledAddonsFilterFn,
   });
 
-  // Show the colorway, forced-colors and smart window theme notices only
+  // Show the forced-colors and smart window theme notices only
   // in themes list view.
   if (type === "theme") {
-    const colorwayNotice = document.createElement("colorway-removal-notice");
-    frag.appendChild(colorwayNotice);
-
     const forcedColorsNotice = document.createElement("forced-colors-notice");
     frag.appendChild(forcedColorsNotice);
 

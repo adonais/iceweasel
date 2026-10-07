@@ -175,7 +175,14 @@ class PerformanceResourceTiming : public PerformanceEntry {
   }
 
   void GetDeliveryType(nsAString& aDeliveryType) const {
+    if (mDeliveryType.IsEmpty() && ServedFromCache()) {
+      aDeliveryType.AssignLiteral("cache");
+      return;
+    }
     aDeliveryType = mDeliveryType;
+  }
+  bool ServedFromCache() const {
+    return mTimingData->ServedFromCache() && mTimingData->TimingAllowed();
   }
   void SetDeliveryType(const nsAString& aDeliveryType) {
     mDeliveryType = aDeliveryType;

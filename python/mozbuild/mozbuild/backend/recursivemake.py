@@ -585,6 +585,8 @@ class RecursiveMakeBackend(MakeBackend):
             build_target = self._build_target_for_obj(obj)
             self._compile_graph[build_target]
             self._rust_targets.add(build_target)
+            if not obj.output_category:
+                self._no_skip["syms"].add(backend_file.relobjdir)
 
         elif isinstance(obj, HostRustProgram):
             self._process_host_rust_program(obj, backend_file)
@@ -1560,8 +1562,23 @@ class RecursiveMakeBackend(MakeBackend):
             backend_file.write(
                 f"{libdef.FEATURES_VAR} := {','.join(libdef.features)}\n"
             )
+        if libdef.cargo_profile_suffix:
+            backend_file.write(
+                f"RUST_LIBRARY_CARGO_PROFILE_SUFFIX := {libdef.cargo_profile_suffix}\n"
+            )
+        if libdef.cargo_crate_type:
+            backend_file.write(
+                f"RUST_LIBRARY_CARGO_CRATE_TYPE := {libdef.cargo_crate_type}\n"
+            )
         if libdef.output_category:
             self._process_non_default_target(libdef, rust_lib, backend_file)
+
+        if (
+            libdef.KIND == "target"
+            and not libdef.no_lto
+            and self.environment.substs.get("RUST_LTO_ELIGIBLE")
+        ):
+            backend_file.write("RUST_LIBRARY_LTO := 1\n")
 
     def _process_host_shared_library(self, libdef, backend_file):
         backend_file.write("HOST_SHARED_LIBRARY = %s\n" % libdef.lib_name)

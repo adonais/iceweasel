@@ -1,0 +1,21 @@
+# Any copyright is dedicated to the Public Domain.
+# http://creativecommons.org/publicdomain/zero/1.0/
+
+
+@template
+def Library(name):
+    """Template for libraries."""
+    LIBRARY_NAME = name
+
+
+@template
+def RustLibrary(name, cargo_profile_suffix, cargo_crate_type):
+    """Template for Rust libraries."""
+    Library(name)
+
+    IS_RUST_LIBRARY = True
+    RUST_LIBRARY_CARGO_PROFILE_SUFFIX = cargo_profile_suffix
+    RUST_LIBRARY_CARGO_CRATE_TYPE = cargo_crate_type
+
+
+RustLibrary("profile-library", "custom", "staticlib")

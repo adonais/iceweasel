@@ -82,10 +82,6 @@ class nsComponentManagerImpl final : public nsIComponentManager,
 
   nsresult FreeServices();
 
-  already_AddRefed<nsIFactory> FindFactory(const nsCID& aClass);
-  already_AddRefed<nsIFactory> FindFactory(const char* aContractID,
-                                           uint32_t aContractIDLen);
-
   already_AddRefed<nsIFactory> LoadFactory(nsFactoryEntry* aEntry);
 
   nsTHashMap<nsIDPointerHashKey, nsFactoryEntry*> mFactories;
@@ -163,7 +159,7 @@ class nsComponentManagerImpl final : public nsIComponentManager,
 
   bool mJSLoaderReady = false;
 
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
  private:
   ~nsComponentManagerImpl();

@@ -15,7 +15,6 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 task-defaults:
-    run-on-repo-type: [hg]
     attributes:
         retrigger: true
     use-python: default
@@ -44,7 +43,6 @@ tasks:
                 PERFHERDER_EXTRA_OPTIONS: valgrind
                 MOZ_PERFHERDER_UPLOAD: /builds/worker/perfherder-data-valgrind.json
         run:
-            clone-with: hg
             using: mozharness
             actions: [get-secrets, build, valgrind-test]
             custom-build-variant-cfg: valgrind

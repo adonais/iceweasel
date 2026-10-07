@@ -14,8 +14,10 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CompositionRecorder.h"
-#include "mozilla/layers/GpuFence.h"
 #include "mozilla/layers/NativeLayer.h"
+#if defined(MOZ_WAYLAND)
+#  include "mozilla/layers/NativeLayerWayland.h"
+#endif
 #include "mozilla/layers/ProfilerScreenshots.h"
 #include "mozilla/layers/SurfacePool.h"
 #include "mozilla/webrender/RenderTextureHost.h"
@@ -34,6 +36,12 @@ RenderCompositorNative::RenderCompositorNative(
   LOG("RenderCompositorNative::RenderCompositorNative()");
 
   MOZ_ASSERT(mNativeLayerRoot);
+
+#if defined(MOZ_WAYLAND)
+  if (auto* rootWayland = mNativeLayerRoot->AsNativeLayerRootWayland()) {
+    rootWayland->SetGLContext(aGL);
+  }
+#endif
 
 #if defined(XP_DARWIN) || defined(MOZ_WAYLAND)
   auto pool = RenderThread::Get()->SharedSurfacePool();

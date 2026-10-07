@@ -187,7 +187,6 @@ static auto CreateDocumentLoadInfo(CanonicalBrowsingContext* aBrowsingContext,
 
   loadInfo->SetTriggeringSandboxFlags(aLoadState->TriggeringSandboxFlags());
   loadInfo->SetTriggeringWindowId(aLoadState->TriggeringWindowId());
-  loadInfo->SetTriggeringStorageAccess(aLoadState->TriggeringStorageAccess());
   ClassificationFlags classificationFlags =
       aLoadState->TriggeringClassificationFlags();
   loadInfo->SetTriggeringFirstPartyClassificationFlags(
@@ -233,7 +232,6 @@ static auto CreateObjectLoadInfo(nsDocShellLoadState* aLoadState,
       aLoadState->GetTextDirectiveUserActivation());
   loadInfo->SetTriggeringSandboxFlags(aLoadState->TriggeringSandboxFlags());
   loadInfo->SetTriggeringWindowId(aLoadState->TriggeringWindowId());
-  loadInfo->SetTriggeringStorageAccess(aLoadState->TriggeringStorageAccess());
   net::ClassificationFlags classificationFlags =
       aLoadState->TriggeringClassificationFlags();
   loadInfo->SetTriggeringFirstPartyClassificationFlags(
@@ -847,8 +845,8 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   OriginAttributes attrs;
   loadingContext->GetOriginAttributes(attrs);
 
-  aLoadInfo->SetContinerFeaturePolicy(
-      loadingContext->GetContainerFeaturePolicy());
+  aLoadInfo->SetContinerPermissionsPolicy(
+      loadingContext->GetContainerPermissionsPolicy());
 
   mLoadIdentifier = aLoadState->GetLoadIdentifier();
   // See description of  mFileName in nsDocShellLoadState.h
@@ -1115,6 +1113,9 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
                                         mIsDocumentLoad);
   openInfo->Prepare();
 
+  // Set before TryActivateFromPrefetch, which flags the activation on it.
+  mTiming = aTiming;
+
   // Check for a matching completed speculation rules prefetch; see
   // TryActivateFromPrefetch. Only for document (navigational) loads; skipped
   // for <object>/<embed>. Runs on all platforms before AsyncOpen.
@@ -1193,7 +1194,6 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   mLoadStateExternalLoadFlags = aLoadState->LoadFlags();
   mLoadStateInternalLoadFlags = aLoadState->InternalLoadFlags();
   mLoadStateLoadType = aLoadState->LoadType();
-  mTiming = aTiming;
   mSrcdocData = aLoadState->SrcdocData();
   mBaseURI = aLoadState->BaseURI();
   mOriginalUriString = aLoadState->GetOriginalURIString();
@@ -2347,13 +2347,13 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
               return;
             }
 
-            // At this point the element has stored the container feature policy
-            // in the new browsing context, but we need to make sure that we
-            // copy it over to the load info.
+            // At this point the element has stored the container permissions
+            // policy in the new browsing context, but we need to make sure that
+            // we copy it over to the load info.
             nsCOMPtr<nsILoadInfo> loadInfo = self->mChannel->LoadInfo();
-            if (aBrowsingContext->GetContainerFeaturePolicy()) {
-              loadInfo->SetContainerFeaturePolicyInfo(
-                  *aBrowsingContext->GetContainerFeaturePolicy());
+            if (aBrowsingContext->GetContainerPermissionsPolicy()) {
+              loadInfo->SetContainerPermissionsPolicyInfo(
+                  *aBrowsingContext->GetContainerPermissionsPolicy());
             }
 
             MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,

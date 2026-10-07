@@ -1386,7 +1386,9 @@ already_AddRefed<RemoteBrowser> ContentParent::CreateBrowser(
   if (NS_WARN_IF(!cpm)) {
     return nullptr;
   }
-  cpm->RegisterRemoteFrame(browserParent);
+  if (NS_WARN_IF(!cpm->RegisterRemoteFrame(browserParent))) {
+    return nullptr;
+  }
 
   // Open a remote endpoint for our PBrowser actor.
   ManagedEndpoint<PBrowserChild> childEp =
@@ -2531,8 +2533,7 @@ bool ContentParent::LaunchSubprocessResolve(bool aIsSync,
 
   mHangMonitorActor = ProcessHangMonitor::AddProcess(this);
 
-  // Set a reply timeout for CPOWs.
-  SetReplyTimeoutMs(StaticPrefs::dom_ipc_cpow_timeout());
+  SetReplyTimeoutMs(StaticPrefs::dom_ipc_reply_timeout());
 
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   if (obs) {
@@ -4301,6 +4302,7 @@ mozilla::ipc::IPCResult ContentParent::RecvConstructPopupBrowser(
 
   // Bind the created BrowserParent to IPC to actually link the actor.
   if (NS_WARN_IF(!BindPBrowserEndpoint(std::move(aBrowserEp), parent))) {
+    cpm->UnregisterRemoteFrame(parent);
     return IPC_FAIL(this, "BindPBrowserEndpoint failed");
   }
 
@@ -6081,9 +6083,7 @@ ContentParent::AboutToLoadOrigin(nsIPrincipal* aPrincipal) {
 
   MOZ_ASSERT_DEBUG_OR_FUZZING(!aPrincipal->GetIsExpandedPrincipal());
 
-  LoadedOriginSet::Level prev =
-      LoadedOrigins()->AddInternal(aPrincipal, /* aTentative */ false);
-  if (prev < LoadedOriginSet::Level::Full) {
+  if (LoadedOrigins()->AddInternal(aPrincipal, /* aTentative */ false)) {
     // Transmit Blob URLs for the newly loaded origin.
     // Skip broadcast principals as they'll already have been sent.
     if (!BlobURLProtocolHandler::IsBlobURLBroadcastPrincipal(aPrincipal)) {
@@ -6671,6 +6671,7 @@ mozilla::ipc::IPCResult ContentParent::RecvCompleteAllowAccessFor(
     const nsACString& aTrackingOrigin, uint32_t aCookieBehavior,
     const ContentBlockingNotifier::StorageAccessPermissionGrantedReason&
         aReason,
+    const Maybe<bool>& aHadPriorUserInteraction,
     CompleteAllowAccessForResolver&& aResolver) {
   if (aParentContext.IsNullOrDiscarded()) {
     return IPC_OK();
@@ -6678,7 +6679,8 @@ mozilla::ipc::IPCResult ContentParent::RecvCompleteAllowAccessFor(
 
   StorageAccessAPIHelper::CompleteAllowAccessForOnParentProcess(
       aParentContext.get_canonical(), aTopLevelWindowId, aTrackingPrincipal,
-      aTrackingOrigin, aCookieBehavior, aReason, nullptr)
+      aTrackingOrigin, aCookieBehavior, aReason, nullptr,
+      aHadPriorUserInteraction)
       ->Then(GetCurrentSerialEventTarget(), __func__,
              [aResolver = std::move(aResolver)](
                  StorageAccessAPIHelper::StorageAccessPermissionGrantPromise::
@@ -7543,15 +7545,15 @@ mozilla::ipc::IPCResult ContentParent::RecvReportServiceWorkerShutdownProgress(
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvNotifyOnHistoryReload(
-    const MaybeDiscarded<BrowsingContext>& aContext, const bool& aForceReload,
-    NotifyOnHistoryReloadResolver&& aResolver) {
+    const MaybeDiscarded<BrowsingContext>& aContext,
+    const uint32_t& aReloadFlags, NotifyOnHistoryReloadResolver&& aResolver) {
   bool canReload = false;
   Maybe<NotNull<RefPtr<nsDocShellLoadState>>> loadState;
   Maybe<bool> reloadActiveEntry;
   if (!aContext.IsNullOrDiscarded() &&
       aContext.get_canonical()->IsOwnedByProcess(ChildID())) {
     aContext.get_canonical()->NotifyOnHistoryReload(
-        aForceReload, canReload, loadState, reloadActiveEntry);
+        aReloadFlags, canReload, loadState, reloadActiveEntry);
   }
   aResolver(
       std::tuple<const bool&,
@@ -7756,10 +7758,9 @@ mozilla::ipc::IPCResult ContentParent::RecvSessionHistoryEntryWireframe(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-ContentParent::RecvGetLoadingSessionHistoryInfoFromParent(
+mozilla::ipc::IPCResult ContentParent::RecvAdoptChildSHEntry(
     const MaybeDiscarded<BrowsingContext>& aContext,
-    GetLoadingSessionHistoryInfoFromParentResolver&& aResolver) {
+    AdoptChildSHEntryResolver&& aResolver) {
   if (aContext.IsNullOrDiscarded()) {
     return IPC_OK();
   }
@@ -7769,7 +7770,7 @@ ContentParent::RecvGetLoadingSessionHistoryInfoFromParent(
   }
 
   Maybe<LoadingSessionHistoryInfo> info;
-  aContext.get_canonical()->GetLoadingSessionHistoryInfoFromParent(info);
+  aContext.get_canonical()->AdoptChildSHEntry(info);
   aResolver(info);
 
   return IPC_OK();
@@ -8027,15 +8028,16 @@ mozilla::ipc::IPCResult ContentParent::RecvGeckoTraceExport(ByteBuf&& aBuf) {
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult ContentParent::RecvSetContainerFeaturePolicy(
+mozilla::ipc::IPCResult ContentParent::RecvSetContainerPermissionsPolicy(
     const MaybeDiscardedBrowsingContext& aContainerContext,
-    MaybeFeaturePolicyInfo&& aContainerFeaturePolicyInfo) {
+    MaybePermissionsPolicyInfo&& aContainerPermissionsPolicyInfo) {
   if (aContainerContext.IsNullOrDiscarded()) {
     return IPC_OK();
   }
 
   auto* context = aContainerContext.get_canonical();
-  context->SetContainerFeaturePolicy(std::move(aContainerFeaturePolicyInfo));
+  context->SetContainerPermissionsPolicy(
+      std::move(aContainerPermissionsPolicyInfo));
 
   return IPC_OK();
 }

@@ -144,7 +144,7 @@ function setPrefDefaults() {
 window.addEventListener(
   "load",
   async function () {
-    gShortcuts = new KeyShortcuts({ window });
+    gShortcuts = new KeyShortcuts(window);
     gShortcuts.on("CmdOrCtrl+W", onCloseCommand);
     gShortcuts.on("CmdOrCtrl+Alt+Shift+I", onDebugBrowserToolbox);
     gShortcuts.on("CmdOrCtrl+Alt+R", onReloadBrowser);

@@ -10,12 +10,12 @@
 #include "mozilla/RangeUtils.h"
 #include "mozilla/Result.h"
 #include "mozilla/dom/HTMLSlotElement.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "nsContentUtils.h"
 #include "nsElementTable.h"
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
-#include "nsRange.h"
 
 namespace mozilla {
 
@@ -966,15 +966,15 @@ nsresult ContentSubtreeIterator::Init(nsINode* aStartContainer,
 
 nsresult ContentSubtreeIterator::Init(const RawRangeBoundary& aStartBoundary,
                                       const RawRangeBoundary& aEndBoundary) {
-  RefPtr<nsRange> range =
-      nsRange::Create(aStartBoundary, aEndBoundary, IgnoreErrors());
+  RefPtr<dom::Range> range =
+      dom::Range::Create(aStartBoundary, aEndBoundary, IgnoreErrors());
   if (NS_WARN_IF(!range) || NS_WARN_IF(!range->IsPositioned())) {
     return NS_ERROR_INVALID_ARG;
   }
 
   if (NS_WARN_IF(range->MayCrossShadowBoundaryStartRef() != aStartBoundary) ||
       NS_WARN_IF(range->MayCrossShadowBoundaryEndRef() != aEndBoundary)) {
-    // Could happen if the above nsRange::Create decides to collapse
+    // Could happen if the above Range::Create decides to collapse
     // the range, like aStartBoundary is "after" aEndBoundary.
     return NS_ERROR_UNEXPECTED;
   }
@@ -992,10 +992,10 @@ nsresult ContentSubtreeIterator::InitWithAllowCrossShadowBoundary(
     return NS_ERROR_INVALID_ARG;
   }
 
-  if (aRange->IsDynamicRange()) {
+  if (aRange->IsRange()) {
     // When we handle flattened tree, we should ignore unformatted nodes.
     // Therefore, we need to adjust the range into the formatted flattened tree.
-    mRange = aRange->AsDynamicRange()->GetRangeInFlatTree();
+    mRange = aRange->AsRange()->GetRangeInFlatTree();
   } else {
     mRange = aRange;
   }

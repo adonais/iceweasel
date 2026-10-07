@@ -28,7 +28,8 @@ add_task(async function test_wrong_policies() {
     },
   });
 
-  let expected = {};
+  // SitePolicies provides an empty set if absent and policies have been previously applied.
+  let expected = { SitePolicies: [] };
 
   Assert.deepEqual(
     await Services.policies.getActivePolicies(),

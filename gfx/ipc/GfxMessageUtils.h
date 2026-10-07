@@ -399,7 +399,7 @@ struct GeckoProcessTypeValidator {
   if (e == IntegralType(GeckoProcessType::GeckoProcessType_##enum_name)) {    \
     return true;                                                              \
   }
-#include "mozilla/GeckoProcessTypes.h"
+#include "mozilla/GeckoProcessTypes.inc"
 #undef GECKO_PROCESS_TYPE
 
     return false;

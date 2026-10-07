@@ -14,10 +14,8 @@ task-defaults:
 wasm32-wasi-compiler-rt-19:
     description: "wasm32-wasi Compiler-rt for Clang 19 toolchain build"
     treeherder:
-        symbol: TL(wasi-crt-19)
+        symbol: WASI(crt-19)
     worker-type: b-linux-docker-xlarge-amd
-    worker:
-        docker-image: {in-tree: deb13-toolchain-build}
     run:
         script: build-wasi-sdk.sh
         arguments:
@@ -35,7 +33,7 @@ wasm32-wasi-compiler-rt-19:
 android-aarch64-compiler-rt-22:
     description: "android aarch64 Compiler-rt for Clang 22 toolchain build"
     treeherder:
-        symbol: TA(aarch64-crt-22)
+        symbol: TA(crt-22-aarch64)
     run:
         arguments:
             - build/build-clang/clang-22.json
@@ -53,7 +51,7 @@ android-aarch64-compiler-rt-22:
 android-arm-compiler-rt-22:
     description: "android arm Compiler-rt for Clang 22 toolchain build"
     treeherder:
-        symbol: TA(arm-crt-22)
+        symbol: TA(crt-22-arm)
     run:
         arguments:
             - build/build-clang/clang-22.json
@@ -71,7 +69,7 @@ android-arm-compiler-rt-22:
 android-x64-compiler-rt-22:
     description: "android x64 Compiler-rt for Clang 22 toolchain build"
     treeherder:
-        symbol: TA(x64-crt-22)
+        symbol: TA(crt-22-x64)
     run:
         arguments:
             - build/build-clang/clang-22.json
@@ -86,7 +84,7 @@ android-x64-compiler-rt-22:
             - linux64-clang-22-stage1
             - linux64-android-ndk-linux-repack
 
-linux64-x86-compiler-rt-22:
+linux32-compiler-rt-22:
     description: "Linux x86 Compiler-rt for Clang 22 toolchain build"
     treeherder:
         symbol: TL32(crt-22)
@@ -233,10 +231,8 @@ win64-aarch64-compiler-rt-22:
 wasm32-wasi-compiler-rt-22:
     description: "wasm32-wasi Compiler-rt for Clang 22 toolchain build"
     treeherder:
-        symbol: TL(wasi-crt-22)
+        symbol: WASI(crt-22)
     worker-type: b-linux-docker-xlarge-amd
-    worker:
-        docker-image: {in-tree: deb13-toolchain-build}
     run:
         script: build-wasi-sdk.sh
         arguments:
@@ -254,7 +250,7 @@ wasm32-wasi-compiler-rt-22:
 android-aarch64-compiler-rt-23:
     description: "android aarch64 Compiler-rt for Clang 23 toolchain build"
     treeherder:
-        symbol: TA(aarch64-crt-23)
+        symbol: TA(crt-23-aarch64)
     run:
         arguments:
             - build/build-clang/clang-23.json
@@ -272,7 +268,7 @@ android-aarch64-compiler-rt-23:
 android-arm-compiler-rt-23:
     description: "android arm Compiler-rt for Clang 23 toolchain build"
     treeherder:
-        symbol: TA(arm-crt-23)
+        symbol: TA(crt-23-arm)
     run:
         arguments:
             - build/build-clang/clang-23.json
@@ -290,7 +286,7 @@ android-arm-compiler-rt-23:
 android-x64-compiler-rt-23:
     description: "android x64 Compiler-rt for Clang 23 toolchain build"
     treeherder:
-        symbol: TA(x64-crt-23)
+        symbol: TA(crt-23-x64)
     run:
         arguments:
             - build/build-clang/clang-23.json
@@ -305,7 +301,7 @@ android-x64-compiler-rt-23:
             - linux64-clang-23-stage1
             - linux64-android-ndk-linux-repack
 
-linux64-x86-compiler-rt-23:
+linux32-compiler-rt-23:
     description: "Linux x86 Compiler-rt for Clang 23 toolchain build"
     treeherder:
         symbol: TL32(crt-23)
@@ -452,10 +448,8 @@ win64-aarch64-compiler-rt-23:
 wasm32-wasi-compiler-rt-23:
     description: "wasm32-wasi Compiler-rt for Clang 23 toolchain build"
     treeherder:
-        symbol: TL(wasi-crt-23)
+        symbol: WASI(crt-23)
     worker-type: b-linux-docker-xlarge-amd
-    worker:
-        docker-image: {in-tree: deb13-toolchain-build}
     run:
         script: build-wasi-sdk.sh
         arguments:
@@ -475,7 +469,7 @@ android-aarch64-compiler-rt-trunk:
     attributes:
         cached_task: false
     treeherder:
-        symbol: TA(aarch64-crt-trunk)
+        symbol: TA(crt-trunk-aarch64)
     run:
         arguments:
             - build/build-clang/clang-trunk.json
@@ -495,7 +489,7 @@ android-arm-compiler-rt-trunk:
     attributes:
         cached_task: false
     treeherder:
-        symbol: TA(arm-crt-trunk)
+        symbol: TA(crt-trunk-arm)
     run:
         arguments:
             - build/build-clang/clang-trunk.json
@@ -515,7 +509,7 @@ android-x64-compiler-rt-trunk:
     attributes:
         cached_task: false
     treeherder:
-        symbol: TA(x64-crt-trunk)
+        symbol: TA(crt-trunk-x64)
     run:
         arguments:
             - build/build-clang/clang-trunk.json
@@ -530,7 +524,7 @@ android-x64-compiler-rt-trunk:
             - linux64-clang-trunk-stage1
             - linux64-android-ndk-linux-repack
 
-linux64-x86-compiler-rt-trunk:
+linux32-compiler-rt-trunk:
     description: "Linux x86 Compiler-rt for Clang trunk toolchain build"
     attributes:
         cached_task: false
@@ -695,10 +689,8 @@ wasm32-wasi-compiler-rt-trunk:
     attributes:
         cached_task: false
     treeherder:
-        symbol: TL(wasi-crt-trunk)
+        symbol: WASI(crt-trunk)
     worker-type: b-linux-docker-xlarge-amd
-    worker:
-        docker-image: {in-tree: deb13-toolchain-build}
     run:
         script: build-wasi-sdk.sh
         arguments:

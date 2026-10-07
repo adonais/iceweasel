@@ -7,8 +7,10 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from collections import defaultdict
+from contextlib import contextmanager
 from pathlib import Path
 
 import taskgraph
@@ -211,94 +213,92 @@ def taskgraph_decision(options, parameters):
 
     decision_task_id = os.environ["TASK_ID"]
 
-    # create a TaskGraphGenerator instance
-    tgg = TaskGraphGenerator(
-        root_dir=options.get("root"),
-        parameters=parameters,
-        decision_task_id=decision_task_id,
-        write_artifacts=True,
-        enable_verifications=options.get("verify", True),
-    )
-
-    if not create.testing:
-        # set additional index paths for the decision task
-        set_decision_indexes(decision_task_id, tgg.parameters, tgg.graph_config)
-
-    # write out the parameters used to generate this graph
-    write_artifact("parameters.yml", dict(**tgg.parameters))
-
-    # write out the public/actions.json file
-    write_artifact(
-        "actions.json",
-        render_actions_json(tgg.parameters, tgg.graph_config, decision_task_id),
-    )
-
-    # write out the full graph for reference
-    full_task_json = tgg.full_task_graph.to_json()
-    write_artifact("full-task-graph.json", full_task_json)
-
-    # write out kind graph
-    write_artifact("kind-graph.mm", format_kind_graph_mermaid(tgg.kind_graph))
-
-    # write out the public/runnable-jobs.json file
-    write_artifact(
-        "runnable-jobs.json", full_task_graph_to_runnable_jobs(full_task_json)
-    )
-
-    # write out the public/manifests-by-task.json file
-    write_artifact(
-        "manifests-by-task.json.gz",
-        full_task_graph_to_manifests_by_task(full_task_json),
-    )
-
-    # `tests-by-manifest.json.gz` was previously written out here
-    # it was moved to `loader/test.py` because its contents now depend on
-    # data generated in a subprocess which we do not have access to here
-    # see https://bugzilla.mozilla.org/show_bug.cgi?id=1989038 for additional
-    # details
-
-    # this is just a test to check whether the from_json() function is working
-    _, _ = TaskGraph.from_json(full_task_json)
-
-    # write out the target task set to allow reproducing this as input
-    write_artifact("target-tasks.json", list(tgg.target_task_set.tasks.keys()))
-
-    # write out the optimized task graph to describe what will actually happen,
-    # and the map of labels to taskids
-    write_artifact("task-graph.json", tgg.morphed_task_graph.to_json())
-    write_artifact("label-to-taskid.json", tgg.label_to_taskid)
-
-    # write bugbug scheduling information if it was invoked
-    if push_schedules.cache_info().currsize > 0:
-        write_artifact(
-            "bugbug-push-schedules.json",
-            push_schedules(tgg.parameters["project"], tgg.parameters["head_rev"]),
+    with source_bundle(parameters["head_rev"], parameters["repository_type"]):
+        # create a TaskGraphGenerator instance
+        tgg = TaskGraphGenerator(
+            root_dir=options.get("root"),
+            parameters=parameters,
+            decision_task_id=decision_task_id,
+            write_artifacts=True,
+            enable_verifications=options.get("verify", True),
         )
 
-    # upload run-task, fetch-content, robustcheckout.py and more as artifacts
-    mozharness_dir = Path(GECKO, "testing", "mozharness")
-    scripts_dir = Path(GECKO, "taskcluster", "scripts")
-    taskgraph_dir = Path(taskgraph.__file__).parent
-    to_copy = {
-        scripts_dir / "run-task": f"{ARTIFACTS_DIR}/run-task-hg",
-        scripts_dir / "tester" / "test-linux.sh": ARTIFACTS_DIR,
-        taskgraph_dir / "run-task" / "fetch-content": ARTIFACTS_DIR,
-        taskgraph_dir / "run-task" / "run-task": f"{ARTIFACTS_DIR}/run-task-git",
-        mozharness_dir / "external_tools" / "robustcheckout.py": ARTIFACTS_DIR,
-    }
-    for target, dest in to_copy.items():
-        shutil.copy2(target, dest)
+        if not create.testing:
+            # set additional index paths for the decision task
+            set_decision_indexes(decision_task_id, tgg.parameters, tgg.graph_config)
 
-    write_source_bundle(tgg.parameters["head_rev"], tgg.parameters["repository_type"])
+        # write out the parameters used to generate this graph
+        write_artifact("parameters.yml", dict(**tgg.parameters))
 
-    # actually create the graph
-    create_tasks(
-        tgg.graph_config,
-        tgg.morphed_task_graph,
-        tgg.label_to_taskid,
-        tgg.parameters,
-        decision_task_id=decision_task_id,
-    )
+        # write out the public/actions.json file
+        write_artifact(
+            "actions.json",
+            render_actions_json(tgg.parameters, tgg.graph_config, decision_task_id),
+        )
+
+        # write out the full graph for reference
+        full_task_json = tgg.full_task_graph.to_json()
+        write_artifact("full-task-graph.json", full_task_json)
+
+        # write out kind graph
+        write_artifact("kind-graph.mm", format_kind_graph_mermaid(tgg.kind_graph))
+
+        # write out the public/runnable-jobs.json file
+        write_artifact(
+            "runnable-jobs.json", full_task_graph_to_runnable_jobs(full_task_json)
+        )
+
+        # write out the public/manifests-by-task.json file
+        write_artifact(
+            "manifests-by-task.json.gz",
+            full_task_graph_to_manifests_by_task(full_task_json),
+        )
+
+        # `tests-by-manifest.json.gz` was previously written out here
+        # it was moved to `loader/test.py` because its contents now depend on
+        # data generated in a subprocess which we do not have access to here
+        # see https://bugzilla.mozilla.org/show_bug.cgi?id=1989038 for additional
+        # details
+
+        # this is just a test to check whether the from_json() function is working
+        _, _ = TaskGraph.from_json(full_task_json)
+
+        # write out the target task set to allow reproducing this as input
+        write_artifact("target-tasks.json", list(tgg.target_task_set.tasks.keys()))
+
+        # write out the optimized task graph to describe what will actually happen,
+        # and the map of labels to taskids
+        write_artifact("task-graph.json", tgg.morphed_task_graph.to_json())
+        write_artifact("label-to-taskid.json", tgg.label_to_taskid)
+
+        # write bugbug scheduling information if it was invoked
+        if push_schedules.cache_info().currsize > 0:
+            write_artifact(
+                "bugbug-push-schedules.json",
+                push_schedules(tgg.parameters["project"], tgg.parameters["head_rev"]),
+            )
+
+        # upload run-task, fetch-content, robustcheckout.py and more as artifacts
+        scripts_dir = Path(GECKO, "taskcluster", "scripts")
+        taskgraph_dir = Path(taskgraph.__file__).parent
+        to_copy = {
+            scripts_dir / "run-task": f"{ARTIFACTS_DIR}/run-task-hg",
+            scripts_dir / "tester" / "test-linux.sh": ARTIFACTS_DIR,
+            taskgraph_dir / "run-task" / "fetch-content": ARTIFACTS_DIR,
+            taskgraph_dir / "run-task" / "run-task": f"{ARTIFACTS_DIR}/run-task-git",
+            scripts_dir / "robustcheckout.py": ARTIFACTS_DIR,
+        }
+        for target, dest in to_copy.items():
+            shutil.copy2(target, dest)
+
+        # actually create the graph
+        create_tasks(
+            tgg.graph_config,
+            tgg.morphed_task_graph,
+            tgg.label_to_taskid,
+            tgg.parameters,
+            decision_task_id=decision_task_id,
+        )
 
 
 def get_decision_parameters(graph_config, options):
@@ -356,10 +356,9 @@ def get_decision_parameters(graph_config, options):
         )
 
     elif parameters["repository_type"] == "git":
+        # `files_changed` is derived further down, once parameter overrides had a
+        # chance to correct `base_rev`.
         parameters["hg_branch"] = None
-        parameters["files_changed"] = repo.get_changed_files(
-            rev=parameters["head_rev"], base=parameters["base_rev"]
-        )
 
     # Define default filter list, as most configurations shouldn't need
     # custom filters.
@@ -487,6 +486,12 @@ def get_decision_parameters(graph_config, options):
             except ValueError as e:
                 raise Exception(f"Failed to parse {note_ref} as JSON: {e}") from e
 
+    # Github reports a null base revision for a push that creates a branch, which would
+    # make the diff cover the whole tree. `mach try` records the real base in the
+    # parameter overrides applied above, so only derive `files_changed` now.
+    if parameters["repository_type"] == "git" and "files_changed" not in parameters:
+        parameters["files_changed"] = get_git_files_changed(repo, parameters)
+
     result = Parameters(**parameters)
     result.check()
     return result
@@ -514,6 +519,21 @@ def get_existing_tasks(rebuild_kinds, parameters, graph_config):
     parameters["existing_tasks"] = find_existing_tasks_from_previous_kinds(
         task_graph, [decision_task], rebuild_kinds
     )
+
+
+def get_git_files_changed(repo, parameters):
+    base_rev = parameters["base_rev"]
+    if base_rev != repo.NULL_REVISION and repo.is_shallow:
+        try:
+            repo.run("fetch", "--depth=1", parameters["base_repository"], base_rev)
+        except subprocess.CalledProcessError:
+            logger.warning(
+                f"Could not fetch base revision {base_rev}, "
+                "treating the whole tree as changed."
+            )
+            base_rev = repo.NULL_REVISION
+
+    return repo.get_changed_files(rev=parameters["head_rev"], base=base_rev)
 
 
 def set_try_config(parameters, task_config_file):
@@ -549,7 +569,8 @@ def set_decision_indexes(decision_task_id, params, graph_config):
         insert_index(index_path.format(**subs), decision_task_id)
 
 
-def write_source_bundle(head_rev, repository_type):
+@contextmanager
+def source_bundle(head_rev, repository_type):
     """Write a Mercurial bundle of recent changesets as a public artifact.
 
     Downstream build and source-test tasks can apply this bundle to obtain the
@@ -558,10 +579,15 @@ def write_source_bundle(head_rev, repository_type):
     which is the delta a task would otherwise pull on top of the CDN clone
     bundle.
 
+    The bundle is generated in the background while the body of the ``with``
+    block runs, and waited on when it exits. If the body raises, generation is
+    aborted and any partial bundle is removed.
+
     Only produced for Mercurial checkouts; git checkouts are served elsewhere.
     """
     if repository_type != "hg":
         logger.info("source checkout is not Mercurial; skipping source bundle")
+        yield
         return
 
     if not os.path.isdir(ARTIFACTS_DIR):
@@ -580,9 +606,13 @@ def write_source_bundle(head_rev, repository_type):
         f"(last(all(), {SOURCE_BUNDLE_RECENT_REVS}) "
         f"and date('-{SOURCE_BUNDLE_MAX_AGE_DAYS}'))"
     )
-    logger.info(f"writing source bundle artifact `{path}`")
+    logger.info(f"writing source bundle artifact `{path}` in the background")
+    output = tempfile.TemporaryFile()
+    proc = None
+    error = None
     try:
-        subprocess.run(
+        # Output is captured so it doesn't interleave with graph generation logs.
+        proc = subprocess.Popen(
             [
                 "hg",
                 "--cwd",
@@ -596,14 +626,42 @@ def write_source_bundle(head_rev, repository_type):
                 base,
                 path,
             ],
-            check=True,
+            stdin=subprocess.DEVNULL,
+            stdout=output,
+            stderr=subprocess.STDOUT,
         )
-    except (OSError, subprocess.CalledProcessError) as e:
-        # A missing bundle is non-fatal: downstream tasks fall back to pulling
-        # from the remote. Don't fail the decision task over it.
-        logger.warning(f"failed to write source bundle artifact: {e}")
-        if os.path.exists(path):
-            os.remove(path)
+    except OSError as e:
+        error = e
+
+    succeeded = False
+    try:
+        yield
+        succeeded = True
+    finally:
+        with output:
+            if proc:
+                if not succeeded:
+                    proc.kill()
+                start = time.monotonic()
+                returncode = proc.wait()
+                if succeeded:
+                    output.seek(0)
+                    hg_output = output.read().decode("utf-8", "replace").strip()
+                    if hg_output:
+                        logger.info(hg_output)
+                    logger.info(
+                        f"waited {time.monotonic() - start:.1f}s for source bundle"
+                    )
+                    if returncode:
+                        error = f"hg bundle exited with status {returncode}"
+
+        if not succeeded or error:
+            if succeeded:
+                # A missing bundle is non-fatal: downstream tasks fall back to
+                # pulling from the remote. Don't fail the decision task over it.
+                logger.warning(f"failed to write source bundle artifact: {error}")
+            if os.path.exists(path):
+                os.remove(path)
 
 
 def write_artifact(filename, data):

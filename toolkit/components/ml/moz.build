@@ -72,3 +72,14 @@ XPIDL_MODULE = "ml"
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+LICENSED_UNDER += ["apache"]
+LICENSED_UNDER["apache"].paths = [
+    "vendor/openai/dist/openai.mjs",
+    "vendor/transformers.js",
+]
+if CONFIG["NIGHTLY_BUILD"]:
+    LICENSED_UNDER["apache"].paths += [
+        "vendor/openai/dist/openai-dev.mjs",
+        "vendor/transformers-dev.js",
+    ]

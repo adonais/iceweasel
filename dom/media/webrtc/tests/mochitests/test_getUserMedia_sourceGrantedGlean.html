@@ -1,0 +1,61 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <script type="application/javascript" src="mediaStreamPlayback.js"></script>
+</head>
+<body>
+<pre id="test">
+<script type="application/javascript">
+  createHTML({
+    bug: "2063642",
+    title: "getUserMedia records the actually granted media source, not just the requested one",
+  });
+
+  const Services = SpecialPowers.Services;
+
+  async function gleanResetTestValues() {
+    return SpecialPowers.spawnChrome([], async () => {
+      await Services.fog.testFlushAllChildren();
+      Services.fog.testResetFOG();
+    });
+  }
+
+  async function grantedCountFor(label) {
+    await SpecialPowers.spawnChrome([], async () => {
+      await Services.fog.testFlushAllChildren();
+    });
+    return (
+      (await GleanTest.webrtc.getUserMediaSourceGranted[label].testGetValue()) ??
+      0
+    );
+  }
+
+  async function checkGrant(constraints, label, description) {
+    const before = await grantedCountFor(label);
+    const stream = await getUserMedia(constraints);
+    const after = await grantedCountFor(label);
+    is(after, before + 1, description);
+    for (const track of stream.getTracks()) {
+      track.stop();
+    }
+  }
+
+  runTest(async () => {
+    await gleanResetTestValues();
+
+    await checkGrant(
+      { video: true },
+      "camera",
+      "Granting a plain video gUM request should record a camera grant"
+    );
+
+    await checkGrant(
+      { audio: true },
+      "microphone",
+      "Granting a plain audio gUM request should record a microphone grant"
+    );
+  });
+</script>
+</pre>
+</body>
+</html>

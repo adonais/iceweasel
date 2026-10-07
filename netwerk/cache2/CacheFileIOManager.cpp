@@ -2301,7 +2301,8 @@ nsresult CacheFileIOManager::WriteInternal(CacheFileHandle* aHandle,
     } else {
       freeSpace >>= 10;  // bytes to kilobytes
       uint32_t limit = CacheObserver::DiskFreeSpaceHardLimit();
-      if (freeSpace - aOffset - aCount + aHandle->mFileSize < limit) {
+      // Convert to KiB for comparison
+      if (freeSpace - ((aOffset + aCount - aHandle->mFileSize) >> 10) < limit) {
         LOG(
             ("CacheFileIOManager::WriteInternal() - Low free space, refusing "
              "to write! [freeSpace=%" PRId64 "kB, limit=%ukB]",
@@ -2876,7 +2877,8 @@ nsresult CacheFileIOManager::TruncateSeekSetEOFInternal(
     } else {
       freeSpace >>= 10;  // bytes to kilobytes
       uint32_t limit = CacheObserver::DiskFreeSpaceHardLimit();
-      if (freeSpace - aEOFPos + aHandle->mFileSize < limit) {
+      // Convert to KiB for comparison
+      if (freeSpace - ((aEOFPos - aHandle->mFileSize) >> 10) < limit) {
         LOG(
             ("CacheFileIOManager::TruncateSeekSetEOFInternal() - Low free space"
              ", refusing to write! [freeSpace=%" PRId64 "kB, limit=%ukB]",

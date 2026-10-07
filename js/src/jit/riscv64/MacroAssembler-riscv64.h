@@ -10,9 +10,14 @@
 
 #include "mozilla/Maybe.h"
 
+#include <type_traits>
+
 #include "jit/MoveResolver.h"
 #include "jit/riscv64/Assembler-riscv64.h"
 #include "wasm/WasmTypeDecls.h"
+
+using js::wasm::FaultingCodeRange;
+using js::wasm::FaultingCodeRangePair;
 
 namespace js {
 namespace jit {
@@ -158,6 +163,8 @@ class MacroAssemblerRiscv64 : public Assembler {
   FaultingCodeRange ma_storeFloat(FloatRegister src, const BaseIndex& dest);
   FaultingCodeRange ma_storeFloat16(FloatRegister src, Address address);
   FaultingCodeRange ma_storeFloat16(FloatRegister src, const BaseIndex& dest);
+
+  void ma_mv(Register dest, Register src);
 
   // immediates
   BufferOffset ma_liPatchable(Register dest, Imm32 imm);
@@ -553,19 +560,21 @@ class MacroAssemblerRiscv64 : public Assembler {
                              AnyRegister value, Register memoryBase,
                              uint64_t offset);
 
-  void wasmLoadImpl(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                    Register ptr, AnyRegister output,
-                    wasm::ZeroExtendIndex zeroExtend);
-  void wasmStoreImpl(const wasm::MemoryAccessDesc& access, AnyRegister value,
-                     Register memoryBase, Register ptr,
-                     wasm::ZeroExtendIndex zeroExtend);
+  FaultingCodeRange wasmLoadImpl(const wasm::MemoryAccessDesc& access,
+                                 Register memoryBase, Register ptr,
+                                 AnyRegister output,
+                                 wasm::ZeroExtendIndex zeroExtend);
+  FaultingCodeRange wasmStoreImpl(const wasm::MemoryAccessDesc& access,
+                                  AnyRegister value, Register memoryBase,
+                                  Register ptr,
+                                  wasm::ZeroExtendIndex zeroExtend);
 
-  void wasmLoadImpl(const wasm::MemoryAccessDesc& access,
-                    const BaseIndex& address, AnyRegister output,
-                    wasm::ZeroExtendIndex zeroExtend);
-  void wasmStoreImpl(const wasm::MemoryAccessDesc& access, AnyRegister value,
-                     const BaseIndex& address,
-                     wasm::ZeroExtendIndex zeroExtend);
+  FaultingCodeRange wasmLoadImpl(const wasm::MemoryAccessDesc& access,
+                                 const BaseIndex& address, AnyRegister output,
+                                 wasm::ZeroExtendIndex zeroExtend);
+  FaultingCodeRange wasmStoreImpl(const wasm::MemoryAccessDesc& access,
+                                  AnyRegister value, const BaseIndex& address,
+                                  wasm::ZeroExtendIndex zeroExtend);
 };
 
 class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
@@ -655,7 +664,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
 
   void j(Label* dest) { jump(dest); }
 
-  void mov(Register src, Register dest) { mv(dest, src); }
+  void mov(Register src, Register dest) { ma_mv(dest, src); }
   void mov(ImmWord imm, Register dest) { ma_li(dest, imm); }
   void mov(ImmPtr imm, Register dest) {
     mov(ImmWord(uintptr_t(imm.value)), dest);
@@ -729,6 +738,39 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   void push(FloatRegister reg) { ma_push(reg); }
   void pop(Register reg) { ma_pop(reg); }
   void pop(FloatRegister reg) { ma_pop(reg); }
+
+  template <typename... Regs>
+  void pushRegs(const Regs&... regs) {
+    static_assert((std::is_convertible_v<Regs, Register> && ...));
+    static_assert(sizeof...(Regs) > 0);
+
+    if (((static_cast<Register>(regs) == StackPointer) || ...)) {
+      (ma_push(regs), ...);
+      return;
+    }
+
+    int32_t offset = int32_t(sizeof...(Regs) * sizeof(intptr_t));
+    ma_sub64(StackPointer, StackPointer, Imm32(offset));
+    (storePtr(regs, Address(StackPointer, offset -= int32_t(sizeof(intptr_t)))),
+     ...);
+  }
+
+  template <typename... Regs>
+  void popRegs(const Regs&... regs) {
+    static_assert((std::is_convertible_v<Regs, Register> && ...));
+    static_assert(sizeof...(Regs) > 0);
+
+    if (((static_cast<Register>(regs) == StackPointer) || ...)) {
+      (ma_pop(regs), ...);
+      return;
+    }
+
+    int32_t offset = -int32_t(sizeof(intptr_t));
+    (loadPtr(Address(StackPointer, offset += int32_t(sizeof(intptr_t))), regs),
+     ...);
+    ma_add64(StackPointer, StackPointer,
+             Imm32(int32_t(sizeof...(Regs) * sizeof(intptr_t))));
+  }
 
   // Emit a branch that can be toggled to a non-operation. On LOONG64 we use
   // "andi" instruction to toggle the branch.

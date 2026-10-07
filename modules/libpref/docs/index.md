@@ -164,7 +164,7 @@ bool/int/float values, not strings or complex values.
 
 Each mirror variable is read-only, accessible via a getter function. The base
 name of the getter function is the same as the pref's name, but with '.' or '-'
-converted to '_'. Sometimes a suffix is added, e.g. _AtStartup for the mirror
+converted to '_'. Sometimes a suffix is added, e.g. `_AtStartup` for the mirror
 once kind.
 
 Mirror variables have two benefits. First, they allow C++ and Rust code to get
@@ -415,7 +415,7 @@ is subsequently used only to store changed pref values.
 
 When any child process is created, the parent process serializes all pref
 values present in the hash table (i.e. those that have changed since the
-snapshot was made) _except sanitized prefs__ and stores them in a second,
+snapshot was made) *except sanitized prefs* and stores them in a second,
 short-lived shared memory region. This represents the set of changes the child
 process needs to apply on top of the snapshot, and allows it to build a hash
 table which should exactly match the parent's, modulo the sanitized prefs.

@@ -11,6 +11,9 @@ from .util import create_tasks, fetch_graph_and_labels
 logger = logging.getLogger(__name__)
 
 TASK_LABEL = "bhr-aggregate-cron"
+# Where a custom-date run publishes. The cron's own routes are all "this is the
+# aggregation for this push", which a backfill is not.
+BUILD_DATE_ROUTE = "index.gecko.v2.mozilla-central.bhr-aggregate.build.{date}"
 
 
 @register_callback_action(
@@ -43,6 +46,19 @@ TASK_LABEL = "bhr-aggregate-cron"
                     "BHR_AGGREGATE_DATE_OFFSET_DAYS."
                 ),
             },
+            "refill_dates": {
+                "type": "array",
+                "items": {"type": "string", "pattern": "^[0-9]{8}$"},
+                "title": "Roll-up dates to recompute",
+                "description": (
+                    "Build dates whose timeseries entry should be rebuilt from "
+                    "their published artifact. The roll-up keeps whatever a day's "
+                    "first run produced, so days that were backfilled or re-run "
+                    "only reach it when named here. Leave empty unless that is "
+                    "what you are doing; this run then also publishes the daily "
+                    "artifact and roll-up as usual, so do not pin a date with it."
+                ),
+            },
             "sample_size": {
                 "type": "number",
                 "exclusiveMinimum": 0,
@@ -71,6 +87,14 @@ def bhr_aggregate_action(parameters, graph_config, input, task_group_id, task_id
 
     date = input.get("date")
     sample_size = input.get("sample_size")
+    refill_dates = input.get("refill_dates") or []
+
+    if date and refill_dates:
+        raise Exception(
+            "date and refill_dates cannot be combined: a run pinned to a past "
+            "build date must not publish the roll-up, which is shared state "
+            "ending at the most recent day."
+        )
 
     def modifier(task):
         if task.label != TASK_LABEL:
@@ -85,15 +109,46 @@ def bhr_aggregate_action(parameters, graph_config, input, task_group_id, task_id
         if sample_size is not None:
             env["BHR_AGGREGATE_SAMPLE_SIZE"] = str(sample_size)
 
-        # Distinguish the one-off from the daily run on Treeherder.
+        # Distinguish any run triggered here from the daily one on Treeherder.
         task.task["extra"]["treeherder"]["symbol"] += "-custom"
+
+        if refill_dates:
+            # Recomputing the roll-up is the one thing this action does that is
+            # meant to replace the day's run, so it keeps the cron's routes and
+            # its timeseries step: it aggregates the current day as usual and
+            # rebuilds the named days alongside it.
+            env["BHR_TIMESERIES_REFILL_DATES"] = ",".join(refill_dates)
+            return task
+
+        # Otherwise this is a one-off, and it must not inherit the push's index
+        # routes. Those include the "latest" route, which is both the build the
+        # dashboard shows by default and where the next cron run reads its
+        # timeseries state, and the pushdate route the dashboard resolves a
+        # build date through -- a backfill landing on either would displace the
+        # real run for the day it was triggered on.
+        routes = [
+            route
+            for route in task.task.get("routes", [])
+            if not route.startswith("index.")
+        ]
+        if date:
+            routes.append(BUILD_DATE_ROUTE.format(date=date))
+        task.task["routes"] = routes
+
+        # Nor may it touch the shared roll-up. build_timeseries ends the window
+        # at the build date and drops every state day outside it, so rolling up
+        # a past day would prune all the later days out of the state the cron
+        # publishes -- and nothing can refill them, since their artifacts are
+        # not local to that run.
+        env["BHR_SKIP_TIMESERIES"] = "1"
         return task
 
     logger.info(
-        "Triggering %s with date=%s sample_size=%s",
+        "Triggering %s with date=%s sample_size=%s refill_dates=%s",
         TASK_LABEL,
         date or "(cron default)",
         sample_size if sample_size is not None else "(cron default)",
+        ",".join(refill_dates) or "(none)",
     )
     create_tasks(
         graph_config,

@@ -45,8 +45,8 @@
  *   Whether the window is an AI window.
  * @property {string} [title]
  *   Title of the window's selected tab.
- * @property {string} [hidden]
- *   Comma-separated list of the window's hidden toolbars.
+ * @property {WindowArgumentsState} [args]
+ *   Window creation arguments necessary to recreate this window.
  * @property {"normal"|"maximized"|"minimized"|"fullscreen"} [sizemode]
  *   Size mode of the window.
  * @property {"normal"|"maximized"|"minimized"|"fullscreen"} [sizemodeBeforeMinimized]
@@ -170,9 +170,19 @@ const CHROME_FLAGS_MAP = [
   [Ci.nsIWebBrowserChrome.CHROME_OPENAS_DIALOG, "dialog", "dialog=0"],
 ];
 
-// Hideable window features to restore
-// TODO(bug 2065234): This could just be an "is popup" bit now.
-const WINDOW_HIDEABLE_FEATURES = ["toolbar"];
+/** Whether a window is a popup specifically opened by a WebExtension. */
+const ARG_WEB_EXTENSION_POPUP_WINDOW = "web-extension-popup-window";
+/** Whether a window should be displayed with minimal chrome UI. */
+const ARG_CHROMELESS_WINDOW = "chromeless-window";
+
+/** @typedef {"web-extension-popup-window"|"chromeless-window"} WindowArgument */
+
+/**
+ * @typedef {Partial<Record<WindowArgument, true>>} WindowArgumentsState
+ *   Arguments for {@link nsIWindowWatcher.openWindow} that are not managed
+ *   by other modules (e.g. AI Window/Smart Window and Taskbar Tabs manage
+ *   their own window arguments). Serializes to/from {@link nsIPropertyBag2}.
+ */
 
 // These are tab events that we listen to.
 const TAB_EVENTS = [
@@ -738,7 +748,10 @@ class _SessionStore {
                 triggeringPrincipal_base64:
                   lazy.E10SUtils.SERIALIZED_SYSTEMPRINCIPAL,
               };
-              state = { windows: [{ tabs: [{ entries: [entry], formdata }] }] };
+              state = {
+                windows: [{ tabs: [{ entries: [entry], formdata }] }],
+                savedGroups: state.savedGroups,
+              };
               this.#log.debug("initSession, will show about:sessionrestore");
             } else if (
               this.#hasSingleTabWithURL(state.windows, "about:welcomeback")
@@ -770,10 +783,6 @@ class _SessionStore {
           this.#updateSessionStartTime(state);
 
           if (state.windows.length) {
-            // Make sure that at least the first window doesn't have anything hidden.
-            delete state.windows[0].hidden;
-            // Since nothing is hidden in the first window, it cannot be a popup.
-            delete state.windows[0].isPopup;
             // We don't want to minimize and then open a window at startup.
             if (state.windows[0].sizemode == "minimized") {
               state.windows[0].sizemode = "normal";
@@ -1479,9 +1488,12 @@ class _SessionStore {
       _lastClosedTabGroupCount: -1,
       lastClosedTabGroupId: null,
       busy: false,
+      /** @type {u32} */
       chromeFlags: aWindow.docShell.treeOwner
         .QueryInterface(Ci.nsIInterfaceRequestor)
         .getInterface(Ci.nsIAppWindow).chromeFlags,
+      /** @type {WindowArgumentsState} */
+      args: {},
     };
 
     if (PrivateBrowsingUtils.isWindowPrivate(aWindow)) {
@@ -1500,6 +1512,18 @@ class _SessionStore {
 
     if (lazy.AIWindow.isAIWindowActiveAndEnabled(aWindow)) {
       this.#windows[aWindow.__SSi].isAIWindow = true;
+    }
+
+    if (aWindow.document.documentElement.hasAttribute(ARG_CHROMELESS_WINDOW)) {
+      this.#windows[aWindow.__SSi].args[ARG_CHROMELESS_WINDOW] = true;
+    }
+
+    if (
+      aWindow.document.documentElement.hasAttribute(
+        ARG_WEB_EXTENSION_POPUP_WINDOW
+      )
+    ) {
+      this.#windows[aWindow.__SSi].args[ARG_WEB_EXTENSION_POPUP_WINDOW] = true;
     }
 
     let tabbrowser = aWindow.gBrowser;
@@ -1580,7 +1604,11 @@ class _SessionStore {
           let overwrite = this.#isCmdLineEmpty(aWindow, aInitialState);
 
           this.#cmdLineHadURLOnStartup = !overwrite;
-          let options = { firstWindow: true, overwriteTabs: overwrite };
+          let options = {
+            firstWindow: true,
+            overwriteTabs: overwrite,
+            restoreSource: "automatic_startup",
+          };
           this.#restoreWindows(aWindow, aInitialState, options);
         }
       } else {
@@ -1614,6 +1642,7 @@ class _SessionStore {
           : 0;
         this.#restoreWindows(aWindow, this.#deferredInitialState, {
           firstWindow: true,
+          restoreSource: "deferred_initial_state",
         });
       }
       this.#deferredInitialState = null;
@@ -1671,7 +1700,6 @@ class _SessionStore {
           // #closedWindows.
           this.#removeClosedWindow(closedWindowIndex);
           newWindowState = closedWindowState;
-          delete newWindowState.hidden;
         }
 
         if (newWindowState) {
@@ -1680,6 +1708,11 @@ class _SessionStore {
           let state = { windows: [newWindowState] };
           let options = { overwriteTabs: this.#isCmdLineEmpty(aWindow, state) };
           this.#restoreWindow(aWindow, newWindowState, options);
+          // Unlike #restoreWindowsFeaturesAndTabs, we restore into the window
+          // directly, so notify here as well. Consumers such as
+          // SidebarController wait for this to know that the state we handed
+          // them is all they are going to get.
+          Services.obs.notifyObservers(aWindow, NOTIFY_SINGLE_WINDOW_RESTORED);
         }
       }
       // we actually restored the session just now.
@@ -1708,6 +1741,7 @@ class _SessionStore {
       }
       this.#restoreWindows(aWindow, lastSessionState, {
         firstWindow: true,
+        restoreSource: "automatic_with_taskbar_tab",
       });
       this.#shouldRestoreLastSession = false;
     }
@@ -1727,9 +1761,12 @@ class _SessionStore {
    *        Window reference
    */
   #onBeforeBrowserWindowShown(aWindow) {
-    // Do not track Document Picture-in-Picture windows since these are
-    // ephemeral and tied to a specific tab's browser document.
-    if (aWindow.browsingContext.isDocumentPiP) {
+    // Do not track Document Picture-in-Picture windows or mini windows since
+    // these are ephemeral and tied to a specific tab's browser document.
+    if (
+      aWindow.browsingContext.isDocumentPiP ||
+      aWindow.document.documentElement.hasAttribute("mini-window")
+    ) {
       return;
     }
 
@@ -3433,7 +3470,10 @@ class _SessionStore {
     lazy.SessionCookies.restore(state.cookies || []);
 
     // restore to the given state
-    this.#restoreWindows(window, state, { overwriteTabs: true });
+    this.#restoreWindows(window, state, {
+      overwriteTabs: true,
+      restoreSource: "set_browser_state",
+    });
 
     // Notify of changes to closed objects.
     this.#notifyOfClosedObjectsChange();
@@ -3479,7 +3519,10 @@ class _SessionStore {
       );
     }
 
-    this.#restoreWindows(aWindow, aState, { overwriteTabs: aOverwrite });
+    this.#restoreWindows(aWindow, aState, {
+      overwriteTabs: aOverwrite,
+      restoreSource: "set_window_state",
+    });
 
     // Notify of changes to closed objects.
     this.#notifyOfClosedObjectsChange();
@@ -5003,26 +5046,43 @@ class _SessionStore {
 
   // This method deletes all the closedTabs matching userContextId.
   #forgetTabsWithUserContextId(userContextId) {
+    const clearClosedTabs = windowState => {
+      // In order to remove the tabs in the correct order, we store the
+      // indexes, into an array, then we reverse the array and remove closed
+      // data from the last one going backward.
+      let indexes = [];
+      windowState._closedTabs.forEach((closedTab, index) => {
+        if (closedTab.state.userContextId == userContextId) {
+          indexes.push(index);
+        }
+      });
+
+      for (let index of indexes.reverse()) {
+        this.#removeClosedTabData(windowState, windowState._closedTabs, index);
+      }
+    };
+
     for (let window of Services.wm.getEnumerator("navigator:browser")) {
       let windowState = this.#windows[window.__SSi];
       if (windowState) {
-        // In order to remove the tabs in the correct order, we store the
-        // indexes, into an array, then we revert the array and remove closed
-        // data from the last one going backward.
-        let indexes = [];
-        windowState._closedTabs.forEach((closedTab, index) => {
-          if (closedTab.state.userContextId == userContextId) {
-            indexes.push(index);
-          }
-        });
+        clearClosedTabs(windowState);
+      }
+    }
 
-        for (let index of indexes.reverse()) {
-          this.#removeClosedTabData(
-            windowState,
-            windowState._closedTabs,
-            index
-          );
-        }
+    // Also prune closed windows: remove matching _closedTabs and tabs, and
+    // drop the window entirely if no tabs remain.
+    for (let i = this.#closedWindows.length - 1; i >= 0; i--) {
+      let windowState = this.#closedWindows[i];
+
+      clearClosedTabs(windowState);
+
+      windowState.tabs = windowState.tabs.filter(
+        tab => tab.userContextId != userContextId
+      );
+
+      if (!windowState.tabs.length) {
+        this.#removeClosedWindow(i);
+        this.#saveableClosedWindowData.delete(windowState);
       }
     }
 
@@ -5070,8 +5130,6 @@ class _SessionStore {
 
     // We want to re-use the last opened window instead of opening a new one in
     // the case where it's "empty" and not associated with a window in the session.
-    // We will do more processing via #prepWindowToRestoreInto if we need to use
-    // the lastWindow.
     let lastWindow = this.#getTopWindow();
     let canUseLastWindow = lastWindow && !lastWindow.__SS_lastSessionWindowID;
 
@@ -5116,17 +5174,15 @@ class _SessionStore {
       if (
         !windowToUse &&
         canUseLastWindow &&
-        lastWindowIsAIWindow == thisWindowIsAIWindow
+        lastWindowIsAIWindow == thisWindowIsAIWindow &&
+        this.#canRestoreIntoExistingWindow(lastWindow, winState)
       ) {
         windowToUse = lastWindow;
         canUseLastWindow = false;
       }
 
-      let [canUseWindow, canOverwriteTabs] =
-        this.#prepWindowToRestoreInto(windowToUse);
-
       // If there's a window already open that we can restore into, use that
-      if (canUseWindow) {
+      if (windowToUse) {
         if (!PERSIST_SESSIONS) {
           // Since we're not overwriting existing tabs, we want to merge _closedTabs,
           // putting existing ones first. Then make sure we're respecting the max pref.
@@ -5141,6 +5197,20 @@ class _SessionStore {
             );
           }
         }
+
+        let removableTabs = this.#getRemovableHomePages(windowToUse);
+        let canOverwriteTabs = false;
+        if (windowToUse.gBrowser.tabs.length == removableTabs.length) {
+          canOverwriteTabs = true;
+        } else {
+          // If we're not overwriting all of the tabs, then close the home tabs.
+          while (removableTabs.length) {
+            windowToUse.gBrowser.removeTab(removableTabs.pop(), {
+              animate: false,
+            });
+          }
+        }
+
         // We don't restore window right away, just store its data.
         // Later, these windows will be restored with newly opened windows.
         this.#updateWindowRestoreState(windowToUse, {
@@ -5317,25 +5387,96 @@ class _SessionStore {
   }
 
   /**
-   * See if aWindow is usable for use when restoring a previous session via
-   * restoreLastSession. If usable, prepare it for use.
+   * Whether session state of a window can be restored into the `aExisting`
+   * window. This should return `false` if `aPreviousState` has any
+   * characteristics that `aExisting` cannot adopt, e.g. if `aExisting` is a
+   * popup window and `aPreviousState` is not.
    *
-   * @param {Window} aWindow
-   *        the window to inspect & prepare
-   * @returns {boolean[]}
-   *          canUseWindow: can the window be used to restore into
-   *          canOverwriteTabs: all of the current tabs are home pages and we
-   *                            can overwrite them
+   * @param {Window} aExisting
+   *   Existing window to consider restoring a session into.
+   * @param {WindowStateData} aPreviousState
+   *   Session state for a window.
+   * @returns {boolean}
    */
-  #prepWindowToRestoreInto(aWindow) {
-    if (!aWindow) {
-      return [false, false];
+  #canRestoreIntoExistingWindow(aExisting, aPreviousState) {
+    if (!aExisting) {
+      return false;
     }
 
-    // We might be able to overwrite the existing tabs instead of just adding
-    // the previous session's tabs to the end. This will be set if possible.
-    let canOverwriteTabs = false;
+    let existingState = this.#getWindowStateData(aExisting);
+    if (Boolean(existingState.isPopup) != Boolean(aPreviousState.isPopup)) {
+      return false;
+    }
 
+    if (Boolean(existingState.isPrivate) != Boolean(aPreviousState.isPrivate)) {
+      return false;
+    }
+
+    if (
+      Boolean(existingState.isTaskbarTab) !=
+      Boolean(aPreviousState.isTaskbarTab)
+    ) {
+      return false;
+    }
+
+    let existingArgs = existingState.args ?? {};
+    let previousArgs = aPreviousState.args ?? {};
+
+    if (Object.keys(existingArgs).length != Object.keys(previousArgs).length) {
+      return false;
+    }
+
+    return Object.entries(existingArgs).every(
+      ([key, value]) => previousArgs[key] == value
+    );
+  }
+
+  /**
+   * Provides a list of immutable window features for a given window state.
+   * These features need to be set at window creation time.
+   *
+   * @param {WindowStateData} winState
+   * @returns {Set<string>}
+   *   Names of immutable window features (e.g. `isPopup`) present on
+   *   `winState`.
+   */
+  #getImmutableWindowFeatures(winState) {
+    const features = new Set();
+
+    if (winState.isPrivate) {
+      features.add("private");
+    }
+
+    if (winState.isPopup) {
+      features.add("popup");
+    }
+
+    if (winState.isTaskbarTab) {
+      features.add("taskbartab");
+    }
+
+    if (winState.args?.[ARG_CHROMELESS_WINDOW]) {
+      features.add(ARG_CHROMELESS_WINDOW);
+    }
+    if (winState.args?.[ARG_WEB_EXTENSION_POPUP_WINDOW]) {
+      features.add(ARG_WEB_EXTENSION_POPUP_WINDOW);
+    }
+
+    return features;
+  }
+
+  /**
+   * Returns a list of tabs in an existing window `aWindow` that are "empty"
+   * and can therefore be closed before restoring session into `aWindow`.
+   *
+   * @param {Window} aWindow
+   *   An existing window into which the last session will be restored
+   *   on demand.
+   * @returns {MozTabbrowserTab[]}
+   *   Tabs in `aWindow` that can be removed before the last session is
+   *   restored into `aWindow`.
+   */
+  #getRemovableHomePages(aWindow) {
     // Look at the open tabs in comparison to home pages. If all the tabs are
     // home pages then we'll end up overwriting all of them. Otherwise we'll
     // just close the tabs that match home pages. Tabs with the about:blank
@@ -5368,16 +5509,7 @@ class _SessionStore {
       removableTabs.shift();
     }
 
-    if (tabbrowser.tabs.length == removableTabs.length) {
-      canOverwriteTabs = true;
-    } else {
-      // If we're not overwriting all of the tabs, then close the home tabs.
-      for (let i = removableTabs.length - 1; i >= 0; i--) {
-        tabbrowser.removeTab(removableTabs.pop(), { animate: false });
-      }
-    }
-
-    return [true, canOverwriteTabs];
+    return removableTabs;
   }
 
   /* ........ Saving Functionality .............. */
@@ -5397,15 +5529,6 @@ class _SessionStore {
 
     if (winData.sizemode != "minimized") {
       winData.sizemodeBeforeMinimized = winData.sizemode;
-    }
-
-    var hidden = WINDOW_HIDEABLE_FEATURES.filter(function (aItem) {
-      return aWindow[aItem] && !aWindow[aItem].visible;
-    });
-    if (hidden.length) {
-      winData.hidden = hidden.join(",");
-    } else if (winData.hidden) {
-      delete winData.hidden;
     }
 
     const sidebarUIState = aWindow.SidebarController.getUIState();
@@ -6195,6 +6318,32 @@ class _SessionStore {
     }
 
     let firstWindowData = root.windows.splice(0, 1);
+    let firstWindowState = firstWindowData[0];
+    if (!this.#canRestoreIntoExistingWindow(aWindow, firstWindowState)) {
+      try {
+        let existingState = this.#getWindowStateData(aWindow);
+        let existingFeatures = this.#getImmutableWindowFeatures(existingState);
+        let requestedFeatures =
+          this.#getImmutableWindowFeatures(firstWindowState);
+        this.#log.warn(
+          "SessionStore.#restoreWindows: existing window's features don't " +
+            "match the state being restored into it; a window's chrome " +
+            "can't change after creation, so this state can't be fully applied"
+        );
+        Glean.sessionRestore.windowFeaturesMismatchIgnored.record({
+          entry_point: aOptions.restoreSource ?? "unknown",
+          existing_features: Array.from(existingFeatures).join(","),
+          requested_features: Array.from(requestedFeatures).join(","),
+        });
+      } catch (ex) {
+        // Suppress errors if `aWindow` is undefined or not tracked.
+        this.#log.warn(
+          "SessionStore.#restoreWindows: failed to compare" +
+            "mismatched window features: " +
+            ex.message
+        );
+      }
+    }
     // Store the restore state and restore option of the current window,
     // so that the window can be restored in reversed z-order.
     this.#updateWindowRestoreState(aWindow, {
@@ -6615,9 +6764,6 @@ class _SessionStore {
    *        Options for the restoration
    */
   #restoreWindowFeatures(aWindow, aWinData, aOptions = {}) {
-    var isTaskbarTab =
-      aWindow.document.documentElement.hasAttribute("taskbartab");
-
     // A restored window keeps its saved type: Classic stays Classic and Smart
     // stays Smart, for both automatic (startup.page=3 / crash) and manual
     // "Restore previous session" restores.
@@ -6641,18 +6787,6 @@ class _SessionStore {
       lazy.AIWindow.toggleAIWindow(aWindow, shouldBeAIWindow, trigger);
     } else if (shouldBeAIWindow) {
       lazy.AIWindow.recordOpenWindowTelemetry(trigger);
-    }
-
-    if (aWinData.isPopup) {
-      this.#windows[aWindow.__SSi].isPopup = true;
-      if (aWindow.gURLBar) {
-        aWindow.gURLBar.readOnly = true;
-      }
-    } else {
-      delete this.#windows[aWindow.__SSi].isPopup;
-      if (aWindow.gURLBar && !isTaskbarTab) {
-        aWindow.gURLBar.readOnly = false;
-      }
     }
 
     let promiseParts = Promise.withResolvers();
@@ -7012,8 +7146,7 @@ class _SessionStore {
    * @param {boolean} [isPrivate]
    *        Optional boolean to get only non-private or private windows
    *        When omitted, we'll return whatever the top-most window is regardless of privateness
-   * @returns {Window}
-   *          The most recent window
+   * @returns {Window|undefined}
    */
   #getTopWindow(isPrivate) {
     const options = { allowPopups: true };
@@ -7068,13 +7201,11 @@ class _SessionStore {
    *        Object containing session data
    */
   #openWindowWithState(aState) {
-    // Build arguments string
-    let argString;
-    // Build feature string
-    let features;
+    let args = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+
+    let features = ["chrome", "suppressanimation"];
     let winState = aState.windows[0];
     if (winState.chromeFlags) {
-      features = ["chrome", "suppressanimation"];
       let chromeFlags = winState.chromeFlags;
       const allFlags = Ci.nsIWebBrowserChrome.CHROME_ALL;
       const hasAll = (chromeFlags & allFlags) == allFlags;
@@ -7091,18 +7222,13 @@ class _SessionStore {
         }
       }
     } else {
-      // |chromeFlags| is not found. Fallbacks to the old method.
-      features = ["chrome", "dialog=no", "suppressanimation"];
-      let hidden = winState.hidden?.split(",") || [];
-      if (!hidden.length) {
-        features.push("all");
-      } else {
+      // `chromeFlags` is not found despite its introduction in Firefox 99
+      // in bug 1728800. This code should be a one-time fallback
+      features.push("dialog=no");
+      if (winState.isPopup) {
         features.push("resizable");
-        WINDOW_HIDEABLE_FEATURES.forEach(aFeature => {
-          if (!hidden.includes(aFeature)) {
-            features.push(aFeature);
-          }
-        });
+      } else {
+        features.push("all");
       }
     }
     WINDOW_ATTRIBUTES.forEach(aFeature => {
@@ -7123,38 +7249,71 @@ class _SessionStore {
         let activeIndex = this.historyIndex(tab);
         restoreSessionURL = tab.entries[activeIndex].url;
       }
-      argString = lazy.AIWindow.handleAIWindowOptions({
+      args = lazy.AIWindow.handleAIWindowOptions({
         openerWindow: null,
-        args: argString,
+        args,
         aiWindow: winState.isAIWindow,
         restoreSessionURL,
       });
     }
 
-    if (!argString) {
-      argString = Cc["@mozilla.org/supports-string;1"].createInstance(
-        Ci.nsISupportsString
+    if (!args.length) {
+      // Argument 0 for opening a window is the URL to open.
+      // This can be a falsy value since SessionStore will restore specific
+      // tabs and URLs after the window is open.
+      args.appendElement(null);
+    }
+
+    // Argument 1 for opening a window is extra options.
+    let extraOptions;
+    try {
+      extraOptions = args.queryElementAt(1, Ci.nsIWritablePropertyBag2);
+    } catch (e) {
+      extraOptions = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
+        Ci.nsIWritablePropertyBag2
       );
-      argString.data = "";
+      args.appendElement(extraOptions);
+    }
+
+    if (winState.args?.[ARG_WEB_EXTENSION_POPUP_WINDOW]) {
+      extraOptions.setPropertyAsBool(ARG_WEB_EXTENSION_POPUP_WINDOW, true);
+    }
+    if (winState.args?.[ARG_CHROMELESS_WINDOW]) {
+      extraOptions.setPropertyAsBool(ARG_CHROMELESS_WINDOW, true);
     }
 
     this.#log.debug(
       `Opening window:${winState.closedId} with features: ${features.join(
         ","
-      )}, argString: ${argString}.`
+      )}, extraOptions: ${JSON.stringify(this.#serializePropertyBag(extraOptions))}.`
     );
     var window = Services.ww.openWindow(
       null,
       AppConstants.BROWSER_CHROME_URL,
       "_blank",
       features.join(","),
-      argString
+      args
     );
 
     this.#updateWindowRestoreState(window, aState);
     WINDOW_SHOWING_PROMISES.set(window, Promise.withResolvers());
 
     return window;
+  }
+
+  /**
+   * Serialize a property bag to a plain object so that it can be output
+   * for debugging purposes.
+   *
+   * @param {nsIPropertyBag} bag
+   * @returns {{[string]: any}}
+   */
+  #serializePropertyBag(bag) {
+    const obj = {};
+    for (const { name, value } of bag.enumerator) {
+      obj[name] = value;
+    }
+    return obj;
   }
 
   /**
@@ -7629,7 +7788,6 @@ class _SessionStore {
         // Not copying over:
         // - extData
         // - isPopup
-        // - hidden
 
         // Assign a unique ID to correlate the window to be opened with the
         // remaining data

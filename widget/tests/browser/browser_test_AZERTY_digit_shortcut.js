@@ -35,18 +35,6 @@ add_task(async function () {
         );
       }
 
-      async function waitForCondition(aFunc) {
-        for (let i = 0; i < 60; i++) {
-          await new Promise(resolve =>
-            requestAnimationFrame(() => requestAnimationFrame(resolve))
-          );
-          if (aFunc(ZoomManager.getFullZoomForBrowser(browser))) {
-            return true;
-          }
-        }
-        return false;
-      }
-
       const minZoomLevel = ZoomManager.MIN;
       while (true) {
         const currentZoom = ZoomManager.getFullZoomForBrowser(browser);
@@ -55,14 +43,17 @@ add_task(async function () {
         }
         info(`Trying to zoom out: ${currentZoom}`);
         await promiseSynthesizeAccelHyphenMinusWithAZERTY();
-        if (!(await waitForCondition(aZoomLevel => aZoomLevel < currentZoom))) {
-          ok(false, `Failed to zoom out from ${currentZoom}`);
-          return;
-        }
+        await TestUtils.waitForCondition(
+          () => ZoomManager.getFullZoomForBrowser(browser) < currentZoom,
+          `Failed to zoom out from ${currentZoom}`
+        );
       }
 
       await promiseSynthesizeAccelHyphenMinusWithAZERTY();
-      await waitForCondition(() => false);
+      // Brief pause to ensure no tab switch was triggered as a side effect.
+      await new Promise(resolve =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve))
+      );
       is(
         gBrowser.selectedBrowser,
         browser,
@@ -70,7 +61,10 @@ add_task(async function () {
       );
       // Reset the zoom before going to the next test.
       EventUtils.synthesizeKey("0", { accelKey: true });
-      await waitForCondition(aZoomLevel => aZoomLevel == 1);
+      await TestUtils.waitForCondition(
+        () => ZoomManager.getFullZoomForBrowser(browser) == 1,
+        "Waiting for zoom to reset to 1"
+      );
     }
   );
 

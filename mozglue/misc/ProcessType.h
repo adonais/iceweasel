@@ -10,13 +10,13 @@
 
 #include <cstdint>
 
-// This enum is not dense.  See GeckoProcessTypes.h for details.
+// This enum is not dense.  See GeckoProcessTypes.inc for details.
 enum GeckoProcessType {
 #define GECKO_PROCESS_TYPE(enum_value, enum_name, string_name, proc_typename, \
                            process_bin_type, procinfo_typename,               \
                            webidl_typename, allcaps_name)                     \
   GeckoProcessType_##enum_name = (enum_value),
-#include "mozilla/GeckoProcessTypes.h"
+#include "mozilla/GeckoProcessTypes.inc"
 #undef GECKO_PROCESS_TYPE
   GeckoProcessType_End,
   GeckoProcessType_Invalid = GeckoProcessType_End

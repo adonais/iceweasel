@@ -165,9 +165,11 @@ wasm_rt_memory_t create_wasm2c_memory(uint32_t initial_pages,
 
   wasm_rt_memory_t ret;
   ret.data = data;
-  ret.max_pages = chosen_max_pages;
+  ret.page_size = WASM_PAGE_SIZE;
   ret.pages = initial_pages;
+  ret.max_pages = chosen_max_pages;
   ret.size = byte_length;
+  ret.is64 = 0;
   return ret;
 }
 

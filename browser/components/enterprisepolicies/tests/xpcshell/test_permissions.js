@@ -496,3 +496,64 @@ add_task(async function test_cookies_allow_no_persist_when_exceptions_set() {
     "SanitizeOnShutdown.Exceptions sets persist-data-on-shutdown"
   );
 });
+
+// A host and its trailing dot form are distinct permission origins.
+add_task(async function test_trailing_dot_host() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      Permissions: {
+        Notifications: {
+          Allow: ["https://dot-allow.example.com."],
+          Block: ["https://dot-block.example.com"],
+        },
+        Camera: {
+          Block: ["https://127.0.0.1"],
+        },
+      },
+    },
+  });
+
+  equal(
+    PermissionTestUtils.testPermission(
+      URI("https://dot-block.example.com."),
+      "desktop-notification"
+    ),
+    Ci.nsIPermissionManager.DENY_ACTION,
+    "A blocked bare host is also denied on its trailing dot form"
+  );
+
+  equal(
+    PermissionTestUtils.testPermission(
+      URI("https://dot-allow.example.com"),
+      "desktop-notification"
+    ),
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    "An allowed trailing dot host is also allowed on its bare form"
+  );
+
+  equal(
+    PermissionTestUtils.testPermission(URI("https://127.0.0.1"), "camera"),
+    Ci.nsIPermissionManager.DENY_ACTION,
+    "An IP address site list entry still gets its permission"
+  );
+
+  let { isTrailingDotPolicyDuplicate } = ChromeUtils.importESModule(
+    "resource://gre/modules/PoliciesHelpers.sys.mjs"
+  );
+  for (let [origin, expected] of [
+    ["https://dot-block.example.com.", true],
+    ["https://dot-block.example.com", false],
+  ]) {
+    equal(
+      isTrailingDotPolicyDuplicate(
+        PermissionTestUtils.getPermissionObject(
+          URI(origin),
+          "desktop-notification",
+          true
+        )
+      ),
+      expected,
+      `A permission list skips ${origin}: ${expected}`
+    );
+  }
+});

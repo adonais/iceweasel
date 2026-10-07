@@ -303,6 +303,22 @@ fxa_avatar_menu:
     extra_keys: *fxa_avatar_menu_click_extra
     telemetry_mirror: Fxa_avatar_menu_Click_SyncTabsSidebar
 
+  click_view_all_synced_tabs:
+    type: event
+    description: >
+      Recorded when viewing all synced tabs for a device in the avatar menu.
+    bugs:
+      - https://bugzil.la/2040501
+    data_reviews:
+      - https://bugzil.la/2040501
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - asafko@mozilla.com
+      - kpatenio@mozilla.com
+    expires: never
+    extra_keys: *fxa_avatar_menu_click_extra
+
   click_toolbar_icon:
     type: event
     description: >
@@ -785,6 +801,22 @@ fxa_app_menu:
     expires: never
     extra_keys: *fxa_app_menu_click_extra
     telemetry_mirror: Fxa_app_menu_Click_SyncTabsSidebar
+
+  click_view_all_synced_tabs:
+    type: event
+    description: >
+      Recorded when viewing all synced tabs for a device in the app menu.
+    bugs:
+      - https://bugzil.la/2040501
+    data_reviews:
+      - https://bugzil.la/2040501
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - asafko@mozilla.com
+      - kpatenio@mozilla.com
+    expires: never
+    extra_keys: *fxa_app_menu_click_extra
 
   click_toolbar_icon:
     type: event

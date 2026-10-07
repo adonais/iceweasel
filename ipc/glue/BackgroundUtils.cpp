@@ -562,7 +562,6 @@ nsresult LoadInfoToLoadInfoArgs(nsILoadInfo* aLoadInfo,
       aLoadInfo->GetSandboxedNullPrincipalID(), aLoadInfo->GetSecurityFlags(),
       aLoadInfo->GetSandboxFlags(), aLoadInfo->GetTriggeringSandboxFlags(),
       aLoadInfo->GetTriggeringWindowId(),
-      aLoadInfo->GetTriggeringStorageAccess(),
       aLoadInfo->GetTriggeringFirstPartyClassificationFlags(),
       aLoadInfo->GetTriggeringThirdPartyClassificationFlags(),
       aLoadInfo->InternalContentPolicyType(),
@@ -612,7 +611,7 @@ nsresult LoadInfoToLoadInfoArgs(nsILoadInfo* aLoadInfo,
       aLoadInfo->GetIsOriginTrialCoepCredentiallessEnabledForTopLevel(),
       unstrippedURI, interceptionInfoArg, aLoadInfo->GetIsNewWindowTarget(),
       aLoadInfo->GetUserNavigationInvolvement(),
-      aLoadInfo->GetContainerFeaturePolicyInfo(), {});
+      aLoadInfo->GetContainerPermissionsPolicyInfo(), {});
 
   return NS_OK;
 }
@@ -873,7 +872,7 @@ nsresult LoadInfoArgsToLoadInfo(const LoadInfoArgs& loadInfoArgs,
   RefPtr<mozilla::net::LoadInfo> loadInfo = new mozilla::net::LoadInfo(
       loadingPrincipal, triggeringPrincipal, principalToInherit,
       topLevelPrincipal, resultPrincipalURI, cookieJarSettings,
-      policyContainerToInherit, loadInfoArgs.containerFeaturePolicyInfo(),
+      policyContainerToInherit, loadInfoArgs.containerPermissionsPolicyInfo(),
       triggeringRemoteType, loadInfoArgs.sandboxedNullPrincipalID(), clientInfo,
       reservedClientInfo, initialClientInfo, controller,
       loadInfoArgs.securityFlags(), loadInfoArgs.sandboxFlags(),
@@ -959,11 +958,10 @@ void LoadInfoToParentLoadInfoForwarder(
       aLoadInfo->GetIsInDevToolsContext(), aLoadInfo->GetParserCreatedScript(),
       requestMode, aLoadInfo->GetTriggeringSandboxFlags(),
       aLoadInfo->GetTriggeringWindowId(),
-      aLoadInfo->GetTriggeringStorageAccess(),
       aLoadInfo->GetServiceWorkerTaintingSynthesized(),
       aLoadInfo->GetDocumentHasUserInteracted(),
       aLoadInfo->GetAllowListFutureDocumentsCreatedFromThisRedirectChain(),
-      cookieJarSettingsArgs, aLoadInfo->GetContainerFeaturePolicyInfo(),
+      cookieJarSettingsArgs, aLoadInfo->GetContainerPermissionsPolicyInfo(),
       aLoadInfo->GetRequestBlockingReason(), aLoadInfo->GetStoragePermission(),
       overriddenFingerprintingSettingsArg, aLoadInfo->GetIsMetaRefresh(),
       isThirdPartyContextToTopWindow, aLoadInfo->GetIsInThirdPartyContext(),
@@ -1016,10 +1014,6 @@ nsresult MergeParentLoadInfoForwarder(
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = aLoadInfo->SetTriggeringWindowId(aForwarderArgs.triggeringWindowId());
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = aLoadInfo->SetTriggeringStorageAccess(
-      aForwarderArgs.triggeringStorageAccess());
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = aLoadInfo->SetHasValidUserGestureActivation(
@@ -1094,9 +1088,9 @@ nsresult MergeParentLoadInfoForwarder(
   rv = aLoadInfo->SetUnstrippedURI(aForwarderArgs.unstrippedURI());
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (aForwarderArgs.containerFeaturePolicyInfo()) {
-    aLoadInfo->SetContainerFeaturePolicyInfo(
-        *aForwarderArgs.containerFeaturePolicyInfo());
+  if (aForwarderArgs.containerPermissionsPolicyInfo()) {
+    aLoadInfo->SetContainerPermissionsPolicyInfo(
+        *aForwarderArgs.containerPermissionsPolicyInfo());
   }
 
   aLoadInfo->SetUserNavigationInvolvement(

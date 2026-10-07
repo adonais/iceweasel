@@ -5,7 +5,7 @@
 use api::{ImageBufferKind, units::DeviceSize};
 use crate::batch::{BatchKey, BatchKind, BatchFeatures};
 use crate::composite::{CompositeFeatures, CompositeSurfaceFormat};
-use crate::device::{Device, Program, ShaderError};
+use crate::device::{Device, Program, ShaderError, VertexDescriptor};
 use crate::pattern::PatternKind;
 use crate::telemetry::Telemetry;
 use euclid::default::Transform3D;
@@ -58,6 +58,22 @@ pub const IMAGE_BUFFER_KINDS: [ImageBufferKind; 4] = [
     ImageBufferKind::TextureRect,
     ImageBufferKind::TextureExternal,
     ImageBufferKind::TextureExternalBT709,
+];
+
+/// Sampler uniforms bound on every program after a successful link. Names
+/// absent from a given shader are skipped by `bind_shader_samplers`.
+const SAMPLER_BINDINGS: &[(&'static str, TextureSampler)] = &[
+    ("sColor0", TextureSampler::Color0),
+    ("sColor1", TextureSampler::Color1),
+    ("sColor2", TextureSampler::Color2),
+    ("sDither", TextureSampler::Dither),
+    ("sTransformPalette", TextureSampler::TransformPalette),
+    ("sRenderTasks", TextureSampler::RenderTasks),
+    ("sPrimitiveHeadersF", TextureSampler::PrimitiveHeadersF),
+    ("sPrimitiveHeadersI", TextureSampler::PrimitiveHeadersI),
+    ("sClipMask", TextureSampler::ClipMask),
+    ("sGpuBufferF", TextureSampler::GpuBufferF),
+    ("sGpuBufferI", TextureSampler::GpuBufferI),
 ];
 
 const DITHERING_FEATURE: &str = "DITHERING";
@@ -114,6 +130,101 @@ impl LazilyCompiledShader {
         };
 
         Ok(shader)
+    }
+
+    #[cfg(feature = "debugger")]
+    pub fn name(&self) -> &'static str {
+        self.name
+    }
+
+    #[cfg(feature = "debugger")]
+    pub fn features(&self) -> &[&'static str] {
+        &self.features
+    }
+
+    /// The name the driver sees, base filename plus features, as used in
+    /// compile and link logs.
+    #[cfg(feature = "debugger")]
+    pub fn full_name(&self) -> String {
+        if self.features.is_empty() {
+            self.name.to_string()
+        } else {
+            format!("{}_{}", self.name, self.features.join("_"))
+        }
+    }
+
+    /// Whether this shader has a program that has been linked, and so has
+    /// source compiled into it that an edit can invalidate.
+    ///
+    /// This is deliberately not `program.is_some()`. An async precache calls
+    /// `create_program` on every variant without linking any of them, which
+    /// Firefox does at startup, so a program object existing says nothing
+    /// about whether anything has been compiled.
+    #[cfg(feature = "debugger")]
+    pub fn is_compiled(&self) -> bool {
+        self.program.as_ref().map_or(false, Program::is_initialized)
+    }
+
+    /// Drop a program that was created but never linked, so that the next use
+    /// builds a fresh one.
+    ///
+    /// `ProgramSourceInfo` is computed by `create_program` and decides, among
+    /// other things, whether to compile the `.glsl` source or the variant
+    /// optimized at build time. An unlinked program created before a source
+    /// override was installed still carries that decision, so linking it as it
+    /// stands would compile the build-time source and silently ignore the
+    /// edit.
+    #[cfg(feature = "debugger")]
+    fn discard_unlinked_program(&mut self, device: &mut Device) {
+        if self.program.as_ref().map_or(true, Program::is_initialized) {
+            return;
+        }
+
+        if let Some(program) = self.program.take() {
+            device.delete_program(program);
+        }
+        self.cached_projection = Transform3D::identity();
+    }
+
+    fn vertex_descriptor(&self) -> &'static VertexDescriptor {
+        let vertex_format = match self.kind {
+            ShaderKind::Primitive |
+            ShaderKind::Text => VertexArrayKind::Primitive,
+            ShaderKind::Cache(format) => format,
+            ShaderKind::Composite => VertexArrayKind::Composite,
+            ShaderKind::Clear => VertexArrayKind::Clear,
+            ShaderKind::Copy => VertexArrayKind::Copy,
+        };
+
+        match vertex_format {
+            VertexArrayKind::Primitive => &desc::PRIM_INSTANCES,
+            VertexArrayKind::LineDecoration => &desc::LINE,
+            VertexArrayKind::Blur => &desc::BLUR,
+            VertexArrayKind::Border => &desc::BORDER,
+            VertexArrayKind::Scale => &desc::SCALE,
+            VertexArrayKind::SvgFilterNode => &desc::SVG_FILTER_NODE,
+            VertexArrayKind::Composite => &desc::COMPOSITE,
+            VertexArrayKind::Clear => &desc::CLEAR,
+            VertexArrayKind::Copy => &desc::COPY,
+            VertexArrayKind::Mask => &desc::MASK,
+        }
+    }
+
+    /// Compile and link a program for this shader from the sources currently
+    /// in effect, leaving the one already in use alone.
+    #[cfg(feature = "debugger")]
+    fn build_program(&self, device: &mut Device) -> Result<Program, ShaderError> {
+        let mut program = device.create_program(self.name, &self.features)?;
+
+        if let Err(err) = device.link_program(&mut program, self.vertex_descriptor()) {
+            device.delete_program(program);
+            return Err(err);
+        }
+
+        device.bind_program(&program);
+        device.bind_shader_samplers(&program, SAMPLER_BINDINGS);
+
+        Ok(program)
     }
 
     pub fn precache(
@@ -204,51 +315,29 @@ impl LazilyCompiledShader {
             }
         }
 
-        let program = self.program.as_mut().unwrap();
+        let needs_link = precache_flags.contains(ShaderPrecacheFlags::FULL_COMPILE)
+            && !self.program.as_ref().unwrap().is_initialized();
 
-        if precache_flags.contains(ShaderPrecacheFlags::FULL_COMPILE) && !program.is_initialized() {
+        if needs_link {
             let start_time = zeitstempel::now();
 
-            let vertex_format = match self.kind {
-                ShaderKind::Primitive |
-                ShaderKind::Text => VertexArrayKind::Primitive,
-                ShaderKind::Cache(format) => format,
-                ShaderKind::Composite => VertexArrayKind::Composite,
-                ShaderKind::Clear => VertexArrayKind::Clear,
-                ShaderKind::Copy => VertexArrayKind::Copy,
-            };
+            let vertex_descriptor = self.vertex_descriptor();
 
-            let vertex_descriptor = match vertex_format {
-                VertexArrayKind::Primitive => &desc::PRIM_INSTANCES,
-                VertexArrayKind::LineDecoration => &desc::LINE,
-                VertexArrayKind::Blur => &desc::BLUR,
-                VertexArrayKind::Border => &desc::BORDER,
-                VertexArrayKind::Scale => &desc::SCALE,
-                VertexArrayKind::SvgFilterNode => &desc::SVG_FILTER_NODE,
-                VertexArrayKind::Composite => &desc::COMPOSITE,
-                VertexArrayKind::Clear => &desc::CLEAR,
-                VertexArrayKind::Copy => &desc::COPY,
-                VertexArrayKind::Mask => &desc::MASK,
-            };
+            let program = self.program.as_mut().unwrap();
+            if let Err(err) = device.link_program(program, vertex_descriptor) {
+                // A failed link deletes the program object, so drop it rather
+                // than retrying against a dead GL name on the next bind. The
+                // next attempt builds a fresh one, which is what makes a
+                // shader that has been fixed since recover on its own.
+                if let Some(program) = self.program.take() {
+                    device.delete_program(program);
+                }
+                return Err(err);
+            }
 
-            device.link_program(program, vertex_descriptor)?;
+            let program = self.program.as_mut().unwrap();
             device.bind_program(program);
-            device.bind_shader_samplers(
-                &program,
-                &[
-                    ("sColor0", TextureSampler::Color0),
-                    ("sColor1", TextureSampler::Color1),
-                    ("sColor2", TextureSampler::Color2),
-                    ("sDither", TextureSampler::Dither),
-                    ("sTransformPalette", TextureSampler::TransformPalette),
-                    ("sRenderTasks", TextureSampler::RenderTasks),
-                    ("sPrimitiveHeadersF", TextureSampler::PrimitiveHeadersF),
-                    ("sPrimitiveHeadersI", TextureSampler::PrimitiveHeadersI),
-                    ("sClipMask", TextureSampler::ClipMask),
-                    ("sGpuBufferF", TextureSampler::GpuBufferF),
-                    ("sGpuBufferI", TextureSampler::GpuBufferI),
-                ],
-            );
+            device.bind_shader_samplers(&program, SAMPLER_BINDINGS);
 
             if let Some(profile) = &mut profile {
                 let end_time = zeitstempel::now();
@@ -256,7 +345,7 @@ impl LazilyCompiledShader {
             }
         }
 
-        Ok(program)
+        Ok(self.program.as_mut().unwrap())
     }
 
     fn deinit(self, device: &mut Device) {
@@ -385,6 +474,94 @@ impl ShaderLoader {
         }
 
         self.shaders[shader.0].precache(device, flags)
+    }
+
+    /// Rebuild every compiled shader whose source pulls in `changed_file`,
+    /// from the sources currently in effect on the device.
+    ///
+    /// Either all of them are replaced or none is: if any variant fails to
+    /// compile or link, the programs in use are left untouched and the
+    /// instance keeps rendering with the shaders it already had. Shaders that
+    /// have not been linked yet are skipped; they pick the new source up when
+    /// they are first bound.
+    #[cfg(feature = "debugger")]
+    pub fn reload(
+        &mut self,
+        device: &mut Device,
+        changed_file: &str,
+    ) -> Result<usize, Vec<ShaderError>> {
+        // A broken shared include fails identically for every variant that
+        // pulls it in, so stop once enough have failed to describe the
+        // problem rather than reporting the same error a hundred times.
+        const MAX_REPORTED_FAILURES: usize = 8;
+
+        let affected: Vec<usize> = {
+            let device = &*device;
+            self.shaders
+                .iter()
+                .enumerate()
+                .filter(|(_, shader)| {
+                    shader.name() == changed_file
+                        || device.shader_include_closure(shader.name()).contains(changed_file)
+                })
+                .map(|(index, _)| index)
+                .collect()
+        };
+
+        // Unlinked programs carry a source decision that predates the edit, so
+        // drop them rather than rebuild them: they have compiled nothing yet,
+        // and a fresh one is built when they are first used.
+        for &index in &affected {
+            self.shaders[index].discard_unlinked_program(device);
+        }
+
+        let to_rebuild: Vec<usize> = affected
+            .iter()
+            .cloned()
+            .filter(|&index| self.shaders[index].is_compiled())
+            .collect();
+
+        let mut rebuilt = Vec::with_capacity(to_rebuild.len());
+        let mut errors = Vec::new();
+
+        for &index in &to_rebuild {
+            match self.shaders[index].build_program(device) {
+                Ok(program) => rebuilt.push((index, program)),
+                Err(err) => {
+                    errors.push(err);
+                    if errors.len() >= MAX_REPORTED_FAILURES {
+                        break;
+                    }
+                }
+            }
+        }
+
+        if !errors.is_empty() {
+            for (_, program) in rebuilt {
+                device.delete_program(program);
+            }
+            return Err(errors);
+        }
+
+        let count = rebuilt.len();
+
+        for (index, program) in rebuilt {
+            let shader = &mut self.shaders[index];
+            if let Some(old_program) = shader.program.replace(program) {
+                device.delete_program(old_program);
+            }
+            // The cached projection describes uniform state uploaded to the
+            // program that has just been replaced, so force the next bind to
+            // upload it to the new one.
+            shader.cached_projection = Transform3D::identity();
+        }
+
+        Ok(count)
+    }
+
+    #[cfg(feature = "debugger")]
+    pub fn shaders(&self) -> &[LazilyCompiledShader] {
+        &self.shaders
     }
 
     pub fn all_handles(&self) -> Vec<ShaderHandle> {
@@ -1006,6 +1183,23 @@ impl Shaders {
     pub fn ps_mask_superellipse(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.ps_mask_superellipse) }
     pub fn ps_clear(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.ps_clear) }
     pub fn ps_copy(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.ps_copy) }
+
+    /// Rebuild the compiled shaders affected by an edit to `changed_file`.
+    /// See `ShaderLoader::reload`.
+    #[cfg(feature = "debugger")]
+    pub fn reload(
+        &mut self,
+        device: &mut Device,
+        changed_file: &str,
+    ) -> Result<usize, Vec<ShaderError>> {
+        self.loader.reload(device, changed_file)
+    }
+
+    /// Every shader variant this instance may use, whether compiled or not.
+    #[cfg(feature = "debugger")]
+    pub fn variants(&self) -> &[LazilyCompiledShader] {
+        self.loader.shaders()
+    }
 
     pub fn deinit(self, device: &mut Device) {
         self.loader.deinit(device);

@@ -52,6 +52,7 @@ CONFIG_SCHEMA = {
         "name": {"type": "string"},
         "manifest": {"type": "string"},
         "static-only": {"type": "boolean"},
+        "hardware-docs": {"type": "boolean"},
         "metrics": {"$ref": "#/definitions/metrics_schema"},
         "suites": {
             "type": "object",
@@ -505,12 +506,18 @@ class Verifier:
             matched_yml = pathlib.Path(matched["path"], matched["yml"])
             matched_rst = pathlib.Path(matched["path"], matched["rst"])
 
+            matched_yml_content = read_yaml(matched_yml)
             _valid_files = {
                 "yml": self.validate_yaml(matched_yml),
                 "rst": True,
                 "metrics": True,
+                "hardware": True,
             }
-            if not read_yaml(matched_yml)["static-only"]:
+            if matched_yml_content.get("hardware-docs", False):
+                _valid_files["hardware"] = self.validate_rst_content(
+                    matched_rst, "{hardware_documentation}"
+                )
+            if not matched_yml_content["static-only"]:
                 _valid_files["rst"] = self.validate_rst_content(
                     matched_rst, "{documentation}"
                 )

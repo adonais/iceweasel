@@ -11,6 +11,12 @@ function getSecurityCodeField(win) {
 }
 
 add_setup(async function () {
+  // The feature is gated on rollout as well as on the user's own choice. Roll
+  // it out for the whole file so each task can toggle CVV_PREF on its own.
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.formautofill.creditCards.cvv.supported", "on"]],
+  });
+
   let { formAutofillStorage } = ChromeUtils.importESModule(
     "resource://autofill/FormAutofillStorage.sys.mjs"
   );

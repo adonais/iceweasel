@@ -20,13 +20,13 @@ template <class T>
 class UnionMember {
   AlignedStorage2<T> mStorage;
 
-  // Copy construction can't be supported because C++ requires that any enclosed
-  // T be initialized in a way C++ knows about -- that is, by |new| or similar.
-  UnionMember(const UnionMember&) = delete;
-
  public:
   UnionMember() = default;
   ~UnionMember() = default;
+
+  // Copy construction can't be supported because C++ requires that any enclosed
+  // T be initialized in a way C++ knows about -- that is, by |new| or similar.
+  UnionMember(const UnionMember&) = delete;
 
   template <typename... Args>
   T& SetValue(Args&&... args) {

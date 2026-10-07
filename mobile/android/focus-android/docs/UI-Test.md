@@ -39,10 +39,10 @@ To create an emulator:
 
        simulator: '**focusX86Debug**' or '**klarX86Debug**'
 
-  1. Click on the drop down on the top left of Android Studio below the path view, and select '**Tests**'
-  2. navigate the sub-directories to the folder locations of the tests to be run. For example, UI Tests are located in **focus-android/app/src/androidTest/java/org.mozilla.focus.activity**
-  3. To run all tests in folder right click on the folder and select run. For individual tests you will do the same but right click on the specific test.
-  4. select your simulator or device (connected via ADB).
+5. Click on the drop down on the top left of Android Studio below the path view, and select '**Tests**'
+6. navigate the sub-directories to the folder locations of the tests to be run. For example, UI Tests are located in **focus-android/app/src/androidTest/java/org.mozilla.focus.activity**
+7. To run all tests in folder right click on the folder and select run. For individual tests you will do the same but right click on the specific test.
+8. select your simulator or device (connected via ADB).
 
 From there Android Studio will compile and install Focus on the simulator or device and start running the tests.
 

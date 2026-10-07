@@ -10,21 +10,24 @@
 #  include "libwebrtcglue/WebrtcVideoCodecFactory.h"
 #  include "media/base/media_constants.h"
 #  include "mozilla/Maybe.h"
+#  include "mozilla/media/webrtc/AV1FmtpParser.h"
 #  include "mozilla/media/webrtc/H264FmtpParser.h"
 #endif
 
 namespace mozilla {
 
 #ifdef MOZ_WEBRTC
-// Query the webrtc encoder factory whether aMime is supported in SW and/or HW.
-media::EncodeSupportSet SupportsVideoEncodeForWebrtc(
-    const EncoderConfig& aConfig) {
+// Query the webrtc encoder factory whether aConfig is supported in SW and/or
+// HW.
+RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
+SupportsVideoEncodeForWebrtc(const EncoderConfig& aConfig) {
   return WebrtcVideoEncoderFactory::SupportsCodec(aConfig);
 }
 
 // Query the webrtc decoder factory whether aMime is supported in SW and/or HW.
-media::DecodeSupportSet SupportsVideoDecodeForWebrtc(
-    const MediaExtendedMIMEType& aMime, const SupportDecoderParams& aParams) {
+RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
+SupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType& aMime,
+                             const SupportDecoderParams& aParams) {
   return WebrtcVideoDecoderFactory::SupportsCodec(aMime, aParams);
 }
 
@@ -82,14 +85,18 @@ class CodecInfoImpl final : public WebrtcCodecInfo {
     Maybe<uint32_t> requestedPacketizationMode;
     if (isH264) {
       const auto fmtp = ParseH264Fmtp(aMime.OriginalString());
-      // Present-but-invalid packetization-mode (out of [0..2]) is unsupported.
-      if (fmtp.mPacketizationMode.isErr() &&
-          fmtp.mPacketizationMode.inspectErr() == H264FmtpParseError::Invalid) {
+      if (fmtp.HasInvalidParam()) {
         return false;
       }
       if (fmtp.mPacketizationMode.isOk()) {
         requestedPacketizationMode = Some(fmtp.mPacketizationMode.inspect());
       }
+    }
+
+    const bool isAV1 =
+        isVideo && payloadString.EqualsIgnoreCase(webrtc::kAv1CodecName);
+    if (isAV1 && ParseAV1Fmtp(aMime.OriginalString()).HasInvalidParam()) {
+      return false;
     }
 
     const auto& codecs = isAudio ? mAudioCodecs : mVideoCodecs;
@@ -121,12 +128,17 @@ std::unique_ptr<WebrtcCodecInfo> WebrtcCodecInfo::Create() {
   return std::make_unique<CodecInfoImpl>();
 }
 #else
-media::EncodeSupportSet SupportsVideoEncodeForWebrtc(const EncoderConfig&) {
-  return {};
+RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
+SupportsVideoEncodeForWebrtc(const EncoderConfig&) {
+  return PlatformEncoderModule::SupportsEncoderPromise::CreateAndResolve(
+      media::EncodeSupportSet{}, __func__);
 }
-media::DecodeSupportSet SupportsVideoDecodeForWebrtc(
-    const MediaExtendedMIMEType&, const SupportDecoderParams&) {
-  return {};
+
+RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
+SupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType&,
+                             const SupportDecoderParams&) {
+  return PlatformDecoderModule::SupportsDecoderPromise::CreateAndResolve(
+      media::DecodeSupportSet{}, __func__);
 }
 
 class CodecInfoStub final : public WebrtcCodecInfo {

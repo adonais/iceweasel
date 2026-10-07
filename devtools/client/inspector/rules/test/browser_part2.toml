@@ -243,14 +243,8 @@ fail-if = [
 ["browser_rules_non_ascii.js"]
 
 ["browser_rules_original-source-link.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_rules_original-source-link2.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_rules_popup_override.js"]
 
@@ -386,9 +380,6 @@ skip-if = [
 ["browser_rules_strict-search-filter_03.js"]
 
 ["browser_rules_style-editor-link.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_rules_update_mask_image_cors.js"]
 

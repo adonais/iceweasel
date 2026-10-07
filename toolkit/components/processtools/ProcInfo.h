@@ -56,7 +56,7 @@ enum class ProcType {
   WebCOOPCOEP,
   WebServiceWorker,
   Inference,
-// the rest matches GeckoProcessTypes.h
+// the rest matches GeckoProcessTypes.inc
 #define GECKO_PROCESS_TYPE(enum_value, enum_name, string_name, proc_typename, \
                            process_bin_type, procinfo_typename,               \
                            webidl_typename, allcaps_name)                     \
@@ -65,7 +65,7 @@ enum class ProcType {
 #ifndef MOZ_ENABLE_FORKSERVER
 #  define SKIP_PROCESS_TYPE_FORKSERVER
 #endif  // MOZ_ENABLE_FORKSERVER
-#include "mozilla/GeckoProcessTypes.h"
+#include "mozilla/GeckoProcessTypes.inc"
 #undef SKIP_PROCESS_TYPE_CONTENT
 #ifndef MOZ_ENABLE_FORKSERVER
 #  undef SKIP_PROCESS_TYPE_FORKSERVER

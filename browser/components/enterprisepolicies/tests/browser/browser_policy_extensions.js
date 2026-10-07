@@ -78,7 +78,14 @@ add_task(async function test_addon_reinstall() {
 });
 
 add_task(async function test_addon_uninstall() {
-  EnterprisePolicyTesting.resetRunOnceState();
+  is(
+    Services.prefs.getStringPref(
+      "browser.policies.runOncePerModification.extensionsUninstall",
+      ""
+    ),
+    JSON.stringify([ADDON_ID]),
+    "The uninstall marker already names the add-on"
+  );
 
   let uninstallPromise = waitForAddonUninstall(ADDON_ID);
   await setupPolicyEngineWithJson({

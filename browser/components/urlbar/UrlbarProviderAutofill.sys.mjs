@@ -12,6 +12,7 @@
  */
 
 import {
+  INPUT_HISTORY_USE_DECAY,
   UrlbarProvider,
   UrlbarUtils,
 } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
@@ -39,6 +40,68 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "places.history.enabled",
   true
 );
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "frecencyDecayRate",
+  "places.frecency.decayRate",
+  "0.975",
+  () => (gUrlUseCountThreshold = null),
+  val => {
+    let rate = typeof val == "string" ? parseFloat(val) : val;
+    return rate > 0 && rate < 1 ? rate : 0.975;
+  }
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "urlMinPicks",
+  "browser.urlbar.autoFill.adaptiveHistory.urlMinPicks",
+  3,
+  () => (gUrlUseCountThreshold = null)
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "urlPicksAgeDays",
+  "browser.urlbar.autoFill.adaptiveHistory.urlPicksAgeDays",
+  14,
+  () => (gUrlUseCountThreshold = null)
+);
+
+/**
+ * Converts a number of picks into the `moz_inputhistory.use_count` a row would
+ * hold if it were picked that many times in one sitting and then left untouched
+ * for `ageDays`.
+ *
+ * @param {number} picks
+ *   The number of times the (url, input) pairing was picked.
+ * @param {number} ageDays
+ *   Days of idle decay assumed to have elapsed since the last pick.
+ * @returns {number}
+ *   The resulting use_count.
+ */
+export function inputHistoryPicksToUseCount(picks, ageDays) {
+  let useCount = 0;
+  for (let i = 0; i < picks; i++) {
+    useCount = useCount * INPUT_HISTORY_USE_DECAY + 1;
+  }
+  return useCount * lazy.frecencyDecayRate ** ageDays;
+}
+
+// Memoized use_count threshold. Each of the three prefs it derives from resets
+// this from its own pref observer, since a lazy pref getter can only watch one.
+// Do not read this directly since it is null until computed.
+// Call `urlUseCountThreshold()` instead.
+let gUrlUseCountThreshold = null;
+
+function urlUseCountThreshold() {
+  gUrlUseCountThreshold ??= inputHistoryPicksToUseCount(
+    lazy.urlMinPicks,
+    lazy.urlPicksAgeDays
+  );
+  return gUrlUseCountThreshold;
+}
 
 // Returns which result sources are eligible for autofill. When
 // places.history.enabled is false the user has opted out of recording
@@ -826,6 +889,7 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
       useCountThreshold: lazy.UrlbarPrefs.get(
         "autoFillAdaptiveHistoryUseCountThreshold"
       ),
+      urlUseCountThreshold: urlUseCountThreshold(),
       nowMs: Date.now(),
       adaptiveAutofillEnabled: lazy.UrlbarPrefs.get(
         "autoFill.adaptiveHistory.enabled"
@@ -851,6 +915,10 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
           AND :fullSearchString BETWEEN i.input AND i.input || X'FFFF'
           AND ${sourceCondition}
           AND i.use_count >= :useCountThreshold
+          AND (
+            fixup_url(h.url) = fixup_url(o.host) || '/'
+            OR i.use_count >= :urlUseCountThreshold
+          )
           AND (:strippedPrefix = '' OR get_prefix(h.url) = :strippedPrefix)
           AND (
             starts_with OR

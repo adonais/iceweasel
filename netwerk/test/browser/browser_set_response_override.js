@@ -88,6 +88,8 @@ add_task(async function test_set_response_override() {
 // Test that a response override with 302 Found status + Location header
 // redirects to the URL specified in the Location header.
 add_task(async function test_set_response_override_redirects() {
+  Services.cookies.removeAll();
+
   let observer = {
     QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
     observe(aSubject, aTopic) {
@@ -105,6 +107,11 @@ add_task(async function test_set_response_override_redirects() {
         replacedHttpResponse.setResponseHeader(
           "Location",
           "https://example.com/browser/netwerk/test/browser/dummy.html?redirected=true",
+          false
+        );
+        replacedHttpResponse.setResponseHeader(
+          "Set-Cookie",
+          "redirect-cookie=set;Path=/",
           false
         );
         aSubject.setResponseOverride(replacedHttpResponse);
@@ -126,12 +133,17 @@ add_task(async function test_set_response_override_redirects() {
           "https://example.com/browser/netwerk/test/browser/dummy.html?redirected=true",
           "Navigation was redirected based on the overridden response"
         );
+        Assert.ok(
+          content.document.cookie.split("; ").includes("redirect-cookie=set"),
+          "Cookie was set from the overridden redirect response headers"
+        );
       });
     }
   );
   await onTabLoaded;
 
   Services.obs.removeObserver(observer, "http-on-before-connect");
+  Services.cookies.removeAll();
 });
 
 // Test that a response override for a requst with CORS preflight succeeds without

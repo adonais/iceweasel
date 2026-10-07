@@ -26,8 +26,6 @@ support-files = ["../schemas/*.schema.json"]
 
 ["test_ASRouter_shouldShowMessagesToProfile.js"]
 
-["test_CFRMessageProvider.js"]
-
 ["test_OnboardingMessageProvider.js"]
 
 ["test_PanelTestProvider.js"]

@@ -19,18 +19,27 @@ class Draggable extends Component {
     return {
       onMove: PropTypes.func.isRequired,
       onDoubleClick: PropTypes.func,
+      onKeyDown: PropTypes.func,
+      onKeyUp: PropTypes.func,
       onStart: PropTypes.func,
       onStop: PropTypes.func,
       style: PropTypes.object,
       title: PropTypes.string,
       className: PropTypes.string,
+      // Accessible semantics
+      role: PropTypes.string,
+      tabIndex: PropTypes.number,
+      ariaLabel: PropTypes.string,
+      ariaOrientation: PropTypes.string,
+      // Ref the consumer can pass to get hold of the rendered element.
+      elementRef: PropTypes.object,
     };
   }
 
   constructor(props) {
     super(props);
 
-    this.draggableEl = createRef();
+    this.draggableEl = props.elementRef ?? createRef();
 
     this.startDragging = this.startDragging.bind(this);
     this.stopDragging = this.stopDragging.bind(this);
@@ -107,13 +116,18 @@ class Draggable extends Component {
   render() {
     return dom.div({
       ref: this.draggableEl,
-      role: "presentation",
+      role: this.props.role ?? "presentation",
+      tabIndex: this.props.tabIndex,
+      "aria-label": this.props.ariaLabel,
+      "aria-orientation": this.props.ariaOrientation,
       style: this.props.style,
       title: this.props.title,
       className: this.props.className,
       onPointerDown: this.startDragging,
       onPointerUp: this.stopDragging,
       onDoubleClick: this.onDoubleClick,
+      onKeyDown: this.props.onKeyDown,
+      onKeyUp: this.props.onKeyUp,
     });
   }
 }

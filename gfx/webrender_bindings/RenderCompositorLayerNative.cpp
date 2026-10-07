@@ -14,7 +14,6 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CompositionRecorder.h"
-#include "mozilla/layers/GpuFence.h"
 #include "mozilla/layers/NativeLayer.h"
 #include "mozilla/layers/ProfilerScreenshots.h"
 #include "mozilla/layers/SurfacePool.h"
@@ -360,7 +359,11 @@ void RenderCompositorLayerNativeOGL::AttachExternalImage(
   // image->Lock only uses the channel index to populate the returned
   // `WrExternalImage`. Since we don't use that, it doesn't matter
   // what channel index we pass.
-  image->Lock(0, mGL);
+  // A DMABUF buffer is attached to the wl_surface as-is and is never sampled
+  // here, so locking it without a GL context skips a per-frame EGLImage import
+  // and BO mapping. Every other backend still requires a context (e.g.
+  // RenderMacIOSurfaceTextureHost).
+  image->Lock(0, image->AsRenderDMABUFTextureHost() ? nullptr : mGL.get());
 
   RenderCompositorLayerNative::AttachExternalImage(aId, aExternalImage);
 }

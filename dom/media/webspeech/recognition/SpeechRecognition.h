@@ -6,7 +6,9 @@
 #define DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITION_H_
 
 #include "DOMMediaStream.h"
+#include "PrincipalChangeObserver.h"
 #include "SpeechGrammarList.h"
+#include "SpeechRecognitionBackend.h"
 #include "SpeechRecognitionResultList.h"
 #include "js/TypeDecls.h"
 #include "mozilla/DOMEventTargetHelper.h"
@@ -32,7 +34,6 @@ namespace mozilla {
 namespace dom {
 
 class Promise;
-class SpeechRecognitionBackend;
 class SpeechRecognitionPhrase;
 
 #define SPEECH_RECOGNITION_TEST_EVENT_REQUEST_TOPIC \
@@ -67,8 +68,10 @@ class SpeechRecognitionInstallTransaction final {
 
 // This implements the SpeechRecognition object in the content process, from the
 // Web Speech API: https://webaudio.github.io/web-speech-api/#speechrecognition
-class SpeechRecognition final : public DOMEventTargetHelper,
-                                public SupportsWeakPtr {
+class SpeechRecognition final
+    : public DOMEventTargetHelper,
+      public SupportsWeakPtr,
+      public PrincipalChangeObserver<MediaStreamTrack> {
  public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(SpeechRecognition)
 
@@ -132,6 +135,9 @@ class SpeechRecognition final : public DOMEventTargetHelper,
       const GlobalObject& aGlobal, const SpeechRecognitionOptions& aOptions,
       ErrorResult& aRv);
 
+  // ChromeOnly, for perf tests: see SpeechRecognitionPerfStats.
+  already_AddRefed<Promise> GetPerfStats(ErrorResult& aRv);
+
   // https://webaudio.github.io/web-speech-api/#dom-speechrecognition-start
   // Two overloads per spec: start() (microphone) and start(MediaStreamTrack).
   void Start(CallerType aCallerType, ErrorResult& aRv);
@@ -155,6 +161,8 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   IMPL_EVENT_HANDLER(end)
 
   void NotifyTrackAdded(const RefPtr<MediaStreamTrack>& aTrack);
+
+  void PrincipalChanged(MediaStreamTrack* aMediaStreamTrack) override;
 
   class TrackListener final : public DOMMediaStream::TrackListener {
    public:
@@ -199,7 +207,7 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   // Called once the backend's session is fully over: for stop(), only after
   // the engine's end-of-stream flush and the results it produced. Fires
   // nomatch when the engine finalized nothing, then "end".
-  void OnSessionFinished(bool aProducedResult);
+  void OnSessionFinished(bool aProducedResult, EnginePerfStats aEngineStats);
   // Called once the backend's session is initialized and ready to receive
   // audio; combined with a track being attached (mTrack), this determines
   // when "start" fires (see MaybeDispatchStart()).
@@ -262,6 +270,11 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   // Fires "start" once the system is successfully listening: the backend
   // session is initialized and a live track is attached (mTrack).
   void MaybeDispatchStart();
+  SpeechRecognitionPerfStats BuildPerfStats() const;
+  // Records media.speech_recognition.session_ended, classifying the outcome
+  // from the session state. Called from Reset() for a session that reached
+  // [[started]], so it covers every termination path.
+  void RecordSessionEnded();
 
   RefPtr<DOMMediaStream> mStream;
   RefPtr<AudioStreamTrack> mTrack;
@@ -306,6 +319,34 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   // https://github.com/WebAudio/web-speech-api/issues/172
   nsTArray<RefPtr<SpeechRecognitionPhrase>> mPhrases;
   nsTArray<RefPtr<SpeechRecognitionResult>> mRecognitionResults;
+
+  // What getPerfStats() reports. Reset by start(), and not by Reset(), so it
+  // outlives the session it describes. Nothing() until the point it measures
+  // is reached: abort() never reaches mFinalization, a silent session never
+  // reaches mFirstResult.
+  struct PerfTimeline {
+    TimeStamp mStart;
+    Maybe<TimeStamp> mStop;
+    Maybe<TimeDuration> mEngineReady;
+    Maybe<TimeDuration> mFirstResult;
+    Maybe<TimeDuration> mFinalization;
+    EnginePerfStats mEngine;
+  };
+  PerfTimeline mPerf;
+
+  // Per-session telemetry state, all set when the session reaches [[started]]
+  // and consumed by RecordSessionEnded().
+  TimeStamp mSessionStartTime;
+  // Ties session_started to session_ended. Only ever used as that key: not
+  // persisted, not sent anywhere else, and regenerated per session.
+  nsCString mSessionId;
+  TimeDuration mResultLatencyTotal;
+  uint32_t mResultLatencySampleCount = 0;
+  // The code of the "error" event fired for this session, if any. Also set for
+  // errors raised before [[started]], which never reach RecordSessionEnded();
+  // StartImpl() clears it so it cannot leak into the next session.
+  Maybe<SpeechRecognitionErrorCode> mSessionError;
+
   RefPtr<TrackListener> mListener;
   // Backend instance for handling audio processing
   RefPtr<SpeechRecognitionBackend> mBackend;

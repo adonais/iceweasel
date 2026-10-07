@@ -16,8 +16,11 @@
 #include <string>
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "api/call/transport.h"
 #include "api/rtp_headers.h"
+#include "api/rtp_packet_infos.h"
+#include "api/units/timestamp.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "rtc_base/strings/string_builder.h"
 
@@ -120,9 +123,12 @@ std::string VideoReceiveStreamInterface::Stats::ToString(
 VideoReceiveStreamInterface::Config::Config(Config&&) = default;
 VideoReceiveStreamInterface::Config::Config(
     Transport* rtcp_send_transport,
-    VideoDecoderFactory* decoder_factory)
+    VideoDecoderFactory* decoder_factory,
+    absl::AnyInvocable<void(const RtpPacketInfos&, Timestamp) const>
+        on_frame_delivered_callback)
     : decoder_factory(decoder_factory),
-      rtcp_send_transport(rtcp_send_transport) {}
+      rtcp_send_transport(rtcp_send_transport),
+      on_frame_delivered_callback(std::move(on_frame_delivered_callback)) {}
 
 VideoReceiveStreamInterface::Config&
 VideoReceiveStreamInterface::Config::operator=(Config&&) = default;
@@ -195,6 +201,8 @@ VideoReceiveStreamInterface::Config VideoReceiveStreamInterface::Config::Copy()
   config_copy.frame_decryptor = frame_decryptor;
   config_copy.crypto_options = crypto_options;
   config_copy.frame_transformer = frame_transformer;
+  // Note: `on_first_packet` is a one-shot move-only callback.
+  // It is moved out during construction and should not be copied.
   return config_copy;
 }
 

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Rotated capture resolves constraints in the primary orientation</title>
+<meta name="variant" content="?rotation=0">
+<meta name="variant" content="?rotation=90">
+<meta name="variant" content="?rotation=180">
+<meta name="variant" content="?rotation=270">
+<meta name="variant" content="?rotation=0&capabilities=none">
+<meta name="variant" content="?rotation=90&capabilities=none">
+<meta name="variant" content="?rotation=180&capabilities=none">
+<meta name="variant" content="?rotation=270&capabilities=none">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script>
+"use strict";
+
+// https://w3c.github.io/mediacapture-main/ requires that width, height and
+// aspectRatio constraints and capabilities are considered in the primary
+// orientation only, and that getSettings() flips them if necessary to match
+// the dimensions of the video actually delivered.
+//
+// The fake camera captures 640x480 in its primary orientation. Rotating it must
+// not change which resolution the constraints select, only how the delivered
+// frames - and therefore getSettings() - are oriented.
+//
+// The capabilities=none variants drop the advertised capabilities, which makes
+// MediaEngineRemoteVideoSource fall back on the dimensions of the delivered
+// frame. Those are already rotated, so without care the constraints get
+// resolved against the wrong axis. That pairing is unusual on today's
+// platforms but nothing prevents one from reporting rotation without
+// capabilities.
+
+const params = new URLSearchParams(location.search);
+const rotation = parseInt(params.get("rotation"), 10);
+const quarterTurn = rotation == 90 || rotation == 270;
+
+// getSettings() reflects the frames being delivered, so a frame has to have
+// been delivered before it says anything about orientation. Straight after
+// getUserMedia() it still carries what was picked at allocation.
+async function settingsAfterFirstFrame(t, constraints) {
+  const stream = await navigator.mediaDevices.getUserMedia(constraints);
+  t.add_cleanup(() => stream.getTracks().forEach(track => track.stop()));
+  const video = document.createElement("video");
+  video.srcObject = stream;
+  video.muted = true;
+  document.body.appendChild(video);
+  t.add_cleanup(() => video.remove());
+  await video.play();
+  await new Promise(r => video.requestVideoFrameCallback(r));
+  return stream.getVideoTracks()[0].getSettings();
+}
+
+promise_test(async t => {
+  const settings =
+      await settingsAfterFirstFrame(t, {video: {width: 640, height: 480}});
+
+  // Flipped for a quarter turn, since that is what is delivered.
+  assert_equals(settings.width, quarterTurn ? 480 : 640, "settings width");
+  assert_equals(settings.height, quarterTurn ? 640 : 480, "settings height");
+}, `640x480 requested, rotation ${location.search}`);
+
+promise_test(async t => {
+  // The constraint is resolved against the primary orientation, where the
+  // camera is 640 wide, and only the delivered frame has its dimensions swapped.
+  const settings =
+      await settingsAfterFirstFrame(t, {video: {width: {exact: 640}}});
+
+  assert_equals(settings.width, quarterTurn ? 480 : 640,
+                "exact width 640 in the primary orientation");
+}, `exact width honoured in the primary orientation, rotation ${location.search}`);
+</script>

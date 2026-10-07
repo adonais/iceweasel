@@ -155,7 +155,7 @@ SelectContentHelper.prototype = {
       throw new Error("pseudo styles must be set up");
     }
     let uniqueStyles = [];
-    let options = buildOptionListForChildren(this.element, uniqueStyles);
+    let options = buildOptionList(this.element, null, uniqueStyles);
     return { options, uniqueStyles };
   },
 
@@ -386,42 +386,24 @@ function uniqueStylesIndex(cs, uniqueStyles) {
   return uniqueStyles.length - 1;
 }
 
-// Yields the <option>, <optgroup> and <hr> children of `node` in tree order.
-// Any other element is a wrapper, which is transparent for the option list, so
-// it is descended into. See
-// https://html.spec.whatwg.org/#concept-select-option-list
-function* optionListChildren(node) {
-  for (let child of node.children) {
-    let className = ChromeUtils.getClassName(child);
-    switch (className) {
-      case "HTMLOptionElement":
-      case "HTMLOptGroupElement":
-      case "HTMLHRElement":
-        yield [child, className];
-        break;
-      case "HTMLSelectElement":
-      case "HTMLDataListElement":
-        break;
-      default:
-        yield* optionListChildren(child);
-    }
-  }
-}
-
-function buildOptionListForChildren(node, uniqueStyles) {
+// Maps the select's list items, as computed by
+// HTMLSelectElement::GetListItems, onto the option info the parent process
+// needs. `group` selects an optgroup's members, or the top-level items when
+// null.
+function buildOptionList(select, group, uniqueStyles) {
   let result = [];
 
   let lastWasHR = false;
-  for (let [child, className] of optionListChildren(node)) {
+  for (let item of select.getListItems(group)) {
+    let className = ChromeUtils.getClassName(item);
     let isOptGroup = className == "HTMLOptGroupElement";
-    let isHR = className == "HTMLHRElement";
-    if (child.hidden) {
+    if (item.hidden) {
       continue;
     }
 
-    let cs = getComputedStyles(child);
+    let cs = getComputedStyles(item);
 
-    if (isHR) {
+    if (className == "HTMLHRElement") {
       // https://html.spec.whatwg.org/#the-select-element-2
       // "Each sequence of one or more child hr element siblings may be rendered as a single separator."
       if (lastWasHR) {
@@ -429,12 +411,13 @@ function buildOptionListForChildren(node, uniqueStyles) {
       }
 
       let info = {
-        index: child.index,
+        index: item.index,
         display: cs.display,
-        isHR,
+        isHR: true,
       };
 
-      const defaultHRStyle = node.documentGlobal.getDefaultComputedStyle(child);
+      const defaultHRStyle =
+        select.documentGlobal.getDefaultComputedStyle(item);
       if (cs.color != defaultHRStyle.color) {
         info.color = cs.color;
       }
@@ -446,29 +429,18 @@ function buildOptionListForChildren(node, uniqueStyles) {
     }
     lastWasHR = false;
 
-    // The option code-path should match HTMLOptionElement::GetRenderedLabel.
-    let textContent = isOptGroup
-      ? child.getAttribute("label")
-      : child.label || child.text;
-    if (textContent == null) {
-      textContent = "";
-    }
-
-    let info = {
-      index: child.index,
+    result.push({
+      index: item.index,
       isOptGroup,
-      textContent,
-      disabled: child.disabled,
+      textContent: isOptGroup ? item.label : item.renderedLabel,
+      disabled: item.disabled,
       display: cs.display,
-      tooltip: child.title,
-      children: isOptGroup
-        ? buildOptionListForChildren(child, uniqueStyles)
-        : [],
+      tooltip: item.title,
+      children: isOptGroup ? buildOptionList(select, item, uniqueStyles) : [],
       // Most options have the same style. In order to reduce the size of the
       // IPC message, coalesce them in uniqueStyles.
       styleIndex: uniqueStylesIndex(cs, uniqueStyles),
-    };
-    result.push(info);
+    });
   }
   return result;
 }

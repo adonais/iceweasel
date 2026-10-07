@@ -44,15 +44,18 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
   mozilla::ipc::IPCResult RecvResume() override { return IPC_OK(); }
   mozilla::ipc::IPCResult RecvResumeAsync() override { return IPC_OK(); }
   mozilla::ipc::IPCResult RecvNotifyChildCreated(
-      const LayersId& child, CompositorOptions* aOptions) override;
-  mozilla::ipc::IPCResult RecvMapAndNotifyChildCreated(
-      const LayersId& child, const base::ProcessId& pid,
+      const LayersId& child, const LayersId& embedderId,
       CompositorOptions* aOptions) override;
+  mozilla::ipc::IPCResult RecvMapAndNotifyChildCreated(
+      const LayersId& child, const LayersId& embedderId,
+      const base::ProcessId& pid, CompositorOptions* aOptions) override;
   mozilla::ipc::IPCResult RecvNotifyChildRecreated(
-      const LayersId& child, CompositorOptions* aOptions) override {
+      const LayersId& child, const LayersId& embedderId,
+      CompositorOptions* aOptions) override {
     return IPC_FAIL_NO_REASON(this);
   }
-  mozilla::ipc::IPCResult RecvAdoptChild(const LayersId& child) override {
+  mozilla::ipc::IPCResult RecvAdoptChild(const LayersId& child,
+                                         const LayersId& embedderId) override {
     return IPC_FAIL_NO_REASON(this);
   }
   mozilla::ipc::IPCResult RecvFlushRendering(

@@ -25,7 +25,7 @@
 #include <stdlib.h>
 
 #include "libavutil/error.h"
-#include "jni.h"
+#include "fffjni.h"
 
 #if CONFIG_JNI
 #include <jni.h>

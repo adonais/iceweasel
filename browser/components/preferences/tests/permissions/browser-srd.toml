@@ -22,6 +22,8 @@ tags = "os_integration"
 
 ["browser_permissions_dialog_default_perm.js"]
 
+["browser_permissions_policy_trailing_dot.js"]
+
 ["browser_permissions_urlFieldHidden.js"]
 
 ["browser_pip_settings.js"]

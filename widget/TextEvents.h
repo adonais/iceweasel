@@ -1073,7 +1073,7 @@ class WidgetQueryContentEvent final : public WidgetGUIEvent {
   }
 
   struct Options final {
-    explicit Options() {}  // XXX Cannot use `= default` here
+    explicit Options() {}  // NOLINT(modernize-use-equals-default)
     explicit Options(const WidgetQueryContentEvent& aEvent)
         : mRelativeToInsertionPoint(aEvent.mInput.mRelativeToInsertionPoint) {}
 
@@ -1267,6 +1267,7 @@ class WidgetQueryContentEvent final : public WidgetGUIEvent {
     // Used by eQueryTextRectArray
     CopyableTArray<mozilla::LayoutDeviceIntRect> mRectArray;
     // true if selection is reversed (end < start)
+    // FIXME: Use RangeDirection enum class.
     bool mReversed = false;
     // true if DOM element under mouse belongs to widget
     bool mWidgetIsHit = false;
@@ -1438,16 +1439,42 @@ class WidgetSelectionEvent final : public WidgetGUIEvent {
     return nullptr;
   }
 
+  [[nodiscard]] bool IsReversed() const {
+    return mDirection == RangeDirection::Reversed;
+  }
+
+  [[nodiscard]] bool ShouldExpandToClusterBoundary() const {
+    return mExpandToClusterBoundary == ExpandToClusterBoundary::Yes;
+  }
+
+  /**
+   * Return true if this event is dispatched by valid dispatcher. eSetSelection
+   * event is important for TextEventDispatcher. Therefore, this event must be
+   * dispatched by TextEventDispatcher.
+   */
+  [[nodiscard]] bool DispatchedByValidDispatcher() const {
+    // If this event is dispatched in another process, TextEventDispatcher in
+    // this process does not need to get involved.
+    if (mFlags.CameFromAnotherProcess()) {
+      return true;
+    }
+    // SetSelection event must be dispatched by TextEventDispatcher.
+    return mDispatchedByTextEventDispatcher;
+  }
+
   // Start offset of selection
   uint32_t mOffset = 0;
   // Length of selection
   uint32_t mLength = 0;
   // Selection "anchor" should be in front
-  bool mReversed = false;
+  RangeDirection mDirection = RangeDirection::Normal;
   // Cluster-based or character-based
-  bool mExpandToClusterBoundary = true;
+  ExpandToClusterBoundary mExpandToClusterBoundary =
+      ExpandToClusterBoundary::Yes;
   // true if setting selection succeeded.
   bool mSucceeded = false;
+  // true if TextEventDispatcher dispatches this event.
+  bool mDispatchedByTextEventDispatcher = false;
   // Fennec provides eSetSelection reason codes for downstream
   // use in AccessibleCaret visibility logic.
   int16_t mReason = nsISelectionListener::NO_REASON;

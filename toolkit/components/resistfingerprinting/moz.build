@@ -76,3 +76,9 @@ GeneratedFile(
     script="extract_rfp_targets.py",
     inputs=["RFPTargets.inc", "RFPTargetsDefaultBaseline.inc", "RFPTargetsDefault.inc"],
 )
+
+LICENSED_UNDER += ["mit"]
+LICENSED_UNDER["mit"].paths = [
+    "content/gl-matrix.js",
+    "content/ssdeep.js",
+]

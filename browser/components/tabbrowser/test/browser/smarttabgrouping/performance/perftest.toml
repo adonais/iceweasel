@@ -1,0 +1,23 @@
+[DEFAULT]
+support-files = [
+  "data/e2e/*.html",
+]
+prefs = [
+  "browser.newtabpage.enabled=false",
+  "browser.newtabpage.activity-stream.widgets.pictureOfTheDay.enabled=false",
+  "browser.ml.enable=true",
+  "browser.ml.logLevel=Error",
+  "browser.ml.checkForMemory=false",
+  "javascript.options.wasm_lazy_tiering=true",
+  "browser.tabs.groups.enabled=true",
+  "browser.tabs.groups.smart.enabled=true",
+  "browser.tabs.groups.smart.userEnabled=true",
+  # Skip the download opt-in panel: it is a separate flow with its own progress
+  # UI, and it is not what this test measures.
+  "browser.tabs.groups.smart.optin=true",
+  # Ignoring the blocklist is necessary to run tests in CI on old Mesa versions.
+  "gfx.webgpu.ignore-blocklist=true",
+]
+
+["browser_smart_tab_grouping_perf.js"]
+disabled = "Disabled because this is only run as a performance test."

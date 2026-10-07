@@ -129,7 +129,7 @@ async function navigateToNewTabAndRunActivationWindowCheck(
 add_setup(async () => {
   NewTabPagePreloading.removePreloadedBrowser(window);
 
-  await AboutNewTab.activityStream.initialized;
+  await AboutNewTab.activityStreamPromise;
   let prefsFeed = AboutNewTab.activityStream.store.feeds.get("feeds.prefs");
   let sandbox = sinon.createSandbox();
   let originalOnAction = prefsFeed.onAction;
@@ -160,8 +160,6 @@ add_setup(async () => {
       ],
     ],
   });
-
-  await prefsFeed.store.initialized;
 
   registerCleanupFunction(async () => {
     Services.prefs.clearUserPref(

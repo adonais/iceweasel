@@ -6,6 +6,7 @@
 #define DOM_WEBTRANSPORT_API_WEBTRANSPORT_H_
 
 #include "mozilla/dom/BufferSourceBindingFwd.h"
+#include "mozilla/dom/PWebTransport.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebTransportBinding.h"
 #include "mozilla/dom/WebTransportChild.h"
@@ -91,7 +92,8 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
                            const mozilla::TimeStamp& aTimeStamp);
 
   void RemoteClosed(bool aCleanly, const uint32_t& aCode,
-                    const nsACString& aReason);
+                    const nsACString& aReason,
+                    const Maybe<WebTransportStatsData>& aStats);
 
   void SetNegotiatedProtocol(const nsACString& aProtocol);
 
@@ -116,6 +118,7 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   already_AddRefed<Promise> Ready() { return do_AddRef(mReady); }
   WebTransportReliabilityMode Reliability();
   WebTransportCongestionControl CongestionControl();
+  static bool SupportsReliableOnly(const GlobalObject& aGlobal);
   void GetProtocol(nsAString& aProtocol);
   already_AddRefed<Promise> Draining() { return do_AddRef(mDraining); }
   already_AddRefed<Promise> Closed() { return do_AddRef(mClosed); }
@@ -153,6 +156,11 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   already_AddRefed<Promise> CreateUnidirectionalStreamInternal(
       const WebTransportSendStreamOptions& aOptions,
       WebTransportSendGroup* aSendGroup, int64_t aSendOrder, ErrorResult& aRv);
+
+  // Issues the IPC GetStats request and wires the response to aPromise. Used
+  // both immediately (when connected) and deferred until [[Ready]] settles
+  // (when called during "connecting").
+  void SendGetStatsRequest(Promise* aPromise);
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
   // We are the owner of WebTransportChild.  We must call Shutdown() on it
@@ -199,6 +207,14 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   RefPtr<ReadableStream> mIncomingBidirectionalStreams;
   RefPtr<WebTransportDatagramDuplexStream> mDatagrams;
   RefPtr<Promise> mClosed;
+
+  Maybe<WebTransportStatsData> mCachedStats;
+  uint64_t mCachedDroppedIncoming = 0;
+  uint64_t mCachedExpiredIncoming = 0;
+
+  // Close pending state and queued GetStats requests
+  bool mClosePending = false;
+  nsTArray<RefPtr<Promise>> mPendingGetStatsPromises;
 };
 
 }  // namespace mozilla::dom

@@ -19,8 +19,8 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import org.junit.Test
 import org.mozilla.fenix.tabstray.browser.compose.ListReorderState
-import org.mozilla.fenix.tabstray.controller.NoOpTabInteractionHandler
-import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
+import org.mozilla.fenix.tabstray.controller.ItemInteractionHandler
+import org.mozilla.fenix.tabstray.controller.NoOpItemInteractionHandler
 
 class ReorderableListTest {
     private val testDispatcher = StandardTestDispatcher()
@@ -28,7 +28,7 @@ class ReorderableListTest {
 
     @Test
     fun `GIVEN an item is dragged down onto another THEN onMove is called with placeAfter true`() {
-        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val handler = mockk<ItemInteractionHandler>(relaxed = true)
         val dragItemOffset = 10
         val targetItemOffset = 30
         val reorderState =
@@ -61,7 +61,7 @@ class ReorderableListTest {
 
     @Test
     fun `GIVEN an item is dragged up onto another THEN onMove is called with placeAfter false`() {
-        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val handler = mockk<ItemInteractionHandler>(relaxed = true)
         val dragItemOffset = 30
         val targetItemOffset = 10
         val reorderState =
@@ -128,7 +128,7 @@ class ReorderableListTest {
 
     private fun fakeListReorderState(
         listState: LazyListState,
-        handler: TabInteractionHandler = NoOpTabInteractionHandler,
+        handler: ItemInteractionHandler = NoOpItemInteractionHandler,
     ): ListReorderState {
         return ListReorderState(
             listState = listState,

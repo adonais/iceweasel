@@ -46,6 +46,8 @@ class Type {
     FuncRef = -0x10,    // 0x70
     ExternRef = -0x11,  // 0x6f
     Reference = -0x15,  // 0x6b
+    Ref = -0x1c,        // 0x64
+    RefNull = -0x1d,    // 0x63
     Func = -0x20,       // 0x60
     Struct = -0x21,     // 0x5f
     Array = -0x22,      // 0x5e
@@ -58,25 +60,70 @@ class Type {
     I32U = 7,  // Not actually specified, but used internally with load/store
   };
 
+  // Used by FuncRef / ExternRef
+  enum GenericReferenceType : uint32_t {
+    ReferenceOrNull = 0,
+    ReferenceNonNull = 1,
+  };
+
   Type() = default;  // Provided so Type can be member of a union.
   Type(int32_t code)
-      : enum_(static_cast<Enum>(code)), type_index_(kInvalidIndex) {}
-  Type(Enum e) : enum_(e), type_index_(kInvalidIndex) {}
-  Type(Enum e, Index type_index) : enum_(e), type_index_(type_index) {
-    assert(e == Enum::Reference);
+      : enum_(static_cast<Enum>(code)), type_index_(0) {
+    assert(!IsReferenceWithIndex());
   }
+  Type(Enum e) : enum_(e), type_index_(0) {
+    assert(!IsReferenceWithIndex());
+  }
+  Type(Enum e, Index type_index) : enum_(e), type_index_(type_index) {
+    assert(IsReferenceWithIndex() ||
+           (IsNonTypedRef() && (type_index_ == ReferenceOrNull || type_index_ == ReferenceNonNull)));
+  }
+
   constexpr operator Enum() const { return enum_; }
+
+  friend constexpr bool operator==(const Type a, const Type b) {
+    return a.enum_ == b.enum_ && a.type_index_ == b.type_index_;
+  }
+  friend constexpr bool operator!=(const Type a, const Type b) {
+    return !(a == b);
+  }
+  friend constexpr bool operator==(const Type ty, const Enum code) {
+    return ty.enum_ == code;
+  }
+  friend constexpr bool operator!=(const Type ty, const Enum code) {
+    return !(ty == code);
+  }
+  friend constexpr bool operator<(const Type a, const Type b) {
+    return a.enum_ == b.enum_ ? a.type_index_ < b.type_index_
+                              : a.enum_ < b.enum_;
+  }
 
   bool IsRef() const {
     return enum_ == Type::ExternRef || enum_ == Type::FuncRef ||
-           enum_ == Type::Reference || enum_ == Type::ExnRef;
+           enum_ == Type::Reference || enum_ == Type::ExnRef ||
+           enum_ == Type::RefNull || enum_ == Type::Ref;
   }
 
-  bool IsReferenceWithIndex() const { return enum_ == Type::Reference; }
-
   bool IsNullableRef() const {
-    // Currently all reftypes are nullable
-    return IsRef();
+    return enum_ == Type::Reference || enum_ == Type::ExnRef ||
+           enum_ == Type::RefNull ||
+           ((enum_ == Type::ExternRef || enum_ == Type::FuncRef) && type_index_ == ReferenceOrNull);
+  }
+
+  bool IsNonNullableRef() const {
+    return enum_ == Type::Ref ||
+           ((enum_ == Type::ExternRef || enum_ == Type::FuncRef) && type_index_ != ReferenceOrNull);
+  }
+
+  bool IsReferenceWithIndex() const { return EnumIsReferenceWithIndex(enum_); }
+
+  bool IsNonTypedRef() const {
+    return EnumIsNonTypedRef(enum_);
+  }
+
+  bool IsNullableNonTypedRef() const {
+    assert(EnumIsNonTypedRef(enum_));
+    return type_index_ == ReferenceOrNull;
   }
 
   std::string GetName() const {
@@ -89,13 +136,18 @@ class Type {
       case Type::I8:        return "i8";
       case Type::I16:       return "i16";
       case Type::ExnRef:    return "exnref";
-      case Type::FuncRef:   return "funcref";
       case Type::Func:      return "func";
       case Type::Void:      return "void";
       case Type::Any:       return "any";
-      case Type::ExternRef: return "externref";
+      case Type::FuncRef:
+        return type_index_ == ReferenceOrNull ? "funcref" : "(ref func)";
+      case Type::ExternRef:
+        return type_index_ == ReferenceOrNull ? "externref" : "(ref extern)";
       case Type::Reference:
+      case Type::Ref:
         return StringPrintf("(ref %d)", type_index_);
+      case Type::RefNull:
+        return StringPrintf("(ref null %d)", type_index_);
       default:
         return StringPrintf("<type_index[%d]>", enum_);
     }
@@ -132,7 +184,7 @@ class Type {
   }
 
   Index GetReferenceIndex() const {
-    assert(enum_ == Enum::Reference);
+    assert(IsReferenceWithIndex());
     return type_index_;
   }
 
@@ -151,6 +203,8 @@ class Type {
       case Type::ExnRef:
       case Type::ExternRef:
       case Type::Reference:
+      case Type::Ref:
+      case Type::RefNull:
         return TypeVector(this, this + 1);
 
       default:
@@ -158,9 +212,21 @@ class Type {
     }
   }
 
+  static bool EnumIsReferenceWithIndex(Enum value) {
+    return value == Type::Reference || value == Type::Ref ||
+           value == Type::RefNull;
+  }
+
+  static bool EnumIsNonTypedRef(Enum value) {
+    return value == Type::ExternRef || value == Type::FuncRef;
+  }
+
  private:
   Enum enum_;
-  Index type_index_;  // Only used for for Type::Reference
+  // This index is 0 for non-references, so a zeroed
+  // memory area represents a valid Type::Any type.
+  // It contains an index for references with type index.
+  Index type_index_;
 };
 
 }  // namespace wabt

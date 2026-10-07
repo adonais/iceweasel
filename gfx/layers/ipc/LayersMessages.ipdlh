@@ -172,6 +172,11 @@ struct ScrollTimelineOptions {
   ViewID source;
   // The physical direction.
   ScrollDirection axis;
+  // The resolved animation attachment range as fractions of the scroll range
+  // (ScrollTimeline::IntervalForAttachmentRange). {0, 1} means normal. Values
+  // may fall outside [0, 1]; rangeEnd <= rangeStart means a collapsed range.
+  double rangeStart;
+  double rangeEnd;
 };
 
 struct Animation {

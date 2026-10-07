@@ -66,7 +66,7 @@ type PDWORD = *mut DWORD;
 #[allow(non_camel_case_types)]
 type PWER_RUNTIME_EXCEPTION_INFORMATION = *mut WER_RUNTIME_EXCEPTION_INFORMATION;
 
-// This value comes from GeckoProcessTypes.h
+// This value comes from GeckoProcessTypes.inc
 static MAIN_PROCESS_TYPE: u32 = 0;
 
 /// # Safety

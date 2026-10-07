@@ -182,13 +182,14 @@ class HostWebGLContext final : public SupportsWeakPtr {
 
   // -
 
-  Maybe<uvec2> FrontBufferSnapshotInto(Maybe<Range<uint8_t>> dest) const {
+  Maybe<uvec2> FrontBufferSnapshotInto(
+      Maybe<mozilla::Range<uint8_t>> dest) const {
     return mContext->FrontBufferSnapshotInto(dest);
   }
 
   Maybe<uvec2> FrontBufferSnapshotInto(
       std::shared_ptr<gl::SharedSurface>& front,
-      Maybe<Range<uint8_t>> dest) const {
+      Maybe<mozilla::Range<uint8_t>> dest) const {
     return mContext->FrontBufferSnapshotInto(front, dest);
   }
 
@@ -422,6 +423,11 @@ class HostWebGLContext final : public SupportsWeakPtr {
     mContext->PolygonOffset(factor, units);
   }
 
+  void PolygonOffsetClampEXT(GLfloat factor, GLfloat units,
+                             GLfloat clamp) const {
+    mContext->PolygonOffsetClampEXT(factor, units, clamp);
+  }
+
   void SampleCoverage(GLclampf value, bool invert) const {
     mContext->SampleCoverage(value, invert);
   }
@@ -472,7 +478,7 @@ class HostWebGLContext final : public SupportsWeakPtr {
   }
 
   bool GetBufferSubData(GLenum target, uint64_t srcByteOffset,
-                        const Range<uint8_t>& dest) const {
+                        const mozilla::Range<uint8_t>& dest) const {
     return GetWebGL2Context()->GetBufferSubData(target, srcByteOffset, dest);
   }
 
@@ -655,8 +661,9 @@ class HostWebGLContext final : public SupportsWeakPtr {
     mContext->ReadPixelsPbo(desc, offset);
   }
 
-  webgl::ReadPixelsResult ReadPixelsInto(const webgl::ReadPixelsDesc& desc,
-                                         const Range<uint8_t>& dest) const {
+  webgl::ReadPixelsResult ReadPixelsInto(
+      const webgl::ReadPixelsDesc& desc,
+      const mozilla::Range<uint8_t>& dest) const {
     return mContext->ReadPixelsInto(desc, dest);
   }
 

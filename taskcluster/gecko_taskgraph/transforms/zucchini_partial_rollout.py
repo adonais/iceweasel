@@ -15,11 +15,8 @@ partials_transforms = TransformSequence()
 # hold it in beta for a few cycles, or let it ride the train to release.
 # If holding in beta, we'll need to uplift a patch to remove the release entry.
 # TODO: update taskcluster/docs/partials.rst once we are fully rolled out
-LEGACY_PARTIALS_PROJECTS = {
-    "mozilla-beta",
-    "mozilla-release",
-    "mozilla-esr115",
-    "mozilla-esr140",
+ZUCCHINI_PARTIALS_PROJECTS = {
+    "mozilla-central",
 }
 
 
@@ -31,7 +28,7 @@ def filter_legacy_partials_by_project(config, tasks):
     we skip generating the legacy "partials" tasks entirely. This is the inverse
     of the filtering applied by the zucchini_transforms below.
     """
-    if config.params["project"] not in LEGACY_PARTIALS_PROJECTS:
+    if config.params["project"] in ZUCCHINI_PARTIALS_PROJECTS:
         return
     yield from tasks
 
@@ -63,13 +60,13 @@ def filter_partials_by_project(config, tasks):
 
         if (
             primary_dep.kind == "partials"
-            and config.params["project"] not in LEGACY_PARTIALS_PROJECTS
+            and config.params["project"] in ZUCCHINI_PARTIALS_PROJECTS
         ):
             continue
 
         if (
             primary_dep.kind in ("partials-zucchini", "partials-zucchini-l10n")
-            and config.params["project"] in LEGACY_PARTIALS_PROJECTS
+            and config.params["project"] not in ZUCCHINI_PARTIALS_PROJECTS
         ):
             continue
 

@@ -902,6 +902,43 @@ savecipher(int c)
         cipherlist[nciphers++] = (PRUint16)c;
 }
 
+/* How long to let the peer finish sending before giving up on it. */
+#define CLOSE_DRAIN_SECONDS 1
+
+/* Close a connection the way the peer expects it to be closed.
+ *
+ * Closing a socket that still holds unread data in its receive queue makes
+ * Windows reset the connection rather than shut it down, and the peer then
+ * sees PR_CONNECT_RESET_ERROR where it expected end of file. The tail of what
+ * a client sends can still be arriving when we are finished with it -- a
+ * post-handshake authentication flight runs to several kilobytes with a large
+ * signature algorithm -- so send close_notify and our FIN first, then read to
+ * end of file before closing.
+ */
+static void
+closeConnection(PRFileDesc *fd)
+{
+    /* Deliberately not the caller's buffer: handle_connection still needs
+     * what is in its own after this returns. */
+    char drain[512];
+    PRIntervalTime timeout = PR_SecondsToInterval(CLOSE_DRAIN_SECONDS);
+    PRIntervalTime start = PR_IntervalNow();
+    PRIntervalTime elapsed;
+
+    /* This fails when the send side is already down, in which case there is
+     * nothing left of ours to flush and no reason to wait. */
+    if (PR_Shutdown(fd, PR_SHUTDOWN_SEND) == PR_SUCCESS) {
+        while ((elapsed = PR_IntervalNow() - start) < timeout) {
+            /* Whatever is left is of no interest; we only need the peer to
+             * have stopped sending before the socket goes away. */
+            if (PR_Recv(fd, drain, sizeof drain, 0, timeout - elapsed) <= 0) {
+                break;
+            }
+        }
+    }
+    PR_Close(fd);
+}
+
 #ifdef FULL_DUPLEX_CAPABLE
 
 struct lockedVarsStr {
@@ -1049,9 +1086,9 @@ handle_fdx_connection(
 
 cleanup:
     if (ssl_sock) {
-        PR_Close(ssl_sock);
+        closeConnection(ssl_sock);
     } else if (tcp_sock) {
-        PR_Close(tcp_sock);
+        closeConnection(tcp_sock);
     }
 
     VLOG(("selfserv: handle_fdx_connection: exiting"));
@@ -1628,9 +1665,9 @@ handle_connection(PRFileDesc *tcp_sock, PRFileDesc *model_sock)
 
 cleanup:
     if (ssl_sock) {
-        PR_Close(ssl_sock);
+        closeConnection(ssl_sock);
     } else if (tcp_sock) {
-        PR_Close(tcp_sock);
+        closeConnection(tcp_sock);
     }
     if (local_file_fd)
         PR_Close(local_file_fd);
@@ -3018,19 +3055,9 @@ main(int argc, char **argv)
         listen_sock = PR_GetInheritedFD(inheritableSockName);
         if (!listen_sock)
             errExit("PR_GetInheritedFD");
-#ifndef WINNT
-        /* we can't do this on NT because it breaks NSPR and
-    PR_Accept will fail on the socket in the child process if
-    the socket state is change to non inheritable
-    It is however a security issue to leave it accessible,
-    but it is OK for a test server such as selfserv.
-    NSPR should fix it eventually . see bugzilla 101617
-    and 102077
-    */
         prStatus = PR_SetFDInheritable(listen_sock, PR_FALSE);
         if (prStatus != PR_SUCCESS)
             errExit("PR_SetFDInheritable");
-#endif
         rv = SSL_InheritMPServerSIDCache(envString);
         if (rv != SECSuccess)
             errExit("SSL_InheritMPServerSIDCache");

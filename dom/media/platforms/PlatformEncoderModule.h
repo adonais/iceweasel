@@ -46,6 +46,20 @@ class PlatformEncoderModule {
       const EncoderConfig& aConfig) const = 0;
   virtual media::EncodeSupportSet SupportsCodec(CodecType aCodecType) const = 0;
 
+  using SupportsEncoderPromise =
+      MozPromise<media::EncodeSupportSet, nsresult, /* IsExclusive = */ true>;
+
+  // Asynchronous variant of Supports(). The default resolves with the
+  // synchronous result; modules that proxy to a remote process override this
+  // to first wait until that process has reported its codec support, so the
+  // answer reflects accurate hardware capabilities. Must be called off the
+  // main thread.
+  virtual RefPtr<SupportsEncoderPromise> SupportsAsync(
+      const EncoderConfig& aConfig) const {
+    return SupportsEncoderPromise::CreateAndResolve(Supports(aConfig),
+                                                    __func__);
+  }
+
   // Returns a readable name for this Platform Encoder Module
   virtual const char* GetName() const = 0;
 

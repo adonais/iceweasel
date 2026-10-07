@@ -75,6 +75,7 @@ class ContentAnalysisTelemetryTest : public testing::Test {
     mContentAnalysis->mAllowUrlList = {};
     mContentAnalysis->mDenyUrlList = {};
   }
+  void TestSimpleCopyRequestWithPrefValue(bool aPrefValue);
 
   // This is used to help tests clean up after terminating and restarting
   // the agent.
@@ -175,7 +176,7 @@ TEST_F(ContentAnalysisTelemetryTest, TestSimpleRequest) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
 
   nsCString analysisTypeString = "BULK_DATA_ENTRY"_ns;
   auto originalAnalysisTypeCount =
@@ -208,6 +209,74 @@ TEST_F(ContentAnalysisTelemetryTest, TestSimpleRequest) {
             originalReasonCount + 1);
 }
 
+// Also covers the protobuf conversion for copies: the telemetry labels are
+// the SDK enum names of what we actually put on the wire.
+void ContentAnalysisTelemetryTest::TestSimpleCopyRequestWithPrefValue(
+    bool aEnabled) {
+  EnsureAgentStarted();
+  MOZ_ALWAYS_SUCCEEDS(Preferences::SetBool(
+      "browser.contentanalysis.interception_point.clipboard_copy.enabled",
+      aEnabled));
+  auto restorePref = MakeScopeExit([&] {
+    MOZ_ALWAYS_SUCCEEDS(Preferences::ClearUser(
+        "browser.contentanalysis.interception_point.clipboard_copy.enabled"));
+  });
+
+  nsCOMPtr<nsIURI> uri = GetExampleDotComURI();
+  nsString allow(L"allowSimple");
+  nsCOMPtr<nsIContentAnalysisRequest> request = new ContentAnalysisRequest(
+      nsIContentAnalysisRequest::AnalysisType::eDataCopied,
+      nsIContentAnalysisRequest::Reason::eClipboardCopy, std::move(allow),
+      false, EmptyCString(), uri,
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
+
+  nsCString analysisTypeString = "DATA_COPIED"_ns;
+  auto originalAnalysisTypeCount =
+      glean::content_analysis::request_sent_by_analysis_type
+          .Get(analysisTypeString)
+          .TestGetValue()
+          .unwrap()
+          .valueOr(0);
+  nsCString reasonString = "CLIPBOARD_COPY"_ns;
+  auto originalReasonCount =
+      glean::content_analysis::request_sent_by_reason.Get(reasonString)
+          .TestGetValue()
+          .unwrap()
+          .valueOr(0);
+
+  if (aEnabled) {
+    SendRequestAndExpectResponse(mContentAnalysis, request, Some(true),
+                                 Some(nsIContentAnalysisResponse::eAllow),
+                                 Nothing());
+  } else {
+    // The request is permitted early without consulting the agent, so no
+    // nsIContentAnalysisResponse or acknowledgement is produced.
+    SendRequestAndWaitForEarlyResult(mContentAnalysis, request, Some(true));
+  }
+
+  EXPECT_EQ(glean::content_analysis::request_sent_by_analysis_type
+                .Get(analysisTypeString)
+                .TestGetValue()
+                .unwrap()
+                .valueOr(0),
+            originalAnalysisTypeCount + (aEnabled ? 1 : 0));
+  EXPECT_EQ(glean::content_analysis::request_sent_by_reason.Get(reasonString)
+                .TestGetValue()
+                .unwrap()
+                .valueOr(0),
+            originalReasonCount + (aEnabled ? 1 : 0));
+}
+
+TEST_F(ContentAnalysisTelemetryTest,
+       TestSimpleCopyRequestWithInterceptionPointOn) {
+  TestSimpleCopyRequestWithPrefValue(true);
+}
+
+TEST_F(ContentAnalysisTelemetryTest,
+       TestSimpleCopyRequestWithInterceptionPointOff) {
+  TestSimpleCopyRequestWithPrefValue(false);
+}
+
 TEST_F(ContentAnalysisTelemetryTest, TestAllowAndDenyLists) {
   EnsureAgentStarted();
   MOZ_ALWAYS_SUCCEEDS(
@@ -220,7 +289,7 @@ TEST_F(ContentAnalysisTelemetryTest, TestAllowAndDenyLists) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
 
   auto originalAllowCount =
       glean::content_analysis::request_allowed_by_allow_url.TestGetValue()
@@ -264,7 +333,7 @@ TEST_F(ContentAnalysisTelemetryTest, TestSimpleAllowResponse) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
 
   nsCString allowString = "1000"_ns;  // eAllow
   auto originalAnalysisTypeCount =
@@ -293,7 +362,7 @@ TEST_F(ContentAnalysisTelemetryTest, TestSimpleBlockResponse) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(block),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
 
   nsCString blockString = "3"_ns;  // eBlock
   auto originalAnalysisTypeCount =
@@ -326,7 +395,7 @@ TEST_F(ContentAnalysisTelemetryTest, TestConnectionRetry) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   SendRequestAndExpectResponse(mContentAnalysis, request, Some(true),
                                Some(nsIContentAnalysisResponse::eAllow),
                                Nothing());

@@ -56,6 +56,16 @@ struct nsTArray_RelocationStrategy<TestTArray::Movable> {
 
 namespace TestTArray {
 
+static_assert(
+    std::is_same_v<nsTArray_RelocationStrategy<std::pair<int, int>>::Type,
+                   nsTArray_RelocateUsingMemutils>);
+static_assert(std::is_same_v<
+              nsTArray_RelocationStrategy<std::pair<int, Movable>>::Type,
+              nsTArray_RelocateUsingMoveConstructor<std::pair<int, Movable>>>);
+static_assert(std::is_same_v<
+              nsTArray_RelocationStrategy<std::pair<Movable, int>>::Type,
+              nsTArray_RelocateUsingMoveConstructor<std::pair<Movable, int>>>);
+
 constexpr int dummyArrayData[] = {4, 1, 2, 8};
 
 static const nsTArray<int>& DummyArray() {

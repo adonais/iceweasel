@@ -2570,6 +2570,12 @@ BytecodeEmitter::createImmutableScriptData() {
         sc->asFunctionBox()->memberInitializers().numMemberInitializers;
   }
 
+#ifdef DEBUG
+  uint32_t codeLength = bytecodeSection().code().length();
+  bytecodeSection().tryNoteList().checkTryNotes(codeLength);
+  bytecodeSection().scopeNoteList().checkScopeNotes(codeLength);
+#endif
+
   return ImmutableScriptData::new_(
       fc, mainOffset(), maxFixedSlots, nslots, bodyScopeIndex,
       bytecodeSection().numICEntries(), isFunction, funLength,

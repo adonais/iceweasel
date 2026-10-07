@@ -99,6 +99,43 @@ internal open class ForeignBytes : Structure() {
 
     class ByValue : ForeignBytes(), Structure.ByValue
 }
+
+// Converter for `&[u8]` / `[ByRef] bytes` arguments.
+//
+// Only `lower` is valid — zero-copy byte buffers only flow foreign -> Rust,
+// and only in argument position. `lift`, `read`, `write`, and
+// `allocationSize` have no sound implementation here and all panic at
+// runtime. The `FfiConverter` interface is implemented so that the
+// compiler enforces the full method set (rather than relying on eyeball).
+//
+// The provided `ByteBuffer` MUST be direct — only direct buffers have a
+// stable native address that JNA can expose via `getDirectBufferPointer`.
+// The returned `ForeignBytes.ByValue` is only valid for the duration of
+// the FFI call; the Rust side treats it as a borrow.
+internal object FfiConverterByRefBytes : FfiConverter<java.nio.ByteBuffer, ForeignBytes.ByValue> {
+    override fun lower(value: java.nio.ByteBuffer): ForeignBytes.ByValue {
+        require(value.isDirect) { "UniFFI zero-copy &[u8] requires a direct ByteBuffer. Use ByteBuffer.allocateDirect()." }
+        val remaining = value.remaining()
+        val fb = ForeignBytes.ByValue()
+        fb.len = remaining
+        // Zero-length direct buffers: skip getDirectBufferPointer (platform-variable behavior)
+        // and pass null. The Rust side treats (null, 0) as &[].
+        fb.data = if (remaining == 0) null else com.sun.jna.Native.getDirectBufferPointer(value)
+        return fb
+    }
+
+    override fun lift(value: ForeignBytes.ByValue): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be lifted: zero-copy &[u8] only flows foreign->Rust")
+
+    override fun read(buf: java.nio.ByteBuffer): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be read from a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun write(value: java.nio.ByteBuffer, buf: java.nio.ByteBuffer): Unit =
+        error("ByRef bytes cannot be written to a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun allocationSize(value: java.nio.ByteBuffer): ULong =
+        error("ByRef bytes have no RustBuffer allocation size: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+}
 /**
  * The FfiConverter interface handles converter types to and from the FFI
  *
@@ -636,101 +673,95 @@ internal object IntegrityCheckingUniffiLib {
         uniffiCheckContractApiVersion(this)
     }
     external fun uniffi_places_checksum_func_places_api_new(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesapi_new_connection(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesapi_register_with_sync_manager(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_accept_result(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_apply_observation(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_bookmarks_count_bookmarks_in_trees(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_bookmarks_delete(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_bookmarks_delete_everything(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_bookmarks_get_all_with_url(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_bookmarks_get_by_guid(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_bookmarks_get_recent(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_bookmarks_get_tree(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_bookmarks_get_url_for_keyword(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_bookmarks_insert(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_bookmarks_search(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_bookmarks_update(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_delete_everything_history(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_delete_visit(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_delete_visits_between(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_delete_visits_for(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_get_history_highlights(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_get_history_metadata_between(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_get_history_metadata_since(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_get_latest_history_metadata_for_url(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_get_most_recent_history_metadata(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_get_most_recent_search_entries_in_history_metadata(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_get_top_frecent_site_infos(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_get_visit_count(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_get_visit_count_for_host(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_get_visit_infos(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_get_visit_page(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_get_visit_page_with_bound(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_get_visited(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_get_visited_urls_in_range(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_match_url(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_metadata_delete(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_metadata_delete_older_than(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_metadata_delete_search_terms(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_new_interrupt_handle(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_note_history_metadata_observation(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_places_history_import_from_ios(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_query_autocomplete(
-    ): Short
+    ): Int
     external fun uniffi_places_checksum_method_placesconnection_query_history_metadata(
-    ): Short
-    external fun uniffi_places_checksum_method_placesconnection_run_maintenance_checkpoint(
-    ): Short
-    external fun uniffi_places_checksum_method_placesconnection_run_maintenance_optimize(
-    ): Short
-    external fun uniffi_places_checksum_method_placesconnection_run_maintenance_prune(
-    ): Short
-    external fun uniffi_places_checksum_method_placesconnection_run_maintenance_vacuum(
-    ): Short
+    ): Int
+    external fun uniffi_places_checksum_method_placesconnection_run_maintenance(
+    ): Int
     external fun uniffi_places_checksum_method_sqlinterrupthandle_interrupt(
-    ): Short
+    ): Int
     external fun ffi_places_uniffi_contract_version(
     ): Int
 
@@ -750,219 +781,213 @@ internal object UniffiLib {
         
     }
     external fun uniffi_places_fn_clone_placesapi(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_places_fn_free_placesapi(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_method_placesapi_new_connection(`ptr`: Long,`connType`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_places_fn_method_placesapi_register_with_sync_manager(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_clone_placesconnection(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_places_fn_free_placesconnection(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_method_placesconnection_accept_result(`ptr`: Long,`searchString`: RustBuffer.ByValue,`url`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_method_placesconnection_apply_observation(`ptr`: Long,`visit`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_method_placesconnection_bookmarks_count_bookmarks_in_trees(`ptr`: Long,`folderGuids`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Int
-external fun uniffi_places_fn_method_placesconnection_bookmarks_delete(`ptr`: Long,`id`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Byte
-external fun uniffi_places_fn_method_placesconnection_bookmarks_delete_everything(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_method_placesconnection_bookmarks_get_all_with_url(`ptr`: Long,`url`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_bookmarks_get_by_guid(`ptr`: Long,`guid`: RustBuffer.ByValue,`getDirectChildren`: Byte,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_bookmarks_get_recent(`ptr`: Long,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_bookmarks_get_tree(`ptr`: Long,`itemGuid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_bookmarks_get_url_for_keyword(`ptr`: Long,`keyword`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_bookmarks_insert(`ptr`: Long,`bookmark`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_bookmarks_search(`ptr`: Long,`query`: RustBuffer.ByValue,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_bookmarks_update(`ptr`: Long,`data`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_method_placesconnection_delete_everything_history(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_method_placesconnection_delete_visit(`ptr`: Long,`url`: RustBuffer.ByValue,`timestamp`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_method_placesconnection_delete_visits_between(`ptr`: Long,`start`: Long,`end`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_method_placesconnection_delete_visits_for(`ptr`: Long,`url`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_method_placesconnection_get_history_highlights(`ptr`: Long,`weights`: RustBuffer.ByValue,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_get_history_metadata_between(`ptr`: Long,`start`: Long,`end`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_get_history_metadata_since(`ptr`: Long,`since`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_get_latest_history_metadata_for_url(`ptr`: Long,`url`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_get_most_recent_history_metadata(`ptr`: Long,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_get_most_recent_search_entries_in_history_metadata(`ptr`: Long,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_get_top_frecent_site_infos(`ptr`: Long,`numItems`: Int,`thresholdOption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_get_visit_count(`ptr`: Long,`excludeTypes`: Int,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_places_fn_method_placesconnection_get_visit_count_for_host(`ptr`: Long,`host`: RustBuffer.ByValue,`before`: Long,`excludeTypes`: Int,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_places_fn_method_placesconnection_get_visit_infos(`ptr`: Long,`startDate`: Long,`endDate`: Long,`excludeTypes`: Int,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_get_visit_page(`ptr`: Long,`offset`: Long,`count`: Long,`excludeTypes`: Int,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_get_visit_page_with_bound(`ptr`: Long,`bound`: Long,`offset`: Long,`count`: Long,`excludeTypes`: Int,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_get_visited(`ptr`: Long,`urls`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_get_visited_urls_in_range(`ptr`: Long,`start`: Long,`end`: Long,`includeRemote`: Byte,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_match_url(`ptr`: Long,`query`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_metadata_delete(`ptr`: Long,`url`: RustBuffer.ByValue,`referrerUrl`: RustBuffer.ByValue,`searchTerm`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_method_placesconnection_metadata_delete_older_than(`ptr`: Long,`olderThan`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_method_placesconnection_metadata_delete_search_terms(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_method_placesconnection_new_interrupt_handle(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_places_fn_method_placesconnection_note_history_metadata_observation(`ptr`: Long,`data`: RustBuffer.ByValue,`options`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_method_placesconnection_places_history_import_from_ios(`ptr`: Long,`dbPath`: RustBuffer.ByValue,`lastSyncTimestamp`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_query_autocomplete(`ptr`: Long,`search`: RustBuffer.ByValue,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_query_history_metadata(`ptr`: Long,`query`: RustBuffer.ByValue,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_run_maintenance_checkpoint(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_method_placesconnection_run_maintenance_optimize(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_method_placesconnection_run_maintenance_prune(`ptr`: Long,`dbSizeLimit`: Int,`pruneLimit`: Int,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_places_fn_method_placesconnection_run_maintenance_vacuum(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_clone_sqlinterrupthandle(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_places_fn_free_sqlinterrupthandle(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_method_sqlinterrupthandle_interrupt(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_places_fn_func_places_api_new(`dbPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun ffi_places_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun ffi_places_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun ffi_places_rustbuffer_free(`buf`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun ffi_places_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun ffi_places_rust_future_poll_u8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_places_rust_future_cancel_u8(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_free_u8(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Byte
-external fun ffi_places_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_places_rust_future_cancel_i8(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_free_i8(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_complete_i8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Byte
-external fun ffi_places_rust_future_poll_u16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_places_rust_future_cancel_u16(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_free_u16(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Short
-external fun ffi_places_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_places_rust_future_cancel_i16(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_free_i16(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_complete_i16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Short
-external fun ffi_places_rust_future_poll_u32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_places_rust_future_cancel_u32(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_free_u32(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_complete_u32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Int
-external fun ffi_places_rust_future_poll_i32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_places_rust_future_cancel_i32(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_free_i32(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_complete_i32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Int
-external fun ffi_places_rust_future_poll_u64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_places_rust_future_cancel_u64(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_free_u64(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_complete_u64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun ffi_places_rust_future_poll_i64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_places_rust_future_cancel_i64(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_free_i64(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_complete_i64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun ffi_places_rust_future_poll_f32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_places_rust_future_cancel_f32(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_free_f32(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_complete_f32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Float
-external fun ffi_places_rust_future_poll_f64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_places_rust_future_cancel_f64(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_free_f64(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_complete_f64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Double
-external fun ffi_places_rust_future_poll_rust_buffer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_places_rust_future_cancel_rust_buffer(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_free_rust_buffer(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_complete_rust_buffer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun ffi_places_rust_future_poll_void(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_places_rust_future_cancel_void(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_free_void(`handle`: Long,
-): Unit
-external fun ffi_places_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
+    ): Long
+    external fun uniffi_places_fn_free_placesapi(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_method_placesapi_new_connection(`ptr`: Long,`connType`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_places_fn_method_placesapi_register_with_sync_manager(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_clone_placesconnection(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_places_fn_free_placesconnection(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_method_placesconnection_accept_result(`ptr`: Long,`searchString`: RustBuffer.ByValue,`url`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_method_placesconnection_apply_observation(`ptr`: Long,`visit`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_method_placesconnection_bookmarks_count_bookmarks_in_trees(`ptr`: Long,`folderGuids`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Int
+    external fun uniffi_places_fn_method_placesconnection_bookmarks_delete(`ptr`: Long,`id`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    external fun uniffi_places_fn_method_placesconnection_bookmarks_delete_everything(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_method_placesconnection_bookmarks_get_all_with_url(`ptr`: Long,`url`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_bookmarks_get_by_guid(`ptr`: Long,`guid`: RustBuffer.ByValue,`getDirectChildren`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_bookmarks_get_recent(`ptr`: Long,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_bookmarks_get_tree(`ptr`: Long,`itemGuid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_bookmarks_get_url_for_keyword(`ptr`: Long,`keyword`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_bookmarks_insert(`ptr`: Long,`bookmark`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_bookmarks_search(`ptr`: Long,`query`: RustBuffer.ByValue,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_bookmarks_update(`ptr`: Long,`data`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_method_placesconnection_delete_everything_history(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_method_placesconnection_delete_visit(`ptr`: Long,`url`: RustBuffer.ByValue,`timestamp`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_method_placesconnection_delete_visits_between(`ptr`: Long,`start`: Long,`end`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_method_placesconnection_delete_visits_for(`ptr`: Long,`url`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_method_placesconnection_get_history_highlights(`ptr`: Long,`weights`: RustBuffer.ByValue,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_get_history_metadata_between(`ptr`: Long,`start`: Long,`end`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_get_history_metadata_since(`ptr`: Long,`since`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_get_latest_history_metadata_for_url(`ptr`: Long,`url`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_get_most_recent_history_metadata(`ptr`: Long,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_get_most_recent_search_entries_in_history_metadata(`ptr`: Long,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_get_top_frecent_site_infos(`ptr`: Long,`numItems`: Int,`thresholdOption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_get_visit_count(`ptr`: Long,`excludeTypes`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_places_fn_method_placesconnection_get_visit_count_for_host(`ptr`: Long,`host`: RustBuffer.ByValue,`before`: Long,`excludeTypes`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_places_fn_method_placesconnection_get_visit_infos(`ptr`: Long,`startDate`: Long,`endDate`: Long,`excludeTypes`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_get_visit_page(`ptr`: Long,`offset`: Long,`count`: Long,`excludeTypes`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_get_visit_page_with_bound(`ptr`: Long,`bound`: Long,`offset`: Long,`count`: Long,`excludeTypes`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_get_visited(`ptr`: Long,`urls`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_get_visited_urls_in_range(`ptr`: Long,`start`: Long,`end`: Long,`includeRemote`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_match_url(`ptr`: Long,`query`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_metadata_delete(`ptr`: Long,`url`: RustBuffer.ByValue,`referrerUrl`: RustBuffer.ByValue,`searchTerm`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_method_placesconnection_metadata_delete_older_than(`ptr`: Long,`olderThan`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_method_placesconnection_metadata_delete_search_terms(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_method_placesconnection_new_interrupt_handle(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_places_fn_method_placesconnection_note_history_metadata_observation(`ptr`: Long,`data`: RustBuffer.ByValue,`options`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_method_placesconnection_places_history_import_from_ios(`ptr`: Long,`dbPath`: RustBuffer.ByValue,`lastSyncTimestamp`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_query_autocomplete(`ptr`: Long,`search`: RustBuffer.ByValue,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_query_history_metadata(`ptr`: Long,`query`: RustBuffer.ByValue,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_places_fn_method_placesconnection_run_maintenance(`ptr`: Long,`options`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_clone_sqlinterrupthandle(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_places_fn_free_sqlinterrupthandle(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_method_sqlinterrupthandle_interrupt(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_places_fn_func_places_api_new(`dbPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun ffi_places_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun ffi_places_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun ffi_places_rustbuffer_free(`buf`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun ffi_places_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun ffi_places_rust_future_poll_u8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_cancel_u8(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_free_u8(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Int
+    external fun ffi_places_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_cancel_i8(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_free_i8(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_complete_i8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    external fun ffi_places_rust_future_poll_u16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_cancel_u16(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_free_u16(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Int
+    external fun ffi_places_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_cancel_i16(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_free_i16(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_complete_i16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Short
+    external fun ffi_places_rust_future_poll_u32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_cancel_u32(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_free_u32(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_complete_u32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Int
+    external fun ffi_places_rust_future_poll_i32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_cancel_i32(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_free_i32(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_complete_i32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Int
+    external fun ffi_places_rust_future_poll_u64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_cancel_u64(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_free_u64(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_complete_u64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun ffi_places_rust_future_poll_i64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_cancel_i64(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_free_i64(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_complete_i64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun ffi_places_rust_future_poll_f32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_cancel_f32(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_free_f32(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_complete_f32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Float
+    external fun ffi_places_rust_future_poll_f64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_cancel_f64(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_free_f64(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_complete_f64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Double
+    external fun ffi_places_rust_future_poll_rust_buffer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_cancel_rust_buffer(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_free_rust_buffer(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_complete_rust_buffer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun ffi_places_rust_future_poll_void(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_cancel_void(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_free_void(`handle`: Long,
+    ): Unit
+    external fun ffi_places_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
 
-    
+        
 }
 
 private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
@@ -1461,6 +1486,11 @@ open class PlacesApi: Disposable, AutoCloseable, PlacesApiInterface
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
 
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
     override fun destroy() {
         // Only allow a single call to this method.
         // TODO: maybe we should log a warning if called more than once?
@@ -1533,6 +1563,7 @@ open class PlacesApi: Disposable, AutoCloseable, PlacesApiInterface
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesapi_new_connection(
         it,
+        
         FfiConverterTypeConnectionType.lower(`connType`),_status)
 }
     }
@@ -1778,50 +1809,7 @@ public interface PlacesConnectionInterface {
     
     fun `queryHistoryMetadata`(`query`: kotlin.String, `limit`: kotlin.Int): List<HistoryMetadata>
     
-    /**
-     * Run maintenance on the places DB (checkpoint step)
-     *
-     * The `run_maintenance_*()` functions are intended to be run during idle time and will take steps
-     * to clean up / shrink the database.  They're split up so that we can time each one in the
-     * Kotlin wrapper code (This is needed because we only have access to the Glean API in Kotlin and
-     * it supports a stop-watch style API, not recording specific values).
-     */
-    fun `runMaintenanceCheckpoint`()
-    
-    /**
-     * Run maintenance on the places DB (optimize step)
-     *
-     * The `run_maintenance_*()` functions are intended to be run during idle time and will take steps
-     * to clean up / shrink the database.  They're split up so that we can time each one in the
-     * Kotlin wrapper code (This is needed because we only have access to the Glean API in Kotlin and
-     * it supports a stop-watch style API, not recording specific values).
-     */
-    fun `runMaintenanceOptimize`()
-    
-    /**
-     * Run maintenance on the places DB (prune step)
-     *
-     * The `run_maintenance_*()` functions are intended to be run during idle time and will take steps
-     * to clean up / shrink the database.  They're split up so that we can time each one in the
-     * Kotlin wrapper code (This is needed because we only have access to the Glean API in Kotlin and
-     * it supports a stop-watch style API, not recording specific values).
-     *
-     * db_size_limit is the approximate storage limit in bytes.  If the database is using more space
-     * than this, some older visits will be deleted to free up space.  Pass in a 0 to skip this.
-     *
-     * prune_limit is the maximum number of visits to prune if the database is over db_size_limit
-     */
-    fun `runMaintenancePrune`(`dbSizeLimit`: kotlin.UInt, `pruneLimit`: kotlin.UInt): RunMaintenanceMetrics
-    
-    /**
-     * Run maintenance on the places DB (vacuum step)
-     *
-     * The `run_maintenance_*()` functions are intended to be run during idle time and will take steps
-     * to clean up / shrink the database.  They're split up so that we can time each one in the
-     * Kotlin wrapper code (This is needed because we only have access to the Glean API in Kotlin and
-     * it supports a stop-watch style API, not recording specific values).
-     */
-    fun `runMaintenanceVacuum`()
+    fun `runMaintenance`(`options`: PlacesRunMaintenanceOptions)
     
     companion object
 }
@@ -1856,6 +1844,11 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
 
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
+
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
 
     override fun destroy() {
         // Only allow a single call to this method.
@@ -1933,7 +1926,9 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_accept_result(
         it,
-        FfiConverterString.lower(`searchString`),FfiConverterString.lower(`url`),_status)
+        
+        FfiConverterString.lower(`searchString`),
+        FfiConverterString.lower(`url`),_status)
 }
     }
     
@@ -1946,6 +1941,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_apply_observation(
         it,
+        
         FfiConverterTypeVisitObservation.lower(`visit`),_status)
 }
     }
@@ -1965,6 +1961,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_bookmarks_count_bookmarks_in_trees(
         it,
+        
         FfiConverterSequenceTypeGuid.lower(`folderGuids`),_status)
 }
     }
@@ -1979,6 +1976,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_bookmarks_delete(
         it,
+        
         FfiConverterTypeGuid.lower(`id`),_status)
 }
     }
@@ -2006,6 +2004,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_bookmarks_get_all_with_url(
         it,
+        
         FfiConverterString.lower(`url`),_status)
 }
     }
@@ -2020,7 +2019,9 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_bookmarks_get_by_guid(
         it,
-        FfiConverterTypeGuid.lower(`guid`),FfiConverterBoolean.lower(`getDirectChildren`),_status)
+        
+        FfiConverterTypeGuid.lower(`guid`),
+        FfiConverterBoolean.lower(`getDirectChildren`),_status)
 }
     }
     )
@@ -2034,6 +2035,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_bookmarks_get_recent(
         it,
+        
         FfiConverterInt.lower(`limit`),_status)
 }
     }
@@ -2048,6 +2050,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_bookmarks_get_tree(
         it,
+        
         FfiConverterTypeGuid.lower(`itemGuid`),_status)
 }
     }
@@ -2062,6 +2065,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_bookmarks_get_url_for_keyword(
         it,
+        
         FfiConverterString.lower(`keyword`),_status)
 }
     }
@@ -2076,6 +2080,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_bookmarks_insert(
         it,
+        
         FfiConverterTypeInsertableBookmarkItem.lower(`bookmark`),_status)
 }
     }
@@ -2090,7 +2095,9 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_bookmarks_search(
         it,
-        FfiConverterString.lower(`query`),FfiConverterInt.lower(`limit`),_status)
+        
+        FfiConverterString.lower(`query`),
+        FfiConverterInt.lower(`limit`),_status)
 }
     }
     )
@@ -2104,6 +2111,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_bookmarks_update(
         it,
+        
         FfiConverterTypeBookmarkUpdateInfo.lower(`data`),_status)
 }
     }
@@ -2130,7 +2138,9 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_delete_visit(
         it,
-        FfiConverterString.lower(`url`),FfiConverterTypePlacesTimestamp.lower(`timestamp`),_status)
+        
+        FfiConverterString.lower(`url`),
+        FfiConverterTypePlacesTimestamp.lower(`timestamp`),_status)
 }
     }
     
@@ -2143,7 +2153,9 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_delete_visits_between(
         it,
-        FfiConverterTypePlacesTimestamp.lower(`start`),FfiConverterTypePlacesTimestamp.lower(`end`),_status)
+        
+        FfiConverterTypePlacesTimestamp.lower(`start`),
+        FfiConverterTypePlacesTimestamp.lower(`end`),_status)
 }
     }
     
@@ -2156,6 +2168,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_delete_visits_for(
         it,
+        
         FfiConverterString.lower(`url`),_status)
 }
     }
@@ -2169,7 +2182,9 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_get_history_highlights(
         it,
-        FfiConverterTypeHistoryHighlightWeights.lower(`weights`),FfiConverterInt.lower(`limit`),_status)
+        
+        FfiConverterTypeHistoryHighlightWeights.lower(`weights`),
+        FfiConverterInt.lower(`limit`),_status)
 }
     }
     )
@@ -2183,7 +2198,9 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_get_history_metadata_between(
         it,
-        FfiConverterTypePlacesTimestamp.lower(`start`),FfiConverterTypePlacesTimestamp.lower(`end`),_status)
+        
+        FfiConverterTypePlacesTimestamp.lower(`start`),
+        FfiConverterTypePlacesTimestamp.lower(`end`),_status)
 }
     }
     )
@@ -2197,6 +2214,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_get_history_metadata_since(
         it,
+        
         FfiConverterTypePlacesTimestamp.lower(`since`),_status)
 }
     }
@@ -2211,6 +2229,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_get_latest_history_metadata_for_url(
         it,
+        
         FfiConverterTypeUrl.lower(`url`),_status)
 }
     }
@@ -2225,6 +2244,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_get_most_recent_history_metadata(
         it,
+        
         FfiConverterInt.lower(`limit`),_status)
 }
     }
@@ -2239,6 +2259,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_get_most_recent_search_entries_in_history_metadata(
         it,
+        
         FfiConverterInt.lower(`limit`),_status)
 }
     }
@@ -2253,7 +2274,9 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_get_top_frecent_site_infos(
         it,
-        FfiConverterInt.lower(`numItems`),FfiConverterTypeFrecencyThresholdOption.lower(`thresholdOption`),_status)
+        
+        FfiConverterInt.lower(`numItems`),
+        FfiConverterTypeFrecencyThresholdOption.lower(`thresholdOption`),_status)
 }
     }
     )
@@ -2267,6 +2290,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_get_visit_count(
         it,
+        
         FfiConverterTypeVisitTransitionSet.lower(`excludeTypes`),_status)
 }
     }
@@ -2281,7 +2305,10 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_get_visit_count_for_host(
         it,
-        FfiConverterString.lower(`host`),FfiConverterTypePlacesTimestamp.lower(`before`),FfiConverterTypeVisitTransitionSet.lower(`excludeTypes`),_status)
+        
+        FfiConverterString.lower(`host`),
+        FfiConverterTypePlacesTimestamp.lower(`before`),
+        FfiConverterTypeVisitTransitionSet.lower(`excludeTypes`),_status)
 }
     }
     )
@@ -2295,7 +2322,10 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_get_visit_infos(
         it,
-        FfiConverterTypePlacesTimestamp.lower(`startDate`),FfiConverterTypePlacesTimestamp.lower(`endDate`),FfiConverterTypeVisitTransitionSet.lower(`excludeTypes`),_status)
+        
+        FfiConverterTypePlacesTimestamp.lower(`startDate`),
+        FfiConverterTypePlacesTimestamp.lower(`endDate`),
+        FfiConverterTypeVisitTransitionSet.lower(`excludeTypes`),_status)
 }
     }
     )
@@ -2309,7 +2339,10 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_get_visit_page(
         it,
-        FfiConverterLong.lower(`offset`),FfiConverterLong.lower(`count`),FfiConverterTypeVisitTransitionSet.lower(`excludeTypes`),_status)
+        
+        FfiConverterLong.lower(`offset`),
+        FfiConverterLong.lower(`count`),
+        FfiConverterTypeVisitTransitionSet.lower(`excludeTypes`),_status)
 }
     }
     )
@@ -2323,7 +2356,11 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_get_visit_page_with_bound(
         it,
-        FfiConverterLong.lower(`bound`),FfiConverterLong.lower(`offset`),FfiConverterLong.lower(`count`),FfiConverterTypeVisitTransitionSet.lower(`excludeTypes`),_status)
+        
+        FfiConverterLong.lower(`bound`),
+        FfiConverterLong.lower(`offset`),
+        FfiConverterLong.lower(`count`),
+        FfiConverterTypeVisitTransitionSet.lower(`excludeTypes`),_status)
 }
     }
     )
@@ -2337,6 +2374,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_get_visited(
         it,
+        
         FfiConverterSequenceString.lower(`urls`),_status)
 }
     }
@@ -2351,7 +2389,10 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_get_visited_urls_in_range(
         it,
-        FfiConverterTypePlacesTimestamp.lower(`start`),FfiConverterTypePlacesTimestamp.lower(`end`),FfiConverterBoolean.lower(`includeRemote`),_status)
+        
+        FfiConverterTypePlacesTimestamp.lower(`start`),
+        FfiConverterTypePlacesTimestamp.lower(`end`),
+        FfiConverterBoolean.lower(`includeRemote`),_status)
 }
     }
     )
@@ -2365,6 +2406,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_match_url(
         it,
+        
         FfiConverterString.lower(`query`),_status)
 }
     }
@@ -2379,7 +2421,10 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_metadata_delete(
         it,
-        FfiConverterTypeUrl.lower(`url`),FfiConverterOptionalTypeUrl.lower(`referrerUrl`),FfiConverterOptionalString.lower(`searchTerm`),_status)
+        
+        FfiConverterTypeUrl.lower(`url`),
+        FfiConverterOptionalTypeUrl.lower(`referrerUrl`),
+        FfiConverterOptionalString.lower(`searchTerm`),_status)
 }
     }
     
@@ -2392,6 +2437,7 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_metadata_delete_older_than(
         it,
+        
         FfiConverterTypePlacesTimestamp.lower(`olderThan`),_status)
 }
     }
@@ -2431,7 +2477,9 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_note_history_metadata_observation(
         it,
-        FfiConverterTypeHistoryMetadataObservation.lower(`data`),FfiConverterTypeNoteHistoryMetadataObservationOptions.lower(`options`),_status)
+        
+        FfiConverterTypeHistoryMetadataObservation.lower(`data`),
+        FfiConverterTypeNoteHistoryMetadataObservationOptions.lower(`options`),_status)
 }
     }
     
@@ -2444,7 +2492,9 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_places_history_import_from_ios(
         it,
-        FfiConverterString.lower(`dbPath`),FfiConverterLong.lower(`lastSyncTimestamp`),_status)
+        
+        FfiConverterString.lower(`dbPath`),
+        FfiConverterLong.lower(`lastSyncTimestamp`),_status)
 }
     }
     )
@@ -2458,7 +2508,9 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_query_autocomplete(
         it,
-        FfiConverterString.lower(`search`),FfiConverterInt.lower(`limit`),_status)
+        
+        FfiConverterString.lower(`search`),
+        FfiConverterInt.lower(`limit`),_status)
 }
     }
     )
@@ -2472,7 +2524,9 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_method_placesconnection_query_history_metadata(
         it,
-        FfiConverterString.lower(`query`),FfiConverterInt.lower(`limit`),_status)
+        
+        FfiConverterString.lower(`query`),
+        FfiConverterInt.lower(`limit`),_status)
 }
     }
     )
@@ -2480,90 +2534,14 @@ open class PlacesConnection: Disposable, AutoCloseable, PlacesConnectionInterfac
     
 
     
-    /**
-     * Run maintenance on the places DB (checkpoint step)
-     *
-     * The `run_maintenance_*()` functions are intended to be run during idle time and will take steps
-     * to clean up / shrink the database.  They're split up so that we can time each one in the
-     * Kotlin wrapper code (This is needed because we only have access to the Glean API in Kotlin and
-     * it supports a stop-watch style API, not recording specific values).
-     */
-    @Throws(PlacesApiException::class)override fun `runMaintenanceCheckpoint`()
+    @Throws(PlacesApiException::class)override fun `runMaintenance`(`options`: PlacesRunMaintenanceOptions)
         = 
     callWithHandle {
     uniffiRustCallWithError(PlacesApiException) { _status ->
-    UniffiLib.uniffi_places_fn_method_placesconnection_run_maintenance_checkpoint(
+    UniffiLib.uniffi_places_fn_method_placesconnection_run_maintenance(
         it,
-        _status)
-}
-    }
-    
-    
-
-    
-    /**
-     * Run maintenance on the places DB (optimize step)
-     *
-     * The `run_maintenance_*()` functions are intended to be run during idle time and will take steps
-     * to clean up / shrink the database.  They're split up so that we can time each one in the
-     * Kotlin wrapper code (This is needed because we only have access to the Glean API in Kotlin and
-     * it supports a stop-watch style API, not recording specific values).
-     */
-    @Throws(PlacesApiException::class)override fun `runMaintenanceOptimize`()
-        = 
-    callWithHandle {
-    uniffiRustCallWithError(PlacesApiException) { _status ->
-    UniffiLib.uniffi_places_fn_method_placesconnection_run_maintenance_optimize(
-        it,
-        _status)
-}
-    }
-    
-    
-
-    
-    /**
-     * Run maintenance on the places DB (prune step)
-     *
-     * The `run_maintenance_*()` functions are intended to be run during idle time and will take steps
-     * to clean up / shrink the database.  They're split up so that we can time each one in the
-     * Kotlin wrapper code (This is needed because we only have access to the Glean API in Kotlin and
-     * it supports a stop-watch style API, not recording specific values).
-     *
-     * db_size_limit is the approximate storage limit in bytes.  If the database is using more space
-     * than this, some older visits will be deleted to free up space.  Pass in a 0 to skip this.
-     *
-     * prune_limit is the maximum number of visits to prune if the database is over db_size_limit
-     */
-    @Throws(PlacesApiException::class)override fun `runMaintenancePrune`(`dbSizeLimit`: kotlin.UInt, `pruneLimit`: kotlin.UInt): RunMaintenanceMetrics {
-            return FfiConverterTypeRunMaintenanceMetrics.lift(
-    callWithHandle {
-    uniffiRustCallWithError(PlacesApiException) { _status ->
-    UniffiLib.uniffi_places_fn_method_placesconnection_run_maintenance_prune(
-        it,
-        FfiConverterUInt.lower(`dbSizeLimit`),FfiConverterUInt.lower(`pruneLimit`),_status)
-}
-    }
-    )
-    }
-    
-
-    
-    /**
-     * Run maintenance on the places DB (vacuum step)
-     *
-     * The `run_maintenance_*()` functions are intended to be run during idle time and will take steps
-     * to clean up / shrink the database.  They're split up so that we can time each one in the
-     * Kotlin wrapper code (This is needed because we only have access to the Glean API in Kotlin and
-     * it supports a stop-watch style API, not recording specific values).
-     */
-    @Throws(PlacesApiException::class)override fun `runMaintenanceVacuum`()
-        = 
-    callWithHandle {
-    uniffiRustCallWithError(PlacesApiException) { _status ->
-    UniffiLib.uniffi_places_fn_method_placesconnection_run_maintenance_vacuum(
-        it,
-        _status)
+        
+        FfiConverterTypePlacesRunMaintenanceOptions.lower(`options`),_status)
 }
     }
     
@@ -2740,6 +2718,11 @@ open class SqlInterruptHandle: Disposable, AutoCloseable, SqlInterruptHandleInte
 
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
+
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
 
     override fun destroy() {
         // Only allow a single call to this method.
@@ -3728,12 +3711,17 @@ public object FfiConverterTypeNoteHistoryMetadataObservationOptions: FfiConverte
 
 
 
-data class RunMaintenanceMetrics (
-    var `prunedVisits`: kotlin.Boolean
+data class PlacesRunMaintenanceOptions (
+    /**
+     * db_size_limit is the approximate storage limit in bytes.  If the database is using more space
+     * than this, some older visits will be deleted to free up space.  Pass in a 0 to skip this.
+     */
+    var `dbSizeLimit`: kotlin.UInt
     , 
-    var `dbSizeBefore`: kotlin.UInt
-    , 
-    var `dbSizeAfter`: kotlin.UInt
+    /**
+     * Maximum number of visits to prune in one pass
+     */
+    var `pruneLimit`: kotlin.UInt = 12u 
     
 ){
     
@@ -3747,25 +3735,22 @@ data class RunMaintenanceMetrics (
 /**
  * @suppress
  */
-public object FfiConverterTypeRunMaintenanceMetrics: FfiConverterRustBuffer<RunMaintenanceMetrics> {
-    override fun read(buf: ByteBuffer): RunMaintenanceMetrics {
-        return RunMaintenanceMetrics(
-            FfiConverterBoolean.read(buf),
+public object FfiConverterTypePlacesRunMaintenanceOptions: FfiConverterRustBuffer<PlacesRunMaintenanceOptions> {
+    override fun read(buf: ByteBuffer): PlacesRunMaintenanceOptions {
+        return PlacesRunMaintenanceOptions(
             FfiConverterUInt.read(buf),
             FfiConverterUInt.read(buf),
         )
     }
 
-    override fun allocationSize(value: RunMaintenanceMetrics) = (
-            FfiConverterBoolean.allocationSize(value.`prunedVisits`) +
-            FfiConverterUInt.allocationSize(value.`dbSizeBefore`) +
-            FfiConverterUInt.allocationSize(value.`dbSizeAfter`)
+    override fun allocationSize(value: PlacesRunMaintenanceOptions) = (
+            FfiConverterUInt.allocationSize(value.`dbSizeLimit`) +
+            FfiConverterUInt.allocationSize(value.`pruneLimit`)
     )
 
-    override fun write(value: RunMaintenanceMetrics, buf: ByteBuffer) {
-            FfiConverterBoolean.write(value.`prunedVisits`, buf)
-            FfiConverterUInt.write(value.`dbSizeBefore`, buf)
-            FfiConverterUInt.write(value.`dbSizeAfter`, buf)
+    override fun write(value: PlacesRunMaintenanceOptions, buf: ByteBuffer) {
+            FfiConverterUInt.write(value.`dbSizeLimit`, buf)
+            FfiConverterUInt.write(value.`pruneLimit`, buf)
     }
 }
 
@@ -3992,7 +3977,7 @@ public object FfiConverterTypeBookmarkItem : FfiConverterRustBuffer<BookmarkItem
         }
     }
 
-    override fun allocationSize(value: BookmarkItem) = when(value) {
+    override fun allocationSize(value: BookmarkItem): ULong = when(value) {
         is BookmarkItem.Bookmark -> {
             // Add the size for the Int that specifies the variant plus the size needed for all fields
             (
@@ -4082,7 +4067,7 @@ public object FfiConverterTypeBookmarkPosition : FfiConverterRustBuffer<Bookmark
         }
     }
 
-    override fun allocationSize(value: BookmarkPosition) = when(value) {
+    override fun allocationSize(value: BookmarkPosition): ULong = when(value) {
         is BookmarkPosition.Specific -> {
             // Add the size for the Int that specifies the variant plus the size needed for all fields
             (
@@ -4338,7 +4323,7 @@ public object FfiConverterTypeInsertableBookmarkItem : FfiConverterRustBuffer<In
         }
     }
 
-    override fun allocationSize(value: InsertableBookmarkItem) = when(value) {
+    override fun allocationSize(value: InsertableBookmarkItem): ULong = when(value) {
         is InsertableBookmarkItem.Bookmark -> {
             // Add the size for the Int that specifies the variant plus the size needed for all fields
             (
@@ -5362,41 +5347,21 @@ public object FfiConverterSequenceTypeUrl: FfiConverterRustBuffer<List<Url>> {
 
 
 
-/**
- * Typealias from the type name used in the UDL file to the builtin type.  This
- * is needed because the UDL type name is used in function/method signatures.
- * It's also what we have an external type that references a custom type.
- */
 public typealias Guid = kotlin.String
 public typealias FfiConverterTypeGuid = FfiConverterString
 
 
 
-/**
- * Typealias from the type name used in the UDL file to the builtin type.  This
- * is needed because the UDL type name is used in function/method signatures.
- * It's also what we have an external type that references a custom type.
- */
 public typealias PlacesTimestamp = kotlin.Long
 public typealias FfiConverterTypePlacesTimestamp = FfiConverterLong
 
 
 
-/**
- * Typealias from the type name used in the UDL file to the builtin type.  This
- * is needed because the UDL type name is used in function/method signatures.
- * It's also what we have an external type that references a custom type.
- */
 public typealias Url = kotlin.String
 public typealias FfiConverterTypeUrl = FfiConverterString
 
 
 
-/**
- * Typealias from the type name used in the UDL file to the builtin type.  This
- * is needed because the UDL type name is used in function/method signatures.
- * It's also what we have an external type that references a custom type.
- */
 public typealias VisitTransitionSet = kotlin.Int
 public typealias FfiConverterTypeVisitTransitionSet = FfiConverterInt
     @Throws(PlacesApiException::class) fun `placesApiNew`(`dbPath`: kotlin.String): PlacesApi {
@@ -5404,6 +5369,7 @@ public typealias FfiConverterTypeVisitTransitionSet = FfiConverterInt
     uniffiRustCallWithError(PlacesApiException) { _status ->
     UniffiLib.uniffi_places_fn_func_places_api_new(
     
+        
         FfiConverterString.lower(`dbPath`),_status)
 }
     )

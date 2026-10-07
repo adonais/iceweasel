@@ -1320,7 +1320,7 @@ third.party.modules:
       ```text
       [{
         processName: string containing processType and pid, formatted as `${processType}.0x${pid}`,
-        processType: one of the process string names specified in `xpcom/build/GeckoProcessTypes.h` or "browser" for Default,
+        processType: one of the process string names specified in `xpcom/build/GeckoProcessTypes.inc` or "browser" for Default,
         elapsed: number of seconds since process creation that this object was generated,
         xulLoadDurationMS: number of milliseconds it took to load xul.dll,
         sanitizationFailures: number of dropped events due to failures in path sanitization,

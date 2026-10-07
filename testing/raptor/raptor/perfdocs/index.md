@@ -20,6 +20,8 @@ Locally, Raptor can be invoked with the following command:
 browsertime
 debugging
 contributing
+test-list
+webextension
 {metrics_rst_name}
 ```
 

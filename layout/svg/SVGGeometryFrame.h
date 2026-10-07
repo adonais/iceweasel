@@ -93,6 +93,10 @@ class SVGGeometryFrame final : public nsIFrame, public ISVGDisplayableFrame {
   void NotifySVGChanged(ChangeFlags aFlags) override;
   SVGBBox GetBBoxContribution(const Matrix& aToBBoxUserspace,
                               SVGBBoxFlags aFlags) override;
+  bool ComputeCustomOverflow(OverflowAreas&) final;
+  void UnionChildOverflow(OverflowAreas&, bool) final {
+    // Our children don't contribute overflow.
+  }
   bool IsDisplayContainer() override { return false; }
 
   enum class RenderFlag { Fill, Stroke };

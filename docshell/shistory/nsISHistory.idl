@@ -264,6 +264,14 @@ interface nsISHistory: nsISupports
   [noscript, notxpcom]
   void RemoveFrameEntries(in nsISHEntry aEntry);
 
+  /**
+   * Prepare the entry for being reloaded:
+   * - Compute the load type from aReloadFlags and set it on aEntry
+   * - Purge child entries for force-reload
+   */
+  [noscript, notxpcom]
+  unsigned long PrepareReloadEntry(in nsISHEntry aEntry, in unsigned long aReloadFlags);
+
   [can_run_script] void reload(in unsigned long aReloadFlags);
 
   [notxpcom] void EnsureCorrectEntryAtCurrIndex(in nsISHEntry aEntry);

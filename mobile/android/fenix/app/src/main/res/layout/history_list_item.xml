@@ -4,7 +4,6 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:importantForAccessibility="no"
@@ -41,6 +40,5 @@
     <org.mozilla.fenix.library.LibrarySiteItemView
         android:id="@+id/history_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="@dimen/library_item_height" />
+        android:layout_height="wrap_content" />
 </LinearLayout>

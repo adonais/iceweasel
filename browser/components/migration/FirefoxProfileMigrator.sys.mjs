@@ -13,6 +13,8 @@ import { MigrationUtils } from "resource:///modules/MigrationUtils.sys.mjs";
 
 import { MigratorBase } from "resource:///modules/MigratorBase.sys.mjs";
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -33,11 +35,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
  */
 export class FirefoxProfileMigrator extends MigratorBase {
   static get key() {
-    return "firefox";
+    return AppConstants.MOZ_APP_NAME;
   }
 
   static get displayNameL10nID() {
-    return "migration-wizard-migrator-display-name-firefox";
+    return "migration-wizard-migrator-display-name-self";
   }
 
   static get brandImage() {

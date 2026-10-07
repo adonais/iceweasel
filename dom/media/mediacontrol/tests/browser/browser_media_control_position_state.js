@@ -164,6 +164,62 @@ add_task(async function testGuessedPositionStateWithoutMetadata() {
 });
 
 /**
+ * Changing the source of a playing element shuts its decoder down before the
+ * new one exists, and `HTMLMediaElement.duration` is NaN while there is no
+ * decoder. Platform media controls lay out a timeline from that duration, so
+ * no position state should be reported for it. The page needs a media session
+ * here, otherwise the controller deactivates on the switch and stops
+ * reporting altogether.
+ */
+add_task(async function testNoPositionStateWhileDurationIsUnknown() {
+  info(`open media page`);
+  const tab = await createLoadedTabWrapper(PAGE_URL);
+  logPositionStateChangeEvents(tab);
+
+  info(`set media metadata`);
+  await setMediaMetadata(tab, { title: "A Video" });
+
+  info(`start media`);
+  await emitsPositionState(() => playMedia(tab, testVideoId), tab, {
+    duration: videoDuration,
+    position: 0,
+    playbackRate: 1.0,
+  });
+
+  info(`record every duration reported from here on`);
+  const durations = [];
+  const controller = tab.linkedBrowser.browsingContext.mediaController;
+  const record = event => durations.push(event.duration);
+  controller.addEventListener("positionstatechange", record);
+
+  info(`switch to another source`);
+  await SpecialPowers.spawn(tab.linkedBrowser, [testVideoId], async Id => {
+    const video = content.document.getElementById(Id);
+    video.src = "gizmo.mp4?nextTrack";
+    await new Promise(r =>
+      video.addEventListener("loadedmetadata", r, { once: true })
+    );
+  });
+
+  info(`play the new source`);
+  await emitsPositionState(() => playMedia(tab, testVideoId), tab, {
+    duration: videoDuration,
+    position: null,
+    playbackRate: null,
+  });
+
+  controller.removeEventListener("positionstatechange", record);
+  info(`durations reported across the switch: [${durations}]`);
+  ok(
+    durations.every(Number.isFinite),
+    `every reported duration should be finite`
+  );
+
+  info(`remove tab`);
+  await tab.close();
+});
+
+/**
  * @typedef {{
  *   duration: number,
  *   playbackRate?: number | null,

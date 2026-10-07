@@ -2,7 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { IPPAuthProvider } from "moz-src:///toolkit/components/ipprotection/IPPAuthProvider.sys.mjs";
+import {
+  AUTH_ERRORS,
+  IPPAuthProvider,
+} from "moz-src:///toolkit/components/ipprotection/IPPAuthProvider.sys.mjs";
 import { GuardianClient } from "moz-src:///toolkit/components/ipprotection/fxa/GuardianClient.sys.mjs";
 
 const lazy = {};
@@ -23,7 +26,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
   console.createInstance({
-    prefix: "IPPFxaActivateAuthProvider",
+    prefix: "IPP_FxaActivateAuthProvider",
     maxLogLevel: Services.prefs.getBoolPref("browser.ipProtection.log", false)
       ? "Debug"
       : "Warn",
@@ -194,7 +197,11 @@ class IPPFxaActivateAuthProviderSingleton extends IPPAuthProvider {
       this._setEntitlement(entitlement ?? null);
       return { isEnrolledAndEntitled: true, error: null };
     } catch (error) {
-      return { isEnrolledAndEntitled: false, error: error?.message ?? error };
+      lazy.logConsole.error("Enrollment failed:", error);
+      return {
+        isEnrolledAndEntitled: false,
+        error: AUTH_ERRORS.ENROLLMENT_FAILED,
+      };
     } finally {
       this.#isEnrolling = false;
       lazy.IPProtectionService.updateState();
@@ -219,7 +226,11 @@ class IPPFxaActivateAuthProviderSingleton extends IPPAuthProvider {
       abortSignal.throwIfAborted();
       tasks.push(
         new Promise((_, rej) => {
-          abortSignal?.addEventListener("abort", rej, { once: true });
+          abortSignal?.addEventListener(
+            "abort",
+            () => rej(abortSignal.reason),
+            { once: true }
+          );
         })
       );
     }

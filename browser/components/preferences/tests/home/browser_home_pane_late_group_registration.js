@@ -40,10 +40,6 @@ const HOME_PANE_OBSERVER_TOPICS = [
 ];
 
 add_task(async function home_pane_recovers_when_newtab_observer_is_late() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-
   await AboutNewTab.activityStream.initialized;
   const feed = AboutNewTab.activityStream.store.feeds.get(
     "feeds.aboutpreferences"

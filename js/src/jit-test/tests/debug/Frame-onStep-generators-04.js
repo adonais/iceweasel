@@ -19,7 +19,7 @@ let dbg = new Debugger(g);
 dbg.onEnterFrame = frame => {
     frame.onStep = function () {
         assertEq(this, frame);
-        let line = frame.script.getOffsetLocation(frame.offset).lineNumber;
+        let line = frame.script.getOffsetMetadata(frame.offset).lineNumber;
         if (previousLine != line) {
             g.log += line; // We stepped to a new line.
             previousLine = line;

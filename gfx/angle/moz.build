@@ -5,3 +5,13 @@
 DIRS += [
     "/third_party/angle",
 ]
+
+LICENSES += ["angle"]
+LICENSES["angle"].title = "ANGLE License"
+LICENSES["angle"].notice = """
+<p>This license applies to files in the directory <code>gfx/angle/</code>.</p>
+"""
+
+LICENSED_UNDER += [
+    "angle",
+]

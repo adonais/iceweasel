@@ -8,10 +8,10 @@ if CONFIG["OS_ARCH"] == "Linux":
     UNIFIED_SOURCES = [
         "TestElfSoVersion.cpp",
     ]
-
-if CONFIG["OS_ARCH"] == "Darwin" and CONFIG["MOZ_CRASHREPORTER"]:
+elif CONFIG["OS_ARCH"] == "Darwin" and CONFIG["MOZ_CRASHREPORTER"]:
     UNIFIED_SOURCES = [
         "TestMacExceptionHandler.cpp",
+        "TestMacExcResource.cpp",
     ]
 
     LOCAL_INCLUDES += [
@@ -19,6 +19,12 @@ if CONFIG["OS_ARCH"] == "Darwin" and CONFIG["MOZ_CRASHREPORTER"]:
         "/toolkit/crashreporter/breakpad-client",
         "/toolkit/crashreporter/google-breakpad/src",
     ]
+
+    # exception_handler.h picks a different definition of
+    # mozilla::phc::AddrInfo depending on this, it has to match the one
+    # breakpad itself was built with.
+    if CONFIG["MOZ_PHC"]:
+        DEFINES["MOZ_PHC"] = True
 
 include("/ipc/chromium/chromium-config.mozbuild")
 

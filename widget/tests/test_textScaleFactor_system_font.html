@@ -101,12 +101,10 @@ add_task(async () => {
   const expectFn = expectSuccess ? ok : todo;
   const menuSize2 = await setScaleAndPromiseFontSize(2*referenceScale, menu);
   {
-    const singlePrecisionULP = Math.pow(2, -23);
-    // Precision seems to be lost in the conversion to decimal string for the
-    // property value.
-    const reltolerance = 30 * singlePrecisionULP;
+    // Font size is quantized to integer appunits, so allow 1au tolerance here.
+    const tolerance = 1/60;
     fuzzyCompareLength(menuSize2, menuSize1/2, "size of menu font",
-                       reltolerance*menuSize1/2, expectFn);
+                       tolerance, expectFn);
   }
   {
     const menuRect2 = menu.getBoundingClientRect();

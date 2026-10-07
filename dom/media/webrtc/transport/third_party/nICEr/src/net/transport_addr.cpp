@@ -235,31 +235,35 @@ int nr_ip4_port_to_transport_addr(UINT4 ip4, UINT2 port, int protocol, nr_transp
     return(_status);
   }
 
-int nr_str_port_to_transport_addr(const char *ip, UINT2 port, int protocol, nr_transport_addr *addr_out)
+int nr_str_port_to_transport_addr(const char *ip, const char* domain_name, UINT2 port, int protocol, nr_transport_addr *addr_out)
   {
     int r,_status;
     struct in_addr addr;
     struct in6_addr addr6;
 
-    if (inet_pton(AF_INET, ip, &addr) == 1) {
-      if(r=nr_ip4_port_to_transport_addr(ntohl(addr.s_addr),port,protocol,addr_out))
-        ABORT(r);
-    } else if (inet_pton(AF_INET6, ip, &addr6) == 1) {
-      if(r=nr_ip6_port_to_transport_addr(&addr6,port,protocol,addr_out))
-        ABORT(r);
-    } else {
-      /* Not an IP literal; treat as an FQDN. Use 0.0.0.0 as a placeholder
-       * address; callers that act on the addr (rather than just reading
-       * fqdn) are expected to resolve the FQDN. */
-      size_t fqdn_len = strlen(ip);
+    if (ip) {
+      if (inet_pton(AF_INET, ip, &addr) == 1) {
+        if(r=nr_ip4_port_to_transport_addr(ntohl(addr.s_addr),port,protocol,addr_out))
+          ABORT(r);
+      } else if (inet_pton(AF_INET6, ip, &addr6) == 1) {
+        if(r=nr_ip6_port_to_transport_addr(&addr6,port,protocol,addr_out))
+          ABORT(r);
+      } else {
+        ABORT(R_BAD_DATA);
+      }
+    } else if(r=nr_ip4_port_to_transport_addr(0,port,protocol,addr_out)) {
+      /* No IP literal. Use 0.0.0.0 as a placeholder address. */
+      ABORT(r);
+    }
+
+    if (domain_name) {
+      size_t fqdn_len = strlen(domain_name);
       if (fqdn_len == 0 || fqdn_len >= sizeof(addr_out->fqdn)) {
         ABORT(R_BAD_DATA);
       }
-      if(r=nr_ip4_port_to_transport_addr(0,port,protocol,addr_out))
-        ABORT(r);
       // We already bounds-checked this so strncpy would be fine, but static
       // analysis is not happy about that.
-      memcpy(addr_out->fqdn, ip, fqdn_len + 1);
+      memcpy(addr_out->fqdn, domain_name, fqdn_len + 1);
     }
 
     _status=0;

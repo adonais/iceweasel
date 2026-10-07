@@ -26,7 +26,7 @@ developer friction when landing security patches.
 
 ## Process for Security Bugs (Developer Perspective)
 
-One type of security bug is a straightforward vulnerability.  A
+One type of security bug is a straightforward vulnerability. A
 second type is a more casual analysis of a code pattern, an architecture
 limitation, or a general observation about bug patterns.
 
@@ -47,10 +47,10 @@ especially when commenting in bugs with external reporters.
 - Try not to discuss problematic code patterns or architecture limitations
   in bugs filed by external reporters, or in situations where fixing the
   undesirable behavior is likely to be a project that does not complete
-  within half a year or more.  Instead, file a second bug tagged
+  within half a year or more. Instead, file a second bug tagged
   `sec-audit` (for identifying patterns and addressing them) or `sec-want`
   (for developing more comprehensive checks or fixing a design), and move
-  that discussion there.  AI is very good at taking patterns and
+  that discussion there. AI is very good at taking patterns and
   descriptions and finding new bugs based on them.
 
 ### Developing the Patch
@@ -83,7 +83,7 @@ for more details.
 ### On Requesting sec-approval
 
 Previously, sec-approval was required for all `sec-high` rated security
-bugs in most circumstances.  This is now inverted.
+bugs in most circumstances. This is now inverted.
 
 **sec-approval is only required for bugs that represent a vulnerability
 in the parent process, triggerable from a content process**.
@@ -91,29 +91,29 @@ in the parent process, triggerable from a content process**.
 This is typically constrained to bugs with the keywords `sec-high` and
 `csectype-sandbox-escape`.
 
- - If a bug does not have a security rating, you are invited to give it
-   one, following the [Client Severity Guidelines](https://wiki.mozilla.org/Security_Severity_Ratings/Client)
- - If a bug is a cross-process bug that does not affect the Parent
-   Process, the correct keyword is `csectype-priv-escalation`.  In the
-   past, these were given `csectype-sandbox-escape` but this is no longer
-   correct, and you are invited to fix the keywords if you encounter them
-   used incorrectly.
+- If a bug does not have a security rating, you are invited to give it
+  one, following the [Client Severity Guidelines](https://wiki.mozilla.org/Security_Severity_Ratings/Client)
+- If a bug is a cross-process bug that does not affect the Parent
+  Process, the correct keyword is `csectype-priv-escalation`. In the
+  past, these were given `csectype-sandbox-escape` but this is no longer
+  correct, and you are invited to fix the keywords if you encounter them
+  used incorrectly.
 
 For the avoidance of doubt, core-security bug fixes can be landed by
 a developer without any explicit approval if:
 
- - The bug has a sec-low, sec-moderate, sec-other, or sec-want rating.
- - The bug has a sec-high rating, but only affects the content process
- - The bug has a sec-high rating, but only affects some other, non-Parent process
- - The bug has a sec-high rating, is a cross-process bug, but that target process
-   is the GPU, RDD, GMP, Utility, Socket, or other non-Parent process
- - The bug _is_ a parent process bug _but_ it is a recent regression on
-   mozilla-central. Meaning:
-   - A specific regressing check-in has been identified
-   - The developer can (**and has**) marked the status flags for ESR and
-     Beta as "unaffected"
-   - We have not shipped this vulnerability in anything other than a
-     nightly build
+- The bug has a sec-low, sec-moderate, sec-other, or sec-want rating.
+- The bug has a sec-high rating, but only affects the content process
+- The bug has a sec-high rating, but only affects some other, non-Parent process
+- The bug has a sec-high rating, is a cross-process bug, but that target process
+  is the GPU, RDD, GMP, Utility, Socket, or other non-Parent process
+- The bug _is_ a parent process bug _but_ it is a recent regression on
+  mozilla-central. Meaning:
+  - A specific regressing check-in has been identified
+  - The developer can (**and has**) marked the status flags for ESR and
+    Beta as "unaffected"
+  - We have not shipped this vulnerability in anything other than a
+    nightly build
 
 If it meets any of the above criteria, developers do not need to ask for
 sec-approval.

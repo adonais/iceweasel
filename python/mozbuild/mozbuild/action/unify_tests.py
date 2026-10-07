@@ -26,13 +26,6 @@ class UnifiedTestFinder(UnifiedFinder):
             self._report_difference(path, file1, file2)
             errors.ignore_errors(False)
             return file1
-        elif basename == "dump_syms_mac":
-            # At the moment, the dump_syms_mac executable is a x86_64 binary
-            # on both ends. We can't create a universal executable from twice
-            # the same executable.
-            # When this assert hits, remove this block.
-            assert file1.open().read() == file2.open().read()
-            return file1
         return unified
 
 

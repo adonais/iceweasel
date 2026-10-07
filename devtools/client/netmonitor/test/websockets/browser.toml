@@ -2,12 +2,13 @@
 https_first_disabled = true
 tags = "devtools"
 subsuite = "devtools"
-skip-if = [
-  "http3",
+run-if = [
+  "!http3",
 ]
 support-files = [
   "../head.js",
   "../file_ws_backend_wsh.py",
+  "../file_ws_early_backend_wsh.py",
   "html_websocket-test-page.html",
   "html_ws-early-connection-page.html",
   "html_ws-test-page.html",

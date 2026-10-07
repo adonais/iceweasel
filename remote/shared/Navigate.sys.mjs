@@ -145,6 +145,7 @@ export class ProgressListener {
 
   #deferredNavigation;
   #errorName;
+  #errorStatus;
   #navigationId;
   #navigationListener;
   #seenNavigationCommitted;
@@ -209,6 +210,7 @@ export class ProgressListener {
 
     this.#deferredNavigation = null;
     this.#errorName = null;
+    this.#errorStatus = null;
     this.#resolveWhenCommittedError = null;
     this.#seenNavigationCommitted = false;
     this.#seenStartFlag = false;
@@ -339,6 +341,7 @@ export class ProgressListener {
             this.#trace(`Error=${errorName}, wait for redirect to error page`);
             this.#seenNavigationCommitted = false;
             this.#errorName = errorName;
+            this.#errorStatus = status;
             return;
           }
 
@@ -446,7 +449,9 @@ export class ProgressListener {
       );
       if (this.#seenNavigationCommitted || !this.#navigationListener) {
         // If the navigation-committed event was already received, resolve immediately
-        this.stop({ error: new Error(errorName) });
+        this.stop({
+          error: new lazy.NavigationError(errorName, this.#errorStatus),
+        });
       } else {
         this.#trace(
           `Waiting for the "navigation-committed" event for the error page navigation (error: ${errorName}).`

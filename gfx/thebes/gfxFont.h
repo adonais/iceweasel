@@ -112,7 +112,7 @@ struct gfxFontStyle {
   // (3) are guaranteed to be mutually exclusive
 
   // custom opentype feature settings
-  CopyableTArray<gfxFontFeature> featureSettings;
+  mozilla::StyleFontFeatureSettings featureSettings;
 
   // Some font-variant property values require font-specific settings
   // defined via @font-feature-values rules.  These are resolved after
@@ -125,7 +125,7 @@ struct gfxFontStyle {
   RefPtr<gfxFontFeatureValueSet> featureValueLookup;
 
   // opentype variation settings
-  CopyableTArray<gfxFontVariation> variationSettings;
+  mozilla::StyleFontVariationSettings variationSettings;
 
   // The logical size of the font, in pixels
   gfxFloat size;
@@ -175,10 +175,10 @@ struct gfxFontStyle {
   // 7 bytes of padding at the end of the struct.
 
   // caps variant (small-caps, petite-caps, etc.)
-  uint8_t variantCaps : 3;  // uses range 0..6
+  mozilla::StyleFontVariantCaps variantCaps : 3;  // uses range 0..6
 
   // sub/superscript variant
-  uint8_t variantSubSuper : 2;  // uses range 0..2
+  mozilla::StyleFontVariantPosition variantSubSuper : 2;  // uses range 0..2
 
   // font metric used as basis of font-size-adjust
   uint8_t sizeAdjustBasis : 3;  // uses range 0..4
@@ -1622,7 +1622,8 @@ class gfxFont {
 
   // whether the font supports "real" small caps, petite caps etc.
   // aFallbackToSmallCaps true when petite caps should fallback to small caps
-  bool SupportsVariantCaps(Script aScript, uint32_t aVariantCaps,
+  bool SupportsVariantCaps(Script aScript,
+                           mozilla::StyleFontVariantCaps aVariantCaps,
                            bool& aFallbackToSmallCaps,
                            bool& aSyntheticLowerToSmallCaps,
                            bool& aSyntheticUpperToSmallCaps);
@@ -1630,11 +1631,13 @@ class gfxFont {
   // whether the font supports subscript/superscript feature
   // for fallback, need to verify that all characters in the run
   // have variant substitutions
-  bool SupportsSubSuperscript(uint32_t aSubSuperscript, const uint8_t* aString,
-                              uint32_t aLength, Script aRunScript);
+  bool SupportsSubSuperscript(mozilla::StyleFontVariantPosition aSubSuperscript,
+                              const uint8_t* aString, uint32_t aLength,
+                              Script aRunScript);
 
-  bool SupportsSubSuperscript(uint32_t aSubSuperscript, const char16_t* aString,
-                              uint32_t aLength, Script aRunScript);
+  bool SupportsSubSuperscript(mozilla::StyleFontVariantPosition aSubSuperscript,
+                              const char16_t* aString, uint32_t aLength,
+                              Script aRunScript);
 
   // whether the specified feature will apply to the given character
   bool FeatureWillHandleChar(Script aRunScript, uint32_t aFeature,
@@ -2060,7 +2063,7 @@ class gfxFont {
   bool HasColorGlyphFor(uint32_t aCh, uint32_t aNextCh);
 
  protected:
-  virtual const Metrics& GetHorizontalMetrics() const = 0;
+  const Metrics& GetHorizontalMetrics() const { return mMetrics; }
 
   void CreateVerticalMetrics();
   void CreateVerticalBaselines();
@@ -2227,6 +2230,8 @@ class gfxFont {
   // used when analyzing whether a font has space contextual lookups
   static mozilla::Atomic<nsTHashMap<nsUint32HashKey, Script>*> sScriptTagToCode;
   static mozilla::Atomic<nsTHashSet<uint32_t>*> sDefaultFeatures;
+
+  Metrics mMetrics;
 
   RefPtr<gfxFontEntry> mFontEntry;
   mutable mozilla::RWLock mLock;
@@ -2401,21 +2406,21 @@ class gfxFont {
   // Returns TRUE but leaves mIsValid=FALSE if the font seems to be broken.
   // Returns FALSE if the font does not appear to be an sfnt at all,
   // and should be handled (if possible) using other APIs.
-  bool InitMetricsFromSfntTables(Metrics& aMetrics);
+  bool InitMetricsFromSfntTables();
 
 #if MOZ_FONTATIONS
   // Initialize metrics using the font entry's Skrifa font reference.
   // Returns false if unsuccessful (e.g. the entry has no Skrifa font).
-  bool InitMetricsFromSkrifa(Metrics& aMetrics);
+  bool InitMetricsFromSkrifa();
 #endif
 
   // Helper to calculate various derived metrics from the results of
   // InitMetricsFromSfntTables or equivalent platform code
-  void CalculateDerivedMetrics(Metrics& aMetrics);
+  void CalculateDerivedMetrics();
 
   // some fonts have bad metrics, this method sanitize them.
   // if this font has bad underline offset, aIsBadUnderlineFont should be true.
-  void SanitizeMetrics(Metrics* aMetrics, bool aIsBadUnderlineFont);
+  void SanitizeMetrics(bool aIsBadUnderlineFont);
 
   bool RenderSVGGlyph(gfxContext* aContext,
                       mozilla::layout::TextDrawTarget* aTextDrawer,

@@ -410,56 +410,24 @@ bool CodeGeneratorX86Shared::generateOutOfLineCode() {
   return !masm.oom();
 }
 
-class BailoutJump {
-  Assembler::Condition cond_;
+void CodeGeneratorX86Shared::emitBailoutOOL(LSnapshot* snapshot) {
+  masm.push(Imm32(snapshot->snapshotOffset()));
+  masm.jmp(&deoptLabel_);
+}
 
- public:
-  explicit BailoutJump(Assembler::Condition cond) : cond_(cond) {}
-#ifdef JS_CODEGEN_X86
-  void operator()(MacroAssembler& masm, uint8_t* code) const {
-    masm.j(cond_, ImmPtr(code), RelocationKind::HARDCODED);
-  }
-#endif
-  void operator()(MacroAssembler& masm, Label* label) const {
-    masm.j(cond_, label);
-  }
-};
-
-class BailoutLabel {
-  Label* label_;
-
- public:
-  explicit BailoutLabel(Label* label) : label_(label) {}
-#ifdef JS_CODEGEN_X86
-  void operator()(MacroAssembler& masm, uint8_t* code) const {
-    masm.retarget(label_, ImmPtr(code), RelocationKind::HARDCODED);
-  }
-#endif
-  void operator()(MacroAssembler& masm, Label* label) const {
-    masm.retarget(label_, label);
-  }
-};
-
-template <typename T>
-void CodeGeneratorX86Shared::bailout(const T& binder, LSnapshot* snapshot) {
+void CodeGeneratorX86Shared::bailoutIf(Assembler::Condition condition,
+                                       LSnapshot* snapshot) {
   encode(snapshot);
 
   // All bailout code is associated with the bytecodeSite of the block we are
   // bailing out from.
   InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
-  auto* ool = new (alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
-    masm.push(Imm32(snapshot->snapshotOffset()));
-    masm.jmp(&deoptLabel_);
-  });
+  auto* ool = new (alloc()) LambdaOutOfLineCode(
+      [=, this](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
   addOutOfLineCode(ool,
                    new (alloc()) BytecodeSite(tree, tree->script()->code()));
 
-  binder(masm, ool->entry());
-}
-
-void CodeGeneratorX86Shared::bailoutIf(Assembler::Condition condition,
-                                       LSnapshot* snapshot) {
-  bailout(BailoutJump(condition), snapshot);
+  masm.j(condition, ool->entry());
 }
 
 void CodeGeneratorX86Shared::bailoutIf(Assembler::DoubleCondition condition,
@@ -467,17 +435,6 @@ void CodeGeneratorX86Shared::bailoutIf(Assembler::DoubleCondition condition,
   MOZ_ASSERT(Assembler::NaNCondFromDoubleCondition(condition) ==
              Assembler::NaN_HandledByCond);
   bailoutIf(Assembler::ConditionFromDoubleCondition(condition), snapshot);
-}
-
-void CodeGeneratorX86Shared::bailoutFrom(Label* label, LSnapshot* snapshot) {
-  MOZ_ASSERT_IF(!masm.oom(), label->used() && !label->bound());
-  bailout(BailoutLabel(label), snapshot);
-}
-
-void CodeGeneratorX86Shared::bailout(LSnapshot* snapshot) {
-  Label label;
-  masm.jump(&label);
-  bailoutFrom(&label, snapshot);
 }
 
 void CodeGenerator::visitMinMaxD(LMinMaxD* ins) {
@@ -1593,7 +1550,16 @@ void CodeGenerator::visitBitOpI(LBitOpI* ins) {
       break;
     case JSOp::BitAnd:
       if (rhs->isConstant()) {
-        masm.andl(Imm32(ToInt32(rhs)), lhs);
+        int32_t mask = ToInt32(rhs);
+        if (mask == 0xffff) {
+          masm.movzwl(lhs, lhs);
+        } else if (mask == 0xff &&
+                   AllocatableGeneralRegisterSet(Registers::SingleByteRegs)
+                       .has(lhs)) {
+          masm.movzbl(lhs, lhs);
+        } else {
+          masm.andl(Imm32(mask), lhs);
+        }
       } else {
         masm.andl(ToOperand(rhs), lhs);
       }
@@ -3601,7 +3567,7 @@ void CodeGenerator::visitWasmReduceAndBranchSimd128(
       // Compare all lanes to zero, set the zero flag if none of the lanes are
       // zero, and branch on that.
       ScratchSimd128Scope tmp(masm);
-      masm.vpxor(tmp, tmp, tmp);
+      masm.vxorps(tmp, tmp, tmp);
       switch (ins->simdOp()) {
         case wasm::SimdOp::I8x16AllTrue:
           masm.vpcmpeqb(Operand(src), tmp, tmp);

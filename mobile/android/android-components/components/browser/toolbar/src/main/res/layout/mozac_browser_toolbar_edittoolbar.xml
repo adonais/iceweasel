@@ -24,8 +24,10 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- EditToolbar.setIcon() sets the description together with the icon. -->
     <ImageView
         android:id="@+id/mozac_browser_toolbar_edit_icon"
+        tools:ignore="ContentDescription"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:scaleType="center"

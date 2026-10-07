@@ -3,10 +3,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""Build a prefilled Bugzilla enter_bug.cgi URL for a good-first-bug.
+"""Open a prefilled Bugzilla enter_bug.cgi form for a good-first-bug.
 
-There is no MCP tool to create Bugzilla bugs: the user submits each bug by
-clicking the generated URL.
+There is no MCP tool to create Bugzilla bugs: the user submits each bug from the
+form this opens in their browser.
+
+A prefilled form carries the whole bug body percent-encoded in its query string,
+which puts the URL past the length at which a terminal stops linkifying it (2413
+and 2635 characters for two ordinary good-first-bugs). Pasting one into a chat
+reply then gives the reader an unclickable wall of `%20` -- hence opening it here
+rather than printing it. Shortening the bug body is not the answer: a
+good-first-bug has to be self-sufficient. `--print-url` is the fallback for a
+headless host.
 """
 
 import argparse
@@ -16,6 +24,7 @@ import os
 import sys
 import urllib.error
 import urllib.request
+import webbrowser
 from urllib.parse import urlencode
 
 BUGZILLA = "https://bugzilla.mozilla.org"
@@ -115,20 +124,33 @@ def main(argv=None):
         help="Bugzilla account email of the mentor, for the bug_mentors field. "
         "Defaults to the owner of the API key in the bugzillarc.",
     )
+    parser.add_argument(
+        "--print-url",
+        action="store_true",
+        help="Print the URL instead of opening it. For a headless host; the "
+        "URL is long enough that a terminal will not linkify it.",
+    )
     args = parser.parse_args(argv)
     mentor = args.mentor if args.mentor is not None else resolve_mentor()
-    print(
-        build_url(
-            args.title,
-            args.comment,
-            product=args.product,
-            component=args.component,
-            tracker=args.tracker,
-            keywords=args.keywords,
-            lang=args.lang,
-            mentor=mentor,
-        )
+    url = build_url(
+        args.title,
+        args.comment,
+        product=args.product,
+        component=args.component,
+        tracker=args.tracker,
+        keywords=args.keywords,
+        lang=args.lang,
+        mentor=mentor,
     )
+    if args.print_url:
+        print(url)
+        return 0
+    if webbrowser.open(url):
+        print(f"Opened a prefilled form ({len(url)} chars): {args.title}")
+        return 0
+    print("No browser to open; falling back to the URL:", file=sys.stderr)
+    print(url)
+    return 0
 
 
 if __name__ == "__main__":

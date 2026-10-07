@@ -4,7 +4,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <algorithm>
 #include <atomic>
+#include <vector>
 
 #include "gtest/gtest.h"
 
@@ -162,6 +164,28 @@ TEST_F(DecodeCertsTest, ImportCert) {
   rv = PK11_ImportCert(slot.get(), cert2.get(), CK_INVALID_HANDLE, nickname2,
                        PR_TRUE);
   EXPECT_EQ(rv, SECSuccess);
+}
+
+// id-ecPublicKey
+const uint8_t kIdEcPublicKeyOID[] = {0x06, 0x07, 0x2a, 0x86, 0x48,
+                                     0xce, 0x3d, 0x02, 0x01};
+
+// Rejecting a certificate must also release its decoding. Run under LSan.
+TEST_F(DecodeCertsTest, NewTempCertificateWithUnsupportedKeyAlgorithm) {
+  // Make the algorithm OID unallocated: this still decodes, but no public key
+  // can be extracted from it.
+  std::vector<uint8_t> der(kTestImportCertDER,
+                           kTestImportCertDER + sizeof(kTestImportCertDER));
+  auto spki = std::search(der.begin(), der.end(), std::begin(kIdEcPublicKeyOID),
+                          std::end(kIdEcPublicKeyOID));
+  ASSERT_TRUE(spki != der.end());
+  spki[sizeof(kIdEcPublicKeyOID) - 1] = 0x7f;
+
+  SECItem certDER = {siBuffer, der.data(),
+                     static_cast<unsigned int>(der.size())};
+  ScopedCERTCertificate cert(CERT_NewTempCertificate(
+      CERT_GetDefaultCertDB(), &certDER, nullptr, PR_TRUE, PR_TRUE));
+  EXPECT_EQ(nullptr, cert.get());
 }
 
 // A certificate produced by CERT_DecodeDERCertificate() has no NSSCertificate

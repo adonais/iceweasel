@@ -70,6 +70,25 @@ class SendTabUseCases(
             }
         }
 
+        /**
+         * Sends each of the tabs to each of the provided devices if possible.
+         *
+         * @param devices The collection of devices to send tabs to.
+         * @param tabs The list of tabs to send.
+         * @return a deferred boolean as true if the combined result was successful or not.
+         */
+        operator fun invoke(devices: List<Device>, tabs: List<TabData>): Deferred<Boolean> {
+            return scope.async {
+                devices
+                    .crossProduct(tabs) { device, tab ->
+                        send(device.id, tab)
+                    }
+                    .fold(true) { acc, result ->
+                        acc and result
+                    }
+            }
+        }
+
         private suspend fun send(deviceId: String, tab: TabData): Boolean {
             // Filter tabs that don't have a send-capable uri
             if (!isValidTabSchema(tab)) {

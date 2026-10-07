@@ -6,7 +6,7 @@
 
 var testPage =
   "<body style='margin: 0'>" +
-  "  <img id='img' tabindex='1' src='http://example.org/browser/browser/base/content/test/general/moz.png'>" +
+  "  <img id='img' tabindex='1' src='http://example.org/browser/browser/base/content/test/browser-general/moz.png'>" +
   "  <div id='main' contenteditable='true'>Test <b>Bold</b> After Text</div>" +
   "</body>";
 
@@ -305,7 +305,7 @@ async function testClipboardWithContentAnalysis(allowPaste, plainTextOnly) {
 
   // Next, put some HTML data on the clipboard
   setClipboardHTMLData(
-    '<img id="img" tabindex="1" src="http://example.org/browser/browser/base/content/test/general/moz.png">'
+    '<img id="img" tabindex="1" src="http://example.org/browser/browser/base/content/test/browser-general/moz.png">'
   );
 
   // Focus the content again
@@ -332,7 +332,7 @@ async function testClipboardWithContentAnalysis(allowPaste, plainTextOnly) {
               if (
                 clipboardText !==
                 htmlPrefixChild +
-                  '<img id="img" tabindex="1" src="http://example.org/browser/browser/base/content/test/general/moz.png">' +
+                  '<img id="img" tabindex="1" src="http://example.org/browser/browser/base/content/test/browser-general/moz.png">' +
                   htmlPostfixChild
               ) {
                 reject(
@@ -363,7 +363,7 @@ async function testClipboardWithContentAnalysis(allowPaste, plainTextOnly) {
     assertContentAnalysisRequest(
       mockCA.calls[0],
       htmlPrefix +
-        '<img id="img" tabindex="1" src="http://example.org/browser/browser/base/content/test/general/moz.png">' +
+        '<img id="img" tabindex="1" src="http://example.org/browser/browser/base/content/test/browser-general/moz.png">' +
         htmlPostfix,
       mockCA.calls[0].userActionId,
       1
@@ -381,14 +381,14 @@ async function testClipboardWithContentAnalysis(allowPaste, plainTextOnly) {
       if (allowPaste) {
         expectedContents =
           '<i>Italic</i>&nbsp;<img id="img" tabindex="1" ' +
-          'src="http://example.org/browser/browser/base/content/test/general/moz.png">' +
+          'src="http://example.org/browser/browser/base/content/test/browser-general/moz.png">' +
           "Test <b>Bold</b> After<b></b>";
       } else {
         // If plainTextOnly then no CA call will have been made, so
         // the content will be allowed. (but the earlier "<i>Italic</i>" part was not)
         expectedContents = plainTextOnly
           ? '<img id="img" tabindex="1" ' +
-            'src="http://example.org/browser/browser/base/content/test/general/moz.png">' +
+            'src="http://example.org/browser/browser/base/content/test/browser-general/moz.png">' +
             "Test <b>Bold</b>"
           : "Test <b>Bold</b>";
       }
@@ -423,7 +423,7 @@ function assertContentAnalysisRequest(
   );
   is(
     request.operationTypeForDisplay,
-    Ci.nsIContentAnalysisRequest.eClipboard,
+    Ci.nsIContentAnalysisRequest.ePasteClipboard,
     "request has correct operationTypeForDisplay"
   );
   is(request.filePath, "", "request filePath should be empty");

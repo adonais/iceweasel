@@ -22,9 +22,9 @@ let debugLine;
 let foundLine;
 
 dbg.onDebuggerStatement = function(frame) {
-  debugLine = frame.script.getOffsetLocation(frame.offset).lineNumber;
+  debugLine = frame.script.getOffsetMetadata(frame.offset).lineNumber;
   frame.onPop = function(c) {
-    foundLine = this.script.getOffsetLocation(this.offset).lineNumber;
+    foundLine = this.script.getOffsetMetadata(this.offset).lineNumber;
   };
 };
 

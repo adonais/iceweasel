@@ -1,4 +1,18 @@
 [DEFAULT]
 support-files = ["empty.html"]
+environment = ["MOZ_PROFILER_STARTUP_FILTERS=GeckoMain,Compositor,Renderer,DOM Worker,MediaTrackGrph,NativeAudioCallback,Speech,Parakeet,GraphRunner"]
+
+["browser_speech_recognition_inference_telemetry.js"]
+subsuite = "speech-recognition"
+tags = "mtg parakeet-asr"
+support-files = ["kennedy-appolo.opus"]
+# Audio capture doesn't produce real signal under Wayland in CI, so
+# recognition always returns an empty transcript there.
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2053116
+  "verify", # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
+]
 
 ["browser_speech_recognition_process_lifetime.js"]
+
+["browser_speech_recognition_telemetry.js"]

@@ -36,7 +36,7 @@ function executeSoonRemote(aRemote) {
 
 add_task(async function testClickScreenXY() {
   await BrowserTestUtils.withNewTab(
-    "https://example.com/browser/browser/base/content/test/general/dummy_page.html",
+    "https://example.com/browser/browser/base/content/test/browser-general/dummy_page.html",
     async browser => {
       let parentPromise = waitForClickEvent(document);
       let contentPromise = waitForRemoteClickEvent(browser);

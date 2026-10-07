@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200"
+     viewBox="0 0 400 200" preserveAspectRatio="none"
+     shape-rendering="crispEdges">
+  <!-- Thin horizontal stripes: resampling this vertically by a single device
+       pixel greys them out, which is what the test detects. -->
+  <defs>
+    <pattern id="stripes" width="400" height="4" patternUnits="userSpaceOnUse">
+      <rect width="400" height="2" fill="black"/>
+      <rect y="2" width="400" height="2" fill="white"/>
+    </pattern>
+  </defs>
+  <rect width="400" height="200" fill="url(#stripes)"/>
+</svg>

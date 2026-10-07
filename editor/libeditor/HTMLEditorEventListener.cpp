@@ -10,6 +10,7 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventTarget.h"
 #include "mozilla/dom/MouseEvent.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
@@ -17,7 +18,6 @@
 #include "nsISupportsImpl.h"
 #include "nsLiteralString.h"
 #include "nsQueryObject.h"
-#include "nsRange.h"
 
 namespace mozilla {
 

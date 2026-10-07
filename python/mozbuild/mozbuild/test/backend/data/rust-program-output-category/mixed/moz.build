@@ -1,0 +1,7 @@
+# Any copyright is dedicated to the Public Domain.
+# http://creativecommons.org/publicdomain/zero/1.0/
+
+Program("mixed-native")
+
+RUST_PROGRAMS += ["mixed-rust"]
+RUST_PROGRAM_OUTPUT_CATEGORY = "test-category"

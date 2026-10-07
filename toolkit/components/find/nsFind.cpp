@@ -17,7 +17,6 @@
 #include "nsUnicharUtils.h"
 #include "nsUnicodeProperties.h"
 #include "nsCRT.h"
-#include "nsRange.h"
 #include "nsReadableUtils.h"
 #include "nsContentUtils.h"
 #include "mozilla/TextEditor.h"
@@ -27,6 +26,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLOptionElement.h"
 #include "mozilla/dom/HTMLSelectElement.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/intl/Segmenter.h"
 #include "mozilla/intl/UnicodeProperties.h"
@@ -603,8 +603,9 @@ static bool IsSpace(char32_t aChar) {
 // Take nodes out of the tree with NextNode, until null (NextNode will return 0
 // at the end of our range).
 NS_IMETHODIMP
-nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
-             nsRange* aStartPoint, nsRange* aEndPoint, nsRange** aRangeRet) {
+nsFind::Find(const nsAString& aPatText, dom::Range* aSearchRange,
+             dom::Range* aStartPoint, dom::Range* aEndPoint,
+             dom::Range** aRangeRet) {
   DEBUG_FIND_PRINTF("============== nsFind::Find('%s'%s, %p, %p, %p)\n",
                     NS_LossyConvertUTF16toASCII(aPatText).get(),
                     mFindBackward ? " (backward)" : " (forward)",
@@ -623,7 +624,7 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
   }
   return NS_OK;
 }
-already_AddRefed<nsRange> nsFind::FindFromRangeBoundaries(
+already_AddRefed<dom::Range> nsFind::FindFromRangeBoundaries(
     const nsAString& aPatText, const mozilla::RangeBoundary& aStartPoint,
     const mozilla::RangeBoundary& aEndPoint) {
   if (!aStartPoint.IsSetAndInComposedDoc() ||
@@ -1012,7 +1013,7 @@ already_AddRefed<nsRange> nsFind::FindFromRangeBoundaries(
           matchEndOffset = findex + 1;
         }
 
-        RefPtr<nsRange> range = nsRange::Create(current);
+        RefPtr<dom::Range> range = dom::Range::Create(current);
         if (startParent && endParent && IsFindableNode(startParent) &&
             IsFindableNode(endParent)) {
           IgnoredErrorResult rv;

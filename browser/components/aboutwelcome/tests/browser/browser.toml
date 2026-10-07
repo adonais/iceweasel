@@ -29,6 +29,8 @@ skip-if = [
 
 ["browser_aboutwelcome_configurable_ui.js"]
 
+["browser_aboutwelcome_corner_image.js"]
+
 ["browser_aboutwelcome_embedded_browser.js"]
 
 ["browser_aboutwelcome_fxa_signin_flow.js"]
@@ -41,6 +43,10 @@ fail-if = [
 ]
 
 ["browser_aboutwelcome_impression_action.js"]
+
+["browser_aboutwelcome_layout.js"]
+
+["browser_aboutwelcome_logo.js"]
 
 ["browser_aboutwelcome_mobile_downloads.js"]
 
@@ -61,6 +67,8 @@ skip-if = [
 
 ["browser_aboutwelcome_multistage_transitions.js"]
 
+["browser_aboutwelcome_navigation.js"]
+
 ["browser_aboutwelcome_nimbus_gate.js"]
 
 ["browser_aboutwelcome_observer.js"]
@@ -80,6 +88,8 @@ skip-if = [
 ["browser_aboutwelcome_screen_targeting.js"]
 
 ["browser_aboutwelcome_theme_picker.js"]
+
+["browser_aboutwelcome_theming.js"]
 
 ["browser_aboutwelcome_toolbar_button.js"]
 

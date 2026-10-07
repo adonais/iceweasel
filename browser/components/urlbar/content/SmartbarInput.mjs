@@ -161,9 +161,7 @@ ${
         </html:panel-list>
 
         <html:moz-urlbar-slot name="site-info" />
-        <moz-input-box tooltip="aHTMLTooltip"
-                       class="urlbar-input-box"
-                       flex="1">
+        <html:div class="urlbar-input-box">
           <html:input id="urlbar-scheme"
                       required="required"/>
           <html:input id="urlbar-input"
@@ -171,10 +169,10 @@ ${
                       aria-controls="urlbar-results"
                       role="combobox"
                       aria-autocomplete="both"
-                      inputmode="mozAwesomebar"
+                      inputmode="search"
                       preserveundohistory=""
                       data-l10n-id="smartbar-placeholder"/>
-        </moz-input-box>
+        </html:div>
         <html:smartwindow-panel-list></html:smartwindow-panel-list>
         <html:moz-urlbar-slot name="revert-button" />
         <html:img class="urlbar-icon urlbar-go-button"
@@ -187,14 +185,10 @@ ${
             context=""
             role="group"
             tooltip="aHTMLTooltip">
-        <html:div class="urlbarView-body-outer">
-          <html:div class="urlbarView-body-inner">
-            <html:div id="urlbar-results"
-                      class="urlbarView-results"
-                      role="listbox"/>
-          </html:div>
-        </html:div>
-        <html:panel-list class="urlbarView-result-menu"></html:panel-list>
+        <html:div id="urlbar-results"
+                  class="urlbarView-results"
+                  role="listbox"/>
+        <html:panel-list class="urlbarView-result-menu" accesskey-conflicts-bug="2073892"></html:panel-list>
         <html:moz-urlbar-slot name="search-one-offs" />
       </html:div>
       <html:div class="smartbar-button-container">
@@ -394,13 +388,6 @@ ${
     this.#isAddressbar = this.#sapName == "urlbar";
     this.#isSmartbarMode = this.#sapName == "smartbar";
 
-    // This listener must be added before connecting the fragment
-    // because the event could fire while or after connecting it.
-    this.addEventListener(
-      "moz-input-box-rebuilt",
-      this.#onContextMenuRebuilt.bind(this)
-    );
-
     this.appendChild(SmartbarInput.fragment);
 
     // Make sure all children have been parsed before calling #populateSlots.
@@ -529,6 +516,9 @@ ${
     if (!this.controller) {
       this.#initOnce();
     }
+
+    // After #initOnce(), which creates the view AddSearchEngineHelper needs.
+    this.#initContextMenuItems();
 
     this.searchModeSwitcher.connect();
 
@@ -682,6 +672,8 @@ ${
       this.removeEventListener("ai-website-chip:remove", this);
     }
 
+    this.#removeContextMenuItems();
+
     this._removeObservers();
 
     // Remove pref observer
@@ -693,73 +685,128 @@ ${
   }
 
   /**
-   * This method is used to attach new context menu options to the urlbar
-   * context menu, i.e. the context menu of the moz-input-box.
-   * It is called when the moz-input-box rebuilds its context menu.
+   * The text context menu shared by the inputs of the document this one lives
+   * in. In smartbar mode that document isn't this.document, which belongs to
+   * the top chrome window.
    *
-   * Note that it might be called before #init has finished.
+   * @type {object}
    */
-  #onContextMenuRebuilt() {
+  get #editContextMenu() {
+    return this.documentGlobal.EditContextMenu;
+  }
+
+  /**
+   * The sets this input registered with the text context menu.
+   *
+   * @type {object[]}
+   */
+  #contextMenuItemSets = [];
+
+  /**
+   * Contributes this input's own items to the text context menu. A document
+   * without one, i.e. any but a chrome document, gets no items.
+   */
+  #initContextMenuItems() {
+    if (!this.#editContextMenu) {
+      return;
+    }
+
     if (this.#isAddressbar || this.#isSmartbarMode) {
       this._initAutofillDismiss();
     }
     if (this.#isSmartbarMode) {
-      this.#initSmartbarContextMenuPaste();
       this._initPasteAndGo();
       return;
     }
     this._initStripOnShare();
     this._initPasteAndGo();
+    this.#initAddSearchEngines();
+  }
+
+  /**
+   * The engine items are rebuilt on every open, so the item set claims whatever
+   * AddSearchEngineHelper currently owns.
+   */
+  #initAddSearchEngines() {
+    this.#addContextMenuItems({
+      createItems: () => {
+        let fragment = this.ownerDocument.createDocumentFragment();
+        fragment.appendChild(
+          this.addSearchEngineHelper.createContextSeparator()
+        );
+        return fragment;
+      },
+      onShowing: (input, items) => {
+        items.length = 0;
+        items.push(...this.addSearchEngineHelper.refreshContextMenu());
+      },
+    });
+  }
+
+  /**
+   * Registers an item set with the text context menu, scoped to this input.
+   *
+   * @param {object} itemSet
+   *   As passed to EditContextMenu.addItems(), minus `matches`.
+   */
+  #addContextMenuItems(itemSet) {
+    this.#contextMenuItemSets.push(
+      this.#editContextMenu.addItems({
+        ...itemSet,
+        matches: input => input == this.inputField,
+      })
+    );
+  }
+
+  /**
+   * Unregisters the item sets, so a disconnected input stops contributing to
+   * the menu it shares with the other inputs of the document.
+   */
+  #removeContextMenuItems() {
+    for (let itemSet of this.#contextMenuItemSets) {
+      this.#editContextMenu.removeItems(itemSet);
+    }
+    this.#contextMenuItemSets = [];
   }
 
   // A right-click inside the multiline editor's contenteditable lands in the
-  // editor's shadow DOM, so the moz-input-box context menu isn't shown
-  // automatically. Open it explicitly at the cursor position.
+  // editor's shadow DOM, where the shared text context menu's listener doesn't
+  // reach it. Open the menu explicitly at the cursor position.
   #initSmartbarContextMenu() {
-    const inputBox = this.querySelector("moz-input-box");
-    const menupopup = inputBox?.menupopup;
-    if (!menupopup) {
+    if (!this.#editContextMenu) {
       return;
     }
     this.inputField.addEventListener("contextmenu", event => {
       this.#maybeSelectAll();
       event.preventDefault();
-      if (event.button) {
-        menupopup.openPopupAtScreen(event.screenX, event.screenY, true, event);
-      } else {
-        menupopup.openPopup(
-          this.inputField,
-          "after_start",
-          0,
-          0,
-          true,
-          false,
-          event
-        );
-      }
+      this.#initSmartbarContextMenuPaste();
+      this.#editContextMenu.open(this.inputField, event, {
+        anchor: event.button ? null : this.inputField,
+      });
     });
   }
 
+  #smartbarContextMenuPasteInitialized = false;
+
   // TODO(Bug 2047067): the multiline editor is a ProseMirror contenteditable.
-  // The native cmd_paste command the moz-input-box context menu dispatches
-  // does not reliably reach it inside a shadow DOM on Windows, even though
-  // Ctrl+V works (it fires a native paste event ProseMirror handles).
-  // Intercept cmd_paste on the menupopup and route it through the editor
-  // directly. Remove this workaround once the platform bug is fixed.
+  // The native cmd_paste command the text context menu dispatches does not
+  // reliably reach it inside a shadow DOM on Windows, even though Ctrl+V works
+  // (it fires a native paste event ProseMirror handles). Intercept the command
+  // and route it through the editor directly. Remove this workaround once the
+  // platform bug is fixed.
   #initSmartbarContextMenuPaste() {
-    const inputBox = this.querySelector("moz-input-box");
-    const menupopup = inputBox?.menupopup;
-    if (!menupopup) {
+    if (this.#smartbarContextMenuPasteInitialized) {
       return;
     }
-    menupopup.addEventListener(
-      "command",
-      event => {
-        const menuitem =
-          event.target?.localName == "menuitem"
-            ? event.target
-            : event.originalTarget;
-        if (menuitem?.getAttribute("cmd") != "cmd_paste") {
+    this.#smartbarContextMenuPasteInitialized = true;
+
+    // The paste item carries command="cmd_paste", so activating it dispatches
+    // the command event at the command element, not at the menu.
+    this.ownerDocument
+      .getElementById("cmd_paste")
+      .addEventListener("command", event => {
+        // The menu is shared, so only intercept opens on this input.
+        if (this.#editContextMenu.input != this.inputField) {
           return;
         }
         this.#ensureSmartbarEditor();
@@ -770,10 +817,10 @@ ${
         if (editor && dt) {
           editor.paste(dt);
         }
-        event.stopImmediatePropagation();
-      },
-      true
-    );
+        // Keep editMenuOverlay's commandset listener from dispatching the
+        // native command.
+        event.stopPropagation();
+      });
   }
 
   #readClipboardData() {
@@ -1702,6 +1749,11 @@ ${
     }
 
     this.smartbarAction = event.detail.action;
+    if (!this.focused) {
+      // The CTA can be clicked when the input is not focused:
+      // Start an engagement session if none is currently open.
+      this.controller.engagementEvent.start(event, null, this.value);
+    }
     this.handleNavigation({ event });
   }
 
@@ -2266,10 +2318,11 @@ ${
         dueToTabSwitch: true,
         hideSearchTerms: true,
       });
-    } else {
+    } else if (!this.#isSmartbarMode) {
+      // The smartbar has no URI to revert to.
       this.value = "";
     }
-    if (this.value && this.focused) {
+    if (this.#isAddressbar && this.value && this.focused) {
       this.select();
     }
   }
@@ -2309,6 +2362,16 @@ ${
     } else {
       this.search(searchString);
     }
+  }
+
+  /**
+   * Whether pickResult() implements the result menu's commands for opening a
+   * result in a new tab or window. It doesn't, so the menu withholds them.
+   *
+   * @returns {boolean}
+   */
+  get handlesOpenInCommands() {
+    return false;
   }
 
   /**
@@ -3692,10 +3755,8 @@ ${
   }
 
   get focused() {
-    return (
-      this.document.activeElement ==
-      (this.#smartbarInputController?.input ?? this.inputField)
-    );
+    const input = this.#smartbarInputController?.input ?? this.inputField;
+    return !!input && input.getRootNode().activeElement === input;
   }
 
   get goButton() {
@@ -4860,7 +4921,6 @@ ${
     }
 
     let suffix = Services.locale.urlFixupSuffix;
-    Glean.urlfixup.suffix.get("smartbar", suffix).add(1);
     if (!suffix.endsWith("/")) {
       suffix += "/";
     }
@@ -5158,30 +5218,6 @@ ${
   }
 
   /**
-   * Searches the context menu for the location of a specific command.
-   *
-   * @param {string} menuItemCommand
-   *    The command to search for.
-   * @returns {HTMLElement}
-   *    Html element that matches the command or
-   *    the last element if we could not find the command.
-   */
-  #findMenuItemLocation(menuItemCommand) {
-    let inputBox = this.querySelector("moz-input-box");
-    let contextMenu = inputBox.menupopup;
-    let insertLocation = contextMenu.firstElementChild;
-    // find the location of the command
-    while (
-      insertLocation.nextElementSibling &&
-      insertLocation.getAttribute("cmd") != menuItemCommand
-    ) {
-      insertLocation = insertLocation.nextElementSibling;
-    }
-
-    return insertLocation;
-  }
-
-  /**
    * Strips known tracking query parameters/ link decorators.
    *
    * @returns {nsIURI}
@@ -5334,48 +5370,51 @@ ${
   // The strip-on-share feature will strip known tracking/decorational
   // query params from the URI and copy the stripped version to the clipboard.
   _initStripOnShare() {
-    let contextMenu = this.querySelector("moz-input-box").menupopup;
-    let insertLocation = this.#findMenuItemLocation("cmd_copy");
-    // set up the menu item
-    let stripOnShare = this.document.createXULElement("menuitem");
-    this.document.l10n.setAttributes(
-      stripOnShare,
-      "text-action-copy-clean-link"
-    );
-    stripOnShare.setAttribute("anonid", "strip-on-share");
-    stripOnShare.id = "strip-on-share";
+    this.#addContextMenuItems({
+      after: "edit-contextmenu-copy",
+      createItems: () => {
+        let doc = this.ownerDocument;
+        let fragment = doc.createDocumentFragment();
+        let stripOnShare = doc.createXULElement("menuitem");
+        doc.l10n.setAttributes(stripOnShare, "text-action-copy-clean-link");
+        stripOnShare.setAttribute("anonid", "strip-on-share");
+        stripOnShare.id = "strip-on-share";
 
-    insertLocation.insertAdjacentElement("afterend", stripOnShare);
+        // Register listener that returns the stripped url or falls back
+        // to the original url if nothing can be stripped.
+        stripOnShare.addEventListener("command", () => {
+          let strippedURI = this.#stripURI();
+          lazy.ClipboardHelper.copyString(strippedURI.displaySpec);
+        });
 
-    // Register listener that returns the stripped url or falls back
-    // to the original url if nothing can be stripped.
-    stripOnShare.addEventListener("command", () => {
-      let strippedURI = this.#stripURI();
-      lazy.ClipboardHelper.copyString(strippedURI.displaySpec);
-    });
-
-    // Register a listener that hides the menu item if there is nothing to copy.
-    contextMenu.addEventListener("popupshowing", () => {
-      // feature is not enabled
-      if (!UrlbarPrefs.get("privacy.query_stripping.strip_on_share.enabled")) {
-        stripOnShare.setAttribute("hidden", true);
-        return;
-      }
-      let controller =
-        this.document.commandDispatcher.getControllerForCommand("cmd_copy");
-      if (
-        !controller.isCommandEnabled("cmd_copy") ||
-        !this.#isClipboardURIValid()
-      ) {
-        stripOnShare.setAttribute("hidden", true);
-        return;
-      }
-      stripOnShare.removeAttribute("hidden");
-      if (!this.#canStrip()) {
-        stripOnShare.setAttribute("disabled", true);
-        return;
-      }
-      stripOnShare.removeAttribute("disabled");
+        fragment.appendChild(stripOnShare);
+        return fragment;
+      },
+      // Hide the menu item if there is nothing to copy.
+      onShowing: (input, [stripOnShare]) => {
+        // feature is not enabled
+        if (
+          !UrlbarPrefs.get("privacy.query_stripping.strip_on_share.enabled")
+        ) {
+          stripOnShare.setAttribute("hidden", true);
+          return;
+        }
+        let controller =
+          this.document.commandDispatcher.getControllerForCommand("cmd_copy");
+        if (
+          !controller.isCommandEnabled("cmd_copy") ||
+          !this.#isClipboardURIValid()
+        ) {
+          stripOnShare.setAttribute("hidden", true);
+          return;
+        }
+        stripOnShare.removeAttribute("hidden");
+        if (!this.#canStrip()) {
+          stripOnShare.setAttribute("disabled", true);
+          return;
+        }
+        stripOnShare.removeAttribute("disabled");
+      },
     });
   }
 
@@ -5412,89 +5451,110 @@ ${
   }
 
   _initPasteAndGo() {
-    let inputBox = this.querySelector("moz-input-box");
-    let contextMenu = inputBox.menupopup;
-    let insertLocation = this.#findMenuItemLocation("cmd_paste");
-    if (!insertLocation) {
-      return;
-    }
+    this.#addContextMenuItems({
+      after: "edit-contextmenu-paste",
+      createItems: () => {
+        let doc = this.ownerDocument;
+        let fragment = doc.createDocumentFragment();
+        let pasteAndGo = doc.createXULElement("menuitem");
+        pasteAndGo.id = "paste-and-go";
+        let label = Services.strings
+          .createBundle("chrome://browser/locale/browser.properties")
+          .GetStringFromName("pasteAndGo.label");
+        pasteAndGo.setAttribute("label", label);
+        pasteAndGo.setAttribute("anonid", "paste-and-go");
+        pasteAndGo.addEventListener("command", () => {
+          this.suppressStartQuery();
 
-    let pasteAndGo = contextMenu.ownerDocument.createXULElement("menuitem");
-    pasteAndGo.id = "paste-and-go";
-    let label = Services.strings
-      .createBundle("chrome://browser/locale/browser.properties")
-      .GetStringFromName("pasteAndGo.label");
-    pasteAndGo.setAttribute("label", label);
-    pasteAndGo.setAttribute("anonid", "paste-and-go");
-    pasteAndGo.addEventListener("command", () => {
-      this.suppressStartQuery();
+          this.select();
+          this.#pasteForPasteAndGo();
+          this.setResultForCurrentValue(null);
+          this.handleCommand();
+          this.parentController.clearLastQueryContextCache();
 
-      this.select();
-      this.#pasteForPasteAndGo();
-      this.setResultForCurrentValue(null);
-      this.handleCommand();
-      this.parentController.clearLastQueryContextCache();
+          if (!this._permanentlySuppressStartQuery) {
+            this.unsuppressStartQuery();
+          }
+        });
 
-      if (!this._permanentlySuppressStartQuery) {
-        this.unsuppressStartQuery();
-      }
+        fragment.appendChild(pasteAndGo);
+        return fragment;
+      },
+      onShowing: (input, [pasteAndGo]) => {
+        // Close the results pane, because paste and go doesn't want a result
+        // selection. This has to happen before the menu opens: ending
+        // breakout-extend once it's open keeps it from showing (bug 2037468).
+        this.view.close();
+
+        // The edit context menu is shared with other inputs in chrome, and
+        // only the items we add here conflict, so mark it for this opening
+        // alone, removing the marker again when closed.
+        let popup = this.#editContextMenu.popup;
+        popup.setAttribute("accesskey-conflicts-bug", "2073891");
+        popup.addEventListener(
+          "popuphidden",
+          () => {
+            // An opening that got superseded before it finished still fires
+            // popuphidden while the menu is open.
+            if (popup.state == "closed") {
+              popup.removeAttribute("accesskey-conflicts-bug");
+            }
+          },
+          { once: true }
+        );
+
+        if (this.#pasteAndGoEnabled()) {
+          pasteAndGo.removeAttribute("disabled");
+        } else {
+          pasteAndGo.setAttribute("disabled", "true");
+        }
+      },
     });
-
-    contextMenu.addEventListener("popupshowing", () => {
-      // Close the results pane when the input field contextual menu is open,
-      // because paste and go doesn't want a result selection.
-      this.view.close();
-
-      if (this.#pasteAndGoEnabled()) {
-        pasteAndGo.removeAttribute("disabled");
-      } else {
-        pasteAndGo.setAttribute("disabled", "true");
-      }
-    });
-
-    insertLocation.insertAdjacentElement("afterend", pasteAndGo);
   }
 
   // Adds "Dismiss" and "Forget this site" entries to the urlbar input context
   // menu, both hidden unless the heuristic result is autofill.
   _initAutofillDismiss() {
-    let contextMenu = this.querySelector("moz-input-box").menupopup;
-    let insertLocation = this.#findMenuItemLocation("cmd_selectAll");
-    if (!insertLocation) {
-      return;
-    }
+    this.#addContextMenuItems({
+      after: "edit-contextmenu-select-all",
+      createItems: () => {
+        // Use ownerDocument so the elements share a docgroup with the context
+        // menu. In smartbar mode this.document points at the top chrome window,
+        // which is a different docgroup than the AI window that hosts the
+        // input.
+        let doc = this.ownerDocument;
+        let fragment = doc.createDocumentFragment();
 
-    // Use ownerDocument so the elements share a docgroup with the context
-    // menu. In smartbar mode this.document points at the top chrome window,
-    // which is a different docgroup than the AI window that hosts the input.
-    let doc = this.ownerDocument;
-    let separator = doc.createXULElement("menuseparator");
-    separator.setAttribute("anonid", "urlbar-input-autofill-dismiss-separator");
+        let separator = doc.createXULElement("menuseparator");
+        separator.setAttribute(
+          "anonid",
+          "urlbar-input-autofill-dismiss-separator"
+        );
 
-    let dismiss = doc.createXULElement("menuitem");
-    dismiss.setAttribute("anonid", "urlbar-input-dismiss-autofill");
-    doc.l10n.setAttributes(dismiss, "urlbar-input-dismiss-autofill");
-    dismiss.addEventListener("command", () => {
-      this.#dismissAdaptiveAutofillFromContextMenu("dismiss");
-    });
+        let dismiss = doc.createXULElement("menuitem");
+        dismiss.setAttribute("anonid", "urlbar-input-dismiss-autofill");
+        doc.l10n.setAttributes(dismiss, "urlbar-input-dismiss-autofill");
+        dismiss.addEventListener("command", () => {
+          this.#dismissAdaptiveAutofillFromContextMenu("dismiss");
+        });
 
-    let forget = doc.createXULElement("menuitem");
-    forget.setAttribute("anonid", "urlbar-input-remove-from-history");
-    doc.l10n.setAttributes(forget, "urlbar-input-remove-from-history");
-    forget.addEventListener("command", () => {
-      this.#dismissAdaptiveAutofillFromContextMenu("forget");
-    });
+        let forget = doc.createXULElement("menuitem");
+        forget.setAttribute("anonid", "urlbar-input-remove-from-history");
+        doc.l10n.setAttributes(forget, "urlbar-input-remove-from-history");
+        forget.addEventListener("command", () => {
+          this.#dismissAdaptiveAutofillFromContextMenu("forget");
+        });
 
-    insertLocation.insertAdjacentElement("afterend", separator);
-    separator.insertAdjacentElement("afterend", dismiss);
-    dismiss.insertAdjacentElement("afterend", forget);
-
-    contextMenu.addEventListener("popupshowing", () => {
-      let { showDismiss, showForget } =
-        this.#autofillDismissContextMenuVisibility();
-      separator.hidden = !showDismiss && !showForget;
-      dismiss.hidden = !showDismiss;
-      forget.hidden = !showForget;
+        fragment.append(separator, dismiss, forget);
+        return fragment;
+      },
+      onShowing: (input, [separator, dismiss, forget]) => {
+        let { showDismiss, showForget } =
+          this.#autofillDismissContextMenuVisibility();
+        separator.hidden = !showDismiss && !showForget;
+        dismiss.hidden = !showDismiss;
+        forget.hidden = !showForget;
+      },
     });
   }
 
@@ -6023,6 +6083,9 @@ ${
    *  Urlbar state, and whether the selection is empty.
    */
   #maybeSelectAll() {
+    if (this.#isSmartbarMode) {
+      return;
+    }
     if (
       !this._preventClickSelectsAll &&
       this.#compositionState != UrlbarShared.COMPOSITION.COMPOSING &&
@@ -6172,10 +6235,6 @@ ${
   }
 
   _on_contextmenu(event) {
-    if (!this.#isSmartbarMode) {
-      this.addSearchEngineHelper.refreshContextMenu();
-    }
-
     // Context menu opened via keyboard shortcut.
     if (!event.button) {
       return;
@@ -6270,7 +6329,7 @@ ${
       case this: {
         this._mousedownOnUrlbarDescendant = true;
         if (
-          event.composedTarget != this.inputField &&
+          !this.#isInsideContainer(event.composedTarget, this.inputField) &&
           event.composedTarget != this._inputContainer
         ) {
           if (
@@ -6290,7 +6349,7 @@ ${
         // Keep the focus status, since the attribute may be changed
         // upon calling this.focus().
         const hasFocus = this.hasAttribute("focused");
-        if (event.composedTarget != this.inputField) {
+        if (!this.#isInsideContainer(event.composedTarget, this.inputField)) {
           this.focus();
         }
 
@@ -6301,7 +6360,7 @@ ${
 
         // Clear any previous selection unless we are focused, to ensure it
         // doesn't affect drag selection.
-        if (this.focusedViaMousedown) {
+        if (this.focusedViaMousedown && !this.#isSmartbarMode) {
           this.setSelectionRange(0, 0);
         }
 
@@ -7708,13 +7767,19 @@ class CopyCutController {
  *
  * Note: setEnginesFromBrowser must be invoked from the outside when the
  *       page provided engines list changes.
- *       refreshContextMenu must be invoked when the context menu is opened.
  */
 class AddSearchEngineHelper {
   /**
    * @type {UrlbarSearchOneOffs}
    */
   shortcutButtons;
+
+  /**
+   * The engines the page offers, empty until OpenSearchManager reports any.
+   *
+   * @type {object[]}
+   */
+  engines = [];
 
   /**
    * @param {SmartbarInput} input The parent SmartbarInput.
@@ -7761,11 +7826,12 @@ class AddSearchEngineHelper {
   }
 
   _createMenuitem(engine, index) {
-    let elt = this.input.document.createXULElement("menuitem");
+    let doc = this.input.ownerDocument;
+    let elt = doc.createXULElement("menuitem");
     elt.setAttribute("anonid", `add-engine-${index}`);
     elt.classList.add("menuitem-iconic");
     elt.classList.add("context-menu-add-engine");
-    this.input.document.l10n.setAttributes(elt, "search-one-offs-add-engine", {
+    doc.l10n.setAttributes(elt, "search-one-offs-add-engine", {
       engineName: engine.title,
     });
     elt.setAttribute("uri", engine.uri);
@@ -7779,45 +7845,60 @@ class AddSearchEngineHelper {
   }
 
   _createMenu(engine) {
-    let elt = this.input.document.createXULElement("menu");
+    let doc = this.input.ownerDocument;
+    let elt = doc.createXULElement("menu");
     elt.setAttribute("anonid", "add-engine-menu");
     elt.classList.add("menu-iconic");
     elt.classList.add("context-menu-add-engine");
-    this.input.document.l10n.setAttributes(
-      elt,
-      "search-one-offs-add-engine-menu"
-    );
+    doc.l10n.setAttributes(elt, "search-one-offs-add-engine-menu");
     if (engine.icon) {
       elt.setAttribute("image", ChromeUtils.encodeURIForSrcset(engine.icon));
     }
-    let popup = this.input.document.createXULElement("menupopup");
+    let popup = doc.createXULElement("menupopup");
     elt.appendChild(popup);
     return elt;
   }
 
+  /**
+   * The items this helper has put in the context menu, after its separator.
+   *
+   * @type {Element[]}
+   */
+  #contextItems = [];
+
+  /**
+   * Creates the separator the engine items go after. The context menu is shared
+   * with other inputs, so it's owned as part of this input's item set rather
+   * than looked up in the menu.
+   *
+   * @returns {Element}
+   *   The separator.
+   */
+  createContextSeparator() {
+    this.contextSeparator =
+      this.input.ownerDocument.createXULElement("menuseparator");
+    this.contextSeparator.setAttribute("anonid", "add-engine-separator");
+    this.contextSeparator.classList.add("menuseparator-add-engine");
+    this.contextSeparator.collapsed = true;
+    return this.contextSeparator;
+  }
+
+  /**
+   * Rebuilds the engine items.
+   *
+   * @returns {Element[]}
+   *   The separator and the items, for the item set to claim.
+   */
   refreshContextMenu() {
     let engines = this.engines;
-    let contextMenu = this.input.querySelector("moz-input-box").menupopup;
-
-    // Certain operations, like customization, destroy and recreate widgets,
-    // so we cannot rely on cached elements.
-    if (!contextMenu.querySelector(".menuseparator-add-engine")) {
-      this.contextSeparator =
-        this.input.document.createXULElement("menuseparator");
-      this.contextSeparator.setAttribute("anonid", "add-engine-separator");
-      this.contextSeparator.classList.add("menuseparator-add-engine");
-      this.contextSeparator.collapsed = true;
-      contextMenu.appendChild(this.contextSeparator);
-    }
 
     this.contextSeparator.collapsed = !engines.length;
     let curElt = this.contextSeparator;
     // Remove the previous items, if any.
-    for (let elt = curElt.nextElementSibling; elt; ) {
-      let nextElementSibling = elt.nextElementSibling;
+    for (let elt of this.#contextItems) {
       elt.remove();
-      elt = nextElementSibling;
     }
+    this.#contextItems = [];
 
     // If the page provides too many engines, we only show a single menu entry
     // with engines in a submenu.
@@ -7827,6 +7908,7 @@ class AddSearchEngineHelper {
       // choice here.
       let elt = this._createMenu(engines[0]);
       this.contextSeparator.insertAdjacentElement("afterend", elt);
+      this.#contextItems.push(elt);
       curElt = elt.lastElementChild;
     }
 
@@ -7837,9 +7919,12 @@ class AddSearchEngineHelper {
         curElt.appendChild(elt);
       } else {
         curElt.insertAdjacentElement("afterend", elt);
+        this.#contextItems.push(elt);
       }
       curElt = elt;
     }
+
+    return [this.contextSeparator, ...this.#contextItems];
   }
 
   async _onCommand(event) {

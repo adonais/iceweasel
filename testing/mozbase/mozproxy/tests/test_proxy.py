@@ -1,9 +1,12 @@
 #!/usr/bin/env python
+import json
 import os
+from contextlib import ExitStack
 from unittest import mock
 
 import mozinfo
 import mozunit
+import pytest
 import requests
 from mozproxy import get_playback
 from support import tempdir
@@ -218,6 +221,109 @@ def test_mitm_with_retry(*args):
     finally:
         playback.stop()
     cleanup()
+
+
+def test_mitm_direct_mode():
+    config = {
+        "playback_tool": "mitmproxy",
+        "playback_files": ["pageset.manifest"],
+        "playback_mode": "direct",
+        "playback_version": "12.2.1",
+        "platform": mozinfo.os,
+        "run_local": True,
+        "binary": "/tmp/chrome",
+        "app": "chrome",
+        "host": "127.0.0.1",
+    }
+
+    process = mock.Mock(pid=1234)
+    with tempdir() as obj_path:
+        config["obj_path"] = obj_path
+        playback = get_playback(config)
+        playback.playback_files = [mock.Mock()]
+        with ExitStack() as stack:
+            stack.enter_context(
+                mock.patch(
+                    "mozproxy.backends.mitm.mitm.get_available_port",
+                    side_effect=[18080, 18443],
+                )
+            )
+            stack.enter_context(
+                mock.patch(
+                    "mozproxy.backends.mitm.mitm.Mitmproxy._build_replay_paths",
+                    return_value=["/tmp/fake.mp"],
+                )
+            )
+            stack.enter_context(
+                mock.patch(
+                    "mozproxy.backends.mitm.mitm.Mitmproxy.check_proxy",
+                    return_value=True,
+                )
+            )
+            process_handler = stack.enter_context(
+                mock.patch(
+                    "mozproxy.backends.mitm.mitm.ProcessHandler",
+                    return_value=process,
+                )
+            )
+            playback.start_mitmproxy("/tmp/mitmdump", "/tmp/chrome")
+
+    command = process_handler.call_args.args[0]
+    assert "--listen-port" not in command
+    assert "reverse:http://example.invalid@18080" in command
+    assert "reverse:https://example.invalid@18443" in command
+    assert "keep_host_header=true" in command
+    assert "alt_server_replay_ignore_port=true" in command
+
+
+def test_mitm_direct_mode_rejects_unsupported_version():
+    config = {
+        "playback_tool": "mitmproxy",
+        "playback_files": ["pageset.manifest"],
+        "playback_mode": "direct",
+        "playback_version": "6.0.2",
+        "platform": mozinfo.os,
+        "run_local": True,
+        "binary": "/tmp/chrome",
+        "app": "chrome",
+        "host": "127.0.0.1",
+    }
+
+    with tempdir() as obj_path:
+        config["obj_path"] = obj_path
+        with pytest.raises(
+            ValueError,
+            match=(
+                "Direct playback does not support mitmproxy 6.0.2; "
+                "supported versions: 11.0.0, 12.2.1"
+            ),
+        ):
+            get_playback(config)
+
+
+def test_mitm_direct_mode_firefox_policy():
+    config = {
+        "playback_tool": "mitmproxy",
+        "playback_files": ["pageset.manifest"],
+        "playback_mode": "direct",
+        "playback_version": "12.2.1",
+        "platform": mozinfo.os,
+        "run_local": True,
+        "binary": "firefox",
+        "app": "firefox",
+        "host": "127.0.0.1",
+    }
+
+    with tempdir() as obj_path:
+        config["obj_path"] = obj_path
+        playback = get_playback(config)
+
+    playback.cert_path = "/tmp/mitmproxy-ca-cert.cer"
+    policies = json.loads(playback._policies_content())["policies"]
+    assert policies == {
+        "Certificates": {"Install": ["/tmp/mitmproxy-ca-cert.cer"]},
+        "Proxy": {"Mode": "none", "Locked": True},
+    }
 
 
 if __name__ == "__main__":

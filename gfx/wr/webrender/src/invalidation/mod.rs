@@ -17,20 +17,16 @@ use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
 use crate::space::SpaceMapper;
 use crate::util::MaxRect;
 
-/// Represents the dirty region of a tile cache picture, relative to a
-/// "visibility" spatial node. At the moment the visibility node is
-/// world space, but the plan is to switch to raster space.
-///
-/// The plan is to move away from these world space representation and
-/// compute dirty regions in raster space instead.
+/// Represents the dirty region of a tile cache picture, in the raster space of
+/// the surface the picture is drawn into.
 #[derive(Clone)]
 pub struct DirtyRegion {
     /// The overall dirty rect, a combination of dirty_rects
-    pub combined: VisRect,
+    pub combined: RasterRect,
 
-    /// The coordinate space used to do clipping, visibility, and
-    /// dirty rect calculations.
-    pub visibility_spatial_node: SpatialNodeIndex,
+    /// The raster node whose space `combined` is expressed in. This is also the
+    /// space clipping and visibility calculations use.
+    pub raster_spatial_node: SpatialNodeIndex,
     /// Spatial node of the picture this region represents.
     local_spatial_node: SpatialNodeIndex,
 }
@@ -38,12 +34,12 @@ pub struct DirtyRegion {
 impl DirtyRegion {
     /// Construct a new dirty region tracker.
     pub fn new(
-        visibility_spatial_node: SpatialNodeIndex,
+        raster_spatial_node: SpatialNodeIndex,
         local_spatial_node: SpatialNodeIndex,
     ) -> Self {
         DirtyRegion {
-            combined: VisRect::zero(),
-            visibility_spatial_node,
+            combined: RasterRect::zero(),
+            raster_spatial_node,
             local_spatial_node,
         }
     }
@@ -51,11 +47,11 @@ impl DirtyRegion {
     /// Reset the dirty regions back to empty
     pub fn reset(
         &mut self,
-        visibility_spatial_node: SpatialNodeIndex,
+        raster_spatial_node: SpatialNodeIndex,
         local_spatial_node: SpatialNodeIndex,
     ) {
-        self.combined = VisRect::zero();
-        self.visibility_spatial_node = visibility_spatial_node;
+        self.combined = RasterRect::zero();
+        self.raster_spatial_node = raster_spatial_node;
         self.local_spatial_node = local_spatial_node;
     }
 
@@ -67,15 +63,15 @@ impl DirtyRegion {
         spatial_tree: &SpatialTree,
     ) {
         debug_assert_ne!(
-            self.visibility_spatial_node,
+            self.raster_spatial_node,
             SpatialNodeIndex::INVALID,
             "dirty region used before being targeted for this frame",
         );
 
         let map_pic_to_raster = SpaceMapper::new_with_target(
-            self.visibility_spatial_node,
+            self.raster_spatial_node,
             self.local_spatial_node,
-            VisRect::max_rect(),
+            RasterRect::max_rect(),
             spatial_tree,
         );
 

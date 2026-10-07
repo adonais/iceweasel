@@ -1,0 +1,36 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that IME state is updated correctly after attaching/detaching EditContext to focused element</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div tabindex="0"></div>
+<script>
+'use strict';
+
+function checkIMEStatus(isEnabled, description) {
+  let expected = isEnabled
+   ? SpecialPowers.Ci.nsIDOMWindowUtils.IME_STATUS_ENABLED
+   : SpecialPowers.Ci.nsIDOMWindowUtils.IME_STATUS_DISABLED;
+  let got = SpecialPowers.wrap(window).windowUtils.IMEStatus;
+  is(got, expected, `IME should be ${isEnabled ? 'enabled' : 'disabled'} when ${description}`);
+}
+
+const host = document.querySelector('div');
+
+add_task(async () => {
+  await SimpleTest.promiseFocus();
+  host.focus();
+  checkIMEStatus(false, 'non-editable element is focused');
+  host.editContext = new EditContext();
+  checkIMEStatus(true, 'EditContext is attached to focused element');
+  host.editContext = null;
+  checkIMEStatus(false, 'EditContext is detached from focused element');
+});
+
+</script>
+</body>
+</html>

@@ -499,16 +499,8 @@ nsresult nsAppShellService::JustCreateTopWindow(
     widgetInitData.mHasRemoteContent = true;
   }
 
-#if defined(MOZ_WIDGET_GTK) || defined(XP_WIN)
-  // Windows/Gtk PIP window support. It's Chrome dialog window, always on top
-  // and without any bar.
-  uint32_t pipMask = nsIWebBrowserChrome::CHROME_ALWAYS_ON_TOP |
-                     nsIWebBrowserChrome::CHROME_OPENAS_CHROME |
-                     nsIWebBrowserChrome::CHROME_WINDOW_RESIZE;
-  uint32_t barMask = nsIWebBrowserChrome::CHROME_TOOLBAR |
-                     nsIWebBrowserChrome::CHROME_TITLEBAR;
-  if (widgetInitData.mWindowType == widget::WindowType::Dialog &&
-      ((aChromeMask & pipMask) == pipMask) && !(aChromeMask & barMask)) {
+#if defined(MOZ_WIDGET_GTK) || defined(XP_WIN) || defined(XP_MACOSX)
+  if (aChromeMask & nsIWebBrowserChrome::CHROME_MEDIA_PIP) {
     widgetInitData.mPiPType = mozilla::widget::PiPType::MediaPiP;
   }
 #endif

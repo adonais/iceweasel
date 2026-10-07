@@ -8,3 +8,15 @@ DevToolsModules(
 
 with Files("**"):
     BUG_COMPONENT = ("DevTools", "Source Editor")
+
+LICENSES += ["codemirror6"]
+LICENSES["codemirror6"].title = "CodeMirror 6 License"
+LICENSES["codemirror6"].text = "LICENSE-NOTICE.txt"
+LICENSES["codemirror6"].spdx = "MIT"
+LICENSES["codemirror6"].notice = """
+<p>This license applies to all files in <code>devtools/client/shared/sourceeditor/codemirror6</code></p>
+"""
+
+LICENSED_UNDER += [
+    "codemirror6",
+]

@@ -5,6 +5,7 @@
 cmake_minimum_required( VERSION 3.16 )
 project ( YUV C CXX )	# "C" is required even for C++ projects
 option( UNIT_TEST "Built unit tests" OFF )
+option( LIBYUV_DISABLE_JPEG "Disable JPEG support" OFF )
 
 include(CheckCSourceCompiles)
 
@@ -24,10 +25,10 @@ set ( ly_common_source_files
   ${ly_src_dir}/compare_common.cc
   ${ly_src_dir}/compare_gcc.cc
   ${ly_src_dir}/compare_win.cc
-  ${ly_src_dir}/convert_argb.cc
   ${ly_src_dir}/convert.cc
-  ${ly_src_dir}/convert_from_argb.cc
+  ${ly_src_dir}/convert_argb.cc
   ${ly_src_dir}/convert_from.cc
+  ${ly_src_dir}/convert_from_argb.cc
   ${ly_src_dir}/convert_jpeg.cc
   ${ly_src_dir}/convert_to_argb.cc
   ${ly_src_dir}/convert_to_i420.cc
@@ -35,26 +36,22 @@ set ( ly_common_source_files
   ${ly_src_dir}/mjpeg_decoder.cc
   ${ly_src_dir}/mjpeg_validate.cc
   ${ly_src_dir}/planar_functions.cc
+  ${ly_src_dir}/rotate.cc
   ${ly_src_dir}/rotate_any.cc
   ${ly_src_dir}/rotate_argb.cc
-  ${ly_src_dir}/rotate.cc
   ${ly_src_dir}/rotate_common.cc
   ${ly_src_dir}/rotate_gcc.cc
-  ${ly_src_dir}/rotate_lsx.cc
   ${ly_src_dir}/rotate_win.cc
   ${ly_src_dir}/row_any.cc
   ${ly_src_dir}/row_common.cc
   ${ly_src_dir}/row_gcc.cc
-  ${ly_src_dir}/row_lasx.cc
-  ${ly_src_dir}/row_lsx.cc
   ${ly_src_dir}/row_rvv.cc
   ${ly_src_dir}/row_win.cc
+  ${ly_src_dir}/scale.cc
   ${ly_src_dir}/scale_any.cc
   ${ly_src_dir}/scale_argb.cc
-  ${ly_src_dir}/scale.cc
   ${ly_src_dir}/scale_common.cc
   ${ly_src_dir}/scale_gcc.cc
-  ${ly_src_dir}/scale_lsx.cc
   ${ly_src_dir}/scale_rgb.cc
   ${ly_src_dir}/scale_rvv.cc
   ${ly_src_dir}/scale_uv.cc
@@ -65,8 +62,6 @@ file ( GLOB_RECURSE	ly_unittest_sources ${ly_tst_dir}/*.cc )
 list ( SORT			ly_unittest_sources )
 
 include_directories( BEFORE ${ly_inc_dir} )
-
-add_definitions(-DLIBYUV_UNBIASED_DATA)
 
 if(MSVC)
   add_definitions ( -D_CRT_SECURE_NO_WARNINGS )
@@ -119,12 +114,12 @@ if(NOT MSVC)
     target_compile_options(${ly_lib_name}_sve PRIVATE -march=armv8.5-a+i8mm+sve2)
     list(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_sve>)
 
-    set(OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-    set(OLD_CMAKE_TRY_COMPILE_TARGET_TYPE ${CMAKE_TRY_COMPILE_TARGET_TYPE})
-    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -march=armv9-a+i8mm+sme")
-    set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
     # Check whether the compiler can compile SME functions; this fails
     # with Clang for Windows.
+    set(OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+    set(OLD_CMAKE_TRY_COMPILE_TARGET_TYPE ${CMAKE_TRY_COMPILE_TARGET_TYPE})
+    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -march=armv8.5-a+i8mm+sme")
+    set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
     check_c_source_compiles("
 __arm_locally_streaming void func(void) { }
 int main(void) { return 0; }
@@ -138,10 +133,45 @@ int main(void) { return 0; }
         ${ly_src_dir}/rotate_sme.cc
         ${ly_src_dir}/row_sme.cc
         ${ly_src_dir}/scale_sme.cc)
-      target_compile_options(${ly_lib_name}_sme PRIVATE -march=armv9-a+i8mm+sme)
+      target_compile_options(${ly_lib_name}_sme PRIVATE -march=armv8.5-a+i8mm+sme)
       list(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_sme>)
     else()
       add_definitions(-DLIBYUV_DISABLE_SME)
+    endif()
+  endif()
+
+  if(arch_lowercase MATCHES "^riscv")
+    option(USE_RVV "Enable RISC-V Vector" ON)
+    if(USE_RVV)
+      if(NOT RISCV_COMPILER_FLAGS)
+        if(CMAKE_SIZEOF_VOID_P EQUAL 8 OR arch_lowercase STREQUAL "riscv64")
+          set(RISCV_COMPILER_FLAGS "-march=rv64gcv")
+        else()
+          set(RISCV_COMPILER_FLAGS "-march=rv32gcv")
+        endif()
+      endif()
+
+      include(CheckCSourceCompiles)
+      set(OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+      set(OLD_CMAKE_TRY_COMPILE_TARGET_TYPE ${CMAKE_TRY_COMPILE_TARGET_TYPE})
+      set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${RISCV_COMPILER_FLAGS}")
+      set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+      check_c_source_compiles("
+int main(void) { return 0; }
+      " CAN_COMPILE_RVV)
+      set(CMAKE_REQUIRED_FLAGS ${OLD_CMAKE_REQUIRED_FLAGS})
+      set(CMAKE_TRY_COMPILE_TARGET_TYPE ${OLD_CMAKE_TRY_COMPILE_TARGET_TYPE})
+
+      if(CAN_COMPILE_RVV)
+        if(NOT CMAKE_C_FLAGS MATCHES "-march=" AND NOT CMAKE_C_FLAGS MATCHES "-mcpu=")
+          set(CMAKE_C_FLAGS "${RISCV_COMPILER_FLAGS} -fno-vectorize -fno-slp-vectorize ${CMAKE_C_FLAGS}")
+          set(CMAKE_CXX_FLAGS "${RISCV_COMPILER_FLAGS} -fno-vectorize -fno-slp-vectorize ${CMAKE_CXX_FLAGS}")
+        endif()
+      else()
+        add_definitions(-DLIBYUV_DISABLE_RVV)
+      endif()
+    else()
+      add_definitions(-DLIBYUV_DISABLE_RVV)
     endif()
   endif()
 endif()
@@ -164,10 +194,21 @@ if(LOONGARCH64)
     return 0; }" SUPPORTS_LASX)
 
   if(SUPPORTS_LSX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mlsx")
+    # These kernels use only LSX (128-bit) instructions and must not be
+    # compiled with -mlasx, which would let the compiler emit 256-bit LASX
+    # code (e.g. for stack-array copies) and crash on LSX-only CPUs.
+    add_library(${ly_lib_name}_lsx OBJECT
+      ${ly_src_dir}/rotate_lsx.cc
+      ${ly_src_dir}/row_lsx.cc
+      ${ly_src_dir}/scale_lsx.cc)
+    target_compile_options(${ly_lib_name}_lsx PRIVATE -mlsx)
+    list(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_lsx>)
   endif()
   if(SUPPORTS_LASX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mlasx")
+    add_library(${ly_lib_name}_lasx OBJECT
+      ${ly_src_dir}/row_lasx.cc)
+    target_compile_options(${ly_lib_name}_lasx PRIVATE -mlasx)
+    list(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_lasx>)
   endif()
 endif()
 
@@ -194,11 +235,13 @@ target_link_libraries	( yuvconvert ${ly_lib_static} )
 add_executable      ( yuvconstants ${ly_base_dir}/util/yuvconstants.c )
 target_link_libraries  ( yuvconstants ${ly_lib_static} )
 
-find_package ( JPEG )
-if (JPEG_FOUND)
-  include_directories( ${JPEG_INCLUDE_DIR} )
-  target_link_libraries( ${ly_lib_shared} ${JPEG_LIBRARY} )
-  add_definitions( -DHAVE_JPEG )
+if (NOT LIBYUV_DISABLE_JPEG)
+  find_package ( JPEG )
+  if (JPEG_FOUND)
+    include_directories( ${JPEG_INCLUDE_DIR} )
+    target_link_libraries( ${ly_lib_shared} ${JPEG_LIBRARY} )
+    add_definitions( -DHAVE_JPEG )
+  endif()
 endif()
 
 if(UNIT_TEST)

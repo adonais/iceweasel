@@ -1364,8 +1364,8 @@ void nsCSSGradientRenderer::BuildWebRenderDisplayItems(
     aBuilder.PushLinearGradient(
         mozilla::wr::ToLayoutRect(gradientBounds),
         mozilla::wr::ToLayoutRect(clipBounds), aIsBackfaceVisible,
-        mozilla::wr::ToLayoutPoint(lineStart),
-        mozilla::wr::ToLayoutPoint(lineEnd), stops, extendMode,
+        mozilla::wr::ToLayoutVector2D(lineStart),
+        mozilla::wr::ToLayoutVector2D(lineEnd), stops, extendMode,
         mozilla::wr::ToLayoutSize(firstTileBounds.Size()),
         mozilla::wr::ToLayoutSize(tileSpacing));
   } else if (mGradient->IsRadial()) {
@@ -1375,7 +1375,7 @@ void nsCSSGradientRenderer::BuildWebRenderDisplayItems(
     aBuilder.PushRadialGradient(
         mozilla::wr::ToLayoutRect(gradientBounds),
         mozilla::wr::ToLayoutRect(clipBounds), aIsBackfaceVisible,
-        mozilla::wr::ToLayoutPoint(lineStart),
+        mozilla::wr::ToLayoutVector2D(lineStart),
         mozilla::wr::ToLayoutSize(gradientRadius), stops, extendMode,
         mozilla::wr::ToLayoutSize(firstTileBounds.Size()),
         mozilla::wr::ToLayoutSize(tileSpacing));
@@ -1384,7 +1384,7 @@ void nsCSSGradientRenderer::BuildWebRenderDisplayItems(
     aBuilder.PushConicGradient(
         mozilla::wr::ToLayoutRect(gradientBounds),
         mozilla::wr::ToLayoutRect(clipBounds), aIsBackfaceVisible,
-        mozilla::wr::ToLayoutPoint(gradientCenter), gradientAngle, stops,
+        mozilla::wr::ToLayoutVector2D(gradientCenter), gradientAngle, stops,
         extendMode, mozilla::wr::ToLayoutSize(firstTileBounds.Size()),
         mozilla::wr::ToLayoutSize(tileSpacing));
   }

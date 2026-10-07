@@ -223,9 +223,13 @@
   &:focus-within {
     background-color: var(--button-background-color-ghost-hover);
 
-    .recent-searches-row-time,
     .recent-searches-row-remove {
       opacity: 1;
+    }
+
+    .recent-searches-row-time {
+      opacity: 1;
+      position: static;
     }
   }
 
@@ -252,10 +256,11 @@
     gap: var(--space-small);
     inline-size: 100%;
     min-inline-size: 0;
+    position: relative;
   }
 }
 
-.recent-searches-row:has(.recent-searches-row-remove)
+.recent-searches-row:is(:hover, :focus-within):has(.recent-searches-row-remove)
 .recent-searches-row-search::part(moz-button-label) {
   padding-inline-end: calc(var(--button-size-icon-small) + var(--space-xsmall));
 }
@@ -278,4 +283,8 @@
   margin-inline-start: auto;
   color: var(--text-color-deemphasized);
   opacity: 0;
+  // 'absolute' prevents this element from truncating results before
+  // visible, but is still accessible for screen readers.
+  position: absolute;
+  inset-inline-end: 0;
 }

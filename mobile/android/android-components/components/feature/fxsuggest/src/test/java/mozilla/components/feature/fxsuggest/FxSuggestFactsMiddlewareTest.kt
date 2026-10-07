@@ -97,6 +97,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/impression",
                                     iabCategory = "22 - Shopping",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                             FxSuggestSuggestionProvider.MetadataKeys.CLICK_INFO to
                                 FxSuggestInteractionInfo.Amp(
@@ -105,6 +106,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/click",
                                     iabCategory = "22 - Shopping",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                         ),
                 ),
@@ -153,6 +155,7 @@ class FxSuggestFactsMiddlewareTest {
             assertEquals("https://example.com/impression", impressionInfo.reportingUrl)
             assertEquals("22 - Shopping", impressionInfo.iabCategory)
             assertEquals("c303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.contextId)
+            assertEquals("d303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.suggestionId)
 
             val position = requireNotNull(metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)
             assertEquals(2, position)
@@ -187,6 +190,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/impression",
                                     iabCategory = "22 - Shopping",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                             FxSuggestSuggestionProvider.MetadataKeys.CLICK_INFO to
                                 FxSuggestInteractionInfo.Amp(
@@ -195,6 +199,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/click",
                                     iabCategory = "22 - Shopping",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                         ),
                 ),
@@ -243,6 +248,7 @@ class FxSuggestFactsMiddlewareTest {
             assertEquals("https://example.com/impression", impressionInfo.reportingUrl)
             assertEquals("22 - Shopping", impressionInfo.iabCategory)
             assertEquals("c303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.contextId)
+            assertEquals("d303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.suggestionId)
 
             val position = requireNotNull(metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)
             assertEquals(2, position)
@@ -277,6 +283,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/impression",
                                     iabCategory = "22 - Shopping",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                             FxSuggestSuggestionProvider.MetadataKeys.CLICK_INFO to
                                 FxSuggestInteractionInfo.Amp(
@@ -285,6 +292,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/click",
                                     iabCategory = "22 - Shopping",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                         ),
                 ),
@@ -334,6 +342,7 @@ class FxSuggestFactsMiddlewareTest {
             assertEquals("https://example.com/impression", impressionInfo.reportingUrl)
             assertEquals("22 - Shopping", impressionInfo.iabCategory)
             assertEquals("c303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.contextId)
+            assertEquals("d303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.suggestionId)
 
             val position = requireNotNull(metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)
             assertEquals(2, position)
@@ -368,6 +377,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/impression",
                                     iabCategory = "22 - Shopping",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                             FxSuggestSuggestionProvider.MetadataKeys.CLICK_INFO to
                                 FxSuggestInteractionInfo.Amp(
@@ -376,6 +386,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/click",
                                     iabCategory = "22 - Shopping",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                         ),
                 ),
@@ -425,6 +436,7 @@ class FxSuggestFactsMiddlewareTest {
             assertEquals("https://example.com/impression", impressionInfo.reportingUrl)
             assertEquals("22 - Shopping", impressionInfo.iabCategory)
             assertEquals("c303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.contextId)
+            assertEquals("d303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.suggestionId)
 
             val position = requireNotNull(metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)
             assertEquals(2, position)
@@ -462,6 +474,7 @@ class FxSuggestFactsMiddlewareTest {
             assertEquals("https://example.com/click", clickInfo.reportingUrl)
             assertEquals("22 - Shopping", clickInfo.iabCategory)
             assertEquals("c303282d-f2e6-46ca-a04a-35d3d873712d", clickInfo.contextId)
+            assertEquals("d303282d-f2e6-46ca-a04a-35d3d873712d", clickInfo.suggestionId)
 
             val position = requireNotNull(metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)
             assertEquals(2, position)
@@ -489,6 +502,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/impression-1",
                                     iabCategory = "22 - Shopping",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                             FxSuggestSuggestionProvider.MetadataKeys.CLICK_INFO to
                                 FxSuggestInteractionInfo.Amp(
@@ -497,6 +511,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/click-1",
                                     iabCategory = "22 - Shopping",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                         ),
                 ),
@@ -512,6 +527,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/impression-2",
                                     iabCategory = "8 - Food & Drink",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                             FxSuggestSuggestionProvider.MetadataKeys.CLICK_INFO to
                                 FxSuggestInteractionInfo.Amp(
@@ -520,6 +536,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/click-2",
                                     iabCategory = "8 - Food & Drink",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                         ),
                 ),
@@ -568,6 +585,7 @@ class FxSuggestFactsMiddlewareTest {
             assertEquals("https://example.com/impression-1", impressionInfo.reportingUrl)
             assertEquals("22 - Shopping", impressionInfo.iabCategory)
             assertEquals("c303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.contextId)
+            assertEquals("d303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.suggestionId)
 
             val position = requireNotNull(metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)
             assertEquals(2, position)
@@ -607,6 +625,7 @@ class FxSuggestFactsMiddlewareTest {
             assertEquals("https://example.com/impression-2", impressionInfo.reportingUrl)
             assertEquals("8 - Food & Drink", impressionInfo.iabCategory)
             assertEquals("c303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.contextId)
+            assertEquals("d303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.suggestionId)
 
             val position = requireNotNull(metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)
             assertEquals(4, position)
@@ -641,6 +660,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/impression-1",
                                     iabCategory = "22 - Shopping",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                             FxSuggestSuggestionProvider.MetadataKeys.CLICK_INFO to
                                 FxSuggestInteractionInfo.Amp(
@@ -649,6 +669,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/click-1",
                                     iabCategory = "22 - Shopping",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                         ),
                 ),
@@ -664,6 +685,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/impression-2",
                                     iabCategory = "8 - Food & Drink",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                             FxSuggestSuggestionProvider.MetadataKeys.CLICK_INFO to
                                 FxSuggestInteractionInfo.Amp(
@@ -672,6 +694,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/click-2",
                                     iabCategory = "8 - Food & Drink",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                         ),
                 ),
@@ -721,6 +744,7 @@ class FxSuggestFactsMiddlewareTest {
             assertEquals("https://example.com/impression-1", impressionInfo.reportingUrl)
             assertEquals("22 - Shopping", impressionInfo.iabCategory)
             assertEquals("c303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.contextId)
+            assertEquals("d303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.suggestionId)
 
             val position = requireNotNull(metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)
             assertEquals(2, position)
@@ -760,6 +784,7 @@ class FxSuggestFactsMiddlewareTest {
             assertEquals("https://example.com/impression-2", impressionInfo.reportingUrl)
             assertEquals("8 - Food & Drink", impressionInfo.iabCategory)
             assertEquals("c303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.contextId)
+            assertEquals("d303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.suggestionId)
 
             val position = requireNotNull(metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)
             assertEquals(4, position)
@@ -794,6 +819,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/impression-1",
                                     iabCategory = "22 - Shopping",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                             FxSuggestSuggestionProvider.MetadataKeys.CLICK_INFO to
                                 FxSuggestInteractionInfo.Amp(
@@ -802,6 +828,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/click-1",
                                     iabCategory = "22 - Shopping",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                         ),
                 ),
@@ -817,6 +844,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/impression-2",
                                     iabCategory = "8 - Food & Drink",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                             FxSuggestSuggestionProvider.MetadataKeys.CLICK_INFO to
                                 FxSuggestInteractionInfo.Amp(
@@ -825,6 +853,7 @@ class FxSuggestFactsMiddlewareTest {
                                     reportingUrl = "https://example.com/click-2",
                                     iabCategory = "8 - Food & Drink",
                                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                                 ),
                         ),
                 ),
@@ -874,6 +903,7 @@ class FxSuggestFactsMiddlewareTest {
             assertEquals("https://example.com/impression-1", impressionInfo.reportingUrl)
             assertEquals("22 - Shopping", impressionInfo.iabCategory)
             assertEquals("c303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.contextId)
+            assertEquals("d303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.suggestionId)
 
             val position = requireNotNull(metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)
             assertEquals(2, position)
@@ -913,6 +943,7 @@ class FxSuggestFactsMiddlewareTest {
             assertEquals("https://example.com/impression-2", impressionInfo.reportingUrl)
             assertEquals("8 - Food & Drink", impressionInfo.iabCategory)
             assertEquals("c303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.contextId)
+            assertEquals("d303282d-f2e6-46ca-a04a-35d3d873712d", impressionInfo.suggestionId)
 
             val position = requireNotNull(metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)
             assertEquals(4, position)
@@ -950,6 +981,7 @@ class FxSuggestFactsMiddlewareTest {
             assertEquals("https://example.com/click-2", clickInfo.reportingUrl)
             assertEquals("8 - Food & Drink", clickInfo.iabCategory)
             assertEquals("c303282d-f2e6-46ca-a04a-35d3d873712d", clickInfo.contextId)
+            assertEquals("d303282d-f2e6-46ca-a04a-35d3d873712d", clickInfo.suggestionId)
 
             val position = requireNotNull(metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)
             assertEquals(4, position)

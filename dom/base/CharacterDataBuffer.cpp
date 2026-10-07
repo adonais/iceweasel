@@ -542,3 +542,33 @@ bool CharacterDataBuffer::BufferEquals(
 
   return true;
 }
+
+bool CharacterDataBuffer::Equals(const nsAString& aString) const {
+  const uint32_t length = GetLength();
+  if (!length) {
+    return aString.IsEmpty();
+  }
+  if (length != aString.Length()) {
+    return false;
+  }
+  if (Is2b()) {
+    return aString.Equals(nsDependentSubstring(Get2b(), length));
+  }
+  return aString.Equals(
+      NS_ConvertASCIItoUTF16(nsDependentCSubstring(Get1b(), length)));
+}
+
+bool CharacterDataBuffer::Equals(const nsACString& aString) const {
+  const uint32_t length = GetLength();
+  if (!length) {
+    return aString.IsEmpty();
+  }
+  if (length != aString.Length()) {
+    return false;
+  }
+  if (!Is2b()) {
+    return aString.Equals(nsDependentCSubstring(Get1b(), length));
+  }
+  NS_ConvertASCIItoUTF16 string(aString);
+  return string.Equals(nsDependentSubstring(Get2b(), length));
+}

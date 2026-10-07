@@ -4,9 +4,8 @@
 
 #include "Win32SerialParityCheckStream.h"
 
-#include <windows.h>
-
 #include "SerialLogging.h"
+#include "Win32SerialOverlappedIO.h"
 #include "nsError.h"
 #include "nsStreamUtils.h"
 
@@ -25,11 +24,10 @@ void Win32SerialParityCheckStream::CheckForParityError() {
   if (MOZ_UNLIKELY(mParityErrorLatched)) {
     return;
   }
-  DWORD errors = 0;
-  if (ClearCommError(mCommHandle.get(), &errors, nullptr) &&
-      (errors & CE_RXPARITY)) {
+  if (!Win32SerialOverlappedIO::SyncCheckParity(mCommHandle.get())) {
     MOZ_LOG(gWebSerialLog, LogLevel::Debug,
-            ("Win32SerialParityCheckStream[%p] detected CE_RXPARITY", this));
+            ("Win32SerialParityCheckStream[%p] detected SERIAL_ERROR_PARITY",
+             this));
     mParityErrorLatched = true;
   }
 }

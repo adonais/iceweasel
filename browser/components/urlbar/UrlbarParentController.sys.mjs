@@ -27,6 +27,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   BrowserSearchTelemetry:
     "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
+  ContainerCreationPanel:
+    "chrome://browser/content/usercontext/ContainerCreationPanel.mjs",
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
   Interactions: "moz-src:///browser/components/places/Interactions.sys.mjs",
   ProvidersManager:
@@ -565,7 +567,7 @@ export class UrlbarParentController {
 
     // For backspace-induced blocks, record the unblock delay: fast unblocks
     // suggest the original block was accidental.
-    if (backspaceBlock?.level === level) {
+    if (backspaceBlock) {
       Glean.urlbarAutofill.reintegrationAfterBackspace[
         level
       ].accumulateSingleSample(Date.now() - backspaceBlock.blockedAt);
@@ -872,9 +874,22 @@ export class UrlbarParentController {
    *
    * @param {string} paneID
    *   The preferences pane to open, per `openPreferences`.
+   * @param {object} [extraArgs]
+   *   Extra arguments, per `openPreferences`.
    */
-  openPreferences(paneID) {
-    this.browserWindow.openPreferences(paneID);
+  openPreferences(paneID, extraArgs) {
+    this.browserWindow.openPreferences(paneID, extraArgs);
+  }
+
+  /**
+   * Opens the panel that adds a container, anchored in the browser window for
+   * the same reason `openPreferences` is called here.
+   *
+   * @param {string} entrypoint
+   *   The UI entry point the request came from.
+   */
+  openContainerCreationPanel(entrypoint) {
+    lazy.ContainerCreationPanel.open(this.browserWindow, entrypoint);
   }
 
   /**
@@ -1619,6 +1634,10 @@ export class TelemetryEvent {
       "tabswitch",
       "focus",
     ];
+    if (this._controller.sapName === "smartbar") {
+      // The smartbar CTA can start a session when the input is not focused.
+      validEvents.push("aiwindow-input-cta:on-action");
+    }
     if (!validEvents.includes(event.type)) {
       console.error("Can't start recording from event type: ", event.type);
       return;

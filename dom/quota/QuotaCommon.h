@@ -1538,13 +1538,13 @@ auto HandleCustomRetVal(const char (&aFunc)[NFunc], const char (&aExpr)[NExpr],
   using CustomRetVal = CustomRetVal_;
   CustomRetVal& aCustomRetVal = aCustomRetVal_;
 #endif
-  if constexpr (std::is_invocable<CustomRetVal, const char[NFunc],
-                                  const char[NExpr]>::value) {
+  if constexpr (std::is_invocable_v<CustomRetVal, const char[NFunc],
+                                    const char[NExpr]>) {
     return std::forward<CustomRetVal>(aCustomRetVal)(aFunc, aExpr);
-  } else if constexpr (std::is_invocable<CustomRetVal, const char[NFunc],
-                                         const T&>::value) {
+  } else if constexpr (std::is_invocable_v<CustomRetVal, const char[NFunc],
+                                           const T&>) {
     return aCustomRetVal(aFunc, aRv);
-  } else if constexpr (std::is_invocable<CustomRetVal, const T&>::value) {
+  } else if constexpr (std::is_invocable_v<CustomRetVal, const T&>) {
     return aCustomRetVal(aRv);
   } else {
     return std::forward<CustomRetVal>(aCustomRetVal);

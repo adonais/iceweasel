@@ -108,6 +108,10 @@ async function runManageTabsFlow(state, toolHandler) {
     return gatheredResult.earlyResult;
   }
 
+  if (toolHandler.action === GROUP_TABS) {
+    offerChatTab(gatheredResult, state.conversation);
+  }
+
   if (
     state.askConfirmation ||
     shouldRequireUserConfirmation(
@@ -186,6 +190,40 @@ async function runManageTabsFlow(state, toolHandler) {
       },
     },
   };
+}
+
+/**
+ * Adds the chat tab to the tabs the confirmation card offers, so the user can
+ * see that it is going into the group and can untick it.
+ *
+ * It is deliberately kept out of matchedTabs, which decides whether a card is
+ * shown at all, and out of the summary sent to the model, which is never told
+ * about chrome: URLs.
+ *
+ * @param {object} gathered - Result of gatherTabs, updated in place
+ * @param {ChatConversation} conversation - Conversation the request came from
+ */
+function offerChatTab(gathered, conversation) {
+  const chatTab = lazy.ToolUI.findChatTab(conversation?.id);
+  if (!chatTab) {
+    return;
+  }
+
+  const token = Services.uuid.generateUUID().toString();
+  gathered.tabKeyByToken.set(token, chatTab.permanentKey);
+  gathered.tabs.push({
+    token,
+    url: chatTab.linkedBrowser?.currentURI?.spec ?? "",
+    title: sanitizeUntrustedContent(chatTab.label),
+    userContextId: chatTab.userContextId,
+    pinned: chatTab.pinned,
+    selected: chatTab.documentGlobal?.gBrowser?.selectedTab === chatTab,
+    iconSrc: "",
+    checked: true,
+    // Lets createTabGroup tell this row apart from the tabs the user asked
+    // for, so it can avoid making a group out of the chat tab alone.
+    isChatTab: true,
+  });
 }
 
 async function gatherTabs(validUrls, baseTelemetryInfo) {

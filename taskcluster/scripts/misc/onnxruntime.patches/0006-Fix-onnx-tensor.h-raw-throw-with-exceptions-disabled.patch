@@ -1,0 +1,62 @@
+From 994a445ee613f9fb620469976e6912555cb8e368 Mon Sep 17 00:00:00 2001
+From: Ryan VanderMeulen <rvandermeulen@mozilla.com>
+Date: Sun, 26 Jul 2026 23:32:10 -0400
+Subject: [PATCH 6/7] Fix onnx tensor.h raw throw with exceptions disabled
+
+onnx v1.22.0 refactored Tensor::elem_num() and Tensor::size_from_dim() to use
+safe_dim_product() with an error-callback lambda that calls raw
+'throw tensor_error(msg)', bypassing onnx's own ONNX_THROW_EX macro. That
+breaks ONNX_NO_EXCEPTIONS builds. Route both through the existing [[noreturn]]
+throw_tensor_error() helper, which honours ONNX_NO_EXCEPTIONS.
+
+This appends to onnxruntime's own cmake/patches/onnx/onnx.patch, which it
+applies to the onnx dependency at configure time.
+
+The std::string local is required: v1.22.0 declares throw_tensor_error() as
+taking a non-const std::string&, so a const char* cannot bind to it directly.
+Newer onnx takes a const reference and allows a one-liner.
+
+Filed upstream as https://github.com/onnx/onnx/issues/8219, fixed by
+https://github.com/onnx/onnx/pull/8220. Drop this patch once a release with the
+PR is picked up by onnxruntime.
+---
+ cmake/patches/onnx/onnx.patch | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+diff --git a/cmake/patches/onnx/onnx.patch b/cmake/patches/onnx/onnx.patch
+index acd5505..c173312 100644
+--- a/cmake/patches/onnx/onnx.patch
++++ b/cmake/patches/onnx/onnx.patch
+@@ -46,3 +46,29 @@ index 3887169..8432613 100644
+          .SetDoc(GroupNormalization_ver18_doc)
+          .Attr("epsilon", "The epsilon value to use to avoid division by zero.", AttributeProto::FLOAT, 1e-5f)
+          .Attr(
++diff --git a/onnx/common/tensor.h b/onnx/common/tensor.h
++--- a/onnx/common/tensor.h
+++++ b/onnx/common/tensor.h
++@@ -51,14 +51,20 @@
++   /// if tensor is a scalar, the sizes is empty, but the element number is actually 1.
++   /// size_from_dim() cannot handle this case, while elem_num() handles it correctly
++   int64_t elem_num() const {
++-    return safe_dim_product(sizes_, [](const char* msg) { throw tensor_error(msg); });
+++    return safe_dim_product(sizes_, [](const char* msg) {
+++      std::string error_msg(msg);
+++      throw_tensor_error(error_msg);
+++    });
++   }
++   int64_t size_from_dim(int dim) const {
++     if (dim < 0) {
++       dim += static_cast<int>(sizes_.size());
++     }
++     ONNX_ASSERT(dim >= 0 && (size_t)dim < sizes_.size())
++-    return safe_dim_product(sizes_.begin() + dim, sizes_.end(), [](const char* msg) { throw tensor_error(msg); });
+++    return safe_dim_product(sizes_.begin() + dim, sizes_.end(), [](const char* msg) {
+++      std::string error_msg(msg);
+++      throw_tensor_error(error_msg);
+++    });
++   }
++ 
++   int32_t elem_type() const {
+-- 
+2.55.0
+

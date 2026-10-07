@@ -55,8 +55,8 @@ def main(output, annotations_path):
         output.write(
             f'#[allow(non_upper_case_globals)] pub const {name}: Annotation = convert!({namespace}::{metric} = {conversion}("{name}"{args}));\n'
         )
-        names.append(name)
+        names.append(f"&{name}")
 
     names = ",".join(names)
 
-    output.write(f"pub const ANNOTATIONS: &[Annotation] = &[{names}];\n")
+    output.write(f"pub const ANNOTATIONS: &[&'static Annotation] = &[{names}];\n")

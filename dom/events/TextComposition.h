@@ -19,8 +19,6 @@
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
 
-class nsRange;
-
 struct CharacterDataChangeInfo;
 
 namespace mozilla {

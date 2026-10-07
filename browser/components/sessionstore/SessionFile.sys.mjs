@@ -262,6 +262,7 @@ var SessionFileInternal = {
             loadfail_reason:
               "Wrong format/version: " + JSON.stringify(parsed.version) + ".",
           });
+          corrupted = true;
           continue;
         }
         result = {
@@ -338,6 +339,7 @@ var SessionFileInternal = {
             loadfail_reason: ` ${ex.name}: Corrupt session file (invalid JSON found)`,
           });
         } else {
+          corrupted = true;
           lazy.sessionStoreLogger.error(
             `Unexpected error when reading session file: ${key}`,
             ex

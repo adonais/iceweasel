@@ -147,6 +147,14 @@ describe("Privacy widget", () => {
     );
   });
 
+  it("names the context menu button for screen readers", () => {
+    const { container } = renderPrivacy();
+    const menuButton = container.querySelector(".privacy-context-menu-button");
+    expect(menuButton.getAttribute("data-l10n-id")).toBe(
+      "newtab-privacy-widget-menu-button"
+    );
+  });
+
   it("fires widgets_impression once when the widget scrolls into view", () => {
     // beforeEach installs a firing IntersectionObserver, so the hook's
     // impression goes out on observe. This is the trigger the impression-time
@@ -1055,50 +1063,6 @@ describe("Privacy widget celebration", () => {
     expect(container.querySelector(".privacy-count-number").textContent).toBe(
       "100"
     );
-  });
-
-  it("hides the animating count from AT and exposes a stable one", () => {
-    const { container } = renderPrivacy(
-      jest.fn(),
-      {},
-      stateWithMessage(
-        { variant: "blank", celebration: anAward(100, 137) },
-        137
-      )
-    );
-
-    const visible = container.querySelector(".privacy-count-number");
-    const accessible = container.querySelector(".privacy-count-number-a11y");
-
-    expect(visible.getAttribute("aria-hidden")).toBe("true");
-    expect(visible.textContent).toBe("100");
-    // Mid-animation the visible number is stale; AT still gets the true count.
-    expect(accessible.textContent).toBe("137");
-    expect(accessible.getAttribute("aria-hidden")).toBeNull();
-  });
-
-  it("keeps the accessible count capped in step with the visible one", () => {
-    const { container } = renderPrivacy(
-      jest.fn(),
-      {},
-      stateWithMessage(
-        {
-          variant: "tip",
-          messageId: "newtab-privacy-message-daily-cap",
-          category: "dailyCap",
-          countCeiling: 100,
-          celebration: anAward(100, 137),
-        },
-        137
-      )
-    );
-
-    expect(container.querySelector(".privacy-count-number").textContent).toBe(
-      "100+"
-    );
-    expect(
-      container.querySelector(".privacy-count-number-a11y").textContent
-    ).toBe("100+");
   });
 
   it("plays the celebration when the feed awards one", () => {

@@ -28,6 +28,9 @@ const RESULT_MENU_COMMANDS = {
   MANAGE: "manage",
 };
 
+// The entry point the container menu items report to telemetry.
+const CONTAINER_SOURCE = "urlbar_result_context_menu";
+
 const getBoundsWithoutFlushing = UrlbarShared.getBoundsWithoutFlushing;
 
 // Used to get a unique id to use for row elements, it wraps at 9999, that
@@ -650,6 +653,7 @@ export class UrlbarView {
 
   clear() {
     this.#rows.textContent = "";
+    this.#rows.toggleAttribute("actionmode", false);
     this.input.toggleAttribute("noresults", true);
     this.clearSelection();
     this.visibleResults = [];
@@ -967,14 +971,22 @@ export class UrlbarView {
       return;
     }
 
-    // Search mode is active.  If the one-offs should be shown, make sure they
-    // are enabled and show the view.
+    // Search mode is active. Without results the view has nothing to show but
+    // the one-offs, so open it only when they will show.
+    let oneOffs = this.oneOffSearchButtons;
     let openPanelInstance = (this.#openPanelInstance = {});
-    this.oneOffSearchButtons?.willHide().then(willHide => {
-      if (!willHide && openPanelInstance == this.#openPanelInstance) {
-        this.oneOffSearchButtons.enable(true);
-        this.#openPanel();
+    (oneOffs?.willHide() ?? Promise.resolve(true)).then(willHide => {
+      if (openPanelInstance != this.#openPanelInstance) {
+        return;
       }
+      if (willHide) {
+        if (this.isOpen) {
+          this.close();
+        }
+        return;
+      }
+      oneOffs.enable(true);
+      this.#openPanel();
     });
   }
 
@@ -1141,18 +1153,21 @@ export class UrlbarView {
     rowToRemove.remove();
     this.#updateIndices();
 
-    if (!updateSelection) {
-      return;
+    if (updateSelection) {
+      // Select the row that shifted into the removed row's position, clamping
+      // to the last remaining row when the last row was removed. A negative
+      // index clears the selection, which resets the input value when no
+      // results remain.
+      let newSelectionIndex = Math.min(
+        removedIndex,
+        this.#rows.children.length - 1
+      );
+      this.selectedRowIndex = newSelectionIndex;
     }
-    // Select the row that shifted into the removed row's position, clamping to
-    // the last remaining row when the last row was removed. A negative index
-    // clears the selection, which resets the input value when no results
-    // remain.
-    let newSelectionIndex = Math.min(
-      removedIndex,
-      this.#rows.children.length - 1
-    );
-    this.selectedRowIndex = newSelectionIndex;
+
+    if (!this.#rows.children.length) {
+      this.close();
+    }
   }
 
   openResultMenu(result, anchor) {
@@ -2084,10 +2099,7 @@ export class UrlbarView {
       return true;
     }
 
-    if (
-      !!this.#getResultMenuCommands(newResult) !=
-      item._buttons.has("result-menu")
-    ) {
+    if (this.#hasMenuButton(newResult) != item._buttons.has("result-menu")) {
       return true;
     }
 
@@ -2149,7 +2161,7 @@ export class UrlbarView {
       item._buttons.get("tip").textContent = result.payload.buttonText;
     }
 
-    let hasResultMenu = !!this.#getResultMenuCommands(result);
+    let hasResultMenu = this.#hasMenuButton(result);
     item.toggleAttribute("has-menu-button", hasResultMenu);
     if (hasResultMenu) {
       this.#addRowButton(item, {
@@ -4162,6 +4174,36 @@ export class UrlbarView {
 
   /**
    * @param {UrlbarResult} result
+   *   The result to check.
+   * @returns {boolean}
+   *   Whether the result's row shows a menu button. The heuristic result shows
+   *   one only for its own commands, so that the first Tab press moves to the
+   *   second row.
+   */
+  #hasMenuButton(result) {
+    return (
+      (!result.heuristic && this.#canOpenInNewTarget(result)) ||
+      !!this.#getResultMenuCommands(result)
+    );
+  }
+
+  /**
+   * @param {UrlbarResult} result
+   *   The result to check.
+   * @returns {boolean}
+   *   Whether the result's menu offers to open it in a new tab or window.
+   */
+  #canOpenInNewTarget(result) {
+    return (
+      UrlbarPrefs.get("contextMenu.featureGate") &&
+      this.input.handlesOpenInCommands &&
+      result.type != UrlbarShared.RESULT_TYPE.TAB_SWITCH &&
+      !!UrlbarShared.getLoadRequestFromResult(result)
+    );
+  }
+
+  /**
+   * @param {UrlbarResult} result
    *   The result to get menu commands for.
    * @returns {?UrlbarResultCommand[]}
    *   Everything the result's menu shows, null if it has nothing to show. The
@@ -4171,11 +4213,7 @@ export class UrlbarView {
    */
   #getMenuCommands(result) {
     let commands = this.#getResultMenuCommands(result);
-    if (
-      !UrlbarPrefs.get("contextMenu.featureGate") ||
-      !this.input.handlesOpenInCommands ||
-      !UrlbarShared.getLoadRequestFromResult(result)
-    ) {
+    if (!this.#canOpenInNewTarget(result)) {
       return commands;
     }
     let openInCommands = this.#openInCommands;
@@ -4188,8 +4226,7 @@ export class UrlbarView {
    * @param {UrlbarResult} result
    *   The result to get menu commands for.
    * @returns {Array}
-   *   Array of the result's own menu commands, null if there are none. This
-   *   also decides whether the result's row gets a three-dot button.
+   *   Array of the result's own menu commands, null if there are none.
    */
   #getResultMenuCommands(result) {
     if (this.#resultMenuCommands.has(result)) {
@@ -4279,6 +4316,67 @@ export class UrlbarView {
       }
       panel.appendChild(menuitem);
     }
+  }
+
+  /**
+   * Fills the submenu of the command that opens a result in a container tab
+   * with the containers, along with the items that add and manage them.
+   *
+   * @param {PanelList} panel
+   *   The submenu to fill.
+   */
+  async #populateContainerSubmenu(panel) {
+    let containers = await UrlbarContentUtils.getContainers();
+
+    panel.textContent = "";
+    for (let container of containers) {
+      let menuitem = this.document.createElement("panel-item");
+      menuitem.dataset.usercontextid = String(container.userContextId);
+      menuitem.textContent = container.name;
+      menuitem.style.setProperty(
+        "--panel-item-icon",
+        `url("${container.iconURL}")`
+      );
+      menuitem.style.setProperty("--panel-item-fill", container.colorCode);
+      panel.appendChild(menuitem);
+    }
+
+    panel.appendChild(this.document.createElement("hr"));
+    panel.appendChild(
+      this.#createContainerMenuItem(
+        "user-context-add-container2-panel-item",
+        () =>
+          this.controller.parentController.openContainerCreationPanel(
+            CONTAINER_SOURCE
+          )
+      )
+    );
+    panel.appendChild(
+      this.#createContainerMenuItem(
+        "user-context-manage-containers2-panel-item",
+        () =>
+          this.controller.parentController.openPreferences("paneContainers", {
+            urlParams: { entrypoint: CONTAINER_SOURCE },
+          })
+      )
+    );
+  }
+
+  /**
+   * Builds one of the container submenu's items that don't pick the result.
+   *
+   * @param {string} l10nId
+   *   The l10n id of the item's label.
+   * @param {Function} onPick
+   *   Called when the item is picked.
+   * @returns {Element}
+   *   The menu item.
+   */
+  #createContainerMenuItem(l10nId, onPick) {
+    let menuitem = this.document.createElement("panel-item");
+    this.document.l10n.setAttributes(menuitem, l10nId);
+    menuitem.addEventListener("click", onPick);
+    return menuitem;
   }
 
   // Event handlers below.
@@ -4610,12 +4708,7 @@ export class UrlbarView {
 
       this.#populateResultMenu({ commands });
     } else if (event.target.dataset.openIn == "container-tab") {
-      this.chromeWindow.createUserContextMenu(event, {
-        target: event.target.submenuPanel,
-        isContextMenu: true,
-        isPanelList: true,
-        containerSource: "urlbar_result_context_menu",
-      });
+      this.#populateContainerSubmenu(event.target.submenuPanel);
     }
   }
 

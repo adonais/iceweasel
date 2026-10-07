@@ -57,7 +57,8 @@ Each animation or transition is shown as a horizontal bar laid across the timeli
 - orange if a [@keyframes animation](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes) was used
 - green if the [Web Animations API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Animations_API) was used
 
-The bar contains a lightning bolt icon {{ image1 }} if the property was animated using the compositor thread (see more about the {ref}`cost of animating different CSS properties <performance-scenarios-animating_css_properties-css-property-cost>`).
+The bar contains a lightning bolt icon {{ image1 }} if the property was animated using the compositor thread (animating a property on the compositor thread is cheaper than animating one
+that forces layout or paint).
 
 The bar is shaped to reflect the easing effect used for the animation. In the example above you can see that the first bar is concave, representing ease-in, and the second is convex, representing ease-out.
 

@@ -33,6 +33,11 @@ export class CommandLineHandler {
    * @param {nsICommandLine} cmdLine The command line to handle.
    */
   handle(cmdLine) {
+    // Don't receive push messages in a child process
+    if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
+      return;
+    }
+
     if (!cmdLine.handleFlag("receive-push-messages", false)) {
       return;
     }

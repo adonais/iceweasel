@@ -11,6 +11,7 @@ import com.google.android.play.core.integrity.StandardIntegrityManager
 import com.google.android.play.core.integrity.model.StandardIntegrityErrorCode.INTEGRITY_TOKEN_PROVIDER_INVALID
 import mozilla.components.concept.integrity.IntegrityClient
 import mozilla.components.concept.integrity.IntegrityToken
+import mozilla.components.concept.integrity.RequestHashProvider
 import mozilla.components.lib.integrity.googleplay.GleanMetrics.Integrity
 import mozilla.components.lib.integrity.googleplay.ext.prepare
 
@@ -102,24 +103,6 @@ value class IntegrityConsumer(val value: String) {
     }
 }
 
-/**
- * Generates a hash value to uniquely identify a request.
- *
- * This functional interface allows the hash generation strategy to be customized or mocked, making it suitable for
- * dependency injection and testing.
- */
-fun interface RequestHashProvider {
-
-    /**
-     * Generates a new request hash.
-     *
-     * Implementations should return a value that is sufficiently unique for the lifetime and scope of a request.
-     *
-     * @return A newly generated hash string.
-     */
-    fun generateHash(): String
-}
-
 internal class GooglePlayTokenProviderFactory(
     integrityManagerProvider: IntegrityManagerProvider,
     private val projectNumber: Long,
@@ -174,7 +157,7 @@ internal constructor(
      * This method is safe to call multiple times and will only attempt provider creation once unless the provider is
      * refreshed.
      */
-    suspend fun warmUp(): Boolean {
+    override suspend fun warmUp(): Boolean {
         if (tokenProvider == null) {
             val start = currentTimeMillis()
             refreshTokenProvider()
@@ -203,9 +186,12 @@ internal constructor(
      * The returned view delegates to this client and shares its token-provider state, so consumers share the same Phase
      * 1 warmup.
      */
-    fun forConsumer(consumer: IntegrityConsumer): IntegrityClient = IntegrityClient {
-        request(consumer = consumer, retries = 0)
-    }
+    fun forConsumer(consumer: IntegrityConsumer): IntegrityClient =
+        object : IntegrityClient {
+            override suspend fun warmUp() = this@GooglePlayIntegrityClient.warmUp()
+
+            override suspend fun request() = request(consumer = consumer, retries = 0)
+        }
 
     private suspend fun request(consumer: IntegrityConsumer, retries: Int): Result<IntegrityToken> = runCatching {
         warmUp()

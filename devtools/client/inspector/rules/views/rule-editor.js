@@ -189,10 +189,9 @@ class RuleEditor extends EventEmitter {
       this.source = createChild(this.element, "div", {
         class: "ruleview-rule-source theme-link",
       });
-      this.source.addEventListener("click", this.#onSourceClick);
-
       const sourceLabel = this.doc.createElement("a");
       sourceLabel.classList.add("ruleview-rule-source-label");
+      sourceLabel.addEventListener("click", this.#onSourceClick);
       this.source.appendChild(sourceLabel);
     }
     this.#updateSourceLink();

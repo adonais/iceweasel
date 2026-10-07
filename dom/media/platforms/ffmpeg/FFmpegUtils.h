@@ -83,6 +83,21 @@ inline const int64_t& Duration(const T* aObject) {
 
 const char* AVCodecToString(const AVCodecID& aCodec);
 
+// ffmpeg/libavcodec/internal.h defines STRIDE_ALIGN for
+// avcodec_default_get_buffer2() according to used instructions set.
+// The recent biggest value is 64 for AVX-512.
+// We need to keep our internal align in sync with the biggest value
+// to make sure our custom get_buffer2() allocator works with any system
+// provided ffmpeg.
+
+inline int32_t GetBuffer2StrideAlign(int32_t aStride) {
+  // STRIDE_ALIGN from libavcodec/internal.h
+  static constexpr int32_t kStrideAlign = 64;
+  static constexpr int32_t kPlaneTrailingPadding = 16 + kStrideAlign - 1;
+
+  return (kPlaneTrailingPadding + aStride - 1) / aStride;
+}
+
 }  // namespace mozilla
 
 #endif  // DOM_MEDIA_PLATFORMS_FFMPEG_FFMPEGUTILS_H_

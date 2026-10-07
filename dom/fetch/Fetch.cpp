@@ -534,8 +534,19 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
     // Already aborted signal rejects immediately.
     JS::Rooted<JS::Value> reason(cx);
     signalImpl->GetReason(cx, &reason);
+    request->CancelBody(cx, IgnoredErrorResult(), reason);
     p->MaybeReject(reason);
     return p.forget();
+  }
+
+  nsCOMPtr<nsIInputStream> requestBody;
+  internalRequest->GetBody(getter_AddRefs(requestBody));
+  if (requestBody) {
+    request->SetBodyUsed(cx, aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+    request->FollowBodySignal();
   }
 
   JS::Realm* realm = JS::GetCurrentRealmOrNull(cx);
@@ -1179,6 +1190,12 @@ nsresult ExtractByteStreamFromBody(const fetch::OwningBodyInit& aBodyInit,
                                    nsCString& aContentTypeWithCharset,
                                    uint64_t& aContentLength) {
   MOZ_ASSERT(aStream);
+  MOZ_ASSERT(!aBodyInit.IsReadableStream(),
+             "ReadableStream bodies should be handled before calling "
+             "ExtractByteStreamFromBody");
+  if (aBodyInit.IsReadableStream()) {
+    return NS_ERROR_INVALID_ARG;
+  }
   nsAutoCString charset;
   aContentTypeWithCharset.SetIsVoid(true);
 
@@ -1232,62 +1249,12 @@ nsresult ExtractByteStreamFromBody(const fetch::BodyInit& aBodyInit,
                                    uint64_t& aContentLength) {
   MOZ_ASSERT(aStream);
   MOZ_ASSERT(!*aStream);
-
-  nsAutoCString charset;
-  aContentTypeWithCharset.SetIsVoid(true);
-
-  if (aBodyInit.IsArrayBuffer()) {
-    BodyExtractor<const ArrayBuffer> body(&aBodyInit.GetAsArrayBuffer());
-    return body.GetAsStream(aStream, &aContentLength, aContentTypeWithCharset,
-                            charset);
+  MOZ_ASSERT(!aBodyInit.IsReadableStream(),
+             "ReadableStream bodies should be handled before calling "
+             "ExtractByteStreamFromBody");
+  if (aBodyInit.IsReadableStream()) {
+    return NS_ERROR_INVALID_ARG;
   }
-
-  if (aBodyInit.IsArrayBufferView()) {
-    BodyExtractor<const ArrayBufferView> body(
-        &aBodyInit.GetAsArrayBufferView());
-    return body.GetAsStream(aStream, &aContentLength, aContentTypeWithCharset,
-                            charset);
-  }
-
-  if (aBodyInit.IsBlob()) {
-    BodyExtractor<const Blob> body(&aBodyInit.GetAsBlob());
-    return body.GetAsStream(aStream, &aContentLength, aContentTypeWithCharset,
-                            charset);
-  }
-
-  if (aBodyInit.IsFormData()) {
-    BodyExtractor<const FormData> body(&aBodyInit.GetAsFormData());
-    return body.GetAsStream(aStream, &aContentLength, aContentTypeWithCharset,
-                            charset);
-  }
-
-  if (aBodyInit.IsUSVString()) {
-    BodyExtractor<const nsAString> body(&aBodyInit.GetAsUSVString());
-    return body.GetAsStream(aStream, &aContentLength, aContentTypeWithCharset,
-                            charset);
-  }
-
-  if (aBodyInit.IsURLSearchParams()) {
-    BodyExtractor<const URLSearchParams> body(
-        &aBodyInit.GetAsURLSearchParams());
-    return body.GetAsStream(aStream, &aContentLength, aContentTypeWithCharset,
-                            charset);
-  }
-
-  MOZ_ASSERT_UNREACHABLE("Should never reach here");
-  return NS_ERROR_FAILURE;
-}
-
-nsresult ExtractByteStreamFromBody(const fetch::ResponseBodyInit& aBodyInit,
-                                   nsIInputStream** aStream,
-                                   nsCString& aContentTypeWithCharset,
-                                   uint64_t& aContentLength) {
-  MOZ_ASSERT(aStream);
-  MOZ_ASSERT(!*aStream);
-
-  // ReadableStreams should be handled by
-  // BodyExtractorReadableStream::GetAsStream.
-  MOZ_ASSERT(!aBodyInit.IsReadableStream());
 
   nsAutoCString charset;
   aContentTypeWithCharset.SetIsVoid(true);
@@ -1391,6 +1358,54 @@ template bool FetchBody<Request>::BodyUsed() const;
 template bool FetchBody<Response>::BodyUsed() const;
 
 template <class Derived>
+bool FetchBody<Derived>::IsBodyUnusable() const {
+  if (BodyUsed()) {
+    return true;
+  }
+  return mReadableStreamBody && mReadableStreamBody->Locked();
+}
+
+template bool FetchBody<Request>::IsBodyUnusable() const;
+
+template bool FetchBody<Response>::IsBodyUnusable() const;
+
+template <class Derived>
+void FetchBody<Derived>::CancelBody(JSContext* aCx, ErrorResult& aRv,
+                                    JS::Handle<JS::Value> aReason) {
+  MOZ_ASSERT(aCx);
+  MOZ_ASSERT(mGlobal->SerialEventTarget()->IsOnCurrentThread());
+
+  if (mReadableStreamBody) {
+    // Only a locked stream cannot be cancelled; a disturbed one still can.
+    if (!mReadableStreamBody->Locked()) {
+      RefPtr<ReadableStream> body = mReadableStreamBody;
+      // The returned promise only reports the cancel's completion, which
+      // nothing here waits on.
+      RefPtr<Promise> cancelPromise = body->Cancel(aCx, aReason, aRv);
+      if (cancelPromise) {
+        MOZ_ALWAYS_TRUE(cancelPromise->SetAnyPromiseIsHandled());
+      }
+    }
+  } else {
+    nsCOMPtr<nsIInputStream> stream;
+    DerivedClass()->GetBody(getter_AddRefs(stream));
+    if (stream) {
+      stream->Close();
+    }
+  }
+
+  // The body is spent even if the underlying source's cancel algorithm threw,
+  // so a failure reported through aRv still leaves it unusable.
+  mBodyUsed = true;
+}
+
+template void FetchBody<Request>::CancelBody(JSContext* aCx, ErrorResult& aRv,
+                                             JS::Handle<JS::Value> aReason);
+
+template void FetchBody<Response>::CancelBody(JSContext* aCx, ErrorResult& aRv,
+                                              JS::Handle<JS::Value> aReason);
+
+template <class Derived>
 void FetchBody<Derived>::SetBodyUsed(JSContext* aCx, ErrorResult& aRv) {
   MOZ_ASSERT(aCx);
   MOZ_ASSERT(mGlobal->SerialEventTarget()->IsOnCurrentThread());
@@ -1408,7 +1423,9 @@ void FetchBody<Derived>::SetBodyUsed(JSContext* aCx, ErrorResult& aRv) {
     if (mFetchStreamReader) {
       // Having FetchStreamReader means there's no nsIInputStream underlying it
       MOZ_ASSERT(!mReadableStreamBody->MaybeGetInputStreamIfUnread());
-      mFetchStreamReader->StartConsuming(aCx, mReadableStreamBody, aRv);
+      if (!mFetchStreamReader->IsConsuming()) {
+        mFetchStreamReader->StartConsuming(aCx, mReadableStreamBody, aRv);
+      }
       return;
     }
     // We should have nsIInputStream at this point as long as it's still
@@ -1447,7 +1464,7 @@ already_AddRefed<Promise> FetchBody<Derived>::ConsumeBody(
     return promise.forget();
   }
 
-  if (BodyUsed()) {
+  if (IsBodyUnusable()) {
     aRv.ThrowTypeError<MSG_FETCH_BODY_CONSUMED_ERROR>();
     return nullptr;
   }
@@ -1621,7 +1638,8 @@ void FetchBody<Derived>::SetReadableStreamBody(JSContext* aCx,
   MOZ_ASSERT(aBody);
   mReadableStreamBody = aBody;
 
-  RefPtr<AbortSignalImpl> signalImpl = DerivedClass()->GetSignalImpl();
+  RefPtr<AbortSignalImpl> signalImpl =
+      DerivedClass()->GetSignalImplToConsumeBody();
   if (!signalImpl) {
     return;
   }
@@ -1681,7 +1699,8 @@ already_AddRefed<ReadableStream> FetchBody<Derived>::GetBody(JSContext* aCx,
     }
   }
 
-  RefPtr<AbortSignalImpl> signalImpl = DerivedClass()->GetSignalImpl();
+  RefPtr<AbortSignalImpl> signalImpl =
+      DerivedClass()->GetSignalImplToConsumeBody();
   if (signalImpl) {
     if (signalImpl->Aborted()) {
       AbortStream(aCx, body, signalImpl, aRv);

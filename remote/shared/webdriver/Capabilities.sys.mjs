@@ -718,6 +718,11 @@ export class Capabilities extends Map {
             );
           }
           break;
+
+        case "moz:userContext":
+          throw new lazy.error.InvalidArgumentError(
+            `"${k}" is a readonly capability and cannot be requested`
+          );
       }
       capabilities.set(k, v);
     }
@@ -852,6 +857,11 @@ export class Capabilities extends Map {
           );
         }
         return value;
+
+      case "moz:userContext":
+        throw new lazy.error.InvalidArgumentError(
+          `"${name}" is a readonly capability and cannot be requested`
+        );
 
       default:
         lazy.assert.string(

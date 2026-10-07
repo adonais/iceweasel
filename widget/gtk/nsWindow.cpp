@@ -3256,10 +3256,12 @@ bool nsWindow::DispatchCommandEvent(nsAtom* aCommand) {
   return true;
 }
 
-bool nsWindow::DispatchContentCommandEvent(EventMessage aMsg) {
-  WidgetContentCommandEvent event(true, aMsg, this);
-  DispatchEvent(&event);
-  return true;
+Result<bool, nsresult> nsWindow::DispatchContentCommandEvent(
+    EventMessage aMsg) {
+  if (TextEventDispatcher* const dispatcher = GetTextEventDispatcher()) {
+    return dispatcher->DispatchContentCommandEvent(aMsg);
+  }
+  return Err(NS_ERROR_NOT_AVAILABLE);
 }
 
 WidgetEventTime nsWindow::GetWidgetEventTime(guint32 aEventTime) {
@@ -4019,7 +4021,10 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
       SetLastPointerDownEvent((GdkEvent*)aEvent);
       // check to see if we should rollup
       if (CheckForRollup(aEvent->x_root, aEvent->y_root, false, false)) {
-        return FALSE;
+        // Consume the press as the popup manager asked. TRUE also stops
+        // gtk_widget_real_touch_event() from replaying it as a button press
+        // that would reopen the popup (bug 2067688).
+        return TRUE;
       }
       msg = eTouchStart;
       break;
@@ -7575,11 +7580,11 @@ void nsWindow::InsertEmoji(RefPtr<nsWindow> aToplevelWindow) {
                          return;
                        }
                        LOGW("[%p] nsWindow::Emoji() insert_text", window);
-                       WidgetContentCommandEvent insertTextEvent(
-                           true, eContentCommandInsertText, window);
-                       NS_ConvertUTF8toUTF16 str(text);
-                       insertTextEvent.mString.emplace(str);
-                       window->DispatchEvent(&insertTextEvent);
+                       if (TextEventDispatcher* const dispatcher =
+                               window->GetTextEventDispatcher()) {
+                         (void)dispatcher->DispatchInsertTextCommandEvent(
+                             NS_ConvertUTF8toUTF16(text));
+                       }
                      }),
                      aToplevelWindow);
   }

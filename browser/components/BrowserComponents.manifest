@@ -105,13 +105,27 @@ category browser-window-sessionstore-initialized chrome://browser/content/browse
 category browser-window-sessionstore-initialized chrome://browser/content/sidebar/browser-sidebar.js SidebarController.startDelayedLoad
 category browser-window-sessionstore-initialized chrome://browser/content/browser.js#PanicButtonNotifier PanicButtonNotifier.init
 
+# browser-window-idle-tasks is invoked from the window's
+# _schedulePerWindowIdleTasks once all windows have been restored. Each consumer
+# runs in its own idle callback, and consumers are dropped if the window closes
+# before they run.
+category browser-window-idle-tasks chrome://browser/content/browser.js#gReduceMotionManager gReduceMotionManager.init
+category browser-window-idle-tasks chrome://browser/content/browser.js#Win7Features Win7Features.onOpenWindow
+category browser-window-idle-tasks chrome://browser/content/browser-sync.js gSync.init
+category browser-window-idle-tasks chrome://browser/content/browser-thumbnails.js gBrowserThumbnails.init
+category browser-window-idle-tasks chrome://browser/content/browser-gestureSupport.js#gGestureSupport gGestureSupport.init
+category browser-window-idle-tasks chrome://browser/content/browser-gestureSupport.js#gHistorySwipeAnimation gHistorySwipeAnimation.init
+category browser-window-idle-tasks moz-src:///browser/components/tabbrowser/NewTabPagePreloading.sys.mjs NewTabPagePreloading.maybeCreatePreloadedBrowser
+category browser-window-idle-tasks chrome://browser/content/browser-graphics-utils.js gGfxUtils.init
+category browser-window-idle-tasks chrome://browser/content/browser-profiles.js gProfiles.init
+category browser-window-idle-tasks moz-src:///browser/components/downloads/DownloadsCommon.sys.mjs DownloadsCommon.initializeForWindow
+
 category browser-window-location-change chrome://browser/content/browser-places.js BookmarkingUI.onLocationChange
 category browser-window-location-change chrome://browser/content/browser-sitePermissionPanel.js gPermissionPanel.onLocationChange
 category browser-window-location-change chrome://browser/content/browser-siteProtections.js gProtectionsHandler.onLocationChange
 category browser-window-location-change chrome://browser/content/browser-pageActions.js BrowserPageActions.onLocationChange
 category browser-window-location-change moz-src:///browser/components/urlbar/UrlbarProviderSearchTips.sys.mjs UrlbarProviderSearchTips.onLocationChange
 category browser-window-location-change moz-src:///browser/components/urlbar/ActionsProviderContextualSearch.sys.mjs ActionsProviderContextualSearch.onLocationChange
-category browser-window-location-change resource:///modules/asrouter/CFRPageActions.sys.mjs CFRPageActions.onLocationChange
 category browser-window-location-change resource:///actors/AboutReaderParent.sys.mjs AboutReaderParent.onLocationChange
 category browser-window-location-change resource://gre/actors/TranslationsParent.sys.mjs TranslationsParent.onLocationChange
 category browser-window-location-change moz-src:///toolkit/components/pictureinpicture/PictureInPicture.sys.mjs PictureInPicture.onLocationChange
@@ -137,6 +151,9 @@ category browser-window-unload chrome://browser/content/browser-fullScreenAndPoi
 category browser-window-unload chrome://browser/content/browser-addons.js#gExtensionsNotifications gExtensionsNotifications.uninit
 category browser-window-unload chrome://browser/content/browser-places.js#PlacesToolbarHelper PlacesToolbarHelper.uninit
 category browser-window-unload chrome://browser/content/browser-places.js#BookmarkingUI BookmarkingUI.uninit
+category browser-window-unload chrome://browser/content/browser-gestureSupport.js#gGestureSupport gGestureSupport.uninit
+category browser-window-unload chrome://browser/content/browser-gestureSupport.js#gHistorySwipeAnimation gHistorySwipeAnimation.uninit
+category browser-window-unload chrome://browser/content/browser-sync.js gSync.uninit
 
 # Teardown for `browser-window-delayed-startup` consumers. Fired only when the
 # window's delayed startup actually ran.
@@ -146,6 +163,8 @@ category browser-window-unload-delayed-startup chrome://browser/content/browser-
 category browser-window-unload-delayed-startup chrome://browser/content/tabbrowser/browser-fullZoom.js FullZoom.destroy
 category browser-window-unload-delayed-startup chrome://browser/content/browser.js BrowserOffline.uninit
 category browser-window-unload-delayed-startup chrome://browser/content/customizableui/panelUI.js PanelUI.uninit
+category browser-window-unload-delayed-startup chrome://browser/content/browser.js#Win7Features Win7Features.onCloseWindow
+category browser-window-unload-delayed-startup chrome://browser/content/browser-thumbnails.js gBrowserThumbnails.uninit
 
 # The category below is specific to Tabbrowser destruction. For consumers that need to uninitialize during
 # window unload, use 'browser-window-unload' instead.
@@ -182,13 +201,11 @@ category browser-idle-startup resource://gre/modules/RFPHelper.sys.mjs RFPHelper
 category browser-idle-startup resource://gre/modules/Blocklist.sys.mjs Blocklist.loadBlocklistAsync
 category browser-idle-startup resource://gre/modules/psm/RemoteSecuritySettings.sys.mjs RemoteSecuritySettings.init
 category browser-idle-startup moz-src:///browser/components/tabbrowser/TabUnloader.sys.mjs TabUnloader.init
-category browser-idle-startup resource:///modules/GenAI.sys.mjs GenAI.init
+category browser-idle-startup moz-src:///browser/components/genai/GenAI.sys.mjs GenAI.init
 category browser-idle-startup moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs QuickSuggest.init
 category browser-idle-startup moz-src:///browser/components/urlbar/UrlbarSearchTermsPersistence.sys.mjs UrlbarSearchTermsPersistence.init
 category browser-idle-startup moz-src:///browser/components/search/SERPCategorization.sys.mjs SERPCategorization.init
 category browser-idle-startup resource://gre/modules/ContentRelevancyManager.sys.mjs ContentRelevancyManager.init
-category browser-idle-startup chrome://global/content/ml/EngineProcess.sys.mjs EngineProcess.maybeReportNativeOnnxRuntimeAvailability
-category browser-idle-startup resource://gre/modules/ColorwayThemeMigration.sys.mjs ColorwayThemeMigration.maybeWarn
 category browser-idle-startup resource://gre/modules/AppServicesTracing.sys.mjs RustLogForwarder.init
 category browser-idle-startup moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs ContextualIdentityService.load
 #ifdef MOZ_UPDATER
@@ -197,11 +214,13 @@ category browser-idle-startup resource:///modules/UpdatePolicyEnforcer.sys.mjs U
 #endif
 #ifdef XP_WIN
 category browser-idle-startup resource:///modules/WindowsJumpLists.sys.mjs WinTaskbarJumpList.startup
+category browser-idle-startup resource://gre/modules/PushNotificationHelper.sys.mjs PushNotificationHelper.init
 #endif
 #ifdef MOZ_DEFAULT_BROWSER_AGENT
 category browser-idle-startup resource://gre/modules/DefaultAgentScheduler.sys.mjs DefaultAgentScheduler.maybeScheduleDefaultAgentTask
 #endif
 #if defined(XP_WIN) || defined(XP_MACOSX)
+category browser-idle-startup moz-src:///browser/components/defaultlaunchonlogin/DefaultLaunchOnLogin.sys.mjs DefaultLaunchOnLogin.maybeEnableOnFirstRun
 category browser-idle-startup moz-src:///browser/components/shell/StartupOSIntegration.sys.mjs StartupOSIntegration.onStartupIdle
 #endif
 

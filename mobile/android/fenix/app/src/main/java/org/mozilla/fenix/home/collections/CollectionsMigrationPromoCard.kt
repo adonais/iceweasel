@@ -21,13 +21,15 @@ import org.mozilla.fenix.theme.FirefoxTheme
 /**
  * Collections to tab groups migration card.
  *
- * @param onClick Invoked when the user clicks on the "View my tab groups" link.
  * @param modifier The [Modifier] to be applied to the [PromoCard].
+ * @param onClick Invoked when the user clicks on the "View my tab groups" link. When null, the link is not shown.
+ * @param onDismiss Invoked when the user clicks the close button. When null, the close button is not shown.
  */
 @Composable
 fun CollectionsMigrationPromoCard(
-    onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    onDismiss: (() -> Unit)? = null,
 ) {
     val linkText = stringResource(R.string.collections_migration_homepage_card_link)
 
@@ -36,12 +38,14 @@ fun CollectionsMigrationPromoCard(
         modifier = modifier,
         title = stringResource(R.string.collections_migration_homepage_banner_title),
         footer =
-            linkText to
-                LinkTextState(
-                    text = linkText,
-                    url = "",
-                    onClick = { onClick() },
-                ),
+            onClick?.let { onLinkClick ->
+                linkText to
+                    LinkTextState(
+                        text = linkText,
+                        url = "",
+                        onClick = { onLinkClick() },
+                    )
+            },
         illustration = {
             Image(
                 painter = painterResource(R.drawable.mozac_ic_kit_tab_groups),
@@ -54,6 +58,7 @@ fun CollectionsMigrationPromoCard(
                 backgroundColor = MaterialTheme.colorScheme.primaryContainer,
                 actionsTextColor = MaterialTheme.colorScheme.tertiary,
             ),
+        onDismiss = onDismiss,
     )
 }
 
@@ -62,5 +67,13 @@ fun CollectionsMigrationPromoCard(
 private fun CollectionsMigrationPromoCardPreview() {
     FirefoxTheme {
         CollectionsMigrationPromoCard(onClick = {})
+    }
+}
+
+@Composable
+@PreviewLightDark
+private fun CollectionsMigrationPromoCardWithCloseButtonPreview() {
+    FirefoxTheme {
+        CollectionsMigrationPromoCard(onDismiss = {})
     }
 }

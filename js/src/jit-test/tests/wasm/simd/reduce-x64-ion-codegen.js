@@ -9,25 +9,25 @@ ptest %xmm0, %xmm0
 setnz %al`],
      ['i8x16.all_true', `
 xor %eax, %eax
-pxor %xmm15, %xmm15
+xorps %xmm15, %xmm15
 pcmpeqb %xmm0, %xmm15
 ptest %xmm15, %xmm15
 setz %al`],
      ['i16x8.all_true', `
 xor %eax, %eax
-pxor %xmm15, %xmm15
+xorps %xmm15, %xmm15
 pcmpeqw %xmm0, %xmm15
 ptest %xmm15, %xmm15
 setz %al`],
      ['i32x4.all_true', `
 xor %eax, %eax
-pxor %xmm15, %xmm15
+xorps %xmm15, %xmm15
 pcmpeqd %xmm0, %xmm15
 ptest %xmm15, %xmm15
 setz %al`],
      ['i64x2.all_true', `
 xor %eax, %eax
-pxor %xmm15, %xmm15
+xorps %xmm15, %xmm15
 pcmpeqq %xmm0, %xmm15
 ptest %xmm15, %xmm15
 setz %al`]], {}

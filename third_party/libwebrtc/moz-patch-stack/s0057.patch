@@ -114,10 +114,10 @@ index 87974ada5c..d8543e0ba2 100644
    absl::InlinedVector<uint32_t, 4> new_continuous_temporal_units_;
  };
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index 8cdaad680b..fd3eda6ff2 100644
+index 542f30c2e3..955c4952d8 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
-@@ -119,6 +119,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
+@@ -122,6 +122,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
      uint32_t frames_decoded = 0;
      // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats-keyframesdecoded
      uint32_t key_frames_decoded = 0;
@@ -214,18 +214,18 @@ index 5ac8a77130..0b6b1ec6d7 100644
                                     int current_delay_ms,
                                     int target_delay_ms,
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index ea77f8c26e..c1d29d11d8 100644
+index bb4d720f31..359d18f533 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
-@@ -296,6 +296,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
+@@ -297,6 +297,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
      RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
      RtcpCnameCallback* rtcp_cname_callback,
      NackPeriodicProcessor* nack_periodic_processor,
 +    VideoStreamBufferControllerStatsObserver* vcm_receive_statistics,
      OnCompleteFrameCallback* complete_frame_callback,
      scoped_refptr<FrameDecryptorInterface> frame_decryptor,
-     scoped_refptr<FrameTransformerInterface> frame_transformer)
-@@ -340,6 +341,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
+     scoped_refptr<FrameTransformerInterface> frame_transformer,
+@@ -342,6 +343,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
                                              config_.rtp.nack,
                                              &rtcp_feedback_buffer_,
                                              &rtcp_feedback_buffer_)),
@@ -233,7 +233,7 @@ index ea77f8c26e..c1d29d11d8 100644
        packet_buffer_(kPacketBufferStartSize,
                       PacketBufferMaxSize(env_.field_trials())),
        reference_finder_(std::make_unique<RtpFrameReferenceFinder>()),
-@@ -1408,7 +1410,8 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
+@@ -1470,7 +1472,8 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
  
    if (seq_num != -1) {
      int64_t unwrapped_rtp_seq_num = rtp_seq_num_unwrapper_.Unwrap(seq_num);
@@ -244,7 +244,7 @@ index ea77f8c26e..c1d29d11d8 100644
    } else {
      RTC_LOG(LS_WARNING) << "Frame with id " << picture_id
 diff --git a/video/rtp_video_stream_receiver2.h b/video/rtp_video_stream_receiver2.h
-index 14f1193efc..0b87625938 100644
+index 9d06e4063d..cbff95ad3d 100644
 --- a/video/rtp_video_stream_receiver2.h
 +++ b/video/rtp_video_stream_receiver2.h
 @@ -70,6 +70,7 @@
@@ -263,7 +263,7 @@ index 14f1193efc..0b87625938 100644
        // The KeyFrameRequestSender is optional; if not provided, key frame
        // requests are sent via the internal RtpRtcp module.
        OnCompleteFrameCallback* complete_frame_callback,
-@@ -405,6 +407,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
+@@ -419,6 +421,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
    std::unique_ptr<LossNotificationController> loss_notification_controller_
        RTC_GUARDED_BY(worker_queue_);
  
@@ -272,22 +272,22 @@ index 14f1193efc..0b87625938 100644
    // h26x_packet_buffer_ is applicable to H.264 and H.265. For H.265 it is
    // always used but for H.264 it is only used if WebRTC-Video-H26xPacketBuffer
 diff --git a/video/video_receive_stream2.cc b/video/video_receive_stream2.cc
-index 6c84ded9a4..7b2020ac50 100644
+index ff1b240612..b96d027c49 100644
 --- a/video/video_receive_stream2.cc
 +++ b/video/video_receive_stream2.cc
-@@ -248,6 +248,7 @@ VideoReceiveStream2::VideoReceiveStream2(
+@@ -264,6 +264,7 @@ VideoReceiveStream2::VideoReceiveStream2(
                                   &stats_proxy_,
                                   &stats_proxy_,
                                   nack_periodic_processor,
 +                                 &stats_proxy_,
                                   this,  // OnCompleteFrameCallback
                                   std::move(config_.frame_decryptor),
-                                  std::move(config_.frame_transformer)),
+                                  std::move(config_.frame_transformer),
 diff --git a/video/video_stream_buffer_controller.cc b/video/video_stream_buffer_controller.cc
-index ee42713d73..373b0528cd 100644
+index e3fc32bc74..7032b727ca 100644
 --- a/video/video_stream_buffer_controller.cc
 +++ b/video/video_stream_buffer_controller.cc
-@@ -249,6 +249,7 @@ void VideoStreamBufferController::OnFrameReady(
+@@ -254,6 +254,7 @@ void VideoStreamBufferController::OnFrameReady(
  
    // Update stats.
    UpdateDroppedFrames();
@@ -295,7 +295,7 @@ index ee42713d73..373b0528cd 100644
    UpdateFrameBufferTimings(min_receive_time, now);
  
    std::unique_ptr<EncodedFrame> frame =
-@@ -318,6 +319,17 @@ void VideoStreamBufferController::UpdateDroppedFrames()
+@@ -323,6 +324,17 @@ void VideoStreamBufferController::UpdateDroppedFrames()
        buffer_->GetTotalNumberOfDroppedFrames();
  }
  
@@ -314,7 +314,7 @@ index ee42713d73..373b0528cd 100644
      Timestamp min_receive_time,
      Timestamp now) {
 diff --git a/video/video_stream_buffer_controller.h b/video/video_stream_buffer_controller.h
-index 6086ccdcf8..6407ceecf3 100644
+index 5ee3c1834c..2dc7599066 100644
 --- a/video/video_stream_buffer_controller.h
 +++ b/video/video_stream_buffer_controller.h
 @@ -62,6 +62,8 @@ class VideoStreamBufferControllerStatsObserver {
@@ -326,7 +326,7 @@ index 6086ccdcf8..6407ceecf3 100644
    // Various jitter buffer delays determined by VCMTiming.
    virtual void OnFrameBufferTimingsUpdated(int estimated_max_decode_time_ms,
                                             int current_delay_ms,
-@@ -102,6 +104,7 @@ class VideoStreamBufferController {
+@@ -103,6 +105,7 @@ class VideoStreamBufferController {
    void OnTimeout(TimeDelta delay);
    void FrameReadyForDecode(uint32_t rtp_timestamp, Timestamp render_time);
    void UpdateDroppedFrames() RTC_RUN_ON(&worker_sequence_checker_);
@@ -334,7 +334,7 @@ index 6086ccdcf8..6407ceecf3 100644
    void UpdateFrameBufferTimings(Timestamp min_receive_time, Timestamp now);
    bool IsTooManyFramesQueued() const RTC_RUN_ON(&worker_sequence_checker_);
    void ForceKeyFrameReleaseImmediately() RTC_RUN_ON(&worker_sequence_checker_);
-@@ -124,6 +127,8 @@ class VideoStreamBufferController {
+@@ -125,6 +128,8 @@ class VideoStreamBufferController {
        RTC_GUARDED_BY(&worker_sequence_checker_);
    int frames_dropped_before_last_new_frame_
        RTC_GUARDED_BY(&worker_sequence_checker_) = 0;

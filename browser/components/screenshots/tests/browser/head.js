@@ -23,6 +23,7 @@ const RESIZE_TEST_PAGE = TEST_ROOT + "test-page-resize.html";
 const SELECTION_TEST_PAGE = TEST_ROOT + "test-selectionAPI-page.html";
 const RTL_TEST_PAGE = TEST_ROOT + "rtl-test-page.html";
 const SHADOWROOT_TEST_PAGE = TEST_ROOT + "test-page-shadowRoot.html";
+const MISSING_TITLE_TEST_PAGE = TEST_ROOT + "missing-title-test-page.html";
 
 const { MAX_CAPTURE_DIMENSION, MAX_CAPTURE_AREA } = ChromeUtils.importESModule(
   "moz-src:///browser/components/screenshots/ScreenshotsUtils.sys.mjs"

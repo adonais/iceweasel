@@ -2,13 +2,14 @@
 
 This directory contains files used in gecko builds from FFmpeg
 (http://ffmpeg.org). The current files are from FFmpeg as of
-revision 9917308cc209a885c6870f0345905104c6ea8799
+FFmpeg release 9.0.1
 
 All source files match their path from the library's source archive.
 
 Currently, we only use the vp8, vp9, av1 (via libdav1d), mp3, flac, vorbis (via
 libvorbis), opus (via libopus) and PCM portion of the library. If this changes,
-configuration files will most likely need to be updated. On Windows, we use d3d11va for vp9 and av1.
+configuration files will most likely need to be updated. On Windows,
+we use d3d11va for vp9 and av1.
 
 Decoding AV1 via libdav1d and libvorbis is supported, although the decoder
 libraries are vendored separately, `ffvpx` only contains the code to use
@@ -120,10 +121,10 @@ to avoid redefined macros.
 
 # Build, fix errors
 
-Missing files need to be added, and the patch to rename `time.h` to `fftime.h`
-might need to be reapplied or extended to other files including `time.h`. The
-issue being that it's included instead of the system header, causing all sorts
-of issues.
+Missing files need to be added, and fftime-rename.patch, which renames
+`libavutil/time.h` to `libavutil/fftime.h`, might need to be extended to other
+files including `time.h`. The issue being that it's included instead of the
+system header, causing all sorts of issues.
 
 Additionally, `jni.h` and `jni.c` in ffmpeg sources need to be renamed to
 `fffjni.h` and `fffjni.c`, and `#include` to those files need to be updated.
@@ -162,6 +163,22 @@ Finally, apply the patches:
   neither, so multichannel Vorbis plays with its channels permuted
   (bug 1991957). Drop this patch if it is ever fixed upstream.
 - av1_tilesize.patch to clean up av1 tile handling
-- vp9-flush-unref-next-refs.patch to clear VP9 frame-thread references on
-  flush. Cherry-pick of FFmpeg commit a024f8c5413d, which is not in the 9.0
-  release branch; drop this patch once ffvpx is updated past it.
+- fftime-rename.patch to include the renamed `libavutil/fftime.h` from the
+  files that include `libavutil/time.h`, which shadows the system `time.h`.
+  Extend it to any new file that picks up the same include. Applying it before
+  parseutils-no-random-seed.patch keeps the `parseutils.c` context intact.
+- dxva2-bind-shader-resource.patch to add `D3D11_BIND_SHADER_RESOURCE` to the
+  bind flags of the D3D11VA decoder frames pool, so the compositor can sample
+  the decoded textures directly instead of going through a copy.
+- parseutils-no-random-seed.patch to stub out the only `av_get_random_seed()`
+  call in the build, in `av_parse_color()`'s "random"/"bikeshed" branch, which
+  Gecko never reaches. This keeps `random_seed.c` and its `sha.c` dependency out
+  of `libavutil/moz.build`: on Windows `HAVE_BCRYPT` is 1, so compiling
+  `random_seed.c` would make mozavutil import bcrypt.dll for a seed nothing
+  asks for. `av_get_random_seed` and `av_sha_*` are correspondingly absent from
+  `libavutil/avutil.symbols`.
+- vp8dsp-nasm-2.14-compat.patch to restore the `%if`-based register counts in
+  `put_vp8_epel*_h6`/`_h4`. Upstream folded them into inline expressions, but
+  nasm cannot parse a relational operator inside parentheses until 2.15, and
+  our minimum supported nasm (used by the base-toolchains builds) is 2.14.02.
+  Drop this patch once that minimum is raised past 2.15.

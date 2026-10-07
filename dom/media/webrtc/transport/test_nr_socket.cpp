@@ -1076,7 +1076,7 @@ bool TestNrSocket::maybe_send_fake_response(const void* msg, size_t len,
     r_log(LOG_GENERIC, LOG_DEBUG,
           "TestNrSocket attempting to add alternate server %s", address.get());
     nr_transport_addr addr;
-    if (NS_WARN_IF(nr_str_port_to_transport_addr(address.Data(), port,
+    if (NS_WARN_IF(nr_str_port_to_transport_addr(address.Data(), nullptr, port,
                                                  IPPROTO_UDP, &addr))) {
       continue;
     }
@@ -1107,13 +1107,13 @@ bool TestNrSocket::maybe_send_fake_response(const void* msg, size_t len,
     }
     switch (to->ip_version) {
       case NR_IPV4:
-        if (nr_str_port_to_transport_addr("198.51.100.1", port, to->protocol,
-                                          &response_from)) {
+        if (nr_str_port_to_transport_addr("198.51.100.1", nullptr, port,
+                                          to->protocol, &response_from)) {
           MOZ_CRASH();
         }
         break;
       case NR_IPV6:
-        if (nr_str_port_to_transport_addr("::ffff:198.51.100.1", port,
+        if (nr_str_port_to_transport_addr("::ffff:198.51.100.1", nullptr, port,
                                           to->protocol, &response_from)) {
           MOZ_CRASH();
         }

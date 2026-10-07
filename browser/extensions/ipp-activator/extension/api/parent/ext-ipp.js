@@ -7,8 +7,10 @@
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
-  IPPExceptionsManager:
-    "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
+  IPPPrincipalRules:
+    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs",
+  IPPSiteRuleManager:
+    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs",
   IPPProxyManager:
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   IPPProxyStates:
@@ -194,7 +196,10 @@ this.ippActivator = class extends ExtensionAPI {
             const uri = Services.io.newURI(url);
             const principal =
               Services.scriptSecurityManager.createContentPrincipal(uri, {});
-            return lazy.IPPExceptionsManager.hasExclusion(principal);
+            return (
+              lazy.IPPSiteRuleManager.getRule(principal) ===
+              lazy.IPPPrincipalRules.EXCLUDED
+            );
           } catch (e) {
             return false;
           }

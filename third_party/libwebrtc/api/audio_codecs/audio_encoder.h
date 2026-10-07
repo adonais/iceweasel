@@ -218,12 +218,6 @@ class AudioEncoder {
 
   // Provides target audio bitrate and corresponding probing interval of
   // the bandwidth estimator to this encoder to allow it to adapt.
-  ABSL_DEPRECATED("Use OnReceivedUplinkAllocation instead")
-  virtual void OnReceivedUplinkBandwidth(int target_audio_bitrate_bps,
-                                         std::optional<int64_t> bwe_period_ms);
-
-  // Provides target audio bitrate and corresponding probing interval of
-  // the bandwidth estimator to this encoder to allow it to adapt.
   virtual void OnReceivedUplinkAllocation(BitrateAllocationUpdate update);
 
   // Provides RTT to this encoder to allow it to adapt.

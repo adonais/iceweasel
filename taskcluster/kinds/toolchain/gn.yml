@@ -23,6 +23,12 @@ linux64-gn:
         symbol: TL(gn)
     run:
         script: build-gn-linux.sh
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            # gn is built as C++23, which needs a more recent libstdc++ than
+            # the one in linux64-toolchain-sysroot.
+            - linux64-toolchain-sysroot-gcc11
 
 macosx64-gn:
     treeherder:
@@ -36,7 +42,7 @@ macosx64-gn:
 
 macosx64-aarch64-gn:
     treeherder:
-        symbol: TM(gn-aarch64)
+        symbol: TMA64(gn)
     run:
         script: build-gn-macosx.sh
         arguments:

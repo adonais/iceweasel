@@ -351,6 +351,15 @@ bool FilterNodeCropWebgl::DrawAccel(DrawTargetWebgl* aDT,
             aDT, croppedSource,
             aDestPoint + croppedSource.TopLeft() - aSourceRect.TopLeft(),
             aOptions, this);
+      case FilterType::UNPREMULTIPLY:
+        if (aParent && aParent->GetType() == FilterType::PREMULTIPLY) {
+          filter->Draw(
+              aDT, croppedSource,
+              aDestPoint + croppedSource.TopLeft() - aSourceRect.TopLeft(),
+              aOptions, this);
+          return true;
+        }
+        break;
       default:
         break;
     }
@@ -674,6 +683,10 @@ static bool DrawColorMatrixFilter(DrawTargetWebgl* aDT, const Point& aDestPoint,
         Matrix4x4(aMatrix.components)
             .TransformPoint(Point4D(aColor.r, aColor.g, aColor.b, aColor.a)) +
         Point4D(aMatrix._51, aMatrix._52, aMatrix._53, aMatrix._54);
+    outColor.x = std::clamp(outColor.x, 0.0f, 1.0f);
+    outColor.y = std::clamp(outColor.y, 0.0f, 1.0f);
+    outColor.z = std::clamp(outColor.z, 0.0f, 1.0f);
+    outColor.w = std::clamp(outColor.w, 0.0f, 1.0f);
     SurfacePattern maskPattern(aSurface, ExtendMode::CLAMP,
                                Matrix::Translation(destOffset));
     if (!surfRect.IsEqualEdges(aSurface->GetRect())) {
@@ -943,6 +956,9 @@ void FilterNodePremultiplyWebgl::Draw(DrawTargetWebgl* aDT,
           return;
         }
         break;
+      case FilterType::UNPREMULTIPLY:
+        filter->Draw(aDT, aSourceRect, aDestPoint, aOptions, this);
+        return;
       default:
         break;
     }
@@ -957,6 +973,37 @@ int32_t FilterNodeUnpremultiplyWebgl::InputIndex(
       return 0;
     default:
       return -1;
+  }
+}
+
+void FilterNodeUnpremultiplyWebgl::Draw(DrawTargetWebgl* aDT,
+                                        const Rect& aSourceRect,
+                                        const Point& aDestPoint,
+                                        const DrawOptions& aOptions,
+                                        FilterNodeWebgl* aParent) {
+  if (!aParent) {
+    FilterNodeWebgl::Draw(aDT, aSourceRect, aDestPoint, aOptions, aParent);
+    return;
+  }
+  switch (aParent->GetType()) {
+    case FilterType::PREMULTIPLY:
+    case FilterType::CROP:
+      break;
+    default:
+      FilterNodeWebgl::Draw(aDT, aSourceRect, aDestPoint, aOptions, aParent);
+      return;
+  }
+
+  ResolveInputs(aDT, true, aParent);
+
+  uint32_t inputIdx = InputIndex(IN_UNPREMULTIPLY_IN);
+  if (inputIdx < NumberOfSetInputs()) {
+    if (RefPtr<FilterNodeWebgl> filter = mInputFilters[inputIdx]) {
+      filter->Draw(aDT, aSourceRect, aDestPoint, aOptions, this);
+    } else if (RefPtr<SourceSurface> surface = mInputSurfaces[inputIdx]) {
+      aDT->DrawSurface(surface, Rect(aDestPoint, aSourceRect.Size()),
+                       aSourceRect, DrawSurfaceOptions(), aOptions);
+    }
   }
 }
 

@@ -21,7 +21,7 @@ sudo dtrace -n 'mach_kernel::wakeup { @[ustack()] = count(); }' -p $FIREFOX_PID 
 
 Let's break that down further.
 
-- The` -n` option combined with the `mach_kernel::wakeup` selects a
+- The `-n` option combined with the `mach_kernel::wakeup` selects a
   *probe point*. `mach_kernel` is the *module name* and `wakeup` is
   the *probe name*. You can see a complete list of probes by running
   `sudo dtrace -l`.

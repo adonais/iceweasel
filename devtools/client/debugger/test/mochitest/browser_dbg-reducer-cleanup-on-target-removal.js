@@ -94,7 +94,7 @@ add_task(async function () {
     "Some breakable line exists"
   );
   Assert.greater(
-    state.sources.mutableBreakpointPositions.size,
+    state.sourceActors.mutableBreakpointPositions.size,
     0,
     "Some breakable positions exists"
   );
@@ -157,7 +157,7 @@ add_task(async function () {
     "No breakable line exists"
   );
   is(
-    state.sources.mutableBreakpointPositions.size,
+    state.sourceActors.mutableBreakpointPositions.size,
     0,
     "No breakable positions exists"
   );

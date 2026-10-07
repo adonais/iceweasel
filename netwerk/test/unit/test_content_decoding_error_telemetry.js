@@ -6,6 +6,7 @@ const { NodeHTTPSServer } = ChromeUtils.importESModule(
 
 let httpServer;
 let dictUrl;
+let dictOriginAttributes;
 
 function makeChan(url) {
   let chan = NetUtil.newChannel({
@@ -14,6 +15,13 @@ function makeChan(url) {
     contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
   }).QueryInterface(Ci.nsIHttpChannel);
   return chan;
+}
+
+// Returns the OriginAttributes a completed channel's request was
+// partitioned under, for use with nsICacheTesting's dictionary methods.
+function originAttributesForChannel(chan) {
+  let partitionKey = chan.loadInfo.cookieJarSettings.partitionKey;
+  return partitionKey ? { partitionKey } : {};
 }
 
 function channelOpenPromise(chan) {
@@ -66,6 +74,7 @@ add_setup(async function setup() {
 
   let chan = makeChan(dictUrl);
   await channelOpenPromise(chan);
+  dictOriginAttributes = originAttributesForChannel(chan);
 });
 
 async function registerBadDCBEndpoint(httpServer, path, badPayload) {
@@ -219,7 +228,7 @@ add_task(async function test_dict_hash_mismatch_telemetry() {
   Services.fog.testResetFOG();
 
   let cacheTesting = Services.cache2.QueryInterface(Ci.nsICacheTesting);
-  cacheTesting.corruptDictionaryHash(dictUrl);
+  cacheTesting.corruptDictionaryHash(dictUrl, dictOriginAttributes);
 
   Services.obs.notifyObservers(null, "clear-dictionary-data", dictUrl);
 

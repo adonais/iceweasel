@@ -59,36 +59,39 @@ WebSocketEventListenerChild::RecvWebSocketMessageAvailable(
 }
 
 mozilla::ipc::IPCResult WebSocketEventListenerChild::RecvWebSocketClosed(
-    const uint32_t& aWebSocketSerialID, const bool& aWasClean,
-    const uint16_t& aCode, const nsString& aReason) {
+    const uint32_t& aWebSocketSerialID, const uint64_t& aHttpChannelId,
+    const bool& aWasClean, const uint16_t& aCode, const nsString& aReason) {
   if (mService) {
     nsCOMPtr<nsIEventTarget> target = GetNeckoTarget();
-    mService->WebSocketClosed(aWebSocketSerialID, mInnerWindowID, aWasClean,
-                              aCode, aReason, target);
+    mService->WebSocketClosed(aWebSocketSerialID, mInnerWindowID,
+                              aHttpChannelId, aWasClean, aCode, aReason,
+                              target);
   }
 
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult WebSocketEventListenerChild::RecvFrameReceived(
-    const uint32_t& aWebSocketSerialID, const WebSocketFrameData& aFrameData) {
+    const uint32_t& aWebSocketSerialID, const uint64_t& aHttpChannelId,
+    const WebSocketFrameData& aFrameData) {
   if (mService) {
     nsCOMPtr<nsIEventTarget> target = GetNeckoTarget();
     RefPtr frame = MakeRefPtr<WebSocketFrame>(aFrameData);
-    mService->FrameReceived(aWebSocketSerialID, mInnerWindowID, frame.forget(),
-                            target);
+    mService->FrameReceived(aWebSocketSerialID, mInnerWindowID, aHttpChannelId,
+                            frame.forget(), target);
   }
 
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult WebSocketEventListenerChild::RecvFrameSent(
-    const uint32_t& aWebSocketSerialID, const WebSocketFrameData& aFrameData) {
+    const uint32_t& aWebSocketSerialID, const uint64_t& aHttpChannelId,
+    const WebSocketFrameData& aFrameData) {
   if (mService) {
     nsCOMPtr<nsIEventTarget> target = GetNeckoTarget();
     RefPtr frame = MakeRefPtr<WebSocketFrame>(aFrameData);
-    mService->FrameSent(aWebSocketSerialID, mInnerWindowID, frame.forget(),
-                        target);
+    mService->FrameSent(aWebSocketSerialID, mInnerWindowID, aHttpChannelId,
+                        frame.forget(), target);
   }
 
   return IPC_OK();

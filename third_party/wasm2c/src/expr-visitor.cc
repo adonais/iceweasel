@@ -90,6 +90,18 @@ Result ExprVisitor::VisitExpr(Expr* root_expr) {
         break;
       }
 
+      case State::TryTable: {
+        auto try_table_expr = cast<TryTableExpr>(expr);
+        auto& iter = expr_iter_stack_.back();
+        if (iter != try_table_expr->block.exprs.end()) {
+          PushDefault(&*iter++);
+        } else {
+          CHECK_RESULT(delegate_->EndTryTableExpr(try_table_expr));
+          PopExprlist();
+        }
+        break;
+      }
+
       case State::Try: {
         auto try_expr = cast<TryExpr>(expr);
         auto& iter = expr_iter_stack_.back();
@@ -188,6 +200,10 @@ Result ExprVisitor::HandleDefaultState(Expr* expr) {
       CHECK_RESULT(delegate_->OnBinaryExpr(cast<BinaryExpr>(expr)));
       break;
 
+    case ExprType::Quaternary:
+      CHECK_RESULT(delegate_->OnQuaternaryExpr(cast<QuaternaryExpr>(expr)));
+      break;
+
     case ExprType::Block: {
       auto block_expr = cast<BlockExpr>(expr);
       CHECK_RESULT(delegate_->BeginBlockExpr(block_expr));
@@ -201,6 +217,14 @@ Result ExprVisitor::HandleDefaultState(Expr* expr) {
 
     case ExprType::BrIf:
       CHECK_RESULT(delegate_->OnBrIfExpr(cast<BrIfExpr>(expr)));
+      break;
+
+    case ExprType::BrOnNonNull:
+      CHECK_RESULT(delegate_->OnBrOnNonNullExpr(cast<BrOnNonNullExpr>(expr)));
+      break;
+
+    case ExprType::BrOnNull:
+      CHECK_RESULT(delegate_->OnBrOnNullExpr(cast<BrOnNullExpr>(expr)));
       break;
 
     case ExprType::BrTable:
@@ -341,6 +365,10 @@ Result ExprVisitor::HandleDefaultState(Expr* expr) {
       CHECK_RESULT(delegate_->OnTableFillExpr(cast<TableFillExpr>(expr)));
       break;
 
+    case ExprType::RefAsNonNull:
+      CHECK_RESULT(delegate_->OnRefAsNonNullExpr(cast<RefAsNonNullExpr>(expr)));
+      break;
+
     case ExprType::RefFunc:
       CHECK_RESULT(delegate_->OnRefFuncExpr(cast<RefFuncExpr>(expr)));
       break;
@@ -374,6 +402,11 @@ Result ExprVisitor::HandleDefaultState(Expr* expr) {
           cast<ReturnCallIndirectExpr>(expr)));
       break;
 
+    case ExprType::ReturnCallRef:
+      CHECK_RESULT(
+          delegate_->OnReturnCallRefExpr(cast<ReturnCallRefExpr>(expr)));
+      break;
+
     case ExprType::Select:
       CHECK_RESULT(delegate_->OnSelectExpr(cast<SelectExpr>(expr)));
       break;
@@ -385,6 +418,17 @@ Result ExprVisitor::HandleDefaultState(Expr* expr) {
     case ExprType::Throw:
       CHECK_RESULT(delegate_->OnThrowExpr(cast<ThrowExpr>(expr)));
       break;
+
+    case ExprType::ThrowRef:
+      CHECK_RESULT(delegate_->OnThrowRefExpr(cast<ThrowRefExpr>(expr)));
+      break;
+
+    case ExprType::TryTable: {
+      auto try_table_expr = cast<TryTableExpr>(expr);
+      CHECK_RESULT(delegate_->BeginTryTableExpr(try_table_expr));
+      PushExprlist(State::TryTable, expr, try_table_expr->block.exprs);
+      break;
+    }
 
     case ExprType::Try: {
       auto try_expr = cast<TryExpr>(expr);

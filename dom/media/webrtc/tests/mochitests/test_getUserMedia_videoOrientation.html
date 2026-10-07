@@ -1,0 +1,111 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <script type="application/javascript" src="mediaStreamPlayback.js"></script>
+</head>
+<body>
+<pre id="test">
+<video id="v" autoplay muted></video>
+<script type="application/javascript">
+"use strict";
+
+createHTML({
+  bug: "1340372",
+  title: "Camera rotation is reflected in local getUserMedia preview dimensions"
+});
+
+const video = document.getElementById("v");
+
+const rotate90 = [["media.getusermedia.camera.fake.rotation", 90]];
+
+// fake: true uses MediaEngineFake directly, while
+// media.getusermedia.camera.fake.force routes the same fake source through
+// CamerasParent into MediaEngineRemoteVideoSource, which sizes frames against
+// the capability it negotiated.
+//
+// head.js enables streams.fake, and CI provisions a loopback device on some
+// platforms. Either one routes around the capture backend - streams.fake by
+// selecting MediaEngineFake outright, the loopback device by filtering
+// enumeration to a device name the fake backend does not report.
+const captureBackendPrefs = [
+  ["media.getusermedia.camera.fake.force", true],
+  ["media.navigator.streams.fake", false],
+  ["media.video_loopback_dev", ""],
+];
+
+const tests = [
+  async function testFakeEngineRotationWhileCapturing() {
+    const stream =
+      await getUserMedia({video: {width: 640, height: 480}, fake: true});
+    video.srcObject = stream;
+    await timeout(haveEvent(video, "resize"), 10000,
+      "Timeout waiting for initial resize");
+    is(video.videoWidth, 640, "videoWidth is 640 before rotation");
+    is(video.videoHeight, 480, "videoHeight is 480 before rotation");
+
+    await withPrefs(rotate90, async () => {
+      await timeout(haveEvent(video, "resize"), 10000,
+        "Timeout waiting for rotated resize");
+      is(video.videoWidth, 480, "videoWidth is 480 after 90 degree rotation");
+      is(video.videoHeight, 640, "videoHeight is 640 after 90 degree rotation");
+      stream.getTracks().forEach(t => t.stop());
+    });
+  },
+
+  async function testCaptureBackendRotationWhileCapturing() {
+    await withPrefs(captureBackendPrefs, async () => {
+      const stream = await getUserMedia({video: {width: 640, height: 480}});
+      video.srcObject = stream;
+      await timeout(haveEvent(video, "resize"), 10000,
+        "Timeout waiting for initial resize");
+      is(video.videoWidth, 640, "videoWidth is 640 before rotation");
+      is(video.videoHeight, 480, "videoHeight is 480 before rotation");
+
+      await withPrefs(rotate90, async () => {
+        await timeout(haveEvent(video, "resize"), 10000,
+          "Timeout waiting for rotated resize");
+        is(video.videoWidth, 480, "videoWidth is 480 after 90 degree rotation");
+        is(video.videoHeight, 640,
+           "videoHeight is 640 after 90 degree rotation");
+        // Rotation does not change which frame size the constraints selected -
+        // that is resolved in the primary orientation - but the parent
+        // straightens the frame before delivering it, and mediacapture-main
+        // requires getSettings() to report the dimensions actually delivered.
+        const settings = stream.getVideoTracks()[0].getSettings();
+        is(settings.width, 480, "settings width follows the delivered frame");
+        is(settings.height, 640, "settings height follows the delivered frame");
+        stream.getTracks().forEach(t => t.stop());
+      });
+    });
+  },
+
+  // A rotation that is already in effect when capture starts must be reflected
+  // on the first frame, not only when it changes while capturing.
+  async function testCaptureBackendRotatedBeforeCapture() {
+    await withPrefs([...captureBackendPrefs, ...rotate90], async () => {
+      const stream = await getUserMedia({video: {width: 640, height: 480}});
+      video.srcObject = stream;
+      await timeout(haveEvent(video, "resize"), 10000,
+        "Timeout waiting for resize");
+      is(video.videoWidth, 480,
+         "videoWidth is 480 when rotated before capture");
+      is(video.videoHeight, 640,
+         "videoHeight is 640 when rotated before capture");
+      stream.getTracks().forEach(t => t.stop());
+    });
+  },
+];
+
+runTest(async () => {
+  for (const test of tests) {
+    info(`Running test: ${test.name}`);
+    await test();
+    info(`Done running test: ${test.name}`);
+    // Make sure we don't build up a pile of GC work.
+    await new Promise(r => SpecialPowers.exactGC(r));
+  }
+});
+</script>
+</pre>
+</body>
+</html>

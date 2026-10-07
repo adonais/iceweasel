@@ -34,13 +34,34 @@ const TEST_URI = `data:text/html,<meta charset=utf8>
       content: "-";
       outline: calc((sibling-count() + sibling-index()) * 1px) solid tomato;
     }
+
+    aside {
+      width: 300px;
+      height: 200px;
+    }
+
+    aside div {
+      width: calc(50% - 2px);
+      height: calc(25% + 2px);
+    }
+
+    aside div::after {
+      content: "fries";
+      display: inline-block;
+      width: calc(50% - 7px);
+      height: calc(25% + 7px);
+      margin-block: calc(10%);
+    }
   </style>
   <div>CSS explainers</div>
   <ol>
     <li>First</li>
     <li>Second</li>
     <li>Third</li>
-  </ol>`;
+  </ol>
+  <aside>
+    <div>Side</div>
+  </aside>`;
 
 add_task(async function () {
   await pushPref("devtools.inspector.css-explainers", true);
@@ -174,6 +195,64 @@ add_task(async function () {
         "calc(5 * 1px)",
         "5px",
       ].join("\n"),
+    },
+  });
+
+  info("Select the <div> inside <aside> to check % computation");
+  await selectNode("aside div", inspector);
+
+  await assertCssExplainersTooltip({
+    view,
+    selector: "aside div",
+    propertyName: "width",
+    functionIndex: 0,
+    expected: {
+      functionText: "calc(50% - 2px)",
+      tooltipText: ["calc(50% - 2px)", "calc(150px - 2px)", "148px"].join("\n"),
+    },
+  });
+
+  await assertCssExplainersTooltip({
+    view,
+    selector: "aside div",
+    propertyName: "height",
+    functionIndex: 0,
+    expected: {
+      functionText: "calc(25% + 2px)",
+      tooltipText: ["calc(25% + 2px)", "calc(50px + 2px)", "52px"].join("\n"),
+    },
+  });
+
+  await assertCssExplainersTooltip({
+    view,
+    selector: "aside div::after",
+    propertyName: "width",
+    functionIndex: 0,
+    expected: {
+      functionText: "calc(50% - 7px)",
+      tooltipText: ["calc(50% - 7px)", "calc(150px - 7px)", "143px"].join("\n"),
+    },
+  });
+
+  await assertCssExplainersTooltip({
+    view,
+    selector: "aside div::after",
+    propertyName: "height",
+    functionIndex: 0,
+    expected: {
+      functionText: "calc(25% + 7px)",
+      tooltipText: ["calc(25% + 7px)", "calc(50px + 7px)", "57px"].join("\n"),
+    },
+  });
+
+  await assertCssExplainersTooltip({
+    view,
+    selector: "aside div::after",
+    propertyName: "margin-block",
+    functionIndex: 0,
+    expected: {
+      functionText: "calc(10%)",
+      tooltipText: ["calc(10%)", "10%", "30px"].join("\n"),
     },
   });
 });

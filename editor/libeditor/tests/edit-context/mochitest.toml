@@ -17,6 +17,8 @@ support-files = ["common.js"]
 
 ["test_editcontext_composition.html"]
 
+["test_editcontext_compositionend.html"]
+
 ["test_editcontext_content_command_replace_text.html"]
 
 ["test_editcontext_empty_text_node.html"]
@@ -26,6 +28,8 @@ support-files = ["common.js"]
 ["test_editcontext_format_commands.html"]
 
 ["test_editcontext_ime_notifications.html"]
+
+["test_editcontext_ime_state.html"]
 
 ["test_editcontext_query_characters.html"]
 

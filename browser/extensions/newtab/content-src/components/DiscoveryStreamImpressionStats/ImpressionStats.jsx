@@ -112,6 +112,8 @@ export class ImpressionStats extends React.PureComponent {
           scheduled_corpus_item_id: link.scheduled_corpus_item_id,
           recommended_at: link.recommended_at,
           received_rank: link.received_rank,
+          variant_id: link.variant_id,
+          source_section_id: link.source_section_id,
           topic: link.topic,
           features: link.features,
           attribution: link.attribution,

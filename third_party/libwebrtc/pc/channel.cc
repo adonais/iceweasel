@@ -190,7 +190,6 @@ BaseChannel::BaseChannel(
       signaling_thread_(signaling_thread),
       alive_(PendingTaskSafetyFlag::CreateAttachedToTaskQueue(true,
                                                               worker_thread)),
-      on_first_packet_received_(std::move(callbacks.on_first_packet_received)),
       on_first_packet_sent_(std::move(callbacks.on_first_packet_sent)),
       on_packet_received_n_(std::move(callbacks.on_packet_received)),
       srtp_required_(srtp_required),
@@ -452,11 +451,6 @@ bool BaseChannel::SendPacket(bool rtcp,
 void BaseChannel::OnRtpPacket(const RtpPacketReceived& parsed_packet) {
   RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK(network_initialized());
-
-  if (on_first_packet_received_) {
-    std::move(on_first_packet_received_)(parsed_packet);
-    on_first_packet_received_ = nullptr;
-  }
 
   if (!srtp_active() && srtp_required_) {
     // Our session description indicates that SRTP is required, but we got a

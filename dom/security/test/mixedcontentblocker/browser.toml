@@ -28,6 +28,13 @@ support-files = [
 ["browser_mixed_content_auto_upgrade_display_console.js"]
 support-files = ["file_mixed_content_auto_upgrade_display_console.html"]
 
+["browser_securecontext_allowlist_no_upgrade.js"]
+support-files = [
+  "file_scheme_probe.sjs",
+  "file_securecontext_allowlist_page.html",
+  "file_securecontext_allowlist_https_page.html",
+]
+
 ["browser_test_mixed_content_download.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1784764

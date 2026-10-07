@@ -1,0 +1,4 @@
+LICENSES = ["assigned"]
+LICENSES["assigned"].title = "Assigned License"
+LICENSES["assigned"].text = "assigned.txt"
+LICENSES["assigned"].spdx = "LicenseRef-assigned AND MIT"

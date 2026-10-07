@@ -124,7 +124,7 @@ const TESTCASES = [
         expectation: "email",
       },
       {
-        testValues: ["username"],
+        testValues: ["username", "webauthn"],
         expectation: "username",
       },
     ],

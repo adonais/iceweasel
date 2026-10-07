@@ -5,6 +5,7 @@
 #define _mozilla_dom_WorkerIPCUtils_h
 
 #include "ipc/IPCMessageUtils.h"
+#include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/dom/BindingIPCUtils.h"
 
 // For RequestCredentials

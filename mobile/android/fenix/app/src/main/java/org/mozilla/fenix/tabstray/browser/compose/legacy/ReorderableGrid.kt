@@ -37,8 +37,8 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
-import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
+import org.mozilla.fenix.tabstray.browser.compose.ItemInteractionState
+import org.mozilla.fenix.tabstray.controller.ItemInteractionHandler
 
 /**
  * Remember the reordering state for reordering grid items.
@@ -46,7 +46,7 @@ import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
  * @param gridState State of the grid.
  * @param onMove Callback to be invoked when switching between two items.
  * @param ignoredItems List of keys for non-draggable items.
- * @param tabInteractionHandler The tab interaction handler for moves, drops, and drag events.
+ * @param itemInteractionHandler The item interaction handler for moves, drops, and drag events.
  * @param onLongPress Optional callback to be invoked when long pressing an item.
  */
 @Composable
@@ -54,7 +54,7 @@ fun createGridReorderState(
     gridState: LazyGridState,
     onMove: (LazyGridItemInfo, LazyGridItemInfo) -> Unit,
     ignoredItems: List<Any>,
-    tabInteractionHandler: TabInteractionHandler,
+    itemInteractionHandler: ItemInteractionHandler,
     onLongPress: (LazyGridItemInfo) -> Unit = {},
 ): GridReorderState {
     val scope = rememberCoroutineScope()
@@ -70,7 +70,7 @@ fun createGridReorderState(
                 ignoredItems = ignoredItems,
                 onLongPress = onLongPress,
                 hapticFeedback = hapticFeedback,
-                tabInteractionHandler = tabInteractionHandler,
+                itemInteractionHandler = itemInteractionHandler,
             )
         }
     return state
@@ -86,7 +86,7 @@ fun createGridReorderState(
  * @param onMove Callback to be invoked when switching between two items.
  * @param onLongPress Optional callback to be invoked when long pressing an item.
  * @param ignoredItems List of keys for non-draggable items.
- * @param tabInteractionHandler The tab interaction handler for moves, drops, and drag events.
+ * @param itemInteractionHandler The item interaction handler for moves, drops, and drag events.
  */
 class GridReorderState
 internal constructor(
@@ -97,7 +97,7 @@ internal constructor(
     private val onMove: (LazyGridItemInfo, LazyGridItemInfo) -> Unit,
     private val onLongPress: (LazyGridItemInfo) -> Unit = {},
     private val ignoredItems: List<Any> = emptyList(),
-    private val tabInteractionHandler: TabInteractionHandler,
+    private val itemInteractionHandler: ItemInteractionHandler,
 ) {
     internal var draggingItemKey by mutableStateOf<GridItemKey?>(null)
         private set
@@ -160,7 +160,7 @@ internal constructor(
         draggingItemKey = null
         draggingItemInitialOffset = Offset.Zero
         if (moved) {
-            tabInteractionHandler.onDragCancel()
+            itemInteractionHandler.onDragCancel()
         }
     }
 
@@ -174,7 +174,7 @@ internal constructor(
 
         if (!moved && draggingItemCumulatedOffset.getDistance() > touchSlop) {
             (draggingItemKey as? String)?.let { key ->
-                tabInteractionHandler.onDragStart(sourceKey = key, preserveSelectMode = preserveSelectMode)
+                itemInteractionHandler.onDragStart(sourceKey = key, preserveSelectMode = preserveSelectMode)
             }
             moved = true
         }
@@ -235,7 +235,7 @@ fun LazyGridItemScope.ReorderableDragItemContainer(
     key: GridItemKey,
     position: Int,
     swipingActive: Boolean,
-    content: @Composable (interactionState: TabItemInteractionState) -> Unit,
+    content: @Composable (interactionState: ItemInteractionState) -> Unit,
 ) {
     val modifier =
         Modifier.zIndex(
@@ -271,7 +271,7 @@ fun LazyGridItemScope.ReorderableDragItemContainer(
 
     Box(modifier = modifier, propagateMinConstraints = true) {
         content(
-            TabItemInteractionState(
+            ItemInteractionState(
                 isHoveredByItem = key == state.hoveredItemKey,
                 isDragged = key == state.draggingItemKey,
             )

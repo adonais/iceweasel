@@ -4,8 +4,6 @@
 
 "use strict";
 
-const isAndroid = AppConstants.platform == "android";
-
 XPCOMUtils.defineLazyServiceGetter(
   this,
   "peuService",
@@ -191,8 +189,8 @@ async function runTestRedirectHeuristic(disableHeuristics) {
         false,
       ],
       ["privacy.restrict3rdpartystorage.heuristic.window_open", false],
-      ["privacy.restrict3rdpartystorage.heuristic.recently_visited", isAndroid],
-      ["privacy.restrict3rdpartystorage.heuristic.navigation", !isAndroid],
+      ["privacy.restrict3rdpartystorage.heuristic.recently_visited", false],
+      ["privacy.restrict3rdpartystorage.heuristic.navigation", true],
       ["privacy.restrict3rdpartystorage.heuristic.redirect", false],
       ["privacy.antitracking.enableWebcompat", !disableHeuristics],
     ],
@@ -289,8 +287,8 @@ async function runTestRedirectHeuristicWithoutInteraction() {
 
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["privacy.restrict3rdpartystorage.heuristic.recently_visited", isAndroid],
-      ["privacy.restrict3rdpartystorage.heuristic.navigation", !isAndroid],
+      ["privacy.restrict3rdpartystorage.heuristic.recently_visited", false],
+      ["privacy.restrict3rdpartystorage.heuristic.navigation", true],
       ["privacy.antitracking.enableWebcompat", true],
     ],
   });
@@ -363,17 +361,10 @@ async function runTestRedirectHeuristicWithoutInteraction() {
     TEST_TOP_PAGE
   );
 
-  // This heuristic doesn't work in Android because
-  // it doesn't have the session history in the parent
-  // process (yet).
-  info(
-    `third-party page should ${
-      isAndroid ? "" : "not "
-    }be able to access first-party data`
-  );
+  info(`third-party page should not be able to access first-party data`);
   await checkData(browser, {
     firstParty: "firstParty",
-    thirdParty: isAndroid ? "heuristicFirstParty" : "",
+    thirdParty: "",
   });
 
   info("Removing the tab");

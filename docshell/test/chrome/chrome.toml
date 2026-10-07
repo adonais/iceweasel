@@ -46,6 +46,8 @@ support-files = [
 ]
 prefs = ["network.xhr.block_sync_system_requests=false"] # Bug 721336
 
+["include:chrome-xslt.toml"]
+
 ["test_allowContentRetargeting.html"]
 
 ["test_bug89419.xhtml"]
@@ -108,14 +110,6 @@ skip-if = [
 ["test_bug565388.xhtml"]
 skip-if = [
   "true", # Bug 1026815,Bug 1546159
-]
-
-["test_bug582176.xhtml"]
-support-files = [
-  "582176_dummy.html",
-  "582176_xml.xml",
-  "582176_xslt.xsl",
-  "bug582176_window.xhtml",
 ]
 
 ["test_bug608669.xhtml"]

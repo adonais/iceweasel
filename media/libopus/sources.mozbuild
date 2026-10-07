@@ -2,6 +2,7 @@
 celt_sources = [
     'celt/bands.c',
     'celt/celt_lpc.c',
+    'celt/celt_tx_tables.c',
     'celt/cwrs.c',
     'celt/entcode.c',
     'celt/entdec.c',
@@ -10,6 +11,7 @@ celt_sources = [
     'celt/laplace.c',
     'celt/mathops.c',
     'celt/mdct.c',
+    'celt/mdct_pfa.c',
     'celt/modes.c',
     'celt/pitch.c',
     'celt/quant_bands.c',
@@ -65,13 +67,11 @@ celt_am_sources_arm_asm = [
 ]
 
 celt_sources_arm_neon_intr = [
+    'celt/arm/celt_mdct_tx.c',
+    'celt/arm/celt_neon_aarch64.S',
     'celt/arm/celt_neon_intr.c',
+    'celt/arm/celt_tx_neon.S',
     'celt/arm/pitch_neon_intr.c',
-]
-
-celt_sources_arm_ne10 = [
-    'celt/arm/celt_fft_ne10.c',
-    'celt/arm/celt_mdct_ne10.c',
 ]
 
 opus_sources = [

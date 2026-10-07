@@ -176,38 +176,6 @@ export const NET_ERRORS = [
     hasNoUserFix: false,
   },
   {
-    id: "netReset",
-    errorCode: "NS_ERROR_NET_EMPTY_RESPONSE",
-    category: "net",
-    bodyTitleL10nId: "problem-with-this-site-title",
-    introContent: {
-      dataL10nId: "neterror-http-empty-response-description",
-      dataL10nArgs: { hostname: null },
-    },
-    descriptionParts: DESCRIPTION_PARTS_MAP.connectionFailureDescription,
-    buttons: {
-      showTryAgain: true,
-      showGoBack: false,
-    },
-    customNetError: {
-      titleL10nId: "problem-with-this-site-title",
-      whatCanYouDoItems(context) {
-        const items = [
-          "neterror-load-error-try-again",
-          "neterror-load-error-connection",
-          "neterror-load-error-firewall",
-        ];
-        if (context.showOSXPermissionWarning) {
-          items.push("neterror-load-osx-permission");
-        }
-        return items;
-      },
-      showErrorCode: true,
-    },
-    hasNoUserFix: false,
-    image: NET_ERROR_ILLUSTRATIONS.noConnection,
-  },
-  {
     id: "nssBadCert",
     errorCode: "nssBadCert",
     category: "cert",
@@ -290,6 +258,37 @@ export const NET_ERRORS = [
     },
     customNetError: {
       titleL10nId: "netInterrupt-title",
+      whatCanYouDoItems(context) {
+        const items = [
+          "neterror-load-error-try-again",
+          "neterror-load-error-connection",
+          "neterror-load-error-firewall",
+        ];
+        if (context.showOSXPermissionWarning) {
+          items.push("neterror-load-osx-permission");
+        }
+        return items;
+      },
+    },
+    hasNoUserFix: false,
+    image: NET_ERROR_ILLUSTRATIONS.noConnection,
+  },
+  {
+    id: "netReset",
+    errorCode: "netReset",
+    category: "net",
+    bodyTitleL10nId: "netReset-title",
+    introContent: {
+      dataL10nId: "fp-neterror-offline-intro",
+      dataL10nArgs: { hostname: null },
+    },
+    descriptionParts: DESCRIPTION_PARTS_MAP.connectionFailureDescription,
+    buttons: {
+      showTryAgain: true,
+      showGoBack: false,
+    },
+    customNetError: {
+      titleL10nId: "netReset-title",
       whatCanYouDoItems(context) {
         const items = [
           "neterror-load-error-try-again",

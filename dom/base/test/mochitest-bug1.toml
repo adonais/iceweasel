@@ -431,12 +431,6 @@ skip-if = [
   "http3",
 ]
 
-["test_bug428847.html"]
-skip-if = [
-  "http2",
-  "http3",
-]
-
 ["test_bug431082.html"]
 
 ["test_bug431701.html"]

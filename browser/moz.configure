@@ -54,6 +54,67 @@ imply_option("MOZ_STUB_INSTALLER", True, when=requires_stub_installer)
 include("../toolkit/moz.configure")
 
 
+@depends("--enable-maintenance-service", when=target_is_windows)
+@imports(_from="mozbuild.nsis", _import="installer_files")
+def nsis_installer_files(maintenance_service):
+    return list(installer_files(maintenance_service=bool(maintenance_service)))
+
+
+set_config("NSIS_INSTALLER_FILES", nsis_installer_files)
+
+
+@depends(when=target_is_windows)
+@imports(_from="mozbuild.nsis", _import="NSIS_BRANDING_FILES")
+def nsis_branding_files():
+    return list(NSIS_BRANDING_FILES)
+
+
+set_config("NSIS_BRANDING_FILES", nsis_branding_files)
+
+
+@depends(target, when=target_is_windows)
+def nsis_sfx_module(target):
+    if target.cpu == "aarch64":
+        return "other-licenses/7zstub/firefox/7zSD.ARM64.sfx"
+    return "other-licenses/7zstub/firefox/7zSD.Win32.sfx"
+
+
+set_config("NSIS_SFX_MODULE", nsis_sfx_module)
+
+
+@depends(
+    milestone.app_version,
+    moz_app_name,
+    moz_app_displayname,
+    "--enable-default-browser-agent",
+    push_notification_helper_flag,
+    when=target_is_windows,
+)
+@imports("shlex")
+def nsis_installer_defines(
+    app_version,
+    app_name,
+    app_displayname,
+    default_browser_agent,
+    push_notification_helper,
+):
+    defines = [
+        f"-DAPP_VERSION={app_version}",
+        f"-DMOZ_APP_NAME={app_name}",
+        f"-DMOZ_TOAST_APP_NAME={app_name.title()}",
+        f"-DMOZ_APP_DISPLAYNAME={app_displayname}",
+    ]
+    if default_browser_agent:
+        defines.append("-DMOZ_DEFAULT_BROWSER_AGENT=1")
+    if push_notification_helper:
+        defines.append("-DMOZ_PUSH_NOTIFICATION_HELPER=1")
+    # Quote each define so values containing spaces remain one argument.
+    return " ".join(shlex.quote(d) for d in defines)
+
+
+set_config("NSIS_INSTALLER_DEFINES", nsis_installer_defines)
+
+
 @depends(
     moz_app_name,
     moz_app_displayname,
@@ -73,6 +134,7 @@ include("../toolkit/moz.configure")
     target,
     "--enable-default-browser-agent",
     notification_server_flag,
+    push_notification_helper_flag,
     nsis,
     llvm_symbolizer,
     clang_rt_asan_lib_path,
@@ -107,6 +169,7 @@ def package_manifest_defines(
     target,
     default_browser_agent,
     notification_server,
+    push_notification_helper,
     makensis,
     llvm_symbolizer,
     clang_rt_asan_lib_path,
@@ -153,6 +216,8 @@ def package_manifest_defines(
         defines.append("-DMOZ_DEFAULT_BROWSER_AGENT=1")
     if notification_server:
         defines.append("-DMOZ_NOTIFICATION_SERVER=1")
+    if push_notification_helper:
+        defines.append("-DMOZ_PUSH_NOTIFICATION_HELPER=1")
     if makensis:
         defines.append("-DHAVE_MAKENSISU=1")
     if llvm_symbolizer:

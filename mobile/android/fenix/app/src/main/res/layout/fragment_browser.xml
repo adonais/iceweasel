@@ -36,6 +36,14 @@
                     android:visibility="visible" />
             </mozilla.components.ui.widgets.VerticalSwipeRefreshLayout>
 
+            <ImageView
+                android:id="@+id/tabReloadCover"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:visibility="gone"
+                android:importantForAccessibility="no" />
+
             <ViewStub
                 android:id="@+id/findInPageViewStub"
                 android:layout_width="match_parent"

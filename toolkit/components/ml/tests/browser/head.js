@@ -101,6 +101,13 @@ async function setup({
   };
 }
 
+function setupNativeOnnxRuntimeAvailabilityTest() {
+  EngineProcess.resetNativeOnnxRuntimeAvailabilityForTests();
+  registerCleanupFunction(() => {
+    EngineProcess.resetNativeOnnxRuntimeAvailabilityForTests();
+  });
+}
+
 function getDefaultWasmRecords(backend) {
   // A requested backend that isn't itself a wasm runtime (e.g. "best-onnx" or
   // "onnx-native") can still fall back to the wasm onnx backend at engine

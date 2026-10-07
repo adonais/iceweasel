@@ -13,6 +13,12 @@ import {
   flushTokenRemainder,
 } from "moz-src:///browser/components/aiwindow/models/TokenStreamParser.sys.mjs";
 
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  ConversationStore:
+    "moz-src:///browser/components/aiwindow/ui/modules/ConversationStore.sys.mjs",
+});
+
 /**
  * @typedef {import("moz-src:///browser/components/aiwindow/models/Utils.sys.mjs").InferenceParams} InferenceParams
  */
@@ -147,6 +153,24 @@ export class Conversation {
 
   get messageCount() {
     return this.#messages.length;
+  }
+
+  /**
+   * Persists this conversation and its messages to the ConversationStore.
+   * Only the base `Conversation` persists here; subclasses with their own
+   * persistence (e.g. ChatConversation, which uses ChatStore) must not use
+   * this, or their subclass-specific data would be silently dropped.
+   *
+   * @returns {Promise<void>}
+   */
+  async save() {
+    if (this.constructor !== Conversation) {
+      throw new Error(
+        `${this.constructor.name} must not call Conversation.save(): it would ` +
+          `persist only the base conversation slice. Use its own store instead.`
+      );
+    }
+    await lazy.ConversationStore.updateConversation(this);
   }
 
   /** True when the underlying engineInstance is initialized and ready to serve requests. */

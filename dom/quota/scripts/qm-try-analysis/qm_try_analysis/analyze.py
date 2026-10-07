@@ -16,12 +16,12 @@ The analysis is based on stack frames of the following form:
 
 [
     {
-        "event_timeabs": 1617121013137,
-        "session_startabs": 1617120840000,
-        "build_id": "20210329095128",
+        "submit_timeabs": 1788912018146,
+        "build_id": "20260908042139",
         "client_id": "0013a68f-9893-461a-93d4-2d7a2f85583f",
         "session_id": "8cd37159-bd5c-481c-99ad-9eace9ea726a",
-        "seq": 1,
+        "event_timestamp": 1788907668153,
+        "seq": 4294967297,
         "context": "Initialization::TemporaryStorage",
         "source_file": "dom/localstorage/ActorsParent.cpp",
         "source_line": "1018",
@@ -30,6 +30,8 @@ The analysis is based on stack frames of the following form:
     },
 ...
 ]
+
+session_id is the id of the Glean events ping (document_id), see fetch.py.
 
 The location of the input file is expected to be found in the
 last item of the list inside qmexecutions.json.
@@ -79,10 +81,11 @@ def analyze_qm_failures(output_to, workdir):
     info(f"Found {len(rows)} rows of data")
     rows = stackanalysis.sanitize(rows)
 
-    # enrich rows with hg locations
+    # enrich rows with hg locations and Searchfox permalinks
     buildids = stackanalysis.extractBuildIDs(rows)
-    utils.fetchBuildRevisions(buildids)
+    gitcommits = utils.fetchBuildRevisions(buildids)
     stackanalysis.constructHGLinks(buildids, rows)
+    stackanalysis.constructSearchfoxLinks(gitcommits, rows)
 
     # transform rows to unique stacks
     raw_stacks = stackanalysis.collectRawStacks(rows)

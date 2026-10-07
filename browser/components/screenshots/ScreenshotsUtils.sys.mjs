@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { getFilename } from "chrome://browser/content/screenshots/fileHelpers.mjs";
+import { SELECTION_MODES } from "moz-src:///browser/components/screenshots/ScreenshotsSelectionModes.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const SCREENSHOTS_LAST_SCREENSHOT_METHOD_PREF =
@@ -19,6 +20,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   Downloads: "resource://gre/modules/Downloads.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
+  MiniWindowManager:
+    "moz-src:///browser/components/miniwindow/MiniWindowManager.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
 });
@@ -136,6 +139,12 @@ export class ScreenshotsComponentParent extends JSWindowActorParent {
         );
         ScreenshotsUtils.exit(browser);
         break;
+      case "Screenshots:MiniWindowCropSelection":
+        // Exit the Screenshots UI/state first, while `browser` is still in
+        // its origin window.
+        ScreenshotsUtils.exit(browser);
+        await ScreenshotsUtils.miniWindowFromRegion(message.data, browser);
+        break;
       case "Screenshots:OverlaySelection":
         ScreenshotsUtils.setPerBrowserState(browser, {
           hasOverlaySelection: message.data.hasSelection,
@@ -222,6 +231,16 @@ export var ScreenshotsUtils = {
     }
     const buttonsPanel = this.panelForBrowser(browser);
     if (buttonsPanel && !buttonsPanel.hidden) {
+      return UIPhases.INITIAL;
+    }
+    // Mini-window mode deliberately suppresses the buttons panel, so the check
+    // above can't see a session that is already up and has nothing selected
+    // yet. Reporting CLOSED there would let a second toolbar click re-run
+    // start()'s CLOSED branch.
+    if (
+      perBrowserState?.mode === SELECTION_MODES.MINI_WINDOW &&
+      perBrowserState?.overlayShowing
+    ) {
       return UIPhases.INITIAL;
     }
     return UIPhases.CLOSED;
@@ -493,20 +512,31 @@ export var ScreenshotsUtils = {
 
   observe(subj, topic, data) {
     let { gBrowser } = subj;
-    let browser = gBrowser.selectedBrowser;
+    this.toggle(gBrowser.selectedBrowser, data);
+  },
 
-    switch (topic) {
-      case "menuitem-screenshot": {
-        const uiPhase = this.getUIPhase(browser);
-        if (uiPhase !== UIPhases.CLOSED) {
-          // toggle from already-open to closed
-          this.cancel(browser, data);
-          return;
-        }
-        this.start(browser, data);
-        break;
-      }
+  /**
+   * Act on an entry point asking for the selection overlay in a given mode.
+   * It opens the overlay, hands one the other mode opened over to this mode,
+   * or closes an overlay that is already in this mode.
+   *
+   * @param browser The current browser.
+   * @param reason [string] Optional reason string passed along when recording telemetry events
+   * @param {object} [options]
+   * @param {string} [options.mode] Which overlay mode to run; see SELECTION_MODES.
+   */
+  toggle(browser, reason = "", { mode = SELECTION_MODES.SCREENSHOTS } = {}) {
+    if (
+      this.getUIPhase(browser) !== UIPhases.CLOSED &&
+      this.browserToScreenshotsState.get(browser)?.mode === mode
+    ) {
+      // toggle from already-open to closed
+      this.cancel(browser, reason);
+      return;
     }
+    // Either nothing is showing, or the other mode's overlay is and start()
+    // hands it over.
+    this.start(browser, reason, { mode });
   },
 
   /**
@@ -541,8 +571,12 @@ export var ScreenshotsUtils = {
    *
    * @param browser The current browser.
    * @param reason [string] Optional reason string passed along when recording telemetry events
+   * @param {object} [options]
+   * @param {string} [options.mode] Which overlay mode to run; see SELECTION_MODES.
    */
-  start(browser, reason = "") {
+  start(browser, reason = "", { mode = SELECTION_MODES.SCREENSHOTS } = {}) {
+    const previousMode = this.browserToScreenshotsState.get(browser)?.mode;
+    this.setPerBrowserState(browser, { mode });
     const uiPhase = this.getUIPhase(browser);
     switch (uiPhase) {
       case UIPhases.CLOSED: {
@@ -563,7 +597,12 @@ export var ScreenshotsUtils = {
         break;
       }
       case UIPhases.INITIAL:
-        // nothing to do, panel & overlay are already open
+      case UIPhases.OVERLAYSELECTION:
+        // The panel & overlay are already open, so the only thing left to do is
+        // hand them over when another entry point asks for its own mode.
+        if (previousMode && previousMode !== mode) {
+          this.switchMode(browser, reason);
+        }
         break;
       case UIPhases.PREVIEW: {
         this.closeDialogBox(browser);
@@ -571,6 +610,21 @@ export var ScreenshotsUtils = {
         break;
       }
     }
+  },
+
+  /**
+   * Hand a showing overlay over to a different selection mode, as though this
+   * mode had opened it. The child rebuilds the overlay for the new mode, so any
+   * selection the user had made goes with it and they start again from
+   * crosshairs.
+   *
+   * @param browser The current browser.
+   * @param reason [string] Optional reason string passed along when recording telemetry events
+   */
+  switchMode(browser, reason = "") {
+    this.closePanel(browser);
+    this.setPerBrowserState(browser, { hasOverlaySelection: false });
+    this.showPanelAndOverlay(browser, reason);
   },
 
   /**
@@ -620,7 +674,12 @@ export var ScreenshotsUtils = {
    * @param browser The current browser.
    */
   cancel(browser, reason) {
-    this.recordTelemetryEvent("canceled" + reason);
+    if (
+      this.browserToScreenshotsState.get(browser)?.mode !==
+      SELECTION_MODES.MINI_WINDOW
+    ) {
+      this.recordTelemetryEvent("canceled" + reason);
+    }
     this.exit(browser);
   },
 
@@ -874,6 +933,12 @@ export var ScreenshotsUtils = {
    * @param browser The current browser
    */
   openPanel(browser) {
+    if (
+      this.browserToScreenshotsState.get(browser)?.mode ===
+      SELECTION_MODES.MINI_WINDOW
+    ) {
+      return null;
+    }
     let buttonsPanel = this.panelForBrowser(browser);
     if (buttonsPanel && !buttonsPanel.hidden) {
       return null;
@@ -940,7 +1005,14 @@ export var ScreenshotsUtils = {
    */
   showPanelAndOverlay(browser, data) {
     let actor = this.getActor(browser);
-    actor.sendAsyncMessage("Screenshots:ShowOverlay");
+    let mode =
+      this.browserToScreenshotsState.get(browser)?.mode ||
+      SELECTION_MODES.SCREENSHOTS;
+    actor.sendAsyncMessage("Screenshots:ShowOverlay", { mode });
+    this.setPerBrowserState(browser, { overlayShowing: true });
+    if (mode === SELECTION_MODES.MINI_WINDOW) {
+      return null;
+    }
     this.recordTelemetryEvent("started" + data);
     return this.openPanel(browser);
   },
@@ -963,6 +1035,7 @@ export var ScreenshotsUtils = {
     if (this.browserToScreenshotsState.has(browser)) {
       this.setPerBrowserState(browser, {
         hasOverlaySelection: false,
+        overlayShowing: false,
       });
     }
   },
@@ -1353,6 +1426,44 @@ export var ScreenshotsUtils = {
     this.setBlobURL(browser, blobURL);
 
     await this.downloadScreenshot(title, blobURL, browser, "OverlayDownload");
+  },
+
+  /**
+   * Convert a Screenshots overlay region selection into a Mini Window cropInfo object
+   * and pop it into an always-on-top window.
+   *
+   * @param {object} data
+   * @param {object} data.region Page-absolute {left, top, width, height} (or
+   *   {left, top, right, bottom}) selection dimensions.
+   * @param {number} [data.viewportWidth] Content viewport width.
+   * @param {number} [data.viewportHeight] Content viewport height.
+   * @param browser The current browser.
+   */
+  async miniWindowFromRegion(data, browser) {
+    if (!Services.prefs.getBoolPref("browser.mini-window.enabled", false)) {
+      return;
+    }
+
+    let tab = browser.getTabBrowser()?.getTabForBrowser(browser);
+    if (!tab) {
+      return;
+    }
+
+    let { region, viewportWidth, viewportHeight } = data;
+    let width = region.width ?? region.right - region.left;
+    let height = region.height ?? region.bottom - region.top;
+
+    let cropInfo = {
+      left: region.left,
+      top: region.top,
+      width,
+      height,
+      viewportWidth: viewportWidth ?? browser.clientWidth,
+      viewportHeight: viewportHeight ?? browser.clientHeight,
+      fullZoom: browser.fullZoom,
+    };
+
+    await lazy.MiniWindowManager.popRegion(tab, cropInfo);
   },
 
   /**

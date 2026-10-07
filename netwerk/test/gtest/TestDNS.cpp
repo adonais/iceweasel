@@ -40,7 +40,7 @@ class ReentrantCallback final : public nsResolveHostCallback {
         mCompleted(aCompleted) {}
 
   void OnResolveHostComplete(nsHostResolver* aResolver, nsHostRecord* aRecord,
-                             nsresult aStatus) override {
+                             nsresult aStatus, bool aFromStaleCache) override {
     if (mShouldReenter) {
       RefPtr<ReentrantCallback> inner = new ReentrantCallback(
           mResolver, /* aShouldReenter */ false, mMutex, mCondVar, mCompleted);
@@ -170,6 +170,19 @@ nsCString BuildHTTPSAliasPacket(const nsACString& aOrigin,
   return buf;
 }
 
+// A NOERROR response with an empty answer section (NODATA): the name exists
+// but has no HTTPS record.
+nsCString BuildHTTPSNoDataPacket() {
+  nsCString buf;
+  AppendU16(buf, 0);       // id
+  AppendU16(buf, 0x8000);  // flags (QR set)
+  AppendU16(buf, 0);       // qdcount
+  AppendU16(buf, 0);       // ancount
+  AppendU16(buf, 0);       // nscount
+  AppendU16(buf, 0);       // arcount
+  return buf;
+}
+
 // A single HTTPS ServiceMode (SvcPriority 1) answer for |aOrigin|.
 nsCString BuildHTTPSServicePacket(const nsACString& aOrigin) {
   nsCString buf;
@@ -223,6 +236,36 @@ TEST(TestDNS, HTTPSAliasSelfReferenceIsCaseInsensitive)
       << "a case-only self-referencing HTTPS alias must not be followed";
   EXPECT_TRUE(result.is<TypeRecordEmpty>())
       << "no record should be surfaced for a self-referencing alias";
+
+  override->ClearOverrides();
+}
+
+// RFC 9460: an AliasMode TargetName must be used as the connection target even
+// when it has no HTTPS record of its own, so that Happy Eyeballs can resolve
+// its A/AAAA records. Mirrors the ex2.example.com case from bug 2072300.
+TEST(TestDNS, HTTPSAliasTargetWithoutHTTPSRecord)
+{
+  nsCOMPtr<nsINativeDNSResolverOverride> override =
+      do_GetService("@mozilla.org/network/native-dns-override;1");
+  ASSERT_TRUE(override);
+
+  constexpr auto kOrigin = "blog.alias-nodata.example"_ns;
+  constexpr auto kTarget = "alias-nodata.example"_ns;
+
+  AddHTTPSOverride(override, kOrigin, BuildHTTPSAliasPacket(kOrigin, kTarget));
+  AddHTTPSOverride(override, kTarget, BuildHTTPSNoDataPacket());
+
+  TypeRecordResultType result = AsVariant(Nothing());
+  uint32_t ttl = 0;
+  nsresult rv = ResolveHTTPSRecord(
+      kOrigin, nsIDNSService::RESOLVE_DEFAULT_FLAGS, result, ttl);
+
+  EXPECT_NS_SUCCEEDED(rv);
+  ASSERT_TRUE(result.is<TypeRecordHTTPSSVC>());
+  const auto& records = result.as<TypeRecordHTTPSSVC>();
+  ASSERT_EQ(records.Length(), 1u);
+  EXPECT_EQ(records[0].mSvcFieldPriority, 0);
+  EXPECT_TRUE(records[0].mSvcDomainName.Equals(kTarget));
 
   override->ClearOverrides();
 }

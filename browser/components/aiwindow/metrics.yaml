@@ -60,8 +60,8 @@ smart_window:
       submit_type: &submit_type
         type: string
         description: >
-          How the request was submitted: button, enter, follow-up, resume, retry,
-          shortcuts, starter, or suggestion
+          How the request was submitted: button, enter, follow-up, menu, resume,
+          retry, shortcuts, starter, or suggestion
       tabs:
         type: quantity
         unit: count
@@ -466,8 +466,10 @@ smart_window:
       with prompt revisions during debugging.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2041835
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068252
     data_reviews:
       - https://phabricator.services.mozilla.com/D302170
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068252
     data_sensitivity:
       - interaction
     notification_emails: *emails
@@ -489,7 +491,11 @@ smart_window:
       error:
         type: string
         description: >
-          Canonical tool-call error code, or empty on success
+          Canonical tool-call error code, or empty on success. A tool that
+          reports a failure by returning an error-bearing result rather than
+          throwing, as search_the_web does, is also counted as
+          "execution_failed" here; for the reason a search failed, see the
+          error extra on smart_window.search_the_web
 
   model_request:
     type: event
@@ -623,6 +629,113 @@ smart_window:
         description: >
           Line number in the source file the error originated from, or 0 if
           unknown
+
+  search_the_web:
+    type: event
+    description: |
+      Recorded when the snippets-based search_the_web flow finishes. Reports
+      how long the flow took and where that time went, so its latency can be
+      attributed to the Exa retrieval or to processing the results, and so
+      failed searches can be told apart from searches that returned nothing.
+
+      Only the snippets-based flow is reported. The flow is not recorded when
+      it escalates to the Google handoff, which retrieves nothing of its own
+      and is covered by smart_window.search_handoff.
+
+      These durations cover the tool call only. The event is recorded when the
+      flow returns its snippets to the assistant, before any of it has been
+      shown to the user: the assistant then composes the user-facing reply from
+      those snippets in a further model turn. For the user-visible turn, which
+      includes that reply, see smart_window.model_response.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068252
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068252
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+      total_duration:
+        type: quantity
+        unit: ms
+        description: >
+          Time in ms for the whole search flow, from the flow starting through
+          the snippets being returned to the assistant. This starts before the
+          query is validated, so on the invalid_query path it covers a run
+          during which no search request was ever issued. It excludes the
+          argument parsing and action-log setup the chat loop does before
+          invoking the flow.
+      retrieval_duration:
+        type: quantity
+        unit: ms
+        description: >
+          Time in ms for the search provider to return results, including
+          acquiring the auth token the request needs. 0 when the flow failed
+          before the request was made.
+      processing_duration:
+        type: quantity
+        unit: ms
+        description: >
+          Time in ms to filter, cap, sanitize and truncate the retrieved
+          results and register them for citation. 0 when retrieval failed.
+      results_retrieved:
+        type: quantity
+        unit: count
+        description: >
+          Number of usable results the search provider returned, after results
+          with no URL were discarded. 0 when retrieval failed.
+      results_returned:
+        type: quantity
+        unit: count
+        description: >
+          Number of results handed to the assistant, never more than
+          results_retrieved. 0 on any failure. Two independent causes can make
+          this lower than results_retrieved, so the difference between them is
+          not a drop rate: results with an unusable URL or too short a snippet
+          are discarded, and whatever survives is then capped at a limit below
+          the number retrieval requests. When retrieval returns no more than
+          that cap and nothing is discarded, the two counts are equal.
+      snippet_chars_returned:
+        type: quantity
+        unit: count
+        description: >
+          Total characters of snippet text across the results handed to the
+          assistant, measured after whitespace is collapsed and the per-snippet
+          cap is applied, and counting the single ellipsis character appended
+          to a snippet that was cut. A length only, never the text itself.
+          0 on any failure. Read with results_returned this distinguishes a few
+          substantial snippets from several thin ones.
+      snippet_chars_truncated:
+        type: quantity
+        unit: count
+        description: >
+          Total characters removed from those snippets by the per-snippet cap,
+          summed across the results handed to the assistant. A length only,
+          never the text itself. 0 when nothing was cut and on any failure. A
+          large value means the assistant is answering from material the cap
+          shortened.
+      http_status:
+        type: quantity
+        unit: count
+        description: >
+          HTTP status from the search back-end, or 0 if no response arrived.
+      error:
+        type: string
+        description: >
+          Canonical reason the flow ended. One of: "" on success;
+          "invalid_query" when the assistant supplied no usable query;
+          "config_error" when the endpoint or auth token was unavailable;
+          "timeout" when the search request exceeded its deadline;
+          "http_error" when the back-end returned a non-2xx status, whose value
+          is in http_status; "network_error" when the request failed below the
+          HTTP layer; "retrieval_failed" for any other retrieval failure;
+          "no_results" when nothing usable survived processing;
+          "internal_error" when the flow itself threw, which is a client bug
+          rather than a search failure. Never a free form message.
 
   chat_storage:
     type: quantity
@@ -1720,119 +1833,356 @@ smart_window:
     notification_emails: *emails
     expires: never
 
-  # TODO: Follow up Bug https://bugzilla.mozilla.org/show_bug.cgi?id=2046610 for testing telemetry
-  # Will land after FE is landed
-  monitor_delete:
-    type: event
+  agent_active_actions:
+    type: labeled_quantity
     description: |
-      Recorded when a Smart Window monitor is deleted.
-    bugs: &monitor_bugs
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046610
-    data_reviews: &monitor_data_reviews
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046610
+      Number of enabled agentic actions the user currently has, keyed by
+      agent type. Set when the monitor store is loaded at startup and after
+      every create, edit, pause, resume and delete, so each metrics ping
+      carries the current count.
+    lifetime: application
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072399
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072399
     data_sensitivity:
       - interaction
     notification_emails: *emails
     expires: never
-    extra_keys: &monitor_extra_keys
-      monitors:
+    labels:
+      - monitor
+
+  agent_paused_actions:
+    type: labeled_quantity
+    description: |
+      Number of paused (disabled) agentic actions the user currently has,
+      keyed by agent type. Set when the monitor store is loaded at startup
+      and after every create, edit, pause, resume and delete, so each
+      metrics ping carries the current count.
+    lifetime: application
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072399
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072399
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    labels:
+      - monitor
+
+  # The agentic action events below share one vocabulary of extra keys. The
+  # agent key names the agent type so every agent, such as research or
+  # monitor, can record the same events; only the monitor agent records them
+  # today. The spec names tabs, check_frequency and status map to urls,
+  # schedule_type and enabled here.
+
+  agentic_action_create_submit:
+    type: event
+    description: |
+      Recorded when the creation of an agentic action is requested, before
+      the request is validated. Describes what was submitted, so it carries
+      no action_id, age, enabled or prompt_version: the action does not
+      exist yet. Always followed by agentic_action_create_complete. chat_id
+      and message_seq are only present for chat-originated creations and
+      are provided by the front end.
+    bugs: &agentic_action_bugs
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046610
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072399
+    data_reviews: &agentic_action_data_reviews
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072399
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      agent: &agentic_action_agent
+        type: string
+        description: >
+          Agent type the action belongs to. Always monitor for now; other
+          agents, such as research, will record their own values.
+      source: &agentic_action_source
+        type: string
+        description: >
+          Surface the request came from: in_line_chat (chat card),
+          toolbar_panel, about_page (about:smartwindowtasks) or unknown.
+          Tests record test.
+      chat_id: *chat_id
+      message_seq: *message_seq
+      monitors: &agentic_action_monitors
         type: quantity
         unit: count
         description: >
-          Number of monitors currently stored.
-      urls:
+          Number of monitors stored when the event was recorded, or 0 when
+          the store could not be loaded.
+      urls: &agentic_action_urls
         type: quantity
         unit: count
         description: >
-          Number of URLs watched by the monitor.
-      length:
+          Number of URLs watched by the monitor (the spec's tabs). On
+          agentic_action_create_submit this counts the URLs as submitted,
+          before invalid ones are dropped.
+      length: &agentic_action_length
         type: quantity
         unit: characters
         description: >
           Number of characters in the monitor prompt.
-      age:
+      schedule_type: &agentic_action_schedule_type
+        type: string
+        description: >
+          Type of schedule used by the monitor: interval, daily or weekly
+          (the spec's check_frequency). Absent when the submitted schedule
+          type is none of those.
+      check_time: &agentic_action_check_time
+        type: string
+        description: >
+          Local wall clock time the monitor checks at, as zero padded HH:MM.
+          Only present for daily and weekly schedules.
+      check_weekday: &agentic_action_check_weekday
+        type: quantity
+        unit: weekday
+        description: >
+          Weekday the monitor checks on, 0 for Sunday through 6 for
+          Saturday. Only present for weekly schedules.
+
+  agentic_action_create_complete:
+    type: event
+    description: |
+      Recorded when the creation of an agentic action finishes, whether it
+      succeeded or failed. On success the monitor exists and the shared keys
+      describe it; on failure the keys repeat the submitted values from
+      agentic_action_create_submit. chat_id and message_seq are only present
+      for chat-originated creations and are provided by the front end.
+    bugs: *agentic_action_bugs
+    data_reviews: *agentic_action_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      <<: &agentic_action_extra_keys
+        monitors: *agentic_action_monitors
+        urls: *agentic_action_urls
+        length: *agentic_action_length
+        age:
+          type: quantity
+          unit: ms
+          description: >
+            Age of the monitor in milliseconds since it was created.
+        active_age:
+          type: quantity
+          unit: ms
+          description: >
+            Milliseconds since the monitor's current active period began: its
+            creation, or the last time it was resumed or edited.
+        schedule_type: *agentic_action_schedule_type
+        prompt_version:
+          type: string
+          description: >
+            Version of the monitor prompt used for the monitor.
+        enabled:
+          type: boolean
+          description: >
+            Whether the monitor is enabled (the spec's status).
+        action_id:
+          type: string
+          description: >
+            Random UUID of the monitor the event belongs to, generated on the
+            client when the monitor is created. Lets create, run,
+            notification and click events be joined per monitor.
+        agent: *agentic_action_agent
+        check_time: *agentic_action_check_time
+        check_weekday: *agentic_action_check_weekday
+      source: *agentic_action_source
+      chat_id: *chat_id
+      message_seq: *message_seq
+      success:
+        type: boolean
+        description: >
+          Whether the monitor was created.
+      error_code:
+        type: string
+        description: >
+          Why creation failed: limit_reached (the active monitor cap), invalid_input
+          (no prompt, no valid URL, too many URLs or a bad schedule),
+          storage_error (the IndexedDB write failed), interrupted (the
+          browser is shutting down) or unknown_error. Only present when
+          success is false. Never a free-form message.
+
+  agentic_action_edit_complete:
+    type: event
+    description: |
+      Recorded when a monitor's definition (title, prompt, watched URLs or
+      schedule) is saved, whether or not anything changed. A plain pause or
+      resume records agentic_action_pause or agentic_action_resume instead.
+      source, chat_id and message_seq are provided by the front end and stay
+      unset until it passes them.
+    bugs: *agentic_action_bugs
+    data_reviews: *agentic_action_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      <<: *agentic_action_extra_keys
+      source: *agentic_action_source
+      chat_id: *chat_id
+      message_seq: *message_seq
+
+  agentic_action_pause:
+    type: event
+    description: |
+      Recorded when a monitor is paused, so it stops running on its schedule
+      until resumed: by the user, or by the monitor itself when it hits an
+      auto-expiry rule. source, chat_id and message_seq are provided by the
+      front end and stay unset until it passes them.
+    bugs: *agentic_action_bugs
+    data_reviews: *agentic_action_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      <<: *agentic_action_extra_keys
+      source: *agentic_action_source
+      chat_id: *chat_id
+      message_seq: *message_seq
+      reason:
+        type: string
+        description: >
+          Why the monitor paused: user (paused from the UI), no_match (it ran
+          for the no-match window without its condition being met) or
+          max_age (it reached the maximum active lifetime).
+
+  agentic_action_resume:
+    type: event
+    description: |
+      Recorded when a paused monitor is resumed. source, chat_id and
+      message_seq are provided by the front end and stay unset until it
+      passes them.
+    bugs: *agentic_action_bugs
+    data_reviews: *agentic_action_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      <<: *agentic_action_extra_keys
+      source: *agentic_action_source
+      chat_id: *chat_id
+      message_seq: *message_seq
+
+  agentic_action_delete:
+    type: event
+    description: |
+      Recorded when a monitor is deleted. enabled tells whether it was
+      running or paused at the time. source, chat_id and message_seq are
+      provided by the front end and stay unset until it passes them.
+    bugs: *agentic_action_bugs
+    data_reviews: *agentic_action_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      <<: *agentic_action_extra_keys
+      source: *agentic_action_source
+      chat_id: *chat_id
+      message_seq: *message_seq
+
+  agentic_action_execute_request:
+    type: event
+    description: |
+      Recorded when a monitor run starts, whether the user asked for it or
+      the schedule fired. Recorded before the check does any work, so a
+      crash or hard shutdown mid-run leaves a request without a terminal
+      event: the number of requests is greater than or equal to the number
+      of agentic_action_execute_complete plus agentic_action_execute_cancel
+      events. A run asked for while another run of the same monitor is in
+      progress, and a schedule timer firing for a disabled or not yet due
+      monitor, record nothing.
+    bugs: *agentic_action_bugs
+    data_reviews: *agentic_action_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      <<: *agentic_action_extra_keys
+      reason: &agentic_action_reason
+        type: string
+        description: >
+          Why the run happened: manual (the user asked, which includes the
+          automatic first check the chat card triggers right after
+          creation), trigger_time (the schedule fired less than five minutes
+          after the scheduled time) or delayed (the schedule fired five
+          minutes or more late, mostly because the browser was closed or
+          asleep).
+      execution_seq: &agentic_action_execution_seq
+        type: quantity
+        unit: count
+        description: >
+          Lifetime run number of the monitor, 1 for its first run and 0 on
+          the notification shown at creation, before any run. Counts runs
+          since the counter was introduced; monitors created before that
+          start from their visible history length. Best effort: a store
+          failure can leave the persisted count behind.
+      delay: &agentic_action_delay
         type: quantity
         unit: ms
         description: >
-          Age of the monitor in milliseconds since it was created.
-      schedule_type:
-        type: string
-        description: >
-          Type of schedule used by the monitor: interval, daily, or weekly.
-      prompt_version:
-        type: string
-        description: >
-          Version of the monitor prompt used for the monitor.
-      enabled:
-        type: boolean
-        description: >
-          Whether the monitor is enabled.
+          For scheduled runs, how long after the scheduled time the run
+          started. A timer that fired on time reports close to zero. A run
+          that was already overdue when its timer was armed, such as at
+          browser start, reports the missed time plus about one second,
+          because overdue timers are armed one second out. Larger values
+          mostly measure time the browser was closed or asleep. Absent for
+          manual runs and when the stored scheduled time could not be
+          parsed.
 
-  monitor_create:
+  agentic_action_execute_start:
     type: event
     description: |
-      Recorded when a Smart Window monitor is created.
-    bugs: *monitor_bugs
-    data_reviews: *monitor_data_reviews
+      Recorded when a monitor run hands the check to the model: the watched
+      pages were extracted and the prompt was loaded. A request without a
+      start failed or was torn down before reaching the model.
+    bugs: *agentic_action_bugs
+    data_reviews: *agentic_action_data_reviews
     data_sensitivity:
       - interaction
     notification_emails: *emails
     expires: never
     extra_keys:
-      <<: *monitor_extra_keys
-      source:
+      <<: *agentic_action_extra_keys
+      reason: *agentic_action_reason
+      execution_seq: *agentic_action_execution_seq
+      model: &agentic_action_model
         type: string
         description: >
-          Source of the monitor creation.
+          Model the check ran with: the model id from the monitor feature
+          config, or from the chat config when the monitor config says
+          generic, or the custom model name the user entered when a custom
+          model is configured. A value of generic means neither config
+          named a model and the service picked the default. Absent when the
+          run failed before its conversation was built.
 
-  monitor_edit:
+  agentic_action_execute_complete:
     type: event
     description: |
-      Recorded when a Smart Window monitor is edited.
-    bugs: *monitor_bugs
-    data_reviews: *monitor_data_reviews
-    data_sensitivity:
-      - interaction
-    notification_emails: *emails
-    expires: never
-    extra_keys: *monitor_extra_keys
-
-  monitor_enable:
-    type: event
-    description: |
-      Recorded when a Smart Window monitor is enabled.
-    bugs: *monitor_bugs
-    data_reviews: *monitor_data_reviews
-    data_sensitivity:
-      - interaction
-    notification_emails: *emails
-    expires: never
-    extra_keys: *monitor_extra_keys
-
-  monitor_disable:
-    type: event
-    description: |
-      Recorded when a Smart Window monitor is disabled.
-    bugs: *monitor_bugs
-    data_reviews: *monitor_data_reviews
-    data_sensitivity:
-      - interaction
-    notification_emails: *emails
-    expires: never
-    extra_keys: *monitor_extra_keys
-
-  monitor_complete:
-    type: event
-    description: |
-      Recorded when a Smart Window monitor run completes (either successfully or with failure).
-    bugs: *monitor_bugs
-    data_reviews: *monitor_data_reviews
+      Recorded when a monitor run finishes on its own, successfully or with
+      a failure, including a timeout. A run torn down by deleting the
+      monitor or shutting down the browser records
+      agentic_action_execute_cancel instead.
+    bugs: *agentic_action_bugs
+    data_reviews: *agentic_action_data_reviews
     data_sensitivity:
       - interaction
     notification_emails: *emails
     expires: never
     extra_keys:
-      <<: *monitor_extra_keys
+      <<: *agentic_action_extra_keys
+      reason: *agentic_action_reason
+      execution_seq: *agentic_action_execution_seq
       success:
         type: boolean
         description: >
@@ -1840,60 +2190,119 @@ smart_window:
       error_code:
         type: string
         description: >
-          Human-readable error message if the monitor run failed. Only present when success is false.
+          One of the monitor run error codes: network_error, timeout,
+          rate_limit, auth_error, content_extraction_error, canceled,
+          interrupted, model_error, prompt_load_error or unknown_error.
+          Only present when success is false. Never a free-form message.
+      outcome:
+        type: boolean
+        description: >
+          Whether the monitor condition was met on this run. Only present
+          when success is true. A model reply that could not be parsed is
+          stored as a successful not-met run, so it counts as false here.
+      latency:
+        type: quantity
+        unit: ms
+        description: >
+          Time spent in the model call only, excluding page extraction and
+          the account token fetch. Only present when the model call
+          completed.
+      duration: &agentic_action_duration
+        type: quantity
+        unit: ms
+        description: >
+          Total time of the run from start to its terminal event, including
+          page extraction and the model call.
+      model: *agentic_action_model
+      delay: *agentic_action_delay
 
-  monitor_run_manual:
+  agentic_action_execute_cancel:
     type: event
     description: |
-      Recorded when a Smart Window monitor runs after a manual request.
-    bugs: *monitor_bugs
-    data_reviews: *monitor_data_reviews
-    data_sensitivity:
-      - interaction
-    notification_emails: *emails
-    expires: never
-    extra_keys: *monitor_extra_keys
-
-  monitor_run_scheduled:
-    type: event
-    description: |
-      Recorded when a Smart Window monitor runs from its schedule.
-    bugs: *monitor_bugs
-    data_reviews: *monitor_data_reviews
-    data_sensitivity:
-      - interaction
-    notification_emails: *emails
-    expires: never
-    extra_keys: *monitor_extra_keys
-
-  monitor_notification_send:
-    type: event
-    description: |
-      Recorded when a Smart Window monitor sends a notification to the user because its condition was met.
-    bugs: *monitor_bugs
-    data_reviews: *monitor_data_reviews
-    data_sensitivity:
-      - interaction
-    notification_emails: *emails
-    expires: never
-    extra_keys: *monitor_extra_keys
-
-  monitor_notification_click:
-    type: event
-    description: |
-      Recorded when a user interacts with a Smart Window monitor notification.
-    bugs: *monitor_bugs
-    data_reviews: *monitor_data_reviews
+      Recorded when a monitor run is torn down before it finished because
+      the user deleted the monitor mid-run or the browser started shutting
+      down. A run that timed out or failed records
+      agentic_action_execute_complete with an error_code instead.
+    bugs: *agentic_action_bugs
+    data_reviews: *agentic_action_data_reviews
     data_sensitivity:
       - interaction
     notification_emails: *emails
     expires: never
     extra_keys:
-      <<: *monitor_extra_keys
-      click_type:
+      <<: *agentic_action_extra_keys
+      reason: *agentic_action_reason
+      execution_seq: *agentic_action_execution_seq
+      error_code:
         type: string
         description: >
-          Type of notification interaction: "open_url" (body clicked to open watched page), "snooze" (snooze button clicked), or "dismiss" (dismiss button clicked to mute notifications).
+          Why the run was torn down: canceled (the monitor was deleted) or
+          interrupted (browser shutdown). Never a free-form message.
+      duration: *agentic_action_duration
+      model: *agentic_action_model
+
+  agentic_action_notification_display:
+    type: event
+    description: |
+      Recorded when a desktop notification about a monitor is shown: the
+      condition-met or failed-check notification after a run, the one-off
+      notification shown right after the monitor is created, or the
+      notification shown when the monitor pauses itself after hitting an
+      auto-expiry rule. The run's reason is not repeated here; join action_id
+      and execution_seq to agentic_action_execute_request for it.
+    bugs: &agentic_action_notification_bugs
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046610
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072399
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072692
+    data_reviews: *agentic_action_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      <<: *agentic_action_extra_keys
+      notification_type: &agentic_action_notification_type
+        type: string
+        description: >
+          Which notification: condition_met (a run met the monitor
+          condition), run_failed (a run could not check the page), created
+          (the monitor was just created) or expired (the monitor paused
+          itself after hitting an auto-expiry rule).
+      execution_seq: *agentic_action_execution_seq
+      outcome: &agentic_action_notification_outcome
+        type: boolean
+        description: >
+          Always true: the condition-met notification is only shown when the
+          condition was met. Absent for the run_failed, created and expired
+          notifications.
+
+  agentic_action_notification_close:
+    type: event
+    description: |
+      Recorded when the user interacts with a monitor desktop notification.
+      Notifications the user ignores, or that the system closes on its own,
+      record nothing. The run's reason is not repeated here; join action_id
+      and execution_seq to agentic_action_execute_request for it.
+    bugs: *agentic_action_notification_bugs
+    data_reviews: *agentic_action_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      <<: *agentic_action_extra_keys
+      notification_type: *agentic_action_notification_type
+      execution_seq: *agentic_action_execution_seq
+      outcome: *agentic_action_notification_outcome
+      reason:
+        type: string
+        description: >
+          What the user did: open_url (clicked the body of a condition-met
+          or failed-check notification, opening the watched page), snooze
+          (hold off checks until the next day), dismiss (mute the monitor's
+          notifications), open_tasks (clicked the body of the created or
+          expired notification, opening the tasks page) or resume (turned an
+          expired monitor back on from its notification).
 
   # The "Organize Tabs" events below describe one user journey, so they share a
   # vocabulary of extra keys. None of them record a URL, a tab title, or a
@@ -2280,6 +2689,20 @@ smart_window:
           Form type the model classified from the page title and url. One of: travel, registration,
           product_search, or other. Absent when the request failed, and while the
           model does not classify the page yet.
+      fields_typed:
+        type: quantity
+        unit: fields
+        description: >
+          Number of the fields sent that came back with a valid field type, so neither missing
+          nor other/unknown. Absent when the request failed.
+      fields_unknown:
+        type: quantity
+        unit: fields
+        description: >
+          Number of the fields sent that the model explicitly declined to name, so came back
+          as other or unknown. A field with no type at all counts in neither this nor
+          fields_typed, so fields_total minus both is how many the response left out.
+          Absent when the request failed.
       latency_ms:
         type: quantity
         unit: ms
@@ -2327,6 +2750,25 @@ smart_window:
         unit: memories
         description: >
           Number of memories included as context.
+      memories_similarity_min:
+        type: quantity
+        unit: percent
+        description: >
+          Lowest similarity score of memories included as context, as a percentage rounded to
+          the nearest whole one. The score is what memory retrieval ranked the
+          memory as. Absent when no memory was included.
+      memories_similarity_max:
+        type: quantity
+        unit: percent
+        description: >
+          Highest similarity score of those memories, in the same units as
+          memories_similarity_min. Absent when no memory was included.
+      memories_similarity_avg:
+        type: quantity
+        unit: percent
+        description: >
+          Mean similarity score of those memories, in the same units as
+          memories_similarity_min. Absent when no memory was included.
       model:
         type: string
         description: >
@@ -2364,6 +2806,26 @@ smart_window:
         description: >
           Number of memories the model reports having used. Absent when the
           generation failed, since no answer came back to report it.
+      memories_used_similarity_min:
+        type: quantity
+        unit: percent
+        description: >
+          Lowest similarity score among the memories the model reports having
+          used, as a percentage rounded to the nearest whole one. Absent when the
+          model used no memory, and when none of the memories it named could be
+          matched back to one that was sent.
+      memories_used_similarity_max:
+        type: quantity
+        unit: percent
+        description: >
+          Highest similarity score among those memories, in the same units as
+          memories_used_similarity_min. Absent for the same reasons.
+      memories_used_similarity_avg:
+        type: quantity
+        unit: percent
+        description: >
+          Mean similarity score among those memories, in the same units as
+          memories_used_similarity_min. Absent for the same reasons.
       tabs_used:
         type: quantity
         unit: tabs
@@ -2430,6 +2892,26 @@ smart_window:
           Model's inferred field classification from the classification request,
           from a closed enum defined with the models team. Absent when the field
           was not classified.
+      pre_llm_field_kind:
+        type: string
+        description: >
+          What the existing autofill system named the field before being sent to
+          an LLM. A field name from autofill's own vocabulary, e.g. email, tel or
+          given-name. Absent when the autofill system named nothing.
+      pre_llm_source:
+        type: string
+        description: >
+          Which autofill heuristic produced pre_llm_field_kind. One of:
+          autocomplete, ml, fathom, regex-heuristic, update-heuristic or
+          update-heuristic-alternate. Absent when the autofill system named
+          nothing.
+      pre_llm_confidence:
+        type: quantity
+        unit: percent
+        description: >
+          How confident that heuristic was, as a percentage rounded to the
+          nearest whole one. Only fathom reports one, so this is absent for
+          every other pre_llm_source.
       token_available:
         type: boolean
         description: >
@@ -2452,6 +2934,42 @@ smart_window:
         type: boolean
         description: >
           Boolean, whether the field was filled
+
+  form_fill_field_review_outcome:
+    type: event
+    description: |
+      Recorded once per generated field when the user submits the review
+      dialog's fill, capturing what the user did with each field.
+    bugs: *smart_form_fill_bugs
+    data_reviews: *smart_form_fill_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      flow_id: *smart_form_fill_flow_id
+      field_seq:
+        type: quantity
+        unit: count
+        description: >
+          Index of the field, to join with its decision event.
+      outcome:
+        type: string
+        description: >
+          What the user did with the generated value before submitting it. One
+          of: kept, edited, or cleared.
+      generated_length:
+        type: quantity
+        unit: characters
+        description: >
+          Character count of the value the model generated. Only sent when the outcome is edited.
+      reviewed_length:
+        type: quantity
+        unit: characters
+        description: >
+          Character count of the value the user submitted. Read against
+          generated_length it says whether the user cut the generated value down
+          or added to it. Only sent when the outcome is edited, as above.
 
   form_fill_field_outcome:
     type: event
@@ -2489,6 +3007,24 @@ smart_window:
         type: string
         description: >
           Whether the user kept the value. One of: kept, edited, or cleared.
+      filled_length:
+        type: quantity
+        unit: characters
+        description: >
+          Character count of the value the fill wrote into the field. This is
+          the value as approved in the review dialog, which is not necessarily
+          the value the model generated. Sent alongside final_length to give
+          that count something to be read against, so only sent when the
+          outcome is edited.
+      final_length:
+        type: quantity
+        unit: characters
+        description: >
+          Character count of the value the field was left with. Read against
+          filled_length it says whether the user cut the filled value down or
+          added to it, so a value that was consistently too long or too short can
+          be told from one that was simply the wrong value. Only sent when the
+          outcome is edited, as above.
 
   form_relevant_tabs_request:
     type: event
@@ -2516,6 +3052,11 @@ smart_window:
         unit: tabs
         description: >
           How many tabs were sent in the request.
+      threshold:
+        type: string
+        description: >
+          Minimum relevance a tab must reach to be selected as context.
+          A string. One of: low, medium or high.
 
   form_relevant_tabs_response:
     type: event
@@ -2558,5 +3099,72 @@ smart_window:
         description: >
           Number of those tabs that were actually included as context.
           Lower than tabs_selected when the model repeated a tab, named
-          one that was never offered, or picked more than the client accepts.
+          one that was never offered, rated a tab below the relevance
+          threshold, or picked more than the client accepts. Absent when
+          the request failed.
+      tabs_high:
+        type: quantity
+        unit: tabs
+        description: >
+          How many of the tabs the model rated as highly relevant to the form.
           Absent when the request failed.
+      tabs_medium:
+        type: quantity
+        unit: tabs
+        description: >
+          How many tabs the model rated as medium relevance. Absent when the request
+          failed.
+      tabs_low:
+        type: quantity
+        unit: tabs
+        description: >
+          How many tabs the model rated as low relevance. Absent when the request failed.
+
+  form_relevant_tabs_outcome:
+    type: event
+    description: |
+      Recorded when a fill starts, reporting what the user did with the tabs the
+      model picked. A fill the user never started reports nothing. Sent just
+      before the round's form_fill_generate_request, so a round whose generation
+      never reached the model still reports what the user chose.
+    bugs: *smart_form_fill_bugs
+    data_reviews: *smart_form_fill_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      flow_id: *smart_form_fill_flow_id
+      tabs_final:
+        type: quantity
+        unit: tabs
+        description: >
+          Number of tabs the fill actually ran with.
+      tabs_kept:
+        type: quantity
+        unit: tabs
+        description: >
+          How many of the model's tabs survived into that selection.
+      tabs_removed:
+        type: quantity
+        unit: tabs
+        description: >
+          How many of the model's tabs the user took out.
+      tabs_added:
+        type: quantity
+        unit: tabs
+        description: >
+          How many tabs the user added that the model had not picked. The user
+          can only add a tab the model chose from, so an addition always means
+          the model saw that tab and passed on it.
+      editor_opens:
+        type: quantity
+        unit: opens
+        description: >
+          How many times the user opened the source editor before this fill
+          started.
+      editor_result:
+        type: string
+        description: >
+          How the last open of the source editor ended. One of done, cancel, or
+          aborted. Absent when the editor was never opened.

@@ -1,7 +1,6 @@
 import argparse
 import os
 import sys
-from collections import OrderedDict
 from urllib.parse import urlparse
 
 import mozlog
@@ -366,11 +365,11 @@ class ReftestArgumentsParser(argparse.ArgumentParser):
         return moznetwork.get_ip()
 
     def set_default_suite(self, options):
-        manifests = OrderedDict([
-            ("reftest.list", "reftest"),
-            ("crashtests.list", "crashtest"),
-            ("jstests.list", "jstestbrowser"),
-        ])
+        manifests = {
+            "reftest.list": "reftest",
+            "crashtests.list": "crashtest",
+            "jstests.list": "jstestbrowser",
+        }
 
         for test_path in options.tests:
             file_name = os.path.basename(test_path)

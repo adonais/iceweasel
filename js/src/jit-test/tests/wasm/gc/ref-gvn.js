@@ -1317,4 +1317,172 @@ if (getBuildConfiguration("jitspew")) {
   }
   // ref.test of (ref none) gets folded into a constant 0 by GVN, so we can't
   // test it the same way.
+
+  // br_on_cast and br_on_cast_fail generate test and cast nodes and get optimized accordingly
+  {
+    const code = wasmTextToBinary(`(module
+      (type $a (sub (struct (field i32))))
+      (type $b (sub $a (struct (field i32) (field i64))))
+
+      (global $g32 (mut i32) (i32.const 0))
+      (global $g64 (mut i64) (i64.const 0))
+
+      (func (export "makeA") (result (ref $a))
+        (struct.new $a (i32.const 123))
+      )
+      (func (export "makeB") (result (ref $b))
+        (struct.new $b (i32.const 123) (i64.const 234))
+      )
+      (func (export "test1") (param $p (ref $a)) (param $n i32) (result i64)
+        (struct.get $a 0 (local.get $p))
+        global.set $g32
+
+        loop
+          block
+            block (result (ref $b))
+              (br_on_cast 0 (ref $a) (ref $b) (local.get $p))
+              (global.set $g64 (i64.const -1))
+              br 1
+            end
+            struct.get $b 1
+            global.set $g64
+          end
+
+          (i32.sub (local.get $n) (i32.const 1))
+          local.tee $n
+          br_if 0
+        end
+
+        global.get $g64
+      )
+      (func (export "test2") (param $p (ref $a)) (param $n i32) (result i64)
+        (struct.get $a 0 (local.get $p))
+        global.set $g32
+
+        loop
+          block
+            block (result (ref $a))
+              (br_on_cast_fail 0 (ref $a) (ref $b) (local.get $p))
+              struct.get $b 1
+              global.set $g64
+              br 1
+            end
+            drop
+            (global.set $g64 (i64.const -1))
+          end
+
+          (i32.sub (local.get $n) (i32.const 1))
+          local.tee $n
+          br_if 0
+        end
+
+        global.get $g64
+      )
+    )`);
+
+    const { makeA, makeB, test1, test2 } = wasmEvalBinary(code).exports;
+    assertEq(test1(makeA(), 10), -1n);
+    assertEq(test2(makeA(), 10), -1n);
+    assertEq(test1(makeB(), 10), 234n);
+    assertEq(test2(makeB(), 10), 234n);
+
+    {
+      const ionJSON = wasmGetIon(code, 2);
+      const unoptimized = wasmIonGetFirstMIRPass(ionJSON);
+      const optimized = wasmIonGetLastMIRPass(ionJSON);
+      assertOpcodesInOrder(unoptimized, ["WasmRefTestConcrete", "Test", "WasmRefCastConcrete", "WasmLoadField"]);
+      assertOpcodesInOrder(optimized, ["WasmRefTestConcrete", "Test", "WasmRefCastInfallible", "WasmLoadField"]);
+    }
+    {
+      const ionJSON = wasmGetIon(code, 3);
+      const unoptimized = wasmIonGetFirstMIRPass(ionJSON);
+      const optimized = wasmIonGetLastMIRPass(ionJSON);
+      assertOpcodesInOrder(unoptimized, ["WasmRefTestConcrete", "Test", "WasmRefCastConcrete", "WasmLoadField"]);
+      assertOpcodesInOrder(optimized, ["WasmRefTestConcrete", "Test", "WasmRefCastInfallible", "WasmLoadField"]);
+    }
+  }
+
+  // same as above but with OOL fields
+  {
+    const code = wasmTextToBinary(`(module
+      (type $a (sub (struct ${"(field i32)".repeat(60)})))
+      (type $b (sub $a (struct ${"(field i32)".repeat(60)} (field i64))))
+
+      (global $g32 (mut i32) (i32.const 0))
+      (global $g64 (mut i64) (i64.const 0))
+
+      (func (export "makeA") (result (ref $a))
+        (struct.new $a ${"(i32.const 123)".repeat(60)})
+      )
+      (func (export "makeB") (result (ref $b))
+        (struct.new $b ${"(i32.const 123)".repeat(60)} (i64.const 234))
+      )
+      (func (export "test1") (param $p (ref $a)) (param $n i32) (result i64)
+        (struct.get $a 59 (local.get $p))
+        global.set $g32
+
+        loop
+          block
+            block (result (ref $b))
+              (br_on_cast 0 (ref $a) (ref $b) (local.get $p))
+              (global.set $g64 (i64.const -1))
+              br 1
+            end
+            struct.get $b 60
+            global.set $g64
+          end
+
+          (i32.sub (local.get $n) (i32.const 1))
+          local.tee $n
+          br_if 0
+        end
+
+        global.get $g64
+      )
+      (func (export "test2") (param $p (ref $a)) (param $n i32) (result i64)
+        (struct.get $a 59 (local.get $p))
+        global.set $g32
+
+        loop
+          block
+            block (result (ref $a))
+              (br_on_cast_fail 0 (ref $a) (ref $b) (local.get $p))
+              struct.get $b 60
+              global.set $g64
+              br 1
+            end
+            drop
+            (global.set $g64 (i64.const -1))
+          end
+
+          (i32.sub (local.get $n) (i32.const 1))
+          local.tee $n
+          br_if 0
+        end
+
+        global.get $g64
+      )
+    )`);
+
+    const { makeA, makeB, test1, test2 } = wasmEvalBinary(code).exports;
+    assertEq(test1(makeA(), 10), -1n);
+    assertEq(test2(makeA(), 10), -1n);
+    assertEq(test1(makeB(), 10), 234n);
+    assertEq(test2(makeB(), 10), 234n);
+
+    {
+      const ionJSON = wasmGetIon(code, 2);
+      const unoptimized = wasmIonGetFirstMIRPass(ionJSON);
+      const optimized = wasmIonGetLastMIRPass(ionJSON);
+      assertOpcodesInOrder(unoptimized, ["WasmRefTestConcrete", "Test", "WasmRefCastConcrete", "WasmLoadField", "WasmLoadField"]);
+      assertOpcodesInOrder(optimized, ["WasmRefTestConcrete", "Test", "WasmRefCastInfallible", "WasmLoadField", "WasmLoadField"]);
+    }
+    {
+      const ionJSON = wasmGetIon(code, 3);
+      const unoptimized = wasmIonGetFirstMIRPass(ionJSON);
+      const optimized = wasmIonGetLastMIRPass(ionJSON);
+      assertOpcodesInOrder(unoptimized, ["WasmRefTestConcrete", "Test", "WasmRefCastConcrete", "WasmLoadField", "WasmLoadField"]);
+      assertOpcodesInOrder(optimized, ["WasmRefTestConcrete", "Test", "WasmRefCastInfallible", "WasmLoadField", "WasmLoadField"]);
+    }
+  }
 }

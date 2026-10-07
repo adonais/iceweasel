@@ -2,6 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const lazy = {};
+
+ChromeUtils.defineLazyGetter(lazy, "nssErrorsService", () =>
+  Cc["@mozilla.org/nss_errors_service;1"].getService(Ci.nsINSSErrorsService)
+);
+
 /**
  * Base class for all remote protocol errors.
  */
@@ -35,5 +41,16 @@ export class NavigationError extends Error {
 
   get isBindingAborted() {
     return this.#status == Cr.NS_BINDING_ABORTED;
+  }
+
+  get isCertError() {
+    try {
+      return (
+        lazy.nssErrorsService.getErrorClass(this.#status) ===
+        Ci.nsINSSErrorsService.ERROR_CLASS_BAD_CERT
+      );
+    } catch {}
+
+    return false;
   }
 }

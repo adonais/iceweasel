@@ -6,6 +6,9 @@
 </head>
 <body>
   <form>
+    <label for="text">Full name</label>
+    <input id="text" name="text" type="text">
+
     <label for="search">Search</label>
     <input id="search" name="search" type="search">
 
@@ -32,6 +35,19 @@
       <option>Canada</option>
       <option>United States</option>
     </select>
+
+    <label for="city">City</label>
+    <div role="combobox" aria-haspopup="listbox" aria-expanded="false">
+      <input id="city" name="city" type="text" aria-autocomplete="list">
+    </div>
+
+    <label for="address">Address</label>
+    <input id="address" name="address" type="text" role="combobox"
+           aria-autocomplete="list" aria-expanded="false">
+
+    <label for="location-filter">Location</label>
+    <input id="location-filter" type="text" role="combobox"
+           aria-autocomplete="list" aria-expanded="false">
   </form>
 </body>
 </html>

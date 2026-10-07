@@ -13,12 +13,6 @@ const ADDON_ID = "newtab-uninstall@tests.mozilla.org";
 const URL_OVERRIDES_TYPE = "url_overrides";
 const NEW_TAB_KEY = "newTabURL";
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-});
-
 add_task(async function test_uninstall_extension_reverts_dropdown() {
   let extension = ExtensionTestUtils.loadExtension({
     useAddonManager: "permanent",

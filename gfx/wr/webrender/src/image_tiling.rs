@@ -8,16 +8,6 @@ use crate::segment::EdgeMask;
 use euclid::{point2, size2};
 use std::ops::Range;
 
-/// If repetitions are far enough apart that only one is within
-/// the primitive rect, then we can simplify the parameters and
-/// treat the primitive as not repeated.
-/// This can let us avoid unnecessary work later to handle some
-/// of the parameters.
-// `simplify_repeated_primitive` now lives in `webrender_api::prim_geometry` so
-// content-process interning can share it. Re-exported here to keep existing
-// references working.
-pub use api::prim_geometry::simplify_repeated_primitive;
-
 pub struct Repetition {
     pub origin: LayoutPoint,
     pub edge_flags: EdgeMask,

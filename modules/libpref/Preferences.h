@@ -464,6 +464,11 @@ class Preferences final : public nsIPrefService,
   };
   static CallbackTrieStats GetCallbackTrieStatsForTesting();
 
+  // Test-only: synchronously reap expired weak observers and compact dead
+  // callback nodes, which normally happens lazily on an idle task. Lets tests
+  // deterministically run compaction that would otherwise race a notification.
+  static void ReapCallbacksForTesting();
+
   static void HandleDirty();
 
   // Explicitly choosing synchronous or asynchronous (if allowed) preferences

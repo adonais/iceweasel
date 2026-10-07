@@ -7,12 +7,19 @@ package org.mozilla.fenix.components.toolbar
 import android.content.Context
 import android.view.Gravity
 import android.view.ViewGroup
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
 import androidx.core.view.isVisible
 import mozilla.components.compose.browser.toolbar.NavigationBar
@@ -25,6 +32,8 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
 
+private const val NAVBAR_VISIBILITY_ANIMATION_MS = 150
+
 /**
  * A wrapper over the [NavigationBar] composable that provides enhanced customization and lifecycle-aware integration.
  *
@@ -32,39 +41,56 @@ import org.mozilla.fenix.utils.Settings
  * @param container [ViewGroup] which will serve as parent of this View.
  * @param toolbarStore [BrowserToolbarStore] containing the navigation bar state.
  * @param settings [Settings] object to get the toolbar position and other settings.
+ * @param customTabSessionId session ID of the custom tab in which the navigation bar is shown.
  * @param hideWhenKeyboardShown If true, navigation bar will be hidden when the keyboard is visible.
+ * @param tabStripContent Composable content for the tab strip when shown together with the navigation bar.
+ * @param tabGroupsStripContent Composable content for the tab groups strip when shown together with the navigation bar.
  */
+@Suppress("LongParameterList")
 class BrowserNavigationBar(
     private val context: Context,
     private val container: ViewGroup,
     private val toolbarStore: BrowserToolbarStore,
     private val settings: Settings,
+    private val customTabSessionId: String? = null,
     private val hideWhenKeyboardShown: Boolean,
+    private val tabStripContent: () -> @Composable () -> Unit,
+    private val tabGroupsStripContent: () -> @Composable () -> Unit,
 ) {
     val layout =
         NavigationBarComposeView(context) {
-                DefaultNavigationBarContent()
+                val shouldShowTabStrip = remember {
+                    customTabSessionId == null && settings.shouldShowTabStripAtBottom
+                }
+                val shouldShowTabGroupsStrip = remember {
+                    customTabSessionId == null && settings.shouldShowTabGroupsStrip
+                }
+
+                FirefoxTheme {
+                    Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
+                        if (shouldShowTabStrip) {
+                            tabStripContent().invoke()
+                        }
+                        if (shouldShowTabGroupsStrip) {
+                            tabGroupsStripContent().invoke()
+                        }
+                        DefaultNavigationBarContent()
+                    }
+                }
             }
             .apply {
                 id = R.id.navigation_bar
-                addToParent(this)
-                setNavbarDynamicBehavior(this)
+                // Add this to the container only if it is to be shown on it's own, at the bottom of the screen.
+                // If the toolbar is at the bottom the navigation bar is composed inside the toolbar's own View
+                // - see [asComposable] - so this must never become a child of the container.
+                if (!settings.shouldUseBottomToolbar) {
+                    addToParent(this)
+                    setNavbarDynamicBehavior(this)
+                }
             }
 
-    /**
-     * Returns a [Composable] function that renders the default navigation bar content and ensures that the associated
-     * view-based layout is removed from its parent to prevent UI overlap.
-     */
+    /** Returns a [Composable] function that renders the default navigation bar content. */
     fun asComposable(): @Composable () -> Unit = {
-        val removed = remember { mutableStateOf(false) }
-
-        if (!removed.value) {
-            SideEffect {
-                (layout.parent as? ViewGroup)?.removeView(layout)
-                removed.value = true
-            }
-        }
-
         DefaultNavigationBarContent()
     }
 
@@ -94,13 +120,27 @@ class BrowserNavigationBar(
                 false
             }
 
-        if (uiState.displayState.navigationActions.isNotEmpty() && !isKeyboardVisible) {
-            FirefoxTheme {
-                NavigationBar(
-                    actions = uiState.displayState.navigationActions,
-                    toolbarGravity = toolbarGravity,
-                    onInteraction = { toolbarStore.dispatch(it) },
-                )
+        if (uiState.displayState.navigationActions.isNotEmpty()) {
+            AnimatedVisibility(
+                visible = !isKeyboardVisible,
+                enter =
+                    expandVertically(
+                        expandFrom = Alignment.Top,
+                        animationSpec = tween(durationMillis = NAVBAR_VISIBILITY_ANIMATION_MS),
+                    ),
+                exit =
+                    shrinkVertically(
+                        shrinkTowards = Alignment.Top,
+                        animationSpec = tween(durationMillis = NAVBAR_VISIBILITY_ANIMATION_MS),
+                    ),
+            ) {
+                FirefoxTheme {
+                    NavigationBar(
+                        actions = uiState.displayState.navigationActions,
+                        toolbarGravity = toolbarGravity,
+                        onInteraction = { toolbarStore.dispatch(it) },
+                    )
+                }
             }
         }
     }
@@ -119,7 +159,7 @@ class BrowserNavigationBar(
     }
 
     private fun setNavbarDynamicBehavior(view: NavigationBarComposeView) {
-        if (!settings.shouldUseBottomToolbar && settings.isDynamicToolbarEnabled) {
+        if (settings.isDynamicToolbarEnabled) {
             (view.layoutParams as LayoutParams).apply {
                 behavior = NavbarToolbarSyncBehavior(context)
             }

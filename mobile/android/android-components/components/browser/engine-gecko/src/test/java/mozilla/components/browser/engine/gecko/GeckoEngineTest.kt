@@ -481,7 +481,7 @@ class GeckoEngineTest {
     }
 
     @Test
-    fun `WHEN a recommended tracking protection policy is set THEN Bounce Tracking Protection must be in standby mode`() {
+    fun `WHEN a recommended tracking protection policy is set THEN Bounce Tracking Protection must be in dry run mode`() {
         val mockRuntime = mock<GeckoRuntime>()
         whenever(mockRuntime.settings).thenReturn(mock())
         whenever(mockRuntime.settings.contentBlocking).thenReturn(mock())
@@ -491,7 +491,7 @@ class GeckoEngineTest {
         engine.settings.trackingProtectionPolicy = TrackingProtectionPolicy.recommended()
 
         verify(mockRuntime.settings.contentBlocking)
-            .setBounceTrackingProtectionMode(EngineSession.BounceTrackingProtectionMode.ENABLED_STANDBY.mode)
+            .setBounceTrackingProtectionMode(EngineSession.BounceTrackingProtectionMode.ENABLED_DRY_RUN.mode)
     }
 
     @Test
@@ -551,7 +551,7 @@ class GeckoEngineTest {
     }
 
     @Test
-    fun `WHEN a custom tracking protection policy is set THEN Bounce Tracking Protection must be in standby mode`() {
+    fun `WHEN a custom tracking protection policy is set THEN Bounce Tracking Protection must be in dry run mode`() {
         val mockRuntime = mock<GeckoRuntime>()
         whenever(mockRuntime.settings).thenReturn(mock())
         whenever(mockRuntime.settings.contentBlocking).thenReturn(mock())
@@ -565,7 +565,7 @@ class GeckoEngineTest {
             )
 
         verify(mockRuntime.settings.contentBlocking)
-            .setBounceTrackingProtectionMode(EngineSession.BounceTrackingProtectionMode.ENABLED_STANDBY.mode)
+            .setBounceTrackingProtectionMode(EngineSession.BounceTrackingProtectionMode.ENABLED_DRY_RUN.mode)
     }
 
     @Test

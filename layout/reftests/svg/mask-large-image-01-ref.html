@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<!--
+     Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/
+-->
+<html class="reftest-wait">
+<body style="margin: 0">
+<svg width="300" height="500">
+  <image id="img" width="600" height="400"/>
+</svg>
+<script>
+  const canvas = document.createElement("canvas");
+  canvas.width = 600;
+  canvas.height = 400;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "lime";
+  ctx.fillRect(0, 0, 600, 400);
+  ctx.fillStyle = "blue";
+  ctx.fillRect(50, 50, 500, 300);
+  const img = document.getElementById("img");
+  img.addEventListener("load", () => {
+    document.documentElement.classList.remove("reftest-wait");
+  }, { once: true });
+  img.setAttribute("href", canvas.toDataURL());
+</script>
+</body>
+</html>

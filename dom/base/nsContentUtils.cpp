@@ -204,6 +204,7 @@
 #include "mozilla/dom/PBrowser.h"
 #include "mozilla/dom/PContentChild.h"
 #include "mozilla/dom/PrototypeList.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/dom/ReportingUtils.h"
 #include "mozilla/dom/Sanitizer.h"
@@ -387,7 +388,6 @@
 #include "nsPresContext.h"
 #include "nsQueryFrame.h"
 #include "nsQueryObject.h"
-#include "nsRange.h"
 #include "nsReadableUtils.h"
 #include "nsRefPtrHashtable.h"
 #include "nsSandboxFlags.h"
@@ -6018,8 +6018,8 @@ void nsContentUtils::ReportDeprecation(
       new DeprecationReportBody(aGlobal, type, nullptr /* date */, msg,
                                 sourceFile, lineNumber, columnNumber);
 
-  ReportingUtils::Report(aGlobal, nsGkAtoms::deprecation, u"default"_ns,
-                         NS_ConvertUTF8toUTF16(url), body);
+  ReportingUtils::Report(aGlobal, nsGkAtoms::deprecation, "default"_ns, url,
+                         body);
 }
 
 void nsContentUtils::LogMessageToConsole(const char* aMsg) {
@@ -6900,13 +6900,14 @@ static void SetAndFilterHTML(
 
   // Step 2. Let sanitizer be the result of calling get a sanitizer instance
   // from options with options and safe.
-  nsCOMPtr<nsIGlobalObject> global = aTarget->GetRelevantGlobal();
-  if (!global) {
+  nsCOMPtr<nsPIDOMWindowInner> window =
+      do_QueryInterface(aTarget->GetRelevantGlobal());
+  if (!window) {
     aError.ThrowInvalidStateError("Missing owner global.");
     return;
   }
   RefPtr<Sanitizer> sanitizer =
-      Sanitizer::GetInstance(global, aSanitizerOptions, aSafe, aError);
+      Sanitizer::GetInstance(window, aSanitizerOptions, aSafe, aError);
   if (aError.Failed()) {
     return;
   }
@@ -8995,7 +8996,7 @@ bool nsContentUtils::IsPointInSelection(
   const uint32_t rangeCount = aSelection.RangeCount();
   for (const uint32_t i : IntegerRange(rangeCount)) {
     MOZ_ASSERT(aSelection.RangeCount() == rangeCount);
-    RefPtr<const nsRange> range = aSelection.GetRangeAt(i);
+    RefPtr<const dom::Range> range = aSelection.GetRangeAt(i);
     if (NS_WARN_IF(!range)) {
       // Don't bail yet, iterate through them all
       continue;
@@ -9021,7 +9022,7 @@ void nsContentUtils::GetSelectionInTextControl(Selection* aSelection,
   // We don't care which end of this selection is anchor and which is focus.  In
   // fact, we explicitly want to know which is the _start_ and which is the
   // _end_, not anchor vs focus.
-  const nsRange* range = aSelection->GetAnchorFocusRange();
+  const dom::Range* range = aSelection->GetAnchorFocusRange();
   if (!range) {
     // Nothing selected
     aOutStartOffset = aOutEndOffset = 0;
@@ -10460,6 +10461,11 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
     return Err(NS_ERROR_FAILURE);
   }
 
+  if (aMouseEventData.mMovementX.WasPassed() !=
+      aMouseEventData.mMovementY.WasPassed()) {
+    return Err(NS_ERROR_INVALID_ARG);
+  }
+
   Maybe<WidgetPointerEvent> pointerEvent;
   Maybe<WidgetMouseEvent> mouseEvent;
   if (IsPointerEventMessage(msg)) {
@@ -10523,6 +10529,11 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
 
   mouseOrPointerEvent.mRefPoint = aRefPoint;
   mouseOrPointerEvent.mIgnoreRootScrollFrame = aOptions.mIgnoreRootScrollFrame;
+  if (aMouseEventData.mMovementX.WasPassed()) {
+    MOZ_ASSERT(aMouseEventData.mMovementY.WasPassed());
+    mouseOrPointerEvent.mMovement.emplace(aMouseEventData.mMovementX.Value(),
+                                          aMouseEventData.mMovementY.Value());
+  }
 
   nsEventStatus status = nsEventStatus_eIgnore;
   if (aOptions.mToWindow) {

@@ -30,7 +30,6 @@
 #include "mozilla/dom/ServiceWorkerChild.h"
 #include "mozilla/dom/SharedWorkerChild.h"
 #include "mozilla/dom/StorageIPC.h"
-#include "mozilla/dom/MessagePortChild.h"
 #include "mozilla/dom/ServiceWorkerContainerChild.h"
 #include "mozilla/dom/ServiceWorkerManagerChild.h"
 #include "mozilla/ipc/PBackgroundTestChild.h"
@@ -370,24 +369,6 @@ already_AddRefed<PCacheChild> BackgroundChildImpl::AllocPCacheChild() {
 already_AddRefed<PCacheStreamControlChild>
 BackgroundChildImpl::AllocPCacheStreamControlChild() {
   return dom::cache::AllocPCacheStreamControlChild();
-}
-
-// -----------------------------------------------------------------------------
-// MessageChannel/MessagePort API
-// -----------------------------------------------------------------------------
-
-dom::PMessagePortChild* BackgroundChildImpl::AllocPMessagePortChild(
-    const nsID& aUUID, const nsID& aDestinationUUID,
-    const uint32_t& aSequenceID) {
-  RefPtr<dom::MessagePortChild> agent = new dom::MessagePortChild();
-  return agent.forget().take();
-}
-
-bool BackgroundChildImpl::DeallocPMessagePortChild(PMessagePortChild* aActor) {
-  RefPtr<dom::MessagePortChild> child =
-      dont_AddRef(mozilla::ipc::ActorCast<dom::MessagePortChild>(aActor));
-  MOZ_ASSERT(child);
-  return true;
 }
 
 already_AddRefed<PServiceWorkerChild>

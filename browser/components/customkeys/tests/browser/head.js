@@ -31,5 +31,44 @@ const consts = {
   unusedKey: isLinux ? "Q" : "Y",
   unusedModifiersDisplay: isMac ? "⇧⌘" : "Ctrl+Shift+",
   unusedModifiersArgs: ["KEY_Shift", { accelKey: true }],
+
+  // A key which Option (Alt and AltGraph together) remaps to a different
+  // character, so that event.key is not the character on the key that was
+  // pressed. Option+M types "µ" (U+00B5) on macOS, and upper casing that gives
+  // "Μ" (U+039C), a character which is neither on the key nor produced by it,
+  // so a shortcut assigned to it can never match.
+  remappedArgs: [
+    "µ",
+    {
+      accelKey: true,
+      altKey: true,
+      altGraphKey: true,
+      shiftKey: true,
+      keyCode: KeyEvent.DOM_VK_M,
+    },
+  ],
+  remappedDisplay: isMac ? "⇧⌥⌘M" : "Ctrl+Shift+Alt+M",
+
+  // A digit key which Option and Shift together remap to a different
+  // character. Option+Shift+2 types "€" on macOS. Only the shifted character
+  // on the key can match a shortcut, and on a digit key that is punctuation
+  // rather than the digit, so the character which was produced is the one to
+  // record.
+  remappedDigitArgs: [
+    "€",
+    {
+      accelKey: true,
+      altKey: true,
+      altGraphKey: true,
+      shiftKey: true,
+      keyCode: KeyEvent.DOM_VK_2,
+    },
+  ],
+  remappedDigitDisplay: isMac ? "⇧⌥⌘€" : "Ctrl+Shift+Alt+€",
+
+  // A key whose character takes two UTF-16 code units but is one character
+  // as the user sees it: the Hebrew letter shin with a dagesh, U+05E9 U+05BC.
+  twoCodeUnitArgs: ["\u05E9\u05BC", { accelKey: true, shiftKey: true }],
+  twoCodeUnitDisplay: isMac ? "⇧⌘\u05E9\u05BC" : "Ctrl+Shift+\u05E9\u05BC",
 };
 consts.unusedDisplay = `${consts.unusedModifiersDisplay}${consts.unusedKey}`;

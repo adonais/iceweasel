@@ -49,6 +49,9 @@ class nsMixedContentBlocker : public nsIContentPolicy,
   static bool IsPotentiallyTrustworthyLoopbackHost(
       const nsACString& aAsciiHost);
   static bool IsPotentiallyTrustworthyLoopbackURL(nsIURI* aURL);
+  // Whether the host was allowlisted as a secure context by the user via
+  // the `dom.securecontext.allowlist` pref.
+  static bool IsPotentiallyTrustworthyAllowlistedHost(const nsACString& aHost);
   static bool IsPotentiallyTrustworthyOnion(nsIURI* aURL);
   static bool IsPotentiallyTrustworthyOrigin(nsIURI* aURI);
 

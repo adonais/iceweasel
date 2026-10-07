@@ -707,6 +707,12 @@ add_task(function test_validateCapabilities_invalid() {
       /InvalidArgumentError/
     );
   }
+
+  Assert.throws(
+    () => validateCapabilities({ "moz:userContext": "user-context" }),
+    /readonly capability/,
+    "moz:userContext is rejected as a readonly capability"
+  );
 });
 
 add_task(function test_validateCapabilities_valid() {

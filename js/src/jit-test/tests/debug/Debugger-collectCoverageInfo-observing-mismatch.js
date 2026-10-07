@@ -35,12 +35,9 @@ for (var i = 0; i < 30; i++) {
 dbg1.onDebuggerStatement = function() {
   // Set a breakpoint
   var script = dbg1.findScripts({global: g1, displayName: "outer"})[0];
-  var offsets = script.getAllOffsets();
-  for (var line in offsets) {
-    if (offsets[line] && offsets[line].length > 0) {
-      script.setBreakpoint(offsets[line][0], {});
-      break;
-    }
+  var offsets = script.getPossibleBreakpointOffsets();
+  if (offsets.length > 0) {
+    script.setBreakpoint(offsets[0], {});
   }
 
   // Toggle coverage via eval in g2's frame

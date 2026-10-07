@@ -1,6 +1,8 @@
 #ifndef PARAKEET_CAPI_H
 #define PARAKEET_CAPI_H
 
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,6 +42,14 @@ typedef struct parakeet_ctx parakeet_ctx;
 //     Added parakeet_capi_stream_drain_events (typed per-event records with
 //     is_eob + timestamps, freed with parakeet_capi_free_events) and an
 //     "events" array in the stream_feed_json / stream_finalize_json documents.
+//
+// v6: added parakeet_capi_stream_chunk_samples, the audio one encoder chunk
+//     spans. Additive.
+//
+// v7: added parakeet_capi_stream_has_eou, parakeet_capi_stream_end_utterance and
+//     parakeet_capi_stream_blank_seconds,
+//     so a host can close an utterance itself on a model whose vocab has no
+//     <EOU> piece. Additive: the existing entry points are unchanged.
 int parakeet_capi_abi_version(void);
 
 // Load a GGUF model. Returns an owning context, or NULL on failure.
@@ -53,6 +63,9 @@ parakeet_ctx* parakeet_capi_load_fd(int fd);
 
 // Free a context obtained from parakeet_capi_load. Safe on NULL.
 void parakeet_capi_free(parakeet_ctx* ctx);
+
+// Bytes the context's weights occupy, for memory reporting. 0 on NULL.
+size_t parakeet_capi_weights_bytes(const parakeet_ctx* ctx);
 
 // Transcribe a WAV file. `decoder` selects the head:
 //   0 = default (by arch: transducer for tdt/rnnt/hybrid, CTC for ctc),
@@ -214,6 +227,11 @@ char* parakeet_capi_stream_feed(parakeet_stream* s, const float* pcm,
 // complete. Does NOT fabricate an <EOU> NeMo's streaming would not emit.
 char* parakeet_capi_stream_finalize(parakeet_stream* s);
 
+// Firefox-local: the audio one mid-stream encoder chunk spans, in 16 kHz
+// samples: feed at most this much per call to get one chunk's events per call
+// (-1 on error).
+int parakeet_capi_stream_chunk_samples(parakeet_stream* s);
+
 // One <EOU>/<EOB> event emitted by the streaming decoder. <EOU> marks the end
 // of a complete utterance (the user yielded the turn); <EOB> marks the end of a
 // backchannel (a short acknowledgment like "uh-huh" while the other party
@@ -241,6 +259,22 @@ int parakeet_capi_stream_drain_events(parakeet_stream* s,
 // Free an event array previously returned by parakeet_capi_stream_drain_events.
 // Safe on NULL.
 void parakeet_capi_free_events(parakeet_stream_event* events);
+
+// Firefox-local: whether the model marks utterance boundaries itself, i.e. has
+// an <EOU>. 1 / 0, -1 on error.
+int parakeet_capi_stream_has_eou(parakeet_stream* s);
+
+// Firefox-local: audio decoded since the RNN-T last emitted a token, in
+// seconds. The endpointing signal for a model that marks no boundary of its
+// own, needing no noise-floor tuning. 0 while the decoder is emitting, -1 on
+// error.
+double parakeet_capi_stream_blank_seconds(parakeet_stream* s);
+
+// Firefox-local: close the utterance in progress without ending the stream, for
+// a model that marks no boundary itself. Every word decoded so far becomes
+// final and the decoder restarts, so nothing can extend them. Returns the
+// newly-finalized text (malloc'd, "" if none, NULL on error).
+char* parakeet_capi_stream_end_utterance(parakeet_stream* s);
 
 // Firefox-local: a finalized word with timing + confidence. Same data the JSON
 // "words" array carries, in a typed form so the host need not parse JSON.

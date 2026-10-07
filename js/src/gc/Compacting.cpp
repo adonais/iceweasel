@@ -422,7 +422,7 @@ bool GCRuntime::relocateArenas(Zone* zone, Arena*& relocatedListOut,
                                SliceBudget& sliceBudget) {
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::COMPACT_MOVE);
 
-  MOZ_ASSERT(!zone->isPreservingCode());
+  MOZ_ASSERT(!zone->isAnyRealmPreservingCode());
   MOZ_ASSERT(canRelocateZone(zone));
 
   js::CancelOffThreadCompile(rt, JS::Zone::Compact);

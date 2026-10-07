@@ -12,6 +12,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   assert: "chrome://remote/content/shared/webdriver/Assert.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
+  RemoteAgent: "chrome://remote/content/components/RemoteAgent.sys.mjs",
 });
 
 /**
@@ -26,6 +27,43 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * @typedef InstallResult
  *
  * @property {Extension} extension
+ */
+
+/**
+ * Details about an installed WebExtension.
+ *
+ * @typedef ExtensionInfo
+ * @property {boolean} hidden
+ *     Whether the WebExtension is hidden.
+ * @property {string} id
+ *     The id of the WebExtension.
+ * @property {boolean} isActive
+ *     Whether the WebExtension is active.
+ * @property {boolean} isSystem
+ *     Whether the WebExtension is a system extension.
+ * @property {number} manifestVersion
+ *     The manifest version used by the WebExtension.
+ * @property {string} name
+ *     The name of the WebExtension.
+ * @property {boolean} temporarilyInstalled
+ *     Whether the WebExtension is installed temporarily.
+ * @property {string} version
+ *     The version of the WebExtension.
+ * @property {object?} [policy]
+ *     Policy details, or null if no active policy exists. Only returned
+ *     when RemoteAgent.allowSystemAccess is true.
+ * @property {string?} [sourceURL]
+ *     The installation source URL, or null if unknown. Only returned
+ *     when RemoteAgent.allowSystemAccess is true.
+ */
+
+/**
+ * Return value of the moz:listExtensions command.
+ *
+ * @typedef ListExtensionsResult
+ *
+ * @property {Array<ExtensionInfo>} extensions
+ *     Array of ExtensionInfo objects.
  */
 
 /**
@@ -211,6 +249,43 @@ class WebExtensionModule extends RootBiDiModule {
     }
 
     await lazy.Addon.uninstall(addonId);
+  }
+
+  /**
+   * List information about non-hidden WebExtensions.
+   *
+   * This command is Firefox-specific and not part of the WebDriver BiDi
+   * specification.
+   *
+   * @returns {ListExtensionsResult}
+   *     Array of ExtensionInfo objects wrapped in the command result.
+   */
+  async ["moz:listExtensions"]() {
+    const extensions = await lazy.Addon.getAddons("extension", {
+      includeHidden: false,
+    });
+
+    return {
+      extensions: extensions.map(e => {
+        const extension = {
+          hidden: e.hidden,
+          id: e.id,
+          isActive: e.isActive,
+          isSystem: e.isSystem,
+          manifestVersion: e.manifestVersion,
+          name: e.name,
+          temporarilyInstalled: e.temporarilyInstalled,
+          version: e.version,
+        };
+
+        if (lazy.RemoteAgent.allowSystemAccess) {
+          extension.policy = e.policy;
+          extension.sourceURL = e.sourceURL;
+        }
+
+        return extension;
+      }),
+    };
   }
 }
 

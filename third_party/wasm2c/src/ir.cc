@@ -25,17 +25,20 @@
 namespace {
 
 const char* ExprTypeName[] = {
-    "AtomicFence",
     "AtomicLoad",
     "AtomicRmw",
     "AtomicRmwCmpxchg",
     "AtomicStore",
     "AtomicNotify",
+    "AtomicFence",
     "AtomicWait",
     "Binary",
+    "Quaternary",
     "Block",
     "Br",
     "BrIf",
+    "BrOnNonNull",
+    "BrOnNull",
     "BrTable",
     "Call",
     "CallIndirect",
@@ -60,6 +63,7 @@ const char* ExprTypeName[] = {
     "MemoryInit",
     "MemorySize",
     "Nop",
+    "RefAsNonNull",
     "RefIsNull",
     "RefFunc",
     "RefNull",
@@ -67,6 +71,7 @@ const char* ExprTypeName[] = {
     "Return",
     "ReturnCall",
     "ReturnCallIndirect",
+    "ReturnCallRef",
     "Select",
     "SimdLaneOp",
     "SimdLoadLane",
@@ -85,7 +90,9 @@ const char* ExprTypeName[] = {
     "TableFill",
     "Ternary",
     "Throw",
+    "ThrowRef",
     "Try",
+    "TryTable",
     "Unary",
     "Unreachable",
 };
@@ -105,7 +112,24 @@ const char* GetExprTypeName(const Expr& expr) {
 }
 
 bool FuncSignature::operator==(const FuncSignature& rhs) const {
-  return param_types == rhs.param_types && result_types == rhs.result_types;
+  if (param_types.size() != rhs.param_types.size() ||
+      result_types.size() != rhs.result_types.size()) {
+    return false;
+  }
+
+  if (param_types.size() > 0 &&
+      memcmp(param_types.data(), rhs.param_types.data(),
+             param_types.size() * sizeof(Type)) != 0) {
+    return false;
+  }
+
+  if (result_types.size() > 0 &&
+      memcmp(result_types.data(), rhs.result_types.data(),
+             result_types.size() * sizeof(Type)) != 0) {
+    return false;
+  }
+
+  return true;
 }
 
 const Export* Module::GetExport(std::string_view name) const {
@@ -581,18 +605,37 @@ void MakeTypeBindingReverseMapping(
   out_reverse_mapping->clear();
   out_reverse_mapping->resize(num_types);
   for (const auto& [name, binding] : bindings) {
-    assert(static_cast<size_t>(binding.index) < out_reverse_mapping->size());
-    (*out_reverse_mapping)[binding.index] = name;
+    // A binding index can come straight from the name section's local
+    // subsection, which is not otherwise range-checked against the function's
+    // local count, so skip entries that fall outside the mapping instead of
+    // writing past it.
+    if (static_cast<size_t>(binding.index) < out_reverse_mapping->size()) {
+      (*out_reverse_mapping)[binding.index] = name;
+    }
   }
 }
 
 Var::Var() : Var(kInvalidIndex, Location()) {}
 
 Var::Var(Index index, const Location& loc)
-    : loc(loc), type_(VarType::Index), index_(index) {}
+    : loc(loc), type_(VarType::Index), opt_type_(0), index_(index) {}
 
 Var::Var(std::string_view name, const Location& loc)
-    : loc(loc), type_(VarType::Name), name_(name) {}
+    : loc(loc), type_(VarType::Name), opt_type_(0), name_(name) {}
+
+Var::Var(Type type, const Location& loc)
+    : loc(loc), type_(VarType::Index), index_(0) {
+  assert(static_cast<int32_t>(type) < 0 &&
+         static_cast<int32_t>(type) >= INT16_MIN);
+  opt_type_ = static_cast<int16_t>(type);
+
+  if (type.IsReferenceWithIndex()) {
+    index_ = type.GetReferenceIndex();
+  } else if (type.IsNonTypedRef()) {
+    index_ = type.IsNullableNonTypedRef() ? Type::ReferenceOrNull
+                                          : Type::ReferenceNonNull;
+  }
+}
 
 Var::Var(Var&& rhs) : Var() {
   *this = std::move(rhs);
@@ -604,6 +647,7 @@ Var::Var(const Var& rhs) : Var() {
 
 Var& Var::operator=(Var&& rhs) {
   loc = rhs.loc;
+  opt_type_ = rhs.opt_type_;
   if (rhs.is_index()) {
     set_index(rhs.index_);
   } else {
@@ -614,6 +658,7 @@ Var& Var::operator=(Var&& rhs) {
 
 Var& Var::operator=(const Var& rhs) {
   loc = rhs.loc;
+  opt_type_ = rhs.opt_type_;
   if (rhs.is_index()) {
     set_index(rhs.index_);
   } else {
@@ -642,13 +687,30 @@ void Var::set_name(std::string_view name) {
   set_name(std::string(name));
 }
 
+void Var::set_opt_type(Type::Enum type) {
+  assert(static_cast<int32_t>(type) < 0 &&
+         static_cast<int32_t>(type) >= INT16_MIN);
+  opt_type_ = static_cast<int16_t>(type);
+}
+
+Type Var::to_type() const {
+  Type::Enum type = static_cast<Type::Enum>(opt_type_);
+
+  if (Type::EnumIsReferenceWithIndex(type) || Type::EnumIsNonTypedRef(type)) {
+    return Type(type, index());
+  }
+
+  return Type(type);
+}
+
 void Var::Destroy() {
   if (is_name()) {
     Destruct(name_);
   }
 }
 
-uint8_t ElemSegment::GetFlags(const Module* module) const {
+uint8_t ElemSegment::GetFlags(const Module* module,
+                              bool function_references_enabled) const {
   uint8_t flags = 0;
 
   switch (kind) {
@@ -669,15 +731,20 @@ uint8_t ElemSegment::GetFlags(const Module* module) const {
       break;
   }
 
-  bool all_ref_func =
-      elem_type == Type::FuncRef &&
-      std::all_of(elem_exprs.begin(), elem_exprs.end(),
-                  [](const ExprList& elem_expr) {
-                    return elem_expr.front().type() == ExprType::RefFunc;
-                  });
-
-  if (!all_ref_func) {
+  if (function_references_enabled &&
+      elem_type != Type(Type::FuncRef, Type::ReferenceNonNull)) {
     flags |= SegUseElemExprs;
+  } else {
+    bool all_ref_func =
+        elem_type == Type::FuncRef &&
+        std::all_of(elem_exprs.begin(), elem_exprs.end(),
+                    [](const ExprList& elem_expr) {
+                      return elem_expr.front().type() == ExprType::RefFunc;
+                    });
+
+    if (!all_ref_func) {
+      flags |= SegUseElemExprs;
+    }
   }
 
   return flags;

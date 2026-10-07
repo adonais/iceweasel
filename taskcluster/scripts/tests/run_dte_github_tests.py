@@ -76,6 +76,13 @@ def build_headers():
     }
 
 
+def get_target_info():
+    """Download the target_info.txt artifact and return its contents"""
+    resp = get_session().get(os.environ["TARGET_INFO_LINK"])
+    resp.raise_for_status()
+    return resp.text.strip()
+
+
 def issue_api_call():
     """Call POST on the GHA workflow dispatch endpoint with necessary info"""
     target_url = os.environ["INSTALLER_LINK"]
@@ -84,8 +91,9 @@ def issue_api_call():
     branch = os.environ["BRANCH"]
     url = f"{GITHUB_API}/repos/{GITHUB_REPO}/actions/workflows/{workflow_id}/dispatches"
     data = {"ref": branch, "inputs": {input_key: target_url}}
-    if os.environ.get("TEST_SET"):
-        data["inputs"]["test_set"] = os.environ.get("TEST_SET")
+    if os.environ.get("TEST_SETS"):
+        data["inputs"]["test_sets"] = os.environ.get("TEST_SETS")
+    data["inputs"]["target_info"] = get_target_info()
     resp = get_session().post(url=url, headers=build_headers(), json=data, timeout=30)
     print(url, data)
     print(resp.status_code, resp.reason)

@@ -680,10 +680,6 @@ void PerformanceMainThread::CreateNavigationTimingEntry() {
   }
 
   mDocEntry = new PerformanceNavigationTiming(std::move(timing), this, name);
-
-  if (mDOMTiming && mDOMTiming->WasActivatedFromNavigationalPrefetch()) {
-    mDocEntry->SetDeliveryType(u"navigational-prefetch"_ns);
-  }
 }
 
 void PerformanceMainThread::UpdateNavigationTimingEntry() {
@@ -695,6 +691,12 @@ void PerformanceMainThread::UpdateNavigationTimingEntry() {
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel);
   if (httpChannel) {
     mDocEntry->UpdatePropertiesFromHttpChannel(httpChannel, mChannel);
+  }
+
+  // Not in Create(): the cache disposition is unresolved until the load ends.
+  if (mDOMTiming && mDOMTiming->WasActivatedFromNavigationalPrefetch() &&
+      mDocEntry->ServedFromCache()) {
+    mDocEntry->SetDeliveryType(u"navigational-prefetch"_ns);
   }
 }
 

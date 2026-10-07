@@ -666,10 +666,10 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
   };
 
   // Add all necessary TextureHost informations to the resource update queue.
-  virtual void PushResourceUpdates(wr::TransactionBuilder& aResources,
-                                   ResourceUpdateOp aOp,
-                                   const Range<wr::ImageKey>& aImageKeys,
-                                   const wr::ExternalImageId& aExtID) {
+  virtual void PushResourceUpdates(
+      wr::TransactionBuilder& aResources, ResourceUpdateOp aOp,
+      const mozilla::Range<wr::ImageKey>& aImageKeys,
+      const wr::ExternalImageId& aExtID) {
     MOZ_ASSERT_UNREACHABLE("Unimplemented");
   }
 
@@ -693,7 +693,7 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
                                 const wr::LayoutRect& aBounds,
                                 const wr::LayoutRect& aClip,
                                 wr::ImageRendering aFilter,
-                                const Range<wr::ImageKey>& aKeys,
+                                const mozilla::Range<wr::ImageKey>& aKeys,
                                 PushDisplayItemFlagSet aFlags) {
     MOZ_ASSERT_UNREACHABLE(
         "No PushDisplayItems() implementation for this TextureHost type.");
@@ -853,13 +853,13 @@ class BufferTextureHost : public TextureHost {
 
   void PushResourceUpdates(wr::TransactionBuilder& aResources,
                            ResourceUpdateOp aOp,
-                           const Range<wr::ImageKey>& aImageKeys,
+                           const mozilla::Range<wr::ImageKey>& aImageKeys,
                            const wr::ExternalImageId& aExtID) override;
 
   void PushDisplayItems(wr::DisplayListBuilder& aBuilder,
                         const wr::LayoutRect& aBounds,
                         const wr::LayoutRect& aClip, wr::ImageRendering aFilter,
-                        const Range<wr::ImageKey>& aImageKeys,
+                        const mozilla::Range<wr::ImageKey>& aImageKeys,
                         PushDisplayItemFlagSet aFlags) override;
 
   bool IsYCbCr() const;

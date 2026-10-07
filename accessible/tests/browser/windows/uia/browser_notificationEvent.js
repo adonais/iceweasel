@@ -53,7 +53,7 @@ addAccessibleTask(
     );
 
     info("doc.ariaNotify c");
-    await setUpWaitForUiaEvent("Notification", DEFAULT_CONTENT_DOC_BODY_ID);
+    await setUpWaitForUiaEvent("Notification", DEFAULT_CONTENT_DOC_ID);
     await invokeContentTask(browser, [], () => {
       content.document.ariaNotify("c");
     });

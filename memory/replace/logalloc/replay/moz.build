@@ -15,6 +15,8 @@ SOURCES += [
 
 if CONFIG["OS_TARGET"] == "WINNT":
     SOURCES += [
+        "/mozglue/misc/Futex_windows.cpp",
+        "/mozglue/misc/Mutex_futex.cpp",
         "/mozglue/misc/ProcessType.cpp",
     ]
 
@@ -36,6 +38,7 @@ if CONFIG["OS_ARCH"] == "WINNT":
     OS_LIBS += [
         "advapi32",
         "dbghelp",
+        "synchronization",
     ]
 
 if CONFIG["MOZ_LINKER"] and CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":

@@ -351,9 +351,10 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
   nsCOMPtr<nsIAppStartup> appService =
       do_GetService("@mozilla.org/toolkit/app-startup;1");
   if (appService) {
-    bool userAllowedQuit = true;
-    appService->Quit(nsIAppStartup::eForceQuit, 0, &userAllowedQuit);
-    if (!userAllowedQuit) {
+    // Quit does not start a shutdown if the user keeps a window open from a
+    // beforeunload prompt.
+    appService->Quit(nsIAppStartup::eForceQuit, 0);
+    if (!appService->GetShuttingDown()) {
       return NSTerminateCancel;
     }
   }

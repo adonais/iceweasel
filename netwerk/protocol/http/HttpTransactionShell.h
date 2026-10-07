@@ -180,6 +180,11 @@ class HttpTransactionShell : public nsISupports {
 
   virtual void SetIsForWebTransport(bool aIsForWebTransport) = 0;
 
+  // Marks the transaction as uploading a non-replayable streaming body
+  // (e.g. a JS ReadableStream). Such a body has no length known up front,
+  // and retry or restart logic must not attempt to re-send it.
+  virtual void SetRequestBodyIsStreaming(bool aIsStreaming) = 0;
+
   virtual TimeStamp GetOnStartRequestStartTime() const { return TimeStamp(); }
   virtual TimeStamp GetDataAvailableStartTime() const { return TimeStamp(); }
   virtual TimeStamp GetOnStopRequestStartTime() const { return TimeStamp(); }

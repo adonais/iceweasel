@@ -41,6 +41,20 @@ function assertFilenameLength(path, maxFilenameLength) {
   );
 }
 
+add_task(async function missing_document_title() {
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: MISSING_TITLE_TEST_PAGE,
+    },
+    async browser => {
+      const documentTitle = "";
+      const result = await getFilename(documentTitle, browser);
+      Assert.strictEqual(result.filename.endsWith(" .png"), false, "");
+    }
+  );
+});
+
 add_task(async function filename_exceeds_max_length() {
   await BrowserTestUtils.withNewTab(
     {

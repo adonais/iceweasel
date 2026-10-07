@@ -7,12 +7,6 @@ const HOMEPAGE_PREF = "browser.startup.homepage";
 const ADDON_ID = "tabliss-test@example.com";
 const ADDON_NAME = "Tabliss";
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-});
-
 add_task(
   async function test_extension_url_shows_friendly_name_in_custom_list() {
     let extension = ExtensionTestUtils.loadExtension({

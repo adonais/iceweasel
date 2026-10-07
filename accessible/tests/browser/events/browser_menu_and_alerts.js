@@ -148,9 +148,9 @@ addAccessibleTask(
   async function (browser) {
     let onLoadEvents = waitForEvents({
       expected: [
-        [EVENT_FOCUS, "body2"],
-        [EVENT_DOCUMENT_LOAD_COMPLETE, "body2"],
-        stateChangeEventArgs("body2", STATE_BUSY, false, false),
+        [EVENT_FOCUS, "html"],
+        [EVENT_DOCUMENT_LOAD_COMPLETE, "html"],
+        stateChangeEventArgs("html", STATE_BUSY, false, false),
       ],
       unexpected: [[EVENT_ALERT]],
     });
@@ -158,7 +158,7 @@ addAccessibleTask(
     BrowserTestUtils.startLoadingURIString(
       browser,
       `data:text/html;charset=utf-8,
-      <html><body id="body2">
+      <html id="html"><body>
         <div role="alert" id="alert">Alert!</div>
       </body></html>`
     );

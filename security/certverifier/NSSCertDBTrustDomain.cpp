@@ -1628,12 +1628,10 @@ void DisableMD5() {
 }
 
 // Load a given PKCS#11 module located in the given directory. It will be named
-// the given module name. Optionally pass some string parameters to it via
-// 'params'. This argument will be provided to C_Initialize when called on the
-// module.
+// the given module name.
 // |libraryName| and |dir| are encoded in UTF-8.
 bool LoadUserModuleAt(const char* moduleName, const char* libraryName,
-                      const nsCString& dir, /* optional */ const char* params) {
+                      const nsCString& dir) {
   // If a module exists with the same name, make a best effort attempt to delete
   // it. Note that it isn't possible to delete the internal module, so checking
   // the return value would be detrimental in that case.
@@ -1657,11 +1655,6 @@ bool LoadUserModuleAt(const char* moduleName, const char* libraryName,
   pkcs11ModuleSpec.AppendLiteral("\" library=\"");
   pkcs11ModuleSpec.Append(fullLibraryPath);
   pkcs11ModuleSpec.AppendLiteral("\"");
-  if (params) {
-    pkcs11ModuleSpec.AppendLiteral("\" parameters=\"");
-    pkcs11ModuleSpec.Append(params);
-    pkcs11ModuleSpec.AppendLiteral("\"");
-  }
 
   UniqueSECMODModule userModule(SECMOD_LoadUserModule(
       const_cast<char*>(pkcs11ModuleSpec.get()), nullptr, false));
@@ -1750,7 +1743,7 @@ bool LoadOSClientCertsModule() {
 bool LoadLoadableRoots(const nsCString& dir) {
   int unusedModType;
   (void)SECMOD_DeleteModule("Root Certs", &unusedModType);
-  return LoadUserModuleAt(kRootModuleName.get(), "nssckbi", dir, nullptr);
+  return LoadUserModuleAt(kRootModuleName.get(), "nssckbi", dir);
 }
 
 extern "C" {

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Use counter test for Sanitizer configuration dictionaries</title>
+<style>
+  /* Sentinel use counter to signal that telemetry for this document has been captured */
+  div {
+    marker-mid: initial;
+  }
+</style>
+<div id="host"></div>
+<div id="host2"></div>
+<script>
+  // A config dictionary passed to the Sanitizer constructor.
+  // Expected to count only "elements".
+  document.getElementById("host").setHTML("<p>constructed</p>", {
+    sanitizer: new Sanitizer({ elements: ["p"] }),
+  });
+
+  // A config dictionary passed inline to setHTML.
+  // Expected to count only "removeElements".
+  document.getElementById("host2").setHTML("<p>inline</p>", {
+    sanitizer: { removeElements: ["script"] },
+  });
+
+  // Per-element attribute lists, nested inside an "elements" entry. These are
+  // independent of the global attributes/removeAttributes keys, which this
+  // document never uses.
+  new Sanitizer({
+    elements: [
+      { name: "b", attributes: ["title"] },
+      { name: "i", removeAttributes: ["lang"] },
+    ],
+  });
+
+  // A boolean key counts when present, just like the list-valued keys above,
+  // even when its value matches the built-in default.
+  new Sanitizer({ javascriptURLs: false });
+</script>

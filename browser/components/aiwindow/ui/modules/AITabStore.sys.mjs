@@ -19,6 +19,7 @@ import {
   GET_AITAB_BY_SLUG_AND_VERSION,
   GET_AITAB_VERSIONS_BY_SLUG,
   GET_AITAB_PAGES_BY_CONV_ID,
+  DELETE_AITAB_PAGES_BY_SLUG,
 } from "moz-src:///browser/components/aiwindow/ui/modules/AITabSql.sys.mjs";
 import { SQLiteStoreBase } from "moz-src:///browser/components/aiwindow/ui/modules/SQLiteStoreBase.sys.mjs";
 import {
@@ -160,6 +161,27 @@ class AITabStore extends SQLiteStoreBase {
     );
 
     return rows.map(row => this.#parseRow(row));
+  }
+
+  /**
+   * Deletes every version of the tab with the given slug.
+   *
+   * Keyed on slug rather than conv_id to use the (slug, version) index. The
+   * UNIQUE constraint on that index means a slug belongs to exactly one
+   * conversation, so this cannot reach another tab's rows.
+   *
+   * The conversation lives in a different database file, so nothing cascades
+   * from here: callers must also delete it through
+   * `ConversationStore.deleteConversationById`. Delete the pages first — a
+   * conversation left without pages is invisible, whereas pages left without
+   * a conversation still load by slug.
+   *
+   * @param {string} slug
+   */
+  async deleteBySlug(slug) {
+    await this.#ensureConnection();
+
+    await this.connection.execute(DELETE_AITAB_PAGES_BY_SLUG, { slug });
   }
 
   /**

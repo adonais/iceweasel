@@ -200,27 +200,31 @@ void AnimationInfo::EnumerateGenerationOnFrame(
 }
 
 static StyleTransformOperation ResolveTranslate(
-    TransformReferenceBox& aRefBox, const LengthPercentage& aX,
+    TransformReferenceBox& aRefBox, StyleZoom aEffectiveZoom,
+    const LengthPercentage& aX,
     const LengthPercentage& aY = LengthPercentage::Zero(),
     const Length& aZ = Length{0}) {
-  float x = nsStyleTransformMatrix::ProcessTranslatePart(
-      aX, &aRefBox, &TransformReferenceBox::Width);
-  float y = nsStyleTransformMatrix::ProcessTranslatePart(
-      aY, &aRefBox, &TransformReferenceBox::Height);
+  float x = aEffectiveZoom.Zoom(nsStyleTransformMatrix::ProcessTranslatePart(
+      aX, &aRefBox, &TransformReferenceBox::Width));
+  float y = aEffectiveZoom.Zoom(nsStyleTransformMatrix::ProcessTranslatePart(
+      aY, &aRefBox, &TransformReferenceBox::Height));
   return StyleTransformOperation::Translate3D(
-      LengthPercentage::FromPixels(x), LengthPercentage::FromPixels(y), aZ);
+      LengthPercentage::FromPixels(x), LengthPercentage::FromPixels(y),
+      aZ.ScaledBy(aEffectiveZoom.ToFloat()));
 }
 
 static StyleTranslate ResolveTranslate(const StyleTranslate& aValue,
-                                       TransformReferenceBox& aRefBox) {
+                                       TransformReferenceBox& aRefBox,
+                                       StyleZoom aEffectiveZoom) {
   if (aValue.IsTranslate()) {
     const auto& t = aValue.AsTranslate();
-    float x = nsStyleTransformMatrix::ProcessTranslatePart(
-        t._0, &aRefBox, &TransformReferenceBox::Width);
-    float y = nsStyleTransformMatrix::ProcessTranslatePart(
-        t._1, &aRefBox, &TransformReferenceBox::Height);
+    float x = aEffectiveZoom.Zoom(nsStyleTransformMatrix::ProcessTranslatePart(
+        t._0, &aRefBox, &TransformReferenceBox::Width));
+    float y = aEffectiveZoom.Zoom(nsStyleTransformMatrix::ProcessTranslatePart(
+        t._1, &aRefBox, &TransformReferenceBox::Height));
     return StyleTranslate::Translate(LengthPercentage::FromPixels(x),
-                                     LengthPercentage::FromPixels(y), t._2);
+                                     LengthPercentage::FromPixels(y),
+                                     t._2.ScaledBy(aEffectiveZoom.ToFloat()));
   }
 
   MOZ_ASSERT(aValue.IsNone());
@@ -243,44 +247,47 @@ static StyleTransform ResolveTransformOperations(
       result.initCapacity(aTransform.Operations().Length()),
       "Allocating vector of transform operations should be successful.");
 
-  // TODO(salipov, bug 2045846): Fix zooming for transforms other than matrix
   for (const StyleTransformOperation& op : aTransform.Operations()) {
     switch (op.tag) {
       case StyleTransformOperation::Tag::TranslateX:
-        result.infallibleAppend(ResolveTranslate(aRefBox, op.AsTranslateX()));
+        result.infallibleAppend(
+            ResolveTranslate(aRefBox, aEffectiveZoom, op.AsTranslateX()));
         break;
       case StyleTransformOperation::Tag::TranslateY:
-        result.infallibleAppend(ResolveTranslate(
-            aRefBox, LengthPercentage::Zero(), op.AsTranslateY()));
+        result.infallibleAppend(ResolveTranslate(aRefBox, aEffectiveZoom,
+                                                 LengthPercentage::Zero(),
+                                                 op.AsTranslateY()));
         break;
       case StyleTransformOperation::Tag::TranslateZ:
         result.infallibleAppend(
-            ResolveTranslate(aRefBox, LengthPercentage::Zero(),
+            ResolveTranslate(aRefBox, aEffectiveZoom, LengthPercentage::Zero(),
                              LengthPercentage::Zero(), op.AsTranslateZ()));
         break;
       case StyleTransformOperation::Tag::Translate: {
         const auto& translate = op.AsTranslate();
-        result.infallibleAppend(
-            ResolveTranslate(aRefBox, translate._0, translate._1));
+        result.infallibleAppend(ResolveTranslate(aRefBox, aEffectiveZoom,
+                                                 translate._0, translate._1));
         break;
       }
       case StyleTransformOperation::Tag::Translate3D: {
         const auto& translate = op.AsTranslate3D();
-        result.infallibleAppend(ResolveTranslate(aRefBox, translate._0,
-                                                 translate._1, translate._2));
+        result.infallibleAppend(ResolveTranslate(
+            aRefBox, aEffectiveZoom, translate._0, translate._1, translate._2));
         break;
       }
       case StyleTransformOperation::Tag::InterpolateMatrix: {
         gfx::Matrix4x4 matrix;
-        nsStyleTransformMatrix::ProcessInterpolateMatrix(matrix, op, aRefBox,
-                                                         aEffectiveZoom);
+        nsStyleTransformMatrix::ProcessInterpolateMatrix(
+            matrix, op, aRefBox, aEffectiveZoom,
+            nsStyleTransformMatrix::Zoomed::Yes);
         result.infallibleAppend(convertMatrix(matrix));
         break;
       }
       case StyleTransformOperation::Tag::AccumulateMatrix: {
         gfx::Matrix4x4 matrix;
-        nsStyleTransformMatrix::ProcessAccumulateMatrix(matrix, op, aRefBox,
-                                                        aEffectiveZoom);
+        nsStyleTransformMatrix::ProcessAccumulateMatrix(
+            matrix, op, aRefBox, aEffectiveZoom,
+            nsStyleTransformMatrix::Zoomed::Yes);
         result.infallibleAppend(convertMatrix(matrix));
         break;
       }
@@ -333,13 +340,14 @@ static StyleTransform ResolveTransformOperations(
 }
 
 static Maybe<ScrollTimelineOptions> GetScrollTimelineOptions(
-    dom::AnimationTimeline* aTimeline) {
-  if (!aTimeline || !aTimeline->IsScrollTimeline()) {
+    const dom::Animation* aAnimation) {
+  dom::AnimationTimeline* timeline = aAnimation->GetTimeline();
+  if (!timeline || !timeline->IsScrollTimeline()) {
     return Nothing();
   }
 
-  const dom::ScrollTimeline* timeline = aTimeline->AsScrollTimeline();
-  const auto state = timeline->GetSnapshot();
+  const dom::ScrollTimeline* scrollTimeline = timeline->AsScrollTimeline();
+  const auto state = scrollTimeline->GetSnapshot();
   MOZ_ASSERT(state.IsActive(),
              "We send scroll animation to the compositor only if its timeline "
              "is active");
@@ -349,7 +357,10 @@ static Maybe<ScrollTimelineOptions> GetScrollTimelineOptions(
       nsLayoutUtils::FindIDFor(state.SourceElement(), &source);
   MOZ_ASSERT(success, "We should have a valid ViewID for the scroller");
 
-  return Some(ScrollTimelineOptions(source, state.Axis()));
+  const auto interval = scrollTimeline->IntervalForAttachmentRange(
+      aAnimation->GetTimelineRange());
+  return Some(ScrollTimelineOptions(source, state.Axis(), interval.first,
+                                    interval.second));
 }
 
 static void SetAnimatable(NonCustomCSSPropertyId aProperty,
@@ -380,8 +391,8 @@ static void SetAnimatable(NonCustomCSSPropertyId aProperty,
       aAnimatable = aAnimationValue.GetScaleProperty();
       break;
     case eCSSProperty_translate:
-      aAnimatable =
-          ResolveTranslate(aAnimationValue.GetTranslateProperty(), aRefBox);
+      aAnimatable = ResolveTranslate(aAnimationValue.GetTranslateProperty(),
+                                     aRefBox, aFrame->Style()->EffectiveZoom());
       break;
     case eCSSProperty_transform:
       aAnimatable =
@@ -493,8 +504,7 @@ void AnimationInfo::AddAnimationForProperty(
       aAnimation->GetEffect()->AsKeyframeEffect()->IterationComposite());
   animation->isNotPlaying() = !aAnimation->IsPlaying();
   animation->isNotAnimating() = false;
-  animation->scrollTimelineOptions() =
-      GetScrollTimelineOptions(aAnimation->GetTimeline());
+  animation->scrollTimelineOptions() = GetScrollTimelineOptions(aAnimation);
   // We set this flag to let the compositor know that the start value of this
   // transition is replaced. The compositor may replace the start value with its
   // last sampled animation value, instead of using the segment.mFromValue we
@@ -502,7 +512,7 @@ void AnimationInfo::AddAnimationForProperty(
   animation->replacedTransitionId() =
       needReplaceTransition ? Some(GetCompositorAnimationsId()) : Nothing();
 
-  TransformReferenceBox refBox(aFrame);
+  TransformReferenceBox refBox(aFrame, TransformReferenceBox::Unzoomed);
 
   // If the animation is additive or accumulates, we need to pass its base value
   // to the compositor.
@@ -892,7 +902,7 @@ void AnimationInfo::AddNonAnimatingTransformLikePropertiesStyles(
     switch (id) {
       case eCSSProperty_transform:
         if (!display->mTransform.IsNone()) {
-          TransformReferenceBox refBox(aFrame);
+          TransformReferenceBox refBox(aFrame, TransformReferenceBox::Unzoomed);
           appendFakeAnimation(
               id, ResolveTransformOperations(display->mTransform, refBox,
                                              aFrame->Style()->EffectiveZoom()));
@@ -900,9 +910,10 @@ void AnimationInfo::AddNonAnimatingTransformLikePropertiesStyles(
         break;
       case eCSSProperty_translate:
         if (!display->mTranslate.IsNone()) {
-          TransformReferenceBox refBox(aFrame);
-          appendFakeAnimation(id,
-                              ResolveTranslate(display->mTranslate, refBox));
+          TransformReferenceBox refBox(aFrame, TransformReferenceBox::Unzoomed);
+          appendFakeAnimation(
+              id, ResolveTranslate(display->mTranslate, refBox,
+                                   aFrame->Style()->EffectiveZoom()));
         }
         break;
       case eCSSProperty_rotate:

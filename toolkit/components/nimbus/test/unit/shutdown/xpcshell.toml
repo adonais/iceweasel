@@ -2,9 +2,8 @@
 head = "../../../../../../toolkit/profile/test/xpcshell/head.js ../../../../../../browser/components/profiles/tests/unit/head.js ../head.js ./head.js"
 tags = "nimbus"
 firefox-appdir = "browser"
-skip-if = [
-  "appname == 'thunderbird'",
-  "os == 'android'",
+run-if = [
+  "os != 'android' && appname != 'thunderbird'",
 ]
 prefs = [
   "app.normandy.run_interval_seconds=0", # This turns off the update interval for fetching recipes from Remote Settings

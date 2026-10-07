@@ -31,7 +31,7 @@ class LexerSourceLineFinder {
  public:
   struct SourceLine {
     std::string line;
-    int column_offset;
+    unsigned int column_offset;
   };
 
   explicit LexerSourceLineFinder(std::unique_ptr<LexerSource>);
@@ -52,8 +52,6 @@ class LexerSourceLineFinder {
   std::unique_ptr<LexerSource> source_;
   std::vector<OffsetRange> line_ranges_;
   Offset next_line_start_;
-  bool last_cr_;  // Last read character was a '\r' (carriage return).
-  bool eof_;
 };
 
 }  // namespace wabt

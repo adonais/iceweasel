@@ -16,12 +16,15 @@ interface nsIWebTransportHash;
 %{C++
 namespace mozilla::dom {
 class ClientInfo;
+class WebTransportStatsData;
 }
 namespace mozilla::net {
 class WebTransportSessionBase;
 class WebTransportStreamBase;
 }
 %}
+
+[ptr] native WebTransportStatsDataPtr(mozilla::dom::WebTransportStatsData);
 
 [ptr] native WebTransportSessionPtr(mozilla::net::WebTransportSessionBase);
 [ptr] native WebTransportStreamPtr(mozilla::net::WebTransportStreamBase);
@@ -61,7 +64,12 @@ interface nsIWebTransport : nsISupports {
                     in Array<AString> aProtocols,
                     in nsIWebTransport_HTTPVersion aVersion);
 
-  // Asynchronously get stats.
+  // Asynchronously get stats. On success (NS_OK), results in exactly one
+  // call to onStatsAvailable(), even if stats could not be gathered (in
+  // which case aStats is null) -- unless the session is torn down before the
+  // gather completes, since there is then no listener left to call back. On
+  // failure, no callback follows; the caller must treat that the same as a
+  // null aStats.
   void getStats();
 
   // Export keying material using TLS exporter (RFC 5705).
@@ -98,6 +106,14 @@ interface nsIWebTransport : nsISupports {
   [noscript] void retargetTo(in nsIEventTarget aTarget);
 };
 
+// Wraps a WebTransportStatsData snapshot so it can be passed through a
+// scriptable interface. The raw data is only accessible to native (C++)
+// consumers, since WebTransportStatsData itself is not scriptable.
+[builtinclass, scriptable, uuid(bd8549d7-002f-4032-96a4-19430399d081)]
+interface nsIWebTransportSessionStats : nsISupports {
+  [noscript] readonly attribute WebTransportStatsDataPtr rawStats;
+};
+
 // Events related to a WebTransport session.
 [scriptable, uuid(0e3cb269-f318-43c8-959e-897f57894b71)]
 interface WebTransportSessionEventListener : nsISupports {
@@ -106,7 +122,8 @@ interface WebTransportSessionEventListener : nsISupports {
   void onSessionReady(in uint64_t aSessionId);
   void onSessionClosed(in boolean aCleanly,
                        in uint32_t aErrorCode,
-                       in ACString aReason);
+                       in ACString aReason,
+                       in nsIWebTransportSessionStats aStats);
   void onDraining();
 
   // When a new stream has been received.
@@ -131,7 +148,8 @@ interface WebTransportSessionEventListener : nsISupports {
     in uint64_t aId,
     in WebTransportSessionEventListener_DatagramOutcome aOutCome);
 
-  // void onStatsAvailable(in WebTransportStats aStats);
+  // aStats is null if stats could not be gathered for this session.
+  void onStatsAvailable(in nsIWebTransportSessionStats aStats);
 };
 
 [uuid(8fb30aa9-5163-4eb3-81f3-371e1ccb5b0e)]

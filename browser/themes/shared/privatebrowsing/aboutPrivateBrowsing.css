@@ -612,4 +612,126 @@ content-search-handoff-ui {
   #nova-promo {
     flex: 1;
   }
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("browser.privateWindowRedesign.enabled") {
+    @media not (prefers-contrast) {
+      html.private {
+        --background-color-canvas: var(--color-violet-desaturated-80);
+        --link-color: var(--color-violet-10);
+      }
+    }
+
+    .logo {
+      background-size: var(--size-item-xlarge);
+      height: var(--size-item-xlarge);
+      width: var(--size-item-xlarge);
+    }
+
+    .logo-and-wordmark {
+      margin-block-end: var(--space-xlarge);
+    }
+
+    .nova-tagline {
+      font-size: var(--font-size-xlarge);
+      font-weight: var(--font-weight-semibold);
+      line-height: 100%;
+      letter-spacing: 0;
+      margin-block: 0 var(--space-medium);
+    }
+
+    .nova-subheader {
+      text-align: center;
+      max-width: 42em;
+      margin-block: 0 52px;
+    }
+
+    .nova-promo-wrapper {
+      margin-block-start: var(--space-xlarge);
+    }
+
+    html.private .info {
+      #private-window-basics {
+        display: inline-block;
+        margin-block-start: var(--space-medium);
+        padding-inline-start: var(--space-xlarge);
+        background: url("chrome://global/skin/icons/info.svg") left center no-repeat;
+        background-size: var(--icon-size-small);
+        -moz-context-properties: fill;
+        fill: currentColor;
+      }
+
+      #private-window-basics:dir(rtl) {
+        background-position: right center;
+      }
+    }
+
+    #private-browsing-myths:link,
+    #nova-promo-link:link,
+    #private-window-basics:link {
+      @media not (prefers-contrast) {
+        color: var(--link-color);
+
+        &:hover {
+          color: var(--link-color-hover);
+        }
+
+        &:active {
+          color: var(--link-color-active);
+        }
+      }
+    }
+
+    html.private.intro-playing {
+      --intro-kit-duration: 1.6s;
+      --intro-fade-duration: 0.6s;
+      --intro-reveal-duration: 3s;
+      /* The body copy runs long, so it butts against the header rather than
+       * adding the usual gap, and what follows starts into its tail, where
+       * the ease-out is revealing almost nothing. */
+      --intro-body-gap: 0s;
+      --intro-body-overlap: 0.5s;
+      --intro-subheader-start: calc(var(--intro-kit-duration) + var(--intro-fade-duration) + var(--intro-body-gap));
+      --intro-search-start: calc(var(--intro-subheader-start) + var(--intro-reveal-duration) - var(--intro-body-overlap));
+
+      /* backwards, not both: the hidden start state applies through the delay
+       * and each element reverts to its normal style once it has run. */
+      .nova-tagline {
+        animation: pbw-intro-fade-in var(--intro-fade-duration) ease var(--intro-kit-duration) backwards;
+      }
+
+      .nova-subheader {
+        animation: pbw-intro-reveal var(--intro-reveal-duration) ease-out var(--intro-subheader-start) backwards;
+      }
+
+      .search-inner-wrapper,
+      #private-window-basics {
+        animation: pbw-intro-fade-in var(--intro-fade-duration) ease var(--intro-search-start) backwards;
+      }
+    }
+
+    @keyframes pbw-intro-fade-in {
+      from {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      to {
+        opacity: 1;
+        visibility: visible;
+      }
+    }
+
+    @keyframes pbw-intro-reveal {
+      from {
+        visibility: hidden;
+        clip-path: inset(0 0 100% 0);
+      }
+
+      to {
+        visibility: visible;
+        clip-path: inset(0 0 0 0);
+      }
+    }
+  }
 }

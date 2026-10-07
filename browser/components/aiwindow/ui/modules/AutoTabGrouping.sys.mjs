@@ -34,7 +34,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "minCandidateTabs",
   "browser.smartwindow.autoTabGrouping.minCandidateTabs",
-  4
+  2
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,

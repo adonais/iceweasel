@@ -8,6 +8,7 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/dom/Blob.h"
 #include "mozilla/dom/ClipboardBinding.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "nsIClipboard.h"
 #include "nsWrapperCache.h"

@@ -569,4 +569,12 @@ def get_lando_config_section_name(vcs: SupportedVcsRepository) -> str:
     if "LANDO_TRY_CONFIG" in os.environ:
         return os.environ["LANDO_TRY_CONFIG"]
 
-    return "lando-prod" if vcs.name == "hg" else "lando-prod-new"
+    if vcs.name == "hg":
+        raise LandoAPIException(
+            "Mercurial is not supported for Try pushes via Lando.\n"
+            + "You can use `--push-to-vcs` to push straight to HgMO.\n"
+            + "You should consider migrating your clone to git soon.\n"
+            + "Please see https://bit.ly/fx-git-migration for guidance on how to migrate."
+        )
+
+    return "lando-prod"

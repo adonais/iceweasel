@@ -5,6 +5,7 @@
 #ifndef mozilla_dom_MIDIPlatformRunnables_h
 #define mozilla_dom_MIDIPlatformRunnables_h
 
+#include "mozilla/dom/MIDIPortParent.h"
 #include "mozilla/dom/MIDITypes.h"
 
 namespace mozilla::dom {
@@ -12,7 +13,6 @@ namespace mozilla::dom {
 enum class MIDIPortConnectionState : uint8_t;
 enum class MIDIPortDeviceState : uint8_t;
 
-class MIDIPortParent;
 class MIDIMessage;
 class MIDIPortInfo;
 

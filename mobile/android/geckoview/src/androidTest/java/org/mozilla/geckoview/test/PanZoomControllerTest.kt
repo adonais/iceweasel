@@ -735,7 +735,11 @@ class PanZoomControllerTest : BaseSessionTest() {
     @WithDisplay(width = 100, height = 100)
     @Test
     fun touchEventWithXOrigin() {
-        setupDocument(TOUCH_XORIGIN_HTML_PATH)
+        mainSession.loadTestPath(TOUCH_XORIGIN_HTML_PATH)
+        mainSession.waitForPageStop()
+        sessionRule.waitForContentTransformsReceived(mainSession)
+        mainSession.promiseAllPaintsDone()
+        mainSession.flushApzRepaints()
 
         // Touch handler with preventDefault
         val value = sessionRule.waitForResult(sendDownEvent(50f, 45f))

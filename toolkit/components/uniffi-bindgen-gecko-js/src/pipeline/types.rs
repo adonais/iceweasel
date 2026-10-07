@@ -5,14 +5,28 @@
 use super::*;
 use heck::ToUpperCamelCase;
 
-pub fn pass(root: &mut Root) -> Result<()> {
-    root.visit_mut(|node: &mut TypeNode| {
-        node.ffi_converter = format!("FfiConverter{}", node.canonical_name);
-        node.class_name = class_name(&node.ty);
-        node.jsdoc_name = jsdoc_name(&node.ty);
-    });
+pub fn map_external_type(input: general::ExternalType, context: &Context) -> Result<ExternalType> {
+    Ok(ExternalType {
+        self_type: input.self_type.map_node(context)?,
+        namespace: namespaces::format_module_name(&input.namespace),
+        name: input.name.to_upper_camel_case(),
+    })
+}
 
-    Ok(())
+impl TypeNode {
+    pub fn ffi_converter(&self) -> String {
+        format!("FfiConverter{}", self.canonical_name)
+    }
+
+    /// Name of the JS class for this type (only set for user-defined types like
+    /// enums/records/interfaces).
+    pub fn class_name(&self) -> Option<String> {
+        class_name(&self.ty)
+    }
+
+    pub fn jsdoc_name(&self) -> String {
+        jsdoc_name(&self.ty)
+    }
 }
 
 fn class_name(ty: &Type) -> Option<String> {
@@ -38,8 +52,9 @@ fn class_name(ty: &Type) -> Option<String> {
         | Type::Timestamp
         | Type::Duration
         | Type::Sequence { .. }
-        | Type::Map { .. } => None,
-        Type::Optional { inner_type } => class_name(inner_type),
+        | Type::Map { .. }
+        | Type::Set { .. } => None,
+        Type::Optional { inner_type } | Type::Box { inner_type } => class_name(inner_type),
     }
 }
 
@@ -68,8 +83,10 @@ fn jsdoc_name(ty: &Type) -> String {
             format!("{name}[keyof {name}]")
         }
         Type::Optional { inner_type } => format!("?{}", jsdoc_name(inner_type)),
+        Type::Box { inner_type } => format!("{}", jsdoc_name(inner_type)),
         Type::Sequence { inner_type } => format!("Array.<{}>", jsdoc_name(inner_type)),
-        Type::Map { .. } => "object".into(),
+        Type::Map { .. } => "Map".into(),
+        Type::Set { .. } => "Set".into(),
         Type::Timestamp => unimplemented!("Timestamp"),
         Type::Duration => unimplemented!("Duration"),
     }

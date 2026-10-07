@@ -77,7 +77,7 @@ void HTMLEmbedElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
   }
 
   if (aName == nsGkAtoms::src) {
-    RefreshFeaturePolicy();
+    RefreshPermissionsPolicy();
   }
 
   if (aNamespaceID == kNameSpaceID_None &&

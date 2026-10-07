@@ -2115,9 +2115,9 @@ nsresult WebSocket::CreateAndDispatchCloseEvent(bool aWasClean, uint16_t aCode,
   // This method is called by a runnable and it can happen that, in the
   // meantime, GC unlinked this object, so mImpl could be null.
   if (mImpl && mImpl->mChannel) {
-    mImpl->mService->WebSocketClosed(mImpl->mChannel->Serial(),
-                                     mImpl->mInnerWindowID, aWasClean, aCode,
-                                     aReason);
+    mImpl->mService->WebSocketClosed(
+        mImpl->mChannel->Serial(), mImpl->mInnerWindowID,
+        mImpl->mChannel->HttpChannelId(), aWasClean, aCode, aReason);
   }
 
   nsresult rv = CheckCurrentGlobalCorrectness();

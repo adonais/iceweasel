@@ -70,7 +70,7 @@ add_task(async function testManageContainersOpened() {
 
   const reopenMenu = await openReopenMenuForTab(tab);
   const manageItem = reopenMenu.querySelector(
-    'menuitem[data-l10n-id="user-context-manage-containers"]'
+    'menuitem[data-l10n-id="user-context-manage-containers2"]'
   );
   ok(manageItem, "The Manage Containers item should be shown");
 
@@ -247,7 +247,7 @@ add_task(async function testAddContainerFromAllTabsMenu() {
   const creationPanel = document.getElementById("containerCreation-panel");
   const panelShown = BrowserTestUtils.waitForEvent(creationPanel, "popupshown");
   containerView
-    .querySelector('[data-l10n-id="user-context-add-container"]')
+    .querySelector('[data-l10n-id="user-context-add-container2"]')
     .click();
   await panelShown;
 
@@ -298,7 +298,7 @@ add_task(async function testManageContainersFromIndicatorMenu() {
   );
   menu.activateItem(
     menu.querySelector(
-      'menuitem[data-l10n-id="user-context-manage-containers"]'
+      'menuitem[data-l10n-id="user-context-manage-containers2"]'
     )
   );
   const prefsTab = await prefsTabPromise;

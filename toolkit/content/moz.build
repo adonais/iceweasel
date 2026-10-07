@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+DIRS += ["licenses"]
+
 TEST_DIRS += ["tests"]
 
 for var in ("CC", "CC_VERSION", "CXX", "RUSTC", "RUSTC_VERSION"):
@@ -36,6 +38,13 @@ if CONFIG["OS_TARGET"] == "Android":
 
 if CONFIG["MOZ_INSTALL_TRACKING"]:
     DEFINES["MOZ_INSTALL_TRACKING"] = 1
+
+GENERATED_FILES += ["license.html"]
+GENERATED_FILES["license.html"].script = "gen_license_html.py"
+GENERATED_FILES["license.html"].inputs = [
+    "license.html.mako",
+    "!/licenses.json",
+]
 
 JAR_MANIFESTS += ["jar.mn"]
 
@@ -265,3 +274,24 @@ with Files("preferencesBindings.js"):
 
 with Files("preferences/*"):
     BUG_COMPONENT = ("Toolkit", "Preferences")
+
+LICENSED_UNDER += ["bsd3clause"]
+LICENSED_UNDER["bsd3clause"].paths = [
+    "vendor/react/react-transition-group.js",
+]
+
+LICENSED_UNDER += ["mit"]
+LICENSED_UNDER["mit"].paths = [
+    "vendor/react/prop-types*",
+    "vendor/react/react*",
+]
+
+LICENSED_UNDER += ["react-redux"]
+LICENSED_UNDER["react-redux"].paths = [
+    "vendor/react/react-redux.js",
+]
+
+LICENSED_UNDER += ["redux"]
+LICENSED_UNDER["redux"].paths = [
+    "vendor/react/Redux.sys.mjs",
+]

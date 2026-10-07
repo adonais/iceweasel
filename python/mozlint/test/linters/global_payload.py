@@ -20,6 +20,12 @@ def global_payload(_paths, config, **lintargs):
     return issues
 
 
+def global_expanded(paths, config, **lintargs):
+    # A global linter that lints the paths it is handed, which tells an
+    # expanded directory from the directory itself.
+    return external(paths, config, **lintargs)
+
+
 def global_skipped(config, **lintargs):
     # A global linter that always registers a lint error.  Absence of
     # this error shows that the path exclusion mechanism can cause

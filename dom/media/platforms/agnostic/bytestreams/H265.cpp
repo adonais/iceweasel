@@ -1751,10 +1751,11 @@ already_AddRefed<mozilla::MediaByteBuffer> H265::CreateNewExtraData(
   return extradata.forget();
 }
 
-/* static */
-Result<bool, nsresult> H265::IsKeyFrame(const mozilla::MediaRawData* aSample) {
+template <typename Pred>
+static Result<bool, nsresult> SampleContainsNalu(
+    const mozilla::MediaRawData* aSample, Pred aIsWantedNalu) {
   if (aSample->mCrypto.IsEncrypted()) {
-    LOG("Can't check if encrypted sample is keyframe");
+    LOG("Can't examine encrypted sample");
     return Err(NS_ERROR_DOM_MEDIA_DEMUXER_ERR);
   }
 
@@ -1794,11 +1795,24 @@ Result<bool, nsresult> H265::IsKeyFrame(const mozilla::MediaRawData* aSample) {
       break;
     }
     const H265NALU nalu(p, nalLen);
-    if (nalu.IsIframe()) {
+    if (aIsWantedNalu(nalu)) {
       return true;
     }
   }
   return false;
+}
+
+/* static */
+Result<bool, nsresult> H265::IsKeyFrame(const mozilla::MediaRawData* aSample) {
+  return SampleContainsNalu(
+      aSample, [](const H265NALU& aNalu) { return aNalu.IsIframe(); });
+}
+
+/* static */
+Result<bool, nsresult> H265::IsRandomAccessPoint(
+    const mozilla::MediaRawData* aSample) {
+  return SampleContainsNalu(
+      aSample, [](const H265NALU& aNalu) { return aNalu.IsIRAP(); });
 }
 
 #undef LOG

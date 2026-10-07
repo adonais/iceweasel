@@ -7,7 +7,7 @@ export const ProcessType = Object.freeze({
    * Converts a key string to a fluent ID defined in processTypes.ftl.
    */
   kProcessTypeMap: {
-    // Keys defined in xpcom/build/GeckoProcessTypes.h
+    // Keys defined in xpcom/build/GeckoProcessTypes.inc
     default: "process-type-default",
     gpu: "process-type-gpu",
     tab: "process-type-tab",

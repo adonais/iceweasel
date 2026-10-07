@@ -109,5 +109,28 @@ addAsyncAnimTest(async function() {
   done_div();
 });
 
+// As above, but with an animation-range.
+addAsyncAnimTest(async function() {
+  new_div("animation: transform_anim 1s linear; " +
+          "animation-timeline: scroll(x root); " +
+          "animation-range: 25% 75%;");
+  await waitForPaintsFlushed();
+
+  // 37.5% of the timeline is 25% of the [25%, 75%] range, so an
+  // implementation that ignored the range would produce a different result
+  // (translateX(-137.5px) rather than translateX(-125px)).
+  const root = document.scrollingElement;
+  const maxScroll = root.scrollWidth - root.clientWidth;
+  root.scrollLeft = -0.375 * maxScroll;
+  await waitForPaintsFlushed();
+
+  omta_is_approx("transform", { tx: -125 }, 0.1, RunningOn.Compositor,
+                 "scroll transform animation with animation-range in rtl " +
+                 "mode");
+
+  root.scrollLeft = 0;
+  done_div();
+});
+
 </script>
 </html>

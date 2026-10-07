@@ -15,7 +15,7 @@ const {
   DEFAULT_LAUNCH_ON_LOGIN_NIMBUS_FEATURE_ID,
   DEFAULT_LAUNCH_ON_LOGIN_PREF,
 } = ChromeUtils.importESModule(
-  "resource:///modules/DefaultLaunchOnLogin.sys.mjs"
+  "moz-src:///browser/components/defaultlaunchonlogin/DefaultLaunchOnLogin.sys.mjs"
 );
 const { LaunchOnLogin } = ChromeUtils.importESModule(
   "resource://gre/modules/LaunchOnLogin.sys.mjs"
@@ -28,7 +28,8 @@ const { updateAppInfo } = ChromeUtils.importESModule(
 );
 
 const CATEGORY_NAME = "browser-idle-startup";
-const MODULE_URI = "resource:///modules/DefaultLaunchOnLogin.sys.mjs";
+const MODULE_URI =
+  "moz-src:///browser/components/defaultlaunchonlogin/DefaultLaunchOnLogin.sys.mjs";
 
 NimbusTestUtils.init(this);
 

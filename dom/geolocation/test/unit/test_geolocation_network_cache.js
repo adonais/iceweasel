@@ -32,6 +32,9 @@ function getCurrentPosition() {
 }
 
 add_setup(async function () {
+  do_get_profile();
+  Services.fog.initializeFOG();
+
   let httpserver = new HttpServer();
   httpserver.registerPathHandler("/geo", geoHandler);
   httpserver.start(-1);
@@ -60,4 +63,37 @@ add_task(async function cache_is_reused() {
 
   await getCurrentPosition();
   Assert.equal(requestCount, 1, "second lookup is served from the cache");
+});
+
+add_task(async function cache_is_dropped_on_network_change() {
+  Assert.equal(requestCount, 1, "a cached position is in place");
+
+  // Losing the link does not make the cached position wrong.
+  Services.obs.notifyObservers(null, "network:link-status-changed", "down");
+
+  await getCurrentPosition();
+  Assert.equal(requestCount, 1, '"down" leaves the cache in place');
+
+  Services.obs.notifyObservers(null, "network:link-status-changed", "changed");
+
+  await getCurrentPosition();
+  Assert.equal(
+    requestCount,
+    2,
+    "lookup after a network change performs a fresh request"
+  );
+
+  Services.obs.notifyObservers(null, "network:link-status-changed", "up");
+
+  await getCurrentPosition();
+  Assert.equal(
+    requestCount,
+    3,
+    "lookup after the link comes back performs a fresh request"
+  );
+
+  let linkChanges = Glean.geolocation.networkLinkChange;
+  Assert.equal(linkChanges.down.testGetValue(), 1, "counted the down");
+  Assert.equal(linkChanges.changed.testGetValue(), 1, "counted the change");
+  Assert.equal(linkChanges.up.testGetValue(), 1, "counted the up");
 });

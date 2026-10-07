@@ -12,12 +12,12 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"  // for AssertedCast
 #include "mozilla/dom/Comment.h"
+#include "mozilla/dom/Range.h"
 
 #include "nsDebug.h"
 #include "nsError.h"
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
-#include "nsRange.h"
 
 namespace mozilla {
 
@@ -1005,7 +1005,7 @@ WSRunScanner::GetRangeContainingInvisibleWhiteSpacesAtRangeBoundaries(
 Result<bool, nsresult>
 WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
     Options aOptions,  // NOLINT(performance-unnecessary-value-param)
-    nsRange& aRange, const Element* aAncestorLimiter /* = nullptr */) {
+    dom::Range& aRange, const Element* aAncestorLimiter /* = nullptr */) {
   MOZ_ASSERT(aRange.IsPositioned());
   MOZ_ASSERT(!aRange.IsInAnySelection(),
              "Changing range in selection may cause running script");
@@ -1094,7 +1094,7 @@ WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
                    : aRange.StartRef(),
       endContent ? RangeBoundary::After(*endContent) : aRange.EndRef());
   if (NS_FAILED(rv)) {
-    NS_WARNING("nsRange::SetStartAndEnd() failed");
+    NS_WARNING("Range::SetStartAndEnd() failed");
     return Err(rv);
   }
   return true;

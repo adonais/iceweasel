@@ -4,10 +4,10 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
 const { ArchiveUtils } = ChromeUtils.importESModule(
-  "resource:///modules/backup/ArchiveUtils.sys.mjs"
+  "moz-src:///browser/components/backup/ArchiveUtils.sys.mjs"
 );
 const { NonceUtils } = ChromeUtils.importESModule(
-  "resource:///modules/backup/ArchiveEncryption.sys.mjs"
+  "moz-src:///browser/components/backup/ArchiveEncryption.sys.mjs"
 );
 
 /**

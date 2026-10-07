@@ -55,8 +55,8 @@ def set_test_verify_chunks(config, tasks):
     """Set the number of chunks we use for test-verify."""
     for task in tasks:
         if any(task["suite"].startswith(s) for s in ("test-verify", "test-coverage")):
-            env = config.params.get("try_task_config", {}) or {}
-            env = env.get("templates", {}).get("env", {})
+            try_task_config = config.params.get("try_task_config", {}) or {}
+            env = try_task_config.get("env", {})
             task["chunks"] = perfile_number_of_chunks(
                 config.params["try_mode"] is not None,
                 env.get("MOZHARNESS_TEST_PATHS", ""),

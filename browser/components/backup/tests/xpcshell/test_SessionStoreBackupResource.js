@@ -4,7 +4,7 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
 const { SessionStoreBackupResource } = ChromeUtils.importESModule(
-  "resource:///modules/backup/SessionStoreBackupResource.sys.mjs"
+  "moz-src:///browser/components/backup/resources/SessionStoreBackupResource.sys.mjs"
 );
 const { SessionStore } = ChromeUtils.importESModule(
   "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs"

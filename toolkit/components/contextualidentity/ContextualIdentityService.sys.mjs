@@ -4,7 +4,7 @@
 
 // The maximum valid numeric value for the userContextId.
 const MAX_USER_CONTEXT_ID = -1 >>> 0;
-const LAST_CONTAINERS_JSON_VERSION = 6;
+const LAST_CONTAINERS_JSON_VERSION = 8;
 const SAVE_DELAY_MS = 1500;
 const CONTEXTUAL_IDENTITY_ENABLED_PREF = "privacy.userContext.enabled";
 
@@ -177,22 +177,22 @@ _ContextualIdentityService.prototype = {
     {
       icon: "fingerprint",
       color: "blue",
-      l10nId: "user-context-personal",
+      l10nId: "user-context-personal2",
     },
     {
       icon: "briefcase",
       color: "orange",
-      l10nId: "user-context-work",
+      l10nId: "user-context-work2",
     },
     {
       icon: "dollar",
       color: "green",
-      l10nId: "user-context-banking",
+      l10nId: "user-context-banking2",
     },
     {
       icon: "cart",
       color: "pink",
-      l10nId: "user-context-shopping",
+      l10nId: "user-context-shopping2",
     },
   ],
   _systemIdentities: [
@@ -325,7 +325,9 @@ _ContextualIdentityService.prototype = {
 
     // Clone the array
     for (let identity of this._defaultIdentities) {
-      this._identities.push(Object.assign({}, identity));
+      let stored = Object.assign({}, identity);
+      delete stored.l10nId;
+      this._identities.push(stored);
     }
     this._openedIdentities = new Set();
     this._siteAssociations = new Map();
@@ -431,6 +433,57 @@ _ContextualIdentityService.prototype = {
     return Cu.cloneInto(identity, {});
   },
 
+  createForPolicy(policyId) {
+    this.ensureDataReady();
+
+    let userContextId = ++this._lastUserContextId;
+
+    if (userContextId >= MAX_USER_CONTEXT_ID) {
+      throw new Error(
+        `Unable to create a new userContext with id '${userContextId}'`
+      );
+    }
+
+    let identity = {
+      userContextId,
+      public: false,
+      name: policyId,
+      policy: true,
+      policyId,
+    };
+
+    this._identities.push(identity);
+    this.saveSoon();
+
+    return Cu.cloneInto(identity, {});
+  },
+
+  removePolicyIdentity(userContextId) {
+    this.ensureDataReady();
+
+    let index = this._identities.findIndex(
+      i => i.userContextId == userContextId && i.policy
+    );
+    if (index == -1) {
+      return false;
+    }
+
+    Services.clearData.deleteDataFromOriginAttributesPattern({ userContextId });
+    this._identities.splice(index, 1);
+    this.saveSoon();
+
+    return true;
+  },
+
+  getPolicyIdentities() {
+    this.ensureDataReady();
+
+    return Cu.cloneInto(
+      this._identities.filter(info => info.policy),
+      {}
+    );
+  },
+
   update(userContextId, name, icon, color) {
     this.ensureDataReady();
 
@@ -448,7 +501,6 @@ _ContextualIdentityService.prototype = {
       identity.name = name;
       identity.color = color;
       identity.icon = icon;
-      delete identity.l10nId;
 
       this.saveSoon();
       Services.obs.notifyObservers(
@@ -631,7 +683,20 @@ _ContextualIdentityService.prototype = {
     } catch (e) {
       return baselineUserContextId;
     }
-    return this.getSiteAssociation(host) || baselineUserContextId;
+
+    try {
+      let policyContainer = Services.policies?.getContainerForURI(uri);
+      if (policyContainer) {
+        return policyContainer;
+      }
+    } catch (e) {}
+
+    let result = this.getSiteAssociation(host);
+    if (result) {
+      return result;
+    }
+
+    return baselineUserContextId;
   },
 
   getIdentityObserverOutput(identity) {
@@ -671,6 +736,16 @@ _ContextualIdentityService.prototype = {
 
     if (data.version == 5) {
       data = this.migrate5to6(data);
+      saveNeeded = true;
+    }
+
+    if (data.version == 6) {
+      data = this.migrate6to7(data);
+      saveNeeded = true;
+    }
+
+    if (data.version == 7) {
+      data = this.migrate7to8(data);
       saveNeeded = true;
     }
 
@@ -797,17 +872,19 @@ _ContextualIdentityService.prototype = {
 
   getUserContextLabel(userContextId) {
     let identity = this.getPublicIdentityFromId(userContextId);
+    if (!identity) {
+      return "";
+    }
 
     // We cannot localize the user-created identity names.
-    if (identity?.name) {
+    if (identity.name) {
       return identity.name;
     }
 
-    if (identity?.l10nId) {
-      return this.formatContextLabel(identity.l10nId);
-    }
-
-    return "";
+    let l10nId = this._defaultIdentities.find(
+      info => info.public && info.userContextId == userContextId
+    )?.l10nId;
+    return l10nId ? this.formatContextLabel(l10nId) : "";
   },
 
   get containerColors() {
@@ -1020,16 +1097,16 @@ _ContextualIdentityService.prototype = {
     for (let identity of data.identities) {
       switch (identity.l10nID) {
         case "userContextPersonal.label":
-          identity.l10nId = "user-context-personal";
+          identity.l10nId = "user-context-personal2";
           break;
         case "userContextWork.label":
-          identity.l10nId = "user-context-work";
+          identity.l10nId = "user-context-work2";
           break;
         case "userContextBanking.label":
-          identity.l10nId = "user-context-banking";
+          identity.l10nId = "user-context-banking2";
           break;
         case "userContextShopping.label":
-          identity.l10nId = "user-context-shopping";
+          identity.l10nId = "user-context-shopping2";
           break;
       }
       delete identity.l10nID;
@@ -1053,6 +1130,42 @@ _ContextualIdentityService.prototype = {
     }
 
     data.version = 6;
+
+    return data;
+  },
+
+  migrate6to7(data) {
+    // Migrating from 6 to 7 is:
+    // - renaming the default identities' Fluent ids, which Bug 2071753
+    //   changed when it dropped the accesskeys
+    // - increasing the version id.
+    const renamedL10nIds = {
+      "user-context-personal": "user-context-personal2",
+      "user-context-work": "user-context-work2",
+      "user-context-banking": "user-context-banking2",
+      "user-context-shopping": "user-context-shopping2",
+    };
+    for (let identity of data.identities) {
+      if (Object.hasOwn(renamedL10nIds, identity.l10nId)) {
+        identity.l10nId = renamedL10nIds[identity.l10nId];
+      }
+    }
+
+    data.version = 7;
+
+    return data;
+  },
+
+  migrate7to8(data) {
+    // Migrating from 7 to 8 is:
+    // - dropping the l10nId property; the default identities' Fluent ids are
+    //   read from _defaultIdentities
+    // - increasing the version id.
+    for (let identity of data.identities) {
+      delete identity.l10nId;
+    }
+
+    data.version = 8;
 
     return data;
   },

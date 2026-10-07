@@ -5,7 +5,10 @@ run-if = [
   "os == 'linux'",
 ]
 prefs = [
-  "browser.taskbarTabs.enabled=true"
+  "browser.taskbarTabs.enabled=true",
+  # Ensure the page action isn't hidden by default except when we mock it out.
+  # (This can affect Linux.)
+  "browser.shell.desktop-entry-api=filesystem",
 ]
 
 ["browser_taskbarTabs_chromeTest.js"]

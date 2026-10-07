@@ -666,6 +666,94 @@ TEST_F(TlsConnectStreamTls13, ServerRejectsClientCertificateRequest) {
   server_->CheckErrorCode(SSL_ERROR_RX_UNEXPECTED_CERT_REQUEST);
 }
 
+// Rewrites a server's post-handshake application data into a (minimal,
+// well-formed) DTLS CertificateRequest.  Post-handshake authentication is
+// never negotiated for DTLS, so a server must never send this.
+class DtlsAppDataToCertificateRequest : public TlsRecordFilter {
+ public:
+  DtlsAppDataToCertificateRequest(const std::shared_ptr<TlsAgent>& a)
+      : TlsRecordFilter(a) {}
+
+  size_t converted() const { return converted_; }
+
+ protected:
+  PacketFilter::Action FilterRecord(const TlsRecordHeader& header,
+                                    const DataBuffer& record, size_t* offset,
+                                    DataBuffer* output) override {
+    uint16_t protection_epoch = 0;
+    uint8_t inner_content_type = 0;
+    DataBuffer plaintext;
+    TlsRecordHeader out_header;
+    if (!Unprotect(header, record, &protection_epoch, &inner_content_type,
+                   &plaintext, &out_header)) {
+      return KEEP;
+    }
+    if (inner_content_type == ssl_ct_handshake) {
+      // Track the server's message_seq so that an injected CertificateRequest
+      // continues the sequence the client expects.
+      uint32_t seq = 0;
+      if (plaintext.len() >= 12 && plaintext.Read(4, 2, &seq) &&
+          seq + 1 > next_seq_) {
+        next_seq_ = seq + 1;
+      }
+      return KEEP;
+    }
+    if (inner_content_type != ssl_ct_application_data || protection_epoch < 3) {
+      return KEEP;
+    }
+    // DTLS handshake header (type, length, message_seq, fragment_offset,
+    // fragment_length) followed by a CertificateRequest with an empty request
+    // context and a signature_algorithms extension.
+    // clang-format off
+    uint8_t msg[] = {
+        kTlsHandshakeCertificateRequest, 0x00, 0x00, 0x0d,  // type, length
+        0x00, 0x00,                                         // message_seq
+        0x00, 0x00, 0x00,                                   // fragment_offset
+        0x00, 0x00, 0x0d,                                   // fragment_length
+        0x00,                                               // context length
+        0x00, 0x0a,                                         // extensions length
+        0x00, 0x0d, 0x00, 0x06,                             // signature_algorithms
+        0x00, 0x04, 0x08, 0x04, 0x04, 0x03                  // rsa_pss, ecdsa
+    };
+    // clang-format on
+    msg[4] = static_cast<uint8_t>(next_seq_ >> 8);
+    msg[5] = static_cast<uint8_t>(next_seq_);
+    ++next_seq_;
+    ++converted_;
+    DataBuffer replacement(msg, sizeof(msg));
+    DataBuffer ciphertext;
+    if (!Protect(spec(protection_epoch), out_header, ssl_ct_handshake,
+                 replacement, &ciphertext, &out_header)) {
+      return KEEP;
+    }
+    *offset = out_header.Write(output, *offset, ciphertext);
+    return CHANGE;
+  }
+
+ private:
+  uint32_t next_seq_ = 0;
+  size_t converted_ = 0;
+};
+
+// A DTLS 1.3 client must reject a post-handshake CertificateRequest even when
+// it has post-handshake auth enabled, because the feature is never negotiated
+// for DTLS.
+TEST_F(TlsConnectDatagram13, ClientRejectsPostHandshakeCertificateRequest) {
+  EnsureTlsSetup();
+  client_->SetupClientAuth();
+  client_->SetOption(SSL_ENABLE_POST_HANDSHAKE_AUTH, PR_TRUE);
+  auto filter = MakeTlsFilter<DtlsAppDataToCertificateRequest>(server_);
+  filter->EnableDecryption();
+  Connect();
+
+  server_->SendData(10, 10);
+  client_->ExpectSendAlert(kTlsAlertUnexpectedMessage);
+  client_->ExpectReadWriteError();
+  client_->ReadBytes(10);
+  EXPECT_EQ(1U, filter->converted());
+  client_->CheckErrorCode(SSL_ERROR_RX_UNEXPECTED_CERT_REQUEST);
+}
+
 TEST_P(TlsConnectClientAuthStream13, PostHandshakeAuthAfterResumption) {
   ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
   ConfigureVersion(SSL_LIBRARY_VERSION_TLS_1_3);

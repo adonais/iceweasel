@@ -112,6 +112,9 @@ class InnerListResult {
   size_t Length() const;
   ItemResult GetItemAt(size_t aIndex) const;
 
+  template <typename T>
+  nsresult GetParam(const nsACString& aKey, nsACString& aOutput) const;
+
   bool IsValid() const { return mInnerList != nullptr; }
 
  private:

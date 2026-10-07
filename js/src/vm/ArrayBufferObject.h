@@ -6,6 +6,7 @@
 #define vm_ArrayBufferObject_h
 
 #include "mozilla/Maybe.h"
+#include "mozilla/Span.h"
 
 #include <tuple>  // std::tuple
 
@@ -496,6 +497,10 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
  public:
   static FixedLengthArrayBufferObject* createZeroed(
       JSContext* cx, size_t nbytes, HandleObject proto = nullptr);
+
+  static FixedLengthArrayBufferObject* createCopied(
+      JSContext* cx, mozilla::Span<const uint8_t> src,
+      HandleObject proto = nullptr);
 
   // Create an ArrayBufferObject that is safely finalizable and can later be
   // initialize()d to become a real, content-visible ArrayBufferObject.

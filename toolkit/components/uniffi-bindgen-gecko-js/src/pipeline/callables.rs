@@ -7,55 +7,89 @@ use crate::ConcurrencyMode;
 
 use anyhow::{anyhow, bail, Result};
 
-pub fn pass(namespace: &mut Namespace) -> Result<()> {
-    // We have to generate for_callback_interface for now.  In the future, this probably should be
-    // done in the general pipeline.
-    namespace.visit_mut(|cbi: &mut CallbackInterface| {
-        cbi.visit_mut(|callable: &mut Callable| {
-            if let CallableKind::VTableMethod {
-                for_callback_interface,
-                ..
-            } = &mut callable.kind
-            {
-                *for_callback_interface = true;
-            }
-        });
+pub fn map_function(input: general::Function, context: &Context) -> Result<Function> {
+    let callable = input.callable.map_node(context)?;
+    Ok(Function {
+        js_docstring: js_docstrings::format_callable_docstring(&callable, &input.docstring),
+        callable,
+        docstring: input.docstring,
+    })
+}
+
+pub fn map_constructor(input: general::Constructor, context: &Context) -> Result<Constructor> {
+    let callable = input.callable.map_node(context)?;
+    Ok(Constructor {
+        js_docstring: js_docstrings::format_callable_docstring(&callable, &input.docstring),
+        callable,
+        docstring: input.docstring,
+    })
+}
+
+pub fn map_method(input: general::Method, context: &Context) -> Result<Method> {
+    let callable = input.callable.map_node(context)?;
+    Ok(Method {
+        js_docstring: js_docstrings::format_callable_docstring(&callable, &input.docstring),
+        callable,
+        docstring: input.docstring,
+    })
+}
+
+pub fn map_argument(input: general::Argument, context: &Context) -> Result<Argument> {
+    let ty = input.ty.map_node(context)?;
+    let ffi_value_class = ffi_types::ffi_value_class(&ty)?;
+    Ok(Argument {
+        name: input.name.to_lower_camel_case(),
+        ty,
+        by_ref: input.by_ref,
+        optional: input.optional,
+        default: input.default.map_node(context)?,
+        ffi_value_class,
+    })
+}
+
+pub fn check_for_unconfigured_callables(
+    namespace: &general::Namespace,
+    config: &Config,
+) -> Result<()> {
+    let mut unconfigured_callables = vec![];
+    namespace.visit(|callable: &general::Callable| {
+        if lookup_concurrency_mode(callable, config).is_none() {
+            let spec = callable_config_spec(callable);
+            let source_info = match &callable.kind {
+                general::CallableKind::Function => {
+                    format!("Function '{spec}' in module '{}'", namespace.name)
+                }
+                general::CallableKind::Method { .. } => {
+                    format!("Method '{spec}' in module '{}'", namespace.name)
+                }
+                general::CallableKind::Constructor { .. } => {
+                    format!("Constructor '{spec}' in module '{}'", namespace.name)
+                }
+                general::CallableKind::VTableMethod { .. } => {
+                    format!("VTable method '{spec}' in module '{}'", namespace.name)
+                }
+            };
+            let example = match &callable.kind {
+                general::CallableKind::Function
+                | general::CallableKind::Method { .. }
+                | general::CallableKind::Constructor { .. } => {
+                    "\"AsyncWrapped\"  # or \"Sync\"".to_string()
+                }
+                general::CallableKind::VTableMethod { .. } => {
+                    "\"FireAndForget\"  # or \"Sync\"".to_string()
+                }
+            };
+            unconfigured_callables.push((spec, source_info, example));
+        }
     });
 
-    let async_wrappers = &namespace.config.async_wrappers;
-    let namespace_name = &namespace.name;
-
-    // Track unconfigured callables for later reporting
-    let mut unconfigured_callables = Vec::new();
-
-    // Configure all callables
-    namespace
-        .functions
-        .try_visit_mut(|callable: &mut Callable| {
-            handle_callable(
-                callable,
-                async_wrappers,
-                &mut unconfigured_callables,
-                namespace_name,
-            )
-        })?;
-    namespace
-        .type_definitions
-        .try_visit_mut(|callable: &mut Callable| {
-            handle_callable(
-                callable,
-                async_wrappers,
-                &mut unconfigured_callables,
-                namespace_name,
-            )
-        })?;
-
-    // Report unconfigured callables
-    if !unconfigured_callables.is_empty() {
+    if unconfigured_callables.is_empty() {
+        Ok(())
+    } else {
         let mut message = format!(
             "Found {} callables in module '{}' without explicit async/sync configuration in config.toml:\n",
             unconfigured_callables.len(),
-            namespace_name
+            namespace.name,
         );
 
         for (spec, info, _) in &unconfigured_callables {
@@ -70,136 +104,151 @@ pub fn pass(namespace: &mut Namespace) -> Result<()> {
         for (spec, _, example) in &unconfigured_callables {
             message.push_str(&format!("\"{spec}\" = {example}\n"));
         }
-
-        // Fail the build with a helpful error message
-        return Err(anyhow!(message));
+        Err(anyhow!(message))
     }
-
-    Ok(())
 }
 
-fn handle_callable(
-    callable: &mut Callable,
-    async_wrappers: &indexmap::IndexMap<String, ConcurrencyMode>,
-    unconfigured_callables: &mut Vec<(String, String, String)>,
-    module_name: &str,
-) -> Result<()> {
-    let name = &callable.name;
-    let spec = match &callable.kind {
-        CallableKind::Function => name.clone(),
-        CallableKind::Method { self_type, .. } | CallableKind::Constructor { self_type, .. } => {
-            let interface_name = self_type.ty.name()?;
-            format!("{interface_name}.{name}")
+pub fn map_callable(input: general::Callable, context: &Context) -> Result<Callable> {
+    let concurrency_mode = lookup_concurrency_mode(&input, context.current_namespace_config()?)
+        .ok_or_else(|| anyhow!("Failed to find concurrent_mode ({input:?})"))?;
+    let spec = callable_config_spec(&input);
+    let kind = input.kind.map_node(context)?;
+    let (is_js_async, uniffi_scaffolding_method) = match concurrency_mode {
+        ConcurrencyMode::Sync => (false, "UniFFIScaffolding.callSync".to_string()),
+        ConcurrencyMode::Async => (true, "UniFFIScaffolding.callAsync".to_string()),
+        ConcurrencyMode::AsyncWrapped => {
+            if matches!(kind, CallableKind::VTableMethod { .. }) {
+                bail!(
+                    "VTable method '{spec}' cannot be AsyncWrapped as foreign-implemented trait interfaces don't support async wrapping",
+                );
+            }
+            (true, "UniFFIScaffolding.callAsyncWrapper".to_string())
         }
-        CallableKind::VTableMethod { self_type, .. } => {
-            let trait_name = self_type.ty.name()?;
-            format!("{trait_name}.{name}")
+        ConcurrencyMode::FireAndForget => {
+            if !matches!(
+                kind,
+                CallableKind::VTableMethod {
+                    for_callback_interface: true,
+                    ..
+                }
+            ) {
+                bail!(
+                    "VTable method '{spec}' cannot be FireAndForget as Rust-implemented functions don't support fire-and-forget wrapping",
+                );
+            }
+            // Use placeholder values since these can only be called from Rust.
+            (false, "".to_string())
         }
     };
 
-    let config = async_wrappers.get(&spec);
+    let name = match &kind {
+        CallableKind::Constructor { primary: true, .. } => "init".into(),
+        _ => input.name.to_lower_camel_case(),
+    };
+
+    Ok(Callable {
+        id: context.map_callable_id(input.id),
+        name,
+        async_data: input.async_data.map_node(context)?,
+        is_js_async,
+        uniffi_scaffolding_method,
+        kind,
+        concurrency_mode,
+        arguments: input.arguments.map_node(context)?,
+        return_type: input
+            .return_type
+            .ty
+            .map(|type_node| {
+                let ty: TypeNode = type_node.map_node(context)?;
+                anyhow::Ok(ReturnType {
+                    ffi_value_class: ffi_types::ffi_value_class(&ty)?,
+                    ty,
+                })
+            })
+            .transpose()?,
+        throws_type: input
+            .throws_type
+            .ty
+            .map(|type_node| {
+                let ty: TypeNode = type_node.map_node(context)?;
+                anyhow::Ok(ThrowsType { ty })
+            })
+            .transpose()?,
+        checksum: input.checksum,
+        ffi_func: input.ffi_func,
+    })
+}
+
+fn lookup_concurrency_mode(
+    callable: &general::Callable,
+    config: &Config,
+) -> Option<ConcurrencyMode> {
+    let spec = callable_config_spec(callable);
+    let concurrency_mode = config.async_wrappers.get(&spec);
     // If the config is not set, check for a parent config
-    let config = match config {
+    let concurrency_mode = match concurrency_mode {
         Some(c) => Some(c),
         None => match &callable.kind {
-            CallableKind::Method { self_type, .. }
-            | CallableKind::Constructor { self_type, .. }
-            | CallableKind::VTableMethod { self_type, .. } => {
-                let parent = self_type.ty.name()?;
-                async_wrappers.get(parent)
+            general::CallableKind::Method { self_type, .. }
+            | general::CallableKind::Constructor { self_type, .. }
+            | general::CallableKind::VTableMethod { self_type, .. } => {
+                let parent = self_type
+                    .ty
+                    .name()
+                    .unwrap_or_else(|| panic!("Invalid self type: {:?}", self_type.ty));
+                config.async_wrappers.get(parent)
             }
             _ => None,
         },
     };
     // Finally, default to `Async` for async methods
-    let config = config.or_else(|| {
-        if callable.async_data.is_some() {
-            Some(&ConcurrencyMode::Async)
-        } else {
-            None
-        }
-    });
-    match config {
-        Some(concurrency_mode) => {
-            callable.concurrency_mode = concurrency_mode.clone();
-            match concurrency_mode {
-                ConcurrencyMode::Sync => {
-                    callable.is_js_async = false;
-                    callable.uniffi_scaffolding_method = "UniFFIScaffolding.callSync".to_string();
-                }
-                ConcurrencyMode::Async => {
-                    callable.is_js_async = true;
-                    callable.uniffi_scaffolding_method = "UniFFIScaffolding.callAsync".to_string();
-                }
-                ConcurrencyMode::AsyncWrapped => {
-                    if matches!(callable.kind, CallableKind::VTableMethod { .. }) {
-                        bail!(
-                            "VTable method '{}' cannot be AsyncWrapped as foreign-implemented trait interfaces don't support async wrapping",
-                            spec
-                        );
-                    }
-                    callable.is_js_async = true;
-                    callable.uniffi_scaffolding_method =
-                        "UniFFIScaffolding.callAsyncWrapper".to_string();
-                }
-                ConcurrencyMode::FireAndForget => {
-                    if !matches!(
-                        callable.kind,
-                        CallableKind::VTableMethod {
-                            for_callback_interface: true,
-                            ..
-                        }
-                    ) {
-                        bail!(
-                            "VTable method '{}' cannot be FireAndForget as Rust-implemented functions don't support fire-and-forget wrapping",
-                            spec
-                        );
-                    }
-                    // no need to set `is_js_async` or `uniffi_scaffolding_method` since these can only
-                    // be called from Rust.
-                }
+    match concurrency_mode {
+        Some(c) => Some(*c),
+        None => {
+            if callable.async_data.is_some() {
+                Some(ConcurrencyMode::Async)
+            } else {
+                None
             }
         }
-        None => {
-            // Store information about the unconfigured callable
-            let source_info = match &callable.kind {
-                CallableKind::Function => {
-                    format!("Function '{}' in module '{}'", name, module_name)
-                }
-                CallableKind::Method { self_type, .. } => format!(
-                    "Method '{}.{}' in module '{}'",
-                    self_type.ty.name()?,
-                    name,
-                    module_name
-                ),
-                CallableKind::Constructor { self_type, .. } => format!(
-                    "Constructor '{}.{}' in module '{}'",
-                    self_type.ty.name()?,
-                    name,
-                    module_name
-                ),
-                CallableKind::VTableMethod { self_type, .. } => format!(
-                    "VTable method '{}.{}' in module '{}'",
-                    self_type.ty.name()?,
-                    name,
-                    module_name
-                ),
-            };
+    }
+}
 
-            let example = match &callable.kind {
-                CallableKind::Function
-                | CallableKind::Method { .. }
-                | CallableKind::Constructor { .. } => "\"AsyncWrapped\"  # or \"Sync\"".to_string(),
-                CallableKind::VTableMethod { .. } => "\"FireAndForget\"  # or \"Sync\"".to_string(),
-            };
-
-            unconfigured_callables.push((spec.clone(), source_info, example));
-
-            // Default to async for now - this won't matter if we fail the build
-            callable.is_js_async = true;
-            callable.uniffi_scaffolding_method = "UniFFIScaffolding.callAsyncWrapper".to_string();
+fn callable_config_spec(callable: &general::Callable) -> String {
+    let name = &callable.name;
+    match &callable.kind {
+        general::CallableKind::Function => name.clone(),
+        general::CallableKind::Method { self_type, .. }
+        | general::CallableKind::Constructor { self_type, .. } => {
+            let interface_name = self_type
+                .ty
+                .name()
+                .unwrap_or_else(|| panic!("Invalid self type: {:?}", self_type.ty));
+            format!("{interface_name}.{name}")
+        }
+        general::CallableKind::VTableMethod { self_type, .. } => {
+            let trait_name = self_type
+                .ty
+                .name()
+                .unwrap_or_else(|| panic!("Invalid self type: {:?}", self_type.ty));
+            format!("{trait_name}.{name}")
         }
     }
+}
 
-    Ok(())
+impl Argument {
+    /// C++ class field name for this arg
+    pub fn field_name_cpp(&self) -> String {
+        format!("m{}", self.name.to_upper_camel_case())
+    }
+
+    /// C++ function variable name for this arg
+    pub fn var_name_cpp(&self) -> String {
+        self.name.to_lower_camel_case()
+    }
+
+    /// C++ function argument name for this arg
+    pub fn arg_name_cpp(&self) -> String {
+        format!("a{}", self.name.to_upper_camel_case())
+    }
 }

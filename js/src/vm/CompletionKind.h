@@ -5,6 +5,10 @@
 #ifndef vm_CompletionKind_h
 #define vm_CompletionKind_h
 
+#include "mozilla/Assertions.h"
+
+#include <cstdint>
+
 namespace js {
 
 enum class CompletionKind : uint8_t { Normal, Return, Throw };

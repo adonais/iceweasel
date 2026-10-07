@@ -8,12 +8,8 @@ import android.support.v4.media.session.PlaybackStateCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.browser.state.state.MediaSessionState
 import mozilla.components.concept.engine.mediasession.MediaSession
-import mozilla.components.feature.media.MediaNimbus
-import mozilla.components.feature.media.MediaNotificationImprovements
 import mozilla.components.support.test.mock
-import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -22,18 +18,6 @@ class MediaSessionStateKtTest {
 
     private val baseActions =
         PlaybackStateCompat.ACTION_PLAY_PAUSE or PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PAUSE
-
-    @Before
-    fun setUp() {
-        MediaNimbus.features.mediaNotificationImprovements.withCachedValue(
-            MediaNotificationImprovements(enabled = true)
-        )
-    }
-
-    @After
-    fun tearDown() {
-        MediaNimbus.features.mediaNotificationImprovements.withCachedValue(null)
-    }
 
     @Test
     fun `WHEN no track features are set THEN toPlaybackState advertises only base actions`() {
@@ -74,24 +58,6 @@ class MediaSessionStateKtTest {
             baseActions or PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS,
             state.toPlaybackState().actions,
         )
-    }
-
-    @Test
-    fun `WHEN the improvements flag is disabled THEN toPlaybackState omits the timeline actions and reports an unknown position`() {
-        MediaNimbus.features.mediaNotificationImprovements.withCachedValue(
-            MediaNotificationImprovements(enabled = false)
-        )
-        val state =
-            MediaSessionState(
-                controller = mock(),
-                playbackState = MediaSession.PlaybackState.PLAYING,
-                positionState = MediaSession.PositionState(duration = 100.0, position = 30.0),
-            )
-
-        val playbackState = state.toPlaybackState()
-
-        assertEquals(baseActions, playbackState.actions)
-        assertEquals(PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, playbackState.position)
     }
 
     @Test

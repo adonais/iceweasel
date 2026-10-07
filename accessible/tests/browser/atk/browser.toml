@@ -1,8 +1,8 @@
 [DEFAULT]
 subsuite = "a11y"
-skip-if = [
-  "headless",
-  "os != 'linux'",
+# ATK exists only on Linux, and AT-SPI needs a real window.
+run-if = [
+  "os == 'linux' && !headless",
 ]
 support-files = ["head.js"]
 prefs = [

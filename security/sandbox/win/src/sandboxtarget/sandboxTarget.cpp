@@ -6,6 +6,7 @@
 
 #include "mozilla/CpuInfo.h"
 #include "mozilla/SandboxSettings.h"
+#include "mozilla/WindowsStackWalkInitialization.h"
 #include "sandbox/win/src/sandbox.h"
 
 namespace mozilla {
@@ -20,6 +21,12 @@ SandboxTarget* SandboxTarget::Instance() {
 
 void SandboxTarget::StartSandbox() {
   if (mTargetServices) {
+#if defined(_M_AMD64) || defined(_M_ARM64)
+    // Hooks must be installed now even though no stack walk has been requested
+    // yet, in case delayed mitigations against dynamic code are used.
+    InstallStackWalkSuppressionHooks();
+#endif  // _M_AMD64 || _M_ARM64
+
     mTargetServices->LowerToken();
     NotifyStartObservers();
   }

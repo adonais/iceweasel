@@ -10,6 +10,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/Range.h"
 #include "nsComponentManagerUtils.h"
 #include "nsFocusManager.h"
 #include "nsFrameSelection.h"
@@ -27,7 +28,6 @@
 #include "nsISupports.h"
 #include "nsISupportsPrimitives.h"
 #include "nsPIDOMWindow.h"
-#include "nsRange.h"
 #include "nsServiceManagerUtils.h"
 #include "nsURLHelper.h"
 #include "nsWidgetsCID.h"
@@ -442,7 +442,7 @@ nsresult nsCopySupport::GetTransferableForNode(
   // XXX We should try to get rid of the Selection object here.
   // XXX bug 1245883
   RefPtr<Selection> selection = new Selection(SelectionType::eNormal, nullptr);
-  RefPtr<nsRange> range = nsRange::Create(aNode);
+  RefPtr<dom::Range> range = dom::Range::Create(aNode);
   ErrorResult result;
   range->SelectNode(*aNode, result);
   if (NS_WARN_IF(result.Failed())) {
@@ -724,7 +724,7 @@ static bool IsSelectionInsideRuby(Selection* aSelection) {
   uint32_t rangeCount = aSelection->RangeCount();
   for (auto i : IntegerRange(rangeCount)) {
     MOZ_ASSERT(aSelection->RangeCount() == rangeCount);
-    const nsRange* range = aSelection->GetRangeAt(i);
+    const dom::Range* range = aSelection->GetRangeAt(i);
     if (!IsInsideRuby(range->GetClosestCommonInclusiveAncestor())) {
       return false;
     }
@@ -815,7 +815,7 @@ bool nsCopySupport::FireClipboardEvent(
 
   // Retrieve the event target node from the start of the selection.
   if (sel) {
-    const nsRange* range = sel->GetRangeAt(0);
+    const dom::Range* range = sel->GetRangeAt(0);
     if (range) {
       targetElement = GetElementOrNearestFlattenedTreeParentElement(
           range->GetStartContainer());

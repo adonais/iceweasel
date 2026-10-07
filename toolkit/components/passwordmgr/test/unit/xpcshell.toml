@@ -10,6 +10,8 @@ prefs = ["security.storage.encryption.sqlite.enabled=false"]
 
 ["test_BreachAlertStore.js"]
 
+["test_BreachAlertsData.js"]
+
 ["test_CSVParser.js"]
 
 ["test_LoginManagerParent_doAutocompleteSearch.js"]
@@ -37,6 +39,11 @@ run-if = [
   "os != 'android'", # Tests desktop's prompter
 ]
 
+["test_LoginStorageMigrator.js"]
+run-if = [
+  "os != 'android'", # The migrator only runs on desktop
+]
+
 ["test_OSCrypto_win.js"]
 run-if = [
   "os == 'win'",
@@ -57,6 +64,8 @@ skip-if = [
 run-if = [
   "buildapp == 'browser'",
 ]
+
+["test_crypto_SDR_primary_password.js"]
 
 ["test_dedupeLogins.js"]
 
@@ -118,11 +127,6 @@ skip-if = [
 ["test_maybeImportLogin.js"]
 run-if = [
   "os != 'android'", # Only used by migrator, which isn't on Android
-]
-
-["test_LoginStorageMigrator.js"]
-run-if = [
-  "os != 'android'", # The migrator only runs on desktop
 ]
 
 ["test_module_LoginCSVImport.js"]

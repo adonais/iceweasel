@@ -183,11 +183,12 @@ interface nsIContentAnalysisRequest : nsISupports
 
   // Enumeration of what operation is happening, to be displayed to the user
   cenum OperationType : 32 {
-    eClipboard = 0,
+    ePasteClipboard = 0,
     eDroppedText = 1,
     eOperationPrint = 2,
     eUpload = 3,
     eDownload = 4,
+    eCopyClipboard = 5,
   };
   readonly attribute nsIContentAnalysisRequest_OperationType operationTypeForDisplay;
   // Required if operationTypeForDisplay is eUpload or eDownload.

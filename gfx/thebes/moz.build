@@ -68,12 +68,11 @@ EXPORTS += [
 
 EXPORTS.mozilla.gfx += [
     "D3D11Checks.h",
-    "DeviceManagerDx.h",
-    "DisplayConfigWindows.h",
     "FontData.h",
     "FontPaletteCache.h",
     "PrintPromise.h",
     "PrintTarget.h",
+    "PrintTargetSkPDF.h",
     "PrintTargetThebes.h",
     "ThebesRLBox.h",
 ]
@@ -160,6 +159,8 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
         "gfxWindowsSurface.h",
     ]
     EXPORTS.mozilla.gfx += [
+        "DeviceManagerDx.h",
+        "DisplayConfigWindows.h",
         "PrintTargetPDF.h",
         "PrintTargetWindows.h",
     ]
@@ -229,13 +230,11 @@ UNIFIED_SOURCES += [
     "gfxTextRun.cpp",
     "gfxUserFontSet.cpp",
     "gfxUtils.cpp",
+    "PrintTargetSkPDF.cpp",
     "SharedFontList.cpp",
+    "SkMemoryReporter.cpp",
     "SoftwareVsyncSource.cpp",
     "VsyncSource.cpp",
-]
-
-UNIFIED_SOURCES += [
-    "SkMemoryReporter.cpp",
 ]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
@@ -250,14 +249,6 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     UNIFIED_SOURCES += [
         "D3D11Checks.cpp",
         "DeviceManagerDx.cpp",
-    ]
-
-if CONFIG["MOZ_ENABLE_SKIA_PDF"]:
-    EXPORTS.mozilla.gfx += [
-        "PrintTargetSkPDF.h",
-    ]
-    SOURCES += [
-        "PrintTargetSkPDF.cpp",
     ]
 
 # We use ICU for normalization functions:
@@ -301,3 +292,21 @@ DEFINES["GRAPHITE2_STATIC"] = True
 COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += ["-Werror=switch"]
 
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+LICENSES += ["icu"]
+LICENSES["icu"].title = "ICU License"
+LICENSES["icu"].text = "LICENSE-NOTICE.txt"
+LICENSES["icu"].spdx = "ICU"
+LICENSES["icu"].notice = """
+<p>This license applies to some code in the <code>gfx/thebes</code> directory.</p>
+"""
+
+LICENSED_UNDER += [
+    "icu",
+]
+
+LICENSED_UNDER += ["gfx-font-list"]
+LICENSED_UNDER["gfx-font-list"].paths = [
+    "gfxMacPlatformFontList.mm",
+    "gfxPlatformFontList.cpp",
+]

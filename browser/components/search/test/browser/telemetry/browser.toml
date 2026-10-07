@@ -178,6 +178,14 @@ support-files = ["searchTelemetryAd_components_text.html", "serp.css"]
 
 ["browser_search_telemetry_impressionAttributes.js"]
 
+["browser_search_telemetry_impression_interrupted_load.js"]
+support-files = [
+  "searchTelemetry.html",
+  "slow_loading_page_with_ads.html",
+  "slow_loading_page_with_ads.sjs",
+  "slow_loading_page_with_ads_on_load_event.html",
+]
+
 ["browser_search_telemetry_post_engine.js"]
 support-files = ["searchTelemetryAd_post_result.sjs"]
 

@@ -145,3 +145,7 @@ TEST_DIRS += [
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+LICENSED_UNDER += [
+    "chromium",
+]

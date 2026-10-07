@@ -44,7 +44,7 @@ addAccessibleTask(`<p id="p">p</p>`, async function testAriaNotify(browser) {
   info("doc.ariaNotify c");
   announced = waitForMacEventWithInfo(
     "AXAnnouncementRequested",
-    DEFAULT_CONTENT_DOC_BODY_ID
+    DEFAULT_CONTENT_DOC_ID
   );
   await invokeContentTask(browser, [], () => {
     content.document.ariaNotify("c");

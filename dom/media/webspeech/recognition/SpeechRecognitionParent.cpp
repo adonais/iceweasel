@@ -8,9 +8,11 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <thread>
 
 #include "SpeechRecognitionModelMapping.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Preferences.h"
@@ -20,6 +22,7 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/glean/DomMediaWebspeechMetrics.h"
 #include "mozilla/hwinference/HWInferenceChild.h"
 #include "mozilla/ipc/FileDescriptorUtils.h"
 #include "mozilla/ipc/ProtocolUtils.h"
@@ -27,6 +30,7 @@
 #include "mozilla/llama/LlamaRuntimeLinker.h"
 #include "nsDebug.h"
 #include "nsIDUtils.h"
+#include "nsIMemoryReporter.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -51,6 +55,105 @@ static constexpr int32_t PARAKEET_SAMPLE_RATE = 16000;
 // Bound on SpeechRecognitionParent::mCaptureTimeSamples; see the comment at
 // its only push_back() site.
 static constexpr size_t kMaxCaptureTimeSamples = 64;
+
+// Written on the recognition thread as the model is loaded and freed, read on
+// the main thread by the reporter. Only one session runs at a time.
+static Atomic<size_t> sModelWeightsBytes{0};
+
+// ggml keeps the weights in a backend buffer rather than on the heap, so no
+// other reporter in this process accounts for them.
+class SpeechRecognitionMemoryReporter final : public nsIMemoryReporter {
+ public:
+  NS_DECL_ISUPPORTS
+
+  NS_IMETHOD CollectReports(nsIHandleReportCallback* aHandleReport,
+                            nsISupports* aData, bool aAnonymize) override {
+    MOZ_COLLECT_REPORT("explicit/media/speech-recognition/model-weights",
+                       KIND_NONHEAP, UNITS_BYTES, sModelWeightsBytes,
+                       "Weights of the on-device speech recognition model "
+                       "loaded in this process.");
+    return NS_OK;
+  }
+
+ private:
+  ~SpeechRecognitionMemoryReporter() = default;
+};
+
+NS_IMPL_ISUPPORTS(SpeechRecognitionMemoryReporter, nsIMemoryReporter)
+
+namespace {
+
+// Interval covering one parakeet_capi_stream_feed() call: how much audio went
+// in, how much was still waiting behind it, and what came out.
+struct ParakeetFeedMarker : public BaseMarkerType<ParakeetFeedMarker> {
+  static constexpr const char* Name = "ParakeetFeed";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"fedMs", MS::InputType::Double, "Audio fed", MS::Format::Milliseconds},
+      {"queuedMs", MS::InputType::Double, "Audio still queued",
+       MS::Format::Milliseconds},
+      {"totalFedMs", MS::InputType::Double, "Audio fed this session",
+       MS::Format::Milliseconds},
+      {"wordsCommitted", MS::InputType::Int32, "Words committed",
+       MS::Format::Integer},
+      {"endOfUtterance", MS::InputType::Boolean, "End of utterance"},
+  };
+  static constexpr const char* TableLabel =
+      "{marker.name} - fed {marker.data.fedMs}, queued "
+      "{marker.data.queuedMs}, {marker.data.wordsCommitted} word(s)";
+};
+
+// One word the model committed, placed on the audio timeline it belongs to.
+struct ParakeetWordMarker : public BaseMarkerType<ParakeetWordMarker> {
+  static constexpr const char* Name = "ParakeetWord";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"word", MS::InputType::CString, "Word"},
+      {"audioStartS", MS::InputType::Double, "Audio start",
+       MS::Format::Seconds},
+      {"audioEndS", MS::InputType::Double, "Audio end", MS::Format::Seconds},
+      {"confidence", MS::InputType::Double, "Confidence",
+       MS::Format::Percentage},
+  };
+  static constexpr const char* TableLabel =
+      "{marker.name} - \"{marker.data.word}\" @ "
+      "{marker.data.audioStartS} conf {marker.data.confidence}";
+};
+
+// A result on its way to content. lagMs is the user-visible latency: how long
+// ago the audio behind this result was captured.
+struct ParakeetResultMarker : public BaseMarkerType<ParakeetResultMarker> {
+  static constexpr const char* Name = "ParakeetResult";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"transcript", MS::InputType::CString, "Transcript"},
+      {"isFinal", MS::InputType::Boolean, "Final"},
+      {"confidence", MS::InputType::Double, "Confidence",
+       MS::Format::Percentage},
+      {"lagMs", MS::InputType::Double, "Behind capture",
+       MS::Format::Milliseconds},
+      {"wordCount", MS::InputType::Int32, "Words", MS::Format::Integer},
+  };
+  static constexpr const char* TableLabel =
+      "{marker.name} - {marker.data.lagMs} behind capture: "
+      "\"{marker.data.transcript}\"";
+};
+
+}  // namespace
+
+using InitFailure = glean::media_speech_recognition::InitFailureLabel;
 
 void SpeechRecognitionParent::ResolveOrRejectInitOnIPCThread(
     InitResolver&& aResolver, bool aSuccess) {
@@ -269,6 +372,12 @@ SpeechRecognitionParent::SpeechRecognitionParent(
       mAudioQueue(PARAKEET_SAMPLE_RATE * 30),
       mProcessedAudioPos(0),
       mTimingLock("SpeechRecognitionParent::mTimingLock") {
+  static bool sReporterRegistered = false;
+  if (!sReporterRegistered) {
+    sReporterRegistered = true;
+    RefPtr<nsIMemoryReporter> reporter = new SpeechRecognitionMemoryReporter();
+    RegisterStrongMemoryReporter(reporter.forget());
+  }
   // MOZ_DUMP_AUDIO=1 MOZ_DISABLE_UTILITY_SANDBOX=1 to activate this
   // It will contain the (repeating segments of audio), precisely that has been
   // sent to the recognizer.
@@ -289,6 +398,9 @@ void SpeechRecognitionParent::RetrieveModel(InitResolver&& aResolver) {
       mozilla::ipc::UtilityProcessChild::GetSingleton();
   if (!utilityChild) {
     LOGE("{} ERROR: No UtilityProcessChild available", __func__);
+    glean::media_speech_recognition::init_failure
+        .EnumGet(InitFailure::eNoUtilityProcess)
+        .Add();
     ResolveOrRejectInitOnIPCThread(std::move(aResolver), false);
     return;
   }
@@ -296,6 +408,9 @@ void SpeechRecognitionParent::RetrieveModel(InitResolver&& aResolver) {
       utilityChild->GetHWInferenceChild();
   if (!hwInferenceChild) {
     LOGE("{} No HWInferenceChild available for model retrieval", __func__);
+    glean::media_speech_recognition::init_failure
+        .EnumGet(InitFailure::eNoUtilityProcess)
+        .Add();
     ResolveOrRejectInitOnIPCThread(std::move(aResolver), false);
     return;
   }
@@ -323,6 +438,9 @@ void SpeechRecognitionParent::RetrieveModel(InitResolver&& aResolver) {
                      "{} model {} is not installed; call "
                      "SpeechRecognition.install() first",
                      __func__, modelId.get());
+                 glean::media_speech_recognition::init_failure
+                     .EnumGet(InitFailure::eModelNotInstalled)
+                     .Add();
                  self->ResolveOrRejectInitOnIPCThread(std::move(aResolver),
                                                       false);
                  return;
@@ -341,6 +459,9 @@ void SpeechRecognitionParent::FetchModelFile(const nsCString& aModelId,
       utilityChild ? utilityChild->GetHWInferenceChild() : nullptr;
   if (!hwInferenceChild) {
     LOGE("{} No HWInferenceChild available for model retrieval", __func__);
+    glean::media_speech_recognition::init_failure
+        .EnumGet(InitFailure::eNoUtilityProcess)
+        .Add();
     ResolveOrRejectInitOnIPCThread(std::move(aResolver), false);
     return;
   }
@@ -357,6 +478,9 @@ void SpeechRecognitionParent::FetchModelFile(const nsCString& aModelId,
             if (aValue.IsReject()) {
               LOGE("{} Promise rejected with reason {}", __func__,
                    static_cast<int>(aValue.RejectValue()));
+              glean::media_speech_recognition::init_failure
+                  .EnumGet(InitFailure::eModelFetchFailed)
+                  .Add();
               self->ResolveOrRejectInitOnIPCThread(std::move(aResolver), false);
               return;
             }
@@ -368,6 +492,9 @@ void SpeechRecognitionParent::FetchModelFile(const nsCString& aModelId,
               LOGE("{} GetModelError with nsresult={:x}", __func__,
                    static_cast<uint32_t>(
                        result.get_GetModelError().errorCode()));
+              glean::media_speech_recognition::init_failure
+                  .EnumGet(InitFailure::eModelFetchFailed)
+                  .Add();
               self->ResolveOrRejectInitOnIPCThread(std::move(aResolver), false);
               return;
             }
@@ -379,6 +506,9 @@ void SpeechRecognitionParent::FetchModelFile(const nsCString& aModelId,
             FILE* file = FileDescriptorToFILE(fd, "rb");
             if (!file) {
               LOGE("{} Failed to convert FileDescriptor to FILE*", __func__);
+              glean::media_speech_recognition::init_failure
+                  .EnumGet(InitFailure::eModelFdFailed)
+                  .Add();
               self->ResolveOrRejectInitOnIPCThread(std::move(aResolver), false);
               return;
             }
@@ -395,6 +525,9 @@ void SpeechRecognitionParent::FetchModelFile(const nsCString& aModelId,
             if (NS_FAILED(rv)) {
               LOGE("Failed to create recognition thread: {:x}",
                    static_cast<uint32_t>(rv));
+              glean::media_speech_recognition::init_failure
+                  .EnumGet(InitFailure::eThreadCreationFailed)
+                  .Add();
               self->ResolveOrRejectInitOnIPCThread(std::move(aResolver), false);
               return;
             }
@@ -416,6 +549,9 @@ void SpeechRecognitionParent::InitializeParakeetContext(
       mozilla::llama::LlamaRuntimeLinker::Get();
   if (!lib) {
     LOGE("{} Failed to get runtime linker", __func__);
+    glean::media_speech_recognition::init_failure
+        .EnumGet(InitFailure::eEngineLibraryLoadFailed)
+        .Add();
     ResolveOrRejectInitOnIPCThread(std::move(aResolver), false);
     return;
   }
@@ -477,13 +613,24 @@ void SpeechRecognitionParent::InitializeParakeetContext(
   }
 
   MOZ_ASSERT(modelFile);
+  TimeStamp loadStart = TimeStamp::Now();
   mCapiCtx = lib->parakeet_capi_load_fd(fileno(modelFile.get()));
+  sModelWeightsBytes = lib->parakeet_capi_weights_bytes(mCapiCtx);
+  PROFILER_MARKER_TEXT(
+      "parakeet_capi_load_fd", MEDIA_PLAYBACK,
+      MarkerOptions(MarkerTiming::IntervalUntilNowFrom(loadStart)), language);
   if (!mCapiCtx) {
     LOGE("{} parakeet_capi_load_fd failed", __func__);
+    glean::media_speech_recognition::init_failure
+        .EnumGet(InitFailure::eModelLoadFailed)
+        .Add();
     ResolveOrRejectInitOnIPCThread(std::move(aResolver), false);
     return;
   }
+  glean::media_speech_recognition::model_load_time.AccumulateRawDuration(
+      TimeStamp::Now() - loadStart);
   const char* langArg = language.IsEmpty() ? nullptr : language.get();
+  TimeStamp streamBeginStart = TimeStamp::Now();
   mCapiStream = lib->parakeet_capi_stream_begin_lang(mCapiCtx, langArg);
   if (!mCapiStream && langArg) {
     // The multilingual model rejects languages outside its dictionary; rather
@@ -492,8 +639,15 @@ void SpeechRecognitionParent::InitializeParakeetContext(
          langArg);
     mCapiStream = lib->parakeet_capi_stream_begin_lang(mCapiCtx, "auto");
   }
+  PROFILER_MARKER_TEXT(
+      "parakeet_capi_stream_begin_lang", MEDIA_PLAYBACK,
+      MarkerOptions(MarkerTiming::IntervalUntilNowFrom(streamBeginStart)),
+      language);
   if (!mCapiStream) {
     LOGE("{} parakeet_capi_stream_begin_lang failed", __func__);
+    glean::media_speech_recognition::init_failure
+        .EnumGet(InitFailure::eStreamBeginFailed)
+        .Add();
     DestroyParakeetContext(lib);
     ResolveOrRejectInitOnIPCThread(std::move(aResolver), false);
     return;
@@ -507,6 +661,7 @@ void SpeechRecognitionParent::InitializeParakeetContext(
     state = mState;
   }
   if (state != State::Running) {
+    // A deliberate teardown, not an init failure, so nothing is recorded here.
     LOGD("{} Session torn down during load, abandoning init", __func__);
     DestroyParakeetContext(lib);
     ResolveOrRejectInitOnIPCThread(std::move(aResolver), false);
@@ -516,9 +671,13 @@ void SpeechRecognitionParent::InitializeParakeetContext(
   ResolveOrRejectInitOnIPCThread(std::move(aResolver), true);
   LOGD("Parakeet streaming session ready, starting streaming loop");
 
-  // Already running on mRecognitionThread, so just call directly instead of
-  // dispatching back onto it.
-  ProcessAudioStreaming();
+  // Dispatched rather than called directly, even though we are already on
+  // mRecognitionThread: the loop runs for the whole session, and calling it
+  // from here would put all of it inside this runnable, whose profiler marker
+  // would then read as a multi-second "Initialize parakeet context".
+  mRecognitionThread->Dispatch(NS_NewRunnableFunction(
+      "Parakeet streaming loop",
+      [self = RefPtr{this}]() { self->ProcessAudioStreaming(); }));
 }
 
 SpeechRecognitionParent::~SpeechRecognitionParent() {
@@ -591,6 +750,9 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvInit(
     StaticMutexAutoLock lock(sSessionMutex);
     if (sActiveSession) {
       LOGE("Rejecting Init - another recognition session is already active");
+      glean::media_speech_recognition::init_failure
+          .EnumGet(InitFailure::eConcurrentSession)
+          .Add();
       aResolver("concurrent-session"_ns);
       return IPC_OK();
     }
@@ -708,7 +870,7 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvStop(
   if (!mRecognitionThread) {
     // No streaming loop was ever started: nothing to flush, and nothing was
     // ever finalized.
-    aResolver(false);
+    aResolver(std::tuple(false, 0.0, 0.0));
     return IPC_OK();
   }
 
@@ -722,11 +884,19 @@ mozilla::ipc::IPCResult SpeechRecognitionParent::RecvStop(
       [self = RefPtr{this}, resolver = std::move(aResolver)]() mutable {
         self->GetActorEventTarget()->Dispatch(NS_NewRunnableFunction(
             "SpeechRecognitionParent::ResolveStop",
-            [resolver = std::move(resolver),
-             any = self->mEmittedFinalResult]() { resolver(any); }));
+            [resolver = std::move(resolver), any = self->mEmittedFinalResult,
+             perf = self->PerfCounters()]() {
+              resolver(std::tuple(any, perf.first, perf.second));
+            }));
       }));
 
   return IPC_OK();
+}
+
+std::pair<double, double> SpeechRecognitionParent::PerfCounters() {
+  MutexAutoLock lock(mTimingLock);
+  return {1000.0 * double(mFedAudioFrames) / PARAKEET_SAMPLE_RATE,
+          double(mInferenceMicroseconds) / 1000.0};
 }
 
 void SpeechRecognitionParent::SignalError(const nsCString& aErrorMessage) {
@@ -747,12 +917,16 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
       mozilla::llama::LlamaRuntimeLinker::Get();
 
   // parakeet_capi_stream_feed hands new audio to the model (which keeps its
-  // own caches) and returns the text newly committed by this call; a
-  // cache-aware transducer never revises past output, so each committed delta
-  // is emitted as a final result. Forward audio as it arrives; a small floor
+  // own caches) and commits words as it decodes them; a cache-aware transducer
+  // never revises past output. Forward audio as it arrives; a small floor
   // avoids spinning on sub-block wakeups.
   const size_t minFeed = size_t(0.01 * PARAKEET_SAMPLE_RATE);  // 10 ms
-  const size_t maxFeed = size_t(PARAKEET_SAMPLE_RATE);         // 1 s
+  // One encoder chunk at most per call: a bigger block decodes several chunks
+  // and reports their <EOU>s as one flag, merging two utterances into one
+  // result.
+  const int chunkSamples = lib->parakeet_capi_stream_chunk_samples(mCapiStream);
+  MOZ_ASSERT(chunkSamples != -1);
+  const size_t maxFeed = AssertedCast<size_t>(chunkSamples);
 
   // Strip inline <...> markers (e.g. nemotron <en-US> language tags).
   auto stripTags = [](nsCString& aText) {
@@ -767,12 +941,19 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
   };
 
   auto emit = [self = RefPtr{this}](const nsCString& aText, bool aFinal,
-                                    float aConfidence, TimeStamp aEventTime) {
+                                    float aConfidence, TimeStamp aEventTime,
+                                    int32_t aWordCount) {
     // An empty transcript is not a result; a session that only ever produces
     // these is reported as a nomatch when RecvStop() resolves.
     if (aText.IsEmpty()) {
       return;
     }
+    profiler_add_marker(
+        "parakeet result", geckoprofiler::category::MEDIA_PLAYBACK, {},
+        ParakeetResultMarker{}, aText, aFinal, aConfidence,
+        aEventTime.IsNull() ? 0.0
+                            : (TimeStamp::Now() - aEventTime).ToMilliseconds(),
+        aWordCount);
     if (aFinal) {
       self->mEmittedFinalResult = true;
     }
@@ -788,41 +969,67 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
         }));
   };
 
-  // Drain the words the model finalized this step. They are already grouped at
-  // word boundaries and carry per-word timing + confidence. Emit them as a
-  // single final result with the mean confidence; the per-word timestamps are
-  // logged (kept engine-internal — the Web Speech result has no per-word timing
-  // field).
-  auto emitFinalizedWords = [&]() {
-    parakeet_stream_word* words = nullptr;
-    int n = lib->parakeet_capi_stream_drain_words(mCapiStream, &words);
-    if (n > 0) {
-      nsCString text;
-      float confSum = 0.0f;
-      int counted = 0;
-      for (int i = 0; i < n; ++i) {
-        nsCString w(words[i].text ? words[i].text : "");
-        stripTags(w);  // drop any inline <lang> markers
-        w.Trim(" \t\n\r");
-        if (w.IsEmpty()) {
-          continue;
-        }
-        if (!text.IsEmpty()) {
-          text.Append(' ');
-        }
-        text.Append(w);
-        confSum += words[i].conf;
-        ++counted;
-        LOGV("  word '{}' [{:.2f}-{:.2f}] conf={:.2f}", w.get(), words[i].start,
-             words[i].end, words[i].conf);
-      }
-      emit(text, /* isFinal */ true, counted ? confSum / counted : 1.0f,
-           CaptureTimeForPosition(mProcessedAudioPos));
-    }
-    lib->parakeet_capi_free_words(words, n > 0 ? n : 0);
+  // The utterance being spoken, accumulated until it ends: the model commits
+  // words several times over, and the API wants one result for the lot.
+  nsCString utterance;
+  float confSum = 0.0f;
+  int wordCount = 0;
+
+  auto meanConfidence = [&]() {
+    return wordCount ? confSum / float(wordCount) : 1.0f;
   };
 
+  // Drain the words committed this step into the utterance, and return how
+  // many. Their timings only reach the profiler: a result has no room for them.
+  auto drainWords = [&]() {
+    parakeet_stream_word* words = nullptr;
+    int n = lib->parakeet_capi_stream_drain_words(mCapiStream, &words);
+    int32_t added = 0;
+    for (int i = 0; i < n; ++i) {
+      nsCString w(words[i].text ? words[i].text : "");
+      stripTags(w);       // drop any inline <lang> markers
+      w.Trim(" \t\n\r");  // the token carries its own spacing; joined with one
+                          // below
+      if (w.IsEmpty()) {
+        continue;
+      }
+      if (!utterance.IsEmpty()) {
+        utterance.Append(' ');
+      }
+      utterance.Append(w);
+      confSum += words[i].conf;
+      ++wordCount;
+      ++added;
+      profiler_add_marker(
+          "parakeet word", geckoprofiler::category::MEDIA_PLAYBACK, {},
+          ParakeetWordMarker{}, w, words[i].start, words[i].end, words[i].conf);
+      LOGV("  word '{}' [{:.2f}-{:.2f}] conf={:.2f}", w.get(), words[i].start,
+           words[i].end, words[i].conf);
+    }
+    lib->parakeet_capi_free_words(words, n > 0 ? n : 0);
+    return added;
+  };
+
+  auto flushUtterance = [&]() {
+    // emit() ignores an empty transcript, so an utterance that committed
+    // nothing is not reported as a result.
+    emit(utterance, /* isFinal */ true, meanConfidence(),
+         CaptureTimeForPosition(mProcessedAudioPos), wordCount);
+    utterance.Truncate();
+    confSum = 0.0f;
+    wordCount = 0;
+  };
+
+  // How long the decoder must emit nothing before that counts as the end of an
+  // utterance. Unused by an <EOU>-aware model, which marks its own boundaries.
+  const bool engineMarksBoundaries =
+      lib->parakeet_capi_stream_has_eou(mCapiStream) == 1;
+  const double endpointBlankSeconds =
+      StaticPrefs::media_webspeech_recognition_endpoint_blank_ms() / 1000.0;
+
   nsTArray<float> chunk;
+  uint64_t realtimeFactorSum = 0;
+  uint32_t realtimeFactorCount = 0;
 
   while (IsRunning()) {
     size_t available = mAudioQueue.AvailableRead();
@@ -839,32 +1046,81 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
     // Dump audio for debugging
     mRecognitionAudioDumper.Write(chunk.Elements(), chunk.Length());
 
-    int eou = 0;
+    int events = 0;
     // The marker interval is the inference compute time; the text records the
     // audio fed and how much was queued (the buffering-latency component), so a
     // profile shows the real-time factor and end-to-end latency directly.
     TimeStamp feedStart = TimeStamp::Now();
     char* fed = lib->parakeet_capi_stream_feed(mCapiStream, chunk.Elements(),
-                                               AssertedCast<int>(got), &eou);
+                                               AssertedCast<int>(got), &events);
     if (fed) {
       lib->parakeet_capi_free_string(fed);  // text comes from drain_words
     }
-    PROFILER_MARKER_TEXT(
-        "Parakeet stream_feed", MEDIA_PLAYBACK,
-        MarkerOptions(MarkerTiming::IntervalUntilNowFrom(feedStart)),
-        nsFmtCString("fed={:.0f}ms queued={:.0f}ms",
-                     1000.0 * got / PARAKEET_SAMPLE_RATE,
-                     1000.0 * available / PARAKEET_SAMPLE_RATE));
-    emitFinalizedWords();
-    (void)eou;
+    TimeStamp feedEnd = TimeStamp::Now();
+    double totalFedMs;
+    {
+      MutexAutoLock lock(mTimingLock);
+      mFedAudioFrames += got;
+      mInferenceMicroseconds +=
+          uint64_t((feedEnd - feedStart).ToMicroseconds());
+      totalFedMs = 1000.0 * double(mFedAudioFrames) / PARAKEET_SAMPLE_RATE;
+    }
+    TimeDuration computeTime = feedEnd - feedStart;
+    if (computeTime.ToSeconds() > 0.0) {
+      realtimeFactorSum += static_cast<uint32_t>(std::lround(
+          100.0 * got / (PARAKEET_SAMPLE_RATE * computeTime.ToSeconds())));
+      ++realtimeFactorCount;
+    }
+    // Committed words go out as interim results; only the end of an utterance
+    // finalizes them. An <EOB> is a backchannel, not the end of a turn.
+    const bool eou = events & PARAKEET_EVENT_EOU;
+    int32_t committed = drainWords();
+    profiler_add_marker(
+        "parakeet_capi_stream_feed", geckoprofiler::category::MEDIA_PLAYBACK,
+        MarkerOptions(MarkerTiming::Interval(feedStart, feedEnd)),
+        ParakeetFeedMarker{}, 1000.0 * double(got) / PARAKEET_SAMPLE_RATE,
+        1000.0 * double(available) / PARAKEET_SAMPLE_RATE, totalFedMs,
+        committed, eou);
+    if (committed && !eou) {
+      emit(utterance, /* isFinal */ false, meanConfidence(),
+           CaptureTimeForPosition(mProcessedAudioPos), wordCount);
+    }
+    if (eou) {
+      flushUtterance();
+    } else if (!engineMarksBoundaries && endpointBlankSeconds > 0.0 &&
+               lib->parakeet_capi_stream_blank_seconds(mCapiStream) >=
+                   endpointBlankSeconds) {
+      // A blank run this long is the boundary an <EOU> would have marked, and
+      // maxFeed keeps it read once per encoder chunk. end_utterance() releases
+      // the trailing word a transducer is still withholding; if there was
+      // none, it yields no text and flushUtterance() emits nothing.
+      char* closed = lib->parakeet_capi_stream_end_utterance(mCapiStream);
+      if (closed) {
+        // The text comes from drain_words below.
+        lib->parakeet_capi_free_string(closed);
+      }
+      drainWords();
+      flushUtterance();
+    }
   }
 
-  // Flush the end-of-stream tail, then emit its finalized words.
+  // Flush the end-of-stream tail, then close the utterance in progress.
+  TimeStamp finalizeStart = TimeStamp::Now();
   char* tail = lib->parakeet_capi_stream_finalize(mCapiStream);
   if (tail) {
     lib->parakeet_capi_free_string(tail);
   }
-  emitFinalizedWords();
+  int32_t tailWords = drainWords();
+  PROFILER_MARKER_TEXT(
+      "parakeet_capi_stream_finalize", MEDIA_PLAYBACK,
+      MarkerOptions(MarkerTiming::IntervalUntilNowFrom(finalizeStart)),
+      nsFmtCString("{} tail word(s)", tailWords));
+  flushUtterance();
+  if (realtimeFactorCount) {
+    glean::media_speech_recognition::inference_realtime_factor
+        .AccumulateSingleSample(static_cast<uint32_t>(
+            std::lround(double(realtimeFactorSum) / realtimeFactorCount)));
+  }
   LOGD("Streaming loop exiting");
 
   // Freed here, on the thread that alone uses them, rather than from
@@ -881,6 +1137,7 @@ bool SpeechRecognitionParent::IsRunning() {
 
 void SpeechRecognitionParent::DestroyParakeetContext(
     mozilla::llama::LlamaLibWrapper* aLib) {
+  sModelWeightsBytes = 0;
   if (mCapiStream) {
     aLib->parakeet_capi_stream_free(mCapiStream);
     mCapiStream = nullptr;

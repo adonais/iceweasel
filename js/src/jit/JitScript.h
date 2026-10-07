@@ -478,7 +478,7 @@ class alignas(uintptr_t) JitScript final
 
   void trace(JSTracer* trc);
   void traceWeak(JSTracer* trc);
-  void purgeStubs(JSScript* script, ICStubSpace& newStubSpace);
+  void purgeStubs(JSScript* script);
 
   void purgeInactiveICScripts();
 
@@ -514,7 +514,7 @@ class alignas(uintptr_t) JitScript final
                              BaselineScript* baselineScript);
   void maybeRemoveFromCompileQueue(JSScript* script) {
     if (isBaselineQueued()) {
-      script->realm()->removeFromCompileQueue(script);
+      script->realm()->jitRealm().removeFromCompileQueue(script);
     }
   }
 
@@ -667,8 +667,10 @@ class MOZ_RAII AutoKeepJitScripts {
 };
 
 // Mark ICScripts on the stack as active, so that they are not discarded
-// during GC, and copy active Baseline IC stubs to the new stub space.
-void MarkActiveICScriptsAndCopyStubs(Zone* zone, ICStubSpace& newStubSpace);
+// during GC, and copy active Baseline IC stubs to their realm's stub space.
+// Frames in realms that are preserving their JIT code are ignored because
+// their stubs are not discarded.
+void MarkActiveICScriptsAndCopyStubs(Zone* zone);
 
 #ifdef JS_STRUCTURED_SPEW
 void JitSpewBaselineICStats(JSScript* script, const char* dumpReason);

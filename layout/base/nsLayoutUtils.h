@@ -2187,13 +2187,17 @@ class nsLayoutUtils {
   /**
    * Given the image container, frame, and dest rect, determine the best fitting
    * size to decode the image at, and calculate any necessary SVG parameters.
+   * aRasterizedForDest, if given, is set when the returned size is the dest
+   * rect's own snapped device size, so a surface of that size is meant to be
+   * drawn 1:1 in the dest rect rather than scaled to it.
    */
   static mozilla::gfx::IntSize ComputeImageContainerDrawingParameters(
       imgIContainer* aImage, nsIFrame* aForFrame,
       const LayoutDeviceRect& aDestRect, const LayoutDeviceRect& aFillRect,
       const StackingContextHelper& aSc, uint32_t aFlags,
       mozilla::SVGImageContext& aSVGContext,
-      mozilla::Maybe<mozilla::image::ImageIntRegion>& aRegion);
+      mozilla::Maybe<mozilla::image::ImageIntRegion>& aRegion,
+      bool* aRasterizedForDest = nullptr);
 
   /**
    * Given a source area of an image (in appunits) and a destination area

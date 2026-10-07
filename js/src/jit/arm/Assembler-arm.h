@@ -221,6 +221,7 @@ static constexpr Register JSReturnReg_Type = r3;
 static constexpr Register JSReturnReg_Data = r2;
 static constexpr Register StackPointer = sp;
 static constexpr Register FramePointer = r11;
+static constexpr Register LinkRegister = lr;
 static constexpr Register ReturnReg = r0;
 static constexpr Register64 ReturnReg64(r1, r0);
 
@@ -274,6 +275,10 @@ static constexpr Register RegExpExecTestStringReg = CallTempReg1;
 static constexpr Register RegExpSearcherRegExpReg = CallTempReg0;
 static constexpr Register RegExpSearcherStringReg = CallTempReg1;
 static constexpr Register RegExpSearcherLastIndexReg = CallTempReg2;
+
+// Register used by the bailout tail and bailout stubs during stack
+// reconstruction.
+static constexpr Register BailoutStubHandlerReg = CallTempReg0;
 
 static constexpr FloatRegister d0 = {FloatRegisters::d0, VFPRegister::Double};
 static constexpr FloatRegister d1 = {FloatRegisters::d1, VFPRegister::Double};

@@ -23,6 +23,14 @@ const { FormAutofillStorage } = ChromeUtils.importESModule(
 const { RustAutofillAddressesAdapter } = ChromeUtils.importESModule(
   "resource://autofill/RustAutofillAddressStorage.sys.mjs"
 );
+const { FormAutofill } = ChromeUtils.importESModule(
+  "resource://autofill/FormAutofill.sys.mjs"
+);
+
+// A region ICU can name, so it survives normalization on write, but one with no
+// bundled address metadata, so it is absent from FormAutofill.countries and
+// AddressesBase._recordReadProcessor hides it on read.
+const UNSUPPORTED_COUNTRY = "XK";
 
 const ENABLED_PREF = "extensions.formautofill.addresses.storage.rust.enabled";
 const ACTIVE_PREF = "extensions.formautofill.addresses.storage.rust.active";
@@ -98,6 +106,16 @@ const CORPUS = [
       tel: "(212) 555-0199",
     },
   },
+  {
+    label: "country without address metadata",
+    record: {
+      name: "Arben Krasniqi",
+      "street-address": "Rruga B 12",
+      "address-level2": "Pristina",
+      "postal-code": "10000",
+      country: UNSUPPORTED_COUNTRY,
+    },
+  },
 ];
 
 // The field names a divergence can be reported under. Asserting that none of
@@ -170,6 +188,17 @@ add_task(async function test_migration_leaves_no_divergence() {
   for (const { record } of CORPUS) {
     guids.push(await storage.addresses.add(record));
   }
+  // The corpus is only meaningful if the store really kept the unsupported
+  // code: were normalization to reject it, the record would carry the default
+  // region and the case it stands for would silently stop being covered.
+  Assert.ok(
+    !FormAutofill.countries.has(UNSUPPORTED_COUNTRY),
+    `${UNSUPPORTED_COUNTRY} has no bundled address metadata`
+  );
+  Assert.ok(
+    storage.addresses._data.some(r => r.country == UNSUPPORTED_COUNTRY),
+    `a record is stored holding ${UNSUPPORTED_COUNTRY}`
+  );
   await storage._finalize();
 
   // A restart with the pref on: migrate, verify, then serve from Rust.

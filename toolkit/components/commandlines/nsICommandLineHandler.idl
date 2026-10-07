@@ -40,6 +40,7 @@ interface nsICommandLineHandler : nsISupports
    *        (if this is STATE_INITIAL_LAUNCH, quits the app).
    *        All other exceptions are silently ignored.
    */
+  [can_run_script]
   void handle(in nsICommandLine aCommandLine);
 
   /**

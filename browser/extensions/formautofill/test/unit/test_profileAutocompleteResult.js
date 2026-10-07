@@ -736,3 +736,288 @@ add_task(async function test_insecure_credit_card_form_has_no_footer() {
     "The warning row stays ahead of the external entry"
   );
 });
+
+add_task(async function test_indistinguishable_addresses_are_collapsed() {
+  // A section made of a single email field, as seen on Google Forms.
+  const sharedEmail = "timbl@w3.org";
+  const profiles = [
+    {
+      guid: "email-guid-1",
+      email: sharedEmail,
+      name: "Timothy Berners-Lee",
+      "street-address": "123 Sesame Street.",
+    },
+    {
+      guid: "email-guid-2",
+      email: sharedEmail,
+      name: "John Doe",
+      "street-address": "331 E. Evelyn Avenue",
+    },
+    { guid: "email-guid-3", email: sharedEmail, organization: "Mozilla" },
+  ];
+
+  const result = new AddressResult(
+    "",
+    { fieldName: "email" },
+    ["email"],
+    profiles,
+    {}
+  );
+
+  equal(result.matchCount, 2, "Only one address row is shown, plus the footer");
+  equal(result.getLabelAt(0), sharedEmail);
+  equal(result.getTypeOfIndex(1), "manage", "The footer is still last");
+  Assert.deepEqual(
+    JSON.parse(result.getCommentAt(0)).fillMessageData.profile,
+    profiles[0],
+    "The remaining row fills the most recently used address"
+  );
+});
+
+add_task(async function test_addresses_the_section_tells_apart_are_kept() {
+  const sharedEmail = "timbl@w3.org";
+  const profiles = [
+    { guid: "email-guid-1", email: sharedEmail, organization: "Sesame Street" },
+    { guid: "email-guid-2", email: sharedEmail, organization: "Mozilla" },
+  ];
+
+  const result = new AddressResult(
+    "",
+    { fieldName: "email" },
+    ["email", "organization"],
+    profiles,
+    {}
+  );
+
+  equal(result.matchCount, 3, "Both addresses are shown, plus the footer");
+  equal(result.getLabelAt(0), sharedEmail);
+  Assert.deepEqual(
+    JSON.parse(result.getCommentAt(1)).fillMessageData.profile,
+    profiles[1],
+    "Each row still fills the address it was generated from"
+  );
+});
+
+add_task(async function test_two_field_section_collapses_addresses() {
+  // A newsletter-style section: an email and a phone number.
+  const profiles = [
+    {
+      guid: "two-field-guid-1",
+      email: "timbl@w3.org",
+      tel: "+16172535702",
+      name: "Timothy Berners-Lee",
+      "street-address": "32 Vassar Street",
+    },
+    {
+      guid: "two-field-guid-2",
+      email: "timbl@w3.org",
+      tel: "+16172535702",
+      organization: "Mozilla",
+      "address-level2": "Vancouver",
+    },
+  ];
+
+  const result = new AddressResult(
+    "",
+    { fieldName: "email" },
+    ["email", "tel"],
+    profiles,
+    {}
+  );
+
+  equal(
+    result.matchCount,
+    2,
+    "The addresses only differ outside the section, so one row is left"
+  );
+  equal(result.getLabelAt(0), "timbl@w3.org");
+  Assert.deepEqual(
+    JSON.parse(result.getCommentAt(0)).fillMessageData.profile,
+    profiles[0],
+    "The remaining row fills the most recently used address"
+  );
+});
+
+add_task(async function test_three_field_section_collapses_addresses() {
+  const profiles = [
+    {
+      guid: "three-field-guid-1",
+      email: "timbl@w3.org",
+      name: "John Doe",
+      "street-address": "331 E. Evelyn Avenue",
+      organization: "Mozilla",
+    },
+    {
+      guid: "three-field-guid-2",
+      email: "timbl@w3.org",
+      name: "John Doe",
+      "street-address": "331 E. Evelyn Avenue",
+      tel: "+16172535702",
+    },
+  ];
+
+  const result = new AddressResult(
+    "",
+    { fieldName: "email" },
+    ["email", "name", "street-address"],
+    profiles,
+    {}
+  );
+
+  equal(result.matchCount, 2, "Only one row is left, plus the footer");
+  Assert.deepEqual(
+    JSON.parse(result.getCommentAt(0)).fillMessageData.profile,
+    profiles[0],
+    "The remaining row fills the most recently used address"
+  );
+});
+
+add_task(async function test_addresses_with_the_same_labels_are_kept() {
+  // Both rows read "timbl@w3.org / 331 E. Evelyn Avenue", but they fill a
+  // different name, so neither may be dropped.
+  const profiles = [
+    {
+      guid: "same-label-guid-1",
+      email: "timbl@w3.org",
+      name: "John Doe",
+      "street-address": "331 E. Evelyn Avenue",
+    },
+    {
+      guid: "same-label-guid-2",
+      email: "timbl@w3.org",
+      name: "Jane Roe",
+      "street-address": "331 E. Evelyn Avenue",
+    },
+  ];
+
+  const result = new AddressResult(
+    "",
+    { fieldName: "email" },
+    ["email", "name", "street-address"],
+    profiles,
+    {}
+  );
+
+  equal(result.matchCount, 3, "Both addresses keep a row, plus the footer");
+  const rows = [0, 1].map(index => JSON.parse(result.getCommentAt(index)));
+  Assert.deepEqual(
+    rows.map(row => [row.primary, row.secondary]),
+    [
+      ["timbl@w3.org", "331 E. Evelyn Avenue"],
+      ["timbl@w3.org", "331 E. Evelyn Avenue"],
+    ],
+    "The two rows are labelled the same"
+  );
+  Assert.deepEqual(
+    rows.map(row => row.fillMessageData.profile),
+    profiles,
+    "Each row still fills the address it was generated from"
+  );
+});
+
+add_task(async function test_an_empty_field_matches_a_missing_one() {
+  // Storage strips empty fields today, but an address that stores one empty
+  // fills the form just as blank as an address that omits it.
+  const profiles = [
+    { guid: "empty-guid-1", email: "timbl@w3.org", organization: "" },
+    { guid: "empty-guid-2", email: "timbl@w3.org" },
+  ];
+
+  const result = new AddressResult(
+    "",
+    { fieldName: "email" },
+    ["email", "organization"],
+    profiles,
+    {}
+  );
+
+  equal(result.matchCount, 2, "The two addresses collapse into one row");
+  Assert.deepEqual(
+    JSON.parse(result.getCommentAt(0)).fillMessageData.profile,
+    profiles[0],
+    "The remaining row fills the most recently used address"
+  );
+});
+
+add_task(async function test_rows_stay_aligned_when_a_profile_is_skipped() {
+  // The first address has nothing to show for the focused field, so its row is
+  // dropped and the remaining rows must not shift onto the wrong address.
+  const profiles = [
+    { guid: "org-guid-1", "street-address": "123 Sesame Street." },
+    { guid: "org-guid-2", organization: "Mozilla" },
+  ];
+
+  const result = new AddressResult(
+    "",
+    { fieldName: "organization" },
+    ["organization", "street-address"],
+    profiles,
+    {}
+  );
+
+  equal(result.matchCount, 2, "Only the second address has a row");
+  equal(result.getLabelAt(0), "Mozilla");
+  Assert.deepEqual(
+    JSON.parse(result.getCommentAt(0)).fillMessageData.profile,
+    profiles[1],
+    "The row fills the address it was generated from"
+  );
+});
+
+add_task(
+  async function test_card_rows_stay_aligned_when_a_profile_is_skipped() {
+    // The first card has nothing to show for the focused field, so its row is
+    // dropped and the remaining row must not shift onto it.
+    const profiles = [
+      { guid: "cc-guid-1", "cc-number": "************1234" },
+      { guid: "cc-guid-2", "cc-name": "John Doe" },
+    ];
+
+    const result = new CreditCardResult(
+      "",
+      { fieldName: "cc-name" },
+      ["cc-name", "cc-number"],
+      profiles,
+      {}
+    );
+
+    equal(result.matchCount, 2, "Only the second card has a row");
+    equal(result.getLabelAt(0), "John Doe");
+    Assert.deepEqual(
+      JSON.parse(result.getCommentAt(0)).fillMessageData.profile,
+      profiles[1],
+      "The row fills the card it was generated from"
+    );
+  }
+);
+
+add_task(async function test_dedup_does_not_disturb_external_entries() {
+  const profiles = [
+    { guid: "ext-guid-1", email: "timbl@w3.org", organization: "Mozilla" },
+    { guid: "ext-guid-2", email: "timbl@w3.org", organization: "Mozilla" },
+  ];
+
+  const result = new AddressResult(
+    "",
+    { fieldName: "email" },
+    ["email"],
+    profiles,
+    {}
+  );
+  result.externalEntries.push(
+    makeExternalEntry("generic", "Use Firefox Relay")
+  );
+
+  equal(result.matchCount, 3, "One address row, one external entry, a footer");
+  Assert.deepEqual(
+    JSON.parse(result.getCommentAt(0)).fillMessageData.profile,
+    profiles[0],
+    "The address row still fills its own address"
+  );
+  equal(
+    result.getLabelAt(1),
+    "Use Firefox Relay",
+    "The external entry moved up with the dropped row"
+  );
+  equal(result.getTypeOfIndex(2), "manage", "The footer is still last");
+});

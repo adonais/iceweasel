@@ -35,6 +35,10 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--message-bar-content-gap);
+  padding-inline: var(--message-bar-content-padding-inline);
+  padding-block: var(--message-bar-content-padding-block);
+  /* Lets content shrink past its own size instead of overflowing the container in narrow contexts. */
+  min-width: 0;
 }
 
 .text-container {
@@ -57,11 +61,15 @@
   height: var(--message-bar-icon-container-height);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: var(--message-bar-icon-container-align-items);
   border: var(--message-bar-icon-container-border);
-  border-radius: var(--message-bar-icon-container-border-radius);
+  border-start-start-radius: var(--message-bar-icon-container-border-radius-start-start);
+  border-start-end-radius: var(--message-bar-icon-container-border-radius-start-end);
+  border-end-start-radius: var(--message-bar-icon-container-border-radius-end-start);
+  border-end-end-radius: var(--message-bar-icon-container-border-radius-end-end);
   background-color: var(--message-bar-icon-background-color);
   padding: calc(var(--message-bar-icon-container-padding) - var(--message-bar-icon-container-padding-offset));
+  padding-block-start: var(--message-bar-icon-container-padding-block-start);
   margin-block-start: calc(var(--message-bar-icon-container-margin-block-start) + var(--message-bar-icon-container-margin-block-start-offset));
 }
 
@@ -118,6 +126,11 @@
 }
 
 /* Close icon styles */
+
+.close {
+  margin-inline-end: var(--message-bar-close-margin-inline-end);
+  margin-block-start: var(--message-bar-close-margin-block-start);
+}
 
 moz-button::part(button) {
   background-image: var(--message-bar-icon-close-url);

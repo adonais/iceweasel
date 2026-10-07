@@ -105,3 +105,8 @@ FINAL_LIBRARY = "xul"
 
 with Files("tests/*1151186*"):
     BUG_COMPONENT = ("Core", "DOM: UI Events & Focus Handling")
+
+LICENSED_UNDER += ["chromium"]
+LICENSED_UNDER["chromium"].paths = [
+    "EditorEventListener.cpp",
+]

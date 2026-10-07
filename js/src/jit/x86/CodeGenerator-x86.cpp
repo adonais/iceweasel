@@ -238,7 +238,7 @@ void CodeGeneratorX86::emitWasmLoad(T* ins) {
   if (mir->type() == MIRType::Int64) {
     MOZ_ASSERT_IF(mir->access().isAtomic(),
                   mir->access().type() != Scalar::Int64);
-    masm.wasmLoadI64(mir->access(), srcAddr, ToOutRegister64(ins));
+    masm.wasmLoadI32x2(mir->access(), srcAddr, ToOutRegister64(ins));
   } else {
     masm.wasmLoad(mir->access(), srcAddr, ToAnyRegister(ins->output()));
   }
@@ -269,7 +269,7 @@ void CodeGeneratorX86::emitWasmStore(T* ins) {
 
   if constexpr (std::is_same_v<T, LWasmStoreI64>) {
     Register64 value = ToRegister64(ins->value());
-    masm.wasmStoreI64(mir->access(), value, dstAddr);
+    masm.wasmStoreI32x2(mir->access(), value, dstAddr);
   } else {
     AnyRegister value = ToAnyRegister(ins->value());
     masm.wasmStore(mir->access(), value, dstAddr);
@@ -463,17 +463,15 @@ void CodeGenerator::visitWasmAtomicBinopI64(LWasmAtomicBinopI64* ins) {
   MOZ_ASSERT(output.low == eax);
   MOZ_ASSERT(output.high == edx);
 
-  masm.Push(ecx);
-  masm.Push(ebx);
+  masm.PushRegs(ecx, ebx);
 
   Address valueAddr(esp, 0);
 
   // Here the `value` register acts as a temp, we'll restore it below.
-  masm.wasmAtomicFetchOp64(ins->access(), ins->operation(), valueAddr, srcAddr,
-                           value, output);
+  masm.wasmAtomicFetchOp32x2(ins->access(), ins->operation(), valueAddr,
+                             srcAddr, value, output);
 
-  masm.Pop(ebx);
-  masm.Pop(ecx);
+  masm.PopRegs(ebx, ecx);
 }
 
 namespace js {

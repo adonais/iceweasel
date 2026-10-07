@@ -1919,14 +1919,6 @@ export const FeatureManifest: {
                     pref: string;
                 };
             };
-            spocsClearEndpoint: {
-                description: string;
-                type: string;
-                setPref: {
-                    branch: string;
-                    pref: string;
-                };
-            };
             ctaButtonSponsors: {
                 description: string;
                 type: string;

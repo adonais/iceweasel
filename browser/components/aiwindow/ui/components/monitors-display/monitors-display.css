@@ -93,3 +93,34 @@
     height: var(--size-item-small);
   }
 }
+
+:host(monitor-status-chip) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xsmall);
+  flex: none;
+  height: var(--icon-size-medium);
+  padding: var(--space-xsmall) var(--space-small);
+  border-radius: var(--border-radius-circle);
+  font-size: var(--font-size-small);
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--text-color-deemphasized);
+  margin-inline-end: var(--space-small);
+}
+
+/* A status the chip has nothing to say about renders nothing, so it must not
+   leave an empty pill behind. */
+:host(monitor-status-chip:not([kind="watching"], [kind="paused"])) {
+  display: none;
+}
+
+:host(monitor-status-chip[kind="watching"]) {
+  color: var(--icon-color-success);
+  background: var(--background-color-success);
+}
+
+:host(monitor-status-chip[kind="paused"]) {
+  color: var(--icon-color-warning);
+  background: var(--background-color-warning);
+}

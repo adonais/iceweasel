@@ -354,3 +354,27 @@ add_setup(async function os_key_store_setup() {
     await OSKeyStoreTestUtils.cleanup();
   });
 });
+
+// xpcshell_rust.toml runs some of these tests a second time with
+// extensions.formautofill.addresses.storage.rust.enabled set. That pref only
+// asks: FormAutofillStorage serves addresses from the JSON store until the
+// migration completes and sets ...rust.active, and reports nothing when it does
+// not, so a run that never reached the Rust store would pass. Asserted after
+// the test rather than before it, so that the store is the one the test's own
+// reads and writes went to.
+if (
+  Services.prefs.getBoolPref(
+    "extensions.formautofill.addresses.storage.rust.enabled",
+    false
+  )
+) {
+  registerCleanupFunction(function rust_served_the_addresses() {
+    Assert.ok(
+      Services.prefs.getBoolPref(
+        "extensions.formautofill.addresses.storage.rust.active",
+        false
+      ),
+      "the Rust store served addresses, so this run exercised it"
+    );
+  });
+}

@@ -26,7 +26,7 @@
 #include "nsRect.h"                        // for nsRect
 #include "nsTArray.h"                      // for nsTArray, nsTArray_Impl
 
-#if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+#ifdef ACCESSIBILITY
 #  include "mozilla/a11y/PdfStructTreeBuilder.h"
 #endif
 
@@ -277,7 +277,7 @@ RefPtr<PrintEndDocumentPromise> nsDeviceContext::EndDocument() {
                             "nsDeviceContext::EndDocument"_ns);
 
   mIsCurrentlyPrintingDoc = false;
-#if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+#ifdef ACCESSIBILITY
   // PdfStructTreeBuilder::Init is called in
   // a11y::DocManager::NotifyOfPrintDocument for same-process documents or
   // a11y::DocAccessibleParent::RecvPrinting for remote documents, triggered by
@@ -314,7 +314,7 @@ nsresult nsDeviceContext::AbortDocument() {
 
   nsresult rv = mPrintTarget->AbortPrinting();
   mIsCurrentlyPrintingDoc = false;
-#if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+#ifdef ACCESSIBILITY
   // See the comment in EndDocument.
   mozilla::a11y::PdfStructTreeBuilder::Done(mInnerWindowId);
 #endif

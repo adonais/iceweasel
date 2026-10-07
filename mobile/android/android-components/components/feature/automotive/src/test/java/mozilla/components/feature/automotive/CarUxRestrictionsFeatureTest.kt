@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.automotive
 
+import android.car.Car
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.test.assertEquals
@@ -23,11 +24,15 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.mediasession.MediaSession
 import mozilla.components.concept.engine.mediasession.MediaSession.PlaybackState.PAUSED
 import mozilla.components.concept.engine.mediasession.MediaSession.PlaybackState.PLAYING
+import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.doThrow
+import org.robolectric.Shadows.shadowOf
 
 private const val TAB_ID = "tab"
+private const val AUTOMOTIVE_FEATURE = "android.hardware.type.automotive"
 
 @RunWith(AndroidJUnit4::class)
 class CarUxRestrictionsFeatureTest {
@@ -161,6 +166,39 @@ class CarUxRestrictionsFeatureTest {
         assertNull(feature.scope)
         assertEquals(0, controller.pauseInvocations)
     }
+
+    @Test
+    fun `GIVEN an automotive device the car service cannot be reached on WHEN the feature is started THEN it does not throw`() =
+        runTest {
+            shadowOf(testContext.packageManager).setSystemFeature(AUTOMOTIVE_FEATURE, true)
+            val controller = FakeMediaSessionController()
+            val store = BrowserStore(BrowserState(tabs = listOf(mediaTab(controller, PLAYING))))
+            val feature = feature(store)
+
+            feature.start()
+            feature.stop()
+            testScheduler.advanceUntilIdle()
+
+            assertNull(feature.scope)
+        }
+
+    @Test
+    fun `GIVEN the car library is older than the one compiled against WHEN the car becomes ready THEN it does not throw`() =
+        runTest {
+            val controller = FakeMediaSessionController()
+            val store = BrowserStore(BrowserState(tabs = listOf(mediaTab(controller, PLAYING))))
+            val feature = feature(store)
+            val car: Car = mock()
+            doThrow(NoSuchMethodError("android.car is resolved against the system image"))
+                .`when`(car)
+                .getCarManager(Car.CAR_UX_RESTRICTION_SERVICE)
+
+            feature.onCarLifecycleChanged(car, ready = true)
+            testScheduler.advanceUntilIdle()
+
+            assertNull(feature.scope)
+            assertEquals(0, controller.pauseInvocations)
+        }
 
     private fun TestScope.feature(store: BrowserStore) =
         CarUxRestrictionsFeature(

@@ -393,6 +393,11 @@ class JS_PUBLIC_API ArrayBuffer : public ArrayBufferOrView {
 
   static ArrayBuffer create(JSContext* cx, size_t nbytes);
 
+  // Create from a copy of data. This function will GC before copying the data,
+  // so the caller must ensure that the data remains valid until this function
+  // returns.
+  static ArrayBuffer create(JSContext* cx, mozilla::Span<const uint8_t> src);
+
   mozilla::Span<uint8_t> getData(bool* isSharedMemory,
                                  const JS::AutoRequireNoGC&);
 };

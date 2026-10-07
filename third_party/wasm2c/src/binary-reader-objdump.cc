@@ -38,8 +38,7 @@ namespace {
 
 class BinaryReaderObjdumpBase : public BinaryReaderNop {
  public:
-  BinaryReaderObjdumpBase(const uint8_t* data,
-                          size_t size,
+  BinaryReaderObjdumpBase(ByteSpan data,
                           ObjdumpOptions* options,
                           ObjdumpState* state);
 
@@ -71,9 +70,9 @@ class BinaryReaderObjdumpBase : public BinaryReaderNop {
 
   ObjdumpOptions* options_;
   ObjdumpState* objdump_state_;
-  const uint8_t* data_;
-  size_t size_;
+  ByteSpan data_;
   bool print_details_ = false;
+  bool in_function_body = false;
   BinarySection reloc_section_ = BinarySection::Invalid;
   Offset section_starts_[kBinarySectionCount];
   // Map of section index to section type
@@ -85,14 +84,12 @@ class BinaryReaderObjdumpBase : public BinaryReaderNop {
   std::unique_ptr<FileStream> err_stream_;
 };
 
-BinaryReaderObjdumpBase::BinaryReaderObjdumpBase(const uint8_t* data,
-                                                 size_t size,
+BinaryReaderObjdumpBase::BinaryReaderObjdumpBase(ByteSpan data,
                                                  ObjdumpOptions* options,
                                                  ObjdumpState* objdump_state)
     : options_(options),
       objdump_state_(objdump_state),
       data_(data),
-      size_(size),
       err_stream_(FileStream::CreateStderr()) {
   ZeroMemory(section_starts_);
 }
@@ -109,7 +106,7 @@ bool BinaryReaderObjdumpBase::OnError(const Error&) {
   // Tell the BinaryReader that this error is "handled" for all passes other
   // than the prepass. When the error is handled the default message will be
   // suppressed.
-  return options_->mode != ObjdumpMode::Prepass;
+  return options_->mode != ObjdumpMode::Prepass && !in_function_body;
 }
 
 Result BinaryReaderObjdumpBase::BeginModule(uint32_t version) {
@@ -241,7 +238,8 @@ class BinaryReaderObjdumpPrepass : public BinaryReaderObjdumpBase {
   Result BeginSection(Index section_index,
                       BinarySection section_code,
                       Offset size) override {
-    BinaryReaderObjdumpBase::BeginSection(section_index, section_code, size);
+    CHECK_RESULT(BinaryReaderObjdumpBase::BeginSection(section_index,
+                                                       section_code, size));
     if (section_code != BinarySection::Custom) {
       objdump_state_->section_names.Set(section_index,
                                         wabt::GetSectionName(section_code));
@@ -504,7 +502,7 @@ Result BinaryReaderObjdumpPrepass::OnReloc(RelocType type,
                                            Offset offset,
                                            Index index,
                                            uint32_t addend) {
-  BinaryReaderObjdumpBase::OnReloc(type, offset, index, addend);
+  CHECK_RESULT(BinaryReaderObjdumpBase::OnReloc(type, offset, index, addend));
   if (reloc_section_ == BinarySection::Code) {
     objdump_state_->code_relocations.emplace_back(type, offset, index, addend);
   } else if (reloc_section_ == BinarySection::Data) {
@@ -548,6 +546,8 @@ class BinaryReaderObjdumpDisassemble : public BinaryReaderObjdumpBase {
   Result OnOpcodeBlockSig(Type sig_type) override;
   Result OnOpcodeType(Type type) override;
 
+  Result OnTryTableExpr(Type sig_type,
+                        const CatchClauseVector& catches) override;
   Result OnBrTableExpr(Index num_targets,
                        Index* target_depths,
                        Index default_target_depth) override;
@@ -563,7 +563,6 @@ class BinaryReaderObjdumpDisassemble : public BinaryReaderObjdumpBase {
   Index next_reloc = 0;
   Index current_function_index = 0;
   Index local_index_ = 0;
-  bool in_function_body = false;
   bool skip_next_opcode_ = false;
 };
 
@@ -578,7 +577,7 @@ std::string BinaryReaderObjdumpDisassemble::BlockSigToString(Type type) const {
 }
 
 Result BinaryReaderObjdumpDisassemble::OnOpcode(Opcode opcode) {
-  BinaryReaderObjdumpBase::OnOpcode(opcode);
+  CHECK_RESULT(BinaryReaderObjdumpBase::OnOpcode(opcode));
   if (!in_function_body) {
     return Result::Ok;
   }
@@ -795,8 +794,9 @@ Result BinaryReaderObjdumpDisassemble::OnOpcodeUint32(uint32_t value) {
 
 Result BinaryReaderObjdumpDisassemble::OnOpcodeUint32Uint32(uint32_t value,
                                                             uint32_t value2) {
-  if (!in_function_body)
+  if (!in_function_body) {
     return Result::Ok;
+  }
   std::string_view name;
   if (current_opcode == Opcode::MemoryInit &&
       !(name = GetSegmentName(value)).empty()) {
@@ -811,6 +811,9 @@ Result BinaryReaderObjdumpDisassemble::OnOpcodeUint32Uint32(uint32_t value,
 Result BinaryReaderObjdumpDisassemble::OnCallIndirectExpr(
     uint32_t sig_index,
     uint32_t table_index) {
+  if (!in_function_body) {
+    return Result::Ok;
+  }
   std::string_view table_name = GetTableName(table_index);
   std::string_view type_name = GetTypeName(sig_index);
   if (!type_name.empty() && !table_name.empty()) {
@@ -895,11 +898,55 @@ Result BinaryReaderObjdumpDisassemble::OnOpcodeType(Type type) {
   if (!in_function_body) {
     return Result::Ok;
   }
-  if (current_opcode == Opcode::SelectT) {
+  if (current_opcode == Opcode::SelectT || current_opcode == Opcode::CallRef) {
     LogOpcode(type.GetName().c_str());
   } else {
     LogOpcode(type.GetRefKindName());
   }
+  return Result::Ok;
+}
+
+Result BinaryReaderObjdumpDisassemble::OnTryTableExpr(
+    Type sig_type,
+    const CatchClauseVector& catches) {
+  if (!in_function_body) {
+    return Result::Ok;
+  }
+
+  std::string buffer = std::string();
+
+  if (sig_type != Type::Void) {
+    buffer.append(BlockSigToString(sig_type).c_str()).append(" ");
+  }
+
+  for (auto& catch_ : catches) {
+    switch (catch_.kind) {
+      case CatchKind::Catch:
+        buffer.append("catch ");
+        break;
+      case CatchKind::CatchRef:
+        buffer.append("catch_ref ");
+        break;
+      case CatchKind::CatchAll:
+        buffer.append("catch_all ");
+        break;
+      case CatchKind::CatchAllRef:
+        buffer.append("catch_all_ref ");
+        break;
+    }
+    if (catch_.kind == CatchKind::Catch || catch_.kind == CatchKind::CatchRef) {
+      buffer.append(std::to_string(catch_.tag));
+    }
+    buffer.append(" ").append(std::to_string(catch_.depth)).append(" ");
+  }
+
+  if (!buffer.empty()) {
+    // remove trailing space
+    buffer.pop_back();
+  }
+
+  LogOpcode("%s", buffer.c_str());
+  indent_level++;
   return Result::Ok;
 }
 
@@ -1021,8 +1068,7 @@ struct InitExpr {
 
 class BinaryReaderObjdump : public BinaryReaderObjdumpBase {
  public:
-  BinaryReaderObjdump(const uint8_t* data,
-                      size_t size,
+  BinaryReaderObjdump(ByteSpan data,
                       ObjdumpOptions* options,
                       ObjdumpState* state);
 
@@ -1077,9 +1123,10 @@ class BinaryReaderObjdump : public BinaryReaderObjdumpBase {
   Result OnFunction(Index index, Index sig_index) override;
 
   Result OnTableCount(Index count) override;
-  Result OnTable(Index index,
-                 Type elem_type,
-                 const Limits* elem_limits) override;
+  Result BeginTable(Index index,
+                    Type elem_type,
+                    const Limits* elem_limits,
+                    TableInitExprStatus init_provided) override;
 
   Result OnMemoryCount(Index count) override;
   Result OnMemory(Index index,
@@ -1126,6 +1173,14 @@ class BinaryReaderObjdump : public BinaryReaderObjdumpBase {
 
   Result EndDataSegmentInitExpr(Index index) override { return EndInitExpr(); }
 
+  Result BeginTableInitExpr(Index index) override {
+    reading_table_init_expr_ = true;
+    BeginInitExpr();
+    return Result::Ok;
+  }
+
+  Result EndTableInitExpr(Index index) override { return EndInitExpr(); }
+
   Result BeginGlobalInitExpr(Index index) override {
     reading_global_init_expr_ = true;
     BeginInitExpr();
@@ -1150,9 +1205,7 @@ class BinaryReaderObjdump : public BinaryReaderObjdumpBase {
   Result BeginDataSegment(Index index,
                           Index memory_index,
                           uint8_t flags) override;
-  Result OnDataSegmentData(Index index,
-                           const void* data,
-                           Address size) override;
+  Result OnDataSegmentData(Index index, ByteSpan data) override;
 
   Result OnModuleName(std::string_view name) override;
   Result OnFunctionName(Index function_index,
@@ -1236,9 +1289,7 @@ class BinaryReaderObjdump : public BinaryReaderObjdumpBase {
   Result OnRefNullExpr(Type type) override;
   Result OnGlobalGetExpr(Index global_index) override;
   Result OnCodeMetadataCount(Index function_index, Index count) override;
-  Result OnCodeMetadata(Offset code_offset,
-                        const void* data,
-                        Address size) override;
+  Result OnCodeMetadata(Offset code_offset, ByteSpan data) override;
 
  private:
   Result EndInitExpr();
@@ -1255,6 +1306,7 @@ class BinaryReaderObjdump : public BinaryReaderObjdumpBase {
   Index elem_index_ = 0;
   Index table_index_ = 0;
   Index next_data_reloc_ = 0;
+  bool reading_table_init_expr_ = false;
   bool reading_elem_init_expr_ = false;
   bool reading_data_init_expr_ = false;
   bool reading_global_init_expr_ = false;
@@ -1267,16 +1319,16 @@ class BinaryReaderObjdump : public BinaryReaderObjdumpBase {
   uint64_t elem_offset_ = 0;
 
   bool ReadingInitExpr() {
-    return reading_elem_init_expr_ || reading_data_init_expr_ ||
-           reading_global_init_expr_ || reading_elem_expr_;
+    return reading_table_init_expr_ || reading_elem_init_expr_ ||
+           reading_data_init_expr_ || reading_global_init_expr_ ||
+           reading_elem_expr_;
   }
 };
 
-BinaryReaderObjdump::BinaryReaderObjdump(const uint8_t* data,
-                                         size_t size,
+BinaryReaderObjdump::BinaryReaderObjdump(ByteSpan data,
                                          ObjdumpOptions* options,
                                          ObjdumpState* objdump_state)
-    : BinaryReaderObjdumpBase(data, size, options, objdump_state),
+    : BinaryReaderObjdumpBase(data, options, objdump_state),
       out_stream_(FileStream::CreateStdout()) {}
 
 Result BinaryReaderObjdump::BeginCustomSection(Index section_index,
@@ -1294,7 +1346,8 @@ Result BinaryReaderObjdump::BeginCustomSection(Index section_index,
 Result BinaryReaderObjdump::BeginSection(Index section_index,
                                          BinarySection section_code,
                                          Offset size) {
-  BinaryReaderObjdumpBase::BeginSection(section_index, section_code, size);
+  CHECK_RESULT(
+      BinaryReaderObjdumpBase::BeginSection(section_index, section_code, size));
 
   // |section_name| and |match_name| are identical for known sections. For
   // custom sections, |section_name| is "Custom", but |match_name| is the name
@@ -1332,8 +1385,8 @@ Result BinaryReaderObjdump::BeginSection(Index section_index,
     case ObjdumpMode::RawData:
       if (section_match) {
         printf("\nContents of section %s:\n", section_name);
-        out_stream_->WriteMemoryDump(data_ + state->offset, size, state->offset,
-                                     PrintChars::Yes);
+        out_stream_->WriteMemoryDump(data_.subspan(state->offset, size),
+                                     state->offset, PrintChars::Yes);
       }
       break;
     case ObjdumpMode::Prepass:
@@ -1647,9 +1700,10 @@ Result BinaryReaderObjdump::OnTableCount(Index count) {
   return OnCount(count);
 }
 
-Result BinaryReaderObjdump::OnTable(Index index,
-                                    Type elem_type,
-                                    const Limits* elem_limits) {
+Result BinaryReaderObjdump::BeginTable(Index index,
+                                       Type elem_type,
+                                       const Limits* elem_limits,
+                                       TableInitExprStatus) {
   PrintDetails(" - table[%" PRIindex "] type=%s initial=%" PRId64, index,
                elem_type.GetName().c_str(), elem_limits->initial);
   if (elem_limits->has_max) {
@@ -1872,6 +1926,9 @@ Result BinaryReaderObjdump::EndInitExpr() {
   if (reading_data_init_expr_) {
     reading_data_init_expr_ = false;
     InitExprToConstOffset(current_init_expr_, &data_offset_);
+  } else if (reading_table_init_expr_) {
+    reading_table_init_expr_ = false;
+    InitExprToConstOffset(current_init_expr_, &elem_offset_);
   } else if (reading_elem_init_expr_) {
     reading_elem_init_expr_ = false;
     InitExprToConstOffset(current_init_expr_, &elem_offset_);
@@ -1938,9 +1995,9 @@ Result BinaryReaderObjdump::OnRefNullExpr(Type type) {
 }
 
 Result BinaryReaderObjdump::OnOpcode(Opcode opcode) {
-  BinaryReaderObjdumpBase::OnOpcode(opcode);
+  CHECK_RESULT(BinaryReaderObjdumpBase::OnOpcode(opcode));
   if (ReadingInitExpr() && opcode != Opcode::End) {
-    InitInst i;
+    InitInst i{};
     i.opcode = current_opcode;
     current_init_expr_.insts.push_back(i);
   }
@@ -1999,9 +2056,7 @@ Result BinaryReaderObjdump::BeginDataSegment(Index index,
   return Result::Ok;
 }
 
-Result BinaryReaderObjdump::OnDataSegmentData(Index index,
-                                              const void* src_data,
-                                              Address size) {
+Result BinaryReaderObjdump::OnDataSegmentData(Index index, ByteSpan data) {
   if (!ShouldPrintDetails()) {
     return Result::Ok;
   }
@@ -2016,15 +2071,14 @@ Result BinaryReaderObjdump::OnDataSegmentData(Index index,
   } else {
     PrintDetails(" memory=%" PRIindex, data_mem_index_);
   }
-  PrintDetails(" size=%" PRIaddress, size);
+  PrintDetails(" size=%zu", data.size());
   if (data_flags_ & SegPassive) {
     PrintDetails("\n");
   } else {
     PrintInitExpr(current_init_expr_, /*as_unsigned=*/true);
   }
 
-  out_stream_->WriteMemoryDump(src_data, size, data_offset_, PrintChars::Yes,
-                               "  - ");
+  out_stream_->WriteMemoryDump(data, data_offset_, PrintChars::Yes, "  - ");
 
   // Print relocations from this segment.
   if (!options_->relocs) {
@@ -2032,7 +2086,7 @@ Result BinaryReaderObjdump::OnDataSegmentData(Index index,
   }
 
   Offset data_start = GetSectionStart(BinarySection::Data);
-  Offset segment_start = state->offset - size;
+  Offset segment_start = state->offset - data.size();
   Offset segment_offset = segment_start - data_start;
   while (next_data_reloc_ < objdump_state_->data_relocations.size()) {
     const Reloc& reloc = objdump_state_->data_relocations[next_data_reloc_];
@@ -2096,7 +2150,7 @@ Result BinaryReaderObjdump::OnDylinkNeeded(std::string_view so_name) {
 }
 
 Result BinaryReaderObjdump::OnRelocCount(Index count, Index section_index) {
-  BinaryReaderObjdumpBase::OnRelocCount(count, section_index);
+  CHECK_RESULT(BinaryReaderObjdumpBase::OnRelocCount(count, section_index));
   PrintDetails("  - relocations for section: %d (" PRIstringview ") [%d]\n",
                section_index,
                WABT_PRINTF_STRING_VIEW_ARG(GetSectionName(section_index)),
@@ -2403,15 +2457,13 @@ Result BinaryReaderObjdump::OnCodeMetadataCount(Index function_index,
   printf(":\n");
   return Result::Ok;
 }
-Result BinaryReaderObjdump::OnCodeMetadata(Offset code_offset,
-                                           const void* data,
-                                           Address size) {
+Result BinaryReaderObjdump::OnCodeMetadata(Offset code_offset, ByteSpan data) {
   if (!ShouldPrintDetails()) {
     return Result::Ok;
   }
   printf("    - meta[%" PRIzx "]:\n", code_offset);
 
-  out_stream_->WriteMemoryDump(data, size, 0, PrintChars::Yes, "     - ");
+  out_stream_->WriteMemoryDump(data, 0, PrintChars::Yes, "     - ");
   return Result::Ok;
 }
 
@@ -2443,8 +2495,7 @@ void ObjdumpLocalNames::Set(Index function_index,
       std::string(name);
 }
 
-Result ReadBinaryObjdump(const uint8_t* data,
-                         size_t size,
+Result ReadBinaryObjdump(ByteSpan data,
                          ObjdumpOptions* options,
                          ObjdumpState* state) {
   Features features;
@@ -2458,19 +2509,27 @@ Result ReadBinaryObjdump(const uint8_t* data,
   switch (options->mode) {
     case ObjdumpMode::Prepass: {
       read_options.skip_function_bodies = true;
-      BinaryReaderObjdumpPrepass reader(data, size, options, state);
-      return ReadBinary(data, size, &reader, read_options);
+      BinaryReaderObjdumpPrepass reader(data, options, state);
+      return ReadBinary(data, &reader, read_options);
     }
     case ObjdumpMode::Disassemble: {
-      BinaryReaderObjdumpDisassemble reader(data, size, options, state);
-      return ReadBinary(data, size, &reader, read_options);
+      BinaryReaderObjdumpDisassemble reader(data, options, state);
+      return ReadBinary(data, &reader, read_options);
     }
     default: {
       read_options.skip_function_bodies = true;
-      BinaryReaderObjdump reader(data, size, options, state);
-      return ReadBinary(data, size, &reader, read_options);
+      BinaryReaderObjdump reader(data, options, state);
+      return ReadBinary(data, &reader, read_options);
     }
   }
+}
+
+// TODO(sbc): Remove this old API. Use the ByteSpan overload instead.
+Result ReadBinaryObjdump(const uint8_t* data,
+                         size_t size,
+                         ObjdumpOptions* options,
+                         ObjdumpState* state) {
+  return ReadBinaryObjdump(ByteSpan(data, size), options, state);
 }
 
 }  // namespace wabt

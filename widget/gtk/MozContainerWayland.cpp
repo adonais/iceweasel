@@ -56,6 +56,8 @@
 #include "mozilla/gfx/gfxVars.h"
 #include "nsGtkUtils.h"
 #include "nsWaylandDisplay.h"
+#include "nsWindow.h"
+#include "nsWindowWayland.h"
 
 #undef LOGWAYLAND
 #undef LOGCONTAINER
@@ -63,7 +65,6 @@
 #  include "Units.h"
 #  include "mozilla/Logging.h"
 #  include "nsTArray.h"
-#  include "nsWindow.h"
 extern mozilla::LazyLogModule gWidgetWaylandLog;
 extern mozilla::LazyLogModule gWidgetLog;
 #  define LOGWAYLAND(...) \
@@ -87,12 +88,10 @@ static void moz_container_wayland_invalidate(MozContainer* container) {
   LOGWAYLAND("moz_container_wayland_invalidate [%p]\n",
              (void*)moz_container_get_nsWindow(container));
 
-  GdkWindow* window = gtk_widget_get_window(GTK_WIDGET(container));
-  if (!window) {
-    LOGWAYLAND("    Failed - missing GdkWindow!\n");
-    return;
-  }
-  gdk_window_invalidate_rect(window, nullptr, true);
+  nsWindow* window = moz_container_get_nsWindow(container);
+  MOZ_RELEASE_ASSERT(window);
+
+  window->AsWayland()->ForceToplevelCommit();
 }
 
 void moz_container_wayland_unmap(GtkWidget* widget) {

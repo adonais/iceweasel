@@ -17,8 +17,8 @@ sd        s4, 16\\(fp\\))?
 
     // Start of epilogue
     suffix: `
-ld        fp, 0\\(sp\\)
 ld        ra, 8\\(sp\\)
+ld        fp, 0\\(sp\\)
 addi      sp, sp, 16
 `,
 

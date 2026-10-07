@@ -10,6 +10,10 @@
   const { AppConstants } = ChromeUtils.importESModule(
     "resource://gre/modules/AppConstants.sys.mjs"
   );
+  const lazy = {};
+  ChromeUtils.defineESModuleGetters(lazy, {
+    checkAccessKeys: "chrome://global/content/elements/accesskey-check.mjs",
+  });
 
   // For the non-native context menu styling, we need to know if we need a
   // gutter for checkboxes or icons. On linux any checkbox / radio / icon
@@ -43,6 +47,19 @@
     // we use a system bubbling event listener to ensure we run *after* the
     // "normal" popupshowing listeners, so (visibility) changes they make to
     // their items take effect first, before we check for checkable menuitems.
+    { mozSystemGroup: true }
+  );
+
+  document.addEventListener(
+    "popupshown",
+    function (e) {
+      if (
+        e.target.nodeName == "menupopup" &&
+        e.target.ownerDocument == document
+      ) {
+        lazy.checkAccessKeys(e.target);
+      }
+    },
     { mozSystemGroup: true }
   );
 

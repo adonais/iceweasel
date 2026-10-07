@@ -5,7 +5,6 @@
 import os
 
 config = {
-    "stage_platform": "macosx64-fuzzing-debug",
     "debug_build": True,
     #### 64 bit build specific #####
     "env": {
@@ -24,5 +23,4 @@ config = {
         ##
     },
     #######################
-    "artifact_flag_build_variant_in_try": None,
 }

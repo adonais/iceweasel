@@ -15,11 +15,14 @@ import androidx.core.view.OnApplyWindowInsetsListener as AndroidxOnApplyWindowIn
 import androidx.core.view.ViewCompat
 import java.lang.ref.WeakReference
 import mozilla.components.browser.engine.gecko.activity.GeckoViewActivityContextDelegate
+import mozilla.components.browser.engine.gecko.facts.GeckoEngineViewFacts
+import mozilla.components.browser.engine.gecko.facts.emitGeckoEngineViewFact
 import mozilla.components.browser.engine.gecko.selection.GeckoSelectionActionDelegate
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.concept.engine.mediaquery.PreferredColorScheme
 import mozilla.components.concept.engine.selection.SelectionActionDelegate
+import mozilla.components.support.base.facts.Action
 import org.mozilla.geckoview.BasicSelectionActionDelegate
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
@@ -218,6 +221,38 @@ constructor(
                 GeckoResult()
             },
             {
+                onFinish(null)
+                GeckoResult<Void>()
+            },
+        )
+    }
+
+    override fun captureFullPage(onFinish: (Bitmap?) -> Unit) {
+        emitGeckoEngineViewFact(
+            Action.IMPLEMENTATION_DETAIL,
+            GeckoEngineViewFacts.Items.CAPTURE_FULL_PAGE_ATTEMPTED,
+        )
+        val geckoResult = geckoView.captureFullPage()
+        geckoResult.then(
+            { bitmap ->
+                emitGeckoEngineViewFact(
+                    Action.IMPLEMENTATION_DETAIL,
+                    GeckoEngineViewFacts.Items.CAPTURE_FULL_PAGE_RESULT,
+                    if (bitmap != null) {
+                        GeckoEngineViewFacts.CaptureFullPageResults.SUCCEEDED
+                    } else {
+                        GeckoEngineViewFacts.CaptureFullPageResults.FAILED
+                    },
+                )
+                onFinish(bitmap)
+                GeckoResult()
+            },
+            {
+                emitGeckoEngineViewFact(
+                    Action.IMPLEMENTATION_DETAIL,
+                    GeckoEngineViewFacts.Items.CAPTURE_FULL_PAGE_RESULT,
+                    GeckoEngineViewFacts.CaptureFullPageResults.FAILED,
+                )
                 onFinish(null)
                 GeckoResult<Void>()
             },

@@ -156,7 +156,7 @@ void ExtractMicrodumpStackContents(const string& microdump_content,
   std::istringstream iss(microdump_content);
   result->clear();
   for (string line; std::getline(iss, line);) {
-    if (line.find("S ") == 0) {
+    if (line.starts_with("S ")) {
       std::istringstream stack_data(line);
       std::string key;
       std::string addr;
@@ -181,7 +181,7 @@ void CheckMicrodumpContents(const string& microdump_content,
   bool did_find_crash_reason = false;
   bool did_find_gpu_info = false;
   for (string line; std::getline(iss, line);) {
-    if (line.find("O ") == 0) {
+    if (line.starts_with("O ")) {
       std::istringstream os_info_tokens(line);
       string token;
       os_info_tokens.ignore(2); // Ignore the "O " preamble.
@@ -201,11 +201,11 @@ void CheckMicrodumpContents(const string& microdump_content,
       if (expected_info.build_fingerprint)
         ASSERT_EQ(expected_info.build_fingerprint, token);
       did_find_os_info = true;
-    } else if (line.find("P ") == 0) {
+    } else if (line.starts_with("P ")) {
       if (expected_info.process_type)
         ASSERT_EQ(string("P ") + expected_info.process_type, line);
       did_find_process_type = true;
-    } else if (line.find("R ") == 0) {
+    } else if (line.starts_with("R ")) {
       std::istringstream crash_reason_tokens(line);
       string token;
       unsigned crash_reason;
@@ -219,11 +219,11 @@ void CheckMicrodumpContents(const string& microdump_content,
       ASSERT_EQ("DUMP_REQUESTED", crash_reason_str);
       ASSERT_EQ(kCrashAddress, crash_address);
       did_find_crash_reason = true;
-    } else if (line.find("V ") == 0) {
+    } else if (line.starts_with("V ")) {
       if (expected_info.product_info)
         ASSERT_EQ(string("V ") + expected_info.product_info, line);
       did_find_product_info = true;
-    } else if (line.find("G ") == 0) {
+    } else if (line.starts_with("G ")) {
       if (expected_info.gpu_fingerprint)
         ASSERT_EQ(string("G ") + expected_info.gpu_fingerprint, line);
       did_find_gpu_info = true;

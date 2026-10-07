@@ -197,6 +197,10 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
   // Protected destructor, to discourage deletion outside of Release():
   virtual ~gfxDWriteFontEntry();
 
+#if MOZ_FONTATIONS
+  void InitSkrifaFontFace() override;
+#endif
+
   bool HasVariationsInternal() override;
   void GetVariationAxesInternal(nsTArray<gfxFontVariationAxis>& aAxes) override;
   void GetVariationInstancesInternal(
@@ -227,7 +231,7 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
 
   // For custom fonts, we hold a reference to the IDWriteFontFileStream for
   // for the IDWriteFontFile, so that the data is available.
-  RefPtr<gfxDWriteFontFileStream> mFontFileStream;
+  RefPtr<IDWriteFontFileStream> mFontFileStream;
 
   // font face corresponding to the mFont/mFontFile *without* any DWrite
   // style simulations applied
@@ -238,6 +242,11 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
   DWRITE_FONT_FACE_TYPE mFaceType;
 
   mozilla::Atomic<FontTableCache*> mFontTableCache;
+
+#if MOZ_FONTATIONS
+  // File fragment backing our Skrifa font, if unable to mmap the file.
+  void* mFragmentContext = nullptr;
+#endif
 
   int8_t mIsCJK;
   bool mIsSystemFont;

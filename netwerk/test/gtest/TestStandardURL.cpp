@@ -2,6 +2,7 @@
 #include "gtest/MozGTestBench.h"  // For MOZ_GTEST_BENCH
 #include "gtest/gtest.h"
 #include "mozilla/Base64.h"
+#include "mozilla/Encoding.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
@@ -649,4 +650,41 @@ TEST(TestStandardURL, bug1911529)
 
   ASSERT_EQ(uri->Equals(uri2, &equals), NS_OK);
   ASSERT_TRUE(equals);
+}
+
+// The setters take nsACString, so nothing guarantees the bytes are UTF-8.
+// SetQueryWithEncoding reaches nsSegmentEncoder with a non-null encoding,
+// where invalid sequences must be replaced rather than treated as impossible.
+TEST(TestStandardURL, NonUtf8QueryWithEncoding)
+{
+  nsCOMPtr<nsIURI> uri;
+  ASSERT_EQ(NS_MutateURI(NS_STANDARDURLMUTATOR_CONTRACTID)
+                .SetSpec("http://example.com/"_ns)
+                .Finalize(uri),
+            NS_OK);
+
+  // A lone continuation byte, a truncated sequence and a byte that can never
+  // appear in UTF-8 at all.
+  nsAutoCString badQuery(
+      "a\xA7"
+      "b\xF9"
+      "c\xFE");
+
+  const auto* encoding = mozilla::Encoding::ForLabelNoReplacement(
+      mozilla::MakeStringSpan("Shift_JIS"));
+  ASSERT_TRUE(encoding);
+
+  nsCOMPtr<nsIURI> out;
+  ASSERT_EQ(
+      NS_MutateURI(uri).SetQueryWithEncoding(badQuery, encoding).Finalize(out),
+      NS_OK);
+
+  nsAutoCString spec;
+  ASSERT_EQ(out->GetSpec(spec), NS_OK);
+
+  // Each invalid byte became U+FFFD, which Shift_JIS cannot represent, so it
+  // is emitted as a numeric character reference and then percent-escaped.
+  ASSERT_EQ(
+      spec,
+      "http://example.com/?a%26%2365533%3Bb%26%2365533%3Bc%26%2365533%3B"_ns);
 }

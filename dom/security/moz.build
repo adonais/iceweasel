@@ -7,9 +7,11 @@ with Files("*"):
 
 TEST_DIRS += ["test"]
 
-DIRS += ["featurepolicy", "sanitizer", "trusted-types"]
+DIRS += ["permissionspolicy", "sanitizer", "trusted-types"]
 
 EXPORTS.mozilla.dom += [
+    "ConnectionAllowlists.h",
+    "ConnectionAllowlistsService.h",
     "CSPEvalChecker.h",
     "CSPViolationData.h",
     "DomSecurityIPCUtils.h",
@@ -47,6 +49,8 @@ EXPORTS += [
 ]
 
 UNIFIED_SOURCES += [
+    "ConnectionAllowlists.cpp",
+    "ConnectionAllowlistsService.cpp",
     "CSPEvalChecker.cpp",
     "CSPViolationData.cpp",
     "DOMSecurityMonitor.cpp",

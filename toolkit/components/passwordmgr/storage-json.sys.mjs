@@ -60,6 +60,10 @@ export class LoginManagerStorage_json {
     this.#isActive = v;
   }
 
+  get backendName() {
+    return "json";
+  }
+
   constructor() {
     this.__crypto = null; // nsILoginManagerCrypto service
     this.__decryptedPotentiallyVulnerablePasswords = null;

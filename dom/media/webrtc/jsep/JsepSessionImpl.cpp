@@ -583,7 +583,8 @@ JsepSession::Result JsepSessionImpl::CreateAnswer(
     const JsepAnswerOptions& options, std::string* answer) {
   mLastError.clear();
 
-  if (mState != kJsepStateHaveRemoteOffer) {
+  if (mState != kJsepStateHaveRemoteOffer &&
+      mState != kJsepStateHaveLocalPranswer) {
     JSEP_SET_ERROR("Cannot create answer in state " << GetStateStr(mState));
     return dom::PCError::InvalidStateError;
   }
@@ -861,6 +862,14 @@ JsepSession::Result JsepSessionImpl::SetLocalDescription(
     return result;
   }
 
+  if (mState == kJsepStateHaveLocalPranswer) {
+    // Might be a final answer, might be another pranswer
+    result = ValidateAnswerAgainstPranswer(*mPendingLocalDescription, *parsed);
+    if (result.mError.isSome()) {
+      return result;
+    }
+  }
+
   if (type == kJsepSdpOffer) {
     // Save in case we need to rollback
     mOldTransceivers = mTransceivers;
@@ -1017,13 +1026,28 @@ nsresult JsepSessionImpl::SetLocalDescriptionOffer(UniquePtr<Sdp> offer) {
 
 nsresult JsepSessionImpl::SetLocalDescriptionAnswer(JsepSdpType type,
                                                     UniquePtr<Sdp> answer) {
-  MOZ_ASSERT(mState == kJsepStateHaveRemoteOffer);
+  MOZ_ASSERT(mState == kJsepStateHaveRemoteOffer ||
+             mState == kJsepStateHaveLocalPranswer);
+  const bool firstAnswer = (mState == kJsepStateHaveRemoteOffer);
   mPendingLocalDescription = std::move(answer);
 
   nsresult rv = HandleNegotiatedSession(mPendingLocalDescription,
                                         mPendingRemoteDescription);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  // Counts exchanges, not answers; a repeated provisional answer is the same
+  // exchange.
+  if (firstAnswer) {
+    mNegotiations++;
+  }
+
+  if (type == kJsepSdpPranswer) {
+    SetState(kJsepStateHaveLocalPranswer);
+    return NS_OK;
+  }
+
+  mGeneratedAnswer.reset();
+  mGeneratedOffer.reset();
   mCurrentRemoteDescription = std::move(mPendingRemoteDescription);
   mCurrentLocalDescription = std::move(mPendingLocalDescription);
   MOZ_ASSERT(mIsPendingOfferer.isSome() && !*mIsPendingOfferer);
@@ -1109,6 +1133,14 @@ JsepSession::Result JsepSessionImpl::SetRemoteDescription(
   }
   if (result.mError.isSome()) {
     return result;
+  }
+
+  if (mState == kJsepStateHaveRemotePranswer) {
+    // Might be a final answer, might be another pranswer
+    result = ValidateAnswerAgainstPranswer(*mPendingRemoteDescription, *parsed);
+    if (result.mError.isSome()) {
+      return result;
+    }
   }
 
   bool iceLite =
@@ -1266,11 +1298,6 @@ nsresult JsepSessionImpl::HandleNegotiatedSession(
     }
   }
   JsepTrack::SetReceivePayloadTypes(receiveTracks);
-
-  mNegotiations++;
-
-  mGeneratedAnswer.reset();
-  mGeneratedOffer.reset();
 
   return NS_OK;
 }
@@ -1656,13 +1683,24 @@ nsresult JsepSessionImpl::SetRemoteDescriptionAnswer(JsepSdpType type,
                                                      UniquePtr<Sdp> answer) {
   MOZ_ASSERT(mState == kJsepStateHaveLocalOffer ||
              mState == kJsepStateHaveRemotePranswer);
-
+  const bool firstAnswer = (mState == kJsepStateHaveLocalOffer);
   mPendingRemoteDescription = std::move(answer);
 
   nsresult rv = HandleNegotiatedSession(mPendingLocalDescription,
                                         mPendingRemoteDescription);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  if (firstAnswer) {
+    mNegotiations++;
+  }
+
+  if (type == kJsepSdpPranswer) {
+    SetState(kJsepStateHaveRemotePranswer);
+    return NS_OK;
+  }
+
+  mGeneratedAnswer.reset();
+  mGeneratedOffer.reset();
   mCurrentRemoteDescription = std::move(mPendingRemoteDescription);
   mCurrentLocalDescription = std::move(mPendingLocalDescription);
   MOZ_ASSERT(mIsPendingOfferer.isSome() && *mIsPendingOfferer);
@@ -2108,6 +2146,14 @@ JsepSession::Result JsepSessionImpl::ValidateRemoteDescription(
       return Result(dom::PCError::InvalidAccessError);
     }
 
+    if (mSdpHelper.FingerprintsDiffer(newMsection, oldMsection) && !differ) {
+      JSEP_SET_ERROR(
+          "Remote description changes the DTLS fingerprint without changing "
+          "the ICE credentials (i.e. without an ICE restart), which is not "
+          "permitted (see RFC 9429 section 5.11)");
+      return Result(dom::PCError::InvalidAccessError);
+    }
+
     // Detect whether all the creds are the same or all are different
     if (!iceCredsDiffer.isSome()) {
       // for the first msection capture whether creds are different or same
@@ -2291,6 +2337,157 @@ JsepSession::Result JsepSessionImpl::ValidateAnswer(const Sdp& offer,
         }
       }
     }
+  }
+
+  return Result();
+}
+
+// Empty if |aAttrs| has no attribute of that type.
+static std::string SerializeAttribute(const SdpAttributeList& aAttrs,
+                                      SdpAttribute::AttributeType aType) {
+  std::ostringstream os;
+  if (aAttrs.HasAttribute(aType)) {
+    aAttrs.GetAttribute(aType)->Serialize(os);
+  }
+  return os.str();
+}
+
+// Once a provisional answer has been applied, the answers that follow it
+// (final, or more pranswers) may change what the media looks like, but not the
+// transports it runs over. RFC 9429 sections 5.10 and 5.11 permit new ICE
+// credentials or a new DTLS fingerprint (provided the offer had new
+// credentials/fingerprints), but say nothing about BUNDLE, rtcp-mux, the DTLS
+// role, recycling (or resurrection!) of m-sections, ice-lite, ice-options,
+// msid, and on and on. We call shenanigans and forbid all of this. If someone
+// complains, we'll cross that bridge when we get there.
+JsepSession::Result JsepSessionImpl::ValidateAnswerAgainstPranswer(
+    const Sdp& pranswer, const Sdp& answer) {
+  struct Frozen {
+    SdpAttribute::AttributeType mType;
+    const char* mWhat;
+  };
+
+  // Session level. The identity assertion is validated again for every
+  // remote description, so changing it would swap the peer identity out from
+  // under JS; the ICE roles were decided from ice-lite at the provisional
+  // answer.
+  static const Frozen kSessionFrozen[] = {
+      {SdpAttribute::kGroupAttribute, "group"},
+      {SdpAttribute::kIdentityAttribute, "identity"},
+      {SdpAttribute::kIceLiteAttribute, "ice-lite"},
+  };
+  for (const auto& [type, what] : kSessionFrozen) {
+    if (SerializeAttribute(pranswer.GetAttributeList(), type) !=
+        SerializeAttribute(answer.GetAttributeList(), type)) {
+      JSEP_SET_ERROR("Answer changes " << what << " of the provisional answer");
+      return Result(dom::PCError::InvalidAccessError);
+    }
+  }
+
+  // Per m-section. Simulcast is driven by SDP and by JS at the same time, and
+  // every answer, provisional or not, prunes send encodings that nothing puts
+  // back. RFC 9429 section 5.11 would have an SCTP port change tear down the
+  // association, even in have-remote-pranswer; we have no exercised path for
+  // that.
+  // TODO: Check a=tls-id when we support it, see
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=1319681
+  // If we ever support ice-mismatch or ice-pacing, we'll want to check those
+  // here too.
+  // See https://bugzilla.mozilla.org/show_bug.cgi?id=2073595
+  // See https://bugzilla.mozilla.org/show_bug.cgi?id=2073597
+  static const Frozen kMsectionFrozen[] = {
+      {SdpAttribute::kIceUfragAttribute, "ice-ufrag"},
+      {SdpAttribute::kIcePwdAttribute, "ice-pwd"},
+      {SdpAttribute::kIceOptionsAttribute, "ice-options"},
+      {SdpAttribute::kFingerprintAttribute, "fingerprint"},
+      {SdpAttribute::kSetupAttribute, "setup"},
+      {SdpAttribute::kRtcpMuxAttribute, "rtcp-mux"},
+      {SdpAttribute::kRtcpRsizeAttribute, "rtcp-rsize"},
+      {SdpAttribute::kSimulcastAttribute, "simulcast"},
+      {SdpAttribute::kRidAttribute, "rid"},
+      {SdpAttribute::kSctpPortAttribute, "sctp-port"},
+      {SdpAttribute::kSctpmapAttribute, "sctpmap"},
+  };
+
+  // ValidateAnswer has checked both against the offer, so the m-section
+  // counts match.
+  for (size_t i = 0; i < answer.GetMediaSectionCount(); ++i) {
+    const SdpMediaSection& pranswerMsection = pranswer.GetMediaSection(i);
+    const SdpMediaSection& answerMsection = answer.GetMediaSection(i);
+
+    const bool answerDisabled = mSdpHelper.MsectionIsDisabled(answerMsection);
+    if (answerDisabled != mSdpHelper.MsectionIsDisabled(pranswerMsection)) {
+      JSEP_SET_ERROR("Answer " << (answerDisabled ? "rejects" : "accepts")
+                               << " m-section " << i
+                               << ", which the provisional answer "
+                               << (answerDisabled ? "accepted" : "rejected"));
+      return Result(dom::PCError::InvalidAccessError);
+    }
+    if (answerDisabled) {
+      continue;
+    }
+
+    const SdpAttributeList& pranswerAttrs = pranswerMsection.GetAttributeList();
+    const SdpAttributeList& answerAttrs = answerMsection.GetAttributeList();
+
+    for (const auto& [type, what] : kMsectionFrozen) {
+      if (SerializeAttribute(pranswerAttrs, type) !=
+          SerializeAttribute(answerAttrs, type)) {
+        JSEP_SET_ERROR("Answer changes " << what
+                                         << " of the provisional answer at "
+                                            "m-section "
+                                         << i);
+        return Result(dom::PCError::InvalidAccessError);
+      }
+    }
+
+    // extmap ids are pinned to the offer's by ValidateAnswer, for the
+    // provisional answer and this one alike, so an id cannot change meaning
+    // between them. Which extensions are accepted is a media choice and may.
+
+    // An answer may pick payload types of its own (asymmetric payload types),
+    // and which codecs it accepts may change, but a number that appears in
+    // both the provisional answer and this one has to keep its meaning.
+    if (pranswerAttrs.HasAttribute(SdpAttribute::kRtpmapAttribute) &&
+        answerAttrs.HasAttribute(SdpAttribute::kRtpmapAttribute)) {
+      const SdpRtpmapAttributeList& answerRtpmap = answerAttrs.GetRtpmap();
+      for (const auto& entry : pranswerAttrs.GetRtpmap().mRtpmaps) {
+        if (!answerRtpmap.HasEntry(entry.pt)) {
+          continue;
+        }
+        const auto& answerEntry = answerRtpmap.GetEntry(entry.pt);
+        if (answerEntry.name != entry.name ||
+            answerEntry.clock != entry.clock ||
+            answerEntry.channels != entry.channels) {
+          JSEP_SET_ERROR("Answer changes payload type "
+                         << entry.pt
+                         << " of the provisional answer at m-section " << i);
+          return Result(dom::PCError::InvalidAccessError);
+        }
+      }
+    }
+
+    // msid may appear (the answerer started sending) or disappear (it
+    // stopped), but a stream JS has already been told about keeps its id.
+    if (pranswerAttrs.HasAttribute(SdpAttribute::kMsidAttribute) &&
+        answerAttrs.HasAttribute(SdpAttribute::kMsidAttribute)) {
+      const auto& pranswerMsids = pranswerAttrs.GetMsid().mMsids;
+      const auto& answerMsids = answerAttrs.GetMsid().mMsids;
+      bool sameStreams = pranswerMsids.size() == answerMsids.size();
+      for (size_t j = 0; sameStreams && j < pranswerMsids.size(); ++j) {
+        sameStreams = pranswerMsids[j].identifier == answerMsids[j].identifier;
+      }
+      if (!sameStreams) {
+        JSEP_SET_ERROR(
+            "Answer changes the msid of the provisional answer at "
+            "m-section "
+            << i);
+        return Result(dom::PCError::InvalidAccessError);
+      }
+    }
+
+    // max-message-size is meant to be picked up from any answer (webrtc-pc
+    // "set the session description", step 10.1), so it is left alone.
   }
 
   return Result();

@@ -469,6 +469,13 @@ export function removePrettyPrintedSource(source) {
       getState(),
       generatedSource.id
     );
+
+    // Clear the original location from column breakpoint positions currently stored for the minified file
+    dispatch({
+      type: "CLEAR_BREAKPOINT_POSITIONS_ORIGINAL_LOCATION",
+      sourceKey: sourceActor.id,
+    });
+
     // In case we are paused, update frames to remove references to the pretty printed sources
     await dispatch(mapFrames(sourceActor.thread));
 

@@ -12,26 +12,26 @@ from qm_try_analysis.logging import info
 
 """
 The analysis is based on the following query:
-https://sql.telemetry.mozilla.org/queries/78691/source?p_day=28&p_month=03&p_year=2021
+https://sql.telemetry.mozilla.org/queries/126505/source?p_year=2026&p_month=09&p_day=09&p_build=20260901000000&p_last=0
 
-SELECT UNIX_MILLIS(timestamp) AS submit_timeabs,
-       session_start_time,
-       submission_date,
-       build_id,
-       client_id,
-       session_id,
-       event_timestamp,
-       CAST(mozfun.map.get_key(event_map_values, "seq") AS INT64) AS seq,
-       mozfun.map.get_key(event_map_values, "context") AS context,
-       mozfun.map.get_key(event_map_values, "source_file") AS source_file,
-       mozfun.map.get_key(event_map_values, "source_line") AS source_line,
-       mozfun.map.get_key(event_map_values, "severity") AS severity,
-       mozfun.map.get_key(event_map_values, "result") AS result,
-FROM telemetry.events
-WHERE submission_date >= CAST('{{ year }}-{{ month }}-{{ day }}' AS DATE)
-  AND event_category='dom.quota.try'
-  AND build_id >= '{{ build }}'
-  AND UNIX_MILLIS(timestamp) > {{ last }}
+SELECT UNIX_MILLIS(submission_timestamp) AS submit_timeabs,
+       client_info.app_build AS build_id,
+       COALESCE(legacy_telemetry_client_id, client_id) AS client_id,
+       COALESCE(JSON_VALUE(metrics, '$.uuid.legacy_telemetry_session_id'), document_id) AS session_id,
+       UNIX_MILLIS(event_timestamp) AS event_timestamp,
+       CAST(JSON_VALUE(event_extra, '$.seq') AS INT64) AS seq,
+       JSON_VALUE(event_extra, '$.context') AS context,
+       JSON_VALUE(event_extra, '$.source_file') AS source_file,
+       JSON_VALUE(event_extra, '$.source_line') AS source_line,
+       JSON_VALUE(event_extra, '$.severity') AS severity,
+       JSON_VALUE(event_extra, '$.result') AS result
+FROM firefox_desktop.events_stream
+WHERE DATE(submission_timestamp) >= CAST('{{ year }}-{{ month }}-{{ day }}' AS DATE)
+  AND normalized_channel = 'nightly'
+  AND event_category = 'dom.quota.try'
+  AND event_name = 'error_step'
+  AND client_info.app_build >= '{{ build }}'
+  AND UNIX_MILLIS(submission_timestamp) > {{ last }}
 ORDER BY submit_timeabs
 LIMIT 600000
 
@@ -48,12 +48,14 @@ arrived with our analysis. To accomplish this we write our runs into qmexecution
     }
 ]
 
-lasteventtime is the highest value of event_timeabs we found in our data.
+lasteventtime is the highest value of submit_timeabs we found in our data.
 
 analyze_qm_failures instead needs the rows to be ordered by
 client_id, session_id, thread_id, submit_timeabs, seq
 Thus we sort the rows accordingly before writing them.
 """
+
+QUERY_ID = 126505
 
 
 @click.command()
@@ -86,7 +88,7 @@ Thus we sort the rows accordingly before writing them.
 )
 def fetch_qm_failures(key, minbuild, days, lasteventtime, workdir):
     """
-    Invokes the query 78691 and stores the result in a JSON file.
+    Invokes the Redash query QUERY_ID and stores the result in a JSON file.
     """
     # Creeate output dir if it does not exist
     workdir.mkdir(exist_ok=True)
@@ -105,8 +107,8 @@ def fetch_qm_failures(key, minbuild, days, lasteventtime, workdir):
 
     p_params = f"p_year={year:04d}&p_month={month:02d}&p_day={day:02d}&p_build={minbuild}&p_last={lasteventtime}"
 
-    # Read string at the start of the file for more information on query 78691
-    result = telemetry.query(key, 78691, p_params)
+    # See the module docstring for more information on the query
+    result = telemetry.query(key, QUERY_ID, p_params)
     rows = result["query_result"]["data"]["rows"]
     run["numrows"] = len(rows)
 

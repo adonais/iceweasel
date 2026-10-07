@@ -319,6 +319,14 @@ bool FetchService::FetchInstance::IsLocalHostFetch() const {
   return res;
 }
 
+bool FetchService::FetchInstance::IsServiceWorkerEligible() const {
+  if (!mArgs.is<WorkerFetchArgs>() ||
+      mArgs.as<WorkerFetchArgs>().mController.isNothing()) {
+    return false;
+  }
+  return mRequest && !mRequest->SkipServiceWorker();
+}
+
 void FetchService::FetchInstance::Cancel(bool aForceAbort) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(NS_IsMainThread());
@@ -850,7 +858,11 @@ RefPtr<FetchServicePromises> FetchService::Fetch(FetchArgs&& aArgs) {
     return NetworkErrorResponse(rv, fetch->Args());
   }
 
-  if (mOffline && !fetch->IsLocalHostFetch()) {
+  // A controlled client's request has to be dispatched to the service worker
+  // before the network is consulted, so it cannot be failed here. If no
+  // service worker answers it, the channel fails on its own while offline.
+  if (mOffline && !fetch->IsLocalHostFetch() &&
+      !fetch->IsServiceWorkerEligible()) {
     FETCH_LOG(("FetchService::Fetch network offline"));
     return NetworkErrorResponse(NS_ERROR_OFFLINE, fetch->Args());
   }

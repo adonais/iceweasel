@@ -106,6 +106,13 @@ add_task(async function test_sidebar_onboarding() {
     document.querySelector("label:has(.localhost)")
   );
   Assert.ok(label, "Got a provider");
+  const header = document.getElementById("header");
+  const browserContainer = document.getElementById("browser-container");
+  Assert.ok(header.inert, "Header is inert during onboarding");
+  Assert.ok(
+    browserContainer.inert,
+    "Provider frame is inert during onboarding"
+  );
   let events =
     Glean.genaiChatbot.onboardingProviderChoiceDisplayed.testGetValue();
   Assert.equal(events.length, 1, "Displayed onboarding once");
@@ -158,6 +165,11 @@ add_task(async function test_sidebar_onboarding() {
     () => !document.getElementById("multi-stage-message-root")
   );
   Assert.ok(noOnboarding, "Onboarding container went away");
+  Assert.ok(!header.inert, "Header is not inert after onboarding");
+  Assert.ok(
+    !browserContainer.inert,
+    "Provider frame is not inert after onboarding"
+  );
 
   events = Glean.genaiChatbot.onboardingFinish.testGetValue();
   Assert.equal(events.length, 1, "Finished once");
@@ -428,6 +440,9 @@ add_task(async function test_pip_actor_not_chat_sidebar() {
  * Check that the sidebar is focused when opened
  */
 add_task(async function test_sidebar_browser_focus() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.chat.provider", TEST_CHAT_PROVIDER_URL]],
+  });
   const sidebar = document.getElementById("sidebar");
   await SidebarController.show("viewGenaiChatSidebar");
   Assert.equal(document.activeElement, sidebar, "Sidebar is focused");

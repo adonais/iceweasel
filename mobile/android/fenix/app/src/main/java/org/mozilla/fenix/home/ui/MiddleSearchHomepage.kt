@@ -34,7 +34,6 @@ import org.mozilla.fenix.components.components
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.home.fake.FakeHomepagePreview
 import org.mozilla.fenix.home.interactor.HomepageInteractor
-import org.mozilla.fenix.home.pocket.ui.PocketSection
 import org.mozilla.fenix.home.store.HeaderState
 import org.mozilla.fenix.home.store.HomepageState
 import org.mozilla.fenix.home.store.MiddleSearchState
@@ -43,8 +42,6 @@ import org.mozilla.fenix.home.topsites.TopSiteColors
 import org.mozilla.fenix.home.topsites.TopSiteState
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE
 import org.mozilla.fenix.theme.FirefoxTheme
-
-private const val BOTTOM_PADDING = 47
 
 /**
  * Top level composable for the middle search homepage.
@@ -131,15 +128,6 @@ internal fun MiddleSearchHomepage(
                             }
 
                             Spacer(modifier = Modifier.weight(1f))
-
-                            if (pocketState != null) {
-                                PocketSection(
-                                    state = pocketState,
-                                    interactor = interactor,
-                                )
-                            }
-
-                            Spacer(Modifier.height(BOTTOM_PADDING.dp))
                         }
                     }
                 }
@@ -183,12 +171,11 @@ private fun MiddleSearchHomepagePreview() {
                     ),
                 recentlyVisited = FakeHomepagePreview.recentHistory(),
                 collectionsState = FakeHomepagePreview.collectionState(),
-                pocketState = FakeHomepagePreview.pocketState(),
                 showPrivacyReport = true,
                 longfoxEnabled = true,
                 showLongfoxAnimation = true,
                 trackersBlockedCount = 754,
-                headerState = HeaderState.Normal,
+                headerState = HeaderState.Normal(showStoriesButton = true),
                 middleSearchState = MiddleSearchState(searchBarVisible = true, searchBarEnabled = true),
                 firstFrameDrawn = true,
                 setupChecklistState = null,

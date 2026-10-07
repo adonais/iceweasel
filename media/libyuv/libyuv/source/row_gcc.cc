@@ -2639,17 +2639,12 @@ void ARGBToUVMatrixRow_AVX512BW(const uint8_t* src_argb,
   "movdqa     96(%[yuvconstants]),%%xmm11                     \n" \
   "movdqa     128(%[yuvconstants]),%%xmm12                    \n"
 
-#if defined(LIBYUV_UNBIASED_DATA)
 #define YUVTORGB_SETUP_AR30(yuvconstants)                             \
   YUVTORGB_SETUP(yuvconstants)                                        \
   "pcmpeqb     %%xmm0,%%xmm0                                  \n"     \
   "psrlw       $14,%%xmm0                                     \n"     \
   "psllw       $3,%%xmm0                                      \n"     \
   "psubw       %%xmm0,%%xmm12                                 \n"
-#else
-#define YUVTORGB_SETUP_AR30(yuvconstants)                             \
-  YUVTORGB_SETUP(yuvconstants)
-#endif
 
 // Convert 8 pixels: 8 UV and 8 Y
 #define YUVTORGB16(yuvconstants)                                  \
@@ -3722,7 +3717,6 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vmovups    (%[dquadsplitperm]),%%zmm17                         \n" \
   "vmovups    (%[unperm]),%%zmm18                                 \n"
 
-#if defined(LIBYUV_UNBIASED_DATA)
 #define YUVTORGB_SETUP_AR30_AVX2(yuvconstants)                        \
   YUVTORGB_SETUP_AVX2(yuvconstants)                                   \
   "vpcmpeqb    %%ymm0,%%ymm0,%%ymm0                           \n"     \
@@ -3736,12 +3730,6 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
   "vpsrlw      $14,%%zmm0,%%zmm0                                  \n" \
   "vpsllw      $3,%%zmm0,%%zmm0                                   \n" \
   "vpsubw      %%zmm0,%%zmm12,%%zmm12                             \n"
-#else
-#define YUVTORGB_SETUP_AR30_AVX2(yuvconstants)                        \
-  YUVTORGB_SETUP_AVX2(yuvconstants)
-#define YUVTORGB_SETUP_AR30_AVX512BW(yuvconstants)                    \
-  YUVTORGB_SETUP_AVX512BW(yuvconstants)
-#endif
 
 #define YUVTORGB16_AVX2(yuvconstants)                                 \
   "vpsubb      %%ymm13,%%ymm3,%%ymm3                              \n" \
@@ -5801,10 +5789,8 @@ void MultiplyRow_16_AVX2(const uint16_t* src_y,
       // 32 pixels per loop.
       LABELALIGN
       "1:          \n"
-      "vmovdqu     (%0),%%ymm0                   \n"
-      "vmovdqu     0x20(%0),%%ymm1               \n"
-      "vpmullw     %%ymm3,%%ymm0,%%ymm0          \n"
-      "vpmullw     %%ymm3,%%ymm1,%%ymm1          \n"
+      "vpmullw     (%0),%%ymm3,%%ymm0            \n"
+      "vpmullw     0x20(%0),%%ymm3,%%ymm1        \n"
       "vmovdqu     %%ymm0,(%0,%1)                \n"
       "vmovdqu     %%ymm1,0x20(%0,%1)            \n"
       "add         $0x40,%0                      \n"
@@ -5818,6 +5804,34 @@ void MultiplyRow_16_AVX2(const uint16_t* src_y,
       : "memory", "cc", "xmm0", "xmm1", "xmm3");
 }
 #endif  // HAS_MULTIPLYROW_16_AVX2
+
+#ifdef HAS_MULTIPLYROW_16_AVX512BW
+void MultiplyRow_16_AVX512BW(const uint16_t* src_y,
+                             uint16_t* dst_y,
+                             int scale,
+                             int width) {
+  asm volatile(
+      "vpbroadcastw %3,%%zmm2                    \n"
+
+      // 64 pixels per loop.
+      LABELALIGN
+      "1:          \n"
+      "vpmullw     (%0),%%zmm2,%%zmm0            \n"
+      "vpmullw     0x40(%0),%%zmm2,%%zmm1        \n"
+      "add         $0x80,%0                      \n"
+      "vmovdqu16   %%zmm0,(%1)                   \n"
+      "vmovdqu16   %%zmm1,0x40(%1)               \n"
+      "add         $0x80,%1                      \n"
+      "sub         $0x40,%2                      \n"
+      "jg          1b                            \n"
+      "vzeroupper  \n"
+      : "+r"(src_y),  // %0
+        "+r"(dst_y),  // %1
+        "+r"(width)   // %2
+      : "r"(scale)    // %3
+      : "memory", "cc", "xmm0", "xmm1", "xmm2");
+}
+#endif  // HAS_MULTIPLYROW_16_AVX512BW
 
 // Use scale to convert msb formats to lsb, depending how many bits there are:
 // 512 = 9 bits
@@ -6227,16 +6241,16 @@ void HalfWidthRow_16To8_AVX512BW(const uint16_t* src_uv,
 // 512 = 9 bits
 // 1024 = 10 bits
 // 4096 = 12 bits
+// 65536 = 16 bits
 void Convert8To16Row_SSE2(const uint8_t* src_y,
                           uint16_t* dst_y,
-                          int scale,
+                          int bits,
                           int width) {
+  const int shift = 16 - bits;
   asm volatile(
       "movd        %3,%%xmm2                     \n"
-      "punpcklwd   %%xmm2,%%xmm2                 \n"
-      "pshufd      $0x0,%%xmm2,%%xmm2            \n"
 
-      // 32 pixels per loop.
+      // 16 pixels per loop.
       LABELALIGN
       "1:          \n"
       "movdqu      (%0),%%xmm0                   \n"
@@ -6244,8 +6258,8 @@ void Convert8To16Row_SSE2(const uint8_t* src_y,
       "punpcklbw   %%xmm0,%%xmm0                 \n"
       "punpckhbw   %%xmm1,%%xmm1                 \n"
       "add         $0x10,%0                      \n"
-      "pmulhuw     %%xmm2,%%xmm0                 \n"
-      "pmulhuw     %%xmm2,%%xmm1                 \n"
+      "psrlw       %%xmm2,%%xmm0                 \n"
+      "psrlw       %%xmm2,%%xmm1                 \n"
       "movdqu      %%xmm0,(%1)                   \n"
       "movdqu      %%xmm1,0x10(%1)               \n"
       "add         $0x20,%1                      \n"
@@ -6254,16 +6268,16 @@ void Convert8To16Row_SSE2(const uint8_t* src_y,
       : "+r"(src_y),  // %0
         "+r"(dst_y),  // %1
         "+r"(width)   // %2
-      : "r"(scale)    // %3
+      : "r"(shift)    // %3
       : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
 
 #ifdef HAS_CONVERT8TO16ROW_AVX2
 void Convert8To16Row_AVX2(const uint8_t* src_y,
                           uint16_t* dst_y,
-                          int scale,
+                          int bits,
                           int width) {
-  const int shift = __builtin_clz(scale) - 15;
+  const int shift = 16 - bits;
   asm volatile("vmovd       %3,%%xmm2                     \n"
 
                // 32 pixels per loop.
@@ -6289,6 +6303,41 @@ void Convert8To16Row_AVX2(const uint8_t* src_y,
                : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
 #endif  // HAS_CONVERT8TO16ROW_AVX2
+
+#ifdef HAS_CONVERT8TO16ROW_AVX512BW
+void Convert8To16Row_AVX512BW(const uint8_t* src_y,
+                              uint16_t* dst_y,
+                              int bits,
+                              int width) {
+  const int shift = 16 - bits;
+  asm volatile(
+      "vpbroadcastw %4,%%zmm2                    \n"
+      "vmovd        %3,%%xmm3                    \n"
+
+      // 64 pixels per loop.
+      LABELALIGN
+      "1:          \n"
+      "vpmovzxbw    (%0),%%zmm0                  \n"
+      "vpmovzxbw    0x20(%0),%%zmm1              \n"
+      "add          $0x40,%0                     \n"
+      "vpmullw      %%zmm2,%%zmm0,%%zmm0         \n"
+      "vpmullw      %%zmm2,%%zmm1,%%zmm1         \n"
+      "vpsrlw       %%xmm3,%%zmm0,%%zmm0         \n"
+      "vpsrlw       %%xmm3,%%zmm1,%%zmm1         \n"
+      "vmovdqu16    %%zmm0,(%1)                  \n"
+      "vmovdqu16    %%zmm1,0x40(%1)              \n"
+      "add          $0x80,%1                     \n"
+      "sub          $0x40,%2                     \n"
+      "jg           1b                           \n"
+      "vzeroupper                                \n"
+      : "+r"(src_y),  // %0
+        "+r"(dst_y),  // %1
+        "+r"(width)   // %2
+      : "r"(shift),   // %3
+        "r"(0x0101)   // %4
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
+}
+#endif  // HAS_CONVERT8TO16ROW_AVX512BW
 
 #ifdef HAS_SPLITRGBROW_SSSE3
 // Shuffle table for converting RGB to Planar.
@@ -10449,12 +10498,14 @@ void NV21ToYUV24Row_AVX512(const uint8_t* src_y,
 
 #endif  // HAS_NV21ToYUV24ROW_AVX512
 
-#ifdef HAS_SWAPUVROW_SSSE3
+#if defined(HAS_SWAPUVROW_SSSE3) || defined(HAS_SWAPUVROW_AVX2)
 
 // Shuffle table for reversing the bytes.
 static const uvec8 kShuffleUVToVU = {1u, 0u, 3u,  2u,  5u,  4u,  7u,  6u,
                                      9u, 8u, 11u, 10u, 13u, 12u, 15u, 14u};
+#endif
 
+#ifdef HAS_SWAPUVROW_SSSE3
 // Convert UV plane of NV12 to VU of NV21.
 void SwapUVRow_SSSE3(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
   asm volatile("movdqu      %3,%%xmm5                     \n"

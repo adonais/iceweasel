@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 config = {
-    "stage_platform": "android-geckoview-docs",
     "mozconfig_platform": "android-arm",
     "mozconfig_variant": "nightly-android-lints",
     # geckoview-docs doesn't produce a package. So don't collect package metrics.

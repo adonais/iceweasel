@@ -36,6 +36,7 @@ class AudioSink : private AudioStream::DataSource {
     double mVolume;
     double mPlaybackRate;
     bool mPreservesPitch;
+    nsString mStreamName;
   };
 
   AudioSink(AbstractThread* aThread, MediaQueue<AudioData>& aAudioQueue,

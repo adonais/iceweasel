@@ -71,7 +71,7 @@ struct FontInstanceData {
   float mSize;
   Maybe<FontInstanceOptions> mOptions;
   Maybe<FontInstancePlatformOptions> mPlatformOptions;
-  UniquePtr<gfx::FontVariation[]> mVariations;
+  UniquePtr<wr::FontVariation[]> mVariations;
   size_t mNumVariations;
   RefPtr<ScaledFont> mScaledFont;
 
@@ -203,7 +203,7 @@ void DeleteFontData(WrFontKey aKey) {
 void AddBlobFont(WrFontInstanceKey aInstanceKey, WrFontKey aFontKey,
                  float aSize, const FontInstanceOptions* aOptions,
                  const FontInstancePlatformOptions* aPlatformOptions,
-                 const FontVariation* aVariations, size_t aNumVariations) {
+                 const wr::FontVariation* aVariations, size_t aNumVariations) {
   StaticMutexAutoLock lock(sFontDataTableLock);
   auto i = sBlobFontTable.find(aInstanceKey);
   if (i == sBlobFontTable.end()) {
@@ -218,9 +218,9 @@ void AddBlobFont(WrFontInstanceKey aInstanceKey, WrFontKey aFontKey,
     }
     if (aNumVariations) {
       font.mNumVariations = aNumVariations;
-      font.mVariations.reset(new gfx::FontVariation[aNumVariations]);
+      font.mVariations.reset(new wr::FontVariation[aNumVariations]);
       PodCopy(font.mVariations.get(),
-              reinterpret_cast<const gfx::FontVariation*>(aVariations),
+              reinterpret_cast<const wr::FontVariation*>(aVariations),
               aNumVariations);
     }
   }

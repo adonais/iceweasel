@@ -266,6 +266,9 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
 
   // SVGTextFrame methods:
 
+  SVGBBox GetSubtreeBBox(const nsIFrame* aSubtree,
+                         const Matrix& aToBBoxUserspace, SVGBBoxFlags aFlags);
+
   /**
    * Handles a base or animated attribute value change to a descendant
    * text content element.

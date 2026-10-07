@@ -12,7 +12,7 @@ moz_asserts = "0.1"
 mozglue-static = { path = "../../../../mozglue/static/rust" }
 geckoservo = { path = "../../../../servo/ports/geckolib" }
 kvstore = { path = "../../../components/kvstore" }
-mp4parse_capi = { git = "https://github.com/mozilla/mp4parse-rust", rev = "215e238e633fa0df42cc25bfcf43a0f902692691", features = ["missing-pixi-permitted"] }
+mp4parse_capi = { git = "https://github.com/mozilla/mp4parse-rust", rev = "f0c80783227a1fb46f34cb04e10607045eac4297", features = ["missing-pixi-permitted"] }
 nserror = { path = "../../../../xpcom/rust/nserror" }
 nsstring = { path = "../../../../xpcom/rust/nsstring" }
 netwerk_helper = { path = "../../../../netwerk/base/rust-helper" }
@@ -49,7 +49,7 @@ bookmark_sync = { path = "../../../components/places/bookmark_sync", optional = 
 buildid_reader_ffi = { path = "../../buildid_reader/ffi" }
 chardetng_c = "1.0.0"
 audio_thread_priority = { version = "0.37", default-features = false }
-mdns_service = { path="../../../../dom/media/webrtc/transport/mdns_service", optional = true }
+mdns_service = { path="../../../../dom/media/webrtc/transport/mdns_service", features = ["profiler"], optional = true }
 neqo_glue = { path = "../../../../netwerk/socket/neqo_glue" }
 wgpu_bindings = { path = "../../../../gfx/wgpu_bindings" }
 fontations_glue = { path = "../../../../gfx/fontations_glue", optional = true }
@@ -75,6 +75,7 @@ gecko-profiler = { path = "../../../../tools/profiler/rust-api"}
 midir_impl = { path = "../../../../dom/midi/midir_impl", optional = true }
 dom = { path = "../../../../dom/base/rust" }
 dom_fragmentdirectives = { path="../../../../dom/base/fragmentdirectives" }
+dom_push = { path = "../../../../dom/push/rust" }
 dom_speculationrules = { path="../../../../dom/base/speculationrules" }
 origin-trials-ffi = { path = "../../../../dom/origin-trials/ffi" }
 jog = { path = "../../../components/glean/bindings/jog" }
@@ -91,6 +92,7 @@ data_storage = { path = "../../../../security/manager/ssl/data_storage" }
 ipcclientcerts = { path = "../../../../security/manager/ssl/ipcclientcerts" }
 lockstore_ffi = { path = "../../../../security/lockstore/lockstore_ffi" }
 mls_gk = { path = "../../../../security/mls/mls_gk" }
+noise = { path = "../../../../security/manager/ssl/noise" }
 pdf-trust-anchors = { path = "../../../../security/manager/ssl/pdf_trust_anchors" }
 qwac-trust-anchors = { path = "../../../../security/manager/ssl/qwac_trust_anchors" }
 trust-anchors = { path = "../../../../security/manager/ssl/trust_anchors" }
@@ -123,7 +125,7 @@ urlpattern = "0.6.0"
 urlpattern_glue = { path = "../../../../netwerk/base/urlpattern_glue" }
 uritemplate_glue = { path = "../../../../netwerk/base/uritemplate_glue" }
 
-adblock = { version = "0.12.1", features = ["full-regex-handling", "single-thread"], default-features = false }
+etp_engine = { path = "../../../components/content-classifier/etp_engine", features = ["full-regex-handling", "single-thread"], default-features = false }
 content_classifier_engine = { path = "../../../components/content-classifier/content_classifier_engine" }
 
 libz-rs-sys = { version = "0.6", features = ["custom-prefix"], optional = true }
@@ -145,7 +147,7 @@ webext-storage = "0.1"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 backgroundtaskregistrar = { path = "../../../../toolkit/components/taskscheduler/rust", optional = true }
-detect_win32k_conflicts = { path = "../../../xre/detect_win32k_conflicts" }
+win32_process_mitigations = { path = "../../../crashreporter/win32_process_mitigations" }
 widget_windows = { path = "../../../../widget/windows/rust" }
 shell_windows = { path = "../../../../browser/components/shell/rust/shell_windows", optional = true }
 
@@ -185,6 +187,7 @@ webrender_debugger = ["webrender_bindings/debugger"]
 shell_windows = ["dep:shell_windows"]
 backgroundtaskregistrar = ["dep:backgroundtaskregistrar"]
 enable_tests = ["shell_windows?/enable_tests"]
+noise_xpcom = ["noise/xpcom"]
 
 [lib]
 path = "lib.rs"

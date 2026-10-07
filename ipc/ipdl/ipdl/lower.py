@@ -4,7 +4,6 @@
 
 import itertools
 import re
-from collections import OrderedDict
 from copy import deepcopy
 
 import ipdl.ast
@@ -1600,7 +1599,7 @@ class _GenerateProtocolCode(ipdl.ast.Visitor):
         """Generate the definitions for all structs and unions. This will
         re-order the declarations if needed in the C++ code such that
         dependencies have already been defined."""
-        decls = OrderedDict()
+        decls = {}
         for su in tu.structsAndUnions:
             if isinstance(su, StructDecl):
                 which = "struct"
@@ -1652,13 +1651,13 @@ class _GenerateProtocolCode(ipdl.ast.Visitor):
         def gen_struct(deps, defn):
             for dep in deps:
                 if dep in decls:
-                    d, t = decls[dep]
-                    del decls[dep]
+                    d, t = decls.pop(dep)
                     gen_struct(d, t)
             self.hdrfile.addthings(defn)
 
-        while len(decls) > 0:
-            _, (d, t) = decls.popitem(False)
+        while decls:
+            first_k = next(iter(decls))
+            d, t = decls.pop(first_k)
             gen_struct(d, t)
 
     def visitProtocol(self, p):

@@ -122,6 +122,9 @@ class MockEnterprisePoliciesService final : public nsIEnterprisePolicies {
                                          bool*) override {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
+  NS_IMETHOD GetContainerForURI(nsIURI*, uint32_t*) override {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
 };
 
 NS_IMPL_ISUPPORTS(MockEnterprisePoliciesService, nsIEnterprisePolicies)

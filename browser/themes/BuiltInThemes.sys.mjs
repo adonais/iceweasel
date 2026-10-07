@@ -54,8 +54,7 @@ class _BuiltInThemes {
   }
 
   /**
-   * Ensures that all built-in themes are installed and expired themes are
-   * uninstalled.
+   * Ensures that all built-in themes are installed.
    */
   async ensureBuiltInThemes() {
     let installPromises = [];

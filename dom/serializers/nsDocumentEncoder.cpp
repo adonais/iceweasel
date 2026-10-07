@@ -26,6 +26,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/ProcessingInstruction.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/Text.h"
@@ -49,7 +50,6 @@
 #include "nsITransferable.h"
 #include "nsLayoutUtils.h"
 #include "nsMimeTypes.h"
-#include "nsRange.h"
 #include "nsReadableUtils.h"
 #include "nsTArray.h"
 #include "nsUnicharUtils.h"
@@ -177,7 +177,7 @@ class EncodingScope {
   bool IsLimited() const;
 
   RefPtr<Selection> mSelection;
-  RefPtr<nsRange> mRange;
+  RefPtr<dom::Range> mRange;
   nsCOMPtr<nsINode> mNode;
   bool mNodeIsContainer = false;
 };
@@ -440,7 +440,7 @@ class nsDocumentEncoder : public nsIDocumentEncoder {
      * @param aDepth the distance (number of `GetParent` calls) from aNode to
      *               aRange's closest common inclusive ancestor.
      */
-    nsresult SerializeRangeNodes(const nsRange* aRange, nsINode* aNode,
+    nsresult SerializeRangeNodes(const dom::Range* aRange, nsINode* aNode,
                                  int32_t aDepth);
 
     /**
@@ -452,10 +452,10 @@ class nsDocumentEncoder : public nsIDocumentEncoder {
     [[nodiscard]] nsresult SerializeChildrenOfContent(nsIContent& aContent,
                                                       uint32_t aStartOffset,
                                                       uint32_t aEndOffset,
-                                                      const nsRange* aRange,
+                                                      const dom::Range* aRange,
                                                       int32_t aDepth);
 
-    nsresult SerializeRangeToString(const nsRange* aRange);
+    nsresult SerializeRangeToString(const dom::Range* aRange);
 
     /**
      * https://dom.spec.whatwg.org/#concept-tree-inclusive-ancestor.
@@ -482,11 +482,11 @@ class nsDocumentEncoder : public nsIDocumentEncoder {
 
     nsresult SerializeNodePartiallyContainedInRange(
         nsIContent& aContent, const StartAndEndContent& aStartAndEndContent,
-        const nsRange& aRange, int32_t aDepth);
+        const dom::Range& aRange, int32_t aDepth);
 
     nsresult SerializeTextNode(nsIContent& aContent,
                                const StartAndEndContent& aStartAndEndContent,
-                               const nsRange& aRange) const;
+                               const dom::Range& aRange) const;
 
     RangeBoundariesInclusiveAncestorsAndOffsets
         mRangeBoundariesInclusiveAncestorsAndOffsets;
@@ -585,7 +585,7 @@ nsresult nsDocumentEncoder::SerializeDependingOnScope(uint32_t aMaxLength) {
   nsresult rv = NS_OK;
   if (mEncodingScope.mSelection) {
     rv = SerializeSelection();
-  } else if (nsRange* range = mEncodingScope.mRange) {
+  } else if (dom::Range* range = mEncodingScope.mRange) {
     rv = mRangeSerializer.SerializeRangeToString(range);
   } else if (mEncodingScope.mNode) {
     rv = SerializeNode();
@@ -609,7 +609,7 @@ nsresult nsDocumentEncoder::SerializeSelection() {
   const uint32_t rangeCount = selection->RangeCount();
   for (const uint32_t i : IntegerRange(rangeCount)) {
     MOZ_ASSERT(selection->RangeCount() == rangeCount);
-    RefPtr<const nsRange> range = selection->GetRangeAt(i);
+    RefPtr<const dom::Range> range = selection->GetRangeAt(i);
 
     // Bug 236546: newlines not added when copying table cells into clipboard
     // Each selected cell shows up as a range containing a row with a single
@@ -757,7 +757,7 @@ nsDocumentEncoder::SetSelection(Selection* aSelection) {
 }
 
 NS_IMETHODIMP
-nsDocumentEncoder::SetRange(nsRange* aRange) {
+nsDocumentEncoder::SetRange(dom::Range* aRange) {
   mEncodingScope.mRange = aRange;
   return NS_OK;
 }
@@ -1096,7 +1096,7 @@ nsDocumentEncoder::RangeSerializer::GetStartAndEndContentForRecursionLevel(
 
 nsresult nsDocumentEncoder::RangeSerializer::SerializeTextNode(
     nsIContent& aContent, const StartAndEndContent& aStartAndEndContent,
-    const nsRange& aRange) const {
+    const dom::Range& aRange) const {
   const int32_t startOffset = (aStartAndEndContent.mStart == &aContent)
                                   ? ShadowDOMSelectionHelpers::StartOffset(
                                         &aRange, mAllowCrossShadowBoundary)
@@ -1109,7 +1109,8 @@ nsresult nsDocumentEncoder::RangeSerializer::SerializeTextNode(
 }
 
 nsresult nsDocumentEncoder::RangeSerializer::SerializeRangeNodes(
-    const nsRange* const aRange, nsINode* const aNode, const int32_t aDepth) {
+    const dom::Range* const aRange, nsINode* const aNode,
+    const int32_t aDepth) {
   MOZ_ASSERT(aDepth >= 0);
   MOZ_ASSERT(aRange);
 
@@ -1145,7 +1146,7 @@ nsresult nsDocumentEncoder::RangeSerializer::SerializeRangeNodes(
 nsresult
 nsDocumentEncoder::RangeSerializer::SerializeNodePartiallyContainedInRange(
     nsIContent& aContent, const StartAndEndContent& aStartAndEndContent,
-    const nsRange& aRange, const int32_t aDepth) {
+    const dom::Range& aRange, const int32_t aDepth) {
   // due to implementation it is impossible for text node to be both start and
   // end of range.  We would have handled that case without getting here.
   // XXXsmaug What does this all mean?
@@ -1235,7 +1236,7 @@ nsDocumentEncoder::RangeSerializer::SerializeNodePartiallyContainedInRange(
 
 nsresult nsDocumentEncoder::RangeSerializer::SerializeChildrenOfContent(
     nsIContent& aContent, uint32_t aStartOffset, uint32_t aEndOffset,
-    const nsRange* aRange, int32_t aDepth) {
+    const dom::Range* aRange, int32_t aDepth) {
   ShadowRoot* shadowRoot = ShadowDOMSelectionHelpers::GetShadowRoot(
       &aContent, mAllowCrossShadowBoundary);
   if (shadowRoot) {
@@ -1369,7 +1370,7 @@ bool nsDocumentEncoder::RangeSerializer::HasInvisibleParentAndShouldBeSkipped(
 }
 
 nsresult nsDocumentEncoder::RangeSerializer::SerializeRangeToString(
-    const nsRange* aRange) {
+    const dom::Range* aRange) {
   if (!aRange ||
       (aRange->Collapsed() &&
        (mAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::No ||
@@ -1640,7 +1641,7 @@ class nsHTMLCopyEncoder final : public nsDocumentEncoder {
                ? TreeKind::FlatForSelection
                : TreeKind::DOM;
   }
-  nsresult PromoteRange(nsRange* inRange);
+  nsresult PromoteRange(dom::Range* inRange);
 
   /**
    * Return a promoted start point which may be extended to a point at an
@@ -1780,7 +1781,7 @@ nsHTMLCopyEncoder::SetSelection(Selection* aSelection) {
   // We should be able to write this as "Find the common ancestor of the
   // selection, then go through the flattened tree and serialize the selected
   // nodes", effectively serializing the composed tree.
-  RefPtr<nsRange> range = aSelection->GetRangeAt(0);
+  RefPtr<dom::Range> range = aSelection->GetRangeAt(0);
   nsINode* commonParent = range->GetClosestCommonInclusiveAncestor();
 
   mIsTextWidget =
@@ -1818,7 +1819,7 @@ nsHTMLCopyEncoder::SetSelection(Selection* aSelection) {
     MOZ_ASSERT(aSelection->RangeCount() == rangeCount);
     range = aSelection->GetRangeAt(rangeIdx);
     NS_ENSURE_TRUE(range, NS_ERROR_FAILURE);
-    RefPtr<nsRange> myRange = range->CloneRange();
+    RefPtr<dom::Range> myRange = range->CloneRange();
     MOZ_ASSERT(myRange);
 
     // adjust range to include any ancestors who's children are entirely
@@ -1936,7 +1937,7 @@ bool nsHTMLCopyEncoder::RangeNodeContext::IncludeInContext(
       nsGkAtoms::h6);
 }
 
-nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
+nsresult nsHTMLCopyEncoder::PromoteRange(dom::Range* inRange) {
   if (!inRange->IsPositioned()) {
     return NS_ERROR_UNEXPECTED;
   }

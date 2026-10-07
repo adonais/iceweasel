@@ -81,12 +81,7 @@ LoginManagerCrypto_SDR.prototype = {
       }
     } finally {
       this._uiBusy = false;
-      // If we triggered a primary password prompt, notify observers.
-      if (!wasLoggedIn && this.isLoggedIn) {
-        this._notifyObservers("passwordmgr-crypto-login");
-      } else if (canceledMP) {
-        this._notifyObservers("passwordmgr-crypto-loginCanceled");
-      }
+      this._primaryPasswordPromptFinished(wasLoggedIn, canceledMP, "encrypt");
     }
     return cipherText;
   },
@@ -133,12 +128,7 @@ LoginManagerCrypto_SDR.prototype = {
       }
     } finally {
       this._uiBusy = false;
-      // If we triggered a primary password prompt, notify observers.
-      if (!wasLoggedIn && this.isLoggedIn) {
-        this._notifyObservers("passwordmgr-crypto-login");
-      } else if (canceledMP) {
-        this._notifyObservers("passwordmgr-crypto-loginCanceled");
-      }
+      this._primaryPasswordPromptFinished(wasLoggedIn, canceledMP, "encrypt");
     }
     return cipherTexts;
   },
@@ -188,12 +178,7 @@ LoginManagerCrypto_SDR.prototype = {
       }
     } finally {
       this._uiBusy = false;
-      // If we triggered a primary password prompt, notify observers.
-      if (!wasLoggedIn && this.isLoggedIn) {
-        this._notifyObservers("passwordmgr-crypto-login");
-      } else if (canceledMP) {
-        this._notifyObservers("passwordmgr-crypto-loginCanceled");
-      }
+      this._primaryPasswordPromptFinished(wasLoggedIn, canceledMP, "decrypt");
     }
 
     return plainText;
@@ -245,12 +230,7 @@ LoginManagerCrypto_SDR.prototype = {
       }
     } finally {
       this._uiBusy = false;
-      // If we triggered a primary password prompt, notify observers.
-      if (!wasLoggedIn && this.isLoggedIn) {
-        this._notifyObservers("passwordmgr-crypto-login");
-      } else if (canceledMP) {
-        this._notifyObservers("passwordmgr-crypto-loginCanceled");
-      }
+      this._primaryPasswordPromptFinished(wasLoggedIn, canceledMP, "decrypt");
     }
     return plainTexts;
   },
@@ -277,6 +257,49 @@ LoginManagerCrypto_SDR.prototype = {
    */
   get defaultEncType() {
     return Ci.nsILoginManagerCrypto.ENCTYPE_SDR;
+  },
+
+  /**
+   * Wraps up an SDR operation that may have prompted the user for their
+   * primary password, notifying observers and recording telemetry if it did.
+   *
+   * @param {boolean} wasLoggedIn
+   *        Whether the token was already unlocked when the operation started.
+   * @param {boolean} canceledMP
+   *        Whether the operation failed because the user dismissed the prompt.
+   * @param {string} operation
+   *        The operation that needed the key, "encrypt" or "decrypt".
+   */
+  _primaryPasswordPromptFinished(wasLoggedIn, canceledMP, operation) {
+    // A locked token always prompts, and a cancellation can only come from a
+    // prompt. NSS retries a wrong password without telling us, so a single
+    // event can stand for more than one dialog. Returning here also keeps the
+    // unlocked path from asking the token for its state.
+    if (wasLoggedIn && !canceledMP) {
+      return;
+    }
+
+    let isLoggedIn = this.isLoggedIn;
+
+    // If we triggered a primary password prompt, notify observers.
+    if (!wasLoggedIn && isLoggedIn) {
+      this._notifyObservers("passwordmgr-crypto-login");
+    } else if (canceledMP) {
+      this._notifyObservers("passwordmgr-crypto-loginCanceled");
+    }
+
+    let result = "error";
+    if (isLoggedIn) {
+      result = "success";
+    } else if (canceledMP) {
+      result = "cancel";
+    }
+
+    Glean.pwmgr.primaryPasswordPrompt.record({
+      source: "crypto_sdr",
+      trigger: operation,
+      result,
+    });
   },
 
   /*

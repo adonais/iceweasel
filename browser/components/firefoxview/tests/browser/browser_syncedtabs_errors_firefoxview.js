@@ -398,16 +398,6 @@ add_task(async function test_multiple_errors() {
       "Password locked message is shown"
     );
 
-    const errorLink = syncedTabsComponent.emptyState.shadowRoot.querySelector(
-      "a[data-l10n-name=syncedtab-password-locked-link]"
-    );
-    if (!isNovaEnabled) {
-      ok(
-        errorLink && BrowserTestUtils.isVisible(errorLink),
-        "Error link is visible"
-      );
-    }
-
     // Clear the primary password error message
     await LoginTestUtils.primaryPassword.disable();
     Services.obs.notifyObservers(null, UIState.ON_UPDATE);
@@ -421,13 +411,6 @@ add_task(async function test_multiple_errors() {
         syncedTabsComponent.emptyState.getAttribute("headerlabel") ===
         SYNC_ERROR_HEADER_L10N_ID
     );
-
-    if (!isNovaEnabled) {
-      ok(
-        errorLink && BrowserTestUtils.isHidden(errorLink),
-        "Error link is now hidden"
-      );
-    }
 
     // Clear the sync error
     Services.obs.notifyObservers(null, "weave:service:sync:finish");

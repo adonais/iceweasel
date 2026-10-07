@@ -129,6 +129,24 @@ geolocation:
     notification_emails:
       - daparks@mozilla.com
     expires: never
+  network_link_change:
+    type: labeled_counter
+    description: >
+      How many network:link-status-changed notifications, by notification, the
+      NetworkGeolocationProvider request cache saw after it first cached a
+      position.
+    labels:
+      - up
+      - down
+      - changed
+      - unknown
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2060572
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2060572
+    notification_emails:
+      - daparks@mozilla.com
+    expires: never
   geolocation_cache_hit:
     type: labeled_counter
     description: >

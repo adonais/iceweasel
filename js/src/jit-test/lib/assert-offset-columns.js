@@ -39,14 +39,14 @@ function assertOffsetColumns(code, expectedBpts, expectedOrdering = null) {
     }
 
     const { script } = debuggeeFn;
-    for (const offset of script.getAllColumnOffsets()) {
-        assertEq(offset.lineNumber, 1);
-        assertEq(offset.columnNumber <= execCode.length, true);
-        bpts.add(offset.columnNumber);
+    for (const bp of script.getPossibleBreakpoints()) {
+        assertEq(bp.lineNumber, 1);
+        assertEq(bp.columnNumber <= execCode.length, true);
+        bpts.add(bp.columnNumber);
 
-        script.setBreakpoint(offset.offset, {
+        script.setBreakpoint(bp.offset, {
             hit(frame) {
-                hits.push(offset.columnNumber);
+                hits.push(bp.columnNumber);
             },
         });
     }

@@ -42,14 +42,14 @@ avoid-blacklist-and-whitelist:
         - browser/app/winlauncher/LauncherProcessWin.cpp
         - browser/base/content/browser.js
         - browser/base/content/contentTheme.js
-        - browser/base/content/test/performance/browser_preferences_usage.js
-        - browser/base/content/test/protectionsUI/browser_protectionsUI_cryptominers.js
-        - browser/base/content/test/protectionsUI/browser_protectionsUI_fingerprinters.js
-        - browser/base/content/test/protectionsUI/browser_protectionsUI_pbmode_exceptions.js
-        - browser/base/content/test/protectionsUI/browser_protectionsUI_socialtracking.js
-        - browser/base/content/test/protectionsUI/browser_protectionsUI_state.js
-        - browser/base/content/test/protectionsUI/browser_protectionsUI_subview_shim.js
-        - browser/base/content/test/siteIdentity/browser_no_mcb_for_loopback.js
+        - browser/base/content/test/browser-performance/browser_preferences_usage.js
+        - browser/base/content/test/browser-protectionsUI/browser_protectionsUI_cryptominers.js
+        - browser/base/content/test/browser-protectionsUI/browser_protectionsUI_fingerprinters.js
+        - browser/base/content/test/browser-protectionsUI/browser_protectionsUI_pbmode_exceptions.js
+        - browser/base/content/test/browser-protectionsUI/browser_protectionsUI_socialtracking.js
+        - browser/base/content/test/browser-protectionsUI/browser_protectionsUI_state.js
+        - browser/base/content/test/browser-protectionsUI/browser_protectionsUI_subview_shim.js
+        - browser/base/content/test/browser-siteIdentity/browser_no_mcb_for_loopback.js
         - browser/components/enterprisepolicies/Policies.sys.mjs
         - browser/components/migration/ChromeMigrationUtils.sys.mjs
         - browser/components/migration/ChromeProfileMigrator.sys.mjs

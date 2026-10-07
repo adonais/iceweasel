@@ -15,7 +15,7 @@
 
 namespace mozilla::dom {
 
-static_assert(SNAPPY_VERSION == 0x010202);
+static_assert(SNAPPY_VERSION == 0x010300);
 
 bool SnappyCompress(const nsACString& aSource, nsACString& aDest) {
   MOZ_ASSERT(!aSource.IsVoid());

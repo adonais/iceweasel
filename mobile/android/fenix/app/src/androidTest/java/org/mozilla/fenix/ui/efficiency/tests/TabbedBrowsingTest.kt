@@ -5,6 +5,7 @@
 package org.mozilla.fenix.ui.efficiency.tests
 
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.Constants
 import org.mozilla.fenix.helpers.MockBrowserDataHelper
@@ -190,8 +191,9 @@ class TabbedBrowsingTest : BaseTest() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4162826
+    @Critical
     @Test
-    fun verifyAddingTabToExistingGroupWhenGroupExistsTest() {
+    fun verifyAddingTabToExistingGroupViaSelectionTest() {
         val tabGroupTitle = "Mozilla"
         val tabGroupColor = "Grey"
 

@@ -180,7 +180,7 @@ class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
   friend MustConsumeMicroTask DequeueNextDebuggerMicroTask(JSContext* aCx);
 
   ~MustConsumeMicroTask() override {
-    if (!mMicroTask.isUndefined()) {
+    if (!IsConsumed()) {
       MOZ_CRASH("Didn't consume MicroTask");
     }
   }
@@ -190,12 +190,17 @@ class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
   MustConsumeMicroTask& operator=(const MustConsumeMicroTask&) = delete;
   MustConsumeMicroTask(MustConsumeMicroTask&& other)
       : MayConsumeMicroTask(other.mMicroTask) {
-    other.mMicroTask.setUndefined();
+    other.markAsConsumed();
   }
   MustConsumeMicroTask& operator=(MustConsumeMicroTask&& other) noexcept {
+    // We musn't clobber an unconsumed value.
+    MOZ_ASSERT(this->IsConsumed());
+
     if (this != &other) {
       mMicroTask = other.mMicroTask;
-      other.mMicroTask.setUndefined();
+
+      // We've stolen the value, so the other can be marked as consumed.
+      other.markAsConsumed();
     }
     return *this;
   }
@@ -225,7 +230,7 @@ class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
   // execution is disallowed during CallSetup
   void IgnoreJSMicroTask() {
     MOZ_ASSERT(IsJSMicroTask());
-    mMicroTask.setUndefined();
+    markAsConsumed();
   }
 
   // Consume this by prepending this MustConsumeMicroTask back into
@@ -236,7 +241,7 @@ class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
       // Can't lose tasks.
       NS_ABORT_OOM(0);
     }
-    mMicroTask.setUndefined();
+    markAsConsumed();
   }
 
   bool RunAndConsumeJSMicroTask(JSContext* aCx) {
@@ -245,13 +250,16 @@ class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
         aCx, JS::ToMaybeWrappedJSMicroTask(mMicroTask));
     MOZ_ASSERT(task);
     bool v = JS::RunJSMicroTask(aCx, task);
-    mMicroTask.setUndefined();
+    markAsConsumed();
     return v;
   }
 
  private:
   explicit MustConsumeMicroTask(JS::GenericMicroTask aMicroTask)
       : MayConsumeMicroTask(aMicroTask) {}
+
+  // Used to mark a task as consumed during internal operations
+  void markAsConsumed() { mMicroTask.setUndefined(); }
 };
 
 // To allow using the same accessors for data as MustConsumeMicroTask
@@ -334,10 +342,10 @@ class FinalizationRegistryCleanup {
   JS::PersistentRooted<CallbackVector> mCallbacks;
 };
 
-bool EnqueueMicroTask(JSContext* aCx,
-                      already_AddRefed<MicroTaskRunnable> aRunnable);
-bool EnqueueDebugMicroTask(JSContext* aCx,
-                           already_AddRefed<MicroTaskRunnable> aRunnable);
+[[nodiscard]] bool EnqueueMicroTask(
+    JSContext* aCx, already_AddRefed<MicroTaskRunnable> aRunnable);
+[[nodiscard]] bool EnqueueDebugMicroTask(
+    JSContext* aCx, already_AddRefed<MicroTaskRunnable> aRunnable);
 
 MustConsumeMicroTask DequeueNextMicroTask(JSContext* aCx);
 MustConsumeMicroTask DequeueNextRegularMicroTask(JSContext* aCx);

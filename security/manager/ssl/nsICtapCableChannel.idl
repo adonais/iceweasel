@@ -1,0 +1,80 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#include "nsISupports.idl"
+
+/**
+ * CTAP caBLE/Hybrid post-handshake interface.
+ *
+ * Messages must be decrypted in the same order that they were encrypted.
+ *
+ * https://fidoalliance.org/specs/fido-v2.3-ps-20260226/fido-client-to-authenticator-protocol-v2.3-ps-20260226.html#sctn-hybrid
+ * https://noiseprotocol.org/noise.html#the-cipherstate-object
+ * https://noiseprotocol.org/noise.html#the-symmetricstate-object
+ */
+
+[scriptable, uuid(44147a85-3d83-4fa5-b165-bb1f334b1ea4)]
+interface nsICtapCableChannel : nsISupports
+{
+    /**
+     * `true` if this channel has been initialized with decryption and
+     * encryption keys.
+     */
+    readonly attribute boolean hasKeys;
+
+    /**
+     * Intialize this channel with new decryption and encryption keys (derived
+     * from a Noise handshake), and reset both nonces to 0.
+     *
+     * Both keys must be exactly 32 bytes long.
+     */
+    void initializeKeys(
+        in Array<octet> aDecryptKey,
+        in Array<octet> aEncryptKey
+    );
+
+    /**
+     * Encrypt plaintext using this channel's encryption key, and increment the
+     * encryption nonce.
+     *
+     * Returns an error if the channel does not have encryption keys.
+     */
+    Array<octet> encrypt(in Array<octet> aPlainText);
+
+    /**
+     * Decrypt ciphertext using this channel's decryption key and nonce. On
+     * successful decryption, increment the decryption nonce.
+     *
+     * Returns an error if the channel does not have decryptionkeys, or the data
+     * cannot be decrypted.
+     */
+    Array<octet> decrypt(in Array<octet> aCipherText);
+};
+
+
+[scriptable, uuid(158a8333-a0ae-487b-ae1c-48fab5be8cd9)]
+interface nsICtapCableInitiator : nsICtapCableChannel {
+    /**
+     * Handshake hash, used for Noise channel binding.
+     *
+     * <https://noiseprotocol.org/noise.html#channel-binding>
+     */
+    readonly attribute Array<octet> handshakeHash;
+};
+
+
+[scriptable, uuid(2dbfbc2d-33ac-4573-963e-5cdf3d5a93ba)]
+interface nsICtapCableResponder : nsICtapCableChannel {
+    /**
+     * Handshake hash, used for Noise channel binding.
+     *
+     * <https://noiseprotocol.org/noise.html#channel-binding>
+     */
+    readonly attribute Array<octet> handshakeHash;
+
+    /**
+     * Response message to send to the initiator to complete the handshake.
+     */
+    readonly attribute Array<octet> responseMessage;
+};

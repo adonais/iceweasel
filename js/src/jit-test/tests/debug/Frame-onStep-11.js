@@ -21,11 +21,11 @@ var dbg = Debugger(g);
 let foundLines = '';
 
 dbg.onDebuggerStatement = function(frame) {
-  let debugLine = frame.script.getOffsetLocation(frame.offset).lineNumber;
+  let debugLine = frame.script.getOffsetMetadata(frame.offset).lineNumber;
   frame.onStep = function() {
-    // Only record a stop when the offset is an entry point.
-    let foundLine = this.script.getOffsetLocation(this.offset).lineNumber;
-    if (foundLine != debugLine && this.script.getLineOffsets(foundLine).indexOf(this.offset) >= 0) {
+    // Only record a stop when the offset is a recommended breakpoint.
+    let foundLine = this.script.getOffsetMetadata(this.offset).lineNumber;
+    if (foundLine != debugLine && this.script.getPossibleBreakpointOffsets({ line: foundLine }).indexOf(this.offset) >= 0) {
       foundLines += "," + (foundLine - debugLine);
     }
   };
@@ -33,4 +33,6 @@ dbg.onDebuggerStatement = function(frame) {
 
 g.f();
 
-assertEq(foundLines, ",1,2,3,4,5,6,7,8,10,11");
+// try/catch/finally headers (+2/+5/+7) have no recommended breakpoint
+// locations, so stepping no longer reports stops on them.
+assertEq(foundLines, ",1,3,4,6,8,10,11");

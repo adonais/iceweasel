@@ -68,9 +68,9 @@ class AppDateTimeFormat {
 
   static void Shutdown();
 
- private:
   AppDateTimeFormat() = delete;
 
+ private:
   static nsresult Initialize();
   static void DeleteCache();
   static const size_t kMaxCachedFormats = 15;

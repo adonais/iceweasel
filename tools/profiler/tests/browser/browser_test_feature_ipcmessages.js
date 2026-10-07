@@ -48,8 +48,13 @@ add_task(async function test_profile_feature_ipcmessges() {
       const { parentThread, contentThread } =
         await waitSamplingAndStopProfilerAndGetThreads(contentPid);
 
+      const parentPayloads = ProfilerTestUtils.getPayloadsOfType(
+        parentThread,
+        "IPC"
+      );
+
       Assert.greater(
-        ProfilerTestUtils.getPayloadsOfType(parentThread, "IPC").length,
+        parentPayloads.length,
         0,
         "IPC profile markers were recorded for the parent process' main " +
           "thread when the IPCMessages feature was turned on."
@@ -61,6 +66,44 @@ add_task(async function test_profile_feature_ipcmessges() {
         "IPC profile markers were recorded for the content process' main " +
           "thread when the IPCMessages feature was turned on."
       );
+
+      info(
+        "Check the payload shape, which profiler.firefox.com reads with its " +
+          "own dedicated code rather than through the marker schema."
+      );
+      for (const payload of parentPayloads) {
+        Assert.equal(typeof payload.startTime, "number", "startTime is a time");
+        Assert.equal(typeof payload.endTime, "number", "endTime is a time");
+        Assert.equal(typeof payload.otherPid, "number", "otherPid is a number");
+        Assert.equal(
+          typeof payload.messageSeqno,
+          "number",
+          "messageSeqno is a number"
+        );
+        // The strings below have to be inline strings rather than unique
+        // string indices, as the front-end reads them off the raw payload.
+        Assert.equal(
+          typeof payload.messageType,
+          "string",
+          "messageType is a string"
+        );
+        Assert.ok(
+          ["parent", "child", "unknown"].includes(payload.side),
+          `side is a known value, got ${payload.side}`
+        );
+        Assert.ok(
+          ["sending", "receiving"].includes(payload.direction),
+          `direction is a known value, got ${payload.direction}`
+        );
+        Assert.ok(
+          ["endpoint", "transferStart", "transferEnd"].includes(payload.phase),
+          `phase is a known value, got ${payload.phase}`
+        );
+        Assert.equal(typeof payload.sync, "boolean", "sync is a boolean");
+        if ("threadId" in payload) {
+          Assert.equal(typeof payload.threadId, "number", "threadId is a tid");
+        }
+      }
     }
   });
 

@@ -9,7 +9,7 @@
       "channel": "release",
       "userFacingName": "Address bar focus mode - Android",
       "userFacingDescription": "Address bar focus mode",
-      "isEnrollmentPaused": false,
+      "isEnrollmentPaused": true,
       "isRollout": false,
       "bucketConfig": {
         "randomizationUnit": "nimbus_id",

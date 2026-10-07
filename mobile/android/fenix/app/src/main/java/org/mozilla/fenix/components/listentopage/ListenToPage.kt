@@ -15,6 +15,7 @@ import mozilla.components.feature.listentopage.content.ContentProvider
 import mozilla.components.feature.listentopage.listenReducer
 import mozilla.components.feature.listentopage.playback.DirectoryAudioFileCache
 import mozilla.components.feature.listentopage.playback.ListenPlaybackController
+import mozilla.components.feature.listentopage.settings.ListenSettings
 import mozilla.components.feature.listentopage.synthesis.SpeechSynthesizer
 
 /**
@@ -38,6 +39,7 @@ class ListenToPage(
             middleware =
                 listOf(
                     ListenMiddleware(
+                        browserStore = browserStore,
                         contentProvider =
                             ContentProvider.fromPage(
                                 pageContentExtractor = pageExtractor,
@@ -50,6 +52,7 @@ class ListenToPage(
                         },
                         audioCache = audioCache,
                         playbackController = ListenPlaybackController(context, scope),
+                        settings = ListenSettings.dataStore(context),
                         scope = scope,
                     )
                 ),

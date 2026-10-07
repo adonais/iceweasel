@@ -11,6 +11,7 @@
 #include "gfxRect.h"
 #include "harfbuzz/hb.h"
 #include "mozilla/EndianUtils.h"
+#include "mozilla/FileUtils.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MemoryReporting.h"
@@ -388,6 +389,11 @@ gfxFontEntry* gfxDWriteFontEntry::Clone() const {
 gfxDWriteFontEntry::~gfxDWriteFontEntry() {
   auto* cache = mFontTableCache.exchange(nullptr);
   delete cache;
+#if MOZ_FONTATIONS
+  if (mFragmentContext) {
+    mFontFileStream->ReleaseFileFragment(mFragmentContext);
+  }
+#endif
 }
 
 static bool UsingArabicOrHebrewScriptSystemLocale() {
@@ -699,6 +705,93 @@ void gfxDWriteFontEntry::GetVariationInstancesInternal(
   gfxFontUtils::GetVariationData(this, nullptr, &aInstances);
 }
 
+#if MOZ_FONTATIONS
+void gfxDWriteFontEntry::InitSkrifaFontFace() {
+  RefPtr<IDWriteFontFace> face;
+  {
+    AutoReadLock lock(mLock);
+    face = mFontFace;
+  }
+  if (!face) {
+    if (!mFont || FAILED(mFont->CreateFontFace(getter_AddRefs(face)))) {
+      return;
+    }
+  }
+  uint32_t count = 0;
+  if (FAILED(face->GetFiles(&count, nullptr)) || count != 1) {
+    return;
+  }
+  RefPtr<IDWriteFontFile> file;
+  if (FAILED(face->GetFiles(&count, getter_AddRefs(file))) || count != 1) {
+    return;
+  }
+  const void* key = nullptr;
+  uint32_t keySize = 0;
+  if (FAILED(file->GetReferenceKey(&key, &keySize))) {
+    return;
+  }
+  RefPtr<IDWriteFontFileLoader> loader;
+  if (FAILED(file->GetLoader(getter_AddRefs(loader)))) {
+    return;
+  }
+  RefPtr<IDWriteLocalFontFileLoader> local;
+  loader->QueryInterface(__uuidof(IDWriteLocalFontFileLoader),
+                         (void**)getter_AddRefs(local));
+  while (local) {
+    // We have a local file path; attempt to memmap it. If this fails, |break|
+    // to fall back to stream access.
+    uint32_t length = 0;
+    if (FAILED(local->GetFilePathLengthFromKey(key, keySize, &length))) {
+      break;
+    }
+    nsAutoString path;
+    path.SetLength(length);
+    if (FAILED(local->GetFilePathFromKey(
+            key, keySize, (WCHAR*)path.BeginWriting(), length + 1))) {
+      break;
+    }
+    AutoFDClose fd(PR_Open(NS_ConvertUTF16toUTF8(path).get(), PR_RDONLY, 0));
+    MemoryMappedFile mappedFile = MemoryMappedFile::Open(fd.get());
+    if (!mappedFile.IsValid()) {
+      break;
+    }
+    const uint8_t* const data = static_cast<const uint8_t*>(mappedFile.Data());
+    const size_t size = mappedFile.Size();
+    if (auto* skf = skrifa_font_new_from_index(data, size, face->GetIndex())) {
+      SetSkrifaFont(skf, std::move(mappedFile));
+    }
+    return;
+  }
+  // No local file, or failed to open/mmap it. Get a reference to the entire
+  // font data.
+  RefPtr<IDWriteFontFileStream> stream;
+  if (FAILED(
+          loader->CreateStreamFromKey(key, keySize, getter_AddRefs(stream)))) {
+    return;
+  }
+  uint64_t fileSize;
+  if (FAILED(stream->GetFileSize(&fileSize)) || !fileSize ||
+      fileSize > std::numeric_limits<size_t>::max()) {
+    return;
+  }
+  const void* data = nullptr;
+  void* fragmentContext = nullptr;
+  if (FAILED(stream->ReadFileFragment(&data, 0, fileSize, &fragmentContext))) {
+    return;
+  }
+  if (data) {
+    if (auto* skf = skrifa_font_new_from_index(
+            static_cast<const uint8_t*>(data), fileSize, face->GetIndex())) {
+      if (SetSkrifaFont(skf)) {
+        // Hold a reference to the stream, so that the data remains live.
+        mFontFileStream = stream;
+        mFragmentContext = fragmentContext;
+      }
+    }
+  }
+}
+#endif
+
 gfxFont* gfxDWriteFontEntry::CreateFontInstance(
     const gfxFontStyle* aFontStyle) {
   // We use the DirectWrite bold simulation for installed fonts, but NOT for
@@ -810,8 +903,8 @@ nsresult gfxDWriteFontEntry::CreateFontFace(
           if (SUCCEEDED(hr) && resource) {
             AutoTArray<DWRITE_FONT_AXIS_VALUE, 4> fontAxisValues;
             for (const auto& v : mVariationSettings) {
-              DWRITE_FONT_AXIS_VALUE axisValue = {makeDWriteAxisTag(v.mTag),
-                                                  v.mValue};
+              DWRITE_FONT_AXIS_VALUE axisValue = {makeDWriteAxisTag(v.tag),
+                                                  v.value};
               fontAxisValues.AppendElement(axisValue);
             }
             resource->CreateFontFace(
@@ -838,8 +931,8 @@ nsresult gfxDWriteFontEntry::CreateFontFace(
         // Copy variation settings to DWrite's type.
         if (aVariations) {
           for (const auto& v : *aVariations) {
-            DWRITE_FONT_AXIS_VALUE axisValue = {makeDWriteAxisTag(v.mTag),
-                                                v.mValue};
+            DWRITE_FONT_AXIS_VALUE axisValue = {makeDWriteAxisTag(v.tag),
+                                                v.value};
             fontAxisValues.AppendElement(axisValue);
           }
         }
@@ -955,8 +1048,10 @@ void gfxDWriteFontEntry::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
 size_t gfxDWriteFontEntry::ComputedSizeOfExcludingThis(
     mozilla::MallocSizeOf aMallocSizeOf) {
   size_t result = gfxFontEntry::ComputedSizeOfExcludingThis(aMallocSizeOf);
-  if (mFontFileStream) {
-    result += mFontFileStream->SizeOfExcludingThis(aMallocSizeOf);
+  if (mFontFileStream && mIsDataUserFont) {
+    auto* stream =
+        reinterpret_cast<gfxDWriteFontFileStream*>(mFontFileStream.get());
+    result += stream->SizeOfExcludingThis(aMallocSizeOf);
   }
   return result;
 }

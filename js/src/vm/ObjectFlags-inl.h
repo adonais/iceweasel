@@ -38,7 +38,7 @@ GetObjectFlagsForNewProperty(const JSClass* clasp, ObjectFlags flags, jsid id,
     // class has a resolve hook which could lazily define a non-configurable
     // non-writable property. We can just look this up directly though in the
     // JIT.
-    if (propFlags.isDataProperty() && !propFlags.writable()) {
+    if (propFlags.isDataDescriptor() && !propFlags.writable()) {
       flags.setFlag(ObjectFlag::NeedsProxyGetSetResultValidation);
     } else if (propFlags.isAccessorProperty()) {
       // This will cover us for both get trap validation and set trap

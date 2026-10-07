@@ -28,7 +28,7 @@ using mozilla::security::lockstore::LockstoreService;
 // Name of the disk cache's data encryption key in the profile keystore, and
 // the identifier of the "local" KEK wrapping it.
 static constexpr auto kDekName = "httpcache"_ns;
-static constexpr auto kKekIdentifier = "profileEncryption"_ns;
+static constexpr auto kKekIdentifier = "profile"_ns;
 
 // Written on the cache I/O thread when the key load finishes, and on the main
 // thread at lifecycle boundaries (InitForTesting/Shutdown), so every access
@@ -212,18 +212,17 @@ already_AddRefed<CacheCrypto> CacheCrypto::LoadFromKeystore(
     return nullptr;
   }
 
-  // Mint the DEK on first use only: asking for one that already exists is an
-  // error the keystore logs, and after the first run that would be every
-  // startup.
-  auto deks = aLockstore->DoListDeks();
-  if (deks.isErr()) {
-    LOG(("CacheCrypto::LoadFromKeystore() - could not list DEKs [rv=%" PRIx32
-         "]",
-         static_cast<uint32_t>(deks.unwrapErr())));
-    return nullptr;
-  }
+  auto dek = aLockstore->DoGetDek(kDekName, kekRef.inspect());
+  if (dek.isErr()) {
+    // No DEK yet, or one we cannot read -- a DEK wrapped under a KEK this code
+    // no longer asks for is out of reach for good, since the kek_ref is what
+    // the keystore looks it up by. Replace it rather than leave the pref on
+    // with no cipher, which fails every new entry closed; entries written
+    // under the old key reinitialize themselves once their metadata fails to
+    // decrypt. The delete is needed because a DEK cannot be created over an
+    // existing one.
+    (void)aLockstore->DoDeleteDek(kDekName);
 
-  if (!deks.inspect().Contains(kDekName)) {
     // Extractable: the cache does its own AES-GCM per block, binding the block
     // number as AAD, which the keystore's blob-oriented encrypt() cannot
     // express.
@@ -231,14 +230,15 @@ already_AddRefed<CacheCrypto> CacheCrypto::LoadFromKeystore(
                                           /* aExtractable */ true, kKeyLength);
     if (NS_FAILED(rv)) {
       LOG(
-          ("CacheCrypto::LoadFromKeystore() - could not mint the DEK "
+          ("CacheCrypto::LoadFromKeystore() - could not create the DEK "
            "[rv=%" PRIx32 "]",
            static_cast<uint32_t>(rv)));
       return nullptr;
     }
+
+    dek = aLockstore->DoGetDek(kDekName, kekRef.inspect());
   }
 
-  auto dek = aLockstore->DoGetDek(kDekName, kekRef.inspect());
   if (dek.isErr()) {
     LOG(("CacheCrypto::LoadFromKeystore() - could not read the DEK [rv=%" PRIx32
          "]",

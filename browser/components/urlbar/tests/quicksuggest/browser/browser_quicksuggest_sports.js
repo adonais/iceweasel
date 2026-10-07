@@ -840,12 +840,22 @@ async function doOneTest({ expectedItems }) {
             "Child element should have expected attribute: " +
               JSON.stringify({ childName, attr })
           );
-          Assert.equal(
-            child.getAttribute(attr),
-            value,
-            "Child element attribute should have expected value: " +
-              JSON.stringify({ childName, attr })
-          );
+
+          if (childNamePrefix.endsWith("image")) {
+            UrlbarTestUtils.checkImageUrl(
+              child.getAttribute(attr),
+              UrlbarTestUtils.makeMozRemoteImageUrl(value),
+              "Child image attribute should have expected value: " +
+                JSON.stringify({ childName, attr })
+            );
+          } else {
+            Assert.equal(
+              child.getAttribute(attr),
+              value,
+              "Child element attribute should have expected value: " +
+                JSON.stringify({ childName, attr })
+            );
+          }
         }
       }
 

@@ -1,0 +1,31 @@
+[package]
+name = "noise"
+version = "0.1.0"
+edition = "2021"
+rust-version.workspace = true
+license = "MPL-2.0"
+description = "Implements a subset of Noise protocol used by the CTAP caBLE/Hybrid transport."
+
+[features]
+xpcom = [
+    "dep:nserror",
+    "dep:thin-vec",
+    "dep:xpcom",
+]
+
+[dependencies]
+libc = "0.2"
+nserror = { path = "../../../../xpcom/rust/nserror", optional = true }
+sha2 = "0.10.2"
+thin-vec = { version = "0.2.1", features = ["gecko-ffi"], optional = true }
+thiserror = "2"
+xpcom = { path = "../../../../xpcom/rust/xpcom", optional = true }
+
+[dependencies.nss-rs]
+git = "https://github.com/mozilla/nss-rs"
+version = "0.14"
+default-features = false
+features = ["gecko"]
+
+[build-dependencies]
+mozbuild = { path = "../../../../build/rust/mozbuild" }

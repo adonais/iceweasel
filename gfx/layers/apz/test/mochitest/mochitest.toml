@@ -43,6 +43,7 @@ skip-if = [
 skip-if = [
   "http2",
   "http3",
+  "os == 'android' && ccov", # times out, bug 2070393
 ]
 
 ["test_group_displayport-2.html"]

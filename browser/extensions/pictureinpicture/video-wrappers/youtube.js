@@ -99,6 +99,21 @@ class PictureInPictureVideoWrapper {
     }
     return video.volume;
   }
+
+  setPlaybackRate(video, playbackRate) {
+    if (this.player) {
+      this.player.setPlaybackRate(playbackRate);
+    } else {
+      video.playbackRate = playbackRate;
+    }
+  }
+
+  getPlaybackRate(video) {
+    if (this.player) {
+      return this.player.getPlaybackRate();
+    }
+    return video.playbackRate;
+  }
 }
 
 this.PictureInPictureVideoWrapper = PictureInPictureVideoWrapper;

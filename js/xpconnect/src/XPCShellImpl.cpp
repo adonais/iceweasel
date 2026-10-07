@@ -204,14 +204,20 @@ static bool GetLocationProperty(JSContext* cx, unsigned argc, Value* vp) {
 #endif
 }
 
-static bool GetLine(JSContext* cx, char* bufp, FILE* file, const char* prompt) {
+static bool GetLine(JSContext* cx, char* bufp, size_t bufsize, FILE* file,
+                    const char* prompt) {
   fputs(prompt, gOutFile);
   fflush(gOutFile);
 
   char line[4096] = {'\0'};
   while (true) {
     if (fgets(line, sizeof line, file)) {
-      strcpy(bufp, line);
+      size_t linelen = strlen(line);
+      if (linelen >= bufsize) {
+        fprintf(gErrFile, "JS console: input line too long, exiting\n");
+        return false;
+      }
+      memcpy(bufp, line, linelen + 1);
       return true;
     }
     if (errno != EINTR) {
@@ -240,7 +246,7 @@ static bool ReadLine(JSContext* cx, unsigned argc, Value* vp) {
 
   /* Get a line from the infile */
   JS::UniqueChars strBytes = JS_EncodeStringToLatin1(cx, str);
-  if (!strBytes || !GetLine(cx, buf, gInFile, strBytes.get())) {
+  if (!strBytes || !GetLine(cx, buf, sizeof(buf), gInFile, strBytes.get())) {
     return false;
   }
 
@@ -755,7 +761,9 @@ static bool ProcessFile(AutoJSAPI& jsapi, const char* filename, FILE* file,
      */
     int startline = lineno;
     do {
-      if (!GetLine(cx, bufp, file, startline == lineno ? "js> " : "")) {
+      size_t remaining = sizeof(buffer) - static_cast<size_t>(bufp - buffer);
+      if (!GetLine(cx, bufp, remaining, file,
+                   startline == lineno ? "js> " : "")) {
         hitEOF = true;
         break;
       }

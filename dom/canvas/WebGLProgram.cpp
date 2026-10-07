@@ -758,7 +758,7 @@ void WebGLProgram::BindAttribLocation(GLuint loc, const std::string& name) {
     return;
   }
 
-  if (name.find("gl_") == 0) {
+  if (name.starts_with("gl_")) {
     mContext->ErrorInvalidOperation(
         "Can't set the location of a"
         " name that starts with 'gl_'.");

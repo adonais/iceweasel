@@ -248,6 +248,7 @@ class BrowserToolbarMiddlewareTest {
         settings.shouldUseBottomToolbar = false
         settings.shouldUseExpandedToolbar = false
         settings.isTabStripEnabled = false
+        settings.enableHomepageAsNewTab = false
         settings.enableHomepageTrendingRecentSearch = false
     }
 

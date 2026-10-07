@@ -12,29 +12,19 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
-// This is a modified version from browser_contextmenuFillLogins.js.
-async function openContextMenuAt(browser, x, y) {
-  const contextMenu = document.getElementById("contentAreaContextMenu");
-
-  const contextMenuShownPromise = BrowserTestUtils.waitForEvent(
-    contextMenu,
-    "popupshown"
-  );
-
-  // Synthesize a contextmenu event to actually open the context menu.
-  await BrowserTestUtils.synthesizeMouseAtPoint(
-    x,
-    y,
-    {
-      type: "contextmenu",
-      button: 2,
-    },
-    browser
-  );
-
-  await contextMenuShownPromise;
-  return contextMenu;
-}
+const PDFJS_MENUITEMS = [
+  "context-pdfjs-undo",
+  "context-pdfjs-redo",
+  "context-sep-pdfjs-redo",
+  "context-pdfjs-cut",
+  "context-pdfjs-copy",
+  "context-pdfjs-paste",
+  "context-pdfjs-delete",
+  "context-pdfjs-select-all",
+  "context-sep-pdfjs-select-all",
+  "context-pdfjs-highlight-selection",
+  "context-pdfjs-comment-selection",
+];
 
 /**
  * Open a context menu and get the pdfjs entries
@@ -44,33 +34,7 @@ async function openContextMenuAt(browser, x, y) {
  * @returns {Promise<Map<string,HTMLElement>>} the pdfjs menu entries.
  */
 function getContextMenuItems(browser, box) {
-  return new Promise(resolve => {
-    setTimeout(async () => {
-      const { x, y, width, height } = box;
-      const menuitems = [
-        "context-pdfjs-undo",
-        "context-pdfjs-redo",
-        "context-sep-pdfjs-redo",
-        "context-pdfjs-cut",
-        "context-pdfjs-copy",
-        "context-pdfjs-paste",
-        "context-pdfjs-delete",
-        "context-pdfjs-select-all",
-        "context-sep-pdfjs-select-all",
-        "context-pdfjs-highlight-selection",
-        "context-pdfjs-comment-selection",
-      ];
-
-      await openContextMenuAt(browser, x + width / 2, y + height / 2);
-      const results = new Map();
-      for (const menuitem of menuitems) {
-        const item = document.getElementById(menuitem);
-        results.set(menuitem, item || null);
-      }
-
-      resolve(results);
-    }, 0);
-  });
+  return openContextMenuAndGetItems(browser, box, PDFJS_MENUITEMS);
 }
 
 /**
@@ -82,6 +46,9 @@ function getContextMenuItems(browser, box) {
  * @returns {Promise<Map<string,HTMLElement>>} the pdfjs menu entries.
  */
 async function getContextMenuItemsOn(browser, selector) {
+  // Don't measure before the window got its dimensions from the parent
+  // process, else the box is stale by the time the menu is opened.
+  await waitForHitTestableContent(browser);
   const box = await SpecialPowers.spawn(
     browser,
     [selector],
@@ -92,58 +59,6 @@ async function getContextMenuItemsOn(browser, selector) {
     }
   );
   return getContextMenuItems(browser, box);
-}
-
-/**
- * Hide the context menu.
- */
-async function hideContextMenu() {
-  await new Promise(resolve =>
-    setTimeout(async () => {
-      const contextMenu = document.getElementById("contentAreaContextMenu");
-
-      const popupHiddenPromise = BrowserTestUtils.waitForEvent(
-        contextMenu,
-        "popuphidden"
-      );
-      contextMenu.hidePopup();
-      await popupHiddenPromise;
-      resolve();
-    }, 0)
-  );
-}
-
-async function clickOnItem(browser, items, entry) {
-  const editingPromise = BrowserTestUtils.waitForContentEvent(
-    browser,
-    "editingaction",
-    false,
-    null,
-    true
-  );
-  const contextMenu = document.getElementById("contentAreaContextMenu");
-  contextMenu.activateItem(items.get(entry));
-  await editingPromise;
-}
-
-/**
- * Asserts that the enabled pdfjs menuitems are the expected ones.
- *
- * @param {Map<string,HTMLElement>} menuitems
- * @param {Array<string>} expected
- */
-function assertMenuitems(menuitems, expected) {
-  Assert.deepEqual(
-    [...menuitems.values()]
-      .filter(
-        elmt =>
-          !elmt.id.includes("-sep-") &&
-          !elmt.hidden &&
-          [null, "false"].includes(elmt.getAttribute("disabled"))
-      )
-      .map(elmt => elmt.id),
-    expected
-  );
 }
 
 async function waitAndCheckEmptyContextMenu(browser) {
@@ -556,9 +471,13 @@ add_task(async function test_editing_contextmenu_in_stale_frame() {
         });
         await loaded;
 
-        ok(
-          windowGlobal.isCurrentGlobal,
-          "The stale frame is still the current global of its own context"
+        // The window global of the stale frame usually outlives the
+        // navigation of its ancestor, but it can also already have been torn
+        // down: either way no command must be sent to it.
+        info(
+          windowGlobal.isCurrentGlobal
+            ? "The stale frame is still the current global of its own context"
+            : "The stale frame has already been torn down"
         );
         ok(!windowGlobal.isActiveInTab, "The stale frame isn't visible");
 

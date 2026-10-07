@@ -22,6 +22,7 @@
 #include "mozilla/Base64.h"
 #include "nsUrlClassifierDBService.h"
 #include "nsUrlClassifierUtils.h"
+#include "nsCharSeparatedTokenizer.h"
 #include <bit>
 
 // MOZ_LOG=UrlClassifierDbService:5

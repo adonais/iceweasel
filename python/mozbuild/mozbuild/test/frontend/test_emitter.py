@@ -12,6 +12,8 @@ from mozbuild.frontend.context import ObjDirPath, Path, SourcePath
 from mozbuild.frontend.data import (
     ComputedFlags,
     ConfigFileSubstitution,
+    DeclaredLicensedPaths,
+    DeclaredLicenseNotice,
     Defines,
     DirectoryTraversal,
     Exports,
@@ -1760,6 +1762,14 @@ class TestEmitterBasic(unittest.TestCase):
         ):
             self.read_topsrcdir(reader)
 
+    def test_rust_library_invalid_cargo_crate_type(self):
+        """Test that a RustLibrary is restricted to a static library."""
+        reader = self.reader("rust-library-invalid-cargo-crate-type")
+        with self.assertRaisesRegex(
+            SandboxValidationError, "cargo_crate_type.* must be 'staticlib'"
+        ):
+            self.read_topsrcdir(reader)
+
     def test_rust_library_dash_folding(self):
         """Test that on-disk names of RustLibrary objects convert dashes to underscores."""
         reader = self.reader(
@@ -1806,6 +1816,24 @@ class TestEmitterBasic(unittest.TestCase):
         self.assertIsInstance(host_ldflags, ComputedFlags)
         self.assertIsInstance(lib, RustLibrary)
         self.assertEqual(lib.features, ["musthave", "cantlivewithout"])
+        self.assertFalse(lib.no_lto)
+
+    def test_rust_library_no_lto(self):
+        """Test that a RustLibrary LTO opt out is correctly emitted."""
+        reader = self.reader(
+            "rust-library-no-lto",
+            extra_substs=dict(RUST_TARGET="i686-pc-windows-msvc"),
+        )
+        objs = self.read_topsrcdir(reader)
+
+        self.assertEqual(len(objs), 5)
+        ldflags, host_cflags, host_ldflags, lib, cflags = objs
+        self.assertIsInstance(ldflags, ComputedFlags)
+        self.assertIsInstance(cflags, ComputedFlags)
+        self.assertIsInstance(host_cflags, ComputedFlags)
+        self.assertIsInstance(host_ldflags, ComputedFlags)
+        self.assertIsInstance(lib, RustLibrary)
+        self.assertTrue(lib.no_lto)
 
     def test_rust_library_duplicate_features(self):
         """Test that duplicate RustLibrary features are rejected."""
@@ -2027,6 +2055,51 @@ class TestEmitterBasic(unittest.TestCase):
             set(flags.flags["WASM_DEFINES"]),
             set(["-DFOO", '-DBAZ="abcd"', "-UQUX", "-DBAR=7", "-DVALUE=xyz"]),
         )
+
+    def test_licenses(self):
+        reader = self.reader("licenses")
+        objs = self.read_topsrcdir(reader)
+
+        notices = {o.id: o for o in objs if isinstance(o, DeclaredLicenseNotice)}
+        coverage = [o for o in objs if isinstance(o, DeclaredLicensedPaths)]
+
+        self.assertEqual(sorted(notices), ["MIT", "mylib"])
+
+        mit = notices["MIT"]
+        self.assertEqual(mit.title, "MIT License")
+        self.assertEqual(mit.spdx, "MIT")
+        self.assertEqual(mozpath.basename(mit.text_path), "mit.txt")
+        self.assertIsNone(mit.notice)
+
+        mylib = notices["mylib"]
+        self.assertEqual(mylib.notice, "Copyright 2026 Somebody.")
+        self.assertEqual(mylib.paths, ["extra/path"])
+
+        self.assertEqual([o.id for o in coverage], ["MIT"])
+        self.assertEqual(coverage[0].relsrcdir, "lib")
+        # paths are resolved relative to the declaring moz.build
+        self.assertEqual(coverage[0].paths, ["lib/vendor/dep.js", "lib/vendor/other*"])
+
+    def test_licenses_missing_title(self):
+        reader = self.reader("licenses-missing-title")
+        with self.assertRaisesRegex(SandboxValidationError, "requires a title"):
+            self.read_topsrcdir(reader)
+
+    def test_licenses_missing_text_file(self):
+        reader = self.reader("licenses-missing-text-file")
+        with self.assertRaisesRegex(SandboxValidationError, "does not exist"):
+            self.read_topsrcdir(reader)
+
+    def test_licenses_no_text_file_at_all(self):
+        # No `text`, and no moz.yaml above it naming one either.
+        reader = self.reader("licenses-no-text")
+        with self.assertRaisesRegex(SandboxValidationError, "requires a text file"):
+            self.read_topsrcdir(reader)
+
+    def test_licenses_declared_twice_in_one_file(self):
+        reader = self.reader("licenses-declared-twice")
+        with self.assertRaisesRegex(SandboxValidationError, "declared twice here"):
+            self.read_topsrcdir(reader)
 
 
 if __name__ == "__main__":

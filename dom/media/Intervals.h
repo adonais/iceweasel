@@ -60,12 +60,7 @@ class Interval {
         mEnd(std::move(aOther.mEnd)),
         mFuzz(std::move(aOther.mFuzz)) {}
 
-  SelfType& operator=(const SelfType& aOther) {
-    mStart = aOther.mStart;
-    mEnd = aOther.mEnd;
-    mFuzz = aOther.mFuzz;
-    return *this;
-  }
+  SelfType& operator=(const SelfType& aOther) = default;
 
   SelfType& operator=(SelfType&& aOther) {
     MOZ_ASSERT(&aOther != this, "self-moves are prohibited");

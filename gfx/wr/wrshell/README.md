@@ -24,6 +24,7 @@ WRShell can connect to either a local instance of WR (default), or an instance r
  * Inspect the built scene's picture / primitive tree, highlight the hovered primitive in the rendered frame and disable primitives (see below)
  * Display profile counter graphs (basic only, needs to be extended)
  * Capture the current frame as a RenderDoc trace and open it in RenderDoc
+ * Edit a shader's GLSL source and have the connected instance recompile it (see below)
 
 ### Building
 
@@ -93,6 +94,38 @@ In the GUI:
 Both take effect at frame building time without rebuilding the scene. Primitive indices are only valid for one built scene: when a new display list arrives, WebRender drops the override, and the panel reports an error if a stale selection is pushed. Click **Refresh** to fetch the new scene.
 
 Highlighting a pass-through picture (one without its own surface) in Replace mode hides it instead, as it has no rect of its own.
+
+### Shader hot reloading
+
+The **Shaders** panel (GUI) and the `get-shaders` / `get-shader-source` /
+`set-shader-source` / `reset-shader-source` commands (CLI) read the GLSL sources the
+connected instance was built with, push an edited source back, and report the compile
+errors if it does not build.
+
+In the GUI:
+
+* Clicking a file opens it in the editor. Edits are buffered per file, so switching files
+  keeps them; a file with unsaved edits is marked with `*` and an overridden file with
+  `[override]`.
+* **Apply** (or Ctrl+Enter) sends the buffer to WR. On success the affected shaders are swapped and a new frame is rendered.
+* **Revert** discards local edits, **Reset override** drops the override in WR and
+  restores the built-in source, and **Refresh** re-reads the file and variant list.
+* Each variant of the selected file is listed with whether it has been compiled yet, and
+  **expanded** opens its preprocessed source as a document.
+
+Only variants with a linked program are rebuilt when a source is pushed. Editing a shared
+include reaches every variant WR knows about, of which only the few dozen a given page
+exercises are live, so compiling the rest would stall the render thread for no benefit. A
+variant that was not linked at push time picks the new source up when it is first used,
+and if it fails then, the error is streamed to WRShell and appended to the panel.
+
+
+Limitations:
+
+* **Hardware GL only.** SWGL discards the GLSL it is handed and dispatches to a program
+  transpiled to C++ at build time, so there is nothing to recompile. Such an instance
+  reports that reloading is unsupported rather than accepting an edit that does nothing.
+* An edit does not outlive the session it was made in.
 
 ### Extending
 

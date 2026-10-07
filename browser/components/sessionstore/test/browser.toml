@@ -101,6 +101,8 @@ https_first_disabled = true
 
 ["browser_cleaner.js"]
 
+["browser_clear_container_closed_windows.js"]
+
 ["browser_closedId.js"]
 
 ["browser_closed_objects_changed_notifications_tabs.js"]
@@ -430,6 +432,8 @@ skip-if = [
 ["browser_windowRestore_perwindowpb.js"]
 
 ["browser_windowStateContainer.js"]
+
+["browser_window_features_mismatch_telemetry.js"]
 
 ["browser_window_position_precision.js"]
 skip-if = [

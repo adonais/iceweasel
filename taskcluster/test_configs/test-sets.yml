@@ -654,8 +654,9 @@ android-hw-speedometer-tests:
     - browsertime-benchmark-speedometer2-mobile
     - browsertime-benchmark-speedometer3-mobile
 
-android-em-arm64-speedometer-tests:
+android-em-arm64-benchmark-tests:
     - browsertime-benchmark-speedometer3-mobile
+    - browsertime-benchmark-jetstream3
 
 android-hw-power-tests:
     - browsertime-youtube-playback-power-mobile

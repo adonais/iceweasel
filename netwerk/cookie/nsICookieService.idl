@@ -26,15 +26,6 @@ native CookieRefPtr(RefPtr<mozilla::net::Cookie>);
 [ref] native CookieParserPtr(mozilla::net::CookieParser);
 
 /**
- * @see nsICookieService::runInTransaction
- */
-[scriptable, function, uuid(0fc41ffb-f1b7-42d9-9a42-8dc420c158c1)]
-interface nsICookieTransactionCallback : nsISupports
-{
-  void callback();
-};
-
-/**
  * nsICookieService
  *
  * Provides methods for setting and getting cookies in the context of a
@@ -83,10 +74,10 @@ interface nsICookieService : nsISupports
   const uint32_t BEHAVIOR_LAST           = 5;
 
   /*
-   * Get the list of cookies associated with a base domain and an OriginAttributes.
-   * This method is meant to be used for `document.cookie` only. Any security
-   * check about storage-access permission and cookie behavior must be done by
-   * the caller.
+   * Get the list of non-expired cookies associated with a base domain and an
+   * OriginAttributes.  This method is meant to be used for `document.cookie`
+   * and CookieStore API only. Any security check about storage-access
+   * permission and cookie behavior must be done by the caller.
    */
   [noscript, notxpcom, nostdcall] void getCookiesFromHost(in ACString aBaseDomain,
                                                           in const_OriginAttributes aOriginAttributes,
@@ -96,11 +87,12 @@ interface nsICookieService : nsISupports
   [noscript, notxpcom, nostdcall] void staleCookies(in Array<CookieRefPtr> aCookies,
                                                     in int64_t aCurrentTimeInUsec);
 
-  /* Return true if there are existing cookies for the host and OriginAttributes. */
+  /* Return true if there are existing non-expired cookies for the host and
+   * OriginAttributes. */
   [noscript, notxpcom, nostdcall] boolean hasExistingCookies(in ACString aBaseDomain,
                                                              in const_OriginAttributes aOriginAttributes);
 
-  /* Return true if there are existing cookies for the host and OriginAttributes. */
+  /* Return true if there are existing non-expired cookies for the host and OriginAttributes. */
   [noscript, notxpcom, nostdcall] void addCookieFromDocument(in CookieParserPtr aCookieParser,
                                                              in ACString aBaseDomain,
                                                              in const_OriginAttributes aOriginAttributes,
@@ -146,19 +138,4 @@ interface nsICookieService : nsISupports
    */
   void setCookieStringFromHttp(in nsIURI aURI, in ACString aCookie,
                                in nsIChannel aChannel);
-
-  /*
-   * Run a set of operations and write the resulting changes to the underlying
-   * SQLite database as a single transaction, without waiting for the regular
-   * flush interval. Changes are batched anyway, so this only makes the write
-   * happen earlier.
-   * Example: test scripts that need to construct a large cookie database.
-   * Note that this is not atomic: if aCallback() fails halfway through, the
-   * changes it already made are kept, both in memory and on disk.
-   * @param aCallback
-   *        nsICookieTransactionCallback interface to call
-   * @throws NS_ERROR_FAILURE if aCallback() fails.
-   * @throws NS_ERROR_NOT_AVAILABLE if the connection is not established.
-   */
-   void runInTransaction(in nsICookieTransactionCallback aCallback);
 };

@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.3.335
- * pdfjsBuild = 74515c623
+ * pdfjsVersion = 6.4.195
+ * pdfjsBuild = d54c193bd
  */
 
 ;// ./src/shared/util.js
@@ -652,10 +652,7 @@ class Util {
     }
     const yLow = Math.max(Math.min(rect1[1], rect1[3]), Math.min(rect2[1], rect2[3]));
     const yHigh = Math.min(Math.max(rect1[1], rect1[3]), Math.max(rect2[1], rect2[3]));
-    if (yLow > yHigh) {
-      return null;
-    }
-    return [xLow, yLow, xHigh, yHigh];
+    return yLow > yHigh ? null : [xLow, yLow, xHigh, yHigh];
   }
   static pointBoundingBox(x, y, minMax) {
     minMax[0] = Math.min(minMax[0], x);
@@ -1060,10 +1057,7 @@ class XfaLayer {
       attributes.name = `${attributes.name}-${intent}`;
     }
     for (const [key, value] of Object.entries(attributes)) {
-      if (value === null || value === undefined) {
-        continue;
-      }
-      if (disallowedEventHandlerAttrRegExp.test(key)) {
+      if (value === null || value === undefined || disallowedEventHandlerAttrRegExp.test(key)) {
         continue;
       }
       if (intent === "richText" && !this._allowedRichTextAttributes.has(key)) {
@@ -1911,6 +1905,9 @@ class EditorToolbar {
   }
   async addEditSignatureButton(signatureManager) {
     const button = this.#signatureDescriptionButton = await signatureManager.renderEditButton(this.#editor);
+    if (!button) {
+      return;
+    }
     this.#addListenersToElement(button);
     this.#buttons.append(button, this.#divider);
   }
@@ -2064,7 +2061,7 @@ class FloatingToolbar {
 }
 
 ;// ./src/shared/internal_evt.js
-const INTERNAL_EVT = "251ee865-0628-461b-917a-61511965a918";
+const INTERNAL_EVT = "6059afab-e34a-4dff-9dfa-3909d4d805dc";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -2269,10 +2266,7 @@ class ImageManager {
   }
   getSvgUrl(id) {
     const data = this.#cache.get(id);
-    if (!data?.isSvg) {
-      return null;
-    }
-    return data.svgUrl;
+    return !data?.isSvg ? null : data.svgUrl;
   }
   deleteId(id) {
     this.#cache ||= new Map();
@@ -2468,10 +2462,7 @@ class KeyboardManager {
   }
   static #codeToKey(code) {
     const match = /^(?:Key([A-Z])|(?:Digit|Numpad)(\d))$/.exec(code);
-    if (!match) {
-      return null;
-    }
-    return match[1]?.toLowerCase() ?? match[2];
+    return !match ? null : match[1]?.toLowerCase() ?? match[2];
   }
   exec(self, event) {
     let shortcuts = this.callbacks.get(event.key);
@@ -2531,10 +2522,7 @@ class ColorManager {
   }
   getHexCode(name) {
     const rgb = this._colors.get(name);
-    if (!rgb) {
-      return name;
-    }
-    return Util.makeHexColor(...rgb);
+    return !rgb ? name : Util.makeHexColor(...rgb);
   }
 }
 class AnnotationEditorUIManager {
@@ -5311,10 +5299,7 @@ class AnnotationEditor {
     }
   }
   focusout(event) {
-    if (!this._focusEventsAllowed) {
-      return;
-    }
-    if (!this.isAttachedToDOM) {
+    if (!this._focusEventsAllowed || !this.isAttachedToDOM) {
       return;
     }
     const target = event.relatedTarget;
@@ -6864,10 +6849,7 @@ class AnnotationStorage {
   onAnnotationEditor = null;
   getValue(key, defaultValue) {
     const value = this.#storage.get(key);
-    if (value === undefined) {
-      return defaultValue;
-    }
-    return Object.assign(defaultValue, value);
+    return value === undefined ? defaultValue : Object.assign(defaultValue, value);
   }
   getRawValue(key) {
     return this.#storage.get(key);
@@ -7788,7 +7770,7 @@ const Dependencies = {
   rawFillPath: ["filter", "fillColor", "fillAlpha"],
   showText: ["transform", "leading", "charSpacing", "wordSpacing", "hScale", "textRise", "moveText", "textMatrix", "font", "fontObj", "filter", "fillColor", "textRenderingMode", "SMask", "fillAlpha", "strokeAlpha", "globalCompositeOperation", "sameLineText"],
   transform: ["transform"],
-  transformAndFill: ["transform", "fillColor"]
+  transformAndFill: ["transform", "filter", "fillColor"]
 };
 class CanvasImagesTracker {
   #canvasWidth;
@@ -7891,6 +7873,7 @@ function serializeFontFamily(fontFamily) {
 
 
 class FontLoader {
+  #nativeFontFaces = new Set();
   #systemFonts = new Set();
   #styleSheet = null;
   constructor({
@@ -7898,15 +7881,14 @@ class FontLoader {
     styleElement = null
   }) {
     this._document = ownerDocument;
-    this.nativeFontFaces = new Set();
     this.styleElement = null;
   }
   addNativeFontFace(nativeFontFace) {
-    this.nativeFontFaces.add(nativeFontFace);
+    this.#nativeFontFaces.add(nativeFontFace);
     this._document.fonts.add(nativeFontFace);
   }
   removeNativeFontFace(nativeFontFace) {
-    this.nativeFontFaces.delete(nativeFontFace);
+    this.#nativeFontFaces.delete(nativeFontFace);
     this._document.fonts.delete(nativeFontFace);
   }
   insertRule(rule) {
@@ -7935,10 +7917,10 @@ class FontLoader {
     return this.#styleSheet = this.styleElement.sheet;
   }
   clear() {
-    for (const nativeFontFace of this.nativeFontFaces) {
+    for (const nativeFontFace of this.#nativeFontFaces) {
       this._document.fonts.delete(nativeFontFace);
     }
-    this.nativeFontFaces.clear();
+    this.#nativeFontFaces.clear();
     this.#systemFonts.clear();
     if (this.#styleSheet) {
       const {
@@ -7949,10 +7931,8 @@ class FontLoader {
       }
       this.#styleSheet = null;
     }
-    if (this.styleElement) {
-      this.styleElement.remove();
-      this.styleElement = null;
-    }
+    this.styleElement?.remove();
+    this.styleElement = null;
   }
   async loadSystemFont({
     systemFontInfo: info,
@@ -8012,28 +7992,21 @@ class FontLoader {
       if (this.isSyncFontLoadingSupported) {
         return;
       }
-      throw new Error("Not implemented: async font loading");
+      await this.#testFontLoaded(font);
     }
   }
   get isFontLoadingAPISupported() {
-    const hasFonts = !!this._document?.fonts;
-    return shadow(this, "isFontLoadingAPISupported", hasFonts);
+    return shadow(this, "isFontLoadingAPISupported", !!this._document?.fonts);
   }
   get isSyncFontLoadingSupported() {
     return shadow(this, "isSyncFontLoadingSupported", true);
   }
-  _queueLoadingCallback(callback) {
-    throw new Error("Not implemented: _queueLoadingCallback");
-  }
-  get _loadTestFont() {
-    throw new Error("Not implemented: _loadTestFont");
-  }
-  _prepareFontLoadEvent(font, request) {
-    throw new Error("Not implemented: _prepareFontLoadEvent");
+  #testFontLoaded(font) {
+    throw new Error("Not implemented: #testFontLoaded");
   }
 }
 class FontFaceObject {
-  compiledGlyphs = Object.create(null);
+  #compiledPaths = new Map();
   #fontData;
   constructor(translatedData, inspectFont = null, charProcOperatorList, extra) {
     this.#fontData = translatedData;
@@ -8084,21 +8057,23 @@ class FontFaceObject {
     return rule;
   }
   getPathGenerator(objs, character) {
-    if (this.compiledGlyphs[character] !== undefined) {
-      return this.compiledGlyphs[character];
+    let path = this.#compiledPaths.get(character);
+    if (path) {
+      return path;
     }
-    const objId = this.loadedName + "_path_" + character;
+    const objId = `${this.loadedName}_path_${character}`;
     let cmds;
     try {
       cmds = objs.get(objId);
     } catch (ex) {
       warn(`getPathGenerator - ignoring character: "${ex}".`);
     }
-    const path = makePathFromDrawOPS(cmds?.path);
+    path = makePathFromDrawOPS(cmds?.path);
     if (!this.fontExtraProperties) {
       objs.delete(objId);
     }
-    return this.compiledGlyphs[character] = path;
+    this.#compiledPaths.set(character, path);
+    return path;
   }
   get black() {
     return this.#fontData.black;
@@ -8649,17 +8624,20 @@ function wrapReason(ex) {
   return new UnknownErrorException(ex.message, ex.toString());
 }
 class MessageHandler {
+  #actions = new Map();
+  #callbackCapabilities = new Map();
+  #callbackId = 1;
+  #comObj;
   #messageAC = new AbortController();
+  #sourceName;
+  #streamControllers = new Map();
+  #streamId = 1;
+  #streamSinks = new Map();
+  #targetName;
   constructor(sourceName, targetName, comObj) {
-    this.sourceName = sourceName;
-    this.targetName = targetName;
-    this.comObj = comObj;
-    this.callbackId = 1;
-    this.streamId = 1;
-    this.streamSinks = Object.create(null);
-    this.streamControllers = Object.create(null);
-    this.callbackCapabilities = Object.create(null);
-    this.actionHandler = Object.create(null);
+    this.#sourceName = sourceName;
+    this.#targetName = targetName;
+    this.#comObj = comObj;
     comObj.addEventListener("message", this.#onMessage.bind(this), {
       signal: this.#messageAC.signal
     });
@@ -8667,7 +8645,7 @@ class MessageHandler {
   #onMessage({
     data
   }) {
-    if (data.targetName !== this.sourceName) {
+    if (data.targetName !== this.#sourceName) {
       return;
     }
     if (data.stream) {
@@ -8675,30 +8653,33 @@ class MessageHandler {
       return;
     }
     if (data.callback) {
-      const callbackId = data.callbackId;
-      const capability = this.callbackCapabilities[callbackId];
+      const {
+        callbackId,
+        callback
+      } = data;
+      const capability = this.#callbackCapabilities.get(callbackId);
       if (!capability) {
         throw new Error(`Cannot resolve callback ${callbackId}`);
       }
-      delete this.callbackCapabilities[callbackId];
-      if (data.callback === CallbackKind.DATA) {
+      this.#callbackCapabilities.delete(callbackId);
+      if (callback === CallbackKind.DATA) {
         capability.resolve(data.data);
-      } else if (data.callback === CallbackKind.ERROR) {
+      } else if (callback === CallbackKind.ERROR) {
         capability.reject(wrapReason(data.reason));
       } else {
         throw new Error("Unexpected callback case");
       }
       return;
     }
-    const action = this.actionHandler[data.action];
+    const action = this.#actions.get(data.action);
     if (!action) {
       throw new Error(`Unknown action from worker: ${data.action}`);
     }
     if (data.callbackId) {
-      const sourceName = this.sourceName,
+      const sourceName = this.#sourceName,
         targetName = data.sourceName,
-        comObj = this.comObj;
-      Promise.try(action, data.data).then(function (result) {
+        comObj = this.#comObj;
+      Promise.try(action, data.data).then(result => {
         comObj.postMessage({
           sourceName,
           targetName,
@@ -8706,7 +8687,7 @@ class MessageHandler {
           callbackId: data.callbackId,
           data: result
         });
-      }, function (reason) {
+      }, reason => {
         comObj.postMessage({
           sourceName,
           targetName,
@@ -8724,28 +8705,28 @@ class MessageHandler {
     action(data.data);
   }
   on(actionName, handler) {
-    const ah = this.actionHandler;
-    if (ah[actionName]) {
-      throw new Error(`There is already an actionName called "${actionName}"`);
+    const ah = this.#actions;
+    if (ah.has(actionName)) {
+      throw new Error(`There is already a "${actionName}" handler.`);
     }
-    ah[actionName] = handler;
+    ah.set(actionName, handler);
   }
   send(actionName, data, transfers) {
-    this.comObj.postMessage({
-      sourceName: this.sourceName,
-      targetName: this.targetName,
+    this.#comObj.postMessage({
+      sourceName: this.#sourceName,
+      targetName: this.#targetName,
       action: actionName,
       data
     }, transfers);
   }
   sendWithPromise(actionName, data, transfers) {
-    const callbackId = this.callbackId++;
-    const capability = Promise.withResolvers();
-    this.callbackCapabilities[callbackId] = capability;
+    const callbackId = this.#callbackId++,
+      capability = Promise.withResolvers();
+    this.#callbackCapabilities.set(callbackId, capability);
     try {
-      this.comObj.postMessage({
-        sourceName: this.sourceName,
-        targetName: this.targetName,
+      this.#comObj.postMessage({
+        sourceName: this.#sourceName,
+        targetName: this.#targetName,
         action: actionName,
         callbackId,
         data
@@ -8756,20 +8737,20 @@ class MessageHandler {
     return capability.promise;
   }
   sendWithStream(actionName, data, queueingStrategy, transfers) {
-    const streamId = this.streamId++,
-      sourceName = this.sourceName,
-      targetName = this.targetName,
-      comObj = this.comObj;
+    const streamId = this.#streamId++,
+      sourceName = this.#sourceName,
+      targetName = this.#targetName,
+      comObj = this.#comObj;
     return new ReadableStream({
       start: controller => {
         const startCapability = Promise.withResolvers();
-        this.streamControllers[streamId] = {
+        this.#streamControllers.set(streamId, {
           controller,
           startCall: startCapability,
           pullCall: null,
           cancelCall: null,
           isClosed: false
-        };
+        });
         comObj.postMessage({
           sourceName,
           targetName,
@@ -8782,7 +8763,7 @@ class MessageHandler {
       },
       pull: controller => {
         const pullCapability = Promise.withResolvers();
-        this.streamControllers[streamId].pullCall = pullCapability;
+        this.#streamControllers.get(streamId).pullCall = pullCapability;
         comObj.postMessage({
           sourceName,
           targetName,
@@ -8795,8 +8776,8 @@ class MessageHandler {
       cancel: reason => {
         assert(reason instanceof Error, "cancel must have a valid reason");
         const cancelCapability = Promise.withResolvers();
-        this.streamControllers[streamId].cancelCall = cancelCapability;
-        this.streamControllers[streamId].isClosed = true;
+        this.#streamControllers.get(streamId).cancelCall = cancelCapability;
+        this.#streamControllers.get(streamId).isClosed = true;
         comObj.postMessage({
           sourceName,
           targetName,
@@ -8810,11 +8791,11 @@ class MessageHandler {
   }
   #createStreamSink(data) {
     const streamId = data.streamId,
-      sourceName = this.sourceName,
+      sourceName = this.#sourceName,
       targetName = data.sourceName,
-      comObj = this.comObj;
-    const self = this,
-      action = this.actionHandler[data.action];
+      comObj = this.#comObj;
+    const streamSinks = this.#streamSinks,
+      action = this.#actions.get(data.action);
     const streamSink = {
       enqueue(chunk, size = 1, transfers) {
         if (this.isCancelled) {
@@ -8845,7 +8826,7 @@ class MessageHandler {
           stream: StreamKind.CLOSE,
           streamId
         });
-        delete self.streamSinks[streamId];
+        streamSinks.delete(streamId);
       },
       error(reason) {
         assert(reason instanceof Error, "error must have a valid reason");
@@ -8870,8 +8851,8 @@ class MessageHandler {
     };
     streamSink.sinkCapability.resolve();
     streamSink.ready = streamSink.sinkCapability.promise;
-    this.streamSinks[streamId] = streamSink;
-    Promise.try(action, data.data, streamSink).then(function () {
+    streamSinks.set(streamId, streamSink);
+    Promise.try(action, data.data, streamSink).then(() => {
       comObj.postMessage({
         sourceName,
         targetName,
@@ -8879,7 +8860,7 @@ class MessageHandler {
         streamId,
         success: true
       });
-    }, function (reason) {
+    }, reason => {
       comObj.postMessage({
         sourceName,
         targetName,
@@ -8891,11 +8872,11 @@ class MessageHandler {
   }
   #processStreamMessage(data) {
     const streamId = data.streamId,
-      sourceName = this.sourceName,
+      sourceName = this.#sourceName,
       targetName = data.sourceName,
-      comObj = this.comObj;
-    const streamController = this.streamControllers[streamId],
-      streamSink = this.streamSinks[streamId];
+      comObj = this.#comObj;
+    const streamController = this.#streamControllers.get(streamId),
+      streamSink = this.#streamSinks.get(streamId);
     switch (data.stream) {
       case StreamKind.START_COMPLETE:
         if (data.success) {
@@ -8926,7 +8907,7 @@ class MessageHandler {
           streamSink.sinkCapability.resolve();
         }
         streamSink.desiredSize = data.desiredSize;
-        Promise.try(streamSink.onPull || onFn).then(function () {
+        Promise.try(streamSink.onPull || onFn).then(() => {
           comObj.postMessage({
             sourceName,
             targetName,
@@ -8934,7 +8915,7 @@ class MessageHandler {
             streamId,
             success: true
           });
-        }, function (reason) {
+        }, reason => {
           comObj.postMessage({
             sourceName,
             targetName,
@@ -8978,7 +8959,7 @@ class MessageHandler {
           break;
         }
         const dataReason = wrapReason(data.reason);
-        Promise.try(streamSink.onCancel || onFn, dataReason).then(function () {
+        Promise.try(streamSink.onCancel || onFn, dataReason).then(() => {
           comObj.postMessage({
             sourceName,
             targetName,
@@ -8986,7 +8967,7 @@ class MessageHandler {
             streamId,
             success: true
           });
-        }, function (reason) {
+        }, reason => {
           comObj.postMessage({
             sourceName,
             targetName,
@@ -8997,7 +8978,7 @@ class MessageHandler {
         });
         streamSink.sinkCapability.reject(dataReason);
         streamSink.isCancelled = true;
-        delete this.streamSinks[streamId];
+        this.#streamSinks.delete(streamId);
         break;
       default:
         throw new Error("Unexpected stream case");
@@ -9005,7 +8986,7 @@ class MessageHandler {
   }
   async #deleteStreamController(streamController, streamId) {
     await Promise.allSettled([streamController.startCall?.promise, streamController.pullCall?.promise, streamController.cancelCall?.promise]);
-    delete this.streamControllers[streamId];
+    this.#streamControllers.delete(streamId);
   }
   destroy() {
     this.#messageAC?.abort();
@@ -9435,10 +9416,34 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
     }
     return grad;
   }
+  _createRasterPattern(ctx, owner, inverse, bbox, transform, transferMaps) {
+    const width = Math.ceil(bbox[2] - bbox[0]) || 1;
+    const height = Math.ceil(bbox[3] - bbox[1]) || 1;
+    const tmpCanvas = owner.canvasFactory.create(width, height);
+    const tmpCtx = tmpCanvas.context;
+    tmpCtx.clearRect(0, 0, width, height);
+    tmpCtx.beginPath();
+    tmpCtx.rect(0, 0, width, height);
+    tmpCtx.translate(-bbox[0], -bbox[1]);
+    inverse = Util.transform(inverse, [1, 0, 0, 1, bbox[0], bbox[1]]);
+    tmpCtx.transform(...transform);
+    applyBoundingBox(tmpCtx, this._bbox);
+    if (this.areConic()) {
+      tmpCtx.fillStyle = this._createReversedGradient(tmpCtx);
+      tmpCtx.fill();
+    }
+    tmpCtx.fillStyle = this._createGradient(tmpCtx);
+    tmpCtx.fill();
+    transferMaps?.applyToCanvas(tmpCtx);
+    const pattern = ctx.createPattern(tmpCanvas.canvas, "no-repeat");
+    owner.canvasFactory.destroy(tmpCanvas);
+    pattern.setTransform(new DOMMatrix(inverse));
+    return pattern;
+  }
   getPattern(ctx, owner, inverse, pathType) {
-    let pattern;
+    const transferMaps = owner.current.transferMapsFallback;
     if (pathType === PathType.STROKE || pathType === PathType.FILL) {
-      if (this.isOriginBased()) {
+      if (this.isOriginBased() && !transferMaps) {
         let transf = Util.transform(inverse, owner.baseTransform);
         if (this.matrix) {
           transf = Util.transform(transf, this.matrix);
@@ -9458,42 +9463,21 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
         }
       }
       const ownerBBox = owner.current.getClippedPathBoundingBox(pathType, getCurrentTransform(ctx)) || [0, 0, 0, 0];
-      const width = Math.ceil(ownerBBox[2] - ownerBBox[0]) || 1;
-      const height = Math.ceil(ownerBBox[3] - ownerBBox[1]) || 1;
-      const tmpCanvas = owner.canvasFactory.create(width, height);
-      const tmpCtx = tmpCanvas.context;
-      tmpCtx.clearRect(0, 0, tmpCtx.canvas.width, tmpCtx.canvas.height);
-      tmpCtx.beginPath();
-      tmpCtx.rect(0, 0, tmpCtx.canvas.width, tmpCtx.canvas.height);
-      tmpCtx.translate(-ownerBBox[0], -ownerBBox[1]);
-      inverse = Util.transform(inverse, [1, 0, 0, 1, ownerBBox[0], ownerBBox[1]]);
-      tmpCtx.transform(...owner.baseTransform);
-      if (this.matrix) {
-        tmpCtx.transform(...this.matrix);
-      }
-      applyBoundingBox(tmpCtx, this._bbox);
-      if (this.areConic()) {
-        tmpCtx.fillStyle = this._createReversedGradient(tmpCtx);
-        tmpCtx.fill();
-      }
-      tmpCtx.fillStyle = this._createGradient(tmpCtx);
-      tmpCtx.fill();
-      pattern = ctx.createPattern(tmpCanvas.canvas, "no-repeat");
-      owner.canvasFactory.destroy(tmpCanvas);
-      const domMatrix = new DOMMatrix(inverse);
-      pattern.setTransform(domMatrix);
-    } else {
-      if (this.areConic()) {
-        ctx.save();
-        applyBoundingBox(ctx, this._bbox);
-        ctx.fillStyle = this._createReversedGradient(ctx);
-        ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
-        ctx.restore();
-      }
-      applyBoundingBox(ctx, this._bbox);
-      pattern = this._createGradient(ctx);
+      const transform = this.matrix ? Util.transform(owner.baseTransform, this.matrix) : owner.baseTransform;
+      return this._createRasterPattern(ctx, owner, inverse, ownerBBox, transform, transferMaps);
     }
-    return pattern;
+    if (transferMaps && inverse) {
+      return this._createRasterPattern(ctx, owner, inverse, owner.current.clipBox, getCurrentTransform(ctx), transferMaps);
+    }
+    if (this.areConic()) {
+      ctx.save();
+      applyBoundingBox(ctx, this._bbox);
+      ctx.fillStyle = this._createReversedGradient(ctx);
+      ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
+      ctx.restore();
+    }
+    applyBoundingBox(ctx, this._bbox);
+    return this._createGradient(ctx);
   }
 }
 function drawTriangle(data, context, p1, p2, p3, c1, c2, c3) {
@@ -9609,7 +9593,7 @@ class MeshShadingPattern extends BaseShadingPattern {
     this._background = IR[7];
     loadMeshShader();
   }
-  _createMeshCanvas(combinedScale, backgroundColor, canvasFactory) {
+  _createMeshCanvas(combinedScale, backgroundColor, canvasFactory, transferMaps = null) {
     const EXPECTED_SCALE = 1.1;
     const MAX_PATTERN_SIZE = 3000;
     const BORDER_SIZE = 2;
@@ -9650,6 +9634,7 @@ class MeshShadingPattern extends BaseShadingPattern {
       }
       tmpCanvas.context.putImageData(data, BORDER_SIZE, BORDER_SIZE);
     }
+    transferMaps?.applyToCanvas(tmpCanvas.context);
     return {
       canvas: tmpCanvas.canvas,
       offsetX: offsetX - BORDER_SIZE * scaleX,
@@ -9675,7 +9660,7 @@ class MeshShadingPattern extends BaseShadingPattern {
     } else {
       Util.singularValueDecompose2dScale(owner.baseTransform, scale);
     }
-    const temporaryPatternCanvas = this._createMeshCanvas(scale, pathType === PathType.SHADING ? null : this._background, owner.canvasFactory);
+    const temporaryPatternCanvas = this._createMeshCanvas(scale, pathType === PathType.SHADING ? null : this._background, owner.canvasFactory, owner.current.transferMapsFallback);
     if (pathType !== PathType.SHADING) {
       ctx.setTransform(...owner.baseTransform);
       if (this.matrix) {
@@ -9740,15 +9725,12 @@ class TilingPattern {
     return nXLast <= nXFirst && nYLast <= nYFirst ? [nXFirst, nYFirst] : null;
   }
   updatePatternDims(clippedBBox, dims) {
-    const inv = Util.inverseTransform(this.patternBaseMatrix);
-    const c1 = [clippedBBox[0], clippedBBox[1]];
-    const c2 = [clippedBBox[2], clippedBBox[3]];
-    Util.applyTransform(c1, inv);
-    Util.applyTransform(c2, inv);
-    dims[0] = Math.abs(c2[0] - c1[0]);
-    dims[1] = Math.abs(c2[1] - c1[1]);
-    dims[2] = Math.min(c1[0], c2[0]);
-    dims[3] = Math.min(c1[1], c2[1]);
+    const bbox = BBOX_INIT.slice();
+    Util.axialAlignedBoundingBox(clippedBBox, Util.inverseTransform(this.patternBaseMatrix), bbox);
+    dims[0] = bbox[2] - bbox[0];
+    dims[1] = bbox[3] - bbox[1];
+    dims[2] = bbox[0];
+    dims[3] = bbox[1];
   }
   _renderTileCanvas(owner, opIdx, dimx, dimy) {
     const [x0, y0, x1, y1] = this.bbox;
@@ -9756,6 +9738,7 @@ class TilingPattern {
     const tmpCtx = tmpCanvas.context;
     const graphics = this.canvasGraphicsFactory.createCanvasGraphics(tmpCtx, opIdx);
     graphics.groupLevel = owner.groupLevel;
+    graphics.current.transferMapsFallback = owner.current.transferMapsFallback;
     this.setFillAndStrokeStyleToContext(graphics, this.paintType, this.color);
     tmpCtx.translate(-dimx.scale * x0, -dimy.scale * y0);
     graphics.transform(0, dimx.scale, 0, 0, dimy.scale, 0, 0);
@@ -9904,25 +9887,22 @@ class TilingPattern {
     graphics.current.updateClipFromPath();
   }
   setFillAndStrokeStyleToContext(graphics, paintType, color) {
-    const context = graphics.ctx,
-      current = graphics.current;
-    current.patternFill = current.patternStroke = false;
     switch (paintType) {
       case PaintType.COLORED:
-        const {
-          fillStyle,
-          strokeStyle
-        } = this.ctx;
-        context.fillStyle = current.fillColor = fillStyle;
-        context.strokeStyle = current.strokeColor = strokeStyle;
+        color = "#000000";
         break;
       case PaintType.UNCOLORED:
-        context.fillStyle = context.strokeStyle = color;
-        current.fillColor = current.strokeColor = color;
         break;
       default:
         throw new FormatError(`Unsupported paint type: ${paintType}`);
     }
+    const {
+      ctx,
+      current
+    } = graphics;
+    current.patternFill = current.patternStroke = false;
+    ctx.fillStyle = ctx.strokeStyle = current.transferMapsFallback?.applyToColor(color) ?? color;
+    current.fillColor = current.strokeColor = color;
   }
   isModifyingCurrentTransform() {
     return false;
@@ -10038,6 +10018,7 @@ class CanvasExtraState {
   lineWidth = 1;
   activeSMask = null;
   transferMaps = "none";
+  transferMapsFallback = null;
   minMax = F32_BBOX_INIT.slice();
   constructor(width, height) {
     this.clipBox = new Float32Array([0, 0, width, height]);
@@ -10199,6 +10180,48 @@ function resetCtxToDefault(ctx) {
   } = ctx;
   if (filter !== "none" && filter !== "") {
     ctx.filter = "none";
+  }
+}
+class TransferMapsFallback {
+  #maps;
+  constructor(maps) {
+    const [mapR, mapG = mapR, mapB = mapR] = maps;
+    const {
+      identityMap
+    } = TransferMapsFallback;
+    this.#maps = [mapR || identityMap, mapG || identityMap, mapB || identityMap];
+  }
+  static get identityMap() {
+    return shadow(this, "identityMap", Uint8Array.from({
+      length: 256
+    }, (_, i) => i));
+  }
+  applyToColor(color) {
+    if (typeof color !== "string" || !color.startsWith("#")) {
+      return color;
+    }
+    const [r, g, b] = getRGBA(color);
+    const [mapR, mapG, mapB] = this.#maps;
+    return Util.makeHexColor(mapR[r], mapG[g], mapB[b]);
+  }
+  applyToImageData({
+    data
+  }) {
+    const [mapR, mapG, mapB] = this.#maps;
+    for (let i = 0, ii = data.length; i < ii; i += 4) {
+      data[i] = mapR[data[i]];
+      data[i + 1] = mapG[data[i + 1]];
+      data[i + 2] = mapB[data[i + 2]];
+    }
+  }
+  applyToCanvas(ctx) {
+    const {
+      width,
+      height
+    } = ctx.canvas;
+    const imgData = ctx.getImageData(0, 0, width, height);
+    this.applyToImageData(imgData);
+    ctx.putImageData(imgData, 0, 0);
   }
 }
 function getImageSmoothingEnabled(transform, interpolate) {
@@ -10506,8 +10529,8 @@ class CanvasGraphics {
       width,
       height
     } = img;
-    const fillColor = this.current.fillColor;
     const isPatternFill = this.current.patternFill;
+    const fillColor = isPatternFill ? this.current.fillColor : ctx.fillStyle;
     const currentTransform = getCurrentTransform(ctx);
     let cache, cacheKey, scaled, maskCanvas;
     if ((img.bitmap || img.data) && img.count > 1) {
@@ -10661,9 +10684,27 @@ class CanvasGraphics {
           this.checkSMaskState(opIdx);
           break;
         case "TR":
-          this.dependencyTracker?.recordSimpleData("filter", opIdx);
-          this.ctx.filter = this.current.transferMaps = this.filterFactory.addFilter(value);
-          break;
+          {
+            this.dependencyTracker?.recordSimpleData("filter", opIdx);
+            let filter = this.filterFactory.addFilter(value);
+            this.ctx.filter = filter;
+            let fallback = null;
+            if (value && (filter === "none" || !FeatureTest.isCanvasFilterSupported || this.ctx.filter === "none" || this.ctx.filter === "")) {
+              this.ctx.filter = filter = "none";
+              fallback = new TransferMapsFallback(value);
+            }
+            this.current.transferMaps = filter;
+            if (fallback || this.current.transferMapsFallback) {
+              this.current.transferMapsFallback = fallback;
+              if (!this.current.patternFill) {
+                this.ctx.fillStyle = this.#transferColor(this.current.fillColor);
+              }
+              if (!this.current.patternStroke) {
+                this.ctx.strokeStyle = this.#transferColor(this.current.strokeColor);
+              }
+            }
+            break;
+          }
       }
     }
   }
@@ -11770,9 +11811,13 @@ class CanvasGraphics {
     this.current.patternFill = true;
     this.current.tilingPatternDims = pattern instanceof TilingPattern ? [0, 0, 0, 0] : null;
   }
+  #transferColor(color) {
+    return this.current.transferMapsFallback?.applyToColor(color) ?? color;
+  }
   setStrokeRGBColor(opIdx, color) {
     this.dependencyTracker?.recordSimpleData("strokeColor", opIdx);
-    this.ctx.strokeStyle = this.current.strokeColor = color;
+    this.current.strokeColor = color;
+    this.ctx.strokeStyle = this.#transferColor(color);
     this.current.patternStroke = false;
   }
   setStrokeTransparent(opIdx) {
@@ -11782,7 +11827,8 @@ class CanvasGraphics {
   }
   setFillRGBColor(opIdx, color) {
     this.dependencyTracker?.recordSimpleData("fillColor", opIdx);
-    this.ctx.fillStyle = this.current.fillColor = color;
+    this.current.fillColor = color;
+    this.ctx.fillStyle = this.#transferColor(color);
     this.current.patternFill = false;
     this.current.tilingPatternDims = null;
   }
@@ -11927,7 +11973,7 @@ class CanvasGraphics {
     groupCtx.translate(-offsetX, -offsetY);
     groupCtx.transform(...currentTransform);
     const needsBackdropCopy = !group.isolated && !group.smask && group.needsIsolation;
-    const replaceBackdrop = needsBackdropCopy && !inSMaskMode && savedKnockoutLevel === 0 && !group.knockout && !group.isGray && group.hasSoftMask && currentCtx.globalAlpha === 1 && currentCtx.globalCompositeOperation === "source-over" && this.current.transferMaps === "none";
+    const replaceBackdrop = needsBackdropCopy && !inSMaskMode && savedKnockoutLevel === 0 && !group.knockout && !group.isGray && group.hasSoftMask && currentCtx.globalAlpha === 1 && currentCtx.globalCompositeOperation === "source-over" && this.current.transferMaps === "none" && !this.current.transferMapsFallback;
     if (needsBackdropCopy && (inSMaskMode || replaceBackdrop)) {
       groupCtx.save();
       groupCtx.setTransform(1, 0, 0, 1, 0, 0);
@@ -12014,6 +12060,7 @@ class CanvasGraphics {
       this.ctx.restore();
       const currentMtx = getCurrentTransform(this.ctx);
       this.restore(opIdx);
+      this.current.transferMapsFallback?.applyToCanvas(groupCtx);
       this.ctx.save();
       this.ctx.setTransform(...currentMtx);
       const dirtyBox = F32_BBOX_INIT.slice();
@@ -12247,8 +12294,8 @@ class CanvasGraphics {
     }
     const started = this.#beginKnockoutElement(this.current.fillAlpha);
     const ctx = this.ctx;
-    const fillColor = this.current.fillColor;
     const isPatternFill = this.current.patternFill;
+    const fillColor = isPatternFill ? this.current.fillColor : ctx.fillStyle;
     this.dependencyTracker?.resetBBox(opIdx).recordDependencies(opIdx, Dependencies.transformAndFill);
     for (const image of images) {
       const {
@@ -12317,11 +12364,17 @@ class CanvasGraphics {
       ctx.filter = this.current.transferMaps;
       ctx.drawImage(ctx.canvas, 0, 0);
       ctx.filter = "none";
+    } else {
+      this.current.transferMapsFallback?.applyToCanvas(ctx);
     }
     return ctx.canvas;
   }
   applyTransferMapsToBitmap(imgData) {
-    if (this.current.transferMaps === "none") {
+    const {
+      transferMaps,
+      transferMapsFallback
+    } = this.current;
+    if (transferMaps === "none" && !transferMapsFallback) {
       return {
         img: imgData.bitmap,
         canvasEntry: null
@@ -12334,9 +12387,10 @@ class CanvasGraphics {
     } = imgData;
     const tmpCanvas = this.canvasFactory.create(width, height);
     const tmpCtx = tmpCanvas.context;
-    tmpCtx.filter = this.current.transferMaps;
+    tmpCtx.filter = transferMaps;
     tmpCtx.drawImage(bitmap, 0, 0);
     tmpCtx.filter = "none";
+    transferMapsFallback?.applyToCanvas(tmpCtx);
     return {
       img: tmpCanvas.canvas,
       canvasEntry: tmpCanvas
@@ -12395,8 +12449,13 @@ class CanvasGraphics {
     const ctx = this.ctx;
     let imgToPaint;
     let inlineImgCanvas = null;
-    if (imgData.bitmap) {
+    if (imgData.bitmap && !this.current.transferMapsFallback) {
       imgToPaint = imgData.bitmap;
+    } else if (imgData.bitmap) {
+      ({
+        img: imgToPaint,
+        canvasEntry: inlineImgCanvas
+      } = this.applyTransferMapsToBitmap(imgData));
     } else {
       const w = imgData.width;
       const h = imgData.height;
@@ -12736,25 +12795,13 @@ class DOMFilterFactory extends BaseFilterFactory {
     return this.#_defs;
   }
   #createTables(maps) {
+    const toTable = map => map && Array.from(map, v => v / 255).join(",");
     if (maps.length === 1) {
-      const mapR = maps[0];
-      const buffer = new Array(256);
-      for (let i = 0; i < 256; i++) {
-        buffer[i] = mapR[i] / 255;
-      }
-      const table = buffer.join(",");
+      const table = toTable(maps[0]);
       return [table, table, table];
     }
     const [mapR, mapG, mapB] = maps;
-    const bufferR = new Array(256);
-    const bufferG = new Array(256);
-    const bufferB = new Array(256);
-    for (let i = 0; i < 256; i++) {
-      bufferR[i] = mapR[i] / 255;
-      bufferG[i] = mapG[i] / 255;
-      bufferB[i] = mapB[i] / 255;
-    }
-    return [bufferR.join(","), bufferG.join(","), bufferB.join(",")];
+    return [toTable(mapR), toTable(mapG), toTable(mapB)];
   }
   #createUrl(id) {
     if (this.#baseUrl === undefined) {
@@ -13017,6 +13064,9 @@ class DOMFilterFactory extends BaseFilterFactory {
     return filter;
   }
   #appendFeFunc(feComponentTransfer, func, table) {
+    if (!table) {
+      return;
+    }
     const feFunc = this.#document.createElementNS(SVG_NS, func);
     feFunc.setAttribute("type", "discrete");
     feFunc.setAttribute("tableValues", table);
@@ -13364,10 +13414,7 @@ class OptionalContentConfig {
     if (!this.#groups.size) {
       return null;
     }
-    if (this.#order) {
-      return this.#order.slice();
-    }
-    return [...this.#groups.keys()];
+    return this.#order ? this.#order.slice() : [...this.#groups.keys()];
   }
   getGroup(id) {
     return this.#groups.get(id) || null;
@@ -14479,7 +14526,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.3.335",
+    apiVersion: "6.4.195",
     data,
     password,
     disableAutoFetch,
@@ -14715,8 +14762,8 @@ class PDFDocumentProxy {
   getData() {
     return this._transport.getData();
   }
-  saveDocument() {
-    return this._transport.saveDocument();
+  saveDocument(printToPDF) {
+    return this._transport.saveDocument(printToPDF);
   }
   extractPages(pageInfos, copyLevels = null) {
     return this._transport.extractPages(pageInfos, copyLevels);
@@ -15260,9 +15307,9 @@ class PDFWorker {
       }, {
         signal: ac.signal
       });
-      messageHandler.on("test", data => {
+      messageHandler.on("ready", data => {
         ac.abort();
-        if (this.destroyed || !data) {
+        if (this.destroyed || !(data instanceof Uint8Array)) {
           terminateEarly();
           return;
         }
@@ -15271,28 +15318,10 @@ class PDFWorker {
         this.#webWorker = worker;
         this.#resolve();
       });
-      messageHandler.on("ready", data => {
-        ac.abort();
-        if (this.destroyed) {
-          terminateEarly();
-          return;
-        }
-        try {
-          sendTest();
-        } catch {
-          this.#setupFakeWorker();
-        }
-      });
-      const sendTest = () => {
-        const testObj = new Uint8Array();
-        messageHandler.send("test", testObj, [testObj.buffer]);
-      };
-      sendTest();
-      return;
     } catch {
       info("The worker has been disabled.");
+      this.#setupFakeWorker();
     }
-    this.#setupFakeWorker();
   }
   #setupFakeWorker() {
     if (!PDFWorker.#isWorkerDisabled) {
@@ -15370,6 +15399,7 @@ class WorkerTransport {
   #pagePromises = new Map();
   #pageRefCache = new Map();
   #passwordCapability = null;
+  #printToPDF = null;
   constructor(messageHandler, loadingTask, networkStream, params, factory, pagesMapper) {
     this.messageHandler = messageHandler;
     this.loadingTask = loadingTask;
@@ -15711,11 +15741,12 @@ class WorkerTransport {
       }
       this.#onProgress(data);
     });
+    messageHandler.on("PrintToPDF", data => this.#printToPDF?.(data) ?? null);
   }
   getData() {
     return this.messageHandler.sendWithPromise("GetData", null);
   }
-  saveDocument() {
+  saveDocument(printToPDF = null) {
     if (this.annotationStorage.size <= 0) {
       warn("saveDocument called while `annotationStorage` is empty, " + "please use the getData-method instead.");
     }
@@ -15723,12 +15754,15 @@ class WorkerTransport {
       map,
       transfer
     } = this.annotationStorage.serializable;
+    this.#printToPDF = printToPDF;
     return this.messageHandler.sendWithPromise("SaveDocument", {
       isPureXfa: !!this._htmlForXfa,
       numPages: this._numPages,
       annotationStorage: map,
+      supportsPrintToPDF: this.#printToPDF !== null,
       filename: this.#fullReader?.filename ?? null
     }, transfer).finally(() => {
+      this.#printToPDF = null;
       this.annotationStorage.resetModified();
     });
   }
@@ -15849,10 +15883,7 @@ class WorkerTransport {
     return this.messageHandler.sendWithPromise("GetDestinations", null);
   }
   getDestination(id) {
-    if (typeof id !== "string") {
-      return Promise.reject(new Error("Invalid destination request."));
-    }
-    return this.messageHandler.sendWithPromise("GetDestination", {
+    return typeof id !== "string" ? Promise.reject(new Error("Invalid destination request.")) : this.messageHandler.sendWithPromise("GetDestination", {
       id
     });
   }
@@ -16136,8 +16167,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.3.335";
-const build = "74515c623";
+const version = "6.4.195";
+const build = "d54c193bd";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -16679,10 +16710,7 @@ class AnnotationElement {
       data
     } = this;
     const editor = this.annotationStorage?.getEditor(data.id);
-    if (editor) {
-      return editor.getData();
-    }
-    return data;
+    return editor ? editor.getData() : data;
   }
   get hasCommentButton() {
     return this.enableComment && this.hasPopupElement;
@@ -16725,10 +16753,7 @@ class AnnotationElement {
         return [maxX, maxY];
       }
     }
-    if (rect) {
-      return [rect[2], rect[3]];
-    }
-    return null;
+    return rect ? [rect[2], rect[3]] : null;
   }
   _normalizePoint(point) {
     const {
@@ -17192,10 +17217,7 @@ class AnnotationElement {
         id,
         exportValues
       } of fieldObj) {
-        if (page === -1) {
-          continue;
-        }
-        if (id === skipId) {
+        if (page === -1 || id === skipId) {
           continue;
         }
         const exportValue = typeof exportValues === "string" ? exportValues : null;
@@ -17217,10 +17239,7 @@ class AnnotationElement {
         exportValue
       } = domElement;
       const id = domElement.getAttribute("data-element-id");
-      if (id === skipId) {
-        continue;
-      }
-      if (!GetElementsByNameSet.has(domElement)) {
+      if (id === skipId || !GetElementsByNameSet.has(domElement)) {
         continue;
       }
       fields.push({
@@ -18753,10 +18772,7 @@ class PopupElement {
       color,
       opacity
     } = this.#firstElement.commentData;
-    if (!color) {
-      return null;
-    }
-    return this.#parent._commentManager.makeCommentColor(color, opacity);
+    return !color ? null : this.#parent._commentManager.makeCommentColor(color, opacity);
   }
   focusCommentButton() {
     setTimeout(() => {
@@ -19713,11 +19729,15 @@ class MediaAnnotationElement extends AnnotationElement {
     const {
       signal
     } = this.#abortController;
-    const url = URL.createObjectURL(new Blob([content], {
+    const blob = new Blob([content], {
       type: contentType
-    }));
+    });
+    if (!/^(?:video|audio)\//.test(blob.type)) {
+      return;
+    }
+    const url = URL.createObjectURL(blob);
     this.#contentUrl = url;
-    const isAudio = contentType.startsWith("audio/");
+    const isAudio = blob.type.startsWith("audio/");
     const media = document.createElement(isAudio ? "audio" : "video");
     this.#media = media;
     media.className = "mediaContent";
@@ -21511,10 +21531,7 @@ class DrawingEditor extends AnnotationEditor {
   }
   static _drawMove(event) {
     CurrentPointers.isSameTimeStamp(event.timeStamp);
-    if (!DrawingEditor.#currentDraw) {
-      return;
-    }
-    if (!CurrentPointers.isSamePointerId(event.pointerId)) {
+    if (!DrawingEditor.#currentDraw || !CurrentPointers.isSamePointerId(event.pointerId)) {
       return;
     }
     if (CurrentPointers.isUsingMultiplePointers()) {
@@ -24024,10 +24041,7 @@ class SignatureExtractor {
     if (i === 0) {
       return j > 0 ? 0 : 4;
     }
-    if (i === 1) {
-      return j + 6;
-    }
-    return 2 - j;
+    return i === 1 ? j + 6 : 2 - j;
   }
   static #neighborIdToIndex = new Int32Array([0, 1, -1, 1, -1, 0, -1, -1, 0, -1, 1, -1, 1, 0, 1, 1]);
   static #clockwiseNonZero(buf, width, i0, j0, i, j, offset) {
@@ -25829,10 +25843,7 @@ class AnnotationEditorLayer {
     if (annotationLayer) {
       for (const editable of annotationLayer.getEditableAnnotations()) {
         editable.hide();
-        if (this.#uiManager.isDeletedAnnotationElement(editable.data.id)) {
-          continue;
-        }
-        if (annotationElementIds.has(editable.data.id)) {
+        if (this.#uiManager.isDeletedAnnotationElement(editable.data.id) || annotationElementIds.has(editable.data.id)) {
           continue;
         }
         const editor = await this.deserialize(editable);
@@ -26432,10 +26443,7 @@ function getTextLayer(node) {
   if (!node) {
     return null;
   }
-  if (node.nodeType === Node.ELEMENT_NODE) {
-    return node.closest(".textLayer");
-  }
-  return node.parentElement?.closest(".textLayer") || null;
+  return node.nodeType === Node.ELEMENT_NODE ? node.closest(".textLayer") : node.parentElement?.closest(".textLayer") || null;
 }
 function isPointBefore(nodeA, offsetA, nodeB, offsetB) {
   if (nodeA === nodeB) {
@@ -26464,13 +26472,10 @@ function normalizeEdgeBoundary(container, offset, textLayer) {
   if (!lastNode || !textLayer.contains(lastNode)) {
     return null;
   }
-  if (lastNode.nodeType === Node.TEXT_NODE) {
-    return {
-      container: lastNode,
-      offset: lastNode.textContent.length
-    };
-  }
-  return {
+  return lastNode.nodeType === Node.TEXT_NODE ? {
+    container: lastNode,
+    offset: lastNode.textContent.length
+  } : {
     container: lastNode,
     offset: lastNode.childNodes.length
   };

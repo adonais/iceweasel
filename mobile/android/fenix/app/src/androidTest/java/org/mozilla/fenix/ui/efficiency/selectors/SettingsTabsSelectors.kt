@@ -26,7 +26,7 @@ object SettingsTabsSelectors : SelectorContainer {
     val INACTIVE_TABS_TITLE =
         Selector(
             strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
-            value = getStringResource(R.string.preferences_inactive_tabs_title),
+            value = getStringResource(R.string.preferences_inactive_tabs_toggle_title),
             description = "Inactive tabs title",
             groups = setOf(Group.TAB_SETTINGS),
             readiness = PageReadinessProfiles.READY_CONTENT,

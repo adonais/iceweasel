@@ -616,7 +616,6 @@ impl YamlWriter {
                     DisplayItem::SetFilterOps => {}
                     DisplayItem::SetFilterData => {}
                     DisplayItem::SetPoints => {}
-                    DisplayItem::RepeatingImage(..) => {}
                     DisplayItem::YuvImage(..) => {}
                     DisplayItem::BackdropFilter(..) => {}
                     DisplayItem::Gradient(..) => {}

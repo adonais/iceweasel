@@ -1,0 +1,75 @@
+From 2208cf269f0134bc354af40003bca46df970af9f Mon Sep 17 00:00:00 2001
+From: serge-sans-paille <sguelton@mozilla.com>
+Date: Tue, 13 May 2025 12:18:21 +0200
+Subject: [PATCH 5/7] Allow --disable_exceptions without --minimal_build
+
+onnxruntime_DISABLE_EXCEPTIONS is a dependent option that is forced off unless
+onnxruntime_MINIMAL_BUILD is set, and build_args.py rejects the flag combination
+outright. Make it a plain option and drop both checks: the things that made it
+unsafe standalone (raw throws in ONNX, non-CPU providers) are handled by the
+other local patches and by building the CPU provider only.
+
+Keep unwind tables when exceptions are disabled. Firefox builds with
+-funwind-tables so the crash reporter can walk stacks, and frames inside
+libonnxruntime should stay walkable too.
+---
+ cmake/CMakeLists.txt                    | 3 +--
+ cmake/adjust_global_compile_flags.cmake | 6 +-----
+ tools/ci_build/build_args.py            | 3 ---
+ 3 files changed, 2 insertions(+), 10 deletions(-)
+
+diff --git a/cmake/CMakeLists.txt b/cmake/CMakeLists.txt
+index 0946a3e..adf4097 100644
+--- a/cmake/CMakeLists.txt
++++ b/cmake/CMakeLists.txt
+@@ -201,8 +201,7 @@ option(onnxruntime_MINIMAL_BUILD "Exclude as much as possible from the build. Su
+ option(onnxruntime_CLIENT_PACKAGE_BUILD "Enables default settings that are more appropriate for client/on-device workloads." OFF)
+ option(onnxruntime_ENABLE_SESSION_THREADPOOL_CALLBACKS "Enable per-session thread pool work callbacks." OFF)
+ cmake_dependent_option(onnxruntime_DISABLE_RTTI "Disable RTTI" ON "NOT onnxruntime_ENABLE_PYTHON;NOT onnxruntime_USE_CUDA" OFF)
+-# For now onnxruntime_DISABLE_EXCEPTIONS will only work with onnxruntime_MINIMAL_BUILD, more changes (ONNX, non-CPU EP, ...) are required to run this standalone
+-cmake_dependent_option(onnxruntime_DISABLE_EXCEPTIONS "Disable exception handling. Requires onnxruntime_MINIMAL_BUILD currently." ON "onnxruntime_MINIMAL_BUILD;NOT onnxruntime_ENABLE_PYTHON" OFF)
++option(onnxruntime_DISABLE_EXCEPTIONS "Disable exception handling." OFF)
+ # Even when onnxruntime_DISABLE_ABSEIL is ON, ONNX Runtime still needs to link to abseil.
+ option(onnxruntime_DISABLE_ABSEIL "Do not use Abseil data structures in ONNX Runtime source code. Redefine Inlined containers to STD containers." OFF)
+ 
+diff --git a/cmake/adjust_global_compile_flags.cmake b/cmake/adjust_global_compile_flags.cmake
+index 6e548ac..d98a167 100644
+--- a/cmake/adjust_global_compile_flags.cmake
++++ b/cmake/adjust_global_compile_flags.cmake
+@@ -156,10 +156,6 @@ endif()
+ # If this is only enabled in an onnxruntime_ORT_MODEL_FORMAT_ONLY build we don't need ONNX changes
+ # as we (currently) only pull in data_type_utils.cc/h which doesn't throw
+ if (onnxruntime_DISABLE_EXCEPTIONS)
+-  if (NOT onnxruntime_MINIMAL_BUILD)
+-    message(FATAL_ERROR "onnxruntime_MINIMAL_BUILD required for onnxruntime_DISABLE_EXCEPTIONS")
+-  endif()
+-
+   if (onnxruntime_ENABLE_PYTHON)
+     # pybind11 highly depends on C++ exceptions.
+     message(FATAL_ERROR "onnxruntime_ENABLE_PYTHON must be disabled for onnxruntime_DISABLE_EXCEPTIONS")
+@@ -178,7 +174,7 @@ if (onnxruntime_DISABLE_EXCEPTIONS)
+     string(APPEND CMAKE_CXX_FLAGS " /wd4834 /wd4702")
+     add_compile_definitions("_HAS_EXCEPTIONS=0")
+   else()
+-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables")
++    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
+   endif()
+ endif()
+ 
+diff --git a/tools/ci_build/build_args.py b/tools/ci_build/build_args.py
+index 718e6d4..35b8f59 100644
+--- a/tools/ci_build/build_args.py
++++ b/tools/ci_build/build_args.py
+@@ -1061,9 +1061,6 @@ def parse_arguments() -> argparse.Namespace:
+                 "Cross-compiling build detected: Defaulting to --update --build. Specify --test explicitly to run tests."
+             )
+ 
+-    # Validation: Minimal build requires disabling exceptions
+-    if args.disable_exceptions and args.minimal_build is None:
+-        parser.error("--disable_exceptions requires --minimal_build to be specified.")
+     if is_windows():
+         if getattr(args, "use_winml", False) and not getattr(args, "enable_wcos", False):
+             parser.error("--use_winml requires --enable_wcos to be specified.")
+-- 
+2.55.0
+

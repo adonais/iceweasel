@@ -155,3 +155,8 @@ if CONFIG["USE_LIBZ_RS"]:
 
 if CONFIG["FUZZING_JS_FUZZILLI"]:
     include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+LICENSED_UNDER += ["mit"]
+LICENSED_UNDER["mit"].paths = [
+    "Float16.h",
+]

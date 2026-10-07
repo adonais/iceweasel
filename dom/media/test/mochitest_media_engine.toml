@@ -1,8 +1,8 @@
 [DEFAULT]
 subsuite = "media"
 tags = "media-engine-compatible"
-skip-if = [
-  "!wmfme",
+run-if = [
+  "wmfme",
 ]
 
 support-files = [

@@ -8,7 +8,7 @@ const { ERRORS } = ChromeUtils.importESModule(
 );
 
 const { BackupError } = ChromeUtils.importESModule(
-  "resource:///modules/backup/BackupError.mjs"
+  "moz-src:///browser/components/backup/BackupError.mjs"
 );
 
 const SCHEDULED_BACKUPS_ENABLED_PREF = "browser.backup.scheduled.enabled";

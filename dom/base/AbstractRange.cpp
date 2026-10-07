@@ -14,6 +14,7 @@
 #include "mozilla/dom/CrossShadowBoundaryRange.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "mozilla/dom/StaticRange.h"
@@ -23,7 +24,6 @@
 #include "nsFmtString.h"
 #include "nsINode.h"
 #include "nsLayoutUtils.h"
-#include "nsRange.h"
 #include "nsTArray.h"
 #include "nsTextFrame.h"
 
@@ -31,16 +31,16 @@ namespace mozilla::dom {
 
 template nsresult AbstractRange::SetStartAndEndInternal(
     const RangeBoundary& aStartBoundary, const RangeBoundary& aEndBoundary,
-    nsRange* aRange, AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
+    Range* aRange, AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
 template nsresult AbstractRange::SetStartAndEndInternal(
     const RangeBoundary& aStartBoundary, const RawRangeBoundary& aEndBoundary,
-    nsRange* aRange, AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
+    Range* aRange, AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
 template nsresult AbstractRange::SetStartAndEndInternal(
     const RawRangeBoundary& aStartBoundary, const RangeBoundary& aEndBoundary,
-    nsRange* aRange, AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
+    Range* aRange, AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
 template nsresult AbstractRange::SetStartAndEndInternal(
     const RawRangeBoundary& aStartBoundary,
-    const RawRangeBoundary& aEndBoundary, nsRange* aRange,
+    const RawRangeBoundary& aEndBoundary, Range* aRange,
     AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
 template nsresult AbstractRange::SetStartAndEndInternal(
     const RangeBoundary& aStartBoundary, const RangeBoundary& aEndBoundary,
@@ -58,7 +58,7 @@ template nsresult AbstractRange::SetStartAndEndInternal(
     const RawRangeBoundary& aStartBoundary,
     const RawRangeBoundary& aEndBoundary, StaticRange* aRange,
     AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
-template bool AbstractRange::MaybeCacheToReuse(nsRange& aInstance);
+template bool AbstractRange::MaybeCacheToReuse(Range& aInstance);
 template bool AbstractRange::MaybeCacheToReuse(StaticRange& aInstance);
 template bool AbstractRange::MaybeCacheToReuse(
     CrossShadowBoundaryRange& aInstance);
@@ -160,8 +160,8 @@ void AbstractRange::UnmarkDescendants(nsINode& aNode) {
 }
 
 // NOTE: If you need to change default value of members of AbstractRange,
-//       update nsRange::Create(nsINode* aNode) and ClearForReuse() too.
-AbstractRange::AbstractRange(nsINode* aNode, bool aIsDynamicRange,
+//       update Range::Create(nsINode* aNode) and ClearForReuse() too.
+AbstractRange::AbstractRange(nsINode* aNode, bool aIsRange,
                              TreeKind aBoundaryTreeKind)
     : mStart(aBoundaryTreeKind),
       mEnd(aBoundaryTreeKind),
@@ -169,7 +169,7 @@ AbstractRange::AbstractRange(nsINode* aNode, bool aIsDynamicRange,
       mIsPositioned(false),
       mIsGenerated(false),
       mCalledByJS(false),
-      mIsDynamicRange(aIsDynamicRange) {
+      mIsRange(aIsRange) {
   mRefCnt.SetIsOnMainThread();
   Init(aNode);
 }
@@ -184,8 +184,8 @@ void AbstractRange::Init(nsINode* aNode) {
 // static
 void AbstractRange::Shutdown() {
   sHasShutDown = true;
-  if (nsTArray<RefPtr<nsRange>>* cachedRanges = nsRange::sCachedRanges) {
-    nsRange::sCachedRanges = nullptr;
+  if (nsTArray<RefPtr<Range>>* cachedRanges = Range::sCachedRanges) {
+    Range::sCachedRanges = nullptr;
     cachedRanges->Clear();
     delete cachedRanges;
   }
@@ -336,8 +336,8 @@ nsresult AbstractRange::SetStartAndEndInternal(
       // accordingly
       aRange->DoSetRange(aStartBoundary, aEndBoundary, newEndRoot);
     } else {
-      MOZ_ASSERT(aRange->IsDynamicRange());
-      // In contrast, nsRange keeps both. It has a pair of start and end
+      MOZ_ASSERT(aRange->IsRange());
+      // In contrast, Range keeps both. It has a pair of start and end
       // which they have been collapsed to one end, and it also may have a pair
       // of start and end which are the original value.
       aRange->DoSetRange(aEndBoundary, aEndBoundary, newEndRoot);
@@ -369,9 +369,8 @@ nsresult AbstractRange::SetStartAndEndInternal(
                   .get());
           return NS_ERROR_FAILURE;
         }
-        aRange->AsDynamicRange()
-            ->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(startInFlat,
-                                                             endInFlat);
+        aRange->AsRange()->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+            startInFlat, endInFlat);
       }
     }
     return NS_OK;
@@ -419,7 +418,7 @@ nsresult AbstractRange::SetStartAndEndInternal(
   }
 
   if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes &&
-      aRange->IsDynamicRange()) {
+      aRange->IsRange()) {
     const bool isCollapsing = aStartBoundary == aEndBoundary;
     const auto startInFlat = aStartBoundary
                                  .AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
@@ -448,7 +447,7 @@ nsresult AbstractRange::SetStartAndEndInternal(
       return NS_ERROR_FAILURE;
     }
 
-    aRange->AsDynamicRange()->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+    aRange->AsRange()->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
         startInFlat, endInFlat);
   }
 
@@ -590,56 +589,47 @@ void AbstractRange::UpdateCommonAncestorIfNecessary() {
 }
 
 const RangeBoundary& AbstractRange::MayCrossShadowBoundaryStartRef() const {
-  return IsDynamicRange() ? AsDynamicRange()->MayCrossShadowBoundaryStartRef()
-                          : mStart;
+  return IsRange() ? AsRange()->MayCrossShadowBoundaryStartRef() : mStart;
 }
 
 const RangeBoundary& AbstractRange::MayCrossShadowBoundaryEndRef() const {
-  return IsDynamicRange() ? AsDynamicRange()->MayCrossShadowBoundaryEndRef()
-                          : mEnd;
+  return IsRange() ? AsRange()->MayCrossShadowBoundaryEndRef() : mEnd;
 }
 
 nsIContent* AbstractRange::GetMayCrossShadowBoundaryChildAtStartOffset() const {
-  return IsDynamicRange()
-             ? AsDynamicRange()->GetMayCrossShadowBoundaryChildAtStartOffset()
-             : mStart.GetChildAtOffset();
+  return IsRange() ? AsRange()->GetMayCrossShadowBoundaryChildAtStartOffset()
+                   : mStart.GetChildAtOffset();
 }
 
 nsIContent* AbstractRange::GetMayCrossShadowBoundaryChildAtEndOffset() const {
-  return IsDynamicRange()
-             ? AsDynamicRange()->GetMayCrossShadowBoundaryChildAtEndOffset()
-             : mEnd.GetChildAtOffset();
+  return IsRange() ? AsRange()->GetMayCrossShadowBoundaryChildAtEndOffset()
+                   : mEnd.GetChildAtOffset();
 }
 
 nsINode* AbstractRange::GetMayCrossShadowBoundaryStartContainer() const {
-  return IsDynamicRange()
-             ? AsDynamicRange()->GetMayCrossShadowBoundaryStartContainer()
-             : mStart.GetContainer();
+  return IsRange() ? AsRange()->GetMayCrossShadowBoundaryStartContainer()
+                   : mStart.GetContainer();
 }
 
 nsINode* AbstractRange::GetMayCrossShadowBoundaryEndContainer() const {
-  return IsDynamicRange()
-             ? AsDynamicRange()->GetMayCrossShadowBoundaryEndContainer()
-             : mEnd.GetContainer();
+  return IsRange() ? AsRange()->GetMayCrossShadowBoundaryEndContainer()
+                   : mEnd.GetContainer();
 }
 
 bool AbstractRange::MayCrossShadowBoundary() const {
-  return IsDynamicRange() ? !!AsDynamicRange()->GetCrossShadowBoundaryRange()
-                          : false;
+  return IsRange() ? !!AsRange()->GetCrossShadowBoundaryRange() : false;
 }
 
 uint32_t AbstractRange::MayCrossShadowBoundaryStartOffset() const {
-  return IsDynamicRange()
-             ? AsDynamicRange()->MayCrossShadowBoundaryStartOffset()
-             : static_cast<uint32_t>(*mStart.Offset(
-                   RangeBoundary::OffsetFilter::kValidOrInvalidOffsets));
+  return IsRange() ? AsRange()->MayCrossShadowBoundaryStartOffset()
+                   : static_cast<uint32_t>(*mStart.Offset(
+                         RangeBoundary::OffsetFilter::kValidOrInvalidOffsets));
 }
 
 uint32_t AbstractRange::MayCrossShadowBoundaryEndOffset() const {
-  return IsDynamicRange()
-             ? AsDynamicRange()->MayCrossShadowBoundaryEndOffset()
-             : static_cast<uint32_t>(*mEnd.Offset(
-                   RangeBoundary::OffsetFilter::kValidOrInvalidOffsets));
+  return IsRange() ? AsRange()->MayCrossShadowBoundaryEndOffset()
+                   : static_cast<uint32_t>(*mEnd.Offset(
+                         RangeBoundary::OffsetFilter::kValidOrInvalidOffsets));
 }
 
 nsINode* AbstractRange::GetParentObject() const { return mOwner; }
@@ -660,7 +650,7 @@ bool AbstractRange::AreNormalRangeAndCrossShadowBoundaryRangeCollapsed() const {
   }
 
   if (const CrossShadowBoundaryRange* crossShadowBoundaryRange =
-          AsDynamicRange()->GetCrossShadowBoundaryRange()) {
+          AsRange()->GetCrossShadowBoundaryRange()) {
     return crossShadowBoundaryRange->Collapsed();
   }
 

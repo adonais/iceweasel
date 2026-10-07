@@ -9,6 +9,7 @@
 #include "AudioSinkWrapper.h"
 #include "CubebUtils.h"
 #include "MediaData.h"
+#include "MediaSinkTestUtils.h"
 #include "MockCubeb.h"
 #include "TimeUnits.h"
 #include "gmock/gmock.h"
@@ -22,21 +23,6 @@
 #include "nsThreadUtils.h"
 
 using namespace mozilla;
-
-// Build an AudioSinkWrapper whose sink creator draws from aQueue/aInfo. The
-// references must outlive the returned wrapper (the tests keep them as locals
-// or fixture members that do).
-static RefPtr<AudioSinkWrapper> MakeAudioSinkWrapper(
-    MediaQueue<AudioData>& aQueue, MediaInfo& aInfo, double aVolume) {
-  auto creator = [&aQueue, &aInfo]() {
-    return UniquePtr<AudioSink>{new AudioSink(AbstractThread::GetCurrent(),
-                                              aQueue, aInfo.mAudio,
-                                              /*resistFingerprinting*/ false)};
-  };
-  return new AudioSinkWrapper(
-      AbstractThread::GetCurrent(), aQueue, std::move(creator), aVolume,
-      /*playbackRate*/ 1.0, /*preservesPitch*/ true, /*sinkDevice*/ nullptr);
-}
 
 // This is a crashtest to check that AudioSinkWrapper::mEndedPromiseHolder is
 // not settled twice when sync and async AudioSink initializations race.
@@ -612,6 +598,59 @@ class AudioSinkWrapperReuseTest : public ::testing::Test {
   MediaEventListener mDestroyListener;
   bool mWrapperShutDown = false;
 };
+
+TEST_F(AudioSinkWrapperReuseTest, StreamNameSetBeforeStart) {
+  CreateWrapper();
+  mWrapper->SetStreamName(u"Before playback"_ns);
+  Start(media::TimeUnit::Zero());
+  ASSERT_TRUE(mStream);
+  EXPECT_EQ(mStream->StreamName(), "Before playback"_ns);
+}
+
+TEST_F(AudioSinkWrapperReuseTest, StreamNameAfterMute) {
+  CreateWrapper();
+  Start(media::TimeUnit::Zero());
+  ASSERT_TRUE(mStream);
+  mWrapper->SetStreamName(u"Original name"_ns);
+  EXPECT_EQ(mStream->StreamName(), "Original name"_ns);
+
+  mWrapper->SetVolume(0.0);
+  ProcessPending();
+  EXPECT_EQ(mDestroys, 1);
+  mWrapper->SetVolume(1.0);
+  SpinEventLoopUntil("unmuted stream start"_ns, [&] {
+    return mInits == 2 && mStream->State() == Some(CUBEB_STATE_STARTED);
+  });
+  EXPECT_EQ(mStream->StreamName(), "Original name"_ns);
+}
+
+TEST_F(AudioSinkWrapperReuseTest, StreamNameChangesDuringAsyncInit) {
+  CreateWrapper();
+  mWrapper->SetVolume(0.0);
+  Start(media::TimeUnit::Zero());
+  mWrapper->SetStreamName(u"Before initialization"_ns);
+  mWrapper->SetVolume(1.0);
+  // Change the name before the owner thread handles async initialization.
+  mWrapper->SetStreamName(u"During initialization"_ns);
+  SpinEventLoopUntil("async stream start"_ns, [&] {
+    return mStream && mStream->State() == Some(CUBEB_STATE_STARTED);
+  });
+  EXPECT_EQ(mStream->StreamName(), "During initialization"_ns);
+}
+
+TEST_F(AudioSinkWrapperReuseTest, StreamNameChangesWhileStashed) {
+  CreateWrapper();
+  Start(media::TimeUnit::Zero());
+  ASSERT_TRUE(mStream);
+  mWrapper->SetStreamName(u"Before seeking"_ns);
+  SeekStop();
+  EXPECT_EQ(mDestroys, 0);
+  mWrapper->SetStreamName(u"While seeking"_ns);
+  Start(media::TimeUnit::FromSeconds(10), MediaSink::StartType::SeekResume);
+  EXPECT_EQ(mInits, 1);
+  EXPECT_EQ(mDestroys, 0);
+  EXPECT_EQ(mStream->StreamName(), "While seeking"_ns);
+}
 
 // With stream reuse enabled, a seek keeps the audio stream alive and reuses it
 // across the stop/start cycle; with reuse disabled, the stream is torn down and

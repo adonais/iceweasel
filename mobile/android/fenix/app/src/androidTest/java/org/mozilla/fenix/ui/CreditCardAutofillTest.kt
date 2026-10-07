@@ -10,6 +10,7 @@ import java.time.LocalDate
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.Converted
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.bringAppToForeground
@@ -170,6 +171,12 @@ class CreditCardAutofillTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1512788
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.CreditCardAutofillTest#verifyCreditCardsSectionTest"],
+        bug = 2074465,
+        since = "2026-09",
+    )
+    @Critical
     @Test
     fun verifyCreditCardsSectionTest() {
         homeScreen(composeTestRule) {}

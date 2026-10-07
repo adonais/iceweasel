@@ -75,6 +75,23 @@ class MOZ_STACK_CLASS TransformReferenceBox final {
   // cases where we use pass-by-value instead of pass-by-reference.
   TransformReferenceBox(const TransformReferenceBox&) = delete;
 
+  enum { Unzoomed };
+
+  TransformReferenceBox(const nsIFrame* aFrame, decltype(Unzoomed))
+      : TransformReferenceBox(aFrame) {
+    mNeedsUnzooming = true;
+  }
+
+  TransformReferenceBox(const nsIFrame* aFrame,
+                        const nsRect& aFallbackDimensions,
+                        mozilla::StyleZoom aEffectiveZoom, decltype(Unzoomed))
+      : TransformReferenceBox(aFrame, aFallbackDimensions) {
+    mNeedsUnzooming = true;
+    if (!aFrame) {
+      mBox = aEffectiveZoom.Unzoom(mBox);
+    }
+  }
+
   void Init(const nsIFrame* aFrame) {
     MOZ_ASSERT(!mFrame && !mIsCached);
     mFrame = aFrame;
@@ -121,7 +138,22 @@ class MOZ_STACK_CLASS TransformReferenceBox final {
   const nsIFrame* mFrame = nullptr;
   nsRect mBox;
   bool mIsCached = false;
+
+  // When a reference box needs unzooming in order to correctly compute
+  // percentage sizes, this flag is set to true, so that when
+  // EnsureDimensionsAreCached() runs, we unzoom mBox.
+  bool mNeedsUnzooming = false;
+
+  // TODO(bug 2073614): Add a field of type StyleZoom so we don't have to pass
+  // the effective zoom around in callsites that include TransformReferenceBox
 };
+
+// The style system handles zooming of `<length>`s already, so usually we only
+// need to zoom matrix components that are really lengths but are represented as
+// a `<number>`. However, from `getComputedStyle()` we actually need to do the
+// opposite transformation (unzoom only the lengths, so that they round-trip).
+// This enum allows to switch between the two behaviors.
+enum class Zoomed : bool { No, Yes };
 
 float ProcessTranslatePart(
     const mozilla::LengthPercentage& aValue, TransformReferenceBox* aRefBox,
@@ -130,12 +162,14 @@ float ProcessTranslatePart(
 void ProcessInterpolateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
                               const mozilla::StyleTransformOperation& aOp,
                               TransformReferenceBox& aBounds,
-                              mozilla::StyleZoom aEffectiveZoom);
+                              mozilla::StyleZoom aEffectiveZoom,
+                              Zoomed aIsZoomed);
 
 void ProcessAccumulateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
                              const mozilla::StyleTransformOperation& aOp,
                              TransformReferenceBox& aBounds,
-                             mozilla::StyleZoom aEffectiveZoom);
+                             mozilla::StyleZoom aEffectiveZoom,
+                             Zoomed aIsZoomed);
 
 /**
  * Given a StyleTransform containing transform functions, returns a matrix
@@ -144,11 +178,16 @@ void ProcessAccumulateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
  * @param aList the transform operation list.
  * @param aBounds The frame's bounding rectangle.
  * @param aAppUnitsPerMatrixUnit The number of app units per device pixel.
+ * @param aEffectiveZoom The effective zoom which is applied to its target.
+ * @param aZoomTarget Determines which transforms need to have zoom applied,
+ * since matrices only use numbers while translations can have percentage and
+ * length values, which are not always already correctly zoomed.
  */
 mozilla::gfx::Matrix4x4 ReadTransforms(const mozilla::StyleTransform& aList,
                                        TransformReferenceBox& aBounds,
                                        float aAppUnitsPerMatrixUnit,
-                                       mozilla::StyleZoom aEffectiveZoom);
+                                       mozilla::StyleZoom aEffectiveZoom,
+                                       Zoomed aIsZoomed);
 
 // Generate the gfx::Matrix for CSS Transform Module Level 2.
 // https://drafts.csswg.org/css-transforms-2/#ctm
@@ -156,7 +195,8 @@ mozilla::gfx::Matrix4x4 ReadTransforms(
     const mozilla::StyleTranslate&, const mozilla::StyleRotate&,
     const mozilla::StyleScale&, const mozilla::ResolvedMotionPathData* aMotion,
     const mozilla::StyleTransform&, TransformReferenceBox& aRefBox,
-    float aAppUnitsPerMatrixUnit, mozilla::StyleZoom aEffectiveZoom);
+    float aAppUnitsPerMatrixUnit, mozilla::StyleZoom aEffectiveZoom,
+    Zoomed aIsZoomed);
 
 /**
  * Given the x and y values, compute the 2d position with respect to the given

@@ -6,32 +6,11 @@ import copy
 import os
 import re
 import signal
-import subprocess
 import sys
 import time
 from argparse import Namespace
-from contextlib import contextmanager
 from subprocess import PIPE, Popen
 from threading import Thread
-
-
-@contextmanager
-def popenCleanupHack(isWin):
-    """
-    Hack to work around https://bugs.python.org/issue37380
-    The basic idea is that on old versions of Python on Windows,
-    we need to clear subprocess._cleanup before we call Popen(),
-    then restore it afterwards.
-    """
-    savedCleanup = None
-    if isWin and sys.version_info[0] == 3 and sys.version_info < (3, 7, 5):
-        savedCleanup = subprocess._cleanup
-        subprocess._cleanup = lambda: None
-    try:
-        yield
-    finally:
-        if savedCleanup:
-            subprocess._cleanup = savedCleanup
 
 
 class Http3Server:
@@ -84,16 +63,15 @@ class Http3Server:
                 self._env["MOZ_HTTP3_MOCHITEST"] = "1"
             if self._proxyPort != -1:
                 self._env["MOZ_HTTP3_PROXY_PORT"] = str(self._proxyPort)
-            with popenCleanupHack(self._isWin):
-                process = Popen(
-                    [self._http3ServerPath, dbPath],
-                    stdin=PIPE,
-                    stdout=PIPE,
-                    stderr=PIPE,
-                    env=self._env,
-                    cwd=os.getcwd(),
-                    universal_newlines=True,
-                )
+            process = Popen(
+                [self._http3ServerPath, dbPath],
+                stdin=PIPE,
+                stdout=PIPE,
+                stderr=PIPE,
+                env=self._env,
+                cwd=os.getcwd(),
+                universal_newlines=True,
+            )
             self._http3ServerProc["http3Server"] = process
 
             name = "http3server"
@@ -199,22 +177,21 @@ class NodeHttp2Server:
         try:
             # We pipe stdin to node because the server will exit when its
             # stdin reaches EOF
-            with popenCleanupHack(self._isWin):
-                process = Popen(
-                    [
-                        self._nodeBin,
-                        self._serverPath,
-                        f"serverPort={self._dstServerPort}",
-                        f"listeningPort={self._port}",
-                        f"alpn={self._alpn}",
-                    ],
-                    stdin=PIPE,
-                    stdout=PIPE,
-                    stderr=PIPE,
-                    env=self._env,
-                    cwd=os.getcwd(),
-                    universal_newlines=True,
-                )
+            process = Popen(
+                [
+                    self._nodeBin,
+                    self._serverPath,
+                    f"serverPort={self._dstServerPort}",
+                    f"listeningPort={self._port}",
+                    f"alpn={self._alpn}",
+                ],
+                stdin=PIPE,
+                stdout=PIPE,
+                stderr=PIPE,
+                env=self._env,
+                cwd=os.getcwd(),
+                universal_newlines=True,
+            )
             self._nodeProc = process
 
             msg = process.stdout.readline()
@@ -330,17 +307,16 @@ class MozHttp2Server:
         self._log.info(f"Found node at {self._nodeBin}")
 
         try:
-            with popenCleanupHack(self._isWin):
-                process = Popen(
-                    [self._nodeBin, self._serverPath],
-                    stdin=PIPE,
-                    stdout=PIPE,
-                    stderr=PIPE,
-                    env=self._env,
-                    cwd=os.getcwd(),
-                    universal_newlines=True,
-                    start_new_session=True,
-                )
+            process = Popen(
+                [self._nodeBin, self._serverPath],
+                stdin=PIPE,
+                stdout=PIPE,
+                stderr=PIPE,
+                env=self._env,
+                cwd=os.getcwd(),
+                universal_newlines=True,
+                start_new_session=True,
+            )
             self._nodeProc = process
 
             msg = process.stdout.readline()

@@ -47,3 +47,15 @@ if CONFIG['TARGET_CPU'] == 'aarch64':
 if CONFIG['TARGET_ENDIANNESS'] == 'big':
     DEFINES['SNAPPY_IS_BIG_ENDIAN'] = 1
 
+
+LICENSES += ["snappy"]
+LICENSES["snappy"].title = "Snappy License"
+LICENSES["snappy"].text = "LICENSE-NOTICE.txt"
+LICENSES["snappy"].spdx = "BSD-3-Clause"
+LICENSES["snappy"].notice = """
+<p>This license applies to certain files in the directory <code>other-licenses/snappy/</code>.</p>
+"""
+
+LICENSED_UNDER += [
+    "snappy",
+]

@@ -65,6 +65,9 @@ export class SidebarHistory extends SidebarPage {
     this._menuSortByLastVisited = doc.getElementById(
       "sidebar-history-sort-by-last-visited"
     );
+    this._menuSortByMostVisited = doc.getElementById(
+      "sidebar-history-sort-by-most-visited"
+    );
     this._menu.addEventListener("command", this);
     this._menu.addEventListener("popuphidden", this.handlePopupEvent);
     this._contextMenu.addEventListener("popupshowing", this);
@@ -168,6 +171,9 @@ export class SidebarHistory extends SidebarPage {
       case "sidebar-history-sort-by-last-visited":
         this.#changeSortOption(e, "lastvisited");
         break;
+      case "sidebar-history-sort-by-most-visited":
+        this.#changeSortOption(e, "mostvisited");
+        break;
       case "sidebar-history-clear": {
         const button = await lazy.Sanitizer.showUI(this.topWindow);
         const outcome = button === "accept" ? "confirmed" : "cancelled";
@@ -237,6 +243,7 @@ export class SidebarHistory extends SidebarPage {
       site: "site",
       datesite: "date_and_site",
       lastvisited: "last_visited",
+      mostvisited: "most_visited",
     };
     Glean.browserUiInteraction.sidebarSortHistory.record({
       sort_type: sortTypeMap[sortOption],
@@ -367,6 +374,7 @@ export class SidebarHistory extends SidebarPage {
           this.#dateCardTemplate(l10nId, i, items, true)
         );
       case "lastvisited":
+      case "mostvisited":
         return historyVisits.map(
           ({ items }) =>
             html`<moz-card>
@@ -568,6 +576,10 @@ export class SidebarHistory extends SidebarPage {
     this._menuSortByLastVisited.toggleAttribute(
       "checked",
       this.controller.sortOption == "lastvisited"
+    );
+    this._menuSortByMostVisited.toggleAttribute(
+      "checked",
+      this.controller.sortOption == "mostvisited"
     );
   }
 

@@ -74,11 +74,9 @@ stateDiagram-v2
 
 The two layouts apply the entrance with slight differences:
 
-- **Grid** hoists `tabGroupEntranceAnimation` onto the outer `InteractableDragItemContainer`,
-  above the `LazyGridItem`, so the `1.06` overshoot is not clipped to the item's bounds.
-- **List** combines the entrance scale with the interaction scale inside
-  `tabItemGroupListInteractionAnimation` (`combinedScale = interactionScale * entranceScale`).
-  This is because the overshoot displays differently on a list, which has one item per row.
+- **Grid** hoists the entering item decoration onto the outer `InteractableDragItemContainer`,
+  above the `LazyGridItem`, so that a scale animation that exceeds the item's bounds is not clipped.
+- **List** animation is applied by the caller, since the animation clipping does not occur on list.
 
 ## Suppressing default item animations
 
@@ -92,8 +90,8 @@ per the spec:
 
 ## Key references
 
-- `SharedTabItemUi.kt` — holds most of the animation logic.
-- `InteractableGrid.kt` / `InteractableList.kt` — render the tab items and set `isEnteringGroup`.
+- `TabItemAnimations.kt` — holds most of the animation logic.
+- `InteractableGrid.kt` / `InteractableList.kt` — render the tab items and set `isEntering`.
 - `TabGroupAction.kt` — definition of `NewGroupCreated`, `NewGroupAnimationPlayed`.
 - `TabGroupActionReducer.kt` — sets/clears `enteringGroupId`.
 - `TabStorageMiddleware.kt` — dispatches `NewGroupCreated` after the group is persisted.

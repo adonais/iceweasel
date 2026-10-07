@@ -5,10 +5,14 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AutofillDataTypes: "resource://gre/modules/shared/AutofillDataTypes.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   MAX_SELECTED_TABS:
     "chrome://browser/content/aiwindow/modules/SmartFormFillConstants.mjs",
   getTabList: "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs",
+  FormAutofill: "resource://autofill/FormAutofill.sys.mjs",
+  formAutofillStorage: "resource://autofill/FormAutofillStorage.sys.mjs",
+  FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   MemoriesManager:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
@@ -73,7 +77,10 @@ const CONFIDENCE_RANK = new Map([
 
 // The lowest confidence a model's value must reach to be filled. Reported as
 // the threshold of the generation request, so both have to move together.
-const FILL_CONFIDENCE_THRESHOLD = "high";
+const FILL_CONFIDENCE_THRESHOLD = "medium";
+
+// the lowest confidence allowed for tab relevance
+const TAB_RELEVANCE_THRESHOLD = "medium";
 
 /**
  * @typedef {{
@@ -420,8 +427,16 @@ export class SmartFormFillController {
     const page = this.#pageInfo;
 
     // NOTE: These are disabled for v0, will enable in later version
-    //const memories = this.#getMemories(page, fields);
-    const memories = [];
+    //const relevantMemories = await this.#getMemories(page, fields);
+    const relevantMemories = [];
+
+    const memories = relevantMemories.map(memory => ({
+      id: memory.id,
+      memory_summary: memory.memory_summary,
+    }));
+    const similarityByMemory = new Map(
+      relevantMemories.map(memory => [memory.id, memory.similarity])
+    );
 
     const relevantTabs = selectedTabs.map(selectedTab => {
       const { title, url } = this.#tabsById.get(selectedTab.id);
@@ -477,6 +492,7 @@ export class SmartFormFillController {
             valuesByToken,
             modelInfo,
             threshold: FILL_CONFIDENCE_THRESHOLD,
+            similarityByMemory,
           });
         },
       });
@@ -496,6 +512,7 @@ export class SmartFormFillController {
         formFields,
         classifications,
         tokensByFieldId,
+        similarityByMemory,
       });
 
       return {
@@ -522,7 +539,11 @@ export class SmartFormFillController {
    * @param {PageInfo} pageInfo
    * @param {Array<FieldData>} fields
    *
-   * @returns {Promise<Array<string>>}
+   * @returns {Promise<Array<{
+   *   id: string,
+   *   memory_summary: string,
+   *   similarity: number,
+   * }>>}
    */
   // eslint-disable-next-line no-unused-private-class-members -- will be enabled in v0+
   async #getMemories(pageInfo, fields) {
@@ -548,9 +569,11 @@ export class SmartFormFillController {
     const relevantMemories =
       await lazy.MemoriesManager.getRelevantMemories(contextMessage);
 
-    return relevantMemories.map(
-      relevant_memory => relevant_memory.memory_summary
-    );
+    return relevantMemories.map(relevant_memory => {
+      const { id, memory_summary, similarity } = relevant_memory;
+
+      return { id, memory_summary, similarity };
+    });
   }
 
   /**
@@ -580,7 +603,7 @@ export class SmartFormFillController {
       let value;
       switch (result.action) {
         case "fill_from_token":
-          value = result.token ? valuesByToken.get(result.token) : undefined;
+          value = result.value ? valuesByToken.get(result.value) : undefined;
           break;
 
         case "generate":
@@ -613,22 +636,30 @@ export class SmartFormFillController {
     const valuesByToken = new Map();
     const tokensByFieldId = new Map();
     const typeCounts = new Map();
+    // Read once, and only for a form that has a field to spend it on.
+    let savedAddresses;
 
     for (const field of fields) {
-      if (!field.localGuess) {
+      const type = field.localGuess;
+      if (!type) {
         continue;
       }
 
-      const value = await this.#getStoredValue(field);
+      let value;
+      if (lazy.FormAutofillUtils.isAddressField(type)) {
+        savedAddresses ??= await this.#getSavedAddresses();
+        value = savedAddresses.find(address => address[type])?.[type];
+      }
+      value ??= await this.#getFormHistoryValue(field);
+
       if (!value) {
         continue;
       }
 
-      const type = field.localGuess;
       const count = (typeCounts.get(type) ?? 0) + 1;
       typeCounts.set(type, count);
 
-      const token = `$${type.toUpperCase().replaceAll("-", "_")}_${count}`;
+      const token = `§${type.toUpperCase().replaceAll("-", "_")}_${count}§`;
 
       candidates.push({ token, type });
       valuesByToken.set(token, value);
@@ -639,12 +670,40 @@ export class SmartFormFillController {
   }
 
   /**
+   * Gets the saved addresses autofill would offer, most recently used first.
+   * The local guess a field carries is the canonical autofill field name, so
+   * it is also the key these records hold their values under.
+   * Only addresses: a saved card's `cc-number` comes back masked and the real
+   * one needs an OSKeyStore decrypt, which prompts the user to reauthenticate.
+   *
+   * @returns {Promise<Array<object>>}
+   */
+  async #getSavedAddresses() {
+    if (
+      !lazy.FormAutofill.isAutofillTypeEnabled(lazy.AutofillDataTypes.ADDRESS)
+    ) {
+      return [];
+    }
+
+    try {
+      await lazy.formAutofillStorage.initialize();
+      const addresses = await lazy.formAutofillStorage.addresses.getAll();
+
+      return addresses.sort(
+        (a, b) => (b.timeLastUsed ?? 0) - (a.timeLastUsed ?? 0)
+      );
+    } catch {
+      return [];
+    }
+  }
+
+  /**
    * Gets the latest Form History value for a field.
    *
    * @param {FieldData} field
    * @returns {Promise<string | null>}
    */
-  async #getStoredValue(field) {
+  async #getFormHistoryValue(field) {
     if (!field.formHistoryName) {
       return null;
     }
@@ -816,6 +875,13 @@ export class SmartFormFillController {
           return false;
         }
 
+        if (
+          (CONFIDENCE_RANK.get(tab?.relevance) ?? -1) <
+          CONFIDENCE_RANK.get(TAB_RELEVANCE_THRESHOLD)
+        ) {
+          return false;
+        }
+
         seen.add(id);
         return true;
       })
@@ -845,7 +911,8 @@ export class SmartFormFillController {
             flow = this.#requestObserver.onRelevantTabsDispatched(
               id,
               request,
-              modelInfo
+              modelInfo,
+              TAB_RELEVANCE_THRESHOLD
             );
           },
         });

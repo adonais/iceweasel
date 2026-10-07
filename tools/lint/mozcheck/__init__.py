@@ -37,13 +37,35 @@ def _get_mozcheck_target_dir(root, topobjdir):
     return os.path.join(root, "tools", "lint", "mozcheck", "target")
 
 
+# Resolved binary per (root, topobjdir). Populated by `setup` in the parent
+# process so that forked mozlint workers don't resolve it again.
+_binary_cache = {}
+
+
 def _find_mozcheck_binary(log, root, topobjdir=None):
+    key = (root, topobjdir)
+    if key not in _binary_cache:
+        binary = _resolve_mozcheck_binary(log, root, topobjdir)
+        if not binary:
+            return None
+        _binary_cache[key] = binary
+    return _binary_cache[key]
+
+
+def _resolve_mozcheck_binary(log, root, topobjdir=None):
     exe = ".exe" if sys.platform == "win32" else ""
+
+    # In CI, the binary is fetched by the task itself. Use it directly rather
+    # than going through bootstrap_toolchain, which spawns `mach taskgraph` to
+    # resolve toolchain tasks and takes several seconds.
+    if fetches_dir := os.environ.get("MOZ_FETCHES_DIR"):
+        fetched = os.path.join(fetches_dir, "mozcheck", "mozcheck" + exe)
+        if os.path.isfile(fetched):
+            return fetched
 
     # Locate or fetch the prebuilt mozcheck binary for this host, the same way
     # clang-tidy, gn, cargo-vet, etc. do (see bootstrap_path in
-    # build/moz.configure/bootstrap.configure). This also covers the case
-    # where a prebuilt binary is already available via MOZ_FETCHES_DIR, in CI.
+    # build/moz.configure/bootstrap.configure).
     try:
         from mozbuild.bootstrap import bootstrap_toolchain
 

@@ -83,17 +83,8 @@ def GXX(version):
 
 GCC_7 = GCC("7.3.0") + DEFAULT_C11
 GXX_7 = GXX("7.3.0") + DEFAULT_CXX_14 + SUPPORTS_GNUXX17 + SUPPORTS_CXX17
-GCC_10 = GCC("10.2.1") + DEFAULT_C17
-GXX_10 = (
-    GXX("10.2.1")
-    + DEFAULT_CXX_14
-    + SUPPORTS_GNUXX17
-    + SUPPORTS_CXX17
-    + {
-        "-std=gnu++20": {"__cplusplus": "201709L"},
-        "-std=c++20": {"__cplusplus": "201709L"},
-    }
-)
+GCC_11 = GCC("11.2.1") + DEFAULT_C17
+GXX_11 = GXX("11.2.1") + DEFAULT_CXX_17 + SUPPORTS_GNUXX20 + SUPPORTS_CXX20
 GCC_14 = GCC("14.3.0") + DEFAULT_C17
 GXX_14 = GXX("14.3.0") + DEFAULT_CXX_17 + SUPPORTS_GNUXX20 + SUPPORTS_CXX20
 
@@ -414,7 +405,7 @@ class BaseToolchainTest(BaseConfigureTest):
 
 
 def old_gcc_message(old_ver):
-    return f"Only GCC 10.1 or newer is supported (found version {old_ver})."
+    return f"Only GCC 11.1 or newer is supported (found version {old_ver})."
 
 
 class LinuxToolchainTest(BaseToolchainTest):
@@ -423,8 +414,8 @@ class LinuxToolchainTest(BaseToolchainTest):
         "/usr/bin/g++": DEFAULT_GXX + GCC_PLATFORM_X86_64_LINUX,
         "/usr/bin/gcc-7": GCC_7 + GCC_PLATFORM_X86_64_LINUX,
         "/usr/bin/g++-7": GXX_7 + GCC_PLATFORM_X86_64_LINUX,
-        "/usr/bin/gcc-10": GCC_10 + GCC_PLATFORM_X86_64_LINUX,
-        "/usr/bin/g++-10": GXX_10 + GCC_PLATFORM_X86_64_LINUX,
+        "/usr/bin/gcc-11": GCC_11 + GCC_PLATFORM_X86_64_LINUX,
+        "/usr/bin/g++-11": GXX_11 + GCC_PLATFORM_X86_64_LINUX,
         "/usr/bin/gcc-14": GCC_14 + GCC_PLATFORM_X86_64_LINUX,
         "/usr/bin/g++-14": GXX_14 + GCC_PLATFORM_X86_64_LINUX,
         "/usr/bin/clang": DEFAULT_CLANG + CLANG_PLATFORM_X86_64_LINUX,
@@ -437,21 +428,21 @@ class LinuxToolchainTest(BaseToolchainTest):
 
     GCC_7_RESULT = old_gcc_message("7.3.0")
     GXX_7_RESULT = GCC_7_RESULT
-    GCC_10_RESULT = CompilerResult(
-        # gcc 10 defaults to C17, so no there's need to add -std=gnu17.
-        version="10.2.1",
+    GCC_11_RESULT = CompilerResult(
+        # gcc 11 defaults to C17, so there's no need to add -std=gnu17.
+        version="11.2.1",
         type="gcc",
-        compiler="/usr/bin/gcc-10",
+        compiler="/usr/bin/gcc-11",
         language="C",
     )
-    GXX_10_RESULT = CompilerResult(
-        flags=["-std=gnu++20", "-U__cplusplus", "-D__cplusplus=202002L"],
-        version="10.2.1",
+    GXX_11_RESULT = CompilerResult(
+        flags=["-std=gnu++20"],
+        version="11.2.1",
         type="gcc",
-        compiler="/usr/bin/g++-10",
+        compiler="/usr/bin/g++-11",
         language="C++",
     )
-    GCC_14_RESULT = GCC_10_RESULT + {"compiler": "/usr/bin/gcc-14", "version": "14.3.0"}
+    GCC_14_RESULT = GCC_11_RESULT + {"compiler": "/usr/bin/gcc-14", "version": "14.3.0"}
     GXX_14_RESULT = CompilerResult(
         flags=["-std=gnu++20"],
         version="14.3.0",
@@ -544,11 +535,11 @@ class LinuxToolchainTest(BaseToolchainTest):
                 "c_compiler": self.DEFAULT_GCC_RESULT,
                 "cxx_compiler": (
                     "The target C compiler is version 14.3.0, while the target "
-                    "C++ compiler is version 10.2.1. Need to use the same compiler "
+                    "C++ compiler is version 11.2.1. Need to use the same compiler "
                     "version."
                 ),
             },
-            environ={"CC": "gcc", "CXX": "g++-10"},
+            environ={"CC": "gcc", "CXX": "g++-11"},
         )
 
         self.do_toolchain_test(
@@ -559,11 +550,11 @@ class LinuxToolchainTest(BaseToolchainTest):
                 "host_c_compiler": self.DEFAULT_GCC_RESULT,
                 "host_cxx_compiler": (
                     "The host C compiler is version 14.3.0, while the host "
-                    "C++ compiler is version 10.2.1. Need to use the same compiler "
+                    "C++ compiler is version 11.2.1. Need to use the same compiler "
                     "version."
                 ),
             },
-            environ={"CC": "gcc", "HOST_CXX": "g++-10"},
+            environ={"CC": "gcc", "HOST_CXX": "g++-11"},
         )
 
     def test_mismatched_compiler(self):
@@ -807,8 +798,8 @@ class OSXToolchainTest(BaseToolchainTest):
     PATHS = {
         "/usr/bin/gcc-7": GCC_7 + GCC_PLATFORM_X86_64_OSX,
         "/usr/bin/g++-7": GXX_7 + GCC_PLATFORM_X86_64_OSX,
-        "/usr/bin/gcc-10": GCC_10 + GCC_PLATFORM_X86_64_OSX,
-        "/usr/bin/g++-10": GXX_10 + GCC_PLATFORM_X86_64_OSX,
+        "/usr/bin/gcc-11": GCC_11 + GCC_PLATFORM_X86_64_OSX,
+        "/usr/bin/g++-11": GXX_11 + GCC_PLATFORM_X86_64_OSX,
         "/usr/bin/clang": XCODE_CLANG_19 + CLANG_PLATFORM_X86_64_OSX,
         "/usr/bin/clang++": XCODE_CLANGXX_19 + CLANG_PLATFORM_X86_64_OSX,
         "/usr/bin/clang-14": XCODE_CLANG_14 + CLANG_PLATFORM_X86_64_OSX,
@@ -837,8 +828,8 @@ class OSXToolchainTest(BaseToolchainTest):
     )
     GCC_7_RESULT = LinuxToolchainTest.GCC_7_RESULT
     GXX_7_RESULT = LinuxToolchainTest.GXX_7_RESULT
-    GCC_10_RESULT = LinuxToolchainTest.GCC_10_RESULT
-    GXX_10_RESULT = LinuxToolchainTest.GXX_10_RESULT
+    GCC_11_RESULT = LinuxToolchainTest.GCC_11_RESULT
+    GXX_11_RESULT = LinuxToolchainTest.GXX_11_RESULT
     SYSROOT_FLAGS = {
         "flags": PrependFlags([
             "-isysroot",
@@ -883,10 +874,10 @@ class OSXToolchainTest(BaseToolchainTest):
         self.do_toolchain_test(
             self.PATHS,
             {
-                "c_compiler": self.GCC_10_RESULT + self.SYSROOT_FLAGS,
-                "cxx_compiler": self.GXX_10_RESULT + self.SYSROOT_FLAGS,
+                "c_compiler": self.GCC_11_RESULT + self.SYSROOT_FLAGS,
+                "cxx_compiler": self.GXX_11_RESULT + self.SYSROOT_FLAGS,
             },
-            environ={"CC": "gcc-10", "CXX": "g++-10"},
+            environ={"CC": "gcc-11", "CXX": "g++-11"},
         )
 
     def test_forced_unsupported_gcc(self):
@@ -910,8 +901,8 @@ class WindowsToolchainTest(BaseToolchainTest):
         "/usr/bin/g++": DEFAULT_GXX + GCC_PLATFORM_X86_WIN + MINGW32,
         "/usr/bin/gcc-7": GCC_7 + GCC_PLATFORM_X86_WIN + MINGW32,
         "/usr/bin/g++-7": GXX_7 + GCC_PLATFORM_X86_WIN + MINGW32,
-        "/usr/bin/gcc-10": GCC_10 + GCC_PLATFORM_X86_WIN + MINGW32,
-        "/usr/bin/g++-10": GXX_10 + GCC_PLATFORM_X86_WIN + MINGW32,
+        "/usr/bin/gcc-11": GCC_11 + GCC_PLATFORM_X86_WIN + MINGW32,
+        "/usr/bin/g++-11": GXX_11 + GCC_PLATFORM_X86_WIN + MINGW32,
         "/usr/bin/clang": DEFAULT_CLANG + CLANG_PLATFORM_X86_WIN,
         "/usr/bin/clang++": DEFAULT_CLANGXX + CLANG_PLATFORM_X86_WIN,
         "/usr/bin/clang-14": CLANG_14 + CLANG_PLATFORM_X86_WIN,
@@ -1008,8 +999,8 @@ class Windows64ToolchainTest(WindowsToolchainTest):
         "/usr/bin/g++": DEFAULT_GXX + GCC_PLATFORM_X86_64_WIN + MINGW32,
         "/usr/bin/gcc-7": GCC_7 + GCC_PLATFORM_X86_64_WIN + MINGW32,
         "/usr/bin/g++-7": GXX_7 + GCC_PLATFORM_X86_64_WIN + MINGW32,
-        "/usr/bin/gcc-10": GCC_10 + GCC_PLATFORM_X86_64_WIN + MINGW32,
-        "/usr/bin/g++-10": GXX_10 + GCC_PLATFORM_X86_64_WIN + MINGW32,
+        "/usr/bin/gcc-11": GCC_11 + GCC_PLATFORM_X86_64_WIN + MINGW32,
+        "/usr/bin/g++-11": GXX_11 + GCC_PLATFORM_X86_64_WIN + MINGW32,
         "/usr/bin/clang": DEFAULT_CLANG + CLANG_PLATFORM_X86_64_WIN,
         "/usr/bin/clang++": DEFAULT_CLANGXX + CLANG_PLATFORM_X86_64_WIN,
         "/usr/bin/clang-14": CLANG_14 + CLANG_PLATFORM_X86_64_WIN,

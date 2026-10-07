@@ -12,6 +12,8 @@ android {
 }
 
 dependencies {
+    // `ErrorType` defined in `concepts-engine` is exported.
+    api project(':components:concept-engine')
     implementation project(':components:support-ktx')
     implementation project(':components:ui-icons')
 

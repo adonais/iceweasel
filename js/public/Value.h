@@ -331,6 +331,15 @@ constexpr bool ValueTypeIsGCThing(JSValueType type) {
 #define JSVAL_TYPE_TO_TAG(type) (JS::detail::ValueTypeToTag(type))
 
 enum JSWhyMagic {
+  /**
+   * uninitialized lexical bindings that produce ReferenceError on touch.
+   *
+   * Kept first so its payload is zero: the JITs materialize this Value at
+   * every TDZ check and lexical slot initialization, and a zero payload takes
+   * one instruction fewer on ARM64.
+   */
+  JS_UNINITIALIZED_LEXICAL,
+
   /** a hole in a native object's elements */
   JS_ELEMENTS_HOLE,
 
@@ -357,9 +366,6 @@ enum JSWhyMagic {
 
   /** optimized out slot */
   JS_OPTIMIZED_OUT,
-
-  /** uninitialized lexical bindings that produce ReferenceError on touch. */
-  JS_UNINITIALIZED_LEXICAL,
 
   /** arguments object can't be created because environment is dead. */
   JS_MISSING_ARGUMENTS,
@@ -685,7 +691,7 @@ class Value {
 
   template <typename T>
   void setNumber(const T t) {
-    static_assert(std::is_integral<T>::value, "must be integral type");
+    static_assert(std::is_integral_v<T>, "must be integral type");
     MOZ_ASSERT(isNumberRepresentable(t), "value creation would be lossy");
 
     if constexpr (std::numeric_limits<T>::is_signed) {
@@ -1464,7 +1470,8 @@ auto MapGCThingTyped(const JS::Value& val, F&& f) {
     }
     case JS::ValueType::PrivateGCThing: {
       MOZ_ASSERT(gc::IsCellPointerValid(val.toGCThing()));
-      return mozilla::Some(MapGCThingTyped(val.toGCCellPtr(), std::move(f)));
+      return mozilla::Some(
+          MapGCThingTyped(val.toGCCellPtr(), std::forward<F>(f)));
     }
     case JS::ValueType::Double:
     case JS::ValueType::Int32:

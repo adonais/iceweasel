@@ -175,10 +175,6 @@ var s = f(function () {});  // display name: s<``</pre>
 
 : If the referent is a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise), this is the JavaScript execution stack captured at the time of the promise’s resolution. This can return null if the promise was not resolved by calling its `resolve` or `reject` resolving functions from script. If the referent is not a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise), throw a `TypeError` exception.
 
-`promiseID`
-
-: If the referent is a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise), this is a process-unique identifier for the [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise). With e10s, the same id can potentially be assigned to multiple [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) instances, if those instances were created in different processes. If the referent is not a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise), throw a `TypeError` exception.
-
 `promiseDependentPromises`
 
 : If the referent is a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise), this is an `Array` of `Debugger.Objects` referring to the promises directly depending on the referent [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise). These are:

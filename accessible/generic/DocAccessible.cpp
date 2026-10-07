@@ -27,12 +27,14 @@
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/DocumentType.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/WindowGlobalChild.h"
+#include "mozilla/ipc/ProtocolUtils.h"
 #include "nsAccUtils.h"
 #include "nsAccessibilityService.h"
 #include "nsEventShell.h"
@@ -245,7 +247,8 @@ uint64_t DocAccessible::NativeState() const {
   // user-select: none might be set on the body, in which case this won't be
   // exposed on the root frame. Therefore, we explicitly use the body frame
   // here (if any).
-  nsIFrame* bodyFrame = mContent ? mContent->GetPrimaryFrame() : nullptr;
+  dom::Element* bodyEl = mDocumentNode->GetBodyElement();
+  nsIFrame* bodyFrame = bodyEl ? bodyEl->GetPrimaryFrame() : nullptr;
   if ((state & states::EDITABLE) || (bodyFrame && bodyFrame->IsSelectable())) {
     // If the accessible is editable the layout selectable state only disables
     // mouse selection, but keyboard (shift+arrow) selection is still possible.
@@ -289,9 +292,17 @@ void DocAccessible::TakeFocus() const {
 // HyperTextAccessible method
 already_AddRefed<EditorBase> DocAccessible::GetEditor() const {
   // Check if document is editable (designMode="on" case). Otherwise check if
-  // the html:body (for HTML document case) or document element is editable.
+  // the body element, or the root element when there is no body, is editable.
+  // The editable flag cascades down from the root, so it's usually sufficient
+  // to check the attribute's existence on the body. However content _can_ be
+  // shoehorned directly into the root element, so we still check the root if
+  // the body doesn't exist.
+  dom::Element* editableEl = mDocumentNode->GetBodyElement();
+  if (!editableEl) {
+    editableEl = mDocumentNode->GetRootElement();
+  }
   if (!mDocumentNode->IsInDesignMode() &&
-      (!mContent || !mContent->HasFlag(NODE_IS_EDITABLE))) {
+      (!editableEl || !editableEl->HasFlag(NODE_IS_EDITABLE))) {
     return nullptr;
   }
 
@@ -528,6 +539,20 @@ void DocAccessible::Init() {
     logging::DocCreate("document initialize", mDocumentNode, this);
   }
 #endif
+
+  // Our WindowGlobal might already be managing a PDocAccessible for a
+  // document that hasn't been shut down yet; e.g. the initial about:blank. Shut
+  // that one down now so we don't end up with two DocAccessibles alive for the
+  // same WindowGlobal.
+  if (dom::WindowGlobalChild* wgc = mDocumentNode->GetWindowGlobalChild()) {
+    if (auto* actor =
+            LoneManagedOrNullAsserts(wgc->ManagedPDocAccessibleChild())) {
+      if (DocAccessible* prevDocAcc =
+              static_cast<DocAccessibleChild*>(actor)->GetDocAccessible()) {
+        prevDocAcc->Shutdown();
+      }
+    }
+  }
 
   // Initialize notification controller.
   mNotificationController =
@@ -909,6 +934,10 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
                                      int32_t aNameSpaceID, nsAtom* aAttribute,
                                      AttrModType aModType,
                                      const nsAttrValue* aOldValue) {
+  if (!HasLoadState(eTreeConstructed)) {
+    // We haven't built the initial tree yet, so there's nothing to mutate.
+    return;
+  }
   if (sIsAttrElementChanging) {
     // See the comment above the definition of sIsAttrElementChanging.
     return;
@@ -1076,6 +1105,21 @@ void DocAccessible::ARIAActiveDescendantChanged(LocalAccessible* aAccessible) {
 void DocAccessible::ElementStateChanged(dom::Document* aDocument,
                                         dom::Element* aElement,
                                         dom::ElementState aStateMask) {
+  const bool isEditable =
+      aElement->State().HasState(dom::ElementState::READWRITE);
+  if (aStateMask.HasState(dom::ElementState::READWRITE) &&
+      IsBodyElement(aElement)) {
+    // Any editable state reflected on the body element needs to be forwarded
+    // to the doc accessible. We do this here instead of below because the body
+    // is not guaranteed to have its own acc.
+    auto event =
+        MakeRefPtr<AccStateChangeEvent>(this, states::EDITABLE, isEditable);
+    FireDelayedEvent(event);
+    event =
+        MakeRefPtr<AccStateChangeEvent>(this, states::READONLY, !isEditable);
+    FireDelayedEvent(event);
+  }
+
   LocalAccessible* accessible =
       aElement == mContent ? this : GetAccessible(aElement);
 
@@ -1085,8 +1129,6 @@ void DocAccessible::ElementStateChanged(dom::Document* aDocument,
 
   if (aStateMask.HasState(dom::ElementState::READWRITE) &&
       !accessible->IsTextField()) {
-    const bool isEditable =
-        aElement->State().HasState(dom::ElementState::READWRITE);
     auto event = MakeRefPtr<AccStateChangeEvent>(accessible, states::EDITABLE,
                                                  isEditable);
     FireDelayedEvent(event);
@@ -1185,6 +1227,8 @@ void DocAccessible::ElementStateChanged(dom::Document* aDocument,
         MakeRefPtr<AccStateChangeEvent>(accessible, states::UNAVAILABLE);
     FireDelayedEvent(event);
     event = MakeRefPtr<AccStateChangeEvent>(accessible, states::ENABLED);
+    FireDelayedEvent(event);
+    event = MakeRefPtr<AccStateChangeEvent>(accessible, states::SENSITIVE);
     FireDelayedEvent(event);
     // This likely changes focusability as well.
     event = MakeRefPtr<AccStateChangeEvent>(accessible, states::FOCUSABLE);
@@ -1300,13 +1344,8 @@ LocalAccessible* DocAccessible::GetContainerAccessible(nsINode* aNode) const {
 
 LocalAccessible* DocAccessible::GetAccessibleOrDescendant(
     nsINode* aNode) const {
-  LocalAccessible* acc = GetAccessible(aNode);
+  LocalAccessible* acc = GetAccessibleOrDocument(aNode);
   if (acc) return acc;
-
-  if (aNode == mContent || aNode == mDocumentNode->GetRootElement()) {
-    // If the node is the doc's body or root element, return the doc accessible.
-    return const_cast<DocAccessible*>(this);
-  }
 
   acc = GetContainerAccessible(aNode);
   if (acc) {
@@ -1836,7 +1875,7 @@ void DocAccessible::DoInitialUpdate() {
   }
 
   // Set up a root element and ARIA role mapping.
-  UpdateRootElIfNeeded();
+  UpdateRootElement();
 
   // Build initial tree.
   CacheChildrenInSubtree(this);
@@ -2143,14 +2182,14 @@ void DocAccessible::RemoveDependentElementsFor(LocalAccessible* aRelProvider,
 bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
                                                  nsAtom* aAttribute) {
   if (aAttribute == nsGkAtoms::role) {
-    // It is common for js libraries to set the role on the body element after
-    // the document has loaded. In this case we just update the role map entry.
-    if (mContent == aElement) {
-      SetRoleMapEntryForDoc(aElement);
-      if (mIPCDoc) {
-        mIPCDoc->SendRoleChangedEvent(Role(), mRoleMapEntryIndex);
-      }
-
+    // If we're dealing with a role change on the body or the root element
+    // we may need to update the role exposed for the doc accessible.
+    // We never want to recreate this acc during a role change, as doing
+    // so would require we recreate all of the document's content too.
+    // The doc acc has a small set of valid roles, none of which change
+    // the interfaces we should expose, so skipping recreation is safe.
+    if (mContent == aElement || IsBodyElement(aElement)) {
+      UpdateDocRoleMapEntry();
       return true;
     }
 
@@ -2195,7 +2234,8 @@ bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
     // listeners, we need to recreate the accessible since the role might have
     // changed. Without an href or click listener, the accessible must be a
     // generic.
-    if (aElement->IsHTMLElement(nsGkAtoms::a)) {
+    if (aElement->IsHTMLElement(nsGkAtoms::a) ||
+        aElement->IsMathMLElement(nsGkAtoms::a)) {
       LocalAccessible* acc = GetAccessible(aElement);
       if (!acc) {
         return false;
@@ -2240,18 +2280,39 @@ bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
   return false;
 }
 
-void DocAccessible::UpdateRootElIfNeeded() {
-  dom::Element* rootEl = mDocumentNode->GetBodyElement();
-  if (!rootEl) {
-    rootEl = mDocumentNode->GetRootElement();
+void DocAccessible::UpdateDocRoleMapEntry() {
+  // The document exposes the body's role, or the root element's when the
+  // document has no body.
+  dom::Element* roleEl = mDocumentNode->GetBodyElement();
+  if (!roleEl) {
+    roleEl = mDocumentNode->GetRootElement();
   }
-  if (rootEl != mContent) {
-    mContent = rootEl;
-    SetRoleMapEntryForDoc(rootEl);
-    if (mIPCDoc) {
-      mIPCDoc->SendRoleChangedEvent(Role(), mRoleMapEntryIndex);
-    }
+  const nsRoleMapEntry* entry = aria::GetRoleMap(roleEl);
+  if (entry && !nsAccUtils::IsARIARoleAllowedOnContentDoc(entry->role) &&
+      // Role alert isn't valid on the body element according to the ARIA spec,
+      // but it's useful for our UI; e.g. the WebRTC sharing indicator.
+      (entry->role != roles::ALERT || mDocumentNode->IsContentDocument())) {
+    // If we have a role other than those listed above, it isn't valid on the
+    // doc and we shouldn't expose it.
+    entry = nullptr;
   }
+
+  const uint8_t oldRoleMapEntryIndex = mRoleMapEntryIndex;
+  SetRoleMapEntry(entry);
+  // Some code (e.g. LocalAccessible::ContainerWidget) assumes that mContent
+  // must be set if there is an ARIA role. If there is a root element, mContent
+  // should already be set by the time this is called. If there is an ARIA role,
+  // there must be a root element, since the ARIA role comes from the root or
+  // the body.
+  MOZ_ASSERT(!entry || mContent);
+  if (mIPCDoc && mRoleMapEntryIndex != oldRoleMapEntryIndex) {
+    mIPCDoc->SendRoleChangedEvent(mRoleMapEntryIndex);
+  }
+}
+
+void DocAccessible::UpdateRootElement() {
+  mContent = mDocumentNode->GetRootElement();
+  UpdateDocRoleMapEntry();
 }
 
 /**
@@ -2425,7 +2486,7 @@ void DocAccessible::ProcessContentInserted(
 
   // If new root content has been inserted then update it.
   if (aContainer == this) {
-    UpdateRootElIfNeeded();
+    UpdateRootElement();
   }
 
   InsertIterator iter(aContainer, aNodes);
@@ -3201,36 +3262,32 @@ void DocAccessible::ARIAActiveDescendantIDMaybeMoved(
   }
 }
 
-void DocAccessible::SetRoleMapEntryForDoc(dom::Element* aElement) {
-  const nsRoleMapEntry* entry = aria::GetRoleMap(aElement);
-  if (!entry || entry->role == roles::APPLICATION ||
-      entry->role == roles::DIALOG ||
-      // Role alert isn't valid on the body element according to the ARIA spec,
-      // but it's useful for our UI; e.g. the WebRTC sharing indicator.
-      (entry->role == roles::ALERT && !mDocumentNode->IsContentDocument())) {
-    SetRoleMapEntry(entry);
-    return;
+bool DocAccessible::IsRootContent(nsINode* aNode) const {
+  // The root element can be replaced or removed while the document is live.
+  // This means until mContent is re-synced by UpdateRootElement, it can
+  // still be the detached, former root.
+  MOZ_ASSERT(!mContent || !mContent->IsInComposedDoc() ||
+                 mDocumentNode->GetRootElement() == mContent,
+             "The doc acc should be bound to the root element");
+  return mContent == aNode;
+}
+
+bool DocAccessible::IsBodyElement(const nsINode* aNode) const {
+  const bool isBody = aNode && mDocumentNode->GetBodyElement() == aNode;
+  MOZ_ASSERT(!isBody || aNode->IsHTMLElement(nsGkAtoms::body));
+  return isBody;
+}
+
+LocalAccessible* DocAccessible::GetAccessibleOrDocument(nsINode* aNode) const {
+  if (IsRootContent(aNode)) {
+    return const_cast<DocAccessible*>(this);
   }
-  // No other ARIA roles are valid on body elements.
-  SetRoleMapEntry(nullptr);
+  return GetAccessible(aNode);
 }
 
 LocalAccessible* DocAccessible::GetAccessible(nsINode* aNode) const {
   return aNode == mDocumentNode ? const_cast<DocAccessible*>(this)
                                 : mNodeToAccessibleMap.Get(aNode);
-}
-
-bool DocAccessible::HasPrimaryAction() const {
-  if (HyperTextAccessible::HasPrimaryAction()) {
-    return true;
-  }
-  // mContent is normally the body, but there might be a click listener on the
-  // root.
-  dom::Element* root = mDocumentNode->GetRootElement();
-  if (mContent != root) {
-    return nsCoreUtils::HasClickListener(root);
-  }
-  return false;
 }
 
 void DocAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
@@ -3365,8 +3422,8 @@ void DocAccessible::RefreshAnchorRelationCacheForTarget(
       frame->GetProperty(nsIFrame::AnchorPosReferences());
   for (auto& entry : *referencedAnchors) {
     const auto& anchorName = entry.GetKey();
-    if (const nsIFrame* anchorFrame =
-            mPresShell->GetAnchorPosAnchor(anchorName, frame)) {
+    if (const nsIFrame* anchorFrame = mPresShell->GetAnchorPosAnchor(
+            anchorName, frame, referencedAnchors->mFrameTreeDepth)) {
       if (LocalAccessible* anchorAcc =
               GetAccessible(anchorFrame->GetContent())) {
         if (!mInsertedAccessibles.Contains(anchorAcc)) {

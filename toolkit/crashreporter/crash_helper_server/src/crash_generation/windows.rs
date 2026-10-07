@@ -4,7 +4,11 @@
 
 use super::{BreakpadProcessId, CrashGenerator};
 
-use crash_helper_common::messages;
+use anyhow::Result;
+use crash_helper_common::{
+    crash_annotations::CrashAnnotation, messages, ApplicationInfo, ExtraCrashData,
+};
+use mozannotation_server::{AnnotationData, CAnnotation};
 use std::{
     convert::TryInto,
     fs::{create_dir_all, File},
@@ -14,6 +18,7 @@ use std::{
     ptr::{null, null_mut},
 };
 use uuid::Uuid;
+use win32_process_mitigations::MitigationOptions;
 use windows_sys::Win32::{
     Foundation::{FALSE, HANDLE},
     System::{
@@ -73,12 +78,19 @@ impl CrashGenerator {
 
         if res != FALSE {
             let process_id = BreakpadProcessId { pid, handle };
+            let extra_data = ExtraCrashData {
+                error: None,
+                annotations: vec![CAnnotation {
+                    id: CrashAnnotation::WindowsErrorReporting as u32,
+                    data: AnnotationData::ByteBuffer(vec![1]),
+                }],
+            };
 
             self.finalize_crash_report(
-                process_id,
-                None,
+                process_id.get_native(),
+                Some(&extra_data),
                 &path,
-                super::MinidumpOrigin::WindowsErrorReporting,
+                super::ProcessType::Child,
             );
         }
 
@@ -111,7 +123,7 @@ impl CrashGenerator {
             .as_hyphenated()
             .encode_lower(&mut Uuid::encode_buffer())
             .to_string();
-        let path = PathBuf::from(self.minidump_path.clone()).join(uuid + ".dmp");
+        let path = self.minidump_path.clone().join(uuid + ".dmp");
         let file = File::create(&path).map_err(|_| ())?;
         Ok((file, path))
     }
@@ -171,5 +183,32 @@ fn get_thread_id(handle: BorrowedHandle) -> Result<u32, ()> {
     match unsafe { GetThreadId(handle.as_raw_handle() as HANDLE) } {
         0 => Err(()),
         tid => Ok(tid),
+    }
+}
+
+/// Create the annotations that are specific to Windows: the process mitigation
+/// options the system is configured to apply to our executable.
+pub(crate) fn create_platform_specific_annotations(
+    app_info: &ApplicationInfo,
+) -> Result<Vec<CAnnotation>> {
+    let app_mitigations = app_info
+        .get_application_path()
+        .map(win32_process_mitigations::get_app_mitigation_options)
+        .transpose()?
+        .flatten();
+    let sys_mitigations = win32_process_mitigations::get_system_mitigation_options()?;
+    if let Some(mitigations) = MitigationOptions::amalgamate(sys_mitigations, app_mitigations) {
+        Ok(vec![
+            super::make_annotation(
+                CrashAnnotation::WindowsProcessMitigationsBytes,
+                &format!("{}", mitigations),
+            ),
+            super::make_annotation(
+                CrashAnnotation::WindowsProcessMitigations,
+                &mitigations.describe(),
+            ),
+        ])
+    } else {
+        Ok(vec![])
     }
 }

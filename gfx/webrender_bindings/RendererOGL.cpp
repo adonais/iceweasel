@@ -352,8 +352,8 @@ void RendererOGL::WaitForGPU() {
   }
 }
 
-RefPtr<layers::Fence> RendererOGL::GetAndResetReleaseFence() {
-  return mCompositor->GetAndResetReleaseFence();
+RefPtr<layers::Fence> RendererOGL::GetAndResetReadFence() {
+  return mCompositor->GetAndResetReadFence();
 }
 
 RenderedFrameId RendererOGL::GetLastCompletedFrameId() {

@@ -405,8 +405,8 @@ describe("Tree", () => {
 
     wrapper.simulate("blur");
     expect(formatTree(wrapper)).toMatchSnapshot();
-    expect(wrapper.getDOMNode().hasAttribute("aria-activedescendant")).toBe(
-      false
+    expect(wrapper.getDOMNode().getAttribute("aria-activedescendant")).toBe(
+      "key-A"
     );
     expect(wrapper.find(".focused").exists()).toBe(false);
   });

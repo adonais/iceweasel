@@ -258,7 +258,8 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated) {
   // This comes from nsXMLContentSink and the old (now removed)
   // nsHTMLContentSink. If this parser has been marked as broken, treat the end
   // of parse as forced termination.
-  DidBuildModelImpl(aTerminated || NS_FAILED(IsBroken()));
+  const bool terminated = aTerminated || NS_FAILED(IsBroken());
+  DidBuildModelImpl(terminated);
 
   bool destroying = true;
   if (mDocShell) {
@@ -290,8 +291,11 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated) {
 
   // We may not have called BeginLoad() if loading is terminated before
   // OnStartRequest call.
+  // EndLoad below can run script which drops the parser.
+  const RefPtr<nsHtml5Parser> parser = GetParser();
+
   if (mStarted) {
-    mDocument->EndLoad();
+    mDocument->EndLoad(/* aFireDOMContentLoadedSync = */ !terminated);
 
     // Log outcome only for top-level content navigations in order to
     // avoid noise from ad iframes.
@@ -311,7 +315,7 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated) {
     // error pages.
     bool httpOk = false;
     nsCOMPtr<nsIChannel> channel;
-    nsresult rv = GetParser()->GetChannel(getter_AddRefs(channel));
+    nsresult rv = parser->GetChannel(getter_AddRefs(channel));
     if (NS_SUCCEEDED(rv) && channel) {
       nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel);
       if (httpChannel) {
@@ -422,7 +426,7 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated) {
   // before this executor's nsHtml5Parser has been made unreachable from its
   // nsHTMLDocument. (mDocument->EndLoad() above drops the parser from the
   // document.)
-  GetParser()->DropStreamParser();
+  parser->DropStreamParser();
   DropParserAndPerfHint();
 #ifdef GATHER_DOCWRITE_STATISTICS
   printf("UNSAFE SCRIPTS: %d\n", sUnsafeDocWrites);

@@ -1,12 +1,8 @@
 .category-list {
-  border: none;
   display: grid;
   // Bug 1967304 - Large number (48px)
-  gap: calc(var(--space-xlarge) * 2) var(--space-large);
-  grid-auto-rows: 86px;
-  grid-template-columns: 1fr 1fr 1fr;
+  row-gap: calc(var(--space-xlarge) * 2);
   margin-block-end: var(--space-large);
-  padding: 0;
 
   label {
     display: inline-block;
@@ -15,10 +11,20 @@
     width: 100%;
   }
 
-  // @nova-cleanup (remove .nova-enabled class and move this rule to the style above)
-  .nova-enabled & {
-    gap: calc(var(--space-xlarge) * 2) var(--space-medium);
+  .wallpaper-grid-row {
+    column-gap: var(--space-large);
+
+    // @nova-cleanup (remove .nova-enabled class and move this rule to the style above)
+    .nova-enabled & {
+      column-gap: var(--space-medium);
+    }
   }
+}
+
+.wallpaper-grid-row {
+  display: grid;
+  grid-auto-rows: 86px;
+  grid-template-columns: 1fr 1fr 1fr;
 }
 
 .category-header {
@@ -96,7 +102,7 @@ button.arrow-button {
       transform: translate(-50%, -50%);
     }
 
-    &:focus {
+    &:focus-visible {
       outline-color: var(--focus-outline-color);
       outline-offset: var(--focus-outline-offset);
     }
@@ -145,10 +151,16 @@ button.arrow-button {
   .wallpaper-input {
     box-shadow: none;
 
-    &:focus {
+    &:focus-visible {
       outline-color: var(--focus-outline-color);
       outline-offset: 6px;
     }
+  }
+
+  // Focus ring for the color picker
+  &.default-color-set:has(.wallpaper-input:focus-visible) {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
   }
 
   // The color picker has a default state where the user has not picked a custom color
@@ -250,18 +262,22 @@ button.arrow-button {
     // not reflow as images are added.
     scrollbar-gutter: stable;
 
-    fieldset {
-      border: none;
+    .wallpaper-grid {
       display: grid;
-      gap: var(--space-large);
-      grid-auto-rows: 86px;
-      grid-template-columns: 1fr 1fr 1fr;
-      padding: 0;
+      row-gap: var(--space-large);
+
+      .wallpaper-grid-row {
+        column-gap: var(--space-large);
+      }
     }
 
     // "Your images" rows are taller than the shipped ones: the last tile adds
     // an image and carries a label under it.
     fieldset.your-images {
+      border: none;
+      display: grid;
+      gap: var(--space-large);
+      padding: 0;
       grid-auto-rows: auto;
       // Set inline by WallpaperCategories.jsx, which also uses it for the
       // arrow keys, so the two cannot drift apart.
@@ -350,7 +366,8 @@ button.arrow-button {
     }
   }
 
-  // visually hide label, but still read by screen readers
+  // Visually hidden label text. The control it belongs to is named from it
+  // through aria-labelledby; the label itself is aria-hidden.
   .sr-only {
     opacity: 0;
     overflow: hidden;

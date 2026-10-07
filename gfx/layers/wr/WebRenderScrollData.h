@@ -45,7 +45,7 @@ class WebRenderLayerScrollData final {
 
   using ViewID = ScrollableLayerGuid::ViewID;
 
-  // Helper function for WebRenderScrollData::Validate().
+  // Helper function for WebRenderScrollData::ValidateShape().
   bool ValidateSubtree(const WebRenderScrollData& aParent,
                        std::vector<size_t>& aVisitCounts,
                        size_t aCurrentIndex) const;
@@ -97,6 +97,7 @@ class WebRenderLayerScrollData final {
     return mRemoteDocumentSize;
   }
   void SetReferentId(LayersId aReferentId) { mReferentId = Some(aReferentId); }
+  void ClearReferentId() { mReferentId = Nothing(); }
   Maybe<LayersId> GetReferentId() const { return mReferentId; }
 
   void SetScrollbarData(const ScrollbarData& aData) { mScrollbarData = aData; }
@@ -241,7 +242,7 @@ class WebRenderScrollData {
   // Validate that the scroll data is well-formed, and particularly that
   // |mLayerScrollData| encodes a valid tree. This is necessary because
   // the data can be sent over IPC from a less-trusted content process.
-  bool Validate() const;
+  bool ValidateShape() const;
 
   WebRenderLayerManager* GetManager() const;
 

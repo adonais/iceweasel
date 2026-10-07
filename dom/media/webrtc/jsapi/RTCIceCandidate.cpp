@@ -63,7 +63,7 @@ already_AddRefed<RTCIceCandidate> RTCIceCandidate::Constructor(
 
 /* static */
 already_AddRefed<RTCIceCandidate> RTCIceCandidate::FromAttribute(
-    nsIGlobalObject* aGlobal, const nsACString& aAttr, bool aRemote) {
+    nsIGlobalObject* aGlobal, const nsACString& aAttr, bool aHidePrflx) {
   nsString candidate;
   CopyUTF8toUTF16(aAttr, candidate);
   // sdpMid and usernameFragment are signaling-layer concepts; they have no
@@ -77,7 +77,7 @@ already_AddRefed<RTCIceCandidate> RTCIceCandidate::FromAttribute(
   // Note: Spec is a little unclear on whether these obfuscation rules apply to
   // an RTCIceCandidate constructed by JS, as opposed to the PC.
   // See https://github.com/w3c/webrtc-pc/issues/3107
-  if (aRemote && result->mParsed &&
+  if (aHidePrflx && result->mParsed &&
       result->mParsed->Type() ==
           NrIceCandidateAttribute::CandidateType::PeerReflexive) {
     result->mCandidateHidden = true;

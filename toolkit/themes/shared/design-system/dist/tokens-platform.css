@@ -19,7 +19,6 @@
 
     /** border **/
     --border-color: color-mix(in srgb, currentColor 50%, transparent);
-    --border-color-deemphasized: color-mix(in srgb, currentColor 24%, transparent);
     --border-color-interactive: color-mix(in srgb, currentColor 15%, var(--color-gray-60));
 
     /** button **/
@@ -28,8 +27,6 @@
     --button-background-color-hover: color-mix(in srgb, currentColor 17%, transparent);
     --button-background-color-active: color-mix(in srgb, currentColor 30%, transparent);
     --button-background-color-ghost: transparent;
-    --button-background-color-ghost-hover: color-mix(in srgb, currentColor 17%, transparent);
-    --button-background-color-ghost-active: color-mix(in srgb, currentColor 30%, transparent);
     --button-text-color: currentColor;
     --button-text-color-menu-selected: currentColor;
     --button-text-color-primary: AccentColorText;
@@ -44,7 +41,7 @@
     /** font-size **/
     --font-size-root: unset;
     /* 13px in-content, unset in platform (we want to avoid going too small when the root font size is already quite small) */
-    --font-size-small: unset;
+    --font-size-small: 1rem;
 
     /** input **/
     --input-text-background-color: Field;
@@ -103,11 +100,10 @@
   @media -moz-pref("browser.nova.enabled") {
     @layer tokens-foundation-nova {
       /** button **/
-      --button-background-color-hover: color-mix(in srgb, AccentColor 20%, transparent);
-      --button-background-color-active: color-mix(in srgb, AccentColor 30%, transparent);
+      --button-background-color-hover: color-mix(in srgb, currentColor 17%, transparent);
+      --button-background-color-active: color-mix(in srgb, currentColor 30%, transparent);
       --button-background-color-ghost: transparent;
-      --button-background-color-ghost-hover: color-mix(in srgb, currentColor 17%, transparent);
-      --button-background-color-ghost-active: color-mix(in srgb, currentColor 30%, transparent);
+      --button-border-color: currentColor;
       --button-text-color: currentColor;
       --button-text-color-menu-selected: currentColor;
       --button-text-color-primary: AccentColorText;
@@ -179,8 +175,6 @@
       --button-background-color-hover: light-dark(rgba(207, 207, 216, 0.66), rgba(207, 207, 216, 0.2));
       --button-background-color-active: light-dark(rgb(207, 207, 216), rgba(207, 207, 216, 0.4));
       --button-background-color-ghost: transparent;
-      --button-background-color-ghost-hover: var(--button-background-color-hover);
-      --button-background-color-ghost-active: var(--button-background-color-active);
       --button-text-color: light-dark(rgb(21, 20, 26), rgb(251, 251, 254));
       --button-text-color-menu-selected: var(--button-text-color-ghost-selected);
       --button-text-color-primary: light-dark(rgb(251, 251, 254), rgb(43, 42, 51));
@@ -242,17 +236,22 @@
     @layer tokens-browser-theme-nova {
       @media not ((forced-colors) or (-moz-native-theme)) {
         /** button **/
-        --button-background-color-hover: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-50));
-        --button-background-color-active: light-dark(var(--color-violet-desaturated-30), var(--color-violet-desaturated-40));
+        --button-background-color-hover: light-dark(
+          color-mix(in srgb, var(--color-accent-primary) 32%, transparent),
+          color-mix(in srgb, var(--color-accent-primary) 55%, transparent)
+        );
+        --button-background-color-active: light-dark(
+          color-mix(in srgb, var(--color-accent-primary) 50%, transparent),
+          color-mix(in srgb, var(--color-accent-primary) 75%, transparent)
+        );
         --button-background-color-ghost: var(--button-background-color);
-        --button-background-color-ghost-hover: var(--button-background-color-hover);
-        --button-background-color-ghost-active: var(--button-background-color-active);
+        --button-border-color: var(--color-accent-primary);
         --button-text-color: light-dark(var(--color-violet-90), var(--color-gray-0));
         --button-text-color-menu-selected: light-dark(var(--button-text-color-ghost-selected), var(--button-text-color-selected));
         --button-text-color-primary: light-dark(var(--color-white), var(--color-gray-70));
 
         /** color **/
-        --color-accent-attention: light-dark(var(--color-green-40), var(--color-green-30));
+        --color-accent-attention: light-dark(var(--color-green-50), var(--color-green-20));
         --color-accent-primary: light-dark(var(--color-violet-50), var(--color-violet-30));
         --color-accent-primary-hover: light-dark(var(--color-violet-60), var(--color-violet-20));
         --color-accent-primary-active: light-dark(var(--color-violet-70), var(--color-violet-10));

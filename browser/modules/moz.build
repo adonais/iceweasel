@@ -62,9 +62,6 @@ with Files("ExtensionsUI.sys.mjs"):
 with Files("LaterRun.sys.mjs"):
     BUG_COMPONENT = ("Firefox", "Tours")
 
-with Files("PartnerLinkAttribution.sys.mjs"):
-    BUG_COMPONENT = ("Firefox", "Search")
-
 with Files("PermissionUI.sys.mjs"):
     BUG_COMPONENT = ("Firefox", "Site Permissions")
 
@@ -137,7 +134,6 @@ EXTRA_JS_MODULES += [
     "LinksCache.sys.mjs",
     "MenuSectionLayout.sys.mjs",
     "PageActions.sys.mjs",
-    "PartnerLinkAttribution.sys.mjs",
     "PermissionPromptTargeting.sys.mjs",
     "PermissionUI.sys.mjs",
     "PopupAndRedirectBlockerObserver.sys.mjs",

@@ -30,7 +30,7 @@ namespace mozilla {
 class MVMContext {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MVMContext)
  protected:
-  virtual ~MVMContext() {}
+  virtual ~MVMContext() = default;
 
  public:
   virtual void AddEventListener(const nsAString& aType,

@@ -190,6 +190,21 @@ def hg_clone_firefox(hg: Path, dest: Path, head_repo, head_rev):
     return dest
 
 
+def enable_parallel_checkout(git: Path, dest: Path, env=None):
+    try:
+        subprocess.check_call(
+            [str(git), "config", "--get", "checkout.workers"],
+            cwd=str(dest),
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError:
+        subprocess.check_call(
+            [str(git), "config", "checkout.workers", "0"], cwd=str(dest), env=env
+        )
+
+
 def git_clone_firefox(git: Path, dest: Path, head_repo, head_rev):
     if head_repo and "hg.mozilla.org" in head_repo:
         print("GECKO_HEAD_REPOSITORY cannot be a Mercurial repository when using Git")
@@ -205,6 +220,7 @@ def git_clone_firefox(git: Path, dest: Path, head_repo, head_rev):
         ],
     )
     subprocess.check_call([str(git), "config", "pull.ff", "only"], cwd=str(dest))
+    enable_parallel_checkout(git, dest)
 
     if head_repo:
         subprocess.check_call(
@@ -298,6 +314,7 @@ def git_cinnabar_clone_firefox(git: Path, dest: Path, head_repo, head_rev):
         subprocess.check_call(
             [str(git), "config", "pull.ff", "only"], cwd=str(dest), env=env
         )
+        enable_parallel_checkout(git, dest, env)
 
         if head_repo:
             subprocess.check_call(

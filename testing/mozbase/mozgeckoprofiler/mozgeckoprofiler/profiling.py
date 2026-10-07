@@ -15,7 +15,7 @@ except ImportError:
 
 from mozlog import get_proxy_logger
 
-from .symbolication import ProfileSymbolicator, get_extracted_symbols
+from .symbolication import get_extracted_symbols, symbolicate_profile
 
 LOG = get_proxy_logger("profiler")
 
@@ -53,72 +53,39 @@ def symbolicate_profile_json(profile_path, symbol_dir=None):
         if symbol_dir is None:
             symbol_dir = get_extracted_symbols(work_dir)
 
-        temp_dir = tempfile.mkdtemp()
-        windows_symbol_path = os.path.join(temp_dir, "windows")
-        os.mkdir(windows_symbol_path)
-
-        symbol_paths = {"FIREFOX": symbol_dir, "WINDOWS": windows_symbol_path}
-
+        LOG.info("Symbolicating the performance profile...")
         try:
-            symbolicator = ProfileSymbolicator({
-                # Trace-level logging (verbose)
-                "enableTracing": 0,
-                # Fallback server if symbol is not found locally
-                "remoteSymbolServer": "https://symbolication.services.mozilla.com/symbolicate/v4",
-                # Maximum number of symbol files to keep in memory
-                "maxCacheEntries": 2000000,
-                # Frequency of checking for recent symbols to
-                # cache (in hours)
-                "prefetchInterval": 12,
-                # Oldest file age to prefetch (in hours)
-                "prefetchThreshold": 48,
-                # Maximum number of library versions to pre-fetch
-                # per library
-                "prefetchMaxSymbolsPerLib": 3,
-                # Default symbol lookup directories
-                "defaultApp": "FIREFOX",
-                "defaultOs": "WINDOWS",
-                # Paths to .SYM files, expressed internally as a
-                # mapping of app or platform names to directories
-                # Note: App & OS names from requests are converted
-                # to all-uppercase internally
-                "symbolPaths": symbol_paths,
-            })
-            LOG.info("Symbolicating the performance profile...")
-            try:
-                gzipped = False
-                with open(profile_path, "rb") as profile_file:
-                    # Some profile.json files may be compressed with gzip
-                    # (ex. Mochitest / XPCshell profiles)
-                    data = profile_file.read()
-                    LOG.info(f"Profile file size: {len(data)} bytes")
-                    gzip_magic_number = b"\x1f\x8b"
-                    if data[:2] == gzip_magic_number:
-                        gzipped = True
-                        data = gzip.decompress(data)
-                        LOG.info(f"Decompressed profile size: {len(data)} bytes")
-                    else:
-                        LOG.debug("Profile was not gzipped, treating as regular JSON")
+            gzipped = False
+            with open(profile_path, "rb") as profile_file:
+                # Some profile.json files may be compressed with gzip
+                # (ex. Mochitest / XPCshell profiles)
+                data = profile_file.read()
+                LOG.info(f"Profile file size: {len(data)} bytes")
+                gzip_magic_number = b"\x1f\x8b"
+                if data[:2] == gzip_magic_number:
+                    gzipped = True
+                    data = gzip.decompress(data)
+                    LOG.info(f"Decompressed profile size: {len(data)} bytes")
+                else:
+                    LOG.debug("Profile was not gzipped, treating as regular JSON")
 
-                    if orjson is not None:
-                        try:
-                            profile = orjson.loads(data)
-                        except Exception:
-                            profile = json.loads(data)
-                    else:
+                if orjson is not None:
+                    try:
+                        profile = orjson.loads(data)
+                    except Exception:
                         profile = json.loads(data)
+                else:
+                    profile = json.loads(data)
 
-                symbolicator.symbolicate_profile(profile, symbol_dir)
-                save_gecko_profile(profile, profile_path, gzip_compress=gzipped)
-            except MemoryError:
-                LOG.error(
-                    f"Ran out of memory while trying to symbolicate profile {profile_path}"
-                )
-            except Exception as e:
-                LOG.error("Encountered an exception during profile symbolication")
-                LOG.error(e)
-        finally:
-            shutil.rmtree(temp_dir)
+            symbolicate_profile(profile, symbol_dir)
+            save_gecko_profile(profile, profile_path, gzip_compress=gzipped)
+        except MemoryError:
+            LOG.error(
+                f"Ran out of memory while trying to symbolicate profile {profile_path}"
+            )
+        except Exception as e:
+            LOG.error("Encountered an exception during profile symbolication")
+            LOG.error(e)
 
     # To ensure the artifact markers in resource usage profiles are accurate,
     # the symbolicated profile's mod and access time should reflect

@@ -4,6 +4,7 @@
 
 package org.mozilla.gecko;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -47,6 +48,8 @@ public class GeckoNetworkManager extends BroadcastReceiver {
   // different, we ignore it. See Bug 1330836 for some relevant details.
   private static final String LINK_DATA_CHANGED = "changed";
 
+  // start() receives the application context from GeckoRuntime.
+  @SuppressLint("StaticFieldLeak")
   private static GeckoNetworkManager instance;
 
   // We hackishly (yet harmlessly, in this case) keep a Context reference passed in via the start

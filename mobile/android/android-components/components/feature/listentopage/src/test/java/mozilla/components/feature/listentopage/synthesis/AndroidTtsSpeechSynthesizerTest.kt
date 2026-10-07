@@ -34,6 +34,9 @@ import org.robolectric.shadows.ShadowTextToSpeech
 
 private const val NOT_INSTALLED = TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED
 
+// There is no Locale constant for it, and it is the third English region the tests need.
+private val AUSTRALIA: Locale = Locale.forLanguageTag("en-AU")
+
 @RunWith(AndroidJUnit4::class)
 class AndroidTtsSpeechSynthesizerTest {
 
@@ -43,109 +46,186 @@ class AndroidTtsSpeechSynthesizerTest {
     // the request having reached the engine before they fire one.
     private val cache by lazy { DirectoryAudioFileCache({ temporaryFolder.root }, Dispatchers.Unconfined) }
 
-    // Built on first use rather than in a @Before, because the synthesis tests need to fire the init callback on an
-    // engine of their own and a second instance here would be the one the shadow reports as the last.
-    private val synthesizer by lazy { AndroidTtsSpeechSynthesizer(testContext, cache, Dispatchers.Unconfined) }
+    // Started, because loadAvailableVoices waits for the engine to finish binding and the shadow never fires the
+    // init callback of its own accord. Built per test rather than in a @Before, because the synthesis tests fire the
+    // callback on an engine of their own and an instance here would be the one the shadow reports as the last.
+    private fun startedSynthesizer(): SpeechSynthesizer = synthesizerWith(engineStatus = TextToSpeech.SUCCESS)
 
     @After
     fun tearDown() {
         ShadowTextToSpeech.reset()
     }
 
+    // The engine reports no voices at all until it has finished binding, and reports them as an empty list rather
+    // than as a failure. Without the wait the lookup returns nothing for a language the engine does have voices for,
+    // which reaches the user as a language it has no voice for.
     @Test
-    fun `test that a voice needing a network connection is not offered`() {
+    fun `test that the lookup waits for the engine to finish binding`() = runTest {
+        installVoice("en-us-gonzo", Locale.US)
+        val synthesizer = AndroidTtsSpeechSynthesizer(testContext, cache, Dispatchers.Unconfined)
+
+        val voices = async(start = CoroutineStart.UNDISPATCHED) { synthesizer.loadAvailableVoices("en-US") }
+
+        assertTrue(voices.isActive)
+
+        engineShadow().onInitListener.onInit(TextToSpeech.SUCCESS)
+
+        assertEquals(listOf(Voice("en-us-gonzo", Locale.US)), voices.await())
+    }
+
+    @Test
+    fun `test that an engine that fails to start offers no voices`() = runTest {
+        installVoice("en-us-gonzo", Locale.US)
+        val synthesizer = synthesizerWith(engineStatus = TextToSpeech.ERROR)
+
+        assertEquals(emptyList<Voice>(), synthesizer.loadAvailableVoices("en-US"))
+    }
+
+    @Test
+    fun `test that a voice needing a network connection is not offered`() = runTest {
         installVoice("en-us-network", Locale.US, requiresNetwork = true)
 
-        assertEquals(emptyList<Voice>(), synthesizer.loadAvailableVoices("en-US"))
+        assertEquals(emptyList<Voice>(), startedSynthesizer().loadAvailableVoices("en-US"))
     }
 
     @Test
-    fun `test that a voice that is not installed on the device is not offered`() {
+    fun `test that a voice that is not installed on the device is not offered`() = runTest {
         installVoice("en-us-absent", Locale.US, features = setOf(NOT_INSTALLED))
 
-        assertEquals(emptyList<Voice>(), synthesizer.loadAvailableVoices("en-US"))
+        assertEquals(emptyList<Voice>(), startedSynthesizer().loadAvailableVoices("en-US"))
     }
 
     @Test
-    fun `test that only the offline voices are offered when the engine mixes them`() {
+    fun `test that only the offline voices are offered when the engine mixes them`() = runTest {
         installVoice("en-us-offline", Locale.US)
         installVoice("en-us-network", Locale.US, requiresNetwork = true)
         installVoice("en-us-absent", Locale.US, features = setOf(NOT_INSTALLED))
 
-        assertEquals(listOf(Voice(id = "en-us-offline")), synthesizer.loadAvailableVoices("en-US"))
-    }
-
-    @Test
-    fun `test that every offline voice of the matched language is offered`() {
-        installVoice("en-us-gonzo", Locale.US)
-        installVoice("en-us-animal", Locale.US)
-        installVoice("de-de-gonzo", Locale.GERMANY)
-
-        val voices = synthesizer.loadAvailableVoices("en-US")
-
-        assertEquals(setOf(Voice(id = "en-us-gonzo"), Voice(id = "en-us-animal")), voices.toSet())
-    }
-
-    @Test
-    fun `test that the exact region is preferred over another region of the same language`() {
-        installVoice("en-gb-gonzo", Locale.UK)
-        installVoice("en-us-gonzo", Locale.US)
-
-        assertEquals(listOf(Voice(id = "en-gb-gonzo")), synthesizer.loadAvailableVoices("en-GB"))
-    }
-
-    @Test
-    fun `test that another region of the same language is used when the exact region has none`() {
-        installVoice("en-us-gonzo", Locale.US)
-
-        assertEquals(listOf(Voice(id = "en-us-gonzo")), synthesizer.loadAvailableVoices("en-GB"))
-    }
-
-    @Test
-    fun `test that a language with no offline voice is offered nothing`() {
-        installVoice("de-de-gonzo", Locale.GERMANY)
-
-        assertEquals(emptyList<Voice>(), synthesizer.loadAvailableVoices("ja-JP"))
-    }
-
-    @Test
-    fun `test that an engine with no voices at all offers nothing`() {
-        assertEquals(emptyList<Voice>(), synthesizer.loadAvailableVoices("en-US"))
-    }
-
-    @Test
-    fun `test that a malformed language tag is offered nothing rather than throwing`() {
-        installVoice("en-us-gonzo", Locale.US)
-
-        assertEquals(emptyList<Voice>(), synthesizer.loadAvailableVoices("not a language tag"))
-    }
-
-    @Test
-    fun `test that an empty language tag is offered nothing rather than throwing`() {
-        installVoice("en-us-gonzo", Locale.US)
-
-        assertEquals(emptyList<Voice>(), synthesizer.loadAvailableVoices(""))
-    }
-
-    @Test
-    fun `test that voices are ranked by quality first and then by latency`() {
-        installVoice("normal-fast", Locale.US, quality = TtsVoice.QUALITY_NORMAL, latency = TtsVoice.LATENCY_LOW)
-        installVoice("high-slow", Locale.US, quality = TtsVoice.QUALITY_HIGH, latency = TtsVoice.LATENCY_HIGH)
-        installVoice("high-fast", Locale.US, quality = TtsVoice.QUALITY_HIGH, latency = TtsVoice.LATENCY_LOW)
-        installVoice("low-fast", Locale.US, quality = TtsVoice.QUALITY_LOW, latency = TtsVoice.LATENCY_VERY_LOW)
-
         assertEquals(
-            listOf(Voice("high-fast"), Voice("high-slow"), Voice("normal-fast"), Voice("low-fast")),
-            synthesizer.loadAvailableVoices("en-US"),
+            listOf(Voice(id = "en-us-offline", locale = Locale.US)),
+            startedSynthesizer().loadAvailableVoices("en-US"),
         )
     }
 
     @Test
-    fun `test that voices of equal quality and latency are ranked by name`() {
+    fun `test that every region of the article language is offered and no other language is`() = runTest {
+        installVoice("en-us-gonzo", Locale.US)
+        installVoice("en-gb-gonzo", Locale.UK)
+        installVoice("en-au-gonzo", AUSTRALIA)
+        installVoice("de-de-gonzo", Locale.GERMANY)
+
+        val voices = startedSynthesizer().loadAvailableVoices("en-US")
+
+        assertEquals(setOf(Locale.US, Locale.UK, AUSTRALIA), voices.map { it.locale }.toSet())
+    }
+
+    // The reader of an American page may well want to hear it in a British accent, so the region of the article
+    // language narrows nothing: it is the language alone that decides which voices are offered.
+    @Test
+    fun `test that the region of the article language does not narrow the list`() = runTest {
+        installVoice("en-gb-gonzo", Locale.UK)
+        installVoice("en-us-gonzo", Locale.US)
+
+        assertEquals(
+            setOf(Locale.UK, Locale.US),
+            startedSynthesizer().loadAvailableVoices("en-GB").map { it.locale }.toSet(),
+        )
+    }
+
+    @Test
+    fun `test that another region of the same language is used when the exact region has none`() = runTest {
+        installVoice("en-us-gonzo", Locale.US)
+
+        assertEquals(
+            listOf(Voice(id = "en-us-gonzo", locale = Locale.US)),
+            startedSynthesizer().loadAvailableVoices("en-GB"),
+        )
+    }
+
+    // The engines ship several near-identical voices per region, which would otherwise fill the list with rows the
+    // user cannot tell apart, because a row is named after its region.
+    @Test
+    fun `test that a region is offered only by its best voice`() = runTest {
+        installVoice("en-us-poor", Locale.US, quality = TtsVoice.QUALITY_LOW)
+        installVoice("en-us-good", Locale.US, quality = TtsVoice.QUALITY_HIGH)
+        installVoice("en-gb-good", Locale.UK, quality = TtsVoice.QUALITY_HIGH)
+
+        assertEquals(
+            listOf(Voice("en-gb-good", Locale.UK), Voice("en-us-good", Locale.US)),
+            startedSynthesizer().loadAvailableVoices("en-US"),
+        )
+    }
+
+    @Test
+    fun `test that a language with no offline voice is offered nothing`() = runTest {
+        installVoice("de-de-gonzo", Locale.GERMANY)
+
+        assertEquals(emptyList<Voice>(), startedSynthesizer().loadAvailableVoices("ja-JP"))
+    }
+
+    @Test
+    fun `test that an engine with no voices at all offers nothing`() = runTest {
+        assertEquals(emptyList<Voice>(), startedSynthesizer().loadAvailableVoices("en-US"))
+    }
+
+    @Test
+    fun `test that a malformed language tag is offered nothing rather than throwing`() = runTest {
+        installVoice("en-us-gonzo", Locale.US)
+
+        assertEquals(emptyList<Voice>(), startedSynthesizer().loadAvailableVoices("not a language tag"))
+    }
+
+    @Test
+    fun `test that an empty language tag is offered nothing rather than throwing`() = runTest {
+        installVoice("en-us-gonzo", Locale.US)
+
+        assertEquals(emptyList<Voice>(), startedSynthesizer().loadAvailableVoices(""))
+    }
+
+    // Each region is offered by one voice, so the ranking decides the order the regions come out in.
+    @Test
+    fun `test that regions are ranked by quality first and then by latency`() = runTest {
+        installVoice("normal-fast", Locale.US, quality = TtsVoice.QUALITY_NORMAL, latency = TtsVoice.LATENCY_LOW)
+        installVoice("high-slow", Locale.UK, quality = TtsVoice.QUALITY_HIGH, latency = TtsVoice.LATENCY_HIGH)
+        installVoice("high-fast", Locale.CANADA, quality = TtsVoice.QUALITY_HIGH, latency = TtsVoice.LATENCY_LOW)
+        installVoice("low-fast", AUSTRALIA, quality = TtsVoice.QUALITY_LOW, latency = TtsVoice.LATENCY_VERY_LOW)
+
+        assertEquals(
+            listOf("high-fast", "high-slow", "normal-fast", "low-fast"),
+            startedSynthesizer().loadAvailableVoices("en-US").map { it.id },
+        )
+    }
+
+    @Test
+    fun `test that a region whose voices are of equal quality and latency is offered by the first by name`() = runTest {
         installVoice("en-us-zeta", Locale.US)
         installVoice("en-us-alpha", Locale.US)
 
-        assertEquals(listOf(Voice("en-us-alpha"), Voice("en-us-zeta")), synthesizer.loadAvailableVoices("en-US"))
+        assertEquals(listOf(Voice("en-us-alpha", Locale.US)), startedSynthesizer().loadAvailableVoices("en-US"))
+    }
+
+    @Test
+    fun `test that regions whose voices are of equal quality and latency are ranked by name`() = runTest {
+        installVoice("en-us-zeta", Locale.US)
+        installVoice("en-gb-alpha", Locale.UK)
+
+        assertEquals(
+            listOf(Voice("en-gb-alpha", Locale.UK), Voice("en-us-zeta", Locale.US)),
+            startedSynthesizer().loadAvailableVoices("en-US"),
+        )
+    }
+
+    // The lookup finds nothing rather than failing, so without this the engine would go on reading in the voice it
+    // already had and the caller would never learn that the one it asked for was gone.
+    @Test
+    fun `test that a voice the engine does not have leaves the one it is reading with alone`() = runTest {
+        installVoice("en-us-gonzo", Locale.US)
+        val synthesizer = synthesizerWith(engineStatus = TextToSpeech.SUCCESS)
+        synthesizer.setVoice(Voice("en-us-gonzo", Locale.US))
+
+        synthesizer.setVoice(Voice("en-us-uninstalled", Locale.US))
+
+        assertEquals("en-us-gonzo", engineShadow().currentVoice.name)
     }
 
     @Test

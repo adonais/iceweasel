@@ -5,6 +5,9 @@
 #ifndef mozilla_dom_UnboundedMPSCQueue_h
 #define mozilla_dom_UnboundedMPSCQueue_h
 
+#include <atomic>
+#include <cstddef>
+
 namespace mozilla {
 
 // This class implements a lock-free multiple producer single consumer queue of
@@ -46,6 +49,8 @@ class UnboundedMPSCQueue {
     Message* front = mHead.load(std::memory_order_relaxed);
     delete front;
   }
+  UnboundedMPSCQueue(const UnboundedMPSCQueue&) = delete;
+  void operator=(const UnboundedMPSCQueue&) = delete;
 
   void Push(UnboundedMPSCQueue<T>::Message* aMessage) {
     // The next two non-commented line are called A and B in this paragraph.
@@ -122,9 +127,6 @@ class UnboundedMPSCQueue {
   // An atomic pointer to a sentinel node, that points to the oldest message
   // in the queue.
   std::atomic<Message*> mTail;
-
-  UnboundedMPSCQueue(const UnboundedMPSCQueue&) = delete;
-  void operator=(const UnboundedMPSCQueue&) = delete;
 };
 
 }  // namespace mozilla

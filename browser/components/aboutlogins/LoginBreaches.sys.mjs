@@ -12,10 +12,9 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  BreachAlertsData:
+    "moz-src:///toolkit/components/passwordmgr/BreachAlertsData.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
-  RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
-  RemoteSettingsClient:
-    "resource://services-settings/RemoteSettingsClient.sys.mjs",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -26,11 +25,26 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 export const LoginBreaches = {
-  REMOTE_SETTINGS_COLLECTION: "fxmonitor-breaches",
+  _cachedBreachAlertsData: null,
+
+  get breachAlertsData() {
+    if (!this._cachedBreachAlertsData) {
+      this._cachedBreachAlertsData = new lazy.BreachAlertsData();
+    }
+    return this._cachedBreachAlertsData;
+  },
 
   async update(breaches = null) {
     const logins = await lazy.LoginHelper.getAllUserFacingLogins();
     await this.getPotentialBreachesByLoginGUID(logins, breaches);
+  },
+
+  /**
+   * Start watching for Remote Settings breach data updates and
+   * recompute potentially breached logins whenever new data syncs in.
+   */
+  subscribeToBreachUpdates() {
+    return this.breachAlertsData.subscribe(breaches => this.update(breaches));
   },
 
   /**
@@ -54,20 +68,9 @@ export const LoginBreaches = {
       return breachesByLoginGUID;
     }
     if (!breaches) {
-      try {
-        breaches = await lazy
-          .RemoteSettings(this.REMOTE_SETTINGS_COLLECTION)
-          .get();
-      } catch (ex) {
-        if (ex instanceof lazy.RemoteSettingsClient.UnknownCollectionError) {
-          lazy.log.warn(
-            "Could not get Remote Settings collection.",
-            this.REMOTE_SETTINGS_COLLECTION,
-            ex
-          );
-          return breachesByLoginGUID;
-        }
-        throw ex;
+      breaches = await this.breachAlertsData.getAllBreaches();
+      if (breaches.length === 0) {
+        return breachesByLoginGUID;
       }
     }
     const BREACH_ALERT_URL = Services.prefs.getStringPref(
@@ -183,7 +186,3 @@ export const LoginBreaches = {
     return login.timePasswordChanged < breachDate;
   },
 };
-
-ChromeUtils.defineLazyGetter(lazy, "log", () => {
-  return lazy.LoginHelper.createLogger("LoginBreaches");
-});

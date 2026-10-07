@@ -17,6 +17,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   RecentlyClosedTabsAndWindowsMenuUtils:
     "moz-src:///browser/components/sessionstore/RecentlyClosedTabsAndWindowsMenuUtils.sys.mjs",
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
+  ScreenshotsUtils:
+    "moz-src:///browser/components/screenshots/ScreenshotsUtils.sys.mjs",
+  SELECTION_MODES:
+    "moz-src:///browser/components/screenshots/ScreenshotsSelectionModes.sys.mjs",
   SessionStore:
     "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
   SharingUtils: "moz-src:///browser/components/sharing/SharingUtils.sys.mjs",
@@ -507,6 +511,7 @@ if (
 
       let popup = aDocument.createXULElement("menupopup");
       popup.setAttribute("id", "share-tab-popup");
+      popup.setAttribute("accesskey-conflicts-bug", "2073899");
       popup.addEventListener("popupshowing", () => {
         let browser = aDocument.defaultView.gBrowser.selectedBrowser;
         node.contextBrowserToShare = Cu.getWeakReference(browser);
@@ -810,3 +815,18 @@ CustomizableWidgets.push({
     node.setAttribute("aria-pressed", "false");
   },
 });
+
+if (Services.prefs.getBoolPref("browser.mini-window.enabled", false)) {
+  CustomizableWidgets.push({
+    id: "mini-window-button",
+    l10nId: "toolbar-button-mini-window",
+    onCommand(aEvent) {
+      let win = aEvent.currentTarget.documentGlobal;
+      lazy.ScreenshotsUtils.toggle(
+        win.gBrowser.selectedBrowser,
+        "MiniWindowToolbarButton",
+        { mode: lazy.SELECTION_MODES.MINI_WINDOW }
+      );
+    },
+  });
+}

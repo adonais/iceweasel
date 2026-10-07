@@ -102,13 +102,15 @@ set_define("ENABLE_TESTS", enable_tests)
 
 
 option(
-    "--enable-legacy-l10n",
-    env="MOZ_USE_LEGACY_L10N",
-    help="Enable the legacy (recursive-make) l10n driver",
+    "--enable-makefile-installer-build",
+    env="MOZ_USE_MAKEFILE_INSTALLER_BUILD",
+    help="Enable the Windows installer build driven by Make",
 )
 
 
-set_config("MOZ_USE_LEGACY_L10N", True, when="--enable-legacy-l10n")
+set_config(
+    "MOZ_USE_MAKEFILE_INSTALLER_BUILD", True, when="--enable-makefile-installer-build"
+)
 
 
 @depends(enable_tests)
@@ -196,6 +198,21 @@ set_config("MOZ_DEBUG_DEFINES", debug_defines)
 option(env="MOZ_PGO", help="Build with profile guided optimizations")
 
 set_config("MOZ_PGO", depends("MOZ_PGO")(lambda x: bool(x)))  # noqa: PLW0108
+
+
+# Off by default: the document describes the whole tree, so it is regenerated
+# on every build, and only the shippable builds upload one. Which LICENSES
+# declarations are reachable depends on the configuration, so this has to be
+# a build rather than a source-test task.
+option(
+    env="MOZ_GENERATE_SBOM",
+    help="Generate a CycloneDX software bill of materials",
+)
+
+set_config(
+    "MOZ_GENERATE_SBOM",
+    depends("MOZ_GENERATE_SBOM")(lambda x: bool(x)),  # noqa: PLW0108
+)
 
 
 # Imply --enable-release when MOZILLA_OFFICIAL is set rather than adjusting the
@@ -516,6 +533,45 @@ def nsis_flags(host):
 set_config("MAKENSISU_FLAGS", nsis_flags)
 
 
+# Determine whether to build the gtest xul. This happens in automation
+# on Android and Desktop platforms with the exception of:
+#  - Windows PGO, where linking xul-gtest.dll takes too long;
+#  - Android other than x86_64, where gtest is not required.
+@depends(
+    build_project,
+    target,
+    moz_automation,
+    enable_tests,
+    when="--enable-compile-environment",
+)
+def build_gtest(build_project, target, automation, enable_tests):
+    return bool(
+        enable_tests
+        and automation
+        and build_project in ("browser", "comm/mail", "mobile/android")
+        and not (target.os == "Android" and target.cpu != "x86_64")
+    )
+
+
+option(
+    "--enable-gtest-in-build",
+    default=build_gtest,
+    help="{Enable|Force disable} building the gtest libxul during the build",
+    when="--enable-compile-environment",
+)
+
+
+@depends(
+    "--enable-gtest-in-build",
+    when="--enable-compile-environment",
+)
+def gtest_in_build(value):
+    return value
+
+
+set_config("LINK_GTEST_DURING_COMPILE", True, when="--enable-gtest-in-build")
+
+
 include(include_project_configure)
 
 
@@ -632,35 +688,6 @@ def build_backends(backends):
 
 set_config("BUILD_BACKENDS", build_backends)
 
-
-# Determine whether to build the gtest xul. This happens in automation
-# on Android and Desktop platforms with the exception of:
-#  - Windows PGO, where linking xul-gtest.dll takes too long;
-#  - Android other than x86_64, where gtest is not required.
-@depends(
-    build_project,
-    target,
-    moz_automation,
-    enable_tests,
-    when="--enable-compile-environment",
-)
-def build_gtest(build_project, target, automation, enable_tests):
-    return bool(
-        enable_tests
-        and automation
-        and build_project in ("browser", "comm/mail", "mobile/android")
-        and not (target.os == "Android" and target.cpu != "x86_64")
-    )
-
-
-option(
-    "--enable-gtest-in-build",
-    default=build_gtest,
-    help="{Enable|Force disable} building the gtest libxul during the build",
-    when="--enable-compile-environment",
-)
-
-set_config("LINK_GTEST_DURING_COMPILE", True, when="--enable-gtest-in-build")
 
 # Localization
 # ==============================================================
@@ -827,7 +854,12 @@ def need_upx(target):
     return target.os == "WINNT" and target.cpu != "aarch64"
 
 
-check_prog("UPX", ("upx",), allow_missing=True, bootstrap="upx/bin", when=need_upx)
+upx = check_prog(
+    "UPX", ("upx",), allow_missing=True, bootstrap="upx/bin", when=need_upx
+)
+
+
+set_config("NSIS_USE_UPX", True, when=need_upx & (upx | moz_automation))
 
 
 check_prog(

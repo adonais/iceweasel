@@ -23,8 +23,8 @@ let handler = {
 };
 
 dbg.onDebuggerStatement = function(frame) {
-    var line0 = frame.script.getOffsetLocation(frame.offset).lineNumber;
-    var offs = frame.script.getLineOffsets(line0 + 1);
+    var line0 = frame.script.getOffsetMetadata(frame.offset).lineNumber;
+    var offs = frame.script.getPossibleBreakpointOffsets({ line: line0 + 1 });
     frame.script.setBreakpoint(offs[0], handler);
 }
 

@@ -851,7 +851,12 @@ nsresult CacheIndex::RemoveEntry(const SHA1Sum::Hash* aHash,
   // CacheFileContextEvictor purges entries; they've already been cleared
   // via CacheIndex::EvictByContext synchronously
   if (aClearDictionary) {
-    DictionaryCache::RemoveDictionaryOMT(aKey);
+    nsAutoCString uriSpec;
+    nsCOMPtr<nsILoadContextInfo> lci =
+        CacheFileUtils::ParseKey(aKey, nullptr, &uriSpec);
+    if (lci) {
+      DictionaryCache::RemoveDictionaryOMT(uriSpec, lci);
+    }
   }
 
   StaticMutexAutoLock lock(sLock);
@@ -1325,7 +1330,7 @@ nsresult CacheIndex::GetEntryForEviction(EvictionSortedSnapshot& aSnapshot,
   uint32_t skipped = 0;
   size_t recordPosition = 0;
 
-  // find first non-forced valid and unpinned entry with the lowest frecency
+  // find the first evictable entry with the lowest frecency
   for (size_t i = 0; i < aSnapshot.Length(); ++i) {
     if (!aSnapshot[i]) {
       continue;  // Skip the null records
@@ -1350,16 +1355,15 @@ nsresult CacheIndex::GetEntryForEviction(EvictionSortedSnapshot& aSnapshot,
       continue;
     }
 
-    if (IsForcedValidEntry(&hash)) {
-      continue;
-    }
-
     // Skip entries with active (non-doomed) file handles. These are
     // currently being read from or written to. Evicting them would doom
     // the in-progress I/O — in particular, a newly-created entry being
     // written always has the lowest frecency and would otherwise be
     // selected as the first eviction candidate, preventing it from ever
     // being stored. See bug 2031577.
+    //
+    // The previous IsForcedValidEntry check itself required a handle to
+    // return true, so this handle check already subsumes it.
     {
       RefPtr<CacheFileHandle> handle;
       if (CacheFileIOManager::gInstance &&
@@ -1397,19 +1401,6 @@ nsresult CacheIndex::GetEntryForEviction(EvictionSortedSnapshot& aSnapshot,
   aSnapshot[recordPosition] = nullptr;  // Remove the record from the snapshot
 
   return NS_OK;
-}
-
-// static
-bool CacheIndex::IsForcedValidEntry(const SHA1Sum::Hash* aHash) {
-  RefPtr<CacheFileHandle> handle;
-
-  CacheFileIOManager::gInstance->mHandles.GetHandle(aHash,
-                                                    getter_AddRefs(handle));
-
-  if (!handle) return false;
-
-  nsCString hashKey = handle->Key();
-  return CacheStorageService::Self()->IsForcedValidEntry(hashKey);
 }
 
 // static
@@ -1775,7 +1766,17 @@ void CacheIndex::WriteIndexToDisk(const StaticMutexAutoLock& aProofOfLock) {
 
   ChangeState(WRITING, aProofOfLock);
 
-  mProcessEntries = mIndexStats.ActiveEntriesCount();
+  mRWEntries.Clear();
+  mRWEntries.SetCapacity(mIndexStats.ActiveEntriesCount());
+  for (auto iter = mIndex.Iter(); !iter.Done(); iter.Next()) {
+    CacheIndexEntry* entry = iter.Get();
+    if (entry->IsRemoved() || !entry->IsInitialized() || entry->IsFileEmpty()) {
+      continue;
+    }
+    mRWEntries.AppendElement(entry);
+  }
+  MOZ_ASSERT(mRWEntries.Length() == mIndexStats.ActiveEntriesCount());
+  mProcessEntries = static_cast<uint32_t>(mRWEntries.Length());
 
   mIndexFileOpener = new FileOpenHelper(this);
   rv = CacheFileIOManager::OpenFile(
@@ -1846,37 +1847,23 @@ void CacheIndex::WriteRecords(const StaticMutexAutoLock& aProofOfLock) {
   uint32_t hashOffset = mRWBufPos;
 
   char* buf = mRWBuf + mRWBufPos;
-  uint32_t skip = mSkipEntries;
   uint32_t processMax = (mRWBufSize - mRWBufPos) / sizeof(CacheIndexRecord);
   MOZ_ASSERT(processMax != 0 ||
              mProcessEntries ==
                  0);  // TODO make sure we can write an empty index
   uint32_t processed = 0;
-#ifdef DEBUG
-  bool hasMore = false;
-#endif
-  for (auto iter = mIndex.Iter(); !iter.Done(); iter.Next()) {
-    CacheIndexEntry* entry = iter.Get();
-    if (entry->IsRemoved() || !entry->IsInitialized() || entry->IsFileEmpty()) {
-      continue;
-    }
-
-    if (skip) {
-      skip--;
-      continue;
-    }
-
+  for (uint32_t i = mSkipEntries; i < mRWEntries.Length(); ++i) {
     if (processed == processMax) {
-#ifdef DEBUG
-      hasMore = true;
-#endif
       break;
     }
 
-    entry->WriteToBuf(buf);
+    mRWEntries[i]->WriteToBuf(buf);
     buf += sizeof(CacheIndexRecord);
     processed++;
   }
+#ifdef DEBUG
+  bool hasMore = mSkipEntries + processed < mRWEntries.Length();
+#endif
 
   MOZ_ASSERT(mRWBufPos != static_cast<uint32_t>(buf - mRWBuf) ||
              mProcessEntries == 0);
@@ -1931,6 +1918,9 @@ void CacheIndex::FinishWrite(bool aSucceeded,
   mIndexHandle = nullptr;
   mRWHash = nullptr;
   ReleaseBuffer();
+  // ReleaseBuffer() keeps the buffer while a write is still pending, but the
+  // entries below are about to be removed from mIndex.
+  mRWEntries.Clear();
 
   if (aSucceeded) {
     // Opening of the file must not be in progress if writing succeeded.
@@ -3440,6 +3430,7 @@ void CacheIndex::ReleaseBuffer() {
   mRWBuf = nullptr;
   mRWBufSize = 0;
   mRWBufPos = 0;
+  mRWEntries.Clear();
 }
 
 void CacheIndex::FrecencyStorage::AppendRecord(

@@ -317,8 +317,6 @@ bool gfxDWriteFont::GetFakeMetricsForArialBlack(
 }
 
 void gfxDWriteFont::ComputeMetrics(AntialiasOption anAAOption) {
-  ::memset(&mMetrics, 0, sizeof(mMetrics));
-
   DWRITE_FONT_METRICS fontMetrics;
   if (!(mFontEntry->Weight().Min() == FontWeight::FromInt(900) &&
         mFontEntry->Weight().Max() == FontWeight::FromInt(900) &&
@@ -472,7 +470,7 @@ void gfxDWriteFont::ComputeMetrics(AntialiasOption anAAOption) {
   mMetrics.strikeoutSize =
       fontMetrics.strikethroughThickness * mFUnitsConvFactor;
 
-  SanitizeMetrics(&mMetrics, GetFontEntry()->mIsBadUnderlineFont);
+  SanitizeMetrics(GetFontEntry()->mIsBadUnderlineFont);
 
   if (ApplySyntheticBold()) {
     auto delta = GetSyntheticBoldOffset();

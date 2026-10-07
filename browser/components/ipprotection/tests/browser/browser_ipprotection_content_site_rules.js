@@ -57,9 +57,9 @@ function getSiteRuleStatusIcon(content) {
 
 /**
  * openPanel() applies its state before showing(), which then recomputes
- * siteData from the loaded tab - and #getSiteData currently hardcodes
- * isInclusion to false (Bug 2066802). Re-apply the state once the panel is up
- * so the injected siteData survives.
+ * siteData from the loaded tab. Re-apply the state once the panel is up so the
+ * injected siteData survives, for the cases that exercise the rendering rather
+ * than the rule lookup.
  *
  * @param {object} state
  *  The panel state to apply.
@@ -842,5 +842,91 @@ add_task(async function test_has_site_inclusion_defaults_to_false() {
   );
 
   await closePanel();
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
+ * Tests that the panel resolves a site's rule through the SiteRuleManager
+ * instead of taking it from injected state, for an inclusion the user holds on
+ * the loaded site while the VPN is off.
+ */
+add_task(async function test_site_rule_status_inclusion_from_rule() {
+  await pushInclusionsPref(true);
+
+  setupService({
+    isReady: true,
+  });
+
+  const principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      MOCK_SITE_NAME
+    );
+  IPPPermissionRules.setRule(principal, IPPPrincipalRules.INCLUDED);
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    MOCK_SITE_NAME
+  );
+
+  let content = await openPanel({
+    isProtectionEnabled: false,
+  });
+
+  Assert.ok(
+    content.state.siteData?.hasSiteRule,
+    "The panel should report a rule for a site the user included"
+  );
+  Assert.ok(
+    content.hasSiteInclusion,
+    "The panel should resolve the rule as an inclusion"
+  );
+
+  await checkSiteRuleStatus(
+    content,
+    INCLUSION_DESCRIPTION_L10N_ID,
+    VPN_ON_ICON
+  );
+
+  await closePanel();
+  BrowserTestUtils.removeTab(tab);
+  IPPPermissionRules.setRule(principal, IPPPrincipalRules.DEFAULT);
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
+ * Tests that a site the user holds no rule for reports no rule, so the status
+ * card stays out of the panel.
+ */
+add_task(async function test_no_site_rule_status_without_a_rule() {
+  await pushInclusionsPref(true);
+
+  setupService({
+    isReady: true,
+  });
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    MOCK_SITE_NAME
+  );
+
+  let content = await openPanel({
+    isProtectionEnabled: false,
+  });
+
+  Assert.ok(
+    content.state.siteData,
+    "The panel should report site data for a manageable site"
+  );
+  Assert.ok(
+    !content.state.siteData.hasSiteRule,
+    "The panel should report no rule for a site the user has not set"
+  );
+  Assert.ok(
+    !getSiteRuleStatus(content),
+    "Site rule status card should be absent without a rule"
+  );
+
+  await closePanel();
+  BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
 });

@@ -7,7 +7,7 @@
 add_task(async function () {
   let docLoaded = waitForEvent(
     Ci.nsIAccessibleEvent.EVENT_DOCUMENT_LOAD_COMPLETE,
-    "body"
+    "html"
   );
   const [a11yInitObserver, a11yInit] = initAccService();
   await a11yInitObserver;
@@ -22,7 +22,7 @@ add_task(async function () {
     {
       gBrowser,
       url: `data:text/html,
-      <html>
+      <html id="html">
         <head>
           <meta charset="utf-8"/>
           <title>Accessibility Test</title>

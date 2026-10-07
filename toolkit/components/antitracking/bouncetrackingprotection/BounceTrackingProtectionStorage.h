@@ -38,9 +38,7 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
 
  public:
-  BounceTrackingProtectionStorage()
-      : mMonitor("mozilla::BounceTrackingProtectionStorage::mMonitor"),
-        mPendingWrites(0) {};
+  BounceTrackingProtectionStorage();
 
   // Initialises the storage including the on-disk database.
   [[nodiscard]] nsresult Init();
@@ -214,7 +212,7 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   // Map of origin attributes to global state object. This enables us to track
   // bounce tracking state per OA, e.g. to separate private browsing from normal
   // browsing.
-  StateGlobalMap mStateGlobal{};
+  StateGlobalMap mStateGlobal;
 
   // Helpers used to sync updates to BounceTrackingStateGlobal with the
   // database.

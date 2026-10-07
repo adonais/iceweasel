@@ -254,6 +254,10 @@ bool ValidateCookiePath(nsIURI* aURI, const nsAString& aPath,
       directory.Truncate(directory.Length() - 1);
     }
 
+    if (directory.IsEmpty()) {
+      directory.AssignLiteral("/");
+    }
+
     CopyUTF8toUTF16(directory, aRetPath);
   }
 

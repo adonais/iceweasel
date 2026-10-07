@@ -53,10 +53,6 @@ typedef struct {
    const kiss_twiddle_scalar * OPUS_RESTRICT trig;
 } mdct_lookup;
 
-#if defined(HAVE_ARM_NE10)
-#include "arm/mdct_arm.h"
-#endif
-
 int clt_mdct_init(mdct_lookup *l,int N, int maxshift, int arch);
 void clt_mdct_clear(mdct_lookup *l, int arch);
 
@@ -73,39 +69,23 @@ void clt_mdct_backward_c(const mdct_lookup *l, kiss_fft_scalar *in,
       const celt_coef * OPUS_RESTRICT window,
       int overlap, int shift, int stride, int arch);
 
-#if !defined(OVERRIDE_OPUS_MDCT)
-/* Is run-time CPU detection enabled on this platform? */
-#if defined(OPUS_HAVE_RTCD) && defined(HAVE_ARM_NE10)
+void opus_fft_pfa_c(const kiss_fft_state *st, const kiss_fft_cpx *fin, kiss_fft_cpx *fout ARG_FIXED(int downshift));
+void opus_ifft_pfa_c(const kiss_fft_state *st, const kiss_fft_cpx *fin, kiss_fft_cpx *fout ARG_FIXED(int fft_shift));
 
-extern void (*const CLT_MDCT_FORWARD_IMPL[OPUS_ARCHMASK+1])(
-      const mdct_lookup *l, kiss_fft_scalar *in,
-      kiss_fft_scalar * OPUS_RESTRICT out, const celt_coef *window,
-      int overlap, int shift, int stride, int arch);
+#if defined(OPUS_ARM_MAY_HAVE_NEON_INTR) || defined(OPUS_ARM_PRESUME_NEON_INTR)
+#include "arm/mdct_arm.h"
+#endif
 
-#define clt_mdct_forward(_l, _in, _out, _window, _overlap, _shift, _stride, _arch) \
-   ((*CLT_MDCT_FORWARD_IMPL[(arch)&OPUS_ARCHMASK])(_l, _in, _out, \
-                                                   _window, _overlap, _shift, \
-                                                   _stride, _arch))
 
-extern void (*const CLT_MDCT_BACKWARD_IMPL[OPUS_ARCHMASK+1])(
-      const mdct_lookup *l, kiss_fft_scalar *in,
-      kiss_fft_scalar * OPUS_RESTRICT out, const celt_coef *window,
-      int overlap, int shift, int stride, int arch);
 
-#define clt_mdct_backward(_l, _in, _out, _window, _overlap, _shift, _stride, _arch) \
-   (*CLT_MDCT_BACKWARD_IMPL[(arch)&OPUS_ARCHMASK])(_l, _in, _out, \
-                                                   _window, _overlap, _shift, \
-                                                   _stride, _arch)
-
-#else /* if defined(OPUS_HAVE_RTCD) && defined(HAVE_ARM_NE10) */
-
-#define clt_mdct_forward(_l, _in, _out, _window, _overlap, _shift, _stride, _arch) \
+#if !defined(OVERRIDE_CLT_MDCT_FORWARD)
+# define clt_mdct_forward(_l, _in, _out, _window, _overlap, _shift, _stride, _arch) \
    clt_mdct_forward_c(_l, _in, _out, _window, _overlap, _shift, _stride, _arch)
+#endif
 
-#define clt_mdct_backward(_l, _in, _out, _window, _overlap, _shift, _stride, _arch) \
+#if !defined(OVERRIDE_CLT_MDCT_BACKWARD)
+# define clt_mdct_backward(_l, _in, _out, _window, _overlap, _shift, _stride, _arch) \
    clt_mdct_backward_c(_l, _in, _out, _window, _overlap, _shift, _stride, _arch)
-
-#endif /* end if defined(OPUS_HAVE_RTCD) && defined(HAVE_ARM_NE10) && !defined(FIXED_POINT) */
-#endif /* end if !defined(OVERRIDE_OPUS_MDCT) */
+#endif
 
 #endif

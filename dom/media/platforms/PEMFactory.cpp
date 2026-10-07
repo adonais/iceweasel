@@ -464,6 +464,35 @@ EncodeSupportSet PEMFactory::Supports(const EncoderConfig& aConfig) const {
   return EncodeSupportSet{};
 }
 
+RefPtr<PEMSupportsEncoderPromise> PEMFactory::SupportsAsync(
+    const EncoderConfig& aConfig) const {
+  nsTArray<RefPtr<PEMSupportsEncoderPromise>> promises(mCurrentPEMs.Length());
+  for (const auto& m : mCurrentPEMs) {
+    if (!m->Supports(aConfig).isEmpty()) {
+      promises.AppendElement(m->SupportsAsync(aConfig));
+    }
+  }
+  return PEMSupportsEncoderPromise::AllSettled(GetCurrentSerialEventTarget(),
+                                               promises)
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [](CopyableTArray<PEMSupportsEncoderPromise::ResolveOrRejectValue>&&
+                 aValues) -> RefPtr<PEMSupportsEncoderPromise> {
+            EncodeSupportSet support{};
+            for (const auto& value : aValues) {
+              if (value.IsResolve()) {
+                support += value.ResolveValue();
+              }
+            }
+            return PEMSupportsEncoderPromise::CreateAndResolve(support,
+                                                               __func__);
+          },
+          [] {
+            MOZ_CRASH("AllSettled does not reject");
+            return RefPtr<PEMSupportsEncoderPromise>(nullptr);
+          });
+}
+
 EncodeSupportSet PEMFactory::SupportsCodec(CodecType aCodec) const {
   EncodeSupportSet supports{};
   for (const auto& m : mCurrentPEMs) {

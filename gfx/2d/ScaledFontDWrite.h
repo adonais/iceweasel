@@ -37,7 +37,7 @@ class ScaledFontDWrite final : public ScaledFontBase {
   bool GetWRFontInstanceOptions(
       Maybe<wr::FontInstanceOptions>* aOutOptions,
       Maybe<wr::FontInstancePlatformOptions>* aOutPlatformOptions,
-      std::vector<FontVariation>* aOutVariations) override;
+      std::vector<wr::FontVariation>* aOutVariations) override;
 
   DWriteSettings& DWriteSettings() const;
 

@@ -29,6 +29,24 @@ XPCOMUtils.defineLazyPreferenceGetter(
   ""
 );
 
+export const SCHEDULE_TYPES = Object.freeze({
+  DAILY: "daily",
+  WEEKLY: "weekly",
+});
+
+export const DAILY_SCHEDULE_L10N_ID = "ai-tasks-alert-schedule-daily-at";
+
+// Indexed by the weekday values used by the scheduler (0 = Sunday)
+export const WEEKLY_SCHEDULE_L10N_IDS = Object.freeze([
+  "ai-tasks-alert-schedule-weekly-sunday",
+  "ai-tasks-alert-schedule-weekly-monday",
+  "ai-tasks-alert-schedule-weekly-tuesday",
+  "ai-tasks-alert-schedule-weekly-wednesday",
+  "ai-tasks-alert-schedule-weekly-thursday",
+  "ai-tasks-alert-schedule-weekly-friday",
+  "ai-tasks-alert-schedule-weekly-saturday",
+]);
+
 /**
  * Shared utilities for monitor UI operations
  */
@@ -108,6 +126,80 @@ export const MonitorUIUtils = {
         error: error.message,
       };
     }
+  },
+
+  buildMonitorStatus(monitor) {
+    // Return the status with kind, let agent-monitor-item handle the localization
+    const monitorStatus = monitor.enabled
+      ? { kind: "watching" }
+      : { kind: "paused" };
+
+    return monitorStatus;
+  },
+
+  /**
+   * Transforms a monitor object to match the display format.
+   *
+   * @param {object} monitor - The monitor object from the database
+   * @returns {object}
+   */
+  formatMonitorForDisplay(monitor) {
+    const monitorStatus = this.buildMonitorStatus(monitor);
+
+    return {
+      id: monitor.id,
+      monitorName: monitor.title || "",
+      url: monitor.watchUrls?.[0] || "",
+      watchUrls: monitor.watchUrls || [],
+      condition: monitor.monitorPrompt || "",
+      enabled: !!monitor.enabled,
+      status: monitorStatus,
+      history: (monitor.history || []).slice().reverse(),
+      // Pass the schedule data directly - agent-monitor-item will format it using FTL strings
+      schedule: monitor.schedule
+        ? {
+            frequency: monitor.schedule.type,
+            time: `${(monitor.schedule.hour ?? 0)
+              .toString()
+              .padStart(2, "0")}:${(monitor.schedule.minute ?? 0)
+              .toString()
+              .padStart(2, "0")}`,
+            weekday: monitor.schedule.weekday?.toString(),
+          }
+        : null,
+    };
+  },
+
+  /**
+   * The Fluent string that states when a monitor checks, e.g. "Check daily at
+   * 9:00 AM". Callers render it themselves so the string can be localized in
+   * whichever document they live in.
+   *
+   * @param {?object} schedule - A schedule as returned by
+   *   formatMonitorForDisplay: { frequency, time: "HH:MM", weekday }
+   * @returns {?{id: string, args: object}} Null when there is nothing to state.
+   */
+  getScheduleL10n(schedule) {
+    if (!schedule?.time) {
+      return null;
+    }
+    const [hour, minute] = schedule.time.split(":").map(Number);
+    if (!Number.isInteger(hour) || !Number.isInteger(minute)) {
+      return null;
+    }
+
+    const id =
+      schedule.frequency === SCHEDULE_TYPES.WEEKLY
+        ? WEEKLY_SCHEDULE_L10N_IDS[Number(schedule.weekday)]
+        : DAILY_SCHEDULE_L10N_ID;
+    if (!id) {
+      return null;
+    }
+
+    // The strings take a datetime, so the time of day is put on today's date.
+    const time = new Date();
+    time.setHours(hour, minute, 0, 0);
+    return { id, args: { time: time.getTime() } };
   },
 
   /**

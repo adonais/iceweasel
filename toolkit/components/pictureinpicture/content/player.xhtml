@@ -6,7 +6,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
       windowtype="Toolkit:PictureInPicture"
-      macnativefullscreen="true"
+      macnativefullscreen="false"
       customtitlebar="true"
       scrolling="false"
       >
@@ -44,29 +44,28 @@
       <xul:browser type="content" primary="true" remote="true" remoteType="web" id="browser" tabindex="-1" messagemanagergroup="pip-player"></xul:browser>
     </div>
     <div id="controls" dir="ltr">
+#ifdef XP_MACOSX
       <button id="close"
       class="control-item control-button tooltip-under-controls" data-l10n-attrs="tooltip"
-#ifdef XP_MACOSX
       mac="true"
-      tabindex="9"
-#else
-      tabindex="10"
-#endif
       />
       <button id="unpip"
       class="control-item control-button tooltip-under-controls" data-l10n-id="pictureinpicture-unpip-btn" data-l10n-attrs="tooltip"
-#ifdef XP_MACOSX
       mac="true"
-      tabindex="10"
-#else
-      tabindex="9"
-#endif
       />
+#else
+      <button id="unpip"
+      class="control-item control-button tooltip-under-controls" data-l10n-id="pictureinpicture-unpip-btn" data-l10n-attrs="tooltip"
+      />
+      <button id="close"
+      class="control-item control-button tooltip-under-controls" data-l10n-attrs="tooltip"
+      />
+#endif
     <div id="controls-bottom-gradient" class="control-item"></div>
     <div id="controls-bottom">
       <div class="controls-bottom-upper">
           <div class="scrubber-no-drag">
-            <input id="scrubber" class="control-item" min="0" max="1" step=".001" type="range" tabindex="11" hidden="true"/>
+            <input id="scrubber" class="control-item" min="0" max="1" step=".001" type="range" hidden="true"/>
           </div>
       </div>
       <div class="controls-bottom-lower">
@@ -74,45 +73,15 @@
           <div id="timestamp" class="control-item" hidden="true"></div>
         </div>
         <div class="center-controls">
-          <button id="seekBackward" class="control-item control-button tooltip-over-controls center-tooltip" hidden="true" data-l10n-id="pictureinpicture-seekbackward-btn" data-l10n-attrs="tooltip" tabindex="12"></button>
-          <button id="playpause" class="control-item control-button tooltip-over-controls center-tooltip" tabindex="1"
+          <button id="seekBackward" class="control-item control-button tooltip-over-controls center-tooltip" hidden="true" data-l10n-id="pictureinpicture-seekbackward-btn" data-l10n-attrs="tooltip"></button>
+          <button id="playpause" class="control-item control-button tooltip-over-controls center-tooltip"
                   data-l10n-id="pictureinpicture-pause-btn" data-l10n-attrs="tooltip"/>
-          <button id="seekForward" class="control-item control-button tooltip-over-controls center-tooltip" hidden="true" data-l10n-id="pictureinpicture-seekforward-btn" data-l10n-attrs="tooltip" tabindex="2"></button>
+          <button id="seekForward" class="control-item control-button tooltip-over-controls center-tooltip" hidden="true" data-l10n-id="pictureinpicture-seekforward-btn" data-l10n-attrs="tooltip"></button>
         </div>
         <div class="end-controls">
-          <button id="audio" class="control-item control-button tooltip-over-controls center-tooltip" hidden="true" data-l10n-attrs="tooltip" tabindex="3"/>
-          <input id="audio-scrubber" class="control-item" min="0" max="1" step=".001" type="range" tabindex="4" hidden="true"/>
-          <button id="playbackRate" class="control-item control-button tooltip-over-controls center-tooltip" hidden="true" data-l10n-id="pictureinpicture-playback-rate-btn" data-l10n-attrs="tooltip" tabindex="5"></button>
-          <button id="closed-caption" class="control-item control-button tooltip-over-controls center-tooltip closed-caption" hidden="true" disabled="true" data-l10n-id="pictureinpicture-subtitles-btn" data-l10n-attrs="tooltip" tabindex="6"></button>
-          <div id="settings" class="hide panel">
-            <fieldset class="box panel-fieldset">
-              <legend class="a11y-only panel-legend" data-l10n-id="pictureinpicture-subtitles-panel-accessible"></legend>
-              <div class="subtitle-grid">
-                <label id="subtitles-toggle-label" data-l10n-id="pictureinpicture-subtitles-label" class="bold" for="subtitles-toggle"></label>
-                <label class="switch">
-                  <input id="subtitles-toggle" type="checkbox" tabindex="6" checked=""/>
-                  <span class="slider" role="presentation"></span>
-                </label>
-              </div>
-              <div class="grey-line"></div>
-              <fieldset class="font-size-selection panel-fieldset">
-                <legend data-l10n-id="pictureinpicture-font-size-label" class="bold panel-legend"></legend>
-                <div id="font-size-selection-radio-small" class="font-size-selection-radio">
-                  <input id="small" type="radio" name="cc-size" tabindex="7"/>
-                  <label data-l10n-id="pictureinpicture-font-size-small" for="small"></label>
-                </div>
-                <div id="font-size-selection-radio-medium" class="font-size-selection-radio">
-                  <input id="medium" type="radio" name="cc-size" tabindex="7"/>
-                  <label data-l10n-id="pictureinpicture-font-size-medium" for="medium"></label>
-                </div>
-                <div id="font-size-selection-radio-large" class="font-size-selection-radio">
-                  <input id="large" type="radio" name="cc-size" tabindex="7"/>
-                  <label data-l10n-id="pictureinpicture-font-size-large" for="large"></label>
-                </div>
-              </fieldset>
-            </fieldset>
-            <div class="arrow"></div>
-          </div>
+          <button id="audio" class="control-item control-button tooltip-over-controls center-tooltip" hidden="true" data-l10n-attrs="tooltip"/>
+          <input id="audio-scrubber" class="control-item" min="0" max="1" step=".001" type="range" hidden="true"/>
+          <button id="playbackRate" class="control-item control-button tooltip-over-controls center-tooltip" hidden="true" data-l10n-id="pictureinpicture-playback-rate-btn" data-l10n-attrs="tooltip"></button>
           <div id="playbackRateSettings" class="hide panel">
             <fieldset class="box panel-fieldset">
               <legend class="a11y-only panel-legend" data-l10n-id="pictureinpicture-playback-rate-panel-accessible"></legend>
@@ -120,18 +89,48 @@
                 <span data-l10n-id="pictureinpicture-playback-rate-label"></span>
                 <span id="playback-rate-value" data-l10n-id="pictureinpicture-playback-rate-value" data-l10n-args='{"rate": 1}'></span>
               </div>
-              <input id="playback-rate-slider" type="range" min="0.25" max="2" step="0.05" value="1" tabindex="7"/>
+              <input id="playback-rate-slider" type="range" min="0.25" max="2" step="0.05" value="1"/>
               <div class="playback-rate-presets">
-                <button class="playback-rate-preset" data-rate="0.75" aria-pressed="false" data-l10n-id="pictureinpicture-playback-rate-preset" data-l10n-args='{"rate": 0.75}' tabindex="7"></button>
-                <button class="playback-rate-preset" data-rate="1" aria-pressed="false" data-l10n-id="pictureinpicture-playback-rate-preset" data-l10n-args='{"rate": 1}' tabindex="7"></button>
-                <button class="playback-rate-preset" data-rate="1.25" aria-pressed="false" data-l10n-id="pictureinpicture-playback-rate-preset" data-l10n-args='{"rate": 1.25}' tabindex="7"></button>
-                <button class="playback-rate-preset" data-rate="1.5" aria-pressed="false" data-l10n-id="pictureinpicture-playback-rate-preset" data-l10n-args='{"rate": 1.5}' tabindex="7"></button>
-                <button class="playback-rate-preset" data-rate="2" aria-pressed="false" data-l10n-id="pictureinpicture-playback-rate-preset" data-l10n-args='{"rate": 2}' tabindex="7"></button>
+                <button class="playback-rate-preset" data-rate="0.75" aria-pressed="false" data-l10n-id="pictureinpicture-playback-rate-preset" data-l10n-args='{"rate": 0.75}'></button>
+                <button class="playback-rate-preset" data-rate="1" aria-pressed="false" data-l10n-id="pictureinpicture-playback-rate-preset" data-l10n-args='{"rate": 1}'></button>
+                <button class="playback-rate-preset" data-rate="1.25" aria-pressed="false" data-l10n-id="pictureinpicture-playback-rate-preset" data-l10n-args='{"rate": 1.25}'></button>
+                <button class="playback-rate-preset" data-rate="1.5" aria-pressed="false" data-l10n-id="pictureinpicture-playback-rate-preset" data-l10n-args='{"rate": 1.5}'></button>
+                <button class="playback-rate-preset" data-rate="2" aria-pressed="false" data-l10n-id="pictureinpicture-playback-rate-preset" data-l10n-args='{"rate": 2}'></button>
               </div>
             </fieldset>
             <div class="arrow"></div>
           </div>
-          <button id="fullscreen" class="control-item control-button tooltip-over-controls inline-end-tooltip" hidden="true" data-l10n-attrs="tooltip" tabindex="8"></button>
+          <button id="closed-caption" class="control-item control-button tooltip-over-controls center-tooltip closed-caption" hidden="true" disabled="true" data-l10n-id="pictureinpicture-subtitles-btn" data-l10n-attrs="tooltip"></button>
+          <div id="settings" class="hide panel">
+            <fieldset class="box panel-fieldset">
+              <legend class="a11y-only panel-legend" data-l10n-id="pictureinpicture-subtitles-panel-accessible"></legend>
+              <div class="subtitle-grid">
+                <label id="subtitles-toggle-label" data-l10n-id="pictureinpicture-subtitles-label" class="bold" for="subtitles-toggle"></label>
+                <label class="switch">
+                  <input id="subtitles-toggle" type="checkbox" checked=""/>
+                  <span class="slider" role="presentation"></span>
+                </label>
+              </div>
+              <div class="grey-line"></div>
+              <fieldset class="font-size-selection panel-fieldset">
+                <legend data-l10n-id="pictureinpicture-font-size-label" class="bold panel-legend"></legend>
+                <div id="font-size-selection-radio-small" class="font-size-selection-radio">
+                  <input id="small" type="radio" name="cc-size"/>
+                  <label data-l10n-id="pictureinpicture-font-size-small" for="small"></label>
+                </div>
+                <div id="font-size-selection-radio-medium" class="font-size-selection-radio">
+                  <input id="medium" type="radio" name="cc-size"/>
+                  <label data-l10n-id="pictureinpicture-font-size-medium" for="medium"></label>
+                </div>
+                <div id="font-size-selection-radio-large" class="font-size-selection-radio">
+                  <input id="large" type="radio" name="cc-size"/>
+                  <label data-l10n-id="pictureinpicture-font-size-large" for="large"></label>
+                </div>
+              </fieldset>
+            </fieldset>
+            <div class="arrow"></div>
+          </div>
+          <button id="fullscreen" class="control-item control-button tooltip-over-controls inline-end-tooltip" hidden="true" data-l10n-attrs="tooltip"></button>
         </div>
       </div>
     </div>

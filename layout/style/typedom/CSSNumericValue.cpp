@@ -12,8 +12,15 @@
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/CSSMathClamp.h"
+#include "mozilla/dom/CSSMathInvert.h"
+#include "mozilla/dom/CSSMathMax.h"
+#include "mozilla/dom/CSSMathMin.h"
+#include "mozilla/dom/CSSMathNegate.h"
+#include "mozilla/dom/CSSMathProduct.h"
 #include "mozilla/dom/CSSMathSum.h"
 #include "mozilla/dom/CSSMathValue.h"
+#include "mozilla/dom/CSSNumericArray.h"
 #include "mozilla/dom/CSSNumericValueBinding.h"
 #include "mozilla/dom/CSSUnitValue.h"
 
@@ -127,8 +134,21 @@ already_AddRefed<CSSNumericValue> CSSNumericValue::Max(
   return nullptr;
 }
 
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-equals
 bool CSSNumericValue::Equals(const Sequence<OwningCSSNumberish>& aValue) {
-  return false;
+  // Steps 1 and 2.
+  // Rectify and compare each value in a single loop, avoiding the need to
+  // create a separate array for the rectified values.
+  for (const OwningCSSNumberish& numberish : aValue) {
+    RefPtr<CSSNumericValue> value = CSSNumericValue::Create(mParent, numberish);
+
+    if (!EqualNumericValues(*value, *this)) {
+      return false;
+    }
+  }
+
+  // Step 3.
+  return true;
 }
 
 // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-to
@@ -351,6 +371,113 @@ StyleUnitValue CSSNumericValue::ToStyleUnitValue(
   }
 
   return *styleUnitValue;
+}
+
+// https://drafts.css-houdini.org/css-typed-om-1/#equal-numeric-value
+//
+// static
+bool CSSNumericValue::EqualNumericValues(const CSSNumericValue& aValue1,
+                                         const CSSNumericValue& aValue2) {
+  // Step 1.
+  if (aValue1.GetNumericValueType() != aValue2.GetNumericValueType() ||
+      (aValue1.IsCSSMathValue() &&
+       aValue1.GetAsCSSMathValue().GetMathValueType() !=
+           aValue2.GetAsCSSMathValue().GetMathValueType())) {
+    return false;
+  }
+
+  // Step 2.
+  // We don't need to check aValue2 since Step 1 guarantees that both values
+  // are members of the same interface.
+  if (aValue1.IsCSSUnitValue()) {
+    const auto& value1 = aValue1.GetAsCSSUnitValue();
+    const auto& value2 = aValue2.GetAsCSSUnitValue();
+
+    return value1.Unit() == value2.Unit() && value1.Value() == value2.Value();
+  }
+
+  const auto& value1 = aValue1.GetAsCSSMathValue();
+  const auto& value2 = aValue2.GetAsCSSMathValue();
+
+  // Step 3.
+  // As above, we don't need to check aValue2.
+  const CSSNumericArray* numericArray1 = nullptr;
+  const CSSNumericArray* numericArray2 = nullptr;
+
+  switch (value1.GetMathValueType()) {
+    case CSSMathValue::MathValueType::MathSum:
+      numericArray1 = value1.GetAsCSSMathSum().Values();
+      numericArray2 = value2.GetAsCSSMathSum().Values();
+      break;
+
+    case CSSMathValue::MathValueType::MathProduct:
+      numericArray1 = value1.GetAsCSSMathProduct().Values();
+      numericArray2 = value2.GetAsCSSMathProduct().Values();
+      break;
+
+    case CSSMathValue::MathValueType::MathMin:
+      numericArray1 = value1.GetAsCSSMathMin().Values();
+      numericArray2 = value2.GetAsCSSMathMin().Values();
+      break;
+
+    case CSSMathValue::MathValueType::MathMax:
+      numericArray1 = value1.GetAsCSSMathMax().Values();
+      numericArray2 = value2.GetAsCSSMathMax().Values();
+      break;
+
+    default:
+      break;
+  }
+
+  if (numericArray1) {
+    const auto& values1 = numericArray1->GetValues();
+    const auto& values2 = numericArray2->GetValues();
+
+    // Step 3.1.
+    if (values1.Length() != values2.Length()) {
+      return false;
+    }
+
+    // Step 3.2.
+    for (size_t i = 0; i < values1.Length(); ++i) {
+      if (!EqualNumericValues(*values1[i], *values2[i])) {
+        return false;
+      }
+    }
+
+    // Step 3.3.
+    return true;
+  }
+
+  // Proposed step for CSSMathClamp.
+  //
+  // CSSMathClamp is not currently covered by the specification's equality
+  // algorithm. Handle it structurally for compatibility with other browsers.
+  //
+  // As above, we don't need to check aValue2.
+  if (value1.GetMathValueType() == CSSMathValue::MathValueType::MathClamp) {
+    const auto& clamp1 = value1.GetAsCSSMathClamp();
+    const auto& clamp2 = value2.GetAsCSSMathClamp();
+
+    return EqualNumericValues(*clamp1.Lower(), *clamp2.Lower()) &&
+           EqualNumericValues(*clamp1.Value(), *clamp2.Value()) &&
+           EqualNumericValues(*clamp1.Upper(), *clamp2.Upper());
+  }
+
+  // Step 4.
+  // As above, we don't need to check aValue2.
+  MOZ_ASSERT(
+      value1.GetMathValueType() == CSSMathValue::MathValueType::MathNegate ||
+      value1.GetMathValueType() == CSSMathValue::MathValueType::MathInvert);
+
+  // Step 5.
+  if (value1.GetMathValueType() == CSSMathValue::MathValueType::MathNegate) {
+    return EqualNumericValues(*value1.GetAsCSSMathNegate().Value(),
+                              *value2.GetAsCSSMathNegate().Value());
+  }
+
+  return EqualNumericValues(*value1.GetAsCSSMathInvert().Value(),
+                            *value2.GetAsCSSMathInvert().Value());
 }
 
 const CSSNumericValue& CSSStyleValue::GetAsCSSNumericValue() const {

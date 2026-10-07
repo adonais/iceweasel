@@ -25,6 +25,10 @@ XPIDL_SOURCES += [
 
 XPIDL_MODULE = "loginmgr"
 
+MOZ_SRC_FILES += [
+    "BreachAlertsData.sys.mjs",
+]
+
 EXTRA_JS_MODULES += [
     "BreachAlertStore.sys.mjs",
     "crypto-SDR.sys.mjs",
@@ -79,3 +83,13 @@ JAR_MANIFESTS += ["jar.mn"]
 
 with Files("**"):
     BUG_COMPONENT = ("Toolkit", "Password Manager")
+
+LICENSED_UNDER += ["apple-password-rules-parser"]
+LICENSED_UNDER["apple-password-rules-parser"].paths = [
+    "shared/PasswordRulesParser.sys.mjs",
+]
+
+LICENSED_UNDER += ["chromium"]
+LICENSED_UNDER["chromium"].paths = [
+    "shared/PasswordGenerator.sys.mjs",
+]

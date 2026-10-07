@@ -402,24 +402,16 @@ class GleanCrashReporterServiceTest {
                 assertEquals(2, arr.size)
                 val first = arr.get(0).jsonObject.toMutableMap()
                 val second = arr.get(1).jsonObject.toMutableMap()
+
+                // "message" fields should not be present and are intentionally omitted
                 assertNotNull(first.remove("stack"))
                 assertEquals(
-                    JsonObject(
-                        mapOf(
-                            "type_name" to JsonPrimitive("java.lang.RuntimeException"),
-                            "message" to JsonPrimitive("Test"),
-                        )
-                    ),
+                    JsonObject(mapOf("type_name" to JsonPrimitive("java.lang.RuntimeException"))),
                     first,
                 )
                 assertNotNull(second.remove("stack"))
                 assertEquals(
-                    JsonObject(
-                        mapOf(
-                            "type_name" to JsonPrimitive("java.io.IOException"),
-                            "message" to JsonPrimitive("IO"),
-                        )
-                    ),
+                    JsonObject(mapOf("type_name" to JsonPrimitive("java.io.IOException"))),
                     second,
                 )
             }

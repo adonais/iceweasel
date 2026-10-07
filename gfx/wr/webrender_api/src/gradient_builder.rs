@@ -44,16 +44,16 @@ impl GradientBuilder {
     /// Produce a linear gradient, normalize the stops.
     pub fn gradient(
         &mut self,
-        start_point: LayoutPoint,
-        end_point: LayoutPoint,
+        start_point: LayoutVector2D,
+        end_point: LayoutVector2D,
         extend_mode: di::ExtendMode,
     ) -> di::Gradient {
         let (start_offset, end_offset) = self.normalize(extend_mode);
         let start_to_end = end_point - start_point;
 
         di::Gradient {
-            start_point: start_point + start_to_end * start_offset,
-            end_point: start_point + start_to_end * end_offset,
+            start: start_point + start_to_end * start_offset,
+            end: start_point + start_to_end * end_offset,
             extend_mode,
         }
     }
@@ -64,7 +64,7 @@ impl GradientBuilder {
     /// if the radius negative.
     pub fn radial_gradient(
         &mut self,
-        center: LayoutPoint,
+        center: LayoutVector2D,
         radius: LayoutSize,
         extend_mode: di::ExtendMode,
     ) -> di::RadialGradient {
@@ -102,7 +102,7 @@ impl GradientBuilder {
     /// Produce a conic gradient, normalize the stops.
     pub fn conic_gradient(
         &mut self,
-        center: LayoutPoint,
+        center: LayoutVector2D,
         angle: f32,
         extend_mode: di::ExtendMode,
     ) -> di::ConicGradient {

@@ -5,7 +5,6 @@
 import os
 
 config = {
-    "stage_platform": "linux64-debug",
     "debug_build": True,
     #### 64 bit build specific #####
     "env": {

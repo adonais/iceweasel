@@ -36,6 +36,10 @@ module.exports = function (config) {
   const browsers = isTDD ? ["Firefox"] : ["FirefoxHeadless"]; // require("karma-firefox-launcher")
   config.set({
     singleRun: !isTDD,
+    // Every karma test has been migrated to jest; the runner itself is removed
+    // in bug 2024073. Until then an empty suite is the expected state, not a
+    // failure.
+    failOnEmptyTestSuite: false,
     browsers,
     customLaunchers: {
       FirefoxHeadless: {
@@ -77,7 +81,203 @@ module.exports = function (config) {
           functions: 100,
           branches: 66,
           overrides: {
+            "content-src/components/DiscoveryStreamComponents/InterestPicker/InterestPicker.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            "content-src/components/DiscoveryStreamComponents/CardGrid/CardGrid.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            "content-src/components/DiscoveryStreamComponents/DSContextFooter/DSContextFooter.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            "content-src/components/DiscoveryStreamComponents/DSEmptyState/DSEmptyState.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            "content-src/components/DiscoveryStreamComponents/DSImage/DSImage.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            "content-src/components/DiscoveryStreamComponents/DSLinkMenu/DSLinkMenu.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            "content-src/components/DiscoveryStreamComponents/Highlights/Highlights.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            "content-src/components/DiscoveryStreamComponents/HorizontalRule/HorizontalRule.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            "content-src/components/DiscoveryStreamImpressionStats/ImpressionStats.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            "content-src/components/DiscoveryStreamComponents/Navigation/Navigation.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            "content-src/components/DiscoveryStreamComponents/PrivacyLink/PrivacyLink.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            "content-src/components/DiscoveryStreamComponents/SafeAnchor/SafeAnchor.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            "content-src/components/DiscoveryStreamComponents/SectionTitle/SectionTitle.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            "content-src/components/DiscoveryStreamComponents/TopicsWidget/TopicsWidget.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            "content-src/components/CustomizeMenu/CustomizeMenu.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/CustomizeMenu/ContentSection/ContentSection.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            "content-src/components/CustomizeMenu/SectionsMgmtPanel/SectionsMgmtPanel.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            "content-src/components/Widgets/WidgetMenuFooter.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/Widgets/Lists/Lists.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/Widgets/FocusTimer/FocusTimer.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/Widgets/useWidgetCelebration.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/Widgets/useWidgetTelemetry.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/TopSites/TopSiteFormInput.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/TopSites/TopSiteForm.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/TopSites/TopSite.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/A11yLinkButton/A11yLinkButton.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/TopSites/TopSites.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/TopSites/SearchShortcutsForm.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/TopSites/TopSiteImpressionWrapper.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
             "common/Reducers.sys.mjs": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "common/Actions.mjs": {
               statements: 0,
               lines: 0,
               functions: 0,
@@ -231,12 +431,6 @@ module.exports = function (config) {
                 functions: 0,
                 branches: 0,
               },
-            "lib/AboutPreferences.sys.mjs": {
-              statements: 98,
-              lines: 98,
-              functions: 94,
-              branches: 66,
-            },
             /**
              * TelemetryFeed.sys.mjs is tested via an xpcshell test
              */
@@ -246,18 +440,6 @@ module.exports = function (config) {
               functions: 9,
               branches: 0,
             },
-            "content-src/lib/init-store.js": {
-              statements: 98,
-              lines: 98,
-              functions: 100,
-              branches: 100,
-            },
-            "lib/DownloadsManager.sys.mjs": {
-              statements: 100,
-              lines: 100,
-              functions: 100,
-              branches: 78,
-            },
             /**
              * PlacesFeed.sys.mjs is tested via an xpcshell test
              */
@@ -266,12 +448,6 @@ module.exports = function (config) {
               lines: 7,
               functions: 8,
               branches: 0,
-            },
-            "lib/Screenshots.sys.mjs": {
-              statements: 94,
-              lines: 94,
-              functions: 75,
-              branches: 84,
             },
             /**
              * Store.sys.mjs is tested via an xpcshell test
@@ -372,15 +548,17 @@ module.exports = function (config) {
             },
             "content-src/components/DiscoveryStreamComponents/FeatureHighlight/FollowSectionButtonHighlight.jsx":
               {
-                statements: 88,
-                lines: 88,
-                functions: 80,
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
               },
             "content-src/components/DiscoveryStreamComponents/FeatureHighlight/FeatureHighlight.jsx":
               {
-                statements: 88,
-                lines: 88,
-                functions: 80,
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
               },
             // for all other components in FeatureHighlight that dont have bespoke functionality
             "content-src/components/DiscoveryStreamComponents/FeatureHighlight/!(FeatureHighlight).jsx":
@@ -416,17 +594,17 @@ module.exports = function (config) {
               },
             "content-src/components/DiscoveryStreamComponents/DSCard/DSCard.jsx":
               {
-                statements: 94.94,
-                lines: 94.84,
-                functions: 9.91,
-                branches: 70.72,
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
               },
             "content-src/components/DiscoveryStreamComponents/CardSections/CardSections.jsx":
               {
-                statements: 83.11,
-                lines: 82.52,
-                functions: 79.31,
-                branches: 52.8,
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
               },
             "content-src/components/DiscoveryStreamComponents/SectionContextMenu/SectionContextMenu.jsx":
               {
@@ -447,16 +625,17 @@ module.exports = function (config) {
               },
             "content-src/components/DiscoveryStreamComponents/AdBanner/AdBanner.jsx":
               {
-                statements: 94.12,
-                lines: 94.12,
-                functions: 75,
-                branches: 60,
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
               },
             "content-src/components/DiscoveryStreamComponents/AdBannerContextMenu/AdBannerContextMenu.jsx":
               {
-                statements: 84,
-                lines: 84,
-                functions: 83,
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
               },
             /**
              * PromoCard currently has no functionality and is a placeholder component
@@ -723,11 +902,14 @@ module.exports = function (config) {
               functions: 96,
               branches: 70,
             },
+            /**
+             * utils.jsx is tested via Jest (see test/jest/content-src/lib/utils.test.jsx).
+             */
             "content-src/lib/utils.jsx": {
-              branches: 60,
-              statements: 95.56,
-              lines: 95.4,
-              functions: 92.86,
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
             },
             "content-src/components/MessageWrapper/MessageWrapper.jsx": {
               statements: 0,
@@ -790,12 +972,6 @@ module.exports = function (config) {
               lines: 0,
               functions: 0,
               branches: 0,
-            },
-            "content-src/components/Widgets/Widgets.jsx": {
-              statements: 51.1,
-              lines: 52,
-              functions: 31.2,
-              branches: 31.2,
             },
             "content-src/components/Widgets/useWidgetDnD.jsx": {
               statements: 0,

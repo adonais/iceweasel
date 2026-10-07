@@ -138,8 +138,8 @@ extern JS_PUBLIC_API bool IsValidJSON(const char16_t* chars, uint32_t len);
  */
 class JSONParseHandler {
  public:
-  JSONParseHandler() {}
-  virtual ~JSONParseHandler() {}
+  JSONParseHandler() = default;
+  virtual ~JSONParseHandler() = default;
 
   // Called when '{' is found for an object.
   virtual bool startObject() = 0;

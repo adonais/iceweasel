@@ -29,8 +29,8 @@ task-defaults:
     worker-type: b-linux
     worker:
         env:
-            # This not strictly needed by all tasks but doesn't hurt either
-            DEBUGINFOD_MAXTIME: "30"
+            DEBUGINFOD_RETRY_LIMIT: "0"
+            DEBUGINFOD_TIMEOUT: "3"
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
 
 tasks:

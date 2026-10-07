@@ -5357,7 +5357,7 @@ button.hasPopupMenu{
   }
 
   display:flex;
-  padding-bottom:16px;
+  padding-block:0 16px;
   flex-direction:column;
   align-items:flex-start;
   inset-block-start:calc(100% + var(--sidebar-block-padding));
@@ -5424,14 +5424,6 @@ button.hasPopupMenu{
       }
     }
   }
-  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
-    padding-block-start:0;
-
-    #viewsManagerHeader{
-      border-start-start-radius:var(--panel-border-radius);
-      border-start-end-radius:var(--panel-border-radius);
-    }
-  }
 
   #viewsManagerHeader{
     display:flex;
@@ -5442,6 +5434,8 @@ button.hasPopupMenu{
     box-shadow:var(--header-shadow);
     flex:0 0 auto;
     background-color:var(--header-bg);
+    border-start-start-radius:calc(var(--sidebar-border-radius) - 1px);
+    border-start-end-radius:calc(var(--sidebar-border-radius) - 1px);
 
     .viewsManagerLabel{
       flex:1 1 auto;
@@ -7166,6 +7160,7 @@ body{
 }
 
 #viewerContainer:not(.pdfPresentationMode){
+  transition-property:inset-inline-start;
   transition-duration:var(--sidebar-transition-duration);
   transition-timing-function:var(--sidebar-transition-timing-function);
 }
@@ -7182,6 +7177,36 @@ body{
   inset-block-start:calc(
     100% + var(--pfn-bar-height, 0px) + var(--sidebar-block-padding)
   );
+}
+#pdfFeaturesNotification{
+  border-radius:0;
+  border-inline:none;
+  border-block-start:none;
+  --message-bar-icon-container-border-radius-start-start:0;
+  --message-bar-icon-container-border-radius-end-start:0;
+  font:message-box;
+  font-size:var(--font-size-root);
+
+  a{
+    color:var(--link-color);
+    text-decoration:underline;
+    cursor:pointer;
+
+    &:hover{
+      color:var(--link-color-hover);
+    }
+
+    &:hover:active{
+      color:var(--link-color-active);
+      text-decoration:none;
+    }
+
+    &:focus-visible{
+      outline:var(--focus-outline);
+      outline-offset:var(--link-focus-outline-offset);
+      border-radius:var(--border-radius-small);
+    }
+  }
 }
 
 #sidebarContainer :is(input, button, select){

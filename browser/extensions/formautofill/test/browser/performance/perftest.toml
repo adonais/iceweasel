@@ -1,0 +1,25 @@
+[DEFAULT]
+support-files = [
+  "head.js",
+  "!/browser/extensions/formautofill/test/fixtures/without_autocomplete_address_basic.html",
+]
+prefs = [
+  "browser.newtabpage.enabled=false",
+  "browser.newtabpage.activity-stream.widgets.pictureOfTheDay.enabled=false",
+  "browser.ml.enable=true",
+  "browser.ml.logLevel=Error",
+  "browser.ml.checkForMemory=false",
+  "javascript.options.wasm_lazy_tiering=true",
+  "extensions.formautofill.addresses.enabled=true",
+  "extensions.formautofill.skipProgrammaticCheckForTests=true",
+  "extensions.formautofill.useml=true",
+  # Keep ML eligibility enabled when the test replaces the native backend with WASM.
+  "extensions.formautofill.useml.nativeOnnxAvailable=true",
+  # Measure the first complete inference instead of the product's prefetch-only use.
+  "extensions.formautofill.useml.successful=true",
+  # Ignoring the blocklist is necessary to run tests in CI on old Mesa versions.
+  "gfx.webgpu.ignore-blocklist=true",
+]
+
+["browser_formautofill_ml_perf.js"]
+disabled = "Disabled because this is only run as a performance test."

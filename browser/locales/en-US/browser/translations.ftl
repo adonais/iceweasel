@@ -93,6 +93,7 @@ translations-panel-error-change-button =
 translations-panel-error-unsupported-hint-known-2 = Sorry, we don’t support translations from { $language } yet.
 translations-panel-error-unsupported-hint-unknown-2 = Sorry, we don’t support translations from this language yet.
 
+## The default translation view contains two language dropdowns.
 ## Each label is followed, on a new line, by a dropdown list of language names.
 ## If this structure is problematic for your locale, an alternative way is to
 ## translate them as `Source language:` and `Target language:`
@@ -103,6 +104,11 @@ translations-panel-to-label = Translate to
 ## The translation panel appears from the url bar, and this view is the "restore" view
 ## that lets a user restore a page to the original language, or translate into another
 ## language.
+
+# The label for the target-language dropdown in the revisit view. This may need
+# to be translated differently from translations-panel-to-label to convey that
+# selecting a language will translate the page again.
+translations-panel-revisit-to-label = Translate to
 
 # If your language requires declining the language name, a possible solution
 # is to adapt the structure of the phrase, or use a support noun, e.g.

@@ -2538,10 +2538,10 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
 
   openArgs.preflightArgs() = optionalCorsPreflightArgs;
 
+  openArgs.uploadStreamIsStreaming() = LoadUploadStreamIsStreaming();
   openArgs.priority() = mPriority;
   openArgs.classOfService() = mClassOfService;
   openArgs.redirectionLimit() = mRedirectionLimit;
-  openArgs.allowSTS() = LoadAllowSTS();
   openArgs.thirdPartyFlags() = LoadThirdPartyFlags();
   openArgs.resumeAt() = mSendResumeAt;
   openArgs.startPos() = mStartPos;

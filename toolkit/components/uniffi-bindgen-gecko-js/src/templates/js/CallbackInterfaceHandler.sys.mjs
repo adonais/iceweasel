@@ -1,4 +1,4 @@
-const {{ vtable.js_handler_var }} = new UniFFICallbackHandler(
+const {{ vtable.js_handler_var() }} = new UniFFICallbackHandler(
     "{{ vtable.interface_name }}",
     {{ vtable.callback_interface_id }},
     [
@@ -7,21 +7,21 @@ const {{ vtable.js_handler_var }} = new UniFFICallbackHandler(
             "{{ vtable_method.callable.name }}",
             [
                 {%- for arg in vtable_method.callable.arguments %}
-                {{ arg.ty.ffi_converter }},
+                {{ arg.ty.ffi_converter() }},
                 {%- endfor %}
             ],
-            {%- match vtable_method.callable.return_type.ty %}
+            {%- match vtable_method.callable.return_type %}
             {%- when Some(return_type) %}
-            {{ return_type.ffi_converter }}.lower.bind({{ return_type.ffi_converter }}),
+            {{ return_type.ty.ffi_converter() }}.lower.bind({{ return_type.ty.ffi_converter() }}),
             {%- when None %}
             (result) => undefined,
             {%- endmatch %}
 
-            {%- match vtable_method.callable.throws_type.ty %}
+            {%- match vtable_method.callable.throws_type %}
             {%- when Some(err_type) %}
             (e) => {
-              if (e instanceof {{ err_type|class_name }}) {
-                return {{ err_type.ffi_converter }}.lower(e);
+              if (e instanceof {{ err_type.ty|class_name }}) {
+                return {{ err_type.ty.ffi_converter() }}.lower(e);
               }
               throw e;
             }
@@ -36,4 +36,4 @@ const {{ vtable.js_handler_var }} = new UniFFICallbackHandler(
 );
 
 // Allow the shutdown-related functionality to be tested in the unit tests
-UnitTestObjs.{{ vtable.js_handler_var }} = {{ vtable.js_handler_var }};
+UnitTestObjs.{{ vtable.js_handler_var() }} = {{ vtable.js_handler_var() }};

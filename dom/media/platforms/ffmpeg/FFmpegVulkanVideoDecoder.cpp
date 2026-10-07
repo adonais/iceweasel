@@ -37,6 +37,7 @@
 #  include "libavutil/macros.h"
 #  include "libavutil/pixfmt.h"
 #  include "libavutil/version.h"
+#  include "mozilla/StaticMutex.h"
 #  include "mozilla/StaticPrefs_media.h"
 #  ifdef __linux__
 #    include <sys/sysmacros.h>
@@ -110,7 +111,6 @@ void FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::Cleanup() {
 
   mDevice = VK_NULL_HANDLE;
   mCopyQueueCount = 0;
-  mCopyQueueIsDedicatedTransfer = false;
   mCopyQueueRoundRobin = 0;
   mCopyQueue.Clear();
   mCopyCmdPool.Clear();
@@ -152,8 +152,6 @@ struct InstanceFunctionCache {
   uint64_t mGeneration = 0;
   PFN_vkGetDeviceProcAddr mGetDeviceProcAddr = nullptr;
   PFN_vkGetPhysicalDeviceProperties mGetPhysicalDeviceProperties = nullptr;
-  PFN_vkGetPhysicalDeviceQueueFamilyProperties
-      mGetPhysicalDeviceQueueFamilyProperties = nullptr;
   PFN_vkGetPhysicalDeviceMemoryProperties mGetPhysicalDeviceMemoryProperties =
       nullptr;
   PFN_vkGetPhysicalDeviceFormatProperties2 mGetPhysicalDeviceFormatProperties2 =
@@ -214,8 +212,6 @@ void FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::
       cache->mGetDeviceProcAddr) {
     mGetDeviceProcAddr = cache->mGetDeviceProcAddr;
     mGetPhysicalDeviceProperties = cache->mGetPhysicalDeviceProperties;
-    mGetPhysicalDeviceQueueFamilyProperties =
-        cache->mGetPhysicalDeviceQueueFamilyProperties;
     mGetPhysicalDeviceMemoryProperties =
         cache->mGetPhysicalDeviceMemoryProperties;
     mGetPhysicalDeviceFormatProperties2 =
@@ -244,8 +240,6 @@ void FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::
 
   load(mGetDeviceProcAddr, "vkGetDeviceProcAddr");
   load(mGetPhysicalDeviceProperties, "vkGetPhysicalDeviceProperties");
-  load(mGetPhysicalDeviceQueueFamilyProperties,
-       "vkGetPhysicalDeviceQueueFamilyProperties");
   load(mGetPhysicalDeviceMemoryProperties,
        "vkGetPhysicalDeviceMemoryProperties");
   load(mGetPhysicalDeviceFormatProperties2,
@@ -259,8 +253,6 @@ void FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::
   cache->mGeneration = aGeneration;
   cache->mGetDeviceProcAddr = mGetDeviceProcAddr;
   cache->mGetPhysicalDeviceProperties = mGetPhysicalDeviceProperties;
-  cache->mGetPhysicalDeviceQueueFamilyProperties =
-      mGetPhysicalDeviceQueueFamilyProperties;
   cache->mGetPhysicalDeviceMemoryProperties =
       mGetPhysicalDeviceMemoryProperties;
   cache->mGetPhysicalDeviceFormatProperties2 =
@@ -802,8 +794,60 @@ void FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitDrmModifiers(
               (unsigned long long)mDrmModifiers[0]);
 }
 
-static void* sVulkanLib = nullptr;
+// Process-wide loader/instance for physical-device select. Created once;
+// never destroyed (VkPhysicalDevice handles die with the instance).
+// sMutex is per-LIBAV_VER so it cannot guard these; sSharedInstanceMutex
+// does, self-contained within this function.
+static StaticMutex sSharedInstanceMutex;
+static void* sVulkanLib MOZ_GUARDED_BY(sSharedInstanceMutex) = nullptr;
+static VkInstance sSharedInstance MOZ_GUARDED_BY(sSharedInstanceMutex) =
+    VK_NULL_HANDLE;
+static PFN_vkGetInstanceProcAddr sSharedGetInstanceProcAddr
+    MOZ_GUARDED_BY(sSharedInstanceMutex) = nullptr;
+
+static bool EnsureSharedVulkanInstance(
+    VkInstance* aOutInstance, PFN_vkGetInstanceProcAddr* aOutGetProcAddr) {
+  StaticMutexAutoLock lock(sSharedInstanceMutex);
+  if (!sSharedInstance || !sSharedGetInstanceProcAddr) {
+    if (!sVulkanLib) {
+      sVulkanLib = dlopen("libvulkan.so.1", RTLD_LAZY);
+      if (!sVulkanLib) {
+        return false;
+      }
+    }
+    auto getIPA = reinterpret_cast<PFN_vkGetInstanceProcAddr>(
+        dlsym(sVulkanLib, "vkGetInstanceProcAddr"));
+    if (!getIPA) {
+      return false;
+    }
+    auto vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(
+        getIPA(nullptr, "vkCreateInstance"));
+    if (!vkCreateInstance) {
+      return false;
+    }
+    VkApplicationInfo appInfo = {};
+    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.apiVersion = VK_API_VERSION_1_3;
+    VkInstanceCreateInfo instInfo = {};
+    instInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    instInfo.pApplicationInfo = &appInfo;
+    VkInstance instance = VK_NULL_HANDLE;
+    if (vkCreateInstance(&instInfo, nullptr, &instance) != VK_SUCCESS) {
+      return false;
+    }
+    sSharedInstance = instance;
+    sSharedGetInstanceProcAddr = getIPA;
+  }
+  // Copy out under the lock: callers must not read MOZ_GUARDED_BY statics
+  // after this function returns.
+  *aOutInstance = sSharedInstance;
+  *aOutGetProcAddr = sSharedGetInstanceProcAddr;
+  return true;
+}
+
 static bool sVulkanEnumerated = false;
+static uint32_t sCachedRendererDrmMajor = 0;
+static uint32_t sCachedRendererDrmMinor = 0;
 static char sCachedVulkanDeviceName[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE] = {};
 static uint32_t sCachedVulkanVendorID = 0;
 static uint32_t sCachedVulkanDeviceID = 0;
@@ -881,8 +925,12 @@ bool FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::
   }
 #  endif
 
-  const bool useCache = (rendererDrmMajor == 0 && rendererDrmMinor == 0);
-  if (useCache && sVulkanEnumerated) {
+  // The compositor's GPU doesn't change mid-process, so once we've enumerated
+  // for a given renderer node, later selects for that same node can reuse the
+  // result instead of re-running vkEnumeratePhysicalDevices on the shared
+  // instance while another decoder may still be using libvulkan.
+  if (sVulkanEnumerated && rendererDrmMajor == sCachedRendererDrmMajor &&
+      rendererDrmMinor == sCachedRendererDrmMinor) {
     memcpy(mNegotiatedVulkanDeviceName, sCachedVulkanDeviceName,
            VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
     mNegotiatedCompositorDecoderVendorID = sCachedVulkanVendorID;
@@ -897,49 +945,12 @@ bool FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::
     return true;
   }
 
-  if (!sVulkanLib) {
-    sVulkanLib = dlopen("libvulkan.so.1", RTLD_LAZY);
-    if (!sVulkanLib) {
-      FFMPEGV_LOG("Failed to load libvulkan.so.1");
-      return false;
-    }
-  }
-
-  auto vkGetInstanceProcAddr =
-      (PFN_vkGetInstanceProcAddr)dlsym(sVulkanLib, "vkGetInstanceProcAddr");
-  if (!vkGetInstanceProcAddr) {
-    FFMPEGV_LOG("Failed to get vkGetInstanceProcAddr");
-    return false;
-  }
-
-  auto vkCreateInstance =
-      (PFN_vkCreateInstance)vkGetInstanceProcAddr(nullptr, "vkCreateInstance");
-  if (!vkCreateInstance) {
-    FFMPEGV_LOG("Failed to get vkCreateInstance");
-    return false;
-  }
-
-  VkApplicationInfo appInfo = {};
-  appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-  appInfo.apiVersion = VK_API_VERSION_1_3;
-
-  VkInstanceCreateInfo createInfo = {};
-  createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-  createInfo.pApplicationInfo = &appInfo;
-
+  PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = nullptr;
   VkInstance instance = VK_NULL_HANDLE;
-  if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
-    FFMPEGV_LOG("Failed to create Vulkan instance");
+  if (!EnsureSharedVulkanInstance(&instance, &vkGetInstanceProcAddr)) {
+    FFMPEGV_LOG("Failed to create shared Vulkan instance");
     return false;
   }
-
-  auto vkDestroyInstance = (PFN_vkDestroyInstance)vkGetInstanceProcAddr(
-      instance, "vkDestroyInstance");
-  auto destroyInstance = MakeScopeExit([&] {
-    if (vkDestroyInstance && instance) {
-      vkDestroyInstance(instance, nullptr);
-    }
-  });
 
   auto vkEnumeratePhysicalDevices =
       (PFN_vkEnumeratePhysicalDevices)vkGetInstanceProcAddr(
@@ -1050,14 +1061,14 @@ bool FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::
   mNegotiatedCompositorDecoderVendorID = validDevices[0].first.vendorID;
   mNegotiatedCompositorDecoderDeviceID = validDevices[0].first.deviceID;
   mDecoderMatchesCompositor = validDevices[0].second;
-  if (useCache) {
-    memcpy(sCachedVulkanDeviceName, mNegotiatedVulkanDeviceName,
-           VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
-    sCachedVulkanVendorID = mNegotiatedCompositorDecoderVendorID;
-    sCachedVulkanDeviceID = mNegotiatedCompositorDecoderDeviceID;
-    sCachedDecoderMatchesCompositor = mDecoderMatchesCompositor;
-    sVulkanEnumerated = true;
-  }
+  memcpy(sCachedVulkanDeviceName, mNegotiatedVulkanDeviceName,
+         VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+  sCachedVulkanVendorID = mNegotiatedCompositorDecoderVendorID;
+  sCachedVulkanDeviceID = mNegotiatedCompositorDecoderDeviceID;
+  sCachedDecoderMatchesCompositor = mDecoderMatchesCompositor;
+  sCachedRendererDrmMajor = rendererDrmMajor;
+  sCachedRendererDrmMinor = rendererDrmMinor;
+  sVulkanEnumerated = true;
   FFMPEGV_LOG(
       "Selected Vulkan device for video decoding: {} (vendorID=0x{:x}, "
       "deviceID=0x{:x}), matches renderer: {}",
@@ -1071,7 +1082,7 @@ bool FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitCtx(
     VkDevice aDevice, VkPhysicalDevice aPhysDev,
     PFN_vkGetInstanceProcAddr aGetProcAddr, VkInstance aInstance,
     uint64_t aGeneration, uint32_t aCopyQueueFamilyIndex,
-    VkDeviceQueueCreateFlags aQueueCreateFlags) {
+    uint32_t aCopyQueueCount, VkDeviceQueueCreateFlags aQueueCreateFlags) {
   // Load instance-level functions once
   if (!mGetDeviceProcAddr) {
     LoadInstanceFunctions(aGetProcAddr, aInstance, aPhysDev, aGeneration);
@@ -1101,42 +1112,18 @@ bool FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitCtx(
     // the decoder queries supported modifiers from the compositor and uses
     // the intersection. This removes the need for a forceLinear flag.
 
-    uint32_t copyQueueFamilyIndex = aCopyQueueFamilyIndex;
-    uint32_t transferOnlyQueueCount = 0;
-    int32_t transferOnlyQueueFamilyIndex = -1;
-    if (mGetPhysicalDeviceQueueFamilyProperties) {
-      uint32_t queueFamilyCount = 0;
-      mGetPhysicalDeviceQueueFamilyProperties(aPhysDev, &queueFamilyCount,
-                                              nullptr);
-      AutoTArray<VkQueueFamilyProperties, 8> props;
-      if (queueFamilyCount > 0) {
-        props.SetLength(queueFamilyCount);
-        mGetPhysicalDeviceQueueFamilyProperties(aPhysDev, &queueFamilyCount,
-                                                props.Elements());
-        for (uint32_t i = 0; i < queueFamilyCount; i++) {
-          if (props[i].queueCount > 0 &&
-              (props[i].queueFlags &
-               (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) == 0 &&
-              (props[i].queueFlags & VK_QUEUE_TRANSFER_BIT)) {
-            copyQueueFamilyIndex = i;
-            transferOnlyQueueFamilyIndex = static_cast<int32_t>(i);
-            transferOnlyQueueCount = static_cast<uint32_t>(props[i].queueCount);
-            break;
-          }
-        }
-      }
-    }
-    if (transferOnlyQueueFamilyIndex >= 0) {
-      mQueueFamilyIndex = transferOnlyQueueFamilyIndex;
-      mCopyQueueCount = transferOnlyQueueCount;
-    } else {
-      mQueueFamilyIndex = copyQueueFamilyIndex;
-    }
-    mCopyQueueCount = std::max(1u, mCopyQueueCount);
+    mQueueFamilyIndex = aCopyQueueFamilyIndex;
+    mCopyQueueCount = std::max(1u, aCopyQueueCount);
     mCopyQueue.SetLength(mCopyQueueCount);
     mCopyCmdPool.SetLength(mCopyQueueCount);
     mCopyCmdBuf.SetLength(mCopyQueueCount);
     mCopyFence.SetLength(mCopyQueueCount);
+    for (uint32_t qi = 0; qi < mCopyQueueCount; qi++) {
+      mCopyQueue[qi] = VK_NULL_HANDLE;
+      mCopyCmdPool[qi] = VK_NULL_HANDLE;
+      mCopyCmdBuf[qi] = VK_NULL_HANDLE;
+      mCopyFence[qi] = VK_NULL_HANDLE;
+    }
     VkCommandPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -1145,14 +1132,6 @@ bool FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitCtx(
     for (uint32_t qi = 0; qi < mCopyQueueCount; qi++) {
       VkResult poolRes =
           mCreateCommandPool(aDevice, &poolInfo, nullptr, &mCopyCmdPool[qi]);
-      if (poolRes != VK_SUCCESS &&
-          copyQueueFamilyIndex != aCopyQueueFamilyIndex) {
-        copyQueueFamilyIndex = aCopyQueueFamilyIndex;
-        mQueueFamilyIndex = copyQueueFamilyIndex;
-        poolInfo.queueFamilyIndex = mQueueFamilyIndex;
-        poolRes =
-            mCreateCommandPool(aDevice, &poolInfo, nullptr, &mCopyCmdPool[qi]);
-      }
       if (poolRes != VK_SUCCESS) {
         FFMPEGV_LOG("Failed to create Vulkan command pool for queue {}", qi);
         return false;

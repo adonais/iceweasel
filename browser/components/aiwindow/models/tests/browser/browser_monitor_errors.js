@@ -280,10 +280,14 @@ add_task(async function test_error_code_persists_and_validates() {
     watchUrls: ["https://example.com/product"],
     schedule: { type: "interval", hours: 6 },
     enabled: true,
+    runCount: 0,
     createdAt: "2026-06-23T12:00:00.000Z",
     updatedAt: "2026-06-23T12:00:00.000Z",
     lastRunTime: "2026-06-23T12:00:00.000Z",
     nextRunTime: "2026-06-23T18:00:00.000Z",
+    activeSince: "2026-06-23T12:00:00.000Z",
+    lastMatchAt: null,
+    expiry: null,
     history: [
       {
         id: "history-error",

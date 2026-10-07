@@ -2660,7 +2660,8 @@ export class GeckoDriver {
 
         this.#currentSession = new lazy.WebDriverSession(
           capabilities,
-          this.#sessionConfigFlags
+          this.#sessionConfigFlags,
+          { useDedicatedContainer: lazy.Marionette.isDynamicStartRunning }
         );
         this.#currentSession.capabilities.delete("webSocketUrl");
       }

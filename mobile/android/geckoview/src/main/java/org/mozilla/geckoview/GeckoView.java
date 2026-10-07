@@ -7,6 +7,7 @@ package org.mozilla.geckoview;
 import static org.mozilla.geckoview.GeckoSession.GeckoPrintException.ERROR_NO_ACTIVITY_CONTEXT;
 import static org.mozilla.geckoview.GeckoSession.GeckoPrintException.ERROR_NO_ACTIVITY_CONTEXT_DELEGATE;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -265,6 +266,24 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
       }
 
       return mDisplay.capturePixels();
+    }
+
+    /**
+     * Request a {@link Bitmap} of the full web page currently being rendered (including areas
+     * outside the view)
+     *
+     * @return A {@link GeckoResult} that completes with a {@link Bitmap} containing the pixels and
+     *     size information of the currently rendered web page.
+     */
+    @UiThread
+    @NonNull
+    GeckoResult<Bitmap> captureFullPage() {
+      if (mDisplay == null) {
+        return GeckoResult.fromException(
+            new IllegalStateException("Display must be created before pixels can be captured"));
+      }
+
+      return mDisplay.captureFullPage();
     }
   }
 
@@ -930,6 +949,7 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
     }
   }
 
+  @SuppressLint("ClickableViewAccessibility")
   @Override
   public boolean onTouchEvent(final MotionEvent event) {
     if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
@@ -1045,6 +1065,20 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
   @UiThread
   public @NonNull GeckoResult<Bitmap> capturePixels() {
     return mDisplay.capturePixels();
+  }
+
+  /**
+   * Request a {@link Bitmap} of the full web page currently being rendered (including areas outside
+   * the view)
+   *
+   * <p>See {@link GeckoDisplay#captureFullPage} for more details.
+   *
+   * @return A {@link GeckoResult} that completes with a {@link Bitmap} containing the pixels and
+   *     size information of the currently rendered web page.
+   */
+  @UiThread
+  public @NonNull GeckoResult<Bitmap> captureFullPage() {
+    return mDisplay.captureFullPage();
   }
 
   /**

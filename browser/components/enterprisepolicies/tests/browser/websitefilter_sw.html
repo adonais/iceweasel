@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head><body>
+<div id="status">pending</div>
+<script>
+(async () => {
+  try {
+    await navigator.serviceWorker.register("websitefilter_sw.js");
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller) {
+      await new Promise(r =>
+        navigator.serviceWorker.addEventListener("controllerchange", r, { once: true })
+      );
+    }
+    document.getElementById("status").textContent = "ready";
+  } catch (e) {
+    document.getElementById("status").textContent = "error:" + e;
+  }
+})();
+</script>
+</body></html>

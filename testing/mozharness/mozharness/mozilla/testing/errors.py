@@ -106,7 +106,7 @@ TinderBoxPrintRe = {
         ),
         "minimum_regex": re.compile(r"""(TEST-UNEXPECTED|PROCESS-CRASH)"""),
         "retry_regex": re.compile(
-            r"""(FAIL-SHOULD-RETRY|No space left on device|ADBError|ADBProcessError|ADBTimeoutError|program finished with exit code 80|INFRA-ERROR)"""  # NOQA: E501
+            r"""(No space left on device|ADBError|ADBProcessError|ADBTimeoutError|INFRA-ERROR)"""
         ),
     },
 }

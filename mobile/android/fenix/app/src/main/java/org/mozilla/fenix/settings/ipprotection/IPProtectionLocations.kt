@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.role
@@ -126,7 +127,8 @@ private fun LocationList(
                     label = stringResource(R.string.ip_protection_location_recommended_label),
                     description = stringResource(R.string.ip_protection_location_fastest_description),
                     isSelected = selectedLocation == recommended,
-                    onClick = { onLocationSelected(recommended) }.takeIf { !isActivating },
+                    isActivating = isActivating,
+                    onClick = { onLocationSelected(recommended) },
                 )
             }
         }
@@ -146,12 +148,13 @@ private fun LocationList(
                     LocationOption(
                         label = country.displayName(locale),
                         isSelected = country == selectedLocation,
+                        isActivating = isActivating,
                         description =
                             stringResource(R.string.ip_protection_location_unavailable_description).takeIf {
                                 !country.available
                             },
                         enabled = country.available,
-                        onClick = { onLocationSelected(country) }.takeIf { !isActivating },
+                        onClick = { onLocationSelected(country) },
                     )
                 }
             }
@@ -208,9 +211,10 @@ private fun LocationsEmptyState() {
 private fun LocationOption(
     label: String,
     isSelected: Boolean,
+    isActivating: Boolean,
     description: String? = null,
     enabled: Boolean = true,
-    onClick: (() -> Unit)?,
+    onClick: () -> Unit,
 ) {
     MenuTextItem(
         label = label,
@@ -218,6 +222,9 @@ private fun LocationOption(
             Modifier.semantics(mergeDescendants = true) {
                 selected = isSelected
                 role = Role.RadioButton
+                if (isActivating) {
+                    disabled()
+                }
             },
         description = description,
         maxDescriptionLines = 3,
@@ -228,7 +235,11 @@ private fun LocationOption(
             } else {
                 null
             },
-        onClick = onClick,
+        onClick = {
+            if (!isActivating) {
+                onClick()
+            }
+        },
     )
 }
 

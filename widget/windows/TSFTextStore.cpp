@@ -371,18 +371,16 @@ void TSFTextStore::FlushPendingActions() {
           // NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED.
           mDeferNotifyingTSFUntilNextUpdate = true;
           // Select composition range so the new composition replaces the range
-          WidgetSelectionEvent selectionSet(true, eSetSelection, widget);
-          widget->InitEvent(selectionSet);
-          selectionSet.mOffset = static_cast<uint32_t>(action.mSelectionStart);
-          selectionSet.mLength = static_cast<uint32_t>(action.mSelectionLength);
-          selectionSet.mReversed = false;
-          selectionSet.mExpandToClusterBoundary =
+          const bool succeeded = mDispatcher->DispatchSetSelectionEvent(
+              static_cast<uint32_t>(action.mSelectionStart),
+              static_cast<uint32_t>(action.mSelectionLength),
               TSFStaticSink::ActiveTIP() !=
-                  TextInputProcessorID::KeymanDesktop &&
-              StaticPrefs::
-                  intl_tsf_hack_extend_setting_selection_range_to_cluster_boundaries();
-          DispatchEvent(selectionSet);
-          if (!selectionSet.mSucceeded) {
+                          TextInputProcessorID::KeymanDesktop &&
+                      StaticPrefs::
+                          intl_tsf_hack_extend_setting_selection_range_to_cluster_boundaries()
+                  ? ExpandToClusterBoundary::Yes
+                  : ExpandToClusterBoundary::No);
+          if (!succeeded) [[unlikely]] {
             MOZ_LOG(gIMELog, LogLevel::Error,
                     ("0x%p   TSFTextStore::FlushPendingActions() "
                      "FAILED due to eSetSelection failure",
@@ -525,14 +523,14 @@ void TSFTextStore::FlushPendingActions() {
         break;
       }
       case PendingAction::Type::SetSelection: {
-        MOZ_LOG(gIMELog, LogLevel::Debug,
-                ("0x%p   TSFTextStore::FlushPendingActions() "
-                 "flushing Type::eSetSelection={ mSelectionStart=%ld, "
-                 "mSelectionLength=%ld, mSelectionReversed=%s }, "
-                 "mDestroyed=%s",
-                 this, action.mSelectionStart, action.mSelectionLength,
-                 TSFUtils::BoolToChar(action.mSelectionReversed),
-                 TSFUtils::BoolToChar(mDestroyed)));
+        MOZ_LOG_FMT(gIMELog, LogLevel::Debug,
+                    "{}   TSFTextStore::FlushPendingActions() "
+                    "flushing Type::eSetSelection={{ mSelectionStart={}, "
+                    "mSelectionLength={}, mSelectionRangeDirection={} }}, "
+                    "mDestroyed={}",
+                    static_cast<void*>(this), action.mSelectionStart,
+                    action.mSelectionLength, action.mSelectionRangeDirection,
+                    mDestroyed);
 
         if (mDestroyed) {
           MOZ_LOG(gIMELog, LogLevel::Warning,
@@ -548,16 +546,16 @@ void TSFTextStore::FlushPendingActions() {
             mDeferNotifyingTSFUntilNextUpdate;
         mDeferNotifyingTSFUntilNextUpdate = true;
 
-        WidgetSelectionEvent selectionSet(true, eSetSelection, widget);
-        selectionSet.mOffset = static_cast<uint32_t>(action.mSelectionStart);
-        selectionSet.mLength = static_cast<uint32_t>(action.mSelectionLength);
-        selectionSet.mReversed = action.mSelectionReversed;
-        selectionSet.mExpandToClusterBoundary =
+        const bool succeeded = mDispatcher->DispatchSetSelectionEvent(
+            static_cast<uint32_t>(action.mSelectionStart),
+            static_cast<uint32_t>(action.mSelectionLength),
             TSFStaticSink::ActiveTIP() != TextInputProcessorID::KeymanDesktop &&
-            StaticPrefs::
-                intl_tsf_hack_extend_setting_selection_range_to_cluster_boundaries();
-        DispatchEvent(selectionSet);
-        if (!selectionSet.mSucceeded) {
+                    StaticPrefs::
+                        intl_tsf_hack_extend_setting_selection_range_to_cluster_boundaries()
+                ? ExpandToClusterBoundary::Yes
+                : ExpandToClusterBoundary::No,
+            action.mSelectionRangeDirection);
+        if (!succeeded) [[unlikely]] {
           MOZ_LOG(gIMELog, LogLevel::Error,
                   ("0x%p   TSFTextStore::FlushPendingActions() "
                    "FAILED due to eSetSelection failure",
@@ -1652,7 +1650,9 @@ HRESULT TSFTextStore::SetSelectionInternal(
     action->mSelectionStart = selectionInContent.acpStart;
     action->mSelectionLength =
         selectionInContent.acpEnd - selectionInContent.acpStart;
-    action->mSelectionReversed = (selectionInContent.style.ase == TS_AE_START);
+    action->mSelectionRangeDirection =
+        (selectionInContent.style.ase == TS_AE_START) ? RangeDirection::Reversed
+                                                      : RangeDirection::Normal;
   }
 
   // Use TSF specified selection for updating mSelectionForTSF.
@@ -2871,7 +2871,7 @@ HRESULT TSFTextStore::RecordCompositionEndAction() {
         pendingSetSelection->mType = PendingAction::Type::SetSelection;
         pendingSetSelection->mSelectionStart = selectionStart;
         pendingSetSelection->mSelectionLength = selectionLength;
-        pendingSetSelection->mSelectionReversed = false;
+        pendingSetSelection->mSelectionRangeDirection = RangeDirection::Normal;
       }
     }
     // Remove the redundant pending composition.

@@ -9,15 +9,15 @@ const { IPPChannelFilter } = ChromeUtils.importESModule(
 
 const PERM_NAME = "ipp-vpn";
 function withExceptionsManager() {
-  IPPExceptionsManager.init();
+  IPPSiteRuleManager.init();
   return {
     exclude: url => {
       let principal =
         Services.scriptSecurityManager.createContentPrincipalFromOrigin(url);
-      IPPExceptionsManager.addExclusion(principal);
+      IPPPermissionRules.setRule(principal, IPPPrincipalRules.EXCLUDED);
     },
     [Symbol.dispose]() {
-      IPPExceptionsManager.uninit();
+      IPPSiteRuleManager.uninit();
       Services.perms.removeByType(PERM_NAME);
     },
   };

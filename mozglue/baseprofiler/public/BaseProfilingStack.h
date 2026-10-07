@@ -359,6 +359,14 @@ class ProfilingStack final {
 
   MFBT_API ~ProfilingStack();
 
+  // No copying.
+  ProfilingStack(const ProfilingStack&) = delete;
+  void operator=(const ProfilingStack&) = delete;
+
+  // No moving either.
+  ProfilingStack(ProfilingStack&&) = delete;
+  void operator=(ProfilingStack&&) = delete;
+
   void pushLabelFrame(const char* label, const char* dynamicString, void* sp,
                       ProfilingCategoryPair categoryPair, uint32_t flags = 0) {
     // This thread is the only one that ever changes the value of
@@ -432,14 +440,6 @@ class ProfilingStack final {
   // Out of line path for expanding the buffer, since otherwise this would get
   // inlined in every DOM WebIDL call.
   MFBT_API MOZ_COLD void ensureCapacitySlow();
-
-  // No copying.
-  ProfilingStack(const ProfilingStack&) = delete;
-  void operator=(const ProfilingStack&) = delete;
-
-  // No moving either.
-  ProfilingStack(ProfilingStack&&) = delete;
-  void operator=(ProfilingStack&&) = delete;
 
   uint32_t capacity = 0;
 

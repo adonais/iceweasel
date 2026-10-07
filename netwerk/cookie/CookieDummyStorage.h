@@ -7,8 +7,6 @@
 
 #include "CookieStorage.h"
 
-class nsICookieTransactionCallback;
-
 namespace mozilla {
 namespace net {
 
@@ -22,10 +20,6 @@ class CookieDummyStorage final : public CookieStorage {
   void Close() override {}
 
   void EnsureInitialized() override {}
-
-  nsresult RunInTransaction(nsICookieTransactionCallback* aCallback) override {
-    return NS_OK;
-  }
 
  protected:
   const char* NotificationTopic() const override {

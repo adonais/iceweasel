@@ -12,6 +12,7 @@
 #define INCLUDE_LIBYUV_ROW_H_
 
 #include <stddef.h>  // For NULL
+#include <stdint.h>
 #include <stdlib.h>  // For malloc
 
 #include "libyuv/basic_types.h"
@@ -370,6 +371,7 @@ extern "C" {
 #define HAS_I422TOARGB1555ROW_AVX2
 #define HAS_I422TOARGB4444ROW_AVX2
 #define HAS_NV12TORGB565ROW_AVX2
+#define HAS_CONVERT8TO16ROW_AVX2
 #if defined(__x86_64__) || defined(_M_X64)
 #define HAS_I422TOAR30ROW_AVX2
 #define HAS_RAWTORGB24ROW_AVX2
@@ -404,6 +406,8 @@ extern "C" {
 #define HAS_ARGBMIRRORROW_AVX2
 #define HAS_INTERPOLATEROW_AVX2
 #define HAS_INTERPOLATEROW_16_AVX2
+#define HAS_MULTIPLYROW_16_AVX2
+#define HAS_SWAPUVROW_AVX2
 #endif
 
 // The following are available for AVX512 clang x64 platforms:
@@ -419,8 +423,10 @@ extern "C" {
 #define HAS_RAWTORGB24ROW_AVX512VBMI
 #define HAS_ARGBTORGB24ROW_AVX512VBMI
 #define HAS_CONVERT16TO8ROW_AVX512BW
+#define HAS_CONVERT8TO16ROW_AVX512BW
 #define HAS_HALFROW_16TO8_AVX512BW
 #define HAS_HALFWIDTHROW_16TO8_AVX512BW
+#define HAS_MULTIPLYROW_16_AVX512BW
 #endif
 
 // The following are available for AVX512 clang x64 platforms:
@@ -486,6 +492,7 @@ extern "C" {
 #define HAS_AYUVTOYROW_NEON
 #define HAS_BYTETOFLOATROW_NEON
 #define HAS_CONVERT16TO8ROW_NEON
+#define HAS_CONVERT8TO16ROW_NEON
 #define HAS_CONVERT8TO8ROW_NEON
 #define HAS_COPYROW_NEON
 #define HAS_DETILEROW_16_NEON
@@ -584,7 +591,6 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 #define HAS_ABGRTOAR30ROW_NEON
 #define HAS_ARGBTOAR30ROW_NEON
-#define HAS_CONVERT8TO16ROW_NEON
 #define HAS_I210ALPHATOARGBROW_NEON
 #define HAS_I210TOAR30ROW_NEON
 #define HAS_I210TOARGBROW_NEON
@@ -798,6 +804,7 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_LSX
 #define HAS_YUY2TOYROW_LSX
 #define HAS_ARGBTOYMATRIXROW_LSX
+#define HAS_RGBTOYMATRIXROW_LSX
 #endif
 
 #if !defined(LIBYUV_DISABLE_LSX) && defined(__loongarch_sx)
@@ -879,10 +886,13 @@ extern "C" {
 #define HAS_ARGBTOUVMATRIXROW_RVV
 #define HAS_ARGBTOYMATRIXROW_RVV
 #define HAS_CONVERT16TO8ROW_RVV
+#define HAS_CONVERT8TO16ROW_RVV
 #define HAS_COPYROW_RVV
 #define HAS_HALFROW_16TO8_RVV
 #define HAS_HALFWIDTHROW_16TO8_RVV
+#define HAS_I422TOAR30ROW_RVV
 #define HAS_INTERPOLATEROW_RVV
+#define HAS_MULTIPLYROW_16_RVV
 #define HAS_RGBTOUV444MATRIXROW_RVV
 #define HAS_RGBTOUVMATRIXROW_RVV
 #define HAS_RGBTOYMATRIXROW_RVV
@@ -1597,6 +1607,12 @@ void I422ToRGB24Row_RVV(const uint8_t* src_y,
                         uint8_t* dst_rgb24,
                         const struct YuvConstants* yuvconstants,
                         int width);
+void I422ToAR30Row_RVV(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_ar30,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
 void I444ToARGBRow_LSX(const uint8_t* src_y,
                        const uint8_t* src_u,
                        const uint8_t* src_v,
@@ -3529,6 +3545,14 @@ void MultiplyRow_16_Any_AVX2(const uint16_t* src_ptr,
                              uint16_t* dst_ptr,
                              int scale,
                              int width);
+void MultiplyRow_16_AVX512BW(const uint16_t* src_y,
+                             uint16_t* dst_y,
+                             int scale,
+                             int width);
+void MultiplyRow_16_Any_AVX512BW(const uint16_t* src_ptr,
+                                 uint16_t* dst_ptr,
+                                 int scale,
+                                 int width);
 void MultiplyRow_16_NEON(const uint16_t* src_y,
                          uint16_t* dst_y,
                          int scale,
@@ -3538,6 +3562,10 @@ void MultiplyRow_16_Any_NEON(const uint16_t* src_ptr,
                              int scale,
                              int width);
 void MultiplyRow_16_SME(const uint16_t* src_y,
+                        uint16_t* dst_y,
+                        int scale,
+                        int width);
+void MultiplyRow_16_RVV(const uint16_t* src_y,
                         uint16_t* dst_y,
                         int scale,
                         int width);
@@ -3569,35 +3597,47 @@ void DivideRow_16_Any_NEON(const uint16_t* src_ptr,
 
 void Convert8To16Row_C(const uint8_t* src_y,
                        uint16_t* dst_y,
-                       int scale,
+                       int bits,
                        int width);
 void Convert8To16Row_SSE2(const uint8_t* src_y,
                           uint16_t* dst_y,
-                          int scale,
+                          int bits,
                           int width);
 void Convert8To16Row_AVX2(const uint8_t* src_y,
                           uint16_t* dst_y,
-                          int scale,
+                          int bits,
                           int width);
+void Convert8To16Row_AVX512BW(const uint8_t* src_y,
+                              uint16_t* dst_y,
+                              int bits,
+                              int width);
 void Convert8To16Row_Any_SSE2(const uint8_t* src_ptr,
                               uint16_t* dst_ptr,
-                              int scale,
+                              int bits,
                               int width);
 void Convert8To16Row_Any_AVX2(const uint8_t* src_ptr,
                               uint16_t* dst_ptr,
-                              int scale,
+                              int bits,
                               int width);
+void Convert8To16Row_Any_AVX512BW(const uint8_t* src_ptr,
+                                  uint16_t* dst_ptr,
+                                  int bits,
+                                  int width);
 void Convert8To16Row_NEON(const uint8_t* src_y,
                           uint16_t* dst_y,
-                          int scale,
+                          int bits,
                           int width);
 void Convert8To16Row_Any_NEON(const uint8_t* src_y,
                               uint16_t* dst_y,
-                              int scale,
+                              int bits,
                               int width);
 void Convert8To16Row_SME(const uint8_t* src_y,
                          uint16_t* dst_y,
-                         int scale,
+                         int bits,
+                         int width);
+void Convert8To16Row_RVV(const uint8_t* src_y,
+                         uint16_t* dst_y,
+                         int bits,
                          int width);
 
 void Convert16To8Row_C(const uint16_t* src_y,

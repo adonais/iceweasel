@@ -5,64 +5,8 @@
 use super::*;
 use std::borrow::Cow;
 
-pub fn pass(root: &mut Root) -> Result<()> {
-    root.visit_mut(|namespace: &mut Namespace| {
-        namespace.js_docstring =
-            format_docstring(namespace.docstring.as_ref().unwrap_or(&namespace.name));
-    });
-    root.visit_mut(|func: &mut Function| {
-        func.js_docstring = format_callable_docstring(
-            &func.callable,
-            func.docstring.as_ref().unwrap_or(&func.name),
-        );
-    });
-    root.visit_mut(|meth: &mut Method| {
-        meth.js_docstring = format_callable_docstring(
-            &meth.callable,
-            meth.docstring.as_ref().unwrap_or(&meth.name),
-        );
-    });
-    root.visit_mut(|cons: &mut Constructor| {
-        cons.js_docstring = format_callable_docstring(
-            &cons.callable,
-            cons.docstring.as_ref().unwrap_or(&cons.name),
-        );
-    });
-    root.visit_mut(|rec: &mut Record| {
-        rec.js_docstring = format_docstring(rec.docstring.as_ref().unwrap_or(&rec.name));
-    });
-    root.visit_mut(|en: &mut Enum| {
-        en.js_docstring = format_docstring(en.docstring.as_ref().unwrap_or(&en.name));
-    });
-    root.visit_mut(|variant: &mut Variant| {
-        variant.js_docstring =
-            format_docstring(variant.docstring.as_ref().unwrap_or(&variant.name));
-    });
-    root.visit_mut(|field: &mut Field| {
-        let type_docstring = format!("@type {{{}}}", field.ty.jsdoc_name);
-        let full_docstring = match &field.docstring {
-            Some(docstring) => format!("{docstring}\n{type_docstring}"),
-            None => type_docstring.to_string(),
-        };
-        field.js_docstring = format_docstring(&full_docstring);
-    });
-    root.visit_mut(|int: &mut Interface| {
-        int.js_docstring = format_docstring(int.docstring.as_ref().unwrap_or(&int.name));
-    });
-    root.visit_mut(|ibc: &mut InterfaceBaseClass| {
-        ibc.js_docstring = format_docstring(ibc.docstring.as_ref().unwrap_or(&ibc.name));
-    });
-    root.visit_mut(|cbi: &mut CallbackInterface| {
-        cbi.js_docstring = format_docstring(cbi.docstring.as_ref().unwrap_or(&cbi.name));
-    });
-    root.visit_mut(|custom: &mut CustomType| {
-        custom.js_docstring = format_docstring(custom.docstring.as_ref().unwrap_or(&custom.name));
-    });
-    Ok(())
-}
-
 /// Format a docstring for the JS code
-fn format_docstring(docstring: &str) -> String {
+pub fn format_docstring(docstring: &str) -> String {
     // Remove any existing indentation
     let docstring = textwrap::dedent(docstring);
     // "Escape" `*/` chars to avoid closing the comment
@@ -83,15 +27,15 @@ fn format_docstring(docstring: &str) -> String {
 }
 
 /// Format a docstring for a function/method
-fn format_callable_docstring(callable: &Callable, docstring: &str) -> String {
-    let mut parts = vec![Cow::from(docstring)];
+pub fn format_callable_docstring(callable: &Callable, docstring: &Option<String>) -> String {
+    let mut parts = vec![Cow::from(docstring.as_ref().unwrap_or(&callable.name))];
     for arg in callable.arguments.iter() {
-        let type_name = &arg.ty.jsdoc_name;
+        let type_name = arg.ty.jsdoc_name();
         let arg_name = &arg.name;
         parts.push(format!("@param {{{type_name}}} {arg_name}").into());
     }
-    if let Some(return_ty) = &callable.return_type.ty {
-        let type_name = &return_ty.jsdoc_name;
+    if let Some(return_ty) = &callable.return_type {
+        let type_name = &return_ty.ty.jsdoc_name();
         parts.push(if callable.is_js_async {
             format!("@returns {{Promise<{type_name}>}}}}").into()
         } else {

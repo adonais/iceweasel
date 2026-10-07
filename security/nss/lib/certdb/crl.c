@@ -24,6 +24,11 @@
 #endif
 #include "pk11priv.h"
 
+/* CRLs can legitimately be very large, so they are decoded without the
+ * default input size cap and with a raised group element limit.  The
+ * element limit still bounds allocations for absurd entry counts. */
+#define CRL_MAX_ELEMENTS 16000000UL
+
 const SEC_ASN1Template SEC_CERTExtensionTemplate[] = {
     { SEC_ASN1_SEQUENCE, 0, NULL, sizeof(CERTCertExtension) },
     { SEC_ASN1_OBJECT_ID, offsetof(CERTCertExtension, id) },
@@ -278,11 +283,13 @@ CERT_KeyFromDERCrl(PLArenaPool* arena, SECItem* derCrl, SECItem* key)
         myArena = arena;
     }
     PORT_Memset(&sd, 0, sizeof(sd));
-    rv = SEC_QuickDERDecodeItem(myArena, &sd, CERT_SignedDataTemplate, derCrl);
+    rv = SEC_QuickDERDecodeItemWithLimits(myArena, &sd, CERT_SignedDataTemplate,
+                                          derCrl, 0, CRL_MAX_ELEMENTS);
     if (SECSuccess == rv) {
         PORT_Memset(&crlkey, 0, sizeof(crlkey));
-        rv = SEC_QuickDERDecodeItem(myArena, &crlkey, cert_CrlKeyTemplate,
-                                    &sd.data);
+        rv = SEC_QuickDERDecodeItemWithLimits(myArena, &crlkey,
+                                              cert_CrlKeyTemplate, &sd.data, 0,
+                                              CRL_MAX_ELEMENTS);
     }
 
     /* make a copy so the data doesn't point to memory inside derCrl, which
@@ -326,8 +333,9 @@ CERT_CompleteCRLDecodeEntries(CERTSignedCrl* crl)
     }
 
     if (SECSuccess == rv) {
-        rv = SEC_QuickDERDecodeItem(crl->arena, &crl->crl,
-                                    CERT_CrlTemplateEntriesOnly, crldata);
+        rv = SEC_QuickDERDecodeItemWithLimits(crl->arena, &crl->crl,
+                                              CERT_CrlTemplateEntriesOnly,
+                                              crldata, 0, CRL_MAX_ELEMENTS);
         if (SECSuccess == rv) {
             extended->partial = PR_FALSE; /* successful decode, avoid
                 decoding again */
@@ -431,7 +439,9 @@ CERT_DecodeDERCrlWithFlags(PLArenaPool* narena, SECItem* derSignedCrl, int type,
     /* decode the CRL info */
     switch (type) {
         case SEC_CRL_TYPE:
-            rv = SEC_QuickDERDecodeItem(arena, crl, crlTemplate, crl->derCrl);
+            rv = SEC_QuickDERDecodeItemWithLimits(arena, crl, crlTemplate,
+                                                  crl->derCrl, 0,
+                                                  CRL_MAX_ELEMENTS);
             if (rv != SECSuccess) {
                 extended->badDER = PR_TRUE;
                 break;
@@ -706,7 +716,8 @@ CERTSignedCrl*
 SEC_DupCrl(CERTSignedCrl* acrl)
 {
     if (acrl) {
-        PR_ATOMIC_INCREMENT(&acrl->referenceCount);
+        PRInt32 refCount = PR_ATOMIC_INCREMENT(&acrl->referenceCount);
+        PORT_ReleaseAssert(refCount > 1);
         return acrl;
     }
     return NULL;
@@ -716,7 +727,9 @@ SECStatus
 SEC_DestroyCrl(CERTSignedCrl* crl)
 {
     if (crl) {
-        if (PR_ATOMIC_DECREMENT(&crl->referenceCount) < 1) {
+        PRInt32 refCount = PR_ATOMIC_DECREMENT(&crl->referenceCount);
+        PORT_ReleaseAssert(refCount >= 0);
+        if (refCount == 0) {
             if (crl->slot) {
                 PK11_FreeSlot(crl->slot);
             }

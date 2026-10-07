@@ -118,6 +118,8 @@ file-whitespace:
         - testing/web-platform/tests/tools/lint/tests/dummy/broken.html
         - testing/web-platform/tests/tools/lint/tests/dummy/broken_ignored.html
         - toolkit/components/passwordmgr/test/mochitest/
+        # Verbatim upstream license notices rendered by about:license
+        - toolkit/content/licenses
         - toolkit/content/tests/chrome
         - toolkit/locales/en-US/chrome/passwordmgr/passwordmgr.properties
         - tools/lint/eslint

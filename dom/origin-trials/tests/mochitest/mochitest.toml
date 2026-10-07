@@ -11,12 +11,8 @@ support-files = [
 #  * Test interfaces only exposed on DEBUG builds.
 #  * xorigin tests run in example.org rather than example.com, so token
 #    verification fails, expectedly.
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-  "xorigin",
+run-if = [
+  "debug && !xorigin",
 ]
 
 # We want to test that trials are exposed in worklets, and AudioWorklet

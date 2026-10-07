@@ -5,7 +5,7 @@
 with Files("**"):
     BUG_COMPONENT = ("Firefox", "Shell Integration")
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "DefaultLaunchOnLogin.sys.mjs",
 ]
 

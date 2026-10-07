@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <functional>
 #include <iostream>
 #include <map>
 
@@ -884,12 +885,12 @@ class JsepSessionTest : public JsepSessionTestBase,
   }
 
   void SetLocalAnswer(const std::string& answer,
-                      uint32_t checkFlags = ALL_CHECKS) {
+                      uint32_t checkFlags = ALL_CHECKS,
+                      JsepSdpType type = kJsepSdpAnswer) {
     std::vector<JsepTransceiver> transceiversBefore =
         GetTransceivers(*mSessionAns);
 
-    JsepSession::Result result =
-        mSessionAns->SetLocalDescription(kJsepSdpAnswer, answer);
+    JsepSession::Result result = mSessionAns->SetLocalDescription(type, answer);
     if (checkFlags & CHECK_SUCCESS) {
       ASSERT_FALSE(result.mError.isSome());
     }
@@ -931,12 +932,13 @@ class JsepSessionTest : public JsepSessionTestBase,
   }
 
   void SetRemoteAnswer(const std::string& answer,
-                       uint32_t checkFlags = ALL_CHECKS) {
+                       uint32_t checkFlags = ALL_CHECKS,
+                       JsepSdpType type = kJsepSdpAnswer) {
     std::vector<JsepTransceiver> transceiversBefore =
         GetTransceivers(*mSessionOff);
 
     JsepSession::Result result =
-        mSessionOff->SetRemoteDescription(kJsepSdpAnswer, answer);
+        mSessionOff->SetRemoteDescription(type, answer);
     if (checkFlags & CHECK_SUCCESS) {
       ASSERT_FALSE(result.mError.isSome());
     }
@@ -3563,7 +3565,7 @@ TEST_F(JsepSessionTest, ValidateOfferedVideoCodecParams) {
   ASSERT_TRUE(video_attrs.HasAttribute(SdpAttribute::kFmtpAttribute));
   const auto& fmtps = video_attrs.GetFmtp().mFmtps;
 
-  ASSERT_EQ(10U, fmtps.size());
+  ASSERT_EQ(11U, fmtps.size());
 
   // VP8
   const SdpFmtpAttributeList::Parameters* vp8_params =
@@ -3682,8 +3684,19 @@ TEST_F(JsepSessionTest, ValidateOfferedVideoCodecParams) {
       video_section.FindFmtp("104");
   ASSERT_FALSE(h264__baseline_0_rtx_params);
 
-  // AV1 has no default FMTP parameters so there is no FMTP entry for AV1 in the
-  // test.
+  // AV1
+  const SdpFmtpAttributeList::Parameters* av1_params =
+      video_section.FindFmtp("99");
+  ASSERT_TRUE(av1_params);
+  ASSERT_EQ(SdpRtpmapAttributeList::kAV1, av1_params->codec_type);
+
+  const auto& parsed_av1_params =
+      *static_cast<const SdpFmtpAttributeList::Av1Parameters*>(av1_params);
+
+  ASSERT_EQ(Some((uint8_t)0), parsed_av1_params.profile);
+  ASSERT_EQ(Some((uint8_t)9), parsed_av1_params.levelIdx);
+  ASSERT_EQ(Some((uint8_t)0), parsed_av1_params.tier);
+
   // AV1 RTX
   const SdpFmtpAttributeList::Parameters* av1_rtx_params =
       video_section.FindFmtp("100");
@@ -3757,7 +3770,7 @@ TEST_F(JsepSessionTest, ValidateOfferedRecvonlyVideoCodecParams) {
   ASSERT_TRUE(video_attrs.HasAttribute(SdpAttribute::kFmtpAttribute));
   const auto& fmtps = video_attrs.GetFmtp().mFmtps;
 
-  ASSERT_EQ(14U, fmtps.size());
+  ASSERT_EQ(15U, fmtps.size());
 
   // VP8
   const SdpFmtpAttributeList::Parameters* vp8_params =
@@ -3908,8 +3921,19 @@ TEST_F(JsepSessionTest, ValidateOfferedRecvonlyVideoCodecParams) {
 
   ASSERT_EQ((uint32_t)103, parsed_h264_baseline_0_rtx_params.apt);
 
-  // AV1 has no default FMTP parameters so there is no FMTP entry for AV1 in the
-  // test.
+  // AV1
+  const SdpFmtpAttributeList::Parameters* av1_params =
+      video_section.FindFmtp("99");
+  ASSERT_TRUE(av1_params);
+  ASSERT_EQ(SdpRtpmapAttributeList::kAV1, av1_params->codec_type);
+
+  const auto& parsed_av1_params =
+      *static_cast<const SdpFmtpAttributeList::Av1Parameters*>(av1_params);
+
+  ASSERT_EQ(Some((uint8_t)0), parsed_av1_params.profile);
+  ASSERT_EQ(Some((uint8_t)9), parsed_av1_params.levelIdx);
+  ASSERT_EQ(Some((uint8_t)0), parsed_av1_params.tier);
+
   // AV1 RTX
   const SdpFmtpAttributeList::Parameters* av1_rtx_params =
       video_section.FindFmtp("100");
@@ -4073,8 +4097,8 @@ TEST_F(JsepSessionTest, ValidateNoFmtpLineForRedInOfferAndAnswer) {
     fmtpFormats.push_back(fmtp.format);
   }
 
-  ASSERT_THAT(fmtpFormats, ElementsAre("126", "105", "120", "124", "121", "125",
-                                       "127", "106", "100", "119"));
+  ASSERT_THAT(fmtpFormats, ElementsAre("126", "105", "99", "120", "124", "121",
+                                       "125", "127", "106", "100", "119"));
   SetLocalAnswer(answer);
   SetRemoteAnswer(answer);
 
@@ -4164,6 +4188,12 @@ static void GetCodec(JsepSession& session, size_t transceiverIndex,
                   ->Clone();
 }
 
+static void ForceAv1Only(JsepSession& session) {
+  for (auto& codec : session.Codecs()) {
+    codec->mEnabled = (codec->mName == "AV1");
+  }
+}
+
 static void ForceH264(JsepSession& session, uint32_t profileLevelId) {
   for (auto& codec : session.Codecs()) {
     if (codec->mName == "H264") {
@@ -4199,6 +4229,16 @@ TEST_F(JsepSessionTest, TestH264Negotiation) {
   const JsepVideoCodecDescription* offererVideoSendCodec(
       static_cast<const JsepVideoCodecDescription*>(offererSendCodec.get()));
   ASSERT_EQ((uint32_t)0x42e01f, offererVideoSendCodec->mProfileLevelId);
+  // The negotiated level (3.1) implies a macroblock-count/rate cap that gets
+  // applied as an encoding constraint, so the sender doesn't exceed what the
+  // remote declared it can receive.
+  Maybe<H264MacroblockLimits> expectedLimits =
+      H264MacroblockLimitsForLevel(H264_LEVEL::H264_LEVEL_3_1);
+  ASSERT_TRUE(expectedLimits);
+  ASSERT_EQ(expectedLimits->mMaxMacroblocksPerFrame,
+            offererVideoSendCodec->mConstraints.maxFs);
+  ASSERT_EQ(expectedLimits->mMaxMacroblocksPerSecond,
+            offererVideoSendCodec->mConstraints.maxMbps);
 
   UniquePtr<JsepCodecDescription> offererRecvCodec;
   GetCodec(*mSessionOff, 0, sdp::kRecv, 0, 0, &offererRecvCodec);
@@ -4302,6 +4342,119 @@ TEST_F(JsepSessionTest, TestH264NegotiationOffererNoFmtp) {
   const JsepVideoCodecDescription* answererVideoRecvCodec(
       static_cast<const JsepVideoCodecDescription*>(answererRecvCodec.get()));
   ASSERT_EQ((uint32_t)0x42000A, answererVideoRecvCodec->mProfileLevelId);
+}
+
+TEST_F(JsepSessionTest, TestAV1NegotiationDefault) {
+  ForceAv1Only(*mSessionOff);
+  ForceAv1Only(*mSessionAns);
+
+  AddTracks(*mSessionOff, "video");
+  AddTracks(*mSessionAns, "video");
+
+  std::string offer(CreateOffer());
+  SetLocalOffer(offer, CHECK_SUCCESS);
+  SetRemoteOffer(offer, CHECK_SUCCESS);
+  std::string answer(CreateAnswer());
+  SetRemoteAnswer(answer, CHECK_SUCCESS);
+  SetLocalAnswer(answer, CHECK_SUCCESS);
+
+  UniquePtr<JsepCodecDescription> offererSendCodec;
+  GetCodec(*mSessionOff, 0, sdp::kSend, 0, 0, &offererSendCodec);
+  ASSERT_TRUE(offererSendCodec);
+  ASSERT_EQ("AV1", offererSendCodec->mName);
+  const JsepVideoCodecDescription* offererVideoSendCodec(
+      static_cast<const JsepVideoCodecDescription*>(offererSendCodec.get()));
+  ASSERT_EQ(0U, offererVideoSendCodec->mAv1Config.ProfileOrDefault());
+  ASSERT_EQ(9U, offererVideoSendCodec->mAv1Config.LevelIdxOrDefault());
+  ASSERT_EQ(0U, offererVideoSendCodec->mAv1Config.TierOrDefault());
+
+  UniquePtr<JsepCodecDescription> answererSendCodec;
+  GetCodec(*mSessionAns, 0, sdp::kSend, 0, 0, &answererSendCodec);
+  ASSERT_TRUE(answererSendCodec);
+  ASSERT_EQ("AV1", answererSendCodec->mName);
+  const JsepVideoCodecDescription* answererVideoSendCodec(
+      static_cast<const JsepVideoCodecDescription*>(answererSendCodec.get()));
+  ASSERT_EQ(0U, answererVideoSendCodec->mAv1Config.ProfileOrDefault());
+  ASSERT_EQ(9U, answererVideoSendCodec->mAv1Config.LevelIdxOrDefault());
+  ASSERT_EQ(0U, answererVideoSendCodec->mAv1Config.TierOrDefault());
+}
+
+TEST_F(JsepSessionTest, TestAV1NegotiationAsymmetricLevel) {
+  ForceAv1Only(*mSessionOff);
+  ForceAv1Only(*mSessionAns);
+
+  AddTracks(*mSessionOff, "video");
+  AddTracks(*mSessionAns, "video");
+
+  std::string offer(CreateOffer());
+  SetLocalOffer(offer, CHECK_SUCCESS);
+  SetRemoteOffer(offer, CHECK_SUCCESS);
+  std::string answer(CreateAnswer());
+
+  // Simulate the answerer declaring a lower receive level than what it
+  // actually declared, to verify the offerer's sender asymmetrically adopts
+  // it without affecting what the offerer itself declares for receiving.
+  Replace("level-idx=9", "level-idx=5", &answer);
+
+  SetRemoteAnswer(answer, CHECK_SUCCESS);
+  SetLocalAnswer(answer, CHECK_SUCCESS);
+
+  UniquePtr<JsepCodecDescription> offererSendCodec;
+  GetCodec(*mSessionOff, 0, sdp::kSend, 0, 0, &offererSendCodec);
+  ASSERT_TRUE(offererSendCodec);
+  ASSERT_EQ("AV1", offererSendCodec->mName);
+  const JsepVideoCodecDescription* offererVideoSendCodec(
+      static_cast<const JsepVideoCodecDescription*>(offererSendCodec.get()));
+  // Adopts the (munged) remote receiver's declared level.
+  ASSERT_EQ(5U, offererVideoSendCodec->mAv1Config.LevelIdxOrDefault());
+  // The negotiated level's block-count/rate limits are applied as encoding
+  // constraints so the sender doesn't exceed what the remote can receive.
+  Maybe<AV1BlockLimits> expectedLimits = AV1BlockLimitsForLevel(5);
+  ASSERT_TRUE(expectedLimits);
+  ASSERT_EQ(expectedLimits->mMaxFs, offererVideoSendCodec->mConstraints.maxFs);
+  ASSERT_EQ(SaturatingCast<uint32_t>(expectedLimits->mMaxBlocksPerSecond),
+            offererVideoSendCodec->mConstraints.maxMbps);
+
+  UniquePtr<JsepCodecDescription> offererRecvCodec;
+  GetCodec(*mSessionOff, 0, sdp::kRecv, 0, 0, &offererRecvCodec);
+  ASSERT_EQ("AV1", offererRecvCodec->mName);
+  const JsepVideoCodecDescription* offererVideoRecvCodec(
+      static_cast<const JsepVideoCodecDescription*>(offererRecvCodec.get()));
+  // What we ourselves declare for receiving is not derived from the remote
+  // side.
+  ASSERT_EQ(9U, offererVideoRecvCodec->mAv1Config.LevelIdxOrDefault());
+}
+
+TEST_F(JsepSessionTest, TestAV1NegotiationOffererNoFmtp) {
+  ForceAv1Only(*mSessionOff);
+  ForceAv1Only(*mSessionAns);
+
+  AddTracks(*mSessionOff, "video");
+  AddTracks(*mSessionAns, "video");
+
+  std::string offer(CreateOffer());
+  SetLocalOffer(offer, CHECK_SUCCESS);
+
+  Replace("a=fmtp:99", "a=oops:99", &offer);
+
+  SetRemoteOffer(offer, CHECK_SUCCESS);
+  std::string answer(CreateAnswer());
+
+  SetRemoteAnswer(answer, CHECK_SUCCESS);
+  SetLocalAnswer(answer, CHECK_SUCCESS);
+
+  UniquePtr<JsepCodecDescription> answererSendCodec;
+  GetCodec(*mSessionAns, 0, sdp::kSend, 0, 0, &answererSendCodec);
+  ASSERT_TRUE(answererSendCodec);
+  ASSERT_EQ("AV1", answererSendCodec->mName);
+  const JsepVideoCodecDescription* answererVideoSendCodec(
+      static_cast<const JsepVideoCodecDescription*>(answererSendCodec.get()));
+  // With no fmtp at all in the offer, falls back to the AV1 spec's own
+  // defaults (not our locally declared defaults), per
+  // https://aomediacodec.github.io/av1-rtp-spec/#sdp-parameters
+  ASSERT_EQ(0U, answererVideoSendCodec->mAv1Config.ProfileOrDefault());
+  ASSERT_EQ(5U, answererVideoSendCodec->mAv1Config.LevelIdxOrDefault());
+  ASSERT_EQ(0U, answererVideoSendCodec->mAv1Config.TierOrDefault());
 }
 
 TEST_F(JsepSessionTest, TestH264LevelAsymmetryDisallowedByOffererWithLowLevel) {
@@ -8690,6 +8843,347 @@ TEST_F(JsepSessionTest, RecvonlyAddTrackTransceiverDoesNotMatchSendonly) {
   ASSERT_NE(addTrack, transceivers.end());
   ASSERT_FALSE(addTrack->HasLevel());
   ASSERT_FALSE(addTrack->IsAssociated());
+}
+
+// Provisional answers. Apart from the signaling state and which descriptions
+// count as pending or current, a pranswer is handled like an answer.
+// (See https://www.rfc-editor.org/info/rfc9429/#section-4.1.10-3).r
+TEST_P(JsepSessionTest, PranswerThenAnswer) {
+  AddTracks(*mSessionOff);
+  std::string offer = CreateOffer();
+  SetLocalOffer(offer);
+  SetRemoteOffer(offer);
+  AddTracks(*mSessionAns);
+  std::string answer = CreateAnswer();
+
+  SetLocalAnswer(answer, ALL_CHECKS, kJsepSdpPranswer);
+  ASSERT_EQ(kJsepStateHaveLocalPranswer, mSessionAns->GetState());
+  ASSERT_NE(0U,
+            mSessionAns->GetLocalDescription(kJsepDescriptionPending).size());
+  ASSERT_EQ(0U,
+            mSessionAns->GetLocalDescription(kJsepDescriptionCurrent).size());
+  ASSERT_NE(0U,
+            mSessionAns->GetRemoteDescription(kJsepDescriptionPending).size());
+  ASSERT_EQ(0U,
+            mSessionAns->GetRemoteDescription(kJsepDescriptionCurrent).size());
+  ASSERT_EQ(1U, mSessionAns->GetNegotiations());
+
+  // Set again, as a non-provisional answer
+  SetLocalAnswer(answer);
+  ASSERT_EQ(kJsepStateStable, mSessionAns->GetState());
+  ASSERT_EQ(0U,
+            mSessionAns->GetLocalDescription(kJsepDescriptionPending).size());
+  ASSERT_NE(0U,
+            mSessionAns->GetLocalDescription(kJsepDescriptionCurrent).size());
+  ASSERT_EQ(0U,
+            mSessionAns->GetRemoteDescription(kJsepDescriptionPending).size());
+  ASSERT_NE(0U,
+            mSessionAns->GetRemoteDescription(kJsepDescriptionCurrent).size());
+  ASSERT_EQ(1U, mSessionAns->GetNegotiations());
+
+  SetRemoteAnswer(answer, ALL_CHECKS, kJsepSdpPranswer);
+  ASSERT_EQ(kJsepStateHaveRemotePranswer, mSessionOff->GetState());
+  ASSERT_NE(0U,
+            mSessionOff->GetRemoteDescription(kJsepDescriptionPending).size());
+  ASSERT_EQ(0U,
+            mSessionOff->GetRemoteDescription(kJsepDescriptionCurrent).size());
+  ASSERT_NE(0U,
+            mSessionOff->GetLocalDescription(kJsepDescriptionPending).size());
+  ASSERT_EQ(0U,
+            mSessionOff->GetLocalDescription(kJsepDescriptionCurrent).size());
+  ASSERT_EQ(1U, mSessionOff->GetNegotiations());
+
+  // Set again, as a non-provisional answer
+  SetRemoteAnswer(answer);
+  ASSERT_EQ(kJsepStateStable, mSessionOff->GetState());
+  ASSERT_EQ(0U,
+            mSessionOff->GetRemoteDescription(kJsepDescriptionPending).size());
+  ASSERT_NE(0U,
+            mSessionOff->GetRemoteDescription(kJsepDescriptionCurrent).size());
+  ASSERT_EQ(0U,
+            mSessionOff->GetLocalDescription(kJsepDescriptionPending).size());
+  ASSERT_NE(0U,
+            mSessionOff->GetLocalDescription(kJsepDescriptionCurrent).size());
+  ASSERT_EQ(1U, mSessionOff->GetNegotiations());
+}
+
+// A pranswer during a renegotiation leaves the previous exchange's current
+// descriptions alone; only the final answer replaces them.
+TEST_P(JsepSessionTest, PranswerKeepsCurrentDescriptions) {
+  AddTracks(*mSessionOff);
+  AddTracks(*mSessionAns);
+  OfferAnswer();
+  ASSERT_EQ(1U, mSessionOff->GetNegotiations());
+
+  const std::string offCurrentLocal =
+      mSessionOff->GetLocalDescription(kJsepDescriptionCurrent);
+  const std::string offCurrentRemote =
+      mSessionOff->GetRemoteDescription(kJsepDescriptionCurrent);
+  const std::string ansCurrentLocal =
+      mSessionAns->GetLocalDescription(kJsepDescriptionCurrent);
+  const std::string ansCurrentRemote =
+      mSessionAns->GetRemoteDescription(kJsepDescriptionCurrent);
+  ASSERT_NE(0U, offCurrentLocal.size());
+  ASSERT_NE(0U, offCurrentRemote.size());
+  ASSERT_NE(0U, ansCurrentLocal.size());
+  ASSERT_NE(0U, ansCurrentRemote.size());
+
+  std::string reoffer = CreateOffer();
+  SetLocalOffer(reoffer);
+  SetRemoteOffer(reoffer);
+  std::string reanswer = CreateAnswer();
+  SetLocalAnswer(reanswer, ALL_CHECKS, kJsepSdpPranswer);
+  SetRemoteAnswer(reanswer, ALL_CHECKS, kJsepSdpPranswer);
+
+  ASSERT_EQ(offCurrentLocal,
+            mSessionOff->GetLocalDescription(kJsepDescriptionCurrent));
+  ASSERT_EQ(offCurrentRemote,
+            mSessionOff->GetRemoteDescription(kJsepDescriptionCurrent));
+  ASSERT_EQ(ansCurrentLocal,
+            mSessionAns->GetLocalDescription(kJsepDescriptionCurrent));
+  ASSERT_EQ(ansCurrentRemote,
+            mSessionAns->GetRemoteDescription(kJsepDescriptionCurrent));
+  ASSERT_NE(offCurrentLocal,
+            mSessionOff->GetLocalDescription(kJsepDescriptionPending));
+  ASSERT_NE(offCurrentRemote,
+            mSessionOff->GetRemoteDescription(kJsepDescriptionPending));
+  ASSERT_NE(ansCurrentLocal,
+            mSessionAns->GetLocalDescription(kJsepDescriptionPending));
+  ASSERT_NE(ansCurrentRemote,
+            mSessionAns->GetRemoteDescription(kJsepDescriptionPending));
+
+  ASSERT_NE(0U,
+            mSessionOff->GetRemoteDescription(kJsepDescriptionPending).size());
+  ASSERT_NE(0U,
+            mSessionAns->GetLocalDescription(kJsepDescriptionPending).size());
+  ASSERT_EQ(2U, mSessionOff->GetNegotiations());
+  ASSERT_EQ(2U, mSessionAns->GetNegotiations());
+
+  SetLocalAnswer(reanswer);
+  SetRemoteAnswer(reanswer);
+  ASSERT_NE(offCurrentLocal,
+            mSessionOff->GetLocalDescription(kJsepDescriptionCurrent));
+  ASSERT_NE(ansCurrentLocal,
+            mSessionAns->GetLocalDescription(kJsepDescriptionCurrent));
+  ASSERT_NE(offCurrentRemote,
+            mSessionOff->GetRemoteDescription(kJsepDescriptionCurrent));
+  ASSERT_NE(ansCurrentRemote,
+            mSessionAns->GetRemoteDescription(kJsepDescriptionCurrent));
+  ASSERT_EQ(0U,
+            mSessionOff->GetLocalDescription(kJsepDescriptionPending).size());
+  ASSERT_EQ(0U,
+            mSessionAns->GetLocalDescription(kJsepDescriptionPending).size());
+  ASSERT_EQ(0U,
+            mSessionOff->GetRemoteDescription(kJsepDescriptionPending).size());
+  ASSERT_EQ(0U,
+            mSessionAns->GetRemoteDescription(kJsepDescriptionPending).size());
+  ASSERT_EQ(2U, mSessionOff->GetNegotiations());
+  ASSERT_EQ(2U, mSessionAns->GetNegotiations());
+}
+
+TEST_P(JsepSessionTest, RepeatedPranswer) {
+  AddTracks(*mSessionOff);
+  std::string offer = CreateOffer();
+  SetLocalOffer(offer);
+  SetRemoteOffer(offer);
+  AddTracks(*mSessionAns);
+  std::string answer = CreateAnswer();
+
+  SetLocalAnswer(answer, ALL_CHECKS, kJsepSdpPranswer);
+  SetLocalAnswer(answer, ALL_CHECKS, kJsepSdpPranswer);
+  ASSERT_EQ(kJsepStateHaveLocalPranswer, mSessionAns->GetState());
+  SetRemoteAnswer(answer, ALL_CHECKS, kJsepSdpPranswer);
+  SetRemoteAnswer(answer, ALL_CHECKS, kJsepSdpPranswer);
+  ASSERT_EQ(kJsepStateHaveRemotePranswer, mSessionOff->GetState());
+  ASSERT_EQ(1U, mSessionAns->GetNegotiations());
+  ASSERT_EQ(1U, mSessionOff->GetNegotiations());
+
+  // createAnswer is allowed in have-local-pranswer, and what it produces can
+  // be set as the final answer.
+  std::string finalAnswer = CreateAnswer();
+  SetLocalAnswer(finalAnswer);
+  SetRemoteAnswer(finalAnswer);
+  ASSERT_EQ(kJsepStateStable, mSessionAns->GetState());
+  ASSERT_EQ(kJsepStateStable, mSessionOff->GetState());
+  ASSERT_EQ(1U, mSessionAns->GetNegotiations());
+  ASSERT_EQ(1U, mSessionOff->GetNegotiations());
+}
+
+TEST_P(JsepSessionTest, PranswerStatesRejectRollbackAndOffers) {
+  AddTracks(*mSessionOff);
+  std::string offer = CreateOffer();
+  SetLocalOffer(offer);
+  SetRemoteOffer(offer);
+  AddTracks(*mSessionAns);
+  std::string answer = CreateAnswer();
+  SetLocalAnswer(answer, ALL_CHECKS, kJsepSdpPranswer);
+  SetRemoteAnswer(answer, ALL_CHECKS, kJsepSdpPranswer);
+
+  ASSERT_EQ(dom::PCError::InvalidStateError,
+            *mSessionAns->SetLocalDescription(kJsepSdpRollback, "").mError);
+  ASSERT_EQ(dom::PCError::InvalidStateError,
+            *mSessionOff->SetRemoteDescription(kJsepSdpRollback, "").mError);
+  ASSERT_EQ(dom::PCError::InvalidStateError,
+            *mSessionAns->SetRemoteDescription(kJsepSdpOffer, offer).mError);
+  ASSERT_EQ(dom::PCError::InvalidStateError,
+            *mSessionOff->SetLocalDescription(kJsepSdpOffer, offer).mError);
+  ASSERT_EQ(kJsepStateHaveLocalPranswer, mSessionAns->GetState());
+  ASSERT_EQ(kJsepStateHaveRemotePranswer, mSessionOff->GetState());
+
+  SetLocalAnswer(answer);
+  SetRemoteAnswer(answer);
+}
+
+// The main reason pranswer exists: answer provisionally in one direction, then
+// finally in both.
+TEST_F(JsepSessionTest, PranswerDirectionChange) {
+  AddTracks(*mSessionOff, "audio");
+  AddTracks(*mSessionAns, "audio");
+  std::string offer = CreateOffer();
+  SetLocalOffer(offer, CHECK_SUCCESS);
+  SetRemoteOffer(offer, CHECK_SUCCESS);
+  std::string answer = CreateAnswer();
+  std::string pranswer = answer;
+  Replace("a=sendrecv", "a=recvonly", &pranswer);
+
+  SetLocalAnswer(pranswer, CHECK_SUCCESS, kJsepSdpPranswer);
+  SetRemoteAnswer(pranswer, CHECK_SUCCESS, kJsepSdpPranswer);
+  ASSERT_TRUE(GetTransceivers(*mSessionAns)[0].mRecvTrack.GetActive());
+  ASSERT_FALSE(GetTransceivers(*mSessionAns)[0].mSendTrack.GetActive());
+  ASSERT_TRUE(GetTransceivers(*mSessionOff)[0].mSendTrack.GetActive());
+  ASSERT_FALSE(GetTransceivers(*mSessionOff)[0].mRecvTrack.GetActive());
+
+  SetLocalAnswer(answer, CHECK_SUCCESS);
+  SetRemoteAnswer(answer, CHECK_SUCCESS);
+  ASSERT_TRUE(GetTransceivers(*mSessionAns)[0].mRecvTrack.GetActive());
+  ASSERT_TRUE(GetTransceivers(*mSessionAns)[0].mSendTrack.GetActive());
+  ASSERT_TRUE(GetTransceivers(*mSessionOff)[0].mSendTrack.GetActive());
+  ASSERT_TRUE(GetTransceivers(*mSessionOff)[0].mRecvTrack.GetActive());
+}
+
+// Anything about the transports that differs between a pranswer and the
+// answers after it is refused, whether the later one is provisional or final.
+// Note: The spec is largely silent on what ought to be allowed to change here.
+// We forbid just about everything. If someone wants this loosened, we can
+// cross that bridge when we get there.
+TEST_F(JsepSessionTest, PranswerFreezesTransports) {
+  AddTracks(*mSessionOff, "audio,video,datachannel");
+  AddTracks(*mSessionAns, "audio,video,datachannel");
+  // Offer send simulcast on the video, so the answers carry the recv side of
+  // it and there is something for the simulcast checks to compare.
+  for (auto& transceiver : GetTransceivers(*mSessionOff)) {
+    if (transceiver.GetMediaType() == SdpMediaSection::kVideo) {
+      transceiver.mSendTrack.SetRids({"hi", "lo"});
+    }
+  }
+  // Not the fixture's CreateOffer(); that one expects the transceivers to come
+  // through unchanged, and the first simulcast offer allocates more ssrcs.
+  std::string offer;
+  ASSERT_FALSE(
+      mSessionOff->CreateOffer(JsepOfferOptions(), &offer).mError.isSome())
+  << mSessionOff->GetLastError();
+  ASSERT_NE(std::string::npos, offer.find("a=simulcast:send hi;lo")) << offer;
+  SetLocalOffer(offer, CHECK_SUCCESS);
+  SetRemoteOffer(offer, CHECK_SUCCESS);
+  // We do not answer with recv simulcast ourselves, so play the part of an SFU
+  // that does.
+  std::string answer = CreateAnswer();
+  Replace("a=mid:1\r\n",
+          "a=mid:1\r\na=simulcast:recv hi;lo\r\na=rid:hi recv\r\na=rid:lo "
+          "recv\r\n",
+          &answer);
+  SetRemoteAnswer(answer, CHECK_SUCCESS, kJsepSdpPranswer);
+
+  struct Change {
+    const char* mWhat;
+    std::function<void(std::string*)> mApply;
+  };
+  const Change changes[] = {
+      {"ICE ufrag",
+       [](std::string* sdp) { Replace("a=ice-ufrag:", "a=ice-ufrag:x", sdp); }},
+      {"ICE pwd",
+       [](std::string* sdp) { Replace("a=ice-pwd:", "a=ice-pwd:x", sdp); }},
+      // The test fingerprints are all 0x41 bytes.
+      {"DTLS fingerprint",
+       [](std::string* sdp) {
+         Replace("a=fingerprint:sha-256 41:", "a=fingerprint:sha-256 42:", sdp);
+       }},
+      {"DTLS role",
+       [](std::string* sdp) {
+         ReplaceAll("a=setup:active", "a=setup:passive", sdp);
+       }},
+      {"rtcp-mux",
+       [](std::string* sdp) { ReplaceAll("a=rtcp-mux\r\n", "", sdp); }},
+      {"BUNDLE",
+       [](std::string* sdp) { Replace("a=group:BUNDLE", "a=group:LS", sdp); }},
+      {"rejecting an m-section",
+       [](std::string* sdp) { Replace("m=video 9 ", "m=video 0 ", sdp); }},
+      {"identity",
+       [](std::string* sdp) {
+         Replace("t=0 0\r\n", "t=0 0\r\na=identity:eyJpZHAiOnt9fQ\r\n", sdp);
+       }},
+      {"dropping a simulcast layer",
+       [](std::string* sdp) {
+         Replace("a=simulcast:recv hi;lo", "a=simulcast:recv hi", sdp);
+       }},
+      // The parser insists that simulcast only name rids that exist, so the
+      // rid goes along with its layer.
+      {"dropping a rid",
+       [](std::string* sdp) {
+         Replace("a=simulcast:recv hi;lo\r\na=rid:hi recv\r\na=rid:lo recv\r\n",
+                 "a=simulcast:recv hi\r\na=rid:hi recv\r\n", sdp);
+       }},
+      {"restricting a rid",
+       [](std::string* sdp) {
+         Replace("a=rid:hi recv", "a=rid:hi recv max-width=320", sdp);
+       }},
+      {"sctp-port",
+       [](std::string* sdp) {
+         Replace("a=sctp-port:5000", "a=sctp-port:5001", sdp);
+       }},
+      // The payload type keeps its number but not its meaning.
+      {"payload type",
+       [](std::string* sdp) {
+         Replace("a=rtpmap:9 G722/8000", "a=rtpmap:9 PCMA/8000", sdp);
+       }},
+      {"msid",
+       [](std::string* sdp) { Replace("a=msid:", "a=msid:changed-", sdp); }},
+      {"rtcp-rsize",
+       [](std::string* sdp) { Replace("a=rtcp-rsize\r\n", "", sdp); }},
+      {"ice-options",
+       [](std::string* sdp) {
+         Replace("a=ice-options:trickle", "a=ice-options:trickle ice2", sdp);
+       }},
+      {"ice-lite",
+       [](std::string* sdp) {
+         Replace("t=0 0\r\n", "t=0 0\r\na=ice-lite\r\n", sdp);
+       }},
+  };
+
+  for (const auto& change : changes) {
+    std::string changed = answer;
+    change.mApply(&changed);
+    ASSERT_NE(answer, changed) << change.mWhat;
+    for (JsepSdpType type : {kJsepSdpAnswer, kJsepSdpPranswer}) {
+      JsepSession::Result result =
+          mSessionOff->SetRemoteDescription(type, changed);
+      ASSERT_TRUE(result.mError.isSome())
+      << change.mWhat << " was accepted";
+      ASSERT_EQ(dom::PCError::InvalidAccessError, *result.mError)
+          << change.mWhat;
+      // The comparison against the pranswer has to be what catches it, not
+      // the one against the offer.
+      ASSERT_NE(std::string::npos,
+                mSessionOff->GetLastError().find("provisional answer"))
+          << change.mWhat << ": " << mSessionOff->GetLastError();
+    }
+    ASSERT_EQ(kJsepStateHaveRemotePranswer, mSessionOff->GetState())
+        << change.mWhat;
+  }
+
+  // Nothing above disturbed the session.
+  SetRemoteAnswer(answer, CHECK_SUCCESS);
+  ASSERT_EQ(kJsepStateStable, mSessionOff->GetState());
 }
 
 }  // namespace mozilla

@@ -28,14 +28,16 @@ cargo = check_prog(
 
 @template
 def unwrap_rustup(prog, name):
-    # rustc and cargo can either be rustup wrappers, or they can be the actual,
-    # plain executables. For cargo, on OSX, rustup sets DYLD_LIBRARY_PATH (at
+    # rustc and cargo can be rustup wrappers, the actual, plain executables, or
+    # a wrapper script that calls one of the above.
+    #
+    # For cargo, on OSX, rustup sets DYLD_LIBRARY_PATH (at
     # least until https://github.com/rust-lang/rustup.rs/pull/1752 is merged
     # and shipped) and that can wreak havoc (see bug 1536486). Similarly, for
     # rustc, rustup silently honors toolchain overrides set by vendored crates
     # (see bug 1547196).
     #
-    # In either case, we need to find the plain executables.
+    # In any case, we need to find the plain executables.
     #
     # To achieve that, try to run `PROG +stable`. When the rustup wrapper is in
     # use, it either prints PROG's help and exits with status 0, or prints
@@ -56,14 +58,55 @@ def unwrap_rustup(prog, name):
             return
 
         def from_rustup_which():
-            out = check_cmd_output("rustup", "which", name, executable=prog).rstrip()
-            # If for some reason the above failed to return something, keep the
-            # PROG we found originally.
+            log.debug(
+                "'%s' looks like a %s rustup wrapper, trying to find its real path",
+                prog,
+                name,
+            )
+
+            # `rustup` is a multi-call binary that proxies calls to "real" Rust
+            # binaries based on `argv[0]`. When `PROG` is a symlink to `rustup`
+            # (or `rustup-init`), we can call it "as rustup".
+            log.debug("Trying to call '%s' for `rustup which %s`", prog, name)
+            out = check_cmd_output(
+                "rustup",
+                "which",
+                name,
+                executable=prog,
+                onerror=lambda: "",
+            ).rstrip()
+
             if out:
-                log.info("Actually using '%s'", out)
+                log.info("Actually using '%s' as %s", out, name)
                 return out
 
-            log.info("No `rustup which` output, using '%s'", prog)
+            # Bug 2068826: Homebrew rustup >= 1.29.0_1 sets extra environment
+            # variables with `env_script_all_files`, which replaces symlinks
+            # with `write_env_script` wrappers. These *don't* pass `argv[0]`,
+            # so we need to explicitly call `rustup`, which we'll look for in
+            # the same directory as `PROG`.
+            rustup = os.path.join(
+                os.path.dirname(prog),
+                "rustup" + os.path.splitext(prog)[1],
+            )
+
+            if os.path.isfile(rustup):
+                log.debug("Trying to call '%s' for `rustup which %s`", rustup, name)
+                out = check_cmd_output(
+                    "rustup",
+                    "which",
+                    name,
+                    executable=rustup,
+                    onerror=lambda: "",
+                ).rstrip()
+
+                if out:
+                    log.info("Actually using '%s' as %s", out, name)
+                    return out
+
+            # If for some reason the above failed to return something, keep the
+            # PROG we found originally.
+            log.info("No valid `rustup which %s` output, using '%s'", name, prog)
             return prog
 
         (retcode, stdout, stderr) = get_cmd_output(prog, "+stable")
@@ -133,6 +176,16 @@ set_config(
         )
     ),
 )
+
+
+# Must not be empty: glean-build reads it as a virtualenv path rather than as
+# unset.
+@imports(_from="sys", _import="prefix")
+def glean_parser_venv():
+    return prefix
+
+
+set_config("GLEAN_PARSER_VENV", glean_parser_venv())
 
 
 @depends_if(cargo)
@@ -611,6 +664,9 @@ set_define("MOZ_DEBUG_RUST", debug_rust)
 option(env="RUSTFLAGS", nargs=1, help="Rust compiler flags")
 set_config("RUSTFLAGS", depends("RUSTFLAGS")(lambda flags: flags))
 
+option(env="CARGOFLAGS", nargs=1, help="Flags to pass to cargo")
+set_config("CARGOFLAGS", depends("CARGOFLAGS")(lambda flags: flags))
+
 
 # Rust compiler flags
 # ==============================================================
@@ -685,6 +741,9 @@ def rust_compile_flags(
         opts.append("debug-assertions=%s" % ("yes" if debug_assertions else "no"))
     if debug_info is not None:
         opts.append("debuginfo=%s" % debug_info)
+        opts.append("strip=none")
+        if target.kernel == "Darwin":
+            opts.append("split-debuginfo=unpacked")
     if frame_pointers:
         opts.append("force-frame-pointers=yes")
     # CFG for arm64 is crashy, see `def security_hardening_cflags`.
@@ -820,9 +879,6 @@ def pass_only_base_cflags_to_rust(
         return True
 
 
-set_config("PASS_ONLY_BASE_CFLAGS_TO_RUST", "1", when=pass_only_base_cflags_to_rust)
-
-
 @depends(tsan, enable_js_fuzzilli, enable_libfuzzer, enable_aflfuzzer)
 def rust_sancov_flags(tsan, js_fuzzilli, libfuzzer, aflfuzz):
     # TSan and Fuzzilli builds do not use these sanitizer coverage flags.
@@ -900,9 +956,6 @@ def rust_pgo_flags(
     return []
 
 
-set_config("RUST_PGO_FLAGS", rust_pgo_flags)
-
-
 # PGO flags for C and C++ code compiled through cc-rs.
 # Exclude -fprofile-generate because it can instrument host build scripts on
 # native builds and cause link failures. No Rust directory opts out of PGO.
@@ -942,15 +995,455 @@ def rust_pgo_ldflags(profile_generate, profile_use, gen_ldflags, use_ldflags):
 set_config("RUST_PGO_LDFLAGS", rust_pgo_ldflags)
 
 
-@depends(
-    build_environment,
-    host_variables.HOST_OS_ARCH,
+# Enable link-time optimization for release builds, but not when doing
+# cross-language LTO.
+# Never enable when sancov is enabled to work around https://github.com/rust-lang/rust/issues/90300.
+# Never enable when coverage is enabled to work around https://github.com/rust-lang/rust/issues/90045.
+rust_lto_eligible = (
+    ~developer_options
+    & ~debug_rust
+    & ~lto.rust_lto
+    & ~rust_sancov_flags
+    & ~code_coverage
 )
+
+set_config("RUST_LTO_ELIGIBLE", True, when=rust_lto_eligible)
+
+
+# Cargo build arguments
+# ==============================================================
+
+set_config(
+    "MOZ_CARGO_TARGET_ARGS",
+    depends(rust_target_triple)(lambda triple: [f"--target={triple}"]),
+)
+set_config(
+    "MOZ_CARGO_HOST_TARGET_ARGS",
+    depends(rust_host_triple)(lambda triple: [f"--target={triple}"]),
+)
+
+
+# Custom profiles and their artifact directories use a dev or release prefix.
+# Other libraries use --release (or default dev profile for debug builds).
+@depends(debug_rust)
+def rust_cargo_profile(debug_rust):
+    if debug_rust:
+        return namespace(prefix="dev", default_dir="debug", default_args=[])
+    return namespace(
+        prefix="release", default_dir="release", default_args=["--release"]
+    )
+
+
+set_config("MOZ_CARGO_PROFILE_PREFIX", rust_cargo_profile.prefix)
+set_config("MOZ_CARGO_DEFAULT_PROFILE_DIR", rust_cargo_profile.default_dir)
+set_config("MOZ_CARGO_DEFAULT_PROFILE_ARGS", rust_cargo_profile.default_args)
+
+# The Spidermonkey library can be built from a package tarball outside the
+# tree, so we want to let Cargo create lock files in this case. When built
+# within a tree, the Rust dependencies have been vendored in so Cargo won't
+# touch the lock file.
+set_config("MOZ_CARGO_FROZEN_ARGS", ["--frozen"], when=~js_standalone)
+
+# With TSan, we also need to rebuild the rust stdlib so that it's instrumented.
+# Because build-std is still pretty experimental, we need to explicitly request
+# the panic_abort crate for `panic = "abort"` support.
+set_config("MOZ_CARGO_BUILD_STD_ARGS", ["-Zbuild-std=std,panic_abort"], when=tsan)
+
+
+# Rust compiler flags for Cargo builds
+# ==============================================================
+
+# By default the Rust compiler will perform a limited kind of ThinLTO on each
+# crate. For local builds this additional optimization is not worth the
+# increase in compile time so we opt out of it.
+set_config("MOZ_RUSTFLAGS_AFTER_EXTRA", ["-Clto=off"], when=developer_options)
+
+
+@depends(target, c_compiler)
+def rust_target_is_mingw_clang(target, c_compiler):
+    return target.kernel == "WINNT" and c_compiler.type == "clang"
+
+
+# Work around https://github.com/rust-lang/rust/issues/112480
+@depends(debug_rust, rust_target_triple)
+def rust_check_alignment_workaround(debug_rust, rust_target):
+    return debug_rust and rust_target.startswith("i686-pc-windows-")
+
+
+@depends(
+    arm_target.fpu,
+    rust_target_triple,
+    tsan,
+    rust_lto_eligible,
+    rust_check_alignment_workaround,
+    rust_target_is_mingw_clang,
+    llvm_dlltool,
+)
+def rustflags_target_common(
+    fpu,
+    rust_target,
+    tsan,
+    lto_eligible,
+    check_alignment_workaround,
+    mingw_clang,
+    llvm_dlltool,
+):
+    flags = []
+    # Enable neon and disable restriction to 16 FPU registers when neon is enabled
+    # but we're not using a thumbv7neon target, where it's already the default.
+    # (CPUs with neon have 32 FPU registers available)
+    if fpu == "neon" and not rust_target.startswith("thumbv7neon-"):
+        flags += ["-C", "target_feature=+neon,-d16"]
+    if tsan:
+        flags.append("-Zsanitizer=thread")
+    # We need -Cembed-bitcode=yes for all crates when using -Clto.
+    if lto_eligible:
+        flags.append("-Cembed-bitcode=yes")
+    if check_alignment_workaround:
+        flags.append("-Zmir-enable-passes=-CheckAlignment")
+    if mingw_clang and llvm_dlltool:
+        flags += ["-C", f"dlltool={llvm_dlltool}"]
+    return flags
+
+
+set_config("MOZ_RUSTFLAGS_TARGET_COMMON", rustflags_target_common)
+
+
+@depends(rust_pgo_flags, lto.rust_lto)
+def rustflags_target_ltoable(pgo_flags, rust_lto):
+    flags = list(pgo_flags)
+    if rust_lto:
+        flags.append("-Clinker-plugin-lto")
+    return flags
+
+
+set_config("MOZ_RUSTFLAGS_TARGET_LTOABLE", rustflags_target_ltoable)
+
+
+@depends("RUSTFLAGS")
+@imports(_from="mozshellutil", _import="split")
+def user_rustflags(flags):
+    return split(flags[0]) if flags else []
+
+
+@depends(user_rustflags, rustflags_target_common)
+def rust_sanitizers(rustflags, target_common):
+    return [
+        flag for flag in rustflags + target_common if flag.startswith("-Zsanitizer=")
+    ]
+
+
+# Rustc passes -nodefaultlibs to the linker (clang) on mac, which prevents
+# clang from adding the necessary sanitizer runtimes when building with
+# C/C++ sanitizer but without rust sanitizer.
+@depends("LDFLAGS", linker_flags, rust_sanitizers)
+@imports(_from="mozshellutil", _import="split")
+def rustflags_default_linker_libraries(env_ldflags, linker_flags, sanitizers):
+    if sanitizers:
+        return []
+    ldflags = list(linker_flags.ldflags)
+    if env_ldflags:
+        ldflags += split(env_ldflags[0])
+    if any(flag.startswith("-fsanitize=") for flag in ldflags):
+        return ["-C", "default-linker-libraries=yes"]
+    return []
+
+
+set_config(
+    "MOZ_RUSTFLAGS_DEFAULT_LINKER_LIBRARIES",
+    rustflags_default_linker_libraries,
+    when=target_is_darwin,
+)
+
+
+# Cargo needs the same linker flags as the C/C++ compiler,
+# but not the final libraries. Filter those out because they
+# cause problems on macOS 10.7; see bug 1365993 for details.
+# Also, we don't want to pass PGO flags until cargo supports them.
+# Finally, we also remove the -Wl,--build-id=uuid flag when it's in
+# the LDFLAGS. The flag was chosen over the default (build-id=sha1)
+# in developer builds, because for libxul, it's faster. But it's also
+# non-deterministic. So when the rust compiler produces procedural
+# macros as libraries, they're not reproducible. Those procedural
+# macros then end up as dependencies of other crates, and their
+# non-reproducibility leads to sccache transitively having cache
+# misses.
+#
+# When building with sanitizer, rustc links its own runtime, which conflicts
+# with the one that passing -fsanitize=* to the linker would add.
+# Ideally, we'd always do this filtering, but because the flags may also apply
+# to build scripts because cargo doesn't allow the distinction, we only filter
+# when building programs, except when using thread sanitizer where we filter
+# everywhere.
+#
+# These patterns use GNU make $(filter-out) syntax, where % is the wildcard.
+@depends(rust_sanitizers)
+def cargo_ldflags_filter_out(sanitizers):
+    target = [
+        "-fsanitize=cfi%",
+        "-framework",
+        "Cocoa",
+        "-lobjc",
+        "AudioToolbox",
+        "ExceptionHandling",
+        "-fprofile-%",
+        "-Wl,--build-id=uuid",
+    ]
+    program = []
+    if "-Zsanitizer=thread" in sanitizers:
+        target.append("-fsanitize=%")
+    elif sanitizers:
+        program.append("-fsanitize=%")
+    return namespace(target=target, program=program)
+
+
+set_config("MOZ_CARGO_LDFLAGS_FILTER_OUT", cargo_ldflags_filter_out.target)
+set_config("MOZ_CARGO_PROGRAM_LDFLAGS_FILTER_OUT", cargo_ldflags_filter_out.program)
+
+# If this is a release build we want rustc to generate one codegen unit per
+# crate. This results in better optimization and less code duplication at the
+# cost of longer compile times.
+set_config("MOZ_RUSTFLAGS_CODEGEN", ["-C", "codegen-units=1"], when=~developer_options)
+
+# The rust wasi target defaults to statically link the wasi crt, but when we
+# build static libraries from rust and link them with C/C++ code, we also link
+# a wasi crt, which may conflict with rust's.
+set_config(
+    "MOZ_RUST_LIBRARY_RUSTCFLAGS",
+    ["-C", "target-feature=-crt-static"],
+    when=depends(target.os)(lambda os: os == "WASI"),
+)
+
+# With mingw-clang, we need to avoid rustc passing -nodefaultlibs to clang so
+# that it adds clang_rt.
+set_config(
+    "MOZ_RUST_PROGRAM_RUSTCFLAGS",
+    ["-C", "default-linker-libraries=yes"],
+    when=rust_target_is_mingw_clang,
+)
+
+set_config("MOZ_RUSTC_BOOTSTRAP_FORCE", "1", when=rust_check_alignment_workaround)
+
+
+# When host == target, cargo will compile build scripts with sanitizers enabled
+# if sanitizers are enabled, which may randomly fail when they execute
+# because of https://github.com/google/sanitizers/issues/1322.
+# Work around by disabling __tls_get_addr interception (bug 1635327).
+@depends(rust_target_triple, rust_host_triple, asan, tsan, any_ubsan)
+def rust_sanitizer_option_vars(rust_target, rust_host, asan, tsan, ubsan):
+    if rust_target != rust_host:
+        return []
+    enabled = {"ASAN": asan, "TSAN": tsan, "UBSAN": ubsan}
+    return [f"{name}_OPTIONS" for name, on in enabled.items() if on]
+
+
+set_config("MOZ_RUST_SANITIZER_OPTION_VARS", rust_sanitizer_option_vars)
+
+
+# C and C++ compilers for the cc crate
+# ==============================================================
+
+# We're passing these for consumption by the `cc` crate, which doesn't use the same
+# convention as cargo itself:
+# https://github.com/alexcrichton/cc-rs/blob/baa71c0e298d9ad7ac30f0ad78f20b4b3b3a8fb2/src/lib.rs#L1715
+set_config(
+    "MOZ_CARGO_CC_ENV_SUFFIX",
+    depends(rust_target_triple)(lambda triple: triple.replace("-", "_")),
+)
+set_config(
+    "MOZ_CARGO_HOST_CC_ENV_SUFFIX",
+    depends(rust_host_triple)(lambda triple: triple.replace("-", "_")),
+)
+
+
+# HOST_CC/HOST_CXX/CC/CXX usually contain base flags for e.g. the build target.
+# We want to pass those through CFLAGS_*/CXXFLAGS_* instead, so that they end up
+# after whatever cc-rs adds to the compiler command line, so that they win.
+# Ideally, we'd use CRATE_CC_NO_DEFAULTS=1, but that causes other problems at the
+# moment.
+@template
+def cargo_compiler(compiler):
+    return depends_if(compiler)(lambda c: list(c.wrapper) + [c.compiler])
+
+
+# Replace "clang-cl.exe" by "clang.exe --driver-mode=cl" to avoid loading the
+# module clang.exe again when loading the plugin dll, which links to the import
+# library of clang.exe.
+@template
+def cargo_target_compiler(compiler):
+    @depends(cargo_compiler(compiler), target, "--enable-clang-plugin")
+    @imports("re")
+    def cargo_target_compiler(command, target, clang_plugin):
+        if not command or not clang_plugin or target.kernel != "WINNT":
+            return command
+        result = []
+        for arg in command:
+            arg = re.sub(r"\.EXE$", ".exe", arg)
+            if arg.endswith("clang-cl.exe"):
+                result += [arg.replace("clang-cl.exe", "clang.exe"), "--driver-mode=cl"]
+            else:
+                result.append(arg)
+        return result
+
+    return cargo_target_compiler
+
+
+set_config("MOZ_CARGO_CC", cargo_target_compiler(c_compiler))
+set_config("MOZ_CARGO_CXX", cargo_target_compiler(cxx_compiler))
+set_config("MOZ_CARGO_HOST_CC", cargo_compiler(host_c_compiler))
+set_config("MOZ_CARGO_HOST_CXX", cargo_compiler(host_cxx_compiler))
+
+
+@template
+def cargo_base_flags(compiler, host_or_target):
+    @depends_if(compiler, host_or_target)
+    def cargo_base_flags(compiler, host_or_target):
+        flags = list(compiler.flags)
+        if host_or_target.kernel == "WINNT":
+            return flags + ["-DUNICODE"]
+        return flags
+
+    return cargo_base_flags
+
+
+set_config("MOZ_CARGO_CFLAGS_BASE", cargo_base_flags(c_compiler, target))
+set_config("MOZ_CARGO_CXXFLAGS_BASE", cargo_base_flags(cxx_compiler, target))
+set_config("MOZ_CARGO_HOST_CFLAGS_BASE", cargo_base_flags(host_c_compiler, host))
+set_config("MOZ_CARGO_HOST_CXXFLAGS_BASE", cargo_base_flags(host_cxx_compiler, host))
+
+
+# The cc crate will fill in for those flags anyways, but we do need the PGO and
+# LTO flags to fill in for what the cc crate doesn't handle
+# (e.g. -pgo-temporal-instrumentation)
+# We can't use LTO flags with GCC, though: https://github.com/rust-lang/rust/issues/138681
+@depends(lto.cflags, c_compiler)
+def rust_lto_cflags(lto_cflags, c_compiler):
+    if c_compiler.type.startswith("clang"):
+        return list(lto_cflags or [])
+    return []
+
+
+set_config("RUST_LTO_CFLAGS", rust_lto_cflags)
+
+
+# Because cargo doesn't allow to distinguish builds happening for build
+# scripts/procedural macros vs. those happening for the rust target,
+# we can't blindly pass all our flags down for cc-rs to use them, because of the
+# side effects they can have on what otherwise should be host builds.
+# So for sanitizer and coverage builds, we only pass the base compiler flags.
+# This means C code built by rust is not going to be covered by sanitizers
+# and coverage. But at least we control what compiler is being used,
+# rather than relying on cc-rs guesses, which, sometimes fail us.
+# -fno-sized-deallocation is important, though, as -fsized-deallocation may be the
+# compiler default and we don't want it to be used
+# (see build/moz.configure/flags.configure). Likewise with -fno-aligned-new.
+# Each filter lists the computed flags cc-rs receives, where "%" keeps them all.
+@depends(pass_only_base_cflags_to_rust)
+def cargo_computed_flags_filter(base_only):
+    if base_only:
+        return namespace(
+            cflags=[],
+            cxxflags=["-fno-aligned-new", "-fno-sized-deallocation"],
+            host_cflags=[],
+            host_cxxflags=[],
+        )
+    return namespace(
+        cflags=["%"], cxxflags=["%"], host_cflags=["%"], host_cxxflags=["%"]
+    )
+
+
+set_config("MOZ_CARGO_CFLAGS_FILTER", cargo_computed_flags_filter.cflags)
+set_config("MOZ_CARGO_CXXFLAGS_FILTER", cargo_computed_flags_filter.cxxflags)
+set_config("MOZ_CARGO_HOST_CFLAGS_FILTER", cargo_computed_flags_filter.host_cflags)
+set_config("MOZ_CARGO_HOST_CXXFLAGS_FILTER", cargo_computed_flags_filter.host_cxxflags)
+
+set_config("MOZ_RUSTC_WRAPPER", ccache, when=using_sccache | using_buildcache)
+
+
+# Cargo linker wrappers and build script environment
+# ==============================================================
+
+
+# Use .bat wrapping on Windows hosts, and shell wrapping on other hosts.
+@template
+def cargo_wrapper(name):
+    @depends(host, build_environment)
+    @imports("os")
+    def cargo_wrapper(host, build_environment):
+        ext = ".bat" if host.kernel == "WINNT" else ""
+        return normsep(os.path.join(build_environment.topsrcdir, "build", name + ext))
+
+    return cargo_wrapper
+
+
+set_config("MOZ_CARGO_LINKER", cargo_wrapper("cargo-linker"))
+set_config("MOZ_CARGO_HOST_LINKER", cargo_wrapper("cargo-host-linker"))
+set_config("MOZ_CARGO_CLIPPY_WRAPPER", cargo_wrapper("cargo-clippy-wrapper"))
+
+
+@template
+def cargo_linker_env_var(triple):
+    return depends(triple)(
+        lambda t: f"CARGO_TARGET_{t.upper().replace('-', '_')}_LINKER"
+    )
+
+
+set_config("MOZ_CARGO_LINKER_ENV_VAR", cargo_linker_env_var(rust_target_triple))
+set_config("MOZ_CARGO_HOST_LINKER_ENV_VAR", cargo_linker_env_var(rust_host_triple))
+
+
+@template
+def cargo_wrap_ld(c_compiler, cxx_compiler, linker):
+    @depends(c_compiler, cxx_compiler, linker)
+    def cargo_wrap_ld(c_compiler, cxx_compiler, linker):
+        if c_compiler.type == "clang-cl":
+            return namespace(ld=[linker], ld_cxx=[linker])
+
+        def command(compiler):
+            return list(compiler.wrapper) + [compiler.compiler] + list(compiler.flags)
+
+        return namespace(ld=command(c_compiler), ld_cxx=command(cxx_compiler))
+
+    return cargo_wrap_ld
+
+
+cargo_target_wrap_ld = cargo_wrap_ld(c_compiler, cxx_compiler, link)
+cargo_host_wrap_ld = cargo_wrap_ld(host_c_compiler, host_cxx_compiler, host_link)
+
+set_config("MOZ_CARGO_LD", cargo_target_wrap_ld.ld)
+set_config("MOZ_CARGO_LD_CXX", cargo_target_wrap_ld.ld_cxx)
+set_config("MOZ_CARGO_HOST_LD", cargo_host_wrap_ld.ld)
+set_config("MOZ_CARGO_HOST_LD_CXX", cargo_host_wrap_ld.ld_cxx)
+
+
+@depends(host_ldflags, host, host_linker_libpaths, host_linker_libpaths_bat)
+def cargo_wrap_host_ldflags(host_ldflags, host, libpaths, libpaths_bat):
+    libpaths = libpaths_bat if host.kernel == "WINNT" else libpaths
+    return list(host_ldflags) + list(libpaths or [])
+
+
+set_config("MOZ_CARGO_HOST_LDFLAGS", cargo_wrap_host_ldflags)
+
+
+# Rustc assumes that *-windows-gnu targets build with mingw-gcc and manually
+# add runtime libraries that don't exist with mingw-clang. We created dummy
+# libraries in build/win32 under the object directory, but that's not enough,
+# because some of the wanted symbols that come from these libraries are
+# available in a different library, that we add manually.
+@depends(build_environment, when=rust_target_is_mingw_clang)
 @imports("os")
-def clippy_wrapper(build_env, host_os_arch):
-    if host_os_arch == "WINNT":
-        return os.path.join(build_env.topsrcdir, "build/cargo-clippy-wrapper.bat")
-    return os.path.join(build_env.topsrcdir, "build/cargo-clippy-wrapper")
+def rust_program_ldflags(build_environment):
+    win32 = normsep(os.path.join(build_environment.topobjdir, "build", "win32"))
+    return [f"-L{win32}", "-lunwind"]
 
 
-set_config("MOZ_CARGO_CLIPPY_WRAPPER", clippy_wrapper)
+set_config("MOZ_RUST_PROGRAM_LDFLAGS", rust_program_ldflags)
+
+
+# Set COREAUDIO_SDK_PATH for third_party/rust/coreaudio-sys/build.rs
+@depends(macos_sdk, ios_sdk, when=target_is_darwin)
+def coreaudio_sdk_path(macos_sdk, ios_sdk):
+    return ios_sdk or macos_sdk
+
+
+set_config("MOZ_RUST_COREAUDIO_SDK_PATH", coreaudio_sdk_path)

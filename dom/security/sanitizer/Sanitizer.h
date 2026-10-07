@@ -12,9 +12,9 @@
 #include "mozilla/dom/SanitizerBinding.h"
 #include "mozilla/dom/SanitizerTypes.h"
 #include "mozilla/dom/StaticAtomSet.h"
-#include "nsIGlobalObject.h"
 #include "nsIParserUtils.h"
 #include "nsNameSpaceManager.h"
+#include "nsPIDOMWindow.h"
 #include "nsString.h"
 
 class nsISupports;
@@ -22,6 +22,7 @@ class nsISupports;
 namespace mozilla {
 
 class ErrorResult;
+enum UseCounter : int16_t;
 
 namespace dom {
 
@@ -57,21 +58,21 @@ class SanitizerElementMatch final {
 };
 
 class Sanitizer final : public nsISupports, public nsWrapperCache {
-  explicit Sanitizer(nsIGlobalObject* aGlobal) : mGlobal(aGlobal) {
-    MOZ_ASSERT(aGlobal);
+  explicit Sanitizer(nsPIDOMWindowInner* aWindow) : mWindow(aWindow) {
+    MOZ_ASSERT(aWindow);
   }
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Sanitizer);
 
-  nsIGlobalObject* GetParentObject() const { return mGlobal; }
+  nsPIDOMWindowInner* GetParentObject() const { return mWindow; }
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   static already_AddRefed<Sanitizer> GetInstance(
-      nsIGlobalObject* aGlobal,
+      nsPIDOMWindowInner* aWindow,
       const OwningSanitizerOrSanitizerConfigOrSanitizerPresets& aOptions,
       bool aSafe, ErrorResult& aRv);
 
@@ -95,6 +96,7 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
   bool RemoveAttribute(const StringOrSanitizerAttributeNamespace& aAttribute);
   bool SetComments(bool aAllow);
   bool SetDataAttributes(bool aAllow);
+  bool SetJavascriptURLs(bool aAllow);
   bool RemoveUnsafe();
 
   /**
@@ -138,17 +140,48 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
 
   bool CommentsAllowed() const { return mComments; }
 
+  // Telemetry: records that this Sanitizer is about to be used to sanitize.
+  // Call it once per sanitize, from every entry point: Sanitize() for the
+  // pre-sanitize-while-parsing path, and the HTML parser for the
+  // sanitize-while-parsing one, which never calls Sanitize().
+  void RecordSanitizeUse() const;
+
  private:
   ~Sanitizer() = default;
 
+  // Sets aCounter on the document this Sanitizer belongs to. Use counters
+  // deduplicate per document, so a configuration key is counted once however
+  // often it is used. The same counters are shared between the SanitizerConfig
+  // dictionary keys and the Sanitizer methods that modify the same part of the
+  // configuration.
+  void RecordConfigKeyUse(UseCounter aCounter) const;
+
+  // As above, for a Sanitizer method that modified the configuration. Also
+  // marks the configuration as no longer being the unmodified default.
+  void RecordConfigChange(UseCounter aCounter);
+
+  void RecordDictionaryConfigKeyUses(const SanitizerConfig& aConfig) const;
+
+  // Records the per-element attribute lists nested inside an "elements" entry.
+  // Only the dictionary form of the union can carry them. Templated because the
+  // dictionary holds the owning union and the methods take the non-owning one.
+  template <typename T>
+  void RecordElementAttributeKeyUses(const T& aElement) const;
+
+  // The "allow an element" algorithm itself, returning whether it modified the
+  // configuration. AllowElement() records the configuration keys it touched
+  // only when it did, so that the counters cannot drift from the many
+  // codepaths in here.
+  bool AllowElementInternal(
+      const StringOrSanitizerElementNamespaceWithAttributes& aElement);
+
   void CanonicalizeConfiguration(const SanitizerConfig& aConfig,
-                                 bool aAllowCommentsPIsAndDataAttributes,
-                                 ErrorResult& aRv);
+                                 bool aPermissiveDefaults, ErrorResult& aRv);
   void IsValid(ErrorResult& aRv) const;
 
   void SetDefaultConfig();
-  void SetConfig(const SanitizerConfig& aConfig,
-                 bool aAllowCommentsPIsAndDataAttributes, ErrorResult& aRv);
+  void SetConfig(const SanitizerConfig& aConfig, bool aPermissiveDefaults,
+                 ErrorResult& aRv);
 
   void MaybeMaterializeDefaultConfig();
 
@@ -201,7 +234,7 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
     MOZ_ASSERT(!mRemoveAttributes);
   }
 
-  RefPtr<nsIGlobalObject> mGlobal;
+  nsCOMPtr<nsPIDOMWindowInner> mWindow;
 
   Maybe<sanitizer::CanonicalElementMap> mElements;
   Maybe<sanitizer::CanonicalElementSet> mRemoveElements;
@@ -218,10 +251,20 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
   // canonicalization. It never exists at the same time as mRemoveAttributes.
   Maybe<bool> mDataAttributes;
 
+  bool mJavascriptURLs = false;
+
   // Optimization: This sanitizer has a lazy default config. None
   // of the element lists will be used, however mComments and mDataAttributes
   // continue to be functional.
   bool mIsDefaultConfig = false;
+
+  // Telemetry: whether the configuration is still the built-in default, i.e.
+  // no dictionary was supplied and no method call has modified it. This is not
+  // the same as mIsDefaultConfig, which only tracks whether the lists are still
+  // lazy: get() materializes them without modifying the configuration, while
+  // setComments() and setDataAttributes() modify the configuration without
+  // materializing them.
+  bool mCountsAsDefaultConfig = false;
 };
 }  // namespace dom
 }  // namespace mozilla

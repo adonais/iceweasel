@@ -12,12 +12,6 @@ const ADDON_ID = "newtab-restore@tests.mozilla.org";
 const URL_OVERRIDES_TYPE = "url_overrides";
 const NEW_TAB_KEY = "newTabURL";
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-});
-
 add_task(async function test_restore_defaults_deselects_extension() {
   let extension = ExtensionTestUtils.loadExtension({
     useAddonManager: "permanent",

@@ -50,6 +50,7 @@ open class BaseSessionTest(
         const val SELECT_HTML_PATH = "/assets/www/select.html"
         const val SELECT_MULTIPLE_HTML_PATH = "/assets/www/select-multiple.html"
         const val SELECT_LISTBOX_HTML_PATH = "/assets/www/select-listbox.html"
+        const val SELECT_NESTED_HTML_PATH = "/assets/www/select-nested.html"
         const val ADDRESS_FORM_HTML_PATH = "/assets/www/address_form.html"
         const val FORMS_AUTOCOMPLETE_HTML_PATH = "/assets/www/forms_autocomplete.html"
         const val FORMS_AUTOCOMPLETE2_HTML_PATH = "/assets/www/forms_autocomplete2.html"
@@ -58,6 +59,7 @@ open class BaseSessionTest(
         const val CC_FORM_HTML_PATH = "/assets/www/cc_form.html"
         const val FEDCM_RP_HTML_PATH = "/assets/www/fedcm_rp.html"
         const val FEDCM_IDP_MANIFEST_PATH = "/assets/www/fedcm_idp_manifest.json"
+        const val FULLPAGE_HTML_PATH = "/assets/www/fullpage.html"
         const val HELLO_HTML_PATH = "/assets/www/hello.html"
         const val HELLO2_HTML_PATH = "/assets/www/hello2.html"
         const val HELLO_IFRAME_HTML_PATH = "/assets/www/iframe_hello.html"
@@ -107,6 +109,7 @@ open class BaseSessionTest(
         const val IFRAME_UNKNOWN_PROTOCOL = "/assets/www/iframe_unknown_protocol.html"
         const val MEDIA_SESSION_DOM1_PATH = "/assets/www/media_session_dom1.html"
         const val MEDIA_SESSION_DEFAULT1_PATH = "/assets/www/media_session_default1.html"
+        const val AUDIO_SESSION_TYPE_PLAYBACK_PATH = "/assets/www/audio_session_type_playback.html"
         const val AUDIO_SESSION_TYPE_WEBAUDIO_PATH = "/assets/www/audio_session_type_webaudio.html"
         const val AUDIO_SESSION_TYPE_WEBSPEECH_PATH = "/assets/www/audio_session_type_webspeech.html"
         const val PULL_TO_REFRESH_SUBFRAME_PATH = "/assets/www/pull-to-refresh-subframe.html"
@@ -321,7 +324,7 @@ open class BaseSessionTest(
 
     fun GeckoSession.teardownAlertsService() = sessionRule.teardownAlertsService(this)
 
-    fun GeckoSession.notifyUserGestureActivation() = sessionRule.notifyUserGestureActivation(this)
+    fun GeckoSession.showPicker(selector: String) = sessionRule.showPicker(this, selector)
 
     var GeckoSession.active: Boolean
         get() = sessionRule.getActive(this)

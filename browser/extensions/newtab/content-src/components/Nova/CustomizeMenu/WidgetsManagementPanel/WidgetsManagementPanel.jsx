@@ -7,118 +7,76 @@
 import React, { useRef } from "react";
 import { batch, useDispatch, useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
+import {
+  WIDGET_REGISTRY,
+  isWeatherAvailable,
+  isWidgetToggleVisible,
+  resolveWidgetSize,
+} from "common/WidgetsRegistry.mjs";
 // eslint-disable-next-line no-shadow
 import { CSSTransition } from "react-transition-group";
+import { useWidgetLabels } from "./useWidgetLabels.jsx";
 
-function WidgetsManagementPanel({
-  togglePanel,
-  showPanel,
-  enabledSections,
-  enabledWidgets,
-  mayHaveWeather,
-  mayHaveTimerWidget,
-  mayHaveListsWidget,
-  mayHaveSportsWidget,
-  mayHaveClocksWidget,
-  mayHavePrivacyWidget,
-  mayHaveCrosswordWidget,
-  mayHaveStocksWidget,
-  mayHavePictureOfTheDayWidget,
-  mayHaveRecentSearchesWidget,
-  setPref,
-}) {
+function WidgetsManagementPanel({ togglePanel, showPanel, setPref }) {
   const prefs = useSelector(state => state.Prefs.values);
   const arrowButtonRef = useRef(null);
   const panelRef = useRef(null);
   const dispatch = useDispatch();
 
+  const activeWidgets = WIDGET_REGISTRY.filter(w => !w.retired);
+  // Weather also needs the legacy showWeather prefs the widget itself checks.
+  const visibleWidgets = activeWidgets.filter(
+    widget =>
+      isWidgetToggleVisible(widget, prefs) &&
+      (widget.id !== "weather" || isWeatherAvailable(prefs))
+  );
+
+  // No toggle renders until the labels resolve; an unsorted list would reorder
+  // under the user once they did.
+  const widgetLabels = useWidgetLabels(activeWidgets);
+  const sortedWidgets = widgetLabels
+    ? [...visibleWidgets].sort((a, b) =>
+        (widgetLabels.get(a.id) ?? a.id).localeCompare(
+          widgetLabels.get(b.id) ?? b.id
+        )
+      )
+    : [];
+
   const handlePanelEntered = () => {
     arrowButtonRef.current?.focus();
   };
 
-  const onToggleWidget = e => {
-    const { preference, eventSource } = e.target.dataset;
+  const onToggleWidget = (widget, e) => {
+    // The outer Widgets toggle listens for toggle events too and would record
+    // a second telemetry pair for every flip.
+    e.stopPropagation();
     const value = e.target.pressed;
 
     batch(() => {
       dispatch(
         ac.UserEvent({
           event: "PREF_CHANGED",
-          source: eventSource,
+          source: widget.customizeEventSource,
           value: { status: value, menu_source: "CUSTOMIZE_MENU" },
         })
       );
 
-      let widgetName;
-      switch (eventSource) {
-        case "WEATHER":
-          widgetName = "weather";
-          break;
-        case "WIDGET_LISTS":
-          widgetName = "lists";
-          break;
-        case "WIDGET_TIMER":
-          widgetName = "focus_timer";
-          break;
-        case "WIDGET_SPORTS":
-          widgetName = "sports";
-          break;
-        case "WIDGET_CLOCKS":
-          widgetName = "clocks";
-          break;
-        case "WIDGET_PRIVACY":
-          widgetName = "privacy";
-          break;
-        case "WIDGET_CROSSWORD":
-          widgetName = "crossword";
-          break;
-        case "WIDGET_STOCKS":
-          widgetName = "stocks";
-          break;
-        case "WIDGET_PICTURE_OF_THE_DAY":
-          widgetName = "picture_of_the_day";
-          break;
-        case "WIDGET_RECENT_SEARCHES":
-          widgetName = "recent_searches";
-          break;
-      }
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_ENABLED,
+          data: {
+            widget_name: widget.telemetryName,
+            widget_source: "customize_panel",
+            enabled: value,
+            widget_size: resolveWidgetSize(widget, prefs),
+          },
+        })
+      );
 
-      if (widgetName) {
-        const widget = WIDGET_REGISTRY.find(
-          w => w.telemetryName === widgetName
-        );
-        const widgetSize = resolveWidgetSize(widget, prefs);
-
-        dispatch(
-          ac.OnlyToMain({
-            type: at.WIDGETS_ENABLED,
-            data: {
-              widget_name: widgetName,
-              widget_source: "customize_panel",
-              enabled: value,
-              widget_size: widgetSize,
-            },
-          })
-        );
-      }
-
-      setPref(preference, value);
+      setPref(widget.enabledPref, value);
     });
   };
 
-  const { weatherEnabled } = enabledSections;
-  const {
-    timerEnabled,
-    listsEnabled,
-    sportsWidgetEnabled,
-    clocksEnabled,
-    privacyEnabled,
-    crosswordEnabled,
-    stocksEnabled,
-    pictureOfTheDayEnabled,
-    recentSearchesEnabled,
-  } = enabledWidgets;
   const isRTL = typeof document !== "undefined" && document.dir === "rtl";
   const arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
 
@@ -150,126 +108,17 @@ function WidgetsManagementPanel({
               <h2 data-l10n-id="newtab-widget-manage-title"></h2>
             </div>
             <div className="settings-widgets">
-              {mayHaveWeather && (
-                <div id="weather-section" className="section">
-                  <moz-toggle
-                    id="weather-toggle"
-                    pressed={weatherEnabled || null}
-                    ontoggle={onToggleWidget}
-                    data-preference="widgets.weather.enabled"
-                    data-event-source="WEATHER"
-                    data-l10n-id="newtab-custom-widget-weather-toggle"
-                  />
-                </div>
-              )}
-              {mayHaveTimerWidget && (
-                <div id="timer-widget-section" className="section">
-                  <moz-toggle
-                    id="timer-toggle"
-                    pressed={timerEnabled || null}
-                    ontoggle={onToggleWidget}
-                    data-preference="widgets.focusTimer.enabled"
-                    data-event-source="WIDGET_TIMER"
-                    data-l10n-id="newtab-custom-widget-timer-toggle"
-                  />
-                </div>
-              )}
-              {mayHaveListsWidget && (
-                <div id="lists-widget-section" className="section">
-                  <moz-toggle
-                    id="lists-toggle"
-                    pressed={listsEnabled || null}
-                    ontoggle={onToggleWidget}
-                    data-preference="widgets.lists.enabled"
-                    data-event-source="WIDGET_LISTS"
-                    data-l10n-id="newtab-custom-widget-lists-toggle"
-                  />
-                </div>
-              )}
-              {mayHaveSportsWidget && (
-                <div id="sports-widget-section" className="section">
-                  <moz-toggle
-                    id="sports-widget-toggle"
-                    pressed={sportsWidgetEnabled || null}
-                    ontoggle={onToggleWidget}
-                    data-preference="widgets.sportsWidget.enabled"
-                    data-event-source="WIDGET_SPORTS"
-                    data-l10n-id="newtab-custom-widget-sports-toggle2"
-                  />
-                </div>
-              )}
-              {mayHaveClocksWidget && (
-                <div id="clocks-widget-section" className="section">
-                  <moz-toggle
-                    id="clocks-toggle"
-                    pressed={clocksEnabled || null}
-                    ontoggle={onToggleWidget}
-                    data-preference="widgets.clocks.enabled"
-                    data-event-source="WIDGET_CLOCKS"
-                    data-l10n-id="newtab-custom-widget-clock-toggle"
-                  />
-                </div>
-              )}
-              {mayHavePrivacyWidget && (
-                <div id="privacy-widget-section" className="section">
-                  <moz-toggle
-                    id="privacy-toggle"
-                    pressed={privacyEnabled || null}
-                    ontoggle={onToggleWidget}
-                    data-preference="widgets.privacy.enabled"
-                    data-event-source="WIDGET_PRIVACY"
-                    data-l10n-id="newtab-custom-widget-privacy-toggle"
-                  />
-                </div>
-              )}
-              {mayHaveCrosswordWidget && (
-                <div id="crossword-widget-section" className="section">
-                  <moz-toggle
-                    id="crossword-toggle"
-                    pressed={crosswordEnabled || null}
-                    ontoggle={onToggleWidget}
-                    data-preference="widgets.crossword.enabled"
-                    data-event-source="WIDGET_CROSSWORD"
-                    label="Crossword"
-                  ></moz-toggle>
-                </div>
-              )}
-              {mayHaveStocksWidget && (
-                <div id="stocks-widget-section" className="section">
-                  <moz-toggle
-                    id="stocks-toggle"
-                    pressed={stocksEnabled || null}
-                    ontoggle={onToggleWidget}
-                    data-preference="widgets.stocks.enabled"
-                    data-event-source="WIDGET_STOCKS"
-                    data-l10n-id="newtab-custom-widget-stocks-toggle"
-                  />
-                </div>
-              )}
-              {mayHavePictureOfTheDayWidget && (
-                <div id="picture-widget-section" className="section">
-                  <moz-toggle
-                    id="picture-toggle"
-                    pressed={pictureOfTheDayEnabled || null}
-                    ontoggle={onToggleWidget}
-                    data-preference="widgets.pictureOfTheDay.enabled"
-                    data-event-source="WIDGET_PICTURE_OF_THE_DAY"
-                    data-l10n-id="newtab-custom-widget-picture-toggle"
-                  />
-                </div>
-              )}
-              {mayHaveRecentSearchesWidget && (
-                <div id="recent-searches-widget-section" className="section">
-                  <moz-toggle
-                    id="recent-searches-toggle"
-                    pressed={recentSearchesEnabled || null}
-                    ontoggle={onToggleWidget}
-                    data-preference="widgets.recentSearches.enabled"
-                    data-event-source="WIDGET_RECENT_SEARCHES"
-                    data-l10n-id="newtab-custom-widget-recent-searches-toggle"
-                  />
-                </div>
-              )}
+              {sortedWidgets.map(widget => (
+                <moz-toggle
+                  key={widget.id}
+                  id={`${widget.id}-toggle`}
+                  pressed={prefs[widget.enabledPref] || null}
+                  ontoggle={e => onToggleWidget(widget, e)}
+                  // data-preference is read by CustomizeMenu's locked-pref sweep.
+                  data-preference={widget.enabledPref}
+                  data-l10n-id={widget.customizeL10nId}
+                />
+              ))}
             </div>
           </div>
         </div>

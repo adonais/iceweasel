@@ -5,7 +5,7 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 
 ChromeUtils.defineESModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
-  BackupError: "resource:///modules/backup/BackupError.mjs",
+  BackupError: "moz-src:///browser/components/backup/BackupError.mjs",
 });
 
 add_task(async function test_empty() {

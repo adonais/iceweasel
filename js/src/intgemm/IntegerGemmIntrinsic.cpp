@@ -333,7 +333,8 @@ int32_t js::intgemm::IntrI8PrepareBias(
   size_t wasmBufferSize = GetWasmRawBufferLength(memBase);
   if (!CheckMatrixBoundAndAlignment(inputMatrixBPrepared, sizeB, wasmBufferSize,
                                     sizeof(int8_t)) ||
-      !CheckMatrixBound(output, sizeBias, wasmBufferSize, sizeof(float))) {
+      !CheckMatrixBoundAndAlignment(output, sizeBias, wasmBufferSize,
+                                    sizeof(float))) {
     return -1;
   }
 
@@ -345,7 +346,8 @@ int32_t js::intgemm::IntrI8PrepareBias(
       (-1) * ((127.0f / scaleA) * (127.0f / scaleB)) / (127.0f);
 
   if (inputBias) {
-    if (!CheckMatrixBound(inputBias, sizeBias, wasmBufferSize, sizeof(float))) {
+    if (!CheckMatrixBoundAndAlignment(inputBias, sizeBias, wasmBufferSize,
+                                      sizeof(float))) {
       return -1;
     }
     const float* inputBiasPtr = reinterpret_cast<float*>(&memBase[inputBias]);
@@ -396,9 +398,10 @@ int32_t js::intgemm::IntrI8MultiplyAndAddBias(
                                     sizeof(uint8_t)) ||
       !CheckMatrixBoundAndAlignment(inputMatrixBPrepared, sizeB, wasmBufferSize,
                                     sizeof(int8_t)) ||
-      !CheckMatrixBound(inputBiasPrepared, sizeBias, wasmBufferSize,
-                        sizeof(float)) ||
-      !CheckMatrixBound(output, sizeOutput, wasmBufferSize, sizeof(float))) {
+      !CheckMatrixBoundAndAlignment(inputBiasPrepared, sizeBias, wasmBufferSize,
+                                    sizeof(float)) ||
+      !CheckMatrixBoundAndAlignment(output, sizeOutput, wasmBufferSize,
+                                    sizeof(float))) {
     return -1;
   }
 

@@ -1183,4 +1183,4 @@ media:
       - https://bugzil.la/2007596
     notification_emails:
       - media-alerts@mozilla.com
-    expires: 159
+    expires: 170

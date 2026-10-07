@@ -271,6 +271,17 @@ struct ScopedBindPBO final {
   ~ScopedBindPBO();
 };
 
+struct ScopedBindProgram final {
+ private:
+  GLContext* const mGL;
+  const GLuint mOld;
+
+ public:
+  explicit ScopedBindProgram(GLContext* aGL);
+  ScopedBindProgram(GLContext* aGL, GLuint aNewProg);
+  ~ScopedBindProgram();
+};
+
 } /* namespace gl */
 } /* namespace mozilla */
 

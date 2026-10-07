@@ -62,8 +62,10 @@ ipprotection:
       Recorded when the in-panel error message is triggered.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1998500
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063725
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1998500
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063725
     data_sensitivity:
       - interaction
     notification_emails:
@@ -75,6 +77,11 @@ ipprotection:
         type: string
         description: >
           Module where the error originated.
+      reason:
+        type: string
+        description: >
+          The kind of failure, as one of the ERRORS values in
+          IPPProxyManager.sys.mjs. Empty when no kind was reported.
 
   paused:
     type: event

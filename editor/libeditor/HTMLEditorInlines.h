@@ -17,11 +17,11 @@
 #include "mozilla/RefPtr.h"
 
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Range.h"
 
 #include "nsAtom.h"
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
-#include "nsRange.h"
 #include "nsString.h"
 
 #include <ostream>
@@ -80,10 +80,10 @@ HTMLEditor::GetSelectedRangeItemForTopLevelEditSubAction() const {
   return do_AddRef(mSelectedRangeForTopLevelEditSubAction);
 }
 
-already_AddRefed<nsRange> HTMLEditor::GetChangedRangeForTopLevelEditSubAction()
-    const {
+already_AddRefed<dom::Range>
+HTMLEditor::GetChangedRangeForTopLevelEditSubAction() const {
   if (!mChangedRangeForTopLevelEditSubAction) {
-    mChangedRangeForTopLevelEditSubAction = nsRange::Create(GetDocument());
+    mChangedRangeForTopLevelEditSubAction = dom::Range::Create(GetDocument());
   }
   return do_AddRef(mChangedRangeForTopLevelEditSubAction);
 }

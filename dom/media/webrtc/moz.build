@@ -52,6 +52,7 @@ if CONFIG["MOZ_WEBRTC"]:
     ]
     EXPORTS.mozilla.dom += ["RTCIdentityProviderRegistrar.h"]
     UNIFIED_SOURCES += [
+        "AV1FmtpParser.cpp",
         "H264FmtpParser.cpp",
         "MediaEngineRemoteVideoSource.cpp",
         "MediaEngineWebRTCAudio.cpp",
@@ -118,7 +119,9 @@ EXPORTS.mozilla.dom += [
     "RTCCertificate.h",
 ]
 EXPORTS.mozilla.media.webrtc += [
+    "AV1FmtpParser.h",
     "CodecInfo.h",
+    "GMPH264Utils.h",
     "H264FmtpParser.h",
 ]
 

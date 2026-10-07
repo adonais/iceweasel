@@ -746,6 +746,18 @@ MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(
 MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(JSStructuredCloneData)
 MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(mozilla::SourceBufferTask)
 
+// A std::pair can be memmoved only if both of its members can.
+template <class A, class B>
+struct nsTArray_RelocationStrategy<std::pair<A, B>> {
+  using Type = std::conditional_t<
+      std::is_same_v<typename nsTArray_RelocationStrategy<A>::Type,
+                     nsTArray_RelocateUsingMemutils> &&
+          std::is_same_v<typename nsTArray_RelocationStrategy<B>::Type,
+                         nsTArray_RelocateUsingMemutils>,
+      nsTArray_RelocateUsingMemutils,
+      nsTArray_RelocateUsingMoveConstructor<std::pair<A, B>>>;
+};
+
 namespace detail {
 
 // This wrapper allows us to use either a tri-state comparator, or an

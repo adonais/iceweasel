@@ -162,8 +162,8 @@ class MtransportTest : public ::testing::Test {
 
     if (configured) {
       nr_transport_addr addr;
-      if (nr_str_port_to_transport_addr(turn_server_.c_str(), 3478, IPPROTO_UDP,
-                                        &addr)) {
+      if (nr_str_port_to_transport_addr(turn_server_.c_str(), nullptr, 3478,
+                                        IPPROTO_UDP, &addr)) {
         printf(
             "Invalid TURN_SERVER_ADDRESS \"%s\". Only IP numbers supported.\n",
             turn_server_.c_str());

@@ -1,7 +1,7 @@
 diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
 --- a/expat/lib/xmlparse.c
 +++ b/expat/lib/xmlparse.c
-@@ -470,24 +470,36 @@ typedef unsigned long long XmlBigCount;
+@@ -484,24 +484,36 @@ typedef unsigned long long XmlBigCount;
  typedef struct accounting {
    XmlBigCount countBytesDirect;
    XmlBigCount countBytesIndirect;
@@ -38,7 +38,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  } ENTITY_STATS;
  #endif /* XML_GE == 1 */
  
-@@ -649,18 +661,26 @@ static void parserInit(XML_Parser parser, const XML_Char *encodingName);
+@@ -665,18 +677,26 @@ static void parserInit(XML_Parser parser, const XML_Char *encodingName);
  static float accountingGetCurrentAmplification(XML_Parser rootParser);
  static void accountingReportStats(XML_Parser originParser, const char *epilog);
  static void accountingOnAbort(XML_Parser originParser);
@@ -65,7 +65,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  static void entityTrackingOnOpen(XML_Parser parser, ENTITY *entity,
                                   int sourceLine);
  static void entityTrackingOnClose(XML_Parser parser, ENTITY *entity,
-@@ -670,8 +690,12 @@ static void entityTrackingOnClose(XML_Parser parser, ENTITY *entity,
+@@ -686,8 +706,12 @@ static void entityTrackingOnClose(XML_Parser parser, ENTITY *entity,
  static XML_Parser getRootParserOf(XML_Parser parser,
                                    unsigned int *outLevelDiff);
  
@@ -78,7 +78,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  static bool poolAppendChar(STRING_POOL *pool, XML_Char c);
  
-@@ -855,6 +879,8 @@ struct XML_ParserStruct {
+@@ -873,6 +897,8 @@ struct XML_ParserStruct {
  #endif
  
  #if XML_GE == 1
@@ -87,7 +87,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  static void
  expat_heap_stat(XML_Parser rootParser, char operator, XmlBigCount absDiff,
                  XmlBigCount newTotal, XmlBigCount peakTotal, int sourceLine) {
-@@ -868,6 +894,8 @@ expat_heap_stat(XML_Parser rootParser, char operator, XmlBigCount absDiff,
+@@ -886,6 +912,8 @@ expat_heap_stat(XML_Parser rootParser, char operator, XmlBigCount absDiff,
        (void *)rootParser, rootParser->m_accounting.countBytesDirect, operator,
        absDiff, newTotal, peakTotal, (double)amplification, sourceLine);
  }
@@ -96,7 +96,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  static bool
  expat_heap_increase_tolerable(XML_Parser rootParser, XmlBigCount increase,
-@@ -896,9 +924,13 @@ expat_heap_increase_tolerable(XML_Parser rootParser, XmlBigCount increase,
+@@ -914,9 +942,13 @@ expat_heap_increase_tolerable(XML_Parser rootParser, XmlBigCount increase,
      }
    }
  
@@ -110,7 +110,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
    return tolerable;
  }
-@@ -942,6 +974,8 @@ expat_malloc(XML_Parser parser, size_t size, int sourceLine) {
+@@ -960,6 +992,8 @@ expat_malloc(XML_Parser parser, size_t size, int sourceLine) {
    // Update accounting
    rootParser->m_alloc_tracker.bytesAllocated += bytesToAllocate;
  
@@ -119,7 +119,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
    // Report as needed
    if (rootParser->m_alloc_tracker.debugLevel >= 2) {
      if (rootParser->m_alloc_tracker.bytesAllocated
-@@ -953,6 +987,8 @@ expat_malloc(XML_Parser parser, size_t size, int sourceLine) {
+@@ -971,6 +1005,8 @@ expat_malloc(XML_Parser parser, size_t size, int sourceLine) {
                      rootParser->m_alloc_tracker.bytesAllocated,
                      rootParser->m_alloc_tracker.peakBytesAllocated, sourceLine);
    }
@@ -128,7 +128,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
    return (char *)mallocedPtr + sizeof(size_t) + EXPAT_MALLOC_PADDING;
  }
-@@ -982,12 +1018,16 @@ expat_free(XML_Parser parser, void *ptr, int sourceLine) {
+@@ -1000,12 +1036,16 @@ expat_free(XML_Parser parser, void *ptr, int sourceLine) {
    assert(rootParser->m_alloc_tracker.bytesAllocated >= bytesAllocated);
    rootParser->m_alloc_tracker.bytesAllocated -= bytesAllocated;
  
@@ -145,7 +145,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
    // NOTE: This may be freeing rootParser, so freeing has to come last
    parser->m_mem.free_fcn(mallocedPtr);
-@@ -1052,6 +1092,8 @@ expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine) {
+@@ -1070,6 +1110,8 @@ expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine) {
      rootParser->m_alloc_tracker.bytesAllocated -= absDiff;
    }
  
@@ -154,7 +154,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
    // Report as needed
    if (rootParser->m_alloc_tracker.debugLevel >= 2) {
      if (rootParser->m_alloc_tracker.bytesAllocated
-@@ -1063,6 +1105,8 @@ expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine) {
+@@ -1081,6 +1123,8 @@ expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine) {
                      rootParser->m_alloc_tracker.bytesAllocated,
                      rootParser->m_alloc_tracker.peakBytesAllocated, sourceLine);
    }
@@ -163,7 +163,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
    // Update in-block recorded size
    *(size_t *)mallocedPtr = size;
-@@ -1370,8 +1414,12 @@ parserCreate(const XML_Char *encodingName,
+@@ -1407,8 +1451,12 @@ parserCreate(const XML_Char *encodingName,
    // Initialize .m_alloc_tracker
    memset(&parser->m_alloc_tracker, 0, sizeof(MALLOC_TRACKER));
    if (parentParser == NULL) {
@@ -176,7 +176,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
      parser->m_alloc_tracker.maximumAmplificationFactor
          = EXPAT_ALLOC_TRACKER_MAXIMUM_AMPLIFICATION_DEFAULT;
      parser->m_alloc_tracker.activationThresholdBytes
-@@ -1391,6 +1439,8 @@ parserCreate(const XML_Char *encodingName,
+@@ -1428,6 +1476,8 @@ parserCreate(const XML_Char *encodingName,
    assert(SIZE_MAX - rootParser->m_alloc_tracker.bytesAllocated >= increase);
    rootParser->m_alloc_tracker.bytesAllocated += increase;
  
@@ -185,7 +185,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
    // Report on allocation
    if (rootParser->m_alloc_tracker.debugLevel >= 2) {
      if (rootParser->m_alloc_tracker.bytesAllocated
-@@ -1403,6 +1453,8 @@ parserCreate(const XML_Char *encodingName,
+@@ -1440,6 +1490,8 @@ parserCreate(const XML_Char *encodingName,
                      rootParser->m_alloc_tracker.bytesAllocated,
                      rootParser->m_alloc_tracker.peakBytesAllocated, __LINE__);
    }
@@ -194,7 +194,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  #else
    parser->m_parentParser = NULL;
  #endif // XML_GE == 1
-@@ -1584,15 +1636,23 @@ parserInit(XML_Parser parser, const XML_Char *encodingName) {
+@@ -1622,15 +1674,23 @@ parserInit(XML_Parser parser, const XML_Char *encodingName) {
  
  #if XML_GE == 1
    memset(&parser->m_accounting, 0, sizeof(ACCOUNTING));
@@ -218,7 +218,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  }
  
  /* moves list of bindings to m_freeBindingList */
-@@ -8769,6 +8829,8 @@ accountingGetCurrentAmplification(XML_Parser rootParser) {
+@@ -8916,6 +8976,8 @@ accountingGetCurrentAmplification(XML_Parser rootParser) {
  
  static void
  accountingReportStats(XML_Parser originParser, const char *epilog) {
@@ -227,7 +227,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
    const XML_Parser rootParser = getRootParserOf(originParser, NULL);
    assert(! rootParser->m_parentParser);
  
-@@ -8784,6 +8846,8 @@ accountingReportStats(XML_Parser originParser, const char *epilog) {
+@@ -8931,6 +8993,8 @@ accountingReportStats(XML_Parser originParser, const char *epilog) {
            (void *)rootParser, rootParser->m_accounting.countBytesDirect,
            rootParser->m_accounting.countBytesIndirect,
            (double)amplificationFactor, epilog);
@@ -236,7 +236,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  }
  
  static void
-@@ -8791,6 +8855,8 @@ accountingOnAbort(XML_Parser originParser) {
+@@ -8938,6 +9002,8 @@ accountingOnAbort(XML_Parser originParser) {
    accountingReportStats(originParser, " ABORTING\n");
  }
  
@@ -245,7 +245,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  static void
  accountingReportDiff(XML_Parser rootParser,
                       unsigned int levelsAwayFromRootParser, const char *before,
-@@ -8827,6 +8893,8 @@ accountingReportDiff(XML_Parser rootParser,
+@@ -8974,6 +9040,8 @@ accountingReportDiff(XML_Parser rootParser,
    }
    fprintf(stderr, "\"\n");
  }
@@ -254,7 +254,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  static XML_Bool
  accountingDiffTolerated(XML_Parser originParser, int tok, const char *before,
-@@ -8874,11 +8942,15 @@ accountingDiffTolerated(XML_Parser originParser, int tok, const char *before,
+@@ -9021,11 +9089,15 @@ accountingDiffTolerated(XML_Parser originParser, int tok, const char *before,
          || (amplificationFactor
              <= rootParser->m_accounting.maximumAmplificationFactor);
  
@@ -270,7 +270,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
    return tolerated;
  }
-@@ -8897,6 +8969,8 @@ testingAccountingGetCountBytesIndirect(XML_Parser parser) {
+@@ -9044,6 +9116,8 @@ testingAccountingGetCountBytesIndirect(XML_Parser parser) {
    return parser->m_accounting.countBytesIndirect;
  }
  
@@ -279,7 +279,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  static void
  entityTrackingReportStats(XML_Parser rootParser, ENTITY *entity,
                            const char *action, int sourceLine) {
-@@ -8930,9 +9004,13 @@ entityTrackingReportStats(XML_Parser rootParser, ENTITY *entity,
+@@ -9077,9 +9151,13 @@ entityTrackingReportStats(XML_Parser rootParser, ENTITY *entity,
        ellipisOrEmpty, entity->is_param ? "%" : "&", entityName, action,
        entity->textLen, sourceLine);
  }
@@ -293,7 +293,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
    const XML_Parser rootParser = getRootParserOf(originParser, NULL);
    assert(! rootParser->m_parentParser);
  
-@@ -8944,15 +9022,21 @@ entityTrackingOnOpen(XML_Parser originParser, ENTITY *entity, int sourceLine) {
+@@ -9091,15 +9169,21 @@ entityTrackingOnOpen(XML_Parser originParser, ENTITY *entity, int sourceLine) {
    }
  
    entityTrackingReportStats(rootParser, entity, "OPEN ", sourceLine);
@@ -315,7 +315,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  }
  
  #endif /* XML_GE == 1 */
-@@ -8974,6 +9058,8 @@ getRootParserOf(XML_Parser parser, unsigned int *outLevelDiff) {
+@@ -9121,6 +9205,8 @@ getRootParserOf(XML_Parser parser, unsigned int *outLevelDiff) {
  
  #if XML_GE == 1
  
@@ -324,7 +324,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  const char *
  unsignedCharToPrintable(unsigned char c) {
    switch (c) {
-@@ -9497,9 +9583,13 @@ unsignedCharToPrintable(unsigned char c) {
+@@ -9644,9 +9730,13 @@ unsignedCharToPrintable(unsigned char c) {
    assert(0); /* never gets here */
    // LCOV_EXCL_STOP
  }
@@ -338,7 +338,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  static unsigned long
  getDebugLevel(const char *variableName, unsigned long defaultDebugLevel) {
    const char *const valueOrNull = getenv(variableName);
-@@ -9518,3 +9608,5 @@ getDebugLevel(const char *variableName, unsigned long defaultDebugLevel) {
+@@ -9665,3 +9755,5 @@ getDebugLevel(const char *variableName, unsigned long defaultDebugLevel) {
  
    return debugLevel;
  }

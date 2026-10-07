@@ -24,6 +24,7 @@ class nsPrintDialogServiceWin final : public nsIPrintDialogService {
  private:
   virtual ~nsPrintDialogServiceWin() = default;
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult DoDialog(mozIDOMWindowProxy* aParent,
                     nsIDialogParamBlock* aParamBlock, nsIPrintSettings* aPS,
                     const char* aChromeURL);

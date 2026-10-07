@@ -29,6 +29,8 @@ support-files = [
   "!/gfx/layers/apz/test/mochitest/apz_test_utils.js",
 ]
 
+["include:mochitest-xslt.toml"]
+
 ["test_accel_virtual_modifier.html"]
 tags = "os_integration"
 
@@ -62,8 +64,6 @@ skip-if = [
 
 ["test_bug336682_1.html"]
 support-files = ["test_bug336682.js"]
-
-["test_bug379120.html"]
 
 ["test_bug402089.html"]
 
@@ -464,6 +464,8 @@ skip-if = [
   "os == 'android'", # wheel event isn't supported
 ]
 
+["test_datatransfer_internal_types.html"]
+
 ["test_dblclick_explicit_original_target.html"]
 
 ["test_deltaMode_lines_always_enabled.html"]
@@ -522,8 +524,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && (opt || debug)", # Bug 1802904
   "os == 'win' && os_version == '10.2009' && arch == 'x86_64'", # Bug 1802904
   "os == 'android' && os_version == '14' && arch == 'x86_64' && opt", # Bug 1802904
+  "os == 'android' && os_version == '14' && arch == 'x86_64' && ccov", # Bug 1802904
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt", # Bug 1802904
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2019466
 ]
 
 ["test_draggableprop.html"]

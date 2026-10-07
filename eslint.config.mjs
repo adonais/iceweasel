@@ -487,7 +487,7 @@ let config = [
     files: ["**/*.mjs", "**/*.js", "**/*.sys.mjs"],
     ignores: [
       "tools/@types/generated/**",
-      "browser/base/content/test/static/browser_all_files_referenced.js",
+      "browser/base/content/test/browser-static/browser_all_files_referenced.js",
       "tools/lint/eslint/eslint-plugin-mozilla/lib/rules/no-newtab-refs-outside-newtab.mjs",
       "tools/lint/eslint/eslint-plugin-mozilla/tests/no-newtab-refs-outside-newtab.mjs",
     ],

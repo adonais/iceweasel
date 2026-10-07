@@ -613,10 +613,11 @@ xpcAccessible::DoAction(uint8_t aIndex) {
 
 NS_IMETHODIMP
 xpcAccessible::ScrollTo(uint32_t aHow) {
-  if (!IntlGeneric()) return NS_ERROR_FAILURE;
-
-  IntlGeneric()->ScrollTo(aHow);
-  return NS_OK;
+  if (RefPtr<Accessible> acc = IntlGeneric()) {
+    acc->ScrollTo(aHow);
+    return NS_OK;
+  }
+  return NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP

@@ -167,7 +167,10 @@ class DeviceRunner(BaseRunner):
             timeout = self.output_timeout
             msg = "%s with no output" % msg
 
-        print(msg % (self.last_test, timeout))
+        if self.logger:
+            self.logger.error(msg % (self.last_test, timeout))
+        else:
+            print(msg % (self.last_test, timeout))
         self.check_for_crashes()
 
     def on_finish(self):

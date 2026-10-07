@@ -64,8 +64,10 @@ def mock_push_to_lando_try():
 @pytest.fixture(autouse=True)
 def patch_vcs(monkeypatch):
     attrs = {
+        "name": "git",
         "path": push.vcs.path,
         "push.return_value": "abc123fakegitsha",
+        "base_ref_as_commit.return_value": "def456fakebaserev",
     }
     mock = MagicMock()
     mock.configure_mock(**attrs)

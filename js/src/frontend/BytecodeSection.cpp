@@ -158,6 +158,40 @@ void CGScopeNoteList::recordEndImpl(uint32_t index, uint32_t offset) {
   list[index].length = offset - list[index].start;
 }
 
+#ifdef DEBUG
+void CGTryNoteList::checkTryNotes(uint32_t codeLength) const {
+  for (const TryNote& note : list) {
+    MOZ_ASSERT(note.kind_ <= uint32_t(TryNoteKind::Last));
+
+    MOZ_ASSERT(note.start <= codeLength);
+    MOZ_ASSERT(note.length <= codeLength - note.start);
+  }
+}
+
+void CGScopeNoteList::checkScopeNotes(uint32_t codeLength) const {
+  uint32_t lastStart = 0;
+  for (uint32_t i = 0; i < list.length(); i++) {
+    const ScopeNote& note = list[i];
+
+    MOZ_ASSERT(note.start <= codeLength);
+
+    // recordEndFunctionBodyVar() uses UINT32_MAX to mark a note as running to
+    // the end of the function body, instead of a real end offset.
+    bool extendsToFunctionBodyEnd = note.start + note.length == UINT32_MAX;
+    MOZ_ASSERT(extendsToFunctionBodyEnd ||
+               note.length <= codeLength - note.start);
+
+    // The scope note list is documented to be sorted by increasing start.
+    MOZ_ASSERT(note.start >= lastStart);
+    lastStart = note.start;
+
+    // A scope's parent must already be earlier in the list, so following parent
+    // links can never loop back on itself.
+    MOZ_ASSERT(note.parent == ScopeNote::NoScopeNoteIndex || note.parent < i);
+  }
+}
+#endif
+
 BytecodeSection::BytecodeSection(FrontendContext* fc, uint32_t lineNum,
                                  JS::LimitedColumnNumberOneOrigin column)
     : code_(fc),

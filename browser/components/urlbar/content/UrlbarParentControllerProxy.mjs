@@ -496,10 +496,19 @@ export class UrlbarParentControllerProxy {
   }
 
   /** @type {UrlbarParentController["openPreferences"]} */
-  openPreferences(paneID) {
+  openPreferences(paneID, extraArgs) {
     this.#port.sendAsyncMessage("OpenPreferences", {
       instanceId: this.#instanceId,
       paneID,
+      extraArgs,
+    });
+  }
+
+  /** @type {UrlbarParentController["openContainerCreationPanel"]} */
+  openContainerCreationPanel(entrypoint) {
+    this.#port.sendAsyncMessage("OpenContainerCreationPanel", {
+      instanceId: this.#instanceId,
+      entrypoint,
     });
   }
 }

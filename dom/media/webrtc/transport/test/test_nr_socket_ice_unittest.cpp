@@ -218,7 +218,7 @@ class IcePeer {
     int r = nr_ice_peer_ctx_pair_candidates(peer_ctx_);
     ASSERT_EQ(0, r);
 
-    r = nr_ice_peer_ctx_start_checks2(peer_ctx_, 1);
+    r = nr_ice_peer_ctx_start_checks(peer_ctx_);
     ASSERT_EQ(0, r);
   }
 

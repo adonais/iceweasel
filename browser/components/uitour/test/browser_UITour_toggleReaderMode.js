@@ -11,8 +11,9 @@ add_UITour_task(async function () {
     "Should not be in reader mode at start of test."
   );
   await gContentAPI.toggleReaderMode();
-  await waitForConditionPromise(() =>
-    gBrowser.selectedBrowser.currentURI.spec.startsWith("about:reader")
+  await TestUtils.waitForCondition(
+    () => gBrowser.selectedBrowser.currentURI.spec.startsWith("about:reader"),
+    "Should be in reader mode"
   );
   ok(
     gBrowser.selectedBrowser.currentURI.spec.startsWith("about:reader"),

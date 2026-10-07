@@ -1147,6 +1147,10 @@
   <string name="preferences_sync_category">Vel kva som skal synkroniserast</string>
   <!-- Preference category for sync controls -->
   <string name="preferences_category_sync">Synkroniserte data</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">Handsam kva som skal synkroniserast på dei tilkopla einingane dine</string>
+  <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+  <string name="preferences_sync_category_no_engine_selected_summary">Du synkroniserer ingenting. Vel kva som skal synkroniserast på tvers av einingane dine.</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">Historikk</string>
   <!-- Preference for syncing bookmarks -->
@@ -1483,6 +1487,8 @@
   <string name="preferences_inactive_tabs_title">Faner du ikkje har vist på to veker, vert flytta til den uverksame delen.</string>
   <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_title">Fanegrupper</string>
+  <!-- Summary of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_description">Organiser fanene dine i grupper du kan namngi og lagre.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Aktiver fanegrupper</string>
   <!--
@@ -2623,6 +2629,8 @@
   <string name="sign_out_confirmation_message_2">%s vil stoppe synkroniseringa med kontoen din, men vil ikkje slette nettlesardataa dine på denne eiinga.</string>
   <!-- Title of the confirmation dialog shown when the user signs out of their account -->
   <string name="sign_out_dialog_title">Logge ut av kontoen din?</string>
+  <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_message">Synkroniserte data held fram med å vere lagra på kontoen din.</string>
   <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
   <string name="sign_out_dialog_confirm_button">Logg ut</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->

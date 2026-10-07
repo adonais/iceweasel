@@ -150,11 +150,11 @@ pub struct MetricMetadata {
 impl MetricMetadata {
     /// Construct a metric identifier from a triple of (category, name, option
     /// (label)) string references, and make copies of each.
-    pub fn from_triple(t: (&str, &str, Option<&str>)) -> MetricMetadata {
+    pub fn from_triple(t: (&str, &str, Option<String>)) -> MetricMetadata {
         MetricMetadata {
             category: t.0.to_owned(),
             name: t.1.to_owned(),
-            label: t.2.map(str::to_string),
+            label: t.2,
         }
     }
 

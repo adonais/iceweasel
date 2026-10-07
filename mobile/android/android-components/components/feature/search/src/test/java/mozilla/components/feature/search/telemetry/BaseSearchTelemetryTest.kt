@@ -8,6 +8,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import mozilla.appservices.remotesettings.RemoteSettingsClient
+import mozilla.appservices.remotesettings.RemoteSettingsRecord
 import mozilla.appservices.remotesettings.RemoteSettingsService
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine
@@ -21,7 +22,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
-import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
@@ -34,7 +34,7 @@ class BaseSearchTelemetryTest {
 
     @Mock private lateinit var mockRepo: SerpTelemetryRepository
 
-    private val mockReadJson: () -> JSONObject = mock()
+    private lateinit var mockRemoteSettingsClient: RemoteSettingsClient
     private val testDispatcher = StandardTestDispatcher()
 
     private fun createMockProviderList(): List<SearchProviderModel> =
@@ -56,8 +56,6 @@ class BaseSearchTelemetryTest {
     private val rawJson =
         """
                 {
-          "data": [
-            {
               "schema": 1698656464939,
               "taggedCodes": [
                 "monline_7_dg"
@@ -79,8 +77,6 @@ class BaseSearchTelemetryTest {
               "last_modified": 1698666532326,
               "expectedOrganicCodes": [],
               "followOnCookies": []
-            }],
-          "timestamp": 16
         }
         """
             .trimIndent()
@@ -108,14 +104,13 @@ class BaseSearchTelemetryTest {
         // mocking underlying remote-settings service
         val mockMozillaService: MozillaRemoteSettingsService = mock()
         val mockRemoteSettingsService: RemoteSettingsService = mock()
-        val mockRemoteSettingsClient: RemoteSettingsClient = mock()
+        mockRemoteSettingsClient = mock()
         `when`(mockMozillaService.remoteSettingsService).thenReturn(mockRemoteSettingsService)
         `when`(mockRemoteSettingsService.makeClient("test")).thenReturn(mockRemoteSettingsClient)
 
         mockRepo =
             spy(
                 SerpTelemetryRepository(
-                    readJson = mockReadJson,
                     collectionName = "test",
                     remoteSettingsService = mockMozillaService,
                 )
@@ -167,29 +162,30 @@ class BaseSearchTelemetryTest {
     }
 
     @Test
-    fun `GIVEN empty cacheResponse WHEN initializeProviderList is called THEN  update providerList`(): Unit =
+    fun `GIVEN an empty response WHEN initializeProviderList is called THEN providerList is empty`(): Unit =
         runBlocking {
-            val localResponse = JSONObject(rawJson)
+            `when`(mockRemoteSettingsClient.getRecords()).thenReturn(emptyList())
 
-            doAnswer {
-                    localResponse
-                }
-                .`when`(mockReadJson)()
-
-            `when`(mockRepo.parseLocalPreinstalledData(localResponse)).thenReturn(createMockProviderList())
             baseTelemetry.setProviderList(mockRepo.updateProviderList())
 
-            assertEquals(baseTelemetry.providerList.toString(), createMockProviderList().toString())
+            assertEquals(emptyList<SearchProviderModel>(), baseTelemetry.providerList)
         }
 
     @Test
-    fun `GIVEN non-empty cacheResponse WHEN initializeProviderList is called THEN update providerList`(): Unit =
+    fun `GIVEN a non-empty response WHEN initializeProviderList is called THEN update providerList`(): Unit =
         runBlocking {
-            val localResponse = JSONObject(rawJson)
-            doAnswer {
-                    localResponse
-                }
-                .`when`(mockReadJson)()
+            `when`(mockRemoteSettingsClient.getRecords())
+                .thenReturn(
+                    listOf(
+                        RemoteSettingsRecord(
+                            "19c434a3-d173-4871-9743-290ac92a3f6a",
+                            1698666532326u,
+                            false,
+                            null,
+                            JSONObject(rawJson),
+                        )
+                    )
+                )
 
             baseTelemetry.setProviderList(mockRepo.updateProviderList())
 

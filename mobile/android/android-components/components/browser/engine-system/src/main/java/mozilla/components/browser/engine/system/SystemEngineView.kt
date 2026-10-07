@@ -47,7 +47,6 @@ import kotlinx.coroutines.runBlocking
 import mozilla.components.browser.engine.system.matcher.UrlMatcher
 import mozilla.components.browser.engine.system.permission.SystemPermissionRequest
 import mozilla.components.browser.engine.system.window.SystemWindowRequest
-import mozilla.components.browser.errorpages.ErrorType
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicy
 import mozilla.components.concept.engine.EngineView
@@ -55,6 +54,7 @@ import mozilla.components.concept.engine.HitResult
 import mozilla.components.concept.engine.InputResultDetail
 import mozilla.components.concept.engine.content.blocking.Tracker
 import mozilla.components.concept.engine.prompt.PromptRequest
+import mozilla.components.concept.engine.request.ErrorType
 import mozilla.components.concept.engine.request.RequestInterceptor.InterceptionResponse
 import mozilla.components.concept.engine.selection.SelectionActionDelegate
 import mozilla.components.concept.engine.window.WindowRequest

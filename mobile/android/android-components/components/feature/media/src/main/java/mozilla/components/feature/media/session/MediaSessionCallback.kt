@@ -6,7 +6,6 @@ package mozilla.components.feature.media.session
 
 import android.support.v4.media.session.MediaSessionCompat
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.feature.media.MediaNimbus
 import mozilla.components.feature.media.ext.MS_PER_SECOND
 import mozilla.components.feature.media.ext.findActiveMediaTab
 import mozilla.components.support.base.log.logger.Logger
@@ -39,9 +38,6 @@ internal class MediaSessionCallback(private val store: BrowserStore) : MediaSess
     }
 
     override fun onSeekTo(pos: Long) {
-        if (!MediaNimbus.features.mediaNotificationImprovements.value().enabled) {
-            return
-        }
         logger.debug("seekTo()")
         store.state.findActiveMediaTab()?.mediaSessionState?.controller?.seekTo(pos / MS_PER_SECOND, fast = false)
     }

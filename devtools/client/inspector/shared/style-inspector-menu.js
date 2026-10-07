@@ -89,7 +89,7 @@ class StyleInspectorMenu {
     this.currentTarget = target;
     this.styleWindow.focus();
 
-    const menu = new Menu();
+    const menu = new Menu({ accesskeyConflictsBug: 2073896 });
 
     const menuitemCopy = new MenuItem({
       label: STYLE_INSPECTOR_L10N.getStr("styleinspector.contextmenu.copy"),

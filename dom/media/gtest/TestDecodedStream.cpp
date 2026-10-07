@@ -6,6 +6,7 @@
 #include "DecodedStream.h"
 #include "MediaData.h"
 #include "MediaQueue.h"
+#include "MediaSinkTestUtils.h"
 #include "MediaTrackGraphImpl.h"
 #include "MediaTrackListener.h"
 #include "MockCubeb.h"
@@ -19,21 +20,6 @@ using testing::Test;
 
 namespace mozilla {
 enum MediaType { Audio = 1, Video = 2, AudioVideo = Audio | Video };
-
-#define ENSURE_TAIL_DISPATCH(f)                                            \
-  do {                                                                     \
-    if (auto* t = AbstractThread::GetCurrent();                            \
-        t && !t->IsTailDispatcherAvailable()) {                            \
-      ASSERT_EQ(__func__, #f)                                              \
-          << "Must only use ENSURE_TAIL_DISPATCH on the current function"; \
-      MOZ_ALWAYS_SUCCEEDS(                                                 \
-          t->Dispatch(NS_NewRunnableFunction(__func__, [&] { f(); })));    \
-      NS_ProcessPendingEvents(nullptr);                                    \
-      return;                                                              \
-    }                                                                      \
-  } while (false)
-
-#define ENSURE_TEST_TAIL_DISPATCH() ENSURE_TAIL_DISPATCH(TestBody)
 
 template <MediaType Type>
 CopyableTArray<RefPtr<ProcessedMediaTrack>> CreateOutputTracks(
@@ -230,6 +216,3 @@ TEST_F(TestDecodedStreamAV, StartStop) {
   mDecodedStream->Stop();
 }
 }  // namespace mozilla
-
-#undef ENSURE_TEST_TAIL_DISPATCH
-#undef ENSURE_TAIL_DISPATCH

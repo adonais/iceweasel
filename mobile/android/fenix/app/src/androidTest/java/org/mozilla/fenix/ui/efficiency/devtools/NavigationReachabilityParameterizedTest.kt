@@ -152,6 +152,18 @@ class NavigationReachabilityParameterizedTest(private val case: Case) : BaseTest
                         page = { settingsAddonsManager },
                         state = runState.ifBlank { "Navigation Reachability" },
                     ),
+                    Case(
+                        label = "SettingsAdvancedDownloadSettingsPage",
+                        testRailId = "TBD",
+                        page = { settingsAdvancedDownloadSettings },
+                        state = runState.ifBlank { "Navigation Reachability" },
+                    ),
+                    Case(
+                        label = "SettingsAdvancedRemoteImprovementsPage",
+                        testRailId = "TBD",
+                        page = { settingsAdvancedRemoteImprovements },
+                        state = runState.ifBlank { "Navigation Reachability" },
+                    ),
                     // pageName=SettingsAutofillPage, property=settingsAutofill, paths=4
                     Case(
                         label = "SettingsAutofillPage",

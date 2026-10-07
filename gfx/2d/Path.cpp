@@ -41,7 +41,11 @@ struct BezierControlPoints {
 void FlattenBezier(const BezierControlPoints& aPoints, PathSink* aSink,
                    double aTolerance);
 
-Path::Path() = default;
+Path::Path(FillRule aFillRule, const Point& aCurrentPoint,
+           const Point& aBeginPoint)
+    : mFillRule(aFillRule),
+      mCurrentPoint(aCurrentPoint),
+      mBeginPoint(aBeginPoint) {}
 
 Path::~Path() = default;
 

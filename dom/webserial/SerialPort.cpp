@@ -285,7 +285,6 @@ already_AddRefed<Promise> SerialPort::Open(const SerialOptions& aOptions,
             // Step 9.3: Set this.[[state]] to "opened".
             self->mState = State::Opened;
             self->UpdateWorkerRef();
-            self->NotifySharingStateChanged(true);
             // Step 9.4: Set this.[[bufferSize]].
             self->mBufferSize = bufferSize;
             self->mPipeCapacity = std::max(bufferSize, kMinSerialPortPumpSize);
@@ -559,7 +558,6 @@ already_AddRefed<Promise> SerialPort::Close(ErrorResult& aRv) {
           aSelf->mState = State::Closed;
         }
         aSelf->UpdateWorkerRef();
-        aSelf->NotifySharingStateChanged(false);
         if (RefPtr<Promise> closePromise = aSelf->mClosePromise.forget()) {
           closePromise->MaybeReject(aReason);
         }
@@ -602,7 +600,6 @@ already_AddRefed<Promise> SerialPort::Forget(ErrorResult& aRv) {
   }
 
   UpdateWorkerRef();
-  NotifySharingStateChanged(false);
 
   if (mChild) {
     RefPtr<SerialPortChild> child = mChild;
@@ -656,7 +653,6 @@ void SerialPort::MarkForgotten() {
   }
 
   UpdateWorkerRef();
-  NotifySharingStateChanged(false);
 }
 
 void SerialPort::GetInfo(SerialPortInfo& aRetVal, ErrorResult& aRv) {
@@ -707,20 +703,6 @@ WritableStream* SerialPort::GetWritable() {
   return mWritable;
 }
 
-void SerialPort::NotifySharingStateChanged(bool aConnected) {
-  if (!mChild) {
-    return;
-  }
-
-  RefPtr<SerialPortChild> child = mChild;
-  nsISerialEventTarget* actorTarget = child->GetActorEventTarget();
-  if (actorTarget) {
-    actorTarget->Dispatch(NS_NewRunnableFunction(
-        "SerialPort::SendUpdateSharingState",
-        [child, aConnected]() { child->SendUpdateSharingState(aConnected); }));
-  }
-}
-
 void SerialPort::OnActorDestroyed() {
   if (mHasShutdown) {
     return;
@@ -731,8 +713,7 @@ void SerialPort::OnActorDestroyed() {
            NS_ConvertUTF16toUTF8(mInfo.id()).get()));
 
   // Clear the child reference first since the actor is already destroyed.
-  // This prevents MarkForgotten/NotifySharingStateChanged from trying to
-  // use the dead actor.
+  // This prevents MarkForgotten from trying to use the dead actor.
   mChild = nullptr;
 
   // Mark the port as forgotten (closes streams, updates worker ref).
@@ -769,7 +750,6 @@ void SerialPort::NotifyDisconnected() {
   // Don't have to wait for this
   RefPtr<Promise> ignoredPromise = CloseStreams(StreamCloseMode::Graceful);
   UpdateWorkerRef();
-  NotifySharingStateChanged(false);
 
   auto event = MakeRefPtr<Event>(this, nullptr, nullptr);
   event->InitEvent(u"disconnect"_ns, true, false);
@@ -940,7 +920,6 @@ void SerialPort::SettleClosePromise(nsresult aResult) {
     mState = State::Closed;
   }
   UpdateWorkerRef();
-  NotifySharingStateChanged(false);
   if (RefPtr<Promise> closePromise = mClosePromise.forget()) {
     if (NS_SUCCEEDED(aResult)) {
       closePromise->MaybeResolveWithUndefined();

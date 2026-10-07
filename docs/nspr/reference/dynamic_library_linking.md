@@ -65,9 +65,9 @@ information, consult the man pages for `ld` and `dlopen` (or
 `shl_load` on HP-UX) for Unix, and the `LoadLibrary` documentation
 for Win32.
 
-- [Dynamic Library Search Path](#Dynamic_Library_Search_Path)
+- [Dynamic Library Search Path](#dynamic-library-search-path)
 - [Exporting Symbols from the Main Executable
-  Program](#Exporting_Symbols_from_the_Main_Executable_Program)
+  Program](#exporting-symbols-from-the-main-executable-program)
 
 ### Dynamic Library Search Path
 

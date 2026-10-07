@@ -2,7 +2,7 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 const { GenAI } = ChromeUtils.importESModule(
-  "resource:///modules/GenAI.sys.mjs"
+  "moz-src:///browser/components/genai/GenAI.sys.mjs"
 );
 
 registerCleanupFunction(() => {
@@ -105,6 +105,7 @@ add_task(async function test_show_chat() {
   Services.prefs.setBoolPref("browser.ml.chat.enabled", true);
 
   Assert.ok(!GenAI.canShowChatEntrypoint, "Not enough to just enable");
+  Assert.ok(GenAI.canOfferChatbot, "Can offer the chatbot with no provider");
 
   Services.prefs.setStringPref(
     "browser.ml.chat.provider",
@@ -124,8 +125,84 @@ add_task(async function test_show_chat() {
   Services.prefs.setStringPref("sidebar.main.tools", "history");
 
   Assert.ok(!GenAI.canShowChatEntrypoint, "Not shown without chatbot tool");
+  Assert.ok(!GenAI.canOfferChatbot, "Not offered without chatbot tool");
 
   Services.prefs.setBoolPref("sidebar.revamp", false);
 
   Assert.ok(GenAI.canShowChatEntrypoint, "Ignore tools without revamp");
+});
+
+/**
+ * Check various prefs for showing the selection menu
+ */
+add_task(async function test_show_selection_menu() {
+  Services.prefs.setBoolPref("sidebar.revamp", false);
+  Services.prefs.setBoolPref("browser.ml.chat.enabled", true);
+  Services.prefs.setBoolPref("browser.ml.chat.shortcuts", true);
+  Services.prefs.setStringPref("browser.ml.chat.provider", "");
+  Services.prefs.setBoolPref("browser.highlightToSearch.enabled", true);
+  Services.prefs.setBoolPref("browser.highlightToSearch.featureGate", false);
+
+  Assert.ok(!GenAI.canShowSelectionMenu, "No menu without provider or gate");
+
+  Services.prefs.setBoolPref("browser.highlightToSearch.featureGate", true);
+
+  Assert.ok(GenAI.canShowSelectionMenu, "Gate shows menu without provider");
+
+  Services.prefs.setBoolPref("browser.ml.chat.enabled", false);
+
+  Assert.ok(
+    !GenAI.canShowSelectionMenu,
+    "No menu when the chatbot is blocked, as it is the only action so far"
+  );
+
+  Services.prefs.setBoolPref("browser.ml.chat.enabled", true);
+  Services.prefs.setBoolPref("browser.highlightToSearch.enabled", false);
+
+  Assert.ok(!GenAI.canShowSelectionMenu, "Gate needs the feature enabled too");
+
+  Services.prefs.setBoolPref("browser.highlightToSearch.featureGate", false);
+  Services.prefs.setStringPref(
+    "browser.ml.chat.provider",
+    "http://mochi.test:8888"
+  );
+
+  Assert.ok(
+    GenAI.canShowSelectionMenu,
+    "Configured provider shows menu with the gate off"
+  );
+
+  Services.prefs.setBoolPref("browser.ml.chat.shortcuts", false);
+
+  Assert.ok(!GenAI.canShowSelectionMenu, "No menu without chat shortcuts");
+});
+
+/**
+ * Check the contexts that refuse gen-AI surfaces entirely
+ */
+add_task(async function test_supported_context() {
+  const fakeBrowser = ({
+    uri = "https://example.com/",
+    isDocumentPiP = false,
+    toolbarVisible = true,
+  } = {}) => ({
+    browsingContext: { currentURI: { spec: uri }, isDocumentPiP },
+    documentGlobal: { toolbar: { visible: toolbarVisible } },
+  });
+
+  Assert.ok(GenAI.isSupportedContext(fakeBrowser()), "Regular page supported");
+  Assert.ok(
+    !GenAI.isSupportedContext(
+      fakeBrowser({ uri: "moz-extension://abc/page.html" })
+    ),
+    "Extension page not supported"
+  );
+  Assert.ok(
+    !GenAI.isSupportedContext(fakeBrowser({ isDocumentPiP: true })),
+    "Document Picture-in-Picture not supported"
+  );
+  Assert.ok(
+    !GenAI.isSupportedContext(fakeBrowser({ toolbarVisible: false })),
+    "Popup window not supported"
+  );
 });

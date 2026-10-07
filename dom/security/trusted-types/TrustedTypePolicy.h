@@ -14,6 +14,7 @@
 #include "mozilla/dom/TrustedHTML.h"
 #include "mozilla/dom/TrustedScript.h"
 #include "mozilla/dom/TrustedScriptURL.h"
+#include "mozilla/dom/TrustedTypePolicyFactory.h"
 #include "nsISupportsImpl.h"
 #include "nsString.h"
 #include "nsWrapperCache.h"
@@ -24,7 +25,6 @@ class nsTArray;
 namespace mozilla::dom {
 
 class DOMString;
-class TrustedTypePolicyFactory;
 
 // https://w3c.github.io/trusted-types/dist/spec/#trusted-type-policy
 class TrustedTypePolicy : public nsWrapperCache {

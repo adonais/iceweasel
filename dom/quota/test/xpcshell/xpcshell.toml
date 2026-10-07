@@ -87,6 +87,8 @@ prefs = [
 
 ["test_createLocalStorage.js"]
 
+["test_estimateGroupUsage.js"]
+
 ["test_estimateOrigin.js"]
 
 ["test_getCachedUsageForPrincipal.js"]
@@ -180,6 +182,14 @@ skip-if = [
 # enabled  because incremental origin initialization automatically triggers
 # lazy initialization of all temporary origins after temporary storage
 # initialization is complete.
+skip-if = [
+  "inc_origin_init",
+]
+
+["test_shutdownDuringRepositoryInitialization.js"]
+# The test explicitly disables lazy origin initialization and relies on
+# initTemporaryStorage performing full per-origin initialization via
+# InitializeRepository.
 skip-if = [
   "inc_origin_init",
 ]

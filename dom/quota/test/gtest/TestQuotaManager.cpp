@@ -20,6 +20,9 @@
 #include "mozilla/gtest/MozAssertions.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "nsFmtString.h"
+#include "nsIFile.h"
+#include "nsIPrefBranch.h"
+#include "nsIPrefService.h"
 #include "prtime.h"
 
 namespace mozilla::dom::quota::test {
@@ -3861,6 +3864,77 @@ TEST_P(TestQuotaManagerAndClearStorageWithBoolPair,
   const bool anyCachedOriginsMatch = std::any_of(
       cachedOrigins.cbegin(), cachedOrigins.cend(), matchesUserContextId);
   ASSERT_FALSE(anyCachedOriginsMatch);
+}
+
+TEST_F(TestQuotaManagerAndClearStorage,
+       InitializeTemporaryStorage_RestartAfterIncompleteRepositoryInit) {
+  const auto origin1 =
+      GetOriginMetadata(""_ns, "1.example.com"_ns, "https://1.example.com"_ns);
+  const auto origin2 =
+      GetOriginMetadata(""_ns, "2.example.com"_ns, "https://2.example.com"_ns);
+
+  nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
+  ASSERT_TRUE(prefs);
+  prefs->SetBoolPref(
+      "dom.quotaManager.temporaryStorage.lazyOriginInitialization", false);
+  prefs->SetBoolPref("dom.quotaManager.loadQuotaFromCache", false);
+  prefs->SetBoolPref("dom.quotaManager.loadQuotaFromSecondaryCache", false);
+
+  ASSERT_NO_FATAL_FAILURE(ShutdownStorage());
+  ASSERT_NO_FATAL_FAILURE(InitializeStorage());
+  ASSERT_NO_FATAL_FAILURE(InitializeTemporaryStorage());
+  ASSERT_NO_FATAL_FAILURE(InitializeTemporaryOrigin(origin1, true));
+  ASSERT_NO_FATAL_FAILURE(InitializeTemporaryOrigin(origin2, true));
+
+  {
+    const auto metadata1 = LoadDirectoryMetadataHeader(origin1);
+    ASSERT_TRUE(metadata1);
+    const auto metadata2 = LoadDirectoryMetadataHeader(origin2);
+    ASSERT_TRUE(metadata2);
+  }
+
+  ASSERT_NO_FATAL_FAILURE(ShutdownStorage());
+  ASSERT_NO_FATAL_FAILURE(InitializeStorage());
+
+  PerformOnIOThread([&origin2]() {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    ASSERT_TRUE(quotaManager);
+
+    auto directoryRes = quotaManager->GetOriginDirectory(origin2);
+    ASSERT_TRUE(directoryRes.isOk());
+
+    nsCOMPtr<nsIFile> metadataFile = directoryRes.unwrap();
+    nsresult rv = metadataFile->Append(nsLiteralString(METADATA_V2_FILE_NAME));
+    ASSERT_NS_SUCCEEDED(rv);
+
+    bool exists = false;
+    rv = metadataFile->Exists(&exists);
+    ASSERT_NS_SUCCEEDED(rv);
+    ASSERT_TRUE(exists);
+
+    rv = metadataFile->Remove(false);
+    ASSERT_NS_SUCCEEDED(rv);
+  });
+
+  ASSERT_NO_FATAL_FAILURE(InitializeTemporaryStorage());
+
+  {
+    const auto metadata1 = LoadDirectoryMetadataHeader(origin1);
+    ASSERT_TRUE(metadata1);
+    const auto metadata2 = LoadDirectoryMetadataHeader(origin2);
+    ASSERT_TRUE(metadata2);
+  }
+
+  {
+    const auto cachedOrigins = ListCachedOrigins();
+    ASSERT_TRUE(cachedOrigins.Contains(origin1.mOrigin));
+    ASSERT_TRUE(cachedOrigins.Contains(origin2.mOrigin));
+  }
+
+  prefs->ClearUserPref(
+      "dom.quotaManager.temporaryStorage.lazyOriginInitialization");
+  prefs->ClearUserPref("dom.quotaManager.loadQuotaFromCache");
+  prefs->ClearUserPref("dom.quotaManager.loadQuotaFromSecondaryCache");
 }
 
 INSTANTIATE_TEST_SUITE_P(

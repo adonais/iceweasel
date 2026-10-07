@@ -18,7 +18,6 @@
 
 // #define DEBUG_SPELLCHECK
 
-class nsRange;
 class nsINode;
 
 namespace mozilla {
@@ -26,7 +25,8 @@ class EditorBase;
 
 namespace dom {
 class Document;
-}
+class Range;
+}  // namespace dom
 }  // namespace mozilla
 
 // FIXME: NodeOffset is lossy copy of RangeBoundaryBase. We should make all of
@@ -67,7 +67,7 @@ class NodeOffsetRange {
   NodeOffsetRange(NodeOffset b, NodeOffset e)
       : mBegin(std::move(b)), mEnd(std::move(e)) {}
 
-  bool operator==(const nsRange& aRange) const;
+  bool operator==(const mozilla::dom::Range& aRange) const;
 
   const NodeOffset& Begin() const { return mBegin; }
 
@@ -115,12 +115,13 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
   // before you actually generate the range you are interested in and iterate
   // the words in it.
   nsresult GetRangeForWord(nsINode* aWordNode, int32_t aWordOffset,
-                           nsRange** aRange);
+                           mozilla::dom::Range** aRange);
 
   // Convenience functions, object must be initialized
   nsresult MakeRange(NodeOffset aBegin, NodeOffset aEnd,
-                     nsRange** aRange) const;
-  static already_AddRefed<nsRange> MakeRange(const NodeOffsetRange& aRange);
+                     mozilla::dom::Range** aRange) const;
+  static already_AddRefed<mozilla::dom::Range> MakeRange(
+      const NodeOffsetRange& aRange);
 
   struct Word {
     nsAutoString mText;
@@ -254,7 +255,8 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
   nsresult SplitDOMWordAndAppendTo(int32_t aStart, int32_t aEnd,
                                    nsTArray<RealWord>& aRealWords) const;
 
-  nsresult MakeRangeForWord(const RealWord& aWord, nsRange** aRange) const;
+  nsresult MakeRangeForWord(const RealWord& aWord,
+                            mozilla::dom::Range** aRange) const;
   void MakeNodeOffsetRangeForWord(const RealWord& aWord,
                                   NodeOffsetRange* aNodeOffsetRange);
 };

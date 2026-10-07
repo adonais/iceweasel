@@ -230,6 +230,15 @@ ItemResult InnerListResult::GetItemAt(size_t aIndex) const {
   return ItemResult(item);
 }
 
+template <>
+nsresult InnerListResult::GetParam<Token>(const nsACString& aKey,
+                                          nsACString& aOutput) const {
+  if (!mInnerList) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  return sfv_inner_list_get_param_token(mInnerList, &aKey, &aOutput);
+}
+
 DictResult::DictResult(SFVDictHandle* aDict) : mDict(aDict) {}
 
 DictResult::~DictResult() {

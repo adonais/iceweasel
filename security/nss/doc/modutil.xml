@@ -451,7 +451,7 @@ Token "Communicator Certificate DB" password changed successfully.</programlisti
 	<para>The script must define the platform and version number, the module name and file, and any optional information like supported ciphers and mechanisms. Multiple platforms can be defined in a single install file.</para>
 <programlisting>ForwardCompatible { IRIX:6.2:mips SUNOS:5.5.1:sparc }
 Platforms {
-   WINNT::x86 {
+   WIN95::x86 {
       ModuleName { "Example Module" }
       ModuleFile { win32/fort32.dll }
       DefaultMechanismFlags{0x0001}
@@ -563,7 +563,7 @@ complex_string --> ([^\"\\\r\n]|(\\\")|(\\\\))+ </programlisting>
 	<para>UnixWare (x86)</para>
 	</listitem>
 	<listitem>
-	<para>WINNT (x86)</para>
+	<para>WIN95 (x86, x86-64), the historical NSPR name for all Windows versions</para>
 	</listitem>
 	</itemizedlist>
 

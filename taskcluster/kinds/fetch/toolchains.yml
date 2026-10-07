@@ -58,20 +58,6 @@ gcc-9.5.0:
         strip-components: 1
         add-prefix: gcc-source/
 
-gcc-10.5.0:
-    description: GCC 10.5.0 source code
-    fetch:
-        type: static-url
-        url: https://ftp.gnu.org/gnu/gcc/gcc-10.5.0/gcc-10.5.0.tar.xz
-        sha256: 25109543fdf46f397c347b5d8b7a2c7e5694a5a51cce4b9c6e1ea8a71ca307c1
-        size: 77846412
-        gpg-signature:
-            sig-url: "{url}.sig"
-            key-path: build/unix/build-gcc/7F74F97C103468EE5D750B583AB00996FC26A641.key
-        artifact-name: gcc-source.tar.zst
-        strip-components: 1
-        add-prefix: gcc-source/
-
 gcc-11.5.0:
     description: GCC 11.5.0 source code
     fetch:
@@ -168,13 +154,13 @@ nasm-2.14.02:
         sha256: e24ade3e928f7253aa8c14aa44726d1edf3f98643f87c9d72ec1df44b26be8f5
         size: 827620
 
-nasm-3.01:
-    description: nasm 3.01 source code
+nasm:
+    description: nasm 3.02 source code
     fetch:
         type: static-url
-        url: https://www.nasm.us/pub/nasm/releasebuilds/3.01/nasm-3.01.tar.xz
-        sha256: b7324cbe86e767b65f26f467ed8b12ad80e124e3ccb89076855c98e43a9eddd4
-        size: 1499136
+        url: https://www.nasm.us/pub/nasm/releasebuilds/3.02/nasm-3.02.tar.xz
+        sha256: 87336eba53b4acfe917424ab5d500d2b0054d9f5148d35c2273ccf2cfb712f0d
+        size: 1531636
 
 wix-3.14.0:
     description: wix 3.14.0 binary release
@@ -218,12 +204,12 @@ nsis-3.07-win:
         add-prefix: nsis/
 
 upx:
-    description: upx 5.2.0 source
+    description: upx 5.2.1 source
     fetch:
         type: static-url
-        url: https://github.com/upx/upx/releases/download/v5.2.0/upx-5.2.0-src.tar.xz
-        sha256: af99e526d5759de94412aea1104d5e4ca406cb725295f8633ecc9e843dc1ce1c
-        size: 1764768
+        url: https://github.com/upx/upx/releases/download/v5.2.1/upx-5.2.1-src.tar.xz
+        sha256: a7d457be4ef942e46844ee8f301206b111394cbcbde3599747a6904c54ff116b
+        size: 1778024
         artifact-name: upx-src.tar.zst
         strip-components: 1
         add-prefix: upx/
@@ -232,9 +218,9 @@ wine:
     description: wine source code
     fetch:
         type: static-url
-        url: https://dl.winehq.org/wine/source/11.x/wine-11.10.tar.xz
-        sha256: e4c35ebe26f4f8eef5f2143e24a1fb9fd103f1d46132ad4755479227d086b8e7
-        size: 45603064
+        url: https://dl.winehq.org/wine/source/11.x/wine-11.17.tar.xz
+        sha256: 8e752e29bba2901ad9f915139345c6ee67184b099d425704d915971ca5c055fc
+        size: 46726496
         gpg-signature:
             sig-url: "{url}.sign"
             key-path: build/unix/build-gcc/DA23579A74D4AD9AF9D3F945CEFAC8EAAF17519D.key
@@ -338,16 +324,16 @@ grcov:
     fetch:
         type: git
         repo: https://github.com/mozilla/grcov
-        # 0.10.7 release
-        revision: 6efbc1d7604a22fae6ba145d1c3637f0bec7b1e6
+        # 0.10.8 release + fix for bug 2033336
+        revision: 86d5001522d6eff66794fbd8d644807f73870d0b
 
 sccache:
     description: sccache source code
     fetch:
         type: git
         repo: https://github.com/mozilla/sccache
-        # 0.17.0 release
-        revision: c037e117c7625a2668633574028a6addf2a96a6e
+        # 0.18.0 release
+        revision: 01c35e69b97f516c2ebfbdb418b5cd6277bde280
 
 fxc2:
     description: fxc2 source code
@@ -361,7 +347,7 @@ mingw-w64:
     fetch:
         type: git
         repo: https://git.code.sf.net/p/mingw-w64/mingw-w64
-        revision: f91a6c237774954bce1018572dfda796eed4f8db
+        revision: 85c7dd4cce5ab74b679f9ca74efa49a7f5e4bd5a
 
 mingw-w64-trunk:
     description: mingw-w64 master branch source code
@@ -479,23 +465,23 @@ win64-ninja:
         add-prefix: ninja/bin/
 
 macosx64-cmake:
-    description: cmake 4.3.3
+    description: cmake 4.4.3
     fetch:
         type: static-url
-        url: https://github.com/Kitware/CMake/releases/download/v4.3.3/cmake-4.3.3-macos-universal.tar.gz
-        sha256: 5221a13450c7a0219a2a0d1b6c9085eb06489721fafd8488ccebc1584175d2fb
-        size: 87452640
+        url: https://github.com/Kitware/CMake/releases/download/v4.4.3/cmake-4.4.3-macos-universal.tar.gz
+        sha256: 0c5d65251c14cc884bfa16bdbed3c263ce5bffe2e21c0d0d00962cb0610464fa
+        size: 89445170
         artifact-name: cmake.tar.zst
         strip-components: 3
         add-prefix: cmake/
 
 cmake:
-    description: cmake 4.3.3 source code
+    description: cmake 4.4.3 source code
     fetch:
         type: static-url
-        url: https://github.com/Kitware/CMake/releases/download/v4.3.3/cmake-4.3.3.tar.gz
-        sha256: cba4bb7a44edf2877bb6f059932896383babe435b3a8c3b5df48b4aa41c9bb85
-        size: 12971567
+        url: https://github.com/Kitware/CMake/releases/download/v4.4.3/cmake-4.4.3.tar.gz
+        sha256: c46400618b4f1f2b43507f24fb22f3ae830c3416cf23b776e16e1d413aa892f0
+        size: 13288228
         artifact-name: cmake.tar.zst
         strip-components: 1
         add-prefix: cmake/
@@ -533,12 +519,12 @@ upload-symbols-linux64:
         add-prefix: upload-symbols-cli/
 
 7zz:
-    description: 7-zip 26.01 source code
+    description: 7-zip 26.03 source code
     fetch:
         type: static-url
-        url: https://github.com/ip7z/7zip/releases/download/26.01/7z2601-src.tar.xz
-        sha256: b2389e0e930b2f9a348cf0fe7d9870a46482a8ec044ee0bdf42e2136db31c3d6
-        size: 1543032
+        url: https://github.com/ip7z/7zip/releases/download/26.03/7z2603-src.tar.xz
+        sha256: 9cbde5099c6deb73691b0579063da5827522ccbbcba3f0020fd04e8c8c16c0d4
+        size: 1552200
         artifact-name: 7z-src.tar.zst
         add-prefix: 7zz/
 
@@ -576,9 +562,9 @@ jdk-8-linux64:
     description: Java 8 JDK
     fetch:
         type: static-url
-        url: https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u482-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u482b08.tar.gz
-        sha256: e74becad56b4cc01f1556a671e578d3788789f5257f9499f6fbed84e63a55ecf
-        size: 103525252
+        url: https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u502-b07/OpenJDK8U-jdk_x64_linux_hotspot_8u502b07.tar.gz
+        sha256: b8f5440f64f50193c01f67dacba55c9660caffe13b908baf6bd1955f4dd4c3ea
+        size: 103536381
         artifact-name: jdk-8.tar.zst
         strip-components: 1
         add-prefix: jdk-8/
@@ -715,12 +701,12 @@ msix-packaging:
         revision: 1d068315fc1cff43c04837816c28a4a66cba22c1
 
 pkgconf:
-    description: pkgconf 2.5.1
+    description: pkgconf 3.0.7
     fetch:
         type: static-url
-        url: https://distfiles.ariadne.space/pkgconf/pkgconf-2.5.1.tar.xz
-        sha256: cd05c9589b9f86ecf044c10a2269822bc9eb001eced2582cfffd658b0a50c243
-        size: 328064
+        url: https://distfiles.ariadne.space/pkgconf/pkgconf-3.0.7.tar.xz
+        sha256: c926ff491cbd9a331a589160811bd97ab1749b4d5198a519338f2cdfabe6940a
+        size: 427648
         artifact-name: pkgconf.tar.zst
         strip-components: 1
         add-prefix: pkgconf/
@@ -744,7 +730,7 @@ symbol-scrapers:
     fetch:
         type: git
         repo: https://github.com/mozilla/symbol-scrapers
-        revision: 7070f9a4fa7a71413d84c80b3a53ae233e72ee55
+        revision: 7d405538e2f687b37e62445ae177db8a95405665
 
 openssl-1.1.1w:
     description: openssl 1.1.1w source code
@@ -758,12 +744,12 @@ openssl-1.1.1w:
         add-prefix: openssl-source/
 
 xz:
-    description: xz 5.8.3 source code
+    description: xz 5.8.4 source code
     fetch:
         type: static-url
-        url: https://github.com/tukaani-project/xz/releases/download/v5.8.3/xz-5.8.3.tar.xz
-        sha256: fff1ffcf2b0da84d308a14de513a1aa23d4e9aa3464d17e64b9714bfdd0bbfb6
-        size: 1548064
+        url: https://github.com/tukaani-project/xz/releases/download/v5.8.4/xz-5.8.4.tar.xz
+        sha256: 4ce24038fd4221e0d13bc1a2de7a4db56e90b92b3bf75321f6c14be73f65de4b
+        size: 1567192
         artifact-name: xz-source.tar.zst
         strip-components: 1
         add-prefix: xz-source/
@@ -822,11 +808,11 @@ windows-rs:
         add-prefix: windows-rs/
 
 libxml2:
-    description: libxml2 2.15.3 source code
+    description: libxml2 2.15.4 source code
     fetch:
         type: git
         repo: https://gitlab.gnome.org/GNOME/libxml2
-        revision: c94eb0210183b9d7cb43f8e7fddc6be55843ef49
+        revision: 96498992efa48d52b0e8b83058bd88dbdaf153c1
 
 mozilla-pdf.js:
     description: Mozilla pdf.js Github repo
@@ -937,7 +923,7 @@ windowsappsdk-redist:
     description: Windows App SDK Redistributable
     fetch:
         type: static-url
-        url: https://aka.ms/windowsappsdk/2.2/2.2.0/Microsoft.WindowsAppRuntime.Redist.2.2.zip
-        sha256: ab078d5b1d730f093ed4e1a33d0e709d1dbca85fa4a10f546cc6824e3b48057f
-        size: 478796379
+        url: https://aka.ms/windowsappsdk/2.5/2.5.1/Microsoft.WindowsAppRuntime.Redist.2.5.zip
+        sha256: 3c6d3b4d80a194bb4f9a9a91e00f074b7d539929ab53fb7dde3ef9d8a21ddbb4
+        size: 528498305
         artifact-name: Microsoft.WindowsAppRuntime.Redist.tar.zst

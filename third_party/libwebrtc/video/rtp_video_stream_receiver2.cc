@@ -24,6 +24,7 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/base/nullability.h"
+#include "absl/functional/any_invocable.h"
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/environment/environment.h"
 #include "api/field_trials_view.h"
@@ -294,7 +295,8 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
     VideoStreamBufferControllerStatsObserver* vcm_receive_statistics,
     OnCompleteFrameCallback* complete_frame_callback,
     scoped_refptr<FrameDecryptorInterface> frame_decryptor,
-    scoped_refptr<FrameTransformerInterface> frame_transformer)
+    scoped_refptr<FrameTransformerInterface> frame_transformer,
+    absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet)
     : env_(env),
       worker_queue_(worker_queue),
       config_(*config),
@@ -343,7 +345,8 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
       reference_finder_(std::make_unique<RtpFrameReferenceFinder>()),
       has_received_frame_(false),
       frames_decryptable_(false),
-      absolute_capture_time_interpolator_(&env_.clock()) {
+      absolute_capture_time_interpolator_(&env_.clock()),
+      on_first_packet_(std::move(on_first_packet)) {
   if (packet_router_) {
     // Do not register as REMB candidate, this is only done when starting to
     // receive.
@@ -418,11 +421,58 @@ void RtpVideoStreamReceiver2::AddReceiveCodec(
     h26x_packet_buffer_ =
         std::make_unique<H26xPacketBuffer>(!sps_pps_idr_is_h264_keyframe_);
   }
+  const CodecTypeAndRaw new_state{.video_codec = video_codec,
+                                  .raw_payload = raw_payload};
+  const auto existing_codec_it = pt_codec_.find(payload_type);
+  const auto existing_params_it = pt_codec_params_.find(payload_type);
+  // Return early if the codec has already been added.
+  if (existing_codec_it != pt_codec_.end() &&
+      existing_codec_it->second == new_state &&
+      existing_params_it != pt_codec_params_.end() &&
+      existing_params_it->second == codec_params &&
+      payload_type_map_.contains(payload_type)) {
+    return;
+  }
   payload_type_map_.insert_or_assign(
       payload_type, raw_payload ? std::make_unique<VideoRtpDepacketizerRaw>()
                                 : CreateVideoRtpDepacketizer(video_codec));
-  pt_codec_params_.insert_or_assign(payload_type, codec_params);
-  pt_codec_.insert_or_assign(payload_type, video_codec);
+  pt_codec_params_.insert_or_assign(existing_params_it, payload_type,
+                                    codec_params);
+  pt_codec_.insert_or_assign(existing_codec_it, payload_type, new_state);
+}
+
+void RtpVideoStreamReceiver2::SetReceiveCodecs(
+    const std::vector<ReceiveCodec>& codecs) {
+  RTC_DCHECK_RUN_ON(worker_queue_);
+
+  // Reset H.264 keyframe mode to default so that it is re-evaluated across the
+  // new codec set in AddReceiveCodec(). This only updates the keyframe criteria
+  // and does not flush cached SPS/PPS or buffered packets.
+  sps_pps_idr_is_h264_keyframe_ = false;
+  packet_buffer_.ResetSpsPpsIdrIsH264Keyframe();
+  if (h26x_packet_buffer_ != nullptr) {
+    h26x_packet_buffer_->SetH264IdrOnlyKeyframesAllowed(true);
+  }
+
+  // Removes any already registered codecs which are not part of the new set of
+  // codecs.
+  for (auto it = pt_codec_.begin(); it != pt_codec_.end();) {
+    bool found = absl::c_any_of(codecs, [&](const ReceiveCodec& codec) {
+      return codec.payload_type == it->first;
+    });
+    if (!found) {
+      payload_type_map_.erase(it->first);
+      pt_codec_params_.erase(it->first);
+      it = pt_codec_.erase(it);
+    } else {
+      ++it;
+    }
+  }
+
+  for (const ReceiveCodec& codec : codecs) {
+    AddReceiveCodec(codec.payload_type, codec.video_codec, codec.codec_params,
+                    codec.raw_payload);
+  }
 }
 
 void RtpVideoStreamReceiver2::RemoveReceiveCodecs() {
@@ -439,11 +489,12 @@ void RtpVideoStreamReceiver2::RemoveReceiveCodecs() {
 void RtpVideoStreamReceiver2::SetRawPayloadTypes(
     const std::set<int>& raw_payload_types) {
   RTC_DCHECK_RUN_ON(worker_queue_);
-  for (const auto& [pt, codec] : pt_codec_) {
+  for (auto& [pt, codec_state] : pt_codec_) {
     const bool raw_payload = raw_payload_types.contains(pt);
-    payload_type_map_[pt] = raw_payload
-                                ? std::make_unique<VideoRtpDepacketizerRaw>()
-                                : CreateVideoRtpDepacketizer(codec);
+    codec_state.raw_payload = raw_payload;
+    payload_type_map_[pt] =
+        raw_payload ? std::make_unique<VideoRtpDepacketizerRaw>()
+                    : CreateVideoRtpDepacketizer(codec_state.video_codec);
   }
 }
 
@@ -799,6 +850,11 @@ void RtpVideoStreamReceiver2::OnRtpPacket(const RtpPacketReceived& packet) {
   if (!receiving_)
     return;
 
+  if (on_first_packet_) {
+    auto cb = std::move(on_first_packet_);
+    std::move(cb)(config_.rtp.remote_ssrc);
+  }
+
   ReceivePacket(packet);
 
   // Update receive statistics after ReceivePacket.
@@ -899,8 +955,14 @@ void RtpVideoStreamReceiver2::OnInsertedPacket(
         packet_info.absolute_capture_time();
     if (packet->is_last_packet_in_frame()) {
       auto depacketizer_it = payload_type_map_.find(first_packet->payload_type);
-      RTC_CHECK(depacketizer_it != payload_type_map_.end());
-      RTC_CHECK(depacketizer_it->second);
+      // May happen if buffered packets are being drained for a payload type
+      // that was removed during codec reconfiguration.
+      if (depacketizer_it == payload_type_map_.end() ||
+          !depacketizer_it->second) {
+        RTC_LOG(LS_WARNING) << "Missing depacketizer for payload type "
+                            << static_cast<int>(first_packet->payload_type);
+        continue;
+      }
 
       scoped_refptr<EncodedImageBuffer> bitstream =
           depacketizer_it->second->AssembleFrame(payloads);
@@ -1190,7 +1252,7 @@ std::optional<VideoCodecType> RtpVideoStreamReceiver2::GetCodecFromPayloadType(
   if (it == pt_codec_.end()) {
     return std::nullopt;
   }
-  return it->second;
+  return it->second.video_codec;
 }
 
 bool RtpVideoStreamReceiver2::UseH26xPacketBuffer(
@@ -1438,7 +1500,7 @@ void RtpVideoStreamReceiver2::StartReceive() {
   // need to know the value of |sps_pps_id_is_h264_keyframe_|.
   bool has_h26x_codec = false;
   for (const auto& [payload_type, codec] : pt_codec_) {
-    if (UseH26xPacketBuffer(codec)) {
+    if (UseH26xPacketBuffer(codec.video_codec)) {
       has_h26x_codec = true;
       break;
     }

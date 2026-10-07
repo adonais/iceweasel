@@ -116,7 +116,7 @@ const NAME_FROM_SUBTREE_RULE_ROLES = new Set([
   Ci.nsIAccessibleRole.ROLE_MATHML_NUMBER,
   Ci.nsIAccessibleRole.ROLE_MATHML_OPERATOR,
   Ci.nsIAccessibleRole.ROLE_MATHML_TEXT,
-  Ci.nsIAccessibleRole.ROLE_MATHML_STRING_LITERAL,
+  Ci.nsIAccessibleRole.ROLE_MATHML_LINK,
   Ci.nsIAccessibleRole.ROLE_MATHML_GLYPH,
   Ci.nsIAccessibleRole.ROLE_MENUITEM,
   Ci.nsIAccessibleRole.ROLE_OPTION,

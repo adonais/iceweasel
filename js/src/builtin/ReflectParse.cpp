@@ -1166,6 +1166,8 @@ static const char* ImportPhaseName(ImportPhase phase) {
       return "evaluation";
     case ImportPhase::Source:
       return "source";
+    case ImportPhase::Deferred:
+      return "defer";
     case ImportPhase::Limit:
       break;
   }

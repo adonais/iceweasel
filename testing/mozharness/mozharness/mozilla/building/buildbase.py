@@ -15,7 +15,6 @@ import pathlib
 import re
 import sys
 import time
-import uuid
 from datetime import datetime
 
 import yaml
@@ -23,7 +22,7 @@ from yaml import YAMLError
 
 from mozharness.base.config import DEFAULT_CONFIG_PATH, BaseConfig, parse_config_file
 from mozharness.base.errors import MakefileErrorList
-from mozharness.base.log import ERROR, FATAL, OutputParser
+from mozharness.base.log import FATAL, OutputParser
 from mozharness.base.python import PerfherderResourceOptionsMixin, VirtualenvMixin
 from mozharness.base.script import PostScriptRun
 from mozharness.base.vcs.vcsbase import MercurialScript
@@ -116,7 +115,6 @@ def get_mozconfig_path(script, config, dirs):
     have_composite_mozconfig = COMPOSITE_KEYS <= set(config.keys())
     have_partial_composite_mozconfig = len(COMPOSITE_KEYS & set(config.keys())) > 0
     have_src_mozconfig = "src_mozconfig" in config
-    have_src_mozconfig_manifest = "src_mozconfig_manifest" in config
 
     # first determine the mozconfig path
     if have_partial_composite_mozconfig and not have_composite_mozconfig:
@@ -127,16 +125,6 @@ def get_mozconfig_path(script, config, dirs):
     elif have_composite_mozconfig and have_src_mozconfig:
         raise MozconfigPathError(
             "'src_mozconfig' or 'mozconfig_variant' must be "
-            "in the config but not both in order to determine the mozconfig."
-        )
-    elif have_composite_mozconfig and have_src_mozconfig_manifest:
-        raise MozconfigPathError(
-            "'src_mozconfig_manifest' or 'mozconfig_variant' must be "
-            "in the config but not both in order to determine the mozconfig."
-        )
-    elif have_src_mozconfig and have_src_mozconfig_manifest:
-        raise MozconfigPathError(
-            "'src_mozconfig' or 'src_mozconfig_manifest' must be "
             "in the config but not both in order to determine the mozconfig."
         )
     elif have_composite_mozconfig:
@@ -150,25 +138,10 @@ def get_mozconfig_path(script, config, dirs):
         abs_mozconfig_path = os.path.join(
             dirs["abs_src_dir"], config.get("src_mozconfig")
         )
-    elif have_src_mozconfig_manifest:
-        manifest = os.path.join(dirs["abs_work_dir"], config["src_mozconfig_manifest"])
-        if not os.path.exists(manifest):
-            raise MozconfigPathError(
-                'src_mozconfig_manifest: "%s" not found. Does it exist?' % (manifest,)
-            )
-        else:
-            with script.opened(manifest, error_level=ERROR) as (fh, err):
-                if err:
-                    raise MozconfigPathError(
-                        "%s exists but coud not read properties" % manifest
-                    )
-                abs_mozconfig_path = os.path.join(
-                    dirs["abs_src_dir"], json.load(fh)["gecko_path"]
-                )
     else:
         raise MozconfigPathError(
             "Must provide 'app_name', 'mozconfig_platform' and 'mozconfig_variant'; "
-            "or one of 'src_mozconfig' or 'src_mozconfig_manifest' in the config "
+            "or 'src_mozconfig' in the config "
             "in order to determine the mozconfig."
         )
 
@@ -496,14 +469,6 @@ BUILD_BASE_CONFIG_OPTIONS = [
 ]
 
 
-def generate_build_ID():
-    return time.strftime("%Y%m%d%H%M%S", time.localtime(time.time()))
-
-
-def generate_build_UID():
-    return uuid.uuid4().hex
-
-
 class BuildScript(
     AutomationMixin,
     VirtualenvMixin,
@@ -525,12 +490,8 @@ class BuildScript(
         # separate each build
         self.epoch_timestamp = int(time.mktime(datetime.now().timetuple()))
         self.branch = self.config.get("branch")
-        self.stage_platform = self.config.get("stage_platform")
-        if not self.branch or not self.stage_platform:
-            if not self.branch:
-                self.error("'branch' not determined and is required")
-            if not self.stage_platform:
-                self.error("'stage_platform' not determined and is required")
+        if not self.branch:
+            self.error("'branch' not determined and is required")
             self.fatal("Please add missing items to your config")
         self.client_id = None
         self.access_token = None
@@ -592,11 +553,6 @@ items from that key's value."
         self.objdir = self.config["objdir"]
         return self.objdir
 
-    def query_is_nightly_promotion(self):
-        platform_enabled = self.config.get("enable_nightly_promotion")
-        branch_enabled = self.branch in self.config.get("nightly_promotion_branches")
-        return platform_enabled and branch_enabled
-
     def query_build_env(self, **kwargs):
         c = self.config
 
@@ -604,7 +560,7 @@ items from that key's value."
         # as we don't always want every key below added to the same dict
         env = copy.deepcopy(super().query_env(**kwargs))
 
-        if self.query_is_nightly() or self.query_is_nightly_promotion():
+        if self.query_is_nightly():
             # taskcluster sets the update channel for shipping builds
             # explicitly
             if c.get("update_channel"):
@@ -941,6 +897,7 @@ items from that key's value."
             "value": duration,
             "extraOptions": self.perfherder_resource_options(),
             "shouldAlert": should_alert,
+            "alertNotifyEmails": ["ahochheiden@mozilla.com"],
             "subtests": [],
         }
 

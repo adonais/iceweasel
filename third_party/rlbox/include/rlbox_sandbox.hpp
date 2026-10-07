@@ -79,11 +79,6 @@ struct rlbox_transition_timing
 };
 #endif
 
-#ifndef RLBOX_SINGLE_THREADED_INVOCATIONS
-#  error                                                                       \
-    "RLBox does not yet support threading. Please define RLBOX_SINGLE_THREADED_INVOCATIONS prior to including RLBox and ensure you are only using it from a single thread. If threading is required, please file a bug."
-#endif
-
 /**
  * @brief Encapsulation for sandboxes.
  *
@@ -97,6 +92,9 @@ class rlbox_sandbox : protected T_Sbx
 
 private:
 #ifdef RLBOX_MEASURE_TRANSITION_TIMES
+#  ifndef RLBOX_SINGLE_THREADED_INVOCATIONS
+  RLBOX_SHARED_LOCK(transition_times_lock);
+#  endif
   std::vector<rlbox_transition_timing> transition_times;
 #endif
 
@@ -109,6 +107,7 @@ private:
   RLBOX_SHARED_LOCK(func_ptr_cache_lock);
   std::map<std::string, void*> func_ptr_map;
 
+  // This is thread-safe so no locks needed
   app_pointer_map<typename T_Sbx::T_PointerType> app_ptr_map;
 
   // This variable tracks of the sandbox has already been created/destroyed.
@@ -134,9 +133,9 @@ private:
   void* transition_state = nullptr;
 
   template<typename T>
-  using convert_fn_ptr_to_sandbox_equivalent_t = decltype(
-    ::rlbox::convert_fn_ptr_to_sandbox_equivalent_detail::helper<T_Sbx>(
-      std::declval<T>()));
+  using convert_fn_ptr_to_sandbox_equivalent_t =
+    decltype(::rlbox::convert_fn_ptr_to_sandbox_equivalent_detail::helper<
+             T_Sbx>(std::declval<T>()));
 
   template<typename T>
   inline constexpr void check_invoke_param_type_is_ok()
@@ -168,7 +167,8 @@ private:
     else if_constexpr_named(cond2,
                             std::is_null_pointer_v<T_NoRef> ||
                               detail::is_fundamental_or_enum_v<T_NoRef>)
-    {}
+    {
+    }
     else
     {
       constexpr auto unknownCase = !(cond1 || cond2);
@@ -249,11 +249,16 @@ private:
     auto on_exit = rlbox::detail::make_scope_exit([&] {
       auto exit_time = high_resolution_clock::now();
       int64_t ns = duration_cast<nanoseconds>(exit_time - enter_time).count();
-      sandbox.transition_times.push_back(
-        rlbox_transition_timing{ rlbox_transition::CALLBACK,
-                                 nullptr /* func_name */,
-                                 key /* func_ptr */,
-                                 ns });
+      {
+#  ifndef RLBOX_SINGLE_THREADED_INVOCATIONS
+        RLBOX_ACQUIRE_UNIQUE_GUARD(transition_times_lock);
+#  endif
+        sandbox.transition_times.push_back(
+          rlbox_transition_timing{ rlbox_transition::CALLBACK,
+                                   nullptr /* func_name */,
+                                   key /* func_ptr */,
+                                   ns });
+      }
     });
 #endif
 #ifdef RLBOX_TRANSITION_ACTION_OUT
@@ -344,28 +349,29 @@ private:
     return this_ptr->impl_create_sandbox(std::forward<T_Args>(args)...);
   }
 
+  template<typename T>
+  T checked_add(T aLhs, T aRhs, const char* aErrorMsg)
+  {
+    static_assert(std::is_unsigned_v<T>, "Expected unsigned type");
 
-template <typename T>
-T checked_add(T aLhs, T aRhs, const char* aErrorMsg) {
-  static_assert(std::is_unsigned_v<T>, "Expected unsigned type");
+    T ret = aLhs + aRhs;
+    bool has_overflow = ret < aLhs;
+    detail::dynamic_check(!has_overflow, aErrorMsg);
 
-  T ret = aLhs + aRhs;
-  bool has_overflow = ret < aLhs;
-  detail::dynamic_check(!has_overflow, aErrorMsg);
+    return ret;
+  }
 
-  return ret;
-}
+  template<typename T>
+  T checked_multiply(T aLhs, T aRhs, const char* aErrorMsg)
+  {
+    static_assert(std::is_unsigned_v<T>, "Expected unsigned type");
 
-template <typename T>
-T checked_multiply(T aLhs, T aRhs, const char* aErrorMsg) {
-  static_assert(std::is_unsigned_v<T>, "Expected unsigned type");
+    T ret = aLhs * aRhs;
+    bool has_overflow = (aLhs != 0) && ((ret / aLhs) != aRhs);
+    detail::dynamic_check(!has_overflow, aErrorMsg);
 
-  T ret = aLhs * aRhs;
-  bool has_overflow = (aLhs != 0) && ((ret / aLhs) != aRhs);
-  detail::dynamic_check(!has_overflow, aErrorMsg);
-
-  return ret;
-}
+    return ret;
+  }
 
 public:
   /**
@@ -559,7 +565,8 @@ public:
                                          std::numeric_limits<uint32_t>::max(),
                                        "Tried to allocate an object over 4GB.");
     }
-    auto total_size = static_cast<uint64_t>(sizeof(T)) * count;
+    const size_t total_size = checked_multiply(
+      static_cast<size_t>(count), sizeof(T), "Malloc object size too large");
     if constexpr (sizeof(size_t) == 4) {
       // On a 32-bit platform, we need to make sure that total_size is not >=4GB
       detail::dynamic_check(total_size < std::numeric_limits<uint32_t>::max(),
@@ -580,9 +587,11 @@ public:
     detail::dynamic_check(is_pointer_in_sandbox_memory(ptr),
                           "Malloc returned pointer outside the sandbox memory");
 
-    const size_t obj_size = checked_multiply(static_cast<size_t>(count), sizeof(T), "Malloc object size too large");
-    auto ptr_end = checked_add(reinterpret_cast<uintptr_t>(ptr), reinterpret_cast<uintptr_t>(obj_size - 1), "Malloc object end too large");
-    detail::dynamic_check(is_pointer_in_sandbox_memory(reinterpret_cast<const char *>(ptr_end)),
+    auto ptr_end = checked_add(reinterpret_cast<uintptr_t>(ptr),
+                               reinterpret_cast<uintptr_t>(total_size - 1),
+                               "Malloc object end too large");
+    detail::dynamic_check(
+      is_pointer_in_sandbox_memory(reinterpret_cast<const char*>(ptr_end)),
       "Malloc returned a pointer whose range goes beyond sandbox memory");
     auto cast_ptr = reinterpret_cast<T*>(ptr);
     return tainted<T*, T_Sbx>::internal_factory(cast_ptr);
@@ -776,8 +785,13 @@ public:
     auto on_exit = rlbox::detail::make_scope_exit([&] {
       auto exit_time = high_resolution_clock::now();
       int64_t ns = duration_cast<nanoseconds>(exit_time - enter_time).count();
-      transition_times.push_back(rlbox_transition_timing{
-        rlbox_transition::INVOKE, func_name, func_ptr, ns });
+      {
+#  ifndef RLBOX_SINGLE_THREADED_INVOCATIONS
+        RLBOX_ACQUIRE_UNIQUE_GUARD(transition_times_lock);
+#  endif
+        transition_times.push_back(rlbox_transition_timing{
+          rlbox_transition::INVOKE, func_name, func_ptr, ns });
+      }
     });
 #endif
 #ifdef RLBOX_TRANSITION_ACTION_IN
@@ -1004,9 +1018,11 @@ public:
   template<typename T>
   app_pointer<T*, T_Sbx> get_app_pointer(T* ptr)
   {
-    auto max_ptr = (typename T_Sbx::T_PointerType)(get_total_memory() - 1);
+    // only allow app pointer indexes that go up to the first page
+    auto max_ptr = (typename T_Sbx::T_PointerType)std::min(
+      get_total_memory() - 1, (size_t)4096);
     auto idx = app_ptr_map.get_app_pointer_idx((void*)ptr, max_ptr);
-    auto idx_as_ptr = this->template impl_get_unsandboxed_pointer<T>(idx);
+    auto idx_as_ptr = ((char*)get_memory_location()) + (uintptr_t)idx;
     // Right now we simply assume that any integer can be converted to a valid
     // pointer in the sandbox This may not be true for some sandboxing mechanism
     // plugins in the future In this case, we will have to come up with
@@ -1031,7 +1047,11 @@ public:
   template<typename T>
   T* lookup_app_ptr(tainted<T*, T_Sbx> tainted_ptr)
   {
-    auto idx = tainted_ptr.get_raw_sandbox_value(*this);
+    auto idx_as_ptr = tainted_ptr.get_raw_value();
+    detail::dynamic_check(is_pointer_in_sandbox_memory(idx_as_ptr),
+                          "Got an app pointer that is not within range.");
+    auto idx = (typename T_Sbx::T_PointerType)(((char*)idx_as_ptr) -
+                                               ((char*)get_memory_location()));
     void* ret = app_ptr_map.lookup_index(idx);
     return reinterpret_cast<T*>(ret);
   }
@@ -1044,6 +1064,9 @@ public:
   }
   inline int64_t get_total_ns_time_in_sandbox_and_transitions()
   {
+#  ifndef RLBOX_SINGLE_THREADED_INVOCATIONS
+    RLBOX_ACQUIRE_SHARED_GUARD(transition_times_lock);
+#  endif
     int64_t ret = 0;
     for (auto& transition_time : transition_times) {
       if (transition_time.invoke == rlbox_transition::INVOKE) {
@@ -1054,7 +1077,13 @@ public:
     }
     return ret;
   }
-  inline void clear_transition_times() { transition_times.clear(); }
+  inline void clear_transition_times()
+  {
+#  ifndef RLBOX_SINGLE_THREADED_INVOCATIONS
+    RLBOX_ACQUIRE_UNIQUE_GUARD(transition_times_lock);
+#  endif
+    transition_times.clear();
+  }
 #endif
 };
 

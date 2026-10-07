@@ -6,6 +6,7 @@
 #define nsXMLPrettyPrinter_h_
 
 #include "nsCOMPtr.h"
+#include "nsIWeakReferenceUtils.h"
 #include "nsStubDocumentObserver.h"
 
 class nsXMLPrettyPrinter : public nsStubDocumentObserver {
@@ -51,6 +52,7 @@ class nsXMLPrettyPrinter : public nsStubDocumentObserver {
 
   mozilla::dom::Document*
       mDocument;  // weak. Set as long as we're observing the document
+  nsWeakPtr mElement;
   bool mUnhookPending;
 };
 

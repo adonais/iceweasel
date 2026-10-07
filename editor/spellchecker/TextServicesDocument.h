@@ -19,7 +19,6 @@ class nsIContent;
 class nsIEditor;
 class nsINode;
 class nsISelectionController;
-class nsRange;
 
 namespace mozilla {
 
@@ -31,6 +30,7 @@ namespace dom {
 class AbstractRange;
 class Document;
 class Element;
+class Range;
 class StaticRange;
 };  // namespace dom
 
@@ -62,7 +62,7 @@ class TextServicesDocument final : public nsIEditActionListener {
      */
     Result<IteratorStatus, nsresult> Init(
         FilteredContentIterator& aFilteredIter, IteratorStatus aIteratorStatus,
-        nsRange* aIterRange, nsAString* aAllTextInBlock = nullptr);
+        dom::Range* aIterRange, nsAString* aAllTextInBlock = nullptr);
 
     /**
      * Returns index of first `OffsetEntry` which manages aTextNode.
@@ -205,7 +205,7 @@ class TextServicesDocument final : public nsIEditActionListener {
   nsCOMPtr<nsIContent> mPrevTextBlock;
   nsCOMPtr<nsIContent> mNextTextBlock;
   OffsetEntryArray mOffsetTable;
-  RefPtr<nsRange> mExtent;
+  RefPtr<dom::Range> mExtent;
 
   uint32_t mTxtSvcFilterType;
   IteratorStatus mIteratorStatus;
@@ -388,8 +388,8 @@ class TextServicesDocument final : public nsIEditActionListener {
       FilteredContentIterator** aFilteredIter);
 
   dom::Element* GetDocumentContentRootNode() const;
-  already_AddRefed<nsRange> CreateDocumentContentRange();
-  already_AddRefed<nsRange> CreateDocumentContentRootToNodeOffsetRange(
+  already_AddRefed<dom::Range> CreateDocumentContentRange();
+  already_AddRefed<dom::Range> CreateDocumentContentRootToNodeOffsetRange(
       nsINode* aParent, uint32_t aOffset, bool aToStart);
   nsresult CreateDocumentContentIterator(
       FilteredContentIterator** aFilteredIter);

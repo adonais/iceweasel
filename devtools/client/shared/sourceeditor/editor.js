@@ -299,6 +299,9 @@ class Editor extends EventEmitter {
       autoCloseEnabled: useAutoClose,
       theme: "mozilla",
       themeSwitching: true,
+      // Accessible name for the editor's text area. Consumers hosting something
+      // more specific than source code should pass their own.
+      editorLabel: null,
       autocomplete: false,
       autocompleteOpts: {},
       // Expect a CssProperties object (see devtools/client/fronts/css-properties.js)
@@ -854,6 +857,13 @@ class Editor extends EventEmitter {
     }
 
     const extensions = [
+      // CodeMirror gives the content area role="textbox" but no accessible name, and
+      // relies on `contenteditable` for focus, which leaves its DOM tabIndex at -1.
+      EditorView.contentAttributes.of({
+        "aria-label":
+          this.config.editorLabel || L10N.getStr("sourceEditor.label"),
+        tabindex: "0",
+      }),
       bracketMatching(),
       this.#compartments.indentCompartment.of(indentUnit.of(indentStr)),
       this.#compartments.tabSizeCompartment.of(
@@ -1441,9 +1451,14 @@ class Editor extends EventEmitter {
                 class: marker.positionClassName,
               });
               classDecoration.markerType = marker.id;
-              newMarkerDecorations.push(
-                classDecoration.range(position.from, position.to)
-              );
+              // Do not try to render empty ranges (i.e `from` must be less than `to` for text styling)
+              // Mark decorations (e.g text highlights, bolding, colors) add class elements around existing characters,
+              // when there are zero characters, trying to style zero characters will cause CodeMirror to error
+              if (position.from < position.to) {
+                newMarkerDecorations.push(
+                  classDecoration.range(position.from, position.to)
+                );
+              }
             }
           }
           continue;
@@ -1878,7 +1893,7 @@ class Editor extends EventEmitter {
       return [];
     }
     const {
-      codemirrorView: { Decoration, ViewPlugin, EditorView, MatchDecorator },
+      codemirrorView: { Decoration, ViewPlugin, EditorView },
       codemirrorSearch: { RegExpCursor },
     } = this.#CodeMirror6;
 
@@ -1889,24 +1904,42 @@ class Editor extends EventEmitter {
     this.searchState.cursors = Array.from(searchCursor);
     this.searchState.currentCursorIndex = -1;
 
-    const patternMatcher = new MatchDecorator({
-      regexp: pattern,
-      decorate: (add, from, to) => {
-        add(from, to, Decoration.mark({ class: className }));
-      },
-    });
-
     const searchHighlightView = ViewPlugin.fromClass(
       class {
         decorations;
         constructor(view) {
-          this.decorations = patternMatcher.createDeco(view);
+          this.decorations = this.getDecorations(view);
         }
         update(viewUpdate) {
-          this.decorations = patternMatcher.updateDeco(
-            viewUpdate,
-            this.decorations
-          );
+          // Only recalculate if the document or viewport changes
+          if (viewUpdate.docChanged || viewUpdate.viewportChanged) {
+            this.decorations = this.getDecorations(viewUpdate.view);
+          }
+        }
+        getDecorations(view) {
+          const decorations = [];
+
+          // Only loop through lines currently visible on screen
+          for (const { from, to } of view.visibleRanges) {
+            const text = view.state.doc.sliceString(from, to);
+            let match;
+
+            while ((match = pattern.exec(text)) !== null) {
+              // Prevent infinite loops manually if regex returns a 0-length match (i.e patterns like \$\g)
+              if (match[0].length === 0) {
+                pattern.lastIndex++;
+                continue;
+              }
+
+              const start = from + match.index;
+              const end = start + match[0].length;
+
+              decorations.push(
+                Decoration.mark({ class: className }).range(start, end)
+              );
+            }
+          }
+          return Decoration.set(decorations);
         }
       },
       {
@@ -4288,9 +4321,7 @@ class Editor extends EventEmitter {
    * Register all key shortcuts.
    */
   #initSearchShortcuts(win) {
-    const shortcuts = new KeyShortcuts({
-      window: win,
-    });
+    const shortcuts = new KeyShortcuts(win);
     const keys = ["find.key", "findNext.key", "findPrev.key"];
 
     if (OS === "Darwin") {

@@ -405,11 +405,7 @@ export class AboutLoginsParent extends JSWindowActorParent {
       reason
     );
 
-    let { name, extra = {}, value = null } = telemetryEvent;
-    if (value) {
-      extra.value = value;
-    }
-    Glean.pwmgr[name].record(extra);
+    lazy.LoginHelper.recordReauthTelemetryEvent(telemetryEvent);
 
     if (!isAuthorized) {
       return;

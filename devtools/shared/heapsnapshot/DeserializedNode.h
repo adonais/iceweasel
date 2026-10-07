@@ -47,7 +47,6 @@ struct DeserializedEdge {
   DeserializedEdge(DeserializedEdge&& rhs);
   DeserializedEdge& operator=(DeserializedEdge&& rhs);
 
- private:
   DeserializedEdge(const DeserializedEdge&) = delete;
   DeserializedEdge& operator=(const DeserializedEdge&) = delete;
 };
@@ -111,6 +110,9 @@ struct DeserializedNode {
     return *this;
   }
 
+  DeserializedNode(const DeserializedNode&) = delete;
+  DeserializedNode& operator=(const DeserializedNode&) = delete;
+
   // Get a borrowed reference to the given edge's referent. This method is
   // virtual to provide a hook for gmock and gtest.
   virtual JS::ubi::Node getEdgeReferent(const DeserializedEdge& edge);
@@ -130,10 +132,6 @@ struct DeserializedNode {
         scriptFilename(nullptr),
         descriptiveTypeName(nullptr),
         owner(nullptr) {}
-
- private:
-  DeserializedNode(const DeserializedNode&) = delete;
-  DeserializedNode& operator=(const DeserializedNode&) = delete;
 };
 
 static inline js::HashNumber hashIdDerivedFromPtr(uint64_t id) {

@@ -130,7 +130,7 @@ matching part of the error message. Example:
   You can optionally specify a condition which causes the test function
   to be skipped; see [Adding conditions through the add_task or
   add_test
-  function](#adding-conditions-through-the-add-task-or-add-test-function)
+  function](#adding-conditions-through-the-add_task-or-add_test-function)
   for details.
   For tests that use `add_task()`, the `run_test()` function is
   optional, but if present, it should also call `run_next_test()` to
@@ -146,7 +146,7 @@ matching part of the error message. Example:
   You can optionally specify a condition which causes the test function
   to be skipped; see [Adding conditions through the add_task or
   add_test
-  function](#adding-conditions-through-the-add-task-or-add-test-function)
+  function](#adding-conditions-through-the-add_task-or-add_test-function)
   for details.
   Each test function must call `run_next_test()` when it's done. For
   tests that use `add_test()`, `the run_test()` function is
@@ -328,7 +328,7 @@ listed under the `[DEFAULT]` section of the manifest.
 
 : For this entire test suite, run the tests only if they meet certain
   conditions. See [Adding conditions in the xpcshell.toml
-  manifest](#adding-conditions-through-the-add-task-or-add-test-function) for how
+  manifest](#adding-conditions-through-the-add_task-or-add_test-function) for how
   to use these properties.
 
 `support-files`
@@ -649,7 +649,7 @@ This example would skip running `test_example.js` on Windows.
 SeaMonkey 2.37), you can use conditionals on individual test
 functions instead of on entire files. See [Adding conditions through
 the add_task or add_test
-function](#adding-conditions-through-the-add-task-or-add-test-function)
+function](#adding-conditions-through-the-add_task-or-add_test-function)
 above for details.
 :::
 

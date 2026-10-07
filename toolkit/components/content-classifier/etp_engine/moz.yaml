@@ -1,0 +1,41 @@
+schema: 1
+
+bugzilla:
+  product: "Core"
+  component: "Privacy: Anti-Tracking"
+
+origin:
+  name: "adblock-rust"
+  description: "Network filter matching engine using Adblock Plus / uBlock Origin filter syntax"
+
+  url: "https://github.com/brave/adblock-rust"
+
+  license: MPL-2.0
+  license-file: "LICENSE"
+
+  release: v0.12.1 (2026-01-08T17:45:23Z).
+  revision: v0.12.1
+
+updatebot:
+  maintainer-phab: timhuang
+  maintainer-bz: tihuang@mozilla.com
+  tasks:
+    - type: commit-alert
+      branch: master
+      enabled: true
+      frequency: release
+      needinfo: ["tihuang@mozilla.com"]
+
+vendoring:
+  url: https://github.com/brave/adblock-rust
+  source-hosting: github
+  tracking: tag
+
+  # Our changes are edited into the imported files rather than carried as
+  # patches, so a vendor run must not touch this directory. Skipping `fetch`
+  # skips the whole fetch-and-unpack block, which is what cleans the directory
+  # and copies upstream over it. `update-moz-yaml` is skipped too, so that a run
+  # cannot record a revision we have not actually taken.
+  skip-vendoring-steps:
+    - fetch
+    - update-moz-yaml

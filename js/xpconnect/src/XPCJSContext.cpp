@@ -840,7 +840,14 @@ void xpc::SetPrefableRealmOptions(JS::RealmOptions& options) {
 void xpc::SetPrefableCompileOptions(JS::PrefableCompileOptions& options) {
   options.setSourcePragmas(StaticPrefs::javascript_options_source_pragmas())
       .setSourcePhaseImports(
-          StaticPrefs::javascript_options_experimental_source_phase_imports());
+          StaticPrefs::javascript_options_experimental_source_phase_imports())
+      .setDeferImportEval(
+#ifdef NIGHTLY_BUILD
+          StaticPrefs::javascript_options_experimental_defer_import_eval()
+#else
+          false
+#endif
+      );
 }
 
 void xpc::SetPrefableContextOptions(JS::ContextOptions& options) {

@@ -52,7 +52,7 @@ add_task(async function test_schema_17_migration() {
   await promise_load_profile();
 
   // Assert inserted cookies are in the db and correctly handled by services.
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com"), 1);
+  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 1);
 
   // Check if the time was reset
   {

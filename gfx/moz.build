@@ -7,6 +7,12 @@ with Files("**"):
     SCHEDULES.inclusive += ["android-hw-gfx"]
 with Files("wr/**"):
     BUG_COMPONENT = ("Core", "Graphics: WebRender")
+with Files("cairo/**"):
+    BUG_COMPONENT = ("Core", "Graphics: Cairo")
+with Files("skia/**"):
+    BUG_COMPONENT = ("Core", "Graphics: Skia")
+with Files("angle/**"):
+    BUG_COMPONENT = ("Core", "Graphics: ANGLE")
 
 DIRS += [
     "cairo",
@@ -48,3 +54,23 @@ SPHINX_TREES["/gfx"] = "docs"
 
 with Files("docs/**"):
     SCHEDULES.exclusive = ["docs"]
+
+LICENSED_UNDER += ["chromium"]
+LICENSED_UNDER["chromium"].paths = [
+    "ots",
+]
+
+LICENSED_UNDER += ["harfbuzz"]
+LICENSED_UNDER["harfbuzz"].paths = [
+    "harfbuzz",
+]
+
+LICENSED_UNDER += ["lgpl"]
+LICENSED_UNDER["lgpl"].paths = [
+    "graphite2",
+]
+
+LICENSED_UNDER += ["unicode-v3"]
+LICENSED_UNDER["unicode-v3"].paths = [
+    "harfbuzz_glue",
+]

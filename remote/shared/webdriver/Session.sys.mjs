@@ -28,6 +28,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
   unregisterProcessDataActor:
     "chrome://remote/content/shared/webdriver/process-actors/WebDriverProcessDataParent.sys.mjs",
+  UserContextManager:
+    "chrome://remote/content/shared/UserContextManager.sys.mjs",
   WebDriverBiDiConnection:
     "chrome://remote/content/webdriver-bidi/WebDriverBiDiConnection.sys.mjs",
   WebSocketHandshake:
@@ -77,6 +79,7 @@ export class WebDriverSession {
   #messageHandler;
   #navigableSeenNodes;
   #path;
+  #userContext;
 
   static SESSION_FLAG_BIDI = "bidi";
   static SESSION_FLAG_HTTP = "http";
@@ -124,6 +127,11 @@ export class WebDriverSession {
    *
    *  <dt><code>moz:webdriverClick</code> (boolean)
    *  <dd>(HTTP only) Use a WebDriver conforming <i>WebDriver::ElementClick</i>.
+   *
+   *  <dt><code>moz:userContext</code> (string)
+   *  <dd>Returned only for sessions which are restricted to a user context.
+   *   The user context id the session is restricted to. This capability can
+   *   only be returned, it is never accepted as an input capability.
    * </dl>
    *
    * <h4>WebAuthn</h4>
@@ -213,14 +221,20 @@ export class WebDriverSession {
    *     above.
    * @param {SessionConfigurationFlags} flags
    *     Session configuration flags.
-   * @param {WebDriverBiDiConnection=} connection
+   * @param {object=} options
+   * @param {WebDriverBiDiConnection=} options.connection
    *     An optional existing WebDriver BiDi connection to associate with the
    *     new session.
+   * @param {boolean=} options.useDedicatedContainer
+   *     True if the session should use a dedicated container (typically for
+   *     dynamically started servers). Defaults to false.
    *
    * @throws {SessionNotCreatedError}
    *     If, for whatever reason, a session could not be created.
    */
-  constructor(capabilities, flags, connection) {
+  constructor(capabilities, flags, options = {}) {
+    const { connection, useDedicatedContainer = false } = options;
+
     // List of handles for registered chrome:// URLs
     this.#chromeProtocolHandles = new Map();
 
@@ -252,6 +266,16 @@ export class WebDriverSession {
       this.#capabilities = lazy.Capabilities.fromJSON(capabilities, this.#bidi);
     } catch (e) {
       throw new lazy.error.SessionNotCreatedError(e);
+    }
+
+    this.#userContext = useDedicatedContainer
+      ? getRemoteControlUserContextId()
+      : null;
+    if (this.#userContext !== null) {
+      this.#capabilities.set("moz:userContext", this.#userContext);
+      lazy.logger.debug(
+        `Session restricted to user context ${this.#userContext}`
+      );
     }
 
     if (this.proxy.init()) {
@@ -424,6 +448,18 @@ export class WebDriverSession {
     this.#capabilities.set("timeouts", timeouts);
   }
 
+  /**
+   * The user context id of the container created for this session.
+   * Bug 2072964 to start enforcing this restriction in commands and events.
+   * Used only in tests until then.
+   *
+   * @returns {string|null}
+   *     The user context id, or null if no user context was created.
+   */
+  get userContext() {
+    return this.#userContext;
+  }
+
   get userPromptHandler() {
     return this.#capabilities.get("unhandledPromptBehavior");
   }
@@ -579,6 +615,37 @@ export class WebDriverSession {
   // XPCOM
 
   QueryInterface = ChromeUtils.generateQI(["nsIHttpRequestHandler"]);
+}
+
+const REMOTE_CONTROL_CONTAINER_NAME = "remote-control-container";
+
+/**
+ * Retrieve the user context id for the dedicated container created for sessions
+ * using dynamically started servers.
+ *
+ * @returns {string}
+ *     The user context id.
+ */
+function getRemoteControlUserContextId() {
+  const existingUserContexts = lazy.UserContextManager.getUserContextIdsByName(
+    REMOTE_CONTROL_CONTAINER_NAME
+  );
+
+  // If any container already matches the hardcoded REMOTE_CONTROL_CONTAINER_NAME
+  // pick the first one, users should be able to reuse the same container across
+  // sessions.
+  if (existingUserContexts.length) {
+    return existingUserContexts[0];
+  }
+
+  return lazy.UserContextManager.createContext({
+    // Use a color reminiscent of the color applied to the URL bar.
+    color: "red",
+    // Bug 2074485: Add a new container icon matching the robot icon for the
+    // remote control panel. In the meantime, use a circle as a generic icon.
+    icon: "circle",
+    name: REMOTE_CONTROL_CONTAINER_NAME,
+  });
 }
 
 /**

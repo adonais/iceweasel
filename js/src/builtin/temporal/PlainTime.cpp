@@ -27,6 +27,7 @@
 #include "builtin/temporal/ZonedDateTime.h"
 #include "gc/AllocKind.h"
 #include "gc/Barrier.h"
+#include "jit/InlinableNatives.h"
 #include "js/CallArgs.h"
 #include "js/CallNonGenericMethod.h"
 #include "js/Class.h"
@@ -1622,12 +1623,15 @@ static const JSFunctionSpec PlainTime_prototype_methods[] = {
 };
 
 static const JSPropertySpec PlainTime_prototype_properties[] = {
-    JS_PSG("hour", PlainTime_hour, 0),
-    JS_PSG("minute", PlainTime_minute, 0),
-    JS_PSG("second", PlainTime_second, 0),
-    JS_PSG("millisecond", PlainTime_millisecond, 0),
-    JS_PSG("microsecond", PlainTime_microsecond, 0),
-    JS_PSG("nanosecond", PlainTime_nanosecond, 0),
+    JS_INLINABLE_PSG("hour", PlainTime_hour, 0, PlainTimeHour),
+    JS_INLINABLE_PSG("minute", PlainTime_minute, 0, PlainTimeMinute),
+    JS_INLINABLE_PSG("second", PlainTime_second, 0, PlainTimeSecond),
+    JS_INLINABLE_PSG("millisecond", PlainTime_millisecond, 0,
+                     PlainTimeMillisecond),
+    JS_INLINABLE_PSG("microsecond", PlainTime_microsecond, 0,
+                     PlainTimeMicrosecond),
+    JS_INLINABLE_PSG("nanosecond", PlainTime_nanosecond, 0,
+                     PlainTimeNanosecond),
     JS_STRING_SYM_PS(toStringTag, "Temporal.PlainTime", JSPROP_READONLY),
     JS_PS_END,
 };

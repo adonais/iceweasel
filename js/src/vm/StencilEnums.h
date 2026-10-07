@@ -41,7 +41,8 @@ enum class TryNoteKind : uint8_t {
   ForIn,
   Destructuring,
   ForOf,
-  Loop
+  Loop,
+  Last = Loop
 };
 
 // [SMDOC] Script Flags

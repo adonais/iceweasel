@@ -5,22 +5,22 @@
 #ifndef widget_headless_HeadlessCompositorWidget_h
 #define widget_headless_HeadlessCompositorWidget_h
 
-#include "HeadlessWidget.h"
 #include "mozilla/widget/CompositorWidget.h"
+#include "mozilla/widget/HeadlessWidget.h"
 
 namespace mozilla {
 namespace widget {
 
 class HeadlessCompositorWidgetInitData;
 
-class HeadlessCompositorWidget final : public CompositorWidget,
-                                       public CompositorWidgetDelegate {
+class HeadlessCompositorWidget : public CompositorWidget,
+                                 public CompositorWidgetDelegate {
  public:
   HeadlessCompositorWidget(const HeadlessCompositorWidgetInitData& aInitData,
                            const layers::CompositorOptions& aOptions,
                            HeadlessWidget* aWindow);
 
-  void NotifyClientSizeChanged(const LayoutDeviceIntSize& aClientSize);
+  void NotifyClientSizeChanged(const LayoutDeviceIntSize& aClientSize) override;
 
   // CompositorWidget Overrides
 

@@ -5,8 +5,8 @@ support-files = [
   "head.js",
   "!/accessible/tests/mochitest/*.js",
 ]
-skip-if = [
-  "a11y_checks",
+run-if = [
+  "!a11y_checks", # these tests start and stop the accessibility service themselves
 ]
 prefs = [
   # Required for the eval in invokeContentTask in shared-head.js

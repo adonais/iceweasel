@@ -10,12 +10,18 @@ support-files = [
 
 ["browser_content_classifier_blocking.js"]
 
+["browser_content_classifier_content_script.js"]
+
 ["browser_content_classifier_engines_pref.js"]
 
 ["browser_content_classifier_harmful_addon.js"]
 
+["browser_content_classifier_memory_reporter.js"]
+
 ["browser_content_classifier_pref_mirror.js"]
 
 ["browser_content_classifier_remote_settings.js"]
+
+["browser_content_classifier_subdomain_rules.js"]
 
 ["browser_urlclassifier_disable_for_channel_classifier.js"]

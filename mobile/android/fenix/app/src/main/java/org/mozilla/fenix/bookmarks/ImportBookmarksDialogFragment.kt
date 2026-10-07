@@ -8,8 +8,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.compose.content
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.coroutineScope
+import androidx.lifecycle.withStarted
+import kotlinx.coroutines.launch
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.concept.bookmark.parser.BookmarksFileParser
 import mozilla.components.concept.bookmarks.file.BookmarksFileImporter
@@ -46,15 +51,9 @@ internal class ImportBookmarksDialogFragment : DialogFragment() {
                     REQUEST_KEY,
                     event.resultBundle(),
                 )
-                dismissWhenFinished(event)
+                dismissWhenFinished(event, lifecycle) { dismiss() }
             },
         )
-    }
-
-    private fun dismissWhenFinished(event: ImporterEvent) {
-        if (event !is ImporterEvent.Started) {
-            dismiss()
-        }
     }
 
     companion object {
@@ -82,6 +81,15 @@ internal class ImportBookmarksDialogFragment : DialogFragment() {
                 else -> null
             }
     }
+}
+
+@VisibleForTesting
+internal fun dismissWhenFinished(event: ImporterEvent, lifecycle: Lifecycle, dismiss: () -> Unit) {
+    if (event is ImporterEvent.Started) {
+        return
+    }
+
+    lifecycle.coroutineScope.launch { lifecycle.withStarted(dismiss) }
 }
 
 private fun ImporterEvent.resultBundle(): Bundle {

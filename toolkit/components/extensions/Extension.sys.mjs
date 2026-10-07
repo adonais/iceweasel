@@ -899,7 +899,11 @@ export class ExtensionData {
    * Note: These fields are only available and meant to be used on Extension
    * instances, declared here because methods from this class reference them.
    */
-  /** @type {object} TODO: move to the Extension class, bug 1871094. */
+  /**
+   * TODO: move to the Extension class, bug 1871094.
+   *
+   * @type {object}
+   */
   addonData;
   /** @type {nsIURI} */
   baseURI;

@@ -124,73 +124,25 @@
 #include "nsLayoutStatics.h"
 
 // Interfaces Needed
-#include "Crypto.h"
-#include "mozilla/EventDispatcher.h"
-#include "mozilla/EventStateManager.h"
-#include "mozilla/ScrollContainerFrame.h"
-#include "mozilla/dom/CustomEvent.h"
-#include "mozilla/dom/Document.h"
-#include "nsCSSProps.h"
-#include "nsCanvasFrame.h"
-#include "nsComputedDOMStyle.h"
-#include "nsContentUtils.h"
-#include "nsDOMCID.h"
-#include "nsDOMString.h"
-#include "nsDOMWindowUtils.h"
-#include "nsFocusManager.h"
-#include "nsGlobalWindowCommands.h"
-#include "nsIAppWindow.h"
-#include "nsIBaseWindow.h"
-#include "nsIClassifiedChannel.h"
-#include "nsIContent.h"
-#include "nsIControllers.h"
-#include "nsIDeviceSensors.h"
-#include "nsIDocShell.h"
-#include "nsIDocumentViewer.h"
-#include "nsIFrame.h"
-#include "nsILoadContext.h"
-#include "nsIObserverService.h"
-#include "nsIPrompt.h"
-#include "nsIPromptFactory.h"
-#include "nsIPromptService.h"
-#include "nsISHistory.h"
-#include "nsIScreenManager.h"
-#include "nsIScriptError.h"
-#include "nsIURIFixup.h"
-#include "nsIURIMutator.h"
-#include "nsIWebBrowserChrome.h"
-#include "nsIWebBrowserFind.h"  // For window.find()
-#include "nsIWebNavigation.h"
-#include "nsIWidget.h"
-#include "nsIWidgetListener.h"
-#include "nsIWindowWatcher.h"
-#include "nsIWritablePropertyBag2.h"
-#include "nsIXULRuntime.h"
-#include "nsPIWindowWatcher.h"
-#include "nsQueryObject.h"
-#include "nsServiceManagerUtils.h"
-#include "nsThreadUtils.h"
-#include "xpcprivate.h"
-
-#ifdef NS_PRINTING
-#  include "nsIPrintSettings.h"
-#  include "nsIPrintSettingsService.h"
-#  include "nsIWebBrowserPrint.h"
-#endif
-
 #include "AccessCheck.h"
+#include "Crypto.h"
 #include "FxRWindowManager.h"
 #include "VRShMem.h"
 #include "gfxVR.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/EventDispatcher.h"
+#include "mozilla/EventStateManager.h"
 #include "mozilla/GlobalKeyListener.h"
 #include "mozilla/Logging.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/Services.h"
 #include "mozilla/dom/AudioContext.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/Console.h"
+#include "mozilla/dom/CustomEvent.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Fetch.h"
 #include "mozilla/dom/FunctionBinding.h"
@@ -222,22 +174,66 @@
 #include "mozilla/dom/cache/CacheStorage.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
 #include "mozilla/glean/DomMetrics.h"
+#include "nsCSSProps.h"
+#include "nsCanvasFrame.h"
+#include "nsComputedDOMStyle.h"
+#include "nsContentUtils.h"
+#include "nsDOMCID.h"
+#include "nsDOMString.h"
+#include "nsDOMWindowUtils.h"
+#include "nsFocusManager.h"
 #include "nsFrameLoader.h"
 #include "nsFrameLoaderOwner.h"
+#include "nsGlobalWindowCommands.h"
 #include "nsHTMLDocument.h"
+#include "nsIAppWindow.h"
 #include "nsIArray.h"
+#include "nsIBaseWindow.h"
 #include "nsIBrowserChild.h"
+#include "nsIClassifiedChannel.h"
+#include "nsIContent.h"
+#include "nsIControllers.h"
 #include "nsIDOMXULCommandDispatcher.h"
+#include "nsIDeviceSensors.h"
+#include "nsIDocShell.h"
+#include "nsIDocumentViewer.h"
 #include "nsIDragService.h"
+#include "nsIFrame.h"
+#include "nsILoadContext.h"
+#include "nsIObserverService.h"
+#include "nsIPrintSettings.h"
+#include "nsIPrintSettingsService.h"
+#include "nsIPrompt.h"
+#include "nsIPromptFactory.h"
+#include "nsIPromptService.h"
+#include "nsISHistory.h"
+#include "nsIScreenManager.h"
+#include "nsIScriptError.h"
+#include "nsIURIFixup.h"
+#include "nsIURIMutator.h"
+#include "nsIWebBrowserChrome.h"
+#include "nsIWebBrowserFind.h"  // For window.find()
+#include "nsIWebBrowserPrint.h"
+#include "nsIWebNavigation.h"
+#include "nsIWidget.h"
+#include "nsIWidgetListener.h"
+#include "nsIWindowWatcher.h"
+#include "nsIWritablePropertyBag2.h"
+#include "nsIXULRuntime.h"
 #include "nsNetCID.h"
+#include "nsPIWindowWatcher.h"
+#include "nsQueryObject.h"
 #include "nsRefreshDriver.h"
 #include "nsSandboxFlags.h"
+#include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
 #include "nsWindowRoot.h"
 #include "nsWrapperCacheInlines.h"
 #include "nsXPCOMCID.h"
 #include "nsXULControllers.h"
 #include "prenv.h"
 #include "prrng.h"
+#include "xpcprivate.h"
 
 #ifdef MOZ_WEBSPEECH
 #  include "mozilla/dom/SpeechSynthesis.h"
@@ -5007,7 +5003,6 @@ void nsGlobalWindowOuter::PrintOuter(ErrorResult& aError) {
     }
   }
 
-#ifdef NS_PRINTING
   RefPtr<BrowsingContext> top =
       mBrowsingContext ? mBrowsingContext->Top() : nullptr;
   if (NS_WARN_IF(top && top->GetIsPrinting())) {
@@ -5028,7 +5023,6 @@ void nsGlobalWindowOuter::PrintOuter(ErrorResult& aError) {
                           !StaticPrefs::print_prefer_system_dialog();
   Print(nullptr, nullptr, nullptr, nullptr, IsPreview(forPreview),
         IsForWindowDotPrint::Yes, nullptr, nullptr, aError);
-#endif
 }
 
 class MOZ_RAII AutoModalState {
@@ -5051,7 +5045,6 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
     IsPreview aIsPreview, IsForWindowDotPrint aForWindowDotPrint,
     PrintPreviewResolver&& aPrintPreviewCallback,
     RefPtr<BrowsingContext>* aCachedBrowsingContext, ErrorResult& aError) {
-#ifdef NS_PRINTING
   nsCOMPtr<nsIPrintSettingsService> printSettingsService =
       do_GetService("@mozilla.org/gfx/printsettings-service;1");
   if (!printSettingsService) {
@@ -5295,9 +5288,6 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
   }
 
   return WindowProxyHolder(std::move(bc));
-#else
-  return nullptr;
-#endif  // NS_PRINTING
 }
 
 void nsGlobalWindowOuter::MoveToOuter(int32_t aXPos, int32_t aYPos,
@@ -6057,6 +6047,17 @@ void nsGlobalWindowOuter::CloseOuter(bool aTrustedCaller) {
     return;
   }
 
+  // Check allow-top-navigation sandbox flags
+  if (RefPtr<nsGlobalWindowInner> callerInner =
+          nsContentUtils::IncumbentInnerWindow()) {
+    if (BrowsingContext* callerBC = callerInner->GetBrowsingContext()) {
+      if (NS_FAILED(mBrowsingContext->EnsureSourceSandboxAllowsNavigation(
+              callerBC, true))) {
+        return;
+      }
+    }
+  }
+
   // Don't allow scripts from content to close non-neterror windows that
   // were not opened by script.
   if (mDoc) {
@@ -6064,26 +6065,17 @@ void nsGlobalWindowOuter::CloseOuter(bool aTrustedCaller) {
     nsresult rv = mDoc->GetURL(url);
     NS_ENSURE_SUCCESS_VOID(rv);
 
-    RefPtr<ChildSHistory> csh =
-        nsDocShell::Cast(mDocShell)->GetSessionHistory();
-
     if (!StringBeginsWith(url, u"about:neterror"_ns) &&
-        !mBrowsingContext->GetTopLevelCreatedByWebContent() &&
-        !aTrustedCaller && csh && csh->Count() > 1) {
-      bool allowClose =
-          mAllowScriptsToClose ||
-          Preferences::GetBool("dom.allow_scripts_to_close_windows", true);
-      if (!allowClose) {
-        // We're blocking the close operation
-        // report localized error msg in JS console
-        nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                        "DOM Window"_ns,
-                                        mDoc,  // Better name for the category?
-                                        PropertiesFile::DOM_PROPERTIES,
-                                        "WindowCloseByScriptBlockedWarning");
-
-        return;
-      }
+        !mBrowsingContext->IsScriptClosable() && !aTrustedCaller &&
+        !mAllowScriptsToClose &&
+        !Preferences::GetBool("dom.allow_scripts_to_close_windows", true)) {
+      // We're blocking the close operation
+      // report localized error msg in JS console
+      nsContentUtils::ReportToConsole(
+          nsIScriptError::warningFlag, "DOM Window"_ns,
+          mDoc,  // Better name for the category?
+          PropertiesFile::DOM_PROPERTIES, "WindowCloseByScriptBlockedWarning");
+      return;
     }
   }
 
@@ -6702,9 +6694,7 @@ nsresult nsGlobalWindowOuter::GetInterfaceInternal(const nsIID& aIID,
   } else if (aIID.Equals(NS_GET_IID(nsIDocShell))) {
     nsCOMPtr<nsIDocShell> docShell = mDocShell;
     docShell.forget(aSink);
-  }
-#ifdef NS_PRINTING
-  else if (aIID.Equals(NS_GET_IID(nsIWebBrowserPrint))) {
+  } else if (aIID.Equals(NS_GET_IID(nsIWebBrowserPrint))) {
     if (mDocShell) {
       nsCOMPtr<nsIDocumentViewer> viewer;
       mDocShell->GetDocViewer(getter_AddRefs(viewer));
@@ -6713,9 +6703,7 @@ nsresult nsGlobalWindowOuter::GetInterfaceInternal(const nsIID& aIID,
         webBrowserPrint.forget(aSink);
       }
     }
-  }
-#endif
-  else if (aIID.Equals(NS_GET_IID(nsILoadContext))) {
+  } else if (aIID.Equals(NS_GET_IID(nsILoadContext))) {
     nsCOMPtr<nsILoadContext> loadContext(do_QueryInterface(mDocShell));
     loadContext.forget(aSink);
   }

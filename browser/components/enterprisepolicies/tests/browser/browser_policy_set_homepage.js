@@ -2,6 +2,11 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
+// The two tasks that verify the preferences UI each load about:preferences,
+// which costs around ten seconds on a debug build. Test verification runs the
+// file ten times.
+requestLongerTimeout(2);
+
 registerCleanupFunction(function restore_pref_values() {
   // These two prefs are set as user prefs in case the "Locked"
   // option from this policy was not used. In this case, it won't
@@ -17,7 +22,7 @@ add_task(async function homepage_test_simple() {
       },
     },
   });
-  await check_homepage({ expectedURL: "http://example1.com/" });
+  await check_homepage({ expectedURL: "http://example1.com/", checkUI: true });
 });
 
 add_task(async function homepage_test_repeat_same_policy_value() {

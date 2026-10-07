@@ -139,7 +139,7 @@ MatrixScales AnimationValue::GetScaleValue(const nsIFrame* aFrame) const {
       ReadTransforms(StyleTranslate::None(), StyleRotate::None(),
                      StyleScale::None(), nullptr, GetTransformProperty(),
                      refBox, aFrame->PresContext()->AppUnitsPerDevPixel(),
-                     aFrame->Style()->EffectiveZoom());
+                     aFrame->Style()->EffectiveZoom(), Zoomed::Yes);
   Matrix transform2d;
   bool canDraw2D = t.CanDraw2D(&transform2d);
   if (!canDraw2D) {

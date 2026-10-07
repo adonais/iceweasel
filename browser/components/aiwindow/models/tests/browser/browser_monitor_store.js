@@ -72,10 +72,14 @@ function makeMonitor(options = {}) {
     watchUrls: options.watchUrls ?? [`https://example.com/${id}`],
     schedule: options.schedule ?? { type: "interval", hours: 6 },
     enabled: options.enabled ?? true,
+    runCount: options.runCount ?? 0,
     createdAt: options.createdAt ?? "2026-06-23T12:00:00.000Z",
     updatedAt: options.updatedAt ?? "2026-06-23T12:00:00.000Z",
     lastRunTime: options.lastRunTime ?? "2026-06-23T12:00:00.000Z",
     nextRunTime: options.nextRunTime ?? "2026-06-23T18:00:00.000Z",
+    activeSince: options.activeSince ?? "2026-06-23T12:00:00.000Z",
+    lastMatchAt: options.lastMatchAt ?? null,
+    expiry: options.expiry ?? null,
     history: options.history ?? [],
     initialSnapshot: options.initialSnapshot ?? null,
   };
@@ -180,6 +184,135 @@ add_task(async function test_initial_snapshot_validation() {
     await MonitorStore.listMonitors(),
     [{ ...corruptSnapshot, initialSnapshot: null }],
     "A monitor with a corrupt stored snapshot loads with the snapshot dropped."
+  );
+});
+
+add_task(async function test_saveMonitor_persists_expiry_state() {
+  await resetMonitorStore();
+
+  const monitor = makeMonitor({
+    id: "monitor-expired",
+    enabled: false,
+    activeSince: "2026-04-01T12:00:00.000Z",
+    lastMatchAt: "2026-04-20T12:00:00.000Z",
+    expiry: { expiredAt: "2026-06-23T12:00:00.000Z", reason: "no_match" },
+  });
+  await MonitorStore.saveMonitor(monitor);
+  await MonitorStore.close();
+
+  Assert.deepEqual(
+    await MonitorStore.listMonitors(),
+    [monitor],
+    "The active-since, last-match and expiry fields persist through a real IndexedDB reopen."
+  );
+
+  // A record stored before auto-expiry existed loads with the expiry
+  // windows counting from its creation.
+  const legacy = makeMonitor({ id: "legacy-monitor" });
+  delete legacy.activeSince;
+  delete legacy.lastMatchAt;
+  delete legacy.expiry;
+  await writeRawMonitorRecords([legacy]);
+  Assert.deepEqual(
+    (await MonitorStore.listMonitors()).find(m => m.id === "legacy-monitor"),
+    {
+      ...legacy,
+      activeSince: legacy.createdAt,
+      lastMatchAt: null,
+      expiry: null,
+    },
+    "A legacy record loads with activeSince defaulting to createdAt and no expiry."
+  );
+});
+
+add_task(async function test_expiry_state_validation() {
+  await resetMonitorStore();
+
+  await Assert.rejects(
+    MonitorStore.saveMonitor(
+      makeMonitor({
+        id: "invalid-expiry-reason",
+        expiry: { expiredAt: "2026-06-23T12:00:00.000Z", reason: "bogus" },
+      })
+    ),
+    /Monitor expiry is invalid/,
+    "Unknown expiry reasons are rejected on save."
+  );
+  await Assert.rejects(
+    MonitorStore.saveMonitor(
+      makeMonitor({
+        id: "invalid-expiry-timestamp",
+        expiry: { expiredAt: "not-a-date", reason: "max_age" },
+      })
+    ),
+    /Monitor expiry timestamp is invalid/,
+    "Expiry records with invalid timestamps are rejected on save."
+  );
+  await Assert.rejects(
+    MonitorStore.saveMonitor(
+      makeMonitor({ id: "invalid-last-match", lastMatchAt: "not-a-date" })
+    ),
+    /Monitor last match timestamp is invalid/,
+    "Invalid last-match timestamps are rejected on save."
+  );
+
+  // A corrupt stored expiry is dropped on load instead of losing the monitor.
+  const corruptExpiry = makeMonitor({
+    id: "corrupt-stored-expiry",
+    expiry: { expiredAt: "2026-06-23T12:00:00.000Z", reason: "bogus" },
+  });
+  await writeRawMonitorRecords([corruptExpiry]);
+  Assert.deepEqual(
+    await MonitorStore.listMonitors(),
+    [{ ...corruptExpiry, expiry: null }],
+    "A monitor with a corrupt stored expiry loads with the expiry dropped."
+  );
+});
+
+add_task(async function test_run_count_persists_and_validates() {
+  await resetMonitorStore();
+
+  const monitor = makeMonitor({ id: "monitor-run-count", runCount: 7 });
+  await MonitorStore.saveMonitor(monitor);
+  await MonitorStore.close();
+  Assert.deepEqual(
+    await MonitorStore.listMonitors(),
+    [monitor],
+    "The run count round-trips through the store."
+  );
+
+  await Assert.rejects(
+    MonitorStore.saveMonitor(
+      makeMonitor({ id: "invalid-run-count", runCount: "3" })
+    ),
+    /Monitor run count is invalid/,
+    "A non-integer run count is rejected on save."
+  );
+
+  const negative = makeMonitor({ id: "negative-run-count", runCount: -1 });
+  const legacy = makeMonitor({
+    id: "legacy-run-count",
+    history: Array.from({ length: 4 }, (_, index) => ({
+      id: `history-${index}`,
+      checkedAt: new Date(Date.UTC(2026, 5, 24, index)).toISOString(),
+      status: "success",
+      resultExplanation: `Result ${index}`,
+      conditionMet: false,
+    })),
+  });
+  delete legacy.runCount;
+  await writeRawMonitorRecords([negative, legacy]);
+
+  const loaded = await MonitorStore.listMonitors();
+  Assert.equal(
+    loaded.find(record => record.id === "negative-run-count").runCount,
+    0,
+    "An invalid stored run count recovers to 0 on load."
+  );
+  Assert.equal(
+    loaded.find(record => record.id === "legacy-run-count").runCount,
+    4,
+    "A record stored before the counter existed starts from its history length."
   );
 });
 
@@ -328,6 +461,54 @@ add_task(async function test_listMonitors_does_not_require_created_at_index() {
   );
 });
 
+add_task(async function test_shutdown_fetch_state_describes_pending_writes() {
+  await resetMonitorStore();
+
+  let fetchState;
+  const shutdownClient = {
+    addBlocker(_name, _blocker, options) {
+      fetchState = options.fetchState;
+    },
+    removeBlocker() {},
+  };
+  const store = new MonitorStoreImpl(shutdownClient);
+  const savePromise = store.saveMonitor(
+    makeMonitor({ id: "private-monitor-id" })
+  );
+  const deletePromise = store.deleteMonitor("private-monitor-id");
+
+  const state = fetchState();
+  Assert.deepEqual(
+    state.pendingWrites.map(write => ({
+      operation: write.operation,
+      state: write.state,
+    })),
+    [
+      { operation: "saveMonitor", state: "queued" },
+      { operation: "deleteMonitor", state: "queued" },
+    ],
+    "Shutdown state identifies queued writes without their data."
+  );
+  Assert.ok(
+    state.pendingWrites.every(
+      write => Number.isInteger(write.pendingForMs) && write.pendingForMs >= 0
+    ),
+    "Shutdown state reports how long each write has been pending."
+  );
+  Assert.ok(
+    !JSON.stringify(state).includes("private-monitor-id"),
+    "Shutdown state does not expose monitor identifiers."
+  );
+
+  await Promise.all([savePromise, deletePromise]);
+  Assert.deepEqual(
+    fetchState().pendingWrites,
+    [],
+    "Completed writes are removed from shutdown state."
+  );
+  await store.close();
+});
+
 add_task(async function test_shutdown_waits_for_pending_real_database_write() {
   await resetMonitorStore();
 
@@ -384,6 +565,79 @@ add_task(async function test_shutdown_waits_for_pending_real_database_write() {
     );
   } finally {
     await verificationStore.close();
+  }
+});
+
+add_task(async function test_shutdown_does_not_wait_for_database_open() {
+  await resetMonitorStore();
+
+  const barrier = new AsyncShutdown.Barrier("MonitorStore test shutdown");
+  const store = new MonitorStoreImpl(barrier.client);
+  const blockingDatabase = await IndexedDB.open(
+    MonitorStore.databaseName,
+    MonitorStore.databaseVersion
+  );
+  const waitForRequest = request =>
+    new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  let deletionPromise;
+
+  try {
+    const deletionRequest = IndexedDB.deleteDatabase(MonitorStore.databaseName);
+    deletionPromise = waitForRequest(deletionRequest);
+    const deletionBlocked = new Promise(resolve => {
+      deletionRequest.onblocked = resolve;
+    });
+    await deletionBlocked;
+
+    const listPromise = store.listMonitors();
+    let listFinished = false;
+    listPromise.then(
+      () => {
+        listFinished = true;
+      },
+      () => {
+        listFinished = true;
+      }
+    );
+    await TestUtils.waitForTick();
+    Assert.ok(!listFinished, "Opening the database is blocked.");
+
+    let shutdownFinished = false;
+    const shutdownPromise = barrier.wait().then(() => {
+      shutdownFinished = true;
+    });
+    for (let attempt = 0; attempt < 10 && !shutdownFinished; attempt++) {
+      await TestUtils.waitForTick();
+    }
+    const shutdownFinishedBeforeOpen = shutdownFinished;
+
+    blockingDatabase.close();
+    await deletionPromise;
+    await Assert.rejects(
+      listPromise,
+      /Monitor store is shutting down/,
+      "The pending read rejects when its database eventually opens."
+    );
+    await shutdownPromise;
+
+    Assert.ok(
+      shutdownFinishedBeforeOpen,
+      "Shutdown does not wait for a read-only database open."
+    );
+
+    let cleanupBlocked = false;
+    const cleanupRequest = IndexedDB.deleteDatabase(MonitorStore.databaseName);
+    cleanupRequest.onblocked = () => {
+      cleanupBlocked = true;
+    };
+    await waitForRequest(cleanupRequest);
+    Assert.ok(!cleanupBlocked, "The late database was closed.");
+  } finally {
+    blockingDatabase.close();
+    await deletionPromise?.catch(() => {});
   }
 });
 

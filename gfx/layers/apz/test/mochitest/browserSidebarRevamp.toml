@@ -4,7 +4,7 @@ support-files = [
   "apz_test_native_event_utils.js",
   "apz_test_utils.js",
   "helper_browser_test_utils.js",
-  "!/browser/base/content/test/forms/head.js",
+  "!/browser/base/content/test/browser-forms/head.js",
   "!/browser/components/extensions/test/browser/head.js",
   "!/browser/components/extensions/test/browser/head_browserAction.js"
 ]

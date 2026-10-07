@@ -6,13 +6,19 @@
 // Tests pausing in original sources from projects built on ember framework,
 // This also tests the original variable mapping toggle and notifications
 
+// The page has four original sources whose file name is "router.js": the app's
+// own one, and three coming from vendor.js. Refer to the app's one by its full
+// URL, as `findSource` matches on file names and would otherwise return
+// whichever source map happened to be processed first.
+const ROUTER_URL = `${EXAMPLE_URL}ember/quickstart/dist/assets/quickstart/router.js`;
+
 add_task(async function () {
   const dbg = await initDebugger("ember/quickstart/dist/");
 
   await invokeWithBreakpoint(
     dbg,
     "mapTestFunction",
-    "router.js",
+    ROUTER_URL,
     { line: 13, column: 3 },
     async () => {
       info("Assert the original variable mapping notifications are visible");

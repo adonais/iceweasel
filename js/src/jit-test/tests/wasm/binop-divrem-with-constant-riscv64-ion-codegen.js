@@ -220,7 +220,7 @@ const i64_div_s = [
   // Power of two divisor
   {
     divisor: 1,
-    expected: `mv        a0, a0`,
+    expected: ``,
   },
   {
     divisor: 2,
@@ -361,7 +361,7 @@ const i64_div_u = [
   // Power of two divisor
   {
     divisor: 1,
-    expected: `mv        a0, a0`,
+    expected: ``,
   },
   {
     divisor: 2,

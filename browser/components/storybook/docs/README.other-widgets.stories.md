@@ -57,7 +57,7 @@ For example, the [login-timeline widget](https://searchfox.org/firefox-main/sour
 
 ### Adding new domain-specific widgets
 
-While we do have the `./mach addwidget` command, as noted in the [adding new design system components document](#adding-new-design-system-components), this command does not currently support the domain-specific widget case.
+While we do have the `./mach addwidget` command, as noted in the [adding new design system components document](./README.reusable-widgets.stories.md#adding-new-design-system-components), this command does not currently support the domain-specific widget case.
 [See Bug 1828181 for more details on supporting this case](https://bugzilla.mozilla.org/show_bug.cgi?id=1828181).
 Instead, you will need to use `./mach addstory your-widget "your-project-or-team-name"` to create a new story in `browser/components/storybook/stories`.
 You can also use `./mach addstory your-widget "your-project-or-team-name" --path <your-widget-path>/<widget-source>` so that your widget's source is imported correctly.
@@ -68,12 +68,12 @@ This is expected and serves as a reminder that you need to update the newly crea
 
 Since Storybook is unaware of how the actual code is added or built, we won't go into detail about adding your new widget to the codebase.
 It's recommended to have a `.html` test for your new widget since this lets you unit test the component directly rather than using integration tests with the domain.
-To see what kind of files you may need for your widget, please refer back to [the output of the `./mach addwidget` command](#adding-new-design-system-components).
-Just like with the UI widgets, [the `browser_all_files_referenced.js` will fail unless you use your component immediately outside of Storybook.](#known-browser_all_files_referencedjs-issue)
+To see what kind of files you may need for your widget, please refer back to [the output of the `./mach addwidget` command](./README.reusable-widgets.stories.md#adding-new-design-system-components).
+Just like with the UI widgets, [the `browser_all_files_referenced.js` will fail unless you use your component immediately outside of Storybook.](./README.reusable-widgets.stories.md#known-browser_all_files_referencedjs-issue)
 
 ### Using new domain-specific widgets
 
-This is effectively the same as [using new design system components](#using-new-design-system-components). In general you should be able to rely on these elements getting lazily loaded at the time of first use, similar to how existing custom elements are imported.
+This is effectively the same as [using new design system components](./README.reusable-widgets.stories.md#using-new-design-system-components). In general you should be able to rely on these elements getting lazily loaded at the time of first use, similar to how existing custom elements are imported.
 
 Outside of chrome privileged documents you may need to import your widget into the relevant `html`/`xhtml` files via a `script` tag with `type="module"`:
 

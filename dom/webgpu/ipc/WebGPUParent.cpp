@@ -610,7 +610,7 @@ void WebGPUParent::BufferUnmap(RawId aDeviceId, RawId aBufferId, bool aFlush) {
     }
   }
 
-  ffi::wgpu_server_buffer_unmap(mContext.get(), aBufferId, mapData->mIsMapped);
+  ffi::wgpu_server_buffer_unmap(mContext.get(), aBufferId);
 
   mapData->mMappedOffset = 0;
   mapData->mMappedSize = 0;
@@ -908,7 +908,7 @@ static void ReadbackPresentCallback(uint8_t* userdata,
       NS_WARNING("WebGPU present skipped: the swapchain is resized!");
     }
 
-    wgpu_server_buffer_unmap(req->mContext, bufferId, true);
+    wgpu_server_buffer_unmap(req->mContext, bufferId);
   } else {
     // TODO: better handle errors
     NS_WARNING("WebGPU frame mapping failed!");
@@ -990,7 +990,7 @@ static void ReadbackSnapshotCallback(uint8_t* userdata,
     dst += req->mDestStride;
   }
 
-  wgpu_server_buffer_unmap(req->mContext, req->mBufferId, true);
+  wgpu_server_buffer_unmap(req->mContext, req->mBufferId);
 }
 
 ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
@@ -1283,8 +1283,8 @@ void WebGPUParent::SwapChainPresent(
 
   data->mQueuedBufferIds.insert(data->mQueuedBufferIds.begin(), bufferId);
 
-  ffi::wgpu_server_buffer_map(mContext.get(), data->mDeviceId, bufferId, 0,
-                              bufferSize, ffi::WGPUHostMap_Read, closure);
+  ffi::wgpu_server_buffer_map(mContext.get(), bufferId, 0, bufferSize,
+                              ffi::WGPUHostMap_Read, closure);
   // bufferId was transferred to ReadbackPresentCallback.
   bufferId = 0;
 }

@@ -64,6 +64,7 @@ const AUTOFILL_ICON = "chrome://browser/skin/smart-window-simplified.svg";
  * @property {string} ariaLabel
  *   Accessible label for the entry. The entry is an ARIA option, so this
  *   replaces its whole subtree and has to carry the state shown visually.
+ * @property {number} availableTabs Number of open tabs available
  */
 
 /**
@@ -90,10 +91,9 @@ class SmartFormFillAutocompleteItem {
     focusElementId,
     secondaryActionLabel,
     ariaLabel,
+    availableTabs,
   }) {
-    this.image = image;
-    this.label = label;
-    this.comment = JSON.stringify({
+    const comment = {
       type: "smartFormFill",
       sourcesLabel,
       sourcesPillsLabel,
@@ -103,19 +103,26 @@ class SmartFormFillAutocompleteItem {
       loading,
       loadingLabel,
       emptySourcesLabel,
+      availableTabs,
 
       fillMessageName: "SmartFormFill:Start",
       fillMessageData: {
         focusElementId,
       },
+    };
 
-      secondaryAction: {
+    if (availableTabs > 1) {
+      comment.secondaryAction = {
         type: "edit",
         fillMessageName: "SmartFormFill:EditSources",
         label: secondaryActionLabel,
         fillMessageData: {},
-      },
-    });
+      };
+    }
+
+    this.image = image;
+    this.label = label;
+    this.comment = JSON.stringify(comment);
   }
 }
 
@@ -145,6 +152,12 @@ export const SmartFormFillAutocomplete = {
     inputType,
     focusElementId,
   }) {
+    // A search string means the user typed in the field, so there is no entry
+    // to offer.
+    if (searchString) {
+      return [];
+    }
+
     const isSupportedInput =
       inputType == "textarea" || SUPPORTED_INPUT_TYPES.includes(inputType);
     const smartWindowActive = lazy.AIWindow.isAIWindowActive(
@@ -178,10 +191,11 @@ export const SmartFormFillAutocomplete = {
    *   Stable identifier for the focused form.
    * @param {string} [options.focusElementId]
    *   Identifier for the field associated with the autocomplete search.
+   * @param {number} options.availableTabs Number of current open tabs available
    * @returns {Promise<Array<SmartFormFillAutocompleteItem>>}
    *   An array containing the Smart Form Fill entry.
    */
-  async createItemsAsync({ sffActor, formId, focusElementId }) {
+  async createItemsAsync({ sffActor, formId, focusElementId, availableTabs }) {
     const [
       label,
       loadingLabel,
@@ -199,7 +213,6 @@ export const SmartFormFillAutocomplete = {
       { id: "ai-smart-form-fill-edit-sources" },
     ]);
     const relevantTabsReady = sffActor.areRelevantTabsReady(formId);
-
     const hasSources =
       relevantTabsReady && sffActor.getSelectedTabSources(formId).length;
 
@@ -232,6 +245,7 @@ export const SmartFormFillAutocomplete = {
       focusElementId,
       secondaryActionLabel: editSourcesLabel,
       ariaLabel,
+      availableTabs,
     });
 
     return [item];

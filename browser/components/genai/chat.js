@@ -6,7 +6,7 @@ const { topChromeWindow } = window.browsingContext;
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  GenAI: "resource:///modules/GenAI.sys.mjs",
+  GenAI: "moz-src:///browser/components/genai/GenAI.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
 });
@@ -39,6 +39,11 @@ XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "sidebarRevampPref",
   "sidebar.revamp"
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "sidebarVisibilityPref",
+  "sidebar.visibility"
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -376,6 +381,21 @@ function showOnboarding(length) {
   document.getElementById(root.id)?.remove();
   document.body.prepend(root);
   history.replaceState("", "");
+  for (
+    let sibling = root.nextElementSibling;
+    sibling;
+    sibling = sibling.nextElementSibling
+  ) {
+    if (
+      sibling.id === "header" &&
+      lazy.sidebarVisibilityPref === "hide-launcher"
+    ) {
+      // The sidebar switcher needs to stay accessible during onboarding.
+      sibling.inert = false;
+      continue;
+    }
+    sibling.inert = true;
+  }
   const script = document.head.appendChild(document.createElement("script"));
   script.src = "chrome://browser/content/aboutwelcome/aboutwelcome.bundle.js";
 
@@ -395,6 +415,13 @@ function showOnboarding(length) {
     AWFinish() {
       if (lazy.providerPref == "") {
         closeSidebar();
+      }
+      for (
+        let sibling = root.nextElementSibling;
+        sibling;
+        sibling = sibling.nextElementSibling
+      ) {
+        sibling.inert = false;
       }
       root.remove();
 

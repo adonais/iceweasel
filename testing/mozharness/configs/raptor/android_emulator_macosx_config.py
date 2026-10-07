@@ -38,8 +38,10 @@ config = {
         "-ranchu",
         "-selinux",
         "permissive",
+        # 3GB is not enough for jetstream3: lmkd kills the content process
+        # mid-run.
         "-memory",
-        "3072",
+        "6144",
         "-cores",
         "4",
         "-skin",

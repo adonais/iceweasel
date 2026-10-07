@@ -131,6 +131,17 @@ bool SourceIsSameTab(nsIContentAnalysisRequest* aRequest) {
              sourceWindowGlobal->DocumentPrincipal());
 }
 
+// Only used to pick the wording of the dialogs, so that a blocked copy says
+// "copy" rather than "paste".
+nsIContentAnalysisRequest::OperationType ClipboardOperationTypeForReason(
+    nsIContentAnalysisRequest::Reason aReason) {
+  MOZ_ASSERT(aReason == nsIContentAnalysisRequest::Reason::eClipboardCopy ||
+             aReason == nsIContentAnalysisRequest::Reason::eClipboardPaste);
+  return aReason == nsIContentAnalysisRequest::Reason::eClipboardCopy
+             ? nsIContentAnalysisRequest::OperationType::eCopyClipboard
+             : nsIContentAnalysisRequest::OperationType::ePasteClipboard;
+}
+
 }  // anonymous namespace
 
 /* static */ bool nsIContentAnalysis::MightBeActive() {
@@ -364,8 +375,7 @@ ContentAnalysisRequest::ContentAnalysisRequest(
     : mAnalysisType(aAnalysisType),
       mReason(aReason),
       mTransferable(aTransferable),
-      mOperationTypeForDisplay(
-          nsIContentAnalysisRequest::OperationType::eClipboard),
+      mOperationTypeForDisplay(ClipboardOperationTypeForReason(aReason)),
       mWindowGlobalParent(aWindowGlobalParent),
       mSourceWindowGlobal(aSourceWindowGlobal) {}
 
@@ -1160,6 +1170,9 @@ static bool ShouldCheckReason(nsIContentAnalysisRequest::Reason aReason) {
     case nsIContentAnalysisRequest::Reason::eClipboardPaste:
       return mozilla::StaticPrefs::
           browser_contentanalysis_interception_point_clipboard_enabled();
+    case nsIContentAnalysisRequest::Reason::eClipboardCopy:
+      return mozilla::StaticPrefs::
+          browser_contentanalysis_interception_point_clipboard_copy_enabled();
     case nsIContentAnalysisRequest::Reason::ePrintPreviewPrint:
     case nsIContentAnalysisRequest::Reason::eSystemDialogPrint:
       return mozilla::StaticPrefs::
@@ -1345,6 +1358,27 @@ void ContentAnalysis::NotifyObserversAndMaybeIssueResponseFromAgent(
   }
 }
 
+// Data leaving the browser (a copy) is DATA_COPIED; everything else is
+// data entering it.
+static nsIContentAnalysisRequest::AnalysisType TextAnalysisTypeForReason(
+    nsIContentAnalysisRequest::Reason aReason) {
+  return aReason == nsIContentAnalysisRequest::Reason::eClipboardCopy
+             ? nsIContentAnalysisRequest::AnalysisType::eDataCopied
+             : nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry;
+}
+
+// Copy and paste have separate plain_text_only prefs.
+static bool ClipboardAnalysisIsPlainTextOnly(
+    nsIContentAnalysisRequest::Reason aReason) {
+  MOZ_ASSERT(aReason == nsIContentAnalysisRequest::Reason::eClipboardCopy ||
+             aReason == nsIContentAnalysisRequest::Reason::eClipboardPaste);
+  return aReason == nsIContentAnalysisRequest::Reason::eClipboardCopy
+             ? StaticPrefs::
+                   browser_contentanalysis_interception_point_clipboard_copy_plain_text_only()
+             : StaticPrefs::
+                   browser_contentanalysis_interception_point_clipboard_plain_text_only();
+}
+
 static void AddCARForText(
     nsString&& text, nsIContentAnalysisRequest::Reason aReason,
     nsIContentAnalysisRequest::OperationType aOperationType, nsIURI* aURI,
@@ -1360,9 +1394,9 @@ static void AddCARForText(
 
   LOGD("Adding CA request for text: '%s'", NS_ConvertUTF16toUTF8(text).get());
   auto contentAnalysisRequest = MakeRefPtr<ContentAnalysisRequest>(
-      nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry, aReason,
-      std::move(text), false, EmptyCString(), aURI, aOperationType,
-      aWindowGlobal, aSourceWindowGlobal, std::move(aUserActionId));
+      TextAnalysisTypeForReason(aReason), aReason, std::move(text), false,
+      EmptyCString(), aURI, aOperationType, aWindowGlobal, aSourceWindowGlobal,
+      std::move(aUserActionId));
   aRequests->AppendElement(contentAnalysisRequest);
 }
 
@@ -1389,12 +1423,12 @@ void AddCARForUpload(nsString&& filePath,
 
 static nsresult AddClipboardCARForCustomData(
     mozilla::dom::WindowGlobalParent* aWindowGlobal, nsITransferable* aTrans,
-    nsIURI* aURI, mozilla::dom::WindowGlobalParent* aSourceWindowGlobal,
+    nsIContentAnalysisRequest::Reason aReason, nsIURI* aURI,
+    mozilla::dom::WindowGlobalParent* aSourceWindowGlobal,
     nsCString&& aUserActionId,
     nsTArray<RefPtr<nsIContentAnalysisRequest>>* aRequests) {
   nsCOMPtr<nsISupports> transferData;
-  if (StaticPrefs::
-          browser_contentanalysis_interception_point_clipboard_plain_text_only()) {
+  if (ClipboardAnalysisIsPlainTextOnly(aReason)) {
     return NS_OK;
   }
 
@@ -1418,18 +1452,17 @@ static nsresult AddClipboardCARForCustomData(
         texts.AppendElement(std::move(std::move(aData).second));
       });
   for (auto& text : texts) {
-    AddCARForText(std::move(text),
-                  nsIContentAnalysisRequest::Reason::eClipboardPaste,
-                  nsIContentAnalysisRequest::OperationType::eClipboard, aURI,
-                  aWindowGlobal, aSourceWindowGlobal, nsCString(aUserActionId),
-                  aRequests);
+    AddCARForText(std::move(text), aReason,
+                  ClipboardOperationTypeForReason(aReason), aURI, aWindowGlobal,
+                  aSourceWindowGlobal, nsCString(aUserActionId), aRequests);
   }
   return NS_OK;
 }
 
 static nsresult AddClipboardCARForText(
     mozilla::dom::WindowGlobalParent* aWindowGlobal,
-    nsITransferable* aTextTrans, const char* aFlavor, nsIURI* aURI,
+    nsITransferable* aTextTrans, const char* aFlavor,
+    nsIContentAnalysisRequest::Reason aReason, nsIURI* aURI,
     mozilla::dom::WindowGlobalParent* aSourceWindowGlobal,
     nsCString&& aUserActionId,
     nsTArray<RefPtr<nsIContentAnalysisRequest>>* aRequests) {
@@ -1456,17 +1489,16 @@ static nsresult AddClipboardCARForText(
     }
   }
 
-  AddCARForText(
-      std::move(text), nsIContentAnalysisRequest::Reason::eClipboardPaste,
-      nsIContentAnalysisRequest::OperationType::eClipboard, aURI, aWindowGlobal,
-      aSourceWindowGlobal, std::move(aUserActionId), aRequests);
+  AddCARForText(std::move(text), aReason,
+                ClipboardOperationTypeForReason(aReason), aURI, aWindowGlobal,
+                aSourceWindowGlobal, std::move(aUserActionId), aRequests);
   return NS_OK;
 }
 
 static nsresult AddClipboardCARForFile(
     mozilla::dom::WindowGlobalParent* aWindowGlobal,
-    nsITransferable* aFileTrans, nsIURI* aURI,
-    mozilla::dom::WindowGlobalParent* aSourceWindowGlobal,
+    nsITransferable* aFileTrans, nsIContentAnalysisRequest::Reason aReason,
+    nsIURI* aURI, mozilla::dom::WindowGlobalParent* aSourceWindowGlobal,
     nsCString&& aUserActionId,
     nsTArray<RefPtr<nsIContentAnalysisRequest>>* aRequests) {
   nsCOMPtr<nsISupports> transferData;
@@ -1476,10 +1508,8 @@ static nsresult AddClipboardCARForFile(
     if (nsCOMPtr<nsIFile> file = do_QueryInterface(transferData)) {
       nsString filePath;
       NS_ENSURE_SUCCESS(file->GetPath(filePath), NS_ERROR_FAILURE);
-      AddCARForUpload(std::move(filePath),
-                      nsIContentAnalysisRequest::Reason::eClipboardPaste, aURI,
-                      aWindowGlobal, aSourceWindowGlobal,
-                      std::move(aUserActionId), aRequests);
+      AddCARForUpload(std::move(filePath), aReason, aURI, aWindowGlobal,
+                      aSourceWindowGlobal, std::move(aUserActionId), aRequests);
     } else {
       MOZ_ASSERT_UNREACHABLE("clipboard data had kFileMime but no nsIFile!");
       return NS_ERROR_FAILURE;
@@ -1506,24 +1536,27 @@ static Result<bool, nsresult> AddRequestsFromTransferableIfAny(
   nsAutoCString userActionId;
   MOZ_ALWAYS_SUCCEEDS(aOriginalRequest->GetUserActionId(userActionId));
 
+  nsIContentAnalysisRequest::Reason reason;
+  NS_ENSURE_SUCCESS(aOriginalRequest->GetReason(&reason),
+                    Err(NS_ERROR_FAILURE));
+
   nsresult rv = AddClipboardCARForCustomData(
-      aWindowGlobal, transferable, aUri, aSourceWindowGlobal,
+      aWindowGlobal, transferable, reason, aUri, aSourceWindowGlobal,
       nsCString(userActionId), aNewRequests);
   NS_ENSURE_SUCCESS(rv, Err(rv));
 
   for (const auto& textFormat : kTextFormatsToAnalyze) {
-    rv = AddClipboardCARForText(aWindowGlobal, transferable, textFormat, aUri,
-                                aSourceWindowGlobal, nsCString(userActionId),
-                                aNewRequests);
+    rv = AddClipboardCARForText(aWindowGlobal, transferable, textFormat, reason,
+                                aUri, aSourceWindowGlobal,
+                                nsCString(userActionId), aNewRequests);
     NS_ENSURE_SUCCESS(rv, Err(rv));
-    if (StaticPrefs::
-            browser_contentanalysis_interception_point_clipboard_plain_text_only()) {
+    if (ClipboardAnalysisIsPlainTextOnly(reason)) {
       // kTextMime is the first entry in kTextFormatsToAnalyze
       break;
     }
   }
 
-  rv = AddClipboardCARForFile(aWindowGlobal, transferable, aUri,
+  rv = AddClipboardCARForFile(aWindowGlobal, transferable, reason, aUri,
                               aSourceWindowGlobal, std::move(userActionId),
                               aNewRequests);
   NS_ENSURE_SUCCESS(rv, Err(rv));
@@ -1991,8 +2024,10 @@ ContentAnalysis::GetFinalRequestList(
       continue;
     }
 
-    // Maybe skip check if source of operation is same tab.
-    if (mozilla::StaticPrefs::
+    // Maybe skip check if source of operation is same tab, except for copies
+    // for which this doesn't make sense.
+    if (reason != nsIContentAnalysisRequest::Reason::eClipboardCopy &&
+        mozilla::StaticPrefs::
             browser_contentanalysis_bypass_for_same_tab_operations() &&
         SourceIsSameTab(request)) {
       // ALLOW_DUE_TO_SAME_TAB_SOURCE may replace a result of
@@ -2713,11 +2748,22 @@ ContentAnalysis::PrintToPDFToDetermineIfPrintAllowed(
   return promise;
 }
 
+// For copies, the content analysis clipboard paste response cache is not
+// consulted or updated. It is explicitly for pastes, not copies, and agents
+// may approve a copy that they wouldn't approve as a paste. Caching copy
+// requests is assumed to be not useful.
 static nsresult CheckClipboard(
-    ContentAnalysisCallback* aCallback, Maybe<int32_t> aClipboardSequenceNumber,
-    bool aStoreInCache, nsITransferable* aTransferable,
+    ContentAnalysisCallback* aCallback,
+    nsIContentAnalysisRequest::Reason aReason,
+    Maybe<int32_t> aClipboardSequenceNumber, bool aStoreInCache,
+    nsITransferable* aTransferable,
     mozilla::dom::WindowGlobalParent* aWindowGlobal,
     mozilla::dom::WindowGlobalParent* aSourceWindowGlobal) {
+  MOZ_ASSERT(aReason == nsIContentAnalysisRequest::Reason::eClipboardCopy ||
+             aReason == nsIContentAnalysisRequest::Reason::eClipboardPaste);
+  const bool useCache =
+      aReason != nsIContentAnalysisRequest::Reason::eClipboardCopy;
+
   NoContentAnalysisResult caResult =
       NoContentAnalysisResult::DENY_DUE_TO_OTHER_ERROR;
   auto respondOnFailure = MakeScopeExit([&]() {
@@ -2739,14 +2785,13 @@ static nsresult CheckClipboard(
                     : nullptr;
 
   auto request = MakeRefPtr<ContentAnalysisRequest>(
-      nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
-      nsIContentAnalysisRequest::Reason::eClipboardPaste, aTransferable,
-      aWindowGlobal, aSourceWindowGlobal);
+      TextAnalysisTypeForReason(aReason), aReason, aTransferable, aWindowGlobal,
+      aSourceWindowGlobal);
 
   // Don't use the cache if the request can store to the cache -- that
   // is an indication that this is a separate operation from the previous
   // one.
-  if (!aStoreInCache && aClipboardSequenceNumber.isSome()) {
+  if (useCache && !aStoreInCache && aClipboardSequenceNumber.isSome()) {
     bool isValid = false;
     nsIContentAnalysisResponse::Action action =
         nsIContentAnalysisResponse::Action::eUnspecified;
@@ -2765,7 +2810,7 @@ static nsresult CheckClipboard(
   }
 
   RefPtr wrapperCallback = aCallback;
-  if (aStoreInCache && aClipboardSequenceNumber.isSome()) {
+  if (useCache && aStoreInCache && aClipboardSequenceNumber.isSome()) {
     // Add the result to the result cache before we call the caller's callback.
     wrapperCallback = MakeRefPtr<ContentAnalysisCallback>(
         [aClipboardSequenceNumber, uri,
@@ -2794,9 +2839,11 @@ static nsresult CheckClipboard(
       requests, true /* autoAcknowledge */, wrapperCallback);
 }
 
-// This method must stay in sync with ContentAnalysis::kKnownClipboardTypes. All
-// of those types must be analyzed here, and if we start analyzing more types
-// here we should add it to ContentAnalysis::kKnownClipboardTypes.
+// This method and CheckClipboardCopyContentAnalysis must stay in sync with
+// ContentAnalysis::kKnownClipboardTypes - both go through
+// AddRequestsFromTransferableIfAny, which analyzes those types. All of
+// those types must be analyzed there, and if we start analyzing more types
+// there we should add it to ContentAnalysis::kKnownClipboardTypes.
 void ContentAnalysis::CheckClipboardContentAnalysis(
     nsBaseClipboard* aClipboard, mozilla::dom::WindowGlobalParent* aWindow,
     nsITransferable* aTransferable, nsIClipboard::ClipboardType aClipboardType,
@@ -2840,8 +2887,49 @@ void ContentAnalysis::CheckClipboardContentAnalysis(
           .map<decltype(Some<int>)>(Some)
           .unwrapOr(Nothing());
 
-  CheckClipboard(aResolver, maybeSequenceNumber, aForFullClipboard,
-                 aTransferable, aWindow, sourceWindowGlobal);
+  CheckClipboard(aResolver, nsIContentAnalysisRequest::Reason::eClipboardPaste,
+                 maybeSequenceNumber, aForFullClipboard, aTransferable, aWindow,
+                 sourceWindowGlobal);
+
+  issueNoAnalysisResponse.release();
+}
+
+void ContentAnalysis::CheckClipboardCopyContentAnalysis(
+    mozilla::dom::WindowGlobalParent* aWindow, nsITransferable* aTransferable,
+    ContentAnalysisCallback* aResolver) {
+  // Make sure we call aResolver on error.  Use the current value of
+  // noCAResult.
+  NoContentAnalysisResult noCAResult =
+      NoContentAnalysisResult::DENY_DUE_TO_OTHER_ERROR;
+  auto issueNoAnalysisResponse = MakeScopeExit([&]() {
+    LOGD("CheckClipboardCopyContentAnalysis skipping CA.  Response = %d",
+         (int)noCAResult);
+    auto result = MakeRefPtr<ContentAnalysisNoResult>(noCAResult);
+    aResolver->ContentResult(result);
+  });
+
+  nsCOMPtr<nsIContentAnalysis> contentAnalysis =
+      mozilla::components::nsIContentAnalysis::Service();
+  if (!contentAnalysis || !aWindow) {
+    noCAResult = NoContentAnalysisResult::DENY_DUE_TO_OTHER_ERROR;
+    return;
+  }
+
+  bool contentAnalysisIsActive;
+  nsresult rv = contentAnalysis->GetIsActive(&contentAnalysisIsActive);
+  if (MOZ_LIKELY(NS_FAILED(rv) || !contentAnalysisIsActive)) {
+    noCAResult =
+        NoContentAnalysisResult::ALLOW_DUE_TO_CONTENT_ANALYSIS_NOT_ACTIVE;
+    return;
+  }
+
+  // Unlike paste, we don't need to look in the clipboard cache to find the
+  // source of the data: the window doing the copy is both the source of the
+  // data and the context whose URL is reported to the agent.
+  CheckClipboard(aResolver, nsIContentAnalysisRequest::Reason::eClipboardCopy,
+                 Nothing() /* aClipboardSequenceNumber */,
+                 false /* aStoreInCache */, aTransferable, aWindow,
+                 aWindow /* aSourceWindowGlobal */);
 
   issueNoAnalysisResponse.release();
 }

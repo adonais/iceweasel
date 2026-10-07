@@ -748,17 +748,13 @@ uint32_t JitRuntime::generatePreBarrier(JSContext* cx, MacroAssembler& masm,
   Register temp1 = r2;
   Register temp2 = r3;
   Register temp3 = r4;
-  masm.push(temp1);
-  masm.push(temp2);
-  masm.push(temp3);
+  masm.pushRegs(temp1, temp2, temp3);
 
   Label noBarrier;
   masm.emitPreBarrierFastPath(type, temp1, temp2, temp3, &noBarrier);
 
   // Call into C++ to mark this GC thing.
-  masm.pop(temp3);
-  masm.pop(temp2);
-  masm.pop(temp1);
+  masm.popRegs(temp3, temp2, temp1);
 
   LiveRegisterSet regs =
       LiveRegisterSet(GeneralRegisterSet(Registers::VolatileMask),
@@ -781,9 +777,7 @@ uint32_t JitRuntime::generatePreBarrier(JSContext* cx, MacroAssembler& masm,
   masm.abiret();
 
   masm.bind(&noBarrier);
-  masm.pop(temp3);
-  masm.pop(temp2);
-  masm.pop(temp1);
+  masm.popRegs(temp3, temp2, temp1);
   masm.abiret();
 
   return offset;

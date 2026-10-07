@@ -1,13 +1,13 @@
 This chapter describes the functions for retrieving and setting errors
 and the error codes set by NSPR.
 
-- [Error Type](#Error_Type)
-- [Error Functions](#Error_Functions)
-- [Error Codes](#Error_Codes)
+- [Error Type](#error-type)
+- [Error Functions](#error-functions)
+- [Error Codes](#error-codes)
 
 For information on naming conventions for NSPR types, functions, and
 macros, see [NSPR Naming
-Conventions](Introduction_to_NSPR#NSPR_Naming_Conventions).
+Conventions](introduction_to_nspr.md#nspr-naming-conventions).
 
 (error-type)=
 

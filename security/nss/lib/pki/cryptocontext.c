@@ -496,60 +496,6 @@ nssCryptoContext_FindSMIMEProfileForCertificate(
                                                               cert);
 }
 
-NSS_IMPLEMENT PRStatus
-NSSCryptoContext_GenerateKeyPair(
-    NSSCryptoContext *cc,
-    NSSAlgorithmAndParameters *ap,
-    NSSPrivateKey **pvkOpt,
-    NSSPublicKey **pbkOpt,
-    PRBool privateKeyIsSensitive,
-    NSSToken *destination,
-    NSSCallback *uhhOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return PR_FAILURE;
-}
-
-NSS_IMPLEMENT NSSSymmetricKey *
-NSSCryptoContext_GenerateSymmetricKey(
-    NSSCryptoContext *cc,
-    NSSAlgorithmAndParameters *ap,
-    PRUint32 keysize,
-    NSSToken *destination,
-    NSSCallback *uhhOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSSymmetricKey *
-NSSCryptoContext_GenerateSymmetricKeyFromPassword(
-    NSSCryptoContext *cc,
-    NSSAlgorithmAndParameters *ap,
-    NSSUTF8 *passwordOpt, /* if null, prompt */
-    NSSToken *destinationOpt,
-    NSSCallback *uhhOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSSymmetricKey *
-NSSCryptoContext_FindSymmetricKeyByAlgorithmAndKeyID(
-    NSSCryptoContext *cc,
-    NSSOID *algorithm,
-    NSSItem *keyID,
-    NSSCallback *uhhOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-struct token_session_str {
-    NSSToken *token;
-    nssSession *session;
-};
-
 NSS_IMPLEMENT NSSItem *
 NSSCryptoContext_Decrypt(
     NSSCryptoContext *cc,
@@ -680,31 +626,6 @@ NSSCryptoContext_FinishSignRecover(
     return NULL;
 }
 
-NSS_IMPLEMENT NSSSymmetricKey *
-NSSCryptoContext_UnwrapSymmetricKey(
-    NSSCryptoContext *cc,
-    NSSAlgorithmAndParameters *apOpt,
-    NSSItem *wrappedKey,
-    NSSCallback *uhhOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSSymmetricKey *
-NSSCryptoContext_DeriveSymmetricKey(
-    NSSCryptoContext *cc,
-    NSSPublicKey *bk,
-    NSSAlgorithmAndParameters *apOpt,
-    NSSOID *target,
-    PRUint32 keySizeOpt, /* zero for best allowed */
-    NSSOperations operations,
-    NSSCallback *uhhOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
 NSS_IMPLEMENT NSSItem *
 NSSCryptoContext_Encrypt(
     NSSCryptoContext *cc,
@@ -826,19 +747,6 @@ NSSCryptoContext_ContinueVerifyRecover(
 NSS_IMPLEMENT NSSItem *
 NSSCryptoContext_FinishVerifyRecover(
     NSSCryptoContext *cc,
-    NSSItem *rvOpt,
-    NSSArena *arenaOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSItem *
-NSSCryptoContext_WrapSymmetricKey(
-    NSSCryptoContext *cc,
-    NSSAlgorithmAndParameters *apOpt,
-    NSSSymmetricKey *keyToWrap,
-    NSSCallback *uhhOpt,
     NSSItem *rvOpt,
     NSSArena *arenaOpt)
 {

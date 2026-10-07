@@ -1706,7 +1706,7 @@ void MacroAssembler::allTrueInt8x16(FloatRegister src, Register dest) {
 
   ScratchSimd128Scope xtmp(*this);
   // xtmp is all-00h
-  vpxor(xtmp, xtmp, xtmp);
+  vxorps(xtmp, xtmp, xtmp);
   // Set FFh if byte==0 otherwise 00h
   // Operand ordering constraint: lhs==output
   vpcmpeqb(Operand(src), xtmp, xtmp);
@@ -1720,7 +1720,7 @@ void MacroAssembler::allTrueInt16x8(FloatRegister src, Register dest) {
 
   ScratchSimd128Scope xtmp(*this);
   // xtmp is all-00h
-  vpxor(xtmp, xtmp, xtmp);
+  vxorps(xtmp, xtmp, xtmp);
   // Set FFFFh if word==0 otherwise 0000h
   // Operand ordering constraint: lhs==output
   vpcmpeqw(Operand(src), xtmp, xtmp);
@@ -1734,7 +1734,7 @@ void MacroAssembler::allTrueInt32x4(FloatRegister src, Register dest) {
 
   ScratchSimd128Scope xtmp(*this);
   // xtmp is all-00h
-  vpxor(xtmp, xtmp, xtmp);
+  vxorps(xtmp, xtmp, xtmp);
   // Set FFFFFFFFh if doubleword==0 otherwise 00000000h
   // Operand ordering constraint: lhs==output
   vpcmpeqd(Operand(src), xtmp, xtmp);
@@ -1748,7 +1748,7 @@ void MacroAssembler::allTrueInt64x2(FloatRegister src, Register dest) {
 
   ScratchSimd128Scope xtmp(*this);
   // xtmp is all-00h
-  vpxor(xtmp, xtmp, xtmp);
+  vxorps(xtmp, xtmp, xtmp);
   // Set FFFFFFFFFFFFFFFFh if quadword==0 otherwise 0000000000000000h
   // Operand ordering constraint: lhs==output
   vpcmpeqq(Operand(src), xtmp, xtmp);
@@ -1964,7 +1964,7 @@ void MacroAssembler::mulInt64x2(FloatRegister lhs, const SimdConstant& rhs,
     const uint64_t val = static_cast<uint64_t>(c[0]);
     switch (std::popcount(val)) {
       case 0:  // val == 0
-        vpxor(Operand(dest), dest, dest);
+        vxorps(Operand(dest), dest, dest);
         return;
       case 64:  // val == -1
         negInt64x2(lhs, dest);
@@ -2167,7 +2167,7 @@ void MacroAssembler::negInt8x16(FloatRegister src, FloatRegister dest) {
     moveSimd128Int(src, scratch);
     src = scratch;
   }
-  vpxor(Operand(dest), dest, dest);
+  vxorps(Operand(dest), dest, dest);
   vpsubb(Operand(src), dest, dest);
 }
 
@@ -2177,7 +2177,7 @@ void MacroAssembler::negInt16x8(FloatRegister src, FloatRegister dest) {
     moveSimd128Int(src, scratch);
     src = scratch;
   }
-  vpxor(Operand(dest), dest, dest);
+  vxorps(Operand(dest), dest, dest);
   vpsubw(Operand(src), dest, dest);
 }
 
@@ -2187,7 +2187,7 @@ void MacroAssembler::negInt32x4(FloatRegister src, FloatRegister dest) {
     moveSimd128Int(src, scratch);
     src = scratch;
   }
-  vpxor(Operand(dest), dest, dest);
+  vxorps(Operand(dest), dest, dest);
   vpsubd(Operand(src), dest, dest);
 }
 
@@ -2197,7 +2197,7 @@ void MacroAssembler::negInt64x2(FloatRegister src, FloatRegister dest) {
     moveSimd128Int(src, scratch);
     src = scratch;
   }
-  vpxor(Operand(dest), dest, dest);
+  vxorps(Operand(dest), dest, dest);
   vpsubq(Operand(src), dest, dest);
 }
 
@@ -2647,7 +2647,7 @@ void MacroAssembler::unsignedRightShiftInt64x2(Imm32 count, FloatRegister src,
 void MacroAssembler::signReplicationInt8x16(FloatRegister src,
                                             FloatRegister dest) {
   MOZ_ASSERT(src != dest);
-  vpxor(Operand(dest), dest, dest);
+  vxorps(Operand(dest), dest, dest);
   vpcmpgtb(Operand(src), dest, dest);
 }
 
@@ -3467,7 +3467,7 @@ void MacroAssembler::unsignedWidenHighInt32x4(FloatRegister src,
                                               FloatRegister dest) {
   ScratchSimd128Scope scratch(*this);
   src = moveSimd128IntIfNotAVX(src, dest);
-  vpxor(scratch, scratch, scratch);
+  vxorps(scratch, scratch, scratch);
   vpunpckhdq(scratch, src, dest);
 }
 

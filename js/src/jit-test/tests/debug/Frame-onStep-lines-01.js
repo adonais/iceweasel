@@ -12,13 +12,26 @@ var doSingleStep = true;
 var offsets;
 dbg.onDebuggerStatement = function (frame) {
     var script = frame.script;
-    offsets = script.getAllOffsets();
-    print("debugger line: " + script.getOffsetLocation(frame.offset).lineNumber);
+    offsets = {};
+    // Track statement-start lines; the function-close epilogue is a
+    // breakpoint that stepping never pauses at, so it is excluded.
+    for (const bp of script.getPossibleBreakpoints()) {
+        if (bp.isStepStart) {
+            offsets[bp.lineNumber] = true;
+        }
+    }
+    print("debugger line: " + script.getOffsetMetadata(frame.offset).lineNumber);
     print("original lines: " + JSON.stringify(Object.keys(offsets)));
     if (doSingleStep) {
 	frame.onStep = function onStepHandler() {
-	    var line = script.getOffsetLocation(this.offset).lineNumber;
-	    delete offsets[line];
+	    var meta = script.getOffsetMetadata(this.offset);
+	    // Only stops the debugger would show (recommended breakpoints)
+	    // count as visiting a line; jump targets can otherwise inherit the
+	    // position of code that never ran (e.g. the not-taken if body).
+	    if (!meta.isBreakpoint) {
+		return;
+	    }
+	    delete offsets[meta.lineNumber];
 	};
     }
 };
@@ -48,7 +61,9 @@ assertEq(Object.keys(offsets).length, 2);
 // have no effect on this one.
 doSingleStep = false;
 g.eval('t(0, 0, 0)');
-assertEq(Object.keys(offsets).length, 7);
+// The tracked set is statement-start lines, which excludes the
+// function-close epilogue line.
+assertEq(Object.keys(offsets).length, 6);
 doSingleStep = true;
 
 // Single-step in an eval frame. This should reach every line but the

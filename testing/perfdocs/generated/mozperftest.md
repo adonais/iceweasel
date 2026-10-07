@@ -206,6 +206,54 @@ browser_smartwindow_perf.js
 **User-perceived responsiveness of Smart Window across window states and profile sizes**
 
 
+## browser/components/genai/tests/browser
+
+Performance tests for GenAI features on Firefox Desktop
+
+browser_link_preview_perf.js
+============================
+
+:owner: GenAI Team
+:name: browser_link_preview_perf.js
+:Default options:
+
+::
+
+ --perfherder
+ --perfherder-metrics name:LINKPREVIEW-first-keypoint-latency-first-use,unit:ms,shouldAlert:False, name:LINKPREVIEW-first-keypoint-latency-cold,unit:ms,shouldAlert:True, name:LINKPREVIEW-keypoints-complete-latency-first-use,unit:ms,shouldAlert:False, name:LINKPREVIEW-keypoints-complete-latency-cold,unit:ms,shouldAlert:True, name:LINKPREVIEW-peak-memory,unit:MiB,shouldAlert:True, name:LINKPREVIEW-engine-creation-time-first-use,unit:ms,shouldAlert:False, name:LINKPREVIEW-engine-creation-time-cold,unit:ms,shouldAlert:True, name:LINKPREVIEW-engine-run-time-first-use,unit:ms,shouldAlert:False, name:LINKPREVIEW-engine-run-time-cold,unit:ms,shouldAlert:True, name:LINKPREVIEW-memory-after-run-first-use,unit:MiB,shouldAlert:False, name:LINKPREVIEW-memory-after-run-cold,unit:MiB,shouldAlert:True, name:LINKPREVIEW-time-to-first-token-first-use,unit:ms,shouldAlert:False, name:LINKPREVIEW-time-to-first-token-cold,unit:ms,shouldAlert:True, name:LINKPREVIEW-decoding-time-first-use,unit:ms,shouldAlert:False, name:LINKPREVIEW-decoding-time-cold,unit:ms,shouldAlert:True, name:LINKPREVIEW-tokens-per-second-first-use,unit:tokens/s,shouldAlert:False,lowerIsBetter:False, name:LINKPREVIEW-tokens-per-second-cold,unit:tokens/s,shouldAlert:True,lowerIsBetter:False
+ --verbose
+ --ml-services
+ --manifest perftest.toml
+ --manifest-flavor browser-chrome
+ --try-platform linux, mac, win
+
+**User-perceived latency and inference memory for Link Preview key points, driven through the production UI flow**
+
+
+## browser/components/tabbrowser/test/browser/smarttabgrouping/performance
+
+End-to-end performance tests for Smart Tab Grouping
+
+browser_smart_tab_grouping_perf.js
+==================================
+
+:owner: GenAI Team
+:name: browser_smart_tab_grouping_perf.js
+:Default options:
+
+::
+
+ --perfherder
+ --perfherder-metrics name:STG-E2E-embedder-engine-creation-time-cold,unit:ms,shouldAlert:True, name:STG-E2E-embedder-engine-creation-time-first-use,unit:ms,shouldAlert:False, name:STG-E2E-embedder-engine-run-time-cold,unit:ms,shouldAlert:True, name:STG-E2E-embedder-engine-run-time-first-use,unit:ms,shouldAlert:False, name:STG-E2E-embedder-engine-run-time-warm,unit:ms,shouldAlert:True, name:STG-E2E-embedder-memory-after-run-cold,unit:MiB,shouldAlert:True, name:STG-E2E-embedder-memory-after-run-first-use,unit:MiB,shouldAlert:False, name:STG-E2E-embedder-memory-after-run-warm,unit:MiB,shouldAlert:True, name:STG-E2E-embedder-memory-before-run-cold,unit:MiB,shouldAlert:True, name:STG-E2E-embedder-memory-before-run-first-use,unit:MiB,shouldAlert:False, name:STG-E2E-embedder-memory-before-run-warm,unit:MiB,shouldAlert:True, name:STG-E2E-labelLatency-cold,unit:ms,shouldAlert:True, name:STG-E2E-labelLatency-first-use,unit:ms,shouldAlert:False, name:STG-E2E-labelLatency-warm,unit:ms,shouldAlert:True, name:STG-E2E-peak-memory,unit:MiB,shouldAlert:True, name:STG-E2E-suggestLatency-cold,unit:ms,shouldAlert:True, name:STG-E2E-suggestLatency-first-use,unit:ms,shouldAlert:False, name:STG-E2E-suggestLatency-warm,unit:ms,shouldAlert:True, name:STG-E2E-topic-engine-creation-time-cold,unit:ms,shouldAlert:True, name:STG-E2E-topic-engine-creation-time-first-use,unit:ms,shouldAlert:False, name:STG-E2E-topic-engine-run-time-cold,unit:ms,shouldAlert:True, name:STG-E2E-topic-engine-run-time-first-use,unit:ms,shouldAlert:False, name:STG-E2E-topic-engine-run-time-warm,unit:ms,shouldAlert:True, name:STG-E2E-topic-memory-after-run-cold,unit:MiB,shouldAlert:True, name:STG-E2E-topic-memory-after-run-first-use,unit:MiB,shouldAlert:False, name:STG-E2E-topic-memory-after-run-warm,unit:MiB,shouldAlert:True, name:STG-E2E-topic-memory-before-run-cold,unit:MiB,shouldAlert:True, name:STG-E2E-topic-memory-before-run-first-use,unit:MiB,shouldAlert:False, name:STG-E2E-topic-memory-before-run-warm,unit:MiB,shouldAlert:True
+ --verbose
+ --ml-services
+ --manifest perftest.toml
+ --manifest-flavor browser-chrome
+ --try-platform linux, mac, win
+
+**End-to-end Smart Tab Grouping latency, measured through the tab group menu**
+
+
 ## browser/components/translations/tests/browser
 
 Performance tests for Translations models on Firefox Desktop
@@ -263,6 +311,96 @@ browser_translations_perf_tiny.js
  --try-platform linux, mac, win
 
 **Tests the performance of Full Page Translations with a tiny-architecture model**
+
+
+## browser/components/urlbar/tests/browser-ml
+
+Performance tests for urlbar features on Firefox Desktop
+
+browser_quicksuggest_ml_perf.js
+===============================
+
+:owner: GenAI Team
+:name: browser_quicksuggest_ml_perf.js
+:Default options:
+
+::
+
+ --perfherder
+ --perfherder-metrics name:MLSUGGEST-suggestion-latency-first-use,unit:ms,shouldAlert:False, name:MLSUGGEST-suggestion-latency-warm,unit:ms,shouldAlert:True, name:MLSUGGEST-peak-memory,unit:MiB,shouldAlert:True, name:MLSUGGEST-intent-engine-run-time-first-use,unit:ms,shouldAlert:False, name:MLSUGGEST-intent-engine-run-time-warm,unit:ms,shouldAlert:True, name:MLSUGGEST-intent-memory-after-run-first-use,unit:MiB,shouldAlert:False, name:MLSUGGEST-intent-memory-after-run-warm,unit:MiB,shouldAlert:True, name:MLSUGGEST-ner-engine-run-time-first-use,unit:ms,shouldAlert:False, name:MLSUGGEST-ner-engine-run-time-warm,unit:ms,shouldAlert:True, name:MLSUGGEST-ner-memory-after-run-first-use,unit:MiB,shouldAlert:False, name:MLSUGGEST-ner-memory-after-run-warm,unit:MiB,shouldAlert:True
+ --verbose
+ --ml-services
+ --manifest perftest.toml
+ --manifest-flavor browser-chrome
+ --try-platform linux, mac, win
+
+**User-perceived latency and inference memory for ML-backed Firefox Suggest, driven through the production urlbar flow**
+
+browser_urlbar_semantic_history_perf.js
+=======================================
+
+:owner: GenAI Team
+:name: browser_urlbar_semantic_history_perf.js
+:Default options:
+
+::
+
+ --perfherder
+ --perfherder-metrics name:SEMANTICHISTORY-indexing-engine-run-time,unit:ms,shouldAlert:True, name:SEMANTICHISTORY-indexing-memory-after-run,unit:MiB,shouldAlert:True, name:SEMANTICHISTORY-semantic-result-latency,unit:ms,shouldAlert:True, name:SEMANTICHISTORY-peak-memory,unit:MiB,shouldAlert:True, name:SEMANTICHISTORY-engine-creation-time,unit:ms,shouldAlert:True, name:SEMANTICHISTORY-engine-run-time,unit:ms,shouldAlert:True, name:SEMANTICHISTORY-memory-after-run,unit:MiB,shouldAlert:True
+ --verbose
+ --ml-services
+ --manifest perftest.toml
+ --manifest-flavor browser-chrome
+ --try-platform linux, mac, win
+
+**User-perceived latency and inference memory for semantic history search, driven through history ingestion and the production urlbar flow**
+
+
+## browser/extensions/formautofill/test/browser/performance
+
+Performance tests for Form Autofill on Firefox Desktop
+
+browser_formautofill_ml_perf.js
+===============================
+
+:owner: Form Autofill Team
+:name: browser_formautofill_ml_perf.js
+:Default options:
+
+::
+
+ --perfherder
+ --perfherder-metrics name:FORM-AUTOFILL-single-engine-focus-to-identification-time-first-use,unit:ms,shouldAlert:False, name:FORM-AUTOFILL-single-engine-focus-to-identification-time-cold,unit:ms,shouldAlert:True, name:FORM-AUTOFILL-single-engine-focus-to-identification-time-warm,unit:ms,shouldAlert:True, name:FORM-AUTOFILL-single-engine-engine-creation-time-first-use,unit:ms,shouldAlert:False, name:FORM-AUTOFILL-single-engine-engine-creation-time-cold,unit:ms,shouldAlert:True, name:FORM-AUTOFILL-single-engine-engine-run-time-first-use,unit:ms,shouldAlert:False, name:FORM-AUTOFILL-single-engine-engine-run-time-cold,unit:ms,shouldAlert:True, name:FORM-AUTOFILL-single-engine-engine-run-time-warm,unit:ms,shouldAlert:True, name:FORM-AUTOFILL-single-engine-memory-before-run-first-use,unit:MiB,shouldAlert:False, name:FORM-AUTOFILL-single-engine-memory-before-run-cold,unit:MiB,shouldAlert:True, name:FORM-AUTOFILL-single-engine-memory-before-run-warm,unit:MiB,shouldAlert:True, name:FORM-AUTOFILL-single-engine-memory-after-run-first-use,unit:MiB,shouldAlert:False, name:FORM-AUTOFILL-single-engine-memory-after-run-cold,unit:MiB,shouldAlert:True, name:FORM-AUTOFILL-single-engine-memory-after-run-warm,unit:MiB,shouldAlert:True, name:FORM-AUTOFILL-single-engine-peak-memory,unit:MiB,shouldAlert:True, name:FORM-AUTOFILL-double-engine-focus-to-identification-time-first-use,unit:ms,shouldAlert:False, name:FORM-AUTOFILL-double-engine-focus-to-identification-time-cold,unit:ms,shouldAlert:True, name:FORM-AUTOFILL-double-engine-focus-to-identification-time-warm,unit:ms,shouldAlert:True, name:FORM-AUTOFILL-double-engine-peak-memory,unit:MiB,shouldAlert:True, name:FORM-AUTOFILL-double-engine-encoder-engine-creation-time-first-use,unit:ms,shouldAlert:False, name:FORM-AUTOFILL-double-engine-encoder-engine-creation-time-cold,unit:ms,shouldAlert:True, name:FORM-AUTOFILL-double-engine-encoder-engine-run-time-first-use,unit:ms,shouldAlert:False, name:FORM-AUTOFILL-double-engine-encoder-engine-run-time-cold,unit:ms,shouldAlert:True, name:FORM-AUTOFILL-double-engine-encoder-engine-run-time-warm,unit:ms,shouldAlert:True, name:FORM-AUTOFILL-double-engine-encoder-memory-before-run-first-use,unit:MiB,shouldAlert:False, name:FORM-AUTOFILL-double-engine-encoder-memory-before-run-cold,unit:MiB,shouldAlert:True, name:FORM-AUTOFILL-double-engine-encoder-memory-before-run-warm,unit:MiB,shouldAlert:True, name:FORM-AUTOFILL-double-engine-encoder-memory-after-run-first-use,unit:MiB,shouldAlert:False, name:FORM-AUTOFILL-double-engine-encoder-memory-after-run-cold,unit:MiB,shouldAlert:True, name:FORM-AUTOFILL-double-engine-encoder-memory-after-run-warm,unit:MiB,shouldAlert:True, name:FORM-AUTOFILL-double-engine-head-engine-creation-time-first-use,unit:ms,shouldAlert:False, name:FORM-AUTOFILL-double-engine-head-engine-creation-time-cold,unit:ms,shouldAlert:True, name:FORM-AUTOFILL-double-engine-head-engine-run-time-first-use,unit:ms,shouldAlert:False, name:FORM-AUTOFILL-double-engine-head-engine-run-time-cold,unit:ms,shouldAlert:True, name:FORM-AUTOFILL-double-engine-head-engine-run-time-warm,unit:ms,shouldAlert:True, name:FORM-AUTOFILL-double-engine-head-memory-before-run-first-use,unit:MiB,shouldAlert:False, name:FORM-AUTOFILL-double-engine-head-memory-before-run-cold,unit:MiB,shouldAlert:True, name:FORM-AUTOFILL-double-engine-head-memory-before-run-warm,unit:MiB,shouldAlert:True, name:FORM-AUTOFILL-double-engine-head-memory-after-run-first-use,unit:MiB,shouldAlert:False, name:FORM-AUTOFILL-double-engine-head-memory-after-run-cold,unit:MiB,shouldAlert:True, name:FORM-AUTOFILL-double-engine-head-memory-after-run-warm,unit:MiB,shouldAlert:True
+ --verbose
+ --ml-services
+ --manifest perftest.toml
+ --manifest-flavor browser-chrome
+ --try-platform linux, mac, win
+
+**Integrated ML Autofill performance for the single- and double-engine classifiers**
+
+
+## dom/media/webspeech/recognition/test
+
+Performance tests for on-device speech recognition
+
+browser_speech_recognition_perf.js
+==================================
+
+:owner: Media Playback Team
+:name: browser_speech_recognition_perf.js
+:Default options:
+
+::
+
+ --perfherder
+ --perfherder-metrics name:engine-ready-latency,unit:ms,shouldAlert:False, name:first-result-latency,unit:ms,shouldAlert:False, name:finalization-latency,unit:ms,shouldAlert:False, name:real-time-factor,unit:X,shouldAlert:False,lowerIsBetter:False, name:memory-after-init,unit:MB,shouldAlert:False, name:memory-mid-recognition,unit:MB,shouldAlert:False
+ --verbose
+ --manifest perftest.toml
+ --manifest-flavor browser-chrome
+ --try-platform linux, mac, win
+
+**Latency, real-time factor and memory of on-device speech recognition**
 
 
 ## dom/serviceworkers/test/performance

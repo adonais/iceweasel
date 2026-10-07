@@ -4680,6 +4680,31 @@
   generate_lir: true
   lir_temps: 1
 
+- name: UnpackTime
+  operands:
+    packedVal: Value
+  arguments:
+    shiftImm: uint32_t
+    maskImm: uint32_t
+  result_type: Int32
+  movable: true
+  congruent_to: if_operands_and_arguments_equal
+  alias_set: none
+  # Only used on 32-bit systems
+  lir_temps: 1
+  generate_lir: true
+
+- name: EpochMilliseconds
+  operands:
+    seconds: Double
+    nanoseconds: Int32
+  result_type: Double
+  movable: true
+  congruent_to: if_operands_equal
+  alias_set: none
+  lir_temps: 1
+  generate_lir: true
+
 - name: PostIntPtrConversion
   gen_boilerplate: false
 

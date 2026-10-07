@@ -85,6 +85,7 @@ class ScreamNetworkController : public NetworkControllerInterface {
   DataRate reported_pacing_rate_;
   bool reported_is_bandwidth_limited_ = true;
   double reported_cwnd_reduce_ratio_ = 0.0;
+  bool encoder_paused_due_to_congestion_ = false;
 };
 
 }  // namespace webrtc

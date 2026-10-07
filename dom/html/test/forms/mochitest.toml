@@ -237,6 +237,8 @@ skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2023967
 ]
 
+["test_select_list_items.html"]
+
 ["test_select_selectedOptions.html"]
 
 ["test_select_validation.html"]

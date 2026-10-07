@@ -15,23 +15,23 @@
 #include "mozilla/dom/WindowBinding.h"  // for mozilla::dom::ScrollBehavior
 #include "mozilla/layout/ScrollAnchorContainer.h"
 #include "nsContainerFrame.h"
-#include "nsExpirationTracker.h"
+#include "nsExpirationState.h"
 #include "nsIAnonymousContentCreator.h"
 #include "nsIReflowCallback.h"
 #include "nsIScrollbarMediator.h"
-#include "nsIStatefulFrame.h"
 #include "nsQueryFrame.h"
 #include "nsThreadUtils.h"
 
 class nsPresContext;
 class nsIContent;
+class nsILayoutHistoryState;
 class nsAtom;
 class AutoContainsBlendModeCapturer;
 
 namespace mozilla {
 struct nsDisplayListCollection;
 class PresShell;
-class PresState;
+struct ScrollState;
 enum class PhysicalAxis : uint8_t;
 enum class StyleScrollbarWidth : uint8_t;
 class ScrollContainerFrame;
@@ -47,7 +47,8 @@ class WebRenderLayerManager;
 namespace layout {
 class ScrollbarActivity;
 }  // namespace layout
-
+enum class CaptureStateFlag : uint8_t;
+using CaptureStateFlags = EnumSet<CaptureStateFlag>;
 }  // namespace mozilla
 
 mozilla::ScrollContainerFrame* NS_NewScrollContainerFrame(
@@ -68,8 +69,7 @@ namespace mozilla {
 class ScrollContainerFrame : public nsContainerFrame,
                              public nsIScrollbarMediator,
                              public nsIAnonymousContentCreator,
-                             public nsIReflowCallback,
-                             public nsIStatefulFrame {
+                             public nsIReflowCallback {
  public:
   using CSSPoint = mozilla::CSSPoint;
   using Element = dom::Element;
@@ -154,6 +154,8 @@ class ScrollContainerFrame : public nsContainerFrame,
   void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
 
   void Destroy(DestroyContext&) override;
+  void Init(nsIContent*, nsContainerFrame* aParent,
+            nsIFrame* aPrevInFlow) override;
 
   ScrollContainerFrame* GetScrollTargetFrame() const final {
     return const_cast<ScrollContainerFrame*>(this);
@@ -164,11 +166,10 @@ class ScrollContainerFrame : public nsContainerFrame,
   }
 
   nsPoint GetPositionOfChildIgnoringScrolling(const nsIFrame* aChild) final {
-    nsPoint pt = aChild->GetPosition();
-    if (aChild == GetScrolledFrame()) {
-      pt += GetScrollPosition();
-    }
-    return pt;
+    MOZ_ASSERT(aChild->GetParent() == this,
+               "aChild should be our direct child!");
+    return aChild == mScrolledFrame ? mScrollPort.TopLeft()
+                                    : aChild->GetPosition();
   }
 
   // nsIAnonymousContentCreator
@@ -624,7 +625,7 @@ class ScrollContainerFrame : public nsContainerFrame,
   /**
    * Clear the flag so that DidHistoryRestore() returns false until the next
    * RestoreState call.
-   * @see nsIStatefulFrame::RestoreState
+   * @see RestoreState
    */
   void ClearDidHistoryRestore() { mDidHistoryRestore = false; }
 
@@ -951,9 +952,11 @@ class ScrollContainerFrame : public nsContainerFrame,
   bool ReflowFinished() override;
   void ReflowCallbackCanceled() final;
 
-  // nsIStatefulFrame
-  UniquePtr<PresState> SaveState() final;
-  NS_IMETHOD RestoreState(PresState* aState) final;
+  // State save / restoration.
+  Maybe<ScrollState> SaveState();
+  void RestoreState(const ScrollState& aState);
+  void SaveState(nsILayoutHistoryState*);
+  void RestoreState(nsILayoutHistoryState*);
 
   // nsIScrollbarMediator
   void ScrollByPage(
@@ -1200,7 +1203,7 @@ class ScrollContainerFrame : public nsContainerFrame,
                            const nsDisplayListSet& aLists, bool aCreateLayer,
                            bool aPositioned);
 
-  void PostScrollEvent();
+  void PostScrollEvent(const nsPoint& aOldScrollPosition);
   MOZ_CAN_RUN_SCRIPT void FireScrollEvent();
   void PostScrolledAreaEvent();
   MOZ_CAN_RUN_SCRIPT void FireScrolledAreaEvent();
@@ -1254,8 +1257,6 @@ class ScrollContainerFrame : public nsContainerFrame,
   bool HasPendingScrollRestoration() const {
     return mRestorePos != nsPoint(-1, -1);
   }
-
-  bool IsProcessingScrollEvent() const { return mProcessingScrollEvent; }
 
   class AutoScrollbarRepaintSuppression;
   friend class AutoScrollbarRepaintSuppression;
@@ -1401,13 +1402,11 @@ class ScrollContainerFrame : public nsContainerFrame,
   nsCOMPtr<Element> mScrollCornerContent;
   nsCOMPtr<Element> mResizerContent;
 
-  class ScrollEvent;
-  class ScrollEndEvent;
   class AsyncScrollPortEvent;
   class ScrolledAreaEvent;
 
-  RefPtr<ScrollEvent> mScrollEvent;
-  RefPtr<ScrollEndEvent> mScrollEndEvent;
+  uint32_t mScrollEventGeneration = 0;
+  uint32_t mScrollEndEventGeneration = 0;
   nsRevocableEventPtr<AsyncScrollPortEvent> mAsyncScrollPortEvent;
   nsRevocableEventPtr<ScrolledAreaEvent> mScrolledAreaEvent;
   nsScrollbarFrame* mHScrollbarBox;
@@ -1610,9 +1609,6 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   // True if the minimum scale size has been changed since the last reflow.
   bool mMinimumScaleSizeChanged : 1;
-
-  // True if we're processing an scroll event.
-  bool mProcessingScrollEvent : 1;
 
   // This is true from the time a scroll animation is requested of APZ to the
   // time that APZ responds with an up-to-date repaint request. More precisely,

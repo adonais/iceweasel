@@ -6,10 +6,10 @@ semaphore model similar to that which is provided in Unix and Windows
 platforms.
 
 :::{note}
-**Note:** See also [Named Shared Memory](Named_Shared_Memory)
+**Note:** See also [Named Shared Memory](named_shared_memory.md)
 :::
 
-- [IPC Semaphore Functions](#IPC_Semaphore_Functions)
+- [IPC Semaphore Functions](#ipc-semaphore-functions)
 
 (ipc-semaphore-functions)=
 

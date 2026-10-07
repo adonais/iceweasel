@@ -110,7 +110,7 @@ redirects:
     performance/memory/monster_example.html: devtools-user/memory/monster_example/index.html
     browser/browser: browser
     browser/components/newtab/docs/index.html: browser/extensions/newtab/docs/index.html
-    browser/tabunloader/index.html: browser/components/tabbrowser/docs/tab-unloading.html
+    browser/tabunloader: browser/components/tabbrowser/docs/tab-unloading.html
     contributing/how_to_contribute_firefox.html: contributing/contribution_quickref.html
     mobile/android/geckoview/contributor/contributing-to-firefox.html: contributing/contribution_quickref.html
     contributing/artifact_builds.html: contributing/build/artifact_builds.html
@@ -158,7 +158,6 @@ allowed_warnings:
     - "devtools-user/page_inspector/how_to/work_with_animations/index\\.md:.*: WARNING: undefined label"
     # Bug 1915274 - Clean up documentation warnings in NSS
     - "security/nss/.* WARNING: undefined label"
-    - "WARNING: duplicate label header-files, other instance in"
     - "security/nss/.* WARNING: duplicate label"
     - "security/nss/.* WARNING: more than one target found for 'myst' cross-reference"
     # Various python issues
@@ -208,7 +207,6 @@ allowed_warnings:
     - "devtools-user/tools_toolbox/index\\.md:.*: WARNING: unknown document"
     - "devtools-user/web_console/console_messages/index\\.md:.*: ERROR: Undefined substitution referenced"
     # mdn-imported content with image width values that confuse the parser.
-    - "ipc/ipdl\\.md:.*: WARNING: Duplicate explicit target name"
     - "contributing/.*\\.md:.*: WARNING: undefined label"
     - "permissions\\.py:.*: ERROR: Unknown target name: \"server-locations\\.txt\""
     - "toolkit/components/telemetry/data/install-ping\\.md:.*: ERROR: Document or section may not begin with a transition"

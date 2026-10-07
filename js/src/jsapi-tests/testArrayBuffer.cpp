@@ -220,6 +220,36 @@ BEGIN_TEST(testArrayBuffer_staticContents) {
 }
 END_TEST(testArrayBuffer_staticContents)
 
+BEGIN_TEST(testArrayBuffer_newWithData) {
+  // Fits into an inline ArrayBuffer.
+  constexpr uint8_t shortData[] = "One two?";
+
+  JS::RootedObject buffer(cx, JS::NewArrayBuffer(cx, shortData));
+  CHECK(buffer);
+
+  size_t len;
+  bool isShared;
+  uint8_t* bufferData;
+  JS::GetArrayBufferLengthAndData(buffer, &len, &isShared, &bufferData);
+  CHECK_EQUAL(len, sizeof(shortData));
+  CHECK(memcmp(bufferData, shortData, sizeof(shortData)) == 0);
+
+  constexpr uint8_t longData[] =
+      "Three four five six seven and then back to "
+      "three four five six seven and then back to "
+      "three four five six seven and done.";
+
+  buffer = JS::NewArrayBuffer(cx, longData);
+  CHECK(buffer);
+
+  JS::GetArrayBufferLengthAndData(buffer, &len, &isShared, &bufferData);
+  CHECK_EQUAL(len, sizeof(longData));
+  CHECK(memcmp(bufferData, longData, sizeof(longData)) == 0);
+
+  return true;
+}
+END_TEST(testArrayBuffer_newWithData)
+
 BEGIN_TEST(testArrayBuffer_stealDetachExternal) {
   static const char dataBytes[] = "One two three four";
   ExternalData data(dataBytes);

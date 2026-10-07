@@ -9,11 +9,11 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/MerchantValidationEvent.h"
 #include "mozilla/dom/PaymentMethodChangeEvent.h"
 #include "mozilla/dom/PaymentRequestChild.h"
 #include "mozilla/dom/PaymentRequestManager.h"
+#include "mozilla/dom/PermissionsPolicyUtils.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/WindowContext.h"
@@ -606,9 +606,10 @@ already_AddRefed<PaymentRequest> PaymentRequest::Constructor(
     return nullptr;
   }
 
-  if (!FeaturePolicyUtils::IsFeatureAllowed(doc, u"payment"_ns)) {
+  if (!PermissionsPolicyUtils::IsFeatureAllowed(doc, u"payment"_ns)) {
     aRv.ThrowSecurityError(
-        "Document's Feature Policy does not allow to create a PaymentRequest");
+        "Document's Permissions Policy does not allow to create a "
+        "PaymentRequest");
     return nullptr;
   }
 

@@ -1,0 +1,3 @@
+LICENSED_UNDER += [SOME_ID]
+LICENSES[SOME_ID].title = "Computed Title"
+LICENSES["multi", "key"].title = "Odd Subscript"

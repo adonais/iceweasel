@@ -1095,11 +1095,6 @@ impl<'le> TElement for GeckoElement<'le> {
     }
 
     #[inline]
-    fn subtree_bloom_filter(&self) -> u64 {
-        unsafe { bindings::Gecko_Element_GetSubtreeBloomFilter(self.0) }
-    }
-
-    #[inline]
     fn local_name(&self) -> &WeakAtom {
         unsafe { WeakAtom::new(self.as_node().node_info().mInner.mName) }
     }
@@ -1534,7 +1529,7 @@ impl<'le> TElement for GeckoElement<'le> {
         let after_change_ui_style = after_change_style.get_ui();
         let existing_transitions = self.css_transitions_info();
 
-        if after_change_style.get_box().clone_display().is_none()
+        if after_change_style.get_box().get_display().is_none()
             && !crate::pref!("layout.css.display-animations.enabled")
         {
             // We need to cancel existing transitions.
@@ -2239,5 +2234,10 @@ impl<'le> ::selectors::Element for GeckoElement<'le> {
     fn add_element_unique_hashes(&self, filter: &mut BloomFilter) -> bool {
         each_relevant_element_hash(*self, |hash| filter.insert_hash(hash & BLOOM_HASH_MASK));
         true
+    }
+
+    #[inline]
+    fn subtree_filter(&self) -> u64 {
+        unsafe { bindings::Gecko_Element_GetSubtreeBloomFilter(self.0) }
     }
 }

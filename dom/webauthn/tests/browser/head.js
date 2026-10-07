@@ -15,6 +15,11 @@ for (let script of scripts) {
   );
 }
 
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/toolkit/components/passwordmgr/test/browser/head.js",
+  this
+);
+
 function add_virtual_authenticator(autoremove = true) {
   let webauthnService = Cc["@mozilla.org/webauthn/service;1"].getService(
     Ci.nsIWebAuthnService

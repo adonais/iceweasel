@@ -248,6 +248,15 @@ struct MarkerTypeSerialization<::mozilla::baseprofiler::markers::NoPayload> {
   // Nothing! NoPayload has special handling avoiding payload work.
 };
 
+struct NoPayloadUserData : public mozilla::BaseMarkerType<NoPayloadUserData> {
+  static constexpr const char* Name = "NoPayloadUserData";
+  using MS = mozilla::MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+};
+
 template <typename MarkerType, typename... Ts>
 static ProfileBufferBlockIndex AddMarkerWithOptionalStackToBuffer(
     ProfileChunkedBuffer& aBuffer, const ProfilerString8View& aName,
@@ -265,21 +274,6 @@ static ProfileBufferBlockIndex AddMarkerWithOptionalStackToBuffer(
     // TODO: Remove this when bug 1646714 lands.
     if (aOptions.Stack().GetChunkedBuffer() ||
         !aOptions.InnerWindowId().IsUnspecified()) {
-      struct NoPayloadUserData {
-        static constexpr Span<const char> MarkerTypeName() {
-          return MakeStringSpan("NoPayloadUserData");
-        }
-        static void StreamJSONMarkerData(
-            baseprofiler::SpliceableJSONWriter& aWriter) {
-          // No user payload.
-        }
-        static mozilla::MarkerSchema MarkerTypeDisplay() {
-          using MS = mozilla::MarkerSchema;
-          MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-          // No user data to display.
-          return schema;
-        }
-      };
       return MarkerTypeSerialization<NoPayloadUserData>::Serialize(
           aBuffer, aName, aCategory, std::move(aOptions));
     }

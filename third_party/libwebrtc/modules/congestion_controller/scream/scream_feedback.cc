@@ -74,6 +74,7 @@ ScreamFeedback ParseScreamFeedback(const TransportPacketsFeedback& msg) {
 
   // Directly calculate feedback hold time of this feedback.
   if (first_packet && last_packet) {
+    parsed.last_packet_receive_time = last_packet->receive_time;
     parsed.feedback_hold_time =
         last_packet->receive_time +
         last_packet->arrival_time_offset.value_or(TimeDelta::Zero()) -

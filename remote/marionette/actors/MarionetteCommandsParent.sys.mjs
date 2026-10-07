@@ -349,6 +349,12 @@ export class MarionetteCommandsParent extends JSWindowActorParent {
       }
     );
 
+    if (rect.width === 0 || rect.height === 0) {
+      throw new lazy.error.UnableToCaptureScreen(
+        `The dimensions of requested screenshot are incorrect, got width: ${rect.width} and height: ${rect.height}.`
+      );
+    }
+
     // If no element has been specified use the top-level browsing context.
     // Otherwise use the browsing context from the currently selected frame.
     const browsingContext = webEl

@@ -732,7 +732,9 @@ export var BrowserUtils = {
    * @param {string} options.categoryName
    *        What category's consumers to call.
    * @param {boolean} [options.idleDispatch=false]
-   *        If set to true, call each consumer in an idle task.
+   *        If set to true, call each consumer in an idle task. If jsGlobal is a
+   *        window that has closed by the time the idle task runs, the consumer
+   *        is dropped, so we don't initialize (and leak) a closing window.
    * @param {string} [options.profilerMarker=""]
    *        If specified, will create a profiler marker with the provided
    *        identifier for each consumer.
@@ -803,6 +805,12 @@ export var BrowserUtils = {
         allTasks.push(
           new Promise(resolve => {
             ChromeUtils.idleDispatch(() => {
+              // Drop the task if it targets a window that has closed in the
+              // meantime, to avoid initializing (and leaking) a closing window.
+              if (jsGlobal?.closed) {
+                resolve();
+                return;
+              }
               resolve(callSingleListener(listener));
             });
           })

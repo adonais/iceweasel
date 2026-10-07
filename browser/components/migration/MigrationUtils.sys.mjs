@@ -44,8 +44,8 @@ function getL10n() {
 }
 
 const FIREFOX_REFRESH_MIGRATOR_KEYS = new Set([
-  "firefox",
-  "firefox-selectable-profile",
+  AppConstants.MOZ_APP_NAME,
+  AppConstants.MOZ_APP_NAME + "-selectable-profile",
 ]);
 
 const MIGRATOR_MODULES = Object.freeze({
@@ -509,8 +509,8 @@ class MigrationUtils {
       "Internet Explorer": "ie",
       "Microsoft Edge": "edge",
       Safari: "safari",
-      Firefox: "firefox",
-      Nightly: "firefox",
+      [AppConstants.MOZ_APP_BASENAME]: AppConstants.MOZ_APP_NAME,
+      Nightly: AppConstants.MOZ_APP_NAME,
       Opera: "opera",
       Vivaldi: "vivaldi",
       "Opera GX": "opera-gx",
@@ -530,8 +530,8 @@ class MigrationUtils {
         .getApplicationDescription("http");
       key = APP_DESC_TO_KEY[browserDesc] || "";
       // Handle devedition, as well as "FirefoxNightly" on OS X.
-      if (!key && browserDesc.startsWith("Firefox")) {
-        key = "firefox";
+      if (!key && browserDesc.startsWith(AppConstants.MOZ_APP_BASENAME)) {
+        key = AppConstants.MOZ_APP_NAME;
       }
     } catch (ex) {
       console.error("Could not detect default browser: ", ex);

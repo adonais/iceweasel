@@ -338,16 +338,6 @@ discopane-notice-recommendations2 =
         extensions you’ve installed, profile preferences, and usage statistics.
 discopane-notice-learn-more = Learn more
 
-# Notice for the colorway theme removal
-colorway-removal-notice-message =
-    .heading = Your colorway theme(s) were removed.
-    .message =
-        { -brand-product-name } updated its colorways collection. We removed
-        the old version(s) from your “Saved Themes” list. Get new versions on
-        the add-ons site.
-colorway-removal-notice-learn-more = Learn more
-colorway-removal-notice-button = Get updated colorways themes
-
 # Notice to make user aware that themes are not applied in forced colors mode.
 # This notice is only visible on Windows.
 forced-colors-theme-notice =

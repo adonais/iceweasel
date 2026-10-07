@@ -1,0 +1,7 @@
+---
+GlobalNoExtensionsLinter:
+    description: A global linter with no extensions gets a directory's files.
+    include:
+        - files
+    type: global
+    payload: global_payload:global_expanded

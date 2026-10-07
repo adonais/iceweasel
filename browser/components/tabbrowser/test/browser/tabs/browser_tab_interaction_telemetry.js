@@ -677,7 +677,7 @@ add_task(async function test_activate_ctrl_tab_two_tabs() {
   await resetTelemetry();
 });
 
-// The tabs.js on_keydown handler (Ctrl+Shift+Arrow when the tab strip has focus)
+// The tabs.mjs on_keydown handler (Ctrl+Shift+Arrow when the tab strip has focus)
 // passes a KEYBOARD metricsContext to moveTabForward/Backward/ToStart/ToEnd.
 add_task(async function test_move_keyboard_tabstrip_arrow_moves() {
   await resetTelemetry();

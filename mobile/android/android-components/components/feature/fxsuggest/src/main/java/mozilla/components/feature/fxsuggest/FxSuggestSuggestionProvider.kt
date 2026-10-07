@@ -94,6 +94,7 @@ class FxSuggestSuggestionProvider(
                                     reportingUrl = suggestion.clickUrl,
                                     iabCategory = suggestion.iabCategory,
                                     contextId = it,
+                                    suggestionId = suggestion.suggestionId,
                                 )
                             },
                         impressionInfo =
@@ -104,6 +105,7 @@ class FxSuggestSuggestionProvider(
                                     reportingUrl = suggestion.impressionUrl,
                                     iabCategory = suggestion.iabCategory,
                                     contextId = it,
+                                    suggestionId = suggestion.suggestionId,
                                 )
                             },
                     )
@@ -180,6 +182,7 @@ sealed interface FxSuggestInteractionInfo {
      * @param reportingUrl The url to report the click or impression to.
      * @param iabCategory The categorization of the suggestion.
      * @param contextId The contextual services user identifier.
+     * @param suggestionId The suggestion ID from MARS/Merino.
      */
     data class Amp(
         val blockId: Long,
@@ -187,6 +190,7 @@ sealed interface FxSuggestInteractionInfo {
         val reportingUrl: String,
         val iabCategory: String,
         val contextId: String,
+        val suggestionId: String,
     ) : FxSuggestInteractionInfo
 
     /**

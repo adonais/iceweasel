@@ -78,8 +78,9 @@ fn is_excluded(path: &str, excludes: &[String], glob_excludes: &GlobSet) -> bool
         || glob_excludes.is_match(p)
 }
 
-/// Recursively walks `dir`, collecting files that match `extensions` while
-/// skipping paths in `excludes`. Uses the `ignore` crate for efficient
+/// Recursively walks `dir`, collecting files that match `extensions` (all
+/// files when `extensions` is empty, like mozlint's built-in linter types)
+/// while skipping paths in `excludes`. Uses the `ignore` crate for efficient
 /// directory traversal with override-based filtering.
 fn walk_directory(
     dir: &str,
@@ -88,10 +89,6 @@ fn walk_directory(
     find_dotfiles: bool,
     result: &mut Vec<String>,
 ) {
-    if extensions.is_empty() {
-        return;
-    }
-
     let mut builder = WalkBuilder::new(dir);
     builder
         .hidden(!find_dotfiles)
@@ -101,13 +98,15 @@ fn walk_directory(
         .git_exclude(false);
 
     // Use TypesBuilder for extension filtering.
-    let mut types = TypesBuilder::new();
-    for ext in extensions {
-        let _ = types.add("lint", &format!("*.{ext}"));
-    }
-    types.select("lint");
-    if let Ok(t) = types.build() {
-        builder.types(t);
+    if !extensions.is_empty() {
+        let mut types = TypesBuilder::new();
+        for ext in extensions {
+            let _ = types.add("lint", &format!("*.{ext}"));
+        }
+        types.select("lint");
+        if let Ok(t) = types.build() {
+            builder.types(t);
+        }
     }
 
     // Use overrides for exclusion patterns (both literal paths and globs).
@@ -207,17 +206,21 @@ mod tests {
     }
 
     #[test]
-    fn test_expand_exclusions_no_extensions_skips_dirs() {
+    fn test_expand_exclusions_no_extensions_walks_all_files() {
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path().to_str().unwrap().to_string();
 
         let sub = dir.path().join("src");
         fs::create_dir(&sub).unwrap();
         fs::write(sub.join("a.js"), "").unwrap();
+        fs::write(sub.join("README"), "").unwrap();
 
         let paths = vec![sub.to_str().unwrap().to_string()];
-        let result = expand_exclusions(&paths, &[], &[], &root, false);
-        assert!(result.is_empty());
+        let mut result = expand_exclusions(&paths, &[], &[], &root, false);
+        result.sort();
+        assert_eq!(result.len(), 2);
+        assert!(result[0].ends_with("README"));
+        assert!(result[1].ends_with("a.js"));
     }
 
     #[test]

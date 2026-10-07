@@ -151,7 +151,7 @@ addAccessibleTask(
 <textarea id="textarea"></textarea>
   `,
   async function (browser, docAcc) {
-    testAttrs(docAcc, { tag: "body" }, true);
+    testAttrs(docAcc, { tag: "html" }, true);
     const p = findAccessibleChildByID(docAcc, "p");
     testAttrs(p, { tag: "p" }, true);
     const textLeaf = p.firstChild;

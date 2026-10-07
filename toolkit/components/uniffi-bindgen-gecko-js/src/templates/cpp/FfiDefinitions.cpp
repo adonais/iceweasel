@@ -1,16 +1,16 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 extern "C" {
-  {%- for (preprocessor_condition, ffi_definitions, preprocessor_condition_end) in ffi_definitions.iter() %}
-{{ preprocessor_condition }}
-  {%- for def in ffi_definitions %}
+  {%- for lib in root.libraries() %}
+{{ lib.ifdef_start() }}
+  {%- for def in lib.ffi_definitions %}
   {%- match def %}
   {%- when FfiDefinition::RustFunction(func) %}
-  {{ func.return_type.type_name }} {{ func.name.0 }}({{ func.arg_types()|join(", ") }});
+  {{ func.return_type.type_name() }} {{ func.name.0 }}({{ func.arg_types()|join(", ") }});
   {%- when FfiDefinition::FunctionType(func) %}
-  typedef {{ func.return_type.type_name }} (*{{ func.name.0 }})({{ func.arg_types()|join(", ") }});
+  typedef {{ func.return_type.type_name() }} (*{{ func.name.0 }})({{ func.arg_types()|join(", ") }});
   {%- when FfiDefinition::Struct(ffi_struct) %}
   struct {{ ffi_struct.name.0 }} {
     {%- for field in ffi_struct.fields %}
@@ -19,6 +19,6 @@ extern "C" {
   };
   {%- endmatch %}
   {%- endfor %}
-{{ preprocessor_condition_end }}
+{{ lib.ifdef_end() }}
   {%- endfor %}
 }

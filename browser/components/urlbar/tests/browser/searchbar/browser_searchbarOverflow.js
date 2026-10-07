@@ -114,9 +114,7 @@ add_task(async function test_fixedOverflow() {
   Assert.ok(true, "Still in search mode");
 
   info("Try exiting search mode.");
-  let closeButton = searchbar.querySelector(".searchmode-switcher-close");
-  EventUtils.synthesizeMouseAtCenter(closeButton, {});
-  await SearchbarTestUtils.assertSearchMode(window, null);
+  await SearchbarTestUtils.exitSearchMode(window, { waitForSearch: false });
   Assert.ok(true, "Exited search mode");
 
   await SearchbarTestUtils.withContextMenu(window, () => {});

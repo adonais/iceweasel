@@ -7,18 +7,18 @@
 /* import-globals-from ../../mochitest/role.js */
 loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 
-const NESTED_IFRAME_DOC_BODY_ID = "nested-iframe-body";
+const NESTED_IFRAME_DOC_ID = "nested-iframe-doc";
 const NESTED_IFRAME_ID = "nested-iframe";
 // eslint-disable-next-line sdl/no-insecure-url
 const nestedURL = new URL(`http://example.com/document-builder.sjs`);
 nestedURL.searchParams.append(
   "html",
-  `<html>
+  `<html id="${NESTED_IFRAME_DOC_ID}">
       <head>
         <meta charset="utf-8"/>
         <title>Accessibility Nested Iframe Frame Test</title>
       </head>
-      <body id="${NESTED_IFRAME_DOC_BODY_ID}">
+      <body>
         <table id="table">
           <tr>
             <td>cell1</td>
@@ -42,7 +42,7 @@ addAccessibleTask(
     ok(iframeDocAcc, "IFRAME document accessible is present");
     let nestedDocAcc = findAccessibleChildByID(
       iframeDocAcc,
-      NESTED_IFRAME_DOC_BODY_ID
+      NESTED_IFRAME_DOC_ID
     );
     let waitForNestedDocLoad = false;
     if (nestedDocAcc) {
@@ -61,10 +61,7 @@ addAccessibleTask(
     if (waitForNestedDocLoad) {
       info("Waiting for doc load complete on nested iframe document");
       nestedDocAcc = (
-        await waitForEvent(
-          EVENT_DOCUMENT_LOAD_COMPLETE,
-          NESTED_IFRAME_DOC_BODY_ID
-        )
+        await waitForEvent(EVENT_DOCUMENT_LOAD_COMPLETE, NESTED_IFRAME_DOC_ID)
       ).accessible;
     }
 

@@ -7,7 +7,6 @@ import os
 config = {
     # note: overridden by MOZHARNESS_ACTIONS in TaskCluster tasks
     "default_actions": [
-        "clobber",
         "build",
     ],
     "vcs_share_base": "/builds/hg-shared",
@@ -31,7 +30,6 @@ config = {
     #########################################################################
     ###### 64 bit specific ######
     "platform": "linux64",
-    "stage_platform": "linux64-searchfox-opt",
     # This doesn't actually inherit from anything.
     "mozconfig_platform": "linux64",
 }

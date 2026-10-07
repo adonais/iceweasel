@@ -12,6 +12,13 @@ import yaml
 
 def locale_array(name, locales):
     """A null-terminated static array of locale strings, 8 per line."""
+    for locale in locales:
+        if not isinstance(locale, str):
+            raise ValueError(
+                f"{name}: locale {locale!r} is not a string. YAML reads a bare "
+                "no, yes, on, off, y or n as a boolean, so a locale tag that "
+                "collides with one must be quoted in models.yaml."
+            )
     items = [f'"{locale}"' for locale in locales] + ["nullptr"]
     lines = ["    " + ", ".join(items[i : i + 8]) for i in range(0, len(items), 8)]
     return f"static const char* const {name}[] = {{\n" + ",\n".join(lines) + "};\n"

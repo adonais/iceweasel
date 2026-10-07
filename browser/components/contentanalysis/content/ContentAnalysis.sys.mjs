@@ -515,8 +515,11 @@ export const ContentAnalysis = {
     if (!nameOrOperationType.name) {
       let l10nId = undefined;
       switch (nameOrOperationType.operationType) {
-        case Ci.nsIContentAnalysisRequest.eClipboard:
+        case Ci.nsIContentAnalysisRequest.ePasteClipboard:
           l10nId = "contentanalysis-operationtype-clipboard";
+          break;
+        case Ci.nsIContentAnalysisRequest.eCopyClipboard:
+          l10nId = "contentanalysis-operationtype-clipboard-copy";
           break;
         case Ci.nsIContentAnalysisRequest.eDroppedText:
           l10nId = "contentanalysis-operationtype-dropped-text";
@@ -716,8 +719,11 @@ export const ContentAnalysis = {
     }
     let l10nId = undefined;
     switch (aResourceNameOrOperationType.operationType) {
-      case Ci.nsIContentAnalysisRequest.eClipboard:
+      case Ci.nsIContentAnalysisRequest.ePasteClipboard:
         l10nId = "contentanalysis-slow-agent-dialog-body-clipboard";
+        break;
+      case Ci.nsIContentAnalysisRequest.eCopyClipboard:
+        l10nId = "contentanalysis-slow-agent-dialog-body-clipboard-copy";
         break;
       case Ci.nsIContentAnalysisRequest.eDroppedText:
         l10nId = "contentanalysis-slow-agent-dialog-body-dropped-text";
@@ -751,8 +757,11 @@ export const ContentAnalysis = {
     }
     let l10nId = undefined;
     switch (aResourceNameOrOperationType.operationType) {
-      case Ci.nsIContentAnalysisRequest.eClipboard:
+      case Ci.nsIContentAnalysisRequest.ePasteClipboard:
         l10nId = "contentanalysis-error-message-clipboard";
+        break;
+      case Ci.nsIContentAnalysisRequest.eCopyClipboard:
+        l10nId = "contentanalysis-error-message-clipboard-copy";
         break;
       case Ci.nsIContentAnalysisRequest.eDroppedText:
         l10nId = "contentanalysis-error-message-dropped-text";
@@ -942,13 +951,24 @@ export const ContentAnalysis = {
           let bodyId = undefined;
           let bodyHasContent = false;
           switch (aResourceNameOrOperationType.operationType) {
-            case Ci.nsIContentAnalysisRequest.eClipboard: {
+            case Ci.nsIContentAnalysisRequest.ePasteClipboard: {
               // Unlike the cases below, this can be shown when the DLP
               // agent is not available.  We use a different message for that.
               const caInfo = await this.contentAnalysis.getDiagnosticInfo();
               titleId = "contentanalysis-block-dialog-title-clipboard";
               bodyId = caInfo.connectedToAgent
                 ? "contentanalysis-block-dialog-body-clipboard"
+                : "contentanalysis-no-agent-connected-message-content";
+              bodyHasContent = true;
+              break;
+            }
+            case Ci.nsIContentAnalysisRequest.eCopyClipboard: {
+              // Unlike the cases below, this can be shown when the DLP
+              // agent is not available.  We use a different message for that.
+              const caInfo = await this.contentAnalysis.getDiagnosticInfo();
+              titleId = "contentanalysis-block-dialog-title-clipboard-copy";
+              bodyId = caInfo.connectedToAgent
+                ? "contentanalysis-block-dialog-body-clipboard-copy"
                 : "contentanalysis-no-agent-connected-message-content";
               bodyHasContent = true;
               break;

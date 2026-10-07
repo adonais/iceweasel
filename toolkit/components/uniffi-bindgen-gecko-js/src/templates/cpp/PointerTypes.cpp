@@ -1,11 +1,12 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // Define pointer types
-{%- for (preprocessor_condition, pointer_types, preprocessor_condition_end) in pointer_types.iter() %}
-{{ preprocessor_condition }}
-{%- for pointer_type in pointer_types %}
+{%- for lib in root.libraries() %}
+{{ lib.ifdef_start() }}
+{%- for pointer_type in lib.pointer_types %}
+
 const static mozilla::uniffi::UniFFIPointerType {{ pointer_type.name }} {
   "{{ pointer_type.label }}"_ns,
   {{ pointer_type.ffi_func_clone.0 }},
@@ -93,8 +94,9 @@ class {{ pointer_type.ffi_value_class }} {
 extern "C" void {{ trait_interface_info.free_fn }}(uint64_t uniffiHandle);
 extern "C" uint64_t {{ trait_interface_info.clone_fn }}(uint64_t uniffiHandle);
 
-// Trait interface FFI value class.  This is a hybrid between the one for interfaces and callback
-// interface version
+// Trait interface FFI value class for {{ pointer_type.label }}.
+//
+// This is a hybrid between the one for interfaces and callback interface version
 class {{ pointer_type.ffi_value_class }} {
  private:
   // The raw FFI value is a uint64_t in all cases.
@@ -199,21 +201,21 @@ class {{ pointer_type.ffi_value_class }} {
 {%- endmatch %}
 
 {%- endfor %}
-{{ preprocessor_condition_end }}
+{{ lib.ifdef_end() }}
 {%- endfor %}
 
 Maybe<already_AddRefed<UniFFIPointer>> ReadPointer(const GlobalObject& aGlobal, uint64_t aId, const ArrayBuffer& aArrayBuff, long aPosition, ErrorResult& aError) {
   const UniFFIPointerType* type;
   switch (aId) {
-    {%- for (preprocessor_condition, pointer_types, preprocessor_condition_end) in pointer_types.iter() %}
-{{ preprocessor_condition }}
-    {%- for pointer_type in pointer_types %}
+    {%- for lib in root.libraries() %}
+{{ lib.ifdef_start() }}
+    {%- for pointer_type in lib.pointer_types %}
     case {{ pointer_type.id }}: {
       type = &{{ pointer_type.name }};
       break;
     }
     {%- endfor %}
-{{ preprocessor_condition_end }}
+{{ lib.ifdef_end() }}
     {%- endfor %}
     default:
       return Nothing();
@@ -224,15 +226,15 @@ Maybe<already_AddRefed<UniFFIPointer>> ReadPointer(const GlobalObject& aGlobal, 
 bool WritePointer(const GlobalObject& aGlobal, uint64_t aId, const UniFFIPointer& aPtr, const ArrayBuffer& aArrayBuff, long aPosition, ErrorResult& aError) {
   const UniFFIPointerType* type;
   switch (aId) {
-    {%- for (preprocessor_condition, pointer_types, preprocessor_condition_end) in pointer_types.iter() %}
-{{ preprocessor_condition }}
-    {%- for pointer_type in pointer_types %}
+    {%- for lib in root.libraries() %}
+{{ lib.ifdef_start() }}
+    {%- for pointer_type in lib.pointer_types %}
     case {{ pointer_type.id }}: {
       type = &{{ pointer_type.name }};
       break;
     }
     {%- endfor %}
-{{ preprocessor_condition_end }}
+{{ lib.ifdef_end() }}
     {%- endfor %}
     default:
       return false;

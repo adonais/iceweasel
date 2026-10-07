@@ -9,6 +9,7 @@ import mozilla.components.support.ktx.util.PromptAbuserDetector
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.Constants
 import org.mozilla.fenix.helpers.Constants.PackageName.PRINT_SPOOLER
@@ -38,6 +39,7 @@ import org.mozilla.fenix.ui.efficiency.selectors.SettingsAddonsManagerSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSavedPasswordsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.ShareOverlaySelectors
+import org.mozilla.fenix.ui.efficiency.selectors.TabDrawerSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.TabHistorySelectors
 import org.mozilla.fenix.ui.efficiency.selectors.WebCompatReporterSelectors
 
@@ -636,5 +638,60 @@ class MainMenuTest : BaseTest() {
             .mozVerify(WebCompatReporterSelectors.REPORTED_BROKEN_SITE_REASON("Site doesn’t load"))
             .mozVerifyElementIsNotChecked(WebCompatReporterSelectors.ITEMS_BLOCKED_BY_TRACKING_PROTECTION_CHECKBOX)
             .mozVerifyElementsByGroup(WebCompatReporterSelectors.Group.REPORTER_FORM)
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4227141
+    @Critical
+    @Test
+    fun verifyThatTheBrokenSiteFormSubmissionCanBeCanceledTest() {
+        val defaultWebPage = mockWebServer.getGenericAsset(1)
+
+        on.browserPage.navigateToPage(defaultWebPage.url.toString())
+        on.webCompatReporter
+            .navigateToPage()
+            .mozClick(WebCompatReporterSelectors.REPORTED_BROKEN_SITE_REASON("Site doesn’t load"))
+            .mozClick(WebCompatReporterSelectors.CLOSE_REPORT_BUTTON)
+        on.browserPage.navigateToPage()
+        on.webCompatReporter
+            .navigateToPage()
+            .mozVerifyElementsByGroup(WebCompatReporterSelectors.Group.REPORTER_VIEW_ITEMS)
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4227139
+    @Critical
+    @Test
+    fun verifyTheSiteIsDeceptiveReasonTest() {
+        val defaultWebPage = mockWebServer.getGenericAsset(1)
+
+        on.browserPage.navigateToPage(defaultWebPage.url.toString())
+        on.webCompatReporter
+            .navigateToPage()
+            .mozClick(WebCompatReporterSelectors.REPORTED_BROKEN_SITE_REASON("This site is deceptive"))
+        on.browserPage.navigateToPage().verifyUrl("safebrowsing.google.com/safebrowsing/report_phish/")
+        on.tabDrawer.navigateToPage().mozClick(TabDrawerSelectors.TAB_ITEM_WITH_TITLE(defaultWebPage.title))
+        on.browserPage.navigateToPage()
+        on.webCompatReporter
+            .navigateToPage()
+            .mozVerifyElementsByGroup(WebCompatReporterSelectors.Group.REPORTER_VIEW_ITEMS)
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4227138
+    @Critical
+    @Test
+    fun verifyTheSomethingElseReasonTest() {
+        val defaultWebPage = mockWebServer.getGenericAsset(1)
+
+        on.browserPage.navigateToPage(defaultWebPage.url.toString())
+        on.webCompatReporter
+            .navigateToPage()
+            .mozClick(WebCompatReporterSelectors.REPORTED_BROKEN_SITE_REASON("Something else"))
+            .mozVerifyElementsByGroup(WebCompatReporterSelectors.Group.SOMETHING_ELSE_REASON_FORM)
+            .mozVerify(WebCompatReporterSelectors.DESCRIBE_PROBLEM_ERROR_MESSAGE)
+            .mozVerifyElementIsNotEnabled(WebCompatReporterSelectors.SEND_REPORT_BUTTON)
+            .mozClearAndEnterText("Prolonged page loading time", WebCompatReporterSelectors.DESCRIPTION_INPUT_BOX)
+            .mozVerifyElementIsEnabled(WebCompatReporterSelectors.SEND_REPORT_BUTTON)
+            .mozVerifyElementAbsent(WebCompatReporterSelectors.DESCRIBE_PROBLEM_ERROR_MESSAGE)
+            .mozClick(WebCompatReporterSelectors.SEND_REPORT_BUTTON)
+            .mozVerify(WebCompatReporterSelectors.REPORT_SENT_SNACK_BAR_MESSAGE)
     }
 }

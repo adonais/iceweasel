@@ -24,6 +24,8 @@ const CONTENT_CONTROLLER = { rendersInContentProcess: true };
  *   The URL passed to `getRemoteIconUrl`.
  * @param {?string} result
  *   What `getRemoteIconUrl` returned.
+ * @return {URL}
+ *   A `URL` object created from `result`.
  */
 function assertWrapped(iconUrl, result) {
   let url = URL.parse(result);
@@ -33,6 +35,7 @@ function assertWrapped(iconUrl, result) {
     iconUrl,
     "The wrapper carries the original URL"
   );
+  return url;
 }
 
 add_task(function trustedSchemesPassThrough() {
@@ -121,5 +124,15 @@ add_task(function contentProcessViewTakesTheIconAsItIs() {
     UrlbarUtils.getRemoteIconUrl("not a url", SIZE, CONTENT_CONTROLLER),
     null,
     "A string that isn't a URL is still rejected"
+  );
+});
+
+add_task(function noSize() {
+  let bareUrl = "https://example.com/no-size";
+  let wrappedUrl = UrlbarUtils.getRemoteIconUrl(bareUrl);
+  let parsedUrl = assertWrapped(bareUrl, wrappedUrl);
+  Assert.ok(
+    !parsedUrl.searchParams.has("size"),
+    "The created moz-remote-image URL should not have a `size` search param"
   );
 });

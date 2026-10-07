@@ -131,4 +131,15 @@ object CustomTabsSelectors : SelectorContainer {
             value = label,
             description = "Custom tab menu: custom item '$label'",
         )
+
+    // The custom-tab toolbar renders the URL (or its host) as a Compose text node. Matched as a substring so
+    // the caller can assert on the host or any leading portion, mirroring the legacy verifyCustomTabUrl.
+    @Suppress("FunctionName")
+    fun TOOLBAR_URL(url: String = "") =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT_SUBSTRING,
+            value = url,
+            description = "Custom tab toolbar URL '$url'",
+            groups = setOf(Group.CUSTOM_TAB_TOOLBAR),
+        )
 }

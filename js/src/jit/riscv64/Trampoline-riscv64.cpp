@@ -304,7 +304,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
     masm.bind(&notOsr);
     // Load the scope chain in R1.
     MOZ_ASSERT(R1.scratchReg() != reg_code);
-    masm.mv(R1.scratchReg(), reg_chain);
+    masm.ma_mv(R1.scratchReg(), reg_chain);
   }
   JitSpew(JitSpew_Codegen, "__Line__: %d", __LINE__);
   // The call will push the return address and frame pointer on the stack, thus
@@ -394,17 +394,13 @@ uint32_t JitRuntime::generatePreBarrier(JSContext* cx, MacroAssembler& masm,
   Register temp1 = a0;
   Register temp2 = a2;
   Register temp3 = a3;
-  masm.push(temp1);
-  masm.push(temp2);
-  masm.push(temp3);
+  masm.pushRegs(temp1, temp2, temp3);
 
   Label noBarrier;
   masm.emitPreBarrierFastPath(type, temp1, temp2, temp3, &noBarrier);
 
   // Call into C++ to mark this GC thing.
-  masm.pop(temp3);
-  masm.pop(temp2);
-  masm.pop(temp1);
+  masm.popRegs(temp3, temp2, temp1);
 
   LiveRegisterSet save;
   save.set() = RegisterSet(GeneralRegisterSet(Registers::VolatileMask),
@@ -423,9 +419,7 @@ uint32_t JitRuntime::generatePreBarrier(JSContext* cx, MacroAssembler& masm,
   masm.ret();
 
   masm.bind(&noBarrier);
-  masm.pop(temp3);
-  masm.pop(temp2);
-  masm.pop(temp1);
+  masm.popRegs(temp3, temp2, temp1);
   masm.abiret();
 
   return offset;
@@ -462,10 +456,11 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   // push the return address, while the caller must ensure that the address
   // is stored in ra on entry. This allows the VM wrapper to work with both
   // direct calls and tail calls.
-  masm.pushReturnAddress();
-
-  // Push the frame pointer to finish the exit frame, then link it up.
-  masm.Push(FramePointer);
+  // First push the return address, then the frame pointer to finish the exit
+  // frame, then link it up.
+  masm.pushRegs(LinkRegister, FramePointer);
+  // This adjustment is for Push(FramePointer).
+  masm.adjustFrame(sizeof(intptr_t));
   masm.moveStackPtrTo(FramePointer);
   masm.loadJSContext(cxreg);
   masm.enterExitFrame(cxreg, regs.getAny(), id);

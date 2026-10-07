@@ -2,7 +2,7 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 const { GenAI } = ChromeUtils.importESModule(
-  "resource:///modules/GenAI.sys.mjs"
+  "moz-src:///browser/components/genai/GenAI.sys.mjs"
 );
 
 registerCleanupFunction(() => {

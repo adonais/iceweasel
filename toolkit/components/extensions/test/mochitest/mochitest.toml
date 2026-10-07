@@ -4,8 +4,8 @@ prefs = ["extensions.webextensions.remote=false"]
 dupe-manifest = true
 
 ["include:mochitest-common.toml"]
-skip-if = [
-  "os == 'win'", # Windows WebExtensions always run OOP
+run-if = [
+  "os != 'win'", # Windows WebExtensions always run OOP
 ]
 
 ["test_ext_storage_cleanup.html"]

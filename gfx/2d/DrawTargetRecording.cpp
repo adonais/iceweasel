@@ -304,14 +304,11 @@ void DrawTargetRecording::Fill(const Path* aPath, const Pattern& aPattern,
 
   MarkChanged();
 
-  if (aPath->GetBackendType() == BackendType::RECORDING) {
-    const PathRecording* path = static_cast<const PathRecording*>(aPath);
-    auto circle = path->AsCircle();
-    if (circle) {
-      EnsurePatternDependenciesStored(aPattern);
-      RecordEventSelf(RecordedFillCircle(circle.value(), aPattern, aOptions));
-      return;
-    }
+  auto circle = aPath->AsCircle();
+  if (circle) {
+    EnsurePatternDependenciesStored(aPattern);
+    RecordEventSelf(RecordedFillCircle(circle.value(), aPattern, aOptions));
+    return;
   }
 
   RefPtr<PathRecording> pathRecording = EnsurePathStored(aPath);
@@ -460,23 +457,20 @@ void DrawTargetRecording::Stroke(const Path* aPath, const Pattern& aPattern,
                                  const DrawOptions& aOptions) {
   MarkChanged();
 
-  if (aPath->GetBackendType() == BackendType::RECORDING) {
-    const PathRecording* path = static_cast<const PathRecording*>(aPath);
-    auto circle = path->AsCircle();
-    if (circle && circle->closed) {
-      EnsurePatternDependenciesStored(aPattern);
-      RecordEventSelf(RecordedStrokeCircle(circle.value(), aPattern,
-                                           aStrokeOptions, aOptions));
-      return;
-    }
+  auto circle = aPath->AsCircle();
+  if (circle && circle->closed) {
+    EnsurePatternDependenciesStored(aPattern);
+    RecordEventSelf(RecordedStrokeCircle(circle.value(), aPattern,
+                                         aStrokeOptions, aOptions));
+    return;
+  }
 
-    auto line = path->AsLine();
-    if (line) {
-      EnsurePatternDependenciesStored(aPattern);
-      RecordEventSelf(RecordedStrokeLine(line->origin, line->destination,
-                                         aPattern, aStrokeOptions, aOptions));
-      return;
-    }
+  auto line = aPath->AsLine();
+  if (line) {
+    EnsurePatternDependenciesStored(aPattern);
+    RecordEventSelf(RecordedStrokeLine(line->origin, line->destination,
+                                       aPattern, aStrokeOptions, aOptions));
+    return;
   }
 
   RefPtr<PathRecording> pathRecording = EnsurePathStored(aPath);

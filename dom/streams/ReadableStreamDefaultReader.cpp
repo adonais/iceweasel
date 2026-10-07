@@ -79,7 +79,7 @@ bool ReadableStreamReaderGenericInitialize(ReadableStreamGenericReader* aReader,
     // Step 4.
     case ReadableStream::ReaderState::Closed:
       // Step 4.1.
-      aReader->ClosedPromise()->MaybeResolve(JS::UndefinedHandleValue);
+      aReader->ClosedPromise()->MaybeSafeResolve(JS::UndefinedHandleValue);
 
       return true;
     // Step 5.
@@ -158,7 +158,7 @@ void Read_ReadRequest::ChunkSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
     return;
   }
 
-  mPromise->MaybeResolve(value);
+  mPromise->MaybeSafeResolve(value);
 }
 
 void Read_ReadRequest::CloseSteps(JSContext* aCx, ErrorResult& aRv) {
@@ -175,7 +175,7 @@ void Read_ReadRequest::CloseSteps(JSContext* aCx, ErrorResult& aRv) {
     return;
   }
 
-  mPromise->MaybeResolve(value);
+  mPromise->MaybeSafeResolve(value);
 }
 
 void Read_ReadRequest::ErrorSteps(JSContext* aCx, JS::Handle<JS::Value> e,
@@ -368,6 +368,19 @@ void ReadableStreamDefaultReader::ReleaseLock(ErrorResult& aRv) {
   // Step 2. Perform ! ReadableStreamDefaultReaderRelease(this).
   RefPtr<ReadableStreamDefaultReader> thisRefPtr = this;
   ReadableStreamDefaultReaderRelease(cx, thisRefPtr, aRv);
+}
+
+ReadableStreamGenericReader::ReadableStreamGenericReader(
+    nsCOMPtr<nsIGlobalObject> aGlobal)
+    : mGlobal(std::move(aGlobal)) {}
+
+void ReadableStreamGenericReader::SetStream(
+    already_AddRefed<ReadableStream> aStream) {
+  mStream = aStream;
+}
+void ReadableStreamGenericReader::SetStream(ReadableStream* aStream) {
+  RefPtr<ReadableStream> stream(aStream);
+  SetStream(stream.forget());
 }
 
 // https://streams.spec.whatwg.org/#generic-reader-closed

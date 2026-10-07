@@ -10,7 +10,7 @@ const LOG_PREF = "browser.ipProtection.log";
 
 ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
   return console.createInstance({
-    prefix: "IPPNetworkUtils",
+    prefix: "IPP_NetworkUtils",
     maxLogLevel: Services.prefs.getBoolPref(LOG_PREF, false) ? "Debug" : "Warn",
   });
 });

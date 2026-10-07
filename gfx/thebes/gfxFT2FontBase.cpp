@@ -253,7 +253,6 @@ void gfxFT2FontBase::InitMetrics() {
   mFUnitsConvFactor = 0.0;
 
   if (MOZ_UNLIKELY(mStyle.AdjustedSizeMustBeZero())) {
-    memset(&mMetrics, 0, sizeof(mMetrics));  // zero initialize
     mSpaceGlyph = GetGlyph(' ');
     return;
   }
@@ -316,7 +315,7 @@ void gfxFT2FontBase::InitMetrics() {
   mFTSize = FindClosestSize(mFTFace->GetFace(), GetAdjustedSize());
 
 #ifdef MOZ_FONTATIONS
-  if (InitMetricsFromSkrifa(mMetrics)) {
+  if (InitMetricsFromSkrifa()) {
     InitExtraMetrics(GetAdjustedSize(), 0);
     return;
   }
@@ -351,7 +350,7 @@ void gfxFT2FontBase::InitMetrics() {
     mMetrics.strikeoutOffset = 0.25 * emHeight;
     mMetrics.strikeoutSize = underlineSize;
 
-    SanitizeMetrics(&mMetrics, false);
+    SanitizeMetrics(false);
     UnlockFTFace();
     return;
   }
@@ -592,7 +591,7 @@ void gfxFT2FontBase::InitExtraMetrics(gfxFloat aEmHeight,
       sum > 0.0 ? mMetrics.emAscent * mMetrics.emHeight / sum : 0.0;
   mMetrics.emDescent = mMetrics.emHeight - mMetrics.emAscent;
 
-  SanitizeMetrics(&mMetrics, false);
+  SanitizeMetrics(false);
 
 #if 0
     //    printf("font name: %s %f\n", NS_ConvertUTF16toUTF8(GetName()).get(), GetStyle()->size);
@@ -859,8 +858,8 @@ void gfxFT2FontBase::SetupVarCoords(
   for (unsigned i = 0; i < aMMVar->num_axis; ++i) {
     coords.AppendElement(aMMVar->axis[i].def);
     for (const auto& v : aVariations) {
-      if (aMMVar->axis[i].tag == v.mTag) {
-        FT_Fixed val = v.mValue * 0x10000;
+      if (aMMVar->axis[i].tag == v.tag) {
+        FT_Fixed val = v.value * 0x10000;
         val = std::min(val, aMMVar->axis[i].maximum);
         val = std::max(val, aMMVar->axis[i].minimum);
         coords[i] = val;

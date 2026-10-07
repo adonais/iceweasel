@@ -221,6 +221,8 @@ skip-if = [
 
 ["test_menu.xhtml"]
 
+["test_menu_accesskey_conflicts.xhtml"]
+
 ["test_menu_activateitem.xhtml"]
 
 ["test_menu_hide.xhtml"]
@@ -255,8 +257,6 @@ skip-if = [
 ["test_menulist_position.xhtml"]
 
 ["test_mousescroll.xhtml"]
-
-["test_mozinputbox_dictionary.xhtml"]
 
 ["test_named_deck.html"]
 

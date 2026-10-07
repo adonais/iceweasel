@@ -456,7 +456,7 @@ class SnackbarBindingTest {
             val sendToDeviceUseCase: SendToDeviceUseCase = mockk()
             every { sendTabUseCases.sendToDeviceAsync } returns sendToDeviceUseCase
             val retryResult = CompletableDeferred(true)
-            every { sendToDeviceUseCase.invoke(any(), any<List<TabData>>()) } returns retryResult
+            every { sendToDeviceUseCase.invoke(any<String>(), any<List<TabData>>()) } returns retryResult
             val binding = buildSnackbarBinding(sendTabUseCases = sendTabUseCases, scope = this)
             binding.start()
 

@@ -3,8 +3,8 @@ perform memory management. NSPR provides heap-based memory management
 functions that map to the familiar `malloc()`, `calloc()`,
 `realloc()`, and `free()`.
 
-- [Memory Allocation Functions](#Memory_Allocation_Functions)
-- [Memory Allocation Macros](#Memory_Allocation_Macros)
+- [Memory Allocation Functions](#memory-allocation-functions)
+- [Memory Allocation Macros](#memory-allocation-macros)
 
 (memory-allocation-functions)=
 

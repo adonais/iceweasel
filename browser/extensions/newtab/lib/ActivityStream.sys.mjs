@@ -451,6 +451,73 @@ function showSectionLayout({ geo, locale }) {
 
 // Configure default Activity Stream prefs with a plain `value` or a `getValue`
 // that computes a value. A `value_local_dev` is used for development defaults.
+// The thematic spaces layout's shipped default, used when no Nimbus recipe
+// supplies one. Section keys are what Merino's curated-recommendations feeds are
+// keyed by, not the display titles: Entertainment is `arts`, Politics is
+// `government`, Gaming is `hobbies`, Television is `tv`, Perspectives is
+// `in-conversation`, History is `education`. The default space doubles as the
+// catch-all, so a section or widget no space claims lands there.
+const DEFAULT_SPACES_CONFIG = {
+  order: ["games", "home", "living"],
+  default: "home",
+  spaces: {
+    home: {
+      label: "Home",
+      icon: "chrome://browser/skin/home.svg",
+      sections: [
+        "top_stories_section",
+        "headlines",
+        "in-the-zeitgeist",
+        "by-the-numbers",
+        "government",
+        "business",
+        "finance",
+        "explained",
+        "in-conversation",
+        "education-science",
+        "tech",
+      ],
+      widgets: ["pictureOfTheDay"],
+    },
+    games: {
+      label: "Games & Entertainment",
+      icon: "chrome://browser/content/profiles/assets/16_video-game-controller.svg",
+      sections: [
+        "arts",
+        "hobbies",
+        "music",
+        "movies",
+        "tv",
+        "featured-videos",
+        "photojournalism",
+        "sports",
+        "nfl",
+        "nhl",
+        "mlb",
+        "nba",
+        "soccer",
+      ],
+      widgets: ["crossword"],
+    },
+    living: {
+      label: "Living",
+      icon: "chrome://browser/content/profiles/assets/16_leaf.svg",
+      sections: [
+        "food",
+        "home",
+        "travel",
+        "society-parenting",
+        "health",
+        "small-wins",
+        "education",
+        "long-reads",
+        "connections",
+      ],
+      widgets: ["lists", "focusTimer"],
+    },
+  },
+};
+
 export const PREFS_CONFIG = new Map([
   [
     "default.sites",
@@ -846,10 +913,12 @@ export const PREFS_CONFIG = new Map([
     {
       title:
         "Group pinned Top Sites into a contiguous block with restricted drag-and-drop reordering",
-      // Channel-derived (resolves on the host), so it's on in Nightly but stays
-      // dark after the XPI train-hops to Beta/Release. A literal true would ride
-      // inside the XPI and wrongly activate.
-      value: AppConstants.NIGHTLY_BUILD,
+      // Channel-derived (resolves on the host), so it's on in Nightly and Beta
+      // but stays dark after the XPI train-hops to Release. A literal true would
+      // ride inside the XPI and wrongly activate.
+      value:
+        AppConstants.NIGHTLY_BUILD ||
+        AppConstants.MOZ_UPDATE_CHANNEL === "beta",
     },
   ],
   [
@@ -974,7 +1043,9 @@ export const PREFS_CONFIG = new Map([
     "newtabWallpapers.customWallpaper.library.enabled",
     {
       title:
-        'Keeps more than one custom wallpaper, shown as "Your images" in the wallpaper picker. Off by default; can also be turned on via trainhopConfig.customWallpaperLibrary.enabled.',
+        'Keeps more than one custom wallpaper, shown as "Your images" in the wallpaper picker.',
+      // Off on purpose. firefox.js turns it on from 158, so it can never reach
+      // an older host, where a backup keeps only the applied wallpaper.
       value: false,
     },
   ],
@@ -2042,7 +2113,7 @@ export const PREFS_CONFIG = new Map([
       title:
         "Endpoint prefixes (comma-separated) that are allowed to be requested",
       value:
-        "https://getpocket.cdn.mozilla.net/,https://firefox-api-proxy.cdn.mozilla.net/,https://spocs.getpocket.com/,https://merino.services.mozilla.com/,https://ads.mozilla.org/",
+        "https://getpocket.cdn.mozilla.net/,https://firefox-api-proxy.cdn.mozilla.net/,https://merino.services.mozilla.com/,https://ads.mozilla.org/",
     },
   ],
   [
@@ -2073,14 +2144,6 @@ export const PREFS_CONFIG = new Map([
       title: "Track spoc impressions",
       skipBroadcast: true,
       value: "{}",
-    },
-  ],
-  [
-    "discoverystream.endpointSpocsClear",
-    {
-      title:
-        "Endpoint for when a user opts-out of sponsored content to delete the user's data from the ad server.",
-      value: "https://spocs.getpocket.com/user",
     },
   ],
   [
@@ -2321,8 +2384,16 @@ export const PREFS_CONFIG = new Map([
     "pageLayouts.variant",
     {
       title:
-        "Name of the active newtab page layout variant, for layout experimentation. One of nova-full-width, side-by-side-content-lead, side-by-side-widgets-lead, side-by-side-content-lead-five, side-by-side-widgets-lead-five, spaces-buttons-top, spaces-buttons-bottom, auto-minimize-widgets. The -five variants reach five card columns counting the widgets column, the others four. The spaces variants split the band into separately-navigable panels and differ only in where the segmented control sits. The auto-minimize-widgets variant collapses the widgets section to its title row shortly after load. Overridden by trainhopConfig.pageLayouts.variant.",
+        "Name of the active newtab page layout variant, for layout experimentation. One of nova-full-width, side-by-side-content-lead, side-by-side-widgets-lead, side-by-side-content-lead-five, side-by-side-widgets-lead-five, spaces-buttons-top, spaces-buttons-bottom, spaces-thematic-v1, auto-minimize-widgets, widgets-ad-large. The -five variants reach five card columns counting the widgets column, the others four. The spaces variants split the band into separately-navigable panels; the buttons- ones differ only in where the segmented control sits, while spaces-thematic-v1 names its panels for interests and puts the side-by-side pair inside each one, configured by pageLayouts.spacesConfig. The auto-minimize-widgets variant collapses the widgets section to its title row shortly after load. The widgets-ad-large variant puts a large sponsored card at the end of the first widget row. At one card column it sits second instead. Overridden by trainhopConfig.pageLayouts.variant.",
       value: "nova-full-width",
+    },
+  ],
+  [
+    "pageLayouts.spacesConfig",
+    {
+      title:
+        "JSON config for the spaces-thematic-v1 layout variant: an `order` array of space ids, a `default` id that the page opens on and that also takes any section or widget no other space claims, and a `spaces` object mapping each id to a `label`, an `icon` chrome:// URL, and `sections` and `widgets` arrays. Defaults to the config this build ships; clearing the user value returns to it. A config that cannot render turns the layout off rather than partly applying; nothing is merged with the default. Overridden by trainhopConfig.spaces.",
+      value: JSON.stringify(DEFAULT_SPACES_CONFIG),
     },
   ],
   // @experiment(remove) { bug 2066527 }

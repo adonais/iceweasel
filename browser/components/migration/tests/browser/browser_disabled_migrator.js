@@ -105,7 +105,7 @@ class FakeMigrator extends MigratorBase {
   }
 
   static get displayNameL10nID() {
-    return "migration-wizard-migrator-display-name-firefox";
+    return "migration-wizard-migrator-display-name-self";
   }
 
   // We will create a single MigratorResource for each resource type that

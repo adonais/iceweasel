@@ -77,7 +77,7 @@ class BackupReplaceCurrentProfileTest(BackupTestBase):
         self.run_async(
             """
             const { BackupService } = ChromeUtils.importESModule(
-                "resource:///modules/backup/BackupService.sys.mjs"
+                "moz-src:///browser/components/backup/BackupService.sys.mjs"
             );
             let [archivePath, recoveryPath, profileRoot] = arguments;
             let bs = BackupService.get();
@@ -204,7 +204,7 @@ class BackupReplaceCurrentProfileTest(BackupTestBase):
         self.run_async(
             """
             const { BackupService } = ChromeUtils.importESModule(
-                "resource:///modules/backup/BackupService.sys.mjs"
+                "moz-src:///browser/components/backup/BackupService.sys.mjs"
             );
             let [archivePath, recoveryPath, profileRoot] = arguments;
             let bs = BackupService.get();

@@ -26,7 +26,7 @@ const DEFAULT_HORIZONTAL_VISIBILITY = "hide-on-close";
 // New panels that are ready to be introduced to new sidebar users should be added to this list;
 // ensure your feature flag is enabled at the same time you do this and that its the same value as
 // what you added to .
-const DEFAULT_LAUNCHER_TOOLS = "aichat,syncedtabs,history,bookmarks,opentabs";
+const DEFAULT_LAUNCHER_TOOLS = "opentabs,bookmarks,aichat,history,syncedtabs";
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",

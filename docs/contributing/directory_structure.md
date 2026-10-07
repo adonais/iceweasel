@@ -411,7 +411,7 @@ Some tools which are optionally built during the mozilla build process.
 ## tools/lint
 
 The linter declarations and configurations.
-See [linting documentation](/code-quality/lint/)
+See [linting documentation](/code-quality/lint/index.md)
 
 ## uriloader
 
@@ -453,7 +453,7 @@ messages to yet another API, the DOM event API).
 
 ## xpcom
 
-[Cross-Platform Component Object Model](/en-US/docs/XPCOM). Also
+[Cross-Platform Component Object Model](/xpcom/index.md). Also
 contains data structures used by the rest of the mozilla code. See also
 [XPCOM Project](https://www.mozilla.org/projects/xpcom/).
 

@@ -4,17 +4,17 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
 const { ArchiveEncryptionState } = ChromeUtils.importESModule(
-  "resource:///modules/backup/ArchiveEncryptionState.sys.mjs"
+  "moz-src:///browser/components/backup/ArchiveEncryptionState.sys.mjs"
 );
 const { ArchiveUtils } = ChromeUtils.importESModule(
-  "resource:///modules/backup/ArchiveUtils.sys.mjs"
+  "moz-src:///browser/components/backup/ArchiveUtils.sys.mjs"
 );
 const { ArchiveDecryptor } = ChromeUtils.importESModule(
-  "resource:///modules/backup/ArchiveEncryption.sys.mjs"
+  "moz-src:///browser/components/backup/ArchiveEncryption.sys.mjs"
 );
 const { DecoderDecryptorTransformer, FileWriterStream } =
   ChromeUtils.importESModule(
-    "resource:///modules/backup/BackupService.sys.mjs"
+    "moz-src:///browser/components/backup/BackupService.sys.mjs"
   );
 const { ERRORS } = ChromeUtils.importESModule(
   "chrome://browser/content/backup/backup-constants.mjs"

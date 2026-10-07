@@ -99,6 +99,43 @@ internal open class ForeignBytes : Structure() {
 
     class ByValue : ForeignBytes(), Structure.ByValue
 }
+
+// Converter for `&[u8]` / `[ByRef] bytes` arguments.
+//
+// Only `lower` is valid — zero-copy byte buffers only flow foreign -> Rust,
+// and only in argument position. `lift`, `read`, `write`, and
+// `allocationSize` have no sound implementation here and all panic at
+// runtime. The `FfiConverter` interface is implemented so that the
+// compiler enforces the full method set (rather than relying on eyeball).
+//
+// The provided `ByteBuffer` MUST be direct — only direct buffers have a
+// stable native address that JNA can expose via `getDirectBufferPointer`.
+// The returned `ForeignBytes.ByValue` is only valid for the duration of
+// the FFI call; the Rust side treats it as a borrow.
+internal object FfiConverterByRefBytes : FfiConverter<java.nio.ByteBuffer, ForeignBytes.ByValue> {
+    override fun lower(value: java.nio.ByteBuffer): ForeignBytes.ByValue {
+        require(value.isDirect) { "UniFFI zero-copy &[u8] requires a direct ByteBuffer. Use ByteBuffer.allocateDirect()." }
+        val remaining = value.remaining()
+        val fb = ForeignBytes.ByValue()
+        fb.len = remaining
+        // Zero-length direct buffers: skip getDirectBufferPointer (platform-variable behavior)
+        // and pass null. The Rust side treats (null, 0) as &[].
+        fb.data = if (remaining == 0) null else com.sun.jna.Native.getDirectBufferPointer(value)
+        return fb
+    }
+
+    override fun lift(value: ForeignBytes.ByValue): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be lifted: zero-copy &[u8] only flows foreign->Rust")
+
+    override fun read(buf: java.nio.ByteBuffer): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be read from a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun write(value: java.nio.ByteBuffer, buf: java.nio.ByteBuffer): Unit =
+        error("ByRef bytes cannot be written to a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun allocationSize(value: java.nio.ByteBuffer): ULong =
+        error("ByRef bytes have no RustBuffer allocation size: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+}
 /**
  * The FfiConverter interface handles converter types to and from the FFI
  *
@@ -636,17 +673,17 @@ internal object IntegrityCheckingUniffiLib {
         uniffiCheckContractApiVersion(this)
     }
     external fun uniffi_merino_checksum_func_all_curated_recommendation_locales(
-    ): Short
+    ): Int
     external fun uniffi_merino_checksum_func_curated_recommendation_locale_from_string(
-    ): Short
+    ): Int
     external fun uniffi_merino_checksum_method_curatedrecommendationsclient_get_curated_recommendations(
-    ): Short
+    ): Int
     external fun uniffi_merino_checksum_method_suggestclient_get_suggestions(
-    ): Short
+    ): Int
     external fun uniffi_merino_checksum_constructor_curatedrecommendationsclient_new(
-    ): Short
+    ): Int
     external fun uniffi_merino_checksum_constructor_suggestclient_new(
-    ): Short
+    ): Int
     external fun ffi_merino_uniffi_contract_version(
     ): Int
 
@@ -700,7 +737,7 @@ internal object UniffiLib {
     external fun ffi_merino_rust_future_free_u8(`handle`: Long,
     ): Unit
     external fun ffi_merino_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Byte
+    ): Int
     external fun ffi_merino_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
     external fun ffi_merino_rust_future_cancel_i8(`handle`: Long,
@@ -716,7 +753,7 @@ internal object UniffiLib {
     external fun ffi_merino_rust_future_free_u16(`handle`: Long,
     ): Unit
     external fun ffi_merino_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Short
+    ): Int
     external fun ffi_merino_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
     external fun ffi_merino_rust_future_cancel_i16(`handle`: Long,
@@ -963,6 +1000,10 @@ private class JavaLangRefCleanable(
  */
 public object FfiConverterUShort: FfiConverter<UShort, Short> {
     override fun lift(value: Short): UShort {
+        return value.toUShort()
+    }
+
+    fun lift(value: Int): UShort {
         return value.toUShort()
     }
 
@@ -1261,6 +1302,7 @@ open class CuratedRecommendationsClient: Disposable, AutoCloseable, CuratedRecom
     uniffiRustCallWithError(CuratedRecommendationsApiException) { _status ->
     UniffiLib.uniffi_merino_fn_constructor_curatedrecommendationsclient_new(
     
+        
         FfiConverterTypeCuratedRecommendationsConfig.lower(`config`),_status)
 }
     )
@@ -1270,6 +1312,11 @@ open class CuratedRecommendationsClient: Disposable, AutoCloseable, CuratedRecom
 
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
+
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
 
     override fun destroy() {
         // Only allow a single call to this method.
@@ -1346,6 +1393,7 @@ open class CuratedRecommendationsClient: Disposable, AutoCloseable, CuratedRecom
     uniffiRustCallWithError(CuratedRecommendationsApiException) { _status ->
     UniffiLib.uniffi_merino_fn_method_curatedrecommendationsclient_get_curated_recommendations(
         it,
+        
         FfiConverterTypeCuratedRecommendationsRequest.lower(`request`),_status)
 }
     }
@@ -1544,6 +1592,7 @@ open class SuggestClient: Disposable, AutoCloseable, SuggestClientInterface
     uniffiRustCallWithError(MerinoSuggestApiException) { _status ->
     UniffiLib.uniffi_merino_fn_constructor_suggestclient_new(
     
+        
         FfiConverterTypeSuggestConfig.lower(`config`),_status)
 }
     )
@@ -1553,6 +1602,11 @@ open class SuggestClient: Disposable, AutoCloseable, SuggestClientInterface
 
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
+
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
 
     override fun destroy() {
         // Only allow a single call to this method.
@@ -1632,7 +1686,9 @@ open class SuggestClient: Disposable, AutoCloseable, SuggestClientInterface
     uniffiRustCallWithError(MerinoSuggestApiException) { _status ->
     UniffiLib.uniffi_merino_fn_method_suggestclient_get_suggestions(
         it,
-        FfiConverterString.lower(`query`),FfiConverterTypeSuggestOptions.lower(`options`),_status)
+        
+        FfiConverterString.lower(`query`),
+        FfiConverterTypeSuggestOptions.lower(`options`),_status)
 }
     }
     )
@@ -3319,6 +3375,7 @@ public object FfiConverterSequenceTypeTile: FfiConverterRustBuffer<List<Tile>> {
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_merino_fn_func_curated_recommendation_locale_from_string(
     
+        
         FfiConverterString.lower(`locale`),_status)
 }
     )

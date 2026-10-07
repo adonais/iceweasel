@@ -5,12 +5,11 @@
 #ifndef GMPStorageParent_h_
 #define GMPStorageParent_h_
 
+#include "GMPParent.h"
 #include "GMPStorage.h"
 #include "mozilla/gmp/PGMPStorageParent.h"
 
 namespace mozilla::gmp {
-
-class GMPParent;
 
 class GMPStorageParent final : public PGMPStorageParent {
   friend class PGMPStorageParent;

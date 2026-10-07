@@ -12,7 +12,7 @@ g.evaluate(
 
 var fscript = gw.makeDebuggeeValue(g.f).script;
 var handler = {hit: function (frame) { g.s += '1'; }};
-for (var pc of fscript.getLineOffsets(fscript.startLine + 2))
+for (var pc of fscript.getPossibleBreakpointOffsets({ line: fscript.startLine + 2 }))
     fscript.setBreakpoint(pc, handler);
 
 g.f();

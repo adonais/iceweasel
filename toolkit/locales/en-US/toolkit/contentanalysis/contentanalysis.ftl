@@ -25,6 +25,9 @@ contentanalysis-slow-agent-dialog-body-file-and-more =
 # Variables:
 #   $agent - The name of the DLP agent doing the analysis
 contentanalysis-slow-agent-dialog-body-clipboard = { $agent } is reviewing what you pasted against your organization’s data policies. This may take a moment.
+# Variables:
+#   $agent - The name of the DLP agent doing the analysis
+contentanalysis-slow-agent-dialog-body-clipboard-copy = { $agent } is reviewing what you copied against your organization’s data policies. This may take a moment.
 # Note that this is shown when the user drag and drops text into the browser.
 # Variables:
 #   $agent - The name of the DLP agent doing the analysis
@@ -32,7 +35,13 @@ contentanalysis-slow-agent-dialog-body-dropped-text = { $agent } is reviewing th
 # Variables:
 #   $agent - The name of the DLP agent doing the analysis
 contentanalysis-slow-agent-dialog-body-print = { $agent } is reviewing what you printed against your organization’s data policies. This may take a moment.
+# Written to the system clipboard in place of content that the user was not
+# permitted to copy, so that pasting produces this notice rather than silently
+# producing whatever was on the clipboard beforehand.
+contentanalysis-clipboard-copy-blocked-replacement = Copying this content is restricted by your organization.
+
 contentanalysis-operationtype-clipboard = clipboard
+contentanalysis-operationtype-clipboard-copy = copied content
 contentanalysis-operationtype-dropped-text = dropped text
 contentanalysis-operationtype-print = print
 #   $filename - The filename associated with the request, such as "aFile.txt"
@@ -73,6 +82,7 @@ contentanalysis-invalid-agent-signature-message-content = Failed signature verif
 contentanalysis-error-message-upload-file = Upload of “{ $filename }” denied.
 contentanalysis-error-message-dropped-text = Drag and drop denied.
 contentanalysis-error-message-clipboard = Paste denied.
+contentanalysis-error-message-clipboard-copy = Copy denied.
 contentanalysis-error-message-print = Print denied.
 
 # Variables:
@@ -90,6 +100,8 @@ contentanalysis-block-dialog-title-download-file = You’re not permitted to dow
 contentanalysis-block-dialog-body-download-file = Under your organization’s data protection policies, you’re not permitted to download the file “{ $filename }”. Contact your administrator for more info.
 contentanalysis-block-dialog-title-clipboard = You’re not permitted to paste this content
 contentanalysis-block-dialog-body-clipboard = Under your organization’s data protection policies, you’re not permitted to paste this content. Contact your administrator for more info.
+contentanalysis-block-dialog-title-clipboard-copy = You’re not permitted to copy this content
+contentanalysis-block-dialog-body-clipboard-copy = Under your organization’s data protection policies, you’re not permitted to copy this content. Contact your administrator for more info.
 contentanalysis-block-dialog-title-dropped-text = You’re not permitted to drop this content
 contentanalysis-block-dialog-body-dropped-text = Under your organization’s data protection policies, you’re not permitted to drag and drop this content. Contact your administrator for more info.
 contentanalysis-block-dialog-title-print = You’re not permitted to print this document

@@ -1,0 +1,27 @@
+[DEFAULT]
+prefs = [
+  "dom.security.permissionsPolicy.header.enabled=true",
+  "dom.security.permissionsPolicy.webidl.enabled=true",
+  "network.lna.blocking=true",
+]
+support-files = [
+  "empty.html",
+  "test_parser.html^headers^",
+]
+
+["include:mochitest-xslt.toml"]
+
+["test_featureList.html"]
+
+["test_initial_aboutblank.html"]
+
+["test_nested.html"]
+scheme = "https"
+fail-if = [
+  "xorigin",
+]
+
+["test_parser.html"]
+fail-if = [
+  "xorigin",
+]

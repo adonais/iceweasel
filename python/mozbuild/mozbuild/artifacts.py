@@ -266,6 +266,8 @@ class ArtifactJob:
                 yield name
             elif name.endswith(self._extra_archive_suffixes):
                 yield name
+            elif name == self._licenses_artifact:
+                yield name
             else:
                 self.log(
                     logging.DEBUG,
@@ -289,7 +291,15 @@ class ArtifactJob:
         with JarWriter(**kwargs) as writer:
             yield writer
 
+    _licenses_artifact = "public/build/licenses.json"
+
     def process_artifact(self, filename, processed_filename):
+        if self._get_orig_basename(filename) == "licenses.json":
+            with self.get_writer(file=processed_filename) as writer, open(
+                filename, "rb"
+            ) as fh:
+                writer.add(b"licenses.artifact.json", fh)
+            return
         if filename.endswith(ArtifactJob._test_zip_archive_suffix) and self._tests_re:
             return self.process_tests_zip_artifact(filename, processed_filename)
         if filename.endswith(ArtifactJob._test_tar_archive_suffix) and self._tests_re:
@@ -967,6 +977,7 @@ class UnfilteredProjectPackageArtifactJob(ArtifactJob):
         for cls in (LinuxArtifactJob, MacArtifactJob, WinArtifactJob)
     ])
     job_configuration = GeckoJobConfiguration
+    _licenses_artifact = None
 
     @property
     def _extra_archives(self):
@@ -1210,27 +1221,39 @@ class TaskCache(CacheManager):
         # 'autoland'
         tree = tree.split("/")[1] if "/" in tree else tree
 
+        # Optimized builds are normally only published to the `.shippable`
+        # index. Some consumers (e.g. the Android Gradle python tests) run on
+        # autoland, where shippable Android builds aren't scheduled by default;
+        # with MOZ_ARTIFACT_ALLOW_NON_SHIPPABLE they fall back to the regular
+        # per-push opt builds. The shippable index is still tried first, so
+        # branches that only publish shippable builds (central, beta, release,
+        # esr) are unaffected. See bug 1768186 for lifting this more generally.
         if job.endswith("-opt"):
-            tree += ".shippable"
-
-        namespace = f"{job_configuration.trust_domain}.v2.{tree}.revision.{rev}.{job_configuration.product}.{job}"
-        self.log(
-            logging.DEBUG,
-            "artifact",
-            {"namespace": namespace},
-            "Searching Taskcluster index with namespace: {namespace}",
-        )
+            if os.environ.get("MOZ_ARTIFACT_ALLOW_NON_SHIPPABLE"):
+                trees = [f"{tree}.shippable", tree]
+            else:
+                trees = [f"{tree}.shippable"]
+        else:
+            trees = [tree]
 
         from taskcluster.exceptions import TaskclusterRestFailure
 
-        try:
-            index = get_taskcluster_client("index")
-            task = index.findTask(namespace)
-            taskId = task["taskId"]
-        except (KeyError, TaskclusterRestFailure) as e:
-            if isinstance(e, TaskclusterRestFailure) and e.status_code != 404:
-                raise
-
+        index = get_taskcluster_client("index")
+        for candidate_tree in trees:
+            namespace = f"{job_configuration.trust_domain}.v2.{candidate_tree}.revision.{rev}.{job_configuration.product}.{job}"
+            self.log(
+                logging.DEBUG,
+                "artifact",
+                {"namespace": namespace},
+                "Searching Taskcluster index with namespace: {namespace}",
+            )
+            try:
+                taskId = index.findTask(namespace)["taskId"]
+                break
+            except (KeyError, TaskclusterRestFailure) as e:
+                if isinstance(e, TaskclusterRestFailure) and e.status_code != 404:
+                    raise
+        else:
             # Not all revisions correspond to pushes that produce the job we
             # care about; and even those that do may not have completed yet.
             raise ValueError(f"Task for {namespace} does not exist (yet)!")

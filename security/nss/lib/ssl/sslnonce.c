@@ -167,8 +167,8 @@ void
 ssl_DestroySID(sslSessionID *sid, PRBool freeIt)
 {
     SSL_TRC(8, ("SSL: destroy sid: sid=0x%x cached=%d", sid, sid->cached));
-    PORT_Assert(sid->references == 0);
-    PORT_Assert(sid->cached != in_client_cache);
+    PORT_ReleaseAssert(sid->references == 0);
+    PORT_ReleaseAssert(sid->cached != in_client_cache);
 
     if (sid->u.ssl3.locked.sessionTicket.ticket.data) {
         SECITEM_FreeItem(&sid->u.ssl3.locked.sessionTicket.ticket,
@@ -216,7 +216,7 @@ ssl_DestroySID(sslSessionID *sid, PRBool freeIt)
 static void
 ssl_FreeLockedSID(sslSessionID *sid)
 {
-    PORT_Assert(sid->references >= 1);
+    PORT_ReleaseAssert(sid->references >= 1);
     if (--sid->references == 0) {
         ssl_DestroySID(sid, PR_TRUE);
     }
@@ -242,6 +242,7 @@ sslSessionID *
 ssl_ReferenceSID(sslSessionID *sid)
 {
     LOCK_CACHE;
+    PORT_ReleaseAssert(sid->references > 0);
     sid->references++;
     UNLOCK_CACHE;
     return sid;

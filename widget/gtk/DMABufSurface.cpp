@@ -357,6 +357,28 @@ bool DMABufSurface::IsGlobalRefSet() {
   return poll(&pfd, 1, 0) == 1;
 }
 
+int DMABufSurface::GetGlobalRefCountFd() {
+  MutexAutoLock lock(mSurfaceLock);
+  return mGlobalRefCountFd;
+}
+
+/* static */
+void DMABufSurface::GetGlobalRefsSet(Span<const int> aRefCountFds,
+                                     nsTArray<bool>& aRefSet) {
+  // poll() ignores negative fds and reports no events for them, so surfaces
+  // without a global refcount still get a slot and the two arrays map 1:1.
+  AutoTArray<struct pollfd, 32> pfds;
+  pfds.SetCapacity(aRefCountFds.Length());
+  for (int fd : aRefCountFds) {
+    pfds.AppendElement(pollfd{fd ? fd : -1, POLLIN, 0});
+  }
+  aRefSet.SetCapacity(aRefCountFds.Length());
+  bool ret = poll(pfds.Elements(), pfds.Length(), 0) > 0;
+  for (const auto& pfd : pfds) {
+    aRefSet.AppendElement(ret && (pfd.revents & POLLIN));
+  }
+}
+
 void DMABufSurface::GlobalRefRelease() {
 #ifdef HAVE_EVENTFD
   MutexAutoLock lock(mSurfaceLock);
@@ -470,17 +492,7 @@ bool DMABufSurface::ReleaseDMABuf() {
 }
 
 DMABufSurface::DMABufSurface(SurfaceType aSurfaceType)
-    : mGbmBufferObject(),
-      mGbmBufferFlags(0),
-#ifdef MOZ_LOGGING
-      mMappedRegion(),
-      mMappedRegionStride(),
-#endif
-      mGlobalRefCountFd(0),
-      mUID(gNewSurfaceUID++),
-      mPID(0),
-      mCanRecycle(true),
-      mSurfaceLock("DMABufSurface") {
+    : mUID(gNewSurfaceUID++), mPID(0), mSurfaceLock("DMABufSurface") {
   MOZ_COUNT_CTOR(DMABufSurface);
 }
 
@@ -2472,6 +2484,274 @@ wl_buffer* DMABufSurfaceYUV::CreateWlBuffer() {
   return buffer;
 }
 #endif
+
+static const char kHLGToPQVertexShader[] = R"(
+  #version 300 es
+  in vec2 aPosition;
+  out vec2 vTexCoord;
+  void main() {
+    gl_Position = vec4(aPosition * 2.0 - 1.0, 0.0, 1.0);
+    vTexCoord = aPosition;
+  }
+)";
+
+static const char kHLGToPQFragmentShader[] = R"(
+  #version 300 es
+  precision highp float;
+  in vec2 vTexCoord;
+  out vec4 fragColor;
+
+  uniform sampler2D uTexY;
+  uniform sampler2D uTexUV;
+  uniform mat4 uYuvToRgb;
+
+  // BT.2100 HLG inverse OETF: HLG signal [0, 1] to scene light normalized so
+  // that 1.0 is the scene peak. The two branches meet at signal 0.5 / scene
+  // 1/12. Note that gfx/gl/Colorspaces.cpp uses the other common scaling of
+  // this curve, where scene peak is 12.0 rather than 1.0.
+  vec3 HLGtoScene(vec3 e) {
+    float a = 0.17883277;
+    float b = 0.28466892;
+    float c = 0.55991073;
+    return mix(e * e / 3.0, (exp((e - c) / a) + b) / 12.0, step(0.5, e));
+  }
+
+  // BT.2100 HLG reference OOTF, minus its alpha = Lw factor which is folded
+  // into the PQ normalization in main(): scene light to display light, both
+  // normalized to [0, 1]. The luma coefficients are BT.2020 and gamma = 1.2
+  // is the value BT.2100 specifies for a 1000 cd/m^2 nominal peak display.
+  vec3 ApplyOOTF(vec3 scene) {
+    float gamma = 1.2;
+    float Ys = dot(scene, vec3(0.2627, 0.6780, 0.0593));
+    return scene * pow(max(Ys, 0.0), gamma - 1.0);
+  }
+
+  // Inverse of the PQ (SMPTE ST 2084) EOTF: display light normalized so that
+  // 1.0 is 10000 cd/m^2, to a PQ signal in [0, 1].
+  vec3 LinearToPQ(vec3 rgb) {
+    float m1 = 0.1593017578;
+    float m2 = 78.84375;
+    float c1 = 0.8359375;
+    float c2 = 18.8515625;
+    float c3 = 18.6875;
+    vec3 y = pow(max(rgb, 0.0), vec3(m1));
+    return pow((c1 + c2 * y) / (1.0 + c3 * y), vec3(m2));
+  }
+
+  void main() {
+    vec2 uv = vTexCoord;
+    float y = texture(uTexY, uv).r;
+    vec2 cbcr = texture(uTexUV, uv).rg;
+    vec3 srcYUV = vec3(y, cbcr.x, cbcr.y);
+    vec3 srcRGB = (uYuvToRgb * vec4(srcYUV, 1.0)).rgb;
+    // Clamp to avoid negative values from narrow range YUV to RGB conversion.
+    srcRGB = max(srcRGB, 0.0);
+
+    vec3 scene = HLGtoScene(srcRGB);
+    vec3 display = ApplyOOTF(scene);
+
+    // Scale from [0, 1] display light (representing [0, Lw] nits) to the PQ
+    // domain [0, 1] (representing [0, 10000] nits). Lw is the OOTF alpha and
+    // must match the gamma picked in ApplyOOTF(); with 1000 nits, HLG
+    // reference white (signal 0.75) lands on 203 nits, which is
+    // Rec2100ReferenceDisplayWhite in gfx/gl/Colorspaces.h.
+    float Lw = 1000.0;
+    vec3 pq = LinearToPQ(display * (Lw / 10000.0));
+    fragColor = vec4(pq, 1.0);
+  }
+)";
+
+// BT.2020 non-constant-luminance YUV to RGB matrices for P010 (10-bit).
+// Row-major layout, uploaded with GL_TRUE transpose for GLSL mat4.
+// P010 stores 10 bits in the high bits of a 16-bit word, so sampling gives
+// code * 64 / 65535, and the studio range scales are computed against
+// 65535/64 rather than 1023.
+static const float kYuvToRgbBT2020Studio[16] = {
+    1.168932f,  0.000000f, 1.685231f, -0.915688f, 1.168932f,  -0.188058f,
+    -0.652965f, 0.347458f, 1.168932f, 2.150139f,  -0.000000f, -1.148145f,
+    0.000000f,  0.000000f, 0.000000f, 1.000000f};
+
+static const float kYuvToRgbBT2020Full[16] = {
+    1.000000f,  -0.000000f, 1.474600f, -0.737311f, 1.000000f,  -0.164553f,
+    -0.571353f, 0.367959f,  1.000000f, 1.881400f,  -0.000000f, -0.940714f,
+    0.000000f,  0.000000f,  0.000000f, 1.000000f};
+
+static GLuint sHLGToPQProgram = 0;
+static uintptr_t sHLGToPQProgramContext = 0;
+
+static GLuint CompileShader(GLContext* gl, GLenum type, const char* src) {
+  GLuint shader = gl->fCreateShader(type);
+  gl->fShaderSource(shader, 1, &src, nullptr);
+  gl->fCompileShader(shader);
+  GLint status = 0;
+  gl->fGetShaderiv(shader, LOCAL_GL_COMPILE_STATUS, &status);
+  if (!status) {
+    gl->fDeleteShader(shader);
+    return 0;
+  }
+  return shader;
+}
+
+static GLuint GetHLGToPQProgram(GLContext* gl) {
+  if (sHLGToPQProgram &&
+      sHLGToPQProgramContext == reinterpret_cast<uintptr_t>(gl)) {
+    return sHLGToPQProgram;
+  }
+
+  // We may leak the sHLGToPQProgram here but it doesn't matter - it will be
+  // deleted with its GL context.
+  sHLGToPQProgram = 0;
+
+  GLuint vs = CompileShader(gl, LOCAL_GL_VERTEX_SHADER, kHLGToPQVertexShader);
+  if (!vs) {
+    return 0;
+  }
+  GLuint fs =
+      CompileShader(gl, LOCAL_GL_FRAGMENT_SHADER, kHLGToPQFragmentShader);
+  if (!fs) {
+    gl->fDeleteShader(vs);
+    return 0;
+  }
+
+  GLuint program = gl->fCreateProgram();
+  gl->fAttachShader(program, vs);
+  gl->fAttachShader(program, fs);
+  gl->fBindAttribLocation(program, 0, "aPosition");
+  gl->fLinkProgram(program);
+  gl->fDeleteShader(vs);
+  gl->fDeleteShader(fs);
+
+  GLint status = 0;
+  gl->fGetProgramiv(program, LOCAL_GL_LINK_STATUS, &status);
+  if (!status) {
+    gl->fDeleteProgram(program);
+    return 0;
+  }
+
+  sHLGToPQProgramContext = reinterpret_cast<uintptr_t>(gl);
+  sHLGToPQProgram = program;
+  return program;
+}
+
+already_AddRefed<DMABufSurfaceRGBA> DMABufSurfaceYUV::ConvertHLGToPQ(
+    GLContext* gl) {
+  MOZ_DIAGNOSTIC_ASSERT(GetTransferFunction() == gfx::TransferFunction::HLG,
+                        "Unexpected transfer function!");
+  if (GetFOURCCFormat() != VA_FOURCC_P010) {
+    LOGDMABUF("DMABufSurfaceYUV::ConvertHLGToPQ(): failed, unknown format [%x]",
+              GetFOURCCFormat());
+    return nullptr;
+  }
+
+  for (int i = 0; i < GetTextureCount(); i++) {
+    if (!CreateTexture(gl, i)) {
+      return nullptr;
+    }
+  }
+
+  int width = GetWidth();
+  int height = GetHeight();
+
+  auto format = GetGlobalDMABufFormats()->GetDRMFormat(GBM_FORMAT_ABGR2101010);
+  if (!format) {
+    LOGDMABUF(
+        "DMABufSurfaceYUV::ConvertHLGToPQ(): 10-bit RGBA format is not "
+        "suppored");
+    return nullptr;
+  }
+
+  LOGDMABUF("DMABufSurfaceYUV::ConvertHLGToPQ() size [%d x %d]", width, height);
+
+  RefPtr<DMABufSurfaceRGBA> target = DMABufSurfaceRGBA::CreateDMABufSurface(
+      gl, width, height, DMABUF_TEXTURE | DMABUF_USE_MODIFIERS, format);
+  if (!target) {
+    LOGDMABUF(" failed to create GBM_FORMAT_ABGR2101010 dmabuf");
+    return nullptr;
+  }
+  if (!target->CreateTexture(gl)) {
+    LOGDMABUF(" failed to create texture");
+    return nullptr;
+  }
+
+  ScopedFramebufferForTexture autoFBForTex(gl, target->GetTexture());
+  if (!autoFBForTex.IsComplete()) {
+    LOGDMABUF(" failed to create framebuffer for texture");
+    return nullptr;
+  }
+  const ScopedBindFramebuffer bindFB(gl, autoFBForTex.FB());
+  const ScopedViewportRect viewport(gl, 0, 0, width, height);
+
+  GLuint program = GetHLGToPQProgram(gl);
+  if (!program) {
+    LOGDMABUF(" failed to get HLG to PQ shader");
+    return nullptr;
+  }
+  const ScopedBindProgram bindProg(gl, program);
+
+  const ScopedSaveMultiTex saveTex(gl, 2, LOCAL_GL_TEXTURE_2D);
+
+  gl->fActiveTexture(LOCAL_GL_TEXTURE0);
+  gl->fBindTexture(LOCAL_GL_TEXTURE_2D, GetTexture(0));
+  gl->fTexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_MIN_FILTER,
+                     LOCAL_GL_LINEAR);
+  gl->fTexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_MAG_FILTER,
+                     LOCAL_GL_LINEAR);
+  gl->fUniform1i(gl->fGetUniformLocation(program, "uTexY"), 0);
+
+  gl->fActiveTexture(LOCAL_GL_TEXTURE1);
+  gl->fBindTexture(LOCAL_GL_TEXTURE_2D, GetTexture(1));
+  gl->fTexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_MIN_FILTER,
+                     LOCAL_GL_LINEAR);
+  gl->fTexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_MAG_FILTER,
+                     LOCAL_GL_LINEAR);
+  gl->fUniform1i(gl->fGetUniformLocation(program, "uTexUV"), 1);
+
+  const float* matrix =
+      IsFullRange() ? kYuvToRgbBT2020Full : kYuvToRgbBT2020Studio;
+  gl->fUniformMatrix4fv(gl->fGetUniformLocation(program, "uYuvToRgb"), 1,
+                        LOCAL_GL_TRUE, matrix);
+
+  const float quad[] = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
+
+  GLuint oldVAO = 0;
+  GLuint vao = 0;
+  if (gl->IsSupported(GLFeature::vertex_array_object)) {
+    oldVAO = gl->GetIntAs<GLuint>(LOCAL_GL_VERTEX_ARRAY_BINDING);
+    gl->fGenVertexArrays(1, &vao);
+    gl->fBindVertexArray(vao);
+  }
+
+  GLuint vbo = 0;
+  gl->fGenBuffers(1, &vbo);
+
+  {
+    const ScopedVertexAttribPointer autoAttrib(gl, 0, 2, LOCAL_GL_FLOAT,
+                                               LOCAL_GL_FALSE, 0, vbo, nullptr);
+    gl->fBufferData(LOCAL_GL_ARRAY_BUFFER, sizeof(quad), quad,
+                    LOCAL_GL_STATIC_DRAW);
+    gl->fDrawArrays(LOCAL_GL_TRIANGLE_STRIP, 0, 4);
+  }
+
+  if (vao) {
+    gl->fBindVertexArray(oldVAO);
+    gl->fDeleteVertexArrays(1, &vao);
+  }
+  gl->fDeleteBuffers(1, &vbo);
+
+  target->SetTransferFunction(gfx::TransferFunction::PQ);
+  target->SetYUVColorSpace(gfx::YUVColorSpace::BT2020);
+  target->SetColorRange(gfx::ColorRange::FULL);
+  target->SetColorPrimaries(gfx::ColorSpace2::BT2020);
+  target->SetHDRMetadata(GetHDRMetadata());
+
+  // Add fence to commit all changes before we derive wl_buffer from it.
+  target->FenceSet();
+
+  // We're finished here, keep dmabuf memory only.
+  target->ReleaseTextures();
+
+  return target.forget();
+}
 
 #if 0
 void DMABufSurfaceYUV::ClearPlane(int aPlane) {

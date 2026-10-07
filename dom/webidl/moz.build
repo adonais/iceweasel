@@ -113,7 +113,7 @@ with Files("DynamicsCompressorNode.webidl"):
 with Files("EditContext.webidl"):
     BUG_COMPONENT = ("Core", "DOM: Editor")
 
-with Files("FeaturePolicy.webidl"):
+with Files("PermissionsPolicy.webidl"):
     BUG_COMPONENT = ("Core", "DOM: Security")
 
 with Files("File*"):
@@ -621,7 +621,6 @@ WEBIDL_FILES = [
     "ExtendableMessageEvent.webidl",
     "External.webidl",
     "FailedCertSecurityInfo.webidl",
-    "FeaturePolicy.webidl",
     "Fetch.webidl",
     "FetchEvent.webidl",
     "FetchObserver.webidl",
@@ -887,6 +886,7 @@ WEBIDL_FILES = [
     "PerformanceTiming.webidl",
     "PeriodicWave.webidl",
     "Permissions.webidl",
+    "PermissionsPolicy.webidl",
     "PermissionStatus.webidl",
     "PictureInPictureWindow.webidl",
     "Plugin.webidl",

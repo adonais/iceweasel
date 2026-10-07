@@ -1310,7 +1310,8 @@ class Browsertime(Perftest, metaclass=ABCMeta):
 
             if perf_started and self.perf_profiler:
                 try:
-                    self.perf_profiler.stop()
+                    if not self.perf_profiler.stop():
+                        raise RuntimeError("perf recording did not complete")
                     self.perf_profiler.symbolicate()
                     processed_profiles = self.perf_profiler.post_process_profiles()
                     if is_local:

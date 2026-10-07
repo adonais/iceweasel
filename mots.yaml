@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-09-08T16:24:19.337520+00:00'
+updated_at: '2026-09-23T09:10:54.393862+00:00'
 export:
   path: ./docs/mots/index.md
   format: md
@@ -22,6 +22,10 @@ aliases:
   - &TLMC
     nick: TLMC
 people:
+  - &acottner
+    bmo_id: 736702
+    name: Alex Cottner
+    nick: acottner
   - &adw
     bmo_id: 334927
     name: Drew Willcoxon
@@ -427,6 +431,10 @@ people:
     bmo_id: 697145
     name: Gabriel Bustamante
     nick: gabriel
+  - &gbeckley
+    bmo_id: 693496
+    name: Graham Beckley
+    nick: gbeckley
   - &gcp
     bmo_id: 151147
     name: Gian-Carlo Pascutto
@@ -741,6 +749,10 @@ people:
     bmo_id: 582393
     name: Dzmitry Malyshau
     nick: kvark
+  - &leplatrem
+    bmo_id: 526079
+    name: Mathieu Leplatre
+    nick: leplatrem
   - &lina
     bmo_id: 506322
     name: Lina Butler
@@ -1555,6 +1567,29 @@ modules:
           - *jmaher
         machine_name: core_build_config_taskgraph
     machine_name: core_build_config
+
+  - name: 'Core: Canvas (Graphics submodule)'
+    description: Canvas2D and WebGL implementation
+    includes:
+      - dom/canvas/**/*
+    meta:
+      group: dev-platform
+      url: <https://wiki.mozilla.org/Platform/GFX/Moz2D>
+      components:
+        - 'Core::Graphics: Canvas2D'
+        - 'Core::Graphics: CanvasWebGL'
+      review_group: gfx-reviewers
+      owners_emeritus:
+        - *jgilbert
+    owners:
+      - *lsalzman
+    peers:
+      - *ahale
+      - *nical
+      - *nrishel
+      - *aosmond
+      - *jfkthame
+    machine_name: core_canvas_graphics_submodule
 
   - name: 'Core: Code Analysis and Debugging Tools'
     description: Tools for debugging Mozilla code or for analyzing speed, memory use,
@@ -2524,8 +2559,10 @@ modules:
       components:
         - Core::Graphics
       review_group: gfx-reviewers
+      owners_emeritus:
+        - *basschouten
     owners:
-      - *basschouten
+      - *lsalzman
     peers:
       - *jrmuizel
       - *jwatt
@@ -3097,6 +3134,22 @@ modules:
       - *dholbert
       - *birtles
     machine_name: core_svg
+
+  - name: 'Core: SWGL (Graphics submodule)'
+    description: Software rasterizer used as a fallback backend for WebRender
+    includes:
+      - gfx/wr/swgl/**/*
+    meta:
+      group: dev-platform
+      components:
+        - 'Core::Graphics: WebRender'
+      review_group: gfx-reviewers
+    owners:
+      - *lsalzman
+    peers:
+      - *gw
+      - *nical
+    machine_name: core_swgl_graphics_submodule
 
   - name: 'Core: UA String'
     description: User Agent String
@@ -4500,6 +4553,24 @@ modules:
           - *jgraham
           - *Sasha
 
+  - machine_name: remote_settings
+    name: Remote Settings
+    description: Remote Settings client
+    includes:
+      - services/settings/**/*
+    excludes: []
+    owners:
+      - *acottner
+      - *gbeckley
+      - *leplatrem
+    peers: []
+    meta:
+      owners_emeritus: []
+      url: https://firefox-source-docs.mozilla.org/services/settings/
+      components:
+        - 'Firefox :: Remote Settings Client'
+      review_group: remote-settings-reviewers
+
   - machine_name: sync
     name: Sync
     description: Firefox Sync client
@@ -4909,5 +4980,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 69bde0cdf6c276324fec624ba24eb478776f7f76
-  export: 19e7bf3cb5b7ad587a0456981c724895c4921d2b
+  config: 709aa84b20ef7a977fdce2b23542c4cfc8276ca1
+  export: 7fbc7acbdeaabfcdccbe43fd58c82ccabfbe8df3

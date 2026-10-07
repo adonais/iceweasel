@@ -663,6 +663,7 @@ bool ChannelPosix::ProcessOutgoingMessages() {
 
       is_blocked_on_write_ = true;
       if (IOThread().IsOnCurrentThread()) {
+        IOThread().AssertOnCurrentThread();
         // If we're on the I/O thread already, tell libevent to call us back
         // when things are unblocked.
         MessageLoopForIO::current()->WatchFileDescriptor(

@@ -5,19 +5,22 @@
 #include "Win32SerialPlatformService.h"
 
 #include <cfgmgr32.h>
-// Including initguid.h needs to come before including devpkey.h, so
+// Including initguid.h needs to come before including devpkey.h, and
+// winioctl.h must come before initguid.h and before ntddser.h, so
 // disable clang-format here.
 
 // clang-format off
+#include <winioctl.h>
 #include <initguid.h>
 #include <devpkey.h>
+#include <ntddser.h>
 // clang-format on
 
-#include <ntddser.h>
 #include <setupapi.h>
 
 #include "Serial.h"
 #include "SerialLogging.h"
+#include "Win32SerialOverlappedIO.h"
 #include "Win32SerialParityCheckStream.h"
 #include "mozilla/AsyncPlatformPipes.h"
 #include "mozilla/ScopeExit.h"
@@ -222,6 +225,10 @@ HANDLE Win32SerialPlatformService::FindPortHandle(const nsString& aPortId) {
   return mOpenPorts.MaybeGet(aPortId).valueOr(INVALID_HANDLE_VALUE);
 }
 
+// The synchronous Get/SetCommState and SetCommTimeouts calls below are only
+// safe because this runs from OpenImpl, before any PlatformPipeReader shares
+// the file object. Anything that runs after GetReadStreamImpl must go through
+// Win32SerialOverlappedIO instead.
 nsresult Win32SerialPlatformService::ConfigurePort(
     HANDLE aHandle, const IPCSerialOptions& aOptions) {
   MOZ_LOG(gWebSerialLog, LogLevel::Debug,
@@ -412,7 +419,8 @@ nsresult Win32SerialPlatformService::OpenImpl(
     return rv;
   }
 
-  PurgeComm(handle, PURGE_RXCLEAR | PURGE_TXCLEAR);
+  Win32SerialOverlappedIO::SyncPurge(
+      handle, SERIAL_PURGE_RXCLEAR | SERIAL_PURGE_TXCLEAR);
 
   mOpenPorts.InsertOrUpdate(aPortId, handle);
   MOZ_LOG(gWebSerialLog, LogLevel::Info,
@@ -470,24 +478,16 @@ nsresult Win32SerialPlatformService::WriteImpl(const nsString& aPortId,
   const uint8_t* buffer = aData.Elements();
   DWORD remaining = static_cast<DWORD>(aData.Length());
 
-  auto event = UniqueFileHandle(CreateEvent(nullptr, TRUE, FALSE, nullptr));
-  if (!event) {
+  Win32SerialOverlappedIO io;
+  if (!io.Init()) {
     return NS_ERROR_FAILURE;
   }
-  OVERLAPPED ov = {};
-  // Setting the low-order bit of hEvent prevents the I/O completion from
-  // being queued to the IOCP. This is necessary because PlatformPipeReader
-  // may have registered a DuplicateHandle of this port with the IOCP, and
-  // completions from our local OVERLAPPED would corrupt the IOCP handler
-  // lookup. GetOverlappedResult still works via the event.
-  HANDLE rawEvent = event.get();
-  ov.hEvent =
-      reinterpret_cast<HANDLE>(reinterpret_cast<uintptr_t>(rawEvent) | 1);
 
   while (remaining > 0) {
-    ResetEvent(event.get());
+    io.Reset();
 
-    if (!WriteFile(handle, buffer + totalWritten, remaining, nullptr, &ov)) {
+    if (!WriteFile(handle, buffer + totalWritten, remaining, nullptr,
+                   io.Get())) {
       DWORD error = GetLastError();
       if (error != ERROR_IO_PENDING) {
         MOZ_LOG(
@@ -499,7 +499,7 @@ nsresult Win32SerialPlatformService::WriteImpl(const nsString& aPortId,
       }
     }
     DWORD bytesWritten = 0;
-    if (!GetOverlappedResult(handle, &ov, &bytesWritten, TRUE)) {
+    if (!io.Wait(handle, &bytesWritten)) {
       MOZ_LOG(gWebSerialLog, LogLevel::Error,
               ("Win32SerialPlatformService[%p]::Write GetOverlappedResult "
                "failed for port '%s': 0x%08lx",
@@ -549,6 +549,9 @@ nsresult Win32SerialPlatformService::DrainImpl(const nsString& aPortId) {
        "port '%s'",
        this, NS_ConvertUTF16toUTF8(aPortId).get()));
 
+  // Unlike the DeviceIoControl-based comm APIs, FlushFileBuffers is safe on a
+  // shared overlapped handle: NtFlushBuffersFile waits on an event it
+  // allocates itself rather than on the file object's event.
   if (!FlushFileBuffers(handle)) {
     DWORD error = GetLastError();
     MOZ_LOG(
@@ -577,18 +580,18 @@ nsresult Win32SerialPlatformService::FlushImpl(const nsString& aPortId,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  DWORD flags = aReceive ? PURGE_RXCLEAR : PURGE_TXCLEAR;
+  ULONG flags = aReceive ? SERIAL_PURGE_RXCLEAR : SERIAL_PURGE_TXCLEAR;
   MOZ_LOG(gWebSerialLog, LogLevel::Debug,
           ("Win32SerialPlatformService[%p]::Flush discarding %s buffers "
            "for port '%s'",
            this, aReceive ? "receive" : "transmit",
            NS_ConvertUTF16toUTF8(aPortId).get()));
 
-  if (!PurgeComm(handle, flags)) {
+  if (!Win32SerialOverlappedIO::SyncPurge(handle, flags)) {
     DWORD error = GetLastError();
     MOZ_LOG(gWebSerialLog, LogLevel::Error,
-            ("Win32SerialPlatformService[%p]::Flush PurgeComm failed for port "
-             "'%s': error=%lu",
+            ("Win32SerialPlatformService[%p]::Flush IOCTL_SERIAL_PURGE failed "
+             "for port '%s': error=%lu",
              this, NS_ConvertUTF16toUTF8(aPortId).get(), error));
     return NS_ERROR_FAILURE;
   }
@@ -626,41 +629,42 @@ nsresult Win32SerialPlatformService::SetSignalsImpl(
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  if (aSignals.dataTerminalReady().isSome()) {
-    if (!EscapeCommFunction(
-            handle, aSignals.dataTerminalReady().value() ? SETDTR : CLRDTR)) {
+  auto setSignal = [&](const char* aName, DWORD aIoControlCode) -> nsresult {
+    if (!Win32SerialOverlappedIO::SyncSetSignal(handle, aIoControlCode)) {
       DWORD error = GetLastError();
-      MOZ_LOG(
-          gWebSerialLog, LogLevel::Error,
-          ("Win32SerialPlatformService[%p]::SetSignals EscapeCommFunction DTR "
-           "failed for port '%s': 0x%08lx",
-           this, NS_ConvertUTF16toUTF8(aPortId).get(), error));
+      MOZ_LOG(gWebSerialLog, LogLevel::Error,
+              ("Win32SerialPlatformService[%p]::SetSignals %s failed for port "
+               "'%s': 0x%08lx",
+               this, aName, NS_ConvertUTF16toUTF8(aPortId).get(), error));
       return NS_ERROR_FAILURE;
+    }
+    return NS_OK;
+  };
+
+  if (aSignals.dataTerminalReady().isSome()) {
+    nsresult rv = setSignal("DTR", aSignals.dataTerminalReady().value()
+                                       ? IOCTL_SERIAL_SET_DTR
+                                       : IOCTL_SERIAL_CLR_DTR);
+    if (NS_FAILED(rv)) {
+      return rv;
     }
   }
 
   if (aSignals.requestToSend().isSome()) {
-    if (!EscapeCommFunction(
-            handle, aSignals.requestToSend().value() ? SETRTS : CLRRTS)) {
-      DWORD error = GetLastError();
-      MOZ_LOG(
-          gWebSerialLog, LogLevel::Error,
-          ("Win32SerialPlatformService[%p]::SetSignals EscapeCommFunction RTS "
-           "failed for port '%s': 0x%08lx",
-           this, NS_ConvertUTF16toUTF8(aPortId).get(), error));
-      return NS_ERROR_FAILURE;
+    nsresult rv = setSignal("RTS", aSignals.requestToSend().value()
+                                       ? IOCTL_SERIAL_SET_RTS
+                                       : IOCTL_SERIAL_CLR_RTS);
+    if (NS_FAILED(rv)) {
+      return rv;
     }
   }
 
   if (aSignals.breakSignal().isSome()) {
-    if (!EscapeCommFunction(
-            handle, aSignals.breakSignal().value() ? SETBREAK : CLRBREAK)) {
-      DWORD error = GetLastError();
-      MOZ_LOG(gWebSerialLog, LogLevel::Error,
-              ("Win32SerialPlatformService[%p]::SetSignals EscapeCommFunction "
-               "Break failed for port '%s': 0x%08lx",
-               this, NS_ConvertUTF16toUTF8(aPortId).get(), error));
-      return NS_ERROR_FAILURE;
+    nsresult rv = setSignal("Break", aSignals.breakSignal().value()
+                                         ? IOCTL_SERIAL_SET_BREAK_ON
+                                         : IOCTL_SERIAL_SET_BREAK_OFF);
+    if (NS_FAILED(rv)) {
+      return rv;
     }
   }
 
@@ -681,14 +685,13 @@ nsresult Win32SerialPlatformService::GetSignalsImpl(
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  DWORD status = 0;
-  if (!GetCommModemStatus(handle, &status)) {
+  ULONG status = 0;
+  if (!Win32SerialOverlappedIO::SyncGetSignals(handle, status)) {
     DWORD error = GetLastError();
-    MOZ_LOG(
-        gWebSerialLog, LogLevel::Error,
-        ("Win32SerialPlatformService[%p]::GetSignals GetCommModemStatus failed "
-         "for port '%s': 0x%08lx",
-         this, NS_ConvertUTF16toUTF8(aPortId).get(), error));
+    MOZ_LOG(gWebSerialLog, LogLevel::Error,
+            ("Win32SerialPlatformService[%p]::GetSignals "
+             "IOCTL_SERIAL_GET_MODEMSTATUS failed for port '%s': 0x%08lx",
+             this, NS_ConvertUTF16toUTF8(aPortId).get(), error));
     return NS_ERROR_FAILURE;
   }
 

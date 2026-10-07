@@ -152,6 +152,7 @@ use style::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use style::values::generics::Optional;
 use style::values::generics::color::ColorMixFlags;
 use style::values::generics::easing::BeforeFlag;
+use style::values::generics::font::{FeatureTagValue, VariationValue};
 use style::values::generics::length::GenericAnchorSizeFunction;
 use style::values::resolved;
 use style::values::resolved::ToResolvedValue;
@@ -1564,11 +1565,7 @@ pub extern "C" fn Servo_Element_IsDisplayContents(element: &RawGeckoElement) -> 
     let data = element
         .borrow_data()
         .expect("Invoking Servo_Element_IsDisplayContents on unstyled element");
-    data.styles
-        .primary()
-        .get_box()
-        .clone_display()
-        .is_contents()
+    data.styles.primary().get_box().get_display().is_contents()
 }
 
 #[unsafe(no_mangle)]
@@ -4022,7 +4019,7 @@ pub unsafe extern "C" fn Servo_FontFaceRule_GetSources(
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Servo_FontFaceRule_GetVariationSettings(
     rule: &LockedFontFaceRule,
-    variations: &mut nsTArray<structs::gfxFontVariation>,
+    variations: &mut nsTArray<VariationValue<f32>>,
 ) {
     read_locked_arc_worker(rule, |rule: &FontFaceRule| {
         let source_variations = match rule.descriptors.font_variation_settings {
@@ -4030,24 +4027,19 @@ pub unsafe extern "C" fn Servo_FontFaceRule_GetVariationSettings(
             None => return,
         };
 
-        variations.extend(
-            source_variations
-                .0
-                .iter()
-                .map(|source| structs::gfxFontVariation {
-                    mTag: source.tag.0,
-                    // The value is enforced to be resolvable at parse time
-                    // (see FontVariationSettings::parse_for_font_face_rule).
-                    mValue: source.value.resolve().unwrap(),
-                }),
-        );
+        variations.extend(source_variations.0.iter().map(|source| VariationValue {
+            tag: source.tag,
+            // The value is enforced to be resolvable at parse time
+            // (see FontVariationSettings::parse_for_font_face_rule).
+            value: source.value.resolve().unwrap(),
+        }));
     });
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Servo_FontFaceRule_GetFeatureSettings(
     rule: &LockedFontFaceRule,
-    features: &mut nsTArray<structs::gfxFontFeature>,
+    features: &mut nsTArray<FeatureTagValue<i32>>,
 ) {
     read_locked_arc_worker(rule, |rule: &FontFaceRule| {
         let source_features = match rule.descriptors.font_feature_settings {
@@ -4055,17 +4047,12 @@ pub unsafe extern "C" fn Servo_FontFaceRule_GetFeatureSettings(
             None => return,
         };
 
-        features.extend(
-            source_features
-                .0
-                .iter()
-                .map(|source| structs::gfxFontFeature {
-                    mTag: source.tag.0,
-                    // The value is enforced to be resolvable at parse time
-                    // (see FontFeatureSettings::parse_for_font_face_rule).
-                    mValue: source.value.resolve().unwrap() as u32,
-                }),
-        );
+        features.extend(source_features.0.iter().map(|source| FeatureTagValue {
+            tag: source.tag,
+            // The value is enforced to be resolvable at parse time
+            // (see FontFeatureSettings::parse_for_font_face_rule).
+            value: source.value.resolve().unwrap(),
+        }));
     });
 }
 
@@ -5037,7 +5024,7 @@ pub extern "C" fn Servo_ComputedValues_BlockifiedDisplay(
     style: &ComputedValues,
     is_root_element: bool,
 ) -> u16 {
-    let display = style.get_box().clone_display();
+    let display = *style.get_box().get_display();
     let blockified_display = display.equivalent_block_display(is_root_element);
     blockified_display.to_u16()
 }
@@ -6487,8 +6474,8 @@ pub extern "C" fn Servo_DeclarationBlock_SetKeywordValue(
         },
         FontWeight => longhands::font_weight::SpecifiedValue::from_gecko_keyword(value),
         ListStyleType => longhands::list_style_type::SpecifiedValue::from_gecko_keyword(value),
-        MathStyle => longhands::math_style::SpecifiedValue::from_gecko_keyword(value),
-        MozMathVariant => longhands::_moz_math_variant::SpecifiedValue::from_gecko_keyword(value),
+        MathStyle => get_from_computed::<longhands::math_style::SpecifiedValue>(value),
+        MozMathVariant => get_from_computed::<longhands::_moz_math_variant::SpecifiedValue>(value),
         WhiteSpaceCollapse => get_from_computed::<longhands::white_space_collapse::SpecifiedValue>(value),
         TextWrapMode => get_from_computed::<longhands::text_wrap_mode::SpecifiedValue>(value),
         CaptionSide => get_from_computed::<CaptionSide>(value),
@@ -7161,7 +7148,7 @@ pub unsafe extern "C" fn Servo_CSSSupports(
 
     // NOTE(emilio): The supports API is not associated to any stylesheet,
     // so the fact that there is no namespace map here is fine.
-    let context = ParserContext::new(
+    let mut context = ParserContext::new(
         params.origin,
         url_data,
         Some(CssRuleType::Style),
@@ -7173,7 +7160,7 @@ pub unsafe extern "C" fn Servo_CSSSupports(
         /* attr_taint */ Default::default(),
     );
 
-    cond.eval(&context)
+    cond.eval(&mut context)
 }
 
 #[unsafe(no_mangle)]
@@ -10768,6 +10755,9 @@ pub unsafe extern "C" fn Servo_Value_Matches_Syntax(
         None,
         AllowComputationallyDependent::Yes,
         /* attr_taint */ Default::default(),
+        // TODO(Bug 2071366) - Thread the custom property name through InspectorUtils so that
+        // declarations using random() are not immediately flagged as non-matching.
+        None,
     )
     .is_ok()
 }
@@ -11499,6 +11489,170 @@ pub extern "C" fn Servo_GetShadowRootForScoped(
         .map_or(ptr::null(), |sr| sr.0 as *const _)
 }
 
+fn compute_arbritrary_substitution_functions(
+    string: &str,
+    element: GeckoElement,
+    style: &ComputedValues,
+    data: &PerDocumentStyleDataImpl,
+    parser_context: &ParserContext,
+    context: &Context,
+) -> Option<String> {
+    use style::custom_properties::VariableValue;
+    use style::properties::ARBITRARY_SUBSTITUTION_FUNCTIONS;
+
+    let mut parser = Parser::new(&string);
+
+    // Let's check if we have substitution functions (`var()`, `attr()`, `env()`) to handle.
+    parser.look_for_arbitrary_substitution_functions(ARBITRARY_SUBSTITUTION_FUNCTIONS);
+    let Ok(variable_value) = VariableValue::parse(
+        &mut parser,
+        Some(&parser_context.namespaces.prefixes),
+        &parser_context.url_data,
+    ) else {
+        return None;
+    };
+
+    if !parser.seen_arbitrary_substitution_functions() {
+        return None;
+    }
+
+    // Build the attributes Map that ComputedSubstitutionFunctions needs
+    let stylist = &data.stylist;
+    let mut attribute_tracker = AttributeTracker::new(&element);
+    let attributes: style::custom_properties_map::OwnMap = variable_value
+        .references
+        .refs
+        .iter()
+        .filter_map(|reference| {
+            if !reference.is_attr_with_type() {
+                return None;
+            }
+
+            let value = custom_properties::get_attr_value_for_cycle_resolution(
+                &reference.name,
+                &reference.attribute_data,
+                &variable_value.url_data,
+                &mut attribute_tracker,
+            )
+            .ok()?;
+
+            Some((reference.name.clone(), Some(value)))
+        })
+        .collect();
+    let substitution_functions = custom_properties::ComputedSubstitutionFunctions::new(
+        Some(style.custom_properties().clone()),
+        Some(attributes),
+    );
+
+    let Ok(result) = custom_properties::substitute(
+        &variable_value,
+        // TODO(Bug 2071366) - Thread the property being explained through InspectorUtils so
+        // that random() resolves the same way it does in the cascade.
+        None,
+        &substitution_functions,
+        stylist,
+        &context,
+        &mut attribute_tracker,
+    ) else {
+        return None;
+    };
+
+    Some(result.css.to_string())
+}
+
+struct ContextForSubstitution<'a> {
+    element: GeckoElement<'a>,
+    is_pseudo: bool,
+    parent_style: Option<Arc<ComputedValues>>,
+    conditions: RuleCacheConditions,
+    tree_counting_caches: TreeCountingCaches,
+}
+
+impl<'a> ContextForSubstitution<'a> {
+    fn new(element: GeckoElement<'a>, pseudo_type: PseudoStyleType) -> Self {
+        let pseudo = PseudoElement::from_pseudo_type(pseudo_type, None);
+        let parent_element = if pseudo.is_none() {
+            element.inheritance_parent()
+        } else {
+            Some(element)
+        };
+        let parent_style = parent_element
+            .as_ref()
+            .and_then(|e| e.borrow_data())
+            .map(|d| d.styles.primary().clone());
+        Self {
+            element,
+            is_pseudo: pseudo.is_some(),
+            parent_style,
+            conditions: Default::default(),
+            tree_counting_caches: Default::default(),
+        }
+    }
+
+    fn computed_context<'b>(
+        &'b mut self,
+        data: &'b PerDocumentStyleDataImpl,
+        style: &'b ComputedValues,
+    ) -> Context<'b> {
+        create_context_for_animation(
+            data,
+            style,
+            self.parent_style.as_deref(),
+            /* for_smil_animation = */ false,
+            &mut self.conditions,
+            ContainerSizeQuery::for_element(
+                self.element,
+                self.parent_style.as_deref(),
+                self.is_pseudo,
+            ),
+            &self.element,
+            &mut self.tree_counting_caches,
+        )
+    }
+}
+
+fn dummy_author_style_rule_context() -> ParserContext<'static> {
+    ParserContext::new(
+        Origin::Author,
+        unsafe { dummy_url_data() },
+        Some(CssRuleType::Style),
+        ParsingMode::DEFAULT,
+        QuirksMode::NoQuirks,
+        /* namespaces = */ Default::default(),
+        None,
+        None,
+        /* attr_taint */ Default::default(),
+    )
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn Servo_GetSubstitutedValue(
+    str: &nsACString,
+    raw_element: &RawGeckoElement,
+    pseudo_type: PseudoStyleType,
+    style: &ComputedValues,
+    raw_data: &PerDocumentStyleData,
+    out: &mut nsACString,
+) {
+    let element = GeckoElement(raw_element);
+    let data = raw_data.borrow();
+    let mut context = ContextForSubstitution::new(element, pseudo_type);
+    let parser_context = dummy_author_style_rule_context();
+    match compute_arbritrary_substitution_functions(
+        unsafe { str.as_str_unchecked() },
+        element,
+        style,
+        &data,
+        &parser_context,
+        &context.computed_context(&data, style),
+    ) {
+        Some(s) => out.assign(&s),
+        // Return null when the computation couldn't be done so we can differentiate
+        // from valid empty strings.
+        None => out.set_is_void(true),
+    };
+}
+
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Servo_GetComputationStepsSupportedCSSFunctions(
     out: &mut nsTArray<nsCString>,
@@ -11516,150 +11670,75 @@ pub unsafe extern "C" fn Servo_GetComputationStepsSupportedCSSFunctions(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Servo_GetComputationSteps(
-    str: &nsAString,
-    element: &RawGeckoElement,
+    string: &nsACString,
+    raw_element: &RawGeckoElement,
     pseudo_type: PseudoStyleType,
     style: &ComputedValues,
     raw_data: &PerDocumentStyleData,
+    // The percentage basis for the property the expression is used for, in CSS pixels.
+    // This will be NaN if we couldn't compute the percentage basis (see GetPercentageBasisFor in InspectorUtils.cpp)
+    percentage_basis: f32,
     out: &mut nsTArray<nsCString>,
 ) {
-    use style::custom_properties::VariableValue;
-    use style::properties::ARBITRARY_SUBSTITUTION_FUNCTIONS;
     use style::values::generics::calc::SimplificationResult;
-    use style::values::specified::calc::{CalcNode, CalcParseFlags, Leaf};
+    use style::values::specified::calc::{CalcNode, CalcParseFlags, CalcPercentageLeaf, Leaf};
 
-    let parser_context = ParserContext::new(
-        Origin::Author,
-        unsafe { dummy_url_data() },
-        Some(CssRuleType::Style),
-        ParsingMode::DEFAULT,
-        QuirksMode::NoQuirks,
-        /* namespaces = */ Default::default(),
-        None,
-        None,
-        /* attr_taint */ Default::default(),
-    );
-
-    let string = str.to_string();
+    let string = unsafe { string.as_str_unchecked() };
     let mut substituted = None;
-    let mut parser = Parser::new(&string);
-
+    let element = GeckoElement(raw_element);
     let data = raw_data.borrow();
-    let element = GeckoElement(element);
-    let pseudo = PseudoElement::from_pseudo_type(pseudo_type, None);
-    let parent_element = if pseudo.is_none() {
-        element.inheritance_parent()
-    } else {
-        Some(element)
-    };
-    let parent_data = parent_element.as_ref().and_then(|e| e.borrow_data());
-    let parent_style = parent_data
-        .as_ref()
-        .map(|d| d.styles.primary())
-        .map(|x| &**x);
+    let parser_context = dummy_author_style_rule_context();
+    let mut context = ContextForSubstitution::new(element, pseudo_type);
+    let context = context.computed_context(&data, style);
 
-    let container_size_query =
-        ContainerSizeQuery::for_element(element, parent_style, pseudo.is_some());
-    let mut conditions = Default::default();
-    let mut tree_counting_caches = TreeCountingCaches::default();
-    let context = create_context_for_animation(
+    if let Some(s) = compute_arbritrary_substitution_functions(
+        &string,
+        element,
+        style,
         &data,
-        &style,
-        parent_style,
-        /* for_smil_animation = */ false,
-        &mut conditions,
-        container_size_query,
-        &element,
-        &mut tree_counting_caches,
-    );
-
-    // Let's check if we have substitution functions (`var()`, `attr()`, `env()`) to handle.
-    parser.look_for_arbitrary_substitution_functions(ARBITRARY_SUBSTITUTION_FUNCTIONS);
-    let Ok(variable_value) = VariableValue::parse(
-        &mut parser,
-        Some(&parser_context.namespaces.prefixes),
-        &parser_context.url_data,
-    ) else {
-        return;
-    };
-
-    if parser.seen_arbitrary_substitution_functions() {
-        // Build the attributes Map that ComputedSubstitutionFunctions needs
-        let stylist = &data.stylist;
-        let mut attribute_tracker = AttributeTracker::new(&element);
-        let attributes: style::custom_properties_map::OwnMap = variable_value
-            .references
-            .refs
-            .iter()
-            .filter_map(|reference| {
-                if !reference.is_attr_with_type() {
-                    return None;
-                }
-
-                let value = custom_properties::get_attr_value_for_cycle_resolution(
-                    &reference.name,
-                    &reference.attribute_data,
-                    &variable_value.url_data,
-                    &mut attribute_tracker,
-                )
-                .ok()?;
-
-                Some((reference.name.clone(), Some(value)))
-            })
-            .collect();
-        let substitution_functions = custom_properties::ComputedSubstitutionFunctions::new(
-            Some(style.custom_properties().clone()),
-            Some(attributes),
-        );
-
-        let Ok(result) = custom_properties::substitute(
-            &variable_value,
-            &substitution_functions,
-            stylist,
-            &context,
-            &mut attribute_tracker,
-        ) else {
-            return;
-        };
-
+        &parser_context,
+        &context,
+    ) {
         // We successfully substituted, let's add the initial string to the result array
-        out.push(nsCString::from(&string));
-        let result_string = result.css.to_string();
+        out.push(nsCString::from(string));
         // …as well as the substituted string.
-        out.push(nsCString::from(&result_string));
-        substituted = Some(result_string.clone());
-    }
+        out.push(nsCString::from(&s));
+        substituted = Some(s.clone());
+    };
 
     let substituted_str = substituted.as_deref().unwrap_or(&string);
-    // Create a new Parser with the substituted string (even if no substitution occured)
-    // so we have a clean state and can get the computation steps now.
-    parser = Parser::new(substituted_str);
-
-    // At the moment, we're only supporting top-level Math function
-    // TODO: we should handle simple values too.
-    let math_func = match parser.next() {
-        Ok(Token::Function(name)) => match CalcNode::math_function(&parser_context, name) {
-            Ok(f) => f,
-            Err(_) => {
-                return;
-            },
-        },
-        _ => {
-            return;
-        },
-    };
+    let mut parser = Parser::new(substituted_str);
 
     let flags = CalcParseFlags {
         percentage_context: PercentageContext::allowed(),
         in_place_operations: CalcNodeParseInPlaceOperations::No,
         ..Default::default()
     };
+
     // Initial parsing
-    let mut node = match CalcNode::parse(&parser_context, &mut parser, math_func, flags) {
-        Ok(n) => n,
-        Err(_) => {
-            return;
+    let Ok(token) = parser.next() else { return };
+    let mut node = match token {
+        Token::Function(name) => {
+            let Ok(math_func) = CalcNode::math_function(&parser_context, name) else {
+                return;
+            };
+            match CalcNode::parse(&parser_context, &mut parser, math_func, flags) {
+                Ok(n) => n,
+                Err(_) => return,
+            }
         },
+        Token::Percentage { unit_value, .. } => CalcNode::Leaf(Leaf::Percentage(
+            CalcPercentageLeaf::new(*unit_value, Optional::None),
+        )),
+        Token::Dimension { value, unit, .. } => {
+            let Ok(length) =
+                NoCalcLength::parse_dimension_with_context(&parser_context, *value, unit)
+            else {
+                return;
+            };
+            CalcNode::Leaf(Leaf::Length(length))
+        },
+        _ => return,
     };
 
     let mut value = match node.as_leaf() {
@@ -11675,15 +11754,22 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
         // We only want to put `string` in the array if it's significantly different (as in, it
         // should have more differences than juste whitespace/casing).
         if value.replace(" ", "").to_lowercase() != string.replace(" ", "").to_lowercase() {
-            out.push(nsCString::from(&string));
+            out.push(nsCString::from(string));
         }
         out.push(nsCString::from(&value));
     }
 
     // Go through the leaves so we have consistent units to run the computation
     node = node.map_leaves(|leaf| match *leaf {
-        // TODO: Percentages should be replaced by the appropriate value (See Bug 2041621)
-        // Leaf::Percentage(p) => { },
+        Leaf::Percentage(p) => {
+            // If percentage_basis is NaN, that means we couldn't compute it (see
+            // InspectorUtils.cpp `GetPercentageBasisFor`).
+            if percentage_basis.is_nan() {
+                return leaf.clone();
+            }
+
+            Leaf::Length(NoCalcLength::from_px(p.get() * percentage_basis))
+        },
         Leaf::Length(l) => {
             let result = l.to_computed_value(&context);
             Leaf::Length(NoCalcLength::from_computed_value(&result))

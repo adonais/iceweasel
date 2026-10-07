@@ -322,13 +322,18 @@ def install_requirements_file(
 # xpcshell tests, don't have the same path.
 # see - python/mozbuild/mozbuild/action/test_archive.py
 # this mapping will map paths when running there.
-# The key is the source path, and the value the ci path
+# The key is the source path, and the value the list of candidate ci paths,
+# tried in order. A single source directory can hold tests of several flavors,
+# which end up in different subdirectories of the test package.
 _TRY_MAPPING = {
-    Path("accessible"): Path("mochitest", "browser", "accessible"),
-    Path("browser"): Path("mochitest", "browser", "browser"),
-    Path("netwerk"): Path("xpcshell", "tests", "netwerk"),
-    Path("dom"): Path("mochitest", "tests", "dom"),
-    Path("toolkit"): Path("mochitest", "browser", "toolkit"),
+    Path("accessible"): [Path("mochitest", "browser", "accessible")],
+    Path("browser"): [Path("mochitest", "browser", "browser")],
+    Path("netwerk"): [Path("xpcshell", "tests", "netwerk")],
+    Path("dom"): [
+        Path("mochitest", "tests", "dom"),
+        Path("mochitest", "browser", "dom"),
+    ],
+    Path("toolkit"): [Path("mochitest", "browser", "toolkit")],
 }
 
 
@@ -359,11 +364,18 @@ def build_test_list(tests):
         p_test = Path(test)
         if ON_TRY and not p_test.resolve().exists():
             # until we have pathlib.Path.is_relative_to() (3.9)
-            for src_path, ci_path in _TRY_MAPPING.items():
-                src_path, ci_path = str(src_path), str(ci_path)  # noqa
-                if test.startswith(src_path):
-                    p_test = Path(test.replace(src_path, ci_path, 1))
-                    break
+            for src_path, ci_paths in _TRY_MAPPING.items():
+                src_path = str(src_path)
+                if not test.startswith(src_path):
+                    continue
+                candidates = [
+                    Path(test.replace(src_path, str(ci_path), 1))
+                    for ci_path in ci_paths
+                ]
+                p_test = next(
+                    (c for c in candidates if c.resolve().exists()), candidates[0]
+                )
+                break
 
         resolved_test = p_test.resolve()
 

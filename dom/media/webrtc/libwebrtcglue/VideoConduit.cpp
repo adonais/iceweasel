@@ -767,17 +767,30 @@ void WebrtcVideoConduit::OnControlConfigChange() {
           video_stream.height = codecConfig->mEncodingConstraints.maxHeight;
 
           // Max framerate is also used to cap the source, to avoid processing
-          // frames that will have to be dropped. Our signals here are both
-          // RTCRtpEncodingParameters.maxFramerate (per encoding) and max-fr
-          // for supported codecs.
+          // frames that will have to be dropped. Our signals here are
+          // RTCRtpEncodingParameters.maxFramerate (per encoding), max-fr for
+          // supported codecs, and any macroblocks-per-second cap implied by a
+          // negotiated level (H264 Annex A Table A-1 / AV1 Annex A.3). Since
+          // resolution is always scaled to fit within maxFs (see
+          // VideoStreamFactory::CalculateScaledResolution), maxMbps / maxFs
+          // is a safe worst-case framerate ceiling for whatever resolution
+          // ends up being used.
+          Maybe<double> levelMaxFps;
+          if (codecConstraints.maxMbps && codecConstraints.maxFs) {
+            levelMaxFps = Some(static_cast<double>(codecConstraints.maxMbps) /
+                               codecConstraints.maxFs);
+          }
           video_stream.max_framerate = static_cast<int>(([&]() {
-            if (codecConstraints.maxFps && encodingConstraints.maxFps) {
-              return std::min(*codecConstraints.maxFps,
-                              *encodingConstraints.maxFps);
+            Maybe<double> fps;
+            for (const auto& candidate :
+                 {codecConstraints.maxFps, encodingConstraints.maxFps,
+                  levelMaxFps}) {
+              if (!candidate) {
+                continue;
+              }
+              fps = fps ? Some(std::min(*fps, *candidate)) : candidate;
             }
-            return codecConstraints.maxFps
-                .orElse([&] { return encodingConstraints.maxFps; })
-                .valueOr(-1);
+            return fps.valueOr(-1);
           })());
 
           // Set each layer's max-bitrate explicitly or libwebrtc may ignore all

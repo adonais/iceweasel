@@ -1,34 +1,34 @@
-load 91332.xml
-load 111994.xml
-load 182460-table.xhtml
-load 226425.xml
-load 406106-1.html
-load 483444.xml
-load 485217.xml
-load 485286.xml
-load 527558_1.xml
-load 528300.xml
-load 528488.xml
-load 528963.xml
-load 545927.html
-load 601543.html
-load 602115.html
-load 603844.html
-load 667315.xml
-load 949990.html
-load 1089049.html
-load 1205163.xml
-load 1243337.xml
-load 1330492.html
-load 1336828.html
-load 1336830.html
-load 1336832.html
-load 1338277.html
-load 1361892.html
-load 1527277.html
-load 1589930.xml
-load 1936613.html
-HTTP load 1430818.sjs
-HTTP load 1941002-1.html
-HTTP load 1941002-2.html
-HTTP load 1941002-3.html
+pref(dom.xslt.enabled,true) load 91332.xml
+pref(dom.xslt.enabled,true) load 111994.xml
+pref(dom.xslt.enabled,true) load 182460-table.xhtml
+pref(dom.xslt.enabled,true) load 226425.xml
+pref(dom.xslt.enabled,true) load 406106-1.html
+pref(dom.xslt.enabled,true) load 483444.xml
+pref(dom.xslt.enabled,true) load 485217.xml
+pref(dom.xslt.enabled,true) load 485286.xml
+pref(dom.xslt.enabled,true) load 527558_1.xml
+pref(dom.xslt.enabled,true) load 528300.xml
+pref(dom.xslt.enabled,true) load 528488.xml
+pref(dom.xslt.enabled,true) load 528963.xml
+pref(dom.xslt.enabled,true) load 545927.html
+pref(dom.xslt.enabled,true) load 601543.html
+pref(dom.xslt.enabled,true) load 602115.html
+pref(dom.xslt.enabled,true) load 603844.html
+pref(dom.xslt.enabled,true) load 667315.xml
+pref(dom.xslt.enabled,true) load 949990.html
+pref(dom.xslt.enabled,true) load 1089049.html
+pref(dom.xslt.enabled,true) load 1205163.xml
+pref(dom.xslt.enabled,true) load 1243337.xml
+pref(dom.xslt.enabled,true) load 1330492.html
+pref(dom.xslt.enabled,true) load 1336828.html
+pref(dom.xslt.enabled,true) load 1336830.html
+pref(dom.xslt.enabled,true) load 1336832.html
+pref(dom.xslt.enabled,true) load 1338277.html
+pref(dom.xslt.enabled,true) load 1361892.html
+pref(dom.xslt.enabled,true) load 1527277.html
+pref(dom.xslt.enabled,true) load 1589930.xml
+pref(dom.xslt.enabled,true) load 1936613.html
+pref(dom.xslt.enabled,true) HTTP load 1430818.sjs
+pref(dom.xslt.enabled,true) HTTP load 1941002-1.html
+pref(dom.xslt.enabled,true) HTTP load 1941002-2.html
+pref(dom.xslt.enabled,true) HTTP load 1941002-3.html

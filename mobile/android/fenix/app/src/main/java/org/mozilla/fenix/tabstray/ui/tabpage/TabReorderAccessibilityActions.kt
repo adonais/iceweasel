@@ -13,7 +13,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.unit.LayoutDirection
 import org.mozilla.fenix.R
-import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
+import org.mozilla.fenix.tabstray.controller.ItemInteractionHandler
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 
 /**
@@ -27,7 +27,7 @@ import org.mozilla.fenix.tabstray.data.TabsTrayItem
  * @param tabIndex The tab item's index within [tabs].
  * @param reorderGeometry Geometry of the tab order [item] belongs to.
  * @param enabled Whether reordering is currently possible. No actions are offered when it is not.
- * @param tabInteractionHandler Handler the reorder is dispatched to.
+ * @param itemInteractionHandler Handler the reorder is dispatched to.
  */
 @Composable
 internal fun rememberTabReorderActions(
@@ -36,14 +36,14 @@ internal fun rememberTabReorderActions(
     tabIndex: Int,
     reorderGeometry: TabReorderGeometry,
     enabled: Boolean,
-    tabInteractionHandler: TabInteractionHandler,
+    itemInteractionHandler: ItemInteractionHandler,
 ): List<CustomAccessibilityAction> {
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val directions = if (enabled) reorderGeometry.reorderDirections(tabIndex, isRtl) else emptyList()
     val labels = reorderActionLabels()
 
     val currentTabs by rememberUpdatedState(tabs)
-    val currentHandler by rememberUpdatedState(tabInteractionHandler)
+    val currentHandler by rememberUpdatedState(itemInteractionHandler)
 
     return remember(item.id, directions, reorderGeometry, isRtl, labels) {
         directions.map { direction ->
@@ -83,7 +83,7 @@ private fun reorderActionLabels(): Map<ReorderDirection, String> {
  * [TabReorderGeometry.reorderDirections], so a missing source or target means [tabs] changed since the action was
  * composed.
  */
-private fun TabInteractionHandler.moveRelativeTo(
+private fun ItemInteractionHandler.moveRelativeTo(
     sourceKey: String,
     tabs: List<TabsTrayItem>,
     offset: Int,

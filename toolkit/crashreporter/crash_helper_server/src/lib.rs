@@ -12,10 +12,12 @@ mod logging;
 mod phc;
 mod platform;
 
-use crash_helper_common::{BreakpadData, BreakpadRawData, IPCConnector, IPCListener, Pid};
+use crash_helper_common::{
+    ApplicationInfo, BreakpadData, BreakpadRawData, IPCConnector, IPCListener, Pid,
+};
 use std::ffi::{c_char, CStr, OsString};
 
-use crash_generation::finalize_breakpad_minidump;
+use crash_generation::{finalize_breakpad_minidump, initialize_static_annotations};
 use ipc_server::{IPCServer, IPCServerState};
 
 /// Runs the crash generator process logic, this includes the IPC used by
@@ -72,6 +74,7 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
         build_id.to_str(),
         "BuildID is not a valid UTF-8 string"
     ).to_string();
+    initialize_static_annotations(&ApplicationInfo::new(build_id, client_handle.clone()));
     let listener = unsafe { CStr::from_ptr(listener) };
     let listener = unwrap_with_message(
         IPCListener::deserialize(listener, client_pid),
@@ -104,7 +107,6 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
         connector,
         breakpad_data,
         minidump_path,
-        build_id,
     );
 
     match ipc_server {
@@ -139,12 +141,19 @@ pub unsafe extern "C" fn crash_generator_logic_android(
     minidump_path: *const c_char,
     pipe: crash_helper_common::RawIPCConnector,
 ) {
+    use crash_helper_common::{FromRawProcessHandle, ProcessHandle};
+
     logging::init();
 
     let build_id = unsafe { CStr::from_ptr(build_id) }
         .to_owned()
         .into_string()
         .unwrap();
+    initialize_static_annotations(&ApplicationInfo::new(
+        build_id,
+        Some(ProcessHandle::from_raw_handle(pid)),
+    ));
+
     let breakpad_data = BreakpadData::new(breakpad_data);
     let minidump_path = unsafe { CStr::from_ptr(minidump_path) }
         .to_owned()
@@ -173,7 +182,6 @@ pub unsafe extern "C" fn crash_generator_logic_android(
             connector,
             breakpad_data,
             minidump_path,
-            build_id,
         ) {
             Ok(ipc_server) => ipc_server,
             Err(error) => {

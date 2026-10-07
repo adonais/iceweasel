@@ -8,6 +8,7 @@
 #include "VRManagerChild.h"
 #include "gfxVR.h"
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebXRBinding.h"
 #include "nsContentPermissionHelper.h"
 
@@ -104,7 +105,7 @@ class XRSystem final : public DOMEventTargetHelper,
 
   void Shutdown();
   void SessionEnded(XRSession* aSession);
-  bool FeaturePolicyBlocked() const;
+  bool PermissionsPolicyBlocked() const;
   bool OnXRPermissionRequestAllow();
   void OnXRPermissionRequestCancel();
   bool HasActiveImmersiveSession() const;

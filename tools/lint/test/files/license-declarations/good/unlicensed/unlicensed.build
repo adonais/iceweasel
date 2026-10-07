@@ -1,0 +1,4 @@
+LICENSES += ["unlicensed"]
+LICENSES["unlicensed"].title = "Unlicensed License"
+LICENSES["unlicensed"].text = "LICENSE"
+LICENSES["unlicensed"].spdx = "MIT"

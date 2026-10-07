@@ -30,7 +30,7 @@ class AssistIntentProcessorTest {
             Intent().apply {
                 action = TEST_WRONG_ACTION
             }
-        val result = StartSearchIntentProcessor { true }.process(intent, navController, out, settings)
+        val result = AssistIntentProcessor().process(intent, navController, out, settings)
 
         verify { navController wasNot Called }
         verify { out wasNot Called }

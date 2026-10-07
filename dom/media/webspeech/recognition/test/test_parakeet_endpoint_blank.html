@@ -1,0 +1,168 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: an utterance ends when nothing is committed and the engine marks no boundary</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="head.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div id="content"></div>
+<div id="results">
+  <label>Recognized:</label>
+  <div class="recognized" id="rec-text">waiting...</div>
+</div>
+<pre id="test">
+<script>
+"use strict";
+
+// The multilingual model has no <EOU> token, so the backend ends an utterance
+// once the decoder has emitted nothing for endpoint_blank_ms of audio.
+// pangrams.opus is two sentences 4.2s of silence apart: with the fallback on
+// they arrive as two results, with the pref at 0 as one, after stop().
+
+const SERVER_PORT = 8766;
+const LANG = "en-US";
+const BLANK_MS = 800;
+
+const U1_LAST_WORD = "dog";
+const U2_WORDS = "pack my box with five dozen liquor jugs".split(" ");
+
+SimpleTest.requestCompleteLog();
+SimpleTest.requestFlakyTimeout(
+  "createResumedAudioContext() and waitForAudioFlowing() are bounded by setTimeout");
+
+const T0 = performance.now();
+const ms = () => "+" + Math.round(performance.now() - T0) + "ms";
+function diag(msg) { info("[diag " + ms() + "] " + msg); }
+
+function words(text) {
+  return text.toLowerCase().replace(/[^\p{L}\p{N}\s']/gu, " ").split(/\s+/).filter(Boolean);
+}
+
+// A final delivered before stoppedAt came from an endpointing cut, one after it
+// from the end-of-stream flush.
+async function recognizeClip(filename, blankMs) {
+  await SpecialPowers.pushPrefEnv({
+    set: [["media.webspeech.recognition.endpoint_blank_ms", blankMs]],
+  });
+
+  const ctx = await createResumedAudioContext();
+
+  const audio = await loadTestAudio(filename, a => {
+    a.id = "audioElement";
+    a.controls = true;
+  });
+
+  const src = ctx.createMediaElementSource(audio);
+  const dst = ctx.createMediaStreamDestination();
+  src.connect(dst);
+  src.connect(ctx.destination);
+
+  const track = dst.stream.getAudioTracks()[0];
+  ok(track, `[${blankMs}ms] Got audio track`);
+
+  audio.currentTime = 0;
+  await audio.play().then(() => diag("audio.play() resolved"),
+                          e => diag("audio.play() rejected: " + e));
+  await waitForAudioFlowing(ctx, dst.stream);
+
+  const sr = new SpeechRecognition();
+  sr.continuous = true;
+  sr.lang = LANG;
+
+  const finals = [];
+  sr.onresult = e => {
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        const text = e.results[i][0].transcript;
+        finals.push({ text, at: performance.now() });
+        diag(`[${blankMs}ms] final result #${finals.length}: "${text}"`);
+      }
+    }
+    document.getElementById("rec-text").textContent =
+      finals.map(f => f.text).join(" | ");
+  };
+
+  const ended = new Promise((resolve, reject) => {
+    sr.onend = resolve;
+    sr.onerror = e => reject(new Error(e.error));
+  });
+
+  sr.start(track);
+  await new Promise(r => { audio.onended = r; });
+
+  const stoppedAt = performance.now();
+  diag(`[${blankMs}ms] calling sr.stop()`);
+  sr.stop();
+  await ended;
+
+  await ctx.close();
+  audio.pause();
+
+  return { finals, stoppedAt };
+}
+
+add_setup(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.webspeech.recognition.enable", true],
+      ["browser.ml.modelHubRootUrl", `http://localhost:${SERVER_PORT}/`],
+      ["media.webspeech.recognition.model.en", "multilingual"],
+      ["media.webspeech.recognition.model-download.prompt.testing", true],
+      ["media.navigator.permission.disabled", true],
+      // Two sessions run here, with the model install in front of them: keep
+      // the HWInference connection up across all three rather than paying for
+      // (and racing with) a teardown between them.
+      ["media.webspeech.recognition.idle_shutdown_grace_ms", 60000],
+    ],
+  });
+  const installed = await ensureModelInstalled([LANG]);
+  ok(installed, "Multilingual model installed successfully");
+});
+
+add_task(async function a_blank_run_closes_the_utterance() {
+  const { finals, stoppedAt } = await recognizeClip("pangrams.opus", BLANK_MS);
+
+  is(finals.length, 2,
+     `The clip's two sentences arrive as two final results. Got ` +
+     `${finals.length}: "${finals.map(f => f.text).join(" | ")}"`);
+  if (finals.length !== 2) {
+    return;
+  }
+
+  ok(finals[0].at < stoppedAt,
+     "The first final arrived while the session was still listening, from the " +
+     "endpointing cut rather than the end-of-stream flush");
+
+  const first = words(finals[0].text);
+  is(first[first.length - 1], U1_LAST_WORD,
+     `The first utterance is closed whole, ending in "${U1_LAST_WORD}": its ` +
+     `trailing word is not withheld for the next one. Got: "${finals[0].text}"`);
+
+  const second = words(finals[1].text);
+  ok(!second.includes(U1_LAST_WORD),
+     `"${U1_LAST_WORD}" is not delivered again with the second utterance. ` +
+     `Got: "${finals[1].text}"`);
+  ok(U2_WORDS.some(w => second.includes(w)),
+     `The second final carries the second sentence. Got: "${finals[1].text}"`);
+});
+
+add_task(async function pref_zero_disables_the_fallback() {
+  const { finals, stoppedAt } = await recognizeClip("pangrams.opus", 0);
+
+  is(finals.length, 1,
+     `With the fallback off the whole session is one utterance. Got ` +
+     `${finals.length}: "${finals.map(f => f.text).join(" | ")}"`);
+  if (finals.length !== 1) {
+    return;
+  }
+  ok(finals[0].at > stoppedAt,
+     "That one final came from the end-of-stream flush, after stop()");
+});
+
+</script>
+</pre>
+</body>
+</html>

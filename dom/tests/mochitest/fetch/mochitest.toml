@@ -23,6 +23,9 @@ support-files = [
   "reroute.js",
   "reroute.js^headers^",
   "slow.sjs",
+  "stall.sjs",
+  "frame_offline_cancel.html",
+  "worker_offline_cancel.js",
   "sw_reroute.js",
   "empty.js",
   "empty.js^headers^",
@@ -138,6 +141,13 @@ skip-if = [
 ["test_headers_mainthread.html"]
 
 ["test_headers_sw_reroute.html"]
+
+["test_offline_cancel_inflight_fetch.html"]
+# The http3 variant fronts httpd.js with the http3server proxy, whose fetch_url
+# accumulates the whole upstream body before it responds. Response headers
+# therefore never arrive before the body is complete, and this test needs a
+# response that is genuinely still in flight.
+skip-if = ["http3"]
 
 ["test_readableStreams.html"]
 scheme = "https"

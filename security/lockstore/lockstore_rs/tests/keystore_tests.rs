@@ -82,6 +82,68 @@ fn test_delete_dek_nonexistent() {
 }
 
 #[test]
+fn test_dek_exists() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+    let local = mint_local(&keystore);
+
+    assert!(!keystore.dek_exists("maybe").expect("dek_exists before"));
+
+    keystore
+        .create_dek("maybe", &local, true, 32)
+        .expect("create dek");
+    assert!(keystore.dek_exists("maybe").expect("dek_exists after"));
+
+    keystore.delete_dek("maybe").expect("delete dek");
+    assert!(!keystore
+        .dek_exists("maybe")
+        .expect("dek_exists after delete"));
+
+    keystore.close();
+}
+
+#[test]
+fn test_dek_exists_ignores_kek_lock_state() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+    let password = keystore
+        .create_kek(KekType::Password, "", b"hunter2", Duration::from_secs(60))
+        .expect("create password kek");
+    keystore
+        .unlock_kek(&password, b"hunter2", Duration::from_secs(60))
+        .expect("unlock");
+    keystore
+        .create_dek("locked_up", &password, true, 32)
+        .expect("create dek");
+
+    keystore.lock_kek(&password).expect("lock");
+
+    // The DEK is unreadable while the KEK is locked, but it still exists.
+    assert!(matches!(
+        keystore.get_dek("locked_up", &password),
+        Err(LockstoreError::Locked)
+    ));
+    assert!(keystore
+        .dek_exists("locked_up")
+        .expect("dek_exists with locked kek"));
+
+    keystore.close();
+}
+
+#[test]
+fn test_dek_exists_non_extractable() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+    let local = mint_local(&keystore);
+    keystore
+        .create_dek("opaque", &local, false, 32)
+        .expect("create dek");
+
+    // Extractability is orthogonal: the DEK exists even though its bytes
+    // can never be exported.
+    assert!(keystore.dek_exists("opaque").expect("dek_exists"));
+
+    keystore.close();
+}
+
+#[test]
 fn test_extractable_dek() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
     let local = mint_local(&keystore);
@@ -1130,6 +1192,110 @@ fn test_switch_kek_preserves_ciphertext() {
 }
 
 #[test]
+fn test_migrate_deks_moves_all_and_keeps_source() {
+    let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let from = mint_local(&keystore);
+    let to = mint_local(&keystore);
+    let other = mint_local(&keystore);
+
+    keystore.create_dek("a", &from, true, 32).expect("create a");
+    keystore.create_dek("b", &from, true, 32).expect("create b");
+    keystore
+        .create_dek("c", &other, true, 32)
+        .expect("create c");
+
+    let (a_before, _) = keystore.get_dek("a", &from).expect("get a before");
+    let (b_before, _) = keystore.get_dek("b", &from).expect("get b before");
+
+    keystore.migrate_deks(&from, &to).expect("migrate");
+
+    assert_eq!(
+        keystore.list_keks("a").expect("list a"),
+        vec![to.clone()],
+        "collection a should now be wrapped only by the target KEK"
+    );
+    assert_eq!(
+        keystore.list_keks("b").expect("list b"),
+        vec![to.clone()],
+        "collection b should now be wrapped only by the target KEK"
+    );
+    assert_eq!(
+        keystore.list_keks("c").expect("list c"),
+        vec![other.clone()],
+        "collection not wrapped by the source KEK is left untouched"
+    );
+
+    let (a_after, _) = keystore.get_dek("a", &to).expect("get a after");
+    let (b_after, _) = keystore.get_dek("b", &to).expect("get b after");
+    assert_eq!(a_before, a_after, "DEK bytes unchanged across migration");
+    assert_eq!(b_before, b_after, "DEK bytes unchanged across migration");
+
+    assert!(
+        keystore.kek_exists(&from).expect("kek_exists from"),
+        "source KEK record outlives the migration; dropping it is the caller's"
+    );
+    assert!(
+        keystore.kek_exists(&to).expect("kek_exists to"),
+        "target KEK record still exists"
+    );
+    keystore.delete_kek(&from).expect("delete drained source");
+    assert!(
+        !keystore
+            .kek_exists(&from)
+            .expect("kek_exists from after delete"),
+        "a drained source KEK can be deleted once nothing wraps under it"
+    );
+
+    keystore.close();
+}
+
+#[test]
+fn test_migrate_deks_no_source_wrappings_is_a_noop() {
+    let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let from = mint_local(&keystore);
+    let to = mint_local(&keystore);
+
+    keystore.create_dek("c", &to, true, 32).expect("create c");
+
+    keystore.migrate_deks(&from, &to).expect("migrate noop");
+
+    assert_eq!(
+        keystore.list_keks("c").expect("list c"),
+        vec![to.clone()],
+        "collection wrapped only by the target is left untouched"
+    );
+    assert!(
+        keystore.kek_exists(&from).expect("kek_exists from"),
+        "a source KEK that wrapped nothing is still left for the caller"
+    );
+
+    keystore.close();
+}
+
+#[test]
+fn test_migrate_deks_preserves_ciphertext() {
+    let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let from = mint_local(&keystore);
+    let to = mint_local(&keystore);
+
+    keystore
+        .create_dek("col", &from, false, 32)
+        .expect("create");
+    let ct = keystore
+        .encrypt("col", &from, b"pre-migrate")
+        .expect("encrypt before migrate");
+
+    keystore.migrate_deks(&from, &to).expect("migrate");
+
+    let pt = keystore
+        .decrypt("col", &to, &ct)
+        .expect("decrypt after migrate");
+    assert_eq!(&pt[..], b"pre-migrate");
+
+    keystore.close();
+}
+
+#[test]
 fn test_create_kek_identifier_deterministic_and_idempotent() {
     let keystore = Keystore::new_in_memory().expect("keystore");
     // A non-empty identifier yields a deterministic, well-known kek_ref.
@@ -1165,5 +1331,294 @@ fn test_create_kek_rejects_non_base64url_identifier() {
         result,
         Err(LockstoreError::InvalidConfiguration(_))
     ));
+    keystore.close();
+}
+
+#[test]
+fn test_change_kek_password_rewraps_same_kek() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+    let password = keystore
+        .create_password_kek_test_only(b"old-pw")
+        .expect("create password kek");
+    keystore
+        .unlock_kek(&password, b"old-pw", Duration::from_secs(60))
+        .expect("unlock with old");
+    keystore
+        .create_dek("dek", &password, true, 32)
+        .expect("create dek");
+    let (before, suite_before) = keystore.get_dek("dek", &password).expect("get_dek before");
+
+    keystore
+        .change_kek_password(&password, b"old-pw", b"new-pw")
+        .expect("change password");
+
+    keystore
+        .unlock_kek(&password, b"new-pw", Duration::from_secs(60))
+        .expect("unlock with new");
+    let (after, suite_after) = keystore.get_dek("dek", &password).expect("get_dek after");
+
+    // Only the wrapping changed: the DEK underneath must be byte-identical.
+    assert_eq!(before, after);
+    assert_eq!(suite_before, suite_after);
+
+    keystore.close();
+}
+
+#[test]
+fn test_change_kek_password_preserves_ciphertext() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+    let password = keystore
+        .create_password_kek_test_only(b"old-pw")
+        .expect("create password kek");
+    keystore
+        .unlock_kek(&password, b"old-pw", Duration::from_secs(60))
+        .expect("unlock with old");
+    keystore
+        .create_dek("dek", &password, false, 32)
+        .expect("create dek");
+    let ct = keystore
+        .encrypt("dek", &password, b"pre-change")
+        .expect("encrypt before change");
+
+    keystore
+        .change_kek_password(&password, b"old-pw", b"new-pw")
+        .expect("change password");
+    keystore
+        .unlock_kek(&password, b"new-pw", Duration::from_secs(60))
+        .expect("unlock with new");
+
+    let pt = keystore
+        .decrypt("dek", &password, &ct)
+        .expect("decrypt after change");
+    assert_eq!(&pt[..], b"pre-change");
+
+    keystore.close();
+}
+
+#[test]
+fn test_change_kek_password_retires_old_password() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+    let password = keystore
+        .create_password_kek_test_only(b"old-pw")
+        .expect("create password kek");
+
+    keystore
+        .change_kek_password(&password, b"old-pw", b"new-pw")
+        .expect("change password");
+
+    assert!(matches!(
+        keystore.unlock_kek(&password, b"old-pw", Duration::from_secs(60)),
+        Err(LockstoreError::WrongPassword)
+    ));
+
+    keystore.close();
+}
+
+#[test]
+fn test_change_kek_password_drops_cached_unlock() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+    let password = keystore
+        .create_password_kek_test_only(b"old-pw")
+        .expect("create password kek");
+    keystore
+        .unlock_kek(&password, b"old-pw", Duration::from_secs(60))
+        .expect("unlock with old");
+    keystore
+        .create_dek("dek", &password, true, 32)
+        .expect("create dek");
+    assert!(keystore
+        .is_kek_unlocked(&password)
+        .expect("is_kek_unlocked"));
+
+    keystore
+        .change_kek_password(&password, b"old-pw", b"new-pw")
+        .expect("change password");
+
+    // The cached plaintext was derived from the old password; leaving it in
+    // place would keep the KEK usable without ever proving the new one.
+    assert!(!keystore
+        .is_kek_unlocked(&password)
+        .expect("is_kek_unlocked"));
+    assert!(matches!(
+        keystore.get_dek("dek", &password),
+        Err(LockstoreError::Locked)
+    ));
+
+    keystore.close();
+}
+
+#[test]
+fn test_change_kek_password_wrong_old_password_leaves_record_intact() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+    let password = keystore
+        .create_password_kek_test_only(b"old-pw")
+        .expect("create password kek");
+    keystore
+        .unlock_kek(&password, b"old-pw", Duration::from_secs(60))
+        .expect("unlock with old");
+    keystore
+        .create_dek("dek", &password, true, 32)
+        .expect("create dek");
+    let (before, _) = keystore.get_dek("dek", &password).expect("get_dek before");
+
+    assert!(matches!(
+        keystore.change_kek_password(&password, b"wrong-pw", b"new-pw"),
+        Err(LockstoreError::WrongPassword)
+    ));
+
+    // A rejected change must not have touched the record, and must not have
+    // keyed it to the new password either.
+    assert!(matches!(
+        keystore.unlock_kek(&password, b"new-pw", Duration::from_secs(60)),
+        Err(LockstoreError::WrongPassword)
+    ));
+    keystore
+        .unlock_kek(&password, b"old-pw", Duration::from_secs(60))
+        .expect("unlock with old after failed change");
+    let (after, _) = keystore.get_dek("dek", &password).expect("get_dek after");
+    assert_eq!(before, after);
+
+    keystore.close();
+}
+
+#[test]
+fn test_change_kek_password_rejects_empty_new_password() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+    let password = keystore
+        .create_password_kek_test_only(b"old-pw")
+        .expect("create password kek");
+
+    assert!(matches!(
+        keystore.change_kek_password(&password, b"old-pw", b""),
+        Err(LockstoreError::InvalidConfiguration(_))
+    ));
+
+    // Rejected before any rewrap, so the old password still works.
+    keystore
+        .unlock_kek(&password, b"old-pw", Duration::from_secs(60))
+        .expect("unlock with old");
+
+    keystore.close();
+}
+
+#[test]
+fn test_change_kek_password_rejects_non_password_kek() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+    let local = mint_local(&keystore);
+
+    assert!(matches!(
+        keystore.change_kek_password(&local, b"old-pw", b"new-pw"),
+        Err(LockstoreError::InvalidConfiguration(_))
+    ));
+
+    keystore.close();
+}
+
+#[test]
+fn test_change_kek_password_rejects_invalid_kek_ref() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+
+    assert!(matches!(
+        keystore.change_kek_password("not-a-kek-ref", b"old-pw", b"new-pw"),
+        Err(LockstoreError::InvalidKekRef(_))
+    ));
+
+    keystore.close();
+}
+
+#[test]
+fn test_change_kek_password_missing_record() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+
+    assert!(matches!(
+        keystore.change_kek_password(
+            "lockstore::kek::password:nonexistent-id",
+            b"old-pw",
+            b"new-pw"
+        ),
+        Err(LockstoreError::InvalidKekRef(_))
+    ));
+
+    keystore.close();
+}
+
+#[test]
+fn test_change_kek_password_persists_on_disk() {
+    let dir = tempdir().expect("tempdir");
+    let path = dir.path().join("lockstore.sqlite");
+
+    let password = {
+        let keystore = Keystore::get(path.clone()).expect("keystore");
+        let password = keystore
+            .create_password_kek_test_only(b"old-pw")
+            .expect("create password kek");
+        keystore
+            .unlock_kek(&password, b"old-pw", Duration::from_secs(60))
+            .expect("unlock with old");
+        keystore
+            .create_dek("dek", &password, true, 32)
+            .expect("create dek");
+        keystore
+            .change_kek_password(&password, b"old-pw", b"new-pw")
+            .expect("change password");
+        keystore.close();
+        password
+    };
+
+    let keystore = Keystore::get(path).expect("reopen keystore");
+    assert!(matches!(
+        keystore.unlock_kek(&password, b"old-pw", Duration::from_secs(60)),
+        Err(LockstoreError::WrongPassword)
+    ));
+    keystore
+        .unlock_kek(&password, b"new-pw", Duration::from_secs(60))
+        .expect("unlock with new after reopen");
+    keystore.get_dek("dek", &password).expect("get_dek");
+
+    keystore.close();
+}
+
+#[test]
+fn test_get_dek_automatic_with_local_kek() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+    let local = mint_local(&keystore);
+
+    keystore
+        .create_dek("auto_dek", &local, true, 32)
+        .expect("create dek");
+
+    let (auto_key, auto_suite) = keystore
+        .get_dek_automatic("auto_dek")
+        .expect("get_dek_automatic");
+    let (explicit_key, explicit_suite) = keystore.get_dek("auto_dek", &local).expect("get_dek");
+
+    assert_eq!(auto_key, explicit_key);
+    assert_eq!(auto_suite, explicit_suite);
+
+    keystore.close();
+}
+
+#[test]
+fn test_get_dek_automatic_non_extractable() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+    let local = mint_local(&keystore);
+
+    keystore
+        .create_dek("non_extract", &local, false, 32)
+        .expect("create dek");
+
+    let result = keystore.get_dek_automatic("non_extract");
+    assert!(matches!(result, Err(LockstoreError::NotExtractable(_))));
+
+    keystore.close();
+}
+
+#[test]
+fn test_get_dek_automatic_missing_dek() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+
+    let result = keystore.get_dek_automatic("nonexistent");
+    assert!(matches!(result, Err(LockstoreError::NotFound(_))));
+
     keystore.close();
 }

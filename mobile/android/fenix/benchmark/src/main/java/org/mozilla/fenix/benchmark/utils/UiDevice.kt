@@ -166,6 +166,12 @@ fun UiDevice.closeAllTabs() {
     )
     closeAllTabsButton.waitForExists(WAITING_TIME_MS)
     closeAllTabsButton.click()
+
+    val confirmCloseTabsButton = findObject(
+        UiSelector().text("Close tabs")
+    )
+    confirmCloseTabsButton.waitForExists(WAITING_TIME_MS)
+    confirmCloseTabsButton.click()
 }
 
 fun UiDevice.enterSearchMode() {

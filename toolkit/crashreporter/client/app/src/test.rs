@@ -1040,6 +1040,32 @@ fn include_url() {
 }
 
 #[test]
+fn include_annotation_altname() {
+    let mut test = GuiTest::new();
+    customize_extra_file(&mut test, &[("Add-ons", "foo%40example.com:1.0")]);
+    let invoked = Counter::new();
+    let mock_invoked = invoked.clone();
+    test.mock.set(
+        net::report::MockReport,
+        Box::new(move |report| {
+            mock_invoked.inc();
+            assert_eq!(
+                report.extra.get("Add-ons").and_then(|v| v.as_str()),
+                Some("foo%40example.com:1.0")
+            );
+            Ok(Ok(format!("CrashID={MOCK_REMOTE_CRASH_ID}")))
+        }),
+    );
+    test.run(|interact| {
+        interact.element("quit", |_style, b: &model::Button| b.click.fire(&()));
+    });
+    invoked.assert_one();
+    test.assert_files()
+        .saved_settings(Settings::default())
+        .submitted();
+}
+
+#[test]
 fn persistent_settings() {
     let mut test = GuiTest::new();
     test.run(|interact| {
@@ -1432,6 +1458,8 @@ fn curl_binary() {
                 "--fail",
                 "--user-agent",
                 net::http::user_agent(),
+                "--silent",
+                "--show-error",
                 "--form",
                 "extra=@-;filename=extra.json;type=application/json",
                 "--form",
@@ -1573,6 +1601,8 @@ fn background_task_curl_fallback() {
                     "--fail",
                     "--user-agent",
                     net::http::user_agent(),
+                    "--silent",
+                    "--show-error",
                     "--form",
                     "extra=@-;filename=extra.json;type=application/json",
                     "--form",

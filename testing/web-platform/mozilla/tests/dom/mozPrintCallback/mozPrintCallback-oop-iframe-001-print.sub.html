@@ -1,0 +1,17 @@
+<!doctype html>
+<html class="reftest-wait">
+<meta charset="utf-8">
+<title>Test for printing waiting for mozPrintCallback in an out-of-process iframe</title>
+<link rel="match" href="mozPrintCallback-oop-iframe-001-print-ref.html">
+<style>
+  body { margin: 0 }
+  iframe { border: 0; width: 100px; height: 100px }
+</style>
+<!--
+  The canvas in the cross-site iframe has a mozPrintCallback that only paints
+  it (and calls obj.done()) a while after being invoked. If the print job
+  doesn't wait for it, the canvas ends up blank.
+-->
+<iframe onload="document.documentElement.classList.remove('reftest-wait')"
+        src="http://{{hosts[alt][www]}}:{{ports[http][0]}}/_mozilla/dom/mozPrintCallback/support/mozPrintCallback-oop-iframe-frame.html"></iframe>
+</html>

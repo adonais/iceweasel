@@ -10,7 +10,7 @@ Preferences.addAll([
 ]);
 
 const { BackupService } = ChromeUtils.importESModule(
-  "resource:///modules/backup/BackupService.sys.mjs"
+  "moz-src:///browser/components/backup/BackupService.sys.mjs"
 );
 
 let DebugUI = {

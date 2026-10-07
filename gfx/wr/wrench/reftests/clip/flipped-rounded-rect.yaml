@@ -1,0 +1,32 @@
+# A rounded rectangle clip in a space that is flipped with respect to the
+# primitive it clips.
+---
+root:
+  items:
+    - type: stacking-context
+      bounds: [0, 0, 600, 300]
+      items:
+        - type: clip
+          id: 1
+          complex:
+            - rect: [0, 0, 600, 300]
+              radius: [150, 150]
+        - type: clip-chain
+          id: 2
+          clips: [1]
+        # A second rect that is only there to prevent the clip from being
+        # moved to the compositor.
+        - type: rect
+          bounds: [0, 0, 300, 150]
+          color: white
+        # `scale` is applied around the origin instead of the center of the
+        # bounds, so the rect below is placed in the negative quadrant to land
+        # back on [0, 0, 600, 300] in the parent's space.
+        - type: stacking-context
+          bounds: [0, 0, 600, 300]
+          transform: scale(-1.0, -1.0)
+          items:
+            - type: rect
+              bounds: [-600, -300, 600, 300]
+              color: green
+              clip-chain: 2

@@ -227,9 +227,17 @@ const ProxyMessenger = {
   portPromises: new Map(),
 
   // Known endpoints of each open port.
-  /** @type {Map<number, object>} portId -> source actor. */
+  /**
+   * portId -> source actor.
+   *
+   * @type {Map<number, object>}
+   */
   portSources: new Map(),
-  /** @type {Map<number, Set<object>>} portId -> known receiver actors. */
+  /**
+   * portId -> known receiver actors.
+   *
+   * @type {Map<number, Set<object>>}
+   */
   portReceivers: new Map(),
 
   init() {
@@ -527,7 +535,11 @@ GlobalManager = {
   extensionMap: new Map(),
   initialized: false,
 
-  /** @type {WeakMap<MozBrowser, object>} Extension Context init data. */
+  /**
+   * Extension Context init data.
+   *
+   * @type {WeakMap<MozBrowser, object>}
+   */
   frameData: new WeakMap(),
 
   init(extension) {

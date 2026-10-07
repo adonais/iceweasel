@@ -899,7 +899,8 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
   */
   nsCOMPtr<nsIWidget> widget = GetWidget();
   NS_ENSURE_TRUE(mDispatcher && widget, false);
-  NS_ENSURE_SUCCESS(BeginInputTransaction(mDispatcher), false);
+  const OwningNonNull<TextEventDispatcher> dispatcher(*mDispatcher);
+  NS_ENSURE_SUCCESS(BeginInputTransaction(dispatcher), false);
 
   RefPtr<TextComposition> composition(GetComposition());
   MOZ_ASSERT(!composition || !composition->EditorIsHandlingLatestChange());
@@ -913,7 +914,7 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
   // Dispatch composition start to set current composition.
   bool needDispatchCompositionStart = false;
 
-  if (!mIMEKeyEvents.IsEmpty() || !composition || !mDispatcher->IsComposing() ||
+  if (!mIMEKeyEvents.IsEmpty() || !composition || !dispatcher->IsComposing() ||
       uint32_t(aStart) != composition->NativeOffsetOfStartComposition() ||
       uint32_t(aEnd) != composition->NativeOffsetOfStartComposition() +
                             composition->String().Length()) {
@@ -940,12 +941,11 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
     if (aStart >= 0 && aEnd >= 0) {
       // Use text selection to set target position(s) for
       // insert, or replace, of text.
-      WidgetSelectionEvent event(true, eSetSelection, widget);
-      event.mOffset = uint32_t(aStart);
-      event.mLength = uint32_t(aEnd - aStart);
-      event.mExpandToClusterBoundary = false;
-      event.mReason = nsISelectionListener::IME_REASON;
-      status = widget->DispatchEvent(&event);
+      MOZ_ASSERT(dispatcher->GetWidget() == widget);
+      dispatcher->DispatchSetSelectionEvent(
+          uint32_t(aStart), uint32_t(aEnd - aStart),
+          ExpandToClusterBoundary::No, RangeDirection::Normal,
+          nsISelectionListener::IME_REASON);
     }
 
     if (!mIMEKeyEvents.IsEmpty()) {
@@ -957,7 +957,7 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
 
         status = nsEventStatus_eIgnore;
         if (event->mMessage != eKeyPress) {
-          mDispatcher->DispatchKeyboardEvent(event->mMessage, *event, status);
+          dispatcher->DispatchKeyboardEvent(event->mMessage, *event, status);
           // Skip default processing. It means that next key press shouldn't
           // be dispatched.
           ignoreNextKeyPress = event->mMessage == eKeyDown &&
@@ -968,7 +968,7 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
             ignoreNextKeyPress = false;
             continue;
           }
-          mDispatcher->MaybeDispatchKeypressEvents(*event, status);
+          dispatcher->MaybeDispatchKeypressEvents(*event, status);
           if (status == nsEventStatus_eConsumeNoDefault) {
             textChanged = true;
           }
@@ -1014,15 +1014,12 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
   }
 
   if (!StaticPrefs::intl_ime_use_composition_events_for_insert_text() &&
-      !composing && !mDispatcher->IsComposing() && aStart == aEnd &&
+      !composing && !dispatcher->IsComposing() && aStart == aEnd &&
       !string.IsEmpty()) {
     // We don't start composition yet and inserting text has no composition.
     // So we can simply insert text without composition.
     ALOGIME("IME: Don't use composition event to insert text");
-    WidgetContentCommandEvent insertTextEvent(true, eContentCommandInsertText,
-                                              widget);
-    insertTextEvent.mString = Some(string);
-    widget->DispatchEvent(&insertTextEvent);
+    (void)dispatcher->DispatchInsertTextCommandEvent(string);
     if (!mDispatcher || widget->Destroyed()) {
       return false;
     }
@@ -1033,13 +1030,12 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
   if (needDispatchCompositionStart) {
     // StartComposition sets composition string from selected string.
     nsEventStatus status = nsEventStatus_eIgnore;
-    mDispatcher->StartComposition(status);
+    dispatcher->StartComposition(status);
     if (!mDispatcher || widget->Destroyed()) {
       return false;
     }
   } else if (performDeletion) {
-    WidgetContentCommandEvent event(true, eContentCommandDelete, widget);
-    status = widget->DispatchEvent(&event);
+    (void)dispatcher->DispatchContentCommandEvent(eContentCommandDelete);
     if (!mDispatcher || widget->Destroyed()) {
       return false;
     }
@@ -1047,13 +1043,13 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
   }
 
   if (composing) {
-    mDispatcher->SetPendingComposition(string, mIMERanges);
-    mDispatcher->FlushPendingComposition(status);
+    dispatcher->SetPendingComposition(string, mIMERanges);
+    dispatcher->FlushPendingComposition(status);
     mIMEActiveCompositionCount++;
     // Ensure IME ranges are empty.
     mIMERanges->Clear();
-  } else if (!string.IsEmpty() || mDispatcher->IsComposing()) {
-    mDispatcher->CommitComposition(status, &string);
+  } else if (!string.IsEmpty() || dispatcher->IsComposing()) {
+    dispatcher->CommitComposition(status, &string);
     mIMEActiveCompositionCount++;
     textChanged = true;
   }
@@ -1126,12 +1122,11 @@ bool GeckoEditableSupport::DoUpdateComposition(int32_t aStart, int32_t aEnd,
     MOZ_ASSERT(aStart >= 0 && aEnd >= 0);
     const bool compositionChanged = RemoveComposition();
 
-    WidgetSelectionEvent selEvent(true, eSetSelection, widget);
-    selEvent.mOffset = std::min(aStart, aEnd);
-    selEvent.mLength = std::max(aStart, aEnd) - selEvent.mOffset;
-    selEvent.mReversed = aStart > aEnd;
-    selEvent.mExpandToClusterBoundary = false;
-    widget->DispatchEvent(&selEvent);
+    MOZ_ASSERT(mDispatcher->GetWidget() == widget);
+    const uint32_t offset = std::min(aStart, aEnd);
+    mDispatcher->DispatchSetSelectionEvent(
+        offset, std::max(aStart, aEnd) - offset, ExpandToClusterBoundary::No,
+        aStart > aEnd ? RangeDirection::Reversed : RangeDirection::Normal);
     return compositionChanged;
   }
 
@@ -1161,16 +1156,16 @@ bool GeckoEditableSupport::DoUpdateComposition(int32_t aStart, int32_t aEnd,
     // or if the existing composition doesn't match the new one.
     RemoveComposition();
 
-    {
-      WidgetSelectionEvent event(true, eSetSelection, widget);
-      event.mOffset = uint32_t(aStart);
-      event.mLength = uint32_t(aEnd - aStart);
-      event.mExpandToClusterBoundary = false;
-      event.mReason = nsISelectionListener::IME_REASON;
-      status = widget->DispatchEvent(&event);
-    }
+    MOZ_ASSERT(mDispatcher->GetWidget() == widget);
+    mDispatcher->DispatchSetSelectionEvent(
+        uint32_t(aStart), uint32_t(aEnd - aStart), ExpandToClusterBoundary::No,
+        RangeDirection::Normal, nsISelectionListener::IME_REASON);
 
     {
+      // XXX Hasn't already received selection change notification?
+      // https://searchfox.org/firefox-main/rev/6762e79efb6111d51bb58951c1ebdbac886526e7/layout/base/PresShell.cpp#9295-9301
+      // Then, we don't need to make ContentEventHandler recompute the new
+      // selection range.
       WidgetQueryContentEvent querySelectedTextEvent(true, eQuerySelectedText,
                                                      widget);
       status = widget->DispatchEvent(&querySelectedTextEvent);
@@ -1240,12 +1235,15 @@ class MOZ_STACK_CLASS AutoSelectionRestore final {
       return;
     }
 
-    WidgetSelectionEvent selection(true, eSetSelection, mWidget);
-    selection.mOffset = mOffset;
-    selection.mLength = mLength;
-    selection.mExpandToClusterBoundary = false;
-    selection.mReason = nsISelectionListener::IME_REASON;
-    mWidget->DispatchEvent(&selection);
+    // FIXME: If the range boundaries are around inline element boundaries, the
+    // restored range may be different from the original one because inline
+    // element boundaries do not advance offset in the flattened text. I wonder
+    // if we can add eSaveSelectionRange event and eRestoreSelectionRange events
+    // to make IMEContentObserver or something handle it.
+    MOZ_ASSERT(mDispatcher->GetWidget() == mWidget);
+    mDispatcher->DispatchSetSelectionEvent(
+        mOffset, mLength, ExpandToClusterBoundary::No, RangeDirection::Normal,
+        nsISelectionListener::IME_REASON);
   }
 
  private:
@@ -1728,10 +1726,10 @@ void GeckoEditableSupport::OnImeInsertImage(jni::ByteArray::Param aData,
     return;
   }
 
-  WidgetContentCommandEvent command(true, eContentCommandPasteTransferable,
-                                    widget);
-  command.mTransferable = trans.forget();
-  widget->DispatchEvent(&command);
+  if (const RefPtr<TextEventDispatcher> dispatcher =
+          widget->GetTextEventDispatcher()) {
+    (void)dispatcher->DispatchPasteTransferableCommandEvent(trans);
+  }
 }
 
 void GeckoEditableSupport::PostHandleKeyEvent(WidgetKeyboardEvent* aEvent) {

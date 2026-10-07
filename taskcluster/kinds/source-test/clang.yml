@@ -60,6 +60,18 @@ external:
     description: Run static-analysis (clang-tidy) on C/C++ patches with external checks
     treeherder:
         symbol: cpp(clang-tidy-external)
+    attributes:
+        code-review:
+            # This task has a dependency that requires a secret and shouldn't
+            # run in L1 contexts. We exclude try to preserve backwards
+            # compatibility and because reviewbot is already restricted to
+            # trusted contributors there.
+            by-project:
+                try: true
+                default:
+                    by-level:
+                        "1": false
+                        default: true
     run:
         cwd: '{checkout}'
         command: >-

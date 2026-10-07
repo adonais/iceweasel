@@ -126,3 +126,8 @@ FINAL_LIBRARY = "xul"
 
 with Files("android_video_capture/**"):
     SCHEDULES.exclusive = ["android"]
+
+LICENSED_UNDER += ["webrtc"]
+LICENSED_UNDER["webrtc"].paths = [
+    "android_video_capture",
+]

@@ -355,11 +355,12 @@ pkcs11:
       - default
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1905453
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068820
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1905453
     notification_emails:
       - haftandilian@mozilla.com
-    expires: 159
+    expires: 185
     extra_keys:
       filename:
         type: string
@@ -382,9 +383,10 @@ pkcs11:
       - haftandilian@mozilla.com
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1905453
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068820
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1905453
-    expires: 159
+    expires: 185
 
   builtin_roots_module_source:
     type: labeled_counter

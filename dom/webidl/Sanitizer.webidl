@@ -59,6 +59,7 @@ dictionary SanitizerConfig {
 
   boolean comments;
   boolean dataAttributes;
+  boolean javascriptURLs;
 };
 
 [Exposed=Window, Pref="dom.security.sanitizer.enabled"]
@@ -81,7 +82,9 @@ interface Sanitizer {
   boolean removeAttribute(SanitizerAttribute attribute);
   boolean setComments(boolean allow);
   boolean setDataAttributes(boolean allow);
+  boolean setJavascriptURLs(boolean allow);
 
   // Remove markup that executes script. May modify multiple lists:
+  [UseCounter]
   boolean removeUnsafe();
 };

@@ -6,17 +6,19 @@
 // Callback interface FfiValueClasses
 //
 // These need to come first so they're defined for the scaffolding call code
-{%- for (preprocessor_condition, callback_interfaces, preprocessor_condition_end) in callback_interfaces.iter() %}
-{{ preprocessor_condition }}
+{%- for lib in root.libraries() %}
+{{ lib.ifdef_start() }}
 
-{%- for cbi in callback_interfaces %}
+{%- for cbi in lib.callback_interfaces %}
 {%- if let Some(ffi_value_class) = cbi.ffi_value_class %}
 
 // Forward declare the free function, which is defined later on in `CallbackInterfaces.cpp`
 extern "C" void {{ cbi.free_fn }}(uint64_t uniffiHandle);
 
-// FfiValue class for these callback interface handles.  This works like the
-// `FfiValueInt<uint64_t>`, except it has extra code to cleanup the callback handles.
+// FfiValue class for {{ cbi.name }} callback interface handles
+//
+// This works like the `FfiValueInt<uint64_t>`, except it has extra code to
+// cleanup the callback handles.
 class {{ ffi_value_class }} {
  private:
   uint64_t mValue = 0;
@@ -72,5 +74,5 @@ class {{ ffi_value_class }} {
 
 {%- endif %}
 {%- endfor %}
-{{ preprocessor_condition_end }}
+{{ lib.ifdef_end() }}
 {%- endfor %}

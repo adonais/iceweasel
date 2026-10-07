@@ -1,0 +1,17 @@
+<!doctype html>
+<!-- Loops a media element so the tab's effective audio-session type stays "playback". -->
+<html>
+  <head>
+    <title>audio session type: playback</title>
+  </head>
+  <body>
+    <script>
+      const audio = document.createElement("audio");
+      audio.src = "audio/owl.mp3";
+      audio.loop = true;
+      window.onload = () => {
+        audio.play();
+      };
+    </script>
+  </body>
+</html>

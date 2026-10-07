@@ -161,6 +161,23 @@ bool IDBTypedCursor<CursorType>::IsSourceDeleted() const {
   return !sourceObjectStore || sourceObjectStore->IsDeleted();
 }
 
+template <IDBCursor::Type CursorType>
+bool IDBTypedCursor<CursorType>::CheckContinueState(ErrorResult& aRv) const {
+  AssertIsOnOwningThread();
+
+  if (!mTransaction->IsActive()) {
+    aRv.Throw(NS_ERROR_DOM_INDEXEDDB_TRANSACTION_INACTIVE_ERR);
+    return false;
+  }
+
+  if (IsSourceDeleted() || !mHaveValue || mContinueCalled) {
+    aRv.Throw(NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR);
+    return false;
+  }
+
+  return true;
+}
+
 void IDBCursor::ResetBase() {
   AssertIsOnOwningThread();
 
@@ -338,13 +355,7 @@ void IDBTypedCursor<CursorType>::Continue(JSContext* const aCx,
                                           ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  if (!mTransaction->IsActive()) {
-    aRv.Throw(NS_ERROR_DOM_INDEXEDDB_TRANSACTION_INACTIVE_ERR);
-    return;
-  }
-
-  if (IsSourceDeleted() || !mHaveValue || mContinueCalled) {
-    aRv.Throw(NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR);
+  if (!CheckContinueState(aRv)) {
     return;
   }
 
@@ -353,6 +364,10 @@ void IDBTypedCursor<CursorType>::Continue(JSContext* const aCx,
   if (result.isErr()) {
     aRv = result.unwrapErr().ExtractErrorResult(
         InvalidMapsTo<NS_ERROR_DOM_INDEXEDDB_DATA_ERR>);
+    return;
+  }
+
+  if (!CheckContinueState(aRv)) {
     return;
   }
 
@@ -483,6 +498,10 @@ void IDBTypedCursor<CursorType>::ContinuePrimaryKey(
 
     if (primaryKey.IsUnset()) {
       aRv.Throw(NS_ERROR_DOM_INDEXEDDB_DATA_ERR);
+      return;
+    }
+
+    if (!CheckContinueState(aRv)) {
       return;
     }
 

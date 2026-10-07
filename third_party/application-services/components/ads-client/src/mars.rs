@@ -77,7 +77,7 @@ where
         let mut ad_request = AdRequest::try_new(
             blocks,
             context_id,
-            self.environment,
+            self.environment.clone(),
             flags,
             ohttp,
             placements,
@@ -87,7 +87,7 @@ where
         if ohttp {
             ad_request
                 .headers
-                .extend(Headers::from(self.fetch_preflight()?));
+                .extend(Headers::try_from(self.fetch_preflight()?)?);
         }
 
         let response = self.transport.send(ad_request, &cache_policy, ohttp)?;
@@ -130,7 +130,7 @@ where
 
     fn fetch_preflight(&self) -> Result<preflight::PreflightResponse, CallbackRequestError> {
         let response = self.transport.send(
-            PreflightRequest(self.environment.into_url("ads-preflight")),
+            PreflightRequest(self.environment.clone().into_url("ads-preflight")),
             &CachePolicy::CacheFirst { ttl: None },
             false,
         )?;
@@ -146,7 +146,7 @@ where
         if ohttp {
             request
                 .headers
-                .extend(Headers::from(self.fetch_preflight()?));
+                .extend(Headers::try_from(self.fetch_preflight()?)?);
         }
         self.transport.fire(request, ohttp).map_err(Into::into)
     }
@@ -268,7 +268,7 @@ mod tests {
 
         let cache = HttpCache::builder("test_fetch_ads_cache_hit_skips_network.db")
             .default_ttl(std::time::Duration::from_secs(300))
-            .max_size(crate::http_cache::ByteSize::mib(1))
+            .max_size(crate::common::bytesize::ByteSize::mib(1))
             .build()
             .unwrap();
         let client = make_test_client(Some(cache));
@@ -306,7 +306,7 @@ mod tests {
         viaduct_dev::init_backend_dev();
         let cache = HttpCache::builder("test_record_click.db")
             .default_ttl(std::time::Duration::from_secs(300))
-            .max_size(crate::http_cache::ByteSize::mib(1))
+            .max_size(crate::common::bytesize::ByteSize::mib(1))
             .build()
             .unwrap();
 
@@ -325,7 +325,7 @@ mod tests {
         viaduct_dev::init_backend_dev();
         let cache = HttpCache::builder("test_record_impression.db")
             .default_ttl(std::time::Duration::from_secs(300))
-            .max_size(crate::http_cache::ByteSize::mib(1))
+            .max_size(crate::common::bytesize::ByteSize::mib(1))
             .build()
             .unwrap();
 

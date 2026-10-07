@@ -2,9 +2,9 @@
 
 This chapter describes the NSPR API for anonymous shared memory.
 
-- [Anonymous Memory Protocol](#Anonymous_Memory_Protocol)
+- [Anonymous Memory Protocol](#anonymous-memory-protocol)
 - [Anonymous Shared Memory
-  Functions](#Anonymous_Shared_Memory_Functions)
+  Functions](#anonymous-shared-memory-functions)
 
 (anonymous-memory-protocol)=
 

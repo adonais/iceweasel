@@ -2,7 +2,7 @@
 prefs = ["toolkit.telemetry.ipcBatchTimeout=0"]
 support-files = [
   "head.js",
-  "!/browser/base/content/test/protectionsUI/trackingPage.html",
+  "!/browser/base/content/test/browser-protectionsUI/trackingPage.html",
 ]
 
 ["browser_privacyMetrics_actor.js"]

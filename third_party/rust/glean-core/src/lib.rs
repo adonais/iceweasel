@@ -3,6 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #![allow(clippy::doc_overindented_list_items)]
+#![allow(clippy::large_const_arrays)] // `UNIFFI_META_CONST_UDL_GLEAN`
 #![allow(clippy::significant_drop_in_scrutinee)]
 #![allow(clippy::uninlined_format_args)]
 #![deny(rustdoc::broken_intra_doc_links)]
@@ -64,7 +65,7 @@ mod util;
 #[cfg(all(not(target_os = "android"), not(target_os = "ios")))]
 mod fd_logger;
 
-pub use crate::common_metric_data::{CommonMetricData, DynamicLabelType, Lifetime};
+pub use crate::common_metric_data::{CommonMetricData, Lifetime, MetricLabel};
 pub use crate::core::Glean;
 pub use crate::core_metrics::{AttributionMetrics, ClientInfoMetrics, DistributionMetrics};
 use crate::dispatcher::is_test_mode;
@@ -181,6 +182,10 @@ pub struct InternalConfiguration {
     /// Inactivity timeout in milliseconds for AUTO mode before a new session starts.
     /// Default: 1 800 000 ms (30 minutes).
     pub session_inactivity_timeout_ms: u64,
+    /// The number of "events" pings to accelerate each session, plus one.
+    pub events_ping_acceleration_factor: Option<u32>,
+    /// Whether to store submitted pings. Default: false
+    pub enable_store_submitted_pings: bool,
 }
 
 /// How to specify the rate at which pings may be uploaded before they are throttled.
@@ -786,10 +791,22 @@ pub fn shutdown() {
     uploader_shutdown();
 
     // Be sure to call this _after_ draining the dispatcher
-    core::with_glean(|glean| {
+    core::with_glean_mut(|glean| {
         if let Err(e) = glean.persist_ping_lifetime_data() {
             log::info!("Can't persist ping lifetime data: {:?}", e);
         }
+
+        #[cfg(feature = "sqlite")]
+        if let Some(database) = &glean.data_store {
+            if let Err(e) = database.cleanup_submitted_pings(None) {
+                log::info!("Could not clean up submitted_pings table: {:?}", e);
+            }
+            if let Err(e) = database.run_maintenance(false) {
+                log::info!("Can't run database maintenance on shutdown: {:?}", e);
+            }
+        }
+
+        glean.close_db();
     });
 }
 
@@ -952,6 +969,95 @@ pub fn glean_set_upload_enabled(enabled: bool) {
 /// This replaces `set_upload_enabled`.
 pub fn glean_set_collection_enabled(enabled: bool) {
     glean_set_upload_enabled(enabled)
+}
+
+/// Sets whether Glean should store submitted pings or not.
+pub fn glean_set_store_submitted_pings_enabled(enabled: bool) {
+    if !was_initialize_called() {
+        return;
+    }
+
+    launch_with_glean_mut(move |glean| {
+        glean.store_submitted_pings_enabled = enabled;
+    });
+}
+
+/// A submitted ping that has been stored by Glean.
+pub struct SubmittedPing {
+    /// The document ID (unique identifier)
+    pub document_id: String,
+    /// The ping's name
+    pub ping: String,
+    /// RFC3339 datetime string
+    pub submitted_date: String,
+    /// Optional RFC3339 datetime string
+    pub uploaded_date: Option<String>,
+    /// Whether the upload failed unrecoverably or not
+    pub upload_failed: Option<String>,
+    /// The ping's payload
+    pub payload: Option<JsonValue>,
+}
+
+#[cfg(feature = "sqlite")]
+impl From<database::sqlite::SubmittedPing> for SubmittedPing {
+    fn from(value: database::sqlite::SubmittedPing) -> Self {
+        SubmittedPing {
+            document_id: value.document_id.clone(),
+            ping: value.ping.clone(),
+            submitted_date: value.submitted_date.0.to_rfc3339(),
+            uploaded_date: value.uploaded_date.as_ref().map(|d| d.0.to_rfc3339()),
+            upload_failed: value.upload_failed.as_ref().map(|d| d.0.to_rfc3339()),
+            payload: value.payload(),
+        }
+    }
+}
+
+/// Returns a `Vec` containing all stored submitted pings.
+pub fn glean_get_all_stored_submitted_pings() -> Vec<SubmittedPing> {
+    #[cfg(feature = "sqlite")]
+    {
+        core::with_glean(|glean| glean.storage().get_all_submitted_pings())
+            .into_iter()
+            .map(|p| p.into())
+            .collect()
+    }
+
+    #[cfg(not(feature = "sqlite"))]
+    Vec::new()
+}
+
+/// Returns a `Vec` containing all stored submitted pings with the supplied name.
+///
+/// # Arguments
+///
+/// * `ping` - The name of the pings that should be returned.
+pub fn glean_get_stored_submitted_pings_by_name(ping: String) -> Vec<SubmittedPing> {
+    #[cfg(feature = "sqlite")]
+    {
+        core::with_glean(|glean| glean.storage().get_submitted_pings_by_name(&ping))
+            .into_iter()
+            .map(|p| p.into())
+            .collect()
+    }
+
+    #[cfg(not(feature = "sqlite"))]
+    {
+        _ = ping;
+        Vec::new()
+    }
+}
+
+/// Clears the stored submitted pings.
+pub fn glean_clear_stored_submitted_pings() {
+    #[cfg(feature = "sqlite")]
+    launch_with_glean(|glean| {
+        if let Err(e) = glean
+            .storage()
+            .cleanup_submitted_pings(Some(chrono::Utc::now()))
+        {
+            log::warn!("Unable to clear stored submitted pings: {:?}", e);
+        }
+    });
 }
 
 /// Enable or disable a ping.
@@ -1337,7 +1443,7 @@ pub fn glean_test_destroy_glean(clear_stores: bool, data_path: Option<String>) {
                 if clear_stores {
                     glean.test_clear_all_stores()
                 }
-                glean.destroy_db()
+                glean.close_db()
             });
         }
 
@@ -1643,30 +1749,27 @@ pub fn glean_enable_logging_to_fd(_fd: u64) {
     // intentionally left empty
 }
 
-#[allow(missing_docs)]
-// uniffi-generated code should not be checked.
-#[allow(clippy::all)]
-mod ffi {
-    use super::*;
-    uniffi::include_scaffolding!("glean");
+// UNIFFI - START
 
-    type CowString = Cow<'static, str>;
+uniffi::include_scaffolding!("glean");
 
-    uniffi::custom_type!(CowString, String, {
-        remote,
-        lower: |s| s.into_owned(),
-        try_lift: |s| Ok(Cow::from(s))
-    });
+type CowString = Cow<'static, str>;
 
-    type JsonValue = serde_json::Value;
+uniffi::custom_type!(CowString, String, {
+    remote,
+    lower: |s| s.into_owned(),
+    try_lift: |s| Ok(Cow::from(s))
+});
 
-    uniffi::custom_type!(JsonValue, String, {
-        remote,
-        lower: |s| serde_json::to_string(&s).unwrap(),
-        try_lift: |s| Ok(serde_json::from_str(&s)?)
-    });
-}
-pub use ffi::*;
+type JsonValue = serde_json::Value;
+
+uniffi::custom_type!(JsonValue, String, {
+    remote,
+    lower: |s| serde_json::to_string(&s).unwrap(),
+    try_lift: |s| Ok(serde_json::from_str(&s)?)
+});
+
+// UNIFFI - END
 
 // Split unit tests to a separate file, to reduce the file of this one.
 #[cfg(test)]

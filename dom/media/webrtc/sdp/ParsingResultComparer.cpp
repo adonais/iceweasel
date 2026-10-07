@@ -276,7 +276,7 @@ std::string ParsingResultComparer::GetAttributeLines(
   std::regex customRtcpFbLines(R"(a\=rtcp\-fb\:(\d+|\*).* x\-.*)");
 
   for (auto& line : lines) {
-    if (line.find("m=") == 0) {
+    if (line.starts_with("m=")) {
       if (level > currentLevel) {
         attrLines.clear();
         currentLevel++;

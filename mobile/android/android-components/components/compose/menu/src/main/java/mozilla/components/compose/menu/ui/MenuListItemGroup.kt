@@ -59,7 +59,7 @@ internal fun ListMenuItemsGroup(
                     actionButton = it.actionButton,
                     state = it.state,
                     onClickEvent = it.onClickEvent,
-                    onClick = onClick,
+                    onInteraction = onClick,
                 )
             } else if (it is ExpandableMenuItem) {
                 ExpandableHeaderItem(
@@ -69,7 +69,7 @@ internal fun ListMenuItemsGroup(
                     modifier = Modifier,
                     hideOnExpand = it.hideOnExpand,
                     onClickEvent = it.onClickEvent,
-                    onClick = onClick,
+                    onInteraction = onClick,
                     role = it.role,
                     summary = it.summary,
                     icon = it.icon,

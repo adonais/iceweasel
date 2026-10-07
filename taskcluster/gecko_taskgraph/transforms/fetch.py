@@ -28,6 +28,7 @@ from ..util.cached_tasks import add_optimization
 CACHE_TYPE = "content.v1"
 
 CRX3_SCRIPT = "taskcluster/scripts/misc/fetch-crx3.py"
+ONNXRUNTIME_DEPS_SCRIPT = "taskcluster/scripts/misc/fetch-onnxruntime-deps.sh"
 
 
 class FetchTypeSchema(Schema, forbid_unknown_fields=False, kw_only=True):
@@ -364,7 +365,7 @@ def create_onnxruntime_deps_fetch_task(config, name, fetch):
     artifact_name = fetch.get("artifact-name")
     workdir = "/builds/worker"
 
-    script = os.path.join(workdir, "bin/fetch-onnxruntime-deps.sh")
+    script = os.path.join(workdir, "bin", os.path.basename(ONNXRUNTIME_DEPS_SCRIPT))
     repo = fetch["repo"]
     revision = fetch["revision"]
 
@@ -378,6 +379,7 @@ def create_onnxruntime_deps_fetch_task(config, name, fetch):
             f"repo={repo}",
             f"revision={revision}",
             f"artifact_name={artifact_name}",
+            hash_paths(GECKO, [ONNXRUNTIME_DEPS_SCRIPT]),
         ],
     }
 

@@ -10,6 +10,7 @@ cd $GECKO_PATH
 export MOZ_OBJDIR=obj-injector
 
 echo ac_add_options --enable-project=tools/crashreporter/injector > .mozconfig
+echo ac_add_options --with-sysroot=$MOZ_FETCHES_DIR/sysroot-x86_64-linux-gnu >> .mozconfig
 
 INJECTOR=libbreakpadinjector.so
 

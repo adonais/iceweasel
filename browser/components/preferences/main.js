@@ -1297,7 +1297,7 @@ var gMainPane = {
 
   /* Show the confirmation message bar to allow a restart into the new locales. */
   async showConfirmLanguageChangeMessageBar(locales) {
-    let messageBar = document.getElementById("confirmBrowserLanguage");
+    let messageBarContainer = document.getElementById("confirmBrowserLanguage");
 
     // Get the bundle for the new locale.
     let newBundle = getBundleForLocales(locales);
@@ -1320,51 +1320,38 @@ var gMainPane = {
       buttonLabels.pop();
     }
 
-    let contentContainer = messageBar.querySelector(
-      ".message-bar-content-container"
-    );
-    contentContainer.textContent = "";
+    messageBarContainer.textContent = "";
 
     for (let i = 0; i < messages.length; i++) {
-      let messageContainer = document.createXULElement("hbox");
-      messageContainer.classList.add("message-bar-content");
-      messageContainer.style.flex = "1 50%";
-      messageContainer.setAttribute("align", "center");
-
-      let description = document.createXULElement("description");
-      description.classList.add("message-bar-description");
-
+      let messageBar = document.createElement("moz-message-bar");
+      messageBar.setAttribute("type", "info");
+      messageBar.setAttribute("data-l10n-attrs", "message");
+      messageBar.setAttribute("message", messages[i]);
       if (i == 0 && Services.intl.getScriptDirection(locales[0]) === "rtl") {
-        description.classList.add("rtl-locale");
+        messageBar.setAttribute("dir", "rtl");
       }
-      description.setAttribute("flex", "1");
-      description.textContent = messages[i];
-      messageContainer.appendChild(description);
 
       let button = document.createXULElement("button");
       button.addEventListener(
         "command",
         gMainPane.confirmBrowserLanguageChange
       );
-      button.classList.add("message-bar-button");
       button.setAttribute("locales", locales.join(","));
       button.setAttribute("label", buttonLabels[i]);
-      messageContainer.appendChild(button);
+      button.setAttribute("slot", "actions");
+      messageBar.appendChild(button);
 
-      contentContainer.appendChild(messageContainer);
+      messageBarContainer.appendChild(messageBar);
     }
 
-    messageBar.hidden = false;
+    messageBarContainer.hidden = false;
     gMainPane.selectedLocalesForRestart = locales;
   },
 
   hideConfirmLanguageChangeMessageBar() {
-    let messageBar = document.getElementById("confirmBrowserLanguage");
-    messageBar.hidden = true;
-    let contentContainer = messageBar.querySelector(
-      ".message-bar-content-container"
-    );
-    contentContainer.textContent = "";
+    let messageBarContainer = document.getElementById("confirmBrowserLanguage");
+    messageBarContainer.hidden = true;
+    messageBarContainer.textContent = "";
     gMainPane.requestingLocales = null;
   },
 

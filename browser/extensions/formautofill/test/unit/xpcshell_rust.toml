@@ -1,0 +1,35 @@
+# Address storage tests from xpcshell.toml, run a second time with the Rust
+# store serving every address read and write.
+#
+# Most of that manifest's storage tests cannot be shared, and not for want of
+# trying: test_reconcile.js calls reconcile(), test_storage_syncfields.js calls
+# changeGUID(), pushSyncChanges() and resetSync(), test_storage_remove.js calls
+# pullSyncChanges() and test_storage_tombstones.js reads the _sync change
+# counters -- none of which the Rust adapter answers, because its sync goes
+# through a bridged engine instead. test_savedFieldNames.js assigns to
+# addresses._data, reaching past the collection API into the JSON store. And
+# test_addressRecords.js asserts that an unknown field survives a local
+# add/getAll round trip, which the Rust store only manages for records that
+# arrived over sync, where the mirror holds them.
+#
+# Every entry here is a second run of a test xpcshell.toml already lists, so
+# this file can be deleted whole once the Rust store is the only one. The
+# skip-if conditions are copies; keep them in step with xpcshell.toml.
+[DEFAULT]
+dupe-manifest = true
+run-if = [
+  "os != 'android'",
+]
+firefox-appdir = "browser"
+head = "head.js"
+support-files = ["../fixtures/**"]
+prefs = [
+  "extensions.formautofill.test.ignoreVisibilityCheck=true",
+  "extensions.formautofill.heuristics.detectDynamicFormChanges=false",
+  "extensions.formautofill.addresses.storage.rust.enabled=true",
+]
+
+["test_getRecords.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1729554
+]

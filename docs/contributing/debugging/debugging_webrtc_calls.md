@@ -27,7 +27,7 @@ Not all web conferencing software makes extensive use of WebRTC.
 :::
 
 For simple issues, the first place to look is to check the
-[web developer console](/devtools-user/web_console) for error messages
+[web developer console](/devtools-user/web_console/index.md) for error messages
 related to media format issues. If you see messages here related to WebRTC,
 getUserMedia, or getDisplayMedia, please add this information to your bug.
 
@@ -705,7 +705,7 @@ regression test which are written to induce crashes. There are fuzzing tests
 which exercise APIs in ways that the authors did not foresee. All of the WebRTC
 tests can be run locally with {code}`mach` or in CI on `Try`. There is a
 detailed overview of all available test types including those not exercised by
-WebRTC code [here](/testing/automated-testing/index.html#functional-testing).
+WebRTC code [here](/testing/automated-testing/index.md#functional-testing).
 
 :::{note}
 Running {code}`./mach <verb> --help` is an indispensable tool for discovering
@@ -770,7 +770,7 @@ as shown below:
      - :code:`gtest`
    * - WebRTC (gUM / gDDM)
      - Browser Chrome Test (mochitest)
-     - browser/base/content/test/webrtc
+     - browser/base/content/test/browser-webrtc
      - browser-chrome
      - :code:`bc`, :code:`M(bc)`
    * - WebRTC Transport
@@ -796,7 +796,7 @@ as shown below:
 
 The WPT suite comprises conformance tests for various W3C specs such as: CSS,
 JS APIs, and HTML. WebRTC is a JS API and as such its tests are of the [testharness.js](https://web-platform-tests.org/writing-tests/testharness.html) type.
-There is detailed {code}`WPT` documentation available [here](/web-platform/index.html#web-platform-tests)
+There is detailed {code}`WPT` documentation available [here](/web-platform/index.md#web-platform-tests)
 Web Platform Tests can be run locally from
 
 ```bash
@@ -836,7 +836,7 @@ As such, this can be slow.
 One can [run those same tests in
 Chromium](https://chromium.googlesource.com/chromium/src/+/refs/heads/main/docs/testing/web_platform_tests_wptrunner.md),
 Safari, or Servo if one needs to compare behavior between browsers. This can be
-done directly through {code}`mach`, see [running tests in other browsers](/web-platform/index.html#running-tests-in-other-browsers)
+done directly through {code}`mach`, see [running tests in other browsers](/web-platform/index.md#running-tests-in-other-browsers)
 for more details.
 
 (webrtc-mochitests)=
@@ -1053,7 +1053,7 @@ provided below to help one navigate.
      - Signalling
      - WebRTC signaling implementation and GTests
      -
-   * - :searchfox:`browser/base/content/test/webrtc`
+   * - :searchfox:`browser/base/content/test/browser-webrtc`
      - Tests
      - Browser chrome tests for WebRTC getUserMedia and getDisplayMedia
      -

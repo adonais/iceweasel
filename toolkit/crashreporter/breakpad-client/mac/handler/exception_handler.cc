@@ -27,6 +27,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <kern/exc_resource.h>
 #include <mach/exc.h>
 #include <mach/mig.h>
 #include <pthread.h>
@@ -136,6 +137,53 @@ kern_return_t ForwardException(mach_port_t task,
                                mach_exception_data_t code,
                                mach_msg_type_number_t code_count);
 
+// Whether an EXC_RESOURCE exception means the process is about to get killed.
+// Based off xnu-12377.121.6, encodes behavior for macOS 15.
+bool IsNonFatalResourceException(int64_t code) {
+  switch (EXC_RESOURCE_DECODE_RESOURCE_TYPE(code)) {
+    case RESOURCE_TYPE_WAKEUPS:
+      // Wakeup monitors can technically be fatal but the userspace knob to do
+      // so has been no-oped in macOS 15 and the kernel doesn't appear to toggle
+      // it anywhere either, so assumed to be non-fatal.
+      // https://github.com/apple-oss-distributions/xnu/blob/xnu-12377.121.6/osfmk/kern/task.c#L8370-L8384
+      // https://github.com/apple-oss-distributions/xnu/blob/xnu-12377.121.6/bsd/kern/kern_resource.c#L3543
+    case RESOURCE_TYPE_IO:
+      // Only reported, never fatal.
+    case RESOURCE_TYPE_THREADS:
+      // Never fatal, and DEVELOPMENT/DEBUG-only
+      // https://github.com/apple-oss-distributions/xnu/blob/xnu-12377.121.6/osfmk/kern/thread.c#L2785
+      return true;
+    case RESOURCE_TYPE_CPU:
+      // https://github.com/apple-oss-distributions/xnu/blob/xnu-12377.121.6/osfmk/kern/thread.c#L2708
+      return EXC_RESOURCE_DECODE_FLAVOR(code) != FLAVOR_CPU_MONITOR_FATAL;
+    case RESOURCE_TYPE_MEMORY:
+      switch (EXC_RESOURCE_DECODE_FLAVOR(code)) {
+        case FLAVOR_HIGH_WATERMARK:
+        case FLAVOR_DIAG_MEMLIMIT:
+          // https://github.com/apple-oss-distributions/xnu/blob/xnu-12377.121.6/osfmk/kern/task.c#L7335
+          return true;
+        case FLAVOR_CONCLAVE_LIMIT:
+          // https://github.com/apple-oss-distributions/xnu/blob/xnu-12377.121.6/osfmk/kern/task.c#L7524
+        default:
+          return false;
+      }
+    case RESOURCE_TYPE_PORTS:
+      // https://github.com/apple-oss-distributions/xnu/blob/xnu-12377.121.6/osfmk/kern/task.c#L8680
+    default:
+      // Anything unknown is treated as fatal
+      return false;
+  }
+}
+
+// Whether there is nothing we can do about `exception`: either it was raised
+// in another task, or the kernel is merely warning us that we crossed a
+// resource limit rather than about to act on it.
+bool ExceptionCannotBeHandled(mach_port_t task, exception_type_t exception,
+                              int64_t code) {
+  return (task != mach_task_self()) ||
+         ((exception == EXC_RESOURCE) && IsNonFatalResourceException(code));
+}
+
 // The contents of mach_exc_server() and mach_exception_raise() are derived
 // from /usr/include/mach/mach_exc.defs, as follows:
 //
@@ -194,10 +242,11 @@ boolean_t mach_exc_server(mach_msg_header_t* InHeadP,
   Reply* OutP = (Reply*)OutHeadP;
 
   OutP->NDR = NDR_record;
-  if (In0P->task.name != mach_task_self()) {
-    // This exception was not meant for us, we avoid forwarding it (because it
-    // could cause a loop in the exception handler) and tell the kernel we
-    // did not handle it, so delivery continues instead of stopping with us.
+  if (ExceptionCannotBeHandled(In0P->task.name, In0P->exception,
+                               In0P->code[0])) {
+    // We avoid forwarding it (because it could cause a loop in the exception
+    // handler) and tell the kernel we did not handle it, so delivery continues
+    // instead of stopping with us.
     OutP->RetCode = KERN_FAILURE;
   }
   else {
@@ -648,17 +697,19 @@ void* ExceptionHandler::WaitForMessage(void* exception_handler_class) {
 
         self->ResumeThreads();
 
-        if (self->use_minidump_write_mutex_)
+        if (self->use_minidump_write_mutex_) {
           pthread_mutex_unlock(&self->minidump_write_mutex_);
+        }
       } else {
         bool crash_reported = false;
 
         // When forking a child process with the exception handler installed,
         // if the child crashes, it will send the exception back to the parent
-        // process.  The check for task == self_task() ensures that only
-        // exceptions that occur in the parent process are caught and
-        // processed.
-        if (receive.task.name == mach_task_self()) {
+        // process, and a warning-only exception leaves the process running. In
+        // neither case is there anything to report, and the handler has to stay
+        // installed.
+        if (!ExceptionCannotBeHandled(receive.task.name, receive.exception,
+                                      receive.code[0])) {
           self->SuspendThreads();
 
 #if USE_PROTECTED_ALLOCATIONS

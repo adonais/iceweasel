@@ -5,6 +5,7 @@
 #ifndef mozilla_dom_PerformanceObserverEntryList_h_
 #define mozilla_dom_PerformanceObserverEntryList_h_
 
+#include "mozilla/dom/PerformanceEntry.h"
 #include "mozilla/dom/PerformanceEntryBinding.h"
 #include "nsCOMPtr.h"
 #include "nsISupports.h"
@@ -14,7 +15,6 @@
 namespace mozilla::dom {
 
 struct PerformanceEntryFilterOptions;
-class PerformanceEntry;
 template <typename T>
 class Optional;
 

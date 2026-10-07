@@ -154,14 +154,14 @@ function* do_run_test() {
   do_load_profile();
 
   // 1) All unexpired, unique cookies exist.
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com"), 20);
+  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 20);
 
   // 2) All expired, unique cookies exist.
-  Assert.equal(Services.cookies.countCookiesFromHost("bar.com"), 20);
+  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 20);
 
   // 3) Only one cookie remains, and it's the one with the highest expiration
   // time.
-  Assert.equal(Services.cookies.countCookiesFromHost("baz.com"), 1);
+  Assert.equal(Services.cookies.countCookiesFromHost("baz.com", {}), 1);
   let cookies = Services.cookies.getCookiesFromHost("baz.com", {});
   let cookie = cookies[0];
   Assert.equal(cookie.expiry, (futureExpiry + 44) * 1000);

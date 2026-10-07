@@ -139,7 +139,7 @@ flowchart TD
     ins2 --> discard --> disc
     disc -. "browser is lazy again" .-> touch
 
-    classDef event fill:#dbeafe,stroke:#1e40af;
+    classDef event fill:#dbeafe,stroke:#1e40af,color:#1a1a1a;
     class ins1,ins2,open,disc event;
 ```
 

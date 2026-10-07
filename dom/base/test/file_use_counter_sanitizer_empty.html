@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Use counter test for an empty Sanitizer configuration</title>
+<style>
+  /* Sentinel use counter to signal that telemetry for this document has been captured */
+  div {
+    marker-mid: initial;
+  }
+</style>
+<div id="host"></div>
+<script>
+  // An empty dictionary names no configuration key, and it is not the built-in
+  // default either: it allows everything that "remove unsafe" does not strip.
+  const sanitizer = new Sanitizer({});
+  document.getElementById("host").setHTML("<p>empty</p>", { sanitizer });
+
+  // Same via the inline dictionary path.
+  document.getElementById("host").setHTML("<p>empty</p>", { sanitizer: {} });
+</script>

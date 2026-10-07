@@ -8,10 +8,10 @@
 #include "mozilla/Assertions.h"
 #include "nsCOMPtr.h"
 #include "nsIDOMEventListener.h"
+#include "nsITimer.h"
 
 class nsIContent;
 class nsIScrollbarMediator;
-class nsITimer;
 
 namespace mozilla {
 

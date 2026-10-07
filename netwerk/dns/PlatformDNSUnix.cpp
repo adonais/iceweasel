@@ -78,7 +78,7 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
         return len;
       });
   if (NS_FAILED(rv)) {
-    return rv;
+    return NS_ERROR_UNKNOWN_HOST;
   }
 
   return ParseHTTPSRecord(host, packet, aResult, aTTL, aAlias);

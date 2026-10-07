@@ -27,7 +27,6 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/GetUserMediaRequestBinding.h"
 #include "mozilla/dom/MediaDeviceInfo.h"
@@ -35,6 +34,7 @@
 #include "mozilla/dom/MediaDevicesBinding.h"
 #include "mozilla/dom/MediaStreamBinding.h"
 #include "mozilla/dom/MediaStreamTrackBinding.h"
+#include "mozilla/dom/PermissionsPolicyUtils.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/WindowContext.h"
@@ -162,7 +162,6 @@ using dom::ConstrainLongRange;
 using dom::DisplayMediaStreamConstraints;
 using dom::Document;
 using dom::Element;
-using dom::FeaturePolicyUtils;
 using dom::File;
 using dom::GetUserMediaRequest;
 using dom::MediaDeviceKind;
@@ -179,6 +178,7 @@ using dom::MediaTrackSettings;
 using dom::OwningBooleanOrMediaTrackConstraints;
 using dom::OwningStringOrStringSequence;
 using dom::OwningStringOrStringSequenceOrConstrainDOMStringParameters;
+using dom::PermissionsPolicyUtils;
 using dom::Promise;
 using dom::Sequence;
 using dom::UserActivation;
@@ -1488,6 +1488,30 @@ class GetUserMediaTask {
   const enum CallerType mCallerType;
 };
 
+// Glean label names must be lowercase, unlike dom::GetEnumString(), so this
+// cannot just reuse the WebIDL enum strings (e.g. "audioCapture").
+static const char* GleanLabelForMediaSource(MediaSourceEnum aSource) {
+  switch (aSource) {
+    case MediaSourceEnum::Camera:
+      return "camera";
+    case MediaSourceEnum::Screen:
+      return "screen";
+    case MediaSourceEnum::Application:
+      return "application";
+    case MediaSourceEnum::Window:
+      return "window";
+    case MediaSourceEnum::Browser:
+      return "browser";
+    case MediaSourceEnum::Microphone:
+      return "microphone";
+    case MediaSourceEnum::AudioCapture:
+      return "audiocapture";
+    case MediaSourceEnum::Other:
+      return "other";
+  }
+  MOZ_CRASH("Unexpected MediaSourceEnum value");
+}
+
 /**
  * Describes a requested task that handles response from the UI to a
  * getUserMedia() request and sends results back to content.  If the request
@@ -1518,6 +1542,18 @@ class GetUserMediaStreamTask final : public GetUserMediaTask {
   void Allowed(RefPtr<LocalMediaDevice> aAudioDevice,
                RefPtr<LocalMediaDevice> aVideoDevice) {
     MOZ_ASSERT(aAudioDevice || aVideoDevice);
+    if (aAudioDevice) {
+      glean::webrtc::get_user_media_source_granted
+          .Get(nsDependentCString(
+              GleanLabelForMediaSource(aAudioDevice->GetMediaSource())))
+          .Add();
+    }
+    if (aVideoDevice) {
+      glean::webrtc::get_user_media_source_granted
+          .Get(nsDependentCString(
+              GleanLabelForMediaSource(aVideoDevice->GetMediaSource())))
+          .Add();
+    }
     mAudioDevice = std::move(aAudioDevice);
     mVideoDevice = std::move(aVideoDevice);
     // Reuse the same thread to save memory.
@@ -3148,22 +3184,22 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
     if (IsOn(c.mAudio)) {
       if (audioType == MediaSourceEnum::Microphone) {
         if (Preferences::GetBool("media.getusermedia.microphone.deny", false) ||
-            !FeaturePolicyUtils::IsFeatureAllowed(doc, u"microphone"_ns)) {
+            !PermissionsPolicyUtils::IsFeatureAllowed(doc, u"microphone"_ns)) {
           disabled = true;
         }
-      } else if (!FeaturePolicyUtils::IsFeatureAllowed(doc,
-                                                       u"display-capture"_ns)) {
+      } else if (!PermissionsPolicyUtils::IsFeatureAllowed(
+                     doc, u"display-capture"_ns)) {
         disabled = true;
       }
     }
     if (IsOn(c.mVideo)) {
       if (videoType == MediaSourceEnum::Camera) {
         if (Preferences::GetBool("media.getusermedia.camera.deny", false) ||
-            !FeaturePolicyUtils::IsFeatureAllowed(doc, u"camera"_ns)) {
+            !PermissionsPolicyUtils::IsFeatureAllowed(doc, u"camera"_ns)) {
           disabled = true;
         }
-      } else if (!FeaturePolicyUtils::IsFeatureAllowed(doc,
-                                                       u"display-capture"_ns)) {
+      } else if (!PermissionsPolicyUtils::IsFeatureAllowed(
+                     doc, u"display-capture"_ns)) {
         disabled = true;
       }
     }
@@ -3518,8 +3554,8 @@ RefPtr<LocalDevicePromise> MediaManager::SelectAudioOutput(
   bool isHandlingUserInput = UserActivation::IsHandlingUserInput();
   nsCOMPtr<nsIPrincipal> principal =
       nsGlobalWindowInner::Cast(aWindow)->GetPrincipal();
-  if (!FeaturePolicyUtils::IsFeatureAllowed(aWindow->GetExtantDoc(),
-                                            u"speaker-selection"_ns)) {
+  if (!PermissionsPolicyUtils::IsFeatureAllowed(aWindow->GetExtantDoc(),
+                                                u"speaker-selection"_ns)) {
     return LocalDevicePromise::CreateAndReject(
         MakeRefPtr<MediaMgrError>(
             MediaMgrError::Name::NotAllowedError,

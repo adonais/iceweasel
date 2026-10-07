@@ -29,6 +29,8 @@ const BEST_ONNX_OPTIONS = {
   modelHubUrlTemplate: "{model}/resolve/{revision}",
 };
 
+add_setup(setupNativeOnnxRuntimeAvailabilityTest);
+
 /**
  * Stubs getWorkerConfig to a worker whose availability probe reports the native
  * runtime as present but whose onnx-native engine creation rejects with the

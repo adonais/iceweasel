@@ -33,5 +33,6 @@ groups, and to save and restore whole sessions. The remaining modules in
 ```{toctree}
 :maxdepth: 1
 
+events
 api
 ```

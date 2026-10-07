@@ -48,8 +48,6 @@ function run_test() {
 }
 
 add_task(async function test_webapps_cleardata() {
-  Services.fog.testResetFOG();
-
   let db = PushServiceWebSocket.newPushDB();
   registerCleanupFunction(() => {
     return db.drop().then(_ => db.close());
@@ -125,10 +123,5 @@ add_task(async function test_webapps_cleardata() {
   await clearForPattern(testRecords, {});
 
   equal(testRecords.length, 0, "Should remove all test records");
-  equal(
-    Glean.webPush.unsubscribedByClearingData.testGetValue(),
-    1,
-    "Should increment the Glean counter for the removed record"
-  );
   await unregisterPromise;
 });

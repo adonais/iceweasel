@@ -211,7 +211,7 @@ class BackupCompatibilityTest(BackupTestBase):
                 "resource://gre/modules/OSKeyStore.sys.mjs"
             );
             const { BackupService } = ChromeUtils.importESModule(
-                "resource:///modules/backup/BackupService.sys.mjs"
+                "moz-src:///browser/components/backup/BackupService.sys.mjs"
             );
             let [archivePath, recoveryCode, recoveryPath, replaceCurrentProfile] = arguments;
             // Use a fake OSKeyStore label to avoid keychain auth prompts

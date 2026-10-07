@@ -575,7 +575,7 @@ void js::Nursery::updateAllocFlagsForZone(JS::Zone* zone) {
 }
 
 void js::Nursery::discardCodeAndSetJitFlagsForZone(JS::Zone* zone) {
-  zone->forceDiscardJitCode(runtime()->gcContext());
+  zone->discardJitCodeForAllRealms(runtime()->gcContext());
 
   if (jit::JitZone* jitZone = zone->jitZone()) {
     jitZone->discardStubs();
@@ -1868,7 +1868,7 @@ Nursery::WasBufferMoved js::Nursery::maybeMoveRawBufferOnPromotion(
     // This is an external buffer allocation owned by a nursery GC thing.
     Zone* zone = owner->zone();
     MOZ_ASSERT(IsNurseryOwned(zone, buffer));
-    zone->bufferAllocator.markNurseryOwnedAlloc(buffer, nurseryOwned);
+    zone->bufferAllocator.promoteNurseryOwnedAlloc(buffer, nurseryOwned);
     return BufferNotMoved;
   }
 

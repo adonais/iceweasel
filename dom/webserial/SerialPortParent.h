@@ -40,7 +40,6 @@ class SerialPortParent final : public PSerialPortParent {
       const RefPtr<mozilla::ipc::DataPipeSender>& aReadPipeSender);
   mozilla::ipc::IPCResult RecvAttachWritePipe(
       const RefPtr<mozilla::ipc::DataPipeReceiver>& aWritePipeReceiver);
-  mozilla::ipc::IPCResult RecvUpdateSharingState(bool aConnected);
   mozilla::ipc::IPCResult RecvClone(
       mozilla::ipc::Endpoint<PSerialPortParent>&& aEndpoint);
 
@@ -66,7 +65,9 @@ class SerialPortParent final : public PSerialPortParent {
   void StopReadPump();
   void DestroyPlatformReader();
   void StopWritePump();
-  void NotifySharingStateChanged(bool aConnected);
+  // Should only be called when there's a transition from open->closed or
+  // closed->open, as otherwise the sharing indicator can get out of sync.
+  void NotifySharingStateChanged();
   void StartReadPump(
       already_AddRefed<mozilla::ipc::DataPipeSender> aReadPipeSender);
   void StartWritePump(
@@ -75,10 +76,6 @@ class SerialPortParent final : public PSerialPortParent {
   const nsString mPortId;
   const uint64_t mBrowserId;
   bool mIsOpen = false;
-  // Whether we have forwarded a connected=true sharing state notification
-  // without a corresponding connected=false. Used by ActorDestroy to send the
-  // missing disconnect so the browser sharing indicator count stays in sync.
-  bool mSharingConnected = false;
   uint32_t mPipeCapacity = 0;
   // Whether the port was opened with parity checking enabled (even/odd). When
   // set, the read stream is wrapped to detect parity errors and surface them

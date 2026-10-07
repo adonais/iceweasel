@@ -4,6 +4,8 @@
 #ifndef _include_mozilla_gfx_ipc_OverlayInfo_h_
 #define _include_mozilla_gfx_ipc_OverlayInfo_h_
 
+#include <cstdint>
+
 namespace IPC {
 template <typename>
 struct ParamTraits;

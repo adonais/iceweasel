@@ -100,7 +100,7 @@ function assertContentAnalysisRequestText(
 ) {
   assertContentAnalysisRequest(
     request,
-    Ci.nsIContentAnalysisRequest.eClipboard,
+    Ci.nsIContentAnalysisRequest.ePasteClipboard,
     "",
     expectedText,
     expectedUserActionId,

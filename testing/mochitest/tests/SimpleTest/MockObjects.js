@@ -53,16 +53,10 @@ MockObjectRegisterer.prototype = {
       this._mockFactory = SpecialPowers.wrapCallbackObject(this._mockFactory);
     }
 
-    var retVal = SpecialPowers.swapFactoryRegistration(
-      null,
+    this._originalCID = SpecialPowers.registerFactory(
       this._contractID,
       this._mockFactory
     );
-    if ("error" in retVal) {
-      throw new Error("ERROR: " + retVal.error);
-    } else {
-      this._originalCID = retVal.originalCID;
-    }
   },
 
   /**
@@ -74,7 +68,11 @@ MockObjectRegisterer.prototype = {
     }
 
     // Free references to the mock factory.
-    SpecialPowers.swapFactoryRegistration(this._originalCID, this._contractID);
+    SpecialPowers.unregisterFactory(
+      this._originalCID,
+      this._contractID,
+      this._mockFactory
+    );
 
     // Allow registering a mock factory again later.
     this._originalCID = null;

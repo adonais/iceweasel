@@ -434,11 +434,6 @@ void EventListenerManager::AddEventListenerInternal(
           window->SetHasMouseEnterLeaveEventListeners();
         }
         break;
-      case eEditorBeforeInput:
-        if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
-          window->SetHasBeforeInputEventListenersForTelemetry();
-        }
-        break;
       case eSelectionChange:
         mMayHaveSelectionChangeEventListener = true;
         if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
@@ -559,10 +554,6 @@ void EventListenerManager::AddEventListenerInternal(
                                      ToChar(resolvedEventMessage))
                          .get());
         NS_ASSERTION(aTypeAtom != nsGkAtoms::onmouseleave,
-                     nsPrintfCString("resolvedEventMessage=%s",
-                                     ToChar(resolvedEventMessage))
-                         .get());
-        NS_ASSERTION(aTypeAtom != nsGkAtoms::onbeforeinput,
                      nsPrintfCString("resolvedEventMessage=%s",
                                      ToChar(resolvedEventMessage))
                          .get());

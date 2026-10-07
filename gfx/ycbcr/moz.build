@@ -75,3 +75,7 @@ if CONFIG['TARGET_CPU'] == 'arm' and CONFIG['HAVE_ARM_NEON']:
 LOCAL_INCLUDES += ['/media/libyuv/libyuv/include']
 
 FINAL_LIBRARY = 'xul'
+
+LICENSED_UNDER += [
+    "chromium",
+]

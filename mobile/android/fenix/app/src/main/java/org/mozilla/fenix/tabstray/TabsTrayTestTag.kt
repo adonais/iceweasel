@@ -44,12 +44,14 @@ internal object TabsTrayTestTag {
     const val EMPTY_NORMAL_TABS_LIST = "$NORMAL_TABS_LIST.empty"
     const val EMPTY_PRIVATE_TABS_LIST = "$PRIVATE_TABS_LIST.empty"
     const val EMPTY_TAB_GROUPS_LIST = "$TAB_GROUPS_LIST.empty"
+    const val COLLECTIONS_MIGRATION_CARD = "$TAB_GROUPS_LIST.collectionsMigrationCard"
     const val UNAUTHENTICATED_SYNCED_TABS_PAGE = "$SYNCED_TABS_LIST.unauthenticated"
 
     // Tab items
     const val TAB_ITEM_ROOT = "$TABS_TRAY.tabItem"
     const val TAB_ITEM_CLOSE = "$TAB_ITEM_ROOT.close"
     const val TAB_ITEM_THUMBNAIL = "$TAB_ITEM_ROOT.thumbnail"
+    const val TAB_ITEM_MEDIA_INDICATOR = "$TAB_ITEM_ROOT.mediaIndicator"
     const val TAB_GROUP_ONBOARDING_ITEM = "$TABS_TRAY.tabGroupOnboardingItem"
     const val TAB_GROUP_ONBOARDING_GRID_ITEM = "$TAB_GROUP_ONBOARDING_ITEM.grid"
     const val TAB_GROUP_ONBOARDING_LIST_ITEM = "$TAB_GROUP_ONBOARDING_ITEM.list"

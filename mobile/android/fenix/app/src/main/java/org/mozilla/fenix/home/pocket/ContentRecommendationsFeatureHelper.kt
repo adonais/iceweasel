@@ -5,30 +5,12 @@
 package org.mozilla.fenix.home.pocket
 
 import android.content.Context
+import mozilla.components.service.pocket.isContentRecommendationsLocaleSupported
 import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.locale.LocaleManager.getSystemDefault
 
 /** Utility singleton for providing helper functions related to content recommendations feature flags. */
 object ContentRecommendationsFeatureHelper {
-    /** List of supported content recommendations locales. */
-    val CONTENT_RECOMMENDATIONS_SUPPORTED_LOCALE =
-        listOf(
-            "fr",
-            "fr-FR",
-            "es",
-            "es-ES",
-            "it",
-            "it-IT",
-            "en",
-            "en-CA",
-            "en-GB",
-            "en-US",
-            "de",
-            "de-DE",
-            "de-AT",
-            "de-CH",
-        )
-
     /** Show Pocket sponsored stories in between Pocket recommended stories on home. */
     fun isPocketSponsoredStoriesFeatureEnabled(context: Context): Boolean {
         return isContentRecommendationsFeatureEnabled(context)
@@ -39,7 +21,7 @@ object ContentRecommendationsFeatureHelper {
      * otherwise.
      */
     fun isContentRecommendationsFeatureEnabled(context: Context): Boolean {
-        val langTag = LocaleManager.getCurrentLocale(context)?.toLanguageTag() ?: getSystemDefault().toLanguageTag()
-        return CONTENT_RECOMMENDATIONS_SUPPORTED_LOCALE.contains(langTag)
+        val locale = LocaleManager.getCurrentLocale(context) ?: getSystemDefault()
+        return isContentRecommendationsLocaleSupported(locale)
     }
 }

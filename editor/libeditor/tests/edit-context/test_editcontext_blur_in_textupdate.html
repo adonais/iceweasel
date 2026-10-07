@@ -37,14 +37,20 @@ add_task(async () => {
   await SimpleTest.promiseFocus();
   host.focus();
   editContext.addEventListener('textupdate', () => {
+    let compositionEndFired = false;
+    editContext.addEventListener('compositionend', () => {
+      compositionEndFired = true;
+    }, {once: true});
     host.blur();
+    // XXX: The spec says this should be asynchronous, but Chrome is also synchronous:
+    //      https://github.com/w3c/edit-context/issues/127
+    ok(compositionEndFired, 'Should fire compositionend when EditContext associated element is blurred.');
   }, {once: true});
   compositionUpdate('x');
   is(editContext.text, 'x', 'EditContext.text should have text of composition');
   is(document.activeElement, document.body,
      'textupdate should be fired and host should be blurred.');
-  // XXX: Should test compositionend being fired for bug 2048704,
-  //      and textformatupdate once https://github.com/w3c/edit-context/issues/138 is resolved.
+  // XXX: Should test textformatupdate once https://github.com/w3c/edit-context/issues/138 is resolved.
 });
 
 

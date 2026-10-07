@@ -78,12 +78,11 @@ class BaselineICFallbackCode {
                                size_t(BaselineICFallbackKind::Count)>;
   OffsetArray offsets_ = {};
 
-  // Keep track of offset into various baseline stubs' code at return
-  // point from called script.
-  using BailoutReturnArray =
+  // Keep track of offset into various baseline stubs' bailout stub code.
+  using BailoutStubArray =
       mozilla::EnumeratedArray<BailoutReturnKind, uint32_t,
                                size_t(BailoutReturnKind::Count)>;
-  BailoutReturnArray bailoutReturnOffsets_ = {};
+  BailoutStubArray bailoutStubOffsets_ = {};
 
  public:
   BaselineICFallbackCode() = default;
@@ -94,14 +93,14 @@ class BaselineICFallbackCode {
     offsets_[kind] = offset;
   }
   void initCode(JitCode* code) { code_ = code; }
-  void initBailoutReturnOffset(BailoutReturnKind kind, uint32_t offset) {
-    bailoutReturnOffsets_[kind] = offset;
+  void initBailoutStubOffset(BailoutReturnKind kind, uint32_t offset) {
+    bailoutStubOffsets_[kind] = offset;
   }
   TrampolinePtr addr(BaselineICFallbackKind kind) const {
     return TrampolinePtr(code_->raw() + offsets_[kind]);
   }
-  uint8_t* bailoutReturnAddr(BailoutReturnKind kind) const {
-    return code_->raw() + bailoutReturnOffsets_[kind];
+  uint8_t* bailoutStubAddr(BailoutReturnKind kind) const {
+    return code_->raw() + bailoutStubOffsets_[kind];
   }
 };
 
@@ -241,6 +240,11 @@ class JitRuntime {
   MainThreadData<uint32_t> disallowArbitraryCode_{false};
 #endif
 
+  // Flag that can be set from JIT code to indicate that we're calling
+  // a function whose alias set does not include stores to ObjectFields.
+  // See handleGrowSlotsForPureCall.
+  MainThreadData<uint32_t> inPureCall_{false};
+
   bool generateTrampolines(JSContext* cx);
   bool generateBaselineICFallbackCode(JSContext* cx);
 
@@ -361,6 +365,9 @@ class JitRuntime {
     return offsetof(JitRuntime, disallowArbitraryCode_);
   }
 #endif
+
+  bool inPureCall() const { return inPureCall_; }
+  const void* addressOfInPureCall() const { return &inPureCall_.refNoCheck(); }
 
   uint8_t* allocateIonOsrTempData(size_t size);
   void freeIonOsrTempData();
@@ -516,6 +523,8 @@ class JitRuntime {
 
   void ionLazyLinkListRemove(JSRuntime* rt, js::jit::IonCompileTask* task);
   void ionLazyLinkListAdd(JSRuntime* rt, js::jit::IonCompileTask* task);
+
+  void handleGrowSlotsForPureCall(JSContext* cx);
 };
 
 }  // namespace jit

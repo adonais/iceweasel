@@ -7,6 +7,7 @@
 #include "mozilla/dom/HTMLOptionElement.h"
 #include "mozilla/dom/HTMLOptionsCollectionBinding.h"
 #include "mozilla/dom/HTMLSelectElement.h"
+#include "nsContentUtils.h"
 
 namespace mozilla::dom {
 
@@ -41,6 +42,8 @@ HTMLSelectElement* HTMLOptionsCollection::Select() const {
 nsresult HTMLOptionsCollection::GetOptionIndex(Element* aOption,
                                                int32_t aStartIndex,
                                                bool aForward, int32_t* aIndex) {
+  MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript(),
+             "Callers must hold a script blocker");
   BringSelfUpToDate(true);
 
   // NOTE: aIndex shouldn't be set if the returned value isn't NS_OK.

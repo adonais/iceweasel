@@ -25,7 +25,7 @@ T* NewArray(size_t size) {
   js::AutoEnterOOMUnsafeRegion oomUnsafe;
   T* result = js_pod_malloc<T>(size);
   if (!result) {
-    oomUnsafe.crash("Irregexp NewArray");
+    oomUnsafe.crash(size * sizeof(T), "Irregexp NewArray");
   }
   return result;
 }

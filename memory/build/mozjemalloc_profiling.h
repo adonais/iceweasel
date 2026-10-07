@@ -57,7 +57,7 @@ class MallocProfilerCallbacks {
     }
   }
 
-  virtual ~MallocProfilerCallbacks() {}
+  virtual ~MallocProfilerCallbacks() = default;
 
   using TS = mozilla::TimeStamp;
 

@@ -596,49 +596,40 @@ export class TabManagementService {
    * @returns {{validTabs: Array<Tab>, failedTabs: Array}} Valid tabs and failed tabs with reasons
    * @private
    */
+  /**
+   * Why a tab cannot go into a tab group in the given window.
+   *
+   * @param {Tab} tab - Tab to check
+   * @param {Window} window - Window the group would be created in
+   * @returns {?string} The reason, or null when the tab can be grouped
+   */
+  getGroupingRejection(tab, window) {
+    // Tabs in a group all belong to one window
+    if (!tab?.linkedBrowser || tab.documentGlobal !== window) {
+      return "invalid-tab";
+    }
+    if (tab.pinned) {
+      return "pinned-tab";
+    }
+    if (tab.group) {
+      return "already-grouped";
+    }
+    if (tab.closing) {
+      return "tab-closing";
+    }
+    return null;
+  }
+
   #validateTabsForGrouping(tabs, window) {
     const validTabs = [];
     const failedTabs = [];
 
     tabs.forEach(tab => {
-      // Check if tab belongs to the window
-      const tabInWindow = tab?.linkedBrowser && tab.documentGlobal === window;
-
-      if (!tabInWindow) {
-        failedTabs.push({
-          tab,
-          reason: "invalid-tab",
-        });
+      const reason = this.getGroupingRejection(tab, window);
+      if (reason) {
+        failedTabs.push({ tab, reason });
         return;
       }
-
-      // Pinned tabs cannot be grouped
-      if (tab.pinned) {
-        failedTabs.push({
-          tab,
-          reason: "pinned-tab",
-        });
-        return;
-      }
-
-      // Tab already in a group
-      if (tab.group) {
-        failedTabs.push({
-          tab,
-          reason: "already-grouped",
-        });
-        return;
-      }
-
-      // Tab is closing
-      if (tab.closing) {
-        failedTabs.push({
-          tab,
-          reason: "tab-closing",
-        });
-        return;
-      }
-
       validTabs.push(tab);
     });
 

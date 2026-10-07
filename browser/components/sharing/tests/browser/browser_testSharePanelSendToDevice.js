@@ -6,7 +6,7 @@
 /* globals promiseSyncReady, setupSendTabMocks, UIState, sinon */
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/base/content/test/sync/head.js",
+  "chrome://mochitests/content/browser/browser/base/content/test/browser-sync/head.js",
   this
 );
 

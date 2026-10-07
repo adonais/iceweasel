@@ -420,6 +420,7 @@ void PrototypeDocumentContentSink::CloseElement(Element* aElement) {
   if (nsIContent::RequiresDoneAddingChildren(
           aElement->NodeInfo()->NamespaceID(),
           aElement->NodeInfo()->NameAtom())) {
+    nsAutoScriptBlocker scriptBlocker;
     aElement->DoneAddingChildren(false);
   }
 
@@ -694,7 +695,7 @@ nsresult PrototypeDocumentContentSink::DoneWalking() {
 
   doc->SetScrollToRef(mDocument->GetDocumentURI());
 
-  doc->EndLoad();
+  doc->EndLoad(/* aFireDOMContentLoadedSync = */ true);
 
   return NS_OK;
 }

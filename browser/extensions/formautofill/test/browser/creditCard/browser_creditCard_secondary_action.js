@@ -151,7 +151,7 @@ add_task(async function test_delete_asks_for_device_sign_in_then_confirms() {
           callback: win => {
             sawDialog = true;
             const [title, message] = AC_L10N.formatValuesSync([
-              { id: "autocomplete-remove-payment-method-title" },
+              { id: "autocomplete-delete-payment-method-title" },
               { id: "autocomplete-remove-record-message" },
             ]);
             is(

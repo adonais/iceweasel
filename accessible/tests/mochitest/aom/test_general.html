@@ -119,6 +119,12 @@
           "readonly", "busy", "focusable", "opaque", "stale", "enabled", "sensitive",
         ];
         break;
+      case 8:
+        states = [
+          "readonly", "busy", "focusable", "selectable text", "opaque", "stale",
+          "enabled", "sensitive",
+        ];
+        break;
       default:
         ok(false, "Unexpected amount of states: " + JSON.stringify(anode.states));
     }

@@ -258,6 +258,7 @@ def repackage_flatpak(
                 "--filesystem=xdg-config/gtk-3.0:ro",
                 "--filesystem=xdg-download:rw",
                 "--filesystem=/run/.heim_org.h5l.kcm-socket",
+                "--filesystem=/run/udev:ro",
                 "--filesystem=xdg-run/speech-dispatcher:ro",
                 "--device=all",
                 "--talk-name=org.freedesktop.FileManager1",

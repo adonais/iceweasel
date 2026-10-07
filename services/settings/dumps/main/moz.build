@@ -62,6 +62,8 @@ if CONFIG["MOZ_BUILD_APP"] == "browser":
         "search-config-icons/25de0352-aabb-d31f-15f7-bf9299fb004c.meta.json",
         "search-config-icons/2bbe48f4-d3b8-c9e0-86e3-a54c37ec3335",
         "search-config-icons/2bbe48f4-d3b8-c9e0-86e3-a54c37ec3335.meta.json",
+        "search-config-icons/2cb3ddd3-0b70-4a4b-b487-fb36cb9658ca",
+        "search-config-icons/2cb3ddd3-0b70-4a4b-b487-fb36cb9658ca.meta.json",
         "search-config-icons/2e835b0e-9709-d1bb-9725-87f59f3445ca",
         "search-config-icons/2e835b0e-9709-d1bb-9725-87f59f3445ca.meta.json",
         "search-config-icons/32d26d19-aeb0-5c01-32e8-f8970be9246f",

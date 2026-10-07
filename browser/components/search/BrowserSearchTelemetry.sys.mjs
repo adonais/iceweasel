@@ -67,6 +67,7 @@ class BrowserSearchTelemetryHandler {
     smartbar: "smartbar",
     smartwindow_assistant: "smartwindow_assistant",
     system: "system",
+    text_selection: "text_selection",
     urlbar: "urlbar",
     urlbar_handoff: "urlbar-handoff",
     urlbar_persisted: "urlbar-persisted",

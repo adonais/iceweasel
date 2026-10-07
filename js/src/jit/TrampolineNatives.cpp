@@ -92,9 +92,10 @@ uint32_t JitRuntime::generateArraySortTrampoline(MacroAssembler& masm,
       -int32_t(FrameSize) + ArraySortData::offsetOfComparatorArgs();
 
 #ifdef JS_USE_LINK_REGISTER
-  masm.pushReturnAddress();
-#endif
+  masm.pushRegs(LinkRegister, FramePointer);
+#else
   masm.push(FramePointer);
+#endif
   masm.moveStackPtrTo(FramePointer);
 
   AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());

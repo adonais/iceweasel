@@ -474,6 +474,7 @@ static nsresult EnumValidate(nsICommandLineValidator* aValidator,
   return aValidator->Validate(aThis);
 }
 
+MOZ_CAN_RUN_SCRIPT
 static nsresult EnumRun(nsICommandLineHandler* aHandler, nsICommandLine* aThis,
                         void*) {
   return aHandler->Handle(aThis);

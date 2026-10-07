@@ -11,7 +11,7 @@
  * https://w3c.github.io/page-visibility/#extensions-to-the-document-interface
  * https://drafts.csswg.org/cssom/#extensions-to-the-document-interface
  * https://drafts.csswg.org/cssom-view/#extensions-to-the-document-interface
- * https://wicg.github.io/feature-policy/#policy
+ * https://w3c.github.io/webappsec-permissions-policy/
  * https://wicg.github.io/scroll-to-text-fragment/#feature-detectability
  */
 
@@ -632,10 +632,12 @@ Document includes GeometryUtils;
 Document includes FontFaceSource;
 Document includes DocumentOrShadowRoot;
 
-// https://w3c.github.io/webappsec-feature-policy/#idl-index
+// https://w3c.github.io/webappsec-permissions-policy/#idl-index
 partial interface Document {
-    [SameObject, Pref="dom.security.featurePolicy.webidl.enabled"]
-    readonly attribute FeaturePolicy featurePolicy;
+    [SameObject, BinaryName="PermissionsPolicy",
+     BindingAlias="permissionsPolicy",
+     Pref="dom.security.permissionsPolicy.webidl.enabled"]
+    readonly attribute PermissionsPolicy featurePolicy;
 };
 
 // Extension to give chrome JS the ability to specify a non-default keypress

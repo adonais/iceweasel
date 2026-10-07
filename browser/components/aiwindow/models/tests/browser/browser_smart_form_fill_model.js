@@ -99,8 +99,45 @@ function makeRequest(id) {
       },
     ],
     candidates: [],
-    context: {},
+    context: {
+      relevantTabs: [],
+    },
   };
+}
+
+function makeFields(count) {
+  return Array.from({ length: count }, (_, index) => ({
+    id: `field-${index}`,
+    label: `Field ${index}`,
+    inputType: "text",
+    options: [],
+    type: "unknown",
+    classificationConfidence: "low",
+  }));
+}
+
+function generateValuesForFields(fields) {
+  return SmartFormFillModel.generateFormValues({
+    task: "generate",
+    page: {
+      title: "Batch test",
+      url: "https://example.com/batch",
+    },
+    fields,
+    candidates: [],
+    context: {
+      pageText: "",
+      relevantTabs: [],
+      memories: [],
+    },
+  });
+}
+
+function getRequestedFields(request) {
+  const marker = "Fields to fill:\n";
+  const content = request.args.at(-1).content;
+
+  return JSON.parse(content.slice(content.lastIndexOf(marker) + marker.length));
 }
 
 describe("SmartFormFillModel", () => {
@@ -120,7 +157,8 @@ describe("SmartFormFillModel", () => {
   });
 
   describe("classifyFields", () => {
-    it("uses the field detection prompts and returns classifications", async () => {
+    it("builds a field classification request", async () => {
+      const title = "T".repeat(101);
       const fields = [
         {
           id: "field-1",
@@ -134,7 +172,7 @@ describe("SmartFormFillModel", () => {
         task: "classify",
         enumVersion: "sff-fieldtypes-1",
         page: {
-          title: "Example form",
+          title,
           url: "https://example.com/form",
         },
         fields,
@@ -157,8 +195,8 @@ describe("SmartFormFillModel", () => {
       Assert.deepEqual(request.args[1], {
         role: "user",
         content:
-          "Page title:\nExample form\n\n" +
-          "Page url:\nhttps://example.com/form\n\n" +
+          `Page title:\n${title.substring(0, 100)}\n\n` +
+          "Page url:\nEXAMPLE_COM_FORM_1\n\n" +
           `Fields to classify:\n${JSON.stringify(fields)}`,
       });
       Assert.deepEqual(request.tools, []);
@@ -171,32 +209,15 @@ describe("SmartFormFillModel", () => {
       );
       Assert.deepEqual(responseFormat.json_schema.schema.required, ["fields"]);
 
-      respond(
-        JSON.stringify({
-          fields: [
-            {
-              id: "field-1",
-              type: "email",
-              confidence: "high",
-            },
-          ],
-        })
-      );
-
-      Assert.deepEqual(await requestPromise, {
-        fields: [
-          {
-            id: "field-1",
-            type: "email",
-            confidence: "high",
-          },
-        ],
-      });
+      respond(JSON.stringify({ fields: [] }));
+      await requestPromise;
     });
   });
 
   describe("findRelevantTabs", () => {
-    it("uses the tab selection prompts and returns relevant tabs", async () => {
+    it("builds a relevant tabs request", async () => {
+      const pageTitle = "P".repeat(101);
+      const tabTitle = "T".repeat(101);
       const fields = [
         {
           id: "field-1",
@@ -208,14 +229,21 @@ describe("SmartFormFillModel", () => {
       const tabs = [
         {
           id: "tab-1",
-          title: "Professional profile",
+          title: tabTitle,
           url: "https://example.com/profile",
+        },
+      ];
+      const shapedTabs = [
+        {
+          ...tabs[0],
+          title: tabTitle.substring(0, 100),
+          url: "EXAMPLE_COM_PROFILE_1",
         },
       ];
       const requestPromise = SmartFormFillModel.findRelevantTabs({
         task: "select_tabs",
         page: {
-          title: "Job application",
+          title: pageTitle,
           url: "https://example.com/jobs/apply",
         },
         maxSelectedTabs: 3,
@@ -237,12 +265,12 @@ describe("SmartFormFillModel", () => {
         role: "user",
         content:
           "FORM THE USER IS FILLING\n" +
-          "Title: Job application\n" +
-          "URL: https://example.com/jobs/apply\n" +
+          `Title: ${pageTitle.substring(0, 100)}\n` +
+          "URL: EXAMPLE_COM_JOBS_APPLY_1\n" +
           "Fields it is asking for:\n" +
           `${JSON.stringify(fields)}\n\n` +
           "THE USER'S OTHER OPEN TABS (title and URL only)\n" +
-          `${JSON.stringify(tabs)}\n\n` +
+          `${JSON.stringify(shapedTabs)}\n\n` +
           "maxSelectedTabs: 3\n\n" +
           "Which of these tabs could help fill this form? " +
           "Include every tab that plausibly could.",
@@ -259,27 +287,8 @@ describe("SmartFormFillModel", () => {
         "selectedTabs",
       ]);
 
-      respond(
-        JSON.stringify({
-          selectedTabs: [
-            {
-              id: "tab-1",
-              relevance: "high",
-              reason: "Your professional profile",
-            },
-          ],
-        })
-      );
-
-      Assert.deepEqual(await requestPromise, {
-        selectedTabs: [
-          {
-            id: "tab-1",
-            relevance: "high",
-            reason: "Your professional profile",
-          },
-        ],
-      });
+      respond(JSON.stringify({ selectedTabs: [] }));
+      await requestPromise;
     });
   });
 
@@ -292,8 +301,10 @@ describe("SmartFormFillModel", () => {
       _clearRemoteClientForTesting();
     });
 
-    it("uses the value generation prompts and returns fill actions", async () => {
-      const candidates = [{ token: "$EMAIL_1", type: "email" }];
+    it("builds a value generation request with the expected schema", async () => {
+      const pageTitle = "P".repeat(101);
+      const tabTitle = "T".repeat(101);
+      const candidates = [{ token: "§EMAIL_1§", type: "email" }];
       const fields = [
         {
           id: "field-email",
@@ -314,16 +325,23 @@ describe("SmartFormFillModel", () => {
       ];
       const relevantTabs = [
         {
-          title: "Example role",
+          title: tabTitle,
           url: "https://example.com/jobs/role",
           tabContent: "The role focuses on browser engineering.",
+        },
+      ];
+      const shapedRelevantTabs = [
+        {
+          ...relevantTabs[0],
+          title: tabTitle.substring(0, 100),
+          url: "§url_token: EXAMPLE_COM_JOBS_ROLE_1§",
         },
       ];
       const requestPromise = SmartFormFillModel.generateFormValues({
         task: "generate",
         page: {
-          title: "Job application",
-          url: "https://example.com/jobs/apply",
+          title: pageTitle,
+          url: "https://example.com/jobs/generate",
         },
         fields,
         candidates,
@@ -346,11 +364,11 @@ describe("SmartFormFillModel", () => {
       Assert.deepEqual(request.args[1], {
         role: "user",
         content:
-          "Current page title:\nJob application\n\n" +
-          "Current page url:\nhttps://example.com/jobs/apply\n\n" +
+          `Current page title:\n${pageTitle.substring(0, 100)}\n\n` +
+          "Current page url:\n§url_token: EXAMPLE_COM_JOBS_GENERATE_1§\n\n" +
           "Current page text:\nApply for the example role.\n\n" +
           "Relevant memories about the user:\n[]\n\n" +
-          `Relevant open tabs:\n${JSON.stringify(relevantTabs)}\n\n` +
+          `Relevant open tabs:\n${JSON.stringify(shapedRelevantTabs)}\n\n` +
           `Available candidate tokens:\n${JSON.stringify(candidates)}\n\n` +
           `Fields to fill:\n${JSON.stringify(fields)}`,
       });
@@ -364,48 +382,232 @@ describe("SmartFormFillModel", () => {
         "tabs_used",
         "fields",
       ]);
+      const fieldSchema =
+        responseFormat.json_schema.schema.properties.fields.items;
+      Assert.deepEqual(fieldSchema.required, [
+        "id",
+        "action",
+        "confidence",
+        "value",
+      ]);
+      Assert.deepEqual(fieldSchema.properties.action.enum, [
+        "fill_from_token",
+        "select_option",
+        "generate",
+        "skip",
+      ]);
 
       respond(
         JSON.stringify({
           memories_used: [],
+          tabs_used: [],
+          fields: [],
+        })
+      );
+      await requestPromise;
+    });
+
+    it("resolves URL tokens the model repeats back", async () => {
+      const tabUrl = "https://example.com/profile/contact?ref=form";
+      const requestPromise = SmartFormFillModel.generateFormValues({
+        task: "generate",
+        page: {
+          title: "Contact form",
+          url: "https://example.com/contact",
+        },
+        fields: makeFields(2),
+        candidates: [],
+        context: {
+          pageText: "",
+          relevantTabs: [
+            {
+              title: "Profile",
+              url: tabUrl,
+              tabContent: "The profile page for the user.",
+            },
+          ],
+          memories: [],
+        },
+      });
+
+      const { request, respond } = await mockEngineMan.captureRequest({
+        purpose: PURPOSE,
+      });
+      const tabToken = "EXAMPLE_COM_PROFILE_CONTACT_1";
+
+      Assert.stringContains(
+        request.args.at(-1).content,
+        `§url_token: ${tabToken}§`,
+        "Context tab URLs should be sent as sentinel URL tokens"
+      );
+
+      respond(
+        JSON.stringify({
+          memories_used: [],
+          tabs_used: [`§url_token: ${tabToken}§`],
           fields: [
             {
-              id: "field-email",
-              action: "fill_from_token",
-              token: "$EMAIL_1",
+              id: "field-0",
+              action: "generate",
               confidence: "high",
+              value: `My page is §url_token: ${tabToken}§`,
             },
             {
-              id: "field-reason",
+              id: "field-1",
               action: "generate",
-              value: "I am interested in browser engineering.",
               confidence: "high",
+              value: "§url_token: EXAMPLE_COM_INVENTED_9§",
             },
           ],
         })
       );
 
-      Assert.deepEqual(await requestPromise, {
-        memories_used: [],
-        // Absent from the answer above, so the merged result reports it empty.
-        tabs_used: [],
-        fields: [
-          {
-            id: "field-email",
-            action: "fill_from_token",
-            token: "$EMAIL_1",
-            confidence: "high",
-          },
-          {
-            id: "field-reason",
-            action: "generate",
-            value: "I am interested in browser engineering.",
-            confidence: "high",
-          },
-        ],
-        // One batch, because the form fits in a single request.
-        batches: { total: 1, failed: 0 },
+      const result = await requestPromise;
+
+      Assert.equal(
+        result.fields[0].value,
+        `My page is ${tabUrl}`,
+        "A URL token in a generated value should expand to the full URL"
+      );
+      Assert.equal(
+        result.fields[1].value,
+        "",
+        "A URL token the model invented should be dropped from the value"
+      );
+      Assert.deepEqual(
+        result.tabs_used,
+        [tabUrl],
+        "Tabs the model reports using should expand to their full URLs"
+      );
+    });
+
+    it("resolves values that are not strings to nothing", async () => {
+      const requestPromise = generateValuesForFields(makeFields(2));
+      const { respond } = await mockEngineMan.captureRequest({
+        purpose: PURPOSE,
       });
+
+      respond(
+        JSON.stringify({
+          memories_used: [],
+          tabs_used: [42, null],
+          fields: [
+            { id: "field-0", action: "generate", confidence: "high" },
+            {
+              id: "field-1",
+              action: "generate",
+              confidence: "high",
+              value: 42,
+            },
+          ],
+        })
+      );
+
+      const result = await requestPromise;
+
+      Assert.equal(
+        result.fields[0].value,
+        "",
+        "A missing generated value should resolve to the empty string"
+      );
+      Assert.equal(
+        result.fields[1].value,
+        "",
+        "A generated value that is not a string should resolve to the empty string"
+      );
+      Assert.deepEqual(
+        result.tabs_used,
+        [],
+        "Reported tabs that are not strings should be dropped"
+      );
+    });
+
+    it("splits fields into batches and combines their results", async () => {
+      const fields = makeFields(21);
+      const requestPromise = generateValuesForFields(fields);
+      const batchSizes = [];
+
+      for (let index = 0; index < 2; index++) {
+        const { request, respond } = await mockEngineMan.captureRequest({
+          purpose: PURPOSE,
+        });
+        const requestedFields = getRequestedFields(request);
+        batchSizes.push(requestedFields.length);
+
+        respond(
+          JSON.stringify({
+            memories_used: [],
+            tabs_used: ["tab-1"],
+            fields: requestedFields.map(({ id }) => ({
+              id,
+              action: "generate",
+              confidence: "high",
+              value: `Value for ${id}`,
+            })),
+          })
+        );
+      }
+
+      const result = await requestPromise;
+
+      Assert.deepEqual(
+        batchSizes,
+        [20, 1],
+        "Fields should be split at the batch limit"
+      );
+      Assert.deepEqual(
+        result.fields.map(({ id }) => id),
+        fields.map(({ id }) => id),
+        "Fields from every batch should be combined in request order"
+      );
+      Assert.deepEqual(
+        result.tabs_used,
+        ["tab-1"],
+        "Tab IDs reported by multiple batches should be deduplicated"
+      );
+      Assert.deepEqual(
+        result.batches,
+        { total: 2, failed: 0 },
+        "Batch metadata should report both successful requests"
+      );
+    });
+
+    it("keeps successful results when another batch fails", async () => {
+      const fields = makeFields(21);
+      const requestPromise = generateValuesForFields(fields);
+      const { request, respond } = await mockEngineMan.captureRequest({
+        purpose: PURPOSE,
+      });
+      const successfulFields = getRequestedFields(request);
+
+      respond(
+        JSON.stringify({
+          memories_used: [],
+          tabs_used: [],
+          fields: successfulFields.map(({ id }) => ({
+            id,
+            action: "generate",
+            confidence: "high",
+            value: `Value for ${id}`,
+          })),
+        })
+      );
+
+      await mockEngineMan.captureRequest({ purpose: PURPOSE });
+      mockEngineMan.rejectAllRequests();
+
+      const result = await requestPromise;
+
+      Assert.deepEqual(
+        result.fields.map(({ id }) => id),
+        successfulFields.map(({ id }) => id),
+        "Successful batch results should be preserved"
+      );
+      Assert.deepEqual(
+        result.batches,
+        { total: 2, failed: 1 },
+        "Batch metadata should report the failed request"
+      );
     });
 
     it("limits concurrent value generation requests globally", async () => {

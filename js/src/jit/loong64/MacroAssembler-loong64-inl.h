@@ -689,22 +689,42 @@ void MacroAssembler::maxPtr(Register lhs, ImmWord rhs, Register dest) {
 
 void MacroAssembler::minFloat32(FloatRegister other, FloatRegister srcDest,
                                 bool handleNaN) {
-  minMaxFloat32(srcDest, other, handleNaN, false);
+  minFloat32(other, srcDest, handleNaN, /* handleZero= */ true);
+}
+
+void MacroAssembler::minFloat32(FloatRegister other, FloatRegister srcDest,
+                                bool handleNaN, bool handleZero) {
+  minMaxFloat32(srcDest, other, handleNaN, handleZero, /* isMax= */ false);
 }
 
 void MacroAssembler::minDouble(FloatRegister other, FloatRegister srcDest,
                                bool handleNaN) {
-  minMaxDouble(srcDest, other, handleNaN, false);
+  minDouble(other, srcDest, handleNaN, /* handleZero= */ true);
+}
+
+void MacroAssembler::minDouble(FloatRegister other, FloatRegister srcDest,
+                               bool handleNaN, bool handleZero) {
+  minMaxDouble(srcDest, other, handleNaN, handleZero, /* isMax= */ false);
 }
 
 void MacroAssembler::maxFloat32(FloatRegister other, FloatRegister srcDest,
                                 bool handleNaN) {
-  minMaxFloat32(srcDest, other, handleNaN, true);
+  maxFloat32(other, srcDest, handleNaN, /* handleZero= */ true);
+}
+
+void MacroAssembler::maxFloat32(FloatRegister other, FloatRegister srcDest,
+                                bool handleNaN, bool handleZero) {
+  minMaxFloat32(srcDest, other, handleNaN, handleZero, /* isMax= */ true);
 }
 
 void MacroAssembler::maxDouble(FloatRegister other, FloatRegister srcDest,
                                bool handleNaN) {
-  minMaxDouble(srcDest, other, handleNaN, true);
+  maxDouble(other, srcDest, handleNaN, /* handleZero= */ true);
+}
+
+void MacroAssembler::maxDouble(FloatRegister other, FloatRegister srcDest,
+                               bool handleNaN, bool handleZero) {
+  minMaxDouble(srcDest, other, handleNaN, handleZero, /* isMax= */ true);
 }
 
 // ===============================================================

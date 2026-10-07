@@ -7,3 +7,7 @@ with Files("**"):
 
 DIRS += ['src']
 
+
+LICENSED_UNDER += [
+    "xiph",
+]

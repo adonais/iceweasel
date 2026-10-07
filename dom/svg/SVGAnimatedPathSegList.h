@@ -59,6 +59,8 @@ class SVGAnimatedPathSegList final {
 
   nsresult SetBaseValueString(const nsAString& aValue);
 
+  bool FirstSegmentIsValid(
+      const dom::Sequence<dom::SVGPathSegmentInit>& aValues) const;
   void SetBaseValueFromPathSegments(
       const dom::Sequence<dom::SVGPathSegmentInit>& aValues);
 

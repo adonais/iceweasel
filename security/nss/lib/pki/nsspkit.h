@@ -36,53 +36,6 @@ struct NSSCertificateStr;
 typedef struct NSSCertificateStr NSSCertificate;
 
 /*
- * NSSUserCertificate
- *
- * A ``User'' certificate is one for which the private key is available.
- * People speak of "using my certificate to sign my email" and "using
- * my certificate to authenticate to (or login to) the server"; for
- * simple operations, we support that simplification by implementing
- * private-key crypto operations as methods on this type.
- *
- * The current design only weakly distinguishes between certificates
- * and user certificates: as far as the compiler goes they're
- * interchangeable; debug libraries only have one common pointer-tracker;
- * etc.  However, attempts to do private-key operations on a certificate
- * for which the private key is not available will fail.
- *
- * Open design question: should these types be more firmly separated?
- */
-
-typedef NSSCertificate NSSUserCertificate;
-
-/*
- * NSSPrivateKey
- *
- * This is the public representation of a Private Key.  In general,
- * the actual value of the key is not available, but operations may
- * be performed with it.
- */
-
-struct NSSPrivateKeyStr;
-typedef struct NSSPrivateKeyStr NSSPrivateKey;
-
-/*
- * NSSPublicKey
- *
- */
-
-struct NSSPublicKeyStr;
-typedef struct NSSPublicKeyStr NSSPublicKey;
-
-/*
- * NSSSymmetricKey
- *
- */
-
-struct NSSSymmetricKeyStr;
-typedef struct NSSSymmetricKeyStr NSSSymmetricKey;
-
-/*
  * NSSTrustDomain
  *
  * A Trust Domain is the field in which certificates may be validated.

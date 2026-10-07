@@ -8,6 +8,7 @@
 
 #include "MediaData.h"
 #include "TimeUnits.h"
+#include "jsapi.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Logging.h"
 #include "mozilla/PodOperations.h"
@@ -187,6 +188,10 @@ already_AddRefed<EncodedAudioChunk> EncodedAudioChunk::Constructor(
     JS::Rooted<JSObject*> transferBuffer(aGlobal.Context(),
                                          data.GetAsArrayBuffer().Obj());
     if (transferSet.Contains(transferBuffer)) {
+      if (!JS_WrapObject(aGlobal.Context(), &transferBuffer)) {
+        aRv.NoteJSContextException(aGlobal.Context());
+        return nullptr;
+      }
       transferLength = JS::GetArrayBufferByteLength(transferBuffer);
       transferData =
           JS::StealArrayBufferContents(aGlobal.Context(), transferBuffer);
@@ -258,6 +263,10 @@ already_AddRefed<EncodedAudioChunk> EncodedAudioChunk::Constructor(
   // 8.1.2.4.1. Perform DetachArrayBuffer on transferable
   for (const auto& buffer : aInit.mTransfer) {
     JS::Rooted<JSObject*> obj(aGlobal.Context(), buffer.Obj());
+    if (!JS_WrapObject(aGlobal.Context(), &obj)) {
+      aRv.NoteJSContextException(aGlobal.Context());
+      return nullptr;
+    }
     JS::DetachArrayBuffer(aGlobal.Context(), obj);
   }
 

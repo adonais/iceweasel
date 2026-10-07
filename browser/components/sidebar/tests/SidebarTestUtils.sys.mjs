@@ -57,6 +57,12 @@ class _SidebarTestUtils {
         );
         this.closePanel(win);
       }
+      // SidebarPopupNotifications is created when chat sidebar opens.
+      // Clean up here as sidebar may close before content fully loads.
+      if (win.SidebarPopupNotifications) {
+        win.SidebarPopupNotifications._currentAnchorElement = null;
+        delete win.SidebarPopupNotifications;
+      }
       await this.restoreToInitialState(win);
     });
   }

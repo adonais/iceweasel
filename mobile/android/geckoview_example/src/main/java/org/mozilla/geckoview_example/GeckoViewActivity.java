@@ -1470,13 +1470,15 @@ public class GeckoViewActivity extends AppCompatActivity
 
   private void takeScreenshot() {
     mGeckoView
-        .capturePixels()
+        .captureFullPage()
         .map(
             bitmap -> {
               ContentResolver resolver = getContentResolver();
 
               ContentValues contentValues = new ContentValues();
-              contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, "screenshot.jpg");
+              contentValues.put(
+                  MediaStore.MediaColumns.DISPLAY_NAME,
+                  "screenshot-" + System.currentTimeMillis() + ".png");
               contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/png");
               contentValues.put(
                   MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
@@ -1503,6 +1505,11 @@ public class GeckoViewActivity extends AppCompatActivity
                 resolver.update(screenshotUri, contentValues, null);
               }
               return null;
+            })
+        .exceptionally(
+            exception -> {
+              Log.e(LOGTAG, "Error saving screenshot: " + exception.getMessage());
+              return GeckoResult.fromException(exception);
             });
   }
 

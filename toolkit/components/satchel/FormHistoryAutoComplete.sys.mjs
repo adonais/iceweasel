@@ -129,7 +129,6 @@ export class FormHistoryAutoCompleteResult {
     if (!lazy.removeRecordsEnabled || !this.#isFormHistoryEntry(index)) {
       return comment;
     }
-    // The trash button is a non-functional placeholder for now
     const parsed = comment ? JSON.parse(comment) : {};
     return JSON.stringify({
       ...parsed,
@@ -139,6 +138,8 @@ export class FormHistoryAutoCompleteResult {
           "autocomplete-delete-form-history-entry2",
           { entry: this.getLabelAt(index) }
         ),
+        fillMessageName: "FormHistory:RemoveEntry",
+        fillMessageData: this.#removeEntryData(index),
       },
     });
   }
@@ -183,15 +184,21 @@ export class FormHistoryAutoCompleteResult {
 
   removeValueAt(index) {
     if (this.#isFormHistoryEntry(index)) {
-      const [removedEntry] = this.entries.splice(index, 1);
+      const data = this.#removeEntryData(index);
+      this.entries.splice(index, 1);
       const actor =
         this.input.documentGlobal.windowGlobalChild.getActor("FormHistory");
-      actor.sendAsyncMessage("FormHistory:RemoveEntry", {
-        inputName: this.inputName,
-        value: removedEntry.text,
-        guid: removedEntry.guid,
-      });
+      actor.sendAsyncMessage("FormHistory:RemoveEntry", data);
     }
+  }
+
+  #removeEntryData(index) {
+    const entry = this.getAt(index);
+    return {
+      inputName: this.inputName,
+      value: entry.text,
+      guid: entry.guid,
+    };
   }
 
   #isFormHistoryEntry(index) {

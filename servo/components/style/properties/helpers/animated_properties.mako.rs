@@ -350,9 +350,9 @@ impl AnimationValue {
                         };
                         let computed = style_struct
                         % if prop.logical:
-                            .clone_${prop.ident}(context.builder.writing_mode);
+                            .slow_clone_${prop.ident}(context.builder.writing_mode);
                         % else:
-                            .clone_${prop.ident}();
+                            .slow_clone_${prop.ident}();
                         % endif
 
                         % if prop.animation_type != "discrete":
@@ -462,7 +462,7 @@ impl AnimationValue {
             % for prop in data.longhands:
             % if prop.animatable and not prop.logical:
             LonghandId::${prop.camel_case} => {
-                let computed = style.clone_${prop.ident}();
+                let computed = style.slow_clone_${prop.ident}();
                 AnimationValue::${prop.camel_case}(
                 % if prop.animation_type == "discrete":
                     computed
@@ -486,7 +486,7 @@ impl AnimationValue {
         match self {
             % for prop in data.longhands:
             % if prop.animatable and not prop.logical:
-            AnimationValue::${prop.camel_case}(ref value) => {
+            AnimationValue::${prop.camel_case}(value) => {
                 let value: longhands::${prop.ident}::computed_value::T =
                 % if prop.animation_type != "discrete":
                     ToAnimatedValue::from_animated_value(value.clone());
@@ -659,10 +659,9 @@ impl Animate for Display {
     fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
         match procedure {
             Procedure::Interpolate { progress } => {
-                debug_assert!(
-                    crate::pref!("layout.css.display-animations.enabled"),
-                    "animating display with the pref disabled",
-                );
+                if !crate::pref!("layout.css.display-animations.enabled") {
+                    return animate_discrete(self, other, procedure)
+                };
                 let (this_weight, other_weight) = procedure.weights();
                 match (*self, *other) {
                     (_, Display::None) => Ok(if this_weight > 0.0 { *self } else { *other }),

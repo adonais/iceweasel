@@ -99,14 +99,16 @@ fun Modifier.debouncedClickable(
     debounceInterval: Long = 1000L,
     onClick: () -> Unit,
 ) = composed {
-    var lastClickTime: Long by remember { mutableLongStateOf(0) }
+    var lastClickTime: Long? by remember { mutableStateOf(null) }
 
     this.then(
         Modifier.clickable(
             role = role,
             onClick = {
                 val currentSystemTime = SystemClock.elapsedRealtime()
-                if (currentSystemTime - lastClickTime > debounceInterval) {
+                val last = lastClickTime
+
+                if (last == null || currentSystemTime - last > debounceInterval) {
                     onClick()
                     lastClickTime = currentSystemTime
                 }

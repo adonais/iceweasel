@@ -34,6 +34,7 @@ import {
 import {
   WIDGET_REGISTRY,
   hasContentAreaWidgets,
+  isWeatherAvailable,
   isWidgetEnabled,
   isWidgetToggleVisible,
   isWidgetsContainerVisible,
@@ -979,13 +980,7 @@ export class BaseContent extends React.PureComponent {
     const pocketRegion = prefs["feeds.system.topstories"];
     const mayHaveInferredPersonalization =
       prefs[PREF_INFERRED_PERSONALIZATION_SYSTEM];
-    // Weather's visibility gate differs from the other widgets (it keys off
-    // system.showWeather / trainhopConfig.weather), so it keeps its own check
-    // plus the additive widgetsSettings.weatherVisible override.
-    const mayHaveWeather =
-      prefs["system.showWeather"] ||
-      prefs.trainhopConfig?.weather?.enabled ||
-      prefs.trainhopConfig?.widgetsSettings?.weatherVisible;
+    const mayHaveWeather = isWeatherAvailable(prefs);
     const mayHaveWebNotifications =
       prefs["system.showWebNotifications"] ||
       prefs.trainhopConfig?.webNotifications?.enabled;
@@ -994,6 +989,11 @@ export class BaseContent extends React.PureComponent {
     // Widget toggle visibility is resolved by the shared registry helpers, which
     // are additive across the system pref, the legacy widgetsConfig variable,
     // trainhopConfig.widgets (addable), and trainhopConfig.widgetsSettings.
+    // @nova-cleanup(remove-conditional): Delete widgetVisibleById, the eight
+    // mayHave*Widget constants below and the now-unused isWidgetToggleVisible
+    // import once the classic widget toggle block in ContentSection.jsx is
+    // deleted. Keep mayHaveWidgets: the Nova widgets section and the standalone
+    // Weather row both read it.
     const widgetVisibleById = id =>
       isWidgetToggleVisible(
         WIDGET_REGISTRY.find(w => w.id === id),
@@ -1003,7 +1003,6 @@ export class BaseContent extends React.PureComponent {
     const mayHaveListsWidget = widgetVisibleById("lists");
     const mayHaveTimerWidget = widgetVisibleById("focusTimer");
     const mayHaveClocksWidget = widgetVisibleById("clocks");
-    const mayHaveSportsWidget = widgetVisibleById("sportsWidget");
     const mayHavePrivacyWidget = widgetVisibleById("privacy");
     const mayHaveCrosswordWidget = widgetVisibleById("crossword");
     const mayHaveStocksWidget = widgetVisibleById("stocks");
@@ -1011,6 +1010,10 @@ export class BaseContent extends React.PureComponent {
     const mayHaveRecentSearchesWidget = widgetVisibleById("recentSearches");
 
     // These prefs set the initial values on the Customize panel toggle switches
+    // @nova-cleanup(remove-conditional): Delete every *Enabled member of
+    // enabledWidgets once the classic widget toggle block in ContentSection.jsx
+    // is deleted; keep widgetsMaximized and widgetsMayBeMaximized, which the
+    // widget size telemetry in ContentSection.jsx reads.
     const enabledWidgets = {
       listsEnabled: prefs["widgets.lists.enabled"],
       timerEnabled: prefs["widgets.focusTimer.enabled"],
@@ -1018,7 +1021,6 @@ export class BaseContent extends React.PureComponent {
       weatherEnabled: novaEnabled
         ? prefs["widgets.weather.enabled"]
         : prefs.showWeather,
-      sportsWidgetEnabled: prefs["widgets.sportsWidget.enabled"],
       privacyEnabled: prefs["widgets.privacy.enabled"],
       crosswordEnabled: prefs["widgets.crossword.enabled"],
       stocksEnabled: prefs["widgets.stocks.enabled"],
@@ -1157,13 +1159,26 @@ export class BaseContent extends React.PureComponent {
         // Unlike side-by-side, an assigned-but-inactive spaces variant renders
         // the ordinary band, so there is no Spaces container for these classes
         // to describe.
-        ...(isSpacesActive(prefs) ? spacesBandClasses(prefs) : []),
+        // The feed state too, or the thematic variant can class the band for
+        // spaces while DiscoveryStreamBase, which drops a space with no
+        // sections, has fallen back to the flat layout.
+        ...(isSpacesActive(prefs, props.DiscoveryStream)
+          ? spacesBandClasses(prefs)
+          : []),
         noFeedOrContentWidgets && "highlights-only",
       ]
         .filter(Boolean)
         .join(" ");
+      // Variant B of the search bar carries its own row above the input, which
+      // a centered logo would sit under.
+      const searchHasOwnRow =
+        prefs.showSearch &&
+        "variant-b" in
+          (this.props.ExternalComponents.components.find(
+            c => c.type === "SEARCH"
+          )?.attributes ?? {});
       const logoShouldBeCentered =
-        noFeedOrContentWidgets && !hasManyTopSitesRows;
+        noFeedOrContentWidgets && !hasManyTopSitesRows && !searchHasOwnRow;
       // The 5-column story grid is driven by the layout data alone: the content
       // band only widens when every section has a columnCount: 5 entry. Sections
       // share one subgrid track count, so a layout set where only some sections
@@ -1228,10 +1243,10 @@ export class BaseContent extends React.PureComponent {
       return (
         <BaseContext.Provider value={baseContextValue}>
           <div
-            className={`nova-outer-wrapper${this.state.fixedSearch ? " stuck-search" : ""}`}
+            className={`nova-outer-wrapper${this.state.fixedSearch ? " stuck-search" : ""}${searchHasOwnRow ? " search-has-own-row" : ""}`}
           >
             <div
-              className={`container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}${hasFiveColumnLayout ? " sections-5-col" : ""}`}
+              className={`container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}${searchHasOwnRow ? " search-has-own-row" : ""}${hasFiveColumnLayout ? " sections-5-col" : ""}`}
             >
               <aside className="sidebar-inline-start">
                 {!prefs.hideLogo && !logoShouldBeCentered && !isPageEmpty && (
@@ -1359,9 +1374,14 @@ export class BaseContent extends React.PureComponent {
                 mayHaveWeather={mayHaveWeather}
                 mayHaveWebNotifications={mayHaveWebNotifications}
                 mayHaveWidgets={mayHaveWidgets}
+                // @nova-cleanup(remove-conditional): Delete the eight
+                // mayHave*Widget props from this render site once the classic
+                // widget toggle block in ContentSection.jsx is deleted. Keep
+                // enabledWidgets: its widgetsMaximized and widgetsMayBeMaximized
+                // members are read by the widget size telemetry in
+                // ContentSection.jsx.
                 mayHaveTimerWidget={mayHaveTimerWidget}
                 mayHaveListsWidget={mayHaveListsWidget}
-                mayHaveSportsWidget={mayHaveSportsWidget}
                 mayHaveClocksWidget={mayHaveClocksWidget}
                 mayHavePrivacyWidget={mayHavePrivacyWidget}
                 mayHaveCrosswordWidget={mayHaveCrosswordWidget}
@@ -1541,7 +1561,6 @@ export class BaseContent extends React.PureComponent {
               mayHaveWidgets={mayHaveWidgets}
               mayHaveTimerWidget={mayHaveTimerWidget}
               mayHaveListsWidget={mayHaveListsWidget}
-              mayHaveSportsWidget={mayHaveSportsWidget}
               mayHaveClocksWidget={mayHaveClocksWidget}
               mayHavePrivacyWidget={mayHavePrivacyWidget}
               mayHaveCrosswordWidget={mayHaveCrosswordWidget}
@@ -1588,6 +1607,7 @@ export const Base = connect(state => ({
   Prefs: state.Prefs,
   Sections: state.Sections,
   DiscoveryStream: state.DiscoveryStream,
+  ExternalComponents: state.ExternalComponents,
   Messages: state.Messages,
   Notifications: state.Notifications,
   Search: state.Search,

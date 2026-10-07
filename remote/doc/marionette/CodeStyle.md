@@ -249,4 +249,4 @@ failing due to a stupid linting issue.
 [mozlint]: /code-quality/lint/mozlint.md
 [eslint]: /code-quality/lint/linters/eslint.md
 [ruff]: /code-quality/lint/linters/ruff.md
-[enable automatic linting]: /code-quality/lint/usage.md#using-a-vcs-hook
+[enable automatic linting]: /code-quality/lint/usage.md#using-a-git-hook

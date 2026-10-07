@@ -227,13 +227,28 @@ export class TaskbarTabsRegistry {
       };
     }
 
+    let startUrl;
+    if (manifest.start_url) {
+      startUrl = manifest.start_url;
+    } else if (aUrl.schemeIs("moz-extension")) {
+      // For extensions, the prePath will give an index of files in the
+      // extension. Since this isn't useful, and it isn't easy to get to the
+      // original page, remove the query/ref but preserve everything else.
+      startUrl = aUrl.mutate().setQuery("").setRef("").finalize().spec;
+    } else {
+      // For non-extensions, it should be easy enough for the user to navigate
+      // to the page they wanted. Without a manifest, we assume this is the
+      // homepage of the web app.
+      startUrl = aUrl.prePath;
+    }
+
     let id = Services.uuid.generateUUID().toString().slice(1, -1);
     let taskbarTab = new TaskbarTab({
       id,
       scopes: [scope],
       userContextId: aUserContextId,
       name: manifest.name ?? generateName(aUrl),
-      startUrl: manifest.start_url ?? aUrl.prePath,
+      startUrl,
     });
     this.#taskbarTabs.push(taskbarTab);
 

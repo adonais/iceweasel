@@ -1,4 +1,6 @@
-# Eclipse
+# Other Editors
+
+## Eclipse
 
 You can generate an Eclipse project by running:
 
@@ -15,6 +17,16 @@ You can run a Visual Studio project by running:
 ```
 ./mach ide visualstudio
 ```
+
+## Zed
+
+You can generate a Zed configuration by running:
+
+```
+./mach ide zed
+```
+
+This will generate a `.zed/settings.json` file in the Firefox project root and won't change global Zed settings.
 
 (compiledb-back-end-compileflags)=
 

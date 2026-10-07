@@ -68,7 +68,7 @@ cairo_font_face_t* ScaledFontFreeType::CreateCairoFontFace(
 
 bool ScaledFontFreeType::GetFontInstanceData(FontInstanceDataOutput aCb,
                                              void* aBaton) {
-  std::vector<FontVariation> variations;
+  std::vector<wr::FontVariation> variations;
   if (HasVariationSettings()) {
     UnscaledFontFreeType::GetVariationSettingsFromFace(&variations,
                                                        mFace->GetFace());
@@ -83,7 +83,7 @@ bool ScaledFontFreeType::GetFontInstanceData(FontInstanceDataOutput aCb,
 bool ScaledFontFreeType::GetWRFontInstanceOptions(
     Maybe<wr::FontInstanceOptions>* aOutOptions,
     Maybe<wr::FontInstancePlatformOptions>* aOutPlatformOptions,
-    std::vector<FontVariation>* aOutVariations) {
+    std::vector<wr::FontVariation>* aOutVariations) {
   wr::FontInstanceOptions options = {};
   options.render_mode = wr::FontRenderMode::Alpha;
   options.flags = wr::FontInstanceFlags{0};

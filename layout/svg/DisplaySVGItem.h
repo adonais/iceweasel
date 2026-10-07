@@ -29,10 +29,18 @@ class DisplaySVGItem : public nsPaintedDisplayItem {
    */
   void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
                HitTestState* aState, nsTArray<nsIFrame*>* aOutFrames) override;
-  /**
-   * Paint the frame to some rendering context.
-   */
+
   void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
+
+  nsRect GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap) const override {
+    if (aBuilder->IsForEventDelivery()) {
+      // We need to include the ink overflow rect to deal with invisible strokes
+      // etc for hit testing.
+      *aSnap = false;
+      return mFrame->InkOverflowRectRelativeToSelf() + ToReferenceFrame();
+    }
+    return nsPaintedDisplayItem::GetBounds(aBuilder, aSnap);
+  }
 };
 
 }  // namespace mozilla

@@ -74,16 +74,11 @@
   .message-inner {
     flex-direction: row;
     gap: var(--space-xlarge);
-    align-items: stretch;
   }
 
   .message-image img {
     width: 98px;
     height: 98px;
-  }
-
-  .message-content {
-    justify-content: space-between;
   }
 
   /* The message can opt-in to has-responsive-image, in which case the image

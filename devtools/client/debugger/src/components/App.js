@@ -53,7 +53,7 @@ class App extends Component {
 
     // The shortcuts should be built as early as possible because they are
     // exposed via getChildContext.
-    this.#shortcuts = new KeyShortcuts({ window });
+    this.#shortcuts = new KeyShortcuts(window);
 
     this.state = {
       shortcutsModalEnabled: false,

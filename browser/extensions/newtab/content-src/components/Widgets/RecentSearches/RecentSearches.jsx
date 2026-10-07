@@ -214,7 +214,7 @@ function RecentSearches({
           <h2
             id="recent-searches-widget-label"
             className="recent-searches-title"
-            data-l10n-id="newtab-recent-searches-widget-title"
+            data-l10n-id="newtab-search-widget-title"
             hidden={true}
           />
           <div className="recent-searches-tabs" role="tablist">
@@ -251,7 +251,7 @@ function RecentSearches({
             menuId="recent-searches-context-menu"
             type="icon ghost"
             size="small"
-            data-l10n-id="newtab-recent-searches-widget-menu-button"
+            data-l10n-id="newtab-search-widget-menu-button"
           />
           <panel-list
             className="panel-list-no-icons"

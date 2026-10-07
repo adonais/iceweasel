@@ -84,6 +84,7 @@
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_general.h"
 #include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/StaticPrefs_mozilla.h"
 #include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/WritingModes.h"
@@ -1461,6 +1462,20 @@ void nsCocoaWindow::DispatchAPZWheelInputEvent(InputData& aEvent) {
   }
 }
 
+void nsCocoaWindow::PerformHapticFeedback(mozilla::HapticFeedbackType aType) {
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+
+  if (aType == mozilla::HapticFeedbackType::ThresholdCrossing) {
+    [[NSHapticFeedbackManager defaultPerformer]
+        performFeedbackPattern:NSHapticFeedbackPatternAlignment
+               performanceTime:NSHapticFeedbackPerformanceTimeNow];
+  }
+
+  // Any other HapticFeedbackType values are not implemented on macOS.
+
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
 void nsCocoaWindow::DispatchDoubleTapGesture(
     TimeStamp aEventTimeStamp, LayoutDeviceIntPoint aScreenPosition,
     mozilla::Modifiers aModifiers) {
@@ -2326,6 +2341,14 @@ NSEvent* gLastDragMouseDownEvent = nil;  // [strong]
 
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
 
+  // The system does not send us mouse button presses while it tracks a drag, so
+  // any drag session that is still around at this point is stale. Ending it
+  // runs script, which can tear down this widget.
+  nsDragService::EndStaleDragSession();
+  if (!mGeckoChild) {
+    return;
+  }
+
   if ([self maybeRollup:theEvent] ||
       !ChildViewMouseTracker::WindowAcceptsEvent([self window], theEvent, self,
                                                  isClickThrough)) {
@@ -2431,11 +2454,7 @@ NSEvent* gLastDragMouseDownEvent = nil;  // [strong]
         ([[self window] isZoomed] != mZoomStateAtLastSingleClick);
 
     if (!zoomStateAlreadyChanged) {
-      if (nsCocoaUtils::ShouldZoomOnTitlebarDoubleClick()) {
-        [[self window] performZoom:nil];
-      } else if (nsCocoaUtils::ShouldMinimizeOnTitlebarDoubleClick()) {
-        [[self window] performMiniaturize:nil];
-      }
+      nsCocoaUtils::PerformTitlebarDoubleClickAction([self window]);
     }
   }
 
@@ -2471,6 +2490,15 @@ NSEvent* gLastDragMouseDownEvent = nil;  // [strong]
   }
 
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
+
+  // A drag needs a pressed mouse button, so any drag session that is still
+  // around while the mouse moves with all buttons released is stale.
+  if (![NSEvent pressedMouseButtons]) {
+    nsDragService::EndStaleDragSession();
+  }
+  if (!mGeckoChild) {
+    return;
+  }
 
   WidgetMouseEvent geckoEvent(true, eMouseMove, mGeckoChild,
                               WidgetMouseEvent::eReal);
@@ -3176,13 +3204,16 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
     return;
   }
 
-  WidgetContentCommandEvent contentCommandEvent(
-      true, eContentCommandLookUpDictionary, mGeckoChild);
-  contentCommandEvent.mTimeStamp =
-      nsCocoaUtils::GetEventTimeStamp([event timestamp]);
-  NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
-  contentCommandEvent.mRefPoint = mGeckoChild->CocoaPointsToDevPixels(point);
-  mGeckoChild->DispatchWindowEvent(contentCommandEvent);
+  if (const RefPtr<TextEventDispatcher> dispatcher =
+          mGeckoChild->GetTextEventDispatcher()) {
+    WidgetContentCommandEvent contentCommandEvent(
+        true, eContentCommandLookUpDictionary, mGeckoChild);
+    contentCommandEvent.mTimeStamp =
+        nsCocoaUtils::GetEventTimeStamp([event timestamp]);
+    NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
+    contentCommandEvent.mRefPoint = mGeckoChild->CocoaPointsToDevPixels(point);
+    dispatcher->DispatchContentCommandEvent(contentCommandEvent);
+  }
 }
 
 - (NSInteger)windowLevel {
@@ -4298,14 +4329,20 @@ static NSURL* GetPasteLocation(NSPasteboard* aPasteboard, bool aUseFallback) {
 
       // Determine if we can paste (if receiving data from the service).
       if (mGeckoChild && returnType) {
-        WidgetContentCommandEvent command(
-            true, eContentCommandPasteTransferable, mGeckoChild, true);
-        command.mTimeStamp =
-            nsCocoaUtils::GetEventTimeStamp([[NSApp currentEvent] timestamp]);
-        // This might possibly destroy our widget (and null out mGeckoChild).
-        mGeckoChild->DispatchWindowEvent(command);
-        if (!mGeckoChild || !command.mSucceeded || !command.mIsEnabled)
-          result = nil;
+        if (const RefPtr<TextEventDispatcher> dispatcher =
+                mGeckoChild->GetTextEventDispatcher()) {
+          // This might possibly destroy our widget (and null out mGeckoChild).
+          const Result<bool, nsresult> pasteTransferableCommandResult =
+              dispatcher->DispatchPasteTransferableCommandEvent(
+                  nullptr,
+                  nsCocoaUtils::GetEventTimeStamp(
+                      [[NSApp currentEvent] timestamp]),
+                  OnlyEnabledCheck::Yes);
+          if (!mGeckoChild || pasteTransferableCommandResult.isErr() ||
+              !pasteTransferableCommandResult.inspect()) {
+            result = nil;
+          }
+        }
       }
     }
   }
@@ -4432,14 +4469,17 @@ static NSURL* GetPasteLocation(NSPasteboard* aPasteboard, bool aUseFallback) {
 
   NS_ENSURE_TRUE(mGeckoChild, false);
 
-  WidgetContentCommandEvent command(true, eContentCommandPasteTransferable,
-                                    mGeckoChild);
-  command.mTimeStamp =
-      nsCocoaUtils::GetEventTimeStamp([[NSApp currentEvent] timestamp]);
-  command.mTransferable = trans;
-  mGeckoChild->DispatchWindowEvent(command);
+  if (const RefPtr<TextEventDispatcher> dispatcher =
+          mGeckoChild->GetTextEventDispatcher()) {
+    const Result<bool, nsresult> pasteTransferableCommandResult =
+        dispatcher->DispatchPasteTransferableCommandEvent(
+            trans,
+            nsCocoaUtils::GetEventTimeStamp([[NSApp currentEvent] timestamp]));
+    return pasteTransferableCommandResult.isOk() &&
+           pasteTransferableCommandResult.inspect();
+  }
 
-  return command.mSucceeded && command.mIsEnabled;
+  return false;
 }
 
 - (void)pressureChangeWithEvent:(NSEvent*)event {
@@ -5229,6 +5269,24 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
         mWindow.collectionBehavior | NSWindowCollectionBehaviorCanJoinAllSpaces;
   }
 
+  // Let the Picture-in-Picture player float above other applications'
+  // native-fullscreen Spaces (bug 1688932). Two things are load-bearing: the
+  // window must carry NSWindowStyleMaskNonactivatingPanel, which BaseWindow
+  // keeps by overriding +_validateStyleMask:, and it must not carry
+  // FullScreenPrimary (handled below). The window level is irrelevant; the
+  // NSFloatingWindowLevel set above is sufficient.
+  if (mPiPType == PiPType::MediaPiP) {
+    mWindow.styleMask |= NSWindowStyleMaskNonactivatingPanel;
+    // A window is assigned to a Space when it is first ordered in, and only a
+    // FullScreenAuxiliary window may be placed on another application's
+    // fullscreen Space. The titled-window block below sets this too, but the
+    // player is recreated without a titlebar for emulated fullscreen
+    // (HideWindowChrome) and would otherwise land on a regular Space.
+    mWindow.collectionBehavior |=
+        NSWindowCollectionBehaviorFullScreenAuxiliary |
+        NSWindowCollectionBehaviorFullScreenDisallowsTiling;
+  }
+
   // Set an explicit fullscreen collection behavior before any display so
   // that AppKit never needs to consult `_implicitlyAllowsFullScreenPrimary`
   // while rendering. That internal heuristic has been observed to flip its
@@ -5249,8 +5307,11 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
   if ((mWindowType == WindowType::TopLevel ||
        mWindowType == WindowType::Dialog) &&
       (features & NSWindowStyleMaskTitled)) {
+    // A non-activating player must stay Auxiliary: FullScreenPrimary would
+    // stop it from being shown on another application's fullscreen Space.
+    const bool pipOverFullScreen = mPiPType == PiPType::MediaPiP;
     NSWindowCollectionBehavior fsBehavior =
-        (features & NSWindowStyleMaskResizable)
+        ((features & NSWindowStyleMaskResizable) && !pipOverFullScreen)
             ? (NSWindowCollectionBehaviorFullScreenPrimary |
                NSWindowCollectionBehaviorFullScreenAllowsTiling)
             : (NSWindowCollectionBehaviorFullScreenAuxiliary |
@@ -6110,6 +6171,7 @@ void nsCocoaWindow::HideWindowChrome(bool aShouldHide) {
   }
 
   const BOOL isVisible = mWindow.isVisible;
+  const BOOL wasKey = mWindow.isKeyWindow;
 
   // Remove child windows.
   NSArray* childWindows = [mWindow childWindows];
@@ -6158,6 +6220,15 @@ void nsCocoaWindow::HideWindowChrome(bool aShouldHide) {
     mIsAnimationSuppressed = true;
     Show(true);
     mIsAnimationSuppressed = wasAnimationSuppressed;
+    // Show() orders an always-on-top window front without making it key. If
+    // the window we replaced was key, hand key status on so keyboard input
+    // keeps reaching it -- e.g. Escape to leave the fullscreen we are
+    // entering. Only the player needs this: Show() makes an ordinary window
+    // key by itself, so restricting it here keeps every other window on the
+    // path it took before.
+    if (wasKey && !mWindow.isKeyWindow && mPiPType == PiPType::MediaPiP) {
+      [mWindow makeKeyAndOrderFront:nil];
+    }
   }
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
@@ -6238,6 +6309,12 @@ static bool AlwaysUsesNativeFullScreen() {
   [win setAlphaValue:0];
   [win setIgnoresMouseEvents:YES];
   [win setLevel:NSScreenSaverWindowLevel];
+  // Cover the Space the window is actually on: the Picture-in-Picture player
+  // may float over another application's fullscreen Space, which only windows
+  // with these behaviors can join.
+  win.collectionBehavior = mWindow.collectionBehavior &
+                           (NSWindowCollectionBehaviorCanJoinAllSpaces |
+                            NSWindowCollectionBehaviorFullScreenAuxiliary);
   [win makeKeyAndOrderFront:nil];
 
   auto data = new FullscreenTransitionData(win);
@@ -6302,6 +6379,18 @@ void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
   mHasStartedNativeFullscreen = false;
   DispatchOcclusionEvent();
 
+  bool restoreKeyToPlayer = false;
+  // The player only borrows FullScreenPrimary while it is in its own
+  // fullscreen (see DoMakeFullScreen). Now that it is windowed again, give
+  // Auxiliary back, so it is composited onto another application's fullscreen
+  // Space rather than being hidden behind it. This is also the path taken when
+  // AppKit refused the transition, so the borrow cannot outlive a failure.
+  if (!aFullscreen && mPiPType == PiPType::MediaPiP &&
+      GetSupportsNativeFullscreen()) {
+    SetSupportsNativeFullscreen(false);
+    restoreKeyToPlayer = true;
+  }
+
   // Check if aFullscreen matches our expected fullscreen state. It might not if
   // there was a failure somewhere along the way, in which case we'll recover
   // from that.
@@ -6316,12 +6405,17 @@ void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
 
   TransitionType transition =
       aFullscreen ? TransitionType::Fullscreen : TransitionType::Windowed;
+  const nsSizeMode sizeModeBefore = mSizeMode;
   if (receivedExpectedFullscreen) {
     // Everything is as expected. Update our state if needed.
     HandleUpdateFullscreenOnResize();
   } else {
-    // We weren't expecting this fullscreen state. Update our fullscreen state
-    // to the new reality.
+    // We weren't expecting this fullscreen state. The pending update belongs to
+    // a transition that is not happening, so drop it before an unrelated resize
+    // applies it.
+    mUpdateFullscreenOnResize.reset();
+
+    // Update our fullscreen state to the new reality.
     UpdateFullscreenState(aFullscreen, true);
 
     // If we have a current transition, switch it to match what we just did.
@@ -6332,6 +6426,30 @@ void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
 
   // Whether we expected this transition or not, we're ready to finish it.
   FinishCurrentTransitionIfMatching(transition);
+
+  // Leaving its own fullscreen returns the player to the Space it came from.
+  // AppKit hands key to another window on the way out and does not give it back
+  // to a non-activating window by itself, so Gecko would stop counting the
+  // player as active (see nsWindowMap.mm) and the keyboard would reach a
+  // browser window the user may not even be able to see. This has to wait until
+  // the transition above has been finished, because taking key runs Gecko code
+  // that must not see a half-updated transition. Only do it while we are the
+  // active application, so that leaving fullscreen by switching away cannot
+  // pull focus out of another application.
+  if (restoreKeyToPlayer && NSApp.isActive && mWindow.isVisible &&
+      !mWindow.isKeyWindow) {
+    [mWindow makeKeyAndOrderFront:nil];
+  }
+
+  // Our size mode changes only along with a size mode event, so an unchanged
+  // size mode here means we reconciled to a fullscreen state we were already
+  // reporting, and our listener is still waiting for the fullscreen change it
+  // asked us for. Tell it last, once our own state has settled, because this
+  // runs script.
+  if (!receivedExpectedFullscreen && mSizeMode == sizeModeBefore &&
+      mWidgetListener) {
+    mWidgetListener->FullscreenChangeFailed(aFullscreen);
+  }
 }
 
 void nsCocoaWindow::UpdateFullscreenState(bool aFullScreen, bool aNativeMode) {
@@ -6366,6 +6484,22 @@ nsresult nsCocoaWindow::DoMakeFullScreen(bool aFullScreen,
                                          bool aUseSystemTransition) {
   if (!mWindow) {
     return NS_OK;
+  }
+
+  // The player is FullScreenAuxiliary so that the window server will composite
+  // it onto another application's fullscreen Space, but an Auxiliary window is
+  // not eligible for AppKit's own fullscreen, so its own fullscreen would fall
+  // to EmulatedFullscreen below. That path calls HideOSChromeOnScreen(), which
+  // is [NSApp setPresentationOptions:], and so hides the menu bar and the Dock
+  // for the whole application; they also draw over the player, which sits at
+  // NSFloatingWindowLevel, as soon as another application is activated. Lend
+  // the player FullScreenPrimary for the duration of its own fullscreen so it
+  // keeps taking the native path and getting a Space of its own.
+  // CocoaWindowDidEnterFullscreen() gives Auxiliary back when it returns to
+  // windowed, including when AppKit refuses the transition.
+  if (aFullScreen && aUseSystemTransition && mPiPType == PiPType::MediaPiP &&
+      !GetSupportsNativeFullscreen()) {
+    SetSupportsNativeFullscreen(true);
   }
 
   // Figure out what type of transition is being requested.
@@ -7106,6 +7240,14 @@ void nsCocoaWindow::SetFocus(Raise aRaise,
       [mWindow deminiaturize:nil];
     }
     [mWindow makeKeyAndOrderFront:nil];
+    // AppKit will not make a window key while its application is inactive, so
+    // the call above cannot honour Raise::Yes from the background, and the
+    // cooperative -activate is refused for a background application. Reaching
+    // here already means BrowsingContext::CanFocusCheck granted the raise.
+    if (StaticPrefs::mozilla_widget_raise_on_setfocus_AtStartup() &&
+        !NSApp.isActive) {
+      [NSApp activateIgnoringOtherApps:YES];
+    }
   }
 }
 
@@ -7769,29 +7911,23 @@ LayoutDeviceIntPoint nsCocoaWindow::GetNativeLockedPoint() {
   mGeckoWindow->CocoaWindowDidEnterFullscreen(false);
 }
 
-- (void)windowDidFailToEnterFullScreen:(NSNotification*)notification {
+- (void)windowDidFailToEnterFullScreen:(NSWindow*)window {
   if (!mGeckoWindow) {
     return;
   }
 
   MOZ_ASSERT((mGeckoWindow->GetCocoaWindow().styleMask &
               NSWindowStyleMaskFullScreen) == 0);
-  MOZ_ASSERT(mGeckoWindow->SizeMode() == nsSizeMode_Fullscreen);
 
-  // We're in a strange situation. We've told DOM that we are going to
-  // fullscreen by changing our size mode, and therefore the window
-  // content is what we would show if we were properly in fullscreen.
-  // But the window is actually in a windowed style. We have to do
-  // several things:
-  // 1) Clear sWindowInNativeTransition and mTransitionCurrent, both set
-  //    when we started the fullscreen transition.
-  // 2) Change our size mode to windowed.
-  // Conveniently, we can do these things by pretending we just arrived
-  // at windowed mode, and all will be sorted out.
+  // macOS has given up on the transition, so the window stays windowed. We can
+  // get the right result by pretending we just arrived at windowed mode: that
+  // releases the native transition for other windows, clears the transition we
+  // are in the middle of, and reconciles our fullscreen state and the DOM's,
+  // whichever of the two the transition had already reached.
   mGeckoWindow->CocoaWindowDidEnterFullscreen(false);
 }
 
-- (void)windowDidFailToExitFullScreen:(NSNotification*)notification {
+- (void)windowDidFailToExitFullScreen:(NSWindow*)window {
   if (!mGeckoWindow) {
     return;
   }
@@ -8047,6 +8183,23 @@ static NSMutableSet* gSwizzledFrameViewClasses = nil;
 @end
 
 @implementation BaseWindow
+
+// AppKit clears NSWindowStyleMaskNonactivatingPanel from any window whose class
+// is not an NSPanel, in +[NSWindow _validateStyleMask:]. The Picture-in-Picture
+// player needs that bit on a plain window so it can float over another
+// application's fullscreen Space without activating Firefox: the window server
+// gates that on the bit and on FullScreenAuxiliary, never on the class
+// (bug 1688932). Keep the bit and let AppKit validate the rest of the mask.
+// Only the player ever asks for it, so this is safe for every BaseWindow.
++ (NSUInteger)_validateStyleMask:(NSUInteger)aStyleMask {
+  if (![NSWindow respondsToSelector:@selector(_validateStyleMask:)]) {
+    // A future macOS without this method: AppKit strips the bit again and the
+    // player stops floating over other applications' fullscreen Spaces.
+    return aStyleMask;
+  }
+  NSUInteger keep = aStyleMask & NSWindowStyleMaskNonactivatingPanel;
+  return [super _validateStyleMask:(aStyleMask & ~keep)] | keep;
+}
 
 // The frame of a window is implemented using undocumented NSView subclasses.
 // We offset the window buttons by overriding the method _closeButtonOrigin on

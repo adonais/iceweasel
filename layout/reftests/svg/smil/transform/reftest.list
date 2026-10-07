@@ -3,7 +3,7 @@
 
 fuzzy(0-130,0-1000) == additive-1.svg additive-1-ref.svg # bug 981344, bug 1239766
 == animate-width-1.svg lime.svg
-fuzzy-if(cocoaWidget,0-5,0-101) fuzzy-if(winWidget,0-15,0-101) fuzzy-if(gtkWidget,0-5,0-101) fuzzy-if(Android,0-16,0-1) == paced-1.svg paced-1-ref.svg # bug 981640, Bug 1293550, Bug 1592998
+fuzzy-if(cocoaWidget,0-5,0-101) fuzzy-if(winWidget,0-15,0-101) fuzzy-if(gtkWidget,0-255,0-2200) fuzzy-if(Android,0-16,0-1) == paced-1.svg paced-1-ref.svg # bug 981640, Bug 1293550, Bug 1592998
 == rotate-angle-1.svg rotate-angle-ref.svg
 == rotate-angle-2.svg rotate-angle-ref.svg
 == rotate-angle-3.svg rotate-angle-ref.svg

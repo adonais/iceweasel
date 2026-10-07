@@ -34,9 +34,15 @@
           },
           "nova": {
             "value": {
-              "nativeTheme": "color-mix(in srgb, AccentColor 20%, transparent)",
-              "light": "{color.violet-desaturated.20}",
-              "dark": "{color.violet-desaturated.50}",
+              "nativeTheme": "color-mix(in srgb, currentColor 17%, transparent)",
+              "platform": {
+                "light": "color-mix(in srgb, {color.accent.primary.@base} 32%, transparent)",
+                "dark": "color-mix(in srgb, {color.accent.primary.@base} 55%, transparent)"
+              },
+              "brand": {
+                "light": "{color.violet-desaturated.20}",
+                "dark": "{color.violet-desaturated.50}"
+              },
               "forcedColors": "SelectedItemText"
             }
           }
@@ -55,9 +61,15 @@
           },
           "nova": {
             "value": {
-              "nativeTheme": "color-mix(in srgb, AccentColor 30%, transparent)",
-              "light": "{color.violet-desaturated.30}",
-              "dark": "{color.violet-desaturated.40}",
+              "nativeTheme": "color-mix(in srgb, currentColor 30%, transparent)",
+              "platform": {
+                "light": "color-mix(in srgb, {color.accent.primary.@base} 50%, transparent)",
+                "dark": "color-mix(in srgb, {color.accent.primary.@base} 75%, transparent)"
+              },
+              "brand": {
+                "light": "{color.violet-desaturated.30}",
+                "dark": "{color.violet-desaturated.40}"
+              },
               "forcedColors": "SelectedItemText"
             }
           }
@@ -142,11 +154,7 @@
           }
         },
         "active": {
-          "value": {
-            "default": "{button.background.color.active}",
-            "nativeTheme": "color-mix(in srgb, currentColor 30%, transparent)",
-            "forcedColors": "{button.background.color.active}"
-          }
+          "value": "{button.background.color.active}"
         },
         "disabled": {
           "ignoreFigma": "Preserve token structure that can't be replicated in Figma",
@@ -158,11 +166,7 @@
           }
         },
         "hover": {
-          "value": {
-            "default": "{button.background.color.hover}",
-            "nativeTheme": "color-mix(in srgb, currentColor 17%, transparent)",
-            "forcedColors": "{button.background.color.hover}"
-          }
+          "value": "{button.background.color.hover}"
         },
         "selected": {
           "value": "{button.background.color.ghost.active}"
@@ -187,18 +191,15 @@
       },
       "menu": {
         "@base": {
-          "value": "{button.background.color.ghost.@base}"
+          "value": {
+            "default": "{button.background.color.ghost.@base}",
+            "forcedColors": "Menu"
+          }
         },
         "active": {
           "value": {
             "default": "{button.background.color.ghost.active}",
-            "forcedColors": "{button.background.color.primary.@base}",
-            "nova": {
-              "comment": "The HCM value in Figma needs to be updated",
-              "value": {
-                "forcedColors": "ButtonText"
-              }
-            }
+            "forcedColors": "{button.background.color.menu.hover}"
           }
         },
         "disabled": {
@@ -207,13 +208,7 @@
         "hover": {
           "value": {
             "default": "{button.background.color.ghost.hover}",
-            "forcedColors": "{button.background.color.primary.@base}",
-            "nova": {
-              "comment": "The HCM value in Figma needs to be updated",
-              "value": {
-                "forcedColors": "ButtonText"
-              }
-            }
+            "forcedColors": "-moz-menuhover"
           }
         },
         "selected": {
@@ -237,10 +232,7 @@
           "value": "{toolbarbutton.background.color.active}"
         },
         "disabled": {
-          "value": {
-            "default": "{toolbarbutton.background.color.@base}",
-            "forcedColors": "{button.background.color.disabled}"
-          }
+          "value": "{toolbarbutton.background.color.disabled}"
         },
         "selected": {
           "value": "{button.background.color.ghost.active}"
@@ -271,6 +263,7 @@
           "nova": {
             "comment": "Preserve prefersContrast value",
             "value": {
+              "nativeTheme": "currentColor",
               "default": "{color.accent.primary.@base}"
             }
           }
@@ -625,6 +618,7 @@
               "comment": "Preserve token structure that can't be replicated in Figma",
               "value": {
                 "brand": {
+                  "default": "{button.text.color.@base}",
                   "forcedColors": "ButtonText"
                 }
               }
@@ -705,18 +699,19 @@
       },
       "menu": {
         "@base": {
-          "value": "{button.text.color.ghost.@base}"
+          "value": {
+            "default": "{button.text.color.ghost.@base}",
+            "forcedColors": "MenuText"
+          }
         },
         "active": {
           "value": {
             "default": "{button.text.color.ghost.active}",
-            "forcedColors": "{button.text.color.primary.@base}",
+            "forcedColors": "{button.text.color.menu.hover}",
             "nova": {
-              "comment": "The HCM value in Figma needs to be updated",
               "value": {
                 "light": "{button.text.color.ghost.active}",
-                "dark": "{button.text.color.active}",
-                "forcedColors": "ButtonFace"
+                "dark": "{button.text.color.active}"
               }
             }
           }
@@ -727,15 +722,7 @@
         "hover": {
           "value": {
             "default": "{button.text.color.ghost.hover}",
-            "forcedColors": "{button.text.color.primary.@base}",
-            "nova": {
-              "comment": "The HCM value in Figma needs to be updated",
-              "value": {
-                "light": "{button.text.color.ghost.hover}",
-                "dark": "{button.text.color.hover}",
-                "forcedColors": "ButtonFace"
-              }
-            }
+            "forcedColors": "-moz-menuhovertext"
           }
         },
         "selected": {

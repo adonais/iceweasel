@@ -104,6 +104,24 @@ class SettingsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRul
         )
         builder.register(
             from = pageName,
+            to = "SettingsAdvancedDownloadSettingsPage",
+            steps =
+                listOf(
+                    NavigationStep.Swipe(SettingsSelectors.DOWNLOAD_SETTINGS_BUTTON),
+                    NavigationStep.Click(SettingsSelectors.DOWNLOAD_SETTINGS_BUTTON),
+                ),
+        )
+        builder.register(
+            from = pageName,
+            to = "SettingsAdvancedRemoteImprovementsPage",
+            steps =
+                listOf(
+                    NavigationStep.Swipe(SettingsSelectors.REMOTE_IMPROVEMENTS_BUTTON),
+                    NavigationStep.Click(SettingsSelectors.REMOTE_IMPROVEMENTS_BUTTON),
+                ),
+        )
+        builder.register(
+            from = pageName,
             to = "SettingsPageSummariesPage",
             steps =
                 listOf(

@@ -16,6 +16,7 @@ from typing import Any
 
 import appdirs
 import yaml
+from taskgraph import main as taskgraph_main
 from taskgraph.main import (
     FORMAT_METHODS,
     argument,
@@ -40,6 +41,21 @@ def format_taskgraph_yaml(taskgraph):
 
 
 FORMAT_METHODS["yaml"] = format_taskgraph_yaml
+
+_upstream_format_taskgraph_multiple = taskgraph_main.format_taskgraph_multiple
+
+
+def format_taskgraph_multiple(*args, **kwargs):
+    """Wrapper run in the worker processes of `generate_taskgraph`.
+
+    With the "spawn" and "forkserver" start methods, workers don't inherit the
+    parent's state. Defining this function here ensures unpickling it imports
+    `gecko_taskgraph`, applying its overrides (e.g. the graph config schema)
+    before any graph generation happens."""
+    return _upstream_format_taskgraph_multiple(*args, **kwargs)
+
+
+taskgraph_main.format_taskgraph_multiple = format_taskgraph_multiple
 
 
 @command(

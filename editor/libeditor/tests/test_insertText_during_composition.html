@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>`insertText` during composition</title>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css">
+<script src="/tests/SimpleTest/EventUtils.js"></script>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<script>
+"use strict";
+
+SimpleTest.waitForExplicitFinish();
+SimpleTest.waitForFocus(() => {
+  const editingHost = document.querySelector("div[contenteditable]");
+  editingHost.focus();
+  getSelection().collapse(editingHost.firstChild, editingHost.firstChild.length);
+  synthesizeCompositionChange({
+    composition: {
+      string: "ABCDEF",
+      clauses: [{ length: 6, attr: COMPOSITION_ATTR_RAW_CLAUSE }],
+    },
+    caret: { offset: 0, length: 0 },
+  });
+  is(
+    editingHost.textContent,
+    "abcdefABCDEF",
+    "composition should be started at end of the line"
+  );
+  editingHost.firstChild.splitText(1);
+  document.execCommand("insertText", false, "GGGG\nH");
+  // insertText should cause inserting text before the composition because the
+  // normal selection is collapsed at start of the composition.
+  is(
+    editingHost.innerHTML,
+    "abcdefGGGG<br>HABCDEF",
+    "insertText should insert the text before the composition"
+  );
+  synthesizeCompositionChange({
+    composition: {
+      string: "ABCDEFX",
+      clauses: [{ length: 7, attr: COMPOSITION_ATTR_RAW_CLAUSE }],
+    },
+    caret: { offset: 0, length: 0 },
+  });
+  // Updating composition should replace only the composition string.
+  todo_is(
+    editingHost.innerHTML,
+    "abcdefGGGG<br>HABCDEFX",
+    "updating composition should replace only the composition string range"
+  );
+
+  synthesizeComposition({ type: "compositioncommitasis" });
+
+  SimpleTest.finish();
+});
+</script>
+</head>
+<body>
+<div contenteditable>abcdef</div>
+</body>
+</html>

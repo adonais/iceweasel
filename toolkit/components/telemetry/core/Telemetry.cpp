@@ -62,6 +62,7 @@
 #if defined(XP_WIN)
 #  include "other/UntrustedModules.h"
 #endif
+#include "nsCRTGlue.h"
 #include "nsJSUtils.h"
 #include "nsNativeCharsetUtils.h"
 #include "nsNetCID.h"

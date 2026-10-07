@@ -8,6 +8,7 @@
 #include "SessionStoreData.h"
 #include "nsIDOMEventListener.h"
 #include "nsIObserver.h"
+#include "nsIDocShell.h"
 #include "nsIPrivacyTransitionObserver.h"
 #include "nsIWebProgressListener.h"
 #include "nsWeakReference.h"

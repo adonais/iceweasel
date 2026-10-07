@@ -55,11 +55,12 @@ def sanitize_shell_env(env):
     return env
 
 
-def get_rust_build_kind(substs, megazord=False):
-    # Megazord libraries use custom cargo profiles ("release-megazord",
-    # "dev-megazord") that output to different directories.
-    if megazord:
-        return "dev-megazord" if substs.get("MOZ_DEBUG_RUST") else "release-megazord"
+def get_rust_build_kind(substs, profile_suffix=""):
+    # Cargo writes the artifacts of a custom profile to a directory named
+    # after it.
+    if profile_suffix:
+        prefix = "dev" if substs.get("MOZ_DEBUG_RUST") else "release"
+        return f"{prefix}-{profile_suffix}"
     return "debug" if substs.get("MOZ_DEBUG_RUST") else "release"
 
 

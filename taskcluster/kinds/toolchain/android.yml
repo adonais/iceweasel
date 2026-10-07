@@ -21,7 +21,7 @@ linux64-android-avd-x86_64-repack:
         local-toolchain: true
     description: "Android AVD (Linux) repack toolchain build"
     treeherder:
-        symbol: TL(avd-x86_64-linux)
+        symbol: TL(avd-x86_64)
     run:
         script: repack-android-avd-linux.sh
         arguments:
@@ -38,7 +38,7 @@ linux64-android-avd-x86_64-repack:
 linux64-android31-avd-x86_64-repack:
     description: "Android AVD (Linux) repack toolchain build"
     treeherder:
-        symbol: TL(avd31-x86_64-linux)
+        symbol: TL(avd31-x86_64)
     worker-type: b-linux-kvm
     worker:
         kvm: true
@@ -58,7 +58,7 @@ linux64-android31-avd-x86_64-repack:
 linux64-android30-avd-x86-repack:
     description: "Android AVD (Linux) repack toolchain build"
     treeherder:
-        symbol: TL(avd30-x86-linux)
+        symbol: TL(avd30-x86)
     worker-type: b-linux-kvm
     worker:
         kvm: true
@@ -78,7 +78,7 @@ linux64-android30-avd-x86-repack:
 linux64-android34-avd-x86_64-repack:
     description: "Android AVD (Linux) repack toolchain build"
     treeherder:
-        symbol: TL(avd34-x86_64-linux)
+        symbol: TL(avd34-x86_64)
     worker-type: b-linux-kvm
     worker:
         kvm: true
@@ -100,7 +100,7 @@ linux64-android-avd-arm64-repack:
         local-toolchain: true
     description: "Android AVD (Linux) repack toolchain build"
     treeherder:
-        symbol: TL(avd-arm64-linux)
+        symbol: TL(avd-arm64)
     run:
         script: repack-android-avd-linux.sh
         arguments:
@@ -117,7 +117,7 @@ linux64-android-avd-arm64-repack:
 linux64-android-system-image-x86_64-repack:
     description: "Android System Images (Linux) repack toolchain build"
     treeherder:
-        symbol: TL(x86_64-avd-img-linux)
+        symbol: TL(avd-img-x86_64)
     run:
         script: repack-android-system-images-linux.sh
         arguments:
@@ -134,7 +134,7 @@ linux64-android-system-image-x86_64-repack:
 linux64-android31-system-image-x86_64-repack:
     description: "Android System Images (Linux) repack toolchain build"
     treeherder:
-        symbol: TL(x86_64-avd31-img-linux)
+        symbol: TL(avd31-img-x86_64)
     run:
         script: repack-android-system-images-linux.sh
         arguments:
@@ -151,7 +151,7 @@ linux64-android31-system-image-x86_64-repack:
 linux64-android30-system-image-x86-repack:
     description: "Android System Images (Linux) repack toolchain build"
     treeherder:
-        symbol: TL(x86-avd30-img-linux)
+        symbol: TL(avd30-img-x86)
     run:
         script: repack-android-system-images-linux.sh
         arguments:
@@ -168,7 +168,7 @@ linux64-android30-system-image-x86-repack:
 linux64-android34-system-image-x86_64-repack:
     description: "Android System Images (Linux) repack toolchain build"
     treeherder:
-        symbol: TL(x86_64-avd34-img-linux)
+        symbol: TL(avd34-img-x86_64)
     run:
         script: repack-android-system-images-linux.sh
         arguments:
@@ -193,12 +193,12 @@ linux64-jdk-repack:
         toolchain-artifact: project/gecko/jdk/jdk-linux.tar.zst
         toolchain-alias: linux64-jdk
         toolchain-env:
-            JAVA_HOME: "/builds/worker/fetches/jdk/jdk-17.0.18+8"
+            JAVA_HOME: "/builds/worker/fetches/jdk/jdk-17.0.20.1+1"
 
 linux64-android-sdk-linux-repack:
     description: "Android SDK (Linux) repack toolchain build"
     treeherder:
-        symbol: TL(android-sdk-linux)
+        symbol: TL(android-sdk)
     run:
         script: repack-android-sdk-linux.sh
         resources:
@@ -213,7 +213,7 @@ linux64-android-sdk-linux-repack:
 linux64-android-emulator-linux-repack:
     description: "Android Emulator (Linux) repack toolchain build"
     treeherder:
-        symbol: TL(android-emulator-linux)
+        symbol: TL(android-emulator)
     run:
         script: repack-android-emulator-linux.sh
         resources:
@@ -228,7 +228,7 @@ linux64-android-emulator-linux-repack:
 linux64-android-ndk-linux-repack:
     description: "Android NDK (Linux) repack toolchain build"
     treeherder:
-        symbol: TL(android-ndk-linux)
+        symbol: TL(android-ndk)
     run:
         script: repack-android-ndk-linux.sh
         resources:
@@ -239,7 +239,7 @@ linux64-android-ndk-linux-repack:
 linux64-android-simpleperf-linux-repack:
     description: "Android Simpleperf NDK (Linux) repack toolchain build"
     treeherder:
-        symbol: TL(android-simpleperf-linux)
+        symbol: TL(android-simpleperf)
     run:
         script: repack-android-simpleperf-linux.sh
         resources:

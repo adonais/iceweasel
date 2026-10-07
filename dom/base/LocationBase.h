@@ -26,9 +26,11 @@ class BrowsingContext;
 class LocationBase {
  public:
   // WebIDL API:
+  MOZ_CAN_RUN_SCRIPT
   void Replace(const nsACString& aUrl, nsIPrincipal& aSubjectPrincipal,
                ErrorResult& aRv);
 
+  MOZ_CAN_RUN_SCRIPT
   void SetHref(const nsACString& aHref, nsIPrincipal& aSubjectPrincipal,
                ErrorResult& aRv);
 
@@ -36,14 +38,17 @@ class LocationBase {
   virtual BrowsingContext* GetBrowsingContext() = 0;
   virtual nsIDocShell* GetDocShell() = 0;
 
+  MOZ_CAN_RUN_SCRIPT
   void Navigate(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv,
                 NavigationHistoryBehavior aHistoryHandling =
                     NavigationHistoryBehavior::Auto);
+  MOZ_CAN_RUN_SCRIPT
   void SetHrefWithBase(const nsACString& aHref, nsIURI* aBase,
                        nsIPrincipal& aSubjectPrincipal, bool aReplace,
                        ErrorResult& aRv);
 
   // Helper for Assign/SetHref/Replace
+  MOZ_CAN_RUN_SCRIPT
   void DoSetHref(const nsACString& aHref, nsIPrincipal& aSubjectPrincipal,
                  bool aReplace, ErrorResult& aRv);
 

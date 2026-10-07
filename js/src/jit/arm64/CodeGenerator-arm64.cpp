@@ -115,27 +115,6 @@ void CodeGeneratorARM64::bailoutIfTest(Assembler::Condition condition,
   }
 }
 
-void CodeGeneratorARM64::bailoutFrom(Label* label, LSnapshot* snapshot) {
-  MOZ_ASSERT_IF(!masm.oom(), label->used());
-  MOZ_ASSERT_IF(!masm.oom(), !label->bound());
-
-  encode(snapshot);
-
-  InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
-  auto* ool = new (alloc()) LambdaOutOfLineCode(
-      [=, this](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
-  addOutOfLineCode(ool,
-                   new (alloc()) BytecodeSite(tree, tree->script()->code()));
-
-  masm.retarget(label, ool->entry());
-}
-
-void CodeGeneratorARM64::bailout(LSnapshot* snapshot) {
-  Label label;
-  masm.b(&label);
-  bailoutFrom(&label, snapshot);
-}
-
 void CodeGenerator::visitMinMaxD(LMinMaxD* ins) {
   ARMFPRegister lhs(ToFloatRegister(ins->first()), 64);
   ARMFPRegister rhs(ToFloatRegister(ins->second()), 64);

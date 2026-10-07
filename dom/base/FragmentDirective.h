@@ -15,9 +15,10 @@
 
 class nsINode;
 class nsIURI;
-class nsRange;
+
 namespace mozilla::dom {
 class Document;
+class Range;
 class Promise;
 class Text;
 class TextDirectiveFinder;
@@ -71,7 +72,7 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
   /** Inserts all text directive ranges into a `eTargetText` `Selection`. */
   MOZ_CAN_RUN_SCRIPT
   void HighlightTextDirectives(
-      const nsTArray<RefPtr<nsRange>>& aTextDirectiveRanges);
+      const nsTArray<RefPtr<Range>>& aTextDirectiveRanges);
 
   /** Searches for the current uninvoked text directives and creates a range for
    * each one that is found.
@@ -83,7 +84,7 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
    * to find a matching range for a text directive. However, instead of using
    * collator-based search, the Gecko find-in-page algorithm is used (`nsFind`).
    */
-  nsTArray<RefPtr<nsRange>> FindTextFragmentsInDocument();
+  nsTArray<RefPtr<Range>> FindTextFragmentsInDocument();
 
   /** Utility function which parses the fragment directive and removes it from
    * the hash of the given URI. This operation happens in-place.
@@ -127,7 +128,7 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
    *
    * This is exposed as a Chrome-Only API.
    */
-  void GetTextDirectiveRanges(nsTArray<RefPtr<nsRange>>& aRanges) const;
+  void GetTextDirectiveRanges(nsTArray<RefPtr<Range>>& aRanges) const;
 
   /** Removes all text directive ranges.
    *
@@ -142,7 +143,7 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
    *         rejected promise in case of an error.
    */
   already_AddRefed<Promise> CreateTextDirectiveForRanges(
-      const Sequence<OwningNonNull<nsRange>>& aRanges);
+      const Sequence<OwningNonNull<Range>>& aRanges);
 
  private:
   RefPtr<Document> mDocument;

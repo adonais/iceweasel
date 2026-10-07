@@ -30,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
@@ -111,20 +110,6 @@ fun ExperimentalPrivateHomepageHeader(onHomeTapped: () -> Unit) {
         horizontalArrangement = Arrangement.End,
     ) {
         HomeButton(onHomeTapped)
-    }
-}
-
-@Composable
-private fun WordmarkAndLogo(
-    wordmarkTextColor: Color?,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        WordmarkLogo()
-        WordmarkText(wordmarkTextColor)
     }
 }
 

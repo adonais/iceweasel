@@ -76,7 +76,7 @@ It is possible to use live web pages for the page-load tests instead of using th
 
 It is possible to disable alerting for all our performance tests. Open the target test manifest such as the raptor-tp6\*.ini file ({searchfox}`Raptor tests folder <testing/raptor/raptor/tests>`), and make sure there are no `alert_on` specifications.
 
-When it's removed there will no longer be a `shouldAlert` field in the output Perfherder data (you can find the {searchfox}`schema here <testing/mozharness/external_tools/performance-artifact-schema.json#68,165>`). As long as `shouldAlert` is not in the data, no alerts will be generated. If you need to also disable code sheriffing for the test, then you need to change the tier of the task to 3.
+When it's removed there will no longer be a `shouldAlert` field in the output Perfherder data (you can find the {searchfox}`schema here <testing/performance/common/performance-artifact-schema.json#68,165>`). As long as `shouldAlert` is not in the data, no alerts will be generated. If you need to also disable code sheriffing for the test, then you need to change the tier of the task to 3.
 
 ### High value tests
 

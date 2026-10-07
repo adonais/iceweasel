@@ -546,17 +546,12 @@ nsresult nsHttpConnection::Activate(nsAHttpTransaction* trans, uint32_t caps,
     if (mTlsHandshaker->NPNComplete()) {
       mExperienced = true;
     }
-    if (mBootstrappedTimingsSet) {
-      mBootstrappedTimingsSet = false;
-      nsHttpTransaction* hTrans = trans->QueryHttpTransaction();
-      if (hTrans) {
-        hTrans->BootstrapTimings(mBootstrappedTimings);
-        SetUrgentStartPreferred(hTrans->GetClassOfService().Flags() &
-                                nsIClassOfService::UrgentStart);
-      }
+    if (nsHttpTransaction* hTrans = trans->QueryHttpTransaction()) {
+      SetUrgentStartPreferred(hTrans->GetClassOfService().Flags() &
+                              nsIClassOfService::UrgentStart);
     }
-    mBootstrappedTimings = TimingStruct();
   }
+  HandOffConnectPhase(trans);
 
   if (caps & NS_HTTP_LARGE_KEEPALIVE) {
     mDefaultTimeoutFactor = StaticPrefs::network_http_largeKeepaliveFactor();
@@ -2410,9 +2405,6 @@ void nsHttpConnection::CheckForTraffic(bool check) {
 void nsHttpConnection::SetEvent(nsresult aStatus) {
   LOG(("nsHttpConnection::SetEvent [this=%p status=%" PRIx32 "]\n", this,
        static_cast<uint32_t>(aStatus)));
-  if (!mBootstrappedTimingsSet) {
-    mBootstrappedTimingsSet = true;
-  }
   switch (aStatus) {
     case NS_NET_STATUS_RESOLVING_HOST:
       mBootstrappedTimings.domainLookupStart = TimeStamp::Now();

@@ -11,13 +11,13 @@ from .profiling import (
     symbolicate_profile_json,
     symbolicate_profiles,
 )
-from .symbolication import ProfileSymbolicator
+from .symbolication import symbolicate_profile
 from .viewgeckoprofile import view_gecko_profile
 
 __all__ = [
     "save_gecko_profile",
+    "symbolicate_profile",
     "symbolicate_profile_json",
     "symbolicate_profiles",
-    "ProfileSymbolicator",
     "view_gecko_profile",
 ]

@@ -3,12 +3,91 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { render, fireEvent } from "@testing-library/react";
+import { InterestPicker } from "content-src/components/DiscoveryStreamComponents/InterestPicker/InterestPicker";
+import { WrapWithProvider } from "test/jest/test-utils";
 import { Provider } from "react-redux";
 import { combineReducers, createStore } from "redux";
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
 import { actionTypes as at } from "common/Actions.mjs";
-import { WrapWithProvider } from "test/jest/test-utils";
 import { InterestPicker as NovaInterestPicker } from "content-src/components/Nova/InterestPicker/InterestPicker";
+
+describe("<InterestPicker />", () => {
+  const DEFAULT_PROPS = {
+    title: "Pick your interests",
+    subtitle: "Choose topics you care about",
+    receivedFeedRank: 1,
+    interests: [
+      { sectionId: "section-1", title: "Technology", followable: true },
+      { sectionId: "section-2", title: "Sports", followable: true },
+      { sectionId: "section-3", title: "Hidden", followable: false },
+    ],
+  };
+
+  it("should filter out interests with followable: false", () => {
+    const { container } = render(
+      <WrapWithProvider>
+        <InterestPicker {...DEFAULT_PROPS} />
+      </WrapWithProvider>
+    );
+
+    const items = container.querySelectorAll(".topic-item-label");
+    expect(items.length).toBe(2);
+    expect(items[0].textContent).toBe("Technology");
+    expect(items[1].textContent).toBe("Sports");
+  });
+
+  it("should render all interests when all have followable: true", () => {
+    const { container } = render(
+      <WrapWithProvider>
+        <InterestPicker
+          {...DEFAULT_PROPS}
+          interests={[
+            { sectionId: "section-1", title: "Technology", followable: true },
+            { sectionId: "section-2", title: "Sports", followable: true },
+          ]}
+        />
+      </WrapWithProvider>
+    );
+
+    expect(container.querySelectorAll(".topic-item-label").length).toBe(2);
+  });
+
+  it("should render interests when followable is undefined", () => {
+    const { container } = render(
+      <WrapWithProvider>
+        <InterestPicker
+          {...DEFAULT_PROPS}
+          interests={[
+            {
+              sectionId: "section-1",
+              title: "Technology",
+              followable: undefined,
+            },
+            { sectionId: "section-2", title: "Sports", followable: undefined },
+          ]}
+        />
+      </WrapWithProvider>
+    );
+
+    expect(container.querySelectorAll(".topic-item-label").length).toBe(2);
+  });
+
+  it("should render no interests when all have followable: false", () => {
+    const { container } = render(
+      <WrapWithProvider>
+        <InterestPicker
+          {...DEFAULT_PROPS}
+          interests={[
+            { sectionId: "section-1", title: "Technology", followable: false },
+            { sectionId: "section-2", title: "Sports", followable: false },
+          ]}
+        />
+      </WrapWithProvider>
+    );
+
+    expect(container.querySelectorAll(".topic-item-label").length).toBe(0);
+  });
+});
 
 const PREF_VISIBLE_SECTIONS =
   "discoverystream.sections.interestPicker.visibleSections";
@@ -47,7 +126,7 @@ function renderPicker(props = {}, stateOverrides = {}) {
   return { container };
 }
 
-describe("<InterestPicker />", () => {
+describe("<InterestPicker /> selection behaviour", () => {
   it("filters out interests with followable: false", () => {
     const { container } = renderPicker();
     const buttons = container.querySelectorAll("moz-button");

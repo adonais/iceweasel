@@ -8,7 +8,7 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 /* import-globals-from ../../../profiles/tests/unit/head.js */
 
 const { SelectableProfileBackupResource } = ChromeUtils.importESModule(
-  "resource:///modules/backup/SelectableProfileBackupResource.sys.mjs"
+  "moz-src:///browser/components/backup/resources/SelectableProfileBackupResource.sys.mjs"
 );
 const { ProfilesDatastoreService } = ChromeUtils.importESModule(
   "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs"

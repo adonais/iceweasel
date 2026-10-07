@@ -5,9 +5,6 @@
     <ID>ClassAcronymCasing:AppAction.kt$AppAction$URLCopiedToClipboard : AppAction</ID>
     <ID>ClassAcronymCasing:BookmarksAction.kt$EditBookmarkAction$URLChanged : EditBookmarkAction</ID>
     <ID>ClassAcronymCasing:CfrToolsStore.kt$CfrToolsAction$ResetLastCFRTimestampButtonClicked : CfrToolsAction</ID>
-    <ID>ClassAcronymCasing:ClientUUID.kt$ClientUUID : UserIdProviderRequestHashProvider</ID>
-    <ID>ClassAcronymCasing:ClientUUID.kt$PrefsBackedClientUUID : ClientUUID</ID>
-    <ID>ClassAcronymCasing:FakeClientUUID.kt$FakeClientUUID : ClientUUID</ID>
     <ID>ClassAcronymCasing:FenixFxAEntryPoint.kt$FenixFxAEntryPoint$CREATOR : Creator</ID>
     <ID>ClassAcronymCasing:InstallReferrerWorker.kt$UTMParams</ID>
     <ID>ClassAcronymCasing:MARSUseCases.kt$MARSUseCases</ID>
@@ -94,6 +91,8 @@
     <ID>ForbiddenSuppress:Menu.kt$@Suppress("LongMethod", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:MenuDialogFragment.kt$MenuDialogFragment$@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:MenuDialogMiddleware.kt$MenuDialogMiddleware$@Suppress("LongParameterList", "CyclomaticComplexMethod")</ID>
+    <ID>ForbiddenSuppress:MenuFragment.kt$MenuFragment$@Suppress("LongMethod", "CyclomaticComplexMethod")</ID>
+    <ID>ForbiddenSuppress:MenuMiddleware.kt$MenuMiddleware$@Suppress("LongMethod", "CyclomaticComplexMethod")</ID>
     <ID>ForbiddenSuppress:MenuNavigationMiddleware.kt$MenuNavigationMiddleware$@Suppress("CyclomaticComplexMethod", "LongMethod", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:MenuTelemetryMiddleware.kt$MenuTelemetryMiddleware$@Suppress("CyclomaticComplexMethod", "LongMethod", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:MetricController.kt$ReleaseMetricController$@Suppress("LongMethod", "CognitiveComplexMethod")</ID>
@@ -638,7 +637,6 @@
     <ID>UndocumentedPublicClass:ToolbarMenu.kt$ToolbarMenu.Item$Share : Item</ID>
     <ID>UndocumentedPublicClass:ToolbarMenu.kt$ToolbarMenu.Item$Stop : Item</ID>
     <ID>UndocumentedPublicClass:TrackerBuckets.kt$TrackerBuckets$BucketedTrackerLog</ID>
-    <ID>UndocumentedPublicClass:TrackingProtectionCategoryItem.kt$TrackingProtectionCategoryItem : ConstraintLayout</ID>
     <ID>UndocumentedPublicClass:TrackingProtectionExceptionsAdapter.kt$TrackingProtectionExceptionsAdapter$TrackingProtectionAdapterItem : Item</ID>
     <ID>UndocumentedPublicClass:TrackingProtectionExceptionsInteractor.kt$DefaultTrackingProtectionExceptionsInteractor : TrackingProtectionExceptionsInteractor</ID>
     <ID>UndocumentedPublicClass:TrackingProtectionExceptionsInteractor.kt$TrackingProtectionExceptionsInteractor : ExceptionsInteractor</ID>

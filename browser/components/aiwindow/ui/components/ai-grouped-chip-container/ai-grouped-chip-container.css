@@ -2,39 +2,43 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+/* Declared on :host, not on .grouped-chips, so a consumer can retheme the
+   trigger from outside the shadow root. A custom property declared on an inner
+   element would shadow any inherited override; on :host the outer tree wins. */
 :host {
   /* sets a custom margin between the grouped-chips button and the panel list */
   --smartwindow-panel-list-valign-bottom-margin-block-start: var(--space-xsmall);
+  --ai-grouped-chip-container-padding: var(--space-medium);
+  --ai-grouped-chip-container-border-radius: var(--border-radius-large);
+  --ai-grouped-chip-container-border-end-end-radius: var(--border-radius-small);
+  --ai-grouped-chip-container-bg-color: light-dark(var(--color-violet-20), var(--color-violet-70));
+
+  /* Bug 2033070: remove nova media queries */
+  @media -moz-pref("browser.nova.enabled") {
+    --ai-grouped-chip-container-border-end-end-radius: var(--border-radius-xsmall);
+    --ai-grouped-chip-container-bg-color: light-dark(var(--color-violet-desaturated-10), var(--color-violet-desaturated-60));
+  }
 }
 
 .grouped-chips {
   border: var(--border-width) solid var(--border-color-transparent);
-  border-radius: var(--border-radius-large);
-  border-end-end-radius: var(--border-radius-small);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  border-radius: var(--ai-grouped-chip-container-border-radius);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  border-end-end-radius: var(--ai-grouped-chip-container-border-end-end-radius);
   cursor: pointer;
   display: flex;
   gap: var(--space-xsmall);
-  padding: var(--space-medium);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding: var(--ai-grouped-chip-container-padding);
 
   @media not (prefers-reduced-motion) {
     transition: gap 0.3s ease-in-out;
   }
 
-  /* Bug 2033070: remove nova media queries */
-  @media -moz-pref("browser.nova.enabled") {
-    border-radius: var(--border-radius-large);
-    border-end-end-radius: var(--border-radius-xsmall);
-  }
-
   @media not forced-colors {
-    --ai-grouped-chip-container-bg-color: light-dark(var(--color-violet-20), var(--color-violet-70));
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background-color: var(--ai-grouped-chip-container-bg-color);
-
-    /* Bug 2033070: remove nova media queries */
-    @media -moz-pref("browser.nova.enabled") {
-      --ai-grouped-chip-container-bg-color: light-dark(var(--color-violet-desaturated-10), var(--color-violet-desaturated-60));
-    }
   }
 }
 

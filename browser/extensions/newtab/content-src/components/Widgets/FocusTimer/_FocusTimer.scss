@@ -145,10 +145,9 @@
       margin-block-start: var(--space-xxsmall);
     }
 
-    .focus-timer-time-slot,
-    .focus-timer-bottom-slot {
+    .focus-timer-time-slot {
       align-items: center;
-      block-size: var(--button-min-height, 32px);
+      min-block-size: var(--button-min-height, 32px);
       display: flex;
       justify-content: center;
     }
@@ -352,19 +351,8 @@
       }
     }
 
-    .focus-timer-mode-group {
-      display: flex;
-      gap: var(--space-small);
-      justify-content: center;
-    }
-
-    .focus-timer-mode-group moz-button[type='default']::part(button),
     .focus-timer-reset-button::part(button) {
       border-color: var(--color-accent-primary);
-    }
-
-    .focus-timer-reset-button {
-      align-self: center;
     }
 
     .focus-timer-play-button {
@@ -517,7 +505,6 @@
       border-color: CanvasText;
     }
 
-    .focus-timer-mode-group moz-button[type='default']::part(button),
     .focus-timer-reset-button::part(button) {
       border-color: ButtonText;
     }

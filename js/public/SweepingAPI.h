@@ -48,9 +48,6 @@ JS_PUBLIC_API void RegisterWeakCache(JSRuntime* rt,
 namespace detail {
 
 class WeakCacheBase : public mozilla::LinkedListElement<WeakCacheBase> {
-  WeakCacheBase() = delete;
-  explicit WeakCacheBase(const WeakCacheBase&) = delete;
-
  public:
   enum NeedsLock : bool { Lock = true, DontLock = false };
 
@@ -60,6 +57,9 @@ class WeakCacheBase : public mozilla::LinkedListElement<WeakCacheBase> {
   explicit WeakCacheBase(JSRuntime* rt) { shadow::RegisterWeakCache(rt, this); }
   WeakCacheBase(WeakCacheBase&& other) = default;
   virtual ~WeakCacheBase() = default;
+
+  WeakCacheBase() = delete;
+  explicit WeakCacheBase(const WeakCacheBase&) = delete;
 
   virtual size_t traceWeak(JSTracer* trc, NeedsLock needLock) = 0;
 

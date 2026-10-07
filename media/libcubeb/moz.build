@@ -8,3 +8,13 @@ with Files("**"):
 DIRS += ['include', 'src']
 TEST_DIRS += ['gtest']
 
+
+LICENSES += ["libcubeb"]
+LICENSES["libcubeb"].title = "libcubeb License"
+LICENSES["libcubeb"].notice = """
+<p class="correctme">This license applies to files in the directory <code>media/libcubeb</code>.</p>
+"""
+
+LICENSED_UNDER += [
+    "libcubeb",
+]

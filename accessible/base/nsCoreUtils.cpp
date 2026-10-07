@@ -23,6 +23,7 @@
 #include "mozilla/dom/HTMLOptionElement.h"
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/MouseEventBinding.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/TouchEvent.h"
 #include "nsAccUtils.h"
@@ -36,7 +37,6 @@
 #include "nsISelectionController.h"
 #include "nsISimpleEnumerator.h"
 #include "nsPresContext.h"
-#include "nsRange.h"
 #include "nsTreeColumns.h"
 #include "nsXULElement.h"
 
@@ -227,7 +227,8 @@ bool nsCoreUtils::IsAncestorOf(nsINode* aPossibleAncestorNode,
   return false;
 }
 
-nsresult nsCoreUtils::ScrollSubstringTo(nsIFrame* aFrame, nsRange* aRange,
+nsresult nsCoreUtils::ScrollSubstringTo(nsIFrame* aFrame,
+                                        mozilla::dom::Range* aRange,
                                         uint32_t aScrollType) {
   AxisScrollParams vertical, horizontal;
   ConvertScrollTypeToPercents(aScrollType, &vertical, &horizontal);
@@ -235,7 +236,8 @@ nsresult nsCoreUtils::ScrollSubstringTo(nsIFrame* aFrame, nsRange* aRange,
   return ScrollSubstringTo(aFrame, aRange, vertical, horizontal);
 }
 
-nsresult nsCoreUtils::ScrollSubstringTo(nsIFrame* aFrame, nsRange* aRange,
+nsresult nsCoreUtils::ScrollSubstringTo(nsIFrame* aFrame,
+                                        mozilla::dom::Range* aRange,
                                         AxisScrollParams aVertical,
                                         AxisScrollParams aHorizontal) {
   if (!aFrame || !aRange) {
@@ -587,7 +589,8 @@ bool nsCoreUtils::IsDisplayContents(nsIContent* aContent) {
   return element && element->IsDisplayContents();
 }
 
-bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
+bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent,
+                                                  bool* aIsSubtreeHidden) {
   auto* element = Element::FromNodeOrNull(aContent);
   if (!element) {
     return false;
@@ -615,6 +618,11 @@ bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
   // Note that we need to check primary frame explicitly for the <select> case
   // above.
   if (!element->GetPrimaryFrame() && !element->IsDisplayContents()) {
+    // Nothing in aContent's subtree can ever render in this case, regardless of
+    // any ancestor.
+    if (aIsSubtreeHidden) {
+      *aIsSubtreeHidden = true;
+    }
     return false;
   }
 
@@ -628,8 +636,18 @@ bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
     if (nsIFrame* f = c->GetPrimaryFrame()) {
       if (f->HidesContent(nsIFrame::IncludeContentVisibility::Hidden) ||
           f->IsHiddenByContentVisibilityOnAnyAncestor(
-              nsIFrame::IncludeContentVisibility::Hidden) ||
-          !f->StyleVisibility()->IsVisible() || f->StyleUI()->IsInert()) {
+              nsIFrame::IncludeContentVisibility::Hidden)) {
+        if (aIsSubtreeHidden) {
+          // A descendant can't override content-visibility: hidden, so there's
+          // no point walking into the subtree.
+          *aIsSubtreeHidden = true;
+        }
+        return false;
+      }
+      if (!f->StyleVisibility()->IsVisible() || f->StyleUI()->IsInert()) {
+        // Unlike content-visibility, a descendant might still be exposed
+        // despite this (e.g. an open modal <dialog> which is not inert), so
+        // leave aIsSubtreeHidden alone and let the caller keep walking.
         return false;
       }
       break;
@@ -726,9 +744,10 @@ const nsIFrame* nsCoreUtils::GetAnchorForPositionedFrame(
     anchorName = anchorKey;
   }
 
-  return anchorName.mName
-             ? aPresShell->GetAnchorPosAnchor(anchorName, aPositionedFrame)
-             : nullptr;
+  return anchorName.mName ? aPresShell->GetAnchorPosAnchor(
+                                anchorName, aPositionedFrame,
+                                referencedAnchors->mFrameTreeDepth)
+                          : nullptr;
 }
 
 nsIFrame* nsCoreUtils::GetPositionedFrameForAnchor(
@@ -757,7 +776,9 @@ nsIFrame* nsCoreUtils::GetPositionedFrameForAnchor(
         const ScopedNameRef nameRef(name.AsAtom(), treeScope);
         const auto* data = referencedAnchors->Lookup(nameRef);
         if (data && *data && data->ref().mOffsetData) {
-          if (aAnchorFrame == aPresShell->GetAnchorPosAnchor(nameRef, frame)) {
+          if (aAnchorFrame ==
+              aPresShell->GetAnchorPosAnchor(
+                  nameRef, frame, referencedAnchors->mFrameTreeDepth)) {
             if (positionedFrame) {
               // Multiple positioned frames reference this anchor.
               return nullptr;

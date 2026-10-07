@@ -298,6 +298,8 @@ class LoggingManager:
         self.structured_filter = ConvertToStructuredFilter()
 
         self.structured_loggers = [mach_logger]
+        # Loggers whose propagation enable_unstructured() disabled.
+        self._unstructured_loggers = []
 
         self._terminal = None
 
@@ -413,15 +415,21 @@ class LoggingManager:
             self.terminal_handler.addFilter(self.structured_filter)
             self.root_logger.addHandler(self.terminal_handler)
             for logger in self.structured_loggers:
-                logger.propagate = False
+                if logger.propagate:
+                    logger.propagate = False
+                    self._unstructured_loggers.append(logger)
 
     def disable_unstructured(self):
         """Disable logging of unstructured messages."""
         if self.terminal_handler:
             self.terminal_handler.removeFilter(self.structured_filter)
             self.root_logger.removeHandler(self.terminal_handler)
-            for logger in self.structured_loggers:
-                logger.propagate = True
+            self._restore_propagation()
+
+    def _restore_propagation(self):
+        for logger in self._unstructured_loggers:
+            logger.propagate = True
+        self._unstructured_loggers.clear()
 
     def register_structured_logger(self, logger, terminal=True, file=True):
         """Register a structured logger.
@@ -463,6 +471,9 @@ class LoggingManager:
                 self._remove_file_handlers_from_logger(logger)
 
         # Wipe out existing registered structured loggers since they
-        # all propagate to root logger.
+        # all propagate to root logger. Propagation disabled by
+        # enable_unstructured() has to be restored, otherwise those loggers
+        # would be left without any handler now that theirs has been removed.
+        self._restore_propagation()
         self.structured_loggers = []
         self.register_structured_logger(self.root_logger, terminal=terminal, file=file)

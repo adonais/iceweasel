@@ -99,6 +99,43 @@ internal open class ForeignBytes : Structure() {
 
     class ByValue : ForeignBytes(), Structure.ByValue
 }
+
+// Converter for `&[u8]` / `[ByRef] bytes` arguments.
+//
+// Only `lower` is valid — zero-copy byte buffers only flow foreign -> Rust,
+// and only in argument position. `lift`, `read`, `write`, and
+// `allocationSize` have no sound implementation here and all panic at
+// runtime. The `FfiConverter` interface is implemented so that the
+// compiler enforces the full method set (rather than relying on eyeball).
+//
+// The provided `ByteBuffer` MUST be direct — only direct buffers have a
+// stable native address that JNA can expose via `getDirectBufferPointer`.
+// The returned `ForeignBytes.ByValue` is only valid for the duration of
+// the FFI call; the Rust side treats it as a borrow.
+internal object FfiConverterByRefBytes : FfiConverter<java.nio.ByteBuffer, ForeignBytes.ByValue> {
+    override fun lower(value: java.nio.ByteBuffer): ForeignBytes.ByValue {
+        require(value.isDirect) { "UniFFI zero-copy &[u8] requires a direct ByteBuffer. Use ByteBuffer.allocateDirect()." }
+        val remaining = value.remaining()
+        val fb = ForeignBytes.ByValue()
+        fb.len = remaining
+        // Zero-length direct buffers: skip getDirectBufferPointer (platform-variable behavior)
+        // and pass null. The Rust side treats (null, 0) as &[].
+        fb.data = if (remaining == 0) null else com.sun.jna.Native.getDirectBufferPointer(value)
+        return fb
+    }
+
+    override fun lift(value: ForeignBytes.ByValue): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be lifted: zero-copy &[u8] only flows foreign->Rust")
+
+    override fun read(buf: java.nio.ByteBuffer): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be read from a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun write(value: java.nio.ByteBuffer, buf: java.nio.ByteBuffer): Unit =
+        error("ByRef bytes cannot be written to a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun allocationSize(value: java.nio.ByteBuffer): ULong =
+        error("ByRef bytes have no RustBuffer allocation size: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+}
 /**
  * The FfiConverter interface handles converter types to and from the FFI
  *
@@ -628,9 +665,6 @@ internal interface UniffiCallbackInterfaceMozAdsTelemetryMethod3 : com.sun.jna.C
 internal interface UniffiCallbackInterfaceMozAdsTelemetryMethod4 : com.sun.jna.Callback {
     fun callback(`uniffiHandle`: Long,`label`: RustBuffer.ByValue,`value`: RustBuffer.ByValue,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,)
 }
-internal interface UniffiCallbackInterfaceMozAdsContextIdProviderMethod0 : com.sun.jna.Callback {
-    fun callback(`uniffiHandle`: Long,`uniffiOutReturn`: RustBuffer,uniffiCallStatus: UniffiRustCallStatus,)
-}
 @Structure.FieldOrder("uniffiFree", "uniffiClone", "recordBuildCacheError", "recordClientError", "recordClientOperationTotal", "recordDeserializationError", "recordHttpCacheOutcome")
 internal open class UniffiVTableCallbackInterfaceMozAdsTelemetry(
     @JvmField internal var `uniffiFree`: UniffiCallbackInterfaceFree? = null,
@@ -662,25 +696,6 @@ internal open class UniffiVTableCallbackInterfaceMozAdsTelemetry(
     }
 
 }
-@Structure.FieldOrder("uniffiFree", "uniffiClone", "contextId")
-internal open class UniffiVTableCallbackInterfaceMozAdsContextIdProvider(
-    @JvmField internal var `uniffiFree`: UniffiCallbackInterfaceFree? = null,
-    @JvmField internal var `uniffiClone`: UniffiCallbackInterfaceClone? = null,
-    @JvmField internal var `contextId`: UniffiCallbackInterfaceMozAdsContextIdProviderMethod0? = null,
-) : Structure() {
-    class UniffiByValue(
-        `uniffiFree`: UniffiCallbackInterfaceFree? = null,
-        `uniffiClone`: UniffiCallbackInterfaceClone? = null,
-        `contextId`: UniffiCallbackInterfaceMozAdsContextIdProviderMethod0? = null,
-    ): UniffiVTableCallbackInterfaceMozAdsContextIdProvider(`uniffiFree`,`uniffiClone`,`contextId`,), Structure.ByValue
-
-   internal fun uniffiSetValue(other: UniffiVTableCallbackInterfaceMozAdsContextIdProvider) {
-        `uniffiFree` = other.`uniffiFree`
-        `uniffiClone` = other.`uniffiClone`
-        `contextId` = other.`contextId`
-    }
-
-}
 
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
@@ -704,45 +719,43 @@ internal object IntegrityCheckingUniffiLib {
         uniffiCheckContractApiVersion(this)
     }
     external fun uniffi_ads_client_checksum_method_mozadsclient_clear_cache(
-    ): Short
+    ): Int
     external fun uniffi_ads_client_checksum_method_mozadsclient_record_click(
-    ): Short
+    ): Int
     external fun uniffi_ads_client_checksum_method_mozadsclient_record_impression(
-    ): Short
+    ): Int
     external fun uniffi_ads_client_checksum_method_mozadsclient_report_ad(
-    ): Short
+    ): Int
     external fun uniffi_ads_client_checksum_method_mozadsclient_request_image_ads(
-    ): Short
+    ): Int
     external fun uniffi_ads_client_checksum_method_mozadsclient_request_spoc_ads(
-    ): Short
+    ): Int
     external fun uniffi_ads_client_checksum_method_mozadsclient_request_tile_ads(
-    ): Short
+    ): Int
     external fun uniffi_ads_client_checksum_method_mozadsclient_shutdown(
-    ): Short
+    ): Int
     external fun uniffi_ads_client_checksum_method_mozadsclientbuilder_build(
-    ): Short
+    ): Int
     external fun uniffi_ads_client_checksum_method_mozadsclientbuilder_cache_config(
-    ): Short
-    external fun uniffi_ads_client_checksum_method_mozadsclientbuilder_context_id_provider(
-    ): Short
+    ): Int
     external fun uniffi_ads_client_checksum_method_mozadsclientbuilder_environment(
-    ): Short
+    ): Int
+    external fun uniffi_ads_client_checksum_method_mozadsclientbuilder_store_config(
+    ): Int
     external fun uniffi_ads_client_checksum_method_mozadsclientbuilder_telemetry(
-    ): Short
-    external fun uniffi_ads_client_checksum_method_mozadscontextidprovider_context_id(
-    ): Short
+    ): Int
     external fun uniffi_ads_client_checksum_constructor_mozadsclientbuilder_new(
-    ): Short
+    ): Int
     external fun uniffi_ads_client_checksum_method_mozadstelemetry_record_build_cache_error(
-    ): Short
+    ): Int
     external fun uniffi_ads_client_checksum_method_mozadstelemetry_record_client_error(
-    ): Short
+    ): Int
     external fun uniffi_ads_client_checksum_method_mozadstelemetry_record_client_operation_total(
-    ): Short
+    ): Int
     external fun uniffi_ads_client_checksum_method_mozadstelemetry_record_deserialization_error(
-    ): Short
+    ): Int
     external fun uniffi_ads_client_checksum_method_mozadstelemetry_record_http_cache_outcome(
-    ): Short
+    ): Int
     external fun ffi_ads_client_uniffi_contract_version(
     ): Int
 
@@ -759,7 +772,6 @@ internal object UniffiLib {
 
     init {
         Native.register(UniffiLib::class.java, findLibraryName(componentName = "ads_client"))
-        uniffiCallbackInterfaceMozAdsContextIdProvider.register(this)
         uniffiCallbackInterfaceMozAdsTelemetry.register(this)
         
     }
@@ -793,20 +805,12 @@ internal object UniffiLib {
     ): Long
     external fun uniffi_ads_client_fn_method_mozadsclientbuilder_cache_config(`ptr`: Long,`cacheConfig`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
-    external fun uniffi_ads_client_fn_method_mozadsclientbuilder_context_id_provider(`ptr`: Long,`provider`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Long
     external fun uniffi_ads_client_fn_method_mozadsclientbuilder_environment(`ptr`: Long,`environment`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_ads_client_fn_method_mozadsclientbuilder_store_config(`ptr`: Long,`storeConfig`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_ads_client_fn_method_mozadsclientbuilder_telemetry(`ptr`: Long,`telemetry`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
-    external fun uniffi_ads_client_fn_clone_mozadscontextidprovider(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Long
-    external fun uniffi_ads_client_fn_free_mozadscontextidprovider(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Unit
-    external fun uniffi_ads_client_fn_init_callback_vtable_mozadscontextidprovider(`vtable`: UniffiVTableCallbackInterfaceMozAdsContextIdProvider,
-    ): Unit
-    external fun uniffi_ads_client_fn_method_mozadscontextidprovider_context_id(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
     external fun uniffi_ads_client_fn_init_callback_vtable_mozadstelemetry(`vtable`: UniffiVTableCallbackInterfaceMozAdsTelemetry,
     ): Unit
     external fun ffi_ads_client_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -824,7 +828,7 @@ internal object UniffiLib {
     external fun ffi_ads_client_rust_future_free_u8(`handle`: Long,
     ): Unit
     external fun ffi_ads_client_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Byte
+    ): Int
     external fun ffi_ads_client_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
     external fun ffi_ads_client_rust_future_cancel_i8(`handle`: Long,
@@ -840,7 +844,7 @@ internal object UniffiLib {
     external fun ffi_ads_client_rust_future_free_u16(`handle`: Long,
     ): Unit
     external fun ffi_ads_client_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Short
+    ): Int
     external fun ffi_ads_client_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
     external fun ffi_ads_client_rust_future_cancel_i16(`handle`: Long,
@@ -1410,6 +1414,11 @@ open class MozAdsClient: Disposable, AutoCloseable, MozAdsClientInterface
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
 
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
     override fun destroy() {
         // Only allow a single call to this method.
         // TODO: maybe we should log a warning if called more than once?
@@ -1495,7 +1504,9 @@ open class MozAdsClient: Disposable, AutoCloseable, MozAdsClientInterface
     uniffiRustCallWithError(MozAdsClientApiException) { _status ->
     UniffiLib.uniffi_ads_client_fn_method_mozadsclient_record_click(
         it,
-        FfiConverterString.lower(`clickUrl`),FfiConverterOptionalTypeMozAdsCallbackOptions.lower(`options`),_status)
+        
+        FfiConverterString.lower(`clickUrl`),
+        FfiConverterOptionalTypeMozAdsCallbackOptions.lower(`options`),_status)
 }
     }
     
@@ -1508,7 +1519,9 @@ open class MozAdsClient: Disposable, AutoCloseable, MozAdsClientInterface
     uniffiRustCallWithError(MozAdsClientApiException) { _status ->
     UniffiLib.uniffi_ads_client_fn_method_mozadsclient_record_impression(
         it,
-        FfiConverterString.lower(`impressionUrl`),FfiConverterOptionalTypeMozAdsCallbackOptions.lower(`options`),_status)
+        
+        FfiConverterString.lower(`impressionUrl`),
+        FfiConverterOptionalTypeMozAdsCallbackOptions.lower(`options`),_status)
 }
     }
     
@@ -1521,7 +1534,10 @@ open class MozAdsClient: Disposable, AutoCloseable, MozAdsClientInterface
     uniffiRustCallWithError(MozAdsClientApiException) { _status ->
     UniffiLib.uniffi_ads_client_fn_method_mozadsclient_report_ad(
         it,
-        FfiConverterString.lower(`reportUrl`),FfiConverterTypeMozAdsReportReason.lower(`reason`),FfiConverterOptionalTypeMozAdsCallbackOptions.lower(`options`),_status)
+        
+        FfiConverterString.lower(`reportUrl`),
+        FfiConverterTypeMozAdsReportReason.lower(`reason`),
+        FfiConverterOptionalTypeMozAdsCallbackOptions.lower(`options`),_status)
 }
     }
     
@@ -1534,7 +1550,9 @@ open class MozAdsClient: Disposable, AutoCloseable, MozAdsClientInterface
     uniffiRustCallWithError(MozAdsClientApiException) { _status ->
     UniffiLib.uniffi_ads_client_fn_method_mozadsclient_request_image_ads(
         it,
-        FfiConverterSequenceTypeMozAdsPlacementRequest.lower(`mozAdRequests`),FfiConverterOptionalTypeMozAdsRequestOptions.lower(`options`),_status)
+        
+        FfiConverterSequenceTypeMozAdsPlacementRequest.lower(`mozAdRequests`),
+        FfiConverterOptionalTypeMozAdsRequestOptions.lower(`options`),_status)
 }
     }
     )
@@ -1548,7 +1566,9 @@ open class MozAdsClient: Disposable, AutoCloseable, MozAdsClientInterface
     uniffiRustCallWithError(MozAdsClientApiException) { _status ->
     UniffiLib.uniffi_ads_client_fn_method_mozadsclient_request_spoc_ads(
         it,
-        FfiConverterSequenceTypeMozAdsPlacementRequestWithCount.lower(`mozAdRequests`),FfiConverterOptionalTypeMozAdsRequestOptions.lower(`options`),_status)
+        
+        FfiConverterSequenceTypeMozAdsPlacementRequestWithCount.lower(`mozAdRequests`),
+        FfiConverterOptionalTypeMozAdsRequestOptions.lower(`options`),_status)
 }
     }
     )
@@ -1562,7 +1582,9 @@ open class MozAdsClient: Disposable, AutoCloseable, MozAdsClientInterface
     uniffiRustCallWithError(MozAdsClientApiException) { _status ->
     UniffiLib.uniffi_ads_client_fn_method_mozadsclient_request_tile_ads(
         it,
-        FfiConverterSequenceTypeMozAdsPlacementRequest.lower(`mozAdRequests`),FfiConverterOptionalTypeMozAdsRequestOptions.lower(`options`),_status)
+        
+        FfiConverterSequenceTypeMozAdsPlacementRequest.lower(`mozAdRequests`),
+        FfiConverterOptionalTypeMozAdsRequestOptions.lower(`options`),_status)
 }
     }
     )
@@ -1722,9 +1744,9 @@ public interface MozAdsClientBuilderInterface {
     
     fun `cacheConfig`(`cacheConfig`: MozAdsCacheConfig): MozAdsClientBuilder
     
-    fun `contextIdProvider`(`provider`: MozAdsContextIdProvider): MozAdsClientBuilder
-    
     fun `environment`(`environment`: MozAdsEnvironment): MozAdsClientBuilder
+    
+    fun `storeConfig`(`storeConfig`: MozAdsStoreConfig): MozAdsClientBuilder
     
     fun `telemetry`(`telemetry`: MozAdsTelemetry): MozAdsClientBuilder
     
@@ -1769,6 +1791,11 @@ open class MozAdsClientBuilder: Disposable, AutoCloseable, MozAdsClientBuilderIn
 
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
+
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
 
     override fun destroy() {
         // Only allow a single call to this method.
@@ -1854,20 +1881,8 @@ open class MozAdsClientBuilder: Disposable, AutoCloseable, MozAdsClientBuilderIn
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_ads_client_fn_method_mozadsclientbuilder_cache_config(
         it,
+        
         FfiConverterTypeMozAdsCacheConfig.lower(`cacheConfig`),_status)
-}
-    }
-    )
-    }
-    
-
-    override fun `contextIdProvider`(`provider`: MozAdsContextIdProvider): MozAdsClientBuilder {
-            return FfiConverterTypeMozAdsClientBuilder.lift(
-    callWithHandle {
-    uniffiRustCall() { _status ->
-    UniffiLib.uniffi_ads_client_fn_method_mozadsclientbuilder_context_id_provider(
-        it,
-        FfiConverterTypeMozAdsContextIdProvider.lower(`provider`),_status)
 }
     }
     )
@@ -1880,7 +1895,22 @@ open class MozAdsClientBuilder: Disposable, AutoCloseable, MozAdsClientBuilderIn
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_ads_client_fn_method_mozadsclientbuilder_environment(
         it,
+        
         FfiConverterTypeMozAdsEnvironment.lower(`environment`),_status)
+}
+    }
+    )
+    }
+    
+
+    override fun `storeConfig`(`storeConfig`: MozAdsStoreConfig): MozAdsClientBuilder {
+            return FfiConverterTypeMozAdsClientBuilder.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ads_client_fn_method_mozadsclientbuilder_store_config(
+        it,
+        
+        FfiConverterTypeMozAdsStoreConfig.lower(`storeConfig`),_status)
 }
     }
     )
@@ -1893,6 +1923,7 @@ open class MozAdsClientBuilder: Disposable, AutoCloseable, MozAdsClientBuilderIn
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_ads_client_fn_method_mozadsclientbuilder_telemetry(
         it,
+        
         FfiConverterTypeMozAdsTelemetry.lower(`telemetry`),_status)
 }
     }
@@ -1934,311 +1965,6 @@ public object FfiConverterTypeMozAdsClientBuilder: FfiConverter<MozAdsClientBuil
     override fun allocationSize(value: MozAdsClientBuilder) = 8UL
 
     override fun write(value: MozAdsClientBuilder, buf: ByteBuffer) {
-        buf.putLong(lower(value))
-    }
-}
-
-
-// This template implements a class for working with a Rust struct via a handle
-// to the live Rust struct on the other side of the FFI.
-//
-// There's some subtlety here, because we have to be careful not to operate on a Rust
-// struct after it has been dropped, and because we must expose a public API for freeing
-// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
-//
-//   * Each instance holds an opaque handle to the underlying Rust struct.
-//     Method calls need to read this handle from the object's state and pass it in to
-//     the Rust FFI.
-//
-//   * When an instance is no longer needed, its handle should be passed to a
-//     special destructor function provided by the Rust FFI, which will drop the
-//     underlying Rust struct.
-//
-//   * Given an instance, calling code is expected to call the special
-//     `destroy` method in order to free it after use, either by calling it explicitly
-//     or by using a higher-level helper like the `use` method. Failing to do so risks
-//     leaking the underlying Rust struct.
-//
-//   * We can't assume that calling code will do the right thing, and must be prepared
-//     to handle Kotlin method calls executing concurrently with or even after a call to
-//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
-//
-//   * We must never allow Rust code to operate on the underlying Rust struct after
-//     the destructor has been called, and must never call the destructor more than once.
-//     Doing so may trigger memory unsafety.
-//
-//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
-//     is implemented to call the destructor when the Kotlin object becomes unreachable.
-//     This is done in a background thread. This is not a panacea, and client code should be aware that
-//      1. the thread may starve if some there are objects that have poorly performing
-//     `drop` methods or do significant work in their `drop` methods.
-//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
-//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
-//
-// If we try to implement this with mutual exclusion on access to the handle, there is the
-// possibility of a race between a method call and a concurrent call to `destroy`:
-//
-//    * Thread A starts a method call, reads the value of the handle, but is interrupted
-//      before it can pass the handle over the FFI to Rust.
-//    * Thread B calls `destroy` and frees the underlying Rust struct.
-//    * Thread A resumes, passing the already-read handle value to Rust and triggering
-//      a use-after-free.
-//
-// One possible solution would be to use a `ReadWriteLock`, with each method call taking
-// a read lock (and thus allowed to run concurrently) and the special `destroy` method
-// taking a write lock (and thus blocking on live method calls). However, we aim not to
-// generate methods with any hidden blocking semantics, and a `destroy` method that might
-// block if called incorrectly seems to meet that bar.
-//
-// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
-// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
-// has been called. These are updated according to the following rules:
-//
-//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
-//      The initial value for the flag is false.
-//
-//    * At the start of each method call, we atomically check the counter.
-//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
-//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
-//
-//    * At the end of each method call, we atomically decrement and check the counter.
-//      If it has reached zero then we destroy the underlying Rust struct.
-//
-//    * When `destroy` is called, we atomically flip the flag from false to true.
-//      If the flag was already true we silently fail.
-//      Otherwise we atomically decrement and check the counter.
-//      If it has reached zero then we destroy the underlying Rust struct.
-//
-// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
-// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
-//
-// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
-// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
-// of the underlying Rust code.
-//
-// This makes a cleaner a better alternative to _not_ calling `destroy()` as
-// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
-// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
-// thread may be starved, and the app will leak memory.
-//
-// In this case, `destroy`ing manually may be a better solution.
-//
-// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
-// with Rust peers are reclaimed:
-//
-// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
-// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
-// 3. The memory is reclaimed when the process terminates.
-//
-// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
-//
-
-
-public interface MozAdsContextIdProvider {
-    
-    fun `contextId`(): kotlin.String
-    
-    companion object
-}
-
-open class MozAdsContextIdProviderImpl: Disposable, AutoCloseable, MozAdsContextIdProvider
-{
-
-    @Suppress("UNUSED_PARAMETER")
-    /**
-     * @suppress
-     */
-    constructor(withHandle: UniffiWithHandle, handle: Long) {
-        this.handle = handle
-        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
-    }
-
-    /**
-     * @suppress
-     *
-     * This constructor can be used to instantiate a fake object. Only used for tests. Any
-     * attempt to actually use an object constructed this way will fail as there is no
-     * connected Rust object.
-     */
-    @Suppress("UNUSED_PARAMETER")
-    constructor(noHandle: NoHandle) {
-        this.handle = 0
-        this.cleanable = null
-    }
-
-    protected val handle: Long
-    protected val cleanable: UniffiCleaner.Cleanable?
-
-    private val wasDestroyed = AtomicBoolean(false)
-    private val callCounter = AtomicLong(1)
-
-    override fun destroy() {
-        // Only allow a single call to this method.
-        // TODO: maybe we should log a warning if called more than once?
-        if (this.wasDestroyed.compareAndSet(false, true)) {
-            // This decrement always matches the initial count of 1 given at creation time.
-            if (this.callCounter.decrementAndGet() == 0L) {
-                cleanable?.clean()
-            }
-        }
-    }
-
-    @Synchronized
-    override fun close() {
-        this.destroy()
-    }
-
-    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
-        // Check and increment the call counter, to keep the object alive.
-        // This needs a compare-and-set retry loop in case of concurrent updates.
-        do {
-            val c = this.callCounter.get()
-            if (c == 0L) {
-                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
-            }
-            if (c == Long.MAX_VALUE) {
-                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
-            }
-        } while (! this.callCounter.compareAndSet(c, c + 1L))
-        // Now we can safely do the method call without the handle being freed concurrently.
-        try {
-            return block(this.uniffiCloneHandle())
-        } finally {
-            // This decrement always matches the increment we performed above.
-            if (this.callCounter.decrementAndGet() == 0L) {
-                cleanable?.clean()
-            }
-        }
-    }
-
-    // Use a static inner class instead of a closure so as not to accidentally
-    // capture `this` as part of the cleanable's action.
-    private class UniffiCleanAction(private val handle: Long) : Runnable {
-        override fun run() {
-            if (handle == 0.toLong()) {
-                // Fake object created with `NoHandle`, don't try to free.
-                return;
-            }
-            uniffiRustCall { status ->
-                UniffiLib.uniffi_ads_client_fn_free_mozadscontextidprovider(handle, status)
-            }
-        }
-    }
-
-    /**
-     * @suppress
-     */
-    fun uniffiCloneHandle(): Long {
-        if (handle == 0.toLong()) {
-            throw InternalException("uniffiCloneHandle() called on NoHandle object");
-        }
-        return uniffiRustCall() { status ->
-            UniffiLib.uniffi_ads_client_fn_clone_mozadscontextidprovider(handle, status)
-        }
-    }
-
-    override fun `contextId`(): kotlin.String {
-            return FfiConverterString.lift(
-    callWithHandle {
-    uniffiRustCall() { _status ->
-    UniffiLib.uniffi_ads_client_fn_method_mozadscontextidprovider_context_id(
-        it,
-        _status)
-}
-    }
-    )
-    }
-    
-
-    
-
-    
-
-
-    
-    
-    /**
-     * @suppress
-     */
-    companion object
-    
-}
-
-
-
-// Put the implementation in an object so we don't pollute the top-level namespace
-internal object uniffiCallbackInterfaceMozAdsContextIdProvider {
-    internal object `contextId`: UniffiCallbackInterfaceMozAdsContextIdProviderMethod0 {
-        override fun callback(`uniffiHandle`: Long,`uniffiOutReturn`: RustBuffer,uniffiCallStatus: UniffiRustCallStatus,) {
-            val uniffiObj = FfiConverterTypeMozAdsContextIdProvider.handleMap.get(uniffiHandle)
-            val makeCall = { ->
-                uniffiObj.`contextId`(
-                )
-            }
-            val writeReturn = { value: kotlin.String -> uniffiOutReturn.setValue(FfiConverterString.lower(value)) }
-            uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
-        }
-    }
-
-    internal object uniffiFree: UniffiCallbackInterfaceFree {
-        override fun callback(handle: Long) {
-            FfiConverterTypeMozAdsContextIdProvider.handleMap.remove(handle)
-        }
-    }
-
-    internal object uniffiClone: UniffiCallbackInterfaceClone {
-        override fun callback(handle: Long): Long {
-            return FfiConverterTypeMozAdsContextIdProvider.handleMap.clone(handle)
-        }
-    }
-
-    internal var vtable = UniffiVTableCallbackInterfaceMozAdsContextIdProvider.UniffiByValue(
-        uniffiFree,
-        uniffiClone,
-        `contextId`,
-    )
-
-    // Registers the foreign callback with the Rust side.
-    // This method is generated for each callback interface.
-    internal fun register(lib: UniffiLib) {
-        lib.uniffi_ads_client_fn_init_callback_vtable_mozadscontextidprovider(vtable)
-    }
-}
-
-/**
- * @suppress
- */
-public object FfiConverterTypeMozAdsContextIdProvider: FfiConverter<MozAdsContextIdProvider, Long> {
-    internal val handleMap = UniffiHandleMap<MozAdsContextIdProvider>()
-
-    override fun lower(value: MozAdsContextIdProvider): Long {
-        if (value is MozAdsContextIdProviderImpl) {
-             // Rust-implemented object.  Clone the handle and return it
-            return value.uniffiCloneHandle()
-         } else {
-            // Kotlin object, generate a new vtable handle and return that.
-            return handleMap.insert(value)
-         }
-    }
-
-    override fun lift(value: Long): MozAdsContextIdProvider {
-        if ((value and 1.toLong()) == 0.toLong()) {
-            // Rust-generated handle, construct a new class that uses the handle to implement the
-            // interface
-            return MozAdsContextIdProviderImpl(UniffiWithHandle, value)
-        } else {
-            // Kotlin-generated handle, get the object from the handle map
-            return handleMap.remove(value)
-        }
-    }
-
-    override fun read(buf: ByteBuffer): MozAdsContextIdProvider {
-        return lift(buf.getLong())
-    }
-
-    override fun allocationSize(value: MozAdsContextIdProvider) = 8UL
-
-    override fun write(value: MozAdsContextIdProvider, buf: ByteBuffer) {
         buf.putLong(lower(value))
     }
 }
@@ -2834,6 +2560,39 @@ public object FfiConverterTypeMozAdsSpocRanking: FfiConverterRustBuffer<MozAdsSp
 
 
 
+data class MozAdsStoreConfig (
+    var `dbPath`: kotlin.String
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeMozAdsStoreConfig: FfiConverterRustBuffer<MozAdsStoreConfig> {
+    override fun read(buf: ByteBuffer): MozAdsStoreConfig {
+        return MozAdsStoreConfig(
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: MozAdsStoreConfig) = (
+            FfiConverterString.allocationSize(value.`dbPath`)
+    )
+
+    override fun write(value: MozAdsStoreConfig, buf: ByteBuffer) {
+            FfiConverterString.write(value.`dbPath`, buf)
+    }
+}
+
+
+
 data class MozAdsTile (
     var `blockKey`: kotlin.String
     , 
@@ -2988,33 +2747,86 @@ public object FfiConverterTypeMozAdsClientApiError : FfiConverterRustBuffer<MozA
 
 
 
-
-enum class MozAdsEnvironment {
+sealed class MozAdsEnvironment {
     
-    PROD,
-    STAGING;
+    object Prod : MozAdsEnvironment()
+    
+    
+    object Staging : MozAdsEnvironment()
+    
+    
+    data class Custom(
+        val v1: mozilla.appservices.adsclient.AdsClientUrl) : MozAdsEnvironment()
+        
+    {
+        
 
+        companion object
+    }
+    
+
+    
+
+    
     
 
 
     companion object
 }
 
-
 /**
  * @suppress
  */
-public object FfiConverterTypeMozAdsEnvironment: FfiConverterRustBuffer<MozAdsEnvironment> {
-    override fun read(buf: ByteBuffer) = try {
-        MozAdsEnvironment.values()[buf.getInt() - 1]
-    } catch (e: IndexOutOfBoundsException) {
-        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+public object FfiConverterTypeMozAdsEnvironment : FfiConverterRustBuffer<MozAdsEnvironment>{
+    override fun read(buf: ByteBuffer): MozAdsEnvironment {
+        return when(buf.getInt()) {
+            1 -> MozAdsEnvironment.Prod
+            2 -> MozAdsEnvironment.Staging
+            3 -> MozAdsEnvironment.Custom(
+                FfiConverterTypeAdsClientUrl.read(buf),
+                )
+            else -> throw RuntimeException("invalid enum value, something is very wrong!!")
+        }
     }
 
-    override fun allocationSize(value: MozAdsEnvironment) = 4UL
+    override fun allocationSize(value: MozAdsEnvironment): ULong = when(value) {
+        is MozAdsEnvironment.Prod -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+            )
+        }
+        is MozAdsEnvironment.Staging -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+            )
+        }
+        is MozAdsEnvironment.Custom -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterTypeAdsClientUrl.allocationSize(value.v1)
+            )
+        }
+    }
 
     override fun write(value: MozAdsEnvironment, buf: ByteBuffer) {
-        buf.putInt(value.ordinal + 1)
+        when(value) {
+            is MozAdsEnvironment.Prod -> {
+                buf.putInt(1)
+                Unit
+            }
+            is MozAdsEnvironment.Staging -> {
+                buf.putInt(2)
+                Unit
+            }
+            is MozAdsEnvironment.Custom -> {
+                buf.putInt(3)
+                FfiConverterTypeAdsClientUrl.write(value.v1, buf)
+                Unit
+            }
+        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
     }
 }
 
@@ -3749,11 +3561,6 @@ public object FfiConverterMapStringSequenceTypeMozAdsSpoc: FfiConverterRustBuffe
 
 
 
-/**
- * Typealias from the type name used in the UDL file to the builtin type.  This
- * is needed because the UDL type name is used in function/method signatures.
- * It's also what we have an external type that references a custom type.
- */
 public typealias AdsClientUrl = kotlin.String
 public typealias FfiConverterTypeAdsClientUrl = FfiConverterString
 

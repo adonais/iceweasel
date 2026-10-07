@@ -15,15 +15,13 @@
 #  include "Logging.h"
 #endif
 
-#include "mozilla/a11y/DocAccessibleChild.h"
-#ifdef MOZ_ENABLE_SKIA_PDF
-#  include "mozilla/a11y/PdfStructTreeBuilder.h"
-#endif
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Components.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_accessibility.h"
+#include "mozilla/a11y/DocAccessibleChild.h"
+#include "mozilla/a11y/PdfStructTreeBuilder.h"
 #include "mozilla/dom/Event.h"  // for Event
 #include "nsContentUtils.h"
 #include "nsCoreUtils.h"
@@ -198,7 +196,6 @@ bool DocManager::IsProcessingRefreshDriverNotification() const {
 }
 #endif
 
-#ifdef MOZ_ENABLE_SKIA_PDF
 /* static */
 void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
   if (!StaticPrefs::accessibility_tagged_pdf_output_enabled()) {
@@ -254,7 +251,6 @@ void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
     }
   }
 }
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // DocManager protected
@@ -538,11 +534,13 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument,
   }
 
   // Ignore hidden documents, resource documents, static clone
-  // (printing) documents and documents without a docshell.
+  // (printing) documents, documents without a docshell, and documents that
+  // are no longer current for their WindowGlobal (e.g. the initial about:blank
+  // after its WindowGlobal has been reused for a new document).
   if (!nsCoreUtils::IsDocumentVisibleConsideringInProcessAncestors(aDocument) ||
       aDocument->IsResourceDoc() ||
       (!aAllowStatic && aDocument->IsStaticDocument()) ||
-      !aDocument->IsActive()) {
+      !aDocument->IsActive() || !aDocument->IsCurrentActiveDocument()) {
     return nullptr;
   }
 

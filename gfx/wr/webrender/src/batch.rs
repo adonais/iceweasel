@@ -1016,7 +1016,7 @@ impl BatchBuilder {
                 let text_run_scratch_handle = prim_info.kind_scratch.unwrap_text_run();
                 let run_scratch = &ctx.scratch.frame.text_runs[text_run_scratch_handle];
                 let subpx_dir = run_scratch.used_font.get_subpx_dir();
-                let prim_data = &ctx.data_stores.text_run[data_handle];
+                let prim_data = &ctx.data_stores.text_run[data_handle].kind;
 
                 let glyph_keys = &ctx.scratch.frame.glyph_keys[run_scratch.glyph_keys_range];
 

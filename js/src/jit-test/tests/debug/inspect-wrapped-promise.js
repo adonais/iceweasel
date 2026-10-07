@@ -58,12 +58,6 @@ assertEq(typeof promiseDO3.promiseResolutionSite === "object", true);
 assertThrowsInstanceOf(function () { promiseDO4.promiseResolutionSite }, TypeError);
 assertThrowsInstanceOf(function () { promiseDO5.promiseResolutionSite }, TypeError);
 
-assertEq(promiseDO1.promiseID, 1);
-assertEq(promiseDO2.promiseID, 2);
-assertEq(promiseDO3.promiseID, 3);
-assertThrowsInstanceOf(function () { promiseDO4.promiseID }, TypeError);
-assertThrowsInstanceOf(function () { promiseDO5.promiseID }, TypeError);
-
 assertEq(typeof promiseDO1.promiseDependentPromises, "object");
 assertEq(typeof promiseDO2.promiseDependentPromises, "object");
 assertEq(typeof promiseDO3.promiseDependentPromises, "object");

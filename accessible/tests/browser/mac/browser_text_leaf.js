@@ -46,11 +46,10 @@ addAccessibleTask(
 
     is(
       children[1].getAttributeValue("AXValue"),
-      gIsIframe && !gIsRemoteIframe ? "world" : "world ",
+      "world ",
       "Second child is world text"
     );
     // we have a trailing space in here due to bug 1577028
-    // but this appears fixed in non-remote iframes
   },
   { chrome: true, iframe: true, remoteIframe: true }
 );

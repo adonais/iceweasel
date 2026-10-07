@@ -110,7 +110,7 @@ class FileSystemDatabaseManagerVersion001 : public FileSystemDatabaseManager {
 
   nsresult EndUsageTracking(const FileId& aFileId) override;
 
-  virtual ~FileSystemDatabaseManagerVersion001() = default;
+  virtual ~FileSystemDatabaseManagerVersion001();
 
  protected:
   virtual Result<bool, QMResult> DoesFileIdExist(const FileId& aFileId) const;

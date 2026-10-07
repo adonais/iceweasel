@@ -9,6 +9,7 @@ use glean::private::{
     TimespanMetric,
 };
 use glean::TestGetValue;
+use std::borrow::Cow;
 
 pub struct Annotation {
     pub key: &'static str,
@@ -18,6 +19,23 @@ pub struct Annotation {
     pub set_glean_metric: fn(&serde_json::Value) -> anyhow::Result<()>,
     pub test_get_glean_value: fn() -> Option<serde_json::Value>,
 }
+
+impl std::fmt::Debug for Annotation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct(std::any::type_name::<Self>())
+            .field("key", &self.key)
+            .field("glean_key", &self.glean_key)
+            .finish_non_exhaustive()
+    }
+}
+
+impl PartialEq for Annotation {
+    fn eq(&self, other: &Self) -> bool {
+        self.key == other.key
+    }
+}
+
+impl Eq for Annotation {}
 
 macro_rules! convert {
     ( $category:ident :: $metric:ident = $func:ident ($key:literal $(, $($args:expr),*)? ) ) => {
@@ -309,7 +327,6 @@ fn convert_to_crash_java_exception(
         .map(|throwable| &throwable["stacktrace"])
         .map(
             |throwable| glean_metrics::crash::JavaExceptionObjectThrowablesItem {
-                message: throwable["value"].as_str().map(ToOwned::to_owned),
                 type_name: throwable["module"]
                     .as_str()
                     .zip(throwable["type"].as_str())
@@ -350,4 +367,31 @@ fn glean_datetime(datetime: time::OffsetDateTime) -> glean::Datetime {
         nanosecond: datetime.nanosecond(),
         offset_seconds: datetime.offset().whole_seconds(),
     }
+}
+
+pub fn sanitize<'a>(
+    annotation: &'static Annotation,
+    value: &'a serde_json::Value,
+) -> Cow<'a, serde_json::Value> {
+    maybe_sanitize(annotation, value)
+        .map(Cow::Owned)
+        .unwrap_or(Cow::Borrowed(value))
+}
+
+fn maybe_sanitize(
+    annotation: &'static Annotation,
+    value: &serde_json::Value,
+) -> Option<serde_json::Value> {
+    if annotation == &JavaException {
+        // Remove the java exception messages, which may be arbitrary strings
+        let value: serde_json::Value = serde_json::from_str(value.as_str()?).ok()?;
+        let mut value = value.clone();
+        let throwables = value["exception"]["values"].as_array_mut()?;
+        for throwable in throwables {
+            let stacktrace = throwable["stacktrace"].as_object_mut()?;
+            stacktrace.remove("value");
+        }
+        return Some(serde_json::Value::String(value.to_string()));
+    }
+    None
 }

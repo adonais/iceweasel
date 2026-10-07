@@ -7,6 +7,7 @@
 
 #include <utility>
 
+#include "gfxFontEntry.h"
 #include "harfbuzz/hb.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/MruCache.h"
@@ -14,8 +15,6 @@
 #include "mozilla/gfx/Types.h"
 #include "nsAtom.h"
 #include "nsTArray.h"
-
-class gfxFontEntry;
 
 namespace mozilla::gfx {
 

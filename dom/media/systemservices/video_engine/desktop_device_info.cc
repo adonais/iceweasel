@@ -6,7 +6,6 @@
 
 #include <cstddef>
 #include <cstring>
-#include <map>
 #include <memory>
 
 #include "VideoEngine.h"
@@ -17,6 +16,7 @@
 #include "nsIBrowserWindowTracker.h"
 #include "nsImportModule.h"
 #include "nsPrintfCString.h"
+#include "nsTArray.h"
 
 using mozilla::camera::CaptureDeviceType;
 
@@ -51,7 +51,8 @@ class DesktopDeviceInfoImpl : public CaptureInfo<Device> {
 
  protected:
   const DesktopCaptureOptions mOptions;
-  std::map<intptr_t, Device> mDeviceList;
+  // In the order the platform enumerated them, which is what callers show.
+  nsTArray<Device> mDeviceList;
 };
 
 template <CaptureDeviceType Type, typename Device>
@@ -61,22 +62,20 @@ DesktopDeviceInfoImpl<Type, Device>::DesktopDeviceInfoImpl(
 
 template <CaptureDeviceType Type, typename Device>
 size_t DesktopDeviceInfoImpl<Type, Device>::getSourceCount() const {
-  return mDeviceList.size();
+  return mDeviceList.Length();
 }
 
 template <CaptureDeviceType Type, typename Device>
 const Device* DesktopDeviceInfoImpl<Type, Device>::getSource(
     size_t aIndex) const {
-  if (aIndex >= mDeviceList.size()) {
+  if (aIndex >= mDeviceList.Length()) {
     return nullptr;
   }
-  auto it = mDeviceList.begin();
-  std::advance(it, aIndex);
-  return &std::get<Device>(*it);
+  return &mDeviceList[aIndex];
 }
 
-static std::map<intptr_t, TabSource> InitializeTabList() {
-  std::map<intptr_t, TabSource> tabList;
+static nsTArray<TabSource> InitializeTabList() {
+  nsTArray<TabSource> tabList;
   // This is a sync dispatch to main thread, which is unfortunate. To
   // call JavaScript we have to be on main thread, but the remaining
   // DesktopCapturer very much wants to be off main thread. This might
@@ -103,14 +102,12 @@ static std::map<intptr_t, TabSource> InitializeTabList() {
       int64_t browserId;
       browserTab->GetBrowserId(&browserId);
 
-      auto result =
-          tabList.try_emplace(mozilla::AssertedCast<intptr_t>(browserId));
-      auto& [iter, inserted] = result;
-      if (!inserted) {
-        MOZ_ASSERT_UNREACHABLE("Duplicate browser ids");
-        continue;
-      }
-      auto& [key, desktopTab] = *iter;
+      MOZ_ASSERT(!tabList.Contains(browserId,
+                                   [](const TabSource& aElem, uint64_t aId) {
+                                     return aId <=> aElem.getBrowserId();
+                                   }),
+                 "Duplicate browser ids");
+      TabSource& desktopTab = *tabList.AppendElement();
       desktopTab.setBrowserId(browserId);
       desktopTab.setName(NS_ConvertUTF16toUTF8(contentTitle));
       desktopTab.setUniqueId(nsPrintfCString("%" PRId64, browserId));
@@ -128,7 +125,7 @@ void DesktopDeviceInfoImpl<Type, Device>::Refresh() {
     return;
   }
 
-  mDeviceList.clear();
+  mDeviceList.Clear();
 
   std::unique_ptr<DesktopCapturer> cap;
   if constexpr (Type == CaptureDeviceType::Screen ||
@@ -156,13 +153,12 @@ void DesktopDeviceInfoImpl<Type, Device>::Refresh() {
     }
 
     for (const auto& elem : list) {
-      auto result = mDeviceList.try_emplace(elem.id);
-      auto& [iter, inserted] = result;
-      if (!inserted) {
-        MOZ_ASSERT_UNREACHABLE("Duplicate screen id");
-        continue;
-      }
-      auto& [key, device] = *iter;
+      MOZ_ASSERT(!mDeviceList.Contains(elem.id,
+                                       [](const Device& aElem, ScreenId aId) {
+                                         return aId <=> aElem.getScreenId();
+                                       }),
+                 "Duplicate screen id");
+      Device& device = *mDeviceList.AppendElement();
       device.setScreenId(elem.id);
       device.setUniqueId(nsPrintfCString("%" PRIdPTR, elem.id));
       if (Type == CaptureDeviceType::Screen && list.size() == 1) {

@@ -10,6 +10,7 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
+#include "nsCRTGlue.h"
 #include "nsContentUtils.h"
 #include "nsIObserverService.h"
 #include "nsPIDOMWindowInlines.h"

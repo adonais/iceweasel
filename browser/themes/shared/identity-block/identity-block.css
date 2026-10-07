@@ -12,6 +12,14 @@
 }
 
 #identity-box {
+  margin-inline-start: calc(-1 * var(--urlbar-component-gap));
+
+  > #identity-icon-box,
+  > #identity-permission-box,
+  > #notification-popup-box {
+    margin-inline-start: var(--urlbar-component-gap);
+  }
+
   &[pageproxystate="invalid"] {
     pointer-events: none;
     -moz-user-focus: ignore;
@@ -325,13 +333,9 @@
     display: none;
   }
 
-  #identity-box {
-    /* Keep displaying the moz-extension or chrome UI chicklet */
-    &[pageproxystate="valid"]:not(.chromeUI, .extensionPage) {
-      #identity-icon-box {
-        display: none;
-      }
-    }
+  /* Keep displaying the moz-extension or chrome UI chicklet */
+  #identity-box[pageproxystate="valid"]:not(.chromeUI, .extensionPage) > #identity-icon-box {
+    display: none;
   }
 
   #trust-icon-container {
@@ -360,7 +364,7 @@
 
     &.has-blocked-trackers {
       /* The tracker count below takes the box text color; a color here would recolor the shield. */
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/no-background-without-text-color */
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-paired-color-tokens */
       background-color: var(--urlbar-box-background-color);
 
       /* Only the count text takes the box color, so the shield keeps its fill. */
@@ -375,7 +379,7 @@
     }
 
     /* Tighter padding for the collapsed count; the expanded pill keeps normal. */
-    &.has-blocked-trackers:not(.first-visit) {
+    &.has-blocked-trackers:not(.entry-page) {
       padding-inline-end: var(--space-xsmall);
     }
 
@@ -388,8 +392,8 @@
     /*
      * We use nesting to group three different cases:
      * - small screens/reduced motion (only show shortform tracker count)
-     * - first visit to a site (first a longform "x trackers blocked" pill visible, before collapsing to just a number)
-     * - later visits (just a pill with a number)
+     * - first-visited page on a site (first a longform "x trackers blocked" pill visible, before collapsing to just a number)
+     * - subsequent visits to the same site (just a pill with a number)
      *
      * Add to that that we need a wrapper to animate the width, and nesting quickly exceeds the default limit of 3.
      * Since collapsing it wouldn't increase readability, we disable the lint rule here.
@@ -412,7 +416,7 @@
           box-sizing: border-box;
           /* Also zero the padding so max-width: 0 can reach a true 0 width;
              otherwise the leading digit shows as a sliver through the padding
-             band. !important is required because the first-visit intro
+             band. !important is required because the .entry-page intro
              animation holds the padding, and animations outrank normal
              declarations in the cascade. */
           padding: 0 !important;
@@ -423,8 +427,11 @@
           display: none;
         }
       }
-      /* After a site's first visit, we just show the number of blocked trackers (i.e. the short form) */
-      &:not(.first-visit) {
+      /*
+       * When clicking through a site (i.e. beyond its entry page), we just show
+       * the number of blocked trackers (i.e. the short form)
+       */
+      &:not(.entry-page) {
         #trust-icon-tracker-count-longform-wrapper {
           display: none;
         }
@@ -444,9 +451,9 @@
           }
         }
       }
-      /* On a site's first visit, we first show "x trackers blocked" (the long form) for a few seconds,
+      /* On a site's entry page, we first show "x trackers blocked" (the long form) for a few seconds,
          after which we transition to just the number of blocked trackers (the short form) */
-      &.first-visit {
+      &.entry-page {
         @media (prefers-reduced-motion: no-preference) {
           --initial-delay: 1000ms;
           --longform-presence: 20s;

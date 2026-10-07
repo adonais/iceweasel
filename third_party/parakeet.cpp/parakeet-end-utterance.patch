@@ -1,0 +1,247 @@
+# Firefox-local: let the host close an utterance itself, for a model whose vocab
+# has no <EOU> piece (the multilingual nemotron one). Adds
+# parakeet_capi_stream_has_eou, so the host knows whether the model marks
+# boundaries at all; parakeet_capi_stream_blank_seconds, the endpointing signal
+# such a host decides the boundary from (audio decoded since the decoder last
+# emitted anything - the model's own blank output, so no noise-floor tuning and
+# no waiting for a word to be committed, which a transducer defers until the
+# next word starts); and parakeet_capi_stream_end_utterance, which does what an
+# emitted <EOU> does - finalizes the words decoded so far, including the
+# trailing one, and restarts the decoder and drops the encoder cache so nothing
+# can extend them - without ending the stream. Without it such a model produces
+# one result per session, at end of stream. Splits StreamingEncoder::reset()
+# for that last part: the caches are dropped but the step counter keeps
+# running, since the caller's chunk schedule is unchanged and step 0 is what
+# tells the encoder a window carries no pre-encode overlap to drop. Applies on
+# top of
+# parakeet-stream-words.patch and parakeet-chunk-samples.patch. Upstreamable to
+# https://github.com/mudler/parakeet.cpp
+diff --git a/include/parakeet_capi.h b/include/parakeet_capi.h
+--- a/include/parakeet_capi.h
++++ b/include/parakeet_capi.h
+@@ -45,6 +45,11 @@
+ //
+ // v6: added parakeet_capi_stream_chunk_samples, the audio one encoder chunk
+ //     spans. Additive.
++//
++// v7: added parakeet_capi_stream_has_eou, parakeet_capi_stream_end_utterance and
++//     parakeet_capi_stream_blank_seconds,
++//     so a host can close an utterance itself on a model whose vocab has no
++//     <EOU> piece. Additive: the existing entry points are unchanged.
+ int parakeet_capi_abi_version(void);
+ 
+ // Load a GGUF model. Returns an owning context, or NULL on failure.
+@@ -255,6 +260,22 @@
+ // Safe on NULL.
+ void parakeet_capi_free_events(parakeet_stream_event* events);
+ 
++// Firefox-local: whether the model marks utterance boundaries itself, i.e. has
++// an <EOU>. 1 / 0, -1 on error.
++int parakeet_capi_stream_has_eou(parakeet_stream* s);
++
++// Firefox-local: audio decoded since the RNN-T last emitted a token, in
++// seconds. The endpointing signal for a model that marks no boundary of its
++// own, needing no noise-floor tuning. 0 while the decoder is emitting, -1 on
++// error.
++double parakeet_capi_stream_blank_seconds(parakeet_stream* s);
++
++// Firefox-local: close the utterance in progress without ending the stream, for
++// a model that marks no boundary itself. Every word decoded so far becomes
++// final and the decoder restarts, so nothing can extend them. Returns the
++// newly-finalized text (malloc'd, "" if none, NULL on error).
++char* parakeet_capi_stream_end_utterance(parakeet_stream* s);
++
+ // Firefox-local: a finalized word with timing + confidence. Same data the JSON
+ // "words" array carries, in a typed form so the host need not parse JSON.
+ typedef struct parakeet_stream_word {
+diff --git a/src/parakeet_capi.cpp b/src/parakeet_capi.cpp
+--- a/src/parakeet_capi.cpp
++++ b/src/parakeet_capi.cpp
+@@ -33,7 +33,11 @@
+ //     documents.
+ // v6: parakeet_capi_stream_chunk_samples, the audio one encoder chunk spans.
+ //     Additive.
+-#define PARAKEET_CAPI_ABI_VERSION 6
++// v7: parakeet_capi_stream_has_eou / parakeet_capi_stream_blank_seconds /
++//     parakeet_capi_stream_end_utterance, for a host that has to decide
++//     utterance boundaries itself on a model whose vocab has no <EOU> piece.
++//     Additive.
++#define PARAKEET_CAPI_ABI_VERSION 7
+ 
+ // The opaque context: a loaded model plus a buffer for the last error message.
+ struct parakeet_ctx {
+@@ -553,6 +557,32 @@
+     }
+ }
+ 
++extern "C" int parakeet_capi_stream_has_eou(parakeet_stream* s) {
++    if (!s || !s->sess) return -1;
++    return s->sess->has_eou() ? 1 : 0;
++}
++
++extern "C" double parakeet_capi_stream_blank_seconds(parakeet_stream* s) {
++    if (!s || !s->sess) return -1.0;
++    return s->sess->blank_seconds();
++}
++
++extern "C" char* parakeet_capi_stream_end_utterance(parakeet_stream* s) {
++    if (!s || !s->sess) return nullptr;
++    if (!s->ctx || !s->ctx->model) return nullptr;
++    try {
++        std::string delta = s->sess->end_utterance();
++        s->ctx->last_error.clear();
++        char* out = dup_to_c(delta);
++        if (!out) { s->ctx->last_error = "out of memory"; return nullptr; }
++        return out;
++    } catch (const std::exception& e) {
++        s->ctx->last_error = e.what(); return nullptr;
++    } catch (...) {
++        s->ctx->last_error = "unknown error"; return nullptr;
++    }
++}
++
+ extern "C" parakeet_stream* parakeet_capi_stream_begin(parakeet_ctx* ctx) {
+     // Delegate with the model default language.
+     return parakeet_capi_stream_begin_lang(ctx, nullptr);
+diff --git a/src/streaming.cpp b/src/streaming.cpp
+--- a/src/streaming.cpp
++++ b/src/streaming.cpp
+@@ -137,6 +137,17 @@
+                            &chunk_tokens);
+     enc_frame_ += n_valid;
+ 
++    // Length of the trailing run of blank frames, for blank_seconds(). Frames
++    // the decoder passed over without emitting are what an endpointer counts;
++    // local_frames is in emission order, so its last entry is the latest frame
++    // this chunk produced anything on.
++    if (emitted.empty()) {
++        blank_frames_ += n_valid;
++    } else {
++        blank_frames_ = n_valid - 1 - local_frames.back();
++        tokens_since_boundary_ += emitted.size();
++    }
++
+     // 3. Update text + EOU events; refine each new event's absolute frame index
+     //    from the per-token local frame the decoder reported.
+     const size_t prev_events = events_.size();
+@@ -185,10 +196,48 @@
+         state_.state      = pred_.zero_state();
+         state_.last_token = -1;     // SOS sentinel (nothing emitted yet)
+         state_.have_token = false;
++        tokens_since_boundary_ = 0;
+     }
+     return emitted;
+ }
+ 
++std::string StreamingSession::end_utterance() {
++    // Nothing has been decoded since the last boundary, so there is no
++    // utterance to close. Return without touching the decoder: a caller
++    // polling blank_seconds() asks for this on every stretch of silence, and
++    // resetting to SOS for nothing throws away whatever the decoder is part
++    // way through - the word of a one-word utterance, in the worst case.
++    if (tokens_since_boundary_ == 0) {
++        blank_frames_ = 0;
++        return {};
++    }
++    // The words close as an <EOU> closes them (see regroup_words): the trailing
++    // one is final now rather than withheld until the next utterance emits a
++    // token, and the high-water mark keeps a later mid-stream regroup from
++    // un-finalizing it.
++    regroup_words(/*flush_all=*/true);
++    eou_closed_words_ = words_.size();
++    // The boundary is taken here, so the run of blanks that justified it is
++    // spent: a caller polling blank_seconds() must not cut again on it.
++    blank_frames_ = 0;
++    tokens_since_boundary_ = 0;
++    // Back to SOS, as feed_mel_chunk does after an <EOU>, and for the same
++    // reason the words above can be closed at all: a word only stops being
++    // extendable once the decoder cannot continue it. Without this a later
++    // token could still extend the word just handed out, whose text can no
++    // longer be revised, and the continuation would be lost.
++    state_.state      = pred_.zero_state();
++    state_.last_token = -1;
++    state_.have_token = false;
++    // Same as the <EOU> path above: without dropping the encoder cache the
++    // utterance's last word is re-decoded over the silence that followed it.
++    // The caches only: the caller's chunk schedule is unchanged, so the step
++    // counter must keep running or the next window's pre-encode overlap would
++    // be decoded a second time instead of dropped.
++    enc_.reset_caches();
++    return take_new_text();
++}
++
+ std::string StreamingSession::finalize() {
+     // The end-of-stream tail is flushed by the caller feeding the final buffered
+     // mel chunk with is_last=true (which keeps the streaming tail frames). At the
+diff --git a/src/streaming.hpp b/src/streaming.hpp
+--- a/src/streaming.hpp
++++ b/src/streaming.hpp
+@@ -81,6 +81,19 @@
+     std::vector<int32_t> feed_mel_chunk(const std::vector<float>& mel_chunk,
+                                         int n_frames, bool is_last = false);
+ 
++    // Firefox-local: close the utterance in progress without ending the stream,
++    // for a model with no <EOU> piece. Every word decoded so far becomes final
++    // and the decoder restarts, so nothing can extend them.
++    std::string end_utterance();
++
++    // Whether the model marks utterance boundaries itself, i.e. has an <EOU>.
++    bool has_eou() const { return eou_id_ >= 0; }
++
++    // Firefox-local: audio decoded since the RNN-T last emitted a token. The
++    // endpointing signal for a host with no <EOU>, and it needs no noise-floor
++    // tuning: the model has already told speech from background.
++    double blank_seconds() const { return blank_frames_ * frame_sec_; }
++
+     // Flush the end-of-stream tail. Mirrors NeMo's final-chunk keep_all_outputs:
+     // re-feeds the LAST buffered mel chunk (if the caller did not already mark it
+     // is_last) so the trailing encoder frames complete, decoding any remaining
+@@ -156,6 +169,13 @@
+     std::string text_;
+     size_t text_taken_ = 0;        // byte offset of text_ already returned
+ 
++    // Encoder frames since the last emitted token; see blank_seconds().
++    int64_t blank_frames_ = 0;
++    // Tokens emitted since the last utterance boundary. end_utterance() is a
++    // no-op while this is zero: there is nothing to close, and resetting the
++    // decoder for nothing can only discard a decode in progress.
++    size_t tokens_since_boundary_ = 0;
++
+     bool last_chunk_had_eou_ = false;
+     std::vector<EouEvent> events_;
+ 
+diff --git a/src/streaming_encoder.cpp b/src/streaming_encoder.cpp
+--- a/src/streaming_encoder.cpp
++++ b/src/streaming_encoder.cpp
+@@ -59,8 +59,7 @@
+     reset();
+ }
+ 
+-void StreamingEncoder::reset() {
+-    step_ = 0;
++void StreamingEncoder::reset_caches() {
+     clc_len_ = 0;
+     cache_time_.assign(n_layers_,
+                        std::vector<float>((size_t)left_pad_ * d_model_, 0.0f));
+diff --git a/src/streaming_encoder.hpp b/src/streaming_encoder.hpp
+--- a/src/streaming_encoder.hpp
++++ b/src/streaming_encoder.hpp
+@@ -35,7 +35,17 @@
+     explicit StreamingEncoder(const ModelLoader& ml);
+ 
++    // Zero the caches, keeping the step counter: the caller goes on feeding
++    // mid-stream chunks, and step_ is what selects their pre-encode overlap
++    // accounting (drop_extra_pre_encoded). For an utterance boundary, where the
++    // model must forget the utterance that just ended but the chunk schedule is
++    // unchanged.
++    void reset_caches();
++
+     // Reset all caches to zeros and the step counter to 0 (a fresh stream).
+-    void reset();
++    void reset() {
++        reset_caches();
++        step_ = 0;
++    }
+ 
+     // Process one mel chunk window. `mel_chunk_frames` is row-major
+     // [n_mels, n_mel_frames] (feat-major inner = time), i.e. mel[m*n + t] — the

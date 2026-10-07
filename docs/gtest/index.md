@@ -145,7 +145,7 @@ tear down any dependencies you have in your test fixtures. Avoid
 writing integration tests and focus on testing individual units.
 :::
 
-See https://hg.mozilla.org/mozilla-central/rev/ed612eec41a44867a for an
+See <https://hg.mozilla.org/mozilla-central/rev/ed612eec41a44867a> for an
 example of how to add a simple test.
 
 If you're converting an existing C++ unit test to a GTest, [this

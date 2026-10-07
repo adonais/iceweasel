@@ -278,7 +278,10 @@ void Http2Session::ShutdownStream(Http2StreamBase* aStream, nsresult aReason) {
   } else if (!mCleanShutdown && PossibleZeroRTTRetryError(aReason)) {
     CloseStream(aStream, aReason);
   } else {
-    CloseStream(aStream, NS_ERROR_ABORT);
+    // The connection went away without a clean GOAWAY-based shutdown, but
+    // this stream never received any response data, so it is safe to retry
+    // it on a new connection.
+    CloseStream(aStream, NS_ERROR_NET_UNCLEAN_SHUTDOWN);
   }
 }
 
@@ -3942,7 +3945,14 @@ nsresult Http2Session::ConfirmTLSProfile() {
     return SessionError(INADEQUATE_SECURITY);
   }
 
-  if (kea != ssl_kea_dh && kea != ssl_kea_ecdh && kea != ssl_kea_ecdh_hybrid) {
+  if (kea == ssl_kea_kem && !StaticPrefs::security_tls_enable_mlkem1024()) {
+    LOG3(("Http2Session::ConfirmTLSProfile %p FAILED due to disabled KEA %d\n",
+          this, kea));
+    return SessionError(INADEQUATE_SECURITY);
+  }
+
+  if (kea != ssl_kea_dh && kea != ssl_kea_ecdh && kea != ssl_kea_ecdh_hybrid &&
+      kea != ssl_kea_kem) {
     LOG3(("Http2Session::ConfirmTLSProfile %p FAILED due to invalid KEA %d\n",
           this, kea));
     return SessionError(INADEQUATE_SECURITY);

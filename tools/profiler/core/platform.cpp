@@ -3738,42 +3738,34 @@ static JS::ProfilingCategoryPair InferJavaCategory(nsACString& aName) {
 }
 
 // Marker type for Java markers without any details.
-struct JavaMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("Java");
-  }
-  static void StreamJSONMarkerData(
-      baseprofiler::SpliceableJSONWriter& aWriter) {}
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::TimelineOverview, MS::Location::MarkerChart,
-              MS::Location::MarkerTable};
-    schema.SetAllLabels("{marker.name}");
-    return schema;
-  }
+struct JavaMarker : public BaseMarkerType<JavaMarker> {
+  static constexpr const char* Name = "Java";
+  // The Java marker's own name is the only information these markers carry, so
+  // ETW must keep it.
+  static constexpr bool ETWStoreName = true;
+
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {MS::Location::TimelineOverview,
+                                               MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+  static constexpr const char* AllLabels = "{marker.name}";
 };
 
 // Marker type for Java markers with a detail field.
-struct JavaMarkerWithDetails {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("JavaWithDetails");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   const ProfilerString8View& aText) {
-    // This (currently) needs to be called "name" to be searchable on the
-    // front-end.
-    aWriter.StringProperty("name", aText);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::TimelineOverview, MS::Location::MarkerChart,
-              MS::Location::MarkerTable};
-    schema.SetTooltipLabel("{marker.name}");
-    schema.SetChartLabel("{marker.data.name}");
-    schema.SetTableLabel("{marker.data.name}");
-    schema.AddKeyLabelFormat("name", "Details", MS::Format::String);
-    return schema;
-  }
+struct JavaMarkerWithDetails : public BaseMarkerType<JavaMarkerWithDetails> {
+  static constexpr const char* Name = "JavaWithDetails";
+  // Call sites pass the Java marker's own name, so ETW must keep that name.
+  static constexpr bool ETWStoreName = true;
+
+  using MS = MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"details", MS::InputType::CString, "Details", MS::Format::String}};
+  static constexpr MS::Location Locations[] = {MS::Location::TimelineOverview,
+                                               MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+  static constexpr const char* TooltipLabel = "{marker.name}";
+  static constexpr const char* ChartLabel = "{marker.data.details}";
+  static constexpr const char* TableLabel = "{marker.data.details}";
 };
 
 static void CollectJavaThreadProfileData(
@@ -4684,22 +4676,18 @@ class SamplerThread {
 };
 
 namespace geckoprofiler::markers {
-struct CPUSpeedMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("CPUSpeed");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   uint32_t aCPUSpeedMHz) {
-    aWriter.DoubleProperty("speed", double(aCPUSpeedMHz) / 1000);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.SetTableLabel("{marker.name} Speed = {marker.data.speed}GHz");
-    schema.AddKeyLabelFormat("speed", "CPU Speed (GHz)", MS::Format::String);
-    schema.AddChartColor("speed", MS::GraphType::Bar, MS::GraphColor::Ink);
-    return schema;
-  }
+struct CPUSpeedMarker : public BaseMarkerType<CPUSpeedMarker> {
+  static constexpr const char* Name = "CPUSpeed";
+
+  using MS = MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"speed", MS::InputType::Double, "CPU Speed (GHz)", MS::Format::String}};
+  static constexpr MS::GraphField GraphFields[] = {
+      {"speed", MS::GraphType::Bar, Some(MS::GraphColor::Ink)}};
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+  static constexpr const char* TableLabel =
+      "{marker.name} Speed = {marker.data.speed}GHz";
 };
 }  // namespace geckoprofiler::markers
 
@@ -4851,7 +4839,8 @@ void SamplerThread::Run() {
       PROFILER_MARKER(name, OTHER,
                       MarkerOptions(MarkerThreadId::MainThread(),
                                     MarkerTiming::IntervalStart(now)),
-                      CPUSpeedMarker, CPUSpeeds[i]);
+                      CPUSpeedMarker,
+                      double(CPUSpeeds[i]) / 1000 /* MHz to GHz */);
     }
   }
 #endif
@@ -4944,7 +4933,8 @@ void SamplerThread::Run() {
             PROFILER_MARKER(name, OTHER,
                             MarkerOptions(MarkerThreadId::MainThread(),
                                           MarkerTiming::IntervalStart(now)),
-                            CPUSpeedMarker, newSpeed[i]);
+                            CPUSpeedMarker,
+                            double(newSpeed[i]) / 1000 /* MHz to GHz */);
 
             CPUSpeeds[i] = newSpeed[i];
           }
@@ -5477,61 +5467,88 @@ void SamplerThread::Run() {
 
 namespace geckoprofiler::markers {
 
-struct UnregisteredThreadLifetimeMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("UnregisteredThreadLifetime");
+struct UnregisteredThreadLifetimeMarker
+    : public BaseMarkerType<UnregisteredThreadLifetimeMarker> {
+  static constexpr const char* Name = "UnregisteredThreadLifetime";
+  static constexpr const char* Description =
+      "Start and end are approximate, based on first and last appearances.";
+
+  using MS = MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"threadId", MS::InputType::Int64, "Thread Id", MS::Format::Integer},
+      {"threadName", MS::InputType::CString, "Thread Name", MS::Format::String},
+      {"endEvent", MS::InputType::CString, "End Event", MS::Format::String},
+  };
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+  static constexpr const char* ChartLabel =
+      "{marker.data.threadName} (tid {marker.data.threadId})";
+  static constexpr const char* TableLabel = "{marker.name} lifetime";
+
+  static ProfilerString8View ThreadName(const ProfilerString8View& aName) {
+    return aName.Length() != 0 ? ProfilerString8View(aName.StringView())
+                               : ProfilerString8View("~Unnamed~");
   }
+
   static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
                                    base::ProcessId aThreadId,
                                    const ProfilerString8View& aName,
                                    const ProfilerString8View& aEndEvent) {
-    aWriter.IntProperty("Thread Id", aThreadId);
-    aWriter.StringProperty("Thread Name", aName.Length() != 0
-                                              ? aName.AsSpan()
-                                              : MakeStringSpan("~Unnamed~"));
+    StreamJSONMarkerDataImpl(aWriter, static_cast<int64_t>(aThreadId),
+                             ThreadName(aName));
     if (aEndEvent.Length() != 0) {
-      aWriter.StringProperty("End Event", aEndEvent);
+      aWriter.StringProperty("endEvent", aEndEvent);
     }
   }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyFormat("Thread Id", MS::Format::Integer);
-    schema.AddKeyFormat("Thread Name", MS::Format::String);
-    schema.AddKeyFormat("End Event", MS::Format::String);
-    schema.AddStaticLabelValue(
-        "Note",
-        "Start and end are approximate, based on first and last appearances.");
-    schema.SetChartLabel(
-        "{marker.data.Thread Name} (tid {marker.data.Thread Id})");
-    schema.SetTableLabel("{marker.name} lifetime");
-    return schema;
+
+  static void TranslateMarkerInputToSchema(
+      void* aContext, base::ProcessId aThreadId,
+      const ProfilerString8View& aName, const ProfilerString8View& aEndEvent) {
+    ETW::OutputMarkerSchema(aContext, UnregisteredThreadLifetimeMarker{},
+                            static_cast<int64_t>(aThreadId), ThreadName(aName),
+                            aEndEvent);
   }
 };
 
-struct UnregisteredThreadCPUMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("UnregisteredThreadCPU");
+struct UnregisteredThreadCPUMarker
+    : public BaseMarkerType<UnregisteredThreadCPUMarker> {
+  static constexpr const char* Name = "UnregisteredThreadCPU";
+
+  using MS = MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"threadId", MS::InputType::Int64, "Thread Id", MS::Format::Integer},
+      {"cpuTime", MS::InputType::Int64, "CPU Time", MS::Format::Nanoseconds},
+      {"cpuUtilization", MS::InputType::Double, "CPU Utilization",
+       MS::Format::Percentage},
+  };
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+  static constexpr const char* ChartLabel = "{marker.data.cpuUtilization}";
+  static constexpr const char* TableLabel =
+      "Activity: {marker.data.cpuUtilization}";
+
+  static double CPUUtilization(int64_t aCPUDiffNs, const TimeStamp& aStart,
+                               const TimeStamp& aEnd) {
+    return double(aCPUDiffNs) / ((aEnd - aStart).ToMicroseconds() * 1000.0);
   }
+
   static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
                                    base::ProcessId aThreadId,
                                    int64_t aCPUDiffNs, const TimeStamp& aStart,
                                    const TimeStamp& aEnd) {
-    aWriter.IntProperty("Thread Id", aThreadId);
-    aWriter.IntProperty("CPU Time", aCPUDiffNs);
-    aWriter.DoubleProperty(
-        "CPU Utilization",
-        double(aCPUDiffNs) / ((aEnd - aStart).ToMicroseconds() * 1000.0));
+    StreamJSONMarkerDataImpl(aWriter, static_cast<int64_t>(aThreadId),
+                             aCPUDiffNs,
+                             CPUUtilization(aCPUDiffNs, aStart, aEnd));
   }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyFormat("Thread Id", MS::Format::Integer);
-    schema.AddKeyFormat("CPU Time", MS::Format::Nanoseconds);
-    schema.AddKeyFormat("CPU Utilization", MS::Format::Percentage);
-    schema.SetChartLabel("{marker.data.CPU Utilization}");
-    schema.SetTableLabel("Activity: {marker.data.CPU Utilization}");
-    return schema;
+
+  static void TranslateMarkerInputToSchema(void* aContext,
+                                           base::ProcessId aThreadId,
+                                           int64_t aCPUDiffNs,
+                                           const TimeStamp& aStart,
+                                           const TimeStamp& aEnd) {
+    ETW::OutputMarkerSchema(aContext, UnregisteredThreadCPUMarker{},
+                            static_cast<int64_t>(aThreadId), aCPUDiffNs,
+                            CPUUtilization(aCPUDiffNs, aStart, aEnd));
   }
 };
 
@@ -7849,10 +7866,58 @@ Maybe<uint64_t> profiler_get_inner_window_id_from_docshell(
 
 namespace geckoprofiler::markers {
 
-struct CPUAwakeMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("Awake");
+struct CPUAwakeMarker : public BaseMarkerType<CPUAwakeMarker> {
+  static constexpr const char* Name = "Awake";
+
+  using MS = MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"cpuTime", MS::InputType::Double, "CPU Time", MS::Format::Duration},
+#if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
+      {"cpuId", MS::InputType::Int64, "CPU Id", MS::Format::Integer},
+#endif
+#ifdef GP_OS_windows
+      {"priority", MS::InputType::Int32, "Relative Thread Priority",
+       MS::Format::Integer},
+      {"absPriority", MS::InputType::Int32, "Base Thread Priority",
+       MS::Format::Integer},
+      {"curPriority", MS::InputType::Int32, "Current Thread Priority",
+       MS::Format::Integer},
+#endif
+#ifdef GP_OS_darwin
+      {"QoS", MS::InputType::CString, "Quality of Service", MS::Format::String},
+#endif
+  };
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+#if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
+  static constexpr const char* TableLabel =
+      "Awake - CPU Id = {marker.data.cpuId}";
+#endif
+
+  static double ToMilliseconds(int64_t aCPUTimeNs) {
+    constexpr double NS_PER_MS = 1'000'000;
+    return double(aCPUTimeNs) / NS_PER_MS;
   }
+
+#ifdef GP_OS_darwin
+  static ProfilerString8View QoSString(uint32_t aQoS) {
+    switch (aQoS) {
+      case QOS_CLASS_USER_INTERACTIVE:
+        return "User Interactive";
+      case QOS_CLASS_USER_INITIATED:
+        return "User Initiated";
+      case QOS_CLASS_DEFAULT:
+        return "Default";
+      case QOS_CLASS_UTILITY:
+        return "Utility";
+      case QOS_CLASS_BACKGROUND:
+        return "Background";
+      default:
+        return "Unspecified";
+    }
+  }
+#endif
+
   static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
                                    int64_t aCPUTimeNs
 #if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
@@ -7871,15 +7936,14 @@ struct CPUAwakeMarker {
 #endif
   ) {
     if (aCPUTimeNs) {
-      constexpr double NS_PER_MS = 1'000'000;
-      aWriter.DoubleProperty("CPU Time", double(aCPUTimeNs) / NS_PER_MS);
+      aWriter.DoubleProperty("cpuTime", ToMilliseconds(aCPUTimeNs));
       // CPU Time is only provided for the end marker, the other fields are for
       // the start marker.
       return;
     }
 
 #if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
-    aWriter.IntProperty("CPU Id", aCPUId);
+    aWriter.IntProperty("cpuId", aCPUId);
 #endif
 #ifdef GP_OS_windows
     if (aAbsolutePriority) {
@@ -7891,52 +7955,41 @@ struct CPUAwakeMarker {
     aWriter.IntProperty("priority", aRelativePriority);
 #endif
 #ifdef GP_OS_darwin
-    const char* QoS = "";
-    switch (aQoS) {
-      case QOS_CLASS_USER_INTERACTIVE:
-        QoS = "User Interactive";
-        break;
-      case QOS_CLASS_USER_INITIATED:
-        QoS = "User Initiated";
-        break;
-      case QOS_CLASS_DEFAULT:
-        QoS = "Default";
-        break;
-      case QOS_CLASS_UTILITY:
-        QoS = "Utility";
-        break;
-      case QOS_CLASS_BACKGROUND:
-        QoS = "Background";
-        break;
-      default:
-        QoS = "Unspecified";
-    }
-
-    aWriter.StringProperty("QoS",
-                           ProfilerString8View::WrapNullTerminatedString(QoS));
+    aWriter.StringProperty("QoS", QoSString(aQoS));
 #endif
   }
 
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyFormat("CPU Time", MS::Format::Duration);
+  static void TranslateMarkerInputToSchema(void* aContext, int64_t aCPUTimeNs
 #if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
-    schema.AddKeyFormat("CPU Id", MS::Format::Integer);
-    schema.SetTableLabel("Awake - CPU Id = {marker.data.CPU Id}");
-#endif
-#ifdef GP_OS_windows
-    schema.AddKeyLabelFormat("priority", "Relative Thread Priority",
-                             MS::Format::Integer);
-    schema.AddKeyLabelFormat("absPriority", "Base Thread Priority",
-                             MS::Format::Integer);
-    schema.AddKeyLabelFormat("curPriority", "Current Thread Priority",
-                             MS::Format::Integer);
+                                           ,
+                                           int64_t aCPUId
 #endif
 #ifdef GP_OS_darwin
-    schema.AddKeyLabelFormat("QoS", "Quality of Service", MS::Format::String);
+                                           ,
+                                           uint32_t aQoS
 #endif
-    return schema;
+#ifdef GP_OS_windows
+                                           ,
+                                           int32_t aAbsolutePriority,
+                                           int32_t aRelativePriority,
+                                           int32_t aCurrentPriority
+#endif
+  ) {
+    ETW::OutputMarkerSchema(
+        aContext, CPUAwakeMarker{}, ToMilliseconds(aCPUTimeNs)
+#if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
+                                        ,
+        aCPUId
+#endif
+#ifdef GP_OS_windows
+        ,
+        aRelativePriority, aAbsolutePriority, aCurrentPriority
+#endif
+#ifdef GP_OS_darwin
+        ,
+        QoSString(aQoS)
+#endif
+    );
   }
 };
 
@@ -7999,25 +8052,21 @@ static mozilla::Atomic<uint64_t, mozilla::MemoryOrdering::Relaxed> gWakeCount(
     0);
 
 namespace geckoprofiler::markers {
-struct WakeUpCountMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("WakeUpCount");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   int32_t aCount,
-                                   const ProfilerString8View& aType) {
-    aWriter.IntProperty("Count", aCount);
-    aWriter.StringProperty("label", aType);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyFormat("Count", MS::Format::Integer);
-    schema.AddKeyFormat("label", MS::Format::String, MS::PayloadFlags::Hidden);
-    schema.SetTooltipLabel("{marker.name} - {marker.data.label}");
-    schema.SetTableLabel("{marker.data.label}: {marker.data.count}");
-    return schema;
-  }
+struct WakeUpCountMarker : public BaseMarkerType<WakeUpCountMarker> {
+  static constexpr const char* Name = "WakeUpCount";
+
+  using MS = MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"count", MS::InputType::Int32, "Count", MS::Format::Integer},
+      {"label", MS::InputType::CString, nullptr, MS::Format::String,
+       MS::PayloadFlags::Hidden},
+  };
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+  static constexpr const char* TooltipLabel =
+      "{marker.name} - {marker.data.label}";
+  static constexpr const char* TableLabel =
+      "{marker.data.label}: {marker.data.count}";
 };
 }  // namespace geckoprofiler::markers
 

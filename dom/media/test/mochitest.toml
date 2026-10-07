@@ -712,6 +712,9 @@ support-files = [
   "vp9-superframes.webm^headers^",
   "vp9.webm",
   "vp9.webm^headers^",
+  #ffmpeg -f lavfi -i testsrc=s=256x128:r=30:d=1 -c:v libvpx-vp9 vp9_256x128.webm
+  "vp9_256x128.webm",
+  "vp9_256x128.webm^headers^",
   "vp9-short.webm",
   "vp9-short.webm^headers^",
   "vp9cake.webm",
@@ -856,6 +859,9 @@ skip-if = [
 scheme = "https"
 
 ["test_invalid_reject_play.html"]
+
+["test_live_duration.html"]
+support-files = ["live_duration.sjs"]
 
 ["test_media_error_redirect_redaction.html"]
 
@@ -1018,6 +1024,11 @@ skip-if = [
 ["test_video_to_canvas.html"]
 skip-if = [
   "os == 'android'", # android(bug 1232305), bugs 1320418,1347953,1347954,1348140,1348386
+]
+
+["test_vp9_buffer_overread.html"]
+skip-if = [
+  "mda_gpu",
 ]
 
 ["test_vp9_superframes.html"]

@@ -38,9 +38,9 @@ class SpeechGrammar final : public nsISupports, public nsWrapperCache {
     return Constructor(aGlobal);
   }
 
-  void GetSrc(nsString& aRetVal, ErrorResult& aRv) const;
+  void GetSrc(nsString& aRetVal) const;
 
-  void SetSrc(const nsAString& aArg, ErrorResult& aRv);
+  void SetSrc(const nsAString& aArg);
 
   float GetWeight(ErrorResult& aRv) const;
 

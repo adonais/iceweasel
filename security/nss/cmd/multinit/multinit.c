@@ -547,6 +547,7 @@ do_key_slot(const char *progName, int log)
         appendLabel('K');
         appendLabel('S');
         appendString("none");
+        return;
     }
     print_slot(slot, log);
     PK11_FreeSlot(slot);

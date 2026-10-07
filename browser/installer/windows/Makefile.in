@@ -5,57 +5,12 @@
 include $(topsrcdir)/toolkit/mozapps/installer/package-name.mk
 
 CONFIG_DIR = instgen
-ifeq ($(TARGET_CPU), aarch64)
-SFX_MODULE = $(topsrcdir)/other-licenses/7zstub/firefox/7zSD.ARM64.sfx
-else
-SFX_MODULE = $(topsrcdir)/other-licenses/7zstub/firefox/7zSD.Win32.sfx
-endif
-
-INSTALLER_FILES = \
-  app.tag \
-  nsis/content/installing.html \
-  nsis/content/installing.js \
-  nsis/content/profile_cleanup.html \
-  nsis/content/profile_cleanup.js \
-  nsis/content/stub_common.css \
-  nsis/content/stub_common.js \
-  nsis/installer.nsi \
-  nsis/install_dir_helpers.nsh \
-  nsis/installer_helpers.nsh \
-  nsis/uninstaller.nsi \
-  nsis/uninstaller_helpers.nsh \
-  nsis/stub.nsi \
-  nsis/stub.nsh \
-  nsis/stub_helpers.nsh \
-  nsis/stub_shared_defs.nsh \
-  nsis/shared.nsh \
-  nsis/control_utils.nsh \
-  nsis/postupdate_helper.nsh \
-  nsis/telemetry.nsh \
-  nsis/test_stub.nsi \
-  nsis/test_telemetry.nsh \
-  nsis/desktop_launcher_helpers.nsh \
-  stub.tag \
-  $(NULL)
-
-ifdef MOZ_MAINTENANCE_SERVICE
-INSTALLER_FILES += \
-	nsis/maintenanceservice_installer.nsi \
-	$(NULL)
-endif
-
-BRANDING_FILES = \
-	branding.nsi \
-	firefox64.ico \
-	stubinstaller/bgstub.jpg \
-	stubinstaller/installing_page.css \
-	stubinstaller/profile_cleanup_page.css \
-	wizHeader.bmp \
-	wizHeaderRTL.bmp \
-	wizWatermark.bmp \
-	$(NULL)
 
 include $(topsrcdir)/config/config.mk
+
+SFX_MODULE = $(topsrcdir)/$(NSIS_SFX_MODULE)
+INSTALLER_FILES = $(NSIS_INSTALLER_FILES)
+BRANDING_FILES = $(NSIS_BRANDING_FILES)
 
 ifdef IS_LANGUAGE_REPACK
 PPL_LOCALE_ARGS = \
@@ -70,7 +25,7 @@ endif
 install_deps:
 	$(INSTALL) $(addprefix $(srcdir)/,$(INSTALLER_FILES)) $(CONFIG_DIR)
 	$(INSTALL) $(addprefix $(topsrcdir)/$(MOZ_BRANDING_DIRECTORY)/,$(BRANDING_FILES)) $(CONFIG_DIR)
-	$(call py_action,preprocessor defines.nsi,-Fsubstitution $(DEFINES) $(ACDEFINES) \
+	$(call py_action,preprocessor defines.nsi,-Fsubstitution $(NSIS_INSTALLER_DEFINES) $(ACDEFINES) \
 	-DTOPOBJDIR=$(topobjdir) \
 	  $(srcdir)/nsis/defines.nsi.in -o $(CONFIG_DIR)/defines.nsi)
 	$(PYTHON3) $(topsrcdir)/toolkit/mozapps/installer/windows/nsis/preprocess-locale.py \
@@ -83,12 +38,30 @@ install_deps:
 	$(PYTHON3) $(topsrcdir)/toolkit/mozapps/installer/windows/nsis/preprocess-locale.py \
 	  --convert-utf8-utf16le \
 	  $(srcdir)/nsis/extensionsLocale.nsh $(CONFIG_DIR)/extensionsLocale.nsh
-	$(INSTALL) $(addprefix $(MOZILLA_DIR)/other-licenses/nsis/,$(CUSTOM_UI)) $(CONFIG_DIR)
+	$(INSTALL) $(addprefix $(MOZILLA_DIR)/other-licenses/nsis/,$(NSIS_CUSTOM_UI)) $(CONFIG_DIR)
+
+stage_installer:
+	$(call py_action,nsis_stage installer,$(NSIS_STAGE_ARGS) \
+	$(addprefix --install=,$(addprefix $(MOZILLA_DIR)/other-licenses/nsis/,$(NSIS_CUSTOM_UI))) \
+	--single-file nsisstrings.properties nsisstrings.nlf \
+	--convert-utf8 $(srcdir)/nsis/extensionsLocale.nsh $(CONFIG_DIR)/extensionsLocale.nsh)
 
 $(CONFIG_DIR)/setup.exe::
+ifdef MOZ_USE_MAKEFILE_INSTALLER_BUILD
 	$(RM) -r $(CONFIG_DIR)
 	$(MKDIR) $(CONFIG_DIR)
 	$(MAKE) install_deps
+else
+	$(MAKE) stage_installer
+	$(call py_action,nsis_build setup.exe,--config-dir=$(CONFIG_DIR) --nsi=installer.nsi \
+	--makensis=$(MAKENSISU) $(addprefix --makensis-flag=,$(MAKENSISU_FLAGS)) \
+	--output=$(CONFIG_DIR)/setup.exe)
+ifdef MOZ_STUB_INSTALLER
+	$(call py_action,nsis_build setup-stub.exe,--config-dir=$(CONFIG_DIR) --nsi=stub.nsi \
+	--makensis=$(MAKENSISU) $(addprefix --makensis-flag=,$(MAKENSISU_FLAGS)) \
+	--output=$(CONFIG_DIR)/setup-stub.exe)
+endif
+endif
 
 include $(topsrcdir)/config/rules.mk
 include $(topsrcdir)/toolkit/mozapps/installer/windows/nsis/makensis.mk

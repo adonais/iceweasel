@@ -164,6 +164,9 @@ MACH_COMMANDS = {
     "jsshell-bench": MachCommandReference("testing/mach_commands.py"),
     "jstestbrowser": MachCommandReference("layout/tools/reftest/mach_commands.py"),
     "jstests": MachCommandReference("testing/mach_commands.py"),
+    "licenses": MachCommandReference(
+        "python/mozbuild/mozbuild/licensing_commands.py",
+    ),
     "lint": MachCommandReference("tools/lint/mach_commands.py"),
     "logspam": MachCommandReference("tools/mach_commands.py"),
     "mach-commands": MachCommandReference("python/mach/mach/commands/commandinfo.py"),
@@ -224,6 +227,9 @@ MACH_COMMANDS = {
     "run": MachCommandReference("python/mozbuild/mozbuild/mach_commands.py"),
     "run-condprofile": MachCommandReference("testing/condprofile/mach_commands.py"),
     "rusttests": MachCommandReference("testing/mach_commands.py"),
+    "sbom": MachCommandReference(
+        "python/mozbuild/mozbuild/licensing_commands.py",
+    ),
     "settings": MachCommandReference("python/mach/mach/commands/settings.py"),
     "shell-test": MachCommandReference("browser/installer/linux/mach_commands.py"),
     "show-log": MachCommandReference("python/mozbuild/mozbuild/mach_commands.py"),

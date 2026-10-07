@@ -31,6 +31,9 @@
     --toolbarbutton-padding-inner: var(--toolbarbutton-padding-inner-compact);
     --bookmark-block-padding: 1px;
   }
+  &:where([mini-window]) {
+    --toolbarbutton-padding-inner: var(--toolbarbutton-padding-inner-compact);
+  }
 
   /* Smart window properties */
   --smartwindow-ask-btn-gradient: linear-gradient(
@@ -172,6 +175,36 @@
   }
 }
 
+/* A mini window is narrow enough that the navigation buttons have to go
+   before the address bar does. The rest of its chrome is hidden in
+   browser-shared.css. */
+:root[mini-window] {
+  /* Cropped mini window's dont have any business navigating - they are meant
+     to be ephemeral states of the tab. */
+  &[cropped-mini-window] {
+    #back-button,
+    #forward-button {
+      display: none;
+    }
+  }
+
+  @media (width < 400px) {
+    #back-button,
+    #forward-button,
+    #stop-reload-button {
+      display: none;
+    }
+  }
+}
+
+#mini-window-audio-button {
+  display: none;
+
+  :root[mini-window] &:is([soundplaying], [muted]) {
+    display: revert;
+  }
+}
+
 toolbar .toolbarbutton-1 {
   /* horizontal padding + actual icon width */
   --toolbarbutton-icon-size: calc(2 * var(--toolbarbutton-padding-inner) + 16px);
@@ -221,7 +254,17 @@ toolbar .toolbarbutton-1 {
     }
   }
 
+  &[disabled] {
+    > :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
+      background-color: var(--toolbarbutton-background-color-disabled);
+    }
+  }
+
   &:not([disabled]) {
+    > :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
+      background-color: var(--toolbarbutton-background-color);
+    }
+
     &:hover > :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
       background-color: var(--toolbarbutton-background-color-hover);
       color: inherit;
@@ -765,11 +808,6 @@ toolbar[keyNav]:not([collapsed], [customizing]) toolbartabstop,
   &[aria-expanded="true"] > .toolbarbutton-icon {
     background-color: var(--toolbarbutton-background-color-active);
   }
-}
-
-/* Smart Window monitor button */
-#smartwindow-monitor-button[aria-expanded="true"] .toolbarbutton-icon {
-  background-color: var(--toolbarbutton-background-color-active);
 }
 
 /* Document Picture-in-Picture API window */

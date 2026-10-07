@@ -1,0 +1,2 @@
+// Stands in for a remote AutoConfig file the profile points at.
+pref("_autoconfig_.test.remote", "remote");

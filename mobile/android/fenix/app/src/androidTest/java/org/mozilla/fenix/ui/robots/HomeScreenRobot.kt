@@ -92,7 +92,9 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
     fun verifyHomeScreen() = assertUIObjectExists(homeScreen())
 
     fun verifyPrivateBrowsingHomeScreenItems() {
-        verifyHomeScreenAppBarItems()
+        // The redesigned private homepage header deliberately hides the wordmark, so we don't call the
+        // shared verifyHomeScreenAppBarItems() here (it still checks the wordmark for normal-mode tests).
+        assertUIObjectExists(homeScreen(), privateBrowsingButton())
         composeTestRule.waitForIdle()
         mDevice.waitForIdle()
         assertUIObjectExists(itemContainingText(getStringResource(R.string.felt_privacy_desc_card_title)))

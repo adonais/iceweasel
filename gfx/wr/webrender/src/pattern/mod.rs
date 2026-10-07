@@ -17,7 +17,6 @@ use api::ColorF;
 
 use crate::render_task_graph::RenderTaskId;
 use crate::renderer::{BlendMode, GpuBufferBuilder};
-use crate::spatial_tree::SpatialTree;
 use crate::transform::TransformPalette;
 
 #[repr(u32)]
@@ -137,11 +136,6 @@ impl PatternTextureInput {
     }
 }
 
-pub struct PatternBuilderContext<'a> {
-    pub spatial_tree: &'a SpatialTree,
-    pub prim_origin: LayoutPoint,
-}
-
 pub struct PatternBuilderState<'a> {
     pub frame_gpu_data: &'a mut GpuBufferBuilder,
     #[allow(unused)]
@@ -151,9 +145,7 @@ pub struct PatternBuilderState<'a> {
 pub trait PatternBuilder {
     fn build(
         &self,
-        sub_rect: Option<DeviceRect>,
-        offset: LayoutVector2D,
-        ctx: &PatternBuilderContext,
+        pattern_rect: &LayoutRect,
         state: &mut PatternBuilderState,
     ) -> Pattern;
 }
@@ -232,9 +224,7 @@ pub const TEXTURED_SHADER_MAP_TO_SEGMENT: i32 = 1;
 impl PatternBuilder for ColorF {
     fn build(
         &self,
-        _sub_rect: Option<DeviceRect>,
-        _offset: LayoutVector2D,
-        _ctx: &PatternBuilderContext,
+        _pattern_rect: &LayoutRect,
         _state: &mut PatternBuilderState,
     ) -> Pattern {
         Pattern::color(*self)

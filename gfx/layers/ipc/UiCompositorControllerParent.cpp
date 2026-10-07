@@ -105,13 +105,6 @@ UiCompositorControllerParent::RecvInvalidateAndRender() {
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult UiCompositorControllerParent::RecvMaxToolbarHeight(
-    const int32_t& aHeight) {
-  mMaxToolbarHeight = aHeight;
-
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult UiCompositorControllerParent::RecvFixedBottomOffset(
     const int32_t& aOffset) {
 #if defined(MOZ_WIDGET_ANDROID)
@@ -239,8 +232,7 @@ UiCompositorControllerParent::UiCompositorControllerParent(
       ,
       mCompositorLayersUpdateEnabled(false)
 #endif
-      ,
-      mMaxToolbarHeight(0) {
+{
   MOZ_COUNT_CTOR(UiCompositorControllerParent);
 }
 

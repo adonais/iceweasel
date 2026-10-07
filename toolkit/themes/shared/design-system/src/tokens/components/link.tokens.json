@@ -1,4 +1,11 @@
 {
+  "border": {
+    "radius": {
+      "focus": {
+        "value": "{border.radius.small}"
+      }
+    }
+  },
   "color": {
     "@base": {
       "value": {

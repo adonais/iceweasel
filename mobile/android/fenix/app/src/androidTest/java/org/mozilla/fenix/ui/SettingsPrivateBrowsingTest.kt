@@ -7,6 +7,8 @@ package org.mozilla.fenix.ui
 import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Converted
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.helpers.AppAndSystemHelper
 import org.mozilla.fenix.helpers.AppAndSystemHelper.clickSystemHomeScreenShortcutAddButton
 import org.mozilla.fenix.helpers.DataGenerationHelper
@@ -36,6 +38,13 @@ class SettingsPrivateBrowsingTest {
     @get:Rule(order = 2) val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/555822
+    @Converted(
+        replacedBy =
+            ["org.mozilla.fenix.ui.efficiency.tests.SettingsPrivateBrowsingTest#verifyPrivateBrowsingMenuItemsTest"],
+        bug = 2071878,
+        since = "2026-09",
+    )
+    @Critical
     @Test
     fun verifyPrivateBrowsingMenuItemsTest() {
         homeScreen(composeTestRule) {}

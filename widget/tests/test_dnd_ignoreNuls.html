@@ -64,6 +64,8 @@
     }
 
     async function runTests() {
+      // The drag needs a focused window.
+      await SimpleTest.promiseFocus();
       await SpecialPowers.contentTransformsReceived(window);
       for (let currentTest of tests) {
         await test(currentTest.actual, currentTest.expected);

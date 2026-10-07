@@ -31,38 +31,31 @@ Each message is displayed as a separate row:
 :class: center
 ```
 
-```{eval-rst}
-.. |info-icon| image:: info-icon.png
-.. |warning-icon| image:: warning-icon.png
-.. |error-icon| image:: error-icon.png
-.. |blocked-icon| image:: blocked-icon.png
+```{list-table}
+:widths: 25 75
+:header-rows: 0
 
-.. list-table::
-  :widths: 25 75
-  :header-rows: 0
+* - **Time**
+  - The time the message was recorded. This is not shown by default: you can opt to see timestamps by selecting **Show Timestamps** in the console settings menu (gear icon in the console toolbar).
 
-  * - **Time**
-    - The time the message was recorded. This is not shown by default: you can opt to see timestamps by selecting **Show Timestamps** in the console settings menu (gear icon in the console toolbar).
+* - **Icon**
+  - Not all console messages contain icons. The following icons may be used:
 
-  * - **Icon**
-    - Not all console messages contain icons. The following icons may be used:
+    - ![An "i" inside a circle](info-icon.png) Informational message
+    - ![A "!" inside a yellow triangle](warning-icon.png) Warning
+    - ![A "!" inside a solid red circle](error-icon.png) Error
+    - ![A red circle with a slash across it](blocked-icon.png) Blocked; for network messages
 
-      - |info-icon| Informational message
-      - |warning-icon| Warning
-      - |error-icon| Error
-      - |blocked-icon| Blocked; for network messages
+    In addition, a disclosure triangle indicates that further information is available; clicking it displays or collapses that information.
 
-      In addition, a disclosure triangle indicates that further information is available; clicking it displays or collapses that information.
+* - **Message**
+  - The message itself.
 
-  * - **Message**
-    - The message itself.
+* - **Number of occurrences**
+  - If a line that generates a warning or error is executed more than once, it is only logged once and this counter appears to indicate how many times it was encountered.
 
-  * - **Number of occurrences**
-    - If a line that generates a warning or error is executed more than once, it is only logged once and this counter appears to indicate how many times it was encountered.
-
-  * - **Filename and line number**
-    - For JavaScript, CSS and console API messages, the message can be traced to a specific line of code. The console then provides a link to the filename and line number that generated the message.
-
+* - **Filename and line number**
+  - For JavaScript, CSS and console API messages, the message can be traced to a specific line of code. The console then provides a link to the filename and line number that generated the message.
 ```
 
 By default, the console is cleared each time you navigate to a new page or reload the current page. To override this behavior, enable **Persist Logs** in the console settings menu (gear icon).

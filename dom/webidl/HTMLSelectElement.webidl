@@ -73,6 +73,10 @@ partial interface HTMLSelectElement {
   undefined userFinishedInteracting(boolean changed);
   [ChromeOnly, Pure]
   readonly attribute boolean isCombobox;
+  // The elements that this select, or one of its optgroups, renders as rows,
+  // in tree order: consists of option, hr, optgroup elements.
+  [ChromeOnly]
+  sequence<Element> getListItems(optional HTMLOptGroupElement? group = null);
   [ChromeOnly]
   attribute boolean openInParentProcess;
   [ChromeOnly]

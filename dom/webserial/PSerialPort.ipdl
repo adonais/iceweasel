@@ -48,9 +48,6 @@ parent:
   // its WritableStream.
   async AttachWritePipe(nullable DataPipeReceiver writePipeReceiver);
 
-  // Notify parent of sharing state change
-  async UpdateSharingState(bool connected);
-
   // Clone the parent-side handle into a new PSerialPort actor, allowing
   // a worker thread to bind its own child endpoint to the same port.
   async Clone(Endpoint<PSerialPortParent> aEndpoint);

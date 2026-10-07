@@ -229,6 +229,48 @@ add_task(async function test_submit_and_delete_dispatch_detail() {
   });
 });
 
+/**
+ * The watching/paused pill is its own element, so every surface that lists
+ * monitors shows the same one. The card only says which status to state.
+ */
+add_task(async function test_status_chip_states_the_status() {
+  await withTestPage(async browser => {
+    await setProps(browser, { agent: AGENT, mode: "display" });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-agent-monitor-item");
+      const chip = el.shadowRoot.querySelector("monitor-status-chip");
+      Assert.ok(chip, "The display card shows a status chip");
+      Assert.equal(chip.kind, "watching", "An active monitor is watching");
+
+      await ContentTaskUtils.waitForCondition(
+        () => chip.shadowRoot.querySelector("span")?.textContent,
+        "the chip is localized"
+      );
+      Assert.equal(
+        chip.shadowRoot.querySelector("span").textContent,
+        "Active",
+        "The chip states the status in words"
+      );
+
+      el.agent = { ...el.agent, status: { kind: "paused" } };
+      await el.updateComplete;
+      Assert.equal(chip.kind, "paused", "A paused monitor says so");
+
+      el.agent = { ...el.agent, status: null };
+      await el.updateComplete;
+      Assert.ok(
+        !chip.shadowRoot.querySelector("span"),
+        "A monitor with no status has no pill"
+      );
+      await ContentTaskUtils.waitForCondition(
+        () => content.getComputedStyle(chip).display === "none",
+        "an empty pill takes up no room"
+      );
+    });
+  });
+});
+
 add_task(async function test_pause_button_toggles_label_and_detail() {
   await withTestPage(async browser => {
     await setProps(browser, { agent: AGENT, mode: "display", expanded: true });
@@ -520,6 +562,119 @@ add_task(async function test_create_mode_renders_form() {
   });
 });
 
+/**
+ * A self-contained card frames and titles itself. A host that already does both
+ * - the Tasks panel, which has its own header - sets selfContained to false and
+ * gets just the fields.
+ */
+add_task(async function test_self_contained_frame_and_title() {
+  await withTestPage(async browser => {
+    await setProps(browser, { agent: AGENT, mode: "create" });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-agent-monitor-item");
+      const shadow = el.shadowRoot;
+
+      Assert.ok(
+        el.selfContained,
+        "Cards are self-contained unless a host says otherwise"
+      );
+      Assert.ok(
+        el.hasAttribute("self-contained"),
+        "selfContained is reflected so the stylesheet can drop the frame"
+      );
+      Assert.ok(
+        shadow.querySelector(".title-container"),
+        "A self-contained create card states its own title"
+      );
+
+      el.selfContained = false;
+      await el.updateComplete;
+
+      Assert.ok(
+        !el.hasAttribute("self-contained"),
+        "Turning it off removes the attribute"
+      );
+      Assert.ok(
+        !shadow.querySelector(".title-container"),
+        "A hosted create card leaves the title to its host"
+      );
+      Assert.ok(
+        shadow.querySelector("moz-textarea.monitor-condition-input"),
+        "A hosted create card still shows the fields"
+      );
+
+      const card = shadow.querySelector(".monitor-card");
+      const style = content.getComputedStyle(card);
+      Assert.equal(
+        style.borderTopWidth,
+        "0px",
+        "A hosted card does not draw its own border"
+      );
+      Assert.notEqual(
+        style.paddingTop,
+        "0px",
+        "A hosted card keeps its padding so fields clear the host's edge"
+      );
+    });
+  });
+});
+
+/**
+ * moz-select swaps its native <select> for a popover-based list as soon as an
+ * option has an icon, and a popover renders in the document's top layer - the
+ * wrong place when the host is a XUL panel, which is its own widget. A hosted
+ * card therefore drops the option icons to keep the native dropdown.
+ */
+add_task(async function test_hosted_card_keeps_native_select() {
+  await withTestPage(async browser => {
+    await setProps(browser, { agent: AGENT, mode: "create" });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-agent-monitor-item");
+      const selects = () => [...el.shadowRoot.querySelectorAll("moz-select")];
+      const optionsHaveIcons = () =>
+        selects().every(select =>
+          [...select.querySelectorAll("moz-option")].every(option =>
+            option.hasAttribute("iconsrc")
+          )
+        );
+
+      await Promise.all(selects().map(select => select.updateComplete));
+      Assert.ok(selects().length, "The create form has selects to check");
+      Assert.ok(
+        optionsHaveIcons(),
+        "A self-contained card keeps its option icons"
+      );
+      Assert.ok(
+        selects().every(select => select.usePanelList),
+        "Icons mean moz-select renders its popover list"
+      );
+
+      el.selfContained = false;
+      await el.updateComplete;
+      await Promise.all(selects().map(select => select.updateComplete));
+
+      Assert.ok(
+        selects().every(select =>
+          [...select.querySelectorAll("moz-option")].every(
+            option => !option.hasAttribute("iconsrc")
+          )
+        ),
+        "A hosted card drops the option icons"
+      );
+      Assert.ok(
+        selects().every(select => !select.usePanelList),
+        "Without icons moz-select falls back to the native dropdown"
+      );
+      Assert.ok(
+        selects().every(select => select.shadowRoot.querySelector("select")),
+        "A hosted card renders real native selects"
+      );
+    });
+  });
+});
+
 add_task(async function test_create_mode_empty_state_inputs() {
   await withTestPage(async browser => {
     // when no monitorName or value is available the card should offer editable inputs instead
@@ -559,6 +714,37 @@ add_task(async function test_create_mode_empty_state_inputs() {
         submitDetail,
         null,
         "Submit is blocked while the form is empty"
+      );
+
+      const errorIds = [...shadow.querySelectorAll(".error-message")]
+        .map(node => node.getAttribute("data-l10n-id"))
+        .sort();
+      Assert.deepEqual(
+        errorIds,
+        [
+          "ai-tasks-alert-error-condition-required",
+          "ai-tasks-alert-error-name-required",
+          "ai-tasks-alert-error-no-pages",
+        ],
+        "Empty submit surfaces name, condition and pages errors"
+      );
+      Assert.ok(nameInput.hasAttribute("invalid"), "Name input is invalid");
+      Assert.ok(
+        shadow
+          .querySelector("moz-textarea.monitor-condition-input")
+          .hasAttribute("invalid"),
+        "Condition input is invalid"
+      );
+      Assert.ok(
+        shadow
+          .querySelector("moz-input-url.page-url-input")
+          .hasAttribute("invalid"),
+        "URL input is invalid"
+      );
+      Assert.equal(
+        shadow.activeElement,
+        nameInput,
+        "Focus moves to the first invalid field"
       );
 
       setValue(nameInput, "Sony Headphone");
@@ -1005,21 +1191,149 @@ add_task(async function test_invalid_url_shows_error() {
       urlInput.dispatchEvent(new content.Event("input", { bubbles: true }));
       shadow.querySelector("moz-button.add-page-btn").click();
 
-      // Wait for the async validation to complete and the error message to appear
       await el.updateComplete;
-      await ContentTaskUtils.waitForCondition(
-        () => shadow.querySelector(".error-message"),
-        "Waiting for error message to appear"
-      );
-
-      Assert.ok(
-        shadow.querySelector(".error-message"),
-        "An invalid URL surfaces an error message"
+      Assert.equal(
+        shadow.querySelector(".error-message")?.getAttribute("data-l10n-id"),
+        "ai-tasks-alert-error-invalid-url",
+        "A value that is not a URL shows the invalid-URL error"
       );
       Assert.equal(
         shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
         0,
         "An invalid URL is not added as a pill"
+      );
+    });
+  });
+});
+
+add_task(async function test_bare_host_defaults_to_https() {
+  await withTestPage(async browser => {
+    await setProps(browser, {
+      agent: { conditionPresets: [] },
+      mode: "create",
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-agent-monitor-item");
+      const shadow = el.shadowRoot;
+
+      const urlInput = shadow.querySelector("moz-input-url.page-url-input");
+      const addButton = shadow.querySelector("moz-button.add-page-btn");
+
+      // A scheme-less host is watched over https rather than rejected.
+      urlInput.value = "example.com";
+      urlInput.dispatchEvent(new content.Event("input", { bubbles: true }));
+      addButton.click();
+      await el.updateComplete;
+
+      Assert.ok(
+        !shadow.querySelector(".error-message"),
+        "A scheme-less host is accepted without an error"
+      );
+      Assert.deepEqual(
+        el.pageUrls,
+        ["https://example.com/"],
+        "A host with no scheme is watched over https"
+      );
+
+      // The same page typed differently canonicalizes to the same URL
+      urlInput.value = "HTTPS://EXAMPLE.COM";
+      urlInput.dispatchEvent(new content.Event("input", { bubbles: true }));
+      addButton.click();
+      await el.updateComplete;
+
+      Assert.equal(
+        shadow.querySelector(".error-message")?.getAttribute("data-l10n-id"),
+        "ai-tasks-alert-error-duplicate-url",
+        "The same host in a different case is rejected as a duplicate"
+      );
+      Assert.deepEqual(
+        el.pageUrls,
+        ["https://example.com/"],
+        "The duplicate is not added again"
+      );
+    });
+  });
+});
+
+add_task(async function test_submit_handles_uncommitted_url() {
+  await withTestPage(async browser => {
+    await setProps(browser, {
+      agent: { conditionPresets: [] },
+      mode: "create",
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-agent-monitor-item");
+      const shadow = el.shadowRoot;
+
+      const setValue = (input, value) => {
+        input.value = value;
+        input.dispatchEvent(new content.Event("input", { bubbles: true }));
+        input.dispatchEvent(new content.Event("change", { bubbles: true }));
+      };
+
+      let submitDetail = null;
+      el.addEventListener(
+        "agent-monitor-item:submit",
+        e => (submitDetail = e.detail)
+      );
+
+      setValue(
+        shadow.querySelector("moz-input-text.monitor-name-input"),
+        "Sony Headphone"
+      );
+      setValue(
+        shadow.querySelector("moz-textarea.monitor-condition-input"),
+        "the price drops"
+      );
+
+      const urlInput = shadow.querySelector("moz-input-url.page-url-input");
+      const addButton = shadow.querySelector("moz-button.add-page-btn");
+      const startButton = shadow.querySelector(
+        'moz-button[data-l10n-id="ai-tasks-alert-create-button"]'
+      );
+
+      // A valid page is added, then invalid text is typed but never committed
+      // with +, so there's no visible error yet.
+      setValue(urlInput, "https://example.com/product");
+      addButton.click();
+      await el.updateComplete;
+      setValue(urlInput, "not a url");
+
+      // Submit must not silently drop the uncommitted input
+      startButton.click();
+      await el.updateComplete;
+
+      Assert.equal(
+        submitDetail,
+        null,
+        "An uncommitted invalid url blocks submit even with a valid page added"
+      );
+      Assert.equal(
+        shadow.querySelector(".error-message")?.getAttribute("data-l10n-id"),
+        "ai-tasks-alert-error-invalid-url",
+        "Submit surfaces the uncommitted url's error"
+      );
+      Assert.ok(
+        urlInput.hasAttribute("invalid"),
+        "The url input is marked invalid"
+      );
+      Assert.equal(
+        shadow.activeElement,
+        urlInput,
+        "Focus moves to the url input"
+      );
+
+      // Correcting the input to a valid url lets submit commit it
+      setValue(urlInput, "https://example.com/second");
+      startButton.click();
+      await el.updateComplete;
+
+      Assert.deepEqual(
+        submitDetail?.watchUrls,
+        ["https://example.com/product", "https://example.com/second"],
+        "A valid uncommitted url is committed and carried on submit"
       );
     });
   });
@@ -1054,19 +1368,23 @@ add_task(async function test_max_watch_urls_from_host() {
       );
 
       await addUrl("https://example.com/b");
-      await ContentTaskUtils.waitForCondition(
-        () => shadow.querySelector(".error-message"),
-        "Waiting for the max URLs error to appear"
+      Assert.equal(
+        shadow.querySelector(".error-message")?.getAttribute("data-l10n-id"),
+        "ai-tasks-alert-error-max-urls",
+        "Adding past the cap shows the max-pages error"
       );
-
       Assert.equal(
         shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
         1,
         "A URL past the host's cap is not added"
       );
       // Assert on substitution rather than copy: the cap has to reach Fluent
-      // under the name the string expects, or formatValue rejects and the
-      // error message never renders.
+      // under the name the string expects, or the message never resolves.
+      // data-l10n-id fills text asynchronously, so wait for the cap to appear.
+      await ContentTaskUtils.waitForCondition(
+        () => shadow.querySelector(".error-message")?.textContent.includes("1"),
+        "Waiting for the max URLs error to interpolate the cap"
+      );
       const errorText = shadow
         .querySelector(".error-message")
         .textContent.trim();
@@ -1074,6 +1392,172 @@ add_task(async function test_max_watch_urls_from_host() {
         errorText.includes("1") && !errorText.includes("{"),
         `The error message interpolates the cap: ${errorText}`
       );
+    });
+  });
+});
+
+add_task(async function test_history_result_states() {
+  const checkedAt = "2026-06-23T13:00:00.000Z";
+  const history = [
+    {
+      id: "h-error",
+      checkedAt,
+      status: "error",
+      resultExplanation: "TypeError: raw internal detail",
+      conditionMet: false,
+      errorCode: "rate_limit",
+    },
+    {
+      id: "h-met",
+      checkedAt,
+      status: "success",
+      resultExplanation: "The price dropped to $265.",
+      conditionMet: true,
+    },
+    {
+      id: "h-not-met",
+      checkedAt,
+      status: "success",
+      resultExplanation: "The price is still $299.",
+      conditionMet: false,
+    },
+  ];
+
+  await withTestPage(async browser => {
+    await setProps(browser, {
+      agent: { ...AGENT, history },
+      mode: "display",
+      expanded: true,
+      showLastResult: true,
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-agent-monitor-item");
+      const shadow = el.shadowRoot;
+      const badges = shadow.querySelectorAll(".history-item .condition-badge");
+
+      Assert.deepEqual(
+        Array.from(badges, badge => badge.getAttribute("data-l10n-id")),
+        [
+          "ai-tasks-alert-condition-could-not-check",
+          "ai-tasks-alert-condition-met",
+          "ai-tasks-alert-condition-not-met",
+        ],
+        "A failed run reads Couldn't check, alongside the two success states"
+      );
+
+      const rows = shadow.querySelectorAll(".history-item");
+      Assert.equal(
+        rows[0].lastElementChild.getAttribute("data-l10n-id"),
+        "ai-tasks-alert-history-error-rate-limit",
+        "The note explains the failure the error code names"
+      );
+      Assert.ok(
+        !rows[0].textContent.includes("TypeError"),
+        "The raw error message is not shown to the user"
+      );
+      Assert.equal(
+        rows[1].lastElementChild.textContent.trim(),
+        "The price dropped to $265.",
+        "A successful run still shows the model's explanation"
+      );
+
+      Assert.equal(
+        shadow
+          .querySelector(".monitor-card-head-right .last-result")
+          .getAttribute("data-l10n-id"),
+        "ai-tasks-alert-last-result-could-not-check",
+        "The header chip reports the most recent run's failure too"
+      );
+    });
+  });
+});
+
+add_task(async function test_history_error_without_a_code() {
+  // Entries stored before error codes existed still have to render.
+  await withTestPage(async browser => {
+    await setProps(browser, {
+      agent: {
+        ...AGENT,
+        history: [
+          {
+            id: "h-legacy",
+            checkedAt: "2026-06-23T13:00:00.000Z",
+            status: "error",
+            resultExplanation: "Something went wrong",
+            conditionMet: false,
+          },
+        ],
+      },
+      mode: "display",
+      expanded: true,
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-agent-monitor-item");
+      const row = el.shadowRoot.querySelector(".history-item");
+
+      Assert.equal(
+        row.querySelector(".condition-badge").getAttribute("data-l10n-id"),
+        "ai-tasks-alert-condition-could-not-check",
+        "An entry with no error code still reads Couldn't check"
+      );
+      Assert.equal(
+        row.lastElementChild.getAttribute("data-l10n-id"),
+        "ai-tasks-alert-history-error-unknown",
+        "It falls back to the generic explanation"
+      );
+    });
+  });
+});
+
+/**
+ * A host that has no room left under its active-monitor limit says so with
+ * canResume, and the paused card's Resume button goes disabled rather than
+ * letting the user press a button that cannot do anything.
+ */
+add_task(async function test_resume_disabled_without_room() {
+  const PAUSED = { ...AGENT, status: { label: "Paused", kind: "paused" } };
+  await withTestPage(async browser => {
+    await setProps(browser, {
+      agent: PAUSED,
+      mode: "display",
+      expanded: true,
+      canResume: false,
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-agent-monitor-item");
+      const button = () => el.shadowRoot.getElementById("pause-button");
+
+      Assert.equal(
+        button().getAttribute("data-l10n-id"),
+        "ai-tasks-alert-resume-button",
+        "A paused monitor offers Resume"
+      );
+      Assert.ok(
+        button().disabled,
+        "Resume is disabled while the limit leaves no room for it"
+      );
+
+      // Pausing one of the others frees a slot up.
+      el.canResume = true;
+      await el.updateComplete;
+      Assert.ok(
+        !button().disabled,
+        "Resume comes back once there is room under the limit"
+      );
+
+      // Pausing is never blocked, whatever the limit says.
+      el.canResume = false;
+      el.agent = { ...el.agent, status: { label: "Active", kind: "watching" } };
+      await el.updateComplete;
+      Assert.equal(
+        button().getAttribute("data-l10n-id"),
+        "ai-tasks-alert-pause-button",
+        "An active monitor offers Pause"
+      );
+      Assert.ok(!button().disabled, "Pause stays available at the limit");
     });
   });
 });

@@ -1,0 +1,45 @@
+clang-cl doesn't define __GNUC__, but does accept the GCC asm barriers.
+
+diff --git a/src/prebuilt/wasm2c_simd_source_declarations.cc b/src/prebuilt/wasm2c_simd_source_declarations.cc
+--- a/src/prebuilt/wasm2c_simd_source_declarations.cc
++++ b/src/prebuilt/wasm2c_simd_source_declarations.cc
+@@ -4,7 +4,9 @@ R"w2c_template(    WASM_RT_NONCONFORMING_ALLOW_OOB_READ_ELIMINATION
+ )w2c_template"
+ R"w2c_template(#define SIMD_FORCE_READ(var)
+ )w2c_template"
+-R"w2c_template(#elif defined(__GNUC__) && WASM_RT_MEMCHECK_GUARD_PAGES
++R"w2c_template(#elif (defined(__GNUC__) || defined(__clang__)) && \
++)w2c_template"
++R"w2c_template(    WASM_RT_MEMCHECK_GUARD_PAGES
+ )w2c_template"
+ R"w2c_template(#if defined(__x86_64__)
+ )w2c_template"
+diff --git a/src/prebuilt/wasm2c_source_declarations.cc b/src/prebuilt/wasm2c_source_declarations.cc
+--- a/src/prebuilt/wasm2c_source_declarations.cc
++++ b/src/prebuilt/wasm2c_source_declarations.cc
+@@ -361,7 +361,9 @@ R"w2c_template(#define FORCE_READ_INT(var)
+ )w2c_template"
+ R"w2c_template(#define FORCE_READ_FLOAT(var)
+ )w2c_template"
+-R"w2c_template(#elif defined(__GNUC__) && WASM_RT_MEMCHECK_GUARD_PAGES
++R"w2c_template(#elif (defined(__GNUC__) || defined(__clang__)) && \
++)w2c_template"
++R"w2c_template(    WASM_RT_MEMCHECK_GUARD_PAGES
+ )w2c_template"
+ R"w2c_template(#define FORCE_READ_INT(var) __asm__("" ::"r"(var))
+ )w2c_template"
+diff --git a/wasm2c/wasm-rt.h b/wasm2c/wasm-rt.h
+--- a/wasm2c/wasm-rt.h
++++ b/wasm2c/wasm-rt.h
+@@ -160,8 +160,9 @@ extern "C" {
+  * compiler or the embedder must permit a non-conforming setting (allow dead
+  * read elimination from linear memory)
+  */
+-#if UINTPTR_MAX > 0xffffffff && WASM_RT_USE_MMAP && \
+-    (WASM_RT_NONCONFORMING_ALLOW_OOB_READ_ELIMINATION || defined(__GNUC__))
++#if UINTPTR_MAX > 0xffffffff && WASM_RT_USE_MMAP &&      \
++    (WASM_RT_NONCONFORMING_ALLOW_OOB_READ_ELIMINATION || \
++     defined(__GNUC__) || defined(__clang__))
+ #define WASM_RT_GUARD_PAGES_SUPPORTED 1
+ #else
+ #define WASM_RT_GUARD_PAGES_SUPPORTED 0

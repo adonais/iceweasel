@@ -185,9 +185,6 @@ bool WebTask::Run() {
   MOZ_KnownLive(mCallback)->Call(&returnVal, error, "WebTask",
                                  CallbackFunction::eRethrowExceptions);
 
-  // 11.2.4 Set event loop’s current scheduling state to null.
-  global->SetWebTaskSchedulingState(nullptr);
-
   error.WouldReportJSException();
 
 #ifdef DEBUG
@@ -208,6 +205,9 @@ bool WebTask::Run() {
   } else {
     mPromise->MaybeResolve(returnVal);
   }
+
+  // 11.2.4 Set event loop’s current scheduling state to null.
+  global->SetWebTaskSchedulingState(nullptr);
 
   MOZ_ASSERT(!isInList());
   return true;

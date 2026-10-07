@@ -455,9 +455,24 @@ impl SpatialNode {
                     .to_transform()
                     .with_destination::<LayoutPixel>();
 
+                // Whether 3D content is already flattened into the plane of the
+                // enclosing coordinate system. The root system is flat, but
+                // doesn't set the flag.
+                let parent_flattens = {
+                    let parent = &coord_systems[state.current_coordinate_system_id.0 as usize];
+                    parent.should_flatten || parent.parent.is_none()
+                };
                 let mut reset_cs_id = match info.transform_style {
                     TransformStyle::Preserve3D => !state.preserves_3d,
-                    TransformStyle::Flat => state.preserves_3d,
+                    // A flat transform flattens its 3D descendants (it sets
+                    // `should_flatten` below), so it needs its own coordinate system
+                    // when the enclosing one doesn't flatten - under a perspective,
+                    // say - even if its own matrix is a plain 2D scale/offset that
+                    // could otherwise share the parent system.
+                    TransformStyle::Flat => {
+                        state.preserves_3d ||
+                        (matches!(info.kind, ReferenceFrameKind::Transform { .. }) && !parent_flattens)
+                    }
                 };
 
                 // We reset the coordinate system upon either crossing the preserve-3d context boundary,

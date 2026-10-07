@@ -803,19 +803,23 @@ JavaException:
     uncaught Java exception.
   type: string
   scope: ping
+  bugs:
+    - 1904847
+    - 1961011
+    - 2073234
   glean:
     type: object
     # version history (typescript for brevity)
     # # 0
     # {
-    #   messages: string[],
+    #   messages: string[], /* see bug 2073234 */
     #   stack: { file: string, line: number, class_name: string, method_name: string, is_native: boolean }[]
     # }
     #
     # # 1
     # {
     #   throwables: {
-    #     message: string,
+    #     message: string, /* removed; see bug 2073234 */
     #     type_name: string,
     #     stack: { file: string, line: number, class_name: string, method_name: string, is_native: boolean }[]
     #   }[]
@@ -831,9 +835,6 @@ JavaException:
           items:
             type: object
             properties:
-              # The message of the Throwable.
-              message:
-                type: string
               # The java fully qualified type name of the Throwable.
               type_name:
                 type: string
@@ -1118,7 +1119,7 @@ PluginVersion:
 ProcessType:
   description: >
     Type of the process that crashed, the possible values are defined in
-    GeckoProcessTypes.h.
+    GeckoProcessTypes.inc.
   type: string
   scope: ping
 
@@ -1268,6 +1269,17 @@ ShutdownReason:
   description: >
     One out of "Unknown", "AppClose", "AppRestart", "OSForceClose",
     "OSSessionEnd" or "OSShutdown".
+  type: string
+  scope: ping
+
+ShuttingDownThreads:
+  description: >
+    JSON array of the nsThread::Shutdown handshakes still in flight when the
+    process crashed during shutdown. Each entry has the joining and closing
+    thread TID and name, the handshake phase ("Joining", "Recv" or "Ack") and
+    when that phase was entered, in seconds since the Epoch.
+    A single entry of {"error": "contended"} means the thread list was locked
+    and could not be read without blocking.
   type: string
   scope: ping
 
@@ -1663,6 +1675,29 @@ WindowsErrorReporting:
   scope: ping
   glean:
     metric: crash.windows.error_reporting
+
+WindowsProcessMitigations:
+  description: >
+    A human-readable summary of the Windows process mitigation options configured
+    on the system for this executable, amalgamating the per-application and
+    system-wide values (per-application takes precedence per mitigation). A
+    comma-separated list of "Name=on", "Name=off", or "Name=<variant>" entries
+    (where <variant> names the mitigation's stricter or modified state, e.g.
+    "EmulateAtlThunks" or "StrictMode"); only mitigations that are explicitly
+    configured appear. See WindowsProcessMitigationsBytes for the raw bitmask.
+  type: string
+  scope: report
+
+WindowsProcessMitigationsBytes:
+  description: >
+    The Windows process mitigation options (Exploit Protection "Program
+    settings") configured on the system for this executable, read from the
+    registry at process start independently of any mitigations the process
+    later enables for itself. The value is the compound of the system-wide and
+    path-specific bitmasks, as would appear in regedit (hex-encoded, little
+    endian).
+  type: string
+  scope: report
 
 Winsock_LSP:
   description: >

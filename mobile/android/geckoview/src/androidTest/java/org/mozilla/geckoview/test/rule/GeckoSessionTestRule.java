@@ -2902,9 +2902,9 @@ public class GeckoSessionTestRule implements TestRule {
     return (Boolean) webExtensionApiCall("IsFissionRunning", null);
   }
 
-  /** Simulate user gesture activation */
-  public void notifyUserGestureActivation(final GeckoSession session) {
-    webExtensionApiCall(session, "NotifyUserGestureActivation", null);
+  /** Opens the picker of the element matching selector with a simulated user gesture. */
+  public void showPicker(final GeckoSession session, final String selector) {
+    webExtensionApiCall(session, "ShowPicker", args -> args.put("selector", selector));
   }
 
   /** Adds a virtual WebAuthn authenticator. Returns the authenticator ID. */
@@ -3109,6 +3109,10 @@ public class GeckoSessionTestRule implements TestRule {
    * wait, the delegate is automatically unregistered. Delegates added by {@code
    * addExternalDelegateDuringNextWait} can temporarily take precedence over delegates added by
    * {@link #delegateUntilTestEnd}.
+   *
+   * <p>Register the delegate before triggering the event it is meant to catch. An event that
+   * reaches Gecko or Java while no delegate is registered is dropped or denied, not queued, and the
+   * wait then times out.
    *
    * @param delegate Delegate instance to register.
    * @param register DelegateRegistrar instance that represents a function to register the delegate.

@@ -35,14 +35,12 @@ add_task(async function () {
   const inlinePreviewEl = findElement(dbg, "inlinePreviewsOnLine", 74);
   is(inlinePreviewEl.innerText, `myVar:"foo"`, "got expected inline preview");
 
-  const racePromise = Promise.any([
-    waitForElement(dbg, "previewPopup"),
-    wait(500).then(() => "TIMEOUT"),
-  ]);
   // Hover over the inline preview element
   hoverToken(inlinePreviewEl);
-  const raceResult = await racePromise;
-  is(raceResult, "TIMEOUT", "No popup was displayed over the inline preview");
+  await assertNoPreviewPopup(
+    dbg,
+    "No popup was displayed over the inline preview"
+  );
 
   await resume(dbg);
 
@@ -61,10 +59,6 @@ add_task(async function () {
 
   resetCursorPositionToTopLeftCorner(dbg);
 
-  const racePromiseLines = Promise.any([
-    waitForElement(dbg, "previewPopup"),
-    wait(500).then(() => "TIMEOUT_LINES"),
-  ]);
   // We don't want to use hoverToken, as it synthesize the event at the center of the element,
   // which wouldn't reproduce the original issue we want to check
   EventUtils.synthesizeMouse(
@@ -76,17 +70,10 @@ add_task(async function () {
     },
     dbg.win
   );
-  is(
-    await racePromiseLines,
-    "TIMEOUT_LINES",
+  await assertNoPreviewPopup(
+    dbg,
     "No popup was displayed over the content container element"
   );
-
-  // Trigger a preview popup on an element which actually will show a popup
-  // to avoid test document leaks linked to the earlier mousemove events which
-  // did not trigger any popup.
-  const aTokenEl = await getTokenElAtLine(dbg, "a", 2, 8);
-  await tryHoverToken(dbg, aTokenEl, "previewPopup");
 
   // Resume
   await resume(dbg);
@@ -110,16 +97,22 @@ async function assertNoPreviews(dbg, expression, line, column) {
 
   hoverToken(tokenElement);
 
-  // Hover the token
-  const result = await Promise.race([
-    waitForElement(dbg, "previewPopup"),
-    wait(500).then(() => "NO POPUP AFTER TIMEOUT"),
-  ]);
-  is(
-    result,
-    "NO POPUP AFTER TIMEOUT",
+  await assertNoPreviewPopup(
+    dbg,
     `No popup was displayed when hovering "${expression}"`
   );
+}
+
+/**
+ * Give the debugger a chance to display a preview popup, then assert that none
+ * was displayed.
+ *
+ * @param {DebuggerPanel} dbg
+ * @param {string} message: The assertion message
+ */
+async function assertNoPreviewPopup(dbg, message) {
+  await wait(500);
+  is(findElement(dbg, "previewPopup"), null, message);
 }
 
 function resetCursorPositionToTopLeftCorner(dbg) {

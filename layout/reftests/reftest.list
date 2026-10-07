@@ -445,3 +445,4 @@ include display-list/reftest.list
 include ../../dom/media/test/reftest/reftest.list
 include ../../dom/media/test/reftest/color_quads/reftest.list
 include ../../dom/media/webvtt/test/reftest/reftest.list
+include ../../dom/media/webrtc/tests/reftest/reftest.list

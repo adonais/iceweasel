@@ -43,6 +43,29 @@ var TEST_CASES = [
   },
 ];
 
+// The "url" parameter of an about:reader URI steers process selection like a
+// nested URI does, but about:reader only ever loads http(s) and file
+// documents, so for any other scheme the parameter must be ignored.
+var READER_HONOURS_URL = [
+  {
+    readerURL: "about:reader?url=http%3A%2F%2Fsome.site",
+    plainURL: "http://some.site",
+  },
+  {
+    readerURL: "about:reader?url=file%3A%2F%2F%2Fsome.file",
+    plainURL: "file:///some.file",
+  },
+];
+
+var READER_IGNORES_URL = [
+  "about:reader?url=about%3Aconfig",
+  "about:reader?url=about%3Alogins",
+  "about:reader?url=chrome%3A%2F%2Fglobal%2Fcontent%2Freader%2FaboutReader.html",
+  "about:reader?url=resource%3A%2F%2Fgre%2Fmodules%2FE10SUtils.sys.mjs",
+  "about:reader?url=moz-extension%3A%2F%2F6c56e6dd-e2c1-4d2f-9c9d-6d0e6f0d3b62%2Fx.html",
+  "about:reader?url=jar%3Afile%3A%2F%2F%2Fsome.file!%2F",
+];
+
 function run_test() {
   for (let testCase of TEST_CASES) {
     for (let preferredRemoteType of TEST_PREFERRED_REMOTE_TYPES) {
@@ -80,6 +103,50 @@ function run_test() {
           `Check that ${nestedStr} loads in same remote type as ${plainStr}` +
             ` with preferred remote type: ${preferredRemoteType}` +
             ` and remote subframes: ${useRemoteSubframes}`
+        );
+      }
+    }
+  }
+
+  for (let preferredRemoteType of TEST_PREFERRED_REMOTE_TYPES) {
+    for (let useRemoteSubframes of TEST_USE_REMOTE_SUBFRAMES) {
+      let options = {
+        useRemoteTabs: true,
+        useRemoteSubframes,
+        preferredRemoteType,
+      };
+      let suffix =
+        ` with preferred remote type: ${preferredRemoteType}` +
+        ` and remote subframes: ${useRemoteSubframes}`;
+
+      for (let { readerURL, plainURL } of READER_HONOURS_URL) {
+        equal(
+          ChromeUtils.predictRemoteTypeForURI(
+            Services.io.newURI(readerURL),
+            options
+          ),
+          ChromeUtils.predictRemoteTypeForURI(
+            Services.io.newURI(plainURL),
+            options
+          ),
+          `Check that ${readerURL} loads in same remote type as ${plainURL}` +
+            suffix
+        );
+      }
+
+      let bareReaderRemoteType = ChromeUtils.predictRemoteTypeForURI(
+        Services.io.newURI("about:reader"),
+        options
+      );
+      for (let readerURL of READER_IGNORES_URL) {
+        equal(
+          ChromeUtils.predictRemoteTypeForURI(
+            Services.io.newURI(readerURL),
+            options
+          ),
+          bareReaderRemoteType,
+          `Check that ${readerURL} loads in same remote type as about:reader` +
+            suffix
         );
       }
     }

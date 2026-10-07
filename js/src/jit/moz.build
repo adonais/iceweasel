@@ -315,3 +315,15 @@ if CONFIG["ENABLE_JS_AOT_ICS"]:
 
 if CONFIG["FUZZING_INTERFACES"] or CONFIG["FUZZING_JS_FUZZILLI"]:
     include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+LICENSED_UNDER += ["arm"]
+LICENSED_UNDER["arm"].paths = [
+    "arm64/vixl",
+]
+
+LICENSED_UNDER += ["v8"]
+LICENSED_UNDER["v8"].paths = [
+    "arm",
+    "mips*",
+    "riscv64",
+]

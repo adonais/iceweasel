@@ -94,6 +94,7 @@ using class mozilla::dom::MessagePort from "mozilla/dom/MessagePort.h";
 [RefCounted] using class mozilla::dom::ipc::StructuredCloneData from "mozilla/dom/ipc/StructuredCloneData.h";
 using mozilla::dom::MaybeDiscardedWindowContext from "mozilla/dom/WindowContext.h";
 using mozilla::EventMessage from "mozilla/EventForwards.h";
+using mozilla::PreventSetSelection from "mozilla/EventForwards.h";
 using nsEventStatus from "mozilla/EventForwards.h";
 using mozilla::Modifiers from "mozilla/EventForwards.h";
 using struct mozilla::FontRange from "ipc/nsGUIEventIPC.h";
@@ -501,8 +502,6 @@ parent:
                                       int32_t aModifierFlags,
                                       uint64_t? aCallbackId);
 
-    async LockNativePointer(NativePointerLockMode aNativePointerLockMode);
-    async UnlockNativePointer();
     async SetNativePointerLockMode(NativePointerLockMode aNativePointerLockMode);
 
     async AccessKeyNotHandled(WidgetKeyboardEvent event);
@@ -867,11 +866,11 @@ child:
     [Priority=input] async ReplaceText(nsString aReplacementString,
                                        nsString aStringToInsert,
                                        uint32_t aOffset,
-				       bool aPreventSetSelection);
+				       PreventSetSelection aPreventSetSelection);
     async NormalPriorityReplaceText(nsString aReplacementString,
                                     nsString aStringToInsert,
                                     uint32_t aOffset,
-				    bool aPreventSetSelection);
+				    PreventSetSelection aPreventSetSelection);
 
     /**
      * Call PasteTransferable via a controller on the content process
@@ -1062,7 +1061,7 @@ child:
      */
     async DispatchToDropTargetAndResumeEndDragSession(bool aShouldDrop, StringHashSet aAllowedFilePaths);
 
-#if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+#ifdef ACCESSIBILITY
     async RequestDocAccessibleForPrint();
 #endif
 

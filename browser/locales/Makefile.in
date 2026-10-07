@@ -4,18 +4,8 @@
 
 include $(topsrcdir)/config/config.mk
 
-
-SUBMAKEFILES += \
-	$(DEPTH)/$(MOZ_BRANDING_DIRECTORY)/Makefile \
-	$(DEPTH)/$(MOZ_BRANDING_DIRECTORY)/locales/Makefile \
-	$(NULL)
-
 # This makefile uses variable overrides from the l10n-% target to
 # build non-default locales to non-default dist/ locations. Be aware!
-
-PWD := $(CURDIR)
-
-ZIP_IN ?= $(ABS_DIST)/$(PACKAGE)
 
 MOZ_LANGPACK_EID = langpack-$(AB_CD)@$(MOZ_LANGPACK_EID_HOST)
 
@@ -30,37 +20,15 @@ include $(topsrcdir)/toolkit/locales/l10n.mk
 l10n-%: AB_CD=$*
 l10n-%:
 	$(if $(filter en-US,$(AB_CD)),, @$(MAKE) merge-$*)
-ifdef MOZ_USE_LEGACY_L10N
-	$(NSINSTALL) -D $(DIST)/install
-	@$(MAKE) -C ../themes/shared/app-marketplace-icons AB_CD=$* XPI_NAME=locale-$*
-	@$(MAKE) -C ../../toolkit/locales l10n-$* XPI_ROOT_APPID='$(XPI_ROOT_APPID)'
-	@$(MAKE) -C ../../extensions/spellcheck/locales AB_CD=$* XPI_NAME=locale-$*
-	@$(MAKE) -C ../../devtools/client/locales AB_CD=$* XPI_NAME=locale-$* XPI_ROOT_APPID='$(XPI_ROOT_APPID)'
-	@$(MAKE) -C ../../devtools/startup/locales AB_CD=$* XPI_NAME=locale-$* XPI_ROOT_APPID='$(XPI_ROOT_APPID)'
-	@$(MAKE) l10n AB_CD=$* XPI_NAME=locale-$* PREF_DIR=$(PREF_DIR)
-	@$(MAKE) multilocale.txt-$* AB_CD=$* XPI_NAME=locale-$*
-	@$(MAKE) -C $(DEPTH)/$(MOZ_BRANDING_DIRECTORY)/locales AB_CD=$* XPI_NAME=locale-$*
-else
 	$(call py_action,l10n_stage,--locale=$* --manifest=$(DEPTH)/l10n-manifest.json --merge-tree=$(BASE_MERGE)/$* --dest=$(DIST)/xpi-stage/locale-$* --topsrcdir=$(topsrcdir) --topobjdir=$(DEPTH))
-endif
 
 chrome-%: AB_CD=$*
 chrome-%: IS_LANGUAGE_REPACK=1
 chrome-%:
 	$(if $(filter en-US,$(AB_CD)),, @$(MAKE) merge-$*)
-ifdef MOZ_USE_LEGACY_L10N
-	@$(MAKE) -C ../themes/shared/app-marketplace-icons chrome AB_CD=$*
-	@$(MAKE) -C ../../toolkit/locales chrome-$*
-	@$(MAKE) -C ../../extensions/spellcheck/locales chrome AB_CD=$*
-	@$(MAKE) -C ../../devtools/client/locales chrome AB_CD=$*
-	@$(MAKE) -C ../../devtools/startup/locales chrome AB_CD=$*
-	@$(MAKE) chrome AB_CD=$*
-	@$(MAKE) -C $(DEPTH)/$(MOZ_BRANDING_DIRECTORY)/locales chrome AB_CD=$*
-else
 	$(call py_action,l10n_stage,--locale=$* --manifest=$(DEPTH)/l10n-manifest.json --merge-tree=$(BASE_MERGE)/$* --dest=$(DIST)/bin --topsrcdir=$(topsrcdir) --topobjdir=$(DEPTH) --mode=chrome)
-endif
 
-package-win32-installer: $(SUBMAKEFILES)
+package-win32-installer:
 	$(MAKE) -C ../installer/windows CONFIG_DIR=l10ngen ZIP_IN='$(ZIP_OUT)' installer
 
 langpack: langpack-$(AB_CD)

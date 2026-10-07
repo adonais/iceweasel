@@ -80,15 +80,6 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1560741
     const showCount = await GleanTest.webNotification.showOrigin.third_party.testGetValue();
     is(showCount, 1, "Notification third party show attempt counter should increment once.");
 
-    await SpecialPowers.pushPrefEnv({"set": [["dom.webnotifications.allowcrossoriginiframe", true]]});
-
-    await SpecialPowers.spawn(iframe,
-                              ["granted", "Granted permission in cross-origin iframe with pref set"],
-                              checkRequest);
-    await SpecialPowers.spawn(iframe,
-                              ["granted", "Permission is granted in cross-origin iframe with pref set"],
-                              checkPermission);
-
     SimpleTest.finish();
   })();
   </script>

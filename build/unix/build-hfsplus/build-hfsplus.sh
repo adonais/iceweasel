@@ -33,11 +33,16 @@ patch -p1 << 'EOF'
 @@ -6,3 +6,3 @@
  newfs_hfs: $(OFILES)
 -	${CC} ${CFLAGS} ${LDFLAGS} -o newfs_hfs ${OFILES} -lcrypto
-+	${CC} ${CFLAGS} ${LDFLAGS} -o newfs_hfs ${OFILES} -Wl,-Bstatic -lcrypto -Wl,-Bdynamic,--as-needed,-lz,-ldl
++	${CC} ${CFLAGS} ${LDFLAGS} -no-pie -o newfs_hfs ${OFILES} -Wl,-Bstatic -lcrypto -Wl,-Bdynamic,--as-needed,-lz,-ldl
  
 EOF
 grep -rl sysctl.h . | xargs sed -i /sysctl.h/d
-make $make_flags || exit 1
+CC=clang
+if [ -n "$MOZ_FETCHES_DIR" ]; then
+  [ -d "$MOZ_FETCHES_DIR/sysroot" ] || exit 1
+  CC="clang --sysroot=$MOZ_FETCHES_DIR/sysroot"
+fi
+make $make_flags CC="$CC" || exit 1
 cd ..
 
 mkdir hfsplus

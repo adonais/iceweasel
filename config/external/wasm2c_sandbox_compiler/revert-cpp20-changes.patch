@@ -1,0 +1,27 @@
+diff --git a/include/wabt/common.h b/include/wabt/common.h
+--- a/include/wabt/common.h
++++ b/include/wabt/common.h
+@@ -18,7 +18,6 @@
+ #define WABT_COMMON_H_
+ 
+ #include <algorithm>
+-#include <bit>
+ #include <cassert>
+ #include <cstdarg>
+ #include <cstddef>
+@@ -162,9 +161,12 @@ struct v128 {
+ namespace wabt {
+ 
+ template <typename Dst, typename Src>
+-Dst WABT_VECTORCALL Bitcast(const Src& value) {
+-  return std::bit_cast<Dst>(value);
+-}
++Dst WABT_VECTORCALL Bitcast(Src&& value) {
++  static_assert(sizeof(Src) == sizeof(Dst), "Bitcast sizes must match.");
++  Dst result;
++  memcpy(&result, &value, sizeof(result));
++  return result;
++ }
+ 
+ template <typename T>
+ void ZeroMemory(T& v) {

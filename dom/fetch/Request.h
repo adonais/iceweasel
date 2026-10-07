@@ -56,6 +56,8 @@ class Request final : public FetchBody<Request>, public nsWrapperCache {
 
   bool Keepalive() const { return mRequest->GetKeepalive(); }
 
+  RequestDuplex Duplex() const { return RequestDuplex::Half; }
+
   bool MozErrors() const { return mRequest->MozErrors(); }
 
   RequestDestination Destination() const { return mRequest->Destination(); }
@@ -102,6 +104,7 @@ class Request final : public FetchBody<Request>, public nsWrapperCache {
                                          const RequestInit& aInit,
                                          ErrorResult& rv);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static SafeRefPtr<Request> Constructor(nsIGlobalObject* aGlobal,
                                          JSContext* aCx,
                                          const RequestOrUTF8String& aInput,
@@ -111,7 +114,9 @@ class Request final : public FetchBody<Request>, public nsWrapperCache {
 
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
-  SafeRefPtr<Request> Clone(ErrorResult& aRv);
+  SafeRefPtr<Request> Clone(JSContext* aCx, ErrorResult& aRv);
+
+  void FollowBodySignal();
 
   SafeRefPtr<InternalRequest> GetInternalRequest();
 

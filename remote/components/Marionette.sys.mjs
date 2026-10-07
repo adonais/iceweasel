@@ -28,6 +28,9 @@ const SHARED_DATA_IS_BROWSER_AUTOMATION_KEY =
 
 const PREF_DYNAMIC_START_ENABLED = "remote.experimental.dynamicstart.enabled";
 
+// Locked by the DisableDeveloperTools enterprise policy.
+const PREF_POLICY_DISABLED = "remote.policy.disabled";
+
 // Complements -marionette flag for starting the Marionette server.
 // We also set this if Marionette is running for browser automation in order to
 // start the server again after a Firefox restart.
@@ -93,6 +96,11 @@ class MarionetteParentProcess {
     // Return early if Marionette is already marked as being enabled.
     // There is also no possibility to disable Marionette once it got enabled.
     if (this._enabled || !value) {
+      return;
+    }
+
+    if (Services.prefs.getBoolPref(PREF_POLICY_DISABLED, false)) {
+      lazy.logger.warn("Marionette is disabled by enterprise policy");
       return;
     }
 
@@ -350,6 +358,11 @@ class MarionetteParentProcess {
       lazy.logger.debug(
         `Start aborted, ${PREF_DYNAMIC_START_ENABLED} is disabled`
       );
+      return -1;
+    }
+
+    if (Services.prefs.getBoolPref(PREF_POLICY_DISABLED, false)) {
+      lazy.logger.warn("Start aborted, Marionette is disabled by policy");
       return -1;
     }
 

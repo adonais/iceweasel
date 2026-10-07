@@ -5,6 +5,8 @@
 #ifndef mozilla_dom_network_Constants_h_
 #define mozilla_dom_network_Constants_h_
 
+#include <cstdint>
+
 /**
  * A set of constants to be used by network backends.
  */

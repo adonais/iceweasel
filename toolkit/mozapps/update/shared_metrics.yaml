@@ -15,32 +15,55 @@ $tags:
   - "Toolkit :: Application Update"
 
 update:
-  bitshresult:
-    type: labeled_counter
+  bits_error:
+    type: event
     description: >
-      If a BITS download fails on the Windows side (that is to say, BITS
-      ecounters an error rather than Firefox failing to interact with
-      BITS), it will likely give an hresult error indicating what
-      happened. This probe reports those error codes to allow us to see if
-      BITS is commonly failing on some systems. This probe is keyed on the
-      type of update download, either "PARTIAL" or "COMPLETE".
-      This metric was generated to correspond to the Legacy Telemetry
-      scalar update.bitshresult.
+      Recorded when an update download via BITS fails, with the error type
+      and, where BITS or Windows reported one, the HRESULT. Lets us see
+      whether BITS is commonly failing on some systems and which errors
+      the update code runs into when talking to it. Replaces
+      update.bitshresult, which could not carry the error code.
+    extra_keys:
+      patch_type:
+        description: >
+          Whether the failed download was a "complete" or "partial" update.
+        type: string
+      error_type:
+        description: >
+          The nsIBits ERROR_TYPE_* value of the failure.
+        type: quantity
+      error_action:
+        description: >
+          The nsIBits ERROR_ACTION_* value: what the update code was doing.
+        type: quantity
+      error_stage:
+        description: >
+          The nsIBits ERROR_STAGE_* value: where the failure happened.
+        type: quantity
+      code_type:
+        description: >
+          What kind of code the failure carries: "none", "nsresult",
+          "hresult", "string" or "exception" (see nsIBits ERROR_CODE_TYPE_*).
+        type: string
+      code:
+        description: >
+          The nsresult or HRESULT as an unsigned hexadecimal string, e.g.
+          0x800705b4. Absent for the other code types, whose payload is a
+          free-form message.
+        type: string
     bugs:
-      - https://bugzil.la/1343669
-      - https://bugzil.la/1540193
-      - https://bugzil.la/1520321
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1741675
     data_reviews:
-      - https://bugzil.la/1343669
-      - https://bugzil.la/1540193
-      - https://bugzil.la/1520321
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1741675
+    data_sensitivity:
+      - technical
     notification_emails:
       - application-update-telemetry-alerts@mozilla.com
-      - bytesized@mozilla.com
+      - jstutte@mozilla.com
     expires: never
     send_in_pings:
       - background-update
-      - metrics
+      - events
 
   move_result:
     type: labeled_counter

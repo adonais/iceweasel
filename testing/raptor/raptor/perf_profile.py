@@ -18,6 +18,8 @@ LOG = RaptorLogger(component="raptor-perf")
 
 SAMPLING_FREQUENCY = 1000  # Hz
 SAMPLY_TIMEOUT = 900
+PERF_STOP_TIMEOUT = 300
+PERF_TERM_TIMEOUT = 60
 
 
 class PerfProfile(RaptorProfiling):
@@ -43,6 +45,7 @@ class PerfProfile(RaptorProfiling):
 
         self.perf_data_path = self.temp_dir / f"perf-{self.test_name}.data"
         self.perf_process = None
+        self.perf_stderr = None
         self.running = False
 
         if self.local:
@@ -143,80 +146,104 @@ class PerfProfile(RaptorProfiling):
         if result.stderr:
             LOG.info(f"pkill stderr: {result.stderr}")
 
+    def _log_perf_output(self):
+        if self.perf_stderr is not None:
+            self.perf_stderr.seek(0, os.SEEK_END)
+            self.perf_stderr.seek(max(0, self.perf_stderr.tell() - 65536))
+            output = self.perf_stderr.read().decode("utf-8", errors="replace")
+            if output:
+                LOG.info(f"Perf output: {output}")
+            self.perf_stderr.close()
+            self.perf_stderr = None
+
     def start(self):
-        LOG.info("Killing any existing perf processes")
-        self._pkill_process("perf")
-
-        # Clean up any stale perf.data
-        if self.perf_data_path.exists():
-            self.perf_data_path.unlink()
-            LOG.info(f"Removed stale perf.data: {self.perf_data_path}")
-        else:
-            LOG.info("No stale perf.data found.")
-
-        # Create an empty perf.data file beforehand to avoid R/W
-        # permission issues
-        self.perf_data_path.touch()
-
         if self.local:
+            self._pkill_process("perf")
             subprocess.run(["sudo", "-v"], check=False)
+            # Build perf record command with system-wide profiling
+            cmd = [
+                "sudo",
+                "-n",  # Run non-interactively without password prompt
+                "perf",
+                "record",
+                "-a",  # Profile system-wide
+                "-g",  # Record call graphs (stack traces)
+                "-k",  # Use monotonic clock, same clock as marker file and jitdump timestamps
+                "mono",
+                "-F",  # Sampling frequency
+                str(SAMPLING_FREQUENCY),  # Hz
+                "-o",
+                str(self.perf_data_path),
+            ]
+        else:
+            # The CI wrapper runs the same perf record options as above
+            cmd = ["sudo", "-n", "/usr/local/bin/record-system-perf"]
 
-        # Build and start perf record command with system-wide profiling
-        cmd = [
-            "sudo",
-            "-n",  # Run non-interactively without password prompt
-            "perf",
-            "record",
-            "-a",  # Profile system-wide
-            "-g",  # Record call graphs (stack traces)
-            "-k",  # Use monotonic clock, same clock as marker file and jitdump timestamps
-            "mono",
-            "-F",  # Sampling frequency
-            str(SAMPLING_FREQUENCY),  # Hz
-            "-o",
-            str(self.perf_data_path),
-        ]
-        LOG.info(f"Running perf command: {' '.join(cmd)}")
-        self.perf_process = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
+        self.perf_stderr = tempfile.TemporaryFile()
+        try:
+            # The task opens the destination; the privileged wrapper only returns bytes.
+            with self.perf_data_path.open("wb") as output:
+                LOG.info(f"Running perf command: {' '.join(cmd)}")
+                self.perf_process = subprocess.Popen(
+                    cmd,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL if self.local else output,
+                    stderr=self.perf_stderr,
+                )
+        except Exception:
+            self._log_perf_output()
+            raise
 
-        # Check if perf failed during startup
         try:
             self.perf_process.wait(timeout=1)
-            stdout, stderr = self.perf_process.communicate()
-            LOG.error("Perf process failed to start properly")
-            if stdout:
-                LOG.error(f"perf stdout: {stdout}")
-            if stderr:
-                LOG.error(f"perf stderr: {stderr}")
-            return False
         except subprocess.TimeoutExpired:
-            pass
+            self.running = True
+            LOG.info("Perf profiling started")
+            return True
 
-        self.running = True
-        LOG.info("Perf profiling started")
-        return True
+        self.perf_process.stdin.close()
+        self._log_perf_output()
+        LOG.error("Perf process failed to start properly")
+        return False
+
+    def _terminate_perf(self):
+        # sudo relays SIGTERM to the wrapper, which finalizes and exits;
+        # SIGKILL would only kill sudo and orphan the root-owned recorder.
+        self.perf_process.terminate()
+        try:
+            self.perf_process.wait(timeout=PERF_TERM_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            LOG.error("Perf ignored SIGTERM. Force killing")
+            self.perf_process.kill()
+            self.perf_process.wait(timeout=10)
 
     def stop(self):
-        # Check if perf process is still running
         if not self.running or self.perf_process is None:
             LOG.warning("Perf is not running")
             return False
 
         try:
-            self.perf_process.send_signal(signal.SIGINT)
-            # Wait for perf to exit and perf.data to finalize
-            self.perf_process.wait(timeout=60)
+            if self.local:
+                self.perf_process.send_signal(signal.SIGINT)
+            # EOF asks the wrapper to finalize and deliver the recording.
+            self.perf_process.stdin.close()
+            self.perf_process.wait(timeout=PERF_STOP_TIMEOUT)
         except subprocess.TimeoutExpired:
-            LOG.warning("Process did not stop. Force killing perf")
-            self.perf_process.kill()
-            self.perf_process.wait(timeout=10)
+            LOG.error("Perf did not finish within the stop deadline")
+            self._terminate_perf()
+            self.perf_data_path.unlink(missing_ok=True)
+            return False
         finally:
             self.running = False
+            self._log_perf_output()
 
-        if not self.perf_data_path.is_file():
-            LOG.error(f"perf.data not found after stop: {self.perf_data_path}")
+        if self.perf_process.returncode != 0:
+            LOG.error(f"Perf exited with status {self.perf_process.returncode}")
+            self.perf_data_path.unlink(missing_ok=True)
+            return False
+        if not self.perf_data_path.is_file() or not self.perf_data_path.stat().st_size:
+            LOG.error(f"Perf recording is missing or empty: {self.perf_data_path}")
+            self.perf_data_path.unlink(missing_ok=True)
             return False
 
         LOG.info(

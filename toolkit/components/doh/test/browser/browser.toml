@@ -3,9 +3,6 @@ head = "head.js"
 run-if = [
   "os != 'android'", # browser-chrome tests don't work on android
 ]
-skip-if = [
-  "socketprocess_networking", # bug 1849304 - high freq intermittent
-]
 
 ["browser_cleanFlow.js"]
 

@@ -7,6 +7,37 @@
 
 #include "nsIURLParser.h"
 
+// All-in-one output struct for nsBaseURLParser::ParseAll. Holds every position
+// and length nsStandardURL needs from a single parse, with all positions
+// expressed relative to the input spec (offsets pre-applied by ParseAll).
+struct URLParseResult {
+  uint32_t schemePos = 0;
+  int32_t schemeLen = -1;
+  uint32_t authorityPos = 0;
+  int32_t authorityLen = -1;
+  uint32_t usernamePos = 0;
+  int32_t usernameLen = -1;
+  uint32_t passwordPos = 0;
+  int32_t passwordLen = -1;
+  uint32_t hostPos = 0;
+  int32_t hostLen = -1;
+  uint32_t pathPos = 0;
+  int32_t pathLen = -1;
+  uint32_t filepathPos = 0;
+  int32_t filepathLen = -1;
+  uint32_t directoryPos = 0;
+  int32_t directoryLen = -1;
+  uint32_t basenamePos = 0;
+  int32_t basenameLen = -1;
+  uint32_t extensionPos = 0;
+  int32_t extensionLen = -1;
+  uint32_t queryPos = 0;
+  int32_t queryLen = -1;
+  uint32_t refPos = 0;
+  int32_t refLen = -1;
+  int32_t port = -1;
+};
+
 //----------------------------------------------------------------------------
 // base class for url parsers
 //----------------------------------------------------------------------------
@@ -16,6 +47,12 @@ class nsBaseURLParser : public nsIURLParser {
   NS_DECL_NSIURLPARSER
 
   nsBaseURLParser() = default;
+
+  // Non-XPCOM batched entry point used by nsStandardURL. Performs the full
+  // ParseURL + ParseAuthority + ParsePath + ParseFilePath sequence with the
+  // authority/path/filepath offsets already folded into the output positions,
+  // and writes through a single struct reference instead of ~26 out-params.
+  nsresult ParseAll(const char* spec, int32_t specLen, URLParseResult& aOut);
 
  protected:
   // implemented by subclasses

@@ -16,6 +16,59 @@
 #include "irregexp/imported/regexp-macro-assembler.h"
 #include "jit/MacroAssembler.h"
 
+/*
+ * [SMDOC] RegExp backtrack stack
+ *
+ * Irregexp is a backtracking engine. To keep track of possible backtrack
+ * points, it maintains a backtrack stack, where the engine keeps information
+ * about other possible matches to consider if the current match fails. For
+ * example, the engine may push a code location (represented as an offset from
+ * the code base address) that can be jumped to if the current attempted match
+ * fails. The engine may also push a position in the input string: see
+ * PushCurrentPosition and CheckFixedLengthLoop. The backtrack stack grows
+ * downward in memory, like the hardware stack.
+ *
+ * This stack can be quite deep, so instead of using the native stack, we
+ * allocate space on the heap. This is managed by regexp::Stack (implemented in
+ * imported/regexp_stack.cc). To avoid allocation overhead for simple regexps,
+ * regexp::Stack owns a 1KB static buffer that is not freed between executions.
+ * If the current buffer fills up, the regexp will call GrowBacktrackStack to
+ * grow it.
+ *
+ * The backtrack stack is allocated per-context. If a regexp is interrupted,
+ * and the interrupt handler executes another regexp, we have to ensure that
+ * the backtrack stack is reentrant-safe. To accomplish this, regexp::Stack
+ * has a `stack_pointer` field that represents the base of the stack for the
+ * purposes of the next regexp to execute. This will normally be the base of
+ * the backtrack stack itself, but if a regexp is interrupted, it will store
+ * the top of its current backtrack stack, ensuring that it won't be clobbered
+ * by reentrant regexp execution in the interrupt handler.
+ *
+ * We track three backtrack-stack-related values in regexp jitcode:
+ * 1. backtrack_stack_pointer_: the top of the backtrack stack, pinned to a
+ *     register. This corresponds to regexp::Stack::stack_pointer().
+ * 2. FrameData::backtrackStackBase: a pointer to the base of the backing buffer
+ *     for the stack. This corresponds to regexp::Stack::memory_top(). It is
+ *     used in WriteStackPointerToRegister / ReadStackPointerFromRegister, which
+ *     store a position in the backtrack stack to a Register (irregexp's
+ *     confusing name for a local stack slot). By storing the position as an
+ *     offset from the base instead of a raw pointer, we avoid corruption when
+ *     the stack is reallocated.
+ * 3. FrameData::initialBacktrackStackPointer: the top of the backtrack stack
+ *     before we were invoked, stored as a byte offset from backtrackStackBase.
+ *     This is initialized during the prologue. In the epilogue, we use it to
+ *     restore the correct value. By storing it as an offset instead of a raw
+ *     pointer, we ensure that if the backtrack stack has been reallocated,
+ *     we will store a pointer into the current buffer, not the old one.
+ *
+ * Whenever we call into C++ that can reallocate the backtrack stack (that is,
+ * GrowBacktrackStack or HandleRegExpInterrupt), we update the stack pointer
+ * in the regexp::Stack with the current value of backtrack_stack_pointer_.
+ * When we return, we reload backtrack_stack_pointer_ and backtrackStackBase,
+ * and store the stack base into our local FrameData.
+ *
+ */
+
 namespace v8 {
 namespace internal {
 namespace regexp {
@@ -25,13 +78,25 @@ struct FrameData {
   // negative offset from the end of the string (input_end_pointer_).
   size_t inputStart;
 
-  // The backtrack_stack_pointer_ register points to the top of the stack.
-  // This points to the bottom of the backtrack stack.
+  // `backtrackStackBase` points to the bottom of the backtrack stack.
+  // The backtrack_stack_pointer_ register points to the top.
+  // `initialBacktrackStackPointer` stores the initial offset between
+  // those values, which may be non-zero if one regexp is interrupted and
+  // another regexp is executed by the interrupt handler.
   void* backtrackStackBase;
+  size_t initialBacktrackStackPointer;
 
   // Copy of the input MatchPairs.
   int32_t* matches;    // pointer to capture array
   int32_t numMatches;  // size of capture array
+
+  // Whether this regexp can resume after being interrupted. True
+  // iff we were invoked from C++.
+  uint32_t canResume;
+
+  // The input string itself. We store it here so that we can root it when
+  // interrupted.
+  JSString* inputString;
 };
 
 class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
@@ -160,6 +225,9 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
 
   void CheckBacktrackStackLimit();
 
+  void StoreBacktrackStackToMemory();
+  void LoadBacktrackStackFromMemory(js::jit::Address backtrackStackBaseAddr);
+
  public:
   static bool GrowBacktrackStack(Stack* regexp_stack);
 
@@ -176,6 +244,9 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   inline js::jit::Scale factor() {
     return mode_ == UC16 ? js::jit::TimesTwo : js::jit::TimesOne;
   }
+  inline js::CharEncoding encoding() {
+    return mode_ == UC16 ? js::CharEncoding::TwoByte : js::CharEncoding::Latin1;
+  }
 
   js::jit::Address inputStart() {
     return js::jit::Address(masm_.getStackPointer(),
@@ -185,6 +256,10 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
     return js::jit::Address(masm_.getStackPointer(),
                             offsetof(FrameData, backtrackStackBase));
   }
+  js::jit::Address initialBacktrackStackPointer() {
+    return js::jit::Address(masm_.getStackPointer(),
+                            offsetof(FrameData, initialBacktrackStackPointer));
+  }
   js::jit::Address matches() {
     return js::jit::Address(masm_.getStackPointer(),
                             offsetof(FrameData, matches));
@@ -192,6 +267,14 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   js::jit::Address numMatches() {
     return js::jit::Address(masm_.getStackPointer(),
                             offsetof(FrameData, numMatches));
+  }
+  js::jit::Address canResume() {
+    return js::jit::Address(masm_.getStackPointer(),
+                            offsetof(FrameData, canResume));
+  }
+  js::jit::Address inputString() {
+    return js::jit::Address(masm_.getStackPointer(),
+                            offsetof(FrameData, inputString));
   }
 
   // The stack-pointer-relative location of a regexp register.
@@ -253,6 +336,7 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   js::jit::NonAssertingLabel exit_label_;
   js::jit::NonAssertingLabel stack_overflow_label_;
   js::jit::NonAssertingLabel exit_with_exception_label_;
+  js::jit::NonAssertingLabel exit_overrecursed_label_;
 
   // When we generate the code to push a backtrack label's address
   // onto the backtrack stack, we don't know its final address. We

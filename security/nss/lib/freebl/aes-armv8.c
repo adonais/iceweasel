@@ -5,10 +5,15 @@
 #include "secerr.h"
 #include "rijndael.h"
 
-#if ((defined(__clang__) ||                                         \
-      (defined(__GNUC__) && defined(__GNUC_MINOR__) &&              \
-       (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 8)))) && \
-     defined(IS_LITTLE_ENDIAN))
+#if defined(IS_LITTLE_ENDIAN) &&                                  \
+    (defined(__clang__) ||                                        \
+     (defined(__GNUC__) && defined(__GNUC_MINOR__) &&             \
+      (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 8))) || \
+     (defined(_MSC_VER) && defined(_M_ARM64)))
+
+#ifdef _MSC_VER
+#define __builtin_assume_aligned(ptr, align) (ptr)
+#endif
 
 #ifndef __ARM_FEATURE_CRYPTO
 #error "Compiler option is invalid"

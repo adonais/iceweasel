@@ -1,0 +1,101 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# Adding a new metric? We have docs for that!
+# https://firefox-source-docs.mozilla.org/toolkit/components/glean/user/new_definitions_file.html
+
+---
+$schema: moz://mozilla.org/schemas/glean/metrics/2-0-0
+$tags:
+  - "Core :: Machine Learning"
+
+page_extractor:
+  phase:
+    type: event
+    description: |
+      The Glean twin of a "PageExtractor" profiler marker: recorded for every
+      phase of every PageExtractor call (headless-extractor, get-text,
+      dom-extract, pdf-extract, and so on; see PageExtractorEvent.Phase in
+      PageExtractorEvents.sys.mjs), in whichever process it ran, whether or
+      not the profiler is running. Smart Window is one caller among possibly
+      several.
+
+      `flow_id` ties every phase of one call together, and is the same value
+      as the `flowId` field on that call's profiler markers. Use it to
+      cross-reference a shared profile with this data.
+
+      Slice by `phase` for a route's outcome and latency (e.g.
+      "headless-extractor" for headless loads, "pdf-extract" for PDFs), by
+      `strategy` for how a get-text call read the page ("dom", "reader",
+      "youtube-dom", "youtube-transcript", "about-reader"), and by
+      `site_strategy` for site-specific handling ("google-search",
+      "youtube"). `status` and `error_name` give success rate and failure
+      reasons per slice; `duration_ms` gives latency per slice.
+
+      `text_length`, `link_count` and `canvas_count` are rounded down to a
+      power of two (0 stays 0) so an exact value can't fingerprint the page.
+      `duration_ms` measures our own work and is recorded exactly.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2058247
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2058247
+    data_sensitivity:
+      - web_activity
+    notification_emails:
+      - firefox-ai-and-ml@mozilla.com
+    send_in_pings:
+      - page-extractor
+    expires: 163
+    extra_keys:
+      flow_id:
+        type: string
+        description: Correlates every phase of one PageExtractor call.
+      process:
+        type: string
+        description: The process this phase ran in, "parent" or "content".
+      phase:
+        type: string
+        description: >
+          The PageExtractor phase, e.g. "headless-extractor", "get-text",
+          "dom-extract", "pdf-extract". See PageExtractorEvent.Phase in
+          PageExtractorEvents.sys.mjs for the full list.
+      strategy:
+        type: string
+        description: >
+          The extraction/load strategy used, e.g. "dom", "pdf", "reader",
+          "youtube-dom", "youtube-transcript", "about-reader", "headless",
+          "headless-anonymous". Omitted when not applicable to this phase.
+      site_strategy:
+        type: string
+        description: >
+          Site-specific handling applied on top of `strategy`, when any:
+          "google-search" or "youtube". Omitted otherwise.
+      status:
+        type: string
+        description: >
+          The phase's outcome: "success", "error", or a handled non-error
+          outcome such as "unavailable", "document-hidden", or "empty".
+      error_name:
+        type: string
+        description: >
+          The thrown error's `name` when status is "error". Omitted
+          otherwise.
+      text_length:
+        type: quantity
+        description: >
+          Text length in UTF-16 code units, rounded down to a power of two.
+          Omitted when not applicable to this phase.
+      link_count:
+        type: quantity
+        description: >
+          Links extracted, rounded down to a power of two. Omitted when not
+          applicable to this phase.
+      canvas_count:
+        type: quantity
+        description: >
+          Canvas snapshots captured by this phase, rounded down to a power
+          of two. Omitted when not applicable to this phase.
+      duration_ms:
+        type: quantity
+        description: Wall-clock time in milliseconds for this phase.

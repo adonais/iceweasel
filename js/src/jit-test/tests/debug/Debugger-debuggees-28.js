@@ -79,7 +79,7 @@ function testTrap(toggleSeq) {
 
   dbg.onEnterFrame = function (f) {
     if (f.callee && f.callee.name == "h") {
-      var offs = f.script.getLineOffsets(g.line0 + 2);
+      var offs = f.script.getPossibleBreakpointOffsets({ line: g.line0 + 2 });
       assertEq(offs.length > 0, true);
       f.script.setBreakpoint(offs[0], { hit: function () {
         toggleSeq(dbg, g);

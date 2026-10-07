@@ -31,7 +31,7 @@ object MozAdsClientProvider {
     fun initialize(context: Context) {
         this.client =
             MozAdsClientBuilder()
-                .environment(MozAdsEnvironment.PROD)
+                .environment(MozAdsEnvironment.Prod)
                 .cacheConfig(
                     MozAdsCacheConfig(
                         dbPath = context.getDatabasePath(DB_NAME).absolutePath,

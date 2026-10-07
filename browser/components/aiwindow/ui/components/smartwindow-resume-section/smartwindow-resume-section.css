@@ -1,0 +1,39 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+.resume-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-block-end: var(--space-small);
+  --resume-section-heading-color: var(--text-color-deemphasized);
+  --resume-section-heading-weight: var(--font-weight);
+}
+
+.resume-section-title {
+  color: var(--resume-section-heading-color);
+  font-weight: var(--resume-section-heading-weight);
+  font-size: var(--font-size-small);
+}
+
+.resume-section-toggle {
+  --button-font-weight: var(--resume-section-heading-weight);
+  --button-text-color-ghost: var(--resume-section-heading-color);
+}
+
+.resume-section-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-large);
+}
+
+/* A single card spans the row; trailing odd cards in a longer list don't. */
+.resume-section-grid > :only-child {
+  grid-column: 1 / -1;
+}

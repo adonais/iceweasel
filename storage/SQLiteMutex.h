@@ -47,7 +47,7 @@ class SQLiteMutex : private BlockingResourceBase {
    * After a connection has been successfully closed, its mutex is a dangling
    * pointer, and as such it should be destroyed.
    */
-  void destroy() { mMutex = NULL; }
+  void destroy() { mMutex = nullptr; }
 
   /**
    * Acquires the mutex.

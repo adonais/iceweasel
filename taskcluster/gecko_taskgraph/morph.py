@@ -279,8 +279,11 @@ def add_code_coverage_task(taskgraph, label_to_taskid, parameters, graph_config)
     Add a code-coverage-artifacts task that depends on all ccov test tasks, if
     and only if any such tasks are present in the graph.  This ensures the task
     is not added (and does not pull in extra dependencies) when only a subset of
-    ccov tasks is targeted.
+    ccov tasks is targeted. Only applies to mozilla-central and comm-central.
     """
+    if parameters["project"] not in ("mozilla-central", "comm-central"):
+        return taskgraph, label_to_taskid
+
     ccov_tasks = {
         label: task.task_id
         for label, task in taskgraph.tasks.items()
@@ -349,7 +352,12 @@ def add_try_task_duplicates(taskgraph, label_to_taskid, parameters, graph_config
                 "-".join(label_parts[:-1]) if chunk_index == -2 else task.label
             )
 
-            if label_parts[chunk_index].isnumeric() and label_no_chunk in glob_tasks:
+            # A task's chunk count is only known once the decision task has
+            # resolved it, so a selection made from `mach try`'s task list can
+            # name the task unchunked while the graph ends up chunking it.
+            if label_parts[chunk_index].isnumeric() and (
+                label_no_chunk in glob_tasks or label_no_chunk in tasks
+            ):
                 task.attributes["task_duplicates"] = count
             elif task.label in tasks:
                 task.attributes["task_duplicates"] = count

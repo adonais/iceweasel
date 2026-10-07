@@ -132,9 +132,6 @@ skip-if = [
 ]
 
 ["browser_net_overrides_with_debugger.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_net_overrides_with_styleeditor.js"]
 
@@ -167,9 +164,6 @@ skip-if = [
 ["browser_net_prefs-and-l10n.js"]
 
 ["browser_net_prefs-reload.js"]
-fail-if = [
-  "a11y_checks", # Bug 1860733 splitter element is not focusable
-]
 
 ["browser_net_raw_headers.js"]
 
@@ -298,9 +292,6 @@ skip-if = [
 ["browser_net_stylesheet_cache.js"]
 
 ["browser_net_tabbar_focus.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_net_telemetry_edit_resend.js"]
 

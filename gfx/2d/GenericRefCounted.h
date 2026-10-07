@@ -11,6 +11,7 @@
 
 #include <type_traits>
 
+#include "mozilla/Atomics.h"
 #include "mozilla/RefCounted.h"
 #include "mozilla/RefPtr.h"
 

@@ -46,7 +46,7 @@ if (cb instanceof UniffiSkipJsTypeCheck) {
     FfiConverterTypeTestCallbackInterface.checkType(cb);
 }
 const result = UniFFIScaffolding.callSync(
-    350, // uniffi_uniffi_bindings_tests_collision_fn_func_invoke_collision_callback
+    376, // uniffi_uniffi_bindings_tests_collision_fn_func_invoke_collision_callback
     FfiConverterTypeTestCallbackInterface.lower(cb),
 )
 return handleRustResult(
@@ -55,6 +55,7 @@ return handleRustResult(
     null,
 )
 }
+
 
 
 
@@ -80,11 +81,11 @@ export class FfiConverterTypeTestCallbackInterface extends FfiConverter {
         if (!(callbackObj instanceof TestCallbackInterface)) {
             throw new UniFFITypeError("expected 'TestCallbackInterface' subclass");
         }
-        return uniffiCallbackHandlerUniffiBindingsTestsCollisionTestCallbackInterface.storeCallbackObj(callbackObj)
+        return uniffiCallbackHandlerTestCallbackInterface.storeCallbackObj(callbackObj)
     }
 
     static lift(handleId) {
-        return uniffiCallbackHandlerUniffiBindingsTestsCollisionTestCallbackInterface.takeCallbackObj(handleId)
+        return uniffiCallbackHandlerTestCallbackInterface.takeCallbackObj(handleId)
     }
 
     static read(dataStream) {
@@ -99,9 +100,9 @@ export class FfiConverterTypeTestCallbackInterface extends FfiConverter {
         return 8;
     }
 }
-const uniffiCallbackHandlerUniffiBindingsTestsCollisionTestCallbackInterface = new UniFFICallbackHandler(
+const uniffiCallbackHandlerTestCallbackInterface = new UniFFICallbackHandler(
     "TestCallbackInterface",
-    13,
+    12,
     [
         new UniFFICallbackMethodHandler(
             "getValue",
@@ -116,7 +117,7 @@ const uniffiCallbackHandlerUniffiBindingsTestsCollisionTestCallbackInterface = n
 );
 
 // Allow the shutdown-related functionality to be tested in the unit tests
-UnitTestObjs.uniffiCallbackHandlerUniffiBindingsTestsCollisionTestCallbackInterface = uniffiCallbackHandlerUniffiBindingsTestsCollisionTestCallbackInterface;
+UnitTestObjs.uniffiCallbackHandlerTestCallbackInterface = uniffiCallbackHandlerTestCallbackInterface;
 // Wrapper to skip type checking for function arguments
 //
 // This is only defined and used on test fixtures.  The goal is to skip the JS type checking so that

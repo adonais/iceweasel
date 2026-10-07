@@ -977,8 +977,8 @@ class LocalAccessible : public nsISupports, public Accessible {
   nsIFrame* FindNearestAccessibleAncestorFrame() const;
 
   // Data Members
-  // mContent can be null in a DocAccessible if the document has no body or
-  // root element, or if the initial tree hasn't been constructed yet.
+  // mContent can be null in a DocAccessible if the document has no root
+  // element, or if the initial tree hasn't been constructed yet.
   nsCOMPtr<nsIContent> mContent;
   RefPtr<DocAccessible> mDoc;
 

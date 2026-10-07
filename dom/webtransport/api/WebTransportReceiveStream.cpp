@@ -30,6 +30,10 @@ WebTransportReceiveStream::WebTransportReceiveStream(nsIGlobalObject* aGlobal,
   mozilla::HoldJSObjects(this);
 }
 
+WebTransportReceiveStream::~WebTransportReceiveStream() {
+  mozilla::DropJSObjects(this);
+}
+
 // WebIDL Boilerplate
 
 JSObject* WebTransportReceiveStream::WrapObject(

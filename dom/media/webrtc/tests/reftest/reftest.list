@@ -1,0 +1,39 @@
+# mingw builds are configured with --disable-webrtc, which takes camera capture
+# with it, so getUserMedia rejects and there is nothing to render.
+defaults skip-if(mingw) pref(media.navigator.permission.disabled,true) pref(media.devices.insecure.enabled,true) pref(media.getusermedia.insecure.enabled,true) pref(media.getusermedia.camera.fake.rotation-test-pattern,true)
+
+# The rendered frame must end up upright regardless of where the rotation is
+# applied, so all three configurations below share the same references.
+#
+# The query strings on the test url only serve to give each configuration a
+# distinct name in the reftest log; the page ignores them.
+#
+# The fuzz tolerance covers the 4:2:0 chroma-subsampling blend along the
+# red/blue quadrant boundary - an L-shaped edge, not the whole frame. Measured
+# worst case here is 133 over 1120 pixels, and the tolerance is deliberately
+# looser than that rather than pinned to it, since the YUV to sRGB conversion
+# differs by platform and GPU. A genuinely dropped or wrong rotation differs by
+# upwards of 150000 pixels, so there is no risk of one hiding under this.
+#
+# With draw snapshot the YUV to sRGB conversion lands the whole blue quadrant
+# off by 2 from the CSS reference, which is 76800 pixels at 640x480. The
+# quadrant's position is still verified since a wrong rotation moves it.
+
+# Real capture backend (through CamerasParent), parent straightens the frame.
+fuzzy(0-200,0-2500) fuzzy-if(useDrawSnapshot,0-200,0-80000) pref(media.getusermedia.camera.fake.force,true) pref(media.webrtc.capture.apply-rotation,true) pref(media.getusermedia.camera.fake.rotation,0)   == videoOrientation.html?capture-applied videoOrientation-ref.html?angle=0
+fuzzy(0-200,0-2500) fuzzy-if(useDrawSnapshot,0-200,0-80000) pref(media.getusermedia.camera.fake.force,true) pref(media.webrtc.capture.apply-rotation,true) pref(media.getusermedia.camera.fake.rotation,90)  == videoOrientation.html?capture-applied videoOrientation-ref.html?angle=90
+fuzzy(0-200,0-2500) fuzzy-if(useDrawSnapshot,0-200,0-80000) pref(media.getusermedia.camera.fake.force,true) pref(media.webrtc.capture.apply-rotation,true) pref(media.getusermedia.camera.fake.rotation,180) == videoOrientation.html?capture-applied videoOrientation-ref.html?angle=180
+fuzzy(0-200,0-2500) fuzzy-if(useDrawSnapshot,0-200,0-80000) pref(media.getusermedia.camera.fake.force,true) pref(media.webrtc.capture.apply-rotation,true) pref(media.getusermedia.camera.fake.rotation,270) == videoOrientation.html?capture-applied videoOrientation-ref.html?angle=270
+
+# Real capture backend, rotation left as metadata for the consumer to apply.
+fuzzy(0-200,0-2500) fuzzy-if(useDrawSnapshot,0-200,0-80000) pref(media.getusermedia.camera.fake.force,true) pref(media.webrtc.capture.apply-rotation,false) pref(media.getusermedia.camera.fake.rotation,0)   == videoOrientation.html?capture-unapplied videoOrientation-ref.html?angle=0
+fuzzy(0-200,0-2500) fuzzy-if(useDrawSnapshot,0-200,0-80000) pref(media.getusermedia.camera.fake.force,true) pref(media.webrtc.capture.apply-rotation,false) pref(media.getusermedia.camera.fake.rotation,90)  == videoOrientation.html?capture-unapplied videoOrientation-ref.html?angle=90
+fuzzy(0-200,0-2500) fuzzy-if(useDrawSnapshot,0-200,0-80000) pref(media.getusermedia.camera.fake.force,true) pref(media.webrtc.capture.apply-rotation,false) pref(media.getusermedia.camera.fake.rotation,180) == videoOrientation.html?capture-unapplied videoOrientation-ref.html?angle=180
+fuzzy(0-200,0-2500) fuzzy-if(useDrawSnapshot,0-200,0-80000) pref(media.getusermedia.camera.fake.force,true) pref(media.webrtc.capture.apply-rotation,false) pref(media.getusermedia.camera.fake.rotation,270) == videoOrientation.html?capture-unapplied videoOrientation-ref.html?angle=270
+
+# MediaEngineFake, which bypasses CamerasParent entirely and so never applies
+# rotation itself. Equivalent to the unapplied case above, by a different path.
+fuzzy(0-200,0-2500) fuzzy-if(useDrawSnapshot,0-200,0-80000) pref(media.navigator.streams.fake,true) pref(media.getusermedia.camera.fake.rotation,0)   == videoOrientation.html?enginefake videoOrientation-ref.html?angle=0
+fuzzy(0-200,0-2500) fuzzy-if(useDrawSnapshot,0-200,0-80000) pref(media.navigator.streams.fake,true) pref(media.getusermedia.camera.fake.rotation,90)  == videoOrientation.html?enginefake videoOrientation-ref.html?angle=90
+fuzzy(0-200,0-2500) fuzzy-if(useDrawSnapshot,0-200,0-80000) pref(media.navigator.streams.fake,true) pref(media.getusermedia.camera.fake.rotation,180) == videoOrientation.html?enginefake videoOrientation-ref.html?angle=180
+fuzzy(0-200,0-2500) fuzzy-if(useDrawSnapshot,0-200,0-80000) pref(media.navigator.streams.fake,true) pref(media.getusermedia.camera.fake.rotation,270) == videoOrientation.html?enginefake videoOrientation-ref.html?angle=270

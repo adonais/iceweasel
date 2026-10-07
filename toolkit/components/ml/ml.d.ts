@@ -122,11 +122,301 @@ export type EngineOptions<FeatureId extends EngineFeatureIds> =
   EngineRequests[FeatureId]["options"];
 
 /**
+ * A production engine creation observed by a test interceptor.
+ */
+export interface EngineCreationInterception {
+  /** The engine returned by the production creation path. */
+  engine: MLEngine<unknown>;
+
+  /** The creation start time from the parent process monotonic clock. */
+  start: number;
+
+  /** The creation end time from the parent process monotonic clock. */
+  end: number;
+}
+
+/**
+ * Assertions and overrides applied to an intercepted engine creation.
+ */
+export interface EngineCreationInterceptionOptions {
+  /** Engine options that must be present on the production request. */
+  expectedOptions?: Partial<PipelineOptions>;
+
+  /** Engine options to replace before continuing production creation. */
+  overrides?: Partial<PipelineOptions>;
+}
+
+/** A lifecycle measured by an ML performance scenario. */
+export type MLPerfLifecycle = "first-use" | "cold" | "warm";
+
+/** The purpose of one invocation of an ML performance scenario. */
+export type MLPerfSampleKind = "latency" | "memory" | "warmup";
+
+/** Feature-owned measurements returned by one scenario invocation. */
+export type MLPerfMeasurements = Record<string, number>;
+
+/** Identifies the lifecycle and purpose of one scenario invocation. */
+export interface MLPerfScenarioContext {
+  /** The engine lifecycle being prepared or measured. */
+  lifecycle: MLPerfLifecycle;
+
+  /** Whether the invocation reports latency, samples memory, or warms up. */
+  sampleKind: MLPerfSampleKind;
+
+  /** The zero-based iteration within its lifecycle and sample kind. */
+  iteration: number;
+}
+
+/**
+ * A production feature interaction measured by the ML performance harness.
+ *
+ * @param context - The lifecycle and purpose of this invocation.
+ * @returns Feature-owned measurements from the interaction.
+ */
+export type MLPerfScenario = (
+  context: MLPerfScenarioContext
+) => Promise<MLPerfMeasurements>;
+
+/** Option replacements applied while measuring an ML performance scenario. */
+export type MLPerfEngineOptionOverrides = {
+  [Name in keyof PipelineOptions]?: {
+    /** The value that production must request. */
+    expectValue: PipelineOptions[Name];
+
+    /** The value used by the performance measurement. */
+    replaceWith: PipelineOptions[Name];
+  };
+};
+
+/** An engine whose activity is measured by an ML performance scenario. */
+export interface MLPerfEngineConfig {
+  /** The feature ID supplied by production engine options. */
+  featureId: string;
+
+  /** Component inserted into shared metric names for multi-engine scenarios. */
+  metricName?: string;
+
+  /** Number of runs expected from this engine in each invocation. Defaults to one. */
+  expectedRuns?: number;
+
+  /** Engine options replaced while preserving their expected production values. */
+  overrides?: MLPerfEngineOptionOverrides;
+}
+
+/** A completed production engine creation observed during a scenario. */
+export interface MLPerfEngineCreationObservation {
+  /** The feature ID supplied by production engine options. */
+  featureId: string;
+
+  /** The engine-creation start time. */
+  start: number;
+
+  /** The engine-creation end time. */
+  end: number;
+}
+
+/** Resource fields recorded from a completed engine run. */
+export interface MLPerfObservedRunResult {
+  /** Inference-process resources immediately before the run. */
+  resourcesBefore?: ResourceMeasurement;
+
+  /** Inference-process resources immediately after the run. */
+  resourcesAfter?: ResourceMeasurement;
+
+  /** Metrics reported by the inference backend. */
+  metrics?: {
+    decodingTime?: number;
+    inputTokens?: number;
+    outputTokens?: number;
+  };
+}
+
+/** A completed engine run observed during a scenario. */
+export interface MLPerfEngineRunObservation
+  extends MLPerfObservedRunResult, MLPerfEngineRunDetails {
+  /** The feature ID supplied by production engine options. */
+  featureId: string;
+
+  /** The engine used for the run. */
+  engine: MLEngine<EngineFeatureIds>;
+
+  /** The run start time. */
+  start: number;
+
+  /** The run completion time. */
+  end: number;
+}
+
+/** Generation measurements recorded for an engine run. */
+export interface MLPerfEngineRunDetails {
+  /** Time from the generator request to its first generated token in ms. */
+  timeToFirstToken?: number;
+
+  /** Generated-token throughput observed after the first token arrival. */
+  tokensPerSecond?: number;
+
+  /** Engine-reported decoding time in ms, only for runs that ran to completion. */
+  decodingTime?: number;
+
+  /** Engine-reported input token count, only for runs that ran to completion. */
+  inputTokens?: number;
+
+  /** Number of generated tokens the feature consumed. */
+  outputTokens?: number;
+}
+
+/** A scoped controller for observing engine runs during one scenario. */
+export interface MLPerfEngineRunCapture {
+  /** Engine runs completed while the controller was active. */
+  engineRuns: MLPerfEngineRunObservation[];
+
+  /**
+   * Restores the production engine methods.
+   *
+   * @throws If any measured engine run remains active.
+   */
+  cleanup(): void;
+}
+
+/** Measurements and engine activity observed during one scenario. */
+export interface MLPerfScenarioObservation {
+  /** Feature-owned measurements returned by the scenario. */
+  measurements: MLPerfMeasurements;
+
+  /** Engine creations completed during the scenario. */
+  engineCreations: MLPerfEngineCreationObservation[];
+
+  /** Engine runs completed during the scenario. */
+  engineRuns: MLPerfEngineRunObservation[];
+
+  /** Sampled peak inference-process memory in MiB. */
+  peakMemory?: number;
+}
+
+/** Options controlling measurement of one scenario invocation. */
+export interface MLPerfScenarioInvocationOptions {
+  /** Engines whose production activity should be observed. */
+  engines?: MLPerfEngineConfig[];
+
+  /** Whether engine creation should be intercepted. */
+  captureEngineCreation?: boolean;
+
+  /** Whether to sample peak inference-process memory. */
+  samplePeakMemory?: boolean;
+
+  /** Delay between inference-process memory samples in milliseconds. */
+  peakMemorySampleIntervalMs?: number;
+}
+
+/** Assertions used to validate ML performance measurements. */
+export interface MLPerfAssertions {
+  /**
+   * Verifies a condition.
+   *
+   * @param condition - The condition to verify.
+   * @param message - The assertion description.
+   */
+  ok(condition: unknown, message?: string): void;
+
+  /**
+   * Verifies that a number exceeds another number.
+   *
+   * @param actual - The measured value.
+   * @param expected - The exclusive lower bound.
+   * @param message - The assertion description.
+   */
+  greater(actual: number, expected: number, message?: string): void;
+
+  /**
+   * Verifies that two values are equal.
+   *
+   * @param actual - The measured value.
+   * @param expected - The expected value.
+   * @param message - The assertion description.
+   */
+  equal(actual: unknown, expected: unknown, message?: string): void;
+}
+
+/** The test context used by shared ML performance utilities. */
+export interface MLPerfTestContext {
+  /**
+   * Writes an informational test message.
+   *
+   * @param message - The message to write.
+   */
+  info(message: string): void;
+
+  /** Assertions used to validate collected measurements. */
+  Assert: MLPerfAssertions;
+
+  /**
+   * Registers work to run when the test finishes.
+   *
+   * @param cleanup - Releases state owned by the test utility.
+   */
+  registerCleanupFunction(cleanup: () => void): void;
+}
+
+/** A collection of named ML performance measurement series. */
+export interface MLPerfJournal {
+  /**
+   * Adds one value to a named series.
+   *
+   * @param name - The complete series name.
+   * @param value - The measured value.
+   */
+  add(name: string, value: number): void;
+
+  /** Reports every collected series to MozPerftest. */
+  report(): void;
+}
+
+/** A running inference-process peak-memory sampler. */
+export interface PeakInferenceMemorySampler {
+  /**
+   * Stops the sampler.
+   *
+   * @returns The peak inference-process memory in MiB.
+   */
+  stop(): Promise<number>;
+}
+
+/** Configuration for a complete ML performance scenario. */
+export interface RunPerfScenarioConfig {
+  /** Prefix applied to every reported measurement series. */
+  metricPrefix: string;
+
+  /** Suffix applied to every reported measurement series. */
+  metricSuffix?: string;
+
+  /** Runs one production feature interaction. */
+  scenario: MLPerfScenario;
+
+  /** Engines whose production activity should be observed. */
+  engines?: MLPerfEngineConfig[];
+
+  /** Whether to report the first-use sample, which always runs once. */
+  measureFirstUse?: boolean;
+
+  /** Number of cold-engine latency samples after the first use. */
+  coldIterations?: number;
+
+  /** Number of warm-engine latency samples. */
+  warmIterations?: number;
+
+  /** Peak-memory runs for each measured cold and warm lifecycle. */
+  memoryIterations?: number;
+
+  /** Delay between inference-process memory samples in milliseconds. */
+  peakMemorySampleIntervalMs?: number;
+}
+
+/**
  * Measurements from ChromeUtils.cpuTimeSinceProcessStart and
  * ChromeUtils.currentProcessMemoryUsage that happen inside of the inference process
  * where work is actually happening
  */
-interface ResourceMeasurement {
+export interface ResourceMeasurement {
   cpuTime: number | null;
   memory: number | null;
 }

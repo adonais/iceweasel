@@ -36,7 +36,7 @@ void SetGeckoProcessType(const char* aProcessTypeString) {
 #if !defined(ENABLE_TESTS)
 #  define SKIP_PROCESS_TYPE_IPDLUNITTEST
 #endif
-#include "mozilla/GeckoProcessTypes.h"
+#include "mozilla/GeckoProcessTypes.inc"
 #undef SKIP_PROCESS_TYPE_IPDLUNITTEST
 #undef SKIP_PROCESS_TYPE_FORKSERVER
 #undef SKIP_PROCESS_TYPE_DEFAULT

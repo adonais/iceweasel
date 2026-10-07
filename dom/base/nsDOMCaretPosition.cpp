@@ -7,7 +7,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/CaretPositionBinding.h"
 #include "mozilla/dom/DOMRect.h"
-#include "nsRange.h"
+#include "mozilla/dom/Range.h"
 
 using namespace mozilla::dom;
 
@@ -30,8 +30,8 @@ already_AddRefed<DOMRect> nsDOMCaretPosition::GetClientRect() const {
     node = mOffsetNode;
   }
 
-  RefPtr<nsRange> range =
-      nsRange::Create(node, mOffset, node, mOffset, mozilla::IgnoreErrors());
+  RefPtr<mozilla::dom::Range> range = mozilla::dom::Range::Create(
+      node, mOffset, node, mOffset, mozilla::IgnoreErrors());
   if (!range) {
     return nullptr;
   }

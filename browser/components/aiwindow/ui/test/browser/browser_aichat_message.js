@@ -494,3 +494,170 @@ add_task(async function test_empty_links_render_as_plain_text() {
     await SpecialPowers.popPrefEnv();
   }
 });
+
+// The core of the streaming optimization: as more text streams in after a
+// finished block, that block's DOM element must be reused, not rebuilt. This is
+// what keeps a long reply from getting janky - and what stops a finished table
+// (with its shadow DOM and ResizeObserver) from being torn down every chunk.
+add_task(async function test_streaming_reuses_finished_blocks() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.smartwindow.enabled", true]],
+  });
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:aichatcontent"
+  );
+  const browser = tab.linkedBrowser;
+
+  try {
+    await SpecialPowers.spawn(browser, [], async () => {
+      if (content.document.readyState !== "complete") {
+        await ContentTaskUtils.waitForEvent(content, "load");
+      }
+      await content.customElements.whenDefined("ai-chat-message");
+      await content.customElements.whenDefined("ai-chat-table");
+
+      const doc = content.document;
+      const el = doc.createElement("ai-chat-message");
+      doc.body.appendChild(el);
+
+      // Xray wrappers can block Lit setters, so set the property AND attribute.
+      const elJS = el.wrappedJSObject || el;
+      el.setAttribute("data-message-role", "assistant");
+
+      const TABLE = "| A | B |\n|---|---|\n| 1 | 2 |";
+      const base = `Intro paragraph.\n\n${TABLE}\n\n`;
+
+      async function stream(message, marker) {
+        elJS.message = message;
+        el.setAttribute("message", message);
+        await ContentTaskUtils.waitForCondition(() => {
+          const container = el.shadowRoot.querySelector(".message-assistant");
+          return container && container.textContent.includes(marker);
+        }, `streamed render should include "${marker}"`);
+      }
+
+      await stream(`${base}Tail`, "Tail");
+      const introParagraph = el.shadowRoot.querySelector(
+        ".message-assistant > p"
+      );
+      const table = el.shadowRoot.querySelector(
+        ".message-assistant ai-chat-table"
+      );
+      Assert.ok(introParagraph, "intro paragraph should render");
+      Assert.ok(table, "table should render");
+
+      // Keep appending text after the (now finished) table.
+      await stream(`${base}Tail grows`, "Tail grows");
+      await stream(`${base}Tail grows longer`, "Tail grows longer");
+
+      const introParagraphLater = el.shadowRoot.querySelector(
+        ".message-assistant > p"
+      );
+      const tableLater = el.shadowRoot.querySelector(
+        ".message-assistant ai-chat-table"
+      );
+
+      Assert.strictEqual(
+        introParagraph,
+        introParagraphLater,
+        "the finished intro paragraph node should be reused, not rebuilt"
+      );
+      Assert.strictEqual(
+        table,
+        tableLater,
+        "the finished table node should be reused across chunks, not rebuilt"
+      );
+
+      el.remove();
+    });
+  } finally {
+    BrowserTestUtils.removeTab(tab);
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+// Mid-stream a block can change type as later characters arrive (a paragraph
+// becomes a table once its separator row lands; earlier text becomes a link once
+// its reference definition streams in). Each transition must reach the correct
+// final DOM.
+add_task(async function test_streaming_block_transitions() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.smartwindow.enabled", true]],
+  });
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:aichatcontent"
+  );
+  const browser = tab.linkedBrowser;
+
+  try {
+    await SpecialPowers.spawn(browser, [], async () => {
+      if (content.document.readyState !== "complete") {
+        await ContentTaskUtils.waitForEvent(content, "load");
+      }
+      await content.customElements.whenDefined("ai-chat-message");
+      await content.customElements.whenDefined("ai-chat-table");
+
+      const doc = content.document;
+      const el = doc.createElement("ai-chat-message");
+      doc.body.appendChild(el);
+
+      const elJS = el.wrappedJSObject || el;
+      el.setAttribute("data-message-role", "assistant");
+
+      const set = message => {
+        elJS.message = message;
+        el.setAttribute("message", message);
+      };
+      const msg = () => el.shadowRoot.querySelector(".message-assistant");
+
+      // Paragraph -> table once the separator row arrives.
+      set("| A | B |");
+      await ContentTaskUtils.waitForCondition(
+        () => msg()?.querySelector("p"),
+        "a header-only table row renders as a paragraph first"
+      );
+      set("| A | B |\n|---|---|\n| 1 | 2 |");
+      await ContentTaskUtils.waitForCondition(
+        () => msg()?.querySelector("ai-chat-table"),
+        "table forms once the separator row arrives"
+      );
+      Assert.ok(
+        !msg().querySelector(":scope > p"),
+        "no stale paragraph left behind after becoming a table"
+      );
+
+      // Late reference definition turns earlier text into a link.
+      set("See [docs][1] now.");
+      await ContentTaskUtils.waitForCondition(
+        () => msg()?.textContent.includes("[docs][1]"),
+        "an undefined reference renders as literal text"
+      );
+      Assert.equal(
+        msg().querySelectorAll("a[href]").length,
+        0,
+        "no anchor before the reference is defined"
+      );
+      set("See [docs][1] now.\n\n[1]: https://example.com");
+      await ContentTaskUtils.waitForCondition(
+        () => msg()?.querySelector("a[href]"),
+        "earlier text becomes a link once its definition streams in"
+      );
+      Assert.ok(
+        msg()
+          .querySelector("a[href]")
+          .getAttribute("href")
+          .startsWith("https://example.com"),
+        "the link points at the streamed-in definition"
+      );
+
+      el.remove();
+    });
+  } finally {
+    BrowserTestUtils.removeTab(tab);
+    await SpecialPowers.popPrefEnv();
+  }
+});

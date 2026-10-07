@@ -8,6 +8,7 @@
 #include "js/ForOfIterator.h"
 #include "mozilla/dom/AudioParamDescriptorMap.h"
 #include "mozilla/dom/FunctionBinding.h"
+#include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/WorkletGlobalScope.h"
 #include "nsRefPtrHashtable.h"
 
@@ -18,7 +19,6 @@ class AudioWorkletImpl;
 namespace dom {
 
 class AudioWorkletProcessorConstructor;
-class MessagePort;
 class StructuredCloneHolder;
 class UniqueMessagePortId;
 

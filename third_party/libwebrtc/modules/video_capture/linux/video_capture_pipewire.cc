@@ -473,10 +473,8 @@ void VideoCaptureModulePipeWire::ProcessBuffers() {
         static_cast<struct spa_meta_videotransform*>(spa_buffer_find_meta_data(
             spaBuffer, SPA_META_VideoTransform, sizeof(*videotransform)));
     if (videotransform) {
-      VideoRotation rotation =
-          VideorotationFromPipeWireTransform(videotransform->transform);
-      SetCaptureRotation(rotation);
-      SetApplyRotation(rotation != kVideoRotation_0);
+      SetCaptureRotation(
+          VideorotationFromPipeWireTransform(videotransform->transform));
     }
 
     if (spaBuffer->datas[0].type == SPA_DATA_DmaBuf ||

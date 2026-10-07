@@ -13,9 +13,9 @@
 #include "mozilla/SSE.h"
 
 #ifdef MOZILLA_PRESUME_SSE2
-
 #  include <immintrin.h>
-
+#elif defined(__aarch64__)
+#  include <arm_neon.h>
 #endif
 
 namespace mozilla {
@@ -33,12 +33,6 @@ const TValue* FindInBufferNaive(const TValue* ptr, TValue value,
   return nullptr;
 }
 
-#ifdef MOZILLA_PRESUME_SSE2
-
-const __m128i* Cast128(uintptr_t ptr) {
-  return reinterpret_cast<const __m128i*>(ptr);
-}
-
 template <typename T>
 T GetAs(uintptr_t ptr) {
   return *reinterpret_cast<const T*>(ptr);
@@ -49,6 +43,17 @@ T GetAs(uintptr_t ptr) {
 uintptr_t AlignDown16(uintptr_t ptr) { return ptr & ~0xf; }
 
 uintptr_t AlignUp16(uintptr_t ptr) { return AlignDown16(ptr + 0xf); }
+
+enum class HaystackOverlap {
+  Overlapping,
+  Sequential,
+};
+
+#ifdef MOZILLA_PRESUME_SSE2
+
+const __m128i* Cast128(uintptr_t ptr) {
+  return reinterpret_cast<const __m128i*>(ptr);
+}
 
 template <typename TValue>
 __m128i CmpEq128(__m128i a, __m128i b) {
@@ -153,11 +158,6 @@ const TValue* Check4x16Bytes(__m128i needle, uintptr_t a, uintptr_t b,
 
   return nullptr;
 }
-
-enum class HaystackOverlap {
-  Overlapping,
-  Sequential,
-};
 
 // Check two 16-byte chunks for the two-byte sequence loaded into needle1
 // followed by needle1. `carryOut` is an optional pointer which we will
@@ -496,6 +496,428 @@ const uint64_t* SIMD::memchr64(const uint64_t* ptr, uint64_t value,
 const char* SIMD::memchr2x8(const char* ptr, char v1, char v2, size_t length) {
   // Signed chars are just really annoying to do bit logic with. Convert to
   // unsigned at the outermost scope so we don't have to worry about it.
+  const unsigned char* uptr = reinterpret_cast<const unsigned char*>(ptr);
+  unsigned char uv1 = static_cast<unsigned char>(v1);
+  unsigned char uv2 = static_cast<unsigned char>(v2);
+  const unsigned char* uresult =
+      FindTwoInBuffer<unsigned char>(uptr, uv1, uv2, length);
+  return reinterpret_cast<const char*>(uresult);
+}
+
+const char16_t* SIMD::memchr2x16(const char16_t* ptr, char16_t v1, char16_t v2,
+                                 size_t length) {
+  return FindTwoInBuffer<char16_t>(ptr, v1, v2, length);
+}
+
+#elif defined(__aarch64__)
+
+template <typename TValue>
+uint8x16_t SplatNeedle(TValue value) {
+  static_assert(sizeof(TValue) == 1 || sizeof(TValue) == 2 ||
+                sizeof(TValue) == 4 || sizeof(TValue) == 8);
+  if constexpr (sizeof(TValue) == 1) {
+    return vdupq_n_u8(static_cast<uint8_t>(value));
+  } else if constexpr (sizeof(TValue) == 2) {
+    return vreinterpretq_u8_u16(vdupq_n_u16(static_cast<uint16_t>(value)));
+  } else if constexpr (sizeof(TValue) == 4) {
+    return vreinterpretq_u8_u32(vdupq_n_u32(static_cast<uint32_t>(value)));
+  } else {
+    return vreinterpretq_u8_u64(vdupq_n_u64(static_cast<uint64_t>(value)));
+  }
+}
+
+// Always load as bytes, whatever the element type: the wider vld1q_* variants
+// require the pointer to be aligned to their element type, which buys us
+// nothing here, and every variant lowers to the same 128-bit load anyway.
+uint8x16_t LoadVec(uintptr_t ptr) {
+  return vld1q_u8(reinterpret_cast<const uint8_t*>(ptr));
+}
+
+template <typename TValue>
+uint8x16_t CmpEq128(uint8x16_t a, uint8x16_t b) {
+  static_assert(sizeof(TValue) == 1 || sizeof(TValue) == 2 ||
+                sizeof(TValue) == 4 || sizeof(TValue) == 8);
+  if constexpr (sizeof(TValue) == 1) {
+    return vceqq_u8(a, b);
+  } else if constexpr (sizeof(TValue) == 2) {
+    return vreinterpretq_u8_u16(
+        vceqq_u16(vreinterpretq_u16_u8(a), vreinterpretq_u16_u8(b)));
+  } else if constexpr (sizeof(TValue) == 4) {
+    return vreinterpretq_u8_u32(
+        vceqq_u32(vreinterpretq_u32_u8(a), vreinterpretq_u32_u8(b)));
+  } else {
+    return vreinterpretq_u8_u64(
+        vceqq_u64(vreinterpretq_u64_u8(a), vreinterpretq_u64_u8(b)));
+  }
+}
+
+// NEON has no direct equivalent of SSE2's _mm_movemask_epi8. The standard
+// aarch64 idiom is to narrow each 16-bit lane of the comparison result to a
+// 4-bit nibble via a shift-right-narrow by 4: each input byte (which is
+// 0x00 or 0xFF in a comparison result) becomes a 4-bit nibble in the 64-bit
+// output. The byte index of the first matching byte is then
+// __builtin_ctzll(mask) >> 2.
+uint64_t NeonMovemask(uint8x16_t cmp) {
+  uint8x8_t narrowed = vshrn_n_u16(vreinterpretq_u16_u8(cmp), 4);
+  return vget_lane_u64(vreinterpret_u64_u8(narrowed), 0);
+}
+
+// Equivalent of _mm_bslli_si128: byte-shift left by N bytes, padding low bytes
+// with zero. vextq_u8's shift amount must be a compile-time constant, hence
+// the template.
+template <int N>
+uint8x16_t BSlliN(uint8x16_t x) {
+  static_assert(N >= 0 && N <= 16);
+  if constexpr (N == 0) {
+    return x;
+  } else if constexpr (N == 16) {
+    return vdupq_n_u8(0);
+  } else {
+    return vextq_u8(vdupq_n_u8(0), x, 16 - N);
+  }
+}
+
+// Equivalent of _mm_bsrli_si128: byte-shift right by N bytes, padding high
+// bytes with zero.
+template <int N>
+uint8x16_t BSrliN(uint8x16_t x) {
+  static_assert(N >= 0 && N <= 16);
+  if constexpr (N == 0) {
+    return x;
+  } else if constexpr (N == 16) {
+    return vdupq_n_u8(0);
+  } else {
+    return vextq_u8(x, vdupq_n_u8(0), N);
+  }
+}
+
+uint8x16_t Load32BitsIntoNeon(uintptr_t ptr) {
+  uint32_t tmp;
+  memcpy(&tmp, reinterpret_cast<const void*>(ptr), sizeof(tmp));
+  return vreinterpretq_u8_u32(vsetq_lane_u32(tmp, vdupq_n_u32(0), 0));
+}
+
+const char* Check4x4Chars(uint8x16_t needle, uintptr_t a, uintptr_t b,
+                          uintptr_t c, uintptr_t d) {
+  uint8x16_t haystackA = Load32BitsIntoNeon(a);
+  uint8x16_t cmpA = CmpEq128<uint8_t>(needle, haystackA);
+  uint8x16_t haystackB = Load32BitsIntoNeon(b);
+  uint8x16_t cmpB = CmpEq128<uint8_t>(needle, haystackB);
+  uint8x16_t haystackC = Load32BitsIntoNeon(c);
+  uint8x16_t cmpC = CmpEq128<uint8_t>(needle, haystackC);
+  uint8x16_t haystackD = Load32BitsIntoNeon(d);
+  uint8x16_t cmpD = CmpEq128<uint8_t>(needle, haystackD);
+  uint8x16_t or_ab = vorrq_u8(cmpA, cmpB);
+  uint8x16_t or_cd = vorrq_u8(cmpC, cmpD);
+  uint8x16_t or_abcd = vorrq_u8(or_ab, or_cd);
+  uint64_t orMask = NeonMovemask(or_abcd);
+  if (orMask & 0xffff) {
+    uint64_t cmpMask;
+    cmpMask = NeonMovemask(cmpA);
+    if (cmpMask & 0xffff) {
+      return reinterpret_cast<const char*>(a + (__builtin_ctzll(cmpMask) >> 2));
+    }
+    cmpMask = NeonMovemask(cmpB);
+    if (cmpMask & 0xffff) {
+      return reinterpret_cast<const char*>(b + (__builtin_ctzll(cmpMask) >> 2));
+    }
+    cmpMask = NeonMovemask(cmpC);
+    if (cmpMask & 0xffff) {
+      return reinterpret_cast<const char*>(c + (__builtin_ctzll(cmpMask) >> 2));
+    }
+    cmpMask = NeonMovemask(cmpD);
+    if (cmpMask & 0xffff) {
+      return reinterpret_cast<const char*>(d + (__builtin_ctzll(cmpMask) >> 2));
+    }
+  }
+
+  return nullptr;
+}
+
+template <typename TValue>
+const TValue* Check4x16Bytes(uint8x16_t needle, uintptr_t a, uintptr_t b,
+                             uintptr_t c, uintptr_t d) {
+  uint8x16_t haystackA = LoadVec(a);
+  uint8x16_t cmpA = CmpEq128<TValue>(needle, haystackA);
+  uint8x16_t haystackB = LoadVec(b);
+  uint8x16_t cmpB = CmpEq128<TValue>(needle, haystackB);
+  uint8x16_t haystackC = LoadVec(c);
+  uint8x16_t cmpC = CmpEq128<TValue>(needle, haystackC);
+  uint8x16_t haystackD = LoadVec(d);
+  uint8x16_t cmpD = CmpEq128<TValue>(needle, haystackD);
+  uint8x16_t or_ab = vorrq_u8(cmpA, cmpB);
+  uint8x16_t or_cd = vorrq_u8(cmpC, cmpD);
+  uint8x16_t or_abcd = vorrq_u8(or_ab, or_cd);
+  uint64_t orMask = NeonMovemask(or_abcd);
+  if (orMask) {
+    uint64_t cmpMask;
+    cmpMask = NeonMovemask(cmpA);
+    if (cmpMask) {
+      return reinterpret_cast<const TValue*>(a +
+                                             (__builtin_ctzll(cmpMask) >> 2));
+    }
+    cmpMask = NeonMovemask(cmpB);
+    if (cmpMask) {
+      return reinterpret_cast<const TValue*>(b +
+                                             (__builtin_ctzll(cmpMask) >> 2));
+    }
+    cmpMask = NeonMovemask(cmpC);
+    if (cmpMask) {
+      return reinterpret_cast<const TValue*>(c +
+                                             (__builtin_ctzll(cmpMask) >> 2));
+    }
+    cmpMask = NeonMovemask(cmpD);
+    if (cmpMask) {
+      return reinterpret_cast<const TValue*>(d +
+                                             (__builtin_ctzll(cmpMask) >> 2));
+    }
+  }
+
+  return nullptr;
+}
+
+// See the SSE2 Check2x2x16Bytes for an explanation of the carry handling.
+template <typename TValue>
+const TValue* Check2x2x16Bytes(uint8x16_t needle1, uint8x16_t needle2,
+                               uintptr_t a, uintptr_t b, uint8x16_t* carryIn,
+                               uint8x16_t* carryOut, HaystackOverlap overlap) {
+  constexpr int shiftRightAmount = 16 - sizeof(TValue);
+  constexpr int shiftLeftAmount = sizeof(TValue);
+  uint8x16_t haystackA = LoadVec(a);
+  uint8x16_t cmpA1 = CmpEq128<TValue>(needle1, haystackA);
+  uint8x16_t cmpA2 = CmpEq128<TValue>(needle2, haystackA);
+  uint8x16_t cmpA;
+  if (carryIn) {
+    cmpA = vandq_u8(vorrq_u8(BSlliN<shiftLeftAmount>(cmpA1), *carryIn), cmpA2);
+  } else {
+    cmpA = vandq_u8(BSlliN<shiftLeftAmount>(cmpA1), cmpA2);
+  }
+  uint8x16_t haystackB = LoadVec(b);
+  uint8x16_t cmpB1 = CmpEq128<TValue>(needle1, haystackB);
+  uint8x16_t cmpB2 = CmpEq128<TValue>(needle2, haystackB);
+  uint8x16_t cmpB;
+  if (overlap == HaystackOverlap::Overlapping) {
+    cmpB = vandq_u8(BSlliN<shiftLeftAmount>(cmpB1), cmpB2);
+  } else {
+    MOZ_ASSERT(overlap == HaystackOverlap::Sequential);
+    uint8x16_t carryAB = BSrliN<shiftRightAmount>(cmpA1);
+    cmpB = vandq_u8(vorrq_u8(BSlliN<shiftLeftAmount>(cmpB1), carryAB), cmpB2);
+  }
+  uint8x16_t or_ab = vorrq_u8(cmpA, cmpB);
+  uint64_t orMask = NeonMovemask(or_ab);
+  if (orMask) {
+    uint64_t cmpMask;
+    cmpMask = NeonMovemask(cmpA);
+    if (cmpMask) {
+      return reinterpret_cast<const TValue*>(
+          a + (__builtin_ctzll(cmpMask) >> 2) - shiftLeftAmount);
+    }
+    cmpMask = NeonMovemask(cmpB);
+    if (cmpMask) {
+      return reinterpret_cast<const TValue*>(
+          b + (__builtin_ctzll(cmpMask) >> 2) - shiftLeftAmount);
+    }
+  }
+
+  if (carryOut) {
+    *carryOut = BSrliN<shiftRightAmount>(cmpB1);
+  }
+
+  return nullptr;
+}
+
+template <typename TValue>
+const TValue* FindInBuffer(const TValue* ptr, TValue value, size_t length) {
+  static_assert(sizeof(TValue) == 1 || sizeof(TValue) == 2 ||
+                sizeof(TValue) == 4 || sizeof(TValue) == 8);
+  static_assert(std::is_unsigned_v<TValue>);
+
+  uint8x16_t needle = SplatNeedle<TValue>(value);
+
+  size_t numBytes = length * sizeof(TValue);
+  uintptr_t cur = reinterpret_cast<uintptr_t>(ptr);
+  uintptr_t end = cur + numBytes;
+
+  if ((sizeof(TValue) > 1 && numBytes < 16) || numBytes < 4) {
+    while (cur < end) {
+      if (GetAs<TValue>(cur) == value) {
+        return reinterpret_cast<const TValue*>(cur);
+      }
+      cur += sizeof(TValue);
+    }
+    return nullptr;
+  }
+
+  if (numBytes < 16) {
+    // See the SSE2 path for an explanation of the bit-fiddling.
+    uintptr_t a = cur;
+    uintptr_t b = cur + ((numBytes & 8) >> 1);
+    uintptr_t c = end - 4 - ((numBytes & 8) >> 1);
+    uintptr_t d = end - 4;
+    const char* charResult = Check4x4Chars(needle, a, b, c, d);
+    return reinterpret_cast<const TValue*>(charResult);
+  }
+
+  if (numBytes < 64) {
+    uintptr_t a = cur;
+    uintptr_t b = cur + ((numBytes & 32) >> 1);
+    uintptr_t c = end - 16 - ((numBytes & 32) >> 1);
+    uintptr_t d = end - 16;
+    return Check4x16Bytes<TValue>(needle, a, b, c, d);
+  }
+
+  uint8x16_t haystack = LoadVec(cur);
+  uint8x16_t cmp = CmpEq128<TValue>(needle, haystack);
+  uint64_t cmpMask = NeonMovemask(cmp);
+  if (cmpMask) {
+    return reinterpret_cast<const TValue*>(cur +
+                                           (__builtin_ctzll(cmpMask) >> 2));
+  }
+
+  cur = AlignUp16(cur);
+
+  uintptr_t tailStartPtr = AlignDown16(end - 48);
+  uintptr_t tailEndPtr = end - 16;
+
+  while (cur < tailStartPtr) {
+    uintptr_t a = cur;
+    uintptr_t b = cur + 16;
+    uintptr_t c = cur + 32;
+    uintptr_t d = cur + 48;
+    const TValue* result = Check4x16Bytes<TValue>(needle, a, b, c, d);
+    if (result) {
+      return result;
+    }
+    cur += 64;
+  }
+
+  uintptr_t a = tailStartPtr;
+  uintptr_t b = tailStartPtr + 16;
+  uintptr_t c = tailStartPtr + 32;
+  uintptr_t d = tailEndPtr;
+  return Check4x16Bytes<TValue>(needle, a, b, c, d);
+}
+
+template <typename TValue>
+const TValue* TwoElementLoop(uintptr_t start, uintptr_t end, TValue v1,
+                             TValue v2) {
+  static_assert(sizeof(TValue) == 1 || sizeof(TValue) == 2);
+
+  const TValue* cur = reinterpret_cast<const TValue*>(start);
+  const TValue* preEnd = reinterpret_cast<const TValue*>(end - sizeof(TValue));
+
+  uint32_t expected = static_cast<uint32_t>(v1) |
+                      (static_cast<uint32_t>(v2) << (sizeof(TValue) * 8));
+  while (cur < preEnd) {
+    static_assert(std::endian::native == std::endian::little);
+    uint32_t actual = static_cast<uint32_t>(cur[0]) |
+                      (static_cast<uint32_t>(cur[1]) << (sizeof(TValue) * 8));
+    if (actual == expected) {
+      return cur;
+    }
+    cur++;
+  }
+  return nullptr;
+}
+
+template <typename TValue>
+const TValue* FindTwoInBuffer(const TValue* ptr, TValue v1, TValue v2,
+                              size_t length) {
+  static_assert(sizeof(TValue) == 1 || sizeof(TValue) == 2);
+  static_assert(std::is_unsigned_v<TValue>);
+
+  uint8x16_t needle1 = SplatNeedle<TValue>(v1);
+  uint8x16_t needle2 = SplatNeedle<TValue>(v2);
+
+  size_t numBytes = length * sizeof(TValue);
+  uintptr_t cur = reinterpret_cast<uintptr_t>(ptr);
+  uintptr_t end = cur + numBytes;
+
+  if (numBytes < 16) {
+    return TwoElementLoop<TValue>(cur, end, v1, v2);
+  }
+
+  if (numBytes < 32) {
+    uintptr_t a = cur;
+    uintptr_t b = end - 16;
+    return Check2x2x16Bytes<TValue>(needle1, needle2, a, b, nullptr, nullptr,
+                                    HaystackOverlap::Overlapping);
+  }
+
+  uint8x16_t haystack = LoadVec(cur);
+  uint8x16_t cmp1 = CmpEq128<TValue>(needle1, haystack);
+  uint8x16_t cmp2 = CmpEq128<TValue>(needle2, haystack);
+  uint64_t cmpMask1 = NeonMovemask(cmp1);
+  uint64_t cmpMask2 = NeonMovemask(cmp2);
+  // Each input byte is 4 bits in the mask, so a byte shift becomes a
+  // (4 * sizeof(TValue))-bit shift.
+  uint64_t cmpMask = (cmpMask1 << (sizeof(TValue) * 4)) & cmpMask2;
+  if (cmpMask) {
+    return reinterpret_cast<const TValue*>(
+        cur + (__builtin_ctzll(cmpMask) >> 2) - sizeof(TValue));
+  }
+
+  cur = AlignUp16(cur);
+
+  uintptr_t tailEndPtr = end - 16;
+  uintptr_t tailStartPtr = AlignDown16(tailEndPtr);
+
+  uint8x16_t cmpMaskCarry = vdupq_n_u8(0);
+  while (cur < tailStartPtr) {
+    uintptr_t a = cur;
+    uintptr_t b = cur + 16;
+    const TValue* result =
+        Check2x2x16Bytes<TValue>(needle1, needle2, a, b, &cmpMaskCarry,
+                                 &cmpMaskCarry, HaystackOverlap::Sequential);
+    if (result) {
+      return result;
+    }
+    cur += 32;
+  }
+
+  uint32_t carry = (cur == tailStartPtr) ? 0xffffffff : 0;
+  uint8x16_t wideCarry =
+      Load32BitsIntoNeon(reinterpret_cast<uintptr_t>(&carry));
+  cmpMaskCarry = vandq_u8(cmpMaskCarry, wideCarry);
+  uintptr_t a = tailStartPtr;
+  uintptr_t b = tailEndPtr;
+  return Check2x2x16Bytes<TValue>(needle1, needle2, a, b, &cmpMaskCarry,
+                                  nullptr, HaystackOverlap::Overlapping);
+}
+
+// On arm64 platforms, libc implementations of memchr are generally
+// very well optimized. Defer to the standard library's memchr here.
+const char* SIMD::memchr8(const char* ptr, char value, size_t length) {
+  const void* result = ::memchr(reinterpret_cast<const void*>(ptr),
+                                static_cast<int>(value), length);
+  return reinterpret_cast<const char*>(result);
+}
+
+const char* SIMD::memchr8SSE2(const char* ptr, char value, size_t length) {
+  return memchr8(ptr, value, length);
+}
+
+const char16_t* SIMD::memchr16(const char16_t* ptr, char16_t value,
+                               size_t length) {
+  return FindInBuffer<char16_t>(ptr, value, length);
+}
+
+const char16_t* SIMD::memchr16SSE2(const char16_t* ptr, char16_t value,
+                                   size_t length) {
+  return memchr16(ptr, value, length);
+}
+
+const uint32_t* SIMD::memchr32(const uint32_t* ptr, uint32_t value,
+                               size_t length) {
+  return FindInBuffer<uint32_t>(ptr, value, length);
+}
+
+const uint64_t* SIMD::memchr64(const uint64_t* ptr, uint64_t value,
+                               size_t length) {
+  return FindInBuffer<uint64_t>(ptr, value, length);
+}
+
+const char* SIMD::memchr2x8(const char* ptr, char v1, char v2, size_t length) {
   const unsigned char* uptr = reinterpret_cast<const unsigned char*>(ptr);
   unsigned char uv1 = static_cast<unsigned char>(v1);
   unsigned char uv2 = static_cast<unsigned char>(v2);

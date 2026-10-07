@@ -16,11 +16,7 @@ using namespace mozilla;
 using namespace mozilla::dom;
 
 nsDocShellEditorData::nsDocShellEditorData(nsDocShell* aOwningDocShell)
-    : mDocShell(aOwningDocShell),
-      mDetachedEditingState(Document::EditingState::eOff),
-      mMakeEditable(false),
-      mIsDetached(false),
-      mDetachedMakeEditable(false) {
+    : mDocShell(aOwningDocShell), mMakeEditable(false) {
   NS_ASSERTION(mDocShell, "Where is my docShell?");
 }
 
@@ -32,7 +28,6 @@ void nsDocShellEditorData::TearDownEditor() {
     htmlEditor->PreDestroy();
   }
   mEditingSession = nullptr;
-  mIsDetached = false;
 }
 
 nsresult nsDocShellEditorData::MakeEditable(bool aInWaitForUriLoad) {
@@ -91,7 +86,6 @@ nsresult nsDocShellEditorData::SetHTMLEditor(HTMLEditor* aHTMLEditor) {
 // This creates the editing session on the content docShell that owns 'this'.
 void nsDocShellEditorData::EnsureEditingSession() {
   NS_ASSERTION(mDocShell, "Should have docShell here");
-  NS_ASSERTION(!mIsDetached, "This will stomp editing session!");
 
   if (!mEditingSession) {
     mEditingSession = MakeRefPtr<nsEditingSession>();
@@ -104,34 +98,14 @@ nsresult nsDocShellEditorData::DetachFromWindow() {
 
   nsCOMPtr<nsPIDOMWindowOuter> domWindow =
       mDocShell ? mDocShell->GetWindow() : nullptr;
+  NS_ENSURE_TRUE(domWindow, NS_ERROR_NOT_AVAILABLE);
+
   nsresult rv = mEditingSession->DetachFromWindow(domWindow);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  mIsDetached = true;
-  mDetachedMakeEditable = mMakeEditable;
   mMakeEditable = false;
 
-  nsCOMPtr<dom::Document> doc = domWindow->GetDoc();
-  mDetachedEditingState = doc->GetEditingState();
-
   mDocShell = nullptr;
-
-  return NS_OK;
-}
-
-nsresult nsDocShellEditorData::ReattachToWindow(nsDocShell* aDocShell) {
-  mDocShell = aDocShell;
-
-  nsCOMPtr<nsPIDOMWindowOuter> domWindow =
-      mDocShell ? mDocShell->GetWindow() : nullptr;
-  nsresult rv = mEditingSession->ReattachToWindow(domWindow);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  mIsDetached = false;
-  mMakeEditable = mDetachedMakeEditable;
-
-  RefPtr<dom::Document> doc = domWindow->GetDoc();
-  doc->SetEditingState(mDetachedEditingState);
 
   return NS_OK;
 }

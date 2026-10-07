@@ -121,7 +121,7 @@ impl ChildMetricMeta {
         }
     }
 
-    pub fn get_identifiers<'a>(&'a self) -> (&'a str, &'a str, Option<&'a str>) {
+    pub fn get_identifiers<'a>(&'a self) -> (&'a str, &'a str, Option<String>) {
         (&self.category, &self.name, None)
     }
 }

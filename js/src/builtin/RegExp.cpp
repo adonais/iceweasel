@@ -1662,11 +1662,15 @@ bool js::RegExpMatcher(JSContext* cx, unsigned argc, Value* vp) {
 
 /*
  * Separate interface for use by the JITs.
- * This code cannot re-enter JIT code.
+ * This code cannot re-enter JIT code, except via interrupt handler.
  */
 bool js::RegExpMatcherRaw(JSContext* cx, HandleObject regexp,
                           HandleString input, int32_t lastIndex,
                           MatchPairs* maybeMatches, MutableHandleValue output) {
+  if (!cx->maybeReportDelayedOverRecursed()) {
+    return false;
+  }
+
   MOZ_ASSERT(lastIndex >= 0 && size_t(lastIndex) <= input->length());
 
   // RegExp execution was successful only if the pairs have actually been
@@ -1743,11 +1747,15 @@ bool js::RegExpSearcher(JSContext* cx, unsigned argc, Value* vp) {
 
 /*
  * Separate interface for use by the JITs.
- * This code cannot re-enter JIT code.
+ * This code cannot re-enter JIT code, except via interrupt handler.
  */
 bool js::RegExpSearcherRaw(JSContext* cx, HandleObject regexp,
                            HandleString input, int32_t lastIndex,
                            MatchPairs* maybeMatches, int32_t* result) {
+  if (!cx->maybeReportDelayedOverRecursed()) {
+    return false;
+  }
+
   MOZ_ASSERT(lastIndex >= 0 && size_t(lastIndex) <= input->length());
 
   // RegExp execution was successful only if the pairs have actually been
@@ -1830,6 +1838,10 @@ bool js::RegExpBuiltinExecMatchFromJit(JSContext* cx,
                                        HandleString input,
                                        MatchPairs* maybeMatches,
                                        MutableHandleValue output) {
+  if (!cx->maybeReportDelayedOverRecursed()) {
+    return false;
+  }
+
   int32_t lastIndex = 0;
   if (regexp->isGlobalOrSticky()) {
     lastIndex = regexp->getLastIndex().toInt32();
@@ -1872,6 +1884,10 @@ static bool RegExpBuiltinExecTestRaw(JSContext* cx,
 bool js::RegExpBuiltinExecTestFromJit(JSContext* cx,
                                       Handle<RegExpObject*> regexp,
                                       HandleString input, bool* result) {
+  if (!cx->maybeReportDelayedOverRecursed()) {
+    return false;
+  }
+
   int32_t lastIndex = 0;
   if (regexp->isGlobalOrSticky()) {
     lastIndex = regexp->getLastIndex().toInt32();

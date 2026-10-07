@@ -1,7 +1,52 @@
 {
-  "margin": {
-    "block": {
-      "value": "4px"
+  "attention": {
+    "dot": {
+      "color": {
+        "value": "{color.accent.attention}"
+      }
+    }
+  },
+  "background": {
+    "color": {
+      "@base": {
+        "value": {
+          "default": "transparent",
+          "nativeTheme": "transparent",
+          "forcedColors": "{button.background.color.@base}"
+        }
+      },
+      "hover": {
+        "value": {
+          "default": "color-mix(in srgb, currentColor 11%, transparent)",
+          "forcedColors": "{button.background.color.hover}",
+          "nova": {
+            "comment": "color-mix with currentColor cannot be expressed in Figma",
+            "value": {
+              "nativeTheme": "color-mix(in srgb, currentColor 17%, transparent)",
+              "default": "{toolbarbutton.background.color.hover}"
+            }
+          }
+        }
+      },
+      "selected": {
+        "value": {
+          "light": "{color.white.@base}",
+          "dark": "rgba(106, 106, 120, 0.7)",
+          "nativeTheme": "{toolbar.background.color}",
+          "forcedColors": "SelectedItem"
+        }
+      },
+      "pinned": {
+        "override": true,
+        "value": "unset"
+      }
+    },
+    "width": {
+      "pinned": {
+        "expanded": {
+          "value": "40px"
+        }
+      }
     }
   },
   "border": {
@@ -51,46 +96,115 @@
       }
     }
   },
-  "attention": {
-    "dot": {
-      "color": {
-        "value": "{color.accent.attention}"
-      }
-    }
-  },
-  "background": {
-    "color": {
-      "@base": {
-        "value": {
-          "default": "transparent",
-          "nativeTheme": "transparent",
-          "forcedColors": "{button.background.color.@base}"
-        }
+  "close": {
+    "button": {
+      "padding": {
+        "value": "6px"
       },
-      "hover": {
-        "value": {
-          "default": "color-mix(in srgb, currentColor 11%, transparent)",
-          "forcedColors": "{button.background.color.hover}",
-          "nova": {
-            "comment": "color-mix with currentColor cannot be expressed in Figma",
+      "border": {
+        "color": {
+          "@base": {
+            "value": "{tab.border.color.@base}"
+          },
+          "hover": {
             "value": {
-              "nativeTheme": "color-mix(in srgb, currentColor 17%, transparent)",
-              "default": "{toolbarbutton.background.color.hover}"
+              "default": "{tab.border.color.@base}",
+              "prefersContrast": "{button.border.color.hover}"
+            }
+          },
+          "active": {
+            "value": {
+              "default": "{tab.border.color.@base}",
+              "prefersContrast": "{button.border.color.active}"
             }
           }
         }
-      },
-      "selected": {
-        "value": {
-          "light": "{color.white.@base}",
-          "dark": "rgba(106, 106, 120, 0.7)",
-          "nativeTheme": "{toolbar.background.color}",
-          "forcedColors": "SelectedItem"
+      }
+    }
+  },
+  "container": {
+    "margin": {
+      "inline": {
+        "pinned": {
+          "expanded": {
+            "value": {
+              "default": "{space.small}",
+              "nova": {
+                "comment": "This token's name needs to be updated in Figma to match.",
+                "value": "4px"
+              }
+            }
+          }
         }
+      }
+    }
+  },
+  "icon": {
+    "fill": {
+      "loading": {
+        "value": {
+          "default": "{color.blue.50}",
+          "nova": {
+            "comment": "Tab HCM overrides are handled in CSS, so we don't want the forcedColors value from Figma",
+            "value": "{color.accent.primary.@base}"
+          }
+        }
+      }
+    },
+    "margin": {
+      "inline": {
+        "end": {
+          "value": "5.5px"
+        }
+      }
+    }
+  },
+  "label": {
+    "line": {
+      "height": {
+        "value": 1.7
+      }
+    }
+  },
+  "margin": {
+    "block": {
+      "@base": {
+        "value": "4px"
+      },
+      "vertical": {
+        "value": "2px"
+      }
+    },
+    "inline": {
+      "inner": {
+        "ignoreFigma": "Prefer space token over pixel value from Figma.",
+        "value": "{space.medium}"
       },
       "pinned": {
-        "override": true,
-        "value": "unset"
+        "expanded": {
+          "ignoreFigma": "The 0px value from Figma causes pinned tabs to touch.",
+          "value": "{space.xsmall}"
+        }
+      }
+    },
+    "overflow": {
+      "clip": {
+        "value": "2px"
+      }
+    }
+  },
+  "outline": {
+    "offset": {
+      "value": "calc(-1 * {border.width})"
+    }
+  },
+  "padding": {
+    "inline": {
+      "@base": {
+        "value": "8px"
+      },
+      "vertical": {
+        "value": "{space.medium}"
       }
     }
   },
@@ -114,198 +228,6 @@
           "dark": "{color.white.@base}",
           "nativeTheme": "{toolbar.text.color}",
           "forcedColors": "SelectedItemText"
-        }
-      }
-    }
-  },
-  "icon": {
-    "end": {
-      "margin": {
-        "value": "5.5px"
-      }
-    }
-  },
-  "inline": {
-    "padding": {
-      "value": "8px"
-    }
-  },
-  "inner": {
-    "inline": {
-      "margin": {
-        "value": "{space.medium}"
-      }
-    }
-  },
-  "label": {
-    "line": {
-      "height": {
-        "value": 1.7
-      }
-    }
-  },
-  "loading": {
-    "fill": {
-      "value": {
-        "default": "{color.blue.50}",
-        "nova": {
-          "comment": "Tab HCM overrides are handled in CSS, so we don't want the forcedColors value from Figma",
-          "value": "{color.accent.primary.@base}"
-        }
-      }
-    }
-  },
-  "outline": {
-    "offset": {
-      "value": "calc(-1 * {border.width})"
-    }
-  },
-  "overflow": {
-    "clip": {
-      "margin": {
-        "value": "2px"
-      }
-    }
-  },
-  "pinned": {
-    "container": {
-      "margin": {
-        "inline": {
-          "expanded": {
-            "value": "{space.small}"
-          }
-        }
-      }
-    },
-    "expanded": {
-      "background": {
-        "width": {
-          "value": "40px"
-        }
-      }
-    },
-    "margin": {
-      "inline": {
-        "expanded": {
-          "value": "{space.xsmall}"
-        }
-      }
-    }
-  },
-  "vertical": {
-    "block": {
-      "margin": {
-        "value": "2px"
-      }
-    },
-    "inline": {
-      "padding": {
-        "value": "{space.medium}"
-      }
-    }
-  },
-  "close": {
-    "button": {
-      "padding": {
-        "value": "6px"
-      },
-      "background": {
-        "color": {
-          "@base": {
-            "value": {
-              "default": "{button.background.color.ghost.@base}",
-              "nova": {
-                "comment": "Default themes keep the toolbarbutton colors",
-                "value": {
-                  "nativeTheme": "{button.background.color.ghost.@base}",
-                  "default": "{toolbarbutton.background.color.@base}"
-                }
-              }
-            }
-          },
-          "hover": {
-            "value": {
-              "default": "{button.background.color.ghost.hover}",
-              "nova": {
-                "comment": "Default themes keep the toolbarbutton colors",
-                "value": {
-                  "nativeTheme": "{button.background.color.ghost.hover}",
-                  "default": "{toolbarbutton.background.color.hover}"
-                }
-              }
-            }
-          },
-          "active": {
-            "value": {
-              "default": "{button.background.color.ghost.active}",
-              "nova": {
-                "comment": "Default themes keep the toolbarbutton colors",
-                "value": {
-                  "nativeTheme": "{button.background.color.ghost.active}",
-                  "default": "{toolbarbutton.background.color.active}"
-                }
-              }
-            }
-          }
-        }
-      },
-      "border": {
-        "color": {
-          "@base": {
-            "value": "{tab.border.color.@base}"
-          },
-          "hover": {
-            "value": {
-              "default": "{tab.border.color.@base}",
-              "prefersContrast": "{button.border.color.hover}"
-            }
-          },
-          "active": {
-            "value": {
-              "default": "{tab.border.color.@base}",
-              "prefersContrast": "{button.border.color.active}"
-            }
-          }
-        }
-      },
-      "text": {
-        "color": {
-          "@base": {
-            "value": {
-              "default": "{button.text.color.ghost.@base}",
-              "nova": {
-                "comment": "Default themes keep the toolbarbutton colors",
-                "value": {
-                  "nativeTheme": "{button.text.color.ghost.@base}",
-                  "default": "{tab.text.color.@base}"
-                }
-              }
-            }
-          },
-          "hover": {
-            "value": {
-              "default": "{button.text.color.ghost.hover}",
-              "nova": {
-                "comment": "Default themes keep the toolbarbutton colors",
-                "value": {
-                  "nativeTheme": "{button.text.color.ghost.hover}",
-                  "default": "{tab.text.color.@base}"
-                }
-              }
-            }
-          },
-          "active": {
-            "value": {
-              "default": "{button.text.color.ghost.active}",
-              "nova": {
-                "comment": "Default themes keep the toolbarbutton colors",
-                "value": {
-                  "nativeTheme": "{button.text.color.ghost.active}",
-                  "default": "{tab.text.color.@base}"
-                }
-              }
-            }
-          }
         }
       }
     }

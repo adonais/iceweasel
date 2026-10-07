@@ -5,6 +5,7 @@
 mod reexport_appservices_uniffi_scaffolding {
     ads_client::uniffi_reexport_scaffolding!();
     autofill::uniffi_reexport_scaffolding!();
+    fxcontainers::uniffi_reexport_scaffolding!();
     tabs::uniffi_reexport_scaffolding!();
     relevancy::uniffi_reexport_scaffolding!();
     suggest::uniffi_reexport_scaffolding!();
@@ -17,6 +18,7 @@ mod reexport_appservices_uniffi_scaffolding {
     logins::uniffi_reexport_scaffolding!();
     init_rust_components::uniffi_reexport_scaffolding!();
     breach_alerts::uniffi_reexport_scaffolding!();
+    db_crypto::uniffi_reexport_scaffolding!();
 }
 
 // Define extern "C" versions of these UniFFI functions, so that they can be called from C++

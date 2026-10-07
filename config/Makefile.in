@@ -22,10 +22,7 @@ nsinstall$(HOST_BIN_SUFFIX): $(HOST_PROGRAM)
 	cp $^ $@.tmp
 	mv $@.tmp $@
 
-NSINSTALL_EXECUTABLES := nsinstall$(HOST_BIN_SUFFIX)
-NSINSTALL_DEST := $(DIST)/bin
-NSINSTALL_TARGET := host
-INSTALL_TARGETS += NSINSTALL
+host:: nsinstall$(HOST_BIN_SUFFIX)
 endif
 endif
 

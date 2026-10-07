@@ -115,4 +115,13 @@ interface nsIAutoCompletePopup : nsISupports
    * @return Whether a secondary action was activated.
    */
   boolean maybeActivateSecondaryAction();
+
+  /**
+   * Drop the keyboard sub-selection from the secondary-action button back to
+   * the selected row, in response to Escape, rather than letting the key close
+   * the popup outright.
+   *
+   * @return Whether the key was consumed (and should not close the popup).
+   */
+  boolean maybeLeaveSecondaryAction();
 };

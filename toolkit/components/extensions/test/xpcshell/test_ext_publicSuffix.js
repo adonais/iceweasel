@@ -284,7 +284,7 @@ add_task(async function test_publicSuffix() {
       getDomain_options: { allowIPAddress: true },
       description: "Invalid IP address, IPv4, using options",
       expect: {
-        isKnownSuffix: false,
+        isKnownSuffix: { throws: "Invalid hostname: [127.0.0.1]" },
         getKnownSuffix: { throws: "Invalid hostname: [127.0.0.1]" },
         getDomain: { throws: "Invalid hostname: [127.0.0.1]" },
       },
@@ -315,7 +315,7 @@ add_task(async function test_publicSuffix() {
       hostname: "::1",
       description: "IP address, IPv6, no brackets",
       expect: {
-        isKnownSuffix: false,
+        isKnownSuffix: { throws: "Invalid hostname: ::1" },
         getKnownSuffix: { throws: "Invalid hostname: ::1" },
         getDomain: { throws: "Invalid hostname: ::1" },
       },
@@ -326,7 +326,7 @@ add_task(async function test_publicSuffix() {
       getDomain_options: { allowIPAddress: true },
       description: "IP address, IPv6, no brackets, using options",
       expect: {
-        isKnownSuffix: false,
+        isKnownSuffix: { throws: "Invalid hostname: ::1" },
         getKnownSuffix: { throws: "Invalid hostname: ::1" },
         getDomain: { throws: "Invalid hostname: ::1" },
       },
@@ -336,7 +336,7 @@ add_task(async function test_publicSuffix() {
       hostname: "[example.com]",
       description: "domain name in brackets",
       expect: {
-        isKnownSuffix: false,
+        isKnownSuffix: { throws: "Invalid hostname: [example.com]" },
         getKnownSuffix: { throws: "Invalid hostname: [example.com]" },
         getDomain: { throws: "Invalid hostname: [example.com]" },
       },
@@ -346,7 +346,7 @@ add_task(async function test_publicSuffix() {
       hostname: "[example.com:80]",
       description: "domain name in brackets, with port",
       expect: {
-        isKnownSuffix: false,
+        isKnownSuffix: { throws: "Invalid hostname: [example.com:80]" },
         getKnownSuffix: { throws: "Invalid hostname: [example.com:80]" },
         getDomain: { throws: "Invalid hostname: [example.com:80]" },
       },
@@ -366,7 +366,7 @@ add_task(async function test_publicSuffix() {
       hostname: ".example.net",
       description: "dot in front",
       expect: {
-        isKnownSuffix: false,
+        isKnownSuffix: { throws: "Invalid hostname: .example.net" },
         getKnownSuffix: { throws: "Invalid hostname: .example.net" },
         getDomain: { throws: "Invalid hostname: .example.net" },
       },
@@ -461,7 +461,7 @@ add_task(async function test_publicSuffix() {
       hostname: "*.com",
       description: "contains invalid character '*', 1-label",
       expect: {
-        isKnownSuffix: false,
+        isKnownSuffix: { throws: "Invalid hostname: *.com" },
         getKnownSuffix: { throws: "Invalid hostname: *.com" },
         getDomain: { throws: "Invalid hostname: *.com" },
       },
@@ -471,7 +471,7 @@ add_task(async function test_publicSuffix() {
       hostname: "^.com",
       description: "contains invalid character '^', 1-label",
       expect: {
-        isKnownSuffix: false,
+        isKnownSuffix: { throws: "Invalid hostname: ^.com" },
         getKnownSuffix: { throws: "Invalid hostname: ^.com" },
         getDomain: { throws: "Invalid hostname: ^.com" },
       },
@@ -481,7 +481,7 @@ add_task(async function test_publicSuffix() {
       hostname: "*.mydomain.com",
       description: "contains invalid character '*', 2-label",
       expect: {
-        isKnownSuffix: false,
+        isKnownSuffix: { throws: "Invalid hostname: *.mydomain.com" },
         getKnownSuffix: { throws: "Invalid hostname: *.mydomain.com" },
         getDomain: { throws: "Invalid hostname: *.mydomain.com" },
       },
@@ -491,7 +491,7 @@ add_task(async function test_publicSuffix() {
       hostname: "^.mydomain.com",
       description: "contains invalid character '^', 2-label",
       expect: {
-        isKnownSuffix: false,
+        isKnownSuffix: { throws: "Invalid hostname: ^.mydomain.com" },
         getKnownSuffix: { throws: "Invalid hostname: ^.mydomain.com" },
         getDomain: { throws: "Invalid hostname: ^.mydomain.com" },
       },
@@ -501,7 +501,7 @@ add_task(async function test_publicSuffix() {
       hostname: "",
       description: "empty string",
       expect: {
-        isKnownSuffix: false,
+        isKnownSuffix: { throws: "Invalid hostname: " },
         getKnownSuffix: { throws: "Invalid hostname: " },
         getDomain: { throws: "Invalid hostname: " },
       },
@@ -511,7 +511,7 @@ add_task(async function test_publicSuffix() {
       hostname: ".",
       description: "no domain labels",
       expect: {
-        isKnownSuffix: false,
+        isKnownSuffix: { throws: "Invalid hostname: ." },
         getKnownSuffix: { throws: "Invalid hostname: ." },
         getDomain: { throws: "Invalid hostname: ." },
       },
@@ -521,7 +521,7 @@ add_task(async function test_publicSuffix() {
       hostname: "example..com",
       description: "contains an empty domain label",
       expect: {
-        isKnownSuffix: false,
+        isKnownSuffix: { throws: "Invalid hostname: example..com" },
         getKnownSuffix: { throws: "Invalid hostname: example..com" },
         getDomain: { throws: "Invalid hostname: example..com" },
       },
@@ -541,7 +541,7 @@ add_task(async function test_publicSuffix() {
       hostname: "^.ck",
       description: "wildcard rule *.ck should not match invalid domain ^.ck",
       expect: {
-        isKnownSuffix: false,
+        isKnownSuffix: { throws: "Invalid hostname: ^.ck" },
         getKnownSuffix: { throws: "Invalid hostname: ^.ck" },
         getDomain: { throws: "Invalid hostname: ^.ck" },
       },
@@ -551,7 +551,7 @@ add_task(async function test_publicSuffix() {
       hostname: "*.ck",
       description: "wildcard rule *.ck should not match invalid domain *.ck",
       expect: {
-        isKnownSuffix: false,
+        isKnownSuffix: { throws: "Invalid hostname: *.ck" },
         getKnownSuffix: { throws: "Invalid hostname: *.ck" },
         getDomain: { throws: "Invalid hostname: *.ck" },
       },

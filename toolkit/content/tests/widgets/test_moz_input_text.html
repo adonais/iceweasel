@@ -46,6 +46,27 @@
       add_task(async function testMozInputTextRequiredProperty() {
         await testHelpers.verifyRequired("moz-input-text");
       });
+
+      add_task(async function testMozInputTextFocusOutline() {
+        let renderTarget = await testHelpers.renderTemplate();
+        let el = renderTarget.querySelector("moz-input-text");
+        el.focus();
+        ok(
+          el.inputEl.matches(":focus-visible"),
+          "Inner input matches :focus-visible after focus."
+        );
+        let styles = getComputedStyle(el.inputEl);
+        is(
+          styles.outlineStyle,
+          "solid",
+          "Focus outline uses the design-system token, not the UA auto outline."
+        );
+        is(
+          styles.outlineOffset,
+          "0px",
+          "Focus outline-offset is tight to the input"
+        );
+      });
     </script>
   </head>
   <body>

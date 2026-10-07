@@ -418,7 +418,7 @@ class HTMLBreadcrumbs {
   }
 
   initKeyShortcuts() {
-    this.shortcuts = new KeyShortcuts({ window: this.win, target: this.outer });
+    this.shortcuts = new KeyShortcuts(this.outer);
     this.shortcuts.on("Right", this.handleShortcut);
     this.shortcuts.on("Left", this.handleShortcut);
   }

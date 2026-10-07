@@ -202,6 +202,7 @@ class JS_PUBLIC_API AtomOrTwoByteChars
 
  public:
   template <typename T>
+    requires(std::is_constructible_v<Base, T>)
   MOZ_IMPLICIT AtomOrTwoByteChars(T&& rhs) : Base(std::forward<T>(rhs)) {}
 
   template <typename T>
@@ -225,9 +226,6 @@ class JS_PUBLIC_API AtomOrTwoByteChars
 // must not add data members to this class.
 class BaseStackFrame {
   friend class StackFrame;
-
-  BaseStackFrame(const StackFrame&) = delete;
-  BaseStackFrame& operator=(const StackFrame&) = delete;
 
  protected:
   void* ptr;
@@ -298,6 +296,9 @@ class BaseStackFrame {
 
   // Trace the concrete implementation of JS::ubi::StackFrame.
   virtual void trace(JSTracer* trc) = 0;
+
+  BaseStackFrame(const StackFrame&) = delete;
+  BaseStackFrame& operator=(const StackFrame&) = delete;
 };
 
 // A traits template with a specialization for each backing type that implements
@@ -662,7 +663,6 @@ class JS_PUBLIC_API Base {
   // return nullptr.
   virtual const char* scriptFilename() const { return nullptr; }
 
- private:
   Base(const Base& rhs) = delete;
   Base& operator=(const Base& rhs) = delete;
 };
@@ -911,6 +911,9 @@ class EdgeRange {
  public:
   virtual ~EdgeRange() = default;
 
+  EdgeRange(const EdgeRange&) = delete;
+  EdgeRange& operator=(const EdgeRange&) = delete;
+
   // True if there are no more edges in this range.
   bool empty() const { return !front_; }
 
@@ -923,10 +926,6 @@ class EdgeRange {
   // Remove the front edge from this range. This should only be called if
   // !empty().
   virtual void popFront() = 0;
-
- private:
-  EdgeRange(const EdgeRange&) = delete;
-  EdgeRange& operator=(const EdgeRange&) = delete;
 };
 
 typedef mozilla::Vector<Edge, 8, js::SystemAllocPolicy> EdgeVector;

@@ -50,7 +50,7 @@ support-files = [
 ]
 prefs = ["security.allow_unsafe_parent_loads=true"] # This is far from ideal. Bug 1565279 covers removing this pref flip.
 
-["../../../../browser/base/content/test/static/browser_all_files_referenced.js"]
+["../../../../browser/base/content/test/browser-static/browser_all_files_referenced.js"]
 # We want this test to run for mochitest-dt as well, so we include it here
 skip-if = [
   "debug", # no point in running on both opt and debug, and will likely intermittently timeout on debug, Bug 1598726
@@ -58,7 +58,7 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && ccov",
 ]
 
-["../../../../browser/base/content/test/static/browser_parsable_css.js"]
+["../../../../browser/base/content/test/browser-static/browser_parsable_css.js"]
 # We want this test to run for mochitest-dt as well, so we include it here
 
 ["browser_about-devtools-toolbox_load.js"]
@@ -184,9 +184,6 @@ skip-if = [
 ["browser_toolbox_hosts.js"]
 
 ["browser_toolbox_hosts_size.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_toolbox_hosts_telemetry.js"]
 
@@ -347,6 +344,8 @@ fail-if = [
 ["browser_toolbox_visibility.js"]
 
 ["browser_toolbox_watchedByDevTools.js"]
+
+["browser_toolbox_watchedByDevTools_bfcache.js"]
 
 ["browser_toolbox_window_closed_during_startup.js"]
 

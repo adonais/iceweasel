@@ -82,6 +82,7 @@ child:
              nsHttpRequestHead reqHeaders,
              IPCStream? requestBody,
              uint64_t reqContentLength,
+             bool requestBodyIsStreaming,
              uint64_t topLevelOuterContentWindowId,
              HttpTrafficCategory httpTrafficCategory,
              uint64_t requestContextID,

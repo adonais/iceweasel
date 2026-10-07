@@ -431,26 +431,66 @@ pub fn prepare_composite_mode(
 
             let device_rect = surface_rects.clipped;
 
+            let blur_std_deviations: SmallVec<[DeviceSize; 1]> = shadows.iter().map(|shadow| {
+                let (blur_radius_x, blur_radius_y) = surface.clamp_blur_radius(
+                    shadow.blur_radius,
+                    shadow.blur_radius,
+                );
+                DeviceSize::new(
+                    blur_radius_x * surface.local_scale.0 * device_pixel_scale.0,
+                    blur_radius_y * surface.local_scale.1 * device_pixel_scale.0,
+                )
+            }).collect();
+
+            // Align the source to the downscaling grid of the largest blur,
+            // in device space. Otherwise the downscaled pixels move relative to
+            // the content as the blur radius (and so the surface inflation)
+            // changes, and animated shadows visibly pulse.
+            let max_std_deviation = blur_std_deviations
+                .iter()
+                .fold(DeviceSize::zero(), |max, std_dev| max.max(*std_dev));
+            let scale_factor = BlurTask::downscale_factor(device_rect.size(), max_std_deviation);
+            let aligned_rect = DeviceRect::new(
+                (device_rect.min.to_vector() / scale_factor).floor().to_point() * scale_factor,
+                (device_rect.max.to_vector() / scale_factor).ceil().to_point() * scale_factor,
+            );
+            let max_surface_size = frame_context.max_surface_size() as f32;
+            let (task_rect, uv_rect_kind, clear_color, content_size) = if aligned_rect == device_rect ||
+                aligned_rect.width() > max_surface_size ||
+                aligned_rect.height() > max_surface_size
+            {
+                (device_rect, surface_rects.uv_rect_kind, None, None)
+            } else {
+                let uv_rect_kind = calculate_uv_rect_kind(aligned_rect, surface_rects.unclipped);
+                let content_size = (device_rect.max - aligned_rect.min).to_size().to_i32();
+                (aligned_rect, uv_rect_kind, Some(ColorF::TRANSPARENT), Some(content_size))
+            };
+            let task_size = if task_rect == device_rect {
+                surface_rects.task_size
+            } else {
+                task_rect.size().to_i32()
+            };
+
             let cmd_buffer_index = frame_state.cmd_buffers.create_cmd_buffer();
 
             let picture_task_id = frame_state.rg_builder.add().init(
                 RenderTask::new_dynamic(
-                    surface_rects.task_size,
+                    task_size,
                     RenderTaskKind::new_picture(
-                        surface_rects.task_size,
+                        task_size,
                         surface_rects.needs_scissor_rect,
-                        device_rect.min,
+                        task_rect.min,
                         surface_spatial_node_index,
                         raster_spatial_node_index,
                         device_pixel_scale,
                         None,
                         None,
-                        None,
+                        clear_color,
                         cmd_buffer_index,
                         can_use_shared_surface,
-                        None,
+                        content_size,
                     ),
-                ).with_uv_rect_kind(surface_rects.uv_rect_kind)
+                ).with_uv_rect_kind(uv_rect_kind)
             );
 
             let mut blur_tasks = BlurTaskCache::default();
@@ -458,17 +498,9 @@ pub fn prepare_composite_mode(
             extra_gpu_data.resize(shadows.len(), GpuBufferAddress::INVALID);
 
             let mut blur_render_task_id = picture_task_id;
-            for shadow in shadows {
-                let (blur_radius_x, blur_radius_y) = surface.clamp_blur_radius(
-                    shadow.blur_radius,
-                    shadow.blur_radius,
-                );
-
+            for blur_std_deviation in blur_std_deviations {
                 blur_render_task_id = RenderTask::new_blur(
-                    DeviceSize::new(
-                        blur_radius_x * surface.local_scale.0 * device_pixel_scale.0,
-                        blur_radius_y * surface.local_scale.1 * device_pixel_scale.0,
-                    ),
+                    blur_std_deviation,
                     picture_task_id,
                     frame_state.rg_builder,
                     RenderTargetKind::Color,
@@ -499,7 +531,7 @@ pub fn prepare_composite_mode(
             let map_pic_to_parent = SpaceMapper::new_with_target(
                 parent_surface.surface_spatial_node_index,
                 surface_spatial_node_index,
-                parent_surface.clipping_rect,
+                parent_surface.clipping_rect_in_picture_space(),
                 frame_context.spatial_tree,
             );
             let pic_rect = surface.clipped_local_rect;
@@ -507,20 +539,11 @@ pub fn prepare_composite_mode(
                 .map(&pic_rect)
                 .expect("bug: unable to map mix-blend content into parent");
 
-            let backdrop_rect = pic_in_raster_space;
-            let parent_surface_rect = parent_surface.clipping_rect;
+            let backdrop_rect = parent_surface.map_to_device_rect(&pic_in_raster_space);
 
-            let readback_task_id = match backdrop_rect.intersection(&parent_surface_rect) {
+            let readback_task_id = match backdrop_rect.intersection(&parent_surface.clipping_rect) {
                 Some(available_rect) => {
-                    let backdrop_rect = parent_surface.map_to_device_rect(
-                        &backdrop_rect,
-                        frame_context.spatial_tree,
-                    );
-
-                    let available_rect = parent_surface.map_to_device_rect(
-                        &available_rect,
-                        frame_context.spatial_tree,
-                    ).round_out();
+                    let available_rect = available_rect.round_out();
 
                     let backdrop_uv = calculate_uv_rect_kind(
                         available_rect,
@@ -920,7 +943,10 @@ pub struct SurfaceAllocInfo {
     // Only used for SVGFEGraph currently, this is the source pixels needed to
     // render the pixels in clipped.
     pub source: DeviceRect,
-    // Only used for SVGFEGraph, this is the same as clipped before rounding.
+    // `clipped` before rounding, i.e. the exact device-space image of
+    // `clipped_local`. This is the rect to use where the surface's local ->
+    // device mapping matters rather than the allocated size, which is why it is
+    // what `SurfaceInfo::clipping_rect` is set from.
     pub clipped_notsnapped: DeviceRect,
     pub clipped_local: PictureRect,
     pub uv_rect_kind: UvRectKind,
@@ -964,15 +990,17 @@ pub fn get_surface_rects(
 ) -> Option<SurfaceAllocInfo> {
     let parent_surface = &surfaces[parent_surface_index.0];
 
+    let parent_clipping_rect = parent_surface.clipping_rect_in_picture_space();
+
     let local_to_parent = SpaceMapper::new_with_target(
         parent_surface.surface_spatial_node_index,
         surfaces[surface_index.0].surface_spatial_node_index,
-        parent_surface.clipping_rect,
+        parent_clipping_rect,
         spatial_tree,
     );
 
     let local_clip_rect = local_to_parent
-        .unmap(&parent_surface.clipping_rect)
+        .unmap(&parent_clipping_rect)
         .unwrap_or(PictureRect::max_rect())
         .cast_unit();
 
@@ -1099,28 +1127,10 @@ pub fn get_surface_rects(
         }
     };
 
-    let (mut clipped, mut unclipped, mut source) = if surface.raster_spatial_node_index != surface.surface_spatial_node_index {
-        assert_eq!(surface.device_pixel_scale.0, 1.0);
+    let mut clipped = surface.map_to_device_rect(&clipped_local.cast_unit());
+    let mut unclipped = surface.map_to_device_rect(&unclipped_local.cast_unit());
+    let mut source = surface.map_to_device_rect(&source_local.cast_unit());
 
-        let local_to_world = SpaceMapper::new_with_target(
-            spatial_tree.root_reference_frame_index(),
-            surface.surface_spatial_node_index,
-            WorldRect::max_rect(),
-            spatial_tree,
-        );
-
-        let clipped = local_to_world.map(&clipped_local.cast_unit()).unwrap() * surface.device_pixel_scale;
-        let unclipped = local_to_world.map(&unclipped_local).unwrap() * surface.device_pixel_scale;
-        let source = local_to_world.map(&source_local.cast_unit()).unwrap() * surface.device_pixel_scale;
-
-        (clipped, unclipped, source)
-    } else {
-        let clipped = clipped_local.cast_unit() * surface.device_pixel_scale;
-        let unclipped = unclipped_local.cast_unit() * surface.device_pixel_scale;
-        let source = source_local.cast_unit() * surface.device_pixel_scale;
-
-        (clipped, unclipped, source)
-    };
     let mut clipped_snapped = clipped.round_out();
     let mut source_snapped = source.round_out();
 
@@ -1140,11 +1150,14 @@ pub fn get_surface_rects(
         surface.raster_spatial_node_index = surface.surface_spatial_node_index;
         surface.device_pixel_scale = Scale::new(max_surface_size / max_dimension);
         surface.local_scale = (1.0, 1.0);
+        // The device space this surface rasterizes in just changed, so anything
+        // derived from the old one below has to be re-derived.
+        surface.update_picture_to_device_mapping(spatial_tree);
 
         let add_markers = profiler::thread_is_being_profiled();
         if add_markers {
-            let new_clipped = (clipped_local.cast_unit() * surface.device_pixel_scale).round();
-            let new_source = (source_local.cast_unit() * surface.device_pixel_scale).round();
+            let new_clipped = surface.map_to_device_rect(&clipped_local.cast_unit()).round();
+            let new_source = surface.map_to_device_rect(&source_local.cast_unit()).round();
             profiler::add_text_marker("SurfaceSizeLimited",
                 format!("Surface for {:?} reduced from raster {:?} (source {:?}) to local {:?} (source {:?})",
                     composite_mode.kind(),
@@ -1153,9 +1166,9 @@ pub fn get_surface_rects(
                 Duration::from_secs_f32(new_clipped.width() * new_clipped.height() / 1000000000.0));
         }
 
-        clipped = clipped_local.cast_unit() * surface.device_pixel_scale;
-        unclipped = unclipped_local.cast_unit() * surface.device_pixel_scale;
-        source = source_local.cast_unit() * surface.device_pixel_scale;
+        clipped = surface.map_to_device_rect(&clipped_local.cast_unit());
+        unclipped = surface.map_to_device_rect(&unclipped_local.cast_unit());
+        source = surface.map_to_device_rect(&source_local.cast_unit());
         clipped_snapped = clipped.round();
         source_snapped = source.round();
     }

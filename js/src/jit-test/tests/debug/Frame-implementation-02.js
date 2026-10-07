@@ -26,7 +26,7 @@ withJitOptions(Opts_Ion2NoOffthreadCompilation, function () {
       var frame2 = frame1.older;
       assertEq(frame2.implementation, "ion");
       // Offset of |print(42 + 42)|
-      var offset = frame2.script.getLineOffsets(3)[0];
+      var offset = frame2.script.getPossibleBreakpointOffsets({ line: 3 })[0];
       frame2.script.setBreakpoint(offset, { hit: function (fr) {
         assertEq(fr.implementation != "ion", true);
         breakpointHit = true;

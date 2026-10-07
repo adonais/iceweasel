@@ -40,7 +40,7 @@ add_setup(async () => {
     files: {
       "example.html": "<!doctype html>addon example page",
       // This is used in test_extension_name_is_used.
-      "with-manifest.html": `<!doctype html><link href='data:application/json,{"name": "override!"}' rel=manifest>`,
+      "with-manifest.html": `<!doctype html><link href='data:application/json,{"name": "override!","start_url": "/from_manifest"}' rel=manifest>`,
     },
   });
 
@@ -425,18 +425,25 @@ add_task(async function test_page_action_uses_manifest() {
 });
 
 add_task(async function test_extension_name_is_used() {
-  async function checkExtensionURIWithManifest({ withManifest, expectedName }) {
+  async function checkExtensionURIWithManifest({ withManifest, expected }) {
     let uri = Services.io.newURI(MOZ_EXTENSION_URI);
     uri = uri.resolve(withManifest ? "/with-manifest.html" : "/example.html");
+    uri += "?queryparam&another#more"; // check that these are removed
     uri = Services.io.newURI(uri);
 
+    let manifest = { name: "override!", start_url: "/from_manifest" };
     let result = await TaskbarTabs.findOrCreateTaskbarTab(uri, 0, {
-      ...(withManifest ? { manifest: { name: "override!" } } : {}),
+      ...(withManifest ? { manifest } : {}),
     });
     is(
       result.taskbarTab.name,
-      expectedName,
+      expected.name,
       "findOrCreateTaskbarTab uses expected name"
+    );
+    is(
+      result.taskbarTab.startUrl,
+      expected.startUrl,
+      "findOrCreateTaskbarTab uses expected start URL"
     );
     ok(result.created, "A new Taskbar Tab was created.");
     await TaskbarTabs.removeTaskbarTab(result.taskbarTab.id);
@@ -447,8 +454,13 @@ add_task(async function test_extension_name_is_used() {
 
       is(
         move.taskbarTab.name,
-        expectedName,
+        expected.name,
         "moveTabIntoTaskbarTab uses expected name"
+      );
+      is(
+        result.taskbarTab.startUrl,
+        expected.startUrl,
+        "moveTabIntoTaskbarTab uses expected start URL"
       );
       ok(move.created, "A new Taskbar Tab was created.");
 
@@ -459,11 +471,46 @@ add_task(async function test_extension_name_is_used() {
 
   await checkExtensionURIWithManifest({
     withManifest: false,
-    expectedName: kFakeAddonName,
+    expected: {
+      name: kFakeAddonName,
+      startUrl: Services.io.newURI(MOZ_EXTENSION_URI).resolve("/example.html"),
+    },
   });
 
   await checkExtensionURIWithManifest({
     withManifest: true,
-    expectedName: "override!",
+    expected: {
+      name: "override!",
+      startUrl: Services.io.newURI(MOZ_EXTENSION_URI).resolve("/from_manifest"),
+    },
   });
+});
+
+add_task(async function test_pageActionRequiresDesktopEntryApi() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.shell.desktop-entry-api", "disabled"]],
+  });
+
+  const element = document.getElementById("taskbar-tabs-button");
+
+  let locationChange = BrowserTestUtils.waitForLocationChange(
+    gBrowser,
+    BASE_URL
+  );
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    BASE_URL,
+    false
+  );
+
+  await locationChange;
+  is(
+    element.hidden,
+    // only matters on Linux
+    AppConstants.platform === "linux",
+    `Page action is hidden when desktopEntryApi is null`
+  );
+
+  await SpecialPowers.popPrefEnv();
+  BrowserTestUtils.removeTab(tab);
 });

@@ -27,7 +27,7 @@ using dom::VideoResizeModeEnum;
 
 template <class ValueType>
 template <class ConstrainRange>
-void NormalizedConstraintSet::Range<ValueType>::SetFrom(
+void NormalizedConstraintSet::ConstraintRange<ValueType>::SetFrom(
     const ConstrainRange& aOther) {
   if (aOther.mIdeal.WasPassed()) {
     mIdeal.emplace(aOther.mIdeal.Value());
@@ -48,7 +48,8 @@ void NormalizedConstraintSet::Range<ValueType>::SetFrom(
 // The Range code works surprisingly well for bool, except when averaging
 // ideals.
 template <>
-bool NormalizedConstraintSet::Range<bool>::Merge(const Range& aOther) {
+bool NormalizedConstraintSet::ConstraintRange<bool>::Merge(
+    const ConstraintRange& aOther) {
   if (!Intersects(aOther)) {
     return false;
   }
@@ -77,7 +78,7 @@ bool NormalizedConstraintSet::Range<bool>::Merge(const Range& aOther) {
 }
 
 template <>
-void NormalizedConstraintSet::Range<bool>::FinalizeMerge() {
+void NormalizedConstraintSet::ConstraintRange<bool>::FinalizeMerge() {
   if (mMergeDenominator) {
     uint32_t counter = mMergeDenominator >> 16;
     uint32_t denominator = mMergeDenominator & 0xffff;
@@ -91,9 +92,9 @@ NormalizedConstraintSet::LongRange::LongRange(
     const nsCString& aName,
     const dom::Optional<dom::OwningLongOrConstrainLongRange>& aOther,
     bool advanced)
-    : Range<int32_t>(aName,
-                     1 + INT32_MIN,  // +1 avoids Windows compiler bug
-                     INT32_MAX) {
+    : ConstraintRange<int32_t>(aName,
+                               1 + INT32_MIN,  // +1 avoids Windows compiler bug
+                               INT32_MAX) {
   if (!aOther.WasPassed()) {
     return;
   }
@@ -111,9 +112,9 @@ NormalizedConstraintSet::LongRange::LongRange(
 
 NormalizedConstraintSet::LongLongRange::LongLongRange(
     const nsCString& aName, const dom::Optional<int64_t>& aOther)
-    : Range<int64_t>(aName,
-                     1 + INT64_MIN,  // +1 avoids Windows compiler bug
-                     INT64_MAX) {
+    : ConstraintRange<int64_t>(aName,
+                               1 + INT64_MIN,  // +1 avoids Windows compiler bug
+                               INT64_MAX) {
   if (aOther.WasPassed()) {
     mIdeal.emplace(aOther.Value());
   }
@@ -123,8 +124,8 @@ NormalizedConstraintSet::DoubleRange::DoubleRange(
     const nsCString& aName,
     const dom::Optional<dom::OwningDoubleOrConstrainDoubleRange>& aOther,
     bool advanced)
-    : Range<double>(aName, -std::numeric_limits<double>::infinity(),
-                    std::numeric_limits<double>::infinity()) {
+    : ConstraintRange<double>(aName, -std::numeric_limits<double>::infinity(),
+                              std::numeric_limits<double>::infinity()) {
   if (!aOther.WasPassed()) {
     return;
   }
@@ -144,7 +145,7 @@ NormalizedConstraintSet::BooleanRange::BooleanRange(
     const nsCString& aName,
     const dom::Optional<dom::OwningBooleanOrConstrainBooleanParameters>& aOther,
     bool advanced)
-    : Range<bool>(aName, false, true) {
+    : ConstraintRange<bool>(aName, false, true) {
   if (!aOther.WasPassed()) {
     return;
   }
@@ -529,7 +530,7 @@ static void LogConstraintStringRange(
 
 template <typename T>
 static void LogConstraintRange(
-    const NormalizedConstraintSet::Range<T>& aRange) {
+    const NormalizedConstraintSet::ConstraintRange<T>& aRange) {
   if (aRange.mIdeal.isSome()) {
     LOG("  {}: {{ min: {}, max: {}, ideal: {} }}", aRange.mName.get(),
         aRange.mMin, aRange.mMax, aRange.mIdeal.valueOr(0));
@@ -540,7 +541,8 @@ static void LogConstraintRange(
 }
 
 template <>
-void LogConstraintRange(const NormalizedConstraintSet::Range<double>& aRange) {
+void LogConstraintRange(
+    const NormalizedConstraintSet::ConstraintRange<double>& aRange) {
   if (aRange.mIdeal.isSome()) {
     LOG("  {}: {{ min: {}, max: {}, ideal: {} }}", aRange.mName.get(),
         aRange.mMin, aRange.mMax, aRange.mIdeal.valueOr(0));

@@ -120,6 +120,7 @@ nsGlobalWindowInner* DocumentPictureInPicture::GetWindow() const {
 const CSSIntSize DocumentPictureInPicture::sDefaultSize = {400, 300};
 const CSSIntSize DocumentPictureInPicture::sMinSize = {240, 50};
 
+MOZ_CAN_RUN_SCRIPT
 static nsresult OpenPiPWindowUtility(nsPIDOMWindowOuter* aParent,
                                      const CSSIntRect& aExtent, bool aPrivate,
                                      bool aDisallowReturnToOpener,
@@ -329,9 +330,10 @@ already_AddRefed<Promise> DocumentPictureInPicture::RequestWindow(
   // 15. aOptions.mDisallowReturnToOpener
   // 16. Configure PIP to float on top via window features
   RefPtr<BrowsingContext> pipTraversable;
-  rv = OpenPiPWindowUtility(
-      ownerWin->GetOuterWindow(), extent, bc->UsePrivateBrowsing(),
-      aOptions.mDisallowReturnToOpener, getter_AddRefs(pipTraversable));
+  RefPtr outer = ownerWin->GetOuterWindow();
+  rv = OpenPiPWindowUtility(outer, extent, bc->UsePrivateBrowsing(),
+                            aOptions.mDisallowReturnToOpener,
+                            getter_AddRefs(pipTraversable));
   if (NS_FAILED(rv)) {
     rv = bc->SetControlsDocumentPiP(false);
     MOZ_ASSERT(NS_SUCCEEDED(rv));

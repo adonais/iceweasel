@@ -758,6 +758,7 @@ class ContentChild final : public PContentChild,
       const LoadInfoArgs& loadInfoArgs, const nsString& entryName,
       const nsString& initiatorType, UniquePtr<PerformanceTimingData>&& aData);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvLoadURI(
       const MaybeDiscarded<BrowsingContext>& aContext,
       nsDocShellLoadState* aLoadState, bool aSetNavigating);

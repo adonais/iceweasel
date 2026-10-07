@@ -19,6 +19,8 @@ unit = "score"
 [speedometer2]
 
 [speedometer3]
+alert_threshold = 0.5
+subtest_alert_threshold = 2.0
 browser_cycles = 5
 owner = "Performance Team"
 cold = true

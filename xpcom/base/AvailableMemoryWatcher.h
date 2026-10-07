@@ -5,15 +5,23 @@
 #ifndef mozilla_AvailableMemoryWatcher_h
 #define mozilla_AvailableMemoryWatcher_h
 
-#include "MemoryPressureLevelMac.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/ipc/CrashReporterHost.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"
 #include "nsIAvailableMemoryWatcherBase.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
 
+#if defined(XP_DARWIN)
+#  include "MemoryPressureLevelMac.h"
+#  include "mozilla/UniquePtr.h"
+#endif  // defined(XP_DARWIN)
+
 namespace mozilla {
+
+namespace ipc {
+class CrashReporterHost;
+}
 
 #if defined(XP_LINUX) && !defined(ANDROID)
 // PSIInfo struct holds parsed data from /proc/pressure/memory

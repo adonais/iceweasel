@@ -28,7 +28,7 @@
         "position": {
           "type": "string",
           "description": "The layout position of the screen.",
-          "enum": ["center", "center-large", "split", "callout"]
+          "enum": ["center", "center-large", "split", "callout", "card-stack"]
         },
         "fullscreen": {
           "type": "boolean",
@@ -346,6 +346,10 @@
           "type": "boolean",
           "description": "If true, adds a colorful gradient shadow to the screen. This is only supported for screens with 'hide_arrow' and either 'absolute_position' or 'arrow_position'. There is no effect if HCM or a custom theme add-on is enabled."
         },
+        "zap_border_gradient": {
+          "type": "string",
+          "description": "If present, a custom gradient to use in conjunction with the 'background' and 'zap_border' properties. Only applied if both other properties are present."
+        },
         "logo": {
           "type": "object",
           "description": "An optional object representing a large illustration to show above other content.",
@@ -369,6 +373,17 @@
             "videoURL": {
               "type": "string",
               "description": "A video URL, played once, rendered instead of the image ones above. Ignored (falls back to the image URLs above) for users who prefer reduced motion."
+            },
+            "rtl": {
+              "type": "object",
+              "description": "Right-to-left replacements for any of the URLs above, applied over them when the document is RTL. Omitted keys keep their base value.",
+              "properties": {
+                "imageURL": { "type": "string" },
+                "darkModeImageURL": { "type": "string" },
+                "reducedMotionImageURL": { "type": "string" },
+                "darkModeReducedMotionImageURL": { "type": "string" },
+                "videoURL": { "type": "string" }
+              }
             },
             "alt": {
               "type": "string",
@@ -394,7 +409,7 @@
         },
         "corner_image": {
           "type": "object",
-          "description": "An optional object representing an illustration anchored to a corner of the screen. Only rendered for screens with 'position' set to 'center-large' and 'fullscreen' set to true, which are the only ones that style it.",
+          "description": "An optional object representing an illustration anchored to a corner of the screen. The fullscreen center-large layout anchors it to the window; every other layout anchors it to the card.",
           "properties": {
             "imageURL": {
               "type": "string",
@@ -412,10 +427,29 @@
               "type": "string",
               "description": "The dark mode reduced motion image URL."
             },
+            "rtl": {
+              "type": "object",
+              "description": "Right-to-left replacements for any of the URLs above, applied over them when the document is RTL. Omitted keys keep their base value.",
+              "properties": {
+                "imageURL": { "type": "string" },
+                "darkModeImageURL": { "type": "string" },
+                "reducedMotionImageURL": { "type": "string" },
+                "darkModeReducedMotionImageURL": { "type": "string" }
+              }
+            },
             "position": {
               "type": "string",
-              "description": "The corner the illustration is anchored to. Defaults to 'bottom-right'.",
-              "enum": ["bottom-left", "bottom-right", "top-left", "top-right"]
+              "description": "The corner the illustration is anchored to. Defaults to 'bottom-right'. The -start/-end values are direction-relative and resolve against the text direction, so they mirror in RTL; the left/right values are always that physical corner.",
+              "enum": [
+                "bottom-left",
+                "bottom-right",
+                "top-left",
+                "top-right",
+                "bottom-start",
+                "bottom-end",
+                "top-start",
+                "top-end"
+              ]
             },
             "width": {
               "type": "string",

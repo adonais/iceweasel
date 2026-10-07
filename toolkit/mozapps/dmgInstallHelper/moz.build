@@ -18,15 +18,28 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
         "-fobjc-arc",
     ]
 
+    GeneratedFile(
+        "dmgInstallHelper-Info.plist",
+        script="/python/mozbuild/mozbuild/action/preprocessor.py",
+        entry_point="generate",
+        inputs=["Info.plist.in"],
+        flags=[
+            "-Fsubstitution",
+            f"-DMOZ_SMAUTHORIZEDCLIENTS_REQUIREMENTS={CONFIG['MOZ_SMAUTHORIZEDCLIENTS_REQUIREMENTS']}",
+        ],
+    )
+
     LDFLAGS += [
         "-sectcreate",
         "__TEXT",
         "__info_plist",
-        TOPOBJDIR + "/dist/bin/dmgInstallHelper-Info.plist",
+        f"{OBJDIR}/dmgInstallHelper-Info.plist",
         "-sectcreate",
         "__TEXT",
         "__launchd_plist",
         SRCDIR + "/Launchd.plist",
     ]
+
+    EXTRA_LINK_DEPS += ["!dmgInstallHelper-Info.plist", "Launchd.plist"]
 
     EXPORTS += ["dmgInstallProtocol.h"]

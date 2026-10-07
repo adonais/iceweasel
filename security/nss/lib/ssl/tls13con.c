@@ -1369,7 +1369,8 @@ tls13_HandleKeyUpdate(sslSocket *ss, PRUint8 *b, unsigned int length)
     }
     if (!(update == update_requested ||
           update == update_not_requested)) {
-        FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_KEY_UPDATE, decode_error);
+        /* See RFC 9846, Section 4.7.3. */
+        FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_KEY_UPDATE, illegal_parameter);
         return SECFailure;
     }
 
@@ -3310,7 +3311,11 @@ tls13_HandleCertificateRequest(sslSocket *ss, PRUint8 *b, PRUint32 length)
     }
 
     /* Client */
-    if (ss->opt.enablePostHandshakeAuth) {
+    /* Post-handshake authentication is never negotiated for DTLS: the client
+     * does not send the post_handshake_auth extension (see
+     * tls13_ClientSendPostHandshakeAuthXtn), so a CertificateRequest is only
+     * acceptable in idle_handshake for stream TLS. */
+    if (ss->opt.enablePostHandshakeAuth && !IS_DTLS(ss)) {
         rv = TLS13_CHECK_HS_STATE(ss, SSL_ERROR_RX_UNEXPECTED_CERT_REQUEST,
                                   wait_cert_request, idle_handshake);
     } else {
@@ -6072,6 +6077,23 @@ tls13_FinishHandshake(sslSocket *ss)
     return ssl_FinishHandshake(ss);
 }
 
+/* Hash the handshake messages appended to sendBuf since `offset`.  The caller
+ * captures `offset` before appending, so anything that drains sendBuf in
+ * between leaves it stale; rather than compute a bogus length, fail. */
+static SECStatus
+tls13_UpdatePostHandshakeHashesFrom(sslSocket *ss, unsigned int offset)
+{
+    unsigned int len = SSL_BUFFER_LEN(&ss->sec.ci.sendBuf);
+
+    if (len < offset) {
+        PORT_Assert(0);
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        return SECFailure;
+    }
+    return ssl3_UpdatePostHandshakeHashes(
+        ss, SSL_BUFFER_BASE(&ss->sec.ci.sendBuf) + offset, len - offset);
+}
+
 /* Do the parts of sending the client's second round that require
  * the XmitBuf lock. */
 static SECStatus
@@ -6106,9 +6128,7 @@ tls13_SendClientSecondFlight(sslSocket *ss)
     }
 
     if (ss->firstHsDone) {
-        rv = ssl3_UpdatePostHandshakeHashes(ss,
-                                            SSL_BUFFER_BASE(&ss->sec.ci.sendBuf) + offset,
-                                            SSL_BUFFER_LEN(&ss->sec.ci.sendBuf) - offset);
+        rv = tls13_UpdatePostHandshakeHashesFrom(ss, offset);
         if (rv != SECSuccess) {
             goto alert_error; /* err code was set. */
         }
@@ -6138,9 +6158,7 @@ tls13_SendClientSecondFlight(sslSocket *ss)
         }
 
         if (ss->firstHsDone) {
-            rv = ssl3_UpdatePostHandshakeHashes(ss,
-                                                SSL_BUFFER_BASE(&ss->sec.ci.sendBuf) + offset,
-                                                SSL_BUFFER_LEN(&ss->sec.ci.sendBuf) - offset);
+            rv = tls13_UpdatePostHandshakeHashesFrom(ss, offset);
             if (rv != SECSuccess) {
                 goto alert_error; /* err code was set. */
             }

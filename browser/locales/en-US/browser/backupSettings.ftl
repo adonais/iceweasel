@@ -200,7 +200,7 @@ change-backup-encryption-header = Change backup password
 
 password-rules-header = Password requirements
 password-rules-length-description = At least 8 characters
-password-rules-email-description = Not your email address
+password-rules-email-description2 = Not an email address
 password-rules-disclaimer = Stay safe — don’t reuse passwords. See more tips to <a data-l10n-name="password-support-link">create strong passwords</a>.
 password-validity-has-email = Can’t be an email address
 password-validity-do-not-match = Passwords don’t match

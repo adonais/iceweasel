@@ -92,6 +92,9 @@ DEFINES['SQLITE_OMIT_BUILTIN_TEST'] = True
 # Try to use a MEMORY temp store when possible. That allows for better
 # performance and doesn't suffer from a full separate tmp partition.
 # Exclude 32bit platforms due to address space fragmentation issues.
+# Connection::initializeInternal in storage/mozStorageConnection.cpp assumes
+# these values when deciding whether encrypted databases need to set
+# PRAGMA temp_store themselves; keep the two in sync.
 if CONFIG['OS_TARGET'] == 'Android':
     # On Android there's no tmp partition, so always use a MEMORY temp store.
     DEFINES['SQLITE_TEMP_STORE'] = 3

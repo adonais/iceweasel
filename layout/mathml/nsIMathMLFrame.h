@@ -4,7 +4,10 @@
 #ifndef nsIMathMLFrame_h_
 #define nsIMathMLFrame_h_
 
+#include "mozilla/gfx/2D.h"
+#include "nsBoundingMetrics.h"
 #include "nsMathMLOperators.h"
+#include "nsPoint.h"
 #include "nsQueryFrame.h"
 
 struct nsPresentationData;

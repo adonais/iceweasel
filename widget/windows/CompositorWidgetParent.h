@@ -53,6 +53,8 @@ class CompositorWidgetParent final : public PCompositorWidgetParent,
       const bool& aIsFullyOccluded) override;
   mozilla::ipc::IPCResult RecvUpdateTransparency(
       const TransparencyMode& aTransparencyMode) override;
+  mozilla::ipc::IPCResult RecvNotifyClientSizeChanged(
+      const LayoutDeviceIntSize& aClientSize) override;
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   nsIWidget* RealWidget() override;

@@ -210,17 +210,13 @@ static bool ToNicerStunStruct(const char* aAddrForFqdn,
     return false;
   }
 
-  const char* host = aAddrForFqdn ? aAddrForFqdn : aEntry.mUri.mHost.get();
+  const char* ip = aAddrForFqdn ? aAddrForFqdn : aEntry.mUri.mHost.get();
+  const char* domainName = aAddrForFqdn ? aEntry.mUri.mHost.get() : nullptr;
 
-  if (nr_str_port_to_transport_addr(host, aEntry.mUri.mPort, protocol,
+  if (nr_str_port_to_transport_addr(ip, domainName, aEntry.mUri.mPort, protocol,
                                     &(aResult->addr))) {
     MOZ_MTLOG(ML_ERROR, "Failed to init STUN server");
     return false;
-  }
-
-  if (aAddrForFqdn) {
-    std::strncpy(aResult->addr.fqdn, aEntry.mUri.mHost.get(),
-                 sizeof(aResult->addr.fqdn) - 1);  // Don't stomp trailing null
   }
 
   if (isTls) {
@@ -564,7 +560,7 @@ int NrIceCtx::msg_recvd(void* obj, nr_ice_peer_ctx* pctx,
   // Streams which do not exist should never have packets.
   MOZ_ASSERT(s);
 
-  s->SignalPacketReceived(s, component_id, msg, len);
+  s->PacketReceived(stream, component_id, msg, len);
 
   return 0;
 }
@@ -905,9 +901,10 @@ nsresult NrIceCtx::SetIceServers(const nsTArray<ParsedIceServer>& aServers,
     // dependency.
     nr_transport_addr parsed;
     bool isFqdn = false;
-    if (!nr_str_port_to_transport_addr(entry.mUri.mHost.get(), entry.mUri.mPort,
-                                       IPPROTO_UDP, &parsed)) {
-      isFqdn = parsed.fqdn[0] != '\0';
+    if (nr_str_port_to_transport_addr(entry.mUri.mHost.get(), nullptr,
+                                      entry.mUri.mPort, IPPROTO_UDP, &parsed)) {
+      // Failed to parse, uri's host must be a domain name
+      isFqdn = true;
     }
 
     if (isFqdn) {
@@ -1106,7 +1103,7 @@ nsresult NrIceCtx::StartChecks() {
     return NS_ERROR_FAILURE;
   }
 
-  r = nr_ice_peer_ctx_start_checks2(peer_, 1);
+  r = nr_ice_peer_ctx_start_checks(peer_);
   if (r) {
     if (r == R_NOT_FOUND) {
       MOZ_MTLOG(ML_INFO, "Couldn't start peer checks on "
@@ -1190,7 +1187,9 @@ void NrIceCtx::GenerateObfuscatedAddress(nr_ice_candidate* candidate,
 
       obfuscated_host_addresses_[*actual_address] = *mdns_address;
     }
-    candidate->mdns_addr = strdup(mdns_address->c_str());
+    strncpy(candidate->addr.fqdn, mdns_address->c_str(),
+            sizeof(candidate->addr.fqdn));
+    candidate->addr.fqdn[sizeof(candidate->addr.fqdn) - 1] = '\0';
   }
 }
 

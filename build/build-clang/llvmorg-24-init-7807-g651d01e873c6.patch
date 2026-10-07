@@ -1,0 +1,72 @@
+From 651d01e873c6fce3c8d300362585b1a5f98bb883 Mon Sep 17 00:00:00 2001
+From: AZero13 <gfunni234@gmail.com>
+Date: Tue, 8 Sep 2026 08:47:13 -0400
+Subject: [PATCH] [clang][AST] Fix infinite recursion when printing fully
+ qualified template parameters (#219044)
+
+This fixes an infinite recursion crash that was introduced in #206041.
+
+When printing a `DeclRefExpr` using
+`PrintingPolicy::FullyQualifiedName`, we were previously trying to print
+the fully qualified name of all decls. However, when the decl is a
+template parameter, its `DeclContext` is the template specialization
+itself. If a template specialization's arguments depend on that same
+template parameter (e.g., `template<int Count> struct
+View<int[Count]>`), attempting to print the qualified name forces Clang
+to recursively evaluate the enclosing context. This led to unbounded
+recursion (`View<int[Count]>::Count` ->
+`View<int[View<int[Count]>::Count]>::Count` and so on). Since template
+parameters are inherently scoped to their template declarations and do
+not require a fully qualified name, this patch resolves the issue by
+skipping `printQualifiedName` if the decl is a template parameter
+(`!VD->isTemplateParameter()`).
+
+Fixes #218076.
+---
+ clang/lib/AST/StmtPrinter.cpp           |  3 ++-
+ clang/unittests/AST/TypePrinterTest.cpp | 18 ++++++++++++++++++
+ 2 files changed, 20 insertions(+), 1 deletion(-)
+
+diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
+index 77a3fcfd3ad08..a3da70962f4f5 100644
+--- a/clang/lib/AST/StmtPrinter.cpp
++++ b/clang/lib/AST/StmtPrinter.cpp
+@@ -1378,7 +1378,8 @@ void StmtPrinter::VisitDeclRefExpr(DeclRefExpr *Node) {
+   bool CleanUglifiedParameter = Policy.CleanUglifiedParameters &&
+                                 isa<ParmVarDecl, NonTypeTemplateParmDecl>(VD);
+ 
+-  if (Policy.FullyQualifiedName && !ForceAnonymous && !CleanUglifiedParameter) {
++  if (Policy.FullyQualifiedName && !ForceAnonymous && !CleanUglifiedParameter &&
++      !VD->isTemplateParameter()) {
+     VD->printQualifiedName(OS, Policy);
+   } else {
+     Node->getQualifier().print(OS, Policy);
+diff --git a/clang/unittests/AST/TypePrinterTest.cpp b/clang/unittests/AST/TypePrinterTest.cpp
+index 79f75909c57b5..8a319faabdb96 100644
+--- a/clang/unittests/AST/TypePrinterTest.cpp
++++ b/clang/unittests/AST/TypePrinterTest.cpp
+@@ -145,6 +145,24 @@ TEST(TypePrinter, TemplateArgumentExpressionFullyQualified) {
+       [](PrintingPolicy &Policy) { Policy.FullyQualifiedName = true; }));
+ }
+ 
++TEST(TypePrinter, TemplateSpecializationWithDependentSizedArrayType) {
++  llvm::StringLiteral Code = R"cpp(
++    template<typename Container>
++    struct View {};
++
++    template<int Count>
++    struct View<int[Count]> {
++      using Container = int[Count];
++    };
++  )cpp";
++
++  auto Matcher =
++      typeAliasDecl(hasName("Container"), hasType(qualType().bind("id")));
++  ASSERT_TRUE(PrintedTypeMatches(
++      Code, {}, Matcher, "int[Count]",
++      [](PrintingPolicy &Policy) { Policy.FullyQualifiedName = true; }));
++}
++
+ TEST(TypePrinter, TemplateIdWithNTTP) {
+   constexpr char Code[] = R"cpp(
+     template <int N>

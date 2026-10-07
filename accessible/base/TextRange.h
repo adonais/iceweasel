@@ -9,10 +9,9 @@
 
 #include "nsTArray.h"
 
-class nsRange;
-
 namespace mozilla {
 namespace dom {
+class Range;
 class Selection;
 }  // namespace dom
 namespace a11y {
@@ -125,7 +124,7 @@ class TextRange final {
    * @param  aReversed     [out] whether the start/end offsets were reversed.
    * @return true   if conversion was successful
    */
-  bool AssignDOMRange(nsRange* aRange, bool* aReversed = nullptr) const;
+  bool AssignDOMRange(dom::Range* aRange, bool* aReversed = nullptr) const;
 
   /**
    * Return true if this TextRange object represents an actual range of text.

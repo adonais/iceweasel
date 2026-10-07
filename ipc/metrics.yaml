@@ -29,7 +29,6 @@ process:
       - jimm@mozilla.com
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: CHILD_PROCESS_LAUNCH_MS
 
 ipc:
   transaction_cancel:
@@ -49,7 +48,6 @@ ipc:
     notification_emails:
       - billm@mozilla.com
     expires: never
-    telemetry_mirror: h#IPC_TRANSACTION_CANCEL
 
 subprocess:
   abnormal_abort:

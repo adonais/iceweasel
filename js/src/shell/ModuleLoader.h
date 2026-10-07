@@ -24,7 +24,7 @@ class ModuleLoader {
   void clearModules(JSContext* cx);
 
  private:
-  static bool LoadImportedModule(JSContext* cx, JS::Handle<JSScript*> referrer,
+  static bool LoadImportedModule(JSContext* cx, JS::Handle<JS::Value> referrer,
                                  HandleObject moduleRequest,
                                  HandleValue hostDefined, HandleValue payload,
                                  uint32_t lineNumber,
@@ -44,7 +44,7 @@ class ModuleLoader {
   static bool DynamicImportLoadResolved(JSContext* cx, HandleValue hostDefined);
   static bool DynamicImportLoadRejected(JSContext* cx, HandleValue hostDefined,
                                         HandleValue error);
-  bool loadImportedModule(JSContext* cx, HandleScript referrer,
+  bool loadImportedModule(JSContext* cx, HandleValue referrer,
                           HandleObject moduleRequest, HandleValue payload);
   bool populateImportMeta(JSContext* cx, JS::HandleObject moduleRecord,
                           HandleObject metaObject);
@@ -52,7 +52,7 @@ class ModuleLoader {
                          JS::Handle<JS::Value> referencingPrivate,
                          JS::Handle<JSString*> specifier,
                          JS::MutableHandle<JSString*> urlOut);
-  JSObject* getOrLoadModule(JSContext* cx, HandleScript referrer,
+  JSObject* getOrLoadModule(JSContext* cx, HandleValue referrer,
                             HandleObject moduleRequest);
   JSObject* loadAndParse(JSContext* cx, HandleString path,
                          HandleObject moduleRequestArg);
@@ -62,7 +62,7 @@ class ModuleLoader {
   bool addModuleToRegistry(JSContext* cx, JS::ModuleType moduleType,
                            HandleString path, HandleObject module);
   JSLinearString* resolve(JSContext* cx, HandleObject moduleRequestArg,
-                          HandleScript referrer);
+                          HandleValue referrer);
   JSLinearString* resolve(JSContext* cx, HandleString specifier,
                           HandleValue referencingInfo);
   bool getScriptPath(JSContext* cx, HandleValue privateValue,

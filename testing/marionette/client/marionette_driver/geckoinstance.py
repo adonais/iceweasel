@@ -16,6 +16,7 @@ import codecs
 import io
 import json
 import os
+import shutil
 import sys
 import tempfile
 import time
@@ -47,6 +48,11 @@ class GeckoInstance:
         # and causing false-positive test failures. See bug 1176798, bug 1177018,
         # bug 1210465.
         "apz.content_response_timeout": 60000,
+        # Use zero movement tolerance before a touch is treated as a pan, so that in
+        # automation touch events scroll from exactly the position they are dispatched
+        # without small movements first being absorbed.
+        "apz.touch_move_tolerance": "0.0",
+        "apz.touch_start_tolerance": "0.0",
         # Disable extension discovery
         "browser.discovery.enabled": False,
         # Make sure error page is not shown for blank pages with 4xx or 5xx response code
@@ -200,6 +206,8 @@ class GeckoInstance:
         # Disable window occlusion on Windows, see Bug 1802473.
         "widget.windows.window_occlusion_tracking.enabled": False,
     }
+
+    _appdata_tmpdir = None
 
     def __init__(
         self,
@@ -437,6 +445,18 @@ class GeckoInstance:
             "MOZ_CRASHREPORTER_SHUTDOWN": "1",
         })
 
+        if "MOZ_APP_DATA" not in env:
+            if not self._appdata_tmpdir:
+                self._appdata_tmpdir = tempfile.mkdtemp(
+                    suffix=".moz-appdata", dir=self.workspace
+                )
+            env["MOZ_APP_DATA"] = os.path.normpath(
+                os.path.join(self._appdata_tmpdir, "AppData", "Roaming")
+            )
+            env["MOZ_LOCAL_APP_DATA"] = os.path.normpath(
+                os.path.join(self._appdata_tmpdir, "Local")
+            )
+
         # Default to allow system access unless it is already set.
         if env.get("MOZ_REMOTE_ALLOW_SYSTEM_ACCESS") is None:
             env.update({"MOZ_REMOTE_ALLOW_SYSTEM_ACCESS": "1"})
@@ -475,6 +495,11 @@ class GeckoInstance:
             if isinstance(self.profile, Profile):
                 self.profile.cleanup()
             self.profile = None
+
+    def __del__(self):
+        if self._appdata_tmpdir and os.path.exists(self._appdata_tmpdir):
+            shutil.rmtree(self._appdata_tmpdir, ignore_errors=True)
+            self._appdata_tmpdir = None
 
     def restart(self, prefs=None, clean=True):
         """

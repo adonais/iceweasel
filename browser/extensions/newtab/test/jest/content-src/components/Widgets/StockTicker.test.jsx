@@ -186,6 +186,9 @@ describe("StockTicker", () => {
     expect(
       container.querySelector("li.stock-ticker").getAttribute("aria-hidden")
     ).toBe("true");
+    expect(container.querySelector("li.stock-ticker").className).toContain(
+      "stock-ticker--loading"
+    );
   });
 
   it("falls back to the ticker symbol as the screen-reader subject when name is missing, and is not aria-hidden", () => {
@@ -242,6 +245,58 @@ describe("StockTicker", () => {
       change: "+2.1%",
       price: "$559.44",
     });
+  });
+
+  it.each(["medium", "large"])(
+    "gives a %s quote row a tooltip with the full name",
+    size => {
+      const { container } = render(
+        <StockTicker
+          size={size}
+          name="SPDR Dow Jones Industrial Average ETF Trust"
+          ticker="DIA"
+          price="$559.44 USD"
+          changePercent="-0.11"
+        />
+      );
+      const name = "SPDR Dow Jones Industrial Average ETF Trust";
+      expect(
+        container.querySelector(".stock-indicator").getAttribute("title")
+      ).toBe(name);
+      expect(
+        container.querySelector(".stock-ticker-label").getAttribute("title")
+      ).toBe(name);
+      // The li is what screen readers read; a title there would be announced
+      // as a description after the spoken summary.
+      expect(container.querySelector("li").hasAttribute("title")).toBe(false);
+    }
+  );
+
+  it("gives small, loading and search rows no tooltip", () => {
+    const hasTooltip = container =>
+      !![...container.querySelectorAll("[title]")].length;
+    const small = render(
+      <StockTicker
+        size="small"
+        name="Apple Inc"
+        ticker="AAPL"
+        price="$1 USD"
+        changePercent="+0.1"
+      />
+    );
+    expect(hasTooltip(small.container)).toBe(false);
+    const loading = render(<StockTicker size="large" loading={true} />);
+    expect(hasTooltip(loading.container)).toBe(false);
+    const result = render(
+      <StockTicker
+        size="large"
+        variant="search"
+        name="Apple Inc"
+        ticker="AAPL"
+        exchange="NASDAQ"
+      />
+    );
+    expect(hasTooltip(result.container)).toBe(false);
   });
 });
 
@@ -398,10 +453,59 @@ describe("StockTicker watchlist control (large only)", () => {
         .getAttribute("disabled")
     ).not.toBeNull();
   });
+});
 
-  it("marks a search-variant row with the result class", () => {
-    const { container } = renderRow({ variant: "search" });
+describe("StockTicker search variant", () => {
+  const base = {
+    size: "large",
+    variant: "search",
+    name: "Vanguard S&P 500 ETF",
+    ticker: "VOO",
+    exchange: "NYSE",
+  };
+  const renderRow = props =>
+    render(
+      <ul>
+        <StockTicker {...base} {...props} />
+      </ul>
+    );
+
+  it("marks the row with the result class", () => {
+    const { container } = renderRow();
     expect(container.querySelector("li.stock-ticker--result")).toBeTruthy();
+  });
+
+  it("shows name, symbol and exchange with no quote parts", () => {
+    const { container } = renderRow({
+      watchlistState: "add",
+      onWatchlistToggle: jest.fn(),
+    });
+    expect(container.querySelector(".stock-ticker-name").textContent).toBe(
+      "Vanguard S&P 500 ETF"
+    );
+    expect(container.querySelector(".stock-ticker-symbol").textContent).toBe(
+      "VOO"
+    );
+    expect(container.querySelector(".stock-ticker-exchange").textContent).toBe(
+      "NYSE"
+    );
+    expect(container.querySelector(".stock-indicator")).toBeNull();
+    expect(container.querySelector(".stock-ticker-price")).toBeNull();
+    expect(container.querySelector(".stock-ticker-change")).toBeNull();
+    // Only saved rows carry a second .stock-ticker-sr (the in-watchlist span).
+    expect(container.querySelector(".stock-ticker-sr")).toBeNull();
+    expect(
+      container.querySelector(".stock-ticker-label").getAttribute("aria-hidden")
+    ).toBeNull();
+    expect(
+      container.querySelector("moz-button.stock-ticker-action")
+    ).toBeTruthy();
+  });
+
+  it("omits the second line when the exchange is empty", () => {
+    const { container } = renderRow({ exchange: "" });
+    expect(container.querySelectorAll(".stock-ticker-line")).toHaveLength(1);
+    expect(container.querySelector(".stock-ticker-exchange")).toBeNull();
   });
 });
 

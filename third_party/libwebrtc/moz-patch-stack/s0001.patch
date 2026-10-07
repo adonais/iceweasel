@@ -399,7 +399,7 @@ index 6ba3292fca..5d3a731864 100644
    RTPHeader();
    RTPHeader(const RTPHeader& other);
 diff --git a/api/rtp_parameters.cc b/api/rtp_parameters.cc
-index 772898168a..7c0a523e00 100644
+index 316e4365d9..4ff8b2d617 100644
 --- a/api/rtp_parameters.cc
 +++ b/api/rtp_parameters.cc
 @@ -254,7 +254,8 @@ bool RtpExtension::IsSupportedForAudio(absl::string_view uri) {
@@ -413,7 +413,7 @@ index 772898168a..7c0a523e00 100644
  
  bool RtpExtension::IsSupportedForVideo(absl::string_view uri) {
 diff --git a/call/BUILD.gn b/call/BUILD.gn
-index b2f2bf510b..fa4e117647 100644
+index 1ed224b58e..a985ef3553 100644
 --- a/call/BUILD.gn
 +++ b/call/BUILD.gn
 @@ -20,6 +20,7 @@ rtc_library("call_interfaces") {
@@ -435,10 +435,10 @@ index b2f2bf510b..fa4e117647 100644
    deps = [
      ":audio_sender_interface",
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index 50e0d5b187..fdafd985a3 100644
+index 2a7be9fe0d..1e53b6e117 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
-@@ -243,6 +243,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
+@@ -248,6 +248,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
        // disabled.
        KeyFrameReqMethod keyframe_method = KeyFrameReqMethod::kPliRtcp;
  
@@ -1286,10 +1286,10 @@ index 29e34dc3b5..a0addc53c0 100644
  
    int64_t _lastProcessFrameTimeNanos RTC_GUARDED_BY(capture_checker_);
 diff --git a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
-index 3b745a5ca1..1a3934c364 100644
+index b66ff0fe89..5fe9f3db58 100644
 --- a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
 +++ b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
-@@ -286,6 +286,7 @@ LibvpxVp9Encoder::LibvpxVp9Encoder(const Environment& env,
+@@ -287,6 +287,7 @@ LibvpxVp9Encoder::LibvpxVp9Encoder(const Environment& env,
        force_all_active_layers_(false),
        enable_svc_for_simulcast_(
            !env.field_trials().IsDisabled("WebRTC-VP9-SvcForSimulcast")),
@@ -1320,7 +1320,7 @@ index 3b745a5ca1..1a3934c364 100644
    // Set input image for use in the callback.
    // This was necessary since you need some information from input_image.
    // You can save only the necessary information (such as timestamp) instead of
-@@ -1313,6 +1323,48 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
+@@ -1312,6 +1322,48 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
    return WEBRTC_VIDEO_CODEC_OK;
  }
  
@@ -1370,10 +1370,10 @@ index 3b745a5ca1..1a3934c364 100644
                                               std::optional<int>* spatial_idx,
                                               std::optional<int>* temporal_idx,
 diff --git a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.h b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.h
-index c3326509ce..293ccd7089 100644
+index 849c7ce530..27f1b22422 100644
 --- a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.h
 +++ b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.h
-@@ -84,6 +84,9 @@ class LibvpxVp9Encoder : public VideoEncoder {
+@@ -83,6 +83,9 @@ class LibvpxVp9Encoder : public VideoEncoder {
    // Call encoder initialize function and set control settings.
    int InitAndSetControlSettings();
  
@@ -1383,7 +1383,7 @@ index c3326509ce..293ccd7089 100644
    bool PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                               std::optional<int>* spatial_idx,
                               std::optional<int>* temporal_idx,
-@@ -172,6 +175,7 @@ class LibvpxVp9Encoder : public VideoEncoder {
+@@ -171,6 +174,7 @@ class LibvpxVp9Encoder : public VideoEncoder {
    VideoBitrateAllocation current_bitrate_allocation_;
    bool ss_info_needed_;
    bool force_all_active_layers_;
@@ -1409,10 +1409,10 @@ index 276a878ffc..391fec9870 100644
      # Dependency on chromium's logging (in //base).
      deps += [ "//base" ]
 diff --git a/rtc_base/logging.cc b/rtc_base/logging.cc
-index 0be1b8fc42..30747536fc 100644
+index 00f49c9a52..409c040026 100644
 --- a/rtc_base/logging.cc
 +++ b/rtc_base/logging.cc
-@@ -26,6 +26,7 @@
+@@ -27,6 +27,7 @@
  #include "absl/strings/string_view.h"
  #include "api/task_queue/task_queue_base.h"
  #include "api/units/timestamp.h"
@@ -1420,7 +1420,7 @@ index 0be1b8fc42..30747536fc 100644
  #include "rtc_base/checks.h"
  #include "rtc_base/platform_thread_types.h"
  #include "rtc_base/string_encode.h"
-@@ -54,6 +55,24 @@ static const int kMaxLogLineSize = 1024 - 60;
+@@ -55,6 +56,24 @@ static const int kMaxLogLineSize = 1024 - 60;
  #endif  // WEBRTC_MAC && !defined(WEBRTC_IOS) || WEBRTC_ANDROID
  
  namespace webrtc {
@@ -1445,7 +1445,7 @@ index 0be1b8fc42..30747536fc 100644
  namespace {
  
  // By default, release builds don't log, debug builds at info level
-@@ -168,7 +187,7 @@ std::string LogLineRef::DefaultLogLine() const {
+@@ -169,7 +188,7 @@ std::string LogLineRef::DefaultLogLine() const {
  // LogMessage
  /////////////////////////////////////////////////////////////////////////////
  

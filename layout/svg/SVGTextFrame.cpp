@@ -3379,31 +3379,12 @@ void SVGTextFrame::ReflowSVG() {
   TextRenderedRunIterator it(
       this, TextRenderedRunIterator::RenderedRunFilter::AllFrames);
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
-    TextRenderedRun::GeometryFlags runFlags;
-    if (!run.mFrame->StyleSVG()->mFill.kind.IsNone()) {
-      runFlags += TextRenderedRun::GeometryFlag::IncludeFill;
-    }
-    if (SVGUtils::HasStroke(run.mFrame)) {
+    TextRenderedRun::GeometryFlags runFlags{
+        TextRenderedRun::GeometryFlag::IncludeFill};
+    if (!run.mFrame->StyleSVG()->mStroke.kind.IsNone()) {
       runFlags += TextRenderedRun::GeometryFlag::IncludeStroke;
     }
-    // Our "visual" overflow rect needs to be valid for building display lists
-    // for hit testing, which means that for certain values of 'pointer-events'
-    // it needs to include the geometry of the fill or stroke even when the
-    // fill/ stroke don't actually render (e.g. when stroke="none" or
-    // stroke-opacity="0"). GetGeometryHitTestFlags accounts for
-    // 'pointer-events'. The text-shadow is not part of the hit-test area.
-    SVGHitTestFlags hitTestFlags =
-        SVGUtils::GetGeometryHitTestFlags(run.mFrame);
-    if (hitTestFlags.contains(SVGHitTestFlag::Fill)) {
-      runFlags += TextRenderedRun::GeometryFlag::IncludeFill;
-    }
-    if (hitTestFlags.contains(SVGHitTestFlag::Stroke)) {
-      runFlags += TextRenderedRun::GeometryFlag::IncludeStroke;
-    }
-
-    if (!runFlags.isEmpty()) {
-      r.UnionEdges(run.GetUserSpaceRect(presContext, runFlags));
-    }
+    r.UnionEdges(run.GetUserSpaceRect(presContext, runFlags));
   }
 
   if (r.IsEmpty()) {
@@ -3483,11 +3464,19 @@ SVGBBox SVGTextFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
     return bbox;
   }
 
+  return GetSubtreeBBox(nullptr, aToBBoxUserspace, aFlags);
+}
+
+SVGBBox SVGTextFrame::GetSubtreeBBox(const nsIFrame* aSubtree,
+                                     const Matrix& aToBBoxUserspace,
+                                     SVGBBoxFlags aFlags) {
   UpdateGlyphPositioning();
 
   nsPresContext* presContext = PresContext();
 
-  TextRenderedRunIterator it(this);
+  SVGBBox bbox;
+  TextRenderedRunIterator it(
+      this, TextRenderedRunIterator::RenderedRunFilter::AllFrames, aSubtree);
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
     TextRenderedRun::GeometryFlags flags =
         TextRenderedRunFlagsForBBoxContribution(run, aFlags);

@@ -62,8 +62,19 @@ this.AccessibilityUtils = (function () {
     Ci.nsIAccessibleRole.ROLE_RICH_OPTION,
   ]);
 
+  // Roles which, when focusable, are operated by changing their value rather
+  // than by being activated, so they do not expose an accessible action. The
+  // same roles also cover decorations that are never focusable, like a toolbar
+  // spring or an <hr>, so test them with isFocusableValueRole rather than with
+  // this set directly.
+  const FOCUSABLE_VALUE_ROLES = new Set([
+    Ci.nsIAccessibleRole.ROLE_SCROLLBAR,
+    Ci.nsIAccessibleRole.ROLE_SEPARATOR,
+  ]);
+
   // Roles that are considered interactive when they are focusable.
   const INTERACTIVE_IF_FOCUSABLE_ROLES = new Set([
+    ...FOCUSABLE_VALUE_ROLES,
     // If article is focusable, we can assume it is inside a feed.
     Ci.nsIAccessibleRole.ROLE_ARTICLE,
     // Column header can be focusable.
@@ -74,8 +85,6 @@ this.AccessibilityUtils = (function () {
     Ci.nsIAccessibleRole.ROLE_PAGETABLIST,
     // Row header can be focusable.
     Ci.nsIAccessibleRole.ROLE_ROWHEADER,
-    Ci.nsIAccessibleRole.ROLE_SCROLLBAR,
-    Ci.nsIAccessibleRole.ROLE_SEPARATOR,
     Ci.nsIAccessibleRole.ROLE_TOOLBAR,
   ]);
 
@@ -125,6 +134,10 @@ this.AccessibilityUtils = (function () {
   let gEnv = {
     ...DEFAULT_ENV,
   };
+
+  // The node the test clicked, while the checks are running on a different
+  // node. See assertCanBeClicked.
+  let gClickedNode = null;
 
   // This is set by AccessibilityUtils.init so that we always have a reference
   // to SimpleTest regardless of changes to the global scope.
@@ -228,6 +241,20 @@ this.AccessibilityUtils = (function () {
     accessible.getState(state, {});
 
     return !!(state.value & stateToMatch);
+  }
+
+  /**
+   * Determine if an accessible has a role that is interactive only while
+   * focusable, and is currently focusable.
+   *
+   * @param {nsIAccessible} accessible
+   *        Accessible object for a node.
+   */
+  function isFocusableValueRole(accessible) {
+    return (
+      FOCUSABLE_VALUE_ROLES.has(accessible.role) &&
+      matchState(accessible, STATE_FOCUSABLE)
+    );
   }
 
   /**
@@ -464,7 +491,10 @@ this.AccessibilityUtils = (function () {
       }
       // Use tabIndex rather than a11y focusable state because all tabs might
       // have tabindex="-1".
-      if (tab.DOMNode.tabIndex == 0) {
+      if (
+        tab.DOMNode.tabIndex == 0 &&
+        hasFocusableShadowAncestors(tab.DOMNode)
+      ) {
         if (foundFocusable) {
           // Only one tab within a tablist should be focusable.
           // ToDo: Fine-tune the a11y-check error message generated in this case.
@@ -481,6 +511,27 @@ this.AccessibilityUtils = (function () {
       }
     }
     return foundFocusable;
+  }
+
+  /**
+   * Determine if a node is keyboard focusable by ensuring none of its shadow
+   * host ancestors have a negative tabindex.
+   *
+   * @param {Node} node
+   *   The node to check within the shadow tree.
+   * @returns {boolean}
+   *   `true` if the node is not trapped behind an unfocusable shadow host.
+   */
+  function hasFocusableShadowAncestors(node) {
+    let root = node.getRootNode();
+    while (ShadowRoot.isInstance(root)) {
+      const host = root.host;
+      if (host.hasAttribute("tabindex") && host.tabIndex < 0) {
+        return false;
+      }
+      root = host.getRootNode();
+    }
+    return true;
   }
 
   /**
@@ -618,12 +669,9 @@ this.AccessibilityUtils = (function () {
       return false;
     }
     let ariaRole = node.getAttribute("role");
-    // There are only two cases of this pattern: <moz-input-box> and <searchbar>
-    const isMozInputBox =
-      node.tagName == "moz-input-box" &&
-      node.classList.contains("urlbar-input-box");
+    // <searchbar> is the only case of this pattern.
     const isSearchbar = node.tagName == "searchbar" && node.id == "searchbar";
-    return (isMozInputBox || isSearchbar) && ariaRole == "combobox";
+    return isSearchbar && ariaRole == "combobox";
   }
 
   /**
@@ -795,10 +843,18 @@ this.AccessibilityUtils = (function () {
     );
   }
 
+  function describeNode({ id, tagName, className }) {
+    return `id: ${id}, tagName: ${tagName}, className: ${className}`;
+  }
+
   function buildMessage(message, DOMNode) {
     if (DOMNode) {
-      const { id, tagName, className } = DOMNode;
-      message += `: id: ${id}, tagName: ${tagName}, className: ${className}`;
+      message += `: ${describeNode(DOMNode)}`;
+      if (gClickedNode) {
+        message +=
+          `. The checks fell back to this node from the one the test ` +
+          `clicked: ${describeNode(gClickedNode)}`;
+      }
     }
 
     return message;
@@ -926,10 +982,13 @@ this.AccessibilityUtils = (function () {
    *        Accessible object for a node.
    */
   function assertInteractive(accessible) {
+    const focusableValueRole = isFocusableValueRole(accessible);
+
     if (
       gEnv.mustBeEnabled &&
       gEnv.actionCountRule &&
-      accessible.actionCount === 0
+      accessible.actionCount === 0 &&
+      !focusableValueRole
     ) {
       a11yFail("Node does not support any accessible actions", accessible);
 
@@ -939,7 +998,8 @@ this.AccessibilityUtils = (function () {
     if (
       gEnv.mustBeEnabled &&
       gEnv.interactiveRule &&
-      !INTERACTIVE_ROLES.has(accessible.role)
+      !INTERACTIVE_ROLES.has(accessible.role) &&
+      !focusableValueRole
     ) {
       if (
         // Labels that have a label for relation with their target are clickable.
@@ -1193,7 +1253,7 @@ this.AccessibilityUtils = (function () {
         const targetAcc = relation.getTarget(0);
         return targetAcc;
       }
-      if (INTERACTIVE_ROLES.has(acc.role)) {
+      if (INTERACTIVE_ROLES.has(acc.role) || isFocusableValueRole(acc)) {
         return acc;
       }
     }
@@ -1264,11 +1324,22 @@ this.AccessibilityUtils = (function () {
         return;
       }
 
-      assertInteractive(acc);
-      assertFocusable(acc);
-      assertVisible(acc);
-      assertEnabled(acc);
-      assertLabelled(acc);
+      // acc is not necessarily the node the test clicked. Remember that node
+      // so that buildMessage can name it: a failure reported on a node the
+      // test never touched is otherwise hard to make sense of.
+      if (acc.DOMNode != node) {
+        gClickedNode = node;
+      }
+
+      try {
+        assertInteractive(acc);
+        assertFocusable(acc);
+        assertVisible(acc);
+        assertEnabled(acc);
+        assertLabelled(acc);
+      } finally {
+        gClickedNode = null;
+      }
     },
 
     setEnv(env = DEFAULT_ENV) {

@@ -24,7 +24,6 @@ import mozilla.components.feature.search.telemetry.SearchProviderModel
 import mozilla.components.feature.search.telemetry.SerpTelemetryRepository
 import mozilla.components.service.glean.net.ConceptFetchHttpUploader
 import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.support.ktx.android.content.res.readJSONObject
 import mozilla.components.support.utils.Browsers
 import mozilla.telemetry.glean.Glean
 import mozilla.telemetry.glean.config.Configuration
@@ -138,11 +137,9 @@ class GleanMetricsService(
 
         if (telemetryEnabled) {
             serviceScope.launch {
-                val readJson = { context.assets.readJSONObject("search/search_telemetry_v2.json") }
                 val providerList =
                     withContext(ioDispatcher) {
                         SerpTelemetryRepository(
-                                readJson = readJson,
                                 collectionName = COLLECTION_NAME,
                                 remoteSettingsService = context.components.remoteSettingsService,
                             )
@@ -216,6 +213,7 @@ class GleanMetricsService(
                     settings.lightThemeSelected -> {
                         "Light"
                     }
+
                     settings.darkThemeSelected -> {
                         "Dark"
                     }
@@ -223,6 +221,7 @@ class GleanMetricsService(
                     settings.useDefaultThemeSelected -> {
                         "Follow device"
                     }
+
                     else -> ""
                 }
             if (currentTheme.isNotEmpty()) {

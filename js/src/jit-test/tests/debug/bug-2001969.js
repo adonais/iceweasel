@@ -9,8 +9,8 @@ function assertOffsetColumns(code) {
   const dbg = new Debugger;
   let debuggeeFn = dbg.addDebuggee(global).makeDebuggeeValue(global.f);
   const { script } = debuggeeFn;
-  for (const offset of script.getAllColumnOffsets()) {
-    script.setBreakpoint(offset.offset, {});
+  for (const bp of script.getPossibleBreakpoints()) {
+    script.setBreakpoint(bp.offset, {});
   }
   global.f(3);
   throw new Error(`Assertion failed: ${foo}`);

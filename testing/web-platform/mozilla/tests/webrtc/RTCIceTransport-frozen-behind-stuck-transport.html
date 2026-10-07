@@ -1,0 +1,219 @@
+<!doctype html>
+<meta charset=utf-8>
+<meta name="timeout" content="long">
+<title>ICE transports frozen behind one that never connects</title>
+<script src=/resources/testharness.js></script>
+<script src=/resources/testharnessreport.js></script>
+<script src="/webrtc/RTCPeerConnection-helper.js"></script>
+<script>
+'use strict';
+
+// Our ICE stack follows RFC 5245: when candidates aren't trickled, only the
+// first m-section's transport starts checking, and the rest stay frozen until
+// one of its pairs succeeds. These tests point the first m-section at an
+// address nobody answers, so that never happens, and then take the first
+// transport away in two different ways. The remaining transports (which are
+// frozen) should start checking.
+
+const stripBundle = sdp => sdp.replace(/^a=group:BUNDLE.*\r\n/m, '');
+
+// TEST-NET-1 (RFC 5737)
+const UNROUTABLE_ADDR = '192.0.2.1';
+
+// Points every candidate in the first m-section at an unroutable address.
+function sabotageFirstMsection(sdp) {
+  const sections = sdp.split(/(?=^m=)/m);
+  sections[1] = sections[1].replace(
+    /^(a=candidate:\S+ \d+ \S+ \d+ )\S+/gm, `$1${UNROUTABLE_ADDR}`);
+  return sections.join('');
+}
+
+// A renegotiation delivers the remembered remote candidates to the ICE stack
+// all over again, and those will start any transport still waiting,
+// preventing us from hitting the bug that inspired this test. Leaving the
+// candidate lines out does not help, since the last set seen is kept and
+// re-delivered, unsticking things. Candidates for a component that does not
+// exist do the trick: JSEP remembers them in place of the real ones, they
+// parse just fine, but nICEr rejects them before they can unstick anything.
+const dudCandidates = sdp =>
+  sdp.replace(/^(a=candidate:\S+ )\d+( )/gm, '$13$2');
+
+// Bogs down the socket thread with datachannel traffic on an unrelated pair
+// of connections. Whether a renegotiation's transport removals reach the ICE
+// stack before or after its start-checks depends on how quickly the socket
+// thread gets to the first of two queued callbacks, and an idle one takes the
+// benign order every time. Returns a function that stops the flood.
+async function floodSocketThread(t) {
+  const tweedledee = new RTCPeerConnection();
+  const tweedledum = new RTCPeerConnection();
+  t.add_cleanup(() => {
+    tweedledee.close();
+    tweedledum.close();
+  });
+  const options = {ordered: false, maxRetransmits: 0};
+  const channeldee = tweedledee.createDataChannel('flood', options);
+  const channeldumOpen = new Promise(r => {
+    tweedledum.ondatachannel = ({channel}) => {
+      channel.onopen = () => r(channel);
+    };
+  });
+  exchangeIceCandidates(tweedledee, tweedledum);
+  await exchangeOfferAnswer(tweedledee, tweedledum);
+  const channeldum = await channeldumOpen;
+  if (channeldee.readyState != 'open') {
+    await waitUntilEvent(channeldee, 'open');
+  }
+
+  let running = true;
+  const payload = new Uint8Array(16 * 1024);
+  for (const channel of [channeldee, channeldum]) {
+    channel.bufferedAmountLowThreshold = 256 * 1024;
+    const sendMore = () => {
+      if (!running) {
+        return;
+      }
+      while (channel.bufferedAmount < 1024 * 1024) {
+        channel.send(payload);
+      }
+    };
+    channel.onbufferedamountlow = sendMore;
+    sendMore();
+  }
+  return () => {
+    running = false;
+  };
+}
+
+// Gathers everything before handing over the description, so that the
+// candidates travel in the SDP and nothing is trickled.
+async function gather(pc) {
+  await pc.setLocalDescription();
+  await waitForIceGatheringState(pc, ['complete']);
+}
+
+const iceTransports = pc =>
+  pc.getTransceivers().map(({receiver}) => receiver.transport.iceTransport);
+
+async function assertReachesState(t, transport, state, ms, description) {
+  await Promise.race([
+    waitForState(transport, state),
+    new Promise(r => t.step_timeout(r, ms)),
+  ]);
+  assert_equals(transport.state, state, description);
+}
+
+// Sets up |kinds.length| unbundled m-sections with the first one pointed at
+// the black hole, and waits until the first transport is checking and the
+// rest have not started.
+async function connectWithStuckFirstTransport(t, kinds) {
+  const pc1 = new RTCPeerConnection({bundlePolicy: 'max-compat'});
+  const pc2 = new RTCPeerConnection({bundlePolicy: 'max-compat'});
+  t.add_cleanup(() => {
+    pc1.close();
+    pc2.close();
+  });
+  for (const kind of kinds) {
+    pc1.addTransceiver(kind);
+  }
+
+  await gather(pc1);
+  const offer = pc1.localDescription;
+  // max-compat allows answerer to not do bundle, but Firefox never makes that
+  // choice; strip out the bundle stuff to force the issue.
+  await pc2.setRemoteDescription(
+    {type: 'offer', sdp: sabotageFirstMsection(stripBundle(offer.sdp))});
+  await gather(pc2);
+  const answer = pc2.localDescription;
+  await pc1.setRemoteDescription(
+    {type: 'answer', sdp: sabotageFirstMsection(answer.sdp)});
+
+  for (const pc of [pc1, pc2]) {
+    const [first, ...rest] = iceTransports(pc);
+    assert_equals(new Set([first, ...rest]).size, kinds.length,
+      'each m-section has its own transport');
+    await assertReachesState(t, first, 'checking', 5000,
+      'first transport is checking');
+    for (const transport of rest) {
+      assert_equals(transport.state, 'new', 'later transport has not started');
+    }
+  }
+  return [pc1, pc2];
+}
+
+promise_test(async t => {
+  const [pc1, pc2] =
+    await connectWithStuckFirstTransport(t, ['audio', 'video']);
+
+  for (const pc of [pc1, pc2]) {
+    const [first, second] = iceTransports(pc);
+    // Double-check that we have actually succeeded in setting up the transport
+    // failure we want; we won't bother waiting for this on subsequent tests.
+    await assertReachesState(t, first, 'failed', 15000,
+      'first transport fails');
+    await assertReachesState(t, second, 'connected', 15000,
+      'second transport connects once the first has failed');
+  }
+}, 'A transport frozen behind one that fails starts checking once it fails');
+
+promise_test(async t => {
+  const [pc1, pc2] =
+    await connectWithStuckFirstTransport(t, ['audio', 'video']);
+  const transports = [pc1, pc2].map(iceTransports);
+
+  // Renegotiate away the first m-section while it is still checking. That
+  // removes that transport, leaving the second with nothing in front of it.
+  // The second transport should then start checking and eventually connect.
+  const stopFlood = await floodSocketThread(t);
+  const [first, second] = pc1.getTransceivers();
+  first.stop();
+  await pc1.setLocalDescription();
+  const reoffer = pc1.localDescription;
+  await pc2.setRemoteDescription(
+    {type: 'offer', sdp: dudCandidates(stripBundle(reoffer.sdp))});
+  await pc2.setLocalDescription();
+  const reanswer = pc2.localDescription;
+  await pc1.setRemoteDescription(
+    {type: 'answer', sdp: dudCandidates(reanswer.sdp)});
+  stopFlood();
+
+  for (const [first, second] of transports) {
+    // We're supposed to reach 'closed' quickly, but we don't right now.
+    // See https://bugzilla.mozilla.org/show_bug.cgi?id=2073296
+    await assertReachesState(t, first, 'closed', 5000, 'first transport closed');
+    await assertReachesState(t, second, 'connected', 2000,
+      'second transport connects once nothing is ahead of it');
+  }
+}, 'A transport frozen behind one that is renegotiated away connects');
+
+// Same as above, but with two transports negotiated away, one of which never
+// starts checking.
+promise_test(async t => {
+  const [pc1, pc2] =
+    await connectWithStuckFirstTransport(t, ['audio', 'video', 'audio']);
+  const transports = [pc1, pc2].map(iceTransports);
+
+  const stopFlood = await floodSocketThread(t);
+  const [first, second] = pc1.getTransceivers();
+  first.stop();
+  second.stop();
+  await pc1.setLocalDescription();
+  const reoffer = pc1.localDescription;
+  await pc2.setRemoteDescription(
+    {type: 'offer', sdp: dudCandidates(stripBundle(reoffer.sdp))});
+  await pc2.setLocalDescription();
+  const reanswer = pc2.localDescription;
+  await pc1.setRemoteDescription(
+    {type: 'answer', sdp: dudCandidates(reanswer.sdp)});
+  stopFlood();
+
+  for (const [first, second, third] of transports) {
+    // We're supposed to reach 'closed' quickly, but we don't right now.
+    // See https://bugzilla.mozilla.org/show_bug.cgi?id=2073296
+    await assertReachesState(t, first, 'closed', 5000, 'first transport closed');
+    await assertReachesState(t, second, 'closed', 5000, 'second transport closed');
+    await assertReachesState(t, third, 'connected', 15000,
+      'third transport connects once nothing is ahead of it');
+  }
+}, 'A transport frozen behind ones that are renegotiated away connects');
+
+</script>

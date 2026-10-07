@@ -481,6 +481,7 @@ def remove_dead_symbols(dso_flags):
 
 set_config("MOZ_LTO", lto.enabled)
 set_define("MOZ_LTO", lto.enabled)
+set_config("MOZ_LTO_OBJECT_PATH", True, when=lto.enabled & target_is_darwin)
 set_config("MOZ_LTO_CFLAGS", lto.cflags)
 set_config("MOZ_LTO_LDFLAGS", lto.ldflags)
 set_config("MOZ_LTO_RUST_CROSS", lto.rust_lto)

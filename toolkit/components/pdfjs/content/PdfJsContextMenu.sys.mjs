@@ -145,9 +145,10 @@ export class PdfJsContextMenu {
   }
 
   cmd(aName) {
-    // Ignore commands from context menus made stale by navigation.
+    // Ignore commands from context menus made stale by navigation: the window
+    // global they were opened in may even have been destroyed in the meantime.
     const windowGlobal = this.#contextMenu.actor.manager;
-    if (!windowGlobal.isActiveInTab) {
+    if (!windowGlobal?.isActiveInTab) {
       return;
     }
 

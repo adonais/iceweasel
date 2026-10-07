@@ -36,4 +36,4 @@ memory containing the null value.
 ## Notes
 
 The memory allocated by {ref}`PL_strdup` should be freed with
-[PL_strfree](/en/PL_strfree).
+[PL_strfree](pl_strfree.md).

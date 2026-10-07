@@ -26,7 +26,7 @@ class ReportBody;
 // A global's registered user agent data and it's list of endpoints parsed from
 // the response header "Reporting-Endpoints"
 struct GlobalReportingData {
-  nsString mUserAgentData;
+  nsCString mUserAgentData;
   EndpointsList mEndpoints;
   nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
 };
@@ -38,24 +38,24 @@ class ReportDeliver final : public nsIObserver, public nsINamed {
   NS_DECL_NSINAMED
 
   struct ReportData {
-    nsString mType;
-    nsString mGroupName;
-    nsString mURL;
+    nsCString mType;
+    nsCString mGroupName;
+    nsCString mURL;
     nsCString mEndpointURL;
-    nsString mUserAgent;
+    nsCString mUserAgent;
     TimeStamp mCreationTime;
     nsCString mReportBodyJSON;
     nsCOMPtr<nsIPrincipal> mPrincipal;
     nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
-    uint32_t mFailures;
-    uintptr_t mGlobalKey;
+    uint32_t mFailures = 0;
+    uintptr_t mGlobalKey = 0;
     // Used to track in devtools only
-    uint64_t mAssociatedBrowsingContext;
+    uint64_t mAssociatedBrowsingContext = 0;
   };
 
-  static void AttemptDelivery(nsIGlobalObject* aGlobal, const nsAString& aType,
-                              const nsAString& aGroupName,
-                              const nsAString& aURL, ReportBody* aBody,
+  static void AttemptDelivery(nsIGlobalObject* aGlobal, const nsACString& aType,
+                              const nsACString& aGroupName,
+                              const nsACString& aURL, ReportBody* aBody,
                               uint64_t aAssociatedBrowsingContextId);
 
   static void Fetch(const ReportData& aReportData);
@@ -85,9 +85,9 @@ class ReportDeliver final : public nsIObserver, public nsINamed {
 
   // Safe to return T* here, because now, all mutations, all getters, happens on
   // the main thread.
-  nsIURI* GetEndpointURLFor(uintptr_t aGlobalKey, const nsAString& aGroupName);
+  nsIURI* GetEndpointURLFor(uintptr_t aGlobalKey, const nsACString& aGroupName);
   void EndpointRespondedWithRemove(uint64_t aGlobalKey,
-                                   const nsAString& aEndpointName);
+                                   const nsACString& aEndpointName);
 
   static void RemoveGlobalEndpoints(uintptr_t aGlobalKey);
 

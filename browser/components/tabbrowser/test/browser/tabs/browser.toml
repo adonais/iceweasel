@@ -551,6 +551,8 @@ tags = "vertical-tabs"
 ["browser_tab_close_dependent_window.js"]
 tags = "vertical-tabs"
 
+["browser_tab_detach_fullscreen.js"]
+
 ["browser_tab_detach_restore.js"]
 https_first_disabled = true
 tags = "vertical-tabs"
@@ -656,11 +658,12 @@ skip-if = [
 ["browser_tab_splitview_about_opentabs.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 2014213
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2019466
 ]
 
 
 ["browser_tab_splitview_alt_click.js"]
+
+["browser_tab_splitview_click_target.js"]
 
 ["browser_tab_splitview_content_size.js"]
 
@@ -722,6 +725,12 @@ tags = "vertical-tabs"
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && vertical_tab", # Bug 1971008
 ]
+
+["browser_tabswitch_discard.js"]
+
+["browser_tabswitch_remoteness_change.js"]
+
+["browser_tabswitch_remoteness_change_bfcache.js"]
 
 ["browser_tabswitch_select.js"]
 support-files = ["open_window_in_new_tab.html"]

@@ -154,7 +154,7 @@ class SessionHistoryInfo {
 
   void FillLoadInfo(nsDocShellLoadState& aLoadState) const;
 
-  uint32_t LoadType() { return mLoadType; }
+  uint32_t LoadType() const { return mLoadType; }
 
   void SetSaveLayoutStateFlag(bool aSaveLayoutStateFlag);
 
@@ -449,9 +449,6 @@ class SessionHistoryEntry : public nsISHEntry, public nsSupportsWeakReference {
   // then it returns false.
   bool ReplaceChild(SessionHistoryEntry* aNewChild);
   void GetChildAt(int32_t aIndex, SessionHistoryEntry** aChild);
-
-  SessionHistoryEntry* GetChildSHEntryIfHasNoDynamicallyAddedChild(
-      int32_t aChildOffset);
 
   already_AddRefed<SessionHistoryEntry> GetParent();
 

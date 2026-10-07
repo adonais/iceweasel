@@ -47,14 +47,14 @@ of August 2026.
 05. *ProvidersManager* then tells the *active* providers to fetch results by
     {searchfox}`calling their startQuery method <firefox-main/rev/8e42adb00f0d301d1b74f71d5f7d49228eb712c9:browser/components/urlbar/UrlbarProvidersManager.sys.mjs#815>`.
 
-06. The providers fetch results for the query asynchronously. Each provider
-    fetches results in a different way. As one example, if the default search
-    engine is Google, *UrlbarProviderSearchSuggestions* would send the string
-    "coffee near me" to Google. Google would return a list of suggestions and
+06. Each provider fetches its results in its own way and asynchronously. As one
+    example, if the default search engine is Google,
+    *UrlbarProviderSearchSuggestions* would send the string "coffee near me" to
+    Google. Google would return a list of suggestions and
     *UrlbarProviderSearchSuggestions* would create a *UrlbarResult* for each one.
 
-07. The providers send their results back to *ProvidersManager*. They do
-    this one result at a time by {searchfox}`calling the addCallback callback <firefox-main/rev/8e42adb00f0d301d1b74f71d5f7d49228eb712c9:browser/components/urlbar/UrlbarProviderSearchSuggestions.sys.mjs#312>`
+    The providers send their results back to *ProvidersManager*. They do this
+    one result at a time by {searchfox}`calling the addCallback callback <firefox-main/rev/8e42adb00f0d301d1b74f71d5f7d49228eb712c9:browser/components/urlbar/UrlbarProviderSearchSuggestions.sys.mjs#312>`
     passed into startQuery. *ProvidersManager* takes all the results from all the
     providers and {searchfox}`puts them into the list of unsorted results <firefox-main/rev/8e42adb00f0d301d1b74f71d5f7d49228eb712c9:browser/components/urlbar/UrlbarProvidersManager.sys.mjs#996>`.
 
@@ -67,20 +67,20 @@ of August 2026.
     have from the active providers (the "chunk" of results) and perform the
     following steps.
 
-08. *ProvidersManager* {searchfox}`asks <firefox-main/rev/8e42adb00f0d301d1b74f71d5f7d49228eb712c9:browser/components/urlbar/UrlbarProvidersManager.sys.mjs#1026>`
+07. *ProvidersManager* {searchfox}`asks <firefox-main/rev/8e42adb00f0d301d1b74f71d5f7d49228eb712c9:browser/components/urlbar/UrlbarProvidersManager.sys.mjs#1026>`
     *UrlbarMuxer* to sort the unsorted results.
 
-09. *UrlbarMuxer* chooses the results that will be shown to the user. It groups
+08. *UrlbarMuxer* chooses the results that will be shown to the user. It groups
     and sorts the results to determine the order in which the results will be
     shown. This process usually involves discarding irrelevant and duplicate
     results. We also cap results at a limit, defined in the
     `browser.urlbar.maxRichResults` preference.
 
-10. Once the results are sorted, *ProvidersManager*
+09. Once the results are sorted, *ProvidersManager*
     {searchfox}`tells UrlbarParentController <firefox-main/rev/8e42adb00f0d301d1b74f71d5f7d49228eb712c9:browser/components/urlbar/UrlbarProvidersManager.sys.mjs#1042>`
     that results are ready to be shown.
 
-11. *UrlbarParentController* {searchfox}`sends out a notification <firefox-main/rev/8e42adb00f0d301d1b74f71d5f7d49228eb712c9:browser/components/urlbar/UrlbarParentController.sys.mjs#773>`
+10. *UrlbarParentController* {searchfox}`sends out a notification <firefox-main/rev/8e42adb00f0d301d1b74f71d5f7d49228eb712c9:browser/components/urlbar/UrlbarParentController.sys.mjs#773>`
     that results are ready to be shown. The notification is dispatched by the
     *UrlbarChildController*, which *UrlbarView* was {searchfox}`listening <firefox-main/rev/8e42adb00f0d301d1b74f71d5f7d49228eb712c9:browser/components/urlbar/content/UrlbarView.mjs#73>`
     to. Once the view gets the notification, it {searchfox}`calls #updateResults <firefox-main/rev/8e42adb00f0d301d1b74f71d5f7d49228eb712c9:browser/components/urlbar/content/UrlbarView.mjs#998>`
@@ -94,43 +94,53 @@ of August 2026.
     "flickering" by the user. As a result, we try to limit the number of times
     the view needs to update.
 
-    ```{mermaid}
-    :align: center
-    :caption: UrlbarQueryContext lifetime
+## Diagram
 
-    ---
-    config:
-      flowchart:
-        wrappingWidth: 400
-    ---
-    %% wrappingWidth works around https://github.com/mermaid-js/mermaid/issues/5785,
-    %% which makes Firefox drop labels containing long words.
-    flowchart TD
-        dom([DOM])
+The blue rounded boxes are the UI modules, which run wherever the input
+lives; the amber rectangles always run in the parent process. The solid
+lines show a query traveling to the providers. The dotted lines show its
+results coming back to the view.
 
-        subgraph uiModules ["UI modules"]
-            input[UrlbarInput]
-            child[UrlbarChildController]
-            view[UrlbarView]
-        end
+```{mermaid}
+:align: center
+:caption: One trip through the search pipeline, from a keystroke to result rows.
 
-        subgraph parentSide ["Parent process"]
-            parent[UrlbarParentController]
-            manager[UrlbarProvidersManager]
-            providers["Providers<br/>UrlbarProviderPlaces<br/>UrlbarProviderSearchSuggestions<br/>UrlbarProviderTopSites<br/>..."]
-            muxer[UrlbarMuxer]
-        end
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+%% wrappingWidth works around https://github.com/mermaid-js/mermaid/issues/5785,
+%% which makes Firefox drop labels containing long words.
+flowchart TD
+    dom([DOM])
+    input(UrlbarInput)
+    child(UrlbarChildController)
+    view(UrlbarView)
+    parent[UrlbarParentController]
+    manager[UrlbarProvidersManager]
+    providers[UrlbarProviders]
+    muxer[UrlbarMuxer]
 
-        dom -- "1: text input" --> input
-        input -- "2: UrlbarQueryContext" --> child
-        child -- "2: UrlbarQueryContext" --> parent
-        parent -- "3: fetch results" --> manager
-        manager -- "4, 5: isActive, startQuery" --> providers
-        providers -. "6, 7: UrlbarResults" .-> manager
-        manager -- "8: sort" --> muxer
-        muxer -. "9: sorted results" .-> manager
-        manager -. "10: results ready" .-> parent
-        parent -. "11: notification" .-> child
-        child -. "11: notification" .-> view
-        view -. "result rows" .-> dom
-    ```
+    dom -- "1: text input" --> input
+    input -- "2: UrlbarQueryContext" --> child
+    child -- "2: UrlbarQueryContext" --> parent
+    parent -- "3: fetch results" --> manager
+    %% dagre places siblings in edge order, so the muxer edges come first to
+    %% keep the numbered path descending on the right and returning on the left.
+    manager -. "7: sort" .-> muxer
+    muxer -. "8: sorted results" .-> manager
+    manager -- "4: isActive<br/>5: startQuery" --> providers
+    providers -. "6: results" .-> manager
+    manager -. "9: results ready" .-> parent
+    parent -. "10: notification" .-> child
+    child -. "10: notification" .-> view
+    view -. "result rows" .-> dom
+
+    classDef uiModule fill:#dbeafe,stroke:#1e40af,color:#1a1a1a;
+    classDef parentModule fill:#fef3c7,stroke:#92400e,color:#1a1a1a;
+    classDef domNode fill:#e5e7eb,stroke:#4b5563,color:#1a1a1a;
+    class input,child,view uiModule;
+    class parent,manager,providers,muxer parentModule;
+    class dom domNode;
+```

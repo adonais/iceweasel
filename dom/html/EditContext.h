@@ -6,6 +6,7 @@
 #define mozilla_dom_EditContext_h
 
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/EventForwards.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/EditContextBinding.h"
 
@@ -89,8 +90,11 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
   // Get writing mode of associated element.
   mozilla::WritingMode WritingMode() const;
 
-  // https://w3c.github.io/edit-context/#dfn-deactivate-an-editcontext
-  MOZ_CAN_RUN_SCRIPT void Deactivate();
+  // Notify the EditContext that it's being deactivated. Note that unlike
+  // https://w3c.github.io/edit-context/#dfn-deactivate-an-editcontext,
+  // it doesn't fire compositionend (that is instead done before this in
+  // Document::DeactivateEditContextAndEndComposition).
+  void Deactivate();
 
   IMPL_EVENT_HANDLER(characterboundsupdate);
   IMPL_EVENT_HANDLER(compositionstart);
@@ -111,7 +115,6 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
   // If PreventSetSelection::No is passed to UpdateTextAndFireEvent, the
   // selection will be moved to the end of the replaced text.
   // If PreventSetSelection::Yes is passed, the selection will not change.
-  enum class PreventSetSelection { No, Yes };
   MOZ_CAN_RUN_SCRIPT void UpdateTextAndFireEvent(
       uint32_t aStart, uint32_t aEnd, const nsAString& aString,
       PreventSetSelection aPreventSetSelection = PreventSetSelection::No);
@@ -162,8 +165,8 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
                               nsTArray<LayoutDeviceIntRect>& aRects) const;
 
  private:
-  EditContext(nsIGlobalObject* aGlobalObject, const EditContextInit& aInit,
-              ErrorResult& aRv);
+  explicit EditContext(nsIGlobalObject* aGlobalObject);
+  void Init(const EditContextInit& aInit, ErrorResult& aRv);
   ~EditContext() = default;
 
   enum class IsFromFocus : bool { No, Yes };

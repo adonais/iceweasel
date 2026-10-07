@@ -2,7 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-use crate::platform::AsProcessReaderHandle;
+use crate::platform::{
+    AsRawProcessHandle, AsRawThreadHandle, FromRawProcessHandle, FromRawThreadHandle,
+};
 use nix::{
     errno::Errno,
     fcntl::{
@@ -20,18 +22,34 @@ use thiserror::Error;
 
 pub(crate) const PROCESS_RENDEZVOUS_ANCILLARY_DATA_LEN: usize = 0;
 
-#[repr(transparent)]
-pub struct ProcessHandle(pub crate::Pid);
+pub type RawProcessHandle = nix::libc::pid_t;
+#[derive(Clone)]
+pub struct ProcessHandle(nix::libc::pid_t);
 
-impl Clone for ProcessHandle {
-    fn clone(&self) -> Self {
-        ProcessHandle(self.0)
+impl AsRawProcessHandle for ProcessHandle {
+    fn as_raw_handle(&self) -> RawProcessHandle {
+        self.0
     }
 }
 
-impl AsProcessReaderHandle for ProcessHandle {
-    fn as_handle(&self) -> process_reader::ProcessHandle {
-        self.0 as process_reader::ProcessHandle
+impl FromRawProcessHandle for ProcessHandle {
+    fn from_raw_handle(pid: nix::libc::pid_t) -> ProcessHandle {
+        Self(pid)
+    }
+}
+
+pub type RawThreadHandle = i32;
+pub struct ThreadHandle(pub i32);
+
+impl AsRawThreadHandle for ThreadHandle {
+    fn as_raw_handle(&self) -> RawThreadHandle {
+        self.0
+    }
+}
+
+impl FromRawThreadHandle for ThreadHandle {
+    unsafe fn from_raw_handle(handle: RawThreadHandle) -> ThreadHandle {
+        Self(handle)
     }
 }
 

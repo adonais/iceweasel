@@ -109,7 +109,7 @@ export default [
     // switch, we log these as warnings until they have been transitioned.
     name: "rollout-reject-import-preferences-module",
     files: [
-      "browser/base/content/test/performance/browser_startup.js",
+      "browser/base/content/test/browser-performance/browser_startup.js",
       "browser/components/enterprisepolicies/tests/xpcshell/head.js",
       "browser/components/urlbar/QuickSuggest.sys.mjs",
       "browser/components/urlbar/tests/browser/head-common.js",
@@ -661,13 +661,13 @@ export default [
       // No .(s)js or html test files Bug 1780024
       "services/sync/tests/tps/**",
       // Files that test https and http already
-      "browser/base/content/test/general/browser_remoteTroubleshoot.js",
-      "browser/base/content/test/favicons/browser_mixed_content.js",
-      "browser/base/content/test/sanitize/browser_sanitize-history.js",
+      "browser/base/content/test/browser-general/browser_remoteTroubleshoot.js",
+      "browser/base/content/test/browser-favicons/browser_mixed_content.js",
+      "browser/base/content/test/browser-sanitize/browser_sanitize-history.js",
       "devtools/client/shared/test/shared-head.js",
       "devtools/client/shared/test/head.js",
       // uses new HttpServer which doesn't support https
-      "browser/base/content/test/favicons/browser_favicon_nostore.js",
+      "browser/base/content/test/browser-favicons/browser_favicon_nostore.js",
       // That are all files that produes warnings in the existing test infrastructure.
       // Since our focus is that new tests won't use http without thinking twice we exempt
       // these test files for now. Bug 1758951
@@ -792,7 +792,6 @@ export default [
       "browser/components/preferences/tests/etp/browser_contentblocking.js",
       "browser/components/preferences/tests/etp/browser_cookie_exceptions_addRemove.js",
       "browser/components/preferences/tests/etp/browser_cookies_exceptions.js",
-      "browser/components/preferences/tests/home/browser_homepages_use_bookmark.js",
       "browser/components/preferences/tests/networking/browser_https_only_exceptions.js",
       "browser/components/preferences/tests/permissions/browser_permissions_checkPermissionsWereAdded.js",
       "browser/components/preferences/tests/permissions/browser_permissions_dialog.js",
@@ -1799,7 +1798,6 @@ export default [
       "toolkit/content/widgets/menu.js",
       "toolkit/modules/LightweightThemeConsumer.sys.mjs",
       "toolkit/modules/NewTabUtils.sys.mjs",
-      "toolkit/mozapps/extensions/ColorwayThemeMigration.sys.mjs",
       "toolkit/mozapps/extensions/content/aboutaddons.js",
       "toolkit/mozapps/extensions/internal/AddonTestUtils.sys.mjs",
       "toolkit/mozapps/extensions/internal/XPIDatabase.sys.mjs",

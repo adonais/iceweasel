@@ -8,11 +8,8 @@
 
 [Exposed=(Window,Worker)]
 interface Response {
-  // This should be constructor(optional BodyInit... but BodyInit doesn't
-  // include ReadableStream yet because we don't want to expose Streams API to
-  // Request.
   [Throws]
-  constructor(optional (Blob or BufferSource or FormData or URLSearchParams or ReadableStream or USVString)? body = null,
+  constructor(optional BodyInit? body = null,
               optional ResponseInit init = {});
 
   [NewObject] static Response error();
@@ -40,8 +37,9 @@ interface Response {
 };
 Response includes Body;
 
-// This should be part of Body but we don't want to expose body to request yet.
-// See bug 1387483.
+// This should be part of the Body mixin, but Request's copy is gated on
+// dom.fetch.streaming_upload while this one ships unconditionally, so the two
+// are declared separately. See Request.webidl.
 partial interface Response {
   [GetterThrows]
   readonly attribute ReadableStream? body;

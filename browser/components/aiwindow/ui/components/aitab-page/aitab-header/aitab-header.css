@@ -1,0 +1,95 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  /* Light mode follows the Smart Window theme's own hero gradient; see
+     --lwt-additional-images in aiwindow-theme.css. Dark uses a dimmer violet
+     than the design's ellipse because the design blurs that ellipse, which
+     both spreads the colour and dilutes it, and a gradient does neither. */
+  --aitab-hero-fill: light-dark(var(--color-violet-20), var(--color-violet-desaturated-90));
+  --aitab-hero-bloom: light-dark(var(--color-red-0), var(--color-violet-60));
+  /* How far the bloom stays solid before it starts fading, so the centre
+     reads as a colour rather than a single point. */
+  --aitab-hero-bloom-hold: 30%;
+  --aitab-hero-center: 50% 90%;
+  --aitab-hero-bloom-height: 140%;
+  --aitab-hero-bloom-width: 220%;
+
+  --aitab-hero-radius: 128px;
+
+  --aitab-title-max-width: 600px;
+  --aitab-subtitle-max-width: 934px;
+
+  @media (prefers-color-scheme: dark) {
+    --aitab-hero-bloom-hold: 0%;
+    --aitab-hero-center: 50% 140%;
+    --aitab-hero-bloom-width: 90%;
+  }
+}
+
+.aitab-header {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-xlarge);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding: var(--space-xxlarge) var(--space-xxlarge) 60px;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  border-end-start-radius: var(--aitab-hero-radius);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  border-end-end-radius: var(--aitab-hero-radius);
+  text-align: center;
+
+  @media (forced-colors) {
+    /* Text across the feature is --button-text-color (see bug 2068782), which
+       forced colors resolves to ButtonText, so the surface uses its
+       guaranteed-contrasting partner ButtonFace. The text colour itself comes
+       from the shared base styles rather than being set here. */
+    border-inline: var(--border-width) solid var(--button-border-color);
+    border-block-end: var(--border-width) solid var(--button-border-color);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-paired-color-tokens */
+    background-color: var(--button-background-color);
+  }
+
+  @media not (forced-colors) {
+    background-image: radial-gradient(
+      ellipse var(--aitab-hero-bloom-width) var(--aitab-hero-bloom-height) at var(--aitab-hero-center),
+      var(--aitab-hero-bloom) 0%,
+      var(--aitab-hero-bloom) var(--aitab-hero-bloom-hold),
+      var(--aitab-hero-fill) 100%
+    );
+  }
+}
+
+aitab-page-actions {
+  justify-self: end;
+}
+
+.aitab-title,
+.aitab-title-subtext {
+  line-height: 1;
+  margin: 0 auto;
+}
+
+.aitab-title {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  max-width: var(--aitab-title-max-width);
+}
+
+.aitab-title-subtext {
+  opacity: var(--opacity-deemphasized);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  max-width: var(--aitab-subtitle-max-width);
+}
+
+ai-grouped-chip-container {
+  --ai-grouped-chip-container-padding: var(--space-small);
+  --ai-grouped-chip-container-border-radius: var(--border-radius-medium);
+  --ai-grouped-chip-container-border-end-end-radius: var(--border-radius-medium);
+  --ai-grouped-chip-container-bg-color: light-dark(
+    var(--color-violet-desaturated-10, var(--color-violet-20)),
+    var(--color-violet-desaturated-60, var(--color-violet-70))
+  );
+
+  gap: var(--space-small);
+}

@@ -6,28 +6,26 @@ use api::{ColorF, NormalBorder, RepeatMode};
 use api::units::*;
 use smallvec::SmallVec;
 use crate::border::{build_border_instances, NormalBorderSegment, MAX_BORDER_RESOLUTION};
-use crate::clip::{ClipChainInstance, ClipIntern};
 use crate::command_buffer::CommandBufferIndex;
 use crate::pattern::image::ImagePattern;
 use crate::quad::{self, QuadDescriptor, QuadTransformState};
+use crate::quad_clip::QuadClipStack;
 use crate::render_task_cache::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent, to_cache_size};
-use crate::scene_building::{IsVisible};
-use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext};
-use crate::intern::{self, DataStore};
+use crate::frame_builder::{FrameBuildingContext, FrameBuildingState};
+use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
-    InternablePrimitive, NinePatchDescriptor, PrimKey, PrimTemplate, PrimTemplateCommonData, PrimitiveKind, PrimitiveScratchBuffer, PrimitiveStore
+    InternablePrimitive, NinePatchDescriptor, PrimTemplate, PrimTemplateCommonData, PrimitiveKind, PrimitiveScratchBuffer, PrimitiveStore
 };
 use crate::resource_cache::ImageRequest;
 use crate::render_task::{RenderTask, RenderTaskKind};
 use crate::render_task_graph::RenderTaskId;
 use crate::util::clamp_to_scale_factor;
 
-// `NormalBorderPrim` now lives in `webrender_api::interned_prims` so content-process
-// interning can hold it. Re-exported to keep existing references working.
-pub use api::interned_prims::NormalBorderPrim;
-
-pub type NormalBorderKey = PrimKey<NormalBorderPrim>;
+// `NormalBorderPrim` and its key live in `webrender_api::interned_prims` so
+// content-process interning can hold them. Re-exported to keep existing
+// references working.
+pub use api::interned_prims::{NormalBorderKey, NormalBorderPrim};
 
 impl intern::InternDebug for NormalBorderKey {}
 
@@ -43,12 +41,10 @@ impl NormalBorderData {
     pub fn update(
         &self,
         desc: &QuadDescriptor,
-        clip_chain: &ClipChainInstance,
+        clips: &QuadClipStack,
         quad_transform: &mut QuadTransformState,
         frame_context: &FrameBuildingContext,
-        pic_context: &PictureContext,
         targets: &[CommandBufferIndex],
-        interned_clips: &DataStore<ClipIntern>,
         frame_state: &mut FrameBuildingState,
         scratch: &mut PrimitiveScratchBuffer,
     ) {
@@ -178,12 +174,10 @@ impl NormalBorderData {
                         transformed_aa_edges: desc.transformed_aa_edges & segment.edge_flags,
                     },
                     &None,
-                    clip_chain,
+                    clips,
                     quad_transform,
-                    frame_context,
-                    pic_context,
+                    frame_context.spatial_tree,
                     targets,
-                    interned_clips,
                     frame_state,
                     scratch,
                 );
@@ -286,12 +280,10 @@ impl NormalBorderData {
                 stretch_size,
                 spacing,
                 &None,
-                clip_chain,
+                clips,
                 quad_transform,
-                frame_context,
-                pic_context,
+                frame_context.spatial_tree,
                 targets,
-                interned_clips,
                 frame_state,
                 scratch,
             );
@@ -352,21 +344,12 @@ impl InternablePrimitive for NormalBorderPrim {
     }
 }
 
-
-impl IsVisible for NormalBorderPrim {
-    fn is_visible(&self) -> bool {
-        true
-    }
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 // `ImageBorder` now lives in `webrender_api::interned_prims` (with the image
 // request inlined as key/rendering/tile so the value is api-resident). The
 // frame-time `ImageBorderData` below rebuilds the `ImageRequest`.
-pub use api::interned_prims::ImageBorder;
-
-pub type ImageBorderKey = PrimKey<ImageBorder>;
+pub use api::interned_prims::{ImageBorder, ImageBorderKey};
 
 impl intern::InternDebug for ImageBorderKey {}
 
@@ -451,12 +434,6 @@ impl InternablePrimitive for ImageBorder {
         PrimitiveKind::ImageBorder {
             data_handle
         }
-    }
-}
-
-impl IsVisible for ImageBorder {
-    fn is_visible(&self) -> bool {
-        true
     }
 }
 

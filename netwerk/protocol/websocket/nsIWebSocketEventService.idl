@@ -59,14 +59,17 @@ interface nsIWebSocketEventListener : nsISupports
                                             in unsigned short aType);
 
   [must_use] void webSocketClosed(in unsigned long aWebSocketSerialID,
+                                  in uint64_t aHttpChannelId,
                                   in boolean aWasClean,
                                   in unsigned short aCode,
                                   in AString aReason);
 
   [must_use] void frameReceived(in unsigned long aWebSocketSerialID,
+                                in uint64_t aHttpChannelId,
                                 in nsIWebSocketFrame aFrame);
 
   [must_use] void frameSent(in unsigned long aWebSocketSerialID,
+                            in uint64_t aHttpChannelId,
                             in nsIWebSocketFrame aFrame);
 };
 

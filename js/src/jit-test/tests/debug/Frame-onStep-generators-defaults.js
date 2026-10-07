@@ -24,7 +24,7 @@ let dbg = Debugger(g);
 let log = [];
 dbg.onEnterFrame = frame => {
     frame.onStep = () => {
-        let line = frame.script.getOffsetLocation(frame.offset).lineNumber;
+        let line = frame.script.getOffsetMetadata(frame.offset).lineNumber;
         if (log.length == 0 || line != log[log.length - 1]) {
             log.push(line);
         }
@@ -32,4 +32,4 @@ dbg.onEnterFrame = frame => {
 };
 
 g.gen(0);
-assertDeepEq(log, [5, 7, 1, 8, 2, 9, 3, 10]);
+assertDeepEq(log, [5, 7, 1, 7, 8, 2, 8, 9, 3, 9, 10]);

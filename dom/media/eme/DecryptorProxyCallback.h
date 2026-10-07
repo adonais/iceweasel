@@ -15,7 +15,7 @@ class ErrorResult;
 
 class DecryptorProxyCallback {
  public:
-  virtual ~DecryptorProxyCallback() {}
+  virtual ~DecryptorProxyCallback() = default;
 
   virtual void SetSessionId(uint32_t aCreateSessionId,
                             const nsCString& aSessionId) = 0;

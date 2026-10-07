@@ -23,14 +23,14 @@ function checkStateChangeEvent(event, state, isExtraState, isEnabled) {
 }
 
 // Insert mock source into the iframe to be able to verify the right document
-// body id.
+// id.
 let iframeSrc = `data:text/html,
-  <html>
+  <html id='iframe'>
     <head>
       <meta charset='utf-8'/>
       <title>Inner Iframe</title>
     </head>
-    <body id='iframe'></body>
+    <body></body>
   </html>`;
 
 /**

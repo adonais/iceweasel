@@ -775,6 +775,15 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
     }
 #endif
 
+    if (!mDocument->DocumentNode()->IsCurrentActiveDocument()) {
+      // Our document is no longer current for its WindowGlobal; e.g. we're
+      // the initial about:blank and a new document has replaced us in that
+      // WindowGlobal. Shut ourselves down instead of building an accessibility
+      // tree (and IPC actor) nobody will use.
+      mDocument->Shutdown();
+      return;
+    }
+
     mDocument->DoInitialUpdate();
     if (AppShutdown::IsShutdownImpending()) {
       return;

@@ -1181,8 +1181,16 @@ TEST_F(ImageDecoders, JXLParallelDecodeMatchesSerial) {
   {
     // Compare to the same image in another format to make sure it's the right
     // reference.
-    const uint32_t kLibjxlMaxDifferingPixels = 18;
-    const uint8_t kLibjxlMaxChannelDiff = 1;
+#  if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
+    const uint32_t kReferenceMaxDifferingPixels = 7;
+    const uint8_t kReferenceMaxChannelDiff = 1;
+#  elif defined(ANDROID)
+    const uint32_t kReferenceMaxDifferingPixels = 4;
+    const uint8_t kReferenceMaxChannelDiff = 1;
+#  else
+    const uint32_t kReferenceMaxDifferingPixels = 0;
+    const uint8_t kReferenceMaxChannelDiff = 0;
+#  endif
     ImageTestCase referenceCase = LargeJXLReferenceWebPTestCase();
     RefPtr<SourceSurface> webpReference;
     WithSingleChunkDecode(referenceCase, Nothing(), /* aUseDecodePool */ false,
@@ -1190,8 +1198,9 @@ TEST_F(ImageDecoders, JXLParallelDecodeMatchesSerial) {
                             webpReference =
                                 CheckDecoderState(referenceCase, aDecoder);
                           });
-    ExpectSurfacesSimilar(webpReference, reference, kLibjxlMaxDifferingPixels,
-                          kLibjxlMaxChannelDiff);
+    ExpectSurfacesSimilar(webpReference, reference,
+                          kReferenceMaxDifferingPixels,
+                          kReferenceMaxChannelDiff);
   }
 
   for (bool useDecodePool : {false, true}) {

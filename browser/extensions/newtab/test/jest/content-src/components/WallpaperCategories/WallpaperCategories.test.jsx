@@ -678,6 +678,41 @@ describe("<WallpaperCategories>", () => {
       );
     });
 
+    it("names each saved image and the add tile once", () => {
+      const { container } = render(<Harness {...withSavedWallpapers()} />);
+      fireEvent.click(container.querySelector("#custom-wallpaper"));
+
+      for (const { filename } of SAVED) {
+        const id = `your-images-${filename}`;
+        const radio = container.querySelector(`[id="${id}"]`);
+        const label = container.querySelector(`[id="${id}-label"]`);
+        expect(radio).toHaveAttribute("aria-labelledby", `${id}-label`);
+        expect(label).toHaveAttribute("for", id);
+        expect(label).toHaveAttribute("aria-hidden", "true");
+      }
+
+      const add = container.querySelector("#your-images-add");
+      expect(add).toHaveAttribute("aria-labelledby", "your-images-add-label");
+      expect(container.querySelector("#your-images-add-label")).toHaveAttribute(
+        "aria-hidden",
+        "true"
+      );
+    });
+
+    it("keeps the folder tile's Fluent name instead of the label", () => {
+      const { container } = render(<Harness {...withSavedWallpapers()} />);
+      const tile = container.querySelector("#custom-wallpaper");
+      expect(tile).toHaveAttribute(
+        "data-l10n-id",
+        "newtab-wallpaper-your-images-folder"
+      );
+      expect(tile).not.toHaveAttribute("aria-labelledby");
+      expect(container.querySelector("#celestial")).toHaveAttribute(
+        "aria-labelledby",
+        "celestial-label"
+      );
+    });
+
     it("asks before removing a saved image", () => {
       const { container } = render(<Harness {...withSavedWallpapers()} />);
       fireEvent.click(container.querySelector("#custom-wallpaper"));
@@ -1035,7 +1070,9 @@ describe("<WallpaperCategories>", () => {
     it("asks again when the applied wallpaper changes", () => {
       // A page from the startup cache never sees the library broadcast, so a
       // change to the library alone would never reach it. The applied pref does.
+      // Restored with no thumbnail bytes, which is the state that needs them.
       const props = withSavedWallpapers();
+      props.Wallpapers.customWallpaperThumbnails = [];
       const { container, rerender } = render(<Harness {...props} />);
       fireEvent.click(container.querySelector("#custom-wallpaper"));
 
@@ -1185,20 +1222,6 @@ describe("<WallpaperCategories>", () => {
       );
     });
 
-    it("shows the whole library when a trainhop rollout enables it", () => {
-      const props = withSavedWallpapers(SAVED, {
-        "newtabWallpapers.customWallpaper.library.enabled": false,
-        trainhopConfig: { customWallpaperLibrary: { enabled: true } },
-      });
-
-      const { container } = render(<Harness {...props} />);
-      fireEvent.click(container.querySelector("#custom-wallpaper"));
-
-      expect(
-        container.querySelectorAll('.your-images input[type="radio"]')
-      ).toHaveLength(SAVED.length);
-    });
-
     it("drops thumbnail object URLs when the panel closes", () => {
       const revoked = [];
       globalThis.URL.revokeObjectURL = url => revoked.push(url);
@@ -1245,6 +1268,65 @@ describe("<WallpaperCategories>", () => {
           !action.data.length
       );
       expect(cleared).toHaveLength(1);
+    });
+
+    // Bug 2072951: applying leaves the library alone, so re-fetching it mints a
+    // new blob URL per tile and the whole grid reloads for a frame.
+    it("does not ask for thumbnails again when a picture is applied", () => {
+      const props = withSavedWallpapers();
+      const { rerender } = render(<Harness {...props} />);
+      props.dispatch.mockClear();
+
+      rerender(
+        <Harness
+          {...{
+            ...props,
+            Prefs: {
+              values: {
+                ...props.Prefs.values,
+                "newtabWallpapers.customWallpaper.uuid": SAVED[1].filename,
+              },
+            },
+          }}
+        />
+      );
+
+      const asked = props.dispatch.mock.calls.some(
+        ([action]) => action.type === at.WALLPAPERS_CUSTOM_THUMBNAILS_REQUEST
+      );
+      expect(asked).toBe(false);
+    });
+
+    // The thumbnails and the applied pref can land in one update. A check on
+    // derived state would still read the pre-setState value and ask again.
+    it("does not ask twice when the thumbnails and the applied picture arrive together", () => {
+      const props = withSavedWallpapers();
+      props.Wallpapers.customWallpaperThumbnails = [];
+      const { rerender } = render(<Harness {...props} />);
+      props.dispatch.mockClear();
+
+      rerender(
+        <Harness
+          {...{
+            ...props,
+            Wallpapers: {
+              ...props.Wallpapers,
+              customWallpaperThumbnails: THUMBNAILS,
+            },
+            Prefs: {
+              values: {
+                ...props.Prefs.values,
+                "newtabWallpapers.customWallpaper.uuid": SAVED[1].filename,
+              },
+            },
+          }}
+        />
+      );
+
+      const asked = props.dispatch.mock.calls.filter(
+        ([action]) => action.type === at.WALLPAPERS_CUSTOM_THUMBNAILS_REQUEST
+      );
+      expect(asked).toHaveLength(0);
     });
 
     it("ignores thumbnails a startup cache restore turned into plain objects", () => {
@@ -1578,6 +1660,399 @@ describe("<WallpaperCategories>", () => {
       expect(named).not.toContain("newtabWallpapers.initialWallpaper");
       expect(named).not.toContain("newtabWallpapers.user.enabled");
       expect(named).not.toContain("widgets.pictureOfTheDay.wallpaperActive");
+    });
+  });
+
+  describe("layout grids", () => {
+    const CELESTIAL = ["moon", "stars", "comet", "nebula", "aurora"].map(
+      title => ({ title, category: "celestial", theme: "light" })
+    );
+    const COLORS = ["red", "green", "blue", "cyan", "pink"].map(title => ({
+      title,
+      category: "solid-colors",
+      theme: "light",
+      solid_color: "#000000",
+      fluent_id: `newtab-wallpaper-${title}`,
+    }));
+    // Five categories so the category grid wraps into rows of three and two.
+    const CATEGORIES = [
+      "celestial",
+      "solid-colors",
+      "firefox",
+      "abstracts",
+      "photographs",
+    ];
+
+    const gridProps = (prefs = {}) => ({
+      ...DEFAULT_PROPS,
+      Prefs: {
+        values: {
+          ...DEFAULT_PROPS.Prefs.values,
+          "nova.enabled": true,
+          ...prefs,
+        },
+      },
+      Wallpapers: {
+        ...DEFAULT_PROPS.Wallpapers,
+        wallpaperList: [...CELESTIAL, ...COLORS],
+        categories: CATEGORIES,
+      },
+    });
+
+    const cellsOf = grid => [...grid.querySelectorAll('[role="gridcell"]')];
+    const rowsOf = grid => [...grid.querySelectorAll('[role="row"]')];
+    const tabStopsOf = grid => grid.querySelectorAll('[tabindex="0"]');
+    const openCelestial = container => {
+      fireEvent.click(container.querySelector("#celestial"));
+      return container.querySelector(".wallpaper-list.category [role='grid']");
+    };
+    // fireEvent returns false when the handler called preventDefault.
+    const press = (el, key, init = {}) =>
+      fireEvent.keyDown(el, { key, ...init });
+
+    it("renders the category picker as a grid of rows with three cells", () => {
+      const { container } = render(<Harness {...gridProps()} />);
+      const grid = container.querySelector('[role="grid"].category-list');
+      expect(grid).toHaveAttribute(
+        "data-l10n-id",
+        "newtab-wallpaper-category-list"
+      );
+      expect(grid.querySelector("fieldset")).not.toBeInTheDocument();
+
+      const rows = rowsOf(grid);
+      expect(rows).toHaveLength(2);
+      expect(cellsOf(rows[0])).toHaveLength(3);
+      expect(cellsOf(rows[1])).toHaveLength(2);
+      for (const cell of cellsOf(grid)) {
+        expect(cell.parentElement).toHaveAttribute("role", "row");
+        expect(
+          cell.querySelector("button.wallpaper-input")
+        ).toBeInTheDocument();
+      }
+      expect(tabStopsOf(grid)).toHaveLength(1);
+    });
+
+    it("keeps a tab stop when the category list shrinks", () => {
+      const props = gridProps();
+      const { container, rerender } = render(<Harness {...props} />);
+      const grid = () => container.querySelector('[role="grid"].category-list');
+
+      // Ctrl+End parks the roving tab stop on the last category.
+      press(container.querySelector("#celestial"), "End", { ctrlKey: true });
+      expect(container.querySelector("#photographs").tabIndex).toBe(0);
+
+      // Dropping a category, the way turning a pref off does, leaves the
+      // stored index pointing past the end of the list.
+      act(() => {
+        rerender(
+          <Harness
+            {...props}
+            Wallpapers={{
+              ...props.Wallpapers,
+              categories: CATEGORIES.slice(0, -1),
+            }}
+          />
+        );
+      });
+
+      expect(tabStopsOf(grid())).toHaveLength(1);
+      expect(container.querySelector("#abstracts").tabIndex).toBe(0);
+    });
+
+    it("groups a category's radios under one name", () => {
+      const { container } = render(<Harness {...gridProps()} />);
+      const grid = openCelestial(container);
+      const radios = [...grid.querySelectorAll('input[type="radio"]')];
+
+      expect(radios.length).toBeGreaterThan(1);
+      expect(new Set(radios.map(radio => radio.name)).size).toBe(1);
+    });
+
+    it("opens a category on the applied wallpaper", () => {
+      const { container } = render(
+        <Harness {...gridProps()} activeWallpaper="comet" />
+      );
+      const grid = openCelestial(container);
+
+      expect(container.querySelector("#comet").tabIndex).toBe(0);
+      expect(tabStopsOf(grid)).toHaveLength(1);
+    });
+
+    it("opens on the first cell when the applied wallpaper is elsewhere", () => {
+      // "red" is a solid color, so Celestial has nothing applied to open on.
+      const { container } = render(
+        <Harness {...gridProps()} activeWallpaper="red" />
+      );
+      const grid = openCelestial(container);
+
+      expect(container.querySelector("#moon").tabIndex).toBe(0);
+      expect(tabStopsOf(grid)).toHaveLength(1);
+    });
+
+    it("opens Colors on the color input when a custom color is applied", () => {
+      const props = gridProps({ "newtabWallpapers.customColor.enabled": true });
+      const { container } = render(
+        <Harness {...props} activeWallpaper="solid-color-picker-#112233" />
+      );
+      fireEvent.click(container.querySelector("#solid-colors"));
+
+      // The color input is the last cell of the grid, not one of the swatches.
+      expect(container.querySelector("#solid-color-picker").tabIndex).toBe(0);
+    });
+
+    it("renders the wallpaper picker as a grid labelled by its heading", () => {
+      const { container } = render(<Harness {...gridProps()} />);
+      const grid = openCelestial(container);
+      expect(grid).toHaveAttribute("aria-labelledby", "wallpaper-list-title");
+      expect(
+        container.querySelector(".wallpaper-list.category h2")
+      ).toHaveAttribute("id", "wallpaper-list-title");
+
+      const rows = rowsOf(grid);
+      expect(rows).toHaveLength(2);
+      expect(cellsOf(rows[0])).toHaveLength(3);
+      expect(cellsOf(rows[1])).toHaveLength(2);
+      for (const cell of cellsOf(grid)) {
+        expect(cell.querySelector('input[type="radio"]')).toBeInTheDocument();
+      }
+      expect(tabStopsOf(grid)).toHaveLength(1);
+      expect(container.querySelector("#moon")).toHaveAttribute("tabindex", "0");
+    });
+
+    it("puts the custom colour input in the last cell and in the roving tabindex", () => {
+      const { container } = render(
+        <Harness
+          {...gridProps({ "newtabWallpapers.customColor.enabled": true })}
+        />
+      );
+      fireEvent.click(container.querySelector("#solid-colors"));
+      const grid = container.querySelector(
+        ".wallpaper-list.category [role='grid']"
+      );
+      const cells = cellsOf(grid);
+      expect(cells).toHaveLength(6);
+      expect(rowsOf(grid)).toHaveLength(2);
+      const lastCell = cells[cells.length - 1];
+      expect(lastCell).toHaveClass("theme-custom-color-picker");
+      const colorInput = lastCell.querySelector("#solid-color-picker");
+      expect(colorInput).toHaveAttribute("tabindex", "-1");
+      expect(tabStopsOf(grid)).toHaveLength(1);
+
+      const pink = container.querySelector("#pink");
+      pink.focus();
+      expect(press(pink, "ArrowRight")).toBe(false);
+      expect(document.activeElement).toBe(colorInput);
+      expect(colorInput).toHaveAttribute("tabindex", "0");
+      expect(pink).toHaveAttribute("tabindex", "-1");
+      expect(tabStopsOf(grid)).toHaveLength(1);
+
+      expect(press(colorInput, "ArrowLeft")).toBe(false);
+      expect(document.activeElement).toBe(pink);
+    });
+
+    it("names each control from its label and hides the label from assistive tech", () => {
+      const { container } = render(
+        <Harness
+          {...gridProps({ "newtabWallpapers.customColor.enabled": true })}
+        />
+      );
+      const celestial = container.querySelector("#celestial");
+      const celestialLabel = container.querySelector("#celestial-label");
+      expect(celestial).toHaveAttribute("aria-labelledby", "celestial-label");
+      expect(celestialLabel).toHaveAttribute("for", "celestial");
+      expect(celestialLabel).toHaveAttribute("aria-hidden", "true");
+      expect(celestial).toHaveAccessibleName(
+        "newtab-wallpaper-category-title-celestial"
+      );
+
+      fireEvent.click(container.querySelector("#solid-colors"));
+      const red = container.querySelector("#red");
+      expect(red).toHaveAttribute("aria-labelledby", "red-label");
+      expect(container.querySelector("#red-label")).toHaveAttribute(
+        "aria-hidden",
+        "true"
+      );
+      expect(red).toHaveAccessibleName("newtab-wallpaper-red");
+
+      const colorInput = container.querySelector("#solid-color-picker");
+      expect(colorInput).toHaveAttribute(
+        "aria-labelledby",
+        "solid-color-picker-label"
+      );
+      expect(
+        container.querySelector("#solid-color-picker-label")
+      ).toHaveAttribute("aria-hidden", "true");
+    });
+
+    it("wraps Right and Left between category rows and stops at the grid ends", () => {
+      const { container } = render(<Harness {...gridProps()} />);
+      const [celestial, , firefox, abstracts, photographs] = CATEGORIES.map(
+        id => container.querySelector(`#${id}`)
+      );
+      firefox.focus();
+
+      expect(press(firefox, "ArrowRight")).toBe(false);
+      expect(document.activeElement).toBe(abstracts);
+      expect(abstracts).toHaveAttribute("tabindex", "0");
+      expect(firefox).toHaveAttribute("tabindex", "-1");
+
+      expect(press(abstracts, "ArrowLeft")).toBe(false);
+      expect(document.activeElement).toBe(firefox);
+
+      photographs.focus();
+      expect(press(photographs, "ArrowRight")).toBe(false);
+      expect(document.activeElement).toBe(photographs);
+
+      celestial.focus();
+      expect(press(celestial, "ArrowLeft")).toBe(false);
+      expect(document.activeElement).toBe(celestial);
+    });
+
+    it("moves Up and Down by a row without wrapping", () => {
+      const { container } = render(<Harness {...gridProps()} />);
+      const celestial = container.querySelector("#celestial");
+      const abstracts = container.querySelector("#abstracts");
+      celestial.focus();
+
+      expect(press(celestial, "ArrowDown")).toBe(false);
+      expect(document.activeElement).toBe(abstracts);
+      expect(press(abstracts, "ArrowDown")).toBe(false);
+      expect(document.activeElement).toBe(abstracts);
+
+      expect(press(abstracts, "ArrowUp")).toBe(false);
+      expect(document.activeElement).toBe(celestial);
+      expect(press(celestial, "ArrowUp")).toBe(false);
+      expect(document.activeElement).toBe(celestial);
+    });
+
+    it("moves to the row ends with Home and End and to the grid corners with Ctrl", () => {
+      const { container } = render(<Harness {...gridProps()} />);
+      const [celestial, solidColors, firefox, abstracts, photographs] =
+        CATEGORIES.map(id => container.querySelector(`#${id}`));
+      solidColors.focus();
+
+      expect(press(solidColors, "End")).toBe(false);
+      expect(document.activeElement).toBe(firefox);
+      expect(press(firefox, "Home")).toBe(false);
+      expect(document.activeElement).toBe(celestial);
+
+      expect(press(celestial, "End", { ctrlKey: true })).toBe(false);
+      expect(document.activeElement).toBe(photographs);
+      expect(press(photographs, "Home")).toBe(false);
+      expect(document.activeElement).toBe(abstracts);
+      expect(press(abstracts, "Home", { ctrlKey: true })).toBe(false);
+      expect(document.activeElement).toBe(celestial);
+    });
+
+    it("mirrors Right and Left in right-to-left documents", () => {
+      const { container } = render(<Harness {...gridProps()} />);
+      const celestial = container.querySelector("#celestial");
+      const solidColors = container.querySelector("#solid-colors");
+      document.dir = "rtl";
+      try {
+        solidColors.focus();
+        expect(press(solidColors, "ArrowRight")).toBe(false);
+        expect(document.activeElement).toBe(celestial);
+        expect(press(celestial, "ArrowLeft")).toBe(false);
+        expect(document.activeElement).toBe(solidColors);
+      } finally {
+        document.dir = "";
+      }
+    });
+
+    it("moves focus and selection between wallpapers and leaves Tab alone", () => {
+      const { container } = render(<Harness {...gridProps()} />);
+      const grid = openCelestial(container);
+      const moon = container.querySelector("#moon");
+      const stars = container.querySelector("#stars");
+      const nebula = container.querySelector("#nebula");
+      const aurora = container.querySelector("#aurora");
+      moon.focus();
+
+      expect(press(moon, "ArrowRight")).toBe(false);
+      expect(document.activeElement).toBe(stars);
+      expect(stars).toHaveAttribute("tabindex", "0");
+      expect(moon).toHaveAttribute("tabindex", "-1");
+      expect(tabStopsOf(grid)).toHaveLength(1);
+      expect(DEFAULT_PROPS.setPref).toHaveBeenCalledWith(
+        "newtabWallpapers.wallpaper",
+        "stars"
+      );
+
+      expect(press(stars, "ArrowDown")).toBe(false);
+      expect(document.activeElement).toBe(aurora);
+      expect(press(aurora, "Home")).toBe(false);
+      expect(document.activeElement).toBe(nebula);
+
+      expect(press(nebula, "Tab")).toBe(true);
+      expect(press(nebula, "a")).toBe(true);
+      expect(document.activeElement).toBe(nebula);
+    });
+
+    it("clamps the tab stop when the open category loses wallpapers", () => {
+      const props = gridProps();
+      const { container, rerender } = render(<Harness {...props} />);
+      const grid = openCelestial(container);
+      const moon = container.querySelector("#moon");
+      moon.focus();
+      press(moon, "End", { ctrlKey: true });
+      expect(document.activeElement).toBe(container.querySelector("#aurora"));
+
+      act(() => {
+        rerender(
+          <Harness
+            {...props}
+            Wallpapers={{
+              ...props.Wallpapers,
+              wallpaperList: CELESTIAL.slice(0, 2),
+            }}
+          />
+        );
+      });
+
+      expect(cellsOf(grid)).toHaveLength(2);
+      expect(tabStopsOf(grid)).toHaveLength(1);
+      expect(container.querySelector("#stars")).toHaveAttribute(
+        "tabindex",
+        "0"
+      );
+    });
+
+    it("labels the wallpaper grid from the back button when Nova is off", () => {
+      const props = {
+        ...gridProps(),
+        Prefs: { values: { ...DEFAULT_PROPS.Prefs.values } },
+      };
+      const { container } = render(<Harness {...props} />);
+      const grid = openCelestial(container);
+      const backButton = container.querySelector(
+        ".wallpaper-list.category button.arrow-button"
+      );
+      expect(backButton).toHaveAttribute("id", "wallpaper-list-title");
+      expect(grid).toHaveAttribute("aria-labelledby", "wallpaper-list-title");
+    });
+
+    it("resets the focused wallpaper when a category opens again", () => {
+      const { container } = render(<Harness {...gridProps()} />);
+      openCelestial(container);
+      const moon = container.querySelector("#moon");
+      moon.focus();
+      press(moon, "ArrowRight");
+      expect(container.querySelector("#stars")).toHaveAttribute(
+        "tabindex",
+        "0"
+      );
+
+      fireEvent.click(container.querySelector(".wallpaper-list .arrow-button"));
+      act(() => {
+        fireEvent.click(container.querySelector("#celestial"));
+      });
+
+      expect(container.querySelector("#moon")).toHaveAttribute("tabindex", "0");
+      expect(container.querySelector("#stars")).toHaveAttribute(
+        "tabindex",
+        "-1"
+      );
     });
   });
 

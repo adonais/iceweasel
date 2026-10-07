@@ -13,6 +13,7 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.R
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.AppAndSystemHelper
@@ -20,7 +21,9 @@ import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.MockBrowserDataHelper
 import org.mozilla.fenix.helpers.SearchMockServerRule
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.appContext
+import org.mozilla.fenix.ui.efficiency.core.WaitPolicy
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.helpers.RequiresDeniedRuntimePermission
 import org.mozilla.fenix.ui.efficiency.navigation.LaunchConfig
@@ -95,6 +98,42 @@ class SearchTest : BaseTest(LaunchConfig(isPocketEnabled = false)) {
 
         // Then: the search bar elements should load
         on.searchBar.mozVerifyReadiness()
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/522918
+    @Critical
+    @Test
+    fun verifyClearSearchButtonTest() {
+        val firstPage = mockWebServer.getGenericAsset(1)
+        val secondPage = mockWebServer.getGenericAsset(2)
+
+        // From the homepage: type a term, clear it, then type again. The search bar stays in edit mode
+        // across the clear, which is what the manual case asserts.
+        on.searchBar.navigateToPage().mozEnterText(queryString, SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)
+        on.searchBar
+            .verifyTypedToolbarText(queryString)
+            .clickClearButton()
+            .verifySearchBarPlaceholder()
+            .mozVerify(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)
+            .mozEnterText("mozilla", SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)
+        on.searchBar.verifyTypedToolbarText("mozilla")
+
+        // Load a page, then tap the toolbar: its URL appears in the edit-mode search bar.
+        on.home.navigateToPage()
+        on.browserPage.navigateToPage(firstPage.url.toString()).verifyUrl(firstPage.url.toString())
+
+        // Clear the URL (the search bar stays open), then type a new URL and load it.
+        on.searchBar
+            .navigateToPage()
+            .verifyTypedToolbarText(firstPage.url.toString())
+            .clickClearButton()
+            .verifySearchBarPlaceholder()
+            .mozVerify(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)
+            .mozEnterText(secondPage.url.toString(), SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)
+            .mozPressEnter(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)
+            .mozWaitUntilAbsent(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)
+
+        on.browserPage.navigateToPage().verifyUrl(secondPage.url.toString())
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/235397
@@ -428,9 +467,15 @@ class SearchTest : BaseTest(LaunchConfig(isPocketEnabled = false)) {
             .mozClick(SearchBarSelectors.SEARCH_ENGINE_SELECTOR)
             .mozClick(SearchBarSelectors.SEARCH_SHORTCUT("DuckDuckGo"))
             .mozClick(SearchBarSelectors.SCAN_BUTTON)
-            .mozClick(SystemSettingsSelectors.PERMISSION_DENY_BUTTON)
+            // Poll rather than mozClick's default single look: the deny buttons belong to
+            // GrantPermissionsActivity in another process, and SCAN_BUTTON returns as soon as the request
+            // intent is sent, roughly half a second before that activity is displayed.
+            .mozClick(SystemSettingsSelectors.PERMISSION_DENY_BUTTON, WaitPolicy.Poll(waitingTime))
             .mozClick(SearchBarSelectors.SCAN_BUTTON)
-            .mozClick(SystemSettingsSelectors.PERMISSION_DENY_AND_DONT_ASK_AGAIN_BUTTON)
+            .mozClick(
+                SystemSettingsSelectors.PERMISSION_DENY_AND_DONT_ASK_AGAIN_BUTTON,
+                WaitPolicy.Poll(waitingTime),
+            )
             // Back out until the homepage TOOLBAR is showing, not just HOMEPAGE_VIEW: the homepage view
             // resolves behind the search overlay, so anchoring on it returns immediately while the toolbar is
             // still covered — and HomePage's arrival check needs the menu button, so the following

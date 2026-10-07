@@ -197,7 +197,10 @@ impl ProcessReader {
     }
 
     pub fn copy_array<T>(&self, src: usize, num: usize) -> Result<Vec<T>, ReadError> {
-        let mut array: Vec<MaybeUninit<T>> = Vec::with_capacity(num);
+        let mut array: Vec<MaybeUninit<T>> = Vec::new();
+        array
+            .try_reserve_exact(num)
+            .map_err(|_| ReadError::TooLarge)?;
         let mut size: u64 = 0;
         let res = unsafe {
             mach_vm_read_overwrite(

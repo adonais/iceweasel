@@ -1,0 +1,91 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Test for CSSStyleRule::selectorMatchesElement on ::part() rules</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+  <div id="host"></div>
+  <script>
+    /***** Add Shadow DOM *****/
+    const topLevelHostEl = document.getElementById("host");
+    const topShadow = topLevelHostEl.attachShadow({
+      mode: "open"
+    });
+    const topLevelShadowSectionEl = document.createElement("section");
+    topLevelShadowSectionEl.id = "top-level-shadow-section";
+    topLevelShadowSectionEl.append("top shadow dom section",)
+
+    const topLevelShadowInlineStyle = document.createElement("style");
+    topLevelShadowInlineStyle.append(`
+      #nested-host::part(nested), [test-inline] {
+        background-color: gold;
+      }`);
+
+    const nestedHostEl = document.createElement("div");
+    nestedHostEl.id = "nested-host";
+
+    topShadow.append(topLevelShadowSectionEl, topLevelShadowInlineStyle, nestedHostEl);
+
+    const topLevelStyleSheet  = new CSSStyleSheet();
+    topLevelStyleSheet.replaceSync(`
+      #nested-host::part(nested), [test-adopted] {
+        color: tomato;
+      }`);
+    topShadow.adoptedStyleSheets = [topLevelStyleSheet];
+
+    const nestedShadow = nestedHostEl.attachShadow({
+      mode: "open"
+    });
+    const nestedShadowSectionEl = document.createElement("section");
+    nestedShadowSectionEl.setAttribute("part", "nested")
+    nestedShadowSectionEl.textContent = "nested shadow dom section";
+    nestedShadowSectionEl.id = "nested-shadow-dom-section";
+    nestedShadow.append(nestedShadowSectionEl);
+
+    /***** Test *****/
+    add_task(async () => {
+      checkRulesAndSelectors(nestedShadowSectionEl, [{
+        selectorText: `#nested-host::part(nested), [test-inline]`,
+        selectorMatches: [true, false]
+      },{
+        selectorText: `#nested-host::part(nested), [test-adopted]`,
+        selectorMatches: [true, false]
+      }]);
+    });
+
+    function checkRulesAndSelectors (element, expectedData) {
+      const rules = getNonUAMatchingRules(element);
+      is(rules.length, expectedData.length, `Got expected number of rules for #${element.id}`);
+      for (let i = 0; i < expectedData.length; i++) {
+        const rule = rules[i];
+        const expected = expectedData[i];
+        is(rule.selectorText, expected.selectorText, `Got expected rule at index ${i} for #${element.id}`);
+        for (let j = 0; j < expected.selectorMatches.length; j++) {
+          const selectorMatch = expected.selectorMatches[j];
+          is(
+            rule.selectorMatchesElement(j, element),
+            selectorMatch,
+            `"${rule.selectorText}" selector part at index ${j} ${selectorMatch ? "matches": "does not match"} #${element.id}`
+          );
+        }
+      }
+    }
+
+    function getNonUAMatchingRules(element) {
+      return SpecialPowers.InspectorUtils.getMatchingCSSRules(element)
+        .filter(rule => {
+          let selector = "";
+          // Accessing selectorText does throw for some rules (these aren't the ones
+          // we're interested in, so it's fine)
+          try {
+            selector = rule.selectorText;
+          } catch (e) {}
+          return selector.includes("[test-");
+        })
+    }
+
+  </script>
+</body>
+</html>

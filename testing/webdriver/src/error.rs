@@ -239,7 +239,7 @@ impl ErrorStatus {
             SessionNotCreated => StatusCode::INTERNAL_SERVER_ERROR,
             StaleElementReference => StatusCode::NOT_FOUND,
             Timeout => StatusCode::INTERNAL_SERVER_ERROR,
-            UnableToCaptureScreen => StatusCode::BAD_REQUEST,
+            UnableToCaptureScreen => StatusCode::INTERNAL_SERVER_ERROR,
             UnableToSetCookie => StatusCode::INTERNAL_SERVER_ERROR,
             UnexpectedAlertOpen => StatusCode::INTERNAL_SERVER_ERROR,
             UnknownCommand => StatusCode::NOT_FOUND,

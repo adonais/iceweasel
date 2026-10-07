@@ -58,11 +58,9 @@ addAccessibleTask(
  * Test document with dialog role and heading
  */
 addAccessibleTask(
-  `<body role="dialog" aria-labelledby="h">
-    <h1 id="h">
+  `<h1 id="h">
       We're building a richer search experience
-    </h1>
-  </body>`,
+    </h1>`,
   async (browser, accDoc) => {
     let doc = accDoc.nativeInterface.QueryInterface(
       Ci.nsIAccessibleMacInterface
@@ -87,19 +85,36 @@ addAccessibleTask(
     let rootGroupChildren = rootGroup.getAttributeValue("AXChildren");
     is(rootGroupChildren.length, 1, "Root group has one child");
 
+    // aria-labelledby is a global ARIA attribute, so the body has an
+    // Accessible of its own and sits between the root group and the heading.
+    let body = rootGroupChildren[0];
     is(
-      rootGroupChildren[0].getAttributeValue("AXRole"),
+      body.getAttributeValue("AXDOMIdentifier"),
+      DEFAULT_CONTENT_DOC_BODY_ID,
+      "Body is child of root group"
+    );
+    let bodyChildren = body.getAttributeValue("AXChildren");
+    is(bodyChildren.length, 1, "Body has one child");
+    is(
+      bodyChildren[0].getAttributeValue("AXRole"),
       "AXHeading",
-      "Heading is child of root group"
+      "Heading is child of body"
     );
 
     // From bottom-up
     let heading = getNativeInterface(accDoc, "h");
-    rootGroup = heading.getAttributeValue("AXParent");
+    body = heading.getAttributeValue("AXParent");
+    is(
+      body.getAttributeValue("AXDOMIdentifier"),
+      DEFAULT_CONTENT_DOC_BODY_ID,
+      "Parent is the body"
+    );
+    rootGroup = body.getAttributeValue("AXParent");
     is(
       rootGroup.getAttributeValue("AXIdentifier"),
       "root-group",
-      "Parent is generated root group"
+      "Grandparent is generated root group"
     );
-  }
+  },
+  { contentDocBodyAttrs: { role: "dialog", "aria-labelledby": "h" } }
 );

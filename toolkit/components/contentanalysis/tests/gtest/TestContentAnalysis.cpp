@@ -450,7 +450,7 @@ void ContentAnalysisTest::SendSimpleRequestAndWaitForResponse() {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   SendRequestAndExpectResponse(mContentAnalysis, request, Some(true),
                                Some(nsIContentAnalysisResponse::eAllow),
                                Some(false));
@@ -542,7 +542,7 @@ TEST_F(ContentAnalysisTest, SendAllowedTextToAgent_GetAllowedResponse) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
 
   SendRequestAndExpectResponse(mContentAnalysis, request, Some(true),
                                Some(nsIContentAnalysisResponse::eAllow),
@@ -556,7 +556,7 @@ TEST_F(ContentAnalysisTest, SendBlockedTextToAgent_GetBlockResponse) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(block),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
 
   SendRequestAndExpectResponse(mContentAnalysis, request, Some(false),
                                Some(nsIContentAnalysisResponse::eBlock),
@@ -573,7 +573,7 @@ TEST_F(ContentAnalysisTest,
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
 
   SendRequestAndExpectResponse(mContentAnalysis, request, Some(true),
                                Some(nsIContentAnalysisResponse::eAllow),
@@ -588,7 +588,7 @@ TEST_F(ContentAnalysisTest, TerminateAgent_SendAllowedTextToAgent_GetError) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
 
   SendRequestAndExpectNoAgentResponse(mContentAnalysis, request);
   StartAgent();
@@ -611,7 +611,7 @@ TEST_F(ContentAnalysisTest,
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
 
   SendRequestAndExpectNoAgentResponse(mContentAnalysis, request, true);
   StartAgent();
@@ -629,7 +629,7 @@ TEST_F(ContentAnalysisTest, CheckRawRequestWithText) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   nsCOMPtr<nsIObserverService> obsServ =
       mozilla::services::GetObserverService();
   auto rawRequestObserver = MakeRefPtr<RawRequestObserver>(mContentAnalysis);
@@ -666,8 +666,8 @@ TEST_F(ContentAnalysisTest, CheckRawRequestWithFile) {
   nsCOMPtr<nsIContentAnalysisRequest> request = new ContentAnalysisRequest(
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, allowPath, true,
-      EmptyCString(), uri, nsIContentAnalysisRequest::OperationType::eClipboard,
-      nullptr);
+      EmptyCString(), uri,
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   nsCOMPtr<nsIObserverService> obsServ =
       mozilla::services::GetObserverService();
   auto rawRequestObserver = MakeRefPtr<RawRequestObserver>(mContentAnalysis);
@@ -696,7 +696,7 @@ TEST_F(ContentAnalysisTest, CheckTwoRequestsHaveDifferentUserActionId) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow1),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
 
   // Use different text so the request doesn't match the cache
   nsString allow2(L"allowMeAgain1");
@@ -704,7 +704,7 @@ TEST_F(ContentAnalysisTest, CheckTwoRequestsHaveDifferentUserActionId) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow2),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   nsCOMPtr<nsIObserverService> obsServ =
       mozilla::services::GetObserverService();
   auto rawRequestObserver = MakeRefPtr<RawRequestObserver>(mContentAnalysis);
@@ -731,7 +731,7 @@ TEST_F(ContentAnalysisTest,
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow1),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
 
   // Use different text so the request doesn't match the cache
   nsString allow2(L"allowMeAgain2");
@@ -739,7 +739,7 @@ TEST_F(ContentAnalysisTest,
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow2),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   nsTArray<RefPtr<nsIContentAnalysisRequest>> requests{request1, request2};
   nsCOMPtr<nsIObserverService> obsServ =
       mozilla::services::GetObserverService();
@@ -767,7 +767,7 @@ TEST_F(ContentAnalysisTest, CheckAssignedUserActionIdCanCancel) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow1),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
 
   // Use different text so the request doesn't match the cache
   nsString allow2(L"allowMeAgain3");
@@ -775,7 +775,7 @@ TEST_F(ContentAnalysisTest, CheckAssignedUserActionIdCanCancel) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow2),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   nsTArray<RefPtr<nsIContentAnalysisRequest>> requests{request1, request2};
 
   nsresult rv = SendRequestsCancelAndExpectResponse(mContentAnalysis, requests,
@@ -793,8 +793,8 @@ TEST_F(ContentAnalysisTest, CheckGivenUserActionIdCanCancel) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow1),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr, nullptr,
-      nsCString(userActionId));
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr,
+      nullptr, nsCString(userActionId));
 
   // Use different text so the request doesn't match the cache
   nsString allow2(L"allowMeAgain4");
@@ -802,8 +802,8 @@ TEST_F(ContentAnalysisTest, CheckGivenUserActionIdCanCancel) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow2),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr, nullptr,
-      nsCString(userActionId));
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr,
+      nullptr, nsCString(userActionId));
   nsTArray<RefPtr<nsIContentAnalysisRequest>> requests{request1, request2};
   nsresult rv = SendRequestsCancelAndExpectResponse(mContentAnalysis, requests,
                                                     false /* aDelayCancel */,
@@ -821,8 +821,8 @@ TEST_F(ContentAnalysisTest, CheckGivenUserActionIdsMustMatch) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow1),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr, nullptr,
-      nsCString(userActionId1));
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr,
+      nullptr, nsCString(userActionId1));
 
   // Use different text so the request doesn't match the cache
   nsString allow2(L"allowMeAgain5");
@@ -830,8 +830,8 @@ TEST_F(ContentAnalysisTest, CheckGivenUserActionIdsMustMatch) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow2),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr, nullptr,
-      nsCString(userActionId2));
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr,
+      nullptr, nsCString(userActionId2));
   nsTArray<RefPtr<nsIContentAnalysisRequest>> requests{request1, request2};
 
   nsresult rv = SendRequestsCancelAndExpectResponse(mContentAnalysis, requests,
@@ -972,7 +972,7 @@ TEST_F(ContentAnalysisTest, WarnWithUserRespondingAllow) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(warn),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   SendRequestAndExpectWarnResponse(mContentAnalysis, request,
                                    WarnDialogResponse::Allow);
 }
@@ -984,7 +984,7 @@ TEST_F(ContentAnalysisTest, WarnWithUserRespondingBlock) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(warn),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   SendRequestAndExpectWarnResponse(mContentAnalysis, request,
                                    WarnDialogResponse::Block);
 }
@@ -1004,7 +1004,7 @@ TEST_F(ContentAnalysisTest, CheckBrowserReportsTimeout) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow1),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   // Make sure that, if the timeout happens before the agent thread submits
   // the request, we don't skip the submission.
   MOZ_ALWAYS_SUCCEEDS(
@@ -1070,7 +1070,7 @@ TEST_F(ContentAnalysisTest, CheckBrowserReportsTimeoutWithDefaultTimeoutAllow) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow1),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   // Make sure that, if the timeout happens before the agent thread submits
   // the request, we don't skip the submission.
   MOZ_ALWAYS_SUCCEEDS(
@@ -1153,7 +1153,7 @@ TEST_F(ContentAnalysisTest,
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   MOZ_ALWAYS_SUCCEEDS(request->SetRequestToken(requestToken));
   // Make sure that, if the timeout happens before the agent thread submits
   // the request, we don't skip the submission.
@@ -1199,7 +1199,7 @@ TEST_F(
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   MOZ_ALWAYS_SUCCEEDS(request->SetRequestToken(requestToken));
   // Make sure that, if the timeout happens before the agent thread submits
   // the request, we don't skip the submission.
@@ -1244,7 +1244,7 @@ TEST_F(ContentAnalysisTest,
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   MOZ_ALWAYS_SUCCEEDS(request->SetRequestToken(requestToken));
   // Make sure that, if the timeout happens before the agent thread submits
   // the request, we don't skip the submission.
@@ -1290,7 +1290,7 @@ TEST_F(
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   MOZ_ALWAYS_SUCCEEDS(request->SetRequestToken(requestToken));
   // Make sure that, if the timeout happens before the agent thread submits
   // the request, we don't skip the submission.
@@ -1415,7 +1415,7 @@ TEST_F(ContentAnalysisTest,
         nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
         nsIContentAnalysisRequest::Reason::eClipboardPaste, nsString(text),
         false /* isFilePath */, EmptyCString() /* sha1 */, uri,
-        nsIContentAnalysisRequest::OperationType::eClipboard, nullptr));
+        nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr));
   }
 
   nsCOMPtr<nsIObserverService> obsServ =
@@ -1554,7 +1554,7 @@ TEST_F(ContentAnalysisTest,
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   SendRequestAndExpectNoAgentResponse(mContentAnalysis, request);
 
   RefPtr<ContentAnalysisDiagnosticInfo> info =
@@ -1580,7 +1580,7 @@ TEST_F(ContentAnalysisTest, GetDiagnosticInfo_AfterAgentTerminateAndReconnect) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   SendRequestAndExpectResponse(mContentAnalysis, request, Some(true),
                                Some(nsIContentAnalysisResponse::eAllow),
                                Nothing());
@@ -1607,7 +1607,7 @@ TEST_F(ContentAnalysisTest, GetDiagnosticInfo_RequestCountIncreases) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   SendRequestAndExpectResponse(mContentAnalysis, request, Some(true),
                                Some(nsIContentAnalysisResponse::eAllow),
                                Nothing());
@@ -1627,7 +1627,7 @@ TEST_F(ContentAnalysisTest, GetDiagnosticInfo_FailedSignatureVerification) {
       nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
       nsIContentAnalysisRequest::Reason::eClipboardPaste, std::move(allow),
       false, EmptyCString(), uri,
-      nsIContentAnalysisRequest::OperationType::eClipboard, nullptr);
+      nsIContentAnalysisRequest::OperationType::ePasteClipboard, nullptr);
   SendRequestAndExpectNoAgentResponse(
       mContentAnalysis, request, false,
       nsIContentAnalysisResponse::CancelError::eInvalidAgentSignature);

@@ -45,7 +45,7 @@ class WebTransportSendStream final : public WritableStream {
   already_AddRefed<Promise> GetStats();
 
  private:
-  ~WebTransportSendStream() override { mozilla::DropJSObjects(this); };
+  ~WebTransportSendStream() override;
 
   // We must hold a reference to the WebTransport so it can't go away on
   // us.  This forms a cycle with WebTransport that will be broken when the

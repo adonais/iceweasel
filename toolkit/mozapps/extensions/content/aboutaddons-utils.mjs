@@ -734,7 +734,7 @@ export function nl2br(text) {
 
 const DEFAULT_THEME_PREVIEW_URL =
   "chrome://mozapps/content/extensions/default-theme/preview.svg";
-const DEFAULT_THEME_PREVIEW_NOVA_URL =
+export const DEFAULT_THEME_PREVIEW_NOVA_URL =
   "chrome://mozapps/content/extensions/default-theme/preview-nova.svg";
 
 /**

@@ -19,3 +19,8 @@ DevToolsModules(
     "NetworkUtils.sys.mjs",
     "WildcardToRegexp.sys.mjs",
 )
+
+LICENSED_UNDER += ["firebug"]
+LICENSED_UNDER["firebug"].paths = [
+    "NetworkHelper.sys.mjs",
+]

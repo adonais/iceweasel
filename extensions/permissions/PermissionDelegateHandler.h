@@ -6,19 +6,19 @@
  * Permission delegate handler provides a policy of how top-level can
  * delegate permission to embedded iframes.
  *
- * This class includes a mechanism to delegate permission using feature
- * policy. Feature policy will assure that only cross-origin iframes which
+ * This class includes a mechanism to delegate permission using permissions
+ * policy. Permissions policy will assure that only cross-origin iframes which
  * have been explicitly granted access will have the opportunity to request
  * permission.
  *
  * For example if an iframe has not been granted access to geolocation by
- * Feature Policy, geolocation request from the iframe will be automatically
+ * Permissions Policy, geolocation request from the iframe will be automatically
  * denied. if the top-level origin already has access to geolocation and the
- * iframe has been granted access to geolocation by Feature Policy, the iframe
- * will also have access to geolocation. If the top-level frame did not have
- * access to geolocation, and the iframe has been granted access to geolocation
- * by Feature Policy, a request from the cross-origin iframe would trigger a
- * prompt using of the top-level origin.
+ * iframe has been granted access to geolocation by Permissions Policy, the
+ * iframe will also have access to geolocation. If the top-level frame did not
+ * have access to geolocation, and the iframe has been granted access to
+ * geolocation by Permissions Policy, a request from the cross-origin iframe
+ * would trigger a prompt using of the top-level origin.
  */
 
 #ifndef mozilla_PermissionDelegateHandler_h
@@ -97,11 +97,11 @@ class PermissionDelegateHandler final : public nsIPermissionDelegateHandler {
      * should use top level origin to get/set permission.*/
     eDelegateUseTopOrigin,
 
-    /* Permission is delegated using Feature Policy. Permission is denied by
+    /* Permission is delegated using Permissions Policy. Permission is denied by
      * default in cross origin iframe and the iframe only could get/set
      * permission if there's allow attribute set in iframe. e.g allow =
      * "geolocation" */
-    eDelegateUseFeaturePolicy,
+    eDelegateUsePermissionsPolicy,
 
     /* Persistent denied permissions in cross origin iframe */
     ePersistDeniedCrossOrigin,
@@ -113,8 +113,8 @@ class PermissionDelegateHandler final : public nsIPermissionDelegateHandler {
   };
 
   /*
-   * Indicates matching between Feature Policy and Permissions name defined in
-   * Permissions Manager, not DOM Permissions API. Permissions API exposed in
+   * Indicates matching between Permissions Policy and Permissions name defined
+   * in Permissions Manager, not DOM Permissions API. Permissions API exposed in
    * DOM only supports "geo" at the moment but Permissions Manager also supports
    * "camera", "microphone".
    */
@@ -170,13 +170,13 @@ class PermissionDelegateHandler final : public nsIPermissionDelegateHandler {
   ~PermissionDelegateHandler() = default;
 
   /*
-   * Check whether the permission is blocked by FeaturePolicy directive.
+   * Check whether the permission is blocked by a Permissions Policy directive.
    * Default allowlist for a featureName of permission used in permissions
    * delegate should be set to eSelf, to ensure that permission is denied by
    * default and only have the opportunity to request permission with allow
    * attribute.
    */
-  bool HasFeaturePolicyAllowed(const PermissionDelegateInfo* info) const;
+  bool HasPermissionsPolicyAllowed(const PermissionDelegateInfo* info) const;
 
   /**
    * A helper function to test the permission and set the result to the given

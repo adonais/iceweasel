@@ -18,7 +18,7 @@ addAccessibleTask(
     info("Loading iframe document");
     const HIDDEN_IFRAME_URI =
       "data:text/html,<html id='new_html' aria-hidden='true'><body id='iframeBody'><u>hello world</u></body></html>";
-    const loaded = waitForEvent(EVENT_DOCUMENT_LOAD_COMPLETE, "iframeBody");
+    const loaded = waitForEvent(EVENT_DOCUMENT_LOAD_COMPLETE, "new_html");
     await SpecialPowers.spawn(
       browser,
       [DEFAULT_IFRAME_ID, HIDDEN_IFRAME_URI],

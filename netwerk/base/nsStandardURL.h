@@ -5,13 +5,14 @@
 #ifndef nsStandardURL_h_
 #define nsStandardURL_h_
 
-#include <bitset>
+#include <cstring>
 
 #include "URIHasher.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/LinkedList.h"
 #include "nsCOMPtr.h"
+#include "nsCRT.h"
 #include "nsIFileURL.h"
 #include "nsIIPCSerializableURI.h"
 #include "nsISensitiveInfoHiddenURI.h"
@@ -31,7 +32,7 @@ class nsIBinaryOutputStream;
 class nsIIDNService;
 class nsIPrefBranch;
 class nsIFile;
-class nsIURLParser;
+class nsBaseURLParser;
 
 namespace mozilla {
 class Encoding;
@@ -99,8 +100,17 @@ class URLSegmentNumber {
     return value;
   }
   bool CalculateParity() const {
-    std::bitset<32> bits((uint32_t)mData);
-    return bits.count() % 2 == 0 ? false : true;
+#if defined(__GNUC__) || defined(__clang__)
+    return __builtin_parity(static_cast<uint32_t>(mData));
+#else
+    // https://graphics.stanford.edu/~seander/bithacks.html#ParityParallel
+    // Branchless XOR-fold parity for callers without __builtin_parity.
+    uint32_t x = static_cast<uint32_t>(mData);
+    x ^= x >> 16;
+    x ^= x >> 8;
+    x ^= x >> 4;
+    return (0x6996u >> (x & 0xf)) & 1;
+#endif
   }
   bool Parity() const { return mParity; }
 };
@@ -281,12 +291,40 @@ class nsStandardURL : public nsIFileURL,
   bool SegmentIs(const URLSegment& seg1, const char* val,
                  const URLSegment& seg2, bool ignoreCase = false);
 
+  // String-literal fast paths: length is compile-time so we avoid the
+  // out-of-line strlen, and on length mismatch (the common case for these
+  // checks against specific schemes) we bail without crossing into the .cpp.
+  template <size_t N>
+  bool SegmentIs(const URLSegment& seg, const char (&val)[N],
+                 bool ignoreCase = false) {
+    constexpr size_t vlen = N - 1;
+    if (seg.mLen < 0 || static_cast<size_t>(seg.mLen) != vlen ||
+        mSpec.IsEmpty()) {
+      return false;
+    }
+    if (ignoreCase) {
+      return !nsCRT::strncasecmp(mSpec.get() + seg.mPos, val, vlen);
+    }
+    return !memcmp(mSpec.get() + seg.mPos, val, vlen);
+  }
+  template <size_t N>
+  bool SegmentIs(const char* spec, const URLSegment& seg, const char (&val)[N],
+                 bool ignoreCase = false) {
+    constexpr size_t vlen = N - 1;
+    if (!spec || seg.mLen < 0 || static_cast<size_t>(seg.mLen) != vlen) {
+      return false;
+    }
+    if (ignoreCase) {
+      return !nsCRT::strncasecmp(spec + seg.mPos, val, vlen);
+    }
+    return !memcmp(spec + seg.mPos, val, vlen);
+  }
+
   int32_t ReplaceSegment(uint32_t pos, uint32_t len, const char* val,
                          uint32_t valLen);
   int32_t ReplaceSegment(uint32_t pos, uint32_t len, const nsACString& val);
 
   nsresult ParseURL(const char* spec, int32_t specLen);
-  nsresult ParsePath(const char* spec, uint32_t pathPos, int32_t pathLen = -1);
 
   char* AppendToSubstring(uint32_t pos, int32_t len, const char* tail);
 
@@ -363,7 +401,8 @@ class nsStandardURL : public nsIFileURL,
   URLSegment mQuery;
   URLSegment mRef;
 
-  nsCOMPtr<nsIURLParser> mParser;
+  // Concretely typed so ParseAll() is reachable without a downcast.
+  RefPtr<nsBaseURLParser> mParser;
 
   // mFile is protected so subclasses can access it directly
  protected:

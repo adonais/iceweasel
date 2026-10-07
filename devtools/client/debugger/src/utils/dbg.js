@@ -43,8 +43,8 @@ function formatMappedLocations(locations) {
 }
 
 function formatSelectedColumnBreakpoints(dbg) {
-  const positions = dbg.selectors.getBreakpointPositionsForSource(
-    dbg.selectors.getSelectedSource().id
+  const positions = dbg.selectors.getBreakpointPositionsForLocationSource(
+    dbg.selectors.getSelectedLocation()
   );
 
   return formatMappedLocations(positions);

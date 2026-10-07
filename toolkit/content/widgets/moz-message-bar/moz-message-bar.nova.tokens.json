@@ -5,20 +5,13 @@
         "value": "{background.color.box.@base}"
       },
       "warning": {
-        "value": "{message-bar.background.color.@base}"
+        "value": "{background.color.box.@base}"
       },
       "success": {
-        "value": "{message-bar.background.color.@base}"
+        "value": "{background.color.box.@base}"
       },
       "critical": {
-        "value": "{message-bar.background.color.@base}"
-      }
-    }
-  },
-  "container": {
-    "padding": {
-      "inline": {
-        "value": "8px"
+        "value": "{background.color.box.@base}"
       }
     }
   },

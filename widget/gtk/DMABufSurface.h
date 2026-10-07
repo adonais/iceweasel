@@ -12,6 +12,7 @@
 #include "GLTypes.h"
 #include "ImageContainer.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/Span.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
 #include "mozilla/widget/BufferSurface.h"
@@ -150,6 +151,17 @@ class DMABufSurface : public BufferSurface {
   // returns true when there's an active surface reference.
   bool IsGlobalRefSet();
 
+  // Returns the file descriptor of the global reference counter,
+  // or 0 if the counter was not created. The descriptor stays owned
+  // by the surface.
+  int GetGlobalRefCountFd();
+
+  // Query GlobalRefSet() once by a single poll() call and stores one result
+  // per file descriptor to aRefSet. aRefCountFds holds descriptors obtained
+  // by GetGlobalRefCountFd().
+  static void GetGlobalRefsSet(mozilla::Span<const int> aRefCountFds,
+                               nsTArray<bool>& aRefSet);
+
   // Add/Remove additional reference to the surface global reference counter.
   void GlobalRefAdd();
   void GlobalRefAddLocked(const mozilla::MutexAutoLock& aProofOfLock);
@@ -214,13 +226,13 @@ class DMABufSurface : public BufferSurface {
   int32_t mStrides[DMABUF_BUFFER_PLANES] = {};
   int32_t mOffsets[DMABUF_BUFFER_PLANES] = {};
 
-  struct gbm_bo* mGbmBufferObject[DMABUF_BUFFER_PLANES];
-  uint32_t mGbmBufferFlags;
+  struct gbm_bo* mGbmBufferObject[DMABUF_BUFFER_PLANES]{};
+  uint32_t mGbmBufferFlags = 0;
 
 #ifdef MOZ_LOGGING
-  void* mMappedRegion[DMABUF_BUFFER_PLANES];
-  void* mMappedRegionData[DMABUF_BUFFER_PLANES];
-  uint32_t mMappedRegionStride[DMABUF_BUFFER_PLANES];
+  void* mMappedRegion[DMABUF_BUFFER_PLANES]{};
+  void* mMappedRegionData[DMABUF_BUFFER_PLANES]{};
+  uint32_t mMappedRegionStride[DMABUF_BUFFER_PLANES]{};
 #endif
 
   RefPtr<mozilla::gfx::FileHandleWrapper> mSyncFd;
@@ -232,7 +244,7 @@ class DMABufSurface : public BufferSurface {
 
   // Global refcount tracks DMABuf usage by rendering process,
   // it's used for surface recycle.
-  int mGlobalRefCountFd;
+  int mGlobalRefCountFd = 0;
 
   // mUID/mPID is set when DMABuf is created and/or exported to different
   // process. Allows to identify surfaces created by different process.
@@ -243,7 +255,7 @@ class DMABufSurface : public BufferSurface {
   // If set to false we can't recycle this surfaces as we can't ensure
   // mUID/mPID consistency. Also mPID may be zero in this case.
   // Applies to copied DMABuf surfaces for instance.
-  bool mCanRecycle;
+  bool mCanRecycle = true;
 
   mozilla::Mutex mSurfaceLock MOZ_UNANNOTATED;
 };
@@ -386,12 +398,15 @@ class DMABufSurfaceYUV final : public DMABufSurface {
   int GetTextureCount() override;
   bool HoldsTexture() override;
 
-  void SetWPChromaLocation(uint32_t aWPChromaLocation) {
+  void SetWPChromaLocation(uint32_t aWPChromaLocation) override {
     mWPChromaLocation = aWPChromaLocation;
   }
-  uint32_t GetWPChromaLocation() { return mWPChromaLocation; }
+  uint32_t GetWPChromaLocation() override { return mWPChromaLocation; }
 
   DMABufSurfaceYUV();
+
+  already_AddRefed<DMABufSurfaceRGBA> ConvertHLGToPQ(
+      mozilla::gl::GLContext* gl);
 
   bool UpdateYUVData(const VADRMPRIMESurfaceDescriptor& aDesc, int aWidth,
                      int aHeight, bool aCopy);

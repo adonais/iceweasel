@@ -834,18 +834,17 @@ static void GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed,
 
 #elif defined(JS_CODEGEN_RISCV64)
   {
-    // Actually emits less instructions (maybe 11?), but reserving 20
-    // instructions definitely ensures no pool is placed in this scope.
-    AutoForbidPoolsAndNops afp(&masm, 20);
+    // Actually emits less instructions (maybe 4?), but reserving 8 instructions
+    // (100% slack) definitely ensures no pool is placed in this scope.
+    AutoForbidPoolsAndNops afp(&masm, 8);
 
+    masm.loadPtr(Address(StackPointer, Frame::returnAddressOffset()), ra);
     masm.loadPtr(Address(StackPointer, Frame::callerFPOffset()), FramePointer);
     poppedFP = masm.currentOffset();
-    masm.loadPtr(Address(StackPointer, Frame::returnAddressOffset()), ra);
 
-    *ret = masm.currentOffset();
     masm.addToStackPtr(Imm32(sizeof(Frame)));
+    *ret = masm.currentOffset();
     masm.jalr(zero, ra, 0);
-    masm.nop();
   }
 #elif defined(JS_CODEGEN_ARM64)
 
@@ -1991,17 +1990,8 @@ bool js::wasm::StartUnwinding(const RegisterState& registers,
         fixedPC = Frame::fromUntaggedWasmExitFP(sp)->returnAddress();
         fixedFP = fp;
         AssertMatchesCallSite(fixedPC, fixedFP);
-#elif defined(JS_CODEGEN_RISCV64)
-      } else if (offsetInCode >= codeRange->ret() - PoppedFP &&
-                 offsetInCode <= codeRange->ret()) {
-        // The fixedFP field of the Frame has been loaded into fp.
-        // The ra might also be loaded, but the Frame structure is still on
-        // stack, so we can acess the ra from there.
-        MOZ_ASSERT(*sp == fp);
-        fixedPC = Frame::fromUntaggedWasmExitFP(sp)->returnAddress();
-        fixedFP = fp;
-        AssertMatchesCallSite(fixedPC, fixedFP);
-#elif defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_LOONG64)
+#elif defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_LOONG64) || \
+    defined(JS_CODEGEN_RISCV64)
         // The stack pointer does not move until all values have
         // been restored so several cases can be coalesced here.
       } else if (offsetInCode >= codeRange->ret() - PoppedFP &&

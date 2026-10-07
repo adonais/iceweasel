@@ -28,6 +28,7 @@
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/NameSpaceConstants.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
 
@@ -47,7 +48,6 @@
 #include "nsISupportsImpl.h"
 #include "nsLiteralString.h"
 #include "nsNameSpaceManager.h"
-#include "nsRange.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
@@ -335,7 +335,7 @@ nsresult HTMLEditor::SetInlinePropertiesAroundRanges(
   MOZ_ASSERT(!aRanges.HasSavedRanges());
   for (const EditorInlineStyleAndValue& styleToSet : aStylesToSet) {
     AutoInlineStyleSetter inlineStyleSetter(styleToSet);
-    for (OwningNonNull<nsRange>& domRange : aRanges.Ranges()) {
+    for (OwningNonNull<dom::Range>& domRange : aRanges.Ranges()) {
       inlineStyleSetter.Reset();
       auto rangeOrError =
           [&]() MOZ_CAN_RUN_SCRIPT -> Result<EditorDOMRange, nsresult> {
@@ -418,7 +418,7 @@ nsresult HTMLEditor::SetInlinePropertiesAroundRanges(
         }
         DebugOnly<nsresult> rvIgnored = domRange->CollapseTo(emptyTextNode, 0);
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                             "nsRange::CollapseTo() failed, but ignored");
+                             "Range::CollapseTo() failed, but ignored");
         continue;
       }
 
@@ -2986,7 +2986,7 @@ nsresult HTMLEditor::GetInlinePropertyBase(const EditorInlineStyle& aStyle,
   bool first = true;
 
   const bool isCollapsed = SelectionRef().IsCollapsed();
-  RefPtr<nsRange> range = SelectionRef().GetRangeAt(0);
+  RefPtr<dom::Range> range = SelectionRef().GetRangeAt(0);
   // XXX: Should be a while loop, to get each separate range
   // XXX: ERROR_HANDLING can currentItem be null?
   if (range) {
@@ -3468,7 +3468,7 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
     if (styleToRemove.IsInvertibleWithCSS()) {
       styleInverter.emplace(EditorInlineStyleAndValue::ToInvert(styleToRemove));
     }
-    for (OwningNonNull<nsRange>& selectionRange : selectionRanges.Ranges()) {
+    for (OwningNonNull<dom::Range>& selectionRange : selectionRanges.Ranges()) {
       AutoTrackDOMRange trackSelectionRange(RangeUpdaterRef(), &selectionRange);
       // If we're removing <a name>, we don't want to split ancestors because
       // the split fragment will keep working as named anchor.  Therefore, we
@@ -3652,9 +3652,8 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
                     : range.EndRef();
             DebugOnly<nsresult> rvIgnored = selectionRange->SetStartAndEnd(
                 startPoint.ToRawRangeBoundary(), endPoint.ToRawRangeBoundary());
-            NS_WARNING_ASSERTION(
-                NS_SUCCEEDED(rvIgnored),
-                "nsRange::SetStartAndEnd() failed, but ignored");
+            NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                                 "Range::SetStartAndEnd() failed, but ignored");
           };
 
       if (arrayOfContentsToInvertStyle.IsEmpty()) {
@@ -3984,7 +3983,7 @@ nsresult HTMLEditor::IncrementOrDecrementFontSizeAsSubAction(
 
   AutoClonedSelectionRangeArray selectionRanges(SelectionRef());
   MOZ_ALWAYS_TRUE(selectionRanges.SaveAndTrackRanges(*this));
-  for (const OwningNonNull<nsRange>& domRange : selectionRanges.Ranges()) {
+  for (const OwningNonNull<dom::Range>& domRange : selectionRanges.Ranges()) {
     // TODO: We should stop extending the range outside ancestor blocks because
     //       we don't need to do it for setting inline styles.  However, here is
     //       chrome only handling path.  Therefore, we don't need to fix here

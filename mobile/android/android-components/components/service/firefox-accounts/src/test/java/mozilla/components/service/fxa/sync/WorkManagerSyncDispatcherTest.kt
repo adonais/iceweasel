@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.Configuration
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.testing.SynchronousExecutor
 import androidx.work.testing.WorkManagerTestInitHelper
@@ -15,6 +16,7 @@ import java.time.Instant
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -75,6 +77,7 @@ class WorkManagerSyncDispatcherTest {
             )
         )
 
+        GlobalAccountManager.setRustSyncManager(testRustSyncManager)
         GlobalAccountManager.syncIoDispatcher = testCoroutineDispatcher
         setUpSyncEngineStores()
 
@@ -182,6 +185,48 @@ class WorkManagerSyncDispatcherTest {
             )
         }
 
+    @Test
+    fun `given a startup sync, when a user requests a tabs sync, then the startup sync is kept`() =
+        runTest(testCoroutineDispatcher) {
+            // given a startup sync that hasn't run yet
+            val syncDispatcher = makeSyncDispatcher()
+            syncDispatcher.syncNow(reason = SyncReason.Startup, debounce = false)
+            val startupWork = immediateWorkInfos().single()
+
+            // when the user requests a tabs-only sync
+            syncDispatcher.syncNow(
+                reason = SyncReason.User,
+                debounce = true,
+                customEngineSubset = listOf(SyncEngine.Tabs),
+            )
+
+            // then the startup sync is left alone
+            val workInfos = immediateWorkInfos()
+            assertEquals(1, workInfos.size)
+            assertEquals(startupWork.id, workInfos.single().id)
+            assertEquals(WorkInfo.State.ENQUEUED, workInfos.single().state)
+        }
+
+    @Test
+    fun `given a startup sync, when a user requests a sync of every engine, then the startup sync is replaced`() =
+        runTest(testCoroutineDispatcher) {
+            // given a startup sync that hasn't run yet
+            val syncDispatcher = makeSyncDispatcher()
+            syncDispatcher.syncNow(reason = SyncReason.Startup, debounce = false)
+            val startupWork = immediateWorkInfos().single()
+
+            // when the user requests a sync of every engine
+            syncDispatcher.syncNow(reason = SyncReason.User, debounce = false)
+
+            // then it supersedes the startup sync
+            val workInfos = immediateWorkInfos()
+            assertTrue(workInfos.none { it.id == startupWork.id && it.state == WorkInfo.State.ENQUEUED })
+            assertTrue(workInfos.any { it.id != startupWork.id && it.state == WorkInfo.State.ENQUEUED })
+        }
+
+    private fun immediateWorkInfos(): List<WorkInfo> =
+        WorkManager.getInstance(testContext).getWorkInfosForUniqueWork(SyncWorkerName.Immediate.name).get()
+
     private fun expectedSyncResults(
         vararg expectedResults: SyncResult = arrayOf(SuccessfulSyncResult),
         workName: String = SyncWorkerName.Immediate.name,
@@ -233,9 +278,7 @@ class WorkManagerSyncDispatcherTest {
         WorkManagerSyncDispatcher(
             context = testContext,
             supportedEngines = supportedSyncEngines,
-            syncConfig = syncConfig,
             coroutineContext = testCoroutineDispatcher,
-            rustSyncManager = testRustSyncManager,
         )
 
     companion object {

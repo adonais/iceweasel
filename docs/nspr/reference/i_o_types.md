@@ -1,25 +1,25 @@
 This chapter describes the most common NSPR types, enumerations, and
 structures used with the functions described in [I/O
-Functions](I%2f%2fO_Functions) and [Network
-Addresses](Network_Addresses). These include the types used for
+Functions](i_o_functions.md) and [Network
+Addresses](network_addresses.md). These include the types used for
 system access, normal file I/O, and socket (network) I/O.
 
 Types unique to a particular function are described with the function
 itself.
 
 For sample code that illustrates basic I/O operations, see [Introduction
-to NSPR](Introduction_to_NSPR).
+to NSPR](introduction_to_nspr.md).
 
-- [Directory Type](#Directory_Type)
-- [File Descriptor Types](#File_Descriptor_Types)
-- [File Info Types](#File_Info_Types)
-- [Network Address Types](#Network_Address_Types)
+- [Directory Type](#directory-type)
+- [File Descriptor Types](#file-descriptor-types)
+- [File Info Types](#file-info-types)
+- [Network Address Types](#network-address-types)
 - [Types Used with Socket Options
-  Functions](#Types_Used_with_Socket_Options_Functions)
+  Functions](#types-used-with-socket-options-functions)
 - [Type Used with Memory-Mapped
-  I/O](#Type_Used_with_Memory-Mapped_I/O)
+  I/O](#type-used-with-memory-mapped-io)
 - [Offset Interpretation for Seek
-  Functions](#Offset_Interpretation_for_Seek_Functions)
+  Functions](#offset-interpretation-for-seek-functions)
 
 (directory-type)=
 

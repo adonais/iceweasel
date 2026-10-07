@@ -5,7 +5,7 @@ function attach(g, i) {
     var dbg = Debugger(g);
     dbg.onDebuggerStatement = function (frame) {
         var s = frame.eval("f").return.script;
-        var offs = s.getLineOffsets(g.line0 + 3);
+        var offs = s.getPossibleBreakpointOffsets({ line: g.line0 + 3 });
         for (var j = 0; j < offs.length; j++)
             s.setBreakpoint(offs[j], {hit: function () { g.log += "" + i; }});
     };

@@ -59,7 +59,7 @@ class NativeLayerRemoteMac final : public NativeLayer {
   bool SurfaceIsFlipped() override;
 
   void AttachExternalImage(wr::RenderTextureHost* aExternalImage) override;
-  GpuFence* GetGpuFence() override;
+  RefPtr<GpuFence> GetGpuFence() override;
 
   Maybe<SurfaceWithInvalidRegion> FrontSurface();
 

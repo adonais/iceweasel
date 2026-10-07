@@ -93,7 +93,7 @@ struct AlignedArray final {
     // sure dtors are properly invoked. If we do that, we should check that the
     // comment about compiler dead code elimination is in fact true for all the
     // compilers that we care about.
-    static_assert(std::is_trivially_destructible<T>::value,
+    static_assert(std::is_trivially_destructible_v<T>,
                   "Destructors must be invoked for this type");
 #if 0
     for (size_t i = 0; i < mCount; ++i) {

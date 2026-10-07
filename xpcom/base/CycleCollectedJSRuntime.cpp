@@ -1216,12 +1216,44 @@ struct GCMajorMarker : public BaseMarkerType<GCMajorMarker> {
 
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
+      // This marker has a special handling for its visualization in the
+      // frontend.
       {"timings", MS::InputType::CString, "GC timings", MS::Format::String,
        MS::PayloadFlags::Hidden}};
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable,
                                                MS::Location::TimelineMemory};
+  static constexpr MS::ETWMarkerGroup Group = MS::ETWMarkerGroup::Memory;
+
+  static void StreamJSONMarkerData(
+      mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
+      const mozilla::ProfilerString8View& aTimingJSON) {
+    if (aTimingJSON.Length() != 0) {
+      aWriter.SplicedJSONProperty("timings", aTimingJSON);
+    } else {
+      aWriter.NullProperty("timings");
+    }
+  }
+};
+
+struct GCSliceMarker : public BaseMarkerType<GCSliceMarker> {
+  static constexpr const char* Name = "GCSlice";
+  using MS = MarkerSchema;
+  static constexpr const MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+      MS::Location::TimelineMemory,
+  };
+  static constexpr const MS::PayloadField PayloadFields[] = {
+      // This marker has a special handling for its visualization in the
+      // frontend.
+      {"timings", MS::InputType::CString, "GC timings", MS::Format::String,
+       MS::PayloadFlags::Hidden},
+  };
+  static constexpr const char* Description =
+      "One slice of an incremental garbage collection (GC). The main "
+      "thread is blocked during this time.";
   static constexpr MS::ETWMarkerGroup Group = MS::ETWMarkerGroup::Memory;
 
   static void StreamJSONMarkerData(
@@ -1251,33 +1283,6 @@ void CycleCollectedJSRuntime::GCSliceCallback(JSContext* aContext,
                           ProfilerString8View::WrapNullTerminatedString(
                               aDesc.formatJSONProfiler(aContext).get()));
     } else if (aProgress == JS::GC_SLICE_END) {
-      struct GCSliceMarker {
-        static constexpr mozilla::Span<const char> MarkerTypeName() {
-          return mozilla::MakeStringSpan("GCSlice");
-        }
-        static void StreamJSONMarkerData(
-            mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
-            const mozilla::ProfilerString8View& aTimingJSON) {
-          if (aTimingJSON.Length() != 0) {
-            aWriter.SplicedJSONProperty("timings", aTimingJSON);
-          } else {
-            aWriter.NullProperty("timings");
-          }
-        }
-        static mozilla::MarkerSchema MarkerTypeDisplay() {
-          using MS = mozilla::MarkerSchema;
-          MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable,
-                    MS::Location::TimelineMemory};
-          schema.AddStaticLabelValue(
-              "Description",
-              "One slice of an incremental garbage collection (GC). The main "
-              "thread is blocked during this time.");
-          // No display instructions here, there is special handling in the
-          // front-end.
-          return schema;
-        }
-      };
-
       profiler_add_marker("GCSlice", baseprofiler::category::GCCC,
                           MarkerTiming::Interval(aDesc.lastSliceStart(aContext),
                                                  aDesc.lastSliceEnd(aContext)),

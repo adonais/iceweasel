@@ -49,7 +49,7 @@ add_task(async function amp() {
         index,
         suggestion: SUGGESTION,
         impressionOnly: {
-          pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+          pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
           matchType,
           advertiser,
           blockId: SUGGESTION.id.toString(),
@@ -66,7 +66,7 @@ add_task(async function amp() {
         },
         click: [
           {
-            pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+            pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
             matchType,
             advertiser,
             blockId: SUGGESTION.id.toString(),
@@ -82,7 +82,7 @@ add_task(async function amp() {
             suggestionId: SUGGESTION.suggestion_id,
           },
           {
-            pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION,
+            pingType: QUICK_SUGGEST_PING_TYPE.CLICK,
             matchType,
             advertiser,
             blockId: SUGGESTION.id.toString(),
@@ -102,7 +102,7 @@ add_task(async function amp() {
             command: "dismiss",
             pings: [
               {
-                pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+                pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
                 matchType,
                 advertiser,
                 blockId: SUGGESTION.id.toString(),
@@ -118,7 +118,7 @@ add_task(async function amp() {
                 suggestionId: SUGGESTION.suggestion_id,
               },
               {
-                pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK,
+                pingType: QUICK_SUGGEST_PING_TYPE.BLOCK,
                 matchType,
                 advertiser,
                 blockId: SUGGESTION.id.toString(),
@@ -138,7 +138,7 @@ add_task(async function amp() {
             command: "manage",
             pings: [
               {
-                pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+                pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
                 matchType,
                 advertiser,
                 blockId: SUGGESTION.id.toString(),
@@ -175,7 +175,7 @@ add_task(async function sponsoredBestMatch() {
     index,
     suggestion: SUGGESTION,
     impressionOnly: {
-      pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+      pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
       matchType,
       advertiser,
       blockId: SUGGESTION.id.toString(),
@@ -192,7 +192,7 @@ add_task(async function sponsoredBestMatch() {
     },
     click: [
       {
-        pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+        pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
         matchType,
         advertiser,
         blockId: SUGGESTION.id.toString(),
@@ -208,7 +208,7 @@ add_task(async function sponsoredBestMatch() {
         suggestionId: SUGGESTION.suggestion_id,
       },
       {
-        pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION,
+        pingType: QUICK_SUGGEST_PING_TYPE.CLICK,
         matchType,
         advertiser,
         blockId: SUGGESTION.id.toString(),
@@ -228,7 +228,7 @@ add_task(async function sponsoredBestMatch() {
         command: "dismiss",
         pings: [
           {
-            pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+            pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
             matchType,
             advertiser,
             blockId: SUGGESTION.id.toString(),
@@ -244,7 +244,7 @@ add_task(async function sponsoredBestMatch() {
             suggestionId: SUGGESTION.suggestion_id,
           },
           {
-            pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK,
+            pingType: QUICK_SUGGEST_PING_TYPE.BLOCK,
             matchType,
             advertiser,
             blockId: SUGGESTION.id.toString(),
@@ -264,7 +264,7 @@ add_task(async function sponsoredBestMatch() {
         command: "manage",
         pings: [
           {
-            pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+            pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
             matchType,
             advertiser,
             blockId: SUGGESTION.id.toString(),

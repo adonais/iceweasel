@@ -73,7 +73,7 @@ add_task(async function test_not_deduplicate_top_frecency() {
 add_task(async function test_count_tabs_as_duplicates() {
   // We use this because visiting a non existent page would mess up the title.
   let urlBase =
-    "https://example.com/browser/browser/base/content/test/general/dummy_page.html";
+    "https://example.com/browser/browser/base/content/test/browser-general/dummy_page.html";
   let title = "Dummy test page";
   await PlacesTestUtils.addVisits([
     { url: urlBase, title, visitDate: oneWeekAgo },

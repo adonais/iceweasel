@@ -51,7 +51,7 @@ internal class MerinoContentRecommendationsProvider(
         val locale = config.locale.toCuratedRecommendationLocale()
 
         if (locale == null) {
-            logger.error("Unsupported content recommendations locale: ${config.locale.toLanguageTag()}")
+            logger.debug("Unsupported content recommendations locale: ${config.locale.toLanguageTag()}")
             return PocketResponse.wrap(null)
         }
 

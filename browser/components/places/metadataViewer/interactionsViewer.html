@@ -29,13 +29,12 @@
     <style id="tableStyle" type="text/css"></style>
   </head>
   <body class="hidden">
-    <div id="enabledWarning" class="message-bar message-bar-warning" hidden>
-      <img class="message-bar-icon" />
-      <descripton class="message-bar-description">
+    <moz-message-bar id="enabledWarning" type="warning" hidden>
+      <span slot="message">
         You need to have <code>browser.places.interactions.enabled</code>
         set to true (and restart) for metadata recording to be enabled.
-      </descripton>
-    </div>
+      </span>
+    </moz-message-bar>
     <div id="categories">
       <div class="category selected" value="metadata">
         <span class="category-name">Interactions</span>

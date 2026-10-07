@@ -5,6 +5,9 @@
 #ifndef MOZILLA_BASEPOINT3D_H_
 #define MOZILLA_BASEPOINT3D_H_
 
+#include <cmath>
+#include <limits>
+#include <ostream>
 #include <tuple>
 
 #include "mozilla/Assertions.h"

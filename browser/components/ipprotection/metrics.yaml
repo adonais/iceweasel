@@ -125,8 +125,10 @@ ipprotection:
       Recorded when an account has been enrolled after completing the sign up flow.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2017484
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063725
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2017484
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063725
     data_sensitivity:
       - interaction
     notification_emails:
@@ -138,6 +140,11 @@ ipprotection:
         type: boolean
         description: >
           True if the enrollment finished successfully.
+      reason:
+        type: string
+        description: >
+          Why the enrollment failed, as one of the AUTH_ERRORS values in
+          IPPAuthProvider.sys.mjs. Empty when it succeeded.
 
   location_selector_button_clicked:
     type: event

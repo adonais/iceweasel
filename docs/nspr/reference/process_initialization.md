@@ -3,9 +3,9 @@
 This chapter describes the NSPR API for versioning, process
 initialization, and shutdown of NSPR.
 
-- [Identity and Versioning](#Identity_and_Versioning)
-- [Initialization and Cleanup](#Initialization_and_Cleanup)
-- [Module Initialization](#Module_Initialization)
+- [Identity and Versioning](#identity-and-versioning)
+- [Initialization and Cleanup](#initialization-and-cleanup)
+- [Module Initialization](#module-initialization)
 
 (identity-and-versioning)=
 

@@ -670,7 +670,7 @@ async function runExceptionAllowListTest({
   await SpecialPowers.pushPrefEnv({
     set: [
       ["privacy.trackingprotection.content.testing", true],
-      ["privacy.trackingprotection.content.mirror.enabled", true],
+      ["privacy.trackingprotection.content.mirror.mode", 1],
       ["privacy.trackingprotection.enabled", true],
       [
         "privacy.trackingprotection.allow_list.baseline.enabled",

@@ -33,6 +33,7 @@ class CompositorWidgetChild final : public PCompositorWidgetChild,
   void LeavePresentLock() override;
   void OnDestroyWindow() override;
   bool OnWindowResize(const LayoutDeviceIntSize& aSize) override;
+  void NotifyClientSizeChanged(const LayoutDeviceIntSize& aClientSize) override;
   void NotifyVisibilityUpdated(bool aIsFullyOccluded) override;
 
   void UpdateTransparency(TransparencyMode) override;
@@ -47,6 +48,7 @@ class CompositorWidgetChild final : public PCompositorWidgetChild,
   ~CompositorWidgetChild() override;
   RefPtr<CompositorVsyncDispatcher> mVsyncDispatcher;
   RefPtr<CompositorWidgetVsyncObserver> mVsyncObserver;
+  bool mIsHeadless;
   HWND mCompositorWnd;
 
   HWND mWnd;

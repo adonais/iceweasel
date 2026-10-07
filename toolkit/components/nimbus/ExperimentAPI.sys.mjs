@@ -11,7 +11,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
-  CleanupManager: "resource://normandy/lib/CleanupManager.sys.mjs",
+  AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   ExperimentManager: "resource://nimbus/lib/ExperimentManager.sys.mjs",
   FeatureManifest: "resource://nimbus/FeatureManifest.sys.mjs",
   FirstStartup: "resource://gre/modules/FirstStartup.sys.mjs",
@@ -362,9 +362,12 @@ export const ExperimentAPI = new (class {
       this.manager.store.on("update", this._annotateCrashReport);
       this._annotateCrashReport();
 
-      lazy.CleanupManager.addCleanupHandler(
-        ExperimentAPI._removeCrashReportAnnotator
-      );
+      if (!inShutdown) {
+        lazy.AsyncShutdown.appShutdownConfirmed.addBlocker(
+          "ExperimentAPI: removing crash report annotator",
+          this._removeCrashReportAnnotator
+        );
+      }
     }
 
     // Avoid registering these observers during shutdown as they may trigger
@@ -451,7 +454,9 @@ export const ExperimentAPI = new (class {
     this.#experimentLoader?.disable();
     this.#experimentLoader = null;
 
-    lazy.CleanupManager.removeCleanupHandler(this._removeCrashReportAnnotator);
+    lazy.AsyncShutdown.appShutdownConfirmed.removeBlocker(
+      this._removeCrashReportAnnotator
+    );
     this.#experimentManager?.store.off("update", this._annotateCrashReport);
     this.#experimentManager = null;
 

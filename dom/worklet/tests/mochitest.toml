@@ -9,6 +9,7 @@ support-files = ["worklet_audioWorklet.js"]
 support-files = ["worklet_test_audioWorkletGlobalScopeRegisterProcessor.js"]
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'x86_64' && opt", # Bug 1990938
+  "os == 'android' && os_version == '14' && arch == 'x86_64' && ccov", # Bug 1990938
 ]
 
 ["test_audioWorklet_WASM.html"]

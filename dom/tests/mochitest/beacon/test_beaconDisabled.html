@@ -1,0 +1,118 @@
+<!DOCTYPE HTML>
+<html>
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1961408
+-->
+<head>
+  <title>Bug 1961408 - sendBeacon() is a no-op, not absent, when beacon.enabled is false</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=1961408">Mozilla Bug 1961408</a>
+<p id="display"></p>
+<div id="content" style="display: none"></div>
+<pre id="test">
+<script class="testbody" type="text/javascript">
+
+/* Description of the test:
+ *   With beacon.enabled=false, navigator.sendBeacon() must stay exposed and
+ *   report success, but must not create a request. A content policy records
+ *   every beacon channel and rejects it so that nothing reaches the network.
+ *   The sentinel beacon, sent with the pref back on, is necessarily observed
+ *   after the disabled one would have been, so seeing the sentinel proves the
+ *   disabled beacon created no channel.
+ */
+
+SimpleTest.waitForExplicitFinish();
+
+const Cc = SpecialPowers.Cc;
+const Ci = SpecialPowers.Ci;
+
+const BASE = `${location.origin}/tests/dom/tests/mochitest/beacon/`;
+const DISABLED_URL = `${BASE}beacon-disabled-should-not-load`;
+const SENTINEL_URL = `${BASE}beacon-disabled-sentinel`;
+
+const POLICY_ID = SpecialPowers.wrap(SpecialPowers.Components)
+                               .ID("{a7c34f80-2b6d-4e51-9d24-6f0b5c8e1a93}");
+const POLICY_NAME = "@mozilla.org/test/beacondisabledpolicy;1";
+
+let seen = [];
+let onSentinel;
+const sentinelSeen = new Promise(resolve => { onSentinel = resolve; });
+
+const policy = SpecialPowers.wrapCallbackObject({
+  QueryInterface(iid) {
+    iid = SpecialPowers.wrap(iid);
+    if (iid.equals(Ci.nsISupports) || iid.equals(Ci.nsIFactory) ||
+        iid.equals(Ci.nsIContentPolicy)) {
+      return this;
+    }
+    throw SpecialPowers.Cr.NS_ERROR_NO_INTERFACE;
+  },
+  createInstance(iid) { return this.QueryInterface(iid); },
+  shouldLoad(contentLocation) {
+    const spec = SpecialPowers.wrap(contentLocation).spec;
+    if (spec == DISABLED_URL || spec == SENTINEL_URL) {
+      seen.push(spec);
+      if (spec == SENTINEL_URL) {
+        onSentinel();
+      }
+      // Reject so no request reaches the server. This makes sendBeacon()
+      // return false for the sentinel, which is why we don't assert on it.
+      return Ci.nsIContentPolicy.REJECT_REQUEST;
+    }
+    return Ci.nsIContentPolicy.ACCEPT;
+  },
+  shouldProcess() { return Ci.nsIContentPolicy.ACCEPT; },
+});
+
+function registerPolicy() {
+  const registrar = SpecialPowers.wrap(SpecialPowers.Components)
+                                 .manager.QueryInterface(Ci.nsIComponentRegistrar);
+  registrar.registerFactory(POLICY_ID, "Test content policy", POLICY_NAME, policy);
+  Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager)
+    .addCategoryEntry("content-policy", POLICY_NAME, POLICY_NAME, false, true);
+}
+
+function unregisterPolicy() {
+  const registrar = SpecialPowers.wrap(SpecialPowers.Components)
+                                 .manager.QueryInterface(Ci.nsIComponentRegistrar);
+  Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager)
+    .deleteCategoryEntry("content-policy", POLICY_NAME, false);
+  registrar.unregisterFactory(POLICY_ID, policy);
+}
+
+async function runTest() {
+  registerPolicy();
+  SimpleTest.registerCleanupFunction(unregisterPolicy);
+  // Let nsContentPolicy pick up the newly registered policy.
+  await new Promise(SimpleTest.executeSoon);
+
+  await SpecialPowers.pushPrefEnv({ set: [["beacon.enabled", false]] });
+
+  is(typeof navigator.sendBeacon, "function",
+     "sendBeacon should stay exposed when beacons are disabled");
+  is(navigator.sendBeacon(DISABLED_URL, "beacon payload"), true,
+     "sendBeacon should report success when beacons are disabled");
+
+  // Validation stays web-observable with the pref off.
+  SimpleTest.doesThrow(() => navigator.sendBeacon("ftp://example.com/"),
+     "sendBeacon should still reject non-http(s) schemes when disabled");
+
+  await SpecialPowers.pushPrefEnv({ set: [["beacon.enabled", true]] });
+  navigator.sendBeacon(SENTINEL_URL, "beacon payload");
+
+  await sentinelSeen;
+  is(seen.length, 1, "exactly one beacon channel should have been created");
+  is(seen[0], SENTINEL_URL, "the disabled beacon must not create a channel");
+
+  SimpleTest.finish();
+}
+
+runTest();
+
+</script>
+</pre>
+</body>
+</html>

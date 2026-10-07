@@ -10,10 +10,15 @@ skip-if = [
 ["browser_beforeinput_by_execCommand_in_contentscript.js"]
 support-files = [
   "file_beforeinput_by_execCommand_in_contentscript.html",
-  "../../../browser/base/content/test/general/head.js",
+  "../../../browser/base/content/test/browser-general/head.js",
 ]
 
 ["browser_bug1539497.js"]
+
+["browser_dragdrop_invalid_remote_drag.js"]
+support-files = [
+  "file_empty.html",
+]
 
 ["browser_dragdrop_protected_diff_origin.js"]
 support-files = [
@@ -60,10 +65,10 @@ support-files = [
 ]
 
 ["browser_mouse_click_screenXY.js"]
-support-files = ["../../../browser/base/content/test/general/dummy_page.html"]
+support-files = ["../../../browser/base/content/test/browser-general/dummy_page.html"]
 
 ["browser_mouse_enterleave_switch_tab.js"]
-support-files = ["../../../browser/base/content/test/general/dummy_page.html"]
+support-files = ["../../../browser/base/content/test/browser-general/dummy_page.html"]
 fail-if = [
   "a11y_checks", # Bug 1854502 clicked tabbrowser-tabpanels may not be accessible
 ]

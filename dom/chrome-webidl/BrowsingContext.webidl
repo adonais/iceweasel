@@ -122,7 +122,7 @@ interface BrowsingContext {
 
   [SetterThrows] attribute [LegacyNullToEmptyString] DOMString customPlatform;
 
-  [SetterThrows] attribute [LegacyNullToEmptyString] DOMString customUserAgent;
+  [SetterThrows] attribute [LegacyNullToEmptyString] UTF8String customUserAgent;
 
   readonly attribute DOMString embedderElementType;
 

@@ -5122,7 +5122,7 @@ export var XPIInstall = {
         }
       };
 
-      // Migrate back to the existing addon, unless it was a builtin colorway theme.
+      // Migrate back to the existing addon.
       if (existing) {
         await bootstrap.update(existing, !existing.disabled, uninstall);
         AddonManagerPrivate.callAddonListeners("onInstalled", existing.wrapper);

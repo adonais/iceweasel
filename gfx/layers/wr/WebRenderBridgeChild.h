@@ -126,7 +126,7 @@ class WebRenderBridgeChild final : public PWebRenderBridgeChild,
 
   void PushGlyphs(wr::DisplayListBuilder& aBuilder,
                   wr::IpcResourceUpdateQueue& aResources,
-                  Range<const wr::GlyphInstance> aGlyphs,
+                  mozilla::Range<const wr::GlyphInstance> aGlyphs,
                   gfx::ScaledFont* aFont, const wr::ColorF& aColor,
                   const StackingContextHelper& aSc,
                   const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,

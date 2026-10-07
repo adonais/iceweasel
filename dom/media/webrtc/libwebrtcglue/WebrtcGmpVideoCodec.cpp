@@ -23,6 +23,7 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/svc/create_scalability_structure.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/media/webrtc/GMPH264Utils.h"
 #include "mozilla/media/webrtc/H264FmtpParser.h"
 #include "nsServiceManagerUtils.h"
 
@@ -93,10 +94,6 @@ media::EncodeSupportSet WebrtcGmpEncoderSupports(const EncoderConfig& aConfig) {
   }
   return media::EncodeSupport::SoftwareEncode;
 }
-
-// QP scaling thresholds.
-static const int kLowH264QpThreshold = 24;
-static const int kHighH264QpThreshold = 37;
 
 // Encoder.
 WebrtcGmpVideoEncoder::WebrtcGmpVideoEncoder(
@@ -228,6 +225,17 @@ int32_t WebrtcGmpVideoEncoder::InitEncode(
   codecParams.mWidth = aCodecSettings->width;
   codecParams.mHeight = aCodecSettings->height;
 
+  // Firefox only ever negotiates baseline-family H264 (see bug 1950950), so
+  // this is a self-consistency fix: without it OpenH264's own unconfigured
+  // default profile might not match what we already declared over SDP.
+  // Level is not set here; it's derived from the actual encode dimensions in
+  // InitEncoderForSize instead, once the resolution/framerate has already
+  // been capped to fit the negotiated level (see bug 2013936).
+  auto profileLevel = ParseH264ProfileLevelFromParameters(mFormatParams);
+  if (profileLevel.isOk()) {
+    codecParams.mProfile = ToGMPProfile(profileLevel.inspect().mProfile);
+  }
+
   uint32_t maxPayloadSize = aSettings.max_payload_size;
   if (mFormatParams.count(webrtc::kH264FmtpPacketizationMode) == 1 &&
       mFormatParams.at(webrtc::kH264FmtpPacketizationMode) == "1") {
@@ -344,6 +352,15 @@ int32_t WebrtcGmpVideoEncoder::InitEncoderForSize(unsigned short aWidth,
                                                   std::string* aErrorOut) {
   mCodecParams.mWidth = aWidth;
   mCodecParams.mHeight = aHeight;
+  // Derive the level from what we're actually encoding at, rather than the
+  // raw negotiated ceiling: by this point the resolution/framerate has
+  // already been capped to fit the negotiated level (see bug 2013936), so
+  // this tells OpenH264 the level that actually matches, and stays correct
+  // across resolution changes since this function re-fires on those too.
+  if (Maybe<H264_LEVEL> level = H264SmallestConformingLevel(
+          aWidth, aHeight, mCodecParams.mMaxFramerate)) {
+    mCodecParams.mLevel = ToGMPLevel(*level);
+  }
   // Pass dummy codecSpecific data for now...
   nsTArray<uint8_t> codecSpecific;
 

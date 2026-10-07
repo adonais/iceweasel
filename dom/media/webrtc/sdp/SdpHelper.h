@@ -36,6 +36,9 @@ class SdpHelper {
   bool IceCredentialsDiffer(const SdpMediaSection& msection1,
                             const SdpMediaSection& msection2);
 
+  bool FingerprintsDiffer(const SdpMediaSection& msection1,
+                          const SdpMediaSection& msection2);
+
   bool MsectionIsDisabled(const SdpMediaSection& msection) const;
   static void DisableMsection(Sdp* sdp, SdpMediaSection* msection);
 

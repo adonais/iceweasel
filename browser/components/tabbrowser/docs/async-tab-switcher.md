@@ -52,20 +52,53 @@ There are a number of requirements that the tab switcher must satisfy. In no par
 6. The printing UI uses tabs to show print preview, which requires that the print-previewed tab is in the background and yet also have its docShell be "active" - a state that's usually reserved for the selected tab. See {ref}`async-tab-switcher-useful-properties`
 7. `<xul:tab>`'s and `<xul:browser>`'s might be created or destroyed at any time during an async tab switch
 8. It should be possible to render layers for a tab, despite it not having been set as active (this is used for {ref}`async-tab-switcher-warming`)
+9. A `<xul:browser>`'s frameloader may be replaced at any time during an async tab switch, by a process switch or by a page restored from the bfcache. The switcher relies on the replacement carrying the old frameloader's layer state over and dispatching `MozLayerTreeCleared` or `MozLayerTreeReady` on the browser when the browser's layers change across the swap, so that it learns when a tab it is waiting on has gained or lost its layers
 
-## Lifecycle
+## Switcher lifecycle
+
+```{mermaid}
+:caption: The life of one switcher instance.
+
+flowchart TD
+    none["no switcher<br/><i>gBrowser._switcher is null</i>"]
+    inprogress["switch in progress<br/><i>the requested tab is logically selected;<br/>the display shows the previous tab,<br/>then the spinner after a timeout</i>"]
+    pending["waiting for background tabs<br/><i>tabs still loading or unloading</i>"]
+
+    none -- "tab selected<br/><i>requestTab</i>" --> inprogress
+    none -- "tab warmed, or evicted from the tab cache<br/><i>warmupTab, cleanUpTabAfterEviction</i>" --> pending
+    inprogress -- "requested tab loaded, or shown blank<br/><i>TabSwitched</i>" --> pending
+    pending -- "tab selected<br/><i>requestTab</i>" --> inprogress
+    pending -- "nothing left to load or unload<br/><i>TabSwitchDone</i>" --> none
+```
 
 Per window, an async tab switcher instance is only supposed to exist if one or more tabs still need to have their layers loaded or unloaded. This means that an async tab switcher instance might exist even though a tab switch appears to the user to have completed. This also means that an async tab switcher might continue to exist and handle a new tab switch if the user initiates that tab switch before some background tabs have had their layers unloaded.
 
 There’s only one async tab switcher at a time per window, and it’s owned by that window’s `gBrowser`.
 
-A window starts without an async tab switcher, and only once a tab switch (or warming) is initiated by the user is the switcher instantiated.
+A window starts without an async tab switcher; selecting or warming a tab, or evicting one from the tab cache, creates it.
 
 Once the switcher determines that the tab that the user has requested is being shown, and all background tabs have been properly unloaded or destroyed, the async tab switcher cleans up and destroys itself.
 
 (async-tab-switcher-states)=
 
 ## Tab states
+
+```{mermaid}
+:caption: What moves a tab between the four states.
+
+flowchart TD
+    unloaded["STATE_UNLOADED"]
+    loading["STATE_LOADING"]
+    loaded["STATE_LOADED"]
+    unloading["STATE_UNLOADING"]
+
+    unloaded -- "tab selected or warmed<br/><i>requestTab, warmupTab</i>" --> loading
+    loading -- "layers arrive<br/><i>MozLayerTreeReady</i>" --> loaded
+    loaded -- "unload delay passes, evicted from the tab cache, or window hidden" --> unloading
+    loading -- "window hidden" --> unloading
+    unloading -- "layers released<br/><i>MozLayerTreeCleared</i>" --> unloaded
+    unloading -- "tab selected again<br/><i>requestTab</i>" --> loading
+```
 
 While the async tab switcher exists, it maps each `<xul:tab>` in the window to one of the following internal states:
 
@@ -85,7 +118,7 @@ While the async tab switcher exists, it maps each `<xul:tab>` in the window to o
 
   When a tab is in `STATE_LOADING`, this means that the associated `<xul:browser>` will have its `renderLayers` property return `true` and its `hasLayers` property return `false`.
 
-  If a tab is in this state, it must have either initialized there, or transitioned from `STATE_UNLOADED`.
+  If a tab is in this state, it must have either initialized there, or transitioned from `STATE_UNLOADED`. It can also come back here from `STATE_UNLOADING` when the tab is requested again before its layers are cleared, and from `STATE_LOADED` when its browser turns remote and has to send up a new layer tree.
 
   When logging states, this state is indicated by the `loading` string.
 
@@ -109,7 +142,7 @@ While the async tab switcher exists, it maps each `<xul:tab>` in the window to o
 
   When logging states, this state is indicated by the `unloading` string.
 
-Having a tab render its layers is done by settings its state to `STATE_LOADING`. Once the layers have been received, the switcher will automatically set the state to `STATE_LOADED`. Similarly, telling a tab to stop rendering is done by settings its state to `STATE_UNLOADING`. The switcher will automatically set the state to `STATE_UNLOADED` once the layers have fully unloaded.
+Having a tab render its layers is done by settings its state to `STATE_LOADING`. Once the layers have been received, the switcher will automatically set the state to `STATE_LOADED`. Similarly, telling a tab to stop rendering is done by settings its state to `STATE_UNLOADING`. The switcher will automatically set the state to `STATE_UNLOADED` once the layers have fully unloaded. For a non-remote browser both steps happen within the same call, because it paints synchronously.
 
 ## Stepping through a simple tab switch
 

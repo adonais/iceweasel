@@ -5,6 +5,8 @@
 #ifndef mozilla_intl_l10n_RegistryBindings_h
 #define mozilla_intl_l10n_RegistryBindings_h
 
+#include "mozilla/dom/FluentBinding.h"
+
 #include "mozilla/intl/l10nregistry_ffi_generated.h"
 
 #include "mozilla/RefPtr.h"

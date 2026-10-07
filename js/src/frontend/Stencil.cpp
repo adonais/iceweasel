@@ -2712,7 +2712,8 @@ static bool MaybeDoEagerBaselineCompilations(JSContext* cx,
   jit::AutoKeepJitScripts keepJitScript(cx);
   RootedScript script(cx);
   Rooted<JSFunction*> fn(cx);
-  jit::BaselineCompileQueue& queue = cx->realm()->baselineCompileQueue();
+  jit::BaselineCompileQueue& queue =
+      cx->realm()->jitRealm().baselineCompileQueue();
 
   for (auto item :
        CompilationStencil::functionScriptStencils(stencil, gcOutput)) {

@@ -193,7 +193,7 @@ void SelectionManager::ProcessSelectionChanged(SelData* aSelData) {
   Selection* selection = aSelData->mSel;
   if (!selection->GetPresShell()) return;
 
-  const nsRange* range = selection->GetAnchorFocusRange();
+  const mozilla::dom::Range* range = selection->GetAnchorFocusRange();
   nsINode* cntrNode = nullptr;
   if (range) {
     cntrNode = range->GetClosestCommonInclusiveAncestor();

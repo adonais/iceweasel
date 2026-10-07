@@ -107,12 +107,13 @@ class _TabGroupState {
    * @returns {ClosedTabGroupStateData}
    */
   closed(tabGroup, sourceWindowId) {
-    let closedData = this.collect(tabGroup);
-    closedData.closedAt = Date.now();
-    closedData.sourceWindowId = sourceWindowId;
-    closedData.tabs = [];
-    closedData.splitViews = [];
-    return closedData;
+    return {
+      ...this.collect(tabGroup),
+      closedAt: Date.now(),
+      sourceWindowId,
+      tabs: [],
+      splitViews: [],
+    };
   }
 
   /**
@@ -129,9 +130,7 @@ class _TabGroupState {
    * @returns {SavedTabGroupStateData}
    */
   savedInOpenWindow(tabGroup, sourceWindowId) {
-    let savedData = this.closed(tabGroup, sourceWindowId);
-    savedData.saved = true;
-    return savedData;
+    return { ...this.closed(tabGroup, sourceWindowId), saved: true };
   }
 
   /**
@@ -149,15 +148,17 @@ class _TabGroupState {
    *   `WindowStateData.closedId` of the closed window from which this tab group
    *   should be automatically saved. Left out when the group is saved out of a
    *   state that has no closed window to point at, as in session migration.
+   * @returns {SavedTabGroupStateData}
    */
   savedInClosedWindow(tabGroupState, windowClosedId) {
-    let savedData = tabGroupState;
-    savedData.saved = true;
-    savedData.closedAt = Date.now();
-    savedData.windowClosedId = windowClosedId;
-    savedData.tabs = [];
-    savedData.splitViews = [];
-    return savedData;
+    return {
+      ...tabGroupState,
+      saved: true,
+      closedAt: Date.now(),
+      windowClosedId,
+      tabs: [],
+      splitViews: [],
+    };
   }
 
   /**

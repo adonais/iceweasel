@@ -379,6 +379,9 @@ class DynamicToolbarTest : BaseSessionTest() {
         // Simulate the dynamic toolbar being hidden by the scroll
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
 
+        mainSession.flushApzRepaints()
+        mainSession.promiseAllPaintsDone()
+
         mainSession.synthesizeTap(5, 25)
 
         mainSession.waitUntilCalled(
@@ -409,6 +412,9 @@ class DynamicToolbarTest : BaseSessionTest() {
 
         // Simulate the dynamic toolbar being hidden by the scroll
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
+
+        mainSession.flushApzRepaints()
+        mainSession.promiseAllPaintsDone()
 
         mainSession.synthesizeTap(5, 25)
 
@@ -1216,15 +1222,27 @@ class DynamicToolbarTest : BaseSessionTest() {
                     .trimIndent()
             )
 
-        // Explicitly call `waitForRoundTrip()` to make sure the above event listener
-        // has set up in the content.
+        val resizePromise =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(resolve => {
+                    window.addEventListener('resize', () => { resolve(true); }, { once: true });
+                });
+                """
+                    .trimIndent()
+            )
+
+        // Explicitly call `waitForRoundTrip()` to make sure the above event listeners
+        // have set up in the content.
         mainSession.waitForRoundTrip()
 
         // Simulate the dynamic toolbar being hidden by the scroll
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
+        assertThat("resize event", resizePromise.value as Boolean, equalTo(true))
 
         // To make sure the dynamic toolbar height has been reflected into APZ.
         mainSession.flushApzRepaints()
+        mainSession.promiseAllPaintsDone()
 
         mainSession.synthesizeTap(SCREEN_WIDTH / 2, SCREEN_HEIGHT - dynamicToolbarMaxHeight / 4)
 

@@ -1526,10 +1526,10 @@ void DisplayListBuilder::PushBackdropFilter(
 
 void DisplayListBuilder::PushLinearGradient(
     const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
-    bool aIsBackfaceVisible, const wr::LayoutPoint& aStartPoint,
-    const wr::LayoutPoint& aEndPoint, const nsTArray<wr::GradientStop>& aStops,
-    wr::ExtendMode aExtendMode, const wr::LayoutSize aTileSize,
-    const wr::LayoutSize aTileSpacing) {
+    bool aIsBackfaceVisible, const wr::LayoutVector2D& aStartPoint,
+    const wr::LayoutVector2D& aEndPoint,
+    const nsTArray<wr::GradientStop>& aStops, wr::ExtendMode aExtendMode,
+    const wr::LayoutSize aTileSize, const wr::LayoutSize aTileSpacing) {
   wr_dp_push_linear_gradient(mWrState, aBounds, aClip, aIsBackfaceVisible,
                              &mCurrentSpaceAndClipChain, aStartPoint, aEndPoint,
                              aStops.Elements(), aStops.Length(), aExtendMode,
@@ -1538,7 +1538,7 @@ void DisplayListBuilder::PushLinearGradient(
 
 void DisplayListBuilder::PushRadialGradient(
     const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
-    bool aIsBackfaceVisible, const wr::LayoutPoint& aCenter,
+    bool aIsBackfaceVisible, const wr::LayoutVector2D& aCenter,
     const wr::LayoutSize& aRadius, const nsTArray<wr::GradientStop>& aStops,
     wr::ExtendMode aExtendMode, const wr::LayoutSize aTileSize,
     const wr::LayoutSize aTileSpacing) {
@@ -1550,9 +1550,10 @@ void DisplayListBuilder::PushRadialGradient(
 
 void DisplayListBuilder::PushConicGradient(
     const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
-    bool aIsBackfaceVisible, const wr::LayoutPoint& aCenter, const float aAngle,
-    const nsTArray<wr::GradientStop>& aStops, wr::ExtendMode aExtendMode,
-    const wr::LayoutSize aTileSize, const wr::LayoutSize aTileSpacing) {
+    bool aIsBackfaceVisible, const wr::LayoutVector2D& aCenter,
+    const float aAngle, const nsTArray<wr::GradientStop>& aStops,
+    wr::ExtendMode aExtendMode, const wr::LayoutSize aTileSize,
+    const wr::LayoutSize aTileSpacing) {
   wr_dp_push_conic_gradient(mWrState, aBounds, aClip, aIsBackfaceVisible,
                             &mCurrentSpaceAndClipChain, aCenter, aAngle,
                             aStops.Elements(), aStops.Length(), aExtendMode,
@@ -1564,13 +1565,14 @@ void DisplayListBuilder::PushImage(
     bool aIsBackfaceVisible, bool aForceAntiAliasing,
     wr::ImageRendering aFilter, wr::ImageKey aImage, bool aPremultipliedAlpha,
     const wr::ColorF& aColor, bool aPreferCompositorSurface,
-    bool aSupportsExternalCompositing) {
+    bool aSupportsExternalCompositing, bool aRasterizedForRect) {
   WRDL_LOG("PushImage b=%s cl=%s\n", mWrState, ToString(aBounds).c_str(),
            ToString(aClip).c_str());
   wr_dp_push_image(mWrState, aBounds, aClip, aIsBackfaceVisible,
                    aForceAntiAliasing, &mCurrentSpaceAndClipChain, aFilter,
                    aImage, aPremultipliedAlpha, aColor,
-                   aPreferCompositorSurface, aSupportsExternalCompositing);
+                   aPreferCompositorSurface, aSupportsExternalCompositing,
+                   aRasterizedForRect);
 }
 
 void DisplayListBuilder::PushRepeatingImage(
@@ -1712,9 +1714,9 @@ void DisplayListBuilder::PushBorderGradient(
     const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
     bool aIsBackfaceVisible, const wr::LayoutSideOffsets& aWidths,
     const int32_t aWidth, const int32_t aHeight, bool aFill,
-    const wr::DeviceIntSideOffsets& aSlice, const wr::LayoutPoint& aStartPoint,
-    const wr::LayoutPoint& aEndPoint, const nsTArray<wr::GradientStop>& aStops,
-    wr::ExtendMode aExtendMode) {
+    const wr::DeviceIntSideOffsets& aSlice,
+    const wr::LayoutVector2D& aStartPoint, const wr::LayoutVector2D& aEndPoint,
+    const nsTArray<wr::GradientStop>& aStops, wr::ExtendMode aExtendMode) {
   wr_dp_push_border_gradient(mWrState, aBounds, aClip, aIsBackfaceVisible,
                              &mCurrentSpaceAndClipChain, aWidths, aWidth,
                              aHeight, aFill, aSlice, aStartPoint, aEndPoint,
@@ -1724,7 +1726,7 @@ void DisplayListBuilder::PushBorderGradient(
 void DisplayListBuilder::PushBorderRadialGradient(
     const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
     bool aIsBackfaceVisible, const wr::LayoutSideOffsets& aWidths, bool aFill,
-    const wr::LayoutPoint& aCenter, const wr::LayoutSize& aRadius,
+    const wr::LayoutVector2D& aCenter, const wr::LayoutSize& aRadius,
     const nsTArray<wr::GradientStop>& aStops, wr::ExtendMode aExtendMode) {
   wr_dp_push_border_radial_gradient(
       mWrState, aBounds, aClip, aIsBackfaceVisible, &mCurrentSpaceAndClipChain,
@@ -1735,7 +1737,7 @@ void DisplayListBuilder::PushBorderRadialGradient(
 void DisplayListBuilder::PushBorderConicGradient(
     const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
     bool aIsBackfaceVisible, const wr::LayoutSideOffsets& aWidths, bool aFill,
-    const wr::LayoutPoint& aCenter, const float aAngle,
+    const wr::LayoutVector2D& aCenter, const float aAngle,
     const nsTArray<wr::GradientStop>& aStops, wr::ExtendMode aExtendMode) {
   wr_dp_push_border_conic_gradient(mWrState, aBounds, aClip, aIsBackfaceVisible,
                                    &mCurrentSpaceAndClipChain, aWidths, aFill,

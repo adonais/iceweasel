@@ -19,6 +19,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PrefUtils: "moz-src:///toolkit/modules/PrefUtils.sys.mjs",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SidebarManager:
     "moz-src:///browser/components/sidebar/SidebarManager.sys.mjs",
 });
@@ -109,13 +111,23 @@ XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "chatShortcutsIgnoreFields",
   "browser.ml.chat.shortcuts.ignoreFields",
-  "input",
+  "input,moz-multiline-editor",
   updateIgnoredInputs
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "chatSidebar",
   "browser.ml.chat.sidebar"
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "highlightToSearchFeatureGate",
+  "browser.highlightToSearch.featureGate"
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "highlightToSearchEnabled",
+  "browser.highlightToSearch.enabled"
 );
 XPCOMUtils.defineLazyPreferenceGetter(lazy, "sidebarRevamp", "sidebar.revamp");
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -261,16 +273,46 @@ export const GenAI = {
   },
 
   /**
-   * Determine if chat entrypoints can be shown
+   * Determine if the chatbot can be offered, whether or not the user has
+   * chosen a provider yet. Clicking an entrypoint with no provider starts
+   * onboarding, so surfaces that want to onboard use this instead of
+   * canShowChatEntrypoint.
    *
+   * @returns {bool} can offer
+   */
+  get canOfferChatbot() {
+    return (
+      lazy.chatEnabled &&
+      // Chatbot needs to be a tool if new sidebar
+      (!lazy.sidebarRevamp || lazy.sidebarTools.includes("aichat"))
+    );
+  },
+
+  /**
    * @returns {bool} can show
    */
   get canShowChatEntrypoint() {
+    return this.canOfferChatbot && lazy.chatProvider != "";
+  },
+
+  /**
+   * @returns {bool} can show
+   */
+  get canShowAIAction() {
+    return this.canOfferChatbot && lazy.chatShortcuts;
+  },
+
+  /**
+   * @returns {bool} can show
+   */
+  get canShowSelectionMenu() {
+    if (lazy.chatShortcuts && this.canShowChatEntrypoint) {
+      return true;
+    }
     return (
-      lazy.chatEnabled &&
-      lazy.chatProvider != "" &&
-      // Chatbot needs to be a tool if new sidebar
-      (!lazy.sidebarRevamp || lazy.sidebarTools.includes("aichat"))
+      lazy.highlightToSearchFeatureGate &&
+      lazy.highlightToSearchEnabled &&
+      this.canShowAIAction
     );
   },
 
@@ -407,41 +449,96 @@ export const GenAI = {
   },
 
   /**
-   * Setup helpers and callbacks for ai shortcut button.
+   * Setup helpers and callbacks for the selection shortcut panel.
    *
-   * @param {MozButton} aiActionButton instance for the browser window
-   * @param {string} iconSrc URL for the button icon
+   * The panel owns the state shared by its actions: whether it has been
+   * initialized, how to hide it, and the selection it was opened for.
+   *
+   * @param {MozPanel} panel selection shortcut panel for the browser window
+   * @param {string} iconSrc URL for the ai action button icon
    */
-  initializeAIShortcut(
-    aiActionButton,
+  initializeSelectionShortcutPanel(
+    panel,
     iconSrc = "chrome://global/skin/icons/highlights.svg"
   ) {
+    const document = panel.ownerDocument;
+    const aiActionButton = panel.querySelector("#ai-action-button");
     aiActionButton.iconSrc = iconSrc;
-    if (aiActionButton.initialized) {
+    if (panel.initialized) {
       return;
     }
-    aiActionButton.initialized = true;
+    panel.initialized = true;
+
+    // Set the icons here rather than in markup, because the panel lives in the
+    // popupset and an iconsrc there loads the image during startup while the
+    // action is still hidden.
+    for (const [id, src] of [
+      ["#search-action-button", "chrome://global/skin/icons/search-glass.svg"],
+      ["#copy-action-button", "chrome://global/skin/icons/edit-copy.svg"],
+      ["#more-actions-button", "chrome://global/skin/icons/more.svg"],
+    ]) {
+      panel.querySelector(id).iconSrc = src;
+    }
 
     const setAIButtonAriaLabel = (chatProviderName = "localhost") => {
-      document.l10n.setAttributes(aiActionButton, "genai-shortcut-button", {
+      document.l10n.setAttributes(aiActionButton, "genai-shortcut-button-2", {
         provider: chatProviderName,
       });
     };
 
-    const document = aiActionButton.ownerDocument;
     const initialChatProvider = this.chatProviders.get(lazy.chatProvider);
     setAIButtonAriaLabel(initialChatProvider?.name);
+
+    const searchActionButton = panel.querySelector("#search-action-button");
+
+    // Matches the context menu's "Search <engine> for <selection>" label.
+    const truncateSelection = selection => {
+      const collapsed = selection.replace(/\s+/g, " ").trim();
+      if (collapsed.length <= 15) {
+        return collapsed;
+      }
+      let truncLength = 15;
+      const truncChar = collapsed[15].charCodeAt(0);
+      // Handle surrogate pairs.
+      if (truncChar >= 0xdc00 && truncChar <= 0xdfff) {
+        truncLength++;
+      }
+      return collapsed.substring(0, truncLength) + Services.locale.ellipsis;
+    };
+
+    panel.setSearchButtonLabel = (selection, browser) => {
+      // The default engine getters throw rather than return null until the
+      // search service has initialized, and throwing here would stop the panel
+      // from opening at all, so hide the action like nsContextMenu does.
+      let engine = null;
+      if (lazy.SearchService.hasSuccessfullyInitialized) {
+        engine = lazy.PrivateBrowsingUtils.isBrowserPrivate(browser)
+          ? lazy.SearchService.defaultPrivateEngine
+          : lazy.SearchService.defaultEngine;
+      }
+      if (!engine) {
+        searchActionButton.hidden = true;
+        return;
+      }
+      // No matching unhide: the action stays hidden until bug 2069167 gives it
+      // behavior, so showing it here would offer a control that does nothing.
+      document.l10n.setAttributes(
+        searchActionButton,
+        "genai-shortcut-search-button",
+        {
+          engine: engine.name,
+          selection: truncateSelection(selection),
+        }
+      );
+    };
     const buttonActiveState = "icon";
     const buttonDefaultState = "icon ghost";
     const chatShortcutsOptionsPanel = document.getElementById(
       "chat-shortcuts-options-panel"
     );
-    const selectionShortcutActionPanel = document.getElementById(
-      "selection-shortcut-action-panel"
-    );
-    aiActionButton.hide = () => {
+    panel.hide = () => {
       chatShortcutsOptionsPanel.hidePopup();
-      selectionShortcutActionPanel.hidePopup();
+      panel.hidePopup();
     };
     aiActionButton.setAttribute("type", buttonDefaultState);
     chatShortcutsOptionsPanel.addEventListener("popuphidden", () =>
@@ -481,7 +578,7 @@ export const GenAI = {
           this.estimateSelectionLimit(chatProvider?.maxLength)
         ),
         selectionLength: roundDownToNearestHundred(
-          aiActionButton.data.selection.length
+          panel.selectionData.selection.length
         ),
       });
 
@@ -497,7 +594,7 @@ export const GenAI = {
       const currentIsSmartWindow = lazy.AIWindow.isAIWindowActive(
         document.defaultView
       );
-      const showWarning = this.isContextTooLong(aiActionButton.data.selection);
+      const showWarning = this.isContextTooLong(panel.selectionData.selection);
       const chatProvider = this.chatProviders.get(lazy.chatProvider);
 
       if (initialChatProvider !== chatProvider?.name) {
@@ -521,7 +618,7 @@ export const GenAI = {
       const browser = document.documentGlobal.gBrowser.selectedBrowser;
       const context = await this.addAskChatItems(
         browser,
-        aiActionButton.data,
+        panel.selectionData,
         promptObj => {
           if (currentIsSmartWindow && promptObj.id === "quiz") {
             return null;
@@ -531,7 +628,7 @@ export const GenAI = {
           return button;
         },
         "shortcuts",
-        aiActionButton.hide
+        panel.hide
       );
 
       // Add custom textarea box if configured
@@ -554,7 +651,7 @@ export const GenAI = {
         textAreaEl.addEventListener("keydown", event => {
           if (event.key == "Enter" && !event.shiftKey) {
             this.handleAskChat({ value: textAreaEl.value }, context);
-            aiActionButton.hide();
+            panel.hide();
           }
         });
 
@@ -589,19 +686,14 @@ export const GenAI = {
         hider.addEventListener("command", () => {
           Services.prefs.setBoolPref("browser.ml.chat.shortcuts", false);
           Glean.genaiChatbot.shortcutsHideClick.record({
-            selection: aiActionButton.data.selection.length,
+            selection: panel.selectionData.selection.length,
           });
         });
       }
 
-      chatShortcutsOptionsPanel.openPopup(
-        selectionShortcutActionPanel,
-        "after_start",
-        0,
-        10
-      );
+      chatShortcutsOptionsPanel.openPopup(panel, "after_start", 0, 10);
       Glean.genaiChatbot.shortcutsExpanded.record({
-        selection: aiActionButton.data.selection.length,
+        selection: panel.selectionData.selection.length,
         provider: this.getProviderId(),
         warning: showWarning,
       });
@@ -643,6 +735,7 @@ export const GenAI = {
    * @param {string} name of message
    * @param {{
    *   inputType: string,
+   *   host?: string,
    *   selection: string,
    *   delay: number,
    *   x: number,
@@ -658,51 +751,50 @@ export const GenAI = {
     if (
       !isInBrowserStack ||
       !browser ||
+      !this.isSupportedContext(browser) ||
       this.ignoredInputs.has(data.inputType) ||
+      this.ignoredInputs.has(data.host) ||
       (isSmartWindow
         ? !lazy.chatShortcutsSmartWindow
-        : !lazy.chatShortcuts || !this.canShowChatEntrypoint)
+        : !this.canShowSelectionMenu)
     ) {
       return;
     }
 
     const window = browser.documentGlobal;
     const { document, devicePixelRatio } = window;
-    const aiActionButton = document.getElementById("ai-action-button");
+    const shortcutPanel = document.getElementById(
+      "selection-shortcut-action-panel"
+    );
     if (isSmartWindow) {
-      this.initializeAIShortcut(
-        aiActionButton,
+      this.initializeSelectionShortcutPanel(
+        shortcutPanel,
         "chrome://browser/content/aiwindow/assets/new-chat.svg"
       );
     } else {
-      this.initializeAIShortcut(aiActionButton);
+      this.initializeSelectionShortcutPanel(shortcutPanel);
     }
 
     switch (name) {
       case "GenAI:HideShortcuts": {
-        const shortcutPanel = document.getElementById(
-          "selection-shortcut-action-panel"
-        );
         // For an IME selection change, hide via CSS
         // to avoid hidePopup() cancelling the active IME composition.
         // Any other hide reason closes the panel normally.
         const imeHiding = data === "selectionchange-ime";
-        shortcutPanel?.toggleAttribute("ime-hiding", imeHiding);
+        shortcutPanel.toggleAttribute("ime-hiding", imeHiding);
         if (!imeHiding) {
-          aiActionButton.hide();
+          shortcutPanel.hide();
         }
         break;
       }
       case "GenAI:ShowShortcuts": {
         // Save the latest selection so it can be used by popup
-        aiActionButton.data = data;
+        shortcutPanel.selectionData = data;
+        shortcutPanel.setSearchButtonLabel(data.selection, browser);
 
         // Clear any CSS hide from a prior selectionchange so the panel
         // is visible when it opens for the new selection.
-        const shortcutPanel = document.getElementById(
-          "selection-shortcut-action-panel"
-        );
-        shortcutPanel?.removeAttribute("ime-hiding");
+        shortcutPanel.removeAttribute("ime-hiding");
 
         Glean.genaiChatbot.shortcutsDisplayed.record({
           delay: data.delay,
@@ -718,14 +810,12 @@ export const GenAI = {
         const screenX = data.screenXDevPx / devicePixelRatio;
         const screenY = screenYBase + bottomPadding;
 
-        aiActionButton
-          .closest("panel")
-          .openPopup(
-            browser,
-            "before_start",
-            screenX - browser.screenX,
-            screenY - browser.screenY
-          );
+        shortcutPanel.openPopup(
+          browser,
+          "before_start",
+          screenX - browser.screenX,
+          screenY - browser.screenY
+        );
         break;
       }
     }
@@ -782,17 +872,14 @@ export const GenAI = {
   },
 
   /**
-   * Whether the ask-chat entrypoint may be shown for the given context. Shared
-   * by the full submenu (buildAskChatMenu) and the single page-summarize item
-   * (buildTabSummarizeItem) so the gating stays in one place.
+   * Whether the browser's context supports gen-AI surfaces at all. Shared by
+   * the ask-chat entrypoints and the selection menu so that both refuse the
+   * same contexts.
    *
    * @param {MozBrowser} browser browser for the context's page
-   * @param {string} source one of "page", "tab", "tool"
-   * @param {MozTabbrowserTab[] | null} contextTabs tabs for a "tab" source
-   * @param {object | null} selectionInfo selection details, if any
    * @returns {boolean}
    */
-  canShowAskChat(browser, source, contextTabs, selectionInfo) {
+  isSupportedContext(browser) {
     // DO NOT show when inside an extension panel
     const uri = browser.browsingContext?.currentURI.spec;
     if (uri?.startsWith("moz-extension:")) {
@@ -802,7 +889,18 @@ export const GenAI = {
     // Popups don't have a sidebar, so don't show the menu.
     // Also, it's not useful for most Document Picture-in-Picture API use-cases.
     const isPopup = browser.documentGlobal.toolbar?.visible === false;
-    if (browser.browsingContext?.isDocumentPiP || isPopup) {
+    return !browser.browsingContext?.isDocumentPiP && !isPopup;
+  },
+
+  /**
+   * @param {MozBrowser} browser browser for the context's page
+   * @param {string} source one of "page", "tab", "tool"
+   * @param {MozTabbrowserTab[] | null} contextTabs tabs for a "tab" source
+   * @param {object | null} selectionInfo selection details, if any
+   * @returns {boolean}
+   */
+  canShowAskChat(browser, source, contextTabs, selectionInfo) {
+    if (!this.isSupportedContext(browser)) {
       return false;
     }
 

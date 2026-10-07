@@ -6,7 +6,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  GenAI: "resource:///modules/GenAI.sys.mjs",
+  GenAI: "moz-src:///browser/components/genai/GenAI.sys.mjs",
 });
 
 async function focusAndActivateElement(elem, activateMethod) {
@@ -86,7 +86,11 @@ add_task(async function test_keyboard_navigation() {
   );
   ok(isActiveElement(toolButtons[1]), "Second tool button is focused.");
 
-  // 2nd tool is synced tabs which is a less-moving target than the chat panel
+  info("Press Arrow Down key.");
+  EventUtils.synthesizeKey("KEY_ArrowDown", {});
+  ok(isActiveElement(toolButtons[2]), "Third tool button is focused.");
+
+  // 3rd tool is history, which is a less-moving target than the chat panel
   info("Press Enter key.");
   promisePanelFocused = BrowserTestUtils.waitForEvent(window, "SidebarFocused");
   EventUtils.synthesizeKey("KEY_Enter", {});
@@ -102,19 +106,19 @@ add_task(async function test_keyboard_navigation() {
   info("selectedView is:" + sidebar.selectedView);
   is(
     sidebar.selectedView,
-    toolButtons[1].getAttribute("view"),
-    "Sidebar is showing the 2nd tool."
+    toolButtons[2].getAttribute("view"),
+    "Sidebar is showing the 3rd tool."
   );
-  // Moz-button is passing an "aria-pressed" attribute to the actual buttonEl:
+  // Moz-button is passing an "aria-selected" attribute to the actual buttonEl:
   is(
-    toolButtons[1].buttonEl.getAttribute("aria-pressed"),
+    toolButtons[2].buttonEl.getAttribute("aria-selected"),
     "true",
-    "aria-pressed is true for the active tool button."
+    "aria-selected is true for the active tool button."
   );
   is(
-    toolButtons[0].buttonEl.getAttribute("aria-pressed"),
+    toolButtons[0].buttonEl.getAttribute("aria-selected"),
     "false",
-    "aria-pressed is false for the inactive tool button."
+    "aria-selected is false for the inactive tool button."
   );
 
   info("Press Shift+tab to move focus to the close button in the panel");
@@ -135,9 +139,9 @@ add_task(async function test_keyboard_navigation() {
 
   ok(!sidebar.open, "Sidebar panel is closed.");
   is(
-    toolButtons[1].buttonEl.getAttribute("aria-pressed"),
+    toolButtons[2].buttonEl.getAttribute("aria-selected"),
     "false",
-    "Tool is no longer active, aria-pressed becomes false."
+    "Tool is no longer active, aria-selected becomes false."
   );
 
   // We seem to need to wait here before re-focusing the tool button
@@ -251,16 +255,24 @@ add_task(async function test_genai_chat_sidebar_tooltip() {
 });
 
 add_task(async function test_keyboard_navigation_vertical_tabs() {
-  SpecialPowers.pushPrefEnv({
+  await SpecialPowers.pushPrefEnv({
     set: [[VERTICAL_TABS_PREF, true]],
   });
   await SidebarTestUtils.waitForTabstripOrientation(window, "vertical");
+  await SidebarController.updateUIState({ launcherExpanded: false });
   const sidebar = document.querySelector("sidebar-main");
-  info("Waiting for tool buttons to be present");
-  await BrowserTestUtils.waitForMutationCondition(
-    sidebar,
-    { subTree: true, childList: true },
-    () => !!sidebar.toolButtons.length
+  const syncedTabsButton = await BrowserTestUtils.waitForMutationCondition(
+    sidebar.shadowRoot,
+    { childList: true, subtree: true },
+    () => sidebar.shadowRoot.querySelector("moz-button[view=viewTabsSidebar]"),
+    { msg: "Waiting for Synced Tabs button to be present." }
+  );
+  await SidebarTestUtils.showPanel(window, "viewTabsSidebar");
+  await sidebar.updateComplete;
+  Assert.equal(
+    sidebar.buttonGroup.activeChild,
+    syncedTabsButton,
+    "Synced Tabs button is active."
   );
   const newTabButton = sidebar.querySelector("#tabs-newtab-button");
 
@@ -284,8 +296,13 @@ add_task(async function test_keyboard_navigation_vertical_tabs() {
   ok(isActiveElement(newTabButton), "New tab button is focused again.");
 
   info("Tab to get to tools.");
+  await BrowserTestUtils.waitForMutationCondition(
+    syncedTabsButton,
+    { attributes: true },
+    () => BrowserTestUtils.isVisible(syncedTabsButton)
+  );
   EventUtils.synthesizeKey("KEY_Tab", {});
-  ok(isActiveElement(sidebar.toolButtons[0]), "First tool button is focused.");
+  ok(isActiveElement(syncedTabsButton), "Synced tabs tool button is focused.");
 
   info("Shift+Tab back to new tab button.");
   EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true }, window);

@@ -1,0 +1,3 @@
+LICENSES += ["notice-good"]
+LICENSES["notice-good"].title = "Notice License"
+LICENSES["notice-good"].text = "LICENSE-NOTICE.txt"

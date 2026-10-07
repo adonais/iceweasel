@@ -94,8 +94,23 @@ add_task(async function stop_reports_result_or_nomatch_before_end() {
   let errorFired = null;
 
   sr.onerror = e => { errorFired = e.error; };
+  // https://webaudio.github.io/web-speech-api/#speechreco-events
+  // "These events do not bubble and are not cancelable." Checked here because
+  // reaching a result or a nomatch needs a real model.
+  const bubbled = [];
+  const cancelable = [];
+  const checkFlags = e => {
+    if (e.bubbles) {
+      bubbled.push(e.type);
+    }
+    if (e.cancelable) {
+      cancelable.push(e.type);
+    }
+  };
+
   sr.onresult = e => {
     order.push("result");
+    checkFlags(e);
     for (let i = e.resultIndex; i < e.results.length; i++) {
       if (e.results[i].isFinal) {
         resultCount++;
@@ -105,6 +120,7 @@ add_task(async function stop_reports_result_or_nomatch_before_end() {
   };
   sr.onnomatch = e => {
     order.push("nomatch");
+    checkFlags(e);
     nomatchCount++;
     is(e.results.length, 0, "nomatch carries no results");
   };
@@ -128,6 +144,8 @@ add_task(async function stop_reports_result_or_nomatch_before_end() {
 
   info(`event order: ${order.join(", ")}`);
   is(order.at(-1), "end", "end is the last event: nothing is delivered after it");
+  is(bubbled.join(", "), "", "neither result nor nomatch bubbles");
+  is(cancelable.join(", "), "", "neither result nor nomatch is cancelable");
   if (resultCount) {
     is(nomatchCount, 0,
        `${resultCount} final result(s) were returned, so no nomatch`);

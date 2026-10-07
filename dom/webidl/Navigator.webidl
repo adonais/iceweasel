@@ -53,7 +53,7 @@ interface mixin NavigatorID {
   [Pure, Cached, Throws, NeedsCallerType]
   readonly attribute DOMString platform;
   [Pure, Cached, Throws, NeedsCallerType]
-  readonly attribute DOMString userAgent;
+  readonly attribute UTF8String userAgent;
   [Constant, Cached]
   readonly attribute DOMString product; // constant "Gecko"
 
@@ -285,7 +285,7 @@ partial interface Navigator {
 };
 
 partial interface Navigator {
-  [Throws, Pref="beacon.enabled"]
+  [Throws]
   boolean sendBeacon(DOMString url,
                      optional BodyInit? data = null);
 };

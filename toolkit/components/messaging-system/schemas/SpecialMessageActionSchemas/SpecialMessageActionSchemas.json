@@ -212,6 +212,18 @@
           "properties": {
             "type": {
               "type": "string",
+              "enum": ["OPEN_SMARTWINDOW_MONITOR_CREATE"]
+            }
+          },
+          "required": ["type"],
+          "additionalProperties": false,
+          "description": "Opens the Smart Window monitor panel straight to the create form"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
               "enum": ["OPEN_PROTECTION_REPORT"]
             }
           },
@@ -350,7 +362,7 @@
           },
           "required": ["type"],
           "additionalProperties": false,
-          "description": "Minimize the CFR doorhanger back into the URLbar"
+          "description": "Minimize the notification"
         },
         {
           "type": "object",
@@ -506,6 +518,30 @@
           "required": ["type"],
           "additionalProperties": false,
           "description": "Remove Firefox from Windows login items"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["ENABLE_CLOSED_BROWSER_NOTIFICATIONS"]
+            }
+          },
+          "required": ["type"],
+          "additionalProperties": false,
+          "description": "Turn on web notifications delivered while Firefox is closed"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["DISABLE_CLOSED_BROWSER_NOTIFICATIONS"]
+            }
+          },
+          "required": ["type"],
+          "additionalProperties": false,
+          "description": "Turn off web notifications delivered while Firefox is closed"
         },
         {
           "type": "object",
@@ -878,6 +914,18 @@
           "required": ["type"],
           "additionalProperties": false,
           "description": "Creates a new user profile using SelectableProfileService and launches it in a new instance"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["RESET_PROFILE"]
+            }
+          },
+          "required": ["type"],
+          "additionalProperties": false,
+          "description": "Opens the refresh confirmation dialog, which resets the current profile and restarts the browser"
         },
         {
           "type": "object",

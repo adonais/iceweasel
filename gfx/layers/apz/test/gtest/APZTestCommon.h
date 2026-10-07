@@ -237,7 +237,9 @@ class TestAPZCTreeManager : public APZCTreeManager {
  public:
   explicit TestAPZCTreeManager(MockContentControllerDelayed* aMcc,
                                UniquePtr<IAPZHitTester> aHitTester = nullptr)
-      : APZCTreeManager(LayersId{0}, std::move(aHitTester)), mcc(aMcc) {
+      : APZCTreeManager(LayersId{0}, CSSToLayoutDeviceScale{1},
+                        std::move(aHitTester)),
+        mcc(aMcc) {
     Init();
   }
 

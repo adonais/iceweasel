@@ -52,20 +52,6 @@ add_setup(async function setup() {
 });
 
 add_task(async function test_checkEnvironment() {
-  let data = TelemetryEnvironment.currentEnvironment;
-
-  // Check that settings.intl is lazily loaded.
-  Assert.equal(
-    typeof data.settings.intl,
-    "object",
-    "intl is initially an object"
-  );
-  Assert.equal(
-    Object.keys(data.settings.intl).length,
-    0,
-    "intl is initially empty"
-  );
-
   // Now continue with startup.
   let initPromise = TelemetryEnvironment.onInitialized();
   finishAddonManagerStartup();
@@ -574,24 +560,6 @@ add_task(async function test_experimentsAPI_limits() {
 });
 
 if (gIsWindows) {
-  add_task(async function test_environmentHDDInfo() {
-    await TelemetryEnvironment.testCleanRestart().onInitialized();
-    let data = TelemetryEnvironment.currentEnvironment;
-    let empty = { model: null, revision: null, type: null };
-    Assert.deepEqual(
-      data.system.hdd,
-      { binary: empty, profile: empty, system: empty },
-      "Should have no data yet."
-    );
-    await TelemetryEnvironment.delayedInit();
-    data = TelemetryEnvironment.currentEnvironment;
-    for (let k of TelemetryEnvironmentTesting.EXPECTED_HDD_FIELDS) {
-      TelemetryEnvironmentTesting.checkString(data.system.hdd[k].model);
-      TelemetryEnvironmentTesting.checkString(data.system.hdd[k].revision);
-      TelemetryEnvironmentTesting.checkString(data.system.hdd[k].type);
-    }
-  });
-
   add_task(async function test_environmentProcessInfo() {
     await TelemetryEnvironment.testCleanRestart().onInitialized();
     let data = TelemetryEnvironment.currentEnvironment;
@@ -603,34 +571,8 @@ if (gIsWindows) {
       "boolean",
       "isWow64 must be a boolean."
     );
-    Assert.equal(
-      typeof data.system.isWowARM64,
-      "boolean",
-      "isWowARM64 must be a boolean."
-    );
-    Assert.equal(
-      typeof data.system.hasWinPackageId,
-      "boolean",
-      "hasWinPackageId must be a boolean."
-    );
-    // This is only sent for Mozilla produced MSIX packages
-    Assert.ok(
-      !("winPackageFamilyName" in data.system) ||
-        data.system.winPackageFamilyName === null ||
-        typeof data.system.winPackageFamilyName === "string",
-      "winPackageFamilyName must be a string if non null"
-    );
     // These should be numbers if they are not null
-    for (let f of [
-      "count",
-      "model",
-      "family",
-      "stepping",
-      "l2cacheKB",
-      "l3cacheKB",
-      "speedMHz",
-      "cores",
-    ]) {
+    for (let f of ["count", "model", "family", "stepping", "cores"]) {
       Assert.ok(
         !(f in data.system.cpu) ||
           data.system.cpu[f] === null ||
@@ -643,86 +585,7 @@ if (gIsWindows) {
       "vendor must be a valid string."
     );
   });
-
-  add_task(async function test_environmentOSInfo() {
-    await TelemetryEnvironment.testCleanRestart().onInitialized();
-    let data = TelemetryEnvironment.currentEnvironment;
-    Assert.deepEqual(
-      data.system.os.installYear,
-      null,
-      "Should have no data yet."
-    );
-    await TelemetryEnvironment.delayedInit();
-    data = TelemetryEnvironment.currentEnvironment;
-    Assert.ok(
-      Number.isFinite(data.system.os.installYear),
-      "Install year must be a number."
-    );
-  });
 }
-
-add_task(
-  { skip_if: () => AppConstants.MOZ_APP_NAME == "thunderbird" },
-  async function test_environmentServicesInfo() {
-    let cache = TelemetryEnvironment.testCleanRestart();
-    await cache.onInitialized();
-    let oldGetFxaSignedInUser = cache._getFxaSignedInUser;
-    try {
-      // Test the 'yes to both' case.
-
-      // This makes the weave service return that the usere is definitely a sync user
-      Services.prefs.setStringPref(
-        "services.sync.username",
-        "c00lperson123@example.com"
-      );
-      let calledFxa = false;
-      cache._getFxaSignedInUser = () => {
-        calledFxa = true;
-        return null;
-      };
-
-      await cache._updateServicesInfo();
-      ok(
-        !calledFxa,
-        "Shouldn't need to ask FxA if they're definitely signed in"
-      );
-      deepEqual(cache.currentEnvironment.services, {
-        accountEnabled: true,
-        syncEnabled: true,
-      });
-
-      // Test the fxa-but-not-sync case.
-      Services.prefs.clearUserPref("services.sync.username");
-      // We don't actually inspect the returned object, just t
-      cache._getFxaSignedInUser = async () => {
-        return {};
-      };
-      await cache._updateServicesInfo();
-      deepEqual(cache.currentEnvironment.services, {
-        accountEnabled: true,
-        syncEnabled: false,
-      });
-      // Test the "no to both" case.
-      cache._getFxaSignedInUser = async () => {
-        return null;
-      };
-      await cache._updateServicesInfo();
-      deepEqual(cache.currentEnvironment.services, {
-        accountEnabled: false,
-        syncEnabled: false,
-      });
-      // And finally, the 'fxa is in an error state' case.
-      cache._getFxaSignedInUser = () => {
-        throw new Error("You'll never know");
-      };
-      await cache._updateServicesInfo();
-      equal(cache.currentEnvironment.services, null);
-    } finally {
-      cache._getFxaSignedInUser = oldGetFxaSignedInUser;
-      Services.prefs.clearUserPref("services.sync.username");
-    }
-  }
-);
 
 add_task(async function test_environmentShutdown() {
   // Define and reset the test preference.

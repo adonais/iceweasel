@@ -131,7 +131,6 @@ class ImageUtils {
 
   static DecoderType GetDecoderType(const nsACString& aMimeType);
 
- private:
   ImageUtils() = delete;
   ~ImageUtils() = delete;
 };

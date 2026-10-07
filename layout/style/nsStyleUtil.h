@@ -5,6 +5,7 @@
 #define nsStyleUtil_h_
 
 #include "nsAtom.h"
+#include "nsCRTGlue.h"
 #include "nsCaseTreatment.h"
 #include "nsColor.h"
 #include "nsCoord.h"

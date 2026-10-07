@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LocalContentColor
@@ -66,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.Switch
 import mozilla.components.compose.base.badge.BADGE_SIZE_SMALL
 import mozilla.components.compose.base.badge.BadgedIcon
+import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.RadioButton
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.theme.information
@@ -139,11 +139,12 @@ fun TextListItem(
         } else {
             IconButton(
                 onClick = onIconClick,
+                contentDescription = null,
                 modifier = Modifier.size(ICON_SIZE).clearAndSetSemantics {},
             ) {
                 Icon(
                     painter = iconPainter,
-                    contentDescription = iconDescription,
+                    contentDescription = null,
                     tint = iconTint,
                 )
             }
@@ -223,11 +224,12 @@ fun FaviconListItem(
 
             IconButton(
                 onClick = onIconClick,
+                contentDescription = iconDescription,
                 modifier = iconButtonModifier.then(Modifier.size(ICON_SIZE)),
             ) {
                 Icon(
                     painter = iconPainter,
-                    contentDescription = iconDescription,
+                    contentDescription = null,
                 )
             }
         },
@@ -380,15 +382,13 @@ private fun IconListItemAfterIcon(
     } else {
         IconButton(
             onClick = onClick,
-            modifier =
-                Modifier.size(ICON_SIZE).semantics {
-                    this.role = Role.Button
-                },
+            contentDescription = description,
+            modifier = Modifier.size(ICON_SIZE),
             enabled = enabled,
         ) {
             Icon(
                 painter = painter,
-                contentDescription = description,
+                contentDescription = null,
                 tint = tint,
             )
         }
@@ -575,11 +575,12 @@ fun SelectableFaviconListItem(
                 iconPainter != null && onIconClick != null -> {
                     IconButton(
                         onClick = onIconClick,
+                        contentDescription = iconDescription,
                         modifier = Modifier.size(ICON_SIZE),
                     ) {
                         Icon(
                             painter = iconPainter,
-                            contentDescription = iconDescription,
+                            contentDescription = null,
                             tint = ListItemDefaults.colors().trailingIconColor,
                         )
                     }
@@ -689,12 +690,13 @@ fun SelectableIconListItem(
                     } else {
                         IconButton(
                             onClick = onAfterIconClick,
+                            contentDescription = afterIconDescription,
                             modifier = Modifier.size(ICON_SIZE),
                             enabled = enabled,
                         ) {
                             Icon(
                                 painter = afterIconPainter,
-                                contentDescription = afterIconDescription,
+                                contentDescription = null,
                                 tint = tint,
                             )
                         }
@@ -1412,6 +1414,7 @@ private fun SelectableListItemPreview() {
                 afterListItemAction = {
                     IconButton(
                         onClick = {},
+                        contentDescription = null,
                         modifier = Modifier.size(ICON_SIZE),
                     ) {
                         Icon(
@@ -1430,6 +1433,7 @@ private fun SelectableListItemPreview() {
                 afterListItemAction = {
                     IconButton(
                         onClick = {},
+                        contentDescription = null,
                         modifier = Modifier.size(ICON_SIZE),
                     ) {
                         Icon(

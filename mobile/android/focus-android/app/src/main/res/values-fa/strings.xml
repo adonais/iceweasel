@@ -11,7 +11,7 @@
   <string name="action_cancel">لغو</string>
   <string name="action_save">ذخیره</string>
   <!-- This text is shown in the URL bar when it's empty -->
-  <string name="urlbar_hint">جست‌وجو کنید یا نشانیی را وارد کنید</string>
+  <string name="urlbar_hint">جست‌وجو کنید یا نشانی را وارد کنید</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">تاریخچهٔ مرور، پاک شد</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->

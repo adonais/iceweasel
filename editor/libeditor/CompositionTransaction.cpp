@@ -10,12 +10,12 @@
 #include "mozilla/TextComposition.h"  // TextComposition
 #include "mozilla/TextEditor.h"       // TextEditor
 #include "mozilla/ToString.h"
+#include "mozilla/dom/Range.h"       // local var
 #include "mozilla/dom/Selection.h"   // local var
 #include "mozilla/dom/Text.h"        // mTextNode
 #include "nsAString.h"               // params
 #include "nsDebug.h"                 // for NS_ASSERTION, etc
 #include "nsError.h"                 // for NS_SUCCEEDED, NS_FAILED, etc
-#include "nsRange.h"                 // local var
 #include "nsISelectionController.h"  // for nsISelectionController constants
 #include "nsQueryObject.h"           // for do_QueryObject
 
@@ -123,11 +123,10 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
 
   // Advance caret: This requires the presentation shell to get the selection.
   if (mReplaceLength == 0) {
-    IgnoredErrorResult error;
-    editorBase->DoInsertText(*textNode, mOffset, mStringToInsert, error);
-    if (error.Failed()) {
+    nsresult rv = editorBase->DoInsertText(*textNode, mOffset, mStringToInsert);
+    if (NS_FAILED(rv)) [[unlikely]] {
       NS_WARNING("EditorBase::DoInsertText() failed");
-      return error.StealNSResult();
+      return rv;
     }
     editorBase->RangeUpdaterRef().SelAdjInsertText(*textNode, mOffset,
                                                    mStringToInsert.Length());
@@ -182,15 +181,14 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
       return {offsetInTextNode,
               replaceEndOffsetInCompositionStartTextNode - offsetInTextNode};
     }();
-    IgnoredErrorResult error;
     // FIXME: If mStringToInsert is empty string and mOffset is 0 in HTMLEditor,
     // we should delete the `Text` instead. See bug 2019186.
-    editorBase->DoReplaceText(*textNode, replaceStartInFirstText,
-                              replaceableLengthInFirstText, mStringToInsert,
-                              error);
-    if (error.Failed()) [[unlikely]] {
+    nsresult rv = editorBase->DoReplaceText(*textNode, replaceStartInFirstText,
+                                            replaceableLengthInFirstText,
+                                            mStringToInsert);
+    if (NS_FAILED(rv)) [[unlikely]] {
       NS_WARNING("EditorBase::DoReplaceText() failed");
-      return error.StealNSResult();
+      return rv;
     }
 
     // Don't use RangeUpdaterRef().SelAdjReplaceText() here because undoing
@@ -210,7 +208,6 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
       //     non-empty text nodes which are inserted by JS.  Instead, we
       //     should remove all text in the ranges of IME selections.
       uint32_t remainingLength = mReplaceLength - replaceableLengthInFirstText;
-      IgnoredErrorResult ignoredError;
       for (RefPtr<Text> text = Text::FromNodeOrNull(textNode->GetNextSibling());
            text && remainingLength;
            text = Text::FromNodeOrNull(text->GetNextSibling())) {
@@ -218,10 +215,11 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
             std::min(text->TextDataLength(), remainingLength);
         // FIXME: We should delete the Text when all of its data is deleted
         // now and we're working for HTMLEditor, see bug 2019186.
-        editorBase->DoDeleteText(*text, 0, deletableLengthInText, ignoredError);
-        NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                             "EditorBase::DoDeleteText() failed, but ignored");
-        ignoredError.SuppressException();
+        nsresult rv = editorBase->DoDeleteText(*text, 0, deletableLengthInText);
+        if (NS_FAILED(rv)) [[unlikely]] {
+          NS_WARNING("EditorBase::DoDeleteText() failed");
+          return rv;
+        }
         editorBase->RangeUpdaterRef().SelAdjDeleteText(*text, 0,
                                                        deletableLengthInText);
         remainingLength -= deletableLengthInText;
@@ -261,17 +259,17 @@ NS_IMETHODIMP CompositionTransaction::UndoTransaction() {
   }
 
   const OwningNonNull<EditorBase> editorBase = *mEditorBase;
-  IgnoredErrorResult error;
-  editorBase->DoDeleteText(*textNode, mOffset, mStringToInsert.Length(), error);
-  if (MOZ_UNLIKELY(error.Failed())) {
+  nsresult rv =
+      editorBase->DoDeleteText(*textNode, mOffset, mStringToInsert.Length());
+  if (NS_FAILED(rv)) [[unlikely]] {
     NS_WARNING("EditorBase::DoDeleteText() failed");
-    return error.StealNSResult();
+    return rv;
   }
 
   // set the selection to the insertion point where the string was removed
-  editorBase->CollapseSelectionTo(EditorRawDOMPoint(textNode, mOffset), error);
-  NS_ASSERTION(!error.Failed(), "EditorBase::CollapseSelectionTo() failed");
-  return error.StealNSResult();
+  rv = editorBase->CollapseSelectionTo(EditorRawDOMPoint(textNode, mOffset));
+  NS_ASSERTION(NS_SUCCEEDED(rv), "EditorBase::CollapseSelectionTo() failed");
+  return rv;
 }
 
 NS_IMETHODIMP CompositionTransaction::RedoTransaction() {
@@ -429,7 +427,7 @@ nsresult CompositionTransaction::SetIMESelection(
       continue;
     }
 
-    RefPtr<nsRange> clauseRange;
+    RefPtr<dom::Range> clauseRange;
     CheckedUint32 startOffset = aOffsetInNode;
     startOffset += std::min(textRange.mStartOffset, aLengthOfCompositionString);
     MOZ_ASSERT(startOffset.isValid());
@@ -439,10 +437,10 @@ nsresult CompositionTransaction::SetIMESelection(
     MOZ_ASSERT(endOffset.isValid());
     MOZ_ASSERT(endOffset.value() >= startOffset.value());
     MOZ_ASSERT(endOffset.value() <= maxOffset);
-    clauseRange = nsRange::Create(aTextNode, startOffset.value(), aTextNode,
-                                  endOffset.value(), IgnoreErrors());
+    clauseRange = dom::Range::Create(aTextNode, startOffset.value(), aTextNode,
+                                     endOffset.value(), IgnoreErrors());
     if (!clauseRange) {
-      NS_WARNING("nsRange::Create() failed, but might be ignored");
+      NS_WARNING("Range::Create() failed, but might be ignored");
       break;
     }
 

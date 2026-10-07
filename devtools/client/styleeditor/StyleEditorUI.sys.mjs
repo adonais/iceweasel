@@ -345,9 +345,7 @@ export class StyleEditorUI extends EventEmitter {
       eventListenersConfig
     );
 
-    this.#shortcuts = new KeyShortcuts({
-      window: this.#window,
-    });
+    this.#shortcuts = new KeyShortcuts(this.#window);
     this.#shortcuts.on(
       `CmdOrCtrl+${getString("focusFilterInput.commandkey")}`,
       this.#onFocusFilterInputKeyboardShortcut
@@ -1844,7 +1842,7 @@ export class StyleEditorUI extends EventEmitter {
       editor.onShow(options);
 
       this.#updatePrettyPrintButton();
-
+      Glean.devtoolsStyleeditorStylesheets.stylesheetsOpenedCount.add(1);
       this.emit("editor-selected", editor);
     } catch (e) {
       console.error(e);

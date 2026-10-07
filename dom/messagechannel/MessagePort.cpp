@@ -725,15 +725,14 @@ bool MessagePort::ConnectToPBackground() {
     return false;
   }
 
-  PMessagePortChild* actor = actorChild->SendPMessagePortConstructor(
-      mIdentifier->uuid(), mIdentifier->destinationUuid(),
-      mIdentifier->sequenceId());
-  if (NS_WARN_IF(!actor)) {
+  RefPtr<MessagePortChild> actor = MakeRefPtr<MessagePortChild>();
+  if (NS_WARN_IF(!actorChild->SendPMessagePortConstructor(
+          actor, mIdentifier->uuid(), mIdentifier->destinationUuid(),
+          mIdentifier->sequenceId()))) {
     return false;
   }
 
-  mActor = static_cast<MessagePortChild*>(actor);
-  MOZ_ASSERT(mActor);
+  mActor = std::move(actor);
 
   mActor->SetPort(this);
   mState = eStateEntangling;

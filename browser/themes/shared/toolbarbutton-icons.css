@@ -6,7 +6,22 @@
 .toolbarbutton-1 {
   color: inherit;
   -moz-context-properties: fill, fill-opacity;
+}
+
+.toolbarbutton-1 {
   fill: var(--toolbarbutton-icon-fill);
+}
+
+@media (forced-colors) {
+  toolbar .toolbarbutton-1:not([disabled]) {
+    &:hover {
+      fill: var(--toolbarbutton-icon-fill-hover);
+    }
+
+    &:is(:hover:active, [open], [checked]) {
+      fill: var(--toolbarbutton-icon-fill-active);
+    }
+  }
 }
 
 #back-button:-moz-locale-dir(rtl) > .toolbarbutton-icon,
@@ -479,6 +494,29 @@
   &[muted] {
     list-style-image: url("chrome://global/skin/media/audio-muted.svg");
   }
+}
+
+#mini-window-restore-button {
+  list-style-image: url("chrome://global/skin/icons/open-in-new.svg");
+}
+
+#mini-window-close-button {
+  list-style-image: url("chrome://global/skin/icons/close.svg");
+}
+
+#mini-window-audio-button {
+  &[soundplaying] {
+    list-style-image: url("chrome://global/skin/media/audio.svg");
+  }
+
+  &[muted] {
+    list-style-image: url("chrome://global/skin/media/audio-muted.svg");
+  }
+}
+
+/* TODO: update this image to a more appropriate one further down the stack */
+#mini-window-button {
+  list-style-image: url("chrome://global/skin/icons/open-in-new.svg");
 }
 
 #smartwindow-ask-button-inner {

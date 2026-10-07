@@ -59,6 +59,7 @@
 #include "nsAttrValueInlines.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsCSSProps.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsContentUtils.h"
 #include "nsDOMTokenList.h"
 #include "nsDeviceContext.h"
@@ -952,7 +953,11 @@ SERVO_IMPL_ELEMENT_ATTR_MATCHING_FUNCTIONS(Gecko_Snapshot,
 #undef SERVO_IMPL_ELEMENT_ATTR_MATCHING_FUNCTIONS
 
 nsAtom* Gecko_Atomize(const char* aString, uint32_t aLength) {
-  return NS_Atomize(nsDependentCSubstring(aString, aLength)).take();
+  nsDependentCSubstring str(aString, aLength);
+  if (NS_IsMainThread()) {
+    return NS_AtomizeMainThread(str).take();
+  }
+  return NS_Atomize(str).take();
 }
 
 nsAtom* Gecko_Atomize16(const nsAString* aString) {
@@ -967,7 +972,8 @@ void Gecko_nsFont_InitSystem(nsFont* aDest, StyleSystemFont aFontId,
                              const nsStyleFont* aFont,
                              const Document* aDocument) {
   const nsFont& defaultVariableFont =
-      aDocument->GetFontPrefsForLang(aFont->mLanguage)->mDefaultVariableFont;
+      aDocument->GetFontPrefsForLang(aFont->GetLangAtom())
+          ->mDefaultVariableFont;
 
   // We have passed uninitialized memory to this function,
   // initialize it. We can't simply return an nsFont because then
@@ -1226,16 +1232,6 @@ bool Gecko_IsURIInList(const URLExtraData* aData, const nsACString* aList) {
                                      PromiseFlatCString(*aList));
 }
 
-void Gecko_nsStyleFont_SetLang(nsStyleFont* aFont, nsAtom* aAtom) {
-  aFont->mLanguage = dont_AddRef(aAtom);
-  aFont->mExplicitLanguage = true;
-}
-
-void Gecko_nsStyleFont_CopyLangFrom(nsStyleFont* aFont,
-                                    const nsStyleFont* aSource) {
-  aFont->mLanguage = aSource->mLanguage;
-}
-
 Length Gecko_nsStyleFont_ComputeMinSize(const nsStyleFont* aFont,
                                         const Document* aDocument) {
   // Don't change font-size:0, since that would un-hide hidden text.
@@ -1247,7 +1243,7 @@ Length Gecko_nsStyleFont_ComputeMinSize(const nsStyleFont* aFont,
     return {0};
   }
   Length minFontSize =
-      aDocument->GetFontPrefsForLang(aFont->mLanguage)->mMinimumFontSize;
+      aDocument->GetFontPrefsForLang(aFont->GetLangAtom())->mMinimumFontSize;
   if (minFontSize.ToCSSPixels() <= 0.0f) {
     return {0};
   }

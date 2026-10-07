@@ -10,7 +10,6 @@ import mozilla.components.service.pocket.helpers.assertClassVisibility
 import mozilla.components.support.base.worker.Frequency
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -66,6 +65,5 @@ class PocketStoriesConfigTest {
         assertTrue(config.contentRecommendationsParams.topics.isEmpty())
         assertEquals(DEFAULT_CONTENT_RECOMMENDATIONS_COUNT, config.contentRecommendationsParams.count)
         assertTrue(config.contentRecommendationsParams.userAgent.isBlank())
-        assertFalse(config.contentRecommendationsParams.useMerinoClient)
     }
 }

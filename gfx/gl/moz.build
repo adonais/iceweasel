@@ -23,7 +23,6 @@ EXPORTS += [
     "AndroidSurfaceTexture.h",
     "AutoMappable.h",
     "Colorspaces.h",
-    "ForceDiscreteGPUHelperCGL.h",
     "GfxTexturesReporter.h",
     "GLBlitHelper.h",
     "GLConsts.h",

@@ -593,7 +593,7 @@ class TabTracker extends TabTrackerBase {
         if (this.has("tabs-highlighted")) {
           // Because we are delaying calling emitCreated above, we also need to
           // delay sending this event because it shouldn't fire before onCreated.
-          // event.target is gBrowser, so we don't use maybeWaitForTabOpen.
+          // event.target is the tab strip, so we don't use maybeWaitForTabOpen.
           Promise.resolve().then(() => {
             this.emitHighlighted(event.target.documentGlobal);
           });
@@ -1093,8 +1093,10 @@ class Window extends WindowBase {
     })();
 
     const initialState = window.windowState;
-    // window.fullScreen is checked too, so that we still have work to do below
-    // when DOM and widget disagree on the fullscreen state (bug 2066805).
+    // window.fullScreen is checked too, because it is set as soon as a
+    // fullscreen change is requested, while window.windowState only follows
+    // when the widget reports the change. A request arriving while an earlier
+    // one is still running would otherwise return here and do nothing.
     if (
       expectedState == initialState &&
       window.fullScreen == (expectedState == window.STATE_FULLSCREEN)

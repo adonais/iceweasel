@@ -47,4 +47,11 @@ sealed class BrowserScreenAction : Action {
      * @property customTabColors The new colors configuration.
      */
     data class CustomTabColorsUpdated(val customTabColors: CustomTabColors?) : BrowserScreenAction()
+
+    /**
+     * [Action] for when the tab-reload preview cover is shown or dismissed over the engine view.
+     *
+     * @property isVisible Whether the cover is currently displayed.
+     */
+    data class TabReloadCoverVisibilityUpdated(val isVisible: Boolean) : BrowserScreenAction()
 }

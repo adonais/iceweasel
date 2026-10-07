@@ -344,8 +344,13 @@ export class FormAutofillSection {
     };
 
     for (const detail of this.fieldDetails) {
-      // Do not save security code.
-      if (detail.fieldName == "cc-csc") {
+      // The security code is historically never captured. The CVV prefs let it
+      // be saved along with the card, the same way shouldAutofillField() gates
+      // autofilling it.
+      if (
+        detail.fieldName == "cc-csc" &&
+        !lazy.FormAutofill.isAutofillCreditCardCVVEnabled
+      ) {
         continue;
       }
       const { filledValue } = formFilledData.get(detail.elementId) ?? {};

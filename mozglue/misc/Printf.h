@@ -147,7 +147,7 @@ class MOZ_STACK_CLASS SprintfState final : private mozilla::PrintfTarget,
   explicit SprintfState(char* base)
       : mMaxlen(base ? strlen(base) : 0),
         mBase(base),
-        mCur(base ? base + mMaxlen : 0) {}
+        mCur(base ? base + mMaxlen : nullptr) {}
 
   ~SprintfState() { this->free_(mBase); }
 

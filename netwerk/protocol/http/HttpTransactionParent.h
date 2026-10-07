@@ -40,6 +40,10 @@ class HttpTransactionParent final : public PHttpTransactionParent,
 
   explicit HttpTransactionParent(bool aIsDocumentLoad);
 
+  void SetRequestBodyIsStreaming(bool aIsStreaming) override {
+    mRequestBodyIsStreaming = aIsStreaming;
+  }
+
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   mozilla::ipc::IPCResult RecvOnStartRequest(
@@ -159,6 +163,7 @@ class HttpTransactionParent final : public PHttpTransactionParent,
   uint64_t mChannelId{0};
   bool mDataSentToChildProcess{false};
   bool mIsDocumentLoad;
+  bool mRequestBodyIsStreaming{false};
   bool mRestarted{false};
   Atomic<uint32_t, ReleaseAcquire> mCaps{0};
   TimeStamp mRedirectStart;

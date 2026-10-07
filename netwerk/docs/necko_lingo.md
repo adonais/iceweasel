@@ -68,7 +68,7 @@ It usually means nsHttpChannel.
 
 ## Child Process
 Usually a firefox forked process - not the main process.\
-See [GeckoProcessTypes.h](https://searchfox.org/firefox-main/source/__GENERATED__/xpcom/build/GeckoProcessTypes.h) for all process types in gecko.
+See [GeckoProcessTypes.inc](https://searchfox.org/firefox-main/source/__GENERATED__/xpcom/build/GeckoProcessTypes.inc) for all process types in gecko.
 
 ## Content Process
 Usually a firefox forked process running untrusted web content.

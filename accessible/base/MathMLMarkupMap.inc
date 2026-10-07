@@ -14,7 +14,36 @@ MARKUPMAP(mo, New_HyperText, roles::MATHML_OPERATOR,
 
 MARKUPMAP(mtext, New_HyperText, roles::MATHML_TEXT)
 
-MARKUPMAP(ms, New_HyperText, roles::MATHML_STRING_LITERAL)
+MARKUPMAP(
+    a,
+    [](Element* aElement,
+       LocalAccessible* aContext) -> already_AddRefed<LocalAccessible> {
+      if (aElement->HasAttr(kNameSpaceID_None, nsGkAtoms::href)
+           || nsCoreUtils::HasClickListener(aElement)) {
+        return MakeAndAddRef<HTMLLinkAccessible>(aElement,
+                                                aContext->Document());
+      }
+      return New_HyperText(aElement, aContext);
+    },
+roles::MATHML_ROW)
+
+MARKUPMAP(ms, New_HyperText, roles::MATHML_TEXT)
+
+MARKUPMAP(annotation, New_HyperText, roles::MATHML_TEXT)
+
+MARKUPMAP(annotation_xml, New_HyperText, roles::MATHML_ROW)
+
+MARKUPMAP(mpadded, New_HyperText, roles::MATHML_ROW)
+
+MARKUPMAP(mphantom, New_HyperText, roles::MATHML_ROW)
+
+MARKUPMAP(mprescripts, New_HyperText, roles::MATHML_EMPTY_GROUP)
+
+MARKUPMAP(mspace, New_HyperText, roles::MATHML_EMPTY_GROUP)
+
+MARKUPMAP(none, New_HyperText, roles::MATHML_EMPTY_GROUP)
+
+MARKUPMAP(semantics, New_HyperText, roles::MATHML_ROW)
 
 MARKUPMAP(mglyph, New_HyperText, roles::MATHML_GLYPH)
 
@@ -82,7 +111,7 @@ MARKUPMAP(
     },
     0)
 
-MARKUPMAP(maction, New_HyperText, roles::MATHML_ACTION,
+MARKUPMAP(maction, New_HyperText, roles::MATHML_ROW,
           AttrFromDOM(actiontype, actiontype),
           AttrFromDOM(selection, selection))
 

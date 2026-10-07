@@ -257,6 +257,9 @@ def build_one_stage(
             "-DLLVM_ENABLE_ASSERTIONS=%s" % ("ON" if assertions else "OFF"),
             "-DLLVM_ENABLE_BINDINGS=OFF",
             "-DLLVM_ENABLE_CURL=OFF",
+            # Don't autodetect the system libzstd: it's absent from the sysroots
+            # we link against.
+            "-DLLVM_ENABLE_ZSTD=OFF",
             "-DLLVM_INCLUDE_TESTS=OFF",
             "-DLLVM_HOST_TRIPLE=%s" % target,
             "-DCMAKE_C_COMPILER_TARGET=%s" % target,

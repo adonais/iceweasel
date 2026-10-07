@@ -8,6 +8,7 @@
 #include "nsISupports.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
+#include "nsTString.h"
 #include "ScriptKind.h"  // JS::loader::ScriptKind
 
 #include "js/TypeDecls.h"  // JSContext, JS::MutableHandle, JSScript

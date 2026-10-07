@@ -8,7 +8,7 @@ browser.jar:
 *       content/browser/aboutDialog.xhtml                    (content/aboutDialog.xhtml)
         content/browser/aboutDialog.js                (content/aboutDialog.js)
         content/browser/aboutDialog.css               (content/aboutDialog.css)
-        content/browser/aboutRestartRequired.js       (content/aboutRestartRequired.js)
+        content/browser/aboutRestartRequired.mjs      (content/aboutRestartRequired.mjs)
         content/browser/aboutRestartRequired.xhtml    (content/aboutRestartRequired.xhtml)
         content/browser/aboutRobots.xhtml             (content/aboutRobots.xhtml)
         content/browser/aboutRobots.js                (content/aboutRobots.js)
@@ -94,7 +94,7 @@ browser.jar:
         content/browser/webrtcIndicator.xhtml         (content/webrtcIndicator.xhtml)
         content/browser/webrtcIndicator.js            (content/webrtcIndicator.js)
 # the following files are browser-specific overrides
-*       content/browser/license.html                  (/toolkit/content/license.html)
+        content/browser/license.html
 % override chrome://global/content/license.html chrome://browser/content/license.html
         content/browser/blockedSite.xhtml               (content/blockedSite.xhtml)
         content/browser/blockedSite.js                  (content/blockedSite.js)

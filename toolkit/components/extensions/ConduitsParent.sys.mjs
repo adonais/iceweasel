@@ -74,16 +74,32 @@ const ADDON_ENV = new Set(["addon_child", "devtools_child"]);
  * Internal, keeps track of all parent and remote (child) conduits.
  */
 const Hub = {
-  /** @type {Map<ConduitID, ConduitAddress>} Info about all child conduits. */
+  /**
+   * Info about all child conduits.
+   *
+   * @type {Map<ConduitID, ConduitAddress>}
+   */
   remotes: new Map(),
 
-  /** @type {Map<ConduitID, BroadcastConduit>} All open parent conduits. */
+  /**
+   * All open parent conduits.
+   *
+   * @type {Map<ConduitID, BroadcastConduit>}
+   */
   conduits: new Map(),
 
-  /** @type {Map<string, BroadcastConduit>} Parent conduits by recvMethod. */
+  /**
+   * Parent conduits by recvMethod.
+   *
+   * @type {Map<string, BroadcastConduit>}
+   */
   byMethod: new Map(),
 
-  /** @type {WeakMap<ConduitsParent, Set<ConduitAddress>>} Conduits by actor. */
+  /**
+   * Conduits by actor.
+   *
+   * @type {WeakMap<ConduitsParent, Set<ConduitAddress>>}
+   */
   byActor: new ExtensionUtils.DefaultWeakMap(() => new Set()),
 
   /** @type {Map<string, BroadcastConduit>} */

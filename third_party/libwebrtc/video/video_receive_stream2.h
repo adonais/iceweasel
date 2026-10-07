@@ -139,12 +139,12 @@ class VideoReceiveStream2
   void UnregisterFromTransport();
 
   // Accessor for the a/v sync group. This value may change and the caller
-  // must be on the packet delivery thread.
+  // must be on the worker thread.
   const std::string& sync_group() const;
 
   // Getters for const remote SSRC values that won't change throughout the
   // object's lifetime.
-  uint32_t remote_ssrc() const { return config_.rtp.remote_ssrc; }
+  uint32_t remote_ssrc() const { return remote_ssrc_; }
   // RTX ssrc can be updated.
   uint32_t rtx_ssrc() const {
     RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
@@ -170,6 +170,7 @@ class VideoReceiveStream2
   void SetAssociatedPayloadTypes(
       std::map<int, int> associated_payload_types) override;
   void SetRawPayloadTypes(std::set<int> raw_payload_types) override;
+  void SetDecoders(std::vector<Decoder> decoders) override;
 
   webrtc::VideoReceiveStreamInterface::Stats GetStats() const override;
 
@@ -255,6 +256,14 @@ class VideoReceiveStream2
       RTC_RUN_ON(decode_sequence_checker_);
 
   void UpdateHistograms();
+  void ConfigureCodecs() RTC_RUN_ON(worker_sequence_checker_);
+  // Registers new decoders with the internal VideoReceiver2 database and
+  // deregisters any external decoder instances from `old_decoders` whose
+  // payload type or video format is no longer present in `new_decoders`.
+  void RegisterCodecsOnReceiver(const std::vector<Decoder>& old_decoders,
+                                const std::vector<Decoder>& new_decoders);
+  std::vector<RtpVideoStreamReceiver2::ReceiveCodec> GetReceiveCodecConfig()
+      const RTC_RUN_ON(worker_sequence_checker_);
   void CalculateCorruptionScore(
       const VideoFrame& frame,
       FrameInstrumentationData frame_instrumentation_data,
@@ -270,7 +279,12 @@ class VideoReceiveStream2
   RaceChecker decode_callback_race_checker_;
 
   TransportAdapter transport_adapter_;
-  const VideoReceiveStreamInterface::Config config_;
+  VideoReceiveStreamInterface::Config config_
+      RTC_GUARDED_BY(worker_sequence_checker_);
+  const uint32_t remote_ssrc_;
+  VideoSinkInterface<VideoFrame>* const renderer_;
+  VideoDecoderFactory* const decoder_factory_;
+  const bool require_frame_encryption_;
   const int num_cpu_cores_;
   Call* const call_;
 
@@ -297,7 +311,10 @@ class VideoReceiveStream2
   TimeDelta max_wait_for_keyframe_ RTC_GUARDED_BY(worker_sequence_checker_);
   TimeDelta max_wait_for_frame_ RTC_GUARDED_BY(worker_sequence_checker_);
 
-  const std::unique_ptr<VideoStreamBufferController> buffer_;
+  DecodeSynchronizer* const decode_sync_;
+
+  std::unique_ptr<VideoStreamBufferController> buffer_
+      RTC_GUARDED_BY(worker_sequence_checker_);
 
   // `receiver_controller_` is valid from when RegisterWithTransport is invoked
   //  until UnregisterFromTransport.
@@ -344,6 +361,8 @@ class VideoReceiveStream2
   // Function that is triggered with encoded frames, if not empty.
   std::function<void(const RecordableEncodedFrame&)>
       encoded_frame_buffer_function_ RTC_GUARDED_BY(decode_sequence_checker_);
+  std::vector<VideoReceiveStreamInterface::Decoder> active_decoders_
+      RTC_GUARDED_BY(decode_sequence_checker_);
   // Set to true while we're requesting keyframes but not yet received one.
   bool keyframe_generation_requested_ RTC_GUARDED_BY(worker_sequence_checker_) =
       false;

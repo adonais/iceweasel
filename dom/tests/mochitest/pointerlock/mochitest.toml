@@ -35,6 +35,13 @@ skip-if = [
   "true", # Disabled for many intermittent and permanent failure on various configurations.
 ]
 
+["test_pointerlock_coalesced_movementXY.html"]
+scheme = "https"
+skip-if = [
+  "headless",
+  "os == 'android'", # bug 1897103
+]
+
 ["test_pointerlock_focus.html"]
 
 ["test_pointerlock_target_not_in_active_document.html"]

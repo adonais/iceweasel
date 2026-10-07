@@ -5,6 +5,7 @@
 #ifndef mozilla_intl_l10n_L10nRegistry_h
 #define mozilla_intl_l10n_L10nRegistry_h
 
+#include "nsIGlobalObject.h"
 #include "nsIStreamLoader.h"
 #include "nsWrapperCache.h"
 #include "nsCycleCollectionParticipant.h"
@@ -12,8 +13,6 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/intl/FluentBindings.h"
 #include "mozilla/intl/RegistryBindings.h"
-
-class nsIGlobalObject;
 
 namespace mozilla::dom {
 class L10nFileSourceDescriptor;

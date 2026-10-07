@@ -50,7 +50,7 @@ body {
   left: 0;
   z-index: 10;
   /* This page's --toolbar-background-color is a local variable, not the token; the text color comes from the html, body rule above. */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-background-without-text-color */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-paired-color-tokens */
   background-color: var(--toolbar-background-color);
   font-weight: bold;
   box-shadow: 0 2px 7px rgba(0, 0, 0, 0.25);

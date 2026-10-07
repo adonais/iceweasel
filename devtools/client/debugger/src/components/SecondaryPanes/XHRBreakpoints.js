@@ -298,6 +298,7 @@ class XHRBreakpoints extends Component {
           },
           React.createElement(CloseButton, {
             handleClick: () => removeXHRBreakpoint(index),
+            tooltip: L10N.getStr("xhrBreakpoints.remove.tooltip"),
           })
         )
       )

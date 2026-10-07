@@ -341,7 +341,7 @@ def test_get_raptor_test_list_using_live_sites(mock_info, create_args):
     test_list = get_raptor_test_list(args, mozinfo.os)
     assert len(test_list) == 1
     assert test_list[0]["name"] == "amazon"
-    assert test_list[0]["use_live_sites"] == "true"
+    assert test_list[0]["use_live_sites"]
     assert test_list[0]["playback"] is None
 
 

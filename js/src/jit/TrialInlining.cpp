@@ -611,7 +611,8 @@ bool TrialInliner::canInline(JSContext* cx, JSScript* script,
     JitSpew(JitSpew_WarpTrialInlining, "SKIP: is debuggee");
     return false;
   }
-  // Don't inline cross-realm calls.
+  // Don't inline cross-realm calls. We depend on this when discarding JIT code
+  // per realm.
   if (script->realm() != caller->realm()) {
     JitSpew(JitSpew_WarpTrialInlining, "SKIP: cross-realm call");
     return false;

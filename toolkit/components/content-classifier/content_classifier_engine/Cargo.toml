@@ -6,8 +6,9 @@ authors = ["Tim Huang <tihuang@mozilla.com>", "Benjamin VanderSloot <bvandersloo
 license = "MPL-2.0"
 
 [dependencies]
-adblock = { version = "0.12.1", features = ["full-regex-handling", "single-thread"], default-features = false }
+etp_engine = { path = "../etp_engine", features = ["full-regex-handling", "single-thread", "malloc-size-of"], default-features = false }
 cstr = "0.2"
+malloc_size_of = { path = "../../../../gfx/wr/wr_malloc_size_of", package = "wr_malloc_size_of", default-features = false }
 nsstring = { path = "../../../../xpcom/rust/nsstring" }
 nserror = { path = "../../../../xpcom/rust/nserror" }
 thin-vec = { version = "0.2.1", features = ["gecko-ffi"] }

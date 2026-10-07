@@ -26,6 +26,7 @@
 
 #include "config_components.h"
 
+#include "libavutil/attributes.h"
 #include "libavutil/mem.h"
 #include "libavutil/mem_internal.h"
 
@@ -1660,7 +1661,7 @@ int check_intra_pred4x4_mode_emuedge(int mode, int mb_x, int mb_y,
             *copy_buf = 1;
             return mode;
         }
-        /* fall-through */
+        av_fallthrough;
     case DIAG_DOWN_LEFT_PRED:
     case VERT_LEFT_PRED:
         return !mb_y ? (vp7 ? DC_128_PRED : DC_127_PRED) : mode;
@@ -1669,7 +1670,7 @@ int check_intra_pred4x4_mode_emuedge(int mode, int mb_x, int mb_y,
             *copy_buf = 1;
             return mode;
         }
-        /* fall-through */
+        av_fallthrough;
     case HOR_UP_PRED:
         return !mb_x ? (vp7 ? DC_128_PRED : DC_129_PRED) : mode;
     case TM_VP8_PRED:
@@ -1843,7 +1844,7 @@ void vp8_mc_luma(VP8Context *s, VP8ThreadData *td, uint8_t *dst,
         y_off += mv->y >> 2;
 
         // edge emulation
-        ff_progress_frame_await(ref, (3 + y_off + block_h + subpel_idx[2][my]) >> 4);
+        ff_progress_frame_await(ref, FFMAX((3 + y_off + block_h + subpel_idx[2][my]) >> 4, 0));
         src += y_off * linesize + x_off;
         if (x_off < mx_idx || x_off >= width  - block_w - subpel_idx[2][mx] ||
             y_off < my_idx || y_off >= height - block_h - subpel_idx[2][my]) {
@@ -1901,7 +1902,7 @@ void vp8_mc_chroma(VP8Context *s, VP8ThreadData *td, uint8_t *dst1,
         // edge emulation
         src1 += y_off * linesize + x_off;
         src2 += y_off * linesize + x_off;
-        ff_progress_frame_await(ref, (3 + y_off + block_h + subpel_idx[2][my]) >> 3);
+        ff_progress_frame_await(ref, FFMAX((3 + y_off + block_h + subpel_idx[2][my]) >> 3, 0));
         if (x_off < mx_idx || x_off >= width  - block_w - subpel_idx[2][mx] ||
             y_off < my_idx || y_off >= height - block_h - subpel_idx[2][my]) {
             s->vdsp.emulated_edge_mc(td->edge_emu_buffer,

@@ -10,6 +10,7 @@
 #include "mozilla/dom/DOMExceptionBinding.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/PWebTransport.h"
+#include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/ReadableStreamDefaultController.h"
@@ -54,11 +55,16 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(WebTransport)
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mReceiveStreams entry item");
     cb.NoteXPCOMChild(hashEntry);
   }
+  for (const auto& promise : tmp->mPendingGetStatsPromises) {
+    CycleCollectionNoteChild(cb, promise.get(),
+                             "mPendingGetStatsPromises promise");
+  }
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WebTransport)
   tmp->mSendStreams.Clear();
   tmp->mReceiveStreams.Clear();
+  tmp->mPendingGetStatsPromises.Clear();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mGlobal)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mUnidirectionalStreams)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mBidirectionalStreams)
@@ -575,9 +581,197 @@ bool WebTransport::ParseURL(const nsAString& aURL) const {
   return true;
 }
 
+// aDroppedIncoming/aExpiredIncoming are passed separately because they are
+// tracked at the DOM layer (WebTransportDatagramDuplexStream::mDroppedIncoming
+// / mExpiredIncoming) rather than by the neqo transport, which doesn't track
+// per-session incoming datagram drops/expiry at all (its datagrams().
+// droppedIncoming()/expiredIncoming() are always 0). The DOM-level queue is
+// what actually enforces incomingMaxBufferedDatagrams/incomingMaxAge, so it's
+// the source of truth for these two fields.
+static void PopulateConnectionStats(WebTransportConnectionStats& aStats,
+                                    const WebTransportStatsData& aSource,
+                                    uint64_t aDroppedIncoming,
+                                    uint64_t aExpiredIncoming) {
+  // bytesSent maps to neqo's bytes_tx (total wire bytes including QUIC
+  // framing and retransmissions). The spec calls for payload bytes excluding
+  // framing and retransmissions, which neqo does not expose separately, so
+  // bytesSentOverhead (the difference) is omitted rather than reported as 0,
+  // per the spec's "unavailable stats are absent" rule. See bug 2051624.
+  aStats.mBytesSent.Construct(aSource.bytesSent());
+  aStats.mBytesAcknowledged.Construct(aSource.bytesAcknowledged());
+  aStats.mPacketsSent.Construct(aSource.packetsSent());
+  aStats.mBytesLost.Construct(aSource.bytesLost());
+  aStats.mPacketsLost.Construct(aSource.packetsLost());
+  aStats.mBytesReceived.Construct(aSource.bytesReceived());
+  aStats.mPacketsReceived.Construct(aSource.packetsReceived());
+  aStats.mSmoothedRtt.Construct(aSource.smoothedRtt());
+  aStats.mRttVariation.Construct(aSource.rttVariation());
+  aStats.mMinRtt.Construct(aSource.minRtt());
+  // estimatedSendRate is nullable; aSource.estimatedSendRate() == -1
+  // signals "unknown".
+  if (aSource.estimatedSendRate() >= 0) {
+    aStats.mEstimatedSendRate.SetValue(
+        static_cast<uint64_t>(aSource.estimatedSendRate()));
+  }
+  aStats.mAtSendCapacity = aSource.atSendCapacity();
+  aStats.mDatagrams.mDroppedIncoming.Construct(aDroppedIncoming);
+  aStats.mDatagrams.mExpiredIncoming.Construct(aExpiredIncoming);
+  aStats.mDatagrams.mExpiredOutgoing.Construct(
+      aSource.datagrams().expiredOutgoing());
+  aStats.mDatagrams.mLostOutgoing.Construct(aSource.datagrams().lostOutgoing());
+}
+
 already_AddRefed<Promise> WebTransport::GetStats(ErrorResult& aError) {
-  aError.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  // https://w3c.github.io/webtransport/#dom-webtransport-getstats
+  LOG(("GetStats() called, mClosePending=%d", mClosePending));
+
+  // Step 1: Let transport be this. (implicit)
+
+  // Step 2: Let p be a new promise.
+  RefPtr<Promise> promise = Promise::CreateInfallible(GetParentObject());
+
+  // Step 3: If transport.[[State]] is "failed", reject p with an
+  // InvalidStateError and abort these steps.
+  if (mState == WebTransportState::FAILED) {
+    promise->MaybeRejectWithInvalidStateError("WebTransport failed");
+    return promise.forget();
+  }
+
+  // If close() has been called but hasn't completed (we're waiting on the
+  // parent to return final stats), queue this request; it's resolved or
+  // rejected once Close()'s IPC callback runs (see Close()).
+  if (mClosePending) {
+    LOG(("GetStats: close is pending, queuing promise (queue size: %zu)",
+         mPendingGetStatsPromises.Length()));
+    mPendingGetStatsPromises.AppendElement(promise);
+    return promise.forget();
+  }
+
+  // Step 4: Run the following steps in parallel.
+  //
+  // Step 4.1 is handled below, before dispatching to SendGetStatsRequest().
+  // Step 4.2 (reject if "failed" after waiting) is handled in
+  // SendGetStatsRequest()'s IPC success callback, once the parent reports no
+  // stats.
+  //
+  // Step 4.3: if [[State]] is "closed", resolve with the most recent stats
+  // available for the connection. The exact collection point is
+  // implementation-defined; this implementation caches stats when close()
+  // completes (see Close()) or when the connection is closed remotely (see
+  // RemoteClosed()).
+  if (mState == WebTransportState::CLOSED) {
+    LOG(("GetStats: state is CLOSED, hasCachedStats=%d",
+         mCachedStats.isSome()));
+    RefPtr<Promise> p = promise;
+    if (mCachedStats) {
+      WebTransportStatsData cachedStats = *mCachedStats;
+      uint64_t droppedIncoming = mCachedDroppedIncoming;
+      uint64_t expiredIncoming = mCachedExpiredIncoming;
+      GetCurrentSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
+          "WebTransport::GetStats", [p, cachedStats = std::move(cachedStats),
+                                     droppedIncoming, expiredIncoming]() {
+            WebTransportConnectionStats stats;
+            PopulateConnectionStats(stats, cachedStats, droppedIncoming,
+                                    expiredIncoming);
+            p->MaybeResolve(stats);
+          }));
+    } else {
+      GetCurrentSerialEventTarget()->Dispatch(
+          NS_NewRunnableFunction("WebTransport::GetStats", [p]() {
+            p->MaybeRejectWithInvalidStateError(
+                "No stats available for closed connection");
+          }));
+    }
+    return promise.forget();
+  }
+
+  // mChild may be null only if we entered an unexpected state; all normal
+  // states (CONNECTING, CONNECTED) have mChild set (CLOSED is handled above).
+  if (!mChild) {
+    promise->MaybeRejectWithInvalidStateError("WebTransport not connected");
+    return promise.forget();
+  }
+
+  // Step 4.1: If transport.[[State]] is "connecting", wait for the state to
+  // change before gathering stats, so that getStats() resolves only after
+  // [[Ready]] settles (and rejects if connecting fails). The resolve step is a
+  // network task queued after the connecting state change (spec step 4.1/4.6),
+  // so racing it against [[Ready]] must observe ready first.
+  if (mState == WebTransportState::CONNECTING) {
+    mReady->AddCallbacksWithCycleCollectedArgs(
+        [](JSContext*, JS::Handle<JS::Value>, ErrorResult&, WebTransport* aSelf,
+           Promise* aPromise) { aSelf->SendGetStatsRequest(aPromise); },
+        [](JSContext*, JS::Handle<JS::Value>, ErrorResult&, WebTransport*,
+           Promise* aPromise) {
+          aPromise->MaybeRejectWithInvalidStateError("WebTransport failed");
+        },
+        RefPtr{this}, promise);
+    return promise.forget();
+  }
+
+  // Steps 4.4-4.6: state is "connected"; gather stats now (see
+  // SendGetStatsRequest()).
+  SendGetStatsRequest(promise);
+
+  // Step 5: Return p.
+  return promise.forget();
+}
+
+void WebTransport::SendGetStatsRequest(Promise* aPromise) {
+  // Step 4.4: Let gatheredStats be the list of stats specific to the
+  // underlying connection needed to populate WebTransportConnectionStats and
+  // WebTransportDatagramStats accurately. This is done in parallel via IPC.
+  //
+  // Step 4.5 (removing non-pooled-connection stats when [[NewConnection]] is
+  // "no") does not apply: Firefox does not yet support WebTransport
+  // connection pooling, so gatheredStats is never filtered.
+  //
+  // Step 4.6: Queue a network task with transport to run the following steps.
+  if (!mChild) {
+    aPromise->MaybeRejectWithInvalidStateError("WebTransport not connected");
+    return;
+  }
+  mChild->SendGetStats(
+      [promise = RefPtr(aPromise),
+       self = RefPtr(this)](Maybe<WebTransportStatsData>&& aStats) {
+        LOG(("GetStats callback: aStats.isSome() = %d", aStats.isSome()));
+        if (!aStats) {
+          // Step 4.2: transport.[[State]] became "failed" while waiting.
+          LOG(("GetStats: No stats available\n"));
+          promise->MaybeRejectWithInvalidStateError("Failed to get stats");
+          return;
+        }
+
+        LOG(
+            ("GetStats: bytesSent=%llu, bytesReceived=%llu, "
+             "minRtt=%f, smoothedRtt=%f\n",
+             (unsigned long long)aStats->bytesSent(),
+             (unsigned long long)aStats->bytesReceived(), aStats->minRtt(),
+             aStats->smoothedRtt()));
+
+        // Step 4.6.1-4: Create a WebTransportConnectionStats object, create a
+        // WebTransportDatagramStats object, set datagrams, and populate each
+        // member from gatheredStats.
+        // Also update the cache so post-close getStats() returns fresh data.
+        // droppedIncoming/expiredIncoming are tracked at the DOM layer
+        // (datagrams queue drops/expiry) rather than at the transport layer,
+        // so snapshot them here.
+        self->mCachedStats = Some(*aStats);
+        // The datagram queue doesn't count drops/expiry yet; see bug 2007757.
+        self->mCachedDroppedIncoming = 0;
+        self->mCachedExpiredIncoming = 0;
+
+        WebTransportConnectionStats stats;
+        PopulateConnectionStats(stats, *aStats, self->mCachedDroppedIncoming,
+                                self->mCachedExpiredIncoming);
+
+        // Step 4.6.5: Resolve p with stats.
+        promise->MaybeResolve(stats);
+      },
+      [promise = RefPtr(aPromise)](mozilla::ipc::ResponseRejectReason) {
+        // IPC failure: treat as if the transport failed.
+        promise->MaybeRejectWithInvalidStateError("Failed to get stats");
+      });
 }
 
 already_AddRefed<Promise> WebTransport::ExportKeyingMaterial(
@@ -693,8 +887,13 @@ already_AddRefed<Promise> WebTransport::ExportKeyingMaterial(
 WebTransportReliabilityMode WebTransport::Reliability() { return mReliability; }
 
 WebTransportCongestionControl WebTransport::CongestionControl() {
-  // XXX not implemented
+  // XXX We only implement cubic congestion control currently in QUIC
   return WebTransportCongestionControl::Default;
+}
+
+bool WebTransport::SupportsReliableOnly(const GlobalObject& aGlobal) {
+  // XXX Change to true when we land http/2 support if on http2 (Bug 2071107)
+  return false;
 }
 
 void WebTransport::GetProtocol(nsAString& aProtocol) { aProtocol = mProtocol; }
@@ -710,9 +909,21 @@ void WebTransport::SetNegotiatedProtocol(const nsACString& aProtocol) {
 }
 
 void WebTransport::RemoteClosed(bool aCleanly, const uint32_t& aCode,
-                                const nsACString& aReason) {
+                                const nsACString& aReason,
+                                const Maybe<WebTransportStatsData>& aStats) {
   LOG(("Server closed: cleanly: %d, code %u, reason %s", aCleanly, aCode,
        PromiseFlatCString(aReason).get()));
+
+  // Cache stats from the remote close notification. This is required by the
+  // spec to allow getStats() to return statistics after the connection is
+  // closed (per https://w3c.github.io/webtransport/#dom-webtransport-getstats
+  // step 4.3).
+  if (!mCachedStats && aStats) {
+    LOG(("Caching stats from RemoteClosed"));
+    mCachedStats = Some(*aStats);
+    mCachedDroppedIncoming = 0;
+  }
+
   // Step 2 of https://w3c.github.io/webtransport/#web-transport-termination
   // We calculate cleanly on the parent
   // Step 2.1: If transport.[[State]] is "closed" or "failed", abort these
@@ -820,14 +1031,17 @@ void WebTransport::Close(const WebTransportCloseInfo& aOptions,
   }
   LOG(("Sending Close"));
   MOZ_ASSERT(mChild);
+
   // Step 4: Let session be transport.[[Session]].
   // Step 5: Let code be closeInfo.closeCode.
   // Step 6: "Let reasonString be the maximal code unit prefix of
   // closeInfo.reason where the length of the UTF-8 encoded prefix
-  // doesn’t exceed 1024."
+  // doesn't exceed 1024."
   // Take the maximal "code unit prefix" of mReason and limit to 1024 bytes
   // Step 7: Let reason be reasonString, UTF-8 encoded.
   // Step 8: In parallel, terminate session with code and reason.
+
+  nsCString reason;
   if (aOptions.mReason.Length() > 1024u) {
     // We want to start looking for the previous code point at one past the
     // limit, since if a code point ends exactly at the specified length, the
@@ -835,21 +1049,80 @@ void WebTransport::Close(const WebTransportCloseInfo& aOptions,
     // RewindToPriorUTF8Codepoint doesn't reduce the index if it points to the
     // start of a code point. We know reason[1024] is accessible since
     // Length() > 1024
-    mChild->SendClose(
-        aOptions.mCloseCode,
+    reason =
         Substring(aOptions.mReason, 0,
-                  RewindToPriorUTF8Codepoint(aOptions.mReason.get(), 1024u)));
+                  RewindToPriorUTF8Codepoint(aOptions.mReason.get(), 1024u));
   } else {
-    mChild->SendClose(aOptions.mCloseCode, aOptions.mReason);
-    LOG(("Close sent"));
+    reason = aOptions.mReason;
   }
 
-  // Step 9: Cleanup transport with AbortError and closeInfo. (sets mState to
-  // Closed)
+  // Set close pending state so GetStats requests will be queued
+  LOG(("Setting close pending state"));
+  mClosePending = true;
+
+  // Send Close IPC and get stats back.  We need to cache stats after close to
+  // allow us to respond to GetStats() post-close with final stats, and Close()
+  // will kill the IPC connection to the parent (and the WebTransport session
+  // will go away in any case, so IPC to the  parent wouldn't help us).
+  RefPtr<WebTransport> self = this;
   RefPtr<WebTransportError> error =
       new WebTransportError("close()"_ns, WebTransportErrorSource::Session,
                             DOMException_Binding::ABORT_ERR);
-  Cleanup(error, &aOptions, aRv);
+  WebTransportCloseInfo closeInfo;
+  closeInfo.mCloseCode = aOptions.mCloseCode;
+  closeInfo.mReason = aOptions.mReason;
+
+  mChild->SendClose(
+      aOptions.mCloseCode, reason,
+      [self, error, closeInfo](Maybe<WebTransportStatsData>&& aStats) {
+        LOG(("Close callback received"));
+        if (aStats) {
+          LOG(("Caching stats from close: bytesSent=%llu",
+               (unsigned long long)aStats->bytesSent()));
+          self->mCachedStats = Some(*aStats);
+          self->mCachedDroppedIncoming = 0;
+        } else {
+          LOG(("No stats returned from close"));
+          self->mCachedStats = Nothing();
+        }
+
+        // Resolve any pending GetStats promises
+        LOG(("Resolving %zu pending GetStats promises",
+             self->mPendingGetStatsPromises.Length()));
+        for (auto& promise : self->mPendingGetStatsPromises) {
+          if (self->mCachedStats) {
+            WebTransportConnectionStats stats;
+            PopulateConnectionStats(stats, *self->mCachedStats,
+                                    self->mCachedDroppedIncoming,
+                                    self->mCachedExpiredIncoming);
+            promise->MaybeResolve(stats);
+          } else {
+            promise->MaybeRejectWithInvalidStateError(
+                "No stats available for closed connection");
+          }
+        }
+        self->mPendingGetStatsPromises.Clear();
+
+        self->mClosePending = false;
+      },
+      [self, error, closeInfo](mozilla::ipc::ResponseRejectReason) {
+        LOG(("Close IPC failed"));
+        // Reject pending GetStats promises
+        for (auto& promise : self->mPendingGetStatsPromises) {
+          promise->MaybeRejectWithInvalidStateError("Close IPC failed");
+        }
+        self->mPendingGetStatsPromises.Clear();
+
+        self->mClosePending = false;
+      });
+  LOG(("Close sent"));
+
+  // Step 9: Cleanup transport with AbortError and closeInfo (sets mState to
+  // CLOSED). Per spec, only step 8 ("terminate session") runs in parallel;
+  // this must happen synchronously as part of close(), not deferred until
+  // the Close IPC round trip (used above only to cache final stats)
+  // completes.
+  Cleanup(error, &closeInfo, aRv);
   LOG(("Cleanup done"));
 
   // The other side will call `Close()` for us now, make sure we don't call it

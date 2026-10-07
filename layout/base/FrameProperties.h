@@ -133,6 +133,11 @@ class FrameProperties {
     MOZ_ASSERT(mProperties.Length() == 0, "forgot to delete properties");
   }
 
+  // Prevent copying of FrameProperties; we should always return/pass around
+  // references to it, not copies!
+  FrameProperties(const FrameProperties&) = delete;
+  FrameProperties& operator=(const FrameProperties&) = delete;
+
   /**
    * Return true if we have no properties, otherwise return false.
    */
@@ -264,11 +269,6 @@ class FrameProperties {
   }
 
  private:
-  // Prevent copying of FrameProperties; we should always return/pass around
-  // references to it, not copies!
-  FrameProperties(const FrameProperties&) = delete;
-  FrameProperties& operator=(const FrameProperties&) = delete;
-
   inline void SetInternal(UntypedDescriptor aProperty, uint64_t aValue,
                           const nsIFrame* aFrame);
 

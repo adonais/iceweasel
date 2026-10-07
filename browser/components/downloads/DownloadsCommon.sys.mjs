@@ -24,6 +24,7 @@
 
 // Globals
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
@@ -33,6 +34,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   DownloadHistory: "resource://gre/modules/DownloadHistory.sys.mjs",
   DownloadUtils: "resource://gre/modules/DownloadUtils.sys.mjs",
   Downloads: "resource://gre/modules/Downloads.sys.mjs",
+  DownloadsMacFinderProgress:
+    "moz-src:///browser/components/downloads/DownloadsMacFinderProgress.sys.mjs",
+  DownloadsTaskbar:
+    "moz-src:///browser/components/downloads/DownloadsTaskbar.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
@@ -243,6 +248,25 @@ export var DownloadsCommon = {
   initializeAllDataLinks() {
     lazy.DownloadsData.initializeDataLink();
     lazy.PrivateDownloadsData.initializeDataLink();
+  },
+
+  /**
+   * Initializes the downloads back-end and UI integration for a browser window
+   * during its idle startup. Doing this some time after the app starts lets
+   * auto-resume downloads begin (such as after crashing or quitting with active
+   * downloads) and speeds up the first-load of the download manager UI. If the
+   * user manually opens the download manager before this runs, the downloads
+   * start right away, and initializing again won't hurt.
+   *
+   * @param {Window} window
+   *        The browser window being initialized.
+   */
+  initializeForWindow(window) {
+    this.initializeAllDataLinks();
+    lazy.DownloadsTaskbar.registerIndicator(window).catch(console.error);
+    if (AppConstants.platform == "macosx") {
+      lazy.DownloadsMacFinderProgress.register();
+    }
   },
 
   /**

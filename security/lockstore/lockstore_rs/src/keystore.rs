@@ -501,6 +501,21 @@ impl Keystore {
         Ok(metadata.extractable)
     }
 
+    /// Returns true if a DEK record exists for `dek_name`. Unlike every other
+    /// DEK accessor, a missing DEK is reported as `false` rather than
+    /// `NotFound`, and the unlock state of the wrapping KEKs is not consulted:
+    /// this answers "is there a key here" without needing one unlocked, so a
+    /// caller can tell a first-ever open from a DEK it merely cannot unwrap
+    /// yet.
+    pub fn dek_exists(&self, dek_name: &str) -> Result<bool, LockstoreError> {
+        let conn = self.acquire_connection()?;
+        match conn.load_metadata(dek_name) {
+            Ok(_) => Ok(true),
+            Err(LockstoreError::NotFound(_)) => Ok(false),
+            Err(e) => Err(e),
+        }
+    }
+
     pub fn get_dek(
         &self,
         dek_name: &str,
@@ -514,6 +529,21 @@ impl Keystore {
 
         let (dek, cipher_suite, _) = self.get_dek_internal(dek_name, kek_ref)?;
         Ok((dek, cipher_suite))
+    }
+
+    pub fn get_dek_automatic(
+        &self,
+        dek_name: &str,
+    ) -> Result<(Zeroizing<Vec<u8>>, CipherSuite), LockstoreError> {
+        let kek_refs = self.list_keks(dek_name)?;
+
+        for kek_ref in &kek_refs {
+            if matches!(self.is_kek_unlocked(kek_ref), Ok(true)) {
+                return self.get_dek(dek_name, kek_ref);
+            }
+        }
+
+        Err(LockstoreError::Locked)
     }
 
     /// Encrypts `plaintext` with the DEK for `(dek_name, kek_ref)`. The returned
@@ -653,6 +683,20 @@ impl Keystore {
         old_kek_ref: &str,
         new_kek_ref: &str,
     ) -> Result<(), LockstoreError> {
+        let conn = self.acquire_connection()?;
+        self.switch_kek_locked(&conn, dek_name, old_kek_ref, new_kek_ref)
+    }
+
+    /// `switch_kek` body operating on an already-held connection, so
+    /// multi-collection callers (`migrate_deks`) can serialize an entire
+    /// migration under a single connection.
+    fn switch_kek_locked(
+        &self,
+        conn: &ConnectionHandle<'_>,
+        dek_name: &str,
+        old_kek_ref: &str,
+        new_kek_ref: &str,
+    ) -> Result<(), LockstoreError> {
         if old_kek_ref == new_kek_ref {
             return Err(LockstoreError::InvalidConfiguration(format!(
                 "old_kek_ref and new_kek_ref are the same: '{old_kek_ref}'"
@@ -661,7 +705,6 @@ impl Keystore {
 
         let new_kek_type = KekType::from_kek_ref(new_kek_ref)?;
 
-        let conn = self.acquire_connection()?;
         let mut metadata = conn.load_metadata(dek_name)?;
 
         let old_entry = metadata
@@ -704,6 +747,40 @@ impl Keystore {
         }
 
         conn.save_metadata(dek_name, &metadata)
+    }
+
+    /// Re-wrap every DEK from `from_kek_ref` to `to_kek_ref` under one
+    /// connection. On failure the already-switched DEKs are rolled back (best
+    /// effort), the error is returned, and `to_kek_ref` is left for the caller
+    /// to drop. Both KEKs must be unlocked. Neither KEK record is deleted:
+    /// `delete_kek` is a separate lifecycle step the caller owns, so a
+    /// migration never destroys a record the caller may still want.
+    pub fn migrate_deks(&self, from_kek_ref: &str, to_kek_ref: &str) -> Result<(), LockstoreError> {
+        let conn = self.acquire_connection()?;
+        let mut switched: Vec<String> = Vec::new();
+        for dek_name in conn.list_deks()? {
+            // Propagated rather than skipped: a DEK whose metadata cannot be
+            // read is still wrapped under `from_kek_ref` for all anyone knows,
+            // and reporting the migration as complete would have the caller
+            // delete a KEK that is still in use.
+            let metadata = conn.load_metadata(&dek_name)?;
+            if !metadata
+                .wrapped_deks
+                .iter()
+                .any(|w| w.kek_ref == from_kek_ref)
+            {
+                continue;
+            }
+            if let Err(e) = self.switch_kek_locked(&conn, &dek_name, from_kek_ref, to_kek_ref) {
+                for done in &switched {
+                    let _ = self.switch_kek_locked(&conn, done, to_kek_ref, from_kek_ref);
+                }
+                return Err(e);
+            }
+            switched.push(dek_name);
+        }
+
+        Ok(())
     }
 
     pub fn delete_dek(&self, dek_name: &str) -> Result<(), LockstoreError> {
@@ -769,9 +846,23 @@ impl Keystore {
         }
     }
 
-    /// If any DEK is wrapped under `kek_ref`, return its name
-    /// of the first such dek_name (used for error messages on
-    /// `delete_kek`). Returns `None` if no dek_name references
+    /// Returns true if a KEK record exists for `kek_ref`, regardless of
+    /// whether it is currently unlocked. Unlike [`is_kek_unlocked`], this
+    /// inspects the on-disk record, so it can detect a Password KEK that
+    /// has never been unlocked this session. Returns `InvalidKekRef` if
+    /// `kek_ref` cannot be parsed.
+    pub fn kek_exists(&self, kek_ref: &str) -> Result<bool, LockstoreError> {
+        let kek_type = KekType::from_kek_ref(kek_ref)?;
+        Ok(match kek_type {
+            KekType::LocalKey => self.load_local_record(kek_ref)?.is_some(),
+            KekType::Password => self.load_password_record(kek_ref)?.is_some(),
+            KekType::Pkcs11Token => self.load_pkcs11_record(kek_ref)?.is_some(),
+        })
+    }
+
+    /// If any DEK is wrapped under `kek_ref`, return the name of the first
+    /// such DEK (used for error messages on `delete_kek`). Returns `None`
+    /// if no DEK references
     /// `kek_ref`.
     fn kek_ref_referenced_by_dek_name(
         &self,
@@ -1109,37 +1200,16 @@ impl Keystore {
             return Ok(kek_ref);
         }
         let cipher_suite = DEFAULT_CIPHER_SUITE;
-        let salt = crypto::generate_random_bytes(pbkdf2::PBKDF2_SALT_SIZE);
-
-        // `wrapping_key` (PBKDF2 output) and `kek_plaintext` are Zeroizing,
-        // so both are wiped on drop — including the early-return and
-        // no-cache paths below — without any explicit zeroize call.
-        let wrapping_key =
-            pbkdf2::derive_kek(password, &salt, iterations, cipher_suite.key_size())?;
+        // `kek_plaintext` is Zeroizing, so it is wiped on drop on every path
+        // below — including the no-cache path where it is never moved out.
         let kek_plaintext = crypto::generate_random_key(cipher_suite);
-        let ciphertext = crypto::encrypt_with_key(&kek_plaintext, &wrapping_key, cipher_suite)?;
 
-        self.save_password_record(
-            &kek_ref,
-            &PasswordKekRecord {
-                ciphertext,
-                salt,
-                iterations,
-                cipher_suite,
-            },
-        )?;
+        let record =
+            Self::wrap_kek_under_password(&kek_plaintext, password, iterations, cipher_suite)?;
+        self.save_password_record(&kek_ref, &record)?;
 
         if !cache_timeout.is_zero() {
-            let mut g = self.password_kek_cache.lock().map_err(|_| {
-                LockstoreError::LockingFailure("password_kek_cache poisoned".into())
-            })?;
-            g.insert(
-                kek_ref.clone(),
-                CachedKek {
-                    kek: kek_plaintext,
-                    expires_at: unlock_deadline(cache_timeout),
-                },
-            );
+            self.cache_password_kek(&kek_ref, kek_plaintext, cache_timeout)?;
         }
         Ok(kek_ref)
     }
@@ -1236,9 +1306,116 @@ impl Keystore {
         }
     }
 
+    /// Re-wrap the existing Password KEK at `kek_ref` from `old_password` to
+    /// `new_password`. Returns `InvalidKekRef` if no Password record exists,
+    /// `WrongPassword` if `old_password` does not unwrap the current record,
+    /// and `InvalidConfiguration` for a non-Password kek_ref or an empty
+    /// `new_password`.
+    pub fn change_kek_password(
+        &self,
+        kek_ref: &str,
+        old_password: &[u8],
+        new_password: &[u8],
+    ) -> Result<(), LockstoreError> {
+        if KekType::from_kek_ref(kek_ref)? != KekType::Password {
+            return Err(LockstoreError::InvalidConfiguration(
+                "only Password KEKs have a password to change".into(),
+            ));
+        }
+        if new_password.is_empty() {
+            return Err(LockstoreError::InvalidConfiguration(
+                "Password must not be empty".into(),
+            ));
+        }
+
+        let record = self.load_password_record(kek_ref)?.ok_or_else(|| {
+            LockstoreError::InvalidKekRef(format!("no Password record for kek_ref: {kek_ref}"))
+        })?;
+
+        let kek_plaintext = Self::unwrap_password_record(&record, old_password)?;
+
+        let new_record = Self::wrap_kek_under_password(
+            &kek_plaintext,
+            new_password,
+            record.iterations,
+            record.cipher_suite,
+        )?;
+
+        self.save_password_record(kek_ref, &new_record)?;
+
+        // Any cached unlock was derived from the old password; drop it so a
+        // stale entry can't satisfy a future unlock against the new record.
+        if let Ok(mut guard) = self.password_kek_cache.lock() {
+            guard.remove(kek_ref);
+        }
+        Ok(())
+    }
+
     // ------------------------------------------------------------------------
     // Password-specific implementations
     // ------------------------------------------------------------------------
+
+    /// Derive the PBKDF2 wrapping key from `password` and the record's salt
+    /// parameters, then unwrap and return the KEK plaintext. A failed AEAD
+    /// tag check (i.e. the wrong password) maps to `WrongPassword`. The
+    /// wrapping key is Zeroizing and wiped on drop.
+    fn unwrap_password_record(
+        record: &PasswordKekRecord,
+        password: &[u8],
+    ) -> Result<Zeroizing<Vec<u8>>, LockstoreError> {
+        let wrapping_key = pbkdf2::derive_kek(
+            password,
+            &record.salt,
+            record.iterations,
+            record.cipher_suite.key_size(),
+        )?;
+        crypto::decrypt_with_key(&record.ciphertext, &wrapping_key)
+            .map_err(|_| LockstoreError::WrongPassword)
+    }
+
+    /// Wrap `kek_plaintext` under a freshly derived PBKDF2 key (with a new
+    /// random salt) and assemble the persisted `PasswordKekRecord`. The
+    /// wrapping key is Zeroizing and wiped on drop.
+    fn wrap_kek_under_password(
+        kek_plaintext: &[u8],
+        password: &[u8],
+        iterations: u32,
+        cipher_suite: CipherSuite,
+    ) -> Result<PasswordKekRecord, LockstoreError> {
+        let salt = crypto::generate_random_bytes(pbkdf2::PBKDF2_SALT_SIZE);
+        let wrapping_key =
+            pbkdf2::derive_kek(password, &salt, iterations, cipher_suite.key_size())?;
+        let ciphertext = crypto::encrypt_with_key(kek_plaintext, &wrapping_key, cipher_suite)?;
+        Ok(PasswordKekRecord {
+            ciphertext,
+            salt,
+            iterations,
+            cipher_suite,
+        })
+    }
+
+    /// Insert `kek_plaintext` into the password unlock cache under `kek_ref`
+    /// with the given `timeout`. Takes ownership so the plaintext is wiped on
+    /// drop even when the cache mutex is poisoned.
+    fn cache_password_kek(
+        &self,
+        kek_ref: &str,
+        kek_plaintext: Zeroizing<Vec<u8>>,
+        timeout: Duration,
+    ) -> Result<(), LockstoreError> {
+        let mut guard = self
+            .password_kek_cache
+            .lock()
+            .map_err(|_| LockstoreError::LockingFailure("password_kek_cache poisoned".into()))?;
+        guard.insert(
+            kek_ref.to_string(),
+            CachedKek {
+                kek: kek_plaintext,
+                expires_at: unlock_deadline(timeout),
+            },
+        );
+        Ok(())
+    }
 
     fn is_password_unlocked_impl(&self, kek_ref: &str) -> Result<bool, LockstoreError> {
         let mut guard = self
@@ -1282,33 +1459,11 @@ impl Keystore {
             LockstoreError::InvalidKekRef(format!("no Password record for kek_ref: {kek_ref}"))
         })?;
 
-        // Zeroizing: `wrapping_key` is wiped on drop on every path below.
-        let wrapping_key = pbkdf2::derive_kek(
-            password,
-            &record.salt,
-            record.iterations,
-            record.cipher_suite.key_size(),
-        )?;
-
         // AEAD tag verification doubles as the wrong-password check:
         // a successful decrypt means the supplied password produced the
         // same wrapping key that minted the record.
-        let kek_plaintext = crypto::decrypt_with_key(&record.ciphertext, &wrapping_key)
-            .map_err(|_| LockstoreError::WrongPassword)?;
-
-        let mut guard = self
-            .password_kek_cache
-            .lock()
-            .map_err(|_| LockstoreError::LockingFailure("password_kek_cache poisoned".into()))?;
-        guard.insert(
-            kek_ref.to_string(),
-            CachedKek {
-                kek: kek_plaintext,
-                expires_at: unlock_deadline(timeout),
-            },
-        );
-
-        Ok(())
+        let kek_plaintext = Self::unwrap_password_record(&record, password)?;
+        self.cache_password_kek(kek_ref, kek_plaintext, timeout)
     }
 
     // ------------------------------------------------------------------------

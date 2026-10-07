@@ -535,14 +535,14 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   void EndOfFrame();
   RefPtr<gfx::DataSourceSurface> GetFrontBufferSnapshot();
   Maybe<uvec2> FrontBufferSnapshotInto(
-      const Maybe<Range<uint8_t>> dest,
+      const Maybe<mozilla::Range<uint8_t>> dest,
       const Maybe<size_t> destStride = Nothing());
   Maybe<uvec2> FrontBufferSnapshotInto(
       const std::shared_ptr<gl::SharedSurface>& front,
-      const Maybe<Range<uint8_t>> dest,
+      const Maybe<mozilla::Range<uint8_t>> dest,
       const Maybe<size_t> destStride = Nothing());
   Maybe<uvec2> SnapshotInto(GLuint srcFb, const gfx::IntSize& size,
-                            const Range<uint8_t>& dest,
+                            const mozilla::Range<uint8_t>& dest,
                             const Maybe<size_t> destStride = Nothing());
   already_AddRefed<gfx::SourceSurface> GetBackBufferSnapshot(
       const bool requireAlphaPremult);
@@ -667,6 +667,7 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   void LineWidth(GLfloat width);
   void LinkProgram(WebGLProgram& prog);
   void PolygonOffset(GLfloat factor, GLfloat units);
+  void PolygonOffsetClampEXT(GLfloat factor, GLfloat units, GLfloat clamp);
   void ProvokingVertex(webgl::ProvokingVertex) const;
 
   ////
@@ -684,7 +685,7 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
  public:
   void ReadPixelsPbo(const webgl::ReadPixelsDesc&, uint64_t offset);
   webgl::ReadPixelsResult ReadPixelsInto(const webgl::ReadPixelsDesc&,
-                                         const Range<uint8_t>& dest);
+                                         const mozilla::Range<uint8_t>& dest);
 
   ////
 
@@ -844,7 +845,7 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   // CompressedTexSubImage if `sub`
   void CompressedTexImage(bool sub, GLenum imageTarget, uint32_t level,
                           GLenum format, uvec3 offset, uvec3 size,
-                          const Range<const uint8_t>& src,
+                          const mozilla::Range<const uint8_t>& src,
                           const uint32_t pboImageSize,
                           const Maybe<uint64_t>& pboOffset) const;
 

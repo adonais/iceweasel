@@ -171,7 +171,6 @@
 
   /* Support link */
 
-  a[is="moz-support-link"]:not([hidden]),
   ::slotted([slot="support-link"]:not([hidden])) {
     display: inline-block;
   }

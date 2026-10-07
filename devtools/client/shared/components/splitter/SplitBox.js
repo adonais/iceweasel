@@ -7,6 +7,7 @@
 const {
   Component,
   createFactory,
+  createRef,
 } = require("resource://devtools/client/shared/vendor/react.mjs");
 const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.mjs");
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
@@ -14,6 +15,16 @@ const dom = require("resource://devtools/client/shared/vendor/react-dom-factorie
 const Draggable = createFactory(
   require("resource://devtools/client/shared/components/splitter/Draggable.js")
 );
+
+const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
+const l10n = new LocalizationHelper(
+  "devtools/client/locales/components.properties"
+);
+
+// How many pixels the splitter moves for one arrow key press. Keep in sync
+// with kKeyboardDelta in nsSplitterFrame.cpp, which does this for the XUL
+// `splitter` element.
+const KEYBOARD_RESIZE_STEP = 5;
 
 /**
  * This component represents a Splitter. The splitter supports vertical
@@ -124,6 +135,25 @@ class SplitBox extends Component {
     this.onStartMove = this.onStartMove.bind(this);
     this.onStopMove = this.onStopMove.bind(this);
     this.onMove = this.onMove.bind(this);
+    this.onKeyDown = this.onKeyDown.bind(this);
+    this.onKeyUp = this.onKeyUp.bind(this);
+
+    // The splitter element, on which the ARIA properties are set directly.
+    this.splitterEl = createRef();
+    // The size an in-progress keyboard resize will persist on key up.
+    this.sizeToPersist = null;
+  }
+
+  componentDidMount() {
+    // The reported range depends on the size of the whole split box, which
+    // changes without this component re-rendering: the window is resized, the
+    // toolbox is resized, …
+    const { ResizeObserver } = this.splitBox.ownerDocument.defaultView;
+    this.resizeObserver = new ResizeObserver(() => this.updateAriaValues());
+    this.resizeObserver.observe(this.splitBox);
+
+    this.updateAriaControls();
+    this.updateAriaValues();
   }
 
   shouldComponentUpdate(nextProps, nextState) {
@@ -148,6 +178,116 @@ class SplitBox extends Component {
     ) {
       this.props.onControlledPanelResized(this.state.width, this.state.height);
     }
+    this.updateAriaControls();
+    this.updateAriaValues();
+  }
+
+  componentWillUnmount() {
+    this.resizeObserver?.disconnect();
+  }
+
+  /**
+   * Whether the splitter can be moved
+   *
+   * @return {boolean}
+   */
+  isResizable() {
+    const { startPanel, startPanelCollapsed, endPanel, endPanelCollapsed } =
+      this.props;
+    return !!(
+      startPanel &&
+      !startPanelCollapsed &&
+      endPanel &&
+      !endPanelCollapsed
+    );
+  }
+
+  /**
+   * The container of the panel whose size `state.width`/`state.height` holds,
+   * i.e. the one `render` sizes. Which panel that is does not depend on the
+   * text direction.
+   *
+   * @return {Element|null}
+   *         The controlled panel's container, or a falsy value when that panel
+   *         is collapsed or absent.
+   */
+  getControlledPanelContainer() {
+    return this.state.endPanelControl
+      ? this.endPanelContainer
+      : this.startPanelContainer;
+  }
+
+  /**
+   * Resolve a `minSize`/`maxSize` prop to pixels.
+   *
+   * @param {number|string} size
+   *        The prop value: a number of pixels, a `px` string or a percentage.
+   * @param {number} splitBoxWidthOrHeight
+   *        The split box's size along the split axis, which a percentage is
+   *        relative to.
+   * @return {number|null}
+   *         The size in pixels, or null when there is no such limit.
+   */
+  resolveSizeInPx(size, splitBoxWidthOrHeight) {
+    if (size == null) {
+      return null;
+    }
+    const asString = size + "";
+    if (asString.endsWith("%")) {
+      return (parseFloat(asString) / 100) * splitBoxWidthOrHeight;
+    }
+    const asNumber = parseFloat(asString);
+    return Number.isNaN(asNumber) ? null : asNumber;
+  }
+
+  /**
+   * Point the splitter's `aria-controls` at the panel it resizes, as an
+   * element reference since the panels have no id.
+   */
+  updateAriaControls() {
+    const splitter = this.splitterEl.current;
+    if (!splitter) {
+      return;
+    }
+    const controlledPanel = this.getControlledPanelContainer();
+    splitter.ariaControlsElements =
+      this.isResizable() && controlledPanel ? [controlledPanel] : null;
+  }
+
+  /**
+   * Set `aria-valuemin`, `aria-valuemax` and `aria-valuenow` on the splitter.
+   */
+  updateAriaValues() {
+    const splitter = this.splitterEl.current;
+    if (!splitter) {
+      return;
+    }
+
+    const controlledPanel = this.getControlledPanelContainer();
+    // A splitter which resizes nothing has no position to report, and a value
+    // left from an earlier render is now wrong.
+    if (!this.isResizable() || !controlledPanel) {
+      splitter.removeAttribute("aria-valuemin");
+      splitter.removeAttribute("aria-valuemax");
+      splitter.removeAttribute("aria-valuenow");
+      return;
+    }
+
+    const { vert } = this.state;
+    const boxBounds = this.splitBox.getBoundingClientRect();
+    const total = vert ? boxBounds.width : boxBounds.height;
+    const panelBounds = controlledPanel.getBoundingClientRect();
+
+    const min = this.resolveSizeInPx(this.props.minSize, total) ?? 0;
+    const max = this.resolveSizeInPx(this.props.maxSize, total) ?? total;
+    // Directly set the attribute on the element here instead of in React land
+    // so we avoid React re-rendering when resizing.
+    splitter.setAttribute("aria-valuemin", Math.round(min));
+    splitter.setAttribute("aria-valuemax", Math.round(max));
+    splitter.setAttribute(
+      "aria-valuenow",
+      Math.round(vert ? panelBounds.width : panelBounds.height)
+    );
   }
 
   // Dragging Events
@@ -182,6 +322,68 @@ class SplitBox extends Component {
         this.state.vert ? this.state.width : this.state.height
       );
     }
+  }
+
+  /**
+   * Move the splitter with the keyboard, with the same keys as the XUL
+   * `splitter` element: only the two arrows on the splitter's own axis, so that
+   * what the user sees move matches the direction they pressed.
+   */
+  onKeyDown(event) {
+    const { vert } = this.state;
+    const towardsEnd = vert ? "ArrowRight" : "ArrowDown";
+    const towardsStart = vert ? "ArrowLeft" : "ArrowUp";
+
+    let step;
+    if (event.key == towardsEnd) {
+      step = KEYBOARD_RESIZE_STEP;
+    } else if (event.key == towardsStart) {
+      step = -KEYBOARD_RESIZE_STEP;
+    } else {
+      return;
+    }
+
+    const controlledPanel = this.getControlledPanelContainer();
+    if (!controlledPanel) {
+      return;
+    }
+
+    // Switch the control flag in case of RTL, as `onMove` does. This decides
+    // the sign of the movement only; which panel is sized does not depend on
+    // the text direction.
+    let { endPanelControl } = this.state;
+    if (vert && this.splitBox.ownerDocument.dir === "rtl") {
+      endPanelControl = !endPanelControl;
+    }
+
+    event.preventDefault();
+
+    const boxBounds = this.splitBox.getBoundingClientRect();
+    const total = vert ? boxBounds.width : boxBounds.height;
+    const panelBounds = controlledPanel.getBoundingClientRect();
+    const current = vert ? panelBounds.width : panelBounds.height;
+
+    const max = this.resolveSizeInPx(this.props.maxSize, total) ?? total;
+    const size = Math.min(
+      this.getConstrainedSizeInPx(
+        current + (endPanelControl ? -step : step),
+        total
+      ),
+      max,
+      total
+    );
+    this.setState(vert ? { width: size } : { height: size });
+
+    // Persist once the user stops, rather than on every auto-repeat, since
+    // consumers write a preference from this.
+    this.sizeToPersist = size;
+  }
+
+  onKeyUp() {
+    if (this.sizeToPersist !== null && this.props.onResizeEnd) {
+      this.props.onResizeEnd(this.sizeToPersist);
+    }
+    this.sizeToPersist = null;
   }
 
   /**
@@ -237,13 +439,8 @@ class SplitBox extends Component {
    *         The constrained size
    */
   getConstrainedSizeInPx(requestedSize, splitBoxWidthOrHeight) {
-    let minSize = this.props.minSize + "";
-
-    if (minSize.endsWith("%")) {
-      minSize = (parseFloat(minSize) / 100) * splitBoxWidthOrHeight;
-    } else if (minSize.endsWith("px")) {
-      minSize = parseFloat(minSize);
-    }
+    const minSize =
+      this.resolveSizeInPx(this.props.minSize, splitBoxWidthOrHeight) ?? 0;
     return Math.max(requestedSize, minSize);
   }
 
@@ -314,6 +511,8 @@ class SplitBox extends Component {
       flex: "0 0 " + splitterSize + "px",
     };
 
+    const resizable = this.isResizable();
+
     return dom.div(
       {
         className: classNames.join(" "),
@@ -341,10 +540,24 @@ class SplitBox extends Component {
       splitterSize > 0
         ? Draggable({
             className: "splitter",
+            elementRef: this.splitterEl,
             style: splitterStyle,
             onStart: this.onStartMove,
             onStop: this.onStopMove,
             onMove: this.onMove,
+            role: "separator",
+            // `aria-orientation` conveys how the panels the splitter separates
+            // are laid out, so it is the opposite of the splitter's own axis:
+            // a vertical splitter has a panel on either side of it.
+            ariaOrientation: vert ? "horizontal" : "vertical",
+            ...(resizable
+              ? {
+                  onKeyDown: this.onKeyDown,
+                  onKeyUp: this.onKeyUp,
+                  tabIndex: 0,
+                  ariaLabel: l10n.getStr("splitter.label"),
+                }
+              : null),
           })
         : null,
       endPanel && !endPanelCollapsed

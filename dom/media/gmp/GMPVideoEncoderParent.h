@@ -5,6 +5,7 @@
 #ifndef GMPVideoEncoderParent_h_
 #define GMPVideoEncoderParent_h_
 
+#include "GMPContentParent.h"
 #include "GMPCrashHelperHolder.h"
 #include "GMPMessageUtils.h"
 #include "GMPSharedMemManager.h"
@@ -16,8 +17,6 @@
 #include "mozilla/gmp/PGMPVideoEncoderParent.h"
 
 namespace mozilla::gmp {
-
-class GMPContentParent;
 
 class GMPVideoEncoderParent final : public GMPVideoEncoderProxy,
                                     public PGMPVideoEncoderParent,

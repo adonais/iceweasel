@@ -49927,6 +49927,9 @@ static struct win_syscall {
 #define osCygwin_conv_path ((size_t(*)(unsigned int, \
     const void *, void *, size_t))aSyscall[80].pCurrent)
 
+  { "GetDriveTypeW",            (SYSCALL)GetDriveTypeW,          0 },
+#define osGetDriveTypeW ((UINT(WINAPI*)(LPCWSTR))aSyscall[81].pCurrent)
+
 }; /* End of the overrideable system calls */
 
 /*
@@ -53055,6 +53058,23 @@ static int winIsUNCPath(const char *zFile){
 }
 
 /*
+** Return true if the string passed in is the name of a file on a
+** remote (network-mounted) volume.
+*/
+static int winIsRemoteVolume(const char *zFile){
+  WCHAR zRoot[4];
+  if( strncmp(zFile, "\\\\?\\",4)==0 ) zFile += 4;
+  if( !sqlite3Isalpha(zFile[0]) ) return 0;
+  if( zFile[1]!=':' ) return 0;
+  if( !winIsDirSep(zFile[2]) ) return 0;
+  zRoot[0] = (WCHAR)zFile[0];
+  zRoot[1] = ':';
+  zRoot[2] = '\\';
+  zRoot[3] = 0;
+  return osGetDriveTypeW(zRoot)==DRIVE_REMOTE;
+}
+
+/*
 ** Open the shared-memory area associated with database file pDbFd.
 */
 static int winOpenSharedMemory(winFile *pDbFd){
@@ -53079,7 +53099,11 @@ static int winOpenSharedMemory(winFile *pDbFd){
   pNew->zFilename = (char*)&pNew[1];
   pNew->hSharedShm = INVALID_HANDLE_VALUE;
   pNew->isUnlocked = 1;
-  pNew->bUseSharedLockHandle = winIsUNCPath(pDbFd->zPath);
+  if( winIsUNCPath(pDbFd->zPath) || winIsRemoteVolume(pDbFd->zPath) ){
+    pNew->bUseSharedLockHandle = 1;
+  }else{
+    pNew->bUseSharedLockHandle = 0;
+  }
   sqlite3_snprintf(nName+15, pNew->zFilename, "%s-shm", pDbFd->zPath);
   sqlite3FileSuffix3(pDbFd->zPath, pNew->zFilename);
 
@@ -55261,7 +55285,7 @@ SQLITE_API int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==81 );
+  assert( ArraySize(aSyscall)==82 );
   assert( strcmp(aSyscall[0].zName,"AreFileApisANSI")==0 );
   assert( strcmp(aSyscall[20].zName,"GetFileAttributesA")==0 );
   assert( strcmp(aSyscall[40].zName,"HeapReAlloc")==0 );

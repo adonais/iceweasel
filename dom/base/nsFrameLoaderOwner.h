@@ -7,6 +7,7 @@
 
 #include <functional>
 
+#include "mozilla/Maybe.h"
 #include "nsFrameLoader.h"
 #include "nsISupports.h"
 
@@ -79,7 +80,16 @@ class nsFrameLoaderOwner : public nsISupports {
   MOZ_CAN_RUN_SCRIPT
   void SubframeCrashed();
 
-  void RestoreFrameLoaderFromBFCache(nsFrameLoader* aNewFrameLoader);
+  // Replaces the frameloader with one restored from the bfcache and carries
+  // the layer state over. Returns whether the browser's layers changed, which
+  // the caller reports with DispatchLayerTreeEvent once the restored documents
+  // are active.
+  bool RestoreFrameLoaderFromBFCache(nsFrameLoader* aNewFrameLoader);
+
+  // Dispatches MozLayerTreeReady or MozLayerTreeCleared on the owner element
+  // for the current frameloader's layers.
+  MOZ_CAN_RUN_SCRIPT
+  void DispatchLayerTreeEvent();
 
   MOZ_CAN_RUN_SCRIPT
   void UpdateFocusAndMouseEnterStateAfterFrameLoaderChange();
@@ -118,6 +128,20 @@ class nsFrameLoaderOwner : public nsISupports {
 
   void ChangeFrameLoaderCommon(mozilla::dom::Element* aOwner,
                                bool aRetainPaint);
+
+  // The layer state a BrowserParent holds for its frameloader, which a
+  // frameloader replacement carries over to the new one.
+  struct LayerState {
+    bool mRenderLayers;
+    bool mPreserveLayers;
+    bool mPriorityHint;
+    bool mHasLayers;
+  };
+  mozilla::Maybe<LayerState> GetLayerState() const;
+
+  // Applies the replaced frameloader's layer state to the new one and returns
+  // whether the browser's layers changed.
+  bool TransferLayerState(const mozilla::Maybe<LayerState>& aOldLayerState);
 
   MOZ_CAN_RUN_SCRIPT
   void UpdateFocusAndMouseEnterStateAfterFrameLoaderChange(

@@ -10,6 +10,7 @@ from taskgraph.util.taskcluster import get_artifact_path
 from gecko_taskgraph.util.declarative_artifacts import get_geckoview_upstream_artifacts
 
 LANGPACK_SIGN_PLATFORMS = {  # set
+    "linux64",
     "linux64-shippable",
     "linux64-devedition",
     "macosx64-shippable",

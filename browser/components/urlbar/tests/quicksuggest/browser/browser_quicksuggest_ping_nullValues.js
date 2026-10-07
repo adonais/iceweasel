@@ -59,8 +59,7 @@ add_task(async function () {
       reportingUrl: null, // impression_url
       suggestionId: null,
       advertiser: null,
-
-      pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+      pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
       matchType,
       blockId: SUGGESTION.block_id.toString(),
       improveSuggestExperience: true,
@@ -77,8 +76,7 @@ add_task(async function () {
         reportingUrl: null, // impression_url
         suggestionId: null,
         advertiser: null,
-
-        pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+        pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
         matchType,
         blockId: SUGGESTION.block_id.toString(),
         improveSuggestExperience: true,
@@ -94,8 +92,7 @@ add_task(async function () {
         reportingUrl: null, // click_url
         suggestionId: null,
         advertiser: null,
-
-        pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION,
+        pingType: QUICK_SUGGEST_PING_TYPE.CLICK,
         matchType,
         blockId: SUGGESTION.block_id.toString(),
         improveSuggestExperience: true,
@@ -115,8 +112,7 @@ add_task(async function () {
             reportingUrl: null, // impression_url
             suggestionId: null,
             advertiser: null,
-
-            pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+            pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
             matchType,
             blockId: SUGGESTION.block_id.toString(),
             improveSuggestExperience: true,
@@ -132,8 +128,7 @@ add_task(async function () {
             reportingUrl: null, // not set
             suggestionId: null,
             advertiser: null,
-
-            pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK,
+            pingType: QUICK_SUGGEST_PING_TYPE.BLOCK,
             matchType,
             blockId: SUGGESTION.block_id.toString(),
             improveSuggestExperience: true,
@@ -154,8 +149,7 @@ add_task(async function () {
             reportingUrl: null, // impression_url
             suggestionId: null,
             advertiser: null,
-
-            pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+            pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
             matchType,
             blockId: SUGGESTION.block_id.toString(),
             improveSuggestExperience: true,

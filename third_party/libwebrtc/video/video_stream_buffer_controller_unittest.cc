@@ -902,6 +902,12 @@ TEST_P(LowLatencyVideoStreamBufferControllerTest, ZeroPlayoutDelayFullQueue) {
   EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(1)));
 }
 
+TEST_P(VideoStreamBufferControllerTest, StoppedState) {
+  EXPECT_FALSE(buffer_->stopped());
+  buffer_->Stop();
+  EXPECT_TRUE(buffer_->stopped());
+}
+
 TEST_P(LowLatencyVideoStreamBufferControllerTest,
        MinMaxDelayZeroLowLatencyMode) {
   // Initial keyframe.

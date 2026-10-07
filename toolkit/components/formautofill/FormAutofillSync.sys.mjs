@@ -8,6 +8,7 @@ import {
   SyncEngine,
   Tracker,
 } from "resource://services-sync/engines.sys.mjs";
+import { BridgedEngine } from "resource://services-sync/bridged_engine.sys.mjs";
 import { CryptoWrapper } from "resource://services-sync/record.sys.mjs";
 import { Utils } from "resource://services-sync/util.sys.mjs";
 
@@ -16,8 +17,12 @@ import { SCORE_INCREMENT_XLARGE } from "resource://services-sync/constants.sys.m
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  ADDRESS_SCHEMA_VERSION: "resource://autofill/FormAutofillStorageBase.sys.mjs",
   Log: "resource://gre/modules/Log.sys.mjs",
+  RustAutofillAddressesAdapter:
+    "resource://autofill/RustAutofillAddressStorage.sys.mjs",
   formAutofillStorage: "resource://autofill/FormAutofillStorage.sys.mjs",
+  setupLoggerForTarget: "resource://gre/modules/AppServicesTracing.sys.mjs",
 });
 
 // A helper to sanitize address and creditcard records suitable for logging.
@@ -363,6 +368,88 @@ AddressesEngine.prototype = {
   },
 };
 Object.setPrototypeOf(AddressesEngine.prototype, FormAutofillEngine.prototype);
+
+/**
+ * The addresses engine backed by the Rust autofill store, used instead of
+ * AddressesEngine when `...addresses.storage.rust.active` is set. Sync picks
+ * between the two through registerAlternatives(), so whichever store is serving
+ * the browser is the one that syncs.
+ *
+ * Reconciliation happens inside Rust, so BridgedEngine drives the store's
+ * bridged engine instead of FormAutofillEngine's per-record store surface.
+ * Change scoring still comes from FormAutofillTracker: the Rust adapter fires
+ * the same formautofill-storage-changed notification.
+ */
+export function BridgedAddressesEngine(service) {
+  BridgedEngine.call(this, "Addresses", service);
+}
+
+BridgedAddressesEngine.prototype = {
+  _trackerObj: FormAutofillTracker,
+
+  // The same priority FormAutofillEngine uses, so switching backend does not
+  // reorder which engines sync first.
+  syncPriority: 5,
+
+  // Tells the Rust-backed engine apart from the JS one in sync telemetry.
+  overrideTelemetryName: "rust-addresses",
+
+  get prefName() {
+    return "addresses";
+  },
+
+  async initialize() {
+    await SyncEngine.prototype.initialize.call(this);
+    // FormAutofillEngine avoids initialize() so that sync is not the loader of
+    // FormAutofillStorage for a profile with address sync off. This engine
+    // cannot: BridgedEngine needs the bridge, which only the store hands out,
+    // and reset and wipe reach for it outside a sync.
+    await lazy.formAutofillStorage.initialize();
+
+    // Reconciling happens in Rust, and allowSkippedRecord below leaves a
+    // rejected record skipped with only a Rust-side warning, which without
+    // this would reach no sync log.
+    lazy.setupLoggerForTarget("autofill", this._log);
+
+    // bridgedEngine() waits on the store, so a database that will not open
+    // rejects here and EngineManager.register skips the engine -- there is
+    // nothing to sync from a store we cannot read.
+    const rust = lazy.RustAutofillAddressesAdapter.getInstance();
+    this._bridge = await rust.bridgedEngine();
+    // Also the engine version in meta/global: bumping ADDRESS_SCHEMA_VERSION
+    // would stop older and JSON-backed clients from syncing addresses at all.
+    this._bridge.storageVersion = lazy.ADDRESS_SCHEMA_VERSION;
+    this._bridge.allowSkippedRecord = true;
+    this._bridge.getSyncId = async () => this._bridge.syncId();
+
+    this._log.info("Got a bridged addresses engine!");
+  },
+
+  /**
+   * Stands in for the bridge's own resetLastSync, which the autofill component
+   * implements but does not expose over the FFI, unlike logins and tabs.
+   * reset() zeroes the last-sync timestamp along with the mirror and the
+   * tombstones, which is what the only caller -- _resetClient -- asks for:
+   * drop the sync metadata and keep the records.
+   */
+  async resetLastSync() {
+    await this._bridge.reset();
+  },
+
+  /**
+   * The bridge applied these inside Rust, so no write went through the adapter
+   * and nothing announced them.
+   */
+  async _processIncoming(newitems) {
+    await BridgedEngine.prototype._processIncoming.call(this, newitems);
+    const rust = lazy.RustAutofillAddressesAdapter.getInstance();
+    await rust.notifySyncApplied();
+  },
+};
+Object.setPrototypeOf(
+  BridgedAddressesEngine.prototype,
+  BridgedEngine.prototype
+);
 
 function CreditCardsRecord(collection, id) {
   AutofillRecord.call(this, collection, id);

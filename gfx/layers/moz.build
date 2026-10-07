@@ -42,6 +42,9 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
         "d3d11/TextureD3D11.h",
         "d3d11/TextureHostWrapperD3D11.h",
         "d3d11/VideoProcessorD3D11.h",
+        "D3D11ShareHandleImage.h",
+        "D3D11YCbCrImage.h",
+        "D3D11ZeroCopyTextureImage.h",
     ]
     UNIFIED_SOURCES += [
         "d3d11/FenceD3D11.cpp",
@@ -138,9 +141,6 @@ EXPORTS.mozilla.layers += [
     "Compositor.h",
     "CompositorAnimationStorage.h",
     "CompositorTypes.h",
-    "D3D11ShareHandleImage.h",
-    "D3D11YCbCrImage.h",
-    "D3D11ZeroCopyTextureImage.h",
     "DirectionUtils.h",
     "Effects.h",
     "Fence.h",

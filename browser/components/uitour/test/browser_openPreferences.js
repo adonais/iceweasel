@@ -19,7 +19,7 @@ add_UITour_task(async function test_openInvalidPreferences() {
   await gContentAPI.openPreferences(999);
 
   try {
-    await waitForConditionPromise(() => {
+    await TestUtils.waitForCondition(() => {
       return gBrowser.selectedBrowser.currentURI.spec.startsWith(
         "about:preferences"
       );

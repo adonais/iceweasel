@@ -68,7 +68,7 @@ add_task(async function test_add_container_opens_container_popup() {
   let promisePanel = BrowserTestUtils.waitForEvent(panel, "popupshown");
   let tabCount = gBrowser.tabs.length;
   await BrowserTestUtils.activateMenuItem(
-    getItemByL10nId(containerPopup, "user-context-add-container")
+    getItemByL10nId(containerPopup, "user-context-add-container2")
   );
   // Ensure the panel is opened, on the browser window rather than the Library.
   await promisePanel;
@@ -138,7 +138,7 @@ add_task(async function test_manage_containers_opens_preferences() {
     true
   );
   await BrowserTestUtils.activateMenuItem(
-    getItemByL10nId(containerPopup, "user-context-manage-containers")
+    getItemByL10nId(containerPopup, "user-context-manage-containers2")
   );
   let prefsTab = await promisePrefsTab;
 

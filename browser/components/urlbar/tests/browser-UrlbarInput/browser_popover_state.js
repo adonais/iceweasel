@@ -66,10 +66,10 @@ add_task(async function empty_to_some() {
   );
   await UrlbarTestUtils.promiseSearchComplete(window);
   Assert.equal(UrlbarTestUtils.getResultCount(window), 0);
-  Assert.ok(gURLBar.view.isOpen);
+  Assert.ok(!gURLBar.view.isOpen);
   Assert.ok(gURLBar.hasAttribute("focused"));
   assertContainerUnmoved();
-  Assert.ok(gURLBar.panel.matches(":popover-open"));
+  Assert.ok(!gURLBar.panel.matches(":popover-open"));
 
   info("Open view with some results");
   let someProvider = new UrlbarTestUtils.TestProvider({
@@ -140,10 +140,10 @@ add_task(async function some_to_empty() {
     window,
   });
   Assert.equal(UrlbarTestUtils.getResultCount(window), 0);
-  Assert.ok(gURLBar.view.isOpen);
+  Assert.ok(!gURLBar.view.isOpen);
   Assert.ok(gURLBar.hasAttribute("focused"));
   assertContainerUnmoved();
-  Assert.ok(gURLBar.panel.matches(":popover-open"));
+  Assert.ok(!gURLBar.panel.matches(":popover-open"));
 
   manager.unregisterProvider(emptyProvider);
   await UrlbarTestUtils.promisePopupClose(window);
@@ -169,7 +169,10 @@ add_task(async function oneoffs() {
   Assert.equal(UrlbarTestUtils.getResultCount(window), 0);
   assertContainerUnmoved();
   Assert.ok(gURLBar.hasAttribute("focused"));
-  Assert.ok(gURLBar.panel.matches(":popover-open"));
+  await TestUtils.waitForCondition(
+    () => gURLBar.panel.matches(":popover-open"),
+    "Waiting for the view to open for the one-offs"
+  );
 
   manager.unregisterProvider(emptyProvider);
   await UrlbarTestUtils.promisePopupClose(window);

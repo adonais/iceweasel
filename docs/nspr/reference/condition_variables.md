@@ -2,8 +2,8 @@ This chapter describes the API for creating and destroying condition
 variables, notifying condition variables of changes in monitored data,
 and making a thread wait on such notification.
 
-- [Condition Variable Type](#Condition_Variable_Type)
-- [Condition Variable Functions](#Condition_Variable_Functions)
+- [Condition Variable Type](#condition-variable-type)
+- [Condition Variable Functions](#condition-variable-functions)
 
 Conditions are closely associated with a single monitor, which typically
 consists of a mutex, one or more condition variables, and the monitored
@@ -20,16 +20,16 @@ variable when changes occur.
 
 For an introduction to NSPR thread synchronization, including locks and
 condition variables, see [Introduction to
-NSPR](Introduction_to_NSPR).
+NSPR](introduction_to_nspr.md).
 
 For reference information on NSPR locks, see
-[Locks](NSPR_API_Reference/Locks).
+[Locks](locks.md).
 
 NSPR provides a special type, {ref}`PRMonitor`, for use with Java. Unlike a
 mutex of type {ref}`PRLock`, which can have multiple associated condition
 variables of type {ref}`PRCondVar`, a mutex of type {ref}`PRMonitor` has a
 single, implicitly associated condition variable. For information about
-{ref}`PRMonitor`, see [Monitors](Monitors).
+{ref}`PRMonitor`, see [Monitors](monitors.md).
 
 (condition-variable-type)=
 

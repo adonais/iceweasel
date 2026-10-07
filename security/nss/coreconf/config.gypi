@@ -44,7 +44,7 @@
         }],
         ['OS=="win"', {
           'use_system_zlib%': 0,
-          'nspr_libs%': ['libnspr4.lib', 'libplc4.lib', 'libplds4.lib'],
+          'nspr_libs%': ['nspr4.lib', 'plc4.lib', 'plds4.lib'],
           'zlib_libs%': [],
           #TODO
           'moz_debug_flags%': '',
@@ -199,6 +199,12 @@
       [ 'OS=="android"', {
         'libraries': [
           '-llog',
+        ],
+      }],
+      # Without this, NSPR's Windows headers mark PR_* dllimport, breaking a static link.
+      [ 'OS=="win"', {
+        'defines': [
+          '_NSPR_BUILD_',
         ],
       }],
       [ 'fuzz==1', {
@@ -583,6 +589,19 @@
                     'PreprocessorDefinitions': [
                       'WIN64',
                       '_AMD64_',
+                    ],
+                    'AdditionalOptions': [ '/EHsc' ],
+                  },
+                },
+              }],
+              [ 'target_arch=="arm64"', {
+                'msvs_configuration_platform': 'ARM64',
+                'msvs_settings': {
+                  'VCCLCompilerTool': {
+                    'PreprocessorDefinitions': [
+                      'WIN64',
+                      '_ARM64_',
+                      '__ARM_FEATURE_CRYPTO',
                     ],
                     'AdditionalOptions': [ '/EHsc' ],
                   },

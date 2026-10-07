@@ -21,7 +21,7 @@ Version
 7.1)](http://www.microsoft.com/downloads/details.aspx?FamilyID=6b6c21d2-2006-4afa-9702-529fa782d63b&displaylang=en "http://www.microsoft.com/downloads/details.aspx?FamilyID=6b6c21d2-2006-4afa-9702-529fa782d63b&displaylang=en"){.external}.
 Use the web installer to install at least the \"Win32 Development
 Tools\". Once the SDK installs, execute either `wpt_x86.msi` or
-`wpt_x64.msi` in the `Redist/Windows Performance Toolkit `folder of the
+`wpt_x64.msi` in the `Redist/Windows Performance Toolkit` folder of the
 SDK's install location (typically Program Files/Microsoft
 SDKs/Windows/v7.1/Redist/Windows Performance Toolkit) to actually
 install the Windows Performance Toolkit tools.

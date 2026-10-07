@@ -28,6 +28,22 @@ const threadManager = Cc["@mozilla.org/thread-manager;1"].getService();
 
 const allPermissions = parseInt("777", 8);
 
+// Socket paths have to fit in NetAddr::local.path, which is 104 bytes on every
+// platform. The xpcshell temp directory is usually too deep to build socket
+// names under, so use a short directory of our own.
+var gSocketDir = null;
+function socketDir() {
+  if (!gSocketDir) {
+    let dir = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+    dir.initWithPath("/tmp");
+    dir.append("xpc-uds");
+    dir.createUnique(Ci.nsIFile.DIRECTORY_TYPE, parseInt("700", 8));
+    registerCleanupFunction(() => dir.remove(true));
+    gSocketDir = dir;
+  }
+  return gSocketDir.clone();
+}
+
 function run_test() {
   // If we're on Windows, simply check for graceful failure.
   if (mozinfo.os == "win") {
@@ -78,7 +94,7 @@ function test_not_supported() {
 function test_echo() {
   let log = "";
 
-  let socketName = do_get_tempdir();
+  let socketName = socketDir();
   socketName.append("socket");
 
   // Create a server socket, listening for connections.
@@ -187,7 +203,7 @@ function test_echo() {
 
 // Create client and server sockets using a path that's too long.
 function test_name_too_long() {
-  let socketName = do_get_tempdir();
+  let socketName = socketDir();
   // The length limits on all the systems NSPR supports are a bit past 100.
   socketName.append(new Array(1000).join("x"));
 
@@ -213,7 +229,7 @@ function test_name_too_long() {
 
 // Try creating a socket in a directory that doesn't exist.
 function test_no_directory() {
-  let socketName = do_get_tempdir();
+  let socketName = socketDir();
   socketName.append("missing");
   socketName.append("socket");
 
@@ -227,7 +243,7 @@ function test_no_directory() {
 
 // Try connecting to a server socket that isn't there.
 function test_no_such_socket() {
-  let socketName = do_get_tempdir();
+  let socketName = socketDir();
   socketName.append("nonexistent-socket");
 
   let client = socketTransportService.createUnixDomainTransport(socketName);
@@ -262,7 +278,7 @@ function test_no_such_socket() {
 // Creating a socket with a name that another socket is already using is an
 // error.
 function test_address_in_use() {
-  let socketName = do_get_tempdir();
+  let socketName = socketDir();
   socketName.append("socket-in-use");
 
   // Create one server socket.
@@ -279,7 +295,7 @@ function test_address_in_use() {
 
 // Creating a socket with a name that is already a file is an error.
 function test_file_in_way() {
-  let socketName = do_get_tempdir();
+  let socketName = socketDir();
   socketName.append("file_in_way");
 
   // Create a file with the given name.
@@ -304,7 +320,7 @@ function test_file_in_way() {
 // It is not permitted to create a socket in a directory which we are not
 // permitted to execute, or create files in.
 function test_create_permission() {
-  let dirName = do_get_tempdir();
+  let dirName = socketDir();
   dirName.append("unfriendly");
 
   let socketName = dirName.clone();
@@ -356,7 +372,7 @@ function test_connect_permission() {
   let log = "";
 
   // Create a directory which we are permitted to search - at first.
-  let dirName = do_get_tempdir();
+  let dirName = socketDir();
   dirName.append("inhospitable");
   dirName.create(Ci.nsIFile.DIRECTORY_TYPE, allPermissions);
 
@@ -497,7 +513,7 @@ function test_connect_permission() {
 
 // Creating a socket with a long filename doesn't crash.
 function test_long_socket_name() {
-  let socketName = do_get_tempdir();
+  let socketName = socketDir();
   socketName.append(new Array(10000).join("long"));
 
   // Try to create a server socket with the long name.
@@ -519,7 +535,7 @@ function test_long_socket_name() {
 function test_keep_when_offline() {
   let log = "";
 
-  let socketName = do_get_tempdir();
+  let socketName = socketDir();
   socketName.append("keep-when-offline");
 
   // Create a listening socket.

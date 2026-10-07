@@ -25,23 +25,14 @@ prefs = [
 ["browser_dbg-javascript-tracer-next-load.js"]
 
 ["browser_dbg-javascript-tracer-sidebar-panel.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug The tracer tree isn't yet accessible
-]
 
 ["browser_dbg-javascript-tracer-sidebar-toggle.js"]
 
 ["browser_dbg-javascript-tracer-sidebar-values-search.js"]
 
 ["browser_dbg-javascript-tracer-sidebar.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1924435
-]
 
 ["browser_dbg-javascript-tracer-values-preview.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug The tracer tree isn't yet accessible
-]
 
 ["browser_dbg-javascript-tracer-values.js"]
 

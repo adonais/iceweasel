@@ -2,12 +2,12 @@
 .\"     Title: MODUTIL
 .\"    Author: [see the "Authors" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 19 May 2021
+.\"      Date: 28 August 2026
 .\"    Manual: NSS Security Tools
 .\"    Source: nss-tools
 .\"  Language: English
 .\"
-.TH "MODUTIL" "1" "19 May 2021" "nss-tools" "NSS Security Tools"
+.TH "MODUTIL" "1" "28 August 2026" "nss-tools" "NSS Security Tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -806,7 +806,7 @@ The script must define the platform and version number, the module name and file
 .nf
 ForwardCompatible { IRIX:6\&.2:mips SUNOS:5\&.5\&.1:sparc }
 Platforms {
-   WINNT::x86 {
+   WIN95::x86 {
       ModuleName { "Example Module" }
       ModuleFile { win32/fort32\&.dll }
       DefaultMechanismFlags{0x0001}
@@ -1004,40 +1004,7 @@ NEC (mips)
 .sp -1
 .IP \(bu 2.3
 .\}
-OS2 (x86)
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
 OSF (alpha)
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-ReliantUNIX (mips)
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-SCO (x86)
 .RE
 .sp
 .RS 4
@@ -1092,29 +1059,7 @@ UnixWare (x86)
 .sp -1
 .IP \(bu 2.3
 .\}
-WIN16 (x86)
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-WIN95 (x86)
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-WINNT (x86)
+WIN95 (x86, x86\-64), the historical NSPR name for all Windows versions
 .RE
 .PP
 For example:
@@ -1126,7 +1071,6 @@ For example:
 IRIX:6\&.2:mips
 SUNOS:5\&.5\&.1:sparc
 Linux:2\&.0\&.32:x86
-WIN95::x86
 .fi
 .if n \{\
 .RE

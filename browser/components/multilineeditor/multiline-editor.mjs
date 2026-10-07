@@ -535,11 +535,11 @@ export class MultilineEditor extends MozLitElement {
       changedProps.has("placeholder") ||
       changedProps.has("placeholderHints") ||
       changedProps.has("plugins") ||
-      changedProps.has("readOnly") ||
-      MultilineEditor.FORWARDED_ARIA.some(({ prop }) => changedProps.has(prop))
+      changedProps.has("readOnly")
     ) {
       this.#refreshView();
     }
+    this.#applyForwardedAria(changedProps);
     if (changedProps.has("showPlaceholderAnimation")) {
       // Restart or cancel placeholder animation.
       if (this.showPlaceholderAnimation) {
@@ -669,9 +669,9 @@ export class MultilineEditor extends MozLitElement {
           }
           // TODO(Bug 2047067): right-clicks on the inner contenteditable show
           // a native context menu on Windows whose Paste command does not
-          // reach ProseMirror. Forward the event to the host so moz-input-box
-          // can show its menu. Remove this workaround once the platform bug
-          // is fixed.
+          // reach ProseMirror. Forward the event to the host so it can show
+          // its own menu. Remove this workaround once the platform bug is
+          // fixed.
           event.preventDefault();
           const host = view.dom.getRootNode().host;
           if (host && host != view.dom) {
@@ -912,6 +912,22 @@ export class MultilineEditor extends MozLitElement {
     });
   }
 
+  #applyForwardedAria(changedProps) {
+    if (!this.#view) {
+      return;
+    }
+    for (const { prop, attr } of MultilineEditor.FORWARDED_ARIA) {
+      if (!changedProps.has(prop)) {
+        continue;
+      }
+      if (this[prop] == null) {
+        this.#view.dom.removeAttribute(attr);
+      } else {
+        this.#view.dom.setAttribute(attr, this[prop]);
+      }
+    }
+  }
+
   #refreshView() {
     if (!this.#view) {
       return;
@@ -1142,13 +1158,6 @@ export class MultilineEditor extends MozLitElement {
     } else {
       attrs.role = "textbox";
       attrs["aria-multiline"] = "true";
-    }
-
-    for (const { prop, attr } of MultilineEditor.FORWARDED_ARIA) {
-      const value = this[prop];
-      if (value != null) {
-        attrs[attr] = value;
-      }
     }
 
     if (this.placeholderHints.length) {

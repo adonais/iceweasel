@@ -14,6 +14,7 @@
 #include "mozilla/IntegerRange.h"  // for IntegerRange
 #include "mozilla/Likely.h"        // For MOZ_LIKELY and MOZ_UNLIKELY
 #include "mozilla/RangeUtils.h"    // for RangeUtils
+#include "mozilla/dom/Range.h"     // for Range
 #include "mozilla/dom/RangeBinding.h"
 #include "mozilla/dom/Selection.h"  // for Selection
 #include "nsAString.h"              // for nsAString::Length
@@ -21,8 +22,7 @@
 #include "nsDebug.h"          // for NS_WARNING, etc.
 #include "nsError.h"          // for NS_OK, etc.
 #include "nsIContent.h"       // for nsIContent
-#include "nsISupportsImpl.h"  // for nsRange::Release
-#include "nsRange.h"          // for nsRange
+#include "nsISupportsImpl.h"  // for Range::Release
 
 namespace mozilla {
 
@@ -63,7 +63,7 @@ template nsresult RangeUpdater::SelAdjInsertNode(
 SelectionState::SelectionState(const AutoClonedSelectionRangeArray& aRanges)
     : mDirection(aRanges.GetDirection()) {
   mArray.SetCapacity(aRanges.Ranges().Length());
-  for (const OwningNonNull<nsRange>& range : aRanges.Ranges()) {
+  for (const OwningNonNull<dom::Range>& range : aRanges.Ranges()) {
     RefPtr rangeItem = MakeRefPtr<RangeItem>();
     rangeItem->StoreRange(range);
     mArray.AppendElement(std::move(rangeItem));
@@ -86,7 +86,7 @@ void SelectionState::SaveSelection(Selection& aSelection) {
   const uint32_t rangeCount = aSelection.RangeCount();
   for (const uint32_t i : IntegerRange(rangeCount)) {
     MOZ_ASSERT(aSelection.RangeCount() == rangeCount);
-    const nsRange* range = aSelection.GetRangeAt(i);
+    const dom::Range* range = aSelection.GetRangeAt(i);
     MOZ_ASSERT(range);
     if (MOZ_UNLIKELY(NS_WARN_IF(!range))) {
       continue;
@@ -109,7 +109,7 @@ nsresult SelectionState::RestoreSelection(Selection& aSelection) {
   ErrorResult error;
   const CopyableAutoTArray<RefPtr<RangeItem>, 10> rangeItems(mArray);
   for (const RefPtr<RangeItem>& rangeItem : rangeItems) {
-    RefPtr<nsRange> range = rangeItem->GetRange();
+    RefPtr<dom::Range> range = rangeItem->GetRange();
     if (!range) {
       NS_WARNING("RangeItem::GetRange() failed");
       return NS_ERROR_FAILURE;
@@ -128,7 +128,7 @@ void SelectionState::ApplyTo(AutoClonedSelectionRangeArray& aRanges) {
   aRanges.RemoveAllRanges();
   aRanges.SetDirection(mDirection);
   for (const RefPtr<RangeItem>& rangeItem : mArray) {
-    RefPtr<nsRange> range = rangeItem->GetRange();
+    RefPtr<dom::Range> range = rangeItem->GetRange();
     if (MOZ_UNLIKELY(!range)) {
       continue;
     }
@@ -652,17 +652,17 @@ void RangeUpdater::DidMoveNodes(
 
 NS_IMPL_CYCLE_COLLECTION(RangeItem, mStartContainer, mEndContainer)
 
-void RangeItem::StoreRange(const nsRange& aRange) {
+void RangeItem::StoreRange(const dom::Range& aRange) {
   mStartContainer = aRange.GetStartContainer();
   mStartOffset = aRange.StartOffset();
   mEndContainer = aRange.GetEndContainer();
   mEndOffset = aRange.EndOffset();
 }
 
-already_AddRefed<nsRange> RangeItem::GetRange() const {
-  RefPtr<nsRange> range = nsRange::Create(
+already_AddRefed<dom::Range> RangeItem::GetRange() const {
+  RefPtr<dom::Range> range = dom::Range::Create(
       mStartContainer, mStartOffset, mEndContainer, mEndOffset, IgnoreErrors());
-  NS_WARNING_ASSERTION(range, "nsRange::Create() failed");
+  NS_WARNING_ASSERTION(range, "Range::Create() failed");
   return range.forget();
 }
 

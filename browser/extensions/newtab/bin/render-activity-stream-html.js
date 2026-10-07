@@ -133,6 +133,11 @@ function templateHTML(options) {
     <script
       async
       type="module"
+      src="chrome://global/content/elements/moz-segmented-control.mjs"
+    ></script>
+    <script
+      async
+      type="module"
       src="chrome://global/content/elements/moz-select.mjs"
     ></script>
     <script

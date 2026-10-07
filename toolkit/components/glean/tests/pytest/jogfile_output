@@ -322,8 +322,8 @@
               ],
               "ping",
               false,
-              null,
-              false
+              false,
+              null
             ]
           ]
         }

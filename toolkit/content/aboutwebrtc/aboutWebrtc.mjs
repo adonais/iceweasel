@@ -1657,6 +1657,8 @@ function candidateToString({
     candidateType = `${candidateType}-${relayProtocol}`;
   }
   proxied = type == "local-candidate" ? ` [${proxied}]` : "";
+  // Addresses that must not be exposed to content are reported as null.
+  address ??= "(redacted)";
   return `${address}:${port}/${protocol}(${candidateType})${proxied}`;
 }
 

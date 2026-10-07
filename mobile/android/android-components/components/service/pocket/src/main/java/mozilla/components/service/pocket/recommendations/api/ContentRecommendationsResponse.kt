@@ -4,8 +4,6 @@
 
 package mozilla.components.service.pocket.recommendations.api
 
-import kotlinx.serialization.Serializable
-
 /**
  * The content recommendation payload response.
  *
@@ -15,7 +13,6 @@ import kotlinx.serialization.Serializable
  * @property recommendedAt A timestamp indicating when the content recommendations was recommended.
  * @property data A list of [ContentRecommendationResponseItem]s from the response payload.
  */
-@Serializable
 internal data class ContentRecommendationsResponse(
     val recommendedAt: Long,
     val data: List<ContentRecommendationResponseItem>,
@@ -40,7 +37,6 @@ internal data class ContentRecommendationsResponse(
  * @property receivedRank The original position/sort order of this item. This is provided to include in telemetry
  *   payloads.
  */
-@Serializable
 internal data class ContentRecommendationResponseItem(
     val corpusItemId: String,
     val scheduledCorpusItemId: String,

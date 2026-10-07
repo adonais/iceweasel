@@ -256,6 +256,22 @@ nsIFrame* SVGGeometryFrame::GetFrameForPoint(const gfxPoint& aPoint) {
   return nullptr;
 }
 
+bool SVGGeometryFrame::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
+  if (!StyleSVG()->mStroke.kind.IsNone()) {
+    // Stroke geometry is included in our overflow rect, nothing to do.
+    return true;
+  }
+  // We might need to hit test the stroke, so need to track that as
+  // ink-overflow.
+  float inkOverflowInflation = SVGUtils::GetStrokeWidth(
+      this, SVGContextPaint::GetContextPaint(GetContent()));
+  if (inkOverflowInflation > 0.0f) {
+    aOverflowAreas.InkOverflow().Inflate(
+        CSSPixel::ToAppUnits(inkOverflowInflation));
+  }
+  return true;
+}
+
 void SVGGeometryFrame::ReflowSVG() {
   NS_ASSERTION(SVGUtils::OuterSVGIsCallingReflowSVG(this),
                "This call is probably a wasteful mistake");
@@ -272,23 +288,11 @@ void SVGGeometryFrame::ReflowSVG() {
   SVGBBoxFlags flags = {SVGBBoxFlag::IncludeFillGeometry,
                         SVGBBoxFlag::IncludeStroke, SVGBBoxFlag::IncludeMarkers,
                         SVGBBoxFlag::EstimateStrokeBounds};
-
-  // Our "visual" overflow rect needs to be valid for building display lists
-  // for hit testing, which means that for certain values of 'pointer-events'
-  // it needs to include the geometry of the fill or stroke even when the fill/
-  // stroke don't actually render (e.g. when stroke="none" or
-  // stroke-opacity="0"). GetGeometryHitTestFlags() accounts for
-  // 'pointer-events'.
-  SVGHitTestFlags hitTestFlags = SVGUtils::GetGeometryHitTestFlags(this);
-  if (hitTestFlags.contains(SVGHitTestFlag::Fill)) {
-    flags += SVGBBoxFlag::IncludeFillGeometry;
-  }
-  if (hitTestFlags.contains(SVGHitTestFlag::Stroke)) {
+  if (!StyleSVG()->mStroke.kind.IsNone()) {
     flags += SVGBBoxFlag::IncludeStrokeGeometry;
   }
-
-  SVGBBox extent = GetBBoxContribution({}, flags).ToThebesRect();
-  mRect = nsLayoutUtils::RoundGfxRectToAppRect((const Rect&)extent,
+  SVGBBox extent = GetBBoxContribution({}, flags);
+  mRect = nsLayoutUtils::RoundGfxRectToAppRect(extent.ToThebesRect(),
                                                AppUnitsPerCSSPixel());
 
   if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
@@ -298,8 +302,9 @@ void SVGGeometryFrame::ReflowSVG() {
     SVGObserverUtils::UpdateEffects(this);
   }
 
-  nsRect overflow = nsRect(nsPoint(0, 0), mRect.Size());
-  OverflowAreas overflowAreas(overflow, overflow);
+  const nsRect overflowRect(nsPoint(), mRect.Size());
+  OverflowAreas overflowAreas(overflowRect, overflowRect);
+  ComputeCustomOverflow(overflowAreas);
   FinishAndStoreOverflow(overflowAreas, mRect.Size());
 
   RemoveStateBits(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY |
@@ -414,6 +419,9 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
   Maybe<Rect> simpleBounds;
   if (getStroke && userToOuterSVG) {
     Matrix m = ToMatrix(*userToOuterSVG);
+    if (m.IsSingular()) {
+      return bbox;
+    }
     simpleBounds =
         element->GetGeometryBounds(strokeOptions, aToBBoxUserspace, &m);
   } else if (getFill || getStroke) {

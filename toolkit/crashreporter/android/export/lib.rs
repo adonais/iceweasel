@@ -137,6 +137,7 @@ pub extern "C" fn crashtools_crashping_init(
     app_id: &Utf16String,
     build_id: Option<&Utf16String>,
     display_version: Option<&Utf16String>,
+    server_endpoint: Option<&Utf16String>,
     upload_enabled: bool,
     upload_fn: UploadFn,
 ) -> Utf16String {
@@ -159,6 +160,9 @@ pub extern "C" fn crashtools_crashping_init(
     );
     init_glean.configuration.uploader = Some(Box::new(Uploader(upload_fn)));
     init_glean.configuration.upload_enabled = upload_enabled;
+    if let Some(s) = server_endpoint {
+        init_glean.configuration.server_endpoint = Some(s.as_string_lossy());
+    }
     match init_glean.initialize() {
         Ok(glean_handle) => {
             glean_handle.application_lifetime();

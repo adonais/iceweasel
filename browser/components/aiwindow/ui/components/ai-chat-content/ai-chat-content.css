@@ -53,6 +53,7 @@
         /* Also caps the backdrop-filter surface well under WebRender's
         4096px limit so the blur doesn't silently drop on large screens. */
         max-width: var(--smartwindow-content-max-width);
+        pointer-events: none;
         position: fixed;
       }
 
@@ -283,22 +284,24 @@ moz-button.jump-to-bottom-button {
     visibility 100ms linear;
   visibility: hidden;
   width: max-content;
+  z-index: 1;
+
+  &::part(button) {
+    box-shadow: var(--box-shadow-level-1);
+    cursor: pointer;
+  }
+
+  &[visible] {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+  }
 
   @media not (forced-colors) {
     --button-background-color-ghost: light-dark(var(--color-white), var(--color-gray-80));
     --button-text-color-ghost: light-dark(var(--color-gray-70), var(--color-white));
     --button-background-color-ghost-hover: light-dark(var(--color-violet-0), var(--color-gray-70));
   }
-}
-
-moz-button.jump-to-bottom-button::part(button) {
-  box-shadow: var(--box-shadow-level-1);
-}
-
-moz-button.jump-to-bottom-button[visible] {
-  opacity: 1;
-  pointer-events: auto;
-  visibility: visible;
 }
 
 /* TODO - move these styles into a component https://bugzilla.mozilla.org/show_bug.cgi?id=2046155 */

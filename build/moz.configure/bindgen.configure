@@ -370,3 +370,13 @@ def bindgen_cflags(base_flags, extra_flags):
 
 
 set_config("BINDGEN_SYSTEM_FLAGS", bindgen_cflags)
+
+
+# Force the target down to all bindgen callers, even those that may not
+# read BINDGEN_SYSTEM_FLAGS some way or another.
+@depends(bindgen_cflags)
+def bindgen_extra_clang_args(flags):
+    return [f for f in flags or [] if f.startswith("--target=")]
+
+
+set_config("BINDGEN_EXTRA_CLANG_ARGS", bindgen_extra_clang_args)

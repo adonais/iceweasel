@@ -30,3 +30,4 @@ tempfile = "3.1.0"
 
 [features]
 with_gecko = ["xpcom", "nsstring", "gecko-profiler"]
+gecko_tests = ["glean/mozbuild-rustlib"]

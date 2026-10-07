@@ -22,19 +22,19 @@ root:
 
       - type: stacking-context
         bounds: [0, 0, 2048, 2048]
-        filter: grayscale(1)
+        filters: [grayscale(1)]
         items:
         - type: stacking-context
           bounds: [0, 0, 2048, 2048]
-          filter: grayscale(1)
+          filters: [grayscale(1)]
           items:
           - type: stacking-context
             bounds: [0, 0, 2048, 2048]
-            filter: grayscale(1)
+            filters: [grayscale(1)]
             items:
             - type: stacking-context
               bounds: [0, 0, 2048, 2048]
-              filter: grayscale(1)
+              filters: [grayscale(1)]
               items:
               - image: snapshot(snap0)
                 bounds: [130, 0, 128, 128]

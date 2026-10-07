@@ -30,6 +30,7 @@ class MozharnessSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     comm_checkout: Optional[bool] = None
     run_as_root: Optional[bool] = None
     use_caches: Optional[Union[bool, list[str]]] = None
+    sparse_profile: Optional[str] = None
 
 
 class MsiSchema(Schema, kw_only=True):

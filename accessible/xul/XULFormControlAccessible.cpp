@@ -129,7 +129,7 @@ bool XULButtonAccessible::AreItemsOperable() const {
     LocalAccessible* menuPopup = mChildren.SafeElementAt(0, nullptr);
     if (menuPopup) {
       nsMenuPopupFrame* menuPopupFrame = do_QueryFrame(menuPopup->GetFrame());
-      return menuPopupFrame->IsOpen();
+      return menuPopupFrame && menuPopupFrame->IsOpen();
     }
   }
   return false;  // no items

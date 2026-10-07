@@ -44,11 +44,11 @@ autocomplete-delete-form-history-entry2 = Delete { $entry } from form history
 ## Confirmation shown before a record is removed from the autocomplete dropdown.
 ## Gated by the browser.autocomplete.removeRecords.enabled pref.
 
-autocomplete-remove-password-title = Remove password?
-autocomplete-remove-address-title = Remove address?
-autocomplete-remove-payment-method-title = Remove payment method?
+autocomplete-delete-password-title = Delete password?
+autocomplete-delete-address-title = Delete address?
+autocomplete-delete-payment-method-title = Delete payment method?
 autocomplete-remove-record-message = You cannot undo this action.
-autocomplete-remove-record-button = Remove
+autocomplete-delete-record-button = Delete
 
 ## Device sign-in prompt shown before a password is removed from the autocomplete
 ## dropdown. The -win and -macosx variants are selected at runtime; other platforms

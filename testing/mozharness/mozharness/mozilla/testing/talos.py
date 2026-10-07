@@ -18,11 +18,10 @@ import sys
 
 from mozsystemmonitor.resourcemonitor import SystemResourceMonitor
 
-import mozharness
 from mozharness.base.config import parse_config_file
 from mozharness.base.errors import PythonErrorList
 from mozharness.base.log import CRITICAL, DEBUG, ERROR, INFO, WARNING, OutputParser
-from mozharness.base.python import Python3Virtualenv
+from mozharness.base.python import perfherder_schema_path
 from mozharness.base.vcs.vcsbase import MercurialScript
 from mozharness.mozilla.automation import (
     TBPL_FAILURE,
@@ -38,9 +37,6 @@ from mozharness.mozilla.testing.codecoverage import (
 from mozharness.mozilla.testing.errors import TinderBoxPrintRe
 from mozharness.mozilla.testing.testbase import TestingMixin, testing_config_options
 from mozharness.mozilla.tooltool import TooltoolMixin
-
-scripts_path = os.path.abspath(os.path.dirname(os.path.dirname(mozharness.__file__)))
-external_tools_path = os.path.join(scripts_path, "external_tools")
 
 TalosErrorList = PythonErrorList + [
     {"regex": re.compile(r"""run-as: Package '.*' is unknown"""), "level": DEBUG},
@@ -125,9 +121,7 @@ class TalosOutputParser(OutputParser):
         super().parse_single_line(line)
 
 
-class Talos(
-    TestingMixin, MercurialScript, TooltoolMixin, Python3Virtualenv, CodeCoverageMixin
-):
+class Talos(TestingMixin, MercurialScript, TooltoolMixin, CodeCoverageMixin):
     """
     install and run Talos tests
     """
@@ -696,9 +690,7 @@ class Talos(
                         output_dir=artifact["dest"],
                         cache=self.config.get("tooltool_cache"),
                     )
-                    unzip = self.query_exe("unzip")
-                    unzip_cmd = [unzip, "-q", "-o", archive, "-d", artifact["dest"]]
-                    self.run_command(unzip_cmd, halt_on_failure=True)
+                    shutil.unpack_archive(archive, artifact["dest"])
 
                     if "postprocess" in artifact:
                         for subdir, dirs, files in os.walk(output_dir_path):
@@ -818,9 +810,7 @@ class Talos(
             parser.update_worst_log_and_tbpl_levels(WARNING, TBPL_WARNING)
             return
 
-        schema_path = os.path.join(
-            external_tools_path, "performance-artifact-schema.json"
-        )
+        schema_path = perfherder_schema_path()
         self.info("Validating PERFHERDER_DATA against %s" % schema_path)
         try:
             with open(schema_path) as f:

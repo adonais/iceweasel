@@ -258,10 +258,10 @@ AssemblerLOONG64::Condition AssemblerLOONG64::SwapCmpOperandsCondition(
 }
 
 BOffImm16::BOffImm16(InstImm inst)
-    : data((inst.encode() >> Imm16Shift) & Imm16Mask) {}
+    : data(inst.extractBitField(Imm16Shift + Imm16Bits - 1, Imm16Shift)) {}
 
 Instruction* BOffImm16::getDest(Instruction* src) const {
-  return &src[(((int32_t)data << 16) >> 16) + 1];
+  return &src[(((int32_t)(data << 16)) >> 16) + 1];
 }
 
 bool AssemblerLOONG64::oom() const {
@@ -2120,6 +2120,35 @@ InstImm AssemblerLOONG64::invertBranch(InstImm branch, BOffImm16 skipOffset) {
 void Assembler::executableCopy(uint8_t* buffer) {
   MOZ_ASSERT(isFinished);
   m_buffer.executableCopy(buffer);
+
+  for (const RelativePatch& rp : jumps_) {
+    if (rp.kind != RelocationKind::JITCODE) {
+      continue;
+    }
+
+    InstImm* const inst = (InstImm*)(buffer + rp.offset.getOffset());
+
+    MOZ_ASSERT(inst[0].extractBitField(31, 25) ==
+               (static_cast<uint32_t>(op_pcaddu18i) >> 25));
+
+    const Register scratch = Register::FromCode(inst[0].extractRD());
+
+    const int64_t offset =
+        reinterpret_cast<int64_t>(rp.target) -
+        reinterpret_cast<int64_t>(buffer + rp.offset.getOffset());
+    const auto [si20, offs16] = SplitJump36Offset(offset);
+    inst[0] = InstImm(op_pcaddu18i, si20, scratch, false);
+    if (inst[1].extractBitField(31, 26) ==
+        (static_cast<uint32_t>(op_bne) >> 26)) {
+      // Toggled-off call. Keep the residual in the never-taken branch.
+      inst[1] = InstImm(op_bne, BOffImm16(offs16), zero, zero);
+    } else {
+      MOZ_ASSERT(inst[1].extractBitField(31, 26) ==
+                 (static_cast<uint32_t>(op_jirl) >> 26));
+      const Register rd = Register::FromCode(inst[1].extractRD());
+      inst[1] = InstImm(op_jirl, BOffImm16(offs16), scratch, rd);
+    }
+  }
 }
 
 uintptr_t Assembler::GetPointer(uint8_t* instPtr) {
@@ -2128,8 +2157,18 @@ uintptr_t Assembler::GetPointer(uint8_t* instPtr) {
 }
 
 static JitCode* CodeFromJump(Instruction* jump) {
-  uint8_t* target = (uint8_t*)Assembler::ExtractLoad64Value(jump);
-  return JitCode::FromExecutable(target);
+  // The pair is [pcaddu18i][jirl], or [pcaddu18i][bne] when the call is
+  // toggled off; both carry the residual in their immediate field.
+  InstImm* const i0 = (InstImm*)jump;
+  InstImm* const i1 = (InstImm*)i0->next();
+  MOZ_ASSERT((i0->extractBitField(31, 25)) ==
+             (static_cast<uint32_t>(op_pcaddu18i) >> 25));
+  const int32_t si20 =
+      (static_cast<int32_t>(i0->extractBitField(24, 5)) << 12) >> 12;
+  const int64_t target = reinterpret_cast<int64_t>(jump) +
+                         (static_cast<int64_t>(si20) << 18) +
+                         BOffImm16(*i1).decode();
+  return JitCode::FromExecutable(reinterpret_cast<uint8_t*>(target));
 }
 
 void Assembler::TraceJumpRelocations(JSTracer* trc, JitCode* code,
@@ -2202,7 +2241,6 @@ void Assembler::Bind(uint8_t* rawCode, const CodeLabel& label) {
 
 void Assembler::bind(InstImm* inst, uintptr_t branch, uintptr_t target) {
   int64_t offset = target - branch;
-  InstImm inst_jirl = InstImm(op_jirl, BOffImm16(0), zero, ra);
   InstImm inst_beq = InstImm(op_beq, BOffImm16(0), zero, zero);
 
   // If encoded offset is 4, then the jump must be short
@@ -2215,49 +2253,42 @@ void Assembler::bind(InstImm* inst, uintptr_t branch, uintptr_t target) {
 
   UseScratchRegisterScope temps(*this);
 
-  // Generate the long jump for calls because return address has to be the
-  // address after the reserved block.
-  if (inst[0].encode() == inst_jirl.encode()) {
+  // A call is reserved as [pcaddu18i ?, 0][chain]. See also the last arm of
+  // MacroAssemblerLOONG64::ma_bl(Label* label).
+  if (inst[0].extractBitField(31, 25) == ((uint32_t)op_pcaddu18i >> 25)) {
+    MOZ_ASSERT(inst[0].extractBitField(24, 5) == 0);
+
     Register scratch = temps.Acquire();
-    addLongJump(BufferOffset(branch), BufferOffset(target));
-    Assembler::WriteLoad64Instructions(inst, scratch,
-                                       LabelBase::INVALID_OFFSET);
-    inst[3].makeNop();  // There are 1 nop.
-    inst[4] = InstImm(op_jirl, BOffImm16(0), scratch, ra);
+    const auto [si20, offs16] = SplitJump36Offset(offset);
+    inst[0] = InstImm(op_pcaddu18i, si20, scratch, false);
+    inst[1] = InstImm(op_jirl, BOffImm16(offs16), scratch, ra);
     return;
   }
 
   if (BOffImm16::IsInRange(offset)) {
-    // Skip trailing nops .
-    bool skipNops = (inst[0].encode() != inst_jirl.encode() &&
-                     inst[0].encode() != inst_beq.encode());
+    bool conditional = inst[0].encode() != inst_beq.encode();
 
     inst[0].setBOffImm16(BOffImm16(offset));
-    inst[1].makeNop();
-
-    if (skipNops) {
-      inst[2] = InstImm(op_bge, BOffImm16(3 * sizeof(uint32_t)), zero, zero);
-      // There are 2 nops after this
+    if (conditional) {
+      // Skip the trailing nop on the fallthrough path.
+      inst[1] = InstImm(op_bge, BOffImm16(2 * sizeof(uint32_t)), zero, zero);
+    } else {
+      inst[1].makeNop();
     }
     return;
   }
 
   if (inst[0].encode() == inst_beq.encode()) {
-    // Handle long unconditional jump. Only four 4 instruction.
-    addLongJump(BufferOffset(branch), BufferOffset(target));
     Register scratch = temps.Acquire();
-    Assembler::WriteLoad64Instructions(inst, scratch,
-                                       LabelBase::INVALID_OFFSET);
-    inst[3] = InstImm(op_jirl, BOffImm16(0), scratch, zero);
+    const auto [si20, offs16] = SplitJump36Offset(offset);
+    inst[0] = InstImm(op_pcaddu18i, si20, scratch, false);
+    inst[1] = InstImm(op_jirl, BOffImm16(offs16), scratch, zero);
   } else {
-    // Handle long conditional jump.
-    inst[0] = invertBranch(inst[0], BOffImm16(5 * sizeof(uint32_t)));
-    // No need for a "nop" here because we can clobber scratch.
-    addLongJump(BufferOffset(branch + sizeof(uint32_t)), BufferOffset(target));
+    inst[0] = invertBranch(inst[0], BOffImm16(3 * sizeof(uint32_t)));
     Register scratch = temps.Acquire();
-    Assembler::WriteLoad64Instructions(&inst[1], scratch,
-                                       LabelBase::INVALID_OFFSET);
-    inst[4] = InstImm(op_jirl, BOffImm16(0), scratch, zero);
+    const auto [si20, offs16] = SplitJump36Offset(offset - sizeof(uint32_t));
+    inst[1] = InstImm(op_pcaddu18i, si20, scratch, false);
+    inst[2] = InstImm(op_jirl, BOffImm16(offs16), scratch, zero);
   }
 }
 
@@ -2392,24 +2423,22 @@ uint64_t Assembler::ExtractInstructionImmediate(uint8_t* code) {
 }
 
 void Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled) {
-  Instruction* inst = (Instruction*)inst_.raw();
-  InstImm* i0 = (InstImm*)inst;
-  InstImm* i1 = (InstImm*)i0->next();
-  InstImm* i2 = (InstImm*)i1->next();
-  Instruction* i3 = (Instruction*)i2->next();
+  InstImm* const i0 = (InstImm*)inst_.raw();  // pcaddu18i
+  InstImm* const i1 = (InstImm*)i0->next();  // jirl (enabled) or bne (disabled)
 
-  MOZ_ASSERT((i0->extractBitField(31, 25)) == ((uint32_t)op_lu12i_w >> 25));
-  MOZ_ASSERT((i1->extractBitField(31, 22)) == ((uint32_t)op_ori >> 22));
-  MOZ_ASSERT((i2->extractBitField(31, 25)) == ((uint32_t)op_lu32i_d >> 25));
+  MOZ_ASSERT((i0->extractBitField(31, 25)) == ((uint32_t)op_pcaddu18i >> 25));
+  const BOffImm16 offs = BOffImm16(*i1);
+  const Register scratch = Register::FromCode(i0->extractRD());
+  const mozilla::DebugOnly<uint32_t> i1_op = i1->extractBitField(31, 26);
 
   if (enabled) {
-    MOZ_ASSERT((i3->extractBitField(31, 25)) != ((uint32_t)op_lu12i_w >> 25));
-    InstImm jirl =
-        InstImm(op_jirl, BOffImm16(0), Register::FromCode(i2->extractRD()), ra);
-    *i3 = jirl;
+    MOZ_ASSERT_IF(i1_op != ((uint32_t)op_bne >> 26),
+                  i1_op == ((uint32_t)op_jirl >> 26));
+    *i1 = InstImm(op_jirl, offs, scratch, ra);
   } else {
-    InstNOP nop;
-    *i3 = nop;
+    MOZ_ASSERT_IF(i1_op != ((uint32_t)op_jirl >> 26),
+                  i1_op == ((uint32_t)op_bne >> 26));
+    *i1 = InstImm(op_bne, offs, zero, zero);
   }
 }
 

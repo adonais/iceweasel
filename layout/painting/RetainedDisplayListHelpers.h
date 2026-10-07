@@ -7,6 +7,7 @@
 
 #include "PLDHashTable.h"
 #include "mozilla/Span.h"
+#include "nsTArray.h"
 
 class nsIFrame;
 

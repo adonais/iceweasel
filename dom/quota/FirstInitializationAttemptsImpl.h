@@ -7,7 +7,6 @@
 
 #include "FirstInitializationAttempts.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/TelemetryHistogramEnums.h"
 #include "mozilla/glean/DomQuotaMetrics.h"
 #include "nsError.h"
 

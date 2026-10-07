@@ -37,6 +37,7 @@ from mozlog.formatters import MachFormatter
 from mozlog.handlers import ResourceHandler, StreamHandler
 from mozlog.structuredlog import StructuredLogger
 from mozlog.structuredlog import log_actions as get_log_actions
+from packaging.version import Version
 
 from mozbuild.base import (
     BinaryNotFoundException,
@@ -1922,14 +1923,24 @@ def _get_desktop_run_parser():
         action="store_true",
         help="Do not pass the --profile argument by default.",
     )
-    group.add_argument(
+    appdata_group = group.add_mutually_exclusive_group()
+    appdata_group.add_argument(
         "--appdata",
         "-a",
         nargs="?",
         const=True,
+        default=None,
+        help="Overrides the application data storage area. Without an argument, "
+        "defaults to a temporary location in the object directory. When passed "
+        "explicitly, also implies --noprofile. This override is enabled by "
+        "default even without -a; pass --default-appdata to disable it.",
+    )
+    appdata_group.add_argument(
+        "--default-appdata",
+        action="store_true",
         default=False,
-        help="Overrides the application data storage area defaulting to a "
-        "temporary location in the object directory. Implies --noprofile.",
+        help="Use the system default application data directory instead of "
+        "overriding it to a location in the object directory.",
     )
     group.add_argument(
         "--disable-e10s",
@@ -2469,6 +2480,23 @@ def _run_jsshell(command_context, params, debug, debugger, debugger_args):
     )
 
 
+MOZILLA_MACOS_TEAM_ID = "43AQ936H96"
+
+
+def _macos_is_signed_by_mozilla(path):
+    try:
+        proc = subprocess.run(
+            ["codesign", "-dvv", path],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return False
+    m = re.search(r"^TeamIdentifier=(.+)$", proc.stderr, re.MULTILINE)
+    return bool(m) and m.group(1) == MOZILLA_MACOS_TEAM_ID
+
+
 def _run_desktop(
     command_context,
     params,
@@ -2477,6 +2505,7 @@ def _run_desktop(
     background,
     noprofile,
     appdata,
+    default_appdata,
     disable_e10s,
     enable_crash_reporter,
     disable_fission,
@@ -2492,6 +2521,15 @@ def _run_desktop(
     show_dump_stats,
 ):
     from mozprofile import Preferences, Profile
+
+    if default_appdata:
+        use_appdata = False
+    elif appdata is None:
+        use_appdata = True
+    else:
+        use_appdata = appdata
+
+    skip_profile = appdata is not None
 
     try:
         if packaged:
@@ -2582,7 +2620,7 @@ def _run_desktop(
         no_profile_option_given
         and no_backgroundtask_mode_option_given
         and not noprofile
-        and not appdata
+        and not skip_profile
     ):
         prefs = {
             "browser.aboutConfig.showWarning": False,
@@ -2634,12 +2672,55 @@ def _run_desktop(
         "RUST_BACKTRACE": "full",
     }
 
-    if appdata:
-        if appdata is True:
-            appdata = tmpdir
+    if (
+        not use_appdata
+        and sys.platform == "darwin"
+        and conditions.is_firefox(command_context)
+        and "MOZ_APP_DATA" not in os.environ
+        and Version(platform.mac_ver()[0]) >= Version("27")
+    ):
+        # Starting with macOS 27, Firefox's data directory (by default
+        # `~/Library/Application Support/Firefox` unless overriden by the
+        # environment variable MOZ_APP_DATA) is not accessible unless the
+        # application is signed by Mozilla or given permission to read
+        # Firefox data in macOS Privacy & Security system settings. For
+        # `./mach run`, which launches Firefox by bare executable (unless
+        # --macos-open is used), the terminal application is the
+        # "responsible process" and therefore giving it permission to read
+        # Firefox data is sufficient for `./mach run` to work normally.
+        # The extended attribute `com.apple.macl` indicates protection is
+        # enabled for the directory, but reading the attribute is prevented
+        # when the protection is enabled. For `--macos-open`, either an
+        # alternate app data directory or a signed build must be used.
+        if macos_open:
+            app_data_protected = not _macos_is_signed_by_mozilla(apppath)
+        else:
+            app_data_dir = os.path.expanduser("~/Library/Application Support/Firefox")
+            app_data_protected = os.path.isdir(app_data_dir) and not os.access(
+                app_data_dir, os.R_OK
+            )
+
+        if app_data_protected:
+            command_context.log(
+                logging.ERROR,
+                "run",
+                {},
+                "Firefox's application data directory could not be read "
+                "due to macOS application data protections. Allow the "
+                "terminal access to Firefox data in macOS Privacy & "
+                "Security -> Files & Folders settings to allow builds launched "
+                "from the CLI to access profile data. Alternatively, remove "
+                "`--default-appdata` OR set MOZ_APP_DATA & MOZ_LOCAL_APP_DATA "
+                "environment variables to use an alternate app directory for "
+                "all instances launched from the terminal. See bug 2068208 for "
+                "more information.",
+            )
+
+    if use_appdata:
+        appdata_dir = use_appdata if isinstance(use_appdata, str) else tmpdir
 
         extra_env["MOZ_APP_DATA"] = os.path.normpath(
-            os.path.join(appdata, "AppData", "Roaming")
+            os.path.join(appdata_dir, "AppData", "Roaming")
         )
         command_context.log(
             logging.INFO,
@@ -2648,7 +2729,7 @@ def _run_desktop(
             "Overriding application data directory to {app_data}",
         )
         extra_env["MOZ_LOCAL_APP_DATA"] = os.path.normpath(
-            os.path.join(appdata, "Local")
+            os.path.join(appdata_dir, "Local")
         )
         command_context.log(
             logging.INFO,
@@ -4029,9 +4110,6 @@ def repackage_single_locales(command_context, verbose=False, locales=[], dest=No
         # Simple as possible, please!
         "MOZ_SIMPLE_PACKAGE_NAME": "target",
     }
-    if not command_context.substs.get("MOZ_AUTOMATION") and sys.platform == "darwin":
-        # On macOS DMG packaging is slow to work with.
-        append_env["MOZ_PKG_FORMAT"] = "TAR"
 
     ensure_l10n_central(command_context)
 
@@ -4042,13 +4120,16 @@ def repackage_single_locales(command_context, verbose=False, locales=[], dest=No
         "Processing chrome Gecko resources for locales {locales}",
     )
 
-    def line_handler(line):
-        command_context.log(
-            logging.INFO,
-            "repackage-single-locales",
-            {"line": line},
-            "export> {line}",
-        )
+    def prefixed_line_handler(prefix):
+        def line_handler(line):
+            command_context.log(
+                logging.INFO,
+                "repackage-single-locales",
+                {"prefix": prefix, "line": line},
+                "{prefix}> {line}",
+            )
+
+        return line_handler
 
     command_context.run_process(
         [
@@ -4062,70 +4143,105 @@ def repackage_single_locales(command_context, verbose=False, locales=[], dest=No
         append_env=append_env,
         pass_thru=False,
         ensure_exit_code=True,
-        line_handler=line_handler,
+        line_handler=prefixed_line_handler("export"),
     )
 
-    for locale in locales:
-        command_context.log(
-            logging.INFO,
-            "repackage-single-locales",
-            {"locale": locale},
-            "Repackaging locale {locale}",
-        )
+    command_context.reload_config_environment()
 
-        def line_handler(line):
+    from mozbuild.action.l10n_repackage import uses_local_package
+
+    en_us_package = en_us_snapshot = None
+    if uses_local_package(command_context.substs):
+        suffix = command_context.substs["PKG_SUFFIX"]
+        package_name = append_env["MOZ_SIMPLE_PACKAGE_NAME"]
+        en_us_package = (
+            Path(command_context.topobjdir) / "dist" / f"{package_name}{suffix}"
+        )
+        if not en_us_package.is_file():
+            # `MOZ_SIMPLE_PACKAGE_NAME` gives the package this fixed name, so
+            # the package built here is the one every locale unpacks.
             command_context.log(
                 logging.INFO,
                 "repackage-single-locales",
-                {"locale": locale, "line": line},
-                "{locale}> {line}",
+                {"package": str(en_us_package)},
+                "Building the en-US package {package}",
+            )
+            command_context.run_process(
+                [
+                    sys.executable,
+                    mozpath.join(command_context.topsrcdir, "mach"),
+                    "--log-no-times",
+                    "package",
+                ]
+                + (["-v"] if verbose else []),
+                append_env=append_env,
+                pass_thru=False,
+                ensure_exit_code=True,
+                line_handler=prefixed_line_handler("package"),
+            )
+        en_us_snapshot = en_us_package.with_name(f"{package_name}.en-US{suffix}")
+        shutil.copy2(en_us_package, en_us_snapshot)
+        append_env["MOZ_ARTIFACT_FILE"] = str(en_us_snapshot)
+
+    try:
+        for locale in locales:
+            command_context.log(
+                logging.INFO,
+                "repackage-single-locales",
+                {"locale": locale},
+                "Repackaging locale {locale}",
             )
 
-        command_context.run_process(
-            [
-                sys.executable,
-                mozpath.join(command_context.topsrcdir, "mach"),
-                "--log-no-times",
-                "configure",
-                f"--enable-ui-locale={locale}",
-            ],
-            append_env=append_env,
-            pass_thru=False,
-            ensure_exit_code=True,
-            line_handler=line_handler,
-        )
+            line_handler = prefixed_line_handler(locale)
 
-        command_context.run_process(
-            [
-                sys.executable,
-                mozpath.join(command_context.topsrcdir, "mach"),
-                "--log-no-times",
-                "build",
-            ]
-            + (["-v"] if verbose else [])
-            + [
-                f"installers-{locale}",
-            ],
-            append_env=append_env,
-            pass_thru=False,
-            ensure_exit_code=True,
-            line_handler=line_handler,
-        )
+            command_context.run_process(
+                [
+                    sys.executable,
+                    mozpath.join(command_context.topsrcdir, "mach"),
+                    "--log-no-times",
+                    "configure",
+                    f"--enable-ui-locale={locale}",
+                ],
+                append_env=append_env,
+                pass_thru=False,
+                ensure_exit_code=True,
+                line_handler=line_handler,
+            )
 
-        append_env["UPLOAD_PATH"] = mozpath.join(dest, locale)
+            command_context.run_process(
+                [
+                    sys.executable,
+                    mozpath.join(command_context.topsrcdir, "mach"),
+                    "--log-no-times",
+                    "build",
+                ]
+                + (["-v"] if verbose else [])
+                + [
+                    f"installers-{locale}",
+                ],
+                append_env=append_env,
+                pass_thru=False,
+                ensure_exit_code=True,
+                line_handler=line_handler,
+            )
 
-        command_context._run_make(
-            directory=os.path.join(command_context.topobjdir),
-            target=["upload", f"AB_CD={locale}"],
-            append_env=append_env,
-            pass_thru=False,
-            print_directory=False,
-            ensure_exit_code=True,
-            silent=not verbose,
-            # We do our own logging.
-            log=False,
-            line_handler=line_handler,
-        )
+            append_env["UPLOAD_PATH"] = mozpath.join(dest, locale)
+
+            command_context._run_make(
+                directory=os.path.join(command_context.topobjdir),
+                target=["upload", f"AB_CD={locale}"],
+                append_env=append_env,
+                pass_thru=False,
+                print_directory=False,
+                ensure_exit_code=True,
+                silent=not verbose,
+                # We do our own logging.
+                log=False,
+                line_handler=line_handler,
+            )
+    finally:
+        if en_us_snapshot:
+            shutil.move(en_us_snapshot, en_us_package)
 
     return 0
 

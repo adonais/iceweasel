@@ -3,7 +3,7 @@
 requestLongerTimeout(2);
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/base/content/test/general/head.js",
+  "chrome://mochitests/content/browser/browser/base/content/test/browser-general/head.js",
   this
 );
 

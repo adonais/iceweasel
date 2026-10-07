@@ -75,6 +75,7 @@ Var OpenedDownloadPage
 
 Var DownloadServerIP
 Var PostSigningData
+Var NotificationHelperStopExitCode
 Var PreviousInstallDir
 Var ProfileCleanupPromptType
 Var AppLaunchWaitTickCount
@@ -721,6 +722,10 @@ Function LaunchFullInstaller
   ; the config file above.
   ${GetShortcutsLogPath} $0
   Delete "$0"
+
+!ifdef MOZ_PUSH_NOTIFICATION_HELPER
+  ${SignalPushNotificationHelperStop} $NotificationHelperStopExitCode
+!endif
 
   ${RemovePrecompleteEntries} "false"
 
@@ -1374,6 +1379,7 @@ Function CommonOnInit
   StrCpy $DownloadRequestsBlockedByServer 0
   ; Initialize PostSigningData to detect case of not being set at all
   StrCpy $PostSigningData "stub_installer:unset"
+  StrCpy $NotificationHelperStopExitCode "unset"
   StrCpy $LANGUAGE 0
   ; This macro is used to set the brand name variables but the ini file method
   ; isn't supported for the stub installer.

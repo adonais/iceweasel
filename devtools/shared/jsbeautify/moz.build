@@ -9,3 +9,8 @@ DIRS += [
 DevToolsModules(
     'beautify.js',
 )
+
+LICENSED_UNDER += ["acorn"]
+LICENSED_UNDER["acorn"].paths = [
+    "src/beautify-js.js",
+]

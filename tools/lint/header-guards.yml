@@ -15,6 +15,7 @@ header-guards:
     - config/windows-h-constant.decls.h
     - config/windows-h-unicode.decls.h
     - dom/events/EventDispatcher.h
+    - dom/onnx/onnxruntime_ep_c_api.h
     - editor/txmgr/nsTransactionManagerCID.h
     - gfx/vr/service/oculus/ovr_capi_dynamic.h
     - gfx/src/X11UndefineNone.h

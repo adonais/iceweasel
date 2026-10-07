@@ -30,10 +30,24 @@ from mozharness.base.script import (
     ScriptMixin,
 )
 
-external_tools_path = os.path.join(
-    os.path.abspath(os.path.dirname(os.path.dirname(mozharness.__file__))),
-    "external_tools",
+PERFHERDER_SCHEMA_RELPATH = os.path.join(
+    "testing",
+    "performance",
+    "common",
+    "performance-artifact-schema.json",
 )
+
+
+def perfherder_schema_path():
+    mozharness_root = os.path.abspath(
+        os.path.dirname(os.path.dirname(mozharness.__file__))
+    )
+    topsrcdir = os.path.dirname(os.path.dirname(mozharness_root))
+    for root in (topsrcdir, mozharness_root):
+        path = os.path.join(root, PERFHERDER_SCHEMA_RELPATH)
+        if os.path.exists(path):
+            return path
+    return os.path.join(topsrcdir, PERFHERDER_SCHEMA_RELPATH)
 
 
 class MultipleWheelMatchError(Exception):
@@ -135,7 +149,6 @@ class VirtualenvMixin:
     """
 
     python_paths = {}
-    site_packages_path = None
 
     def __init__(self, *args, **kwargs):
         self._virtualenv_modules = []
@@ -200,17 +213,6 @@ class VirtualenvMixin:
             )
 
         return self.python_paths[binary]
-
-    def query_python_site_packages_path(self):
-        if self.site_packages_path:
-            return self.site_packages_path
-        python = self.query_python_path()
-        self.site_packages_path = self.get_output_from_command([
-            python,
-            "-c",
-            "from sysconfig; print(sysconfig.get_paths()['purelib'])",
-        ])
-        return self.site_packages_path
 
     def package_versions(
         self, pip_freeze_output=None, error_level=WARNING, log_output=False
@@ -1003,9 +1005,7 @@ class ResourceMonitoringMixin(PerfherderResourceOptionsMixin):
                 "suites": suites,
             }
 
-            schema_path = os.path.join(
-                external_tools_path, "performance-artifact-schema.json"
-            )
+            schema_path = perfherder_schema_path()
             with open(schema_path, "rb") as fh:
                 schema = json.load(fh)
 
@@ -1069,151 +1069,6 @@ class ResourceMonitoringMixin(PerfherderResourceOptionsMixin):
 
     def _tinderbox_print(self, message):
         self.info("TinderboxPrint: %s" % message)
-
-
-# This needs to be inherited only if you have already inherited ScriptMixin
-class Python3Virtualenv:
-    """Support Python3.5+ virtualenv creation."""
-
-    py3_initialized_venv = False
-
-    def py3_venv_configuration(self, python_path, venv_path):
-        """We don't use __init__ to allow integrating with other mixins.
-
-        python_path - Path to Python 3 binary.
-        venv_path - Path to virtual environment to be created.
-        """
-        self.py3_initialized_venv = True
-        self.py3_python_path = os.path.abspath(python_path)
-        version = self.get_output_from_command(
-            [self.py3_python_path, "--version"], env=self.query_env()
-        ).split()[-1]
-        # Using -m venv is only used on 3.5+ versions
-        assert version > "3.5.0"
-        self.py3_venv_path = os.path.abspath(venv_path)
-        self.py3_pip_path = os.path.join(self.py3_path_to_executables(), "pip")
-
-    def py3_path_to_executables(self):
-        platform = self.platform_name()
-        if platform.startswith("win"):
-            return os.path.join(self.py3_venv_path, "Scripts")
-        else:
-            return os.path.join(self.py3_venv_path, "bin")
-
-    def py3_venv_initialized(func):
-        def call(self, *args, **kwargs):
-            if not self.py3_initialized_venv:
-                raise Exception(
-                    "You need to call py3_venv_configuration() "
-                    "before using this method."
-                )
-            func(self, *args, **kwargs)
-
-        return call
-
-    @py3_venv_initialized
-    def py3_create_venv(self):
-        """Create Python environment with python3 -m venv /path/to/venv."""
-        if os.path.exists(self.py3_venv_path):
-            self.info(
-                "Virtualenv %s appears to already exist; skipping "
-                "virtualenv creation." % self.py3_venv_path
-            )
-        else:
-            self.info("Running command...")
-            self.run_command(
-                "%s -m venv %s" % (self.py3_python_path, self.py3_venv_path),
-                error_list=VirtualenvErrorList,
-                halt_on_failure=True,
-                env=self.query_env(),
-            )
-
-    @py3_venv_initialized
-    def py3_install_modules(self, modules, use_mozharness_pip_config=True):
-        if not os.path.exists(self.py3_venv_path):
-            raise Exception("You need to call py3_create_venv() first.")
-
-        for m in modules:
-            pip_install_command_args = []
-            pip_install_non_uv_args = []
-            if use_mozharness_pip_config:
-                pip_args, pip_install_non_uv_args = self._mozharness_pip_args()
-                pip_install_command_args += pip_args
-            pip_install_command_args += [m]
-
-            pip_install_command = (
-                pip_command(
-                    python_executable=self.py3_python_path,
-                    subcommand="install",
-                    args=pip_install_command_args,
-                    non_uv_args=pip_install_non_uv_args,
-                ),
-            )
-            self.run_command(pip_install_command, env=self.query_env())
-
-    def _mozharness_pip_args(self):
-        """We have information in Mozharness configs that apply to pip"""
-        c = self.config
-        pip_args = []
-        # To avoid timeouts with our pypi server, increase default timeout:
-        # https://bugzilla.mozilla.org/show_bug.cgi?id=1007230#c802
-        non_uv_pip_args = ["--timeout", str(c.get("pip_timeout", 120))]
-
-        if c.get("find_links") and not c["pip_index"]:
-            pip_args += ["--no-index"]
-
-        non_uv_pip_args += ["--no-use-pep517"]
-
-        # Add --find-links pages to look at. Add --trusted-host automatically if
-        # the host isn't secure. This allows modern versions of pip to connect
-        # without requiring an override.
-        trusted_hosts = set()
-        for link in c.get("find_links", []):
-            parsed = urlparse.urlparse(link)
-
-            try:
-                socket.gethostbyname(parsed.hostname)
-            except socket.gaierror as e:
-                self.info("error resolving %s (ignoring): %s" % (parsed.hostname, e))
-                continue
-
-            pip_args += ["--find-links", link]
-            if parsed.scheme != "https":
-                trusted_hosts.add(parsed.hostname)
-
-        for host in sorted(trusted_hosts):
-            pip_args += ["--trusted-host", host]
-
-        return pip_args, non_uv_pip_args
-
-    @py3_venv_initialized
-    def py3_install_requirement_files(
-        self, requirements, pip_args=[], use_mozharness_pip_config=True
-    ):
-        """
-        requirements - You can specify multiple requirements paths
-        """
-        pip_install_command_args = []
-        pip_install_command_args += pip_args
-        pip_install_non_uv_args = []
-
-        if use_mozharness_pip_config:
-            pip_args, pip_install_non_uv_args = self._mozharness_pip_args()
-            pip_install_command_args += pip_args
-
-        for requirement_path in requirements:
-            pip_install_command_args += ["-r", requirement_path]
-
-        pip_install_command = (
-            pip_command(
-                python_executable=self.py3_python_path,
-                subcommand="install",
-                args=pip_install_command_args,
-                non_uv_args=pip_install_non_uv_args,
-            ),
-        )
-
-        self.run_command(pip_install_command, env=self.query_env())
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@
 #else
 #  include <pthread.h>
 
+#  include "mozilla/Assertions.h"
 #  include "mozilla/DebugOnly.h"
 #endif
 

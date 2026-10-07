@@ -91,49 +91,33 @@ add_task(async function test_autofill_www() {
   await PlacesUtils.history.clear();
 });
 
-add_task(
-  {
-    pref_set: [["browser.urlbar.tabToSearch.onboard.interactionsLeft", 0]],
-  },
-  async function test_autofill_prefix_priority() {
-    const origin = "localhost";
-    const url = `https://${origin}/`;
-    await PlacesTestUtils.addVisits([
-      { url, transition: PlacesUtils.history.TRANSITION_TYPED },
-      {
-        url: `http://${origin}/`,
-        transition: PlacesUtils.history.TRANSITION_TYPED,
-      },
-    ]);
-    await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
+add_task(async function test_autofill_prefix_priority() {
+  const origin = "localhost";
+  const url = `https://${origin}/`;
+  await PlacesTestUtils.addVisits([
+    { url, transition: PlacesUtils.history.TRANSITION_TYPED },
+    {
+      url: `http://${origin}/`,
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+  ]);
+  await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
-    let engine = SearchService.defaultEngine;
-    let context = createContext(origin.substring(0, 2), { isPrivate: false });
-    await check_results({
-      context,
-      autofilled: `${origin}/`,
-      completed: url,
-      matches: [
-        makeVisitResult(context, {
-          uri: url,
-          title: `test visit for ${url}`,
-          heuristic: true,
-        }),
-        makeSearchResult(context, {
-          engineName: engine.name,
-          engineIconUri: UrlbarShared.ICON.SEARCH_GLASS,
-          searchUrlDomainWithoutSuffix: UrlbarUtils.stripPublicSuffixFromHost(
-            engine.searchUrlDomain
-          ),
-          providesSearchMode: true,
-          query: "",
-          providerName: "UrlbarProviderTabToSearch",
-        }),
-      ],
-    });
-    await PlacesUtils.history.clear();
-  }
-);
+  let context = createContext(origin.substring(0, 2), { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: `${origin}/`,
+    completed: url,
+    matches: [
+      makeVisitResult(context, {
+        uri: url,
+        title: `test visit for ${url}`,
+        heuristic: true,
+      }),
+    ],
+  });
+  await PlacesUtils.history.clear();
+});
 
 add_task(async function test_autofill_threshold() {
   await PlacesTestUtils.addVisits(

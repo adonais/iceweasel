@@ -25,7 +25,7 @@ import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.pbmlock.UnlockPrivateTabsTrayScreen
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
-import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
+import org.mozilla.fenix.tabstray.controller.ItemInteractionHandler
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.PrivateBrowsingState
@@ -42,7 +42,7 @@ private val EmptyPageWidth = 190.dp
  * @param onTabClose Invoked when the user clicks to close a tab.
  * @param onItemClick Invoked when the user clicks on a tab.
  * @param onItemLongClick Invoked when the user long clicks on a tab.
- * @param tabInteractionHandler Handlers tab interactions such as moves and drag and drop.
+ * @param itemInteractionHandler Handles tab interactions such as moves and drag and drop.
  * @param onUnlockPbmClick Invoked when user clicks on Unlock button.
  */
 @Suppress("LongParameterList")
@@ -53,7 +53,7 @@ internal fun PrivateTabsPage(
     onTabClose: (TabsTrayItem.Tab) -> Unit,
     onItemClick: (TabsTrayItem) -> Unit,
     onItemLongClick: (TabsTrayItem) -> Unit,
-    tabInteractionHandler: TabInteractionHandler,
+    itemInteractionHandler: ItemInteractionHandler,
     onUnlockPbmClick: () -> Unit,
 ) {
     when {
@@ -69,7 +69,7 @@ internal fun PrivateTabsPage(
             TabLayout(
                 tabs = state.tabs,
                 displayTabsInGrid = config.displayTabsInGrid,
-                tabInteractionHandler = tabInteractionHandler,
+                itemInteractionHandler = itemInteractionHandler,
                 selectedItemIndex = state.selectedItemIndex,
                 selectionMode = Mode.Normal, // Multiselection is not supported in private tabs
                 modifier = Modifier.testTag(TabsTrayTestTag.PRIVATE_TABS_LIST),

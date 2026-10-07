@@ -112,7 +112,7 @@ nscoord nsComboboxControlFrame::GetLongestOptionISize(
   auto textTransform = textStyle->mTextTransform.IsNone()
                            ? Nothing()
                            : Some(textStyle->mTextTransform);
-  nsAtom* language = StyleFont()->mLanguage;
+  nsAtom* language = StyleFont()->GetLangAtom();
   AutoTArray<bool, 50> charsToMergeArray;
   AutoTArray<bool, 50> deletedCharsArray;
   auto GetOptionSize = [&](uint32_t aIndex) -> nscoord {

@@ -3,15 +3,18 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 use std::{
-    ffi::c_void,
-    os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle},
+    ffi::{c_void, OsString},
+    os::windows::{
+        ffi::OsStringExt,
+        io::{AsRawHandle, FromRawHandle, OwnedHandle},
+    },
     ptr::null_mut,
 };
 
 use windows_sys::Win32::{
-    Foundation::{FALSE, HANDLE, INVALID_HANDLE_VALUE},
+    Foundation::{FALSE, HANDLE, INVALID_HANDLE_VALUE, MAX_PATH},
     Security::{GetLengthSid, GetTokenInformation, TokenUser, TOKEN_QUERY, TOKEN_USER},
-    System::Threading::{GetCurrentProcess, OpenProcessToken},
+    System::Threading::{GetCurrentProcess, OpenProcessToken, QueryFullProcessImageNameW},
 };
 
 use super::ApplicationInfo;
@@ -94,11 +97,41 @@ impl ApplicationInfo {
         unsafe { extract_sid_from_token(&token) }
             .map(|sid| sid.iter().copied().map(u64::from).sum())
     }
+
+    /// Returns the full path of the client process executable image (e.g.
+    /// `C:\Program Files\Mozilla Firefox\firefox.exe`), or `None` if it could not be
+    /// determined.
+    ///
+    /// This is the Win32 path rather than the native one, which matters: it is what the
+    /// Exploit Protection registry entries are written in, so it can be compared against
+    /// them directly.
+    pub fn get_application_path(&self) -> Option<OsString> {
+        let process = self.client.as_ref()?.0.as_raw_handle() as HANDLE;
+
+        let mut buffer = [0u16; MAX_PATH as usize];
+        let mut size = buffer.len() as u32;
+        // SAFETY: `process` is a valid handle, the buffer is duly allocated and properly sized.
+        let res = unsafe {
+            QueryFullProcessImageNameW(
+                process,
+                /*dwFlags*/ 0,
+                buffer.as_mut_ptr(),
+                &mut size as _,
+            )
+        };
+
+        if res == FALSE {
+            return None;
+        }
+
+        Some(OsString::from_wide(&buffer[..size as usize]))
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ProcessHandle;
     use windows_sys::Win32::{
         Security::{
             CreateWellKnownSid, ImpersonateAnonymousToken, RevertToSelf, WinAnonymousSid,
@@ -177,5 +210,23 @@ mod tests {
         assert_eq!(sid.as_deref(), Some(anonymous_sid));
 
         drop(anon);
+    }
+
+    #[test]
+    fn test_application_path_is_self() {
+        let app_info = ApplicationInfo::new(
+            "".to_string(),
+            Some(ProcessHandle::current_process().unwrap()),
+        );
+        assert_eq!(
+            Some(std::env::current_exe().unwrap().into_os_string()),
+            app_info.get_application_path()
+        );
+    }
+
+    #[test]
+    fn test_application_path_without_client() {
+        let app_info = ApplicationInfo::new("".to_string(), None);
+        assert_eq!(app_info.get_application_path(), None);
     }
 }

@@ -59,7 +59,7 @@ class TestNrSocketTest : public MtransportTest {
     // is how we simulate a non-natted socket.
     RefPtr<TestNrSocket> sock(new TestNrSocket(nat ? nat : new TestNat));
     nr_transport_addr address;
-    nr_str_port_to_transport_addr(ip_str, 0, proto, &address);
+    nr_str_port_to_transport_addr(ip_str, nullptr, 0, proto, &address);
     int r = sock->create(&address);
     if (r) {
       return nullptr;
@@ -395,7 +395,7 @@ using mozilla::TestNrSocketTest;
 
 TEST_F(TestNrSocketTest, UnsafePortRejectedUDP) {
   nr_transport_addr address;
-  ASSERT_FALSE(nr_str_port_to_transport_addr("127.0.0.1",
+  ASSERT_FALSE(nr_str_port_to_transport_addr("127.0.0.1", nullptr,
                                              // ssh
                                              22, IPPROTO_UDP, &address));
   ASSERT_TRUE(NrSocketBase::IsForbiddenAddress(&address));
@@ -403,7 +403,7 @@ TEST_F(TestNrSocketTest, UnsafePortRejectedUDP) {
 
 TEST_F(TestNrSocketTest, UnsafePortRejectedTCP) {
   nr_transport_addr address;
-  ASSERT_FALSE(nr_str_port_to_transport_addr("127.0.0.1",
+  ASSERT_FALSE(nr_str_port_to_transport_addr("127.0.0.1", nullptr,
                                              // ssh
                                              22, IPPROTO_TCP, &address));
   ASSERT_TRUE(NrSocketBase::IsForbiddenAddress(&address));
@@ -411,7 +411,7 @@ TEST_F(TestNrSocketTest, UnsafePortRejectedTCP) {
 
 TEST_F(TestNrSocketTest, SafePortAcceptedUDP) {
   nr_transport_addr address;
-  ASSERT_FALSE(nr_str_port_to_transport_addr("127.0.0.1",
+  ASSERT_FALSE(nr_str_port_to_transport_addr("127.0.0.1", nullptr,
                                              // stuns
                                              5349, IPPROTO_UDP, &address));
   ASSERT_FALSE(NrSocketBase::IsForbiddenAddress(&address));
@@ -419,7 +419,7 @@ TEST_F(TestNrSocketTest, SafePortAcceptedUDP) {
 
 TEST_F(TestNrSocketTest, SafePortAcceptedTCP) {
   nr_transport_addr address;
-  ASSERT_FALSE(nr_str_port_to_transport_addr("127.0.0.1",
+  ASSERT_FALSE(nr_str_port_to_transport_addr("127.0.0.1", nullptr,
                                              // turns
                                              5349, IPPROTO_TCP, &address));
   ASSERT_FALSE(NrSocketBase::IsForbiddenAddress(&address));
@@ -429,15 +429,15 @@ TEST_F(TestNrSocketTest, WebrtcGoodPortAcceptedUDP) {
   nr_transport_addr address;
   // Port 53 is on Necko's generic block list but is explicitly allowed for
   // webrtc to allow punching through overzealous NATs.
-  ASSERT_FALSE(
-      nr_str_port_to_transport_addr("127.0.0.1", 53, IPPROTO_UDP, &address));
+  ASSERT_FALSE(nr_str_port_to_transport_addr("127.0.0.1", nullptr, 53,
+                                             IPPROTO_UDP, &address));
   ASSERT_FALSE(NrSocketBase::IsForbiddenAddress(&address));
 }
 
 TEST_F(TestNrSocketTest, WebrtcGoodPortAcceptedTCP) {
   nr_transport_addr address;
-  ASSERT_FALSE(
-      nr_str_port_to_transport_addr("127.0.0.1", 53, IPPROTO_TCP, &address));
+  ASSERT_FALSE(nr_str_port_to_transport_addr("127.0.0.1", nullptr, 53,
+                                             IPPROTO_TCP, &address));
   ASSERT_FALSE(NrSocketBase::IsForbiddenAddress(&address));
 }
 

@@ -20,6 +20,10 @@ add_setup(async function () {
     set: [
       ["dom.serviceWorkers.enabled", true],
       ["dom.serviceWorkers.testing.enabled", true],
+      // Traversing a container back might also cause an about:blank iframe
+      // entry to be restored and treated as initial. If the pref is removed,
+      // the test could be adapted to do a back traversal.
+      ["docshell.shistory.restoreSubframesOnReload", true],
     ],
   });
 });

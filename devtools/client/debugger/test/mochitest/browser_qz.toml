@@ -26,42 +26,20 @@ prefs = [
 ["browser_dbg-reducer-cleanup-on-target-removal.js"]
 
 ["browser_dbg-reloading.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2028047
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'",
-]
 
 ["browser_dbg-remember-expanded-scopes.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-restart-frame.js"]
 
 ["browser_dbg-returnvalues.js"]
 
 ["browser_dbg-scopes-duplicated.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-scopes-mutations.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-scopes-xrays.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-scopes.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-scroll-run-to-completion.js"]
 skip-if = [
@@ -75,9 +53,6 @@ skip-if = [
 ["browser_dbg-search-file-retains-query.js"]
 
 ["browser_dbg-search-file.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-settings-disable-javascript.js"]
 
@@ -100,9 +75,6 @@ fail-if = [
 ["browser_dbg-stepping.js"]
 
 ["browser_dbg-stylesheets.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-tabs-keyboard.js"]
 
@@ -118,9 +90,6 @@ fail-if = [
 ["browser_dbg-tabs.js"]
 
 ["browser_dbg-telemetry-stylesheets.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-toggling-tools.js"]
 
@@ -129,13 +98,6 @@ fail-if = [
 ["browser_dbg-unselected-pause.js"]
 
 ["browser_dbg-watchpoints.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1814093
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1814093
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1814093, Bug 2028047
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1814093
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1814093
-]
 
 ["browser_dbg-windowless-service-workers-reload.js"]
 
@@ -159,8 +121,5 @@ fail-if = [
 ["browser_dbg-wrong-fetch.js"]
 
 ["browser_dbg-xhr-breakpoints.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-xhr-run-to-completion.js"]

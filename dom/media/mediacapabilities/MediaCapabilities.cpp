@@ -33,6 +33,7 @@
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/layers/KnowsCompositor.h"
 #include "mozilla/media/MediaUtils.h"
+#include "mozilla/media/webrtc/AV1FmtpParser.h"
 #include "mozilla/media/webrtc/CodecInfo.h"
 #include "mozilla/media/webrtc/H264FmtpParser.h"
 #include "nsContentUtils.h"
@@ -239,6 +240,12 @@ static gfx::IntSize ClampedIntSize(uint32_t aWidth, uint32_t aHeight) {
       static_cast<int32_t>(std::min<uint32_t>(aHeight, INT32_MAX)));
 }
 
+static bool IsLowResolution(const VideoConfiguration& aConfig) {
+  const CheckedInt<uint32_t> pixels =
+      CheckedInt<uint32_t>(aConfig.mWidth) * aConfig.mHeight;
+  return pixels.isValid() && pixels.value() <= kLowResolutionPixelCount;
+}
+
 static CodecType WebrtcMimeToCodecType(const MediaExtendedMIMEType& aMime) {
   const nsCString& mime = aMime.Type().AsString();
   if (mime.EqualsLiteral("video/h264")) {
@@ -254,6 +261,61 @@ static CodecType WebrtcMimeToCodecType(const MediaExtendedMIMEType& aMime) {
     return CodecType::AV1;
   }
   return CodecType::Unknown;
+}
+
+template <typename InfoType>
+static InfoType UnsupportedInfo() {
+  InfoType info;
+  info.mSupported = false;
+  info.mSmooth = false;
+  info.mPowerEfficient = false;
+  return info;
+}
+
+// Whether aMime signals AV1 tier=1 with an explicit level below 4.0
+// (level-idx 8), for which Annex A.3 defines no high tier parameters.
+// Present-but-invalid parameters have already been rejected by
+// WebrtcCodecInfo during the support check, so only well-formed or absent
+// ones reach here. With an absent level-idx the level is inferred from the
+// requested resolution, which is only a lower bound, so tier can't be judged.
+static bool WebrtcVideoTierUndefined(const MediaExtendedMIMEType& aMime) {
+  if (WebrtcMimeToCodecType(aMime) != CodecType::AV1) {
+    return false;
+  }
+  const auto fmtp = ParseAV1Fmtp(aMime.OriginalString());
+  MOZ_ASSERT(!fmtp.HasInvalidParam());
+  return fmtp.mTier.isOk() && fmtp.mTier.inspect() == 1 &&
+         fmtp.mLevelIdx.isOk() && fmtp.mLevelIdx.inspect() < 8;
+}
+
+// Whether aVideo's resolution and framerate exceed the caps of the H264/AV1
+// level signaled in aMime's fmtp parameters. Present-but-invalid parameters
+// have already been rejected by WebrtcCodecInfo during the support check, so
+// only well-formed or absent ones reach here. An absent level is deliberately
+// not defaulted (to level 1.0 for H264, 3.1 for AV1, per their RTP payload
+// specs): the resolution and framerate are given explicitly, so the level is
+// inferred from them instead.
+static bool WebrtcVideoExceedsLevel(const MediaExtendedMIMEType& aMime,
+                                    const VideoConfiguration& aVideo) {
+  const auto framerate = static_cast<double>(aVideo.mFramerate);
+  switch (WebrtcMimeToCodecType(aMime)) {
+    case CodecType::H264: {
+      const auto fmtp = ParseH264Fmtp(aMime.OriginalString());
+      MOZ_ASSERT(!fmtp.HasInvalidParam());
+      return fmtp.mProfileLevel.isOk() &&
+             !H264LevelFits(fmtp.mProfileLevel.inspect().mLevel, aVideo.mWidth,
+                            aVideo.mHeight, framerate);
+    }
+    case CodecType::AV1: {
+      const auto fmtp = ParseAV1Fmtp(aMime.OriginalString());
+      MOZ_ASSERT(!fmtp.HasInvalidParam());
+      return fmtp.mLevelIdx.isOk() &&
+             !AV1LevelFits(fmtp.mLevelIdx.inspect(), aVideo.mWidth,
+                           aVideo.mHeight, framerate);
+    }
+    default:
+      return false;
+  }
 }
 
 // Returns an EncoderConfig for use with PEMFactory::Supports.
@@ -463,49 +525,38 @@ static uint32_t Vp8EncoderThreads(const uint32_t aPixels,
   return 1;
 #endif
 }
-static bool IsWebRTCSWEncodeSmooth(const VideoConfiguration& aConfig) {
-  const auto shouldForceSmooth =
-      StaticPrefs::media_mediacapabilities_webrtc_encode_smooth_override();
-  if (shouldForceSmooth == 1) {
-    return true;
-  } else if (shouldForceSmooth == 2) {
-    return false;
-  }
-
-  const NS_ConvertUTF16toUTF8 mimeStr(aConfig.mContentType);
-  const int32_t slash = mimeStr.FindChar('/');
-  if (slash < 0) {
-    return false;
-  }
-  const auto afterSlash = Substring(mimeStr, slash + 1);
-  const int32_t semi = afterSlash.FindChar(';');
-  nsAutoCString codecStr(semi >= 0 ? Substring(afterSlash, 0, semi)
-                                   : afterSlash);
-  codecStr.Trim(" \t");
-
+static bool IsSWEncodeSmooth(const CodecType aCodec,
+                             const VideoConfiguration& aConfig) {
   // ratio = clip_duration / wall_time at 60fps: >1.0 means faster than
   // real-time. threads = libwebrtc thread count used during measurement. For
   // non-standard resolutions: rounds up to nearest standard bucket
   // Approximates scaling linearly by framerate and thread count.
   static const struct {
-    const char* codec;
+    CodecType codec;
     uint32_t w, h;
     float ratio;  // realtime ratio at 60fps; >1.0 = faster than real-time
     uint32_t threads;
   } kMeasured[] = {
-      {"h264", 426, 240, 2.06f, 1},   {"h264", 854, 480, 1.71f, 1},
-      {"h264", 1280, 720, 1.51f, 1},  {"h264", 1920, 1080, 1.37f, 1},
-      {"h264", 3840, 2160, 0.47f, 1},  // not smooth at 60fps
-      {"av1", 426, 240, 2.10f, 2},    {"av1", 854, 480, 1.43f, 4},
-      {"av1", 1280, 720, 0.98f, 4},   // not smooth at 60fps
-      {"av1", 1920, 1080, 0.73f, 4},  // not smooth at 60fps
-      {"av1", 3840, 2160, 0.26f, 4},  // not smooth at 60fps
-      {"vp9", 426, 240, 1.94f, 1},    {"vp9", 854, 480, 1.85f, 2},
-      {"vp9", 1280, 720, 1.64f, 4},   {"vp9", 1920, 1080, 1.20f, 4},
-      {"vp9", 3840, 2160, 0.50f, 4},  // not smooth at 60fps
-      {"vp8", 426, 240, 2.01f, 1},    {"vp8", 854, 480, 1.80f, 3},
-      {"vp8", 1280, 720, 1.54f, 3},   {"vp8", 1920, 1080, 1.31f, 3},
-      {"vp8", 3840, 2160, 0.55f, 3},  // not smooth at 60fps
+      {CodecType::H264, 426, 240, 2.06f, 1},
+      {CodecType::H264, 854, 480, 1.71f, 1},
+      {CodecType::H264, 1280, 720, 1.51f, 1},
+      {CodecType::H264, 1920, 1080, 1.37f, 1},
+      {CodecType::H264, 3840, 2160, 0.47f, 1},  // not smooth at 60fps
+      {CodecType::AV1, 426, 240, 2.10f, 2},
+      {CodecType::AV1, 854, 480, 1.43f, 4},
+      {CodecType::AV1, 1280, 720, 0.98f, 4},   // not smooth at 60fps
+      {CodecType::AV1, 1920, 1080, 0.73f, 4},  // not smooth at 60fps
+      {CodecType::AV1, 3840, 2160, 0.26f, 4},  // not smooth at 60fps
+      {CodecType::VP9, 426, 240, 1.94f, 1},
+      {CodecType::VP9, 854, 480, 1.85f, 2},
+      {CodecType::VP9, 1280, 720, 1.64f, 4},
+      {CodecType::VP9, 1920, 1080, 1.20f, 4},
+      {CodecType::VP9, 3840, 2160, 0.50f, 4},  // not smooth at 60fps
+      {CodecType::VP8, 426, 240, 2.01f, 1},
+      {CodecType::VP8, 854, 480, 1.80f, 3},
+      {CodecType::VP8, 1280, 720, 1.54f, 3},
+      {CodecType::VP8, 1920, 1080, 1.31f, 3},
+      {CodecType::VP8, 3840, 2160, 0.55f, 3},  // not smooth at 60fps
   };
 
   const CheckedInt<uint32_t> pixelCount =
@@ -520,13 +571,14 @@ static bool IsWebRTCSWEncodeSmooth(const VideoConfiguration& aConfig) {
   const uint32_t cores =
       std::max(1u, static_cast<uint32_t>(GetNumberOfProcessors()));
 
-  // Actual thread count for this machine and codec.
-  uint32_t actualThreads = 1;  // h264 (openh264) is always single-threaded
-  if (codecStr.EqualsIgnoreCase("av1")) {
+  // Single-threaded default. OpenH264 media.gmp.encoder.multithreaded exists,
+  // isn't hooked up to WebRTC and is buggy, at least for decode. Bug 2065570.
+  uint32_t actualThreads = 1;
+  if (aCodec == CodecType::AV1) {
     actualThreads = Av1EncoderThreads(pixels, cores);
-  } else if (codecStr.EqualsIgnoreCase("vp9")) {
+  } else if (aCodec == CodecType::VP9) {
     actualThreads = Vp9EncoderThreads(pixels, cores);
-  } else if (codecStr.EqualsIgnoreCase("vp8")) {
+  } else if (aCodec == CodecType::VP8) {
     actualThreads = Vp8EncoderThreads(pixels, cores);
   }
 
@@ -535,7 +587,7 @@ static bool IsWebRTCSWEncodeSmooth(const VideoConfiguration& aConfig) {
   // (rounds up, conservative).
   int32_t bucketIdx = -1;
   for (int32_t i = 0; i < static_cast<int32_t>(std::size(kMeasured)); i++) {
-    if (!codecStr.EqualsIgnoreCase(kMeasured[i].codec)) {
+    if (aCodec != kMeasured[i].codec) {
       continue;
     } else if (kMeasured[i].w * kMeasured[i].h >= pixels) {
       bucketIdx = i;
@@ -551,6 +603,18 @@ static bool IsWebRTCSWEncodeSmooth(const VideoConfiguration& aConfig) {
       bucket.ratio * (60.0f / static_cast<float>(rfps)) *
       (static_cast<float>(actualThreads) / static_cast<float>(bucket.threads));
   return scaledRatio >= 1.0f;
+}
+
+static bool IsWebRTCSWEncodeSmooth(const CodecType aCodec,
+                                   const VideoConfiguration& aConfig) {
+  const auto shouldForceSmooth =
+      StaticPrefs::media_mediacapabilities_webrtc_encode_smooth_override();
+  if (shouldForceSmooth == 1) {
+    return true;
+  } else if (shouldForceSmooth == 2) {
+    return false;
+  }
+  return IsSWEncodeSmooth(aCodec, aConfig);
 }
 
 // Gets the global's event target and creates a new DOMMozPromiseRequestHolder
@@ -667,7 +731,7 @@ void MediaCapabilities::CreateWebRTCDecodingInfo(
   InvokeAsync(
       taskQueue, __func__,
       [aConfiguration, videoContainer = std::move(aVideoContainer),
-       audioContainer = std::move(aAudioContainer)] {
+       audioContainer = std::move(aAudioContainer)]() -> RefPtr<PromiseType> {
         MOZ_ASSERT(videoContainer || audioContainer);
 
         // Step 7 returns early if neither audio nor video are supported.
@@ -679,70 +743,62 @@ void MediaCapabilities::CreateWebRTCDecodingInfo(
         info.mSmooth = true;
         info.mPowerEfficient = true;
 
-        if (videoContainer) {
-          const auto& v = aConfiguration.mVideo.Value();
-          const auto& mime = videoContainer->ExtendedType();
-          if (WebrtcMimeToCodecType(mime) == CodecType::H264) {
-            const auto fmtp = ParseH264Fmtp(mime.OriginalString());
-            const bool invalidFmtp =
-                fmtp.mProfileLevel.isErr() &&
-                fmtp.mProfileLevel.inspectErr() == H264FmtpParseError::Invalid;
-            const bool levelTooLow =
-                fmtp.mProfileLevel.isOk() &&
-                !H264LevelFits(fmtp.mProfileLevel.inspect().mLevel, v.mWidth,
-                               v.mHeight, static_cast<double>(v.mFramerate));
-            if (invalidFmtp || levelTooLow) {
-              MediaCapabilitiesDecodingInfo unsupported;
-              unsupported.mSupported = false;
-              unsupported.mSmooth = false;
-              unsupported.mPowerEfficient = false;
-              LOG("{} -> {}", aConfiguration, unsupported);
-              return PromiseType::CreateAndResolve(
-                  std::move(unsupported), "MediaCapabilities::DecodingInfo");
-            }
-          }
-          const CheckedInt<uint32_t> pixels =
-              CheckedInt<uint32_t>(v.mWidth) * CheckedInt<uint32_t>(v.mHeight);
-          const bool lowResolution =
-              pixels.isValid() && pixels.value() <= kLowResolutionPixelCount;
-          // Normalize for PDMs that expect "video/avc"
-          nsCString trackMime(videoContainer->Type().AsString());
-          if (trackMime.LowerCaseEqualsLiteral("video/h264")) {
-            trackMime.AssignLiteral("video/avc");
-          }
-          auto trackInfo =
-              CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
-                  trackMime, *videoContainer);
-          if (!trackInfo) {
-            MediaCapabilitiesDecodingInfo unsupported;
-            unsupported.mSupported = false;
-            unsupported.mSmooth = false;
-            unsupported.mPowerEfficient = false;
-            LOG("{} -> {}", aConfiguration, unsupported);
-            return PromiseType::CreateAndResolve(
-                std::move(unsupported), "MediaCapabilities::DecodingInfo");
-          }
-          SupportDecoderParams videoParameters(
-              *trackInfo,
-              media::VideoFrameRate(static_cast<float>(v.mFramerate)));
-          auto videoSupport = SupportsVideoDecodeForWebrtc(
-              videoContainer->ExtendedType(), videoParameters);
-          if (videoSupport.isEmpty()) {
-            MediaCapabilitiesDecodingInfo unsupported;
-            unsupported.mSupported = false;
-            unsupported.mSmooth = false;
-            unsupported.mPowerEfficient = false;
-            LOG("{} -> {}", aConfiguration, unsupported);
-            return PromiseType::CreateAndResolve(
-                std::move(unsupported), "MediaCapabilities::DecodingInfo");
-          }
-          const bool hwSupported =
-              videoSupport.contains(media::DecodeSupport::HardwareDecode);
-          info.mPowerEfficient = hwSupported || lowResolution;
+        if (!videoContainer) {
+          return PromiseType::CreateAndResolve(
+              std::move(info), "MediaCapabilities::CreateWebRTCDecodingInfo");
         }
 
-        return PromiseType::CreateAndResolve(
-            std::move(info), "MediaCapabilities::CreateWebRTCDecodingInfo");
+        const auto& v = aConfiguration.mVideo.Value();
+        const auto& mime = videoContainer->ExtendedType();
+        if (WebrtcVideoTierUndefined(mime) ||
+            WebrtcVideoExceedsLevel(mime, v)) {
+          auto unsupported = UnsupportedInfo<MediaCapabilitiesDecodingInfo>();
+          LOG("{} -> {}", aConfiguration, unsupported);
+          return PromiseType::CreateAndResolve(
+              std::move(unsupported), "MediaCapabilities::DecodingInfo");
+        }
+        const CheckedInt<uint32_t> pixels =
+            CheckedInt<uint32_t>(v.mWidth) * CheckedInt<uint32_t>(v.mHeight);
+        const bool lowResolution =
+            pixels.isValid() && pixels.value() <= kLowResolutionPixelCount;
+        // Normalize for PDMs that expect "video/avc"
+        nsCString trackMime(videoContainer->Type().AsString());
+        if (trackMime.LowerCaseEqualsLiteral("video/h264")) {
+          trackMime.AssignLiteral("video/avc");
+        }
+        auto trackInfo =
+            CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
+                trackMime, *videoContainer);
+        if (!trackInfo) {
+          auto unsupported = UnsupportedInfo<MediaCapabilitiesDecodingInfo>();
+          LOG("{} -> {}", aConfiguration, unsupported);
+          return PromiseType::CreateAndResolve(
+              std::move(unsupported), "MediaCapabilities::DecodingInfo");
+        }
+        SupportDecoderParams videoParameters(
+            *trackInfo,
+            media::VideoFrameRate(static_cast<float>(v.mFramerate)));
+        return SupportsVideoDecodeForWebrtc(mime, videoParameters)
+            ->Then(GetCurrentSerialEventTarget(), __func__,
+                   [aConfiguration, info, lowResolution](
+                       PDMSupportsDecoderPromise::ResolveOrRejectValue&&
+                           aValue) mutable -> RefPtr<PromiseType> {
+                     // Treat an internal failure as unsupported.
+                     if (aValue.IsReject() || aValue.ResolveValue().isEmpty()) {
+                       auto unsupported =
+                           UnsupportedInfo<MediaCapabilitiesDecodingInfo>();
+                       LOG("{} -> {}", aConfiguration, unsupported);
+                       return PromiseType::CreateAndResolve(
+                           std::move(unsupported),
+                           "MediaCapabilities::CreateWebRTCDecodingInfo");
+                     }
+                     const bool hwSupported = aValue.ResolveValue().contains(
+                         media::DecodeSupport::HardwareDecode);
+                     info.mPowerEfficient = hwSupported || lowResolution;
+                     return PromiseType::CreateAndResolve(
+                         std::move(info),
+                         "MediaCapabilities::CreateWebRTCDecodingInfo");
+                   });
       })
       ->Then(
           targetThread, __func__,
@@ -882,7 +938,7 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
 }
 
 static MediaCapabilitiesDecodingInfo CreateVideoDecodingInfo(
-    const TrackInfo& aConfig, const bool aShouldResistFingerprinting,
+    const gfx::IntSize& aResolution, const bool aShouldResistFingerprinting,
     const bool aHardwareAccelerated) {
   MediaCapabilitiesDecodingInfo info;
   info.mSupported = true;
@@ -891,13 +947,11 @@ static MediaCapabilitiesDecodingInfo CreateVideoDecodingInfo(
   if (aShouldResistFingerprinting) {
     return info;
   }
-  MOZ_ASSERT(aConfig.IsVideo());
   // mImage dimensions are int32_t from gfx::IntSize. CheckedInt rejects
   // negative inputs (mapping to !isValid()) and rejects width*height
   // overflow, in either case treating the result as not-low-resolution.
-  const auto& image = aConfig.GetAsVideoInfo()->mImage;
-  const CheckedInt<uint32_t> pixels =
-      CheckedInt<uint32_t>(image.width) * CheckedInt<uint32_t>(image.height);
+  const CheckedInt<uint32_t> pixels = CheckedInt<uint32_t>(aResolution.width) *
+                                      CheckedInt<uint32_t>(aResolution.height);
   const bool lowResolution =
       pixels.isValid() && pixels.value() <= kLowResolutionPixelCount;
   info.mPowerEfficient = aHardwareAccelerated || lowResolution;
@@ -1192,120 +1246,96 @@ MediaCapabilities::CheckVideoDecodingInfo(
     UniquePtr<TrackInfo> aConfig) {
   MOZ_ASSERT(aConfig && aConfig->IsVideo());
   MOZ_ASSERT(aTaskQueue);
+  const bool checkDecoderInstance =
+      !StaticPrefs::media_mediacapabilities_codec_support_cache_enabled();
   RefPtr<nsISerialEventTarget> target = aTaskQueue;
   return InvokeAsync(
       target, __func__,
       [taskQueue = std::move(aTaskQueue), compositor = std::move(aCompositor),
        frameRate = aFrameRate,
        shouldResistFingerprinting = aShouldResistFingerprinting,
-       config = std::move(aConfig)]() mutable -> RefPtr<CapabilitiesPromise> {
-        if (StaticPrefs::
-                media_mediacapabilities_codec_support_cache_enabled()) {
-          // Query the cached codec-support snapshot, waiting asynchronously for
-          // remote processes to report accurate hardware support. No decoder is
-          // created.
-          const nsCString type = config->mMimeType;
-          LOG("Using decoder support cache for codec mime type '{}'", type);
-          SupportDecoderParams params{*config,
-                                      media::VideoFrameRate(frameRate)};
-          return PDMFactorySupport::IsSupportedAsync(params)->Then(
-              GetCurrentSerialEventTarget(), __func__,
-              [config = std::move(config),
-               shouldResistFingerprinting](media::DecodeSupportSet aSupport)
-                  -> RefPtr<CapabilitiesPromise> {
-                LOG("Decoder support cache request for codec mime type '{}' "
-                    "resolved with sw={}, hw={}",
-                    config->mMimeType,
-                    aSupport.contains(media::DecodeSupport::SoftwareDecode),
-                    aSupport.contains(media::DecodeSupport::HardwareDecode));
-                if (aSupport.isEmpty()) {
-                  return CapabilitiesPromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                              __func__);
-                }
-                bool hwAccel =
-                    aSupport.contains(media::DecodeSupport::HardwareDecode);
-                return CapabilitiesPromise::CreateAndResolve(
-                    CreateVideoDecodingInfo(*config, shouldResistFingerprinting,
-                                            hwAccel),
-                    __func__);
-              },
-              [type](nsresult aRv) -> RefPtr<CapabilitiesPromise> {
-                LOG("Decoder support cache request for codec mime type '{}' "
-                    "rejected with {}",
-                    type, aRv);
-                return CapabilitiesPromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                            __func__);
+       config = std::move(aConfig),
+       checkDecoderInstance]() mutable -> RefPtr<CapabilitiesPromise> {
+        // Query the cached codec-support snapshot, waiting asynchronously for
+        // remote processes to report accurate hardware support. No decoder is
+        // created.
+        const nsCString type = config->mMimeType;
+        const gfx::IntSize resolution = config->GetAsVideoInfo()->mImage;
+        SupportDecoderParams params{*config, media::VideoFrameRate(frameRate)};
+        RefPtr<PDMSupportsDecoderPromise> supportsPromise =
+            PDMFactorySupport::IsSupportedAsync(params);
+
+        if (checkDecoderInstance) {
+          // Strict path: create a decoder and query it directly for hardware
+          // acceleration. MediaDataDecoder keeps a reference to the
+          // config object, so we must keep it alive until the decoder has
+          // been shutdown.
+          LOG("Using strict decoder probing for codec mime type '{}'", type);
+          supportsPromise = supportsPromise->Then(
+              GetCurrentSerialEventTarget(),
+              "MediaCapabilities::CheckVideoDecodingInfo",
+              [taskQueue = std::move(taskQueue),
+               compositor = std::move(compositor), config = std::move(config),
+               frameRate](
+                  PDMSupportsDecoderPromise::ResolveOrRejectValue&&) mutable
+                  -> RefPtr<PDMSupportsDecoderPromise> {
+                static Atomic<uint32_t> sTrackingIdCounter(0);
+                TrackingId trackingId(TrackingId::Source::MediaCapabilities,
+                                      sTrackingIdCounter++,
+                                      TrackingId::TrackAcrossProcesses::Yes);
+                CreateDecoderParams params{
+                    *config, compositor,
+                    CreateDecoderParams::VideoFrameRate(frameRate),
+                    TrackInfo::kVideoTrack, Some(std::move(trackingId))};
+                // We want to ensure that all decoder's queries are occurring
+                // only once at a time as it can quickly exhaust the system
+                // resources otherwise.
+                static RefPtr<AllocPolicy> sVideoAllocPolicy = [&taskQueue]() {
+                  SchedulerGroup::Dispatch(NS_NewRunnableFunction(
+                      "MediaCapabilities::AllocPolicy:Video", []() {
+                        ClearOnShutdown(&sVideoAllocPolicy,
+                                        ShutdownPhase::XPCOMShutdownThreads);
+                      }));
+                  return new SingleAllocPolicy(
+                      TrackInfo::TrackType::kVideoTrack, taskQueue);
+                }();
+                return PDMFactory::StrictSupportsAsync(params,
+                                                       sVideoAllocPolicy);
               });
         }
 
-        // Strict path: create a decoder and query it directly for hardware
-        // acceleration. MediaDataDecoder keeps a reference to the
-        // config object, so we must keep it alive until the decoder has
-        // been shutdown.
-        LOG("Using strict decoder probing for codec mime type '{}'",
-            config->mMimeType);
-        static Atomic<uint32_t> sTrackingIdCounter(0);
-        TrackingId trackingId(TrackingId::Source::MediaCapabilities,
-                              sTrackingIdCounter++,
-                              TrackingId::TrackAcrossProcesses::Yes);
-        CreateDecoderParams params{
-            *config, compositor, CreateDecoderParams::VideoFrameRate(frameRate),
-            TrackInfo::kVideoTrack, Some(std::move(trackingId))};
-        // We want to ensure that all decoder's queries are occurring only
-        // once at a time as it can quickly exhaust the system resources
-        // otherwise.
-        static RefPtr<AllocPolicy> sVideoAllocPolicy = [&taskQueue]() {
-          SchedulerGroup::Dispatch(NS_NewRunnableFunction(
-              "MediaCapabilities::AllocPolicy:Video", []() {
-                ClearOnShutdown(&sVideoAllocPolicy,
-                                ShutdownPhase::XPCOMShutdownThreads);
-              }));
-          return new SingleAllocPolicy(TrackInfo::TrackType::kVideoTrack,
-                                       taskQueue);
-        }();
-        return AllocationWrapper::CreateDecoder(params, sVideoAllocPolicy)
-            ->Then(
-                taskQueue, __func__,
-                [taskQueue, shouldResistFingerprinting,
-                 config = std::move(config)](
-                    AllocationWrapper::AllocateDecoderPromise::
-                        ResolveOrRejectValue&& aValue) mutable {
-                  if (aValue.IsReject()) {
-                    return CapabilitiesPromise::CreateAndReject(
-                        std::move(aValue.RejectValue()), __func__);
-                  }
-                  RefPtr<MediaDataDecoder> decoder =
-                      std::move(aValue.ResolveValue());
-                  RefPtr<CapabilitiesPromise> p = decoder->Init()->Then(
-                      taskQueue, __func__,
-                      [taskQueue, decoder, shouldResistFingerprinting,
-                       config = std::move(config)](
-                          MediaDataDecoder::InitPromise::ResolveOrRejectValue&&
-                              aValue) mutable {
-                        RefPtr<CapabilitiesPromise> p;
-                        if (aValue.IsReject()) {
-                          p = CapabilitiesPromise::CreateAndReject(
-                              std::move(aValue.RejectValue()), __func__);
-                        } else {
-                          nsAutoCString reason;
-                          bool hwAccel = decoder->IsHardwareAccelerated(reason);
-                          auto info = CreateVideoDecodingInfo(
-                              *config, shouldResistFingerprinting, hwAccel);
-                          p = CapabilitiesPromise::CreateAndResolve(
-                              std::move(info), __func__);
-                        }
-                        MOZ_ASSERT(p.get(), "the promise has been created");
-                        // Let's keep alive the decoder and the config object
-                        // until the decoder has been shutdown.
-                        decoder->Shutdown()->Then(
-                            taskQueue, __func__,
-                            [taskQueue, decoder, config = std::move(config)](
-                                const ShutdownPromise::ResolveOrRejectValue&
-                                    aValue) {});
-                        return p;
-                      });
-                  return p;
-                });
+        return supportsPromise->Then(
+            GetCurrentSerialEventTarget(), __func__,
+            [type, resolution, shouldResistFingerprinting,
+             checkDecoderInstance](
+                PDMSupportsDecoderPromise::ResolveOrRejectValue&&
+                    aValue) mutable -> RefPtr<CapabilitiesPromise> {
+              if (aValue.IsReject()) {
+                LOG("Decoder support {} request for codec mime type '{}' "
+                    "rejected with {}",
+                    checkDecoderInstance ? "strict" : "cache", type,
+                    aValue.RejectValue());
+                return CapabilitiesPromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                            __func__);
+              }
+
+              media::DecodeSupportSet support = aValue.ResolveValue();
+              LOG("Decoder support {} request for codec mime type '{}' "
+                  "resolved with sw={}, hw={}",
+                  checkDecoderInstance ? "strict" : "cache", type,
+                  support.contains(media::DecodeSupport::SoftwareDecode),
+                  support.contains(media::DecodeSupport::HardwareDecode));
+              if (support.isEmpty()) {
+                return CapabilitiesPromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                            __func__);
+              }
+              bool hwAccel =
+                  support.contains(media::DecodeSupport::HardwareDecode);
+              return CapabilitiesPromise::CreateAndResolve(
+                  CreateVideoDecodingInfo(resolution,
+                                          shouldResistFingerprinting, hwAccel),
+                  __func__);
+            });
       });
 }
 
@@ -1343,6 +1373,33 @@ MediaCapabilities::CheckEncryptedDecodingSupport(
   }
   return manager->Request(
       aConfiguration.mKeySystemConfiguration.Value().mKeySystem, configs);
+}
+
+// Steps 8 through 11 for the "record" type. MediaRecorder encodes video in
+// software, so there is no encoder factory to query. aVideoMime is set only
+// for a video stream that was found supported.
+static void CreateRecordEncodingInfo(
+    const MediaEncodingConfiguration& aConfiguration, Promise* aPromise,
+    const Maybe<MediaExtendedMIMEType>& aVideoMime) {
+  // Step 8: Set supported to true.
+  MediaCapabilitiesInfo info;
+  info.mSupported = true;
+
+  if (aVideoMime) {
+    MOZ_ASSERT(aConfiguration.mVideo.WasPassed());
+    const auto& v = aConfiguration.mVideo.Value();
+    // Steps 9 and 10, video. CanRecordVideoTrackWith accepts only VP8.
+    info.mSmooth = IsSWEncodeSmooth(CodecType::VP8, v);
+    info.mPowerEfficient = IsLowResolution(v);
+  } else {
+    // Steps 9 and 10, audio. Audio encode is always smooth and power efficient.
+    info.mSmooth = true;
+    info.mPowerEfficient = true;
+  }
+
+  // Step 11: Return info.
+  LOG("{} -> {}", aConfiguration, info);
+  aPromise->MaybeResolve(std::move(info));
 }
 
 // https://w3c.github.io/media-capabilities/#abstract-opdef-create-a-mediacapabilitiesencodinginfo
@@ -1432,8 +1489,33 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
     encodePromise->MaybeResolve(std::move(info));
     return encodePromise.forget();
   }
+  MOZ_ASSERT(videoSupported == CodecSupport::Supported ||
+             audioSupported == CodecSupport::Supported);
 
-  // Step 8: Otherwise, set supported to true.
+  // Steps 8 through 11 are type specific: WebRTC queries the encoder
+  // factories, MediaRecorder does not.
+  switch (aConfiguration.mType) {
+    case MediaEncodingType::Record:
+      CreateRecordEncodingInfo(aConfiguration, encodePromise, videoMime);
+      return encodePromise.forget();
+    case MediaEncodingType::Webrtc:
+      CreateWebRTCEncodingInfo(aConfiguration, encodePromise, videoMime);
+      return encodePromise.forget();
+  }
+  MOZ_ASSERT_UNREACHABLE("Unhandled MediaEncodingType");
+  info.mSupported = false;
+  info.mSmooth = false;
+  info.mPowerEfficient = false;
+  encodePromise->MaybeResolve(std::move(info));
+  return encodePromise.forget();
+}
+
+// Steps 8 through 11 for the "webrtc" type.
+void MediaCapabilities::CreateWebRTCEncodingInfo(
+    const MediaEncodingConfiguration& aConfiguration, Promise* aPromise,
+    const Maybe<MediaExtendedMIMEType>& aVideoMime) {
+  // Step 8: Set supported to true.
+  MediaCapabilitiesInfo info;
   info.mSupported = true;
 
   // We defer checking specific encoder support to a background TaskQueue, and
@@ -1448,7 +1530,7 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
           "MediaCapabilities::EncodingInfo")) {
     // Worker is shutting down. Per spec, leave the promise pending; it will
     // be cleaned up by GC when the worker is torn down.
-    return encodePromise.forget();
+    return;
   }
 
   RefPtr<TaskQueue> taskQueue =
@@ -1456,99 +1538,99 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
                         "MediaCapabilities::TaskQueue");
   InvokeAsync(
       taskQueue, __func__,
-      [aConfiguration, videoMime, videoSupported, audioMime, audioSupported,
-       info = std::move(info)]() mutable {
+      [aConfiguration, videoMime = aVideoMime,
+       info = std::move(info)]() mutable -> RefPtr<PromiseType> {
         // Step 7 returns early if neither audio nor video are
         // supported. If video isn't supported, audio must be - they
         // can't both be unknown. We can assume audio encoding, which
         // should be smooth and powerEfficient.
-        MOZ_ASSERT(audioSupported == CodecSupport::Supported ||
-                   videoSupported == CodecSupport::Supported);
-        (void)audioSupported;
         info.mSmooth = true;
         info.mPowerEfficient = true;
 
-        bool lowResolution = false;
-        if (videoSupported == CodecSupport::Supported) {
-          MOZ_ASSERT(aConfiguration.mVideo.WasPassed());
-          const auto& v = aConfiguration.mVideo.Value();
-          if (WebrtcMimeToCodecType(*videoMime) == CodecType::H264) {
-            const auto fmtp = ParseH264Fmtp(videoMime->OriginalString());
-            const bool invalidFmtp =
-                fmtp.mProfileLevel.isErr() &&
-                fmtp.mProfileLevel.inspectErr() == H264FmtpParseError::Invalid;
-            const bool levelTooLow =
-                fmtp.mProfileLevel.isOk() &&
-                !H264LevelFits(fmtp.mProfileLevel.inspect().mLevel, v.mWidth,
-                               v.mHeight, static_cast<double>(v.mFramerate));
-            if (invalidFmtp || levelTooLow) {
-              MediaCapabilitiesInfo unsupported;
-              unsupported.mSupported = false;
-              unsupported.mSmooth = false;
-              unsupported.mPowerEfficient = false;
-              LOG("{} -> {}", aConfiguration, unsupported);
-              return PromiseType::CreateAndResolve(
-                  std::move(unsupported), "MediaCapabilities::EncodingInfo");
-            }
-          }
-          auto encoderConfig = BuildEncoderConfig(*videoMime, v);
-          const auto videoSupport = SupportsVideoEncodeForWebrtc(encoderConfig);
-          if (videoSupport.isEmpty()) {
-            MediaCapabilitiesInfo unsupported;
-            unsupported.mSupported = false;
-            unsupported.mSmooth = false;
-            unsupported.mPowerEfficient = false;
-            LOG("{} -> {}", aConfiguration, unsupported);
-            return PromiseType::CreateAndResolve(
-                std::move(unsupported), "MediaCapabilities::EncodingInfo");
-          }
-          const bool hwSupported =
-              videoSupport.contains(media::EncodeSupport::HardwareEncode);
-          const CheckedInt<uint32_t> pixels =
-              CheckedInt<uint32_t>(v.mWidth) * CheckedInt<uint32_t>(v.mHeight);
-          lowResolution =
-              pixels.isValid() && pixels.value() <= kLowResolutionPixelCount;
-
-          // Step 9: If the user agent is able to encode the media
-          // represented by configuration at the indicated framerate,
-          // set smooth to true. Otherwise set it to false.
-          //
-          // NOTE: The spec doesn't give hard guidelines for smooth.
-          // We will hardware encode or low resolution encoding counts
-          // as "smooth". For the highest accuracy we'd want to use
-          // benchmarking code similar to what we had in the tree
-          // earlier for decoding which was removed due to maintenance
-          // concerns.
-          info.mSmooth &= hwSupported || IsWebRTCSWEncodeSmooth(v);
-
-          // Step 10: If the user agent is able to encode the media
-          // represented by configuration in a power efficient manner,
-          // set powerEfficient to true. Otherwise set it to false.
-          //
-          // Encoding or decoding is considered power efficient when the
-          // power draw is optimal. The definition of optimal power draw
-          // for encoding or decoding is left to the user agent.
-          // However, a common implementation strategy is to consider
-          // hardware usage as indicative of optimal power draw. User
-          // agents SHOULD NOT mark hardware encoding or decoding as
-          // power efficient by default, as non-hardware-accelerated
-          // codecs can be just as efficient, particularly with
-          // low-resolution video. User agents SHOULD NOT take the
-          // device's power source into consideration when determining
-          // encoding power efficiency unless the device's power source
-          // has side effects such as enabling different encoding or
-          // decoding modules.
-          info.mPowerEfficient &= (hwSupported || lowResolution);
+        if (!videoMime) {
+          LOG("{} -> {}", aConfiguration, info);
+          return PromiseType::CreateAndResolve(
+              std::move(info), "MediaCapabilities::EncodingInfo");
         }
 
-        LOG("{} -> {}", aConfiguration, info);
+        MOZ_ASSERT(aConfiguration.mVideo.WasPassed());
+        const auto& v = aConfiguration.mVideo.Value();
+        // Unlike DecodingInfo, a resolution/framerate that exceeds the
+        // negotiated level isn't rejected here: the encoder downscales
+        // and decimates to fit the level instead (see bug 2013936). An
+        // undefined tier can't be fixed that way though.
+        if (WebrtcVideoTierUndefined(*videoMime)) {
+          auto unsupported = UnsupportedInfo<MediaCapabilitiesInfo>();
+          LOG("{} -> {}", aConfiguration, unsupported);
+          return PromiseType::CreateAndResolve(
+              std::move(unsupported), "MediaCapabilities::EncodingInfo");
+        }
+        const CodecType codec = WebrtcMimeToCodecType(*videoMime);
+        auto encoderConfig = BuildEncoderConfig(*videoMime, v);
+        return SupportsVideoEncodeForWebrtc(encoderConfig)
+            ->Then(
+                GetCurrentSerialEventTarget(), __func__,
+                [aConfiguration, codec,
+                 info](media::EncodeSupportSet aVideoSupport) mutable
+                    -> RefPtr<PromiseType> {
+                  if (aVideoSupport.isEmpty()) {
+                    auto unsupported = UnsupportedInfo<MediaCapabilitiesInfo>();
+                    LOG("{} -> {}", aConfiguration, unsupported);
+                    return PromiseType::CreateAndResolve(
+                        std::move(unsupported),
+                        "MediaCapabilities::EncodingInfo");
+                  }
+                  const auto& v = aConfiguration.mVideo.Value();
+                  const bool hwSupported = aVideoSupport.contains(
+                      media::EncodeSupport::HardwareEncode);
 
-        return PromiseType::CreateAndResolve(std::move(info),
-                                             "MediaCapabilities::EncodingInfo");
+                  // Step 9: If the user agent is able to encode the media
+                  // represented by configuration at the indicated framerate,
+                  // set smooth to true. Otherwise set it to false.
+                  //
+                  // NOTE: The spec doesn't give hard guidelines for smooth.
+                  // We will hardware encode or low resolution encoding counts
+                  // as "smooth". For the highest accuracy we'd want to use
+                  // benchmarking code similar to what we had in the tree
+                  // earlier for decoding which was removed due to maintenance
+                  // concerns.
+                  info.mSmooth &=
+                      hwSupported || IsWebRTCSWEncodeSmooth(codec, v);
+
+                  // Step 10: If the user agent is able to encode the media
+                  // represented by configuration in a power efficient manner,
+                  // set powerEfficient to true. Otherwise set it to false.
+                  //
+                  // Encoding or decoding is considered power efficient when the
+                  // power draw is optimal. The definition of optimal power draw
+                  // for encoding or decoding is left to the user agent.
+                  // However, a common implementation strategy is to consider
+                  // hardware usage as indicative of optimal power draw. User
+                  // agents SHOULD NOT mark hardware encoding or decoding as
+                  // power efficient by default, as non-hardware-accelerated
+                  // codecs can be just as efficient, particularly with
+                  // low-resolution video. User agents SHOULD NOT take the
+                  // device's power source into consideration when determining
+                  // encoding power efficiency unless the device's power source
+                  // has side effects such as enabling different encoding or
+                  // decoding modules.
+                  info.mPowerEfficient &= (hwSupported || IsLowResolution(v));
+
+                  LOG("{} -> {}", aConfiguration, info);
+                  return PromiseType::CreateAndResolve(
+                      std::move(info), "MediaCapabilities::EncodingInfo");
+                },
+                [](nsresult) -> RefPtr<PromiseType> {
+                  // Treat an internal failure as unsupported.
+                  auto unsupported = UnsupportedInfo<MediaCapabilitiesInfo>();
+                  return PromiseType::CreateAndResolve(
+                      std::move(unsupported),
+                      "MediaCapabilities::EncodingInfo");
+                });
       })
       ->Then(
           targetThread, __func__,
-          [encodePromise, workerRef, holder,
+          [encodePromise = RefPtr(aPromise), workerRef, holder,
            aConfiguration](MediaCapabilitiesInfo aInfo) {
             holder->Complete();
             nsIGlobalObject* global = holder->GetParentObject();
@@ -1558,7 +1640,6 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
           },
           [] { MOZ_CRASH("Unexpected"); })
       ->Track(*holder);
-  return encodePromise.forget();
 }
 
 bool MediaCapabilities::CheckTypeForMediaSource(

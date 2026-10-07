@@ -16,6 +16,7 @@
 
 #include "wasm/WasmCodegenTypes.h"
 
+#include "mozilla/BinarySearch.h"
 #include "mozilla/PodOperations.h"
 
 #include "wasm/WasmExprType.h"

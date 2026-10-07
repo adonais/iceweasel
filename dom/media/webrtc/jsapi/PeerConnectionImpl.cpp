@@ -1823,7 +1823,7 @@ PeerConnectionImpl::AddIceCandidate(
   // RTCIceTransport.getRemoteCandidates(), in which case it will handle
   // stripping the "a=" off.
   std::string candidate(aCandidate);
-  if (candidate.find("a=") == 0) {
+  if (candidate.starts_with("a=")) {
     candidate = candidate.substr(2);
   }
 
@@ -1849,10 +1849,14 @@ PeerConnectionImpl::AddIceCandidate(
       candidate, aMid, level, aUfrag, &transportId);
 
   if (!result.mError.isSome()) {
-    // We do not bother the MediaTransportHandler about this before
-    // offer/answer concludes.  Once offer/answer concludes, we will extract
+    // We do not bother the MediaTransportHandler about this before an answer
+    // (provisional or final) has been applied. Once one has, we will extract
     // these candidates from the remote SDP.
-    if (mSignalingState == RTCSignalingState::Stable && !transportId.empty()) {
+    const bool answered =
+        mSignalingState == RTCSignalingState::Stable ||
+        mSignalingState == RTCSignalingState::Have_local_pranswer ||
+        mSignalingState == RTCSignalingState::Have_remote_pranswer;
+    if (answered && !transportId.empty()) {
       AddIceCandidate(candidate, transportId, aUfrag);
       mRawTrickledCandidates.push_back(candidate);
     }
@@ -3057,11 +3061,14 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
           EnsureTransports(*mJsepSession);
         }
 
-        if (mJsepSession->GetState() == kJsepStateStable) {
+        const JsepSignalingState jsepState = mJsepSession->GetState();
+        const bool provisional = jsepState == kJsepStateHaveLocalPranswer ||
+                                 jsepState == kJsepStateHaveRemotePranswer;
+        if (jsepState == kJsepStateStable || provisional) {
           // If we're rolling back a local offer, we might need to remove some
           // transports, and stomp some MediaPipeline setup, but nothing further
           // needs to be done.
-          UpdateTransports(*mJsepSession, mForceIceTcp);
+          UpdateTransports(*mJsepSession, mForceIceTcp, provisional);
           if (NS_FAILED(UpdateMediaPipelines())) {
             CSFLogError(LOGTAG, "Error Updating MediaPipelines");
             NS_ASSERTION(
@@ -3163,7 +3170,9 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
           }
         }
 
-        if (aSdpType == dom::RTCSdpType::Answer) {
+        // The ICE role is decided by the first answer, provisional or not.
+        if (aSdpType == dom::RTCSdpType::Answer ||
+            aSdpType == dom::RTCSdpType::Pranswer) {
           dom::RTCIceRole role = mJsepSession->IsIceControlling()
                                      ? dom::RTCIceRole::Controlling
                                      : dom::RTCIceRole::Controlled;
@@ -3463,10 +3472,11 @@ void PeerConnectionImpl::IceConnectionStateChange(
     RefPtr<RTCIceCandidatePair> newCandidatePair;
     if (aSelectedPair.isSome()) {
       nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(mWindow);
-      RefPtr<RTCIceCandidate> local =
-          RTCIceCandidate::FromAttribute(global, aSelectedPair->local());
+      RefPtr<RTCIceCandidate> local = RTCIceCandidate::FromAttribute(
+          global, aSelectedPair->local(),
+          /*aHidePrflx=*/GetPrefObfuscateHostAddresses());
       RefPtr<RTCIceCandidate> remote = RTCIceCandidate::FromAttribute(
-          global, aSelectedPair->remote(), /*aRemote=*/true);
+          global, aSelectedPair->remote(), /*aHidePrflx=*/true);
       newCandidatePair = new RTCIceCandidatePair(global, local, remote);
     }
 
@@ -3546,8 +3556,8 @@ RTCIceConnectionState PeerConnectionImpl::GetNewIceConnectionState() const {
   std::set<RefPtr<RTCDtlsTransport>> transports(GetActiveTransports());
   for (const auto& transport : transports) {
     RefPtr<dom::RTCIceTransport> iceTransport = transport->IceTransport();
-    CSFLogWarn(LOGTAG, "GetNewIceConnectionState: %p %d", iceTransport.get(),
-               static_cast<int>(iceTransport->State()));
+    CSFLogDebug(LOGTAG, "GetNewIceConnectionState: %p %d", iceTransport.get(),
+                static_cast<int>(iceTransport->State()));
     statesFound.insert(iceTransport->State());
   }
 
@@ -3671,8 +3681,8 @@ void PeerConnectionImpl::IceGatheringStateChange(
     return;
   }
 
-  CSFLogWarn(LOGTAG, "IceGatheringStateChange: %s %d (%p)",
-             aTransportId.c_str(), static_cast<int>(state), this);
+  CSFLogDebug(LOGTAG, "IceGatheringStateChange: %s %d (%p)",
+              aTransportId.c_str(), static_cast<int>(state), this);
 
   // Let transport be the RTCIceTransport for which candidate gathering
   // began/finished.
@@ -4235,20 +4245,9 @@ void PeerConnectionImpl::StunAddrsHandler::OnMDNSQueryComplete(
   if (itor != pcw.impl()->mQueriedMDNSHostnames.end()) {
     if (address) {
       for (auto& cand : itor->second) {
-        // Replace obfuscated address with actual address
-        std::string obfuscatedAddr = cand.mTokenizedCandidate[4];
-        cand.mTokenizedCandidate[4] = address->get();
-        std::ostringstream o;
-        for (size_t i = 0; i < cand.mTokenizedCandidate.size(); ++i) {
-          o << cand.mTokenizedCandidate[i];
-          if (i + 1 != cand.mTokenizedCandidate.size()) {
-            o << " ";
-          }
-        }
-        std::string mungedCandidate = o.str();
         pcw.impl()->StampTimecard("Done looking up mDNS name");
         pcw.impl()->mTransportHandler->AddIceCandidate(
-            cand.mTransportId, mungedCandidate, cand.mUfrag, obfuscatedAddr);
+            cand.mTransportId, cand.mCandidate, cand.mUfrag, address->get());
       }
     } else {
       pcw.impl()->StampTimecard("Failed looking up mDNS name");
@@ -4447,7 +4446,8 @@ PeerConnectionImpl::GetActiveTransports() const {
 }
 
 nsresult PeerConnectionImpl::UpdateTransports(const JsepSession& aSession,
-                                              const bool forceIceTcp) {
+                                              const bool forceIceTcp,
+                                              const bool aProvisional) {
   std::set<std::string> finalTransports;
   mJsepSession->ForEachTransceiver(
       [&, this, self = RefPtr<PeerConnectionImpl>(this)](
@@ -4458,7 +4458,12 @@ nsresult PeerConnectionImpl::UpdateTransports(const JsepSession& aSession,
         }
       });
 
-  mTransportHandler->RemoveTransportsExcept(finalTransports);
+  // A provisional answer must not free anything; the transports it does not
+  // use keep running until the final answer.
+  // (see https://www.rfc-editor.org/info/rfc9429/#section-4.1.10-3)
+  if (!aProvisional) {
+    mTransportHandler->RemoveTransportsExcept(finalTransports);
+  }
 
   for (const auto& transceiverImpl : mTransceivers) {
     transceiverImpl->UpdateTransport();
@@ -4550,7 +4555,9 @@ nsresult PeerConnectionImpl::UpdateMediaPipelines() {
 
 void PeerConnectionImpl::StartIceChecks(const JsepSession& aSession) {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(mJsepSession->GetState() == kJsepStateStable);
+  MOZ_ASSERT(mJsepSession->GetState() == kJsepStateStable ||
+             mJsepSession->GetState() == kJsepStateHaveLocalPranswer ||
+             mJsepSession->GetState() == kJsepStateHaveRemotePranswer);
 
   auto transports = GetActiveTransports();
 
@@ -4635,7 +4642,7 @@ void PeerConnectionImpl::AddIceCandidate(const std::string& aCandidate,
           addr.rfind(".local") + dotLocalLength == addr.length()) {
         if (mStunAddrsRequest) {
           PendingIceCandidate cand;
-          cand.mTokenizedCandidate = std::move(tokens);
+          cand.mCandidate = aCandidate;
           cand.mTransportId = aTransportId;
           cand.mUfrag = aUfrag;
           mQueriedMDNSHostnames[addr].push_back(std::move(cand));

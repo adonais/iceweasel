@@ -1,8 +1,8 @@
 This chapter describes the NSPR API for creation and manipulation of a
 mutex of type {ref}`PRLock`.
 
-- [Lock Type](#Lock_Type)
-- [Lock Functions](#Lock_Functions)
+- [Lock Type](#lock-type)
+- [Lock Functions](#lock-functions)
 
 In NSPR, a mutex of type {ref}`PRLock` controls locking, and associated
 condition variables communicate changes in state among threads. When a
@@ -19,10 +19,10 @@ reflects the Java approach to thread synchronization.
 
 For an introduction to NSPR thread synchronization, including locks and
 condition variables, see [Introduction to
-NSPR](Introduction_to_NSPR).
+NSPR](introduction_to_nspr.md).
 
 For reference information on NSPR condition variables, see [Condition
-Variables](Condition_Variables).
+Variables](condition_variables.md).
 
 (lock-type)=
 

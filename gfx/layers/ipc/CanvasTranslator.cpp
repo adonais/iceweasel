@@ -525,11 +525,6 @@ already_AddRefed<gfx::SourceSurface> CanvasTranslator::WaitForSurface(
     if (surf->mSharedSurface) {
       surf->mSharedSurface->BeginRead();
       *aDesc = surf->mSharedSurface->ToSurfaceDescriptor();
-      if (*aDesc && aDesc->ref().type() ==
-                        SurfaceDescriptor::TSurfaceDescriptorMacIOSurface) {
-        aDesc->ref().get_SurfaceDescriptorMacIOSurface().gpuFence() =
-            surf->mSharedSurface->TakeGpuFence();
-      }
       surf->mSharedSurface->EndRead();
     }
   }
@@ -1766,12 +1761,6 @@ mozilla::ipc::IPCResult CanvasTranslator::RecvSnapshotExternalCanvas(
               snapshot.mWebgl = webgl;
               snapshot.mDescriptor =
                   snapshot.mSharedSurface->ToSurfaceDescriptor();
-              if (snapshot.mDescriptor &&
-                  snapshot.mDescriptor->type() ==
-                      SurfaceDescriptor::TSurfaceDescriptorMacIOSurface) {
-                snapshot.mDescriptor->get_SurfaceDescriptorMacIOSurface()
-                    .gpuFence() = snapshot.mSharedSurface->TakeGpuFence();
-              }
             }
           }
           if (!snapshot.mDescriptor) {

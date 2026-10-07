@@ -51,6 +51,8 @@ head = "head_addressComponent.js"
 
 ["test_createRecords.js"]
 
+["test_creditCardCVVPrefs.js"]
+
 ["test_creditCardRecords.js"]
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1729554
@@ -110,9 +112,21 @@ skip-if = [
 
 ["test_rust_autofill_address_adapter.js"]
 
+["test_rust_autofill_address_bridged_engine.js"]
+
 ["test_rust_autofill_address_migration.js"]
 
 ["test_rust_autofill_address_parity.js"]
+
+["test_rust_autofill_address_sync_engine.js"]
+head = "head.js ../../../../../services/sync/tests/unit/head_appinfo.js ../../../../../services/common/tests/unit/head_helpers.js ../../../../../services/sync/tests/unit/head_helpers.js ../../../../../services/sync/tests/unit/head_http_server.js"
+# Registering the addresses engine at all is conditional, and the pref is read
+# when Service builds its engine table -- too early for the test body to set it.
+prefs = ["services.sync.engine.addresses.available=true"]
+
+["test_rust_autofill_credit_card_adapter.js"]
+
+["test_rust_autofill_credit_card_migration.js"]
 
 ["test_savedFieldNames.js"]
 

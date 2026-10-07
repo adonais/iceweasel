@@ -90,8 +90,23 @@ void PdfStructTreeBuilder::Done(uint64_t aInnerWindowId) {
 
 /* static */
 int PdfStructTreeBuilder::GetPdfId(uint64_t aInnerWindowId, uint64_t aAccId) {
-  if (!sBuilders) {
-    return 0;
+  if (!sBuilders || sBuilders->IsEmpty()) {
+    return SkPDF::NodeID::Nothing;
+  }
+  if (aInnerWindowId == 0) {
+    // This indicates that the following drawing instructions are not associated
+    // with anything in the struct tree; e.g. page headers and footers.
+    switch (aAccId) {
+      case SpecialId::Nothing:
+        return SkPDF::NodeID::Nothing;
+      case SpecialId::PageHeader:
+        return SkPDF::NodeID::PaginationHeaderArtifact;
+      case SpecialId::PageFooter:
+        return SkPDF::NodeID::PaginationFooterArtifact;
+      default:
+        MOZ_ASSERT_UNREACHABLE("Invalid special acc id");
+    }
+    return SkPDF::NodeID::Nothing;
   }
   // aInnerWindowId might be a descendant WindowContext. Rather than walking the
   // WindowContext ancestry for each builder, we just ask each builder whether
@@ -347,12 +362,6 @@ void PdfStructTreeBuilder::BuildStructSubtree(
 
 int PdfStructTreeBuilder::GetPdfIdInternal(uint64_t aInnerWindowId,
                                            uint64_t aAccId) const {
-  if (aInnerWindowId == 0) {
-    // This indicates that the following drawing instructions are not associated
-    // with anything in the struct tree; e.g. page headers and footers.
-    MOZ_ASSERT(aAccId == 0);
-    return 0;
-  }
   if (auto entry = mAccToPdf.lookup({aInnerWindowId, aAccId})) {
     return entry->value();
   }

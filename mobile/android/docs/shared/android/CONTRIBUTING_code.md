@@ -2,7 +2,7 @@
 
 Thank you for taking the time to contribute to one of Mozilla's Android
 projects! 🔥 🦊 ❤️ 🤖! 🎉 👍 For a full list of projects, see
-[the README](../../../README.md).
+[the README](/mobile/android/index.md).
 
 Before contributing, please review our [Community Participation Guidelines].
 
@@ -23,7 +23,7 @@ Contents:
 Unfamiliar with the technology we use? No problem! We were once new to this
 too! Here are few guides we've compiled to help you get started:
 
-- [Git guide](../git_guide.md#android)
+- [Git guide](../git_guide.md)
 - [Android guide](android_guide.md)
   - [Accessibility guide](accessibility_guide.md)
 - [Kotlin guide](kotlin_guide.md)

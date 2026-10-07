@@ -71,6 +71,24 @@ export class MockEngineManager {
   }
 
   /**
+   * Engines are created lazily, often only after the code under test has done
+   * real work such as a headless page extraction, which can take up to
+   * browser.ml.pageExtractor.headlessTimeoutMs (15s) on slow builds. Wait
+   * longer than that so a slow extraction is not reported as a missing engine.
+   *
+   * @param {ModelFeature} purpose
+   * @returns {Promise<MockLLMEngine>}
+   */
+  #waitForEngine(purpose) {
+    return TestUtils.waitForCondition(
+      () => this.engines.get(purpose),
+      `Couldn't find the engine "${purpose}"`,
+      100,
+      200
+    );
+  }
+
+  /**
    * Provide the response for an engine. The engine purpose is the "purpose" provided
    * to the PipelineOptions when creating an engine. The MockedResponse can be
    * a simple string or the actual response values provided by the engine.
@@ -82,18 +100,11 @@ export class MockEngineManager {
    */
   async respondTo({ purpose, response }) {
     dump(`[MockEngineManager] Getting the engine with purpose "${purpose}"\n`);
-    /** @type {MockLLMEngine} */
-    const engine = await TestUtils.waitForCondition(
-      () => this.engines.get(purpose),
-      `Couldn't find the engine "${purpose}"`
-    );
+    const engine = await this.#waitForEngine(purpose);
     dump(
       `[MockEngineManager] Waiting for the run request for the engine with purpose "${purpose}"\n`
     );
-    await TestUtils.waitForCondition(
-      () => engine.runRequests.size,
-      `[MockEngineManager] Failed to find a request for the engine with purpose "${purpose}"`
-    );
+    await engine.waitForRunRequest();
     const [requestId] = engine.getNextRequest();
     if (typeof response === "string") {
       dump(
@@ -121,15 +132,8 @@ export class MockEngineManager {
    * @returns {Promise<{request: object, respond: (response: MockedResponse) => void}>}
    */
   async captureRequest({ purpose }) {
-    /** @type {MockLLMEngine} */
-    const engine = await TestUtils.waitForCondition(
-      () => this.engines.get(purpose),
-      `Couldn't find the engine "${purpose}"`
-    );
-    await TestUtils.waitForCondition(
-      () => engine.runRequests.size,
-      `[MockEngineManager] Failed to find a request for the engine with purpose "${purpose}"`
-    );
+    const engine = await this.#waitForEngine(purpose);
+    await engine.waitForRunRequest();
     const [requestId, { request }] = engine.getNextRequest();
     return {
       request,
@@ -243,16 +247,18 @@ export class MockSearchManager {
    * @param {object} options.response
    * @param {number} [options.status]
    * @param {string} [options.statusText]
+   * @param {boolean} [options.jsonThrows] - Fail the body parse, for a
+   *   response with a usable status but an unparseable payload.
    */
-  async respondTo({ response, status = 200, statusText }) {
+  async respondTo({ response, status = 200, statusText, jsonThrows = false }) {
     const request = await this.captureRequest();
-    request.respond(response, { status, statusText });
+    request.respond(response, { status, statusText, jsonThrows });
   }
 
   /**
    * Capture the next request to the search endpoint.
    *
-   * @returns {Promise<{request: {url: string, options: RequestInit}, respond: (response: object, options?: {status?: number, statusText?: string}) => void, reject: (reason: any) => void}>}
+   * @returns {Promise<{request: {url: string, options: RequestInit}, respond: (response: object, options?: {status?: number, statusText?: string, jsonThrows?: boolean}) => void, reject: (reason: any) => void}>}
    */
   async captureRequest() {
     await TestUtils.waitForCondition(
@@ -270,14 +276,24 @@ export class MockSearchManager {
     };
     return {
       request: pendingRequest.request,
-      respond: (response, { status = 200, statusText } = {}) =>
+      respond: (
+        response,
+        { status = 200, statusText, jsonThrows = false } = {}
+      ) =>
         settle(() =>
           pendingRequest.resolve({
             ok: status >= 200 && status < 300,
             status,
             statusText:
               statusText ?? (status >= 200 && status < 300 ? "OK" : "Error"),
-            json: async () => response,
+            json: async () => {
+              if (jsonThrows) {
+                throw new SyntaxError(
+                  "JSON.parse: unexpected character at line 1 column 1"
+                );
+              }
+              return response;
+            },
             text: async () =>
               typeof response === "string"
                 ? response

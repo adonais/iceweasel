@@ -151,7 +151,13 @@ def collapse(paths, base=None, dotfiles=False):
 
 
 def filterpaths(
-    root, paths, include, exclude=None, extensions=None, exclude_extensions=None
+    root,
+    paths,
+    include,
+    exclude=None,
+    extensions=None,
+    exclude_extensions=None,
+    expand_excludes=True,
 ):
     """Filters a list of paths.
 
@@ -164,8 +170,12 @@ def filterpaths(
     :param exclude: A list of paths that should be excluded (optional).
     :param extensions: A list of file extensions which should be considered (optional).
     :param exclude_extensions: A list of file extensions which should not be considered (optional).
+    :param expand_excludes: Whether to compute the list of paths to exclude.
+                            Expanding glob excludes requires walking every
+                            directory in `paths`, so callers that only need
+                            the paths to lint should pass False (optional).
     :returns: A tuple containing a list of file paths to lint and a list of
-              paths to exclude.
+              paths to exclude (empty if `expand_excludes` is False).
     """
 
     def normalize(path):
@@ -226,16 +236,21 @@ def filterpaths(
                     keep.add(path)
                     discard.update([e for e in excs if path.contains(e)])
 
+        if not expand_excludes:
+            continue
+
         # Next expand excludes with globs in them so we can add them to
         # the set of files to discard.
         for pattern in excludeglobs:
             for p, f in path.finder.find(pattern):
                 discard.add(path.join(p))
 
-    return (
-        [f.path for f in keep if f.exists],
-        collapse([f.path for f in discard if f.exists]),
-    )
+    if expand_excludes:
+        excludes = collapse([f.path for f in discard if f.exists])
+    else:
+        excludes = []
+
+    return [f.path for f in keep if f.exists], excludes
 
 
 def findobject(path, definition, linter_paths=None):
@@ -371,11 +386,6 @@ def expand_exclusions(paths, config, root):
             yield path
             continue
 
-        # If there are neither extensions nor exclude_extensions, we can't do
-        # anything useful with a directory. Skip:
-        if not extensions and not exclude_extensions:
-            continue
-
         # This is a directory. Check we don't have excludes for ancestors of
         # this path. Mess with slashes to avoid "foo/bar" matching "foo/barry".
         parent_path = os.path.dirname(path.rstrip("/")) + "/"
@@ -388,10 +398,7 @@ def expand_exclusions(paths, config, root):
         ]
 
         finder = FileFinder(path, ignore=ignore, find_dotfiles=find_dotfiles)
-        if extensions:
-            for p, f in finder.find("**"):
-                if os.path.splitext(p)[1] in extensions:
-                    yield os.path.join(path, p)
-        else:
-            for p, f in finder.find("**/*.*"):
-                yield os.path.join(path, p)
+        for p, f in finder.find("**"):
+            if extensions and os.path.splitext(p)[1] not in extensions:
+                continue
+            yield os.path.join(path, p)

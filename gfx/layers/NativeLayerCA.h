@@ -406,7 +406,7 @@ class NativeLayerCA : public NativeLayer {
                          CMVideoFormatDescriptionRef aFormat);
 
   void AttachExternalImage(wr::RenderTextureHost* aExternalImage) override;
-  GpuFence* GetGpuFence() override;
+  RefPtr<GpuFence> GetGpuFence() override;
 
   void SetRootWindowIsFullscreen(bool aFullscreen);
 

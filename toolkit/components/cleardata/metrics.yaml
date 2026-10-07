@@ -19,13 +19,14 @@ private_browsing.cleanup:
       This currently does not keep track of regular PBM teardown (last PBM window exited).
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2018747
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072835
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2018747
     notification_emails:
       - emz@mozilla.com
     data_sensitivity:
       - technical
-    expires: 160
+    expires: 170
 
   error_rate:
     type: rate
@@ -36,10 +37,11 @@ private_browsing.cleanup:
       This currently does not keep track of regular PBM teardown (last PBM window exited).
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2018747
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072835
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2018747
     notification_emails:
       - emz@mozilla.com
     data_sensitivity:
       - technical
-    expires: 160
+    expires: 170

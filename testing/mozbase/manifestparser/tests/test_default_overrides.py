@@ -9,7 +9,7 @@ import re
 import unittest
 
 import mozunit
-from manifestparser import ManifestParser, combine_fields
+from manifestparser import ManifestParser, TestManifest, combine_fields
 
 here = os.path.dirname(os.path.abspath(__file__))
 
@@ -77,6 +77,109 @@ class TestDefaultSupportFiles(unittest.TestCase):
         for test in parser.tests:
             expected = expected_supp_files[test["name"]]
             self.assertEqual(test["support-files"], expected)
+
+
+class TestDefaultRunif(unittest.TestCase):
+    """Tests combining a [DEFAULT] run-if with the value for a test."""
+
+    def parse(self, filename):
+        manifest = os.path.join(here, filename)
+        parser = ManifestParser(manifests=(manifest,), use_toml=True)
+        return {t["name"]: t.get("run-if", "").splitlines() for t in parser.tests}
+
+    def active(self, filename, **values):
+        """Names of the tests of `filename` that run with the given values."""
+        manifest = os.path.join(here, filename)
+        parser = TestManifest(manifests=(manifest,), use_toml=True)
+        tests = parser.active_tests(exists=False, disabled=False, **values)
+        return {t["name"] for t in tests}
+
+    def test_single_default(self):
+        self.assertEqual(
+            self.parse("default-runif.toml"),
+            {
+                "test7": ["os != 'android'"],
+                "test8": ["(os != 'android') && (!condprof)"],
+                "test9": ["os != 'android'"],
+                "test10": [
+                    "(os != 'android') && (os == 'linux')",
+                    "(os != 'android') && (os == 'win')",
+                ],
+            },
+        )
+
+    def test_multi_default(self):
+        self.assertEqual(
+            self.parse("default-runif-multi.toml"),
+            {
+                "test1": ["os == 'linux'", "os == 'win'"],
+                "test2": [
+                    "(os == 'linux') && (debug)",
+                    "(os == 'win') && (debug)",
+                ],
+                "test3": [
+                    "(os == 'linux') && (debug)",
+                    "(os == 'linux') && (!ccov)",
+                    "(os == 'win') && (debug)",
+                    "(os == 'win') && (!ccov)",
+                ],
+            },
+        )
+
+    def test_no_default(self):
+        """A per-test run-if with no [DEFAULT] run-if must be left alone."""
+        self.assertEqual(
+            self.parse("runif-no-default.toml"),
+            {
+                "test1": ["os == 'linux'", "os == 'win'"],
+                "test2": ["os == 'mac'"],
+            },
+        )
+
+    def test_no_default_scheduling(self):
+        """Several conditions in a per-test run-if are OR'd, not AND'd."""
+        for os_name in ("linux", "win"):
+            self.assertEqual(
+                self.active("runif-no-default.toml", os=os_name),
+                {"test1"},
+                f"only test1 should run on {os_name}",
+            )
+        self.assertEqual(self.active("runif-no-default.toml", os="mac"), {"test2"})
+        self.assertEqual(self.active("runif-no-default.toml", os="android"), set())
+
+    def test_single_default_scheduling(self):
+        """The [DEFAULT] run-if is no longer overridden by a per-test run-if."""
+        self.assertEqual(
+            self.active("default-runif.toml", os="linux", condprof=False),
+            {"test7", "test8", "test9", "test10"},
+        )
+        self.assertEqual(
+            self.active("default-runif.toml", os="linux", condprof=True),
+            {"test7", "test9", "test10"},
+        )
+        self.assertEqual(
+            self.active("default-runif.toml", os="mac", condprof=False),
+            {"test7", "test8", "test9"},
+        )
+        # test8 and test10 would run here if the default were overridden.
+        self.assertEqual(
+            self.active("default-runif.toml", os="android", condprof=False), set()
+        )
+
+    def test_multi_default_scheduling(self):
+        self.assertEqual(
+            self.active("default-runif-multi.toml", os="linux", debug=True, ccov=False),
+            {"test1", "test2", "test3"},
+        )
+        self.assertEqual(
+            self.active("default-runif-multi.toml", os="win", debug=False, ccov=False),
+            {"test1", "test3"},
+        )
+        # test2 and test3 would run here if the default were overridden.
+        self.assertEqual(
+            self.active("default-runif-multi.toml", os="mac", debug=True, ccov=False),
+            set(),
+        )
 
 
 class TestOmitDefaults(unittest.TestCase):

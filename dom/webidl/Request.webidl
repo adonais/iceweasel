@@ -48,6 +48,15 @@ interface Request {
   [BinaryName="getOrCreateSignal"]
   readonly attribute AbortSignal signal;
 
+  [Pref="dom.fetch.streaming_upload"]
+  readonly attribute RequestDuplex duplex;
+
+  // Spec-wise this belongs to the Body mixin, but Response's copy ships
+  // unconditionally while this one is pref-gated, so the two are declared
+  // separately. See Response.webidl.
+  [GetterThrows, Pref="dom.fetch.streaming_upload"]
+  readonly attribute ReadableStream? body;
+
   [Throws,
    NewObject] Request clone();
 
@@ -105,6 +114,9 @@ dictionary RequestInit {
 
   AbortSignal? signal;
 
+  [Pref="dom.fetch.streaming_upload"]
+  RequestDuplex duplex;
+
   [Pref="network.fetchpriority.enabled"]
   RequestPriority priority;
 
@@ -124,3 +136,4 @@ enum RequestCredentials { "omit", "same-origin", "include" };
 enum RequestCache { "default", "no-store", "reload", "no-cache", "force-cache", "only-if-cached" };
 enum RequestRedirect { "follow", "error", "manual" };
 enum RequestPriority { "high" , "low" , "auto" };
+enum RequestDuplex { "half" };

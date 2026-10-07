@@ -34,9 +34,9 @@
 
 Telemetry probes cover:
 
-1: SERVICE_WORKER_REGISTRATION_LOADING
-2-4: SERVICE_WORKER_LAUNCH_TIME_2
-2-5, 7-13: SERVICE_WORKER_FETCH_INTERCEPTION_DURATION_MS_2
-7-9: SERVICE_WORKER_FETCH_EVENT_DISPATCH_MS_2
-11: SERVICE_WORKER_FETCH_EVENT_FINISH_SYNTHESIZED_RESPONSE_MS_2
-12: SERVICE_WORKER_FETCH_EVENT_CHANNEL_RESET_MS_2
+1: service_worker.registration_loading
+2-4: service_worker.launch_time
+2-5, 7-13: service_worker.fetch_interception_duration
+7-9: service_worker.fetch_event_dispatch
+11: service_worker.fetch_event_finish_synthesized_response
+12: service_worker.fetch_event_channel_reset

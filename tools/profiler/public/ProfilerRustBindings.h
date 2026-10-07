@@ -5,6 +5,8 @@
 #ifndef ProfilerRustBindings_h
 #define ProfilerRustBindings_h
 
+#include "mozilla/ProfileJSONWriter.h"
+
 #include "mozilla/profiler_ffi_generated.h"
 
 // Add any non-generated support code here

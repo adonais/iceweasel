@@ -35,9 +35,10 @@ struct TestWebrtcVideoDecoderFactory : public WebrtcVideoDecoderFactory,
                          false);
 
     media::DecodeSupportSet h264GmpSupport =
-        WebrtcVideoDecoderFactory::SupportsCodec(
-            *MakeMediaExtendedMIMEType("video/H264"_ns),
-            SupportDecoderParams(VideoInfo()));
+        WaitFor(WebrtcVideoDecoderFactory::SupportsCodec(
+                    *MakeMediaExtendedMIMEType("video/H264"_ns),
+                    SupportDecoderParams(VideoInfo())))
+            .unwrap();
 
 #ifdef ANDROID
     ASSERT_EQ(h264GmpSupport, media::DecodeSupportSet{});
@@ -68,12 +69,14 @@ struct TestWebrtcVideoEncoderFactory : public WebrtcVideoEncoderFactory,
     Preferences::SetBool("media.webrtc.simulcast.h264.enabled", false);
 
     media::EncodeSupportSet h264GmpSupport =
-        WebrtcVideoEncoderFactory::SupportsCodec(EncoderConfig(
-            CodecType::H264, {640, 480}, Usage::Realtime,
-            EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P), 30,
-            240, 100'000, 50'000, 1'000'000, BitrateMode::Constant,
-            HardwarePreference::None, ScalabilityMode::None,
-            EncoderConfig::CodecSpecific(H264Specific())));
+        WaitFor(
+            WebrtcVideoEncoderFactory::SupportsCodec(EncoderConfig(
+                CodecType::H264, {640, 480}, Usage::Realtime,
+                EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
+                30, 240, 100'000, 50'000, 1'000'000, BitrateMode::Constant,
+                HardwarePreference::None, ScalabilityMode::None,
+                EncoderConfig::CodecSpecific(H264Specific()))))
+            .unwrap();
 
 #ifdef ANDROID
     ASSERT_EQ(h264GmpSupport, media::EncodeSupportSet{});

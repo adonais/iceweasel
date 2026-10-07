@@ -6,7 +6,7 @@ var hits = 0;
 dbg.onDebuggerStatement = function (frame) {
     var a = [];
     for (; frame.type == "call"; frame = frame.older)
-        a.push(frame.script.getOffsetLocation(frame.offset).lineNumber - g.line0);
+        a.push(frame.script.getOffsetMetadata(frame.offset).lineNumber - g.line0);
     assertEq(a.join(","), "1,2,3,4");
     hits++;
 };

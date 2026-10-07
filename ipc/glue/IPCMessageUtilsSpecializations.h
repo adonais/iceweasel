@@ -250,11 +250,11 @@ struct ParamTraits<mozilla::Vector<E, N, AP>> {
   typedef mozilla::Vector<E, N, AP> paramType;
 
   static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteSequenceParam<const E&>(aWriter, aParam.Elements(), aParam.Length());
+    WriteSequenceParam<const E&>(aWriter, aParam.begin(), aParam.length());
   }
 
   static void Write(MessageWriter* aWriter, paramType&& aParam) {
-    WriteSequenceParam<E&&>(aWriter, aParam.Elements(), aParam.Length());
+    WriteSequenceParam<E&&>(aWriter, aParam.begin(), aParam.length());
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {

@@ -1,0 +1,30 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+plugins {
+    id 'com.android.library'
+    alias(libs.plugins.dependency.analysis)
+}
+
+android {
+    namespace = 'mozilla.components.feature.tabdata.coordinator'
+}
+
+dependencies {
+    api project(':components:feature-tabgroups-storage')
+
+    implementation libs.kotlinx.coroutines
+
+    testImplementation platform(libs.junit.bom)
+    testImplementation libs.junit4
+    testRuntimeOnly libs.junit.platform.launcher
+    testRuntimeOnly libs.junit.vintage
+    testImplementation libs.kotlin.test
+    testImplementation libs.kotlinx.coroutines.test
+    testImplementation testFixtures(project(':components:feature-tabgroups-storage'))
+}
+
+apply from: '../../../common-config.gradle'
+apply from: '../../../publish.gradle'
+ext.configurePublish(config.componentsGroupId, project.name, project.ext.description)

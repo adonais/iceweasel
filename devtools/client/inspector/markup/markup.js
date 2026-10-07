@@ -1419,9 +1419,7 @@ class MarkupView extends EventEmitter {
    * Register all key shortcuts.
    */
   _initShortcuts() {
-    const shortcuts = new KeyShortcuts({
-      window: this.win,
-    });
+    const shortcuts = new KeyShortcuts(this.win);
 
     // Keep a pointer on shortcuts to destroy them when destroying the markup
     // view.

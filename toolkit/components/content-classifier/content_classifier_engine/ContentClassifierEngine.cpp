@@ -5,10 +5,12 @@
 #include "mozilla/ContentClassifierEngine.h"
 #include "ContentClassifierFeatureUtils.h"
 #include "ContentClassifierService.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsNetUtil.h"
+#include "nsContentUtils.h"
 #include "mozilla/Components.h"
 
 namespace mozilla {
@@ -38,15 +40,15 @@ ContentClassifierEngineResult ContentClassifierEngine::CheckNetworkRequest(
   bool important = false;
   nsCString exception;
 
-  const nsCString& sourceSite = mFeature.mUseTopWindowAsSource
-                                    ? aRequest.mTopWindowSchemelessSite
-                                    : aRequest.mSourceSchemelessSite;
+  const nsCString& sourceHostname = mFeature.mUseTopWindowAsSource
+                                        ? aRequest.mTopWindowHostname
+                                        : aRequest.mSourceHostname;
   const bool thirdParty = mFeature.mUseTopWindowAsSource
                               ? aRequest.mThirdParty
                               : aRequest.mThirdPartyToSource;
 
   nsresult rv = content_classifier_engine_check_network_request_preparsed(
-      mEngine, &aRequest.mUrl, &aRequest.mSchemelessSite, &sourceSite,
+      mEngine, &aRequest.mUrl, &aRequest.mHostname, &sourceHostname,
       &aRequest.mRequestType, thirdParty, aPreviouslyMatched, &matched,
       &important, &exception);
   return ContentClassifierEngineResult(matched, !exception.IsEmpty(), important,
@@ -115,8 +117,6 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
 
   mIsNonRecommendedAddon = IsNonRecommendedAddonFromLoadInfo(loadInfo);
 
-  mValid = true;
-
   // Unwrap nested URI schemes (jar:, view-source:, ...) before looking
   // at the host, mirroring AsyncUrlChannelClassifier::FeatureData::
   // InitializeList which calls NS_GetInnermostURI on the channel URI
@@ -127,6 +127,10 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
   nsCString host;
   rv = innermostURI->GetHost(host);
   if (NS_FAILED(rv)) return;
+  // The filtering rules expect brackets of an IPv6 literal. We ensure the
+  // brackets when getting the host.
+  mHostname = host;
+  nsContentUtils::MaybeFixIPv6Host(mHostname);
 
   nsCOMPtr<nsIEffectiveTLDService> eTLDService =
       components::EffectiveTLD::Service();
@@ -145,6 +149,8 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
     if (innermostTopURI) {
       nsCString topHost;
       if (NS_SUCCEEDED(innermostTopURI->GetHost(topHost))) {
+        mTopWindowHostname = topHost;
+        nsContentUtils::MaybeFixIPv6Host(mTopWindowHostname);
         rv = eTLDService->GetSchemelessSiteFromHost(topHost,
                                                     mTopWindowSchemelessSite);
         if (NS_FAILED(rv)) {
@@ -160,8 +166,23 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
   // check in CheckNetworkRequest.
   nsCOMPtr<nsIPrincipal> loadingPrincipal = loadInfo->GetLoadingPrincipal();
   if (loadingPrincipal) {
-    rv = loadingPrincipal->GetBaseDomain(mSourceSchemelessSite);
-    if (NS_FAILED(rv)) return;
+    // A system or an expanded principal has neither a host nor a base domain,
+    // and both appear on legitimate loads, such as the expanded principal a
+    // content script's fetch carries. Classify those with an empty source
+    // site rather than dropping the request; any other failure is unexpected
+    // and leaves the request invalid.
+    if (loadingPrincipal->IsSystemPrincipal() ||
+        loadingPrincipal->GetIsExpandedPrincipal()) {
+      mSourceHostname.Truncate();
+      mSourceSchemelessSite.Truncate();
+    } else {
+      rv = nsContentUtils::GetHostOrIPv6WithBrackets(loadingPrincipal,
+                                                     mSourceHostname);
+      if (NS_FAILED(rv)) return;
+
+      rv = loadingPrincipal->GetBaseDomain(mSourceSchemelessSite);
+      if (NS_FAILED(rv)) return;
+    }
   }
 
   // Third-party-ness is the precomputed BrowsingContext flag the
@@ -171,6 +192,8 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
   // mozIThirdPartyUtil check.
   mThirdParty = loadInfo->GetIsThirdPartyContextToTopWindow();
   mThirdPartyToSource = !mSchemelessSite.Equals(mSourceSchemelessSite);
+
+  mValid = true;
 }
 
 static bool IsValidRequestType(const nsACString& aRequestType) {
@@ -212,6 +235,8 @@ ContentClassifierRequest::ContentClassifierRequest(
   nsCString host;
   rv = uri->GetHost(host);
   if (NS_FAILED(rv)) return;
+  mHostname = host;
+  nsContentUtils::MaybeFixIPv6Host(mHostname);
 
   nsCOMPtr<nsIEffectiveTLDService> eTLDService =
       components::EffectiveTLD::Service();
@@ -228,6 +253,8 @@ ContentClassifierRequest::ContentClassifierRequest(
     nsCString sourceHost;
     rv = sourceUri->GetHost(sourceHost);
     if (NS_FAILED(rv)) return;
+    mSourceHostname = sourceHost;
+    nsContentUtils::MaybeFixIPv6Host(mSourceHostname);
 
     rv = eTLDService->GetSchemelessSiteFromHost(sourceHost,
                                                 mSourceSchemelessSite);
@@ -244,6 +271,8 @@ ContentClassifierRequest::ContentClassifierRequest(
     nsCString topHost;
     rv = topUri->GetHost(topHost);
     if (NS_FAILED(rv)) return;
+    mTopWindowHostname = topHost;
+    nsContentUtils::MaybeFixIPv6Host(mTopWindowHostname);
 
     rv = eTLDService->GetSchemelessSiteFromHost(topHost,
                                                 mTopWindowSchemelessSite);

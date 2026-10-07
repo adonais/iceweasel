@@ -71,6 +71,12 @@ ModelLoader::~ModelLoader(){
     if(device_ctx_) ggml_free(device_ctx_);
     if(gguf_) gguf_free(gguf_); if(ctx_) ggml_free(ctx_);
 }
+// The backend buffer once realized, else ctx_'s mem_buffer.
+size_t ModelLoader::weights_bytes() const {
+    if (weights_buf_) return ggml_backend_buffer_get_size(weights_buf_);
+    return ctx_ ? ggml_get_mem_size(ctx_) : 0;
+}
+
 bool ModelLoader::realize_weights(ggml_backend_t backend){
     if(weights_buf_) return true;                       // idempotent
     if(!backend || !ctx_){ PK_LOG("realize_weights: null backend/ctx"); return false; }
@@ -97,7 +103,7 @@ bool ModelLoader::realize_weights(ggml_backend_t backend){
     // ggml_backend_alloc_ctx_tensors rejects (it asserts the ctx is no_alloc).
     // So mirror every weight into a no_alloc=true ctx, allocate THAT on the
     // backend, upload each tensor's bytes from the host source, and repoint the
-    // name->tensor map at the device tensors. ctx_ stays alive as the host source.
+    // name->tensor map at the device tensors.
     const size_t n = tensors_.size();
     struct ggml_init_params dp = {
         /*.mem_size  =*/ ggml_tensor_overhead() * (n + 8),
@@ -121,6 +127,13 @@ bool ModelLoader::realize_weights(ggml_backend_t backend){
     for (auto& pr : ups)
         ggml_backend_tensor_set(pr.first, pr.second, 0, ggml_nbytes(pr.first));
     tensors_.swap(devmap);   // graphs now reference the device-resident tensors
+
+    // The upload was the host copy's last use, and keeping it doubles the
+    // process' footprint. gguf_ stays: it owns the metadata, not the data.
+    if (ctx_) {
+        ggml_free(ctx_);
+        ctx_ = nullptr;
+    }
     return true;
 }
 bool ModelLoader::load(const std::string& path){

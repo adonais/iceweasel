@@ -13,6 +13,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.Converted
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.FenixTestRule
@@ -187,6 +188,12 @@ class LoginsTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/517817
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.LoginsTest#neverSaveLoginFromPromptTest"],
+        bug = 2072575,
+        since = "2026-09",
+    )
+    @Critical
     @Test
     fun neverSaveLoginFromPromptTest() {
         val saveLoginTest = mockWebServer.saveLoginAsset
@@ -306,6 +313,12 @@ class LoginsTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/875849
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.LoginsTest#verifyEditLoginsViewTest"],
+        bug = 2072575,
+        since = "2026-09",
+    )
+    @Critical
     @Test
     @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1935209"])
     fun verifyEditLoginsViewTest() {

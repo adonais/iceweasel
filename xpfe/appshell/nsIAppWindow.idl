@@ -111,6 +111,7 @@ interface nsIAppWindow : nsISupports
    *                        to be opened. Will be null for non-content loads.
    * @return the newly minted window
    */
+  [can_run_script]
   nsIAppWindow createNewWindow(in int32_t aChromeFlags,
                                in nsIOpenWindowInfo aOpenWindowInfo);
 

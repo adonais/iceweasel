@@ -24,6 +24,7 @@
 #include "absl/strings/string_view.h"
 #include "api/data_channel_event_observer_interface.h"
 #include "api/data_channel_interface.h"
+#include "api/peer_connection_tracer_interface.h"
 #include "api/priority.h"
 #include "api/rtc_error.h"
 #include "api/scoped_refptr.h"
@@ -346,6 +347,9 @@ void DataChannelController::OnDataChannelOpenMessage(
   channel_usage_ = DataChannelUsage::kInUse;
   auto proxy = SctpDataChannel::CreateProxy(channel);
 
+  if (auto* tracer = pc_->tracer()) {
+    tracer->OnDataChannel(*proxy);
+  }
   pc_->RunWithObserver([&](auto observer) { observer->OnDataChannel(proxy); });
   pc_->NoteDataAddedEvent();
 

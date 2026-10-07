@@ -32,8 +32,8 @@ import org.mozilla.fenix.tabstray.browser.compose.interactable.InteractionType
 import org.mozilla.fenix.tabstray.browser.compose.interactable.closestDistanceTo
 import org.mozilla.fenix.tabstray.browser.compose.interactable.closestPointTo
 import org.mozilla.fenix.tabstray.browser.compose.interactable.gatherCandidates
-import org.mozilla.fenix.tabstray.controller.NoOpTabInteractionHandler
-import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
+import org.mozilla.fenix.tabstray.controller.ItemInteractionHandler
+import org.mozilla.fenix.tabstray.controller.NoOpItemInteractionHandler
 
 class InteractableGridTest {
     private val testDispatcher = StandardTestDispatcher()
@@ -278,7 +278,7 @@ class InteractableGridTest {
 
     @Test
     fun `GIVEN an item is dragged onto another AND live reorder is disabled WHEN onDragEnd is called THEN onDrop is called`() {
-        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val handler = mockk<ItemInteractionHandler>(relaxed = true)
         val dragItemOffset = IntOffset(0, 110)
         val reorderState =
             twoTabReorderState(
@@ -298,7 +298,7 @@ class InteractableGridTest {
 
     @Test
     fun `GIVEN an item is dragged onto another AND live reorder is enabled WHEN onDragEnd is called THEN onDrop is called`() {
-        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val handler = mockk<ItemInteractionHandler>(relaxed = true)
         val dragItemOffset = IntOffset(0, 0)
         val reorderState =
             twoTabReorderState(
@@ -317,7 +317,7 @@ class InteractableGridTest {
 
     @Test
     fun `GIVEN an item is dragged to the right of another WHEN onDragEnd is called THEN onMove is called`() {
-        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val handler = mockk<ItemInteractionHandler>(relaxed = true)
         val dragItemOffset = IntOffset(10, 110)
         val reorderState =
             twoTabReorderState(
@@ -337,7 +337,7 @@ class InteractableGridTest {
 
     @Test
     fun `GIVEN live reorder is disabled WHEN an item is dragged to the right of another THEN onMove is called`() {
-        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val handler = mockk<ItemInteractionHandler>(relaxed = true)
         val dragItemOffset = IntOffset(10, 0)
         val reorderState =
             twoTabReorderState(
@@ -355,7 +355,7 @@ class InteractableGridTest {
 
     @Test
     fun `GIVEN live reorder is enabled WHEN an item is dragged to the right of another THEN onMove is called`() {
-        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val handler = mockk<ItemInteractionHandler>(relaxed = true)
         val dragItemOffset = IntOffset(10, 0)
         val reorderState =
             twoTabReorderState(
@@ -373,7 +373,7 @@ class InteractableGridTest {
 
     @Test
     fun `GIVEN live reorder is enabled THEN multiple drag events do not invoke multiple moves`() {
-        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val handler = mockk<ItemInteractionHandler>(relaxed = true)
         val dragItemOffset = IntOffset(10, 0)
         val reorderState =
             twoTabReorderState(
@@ -393,7 +393,7 @@ class InteractableGridTest {
 
     @Test
     fun `GIVEN an item is dragged to the left of another WHEN onDragEnd is called THEN onMove is called`() {
-        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val handler = mockk<ItemInteractionHandler>(relaxed = true)
         val draggedItemOffset = IntOffset(30, 110)
         val reorderState =
             twoTabReorderState(
@@ -413,7 +413,7 @@ class InteractableGridTest {
 
     @Test
     fun `GIVEN live reorder disabled WHEN an item is dragged to the left of another THEN onMove is not called`() {
-        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val handler = mockk<ItemInteractionHandler>(relaxed = true)
         val draggedItemOffset = IntOffset(30, 0)
         val reorderState =
             twoTabReorderState(
@@ -431,7 +431,7 @@ class InteractableGridTest {
 
     @Test
     fun `GIVEN live reorder enabled WHEN an item is dragged to the left of another THEN onMove is called`() {
-        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val handler = mockk<ItemInteractionHandler>(relaxed = true)
         val draggedItemOffset = IntOffset(30, 0)
         val reorderState =
             twoTabReorderState(
@@ -462,7 +462,7 @@ class InteractableGridTest {
 
     @Test
     fun `GIVEN a drag is in progress and the dragged item is not visible when onDragEnd is called THEN onDragCancelled is called`() {
-        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val handler = mockk<ItemInteractionHandler>(relaxed = true)
         val draggedItemOffset = IntOffset(30, 0)
         val reorderState =
             fakeGridReorderState(
@@ -479,7 +479,7 @@ class InteractableGridTest {
 
     @Test
     fun `WHEN an item is dragged GIVEN preserveSelectMode is true THEN onDragStart is called with the same flag`() {
-        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val handler = mockk<ItemInteractionHandler>(relaxed = true)
         val dragItemOffset = IntOffset(10, 0)
         val reorderState =
             twoTabReorderState(
@@ -496,7 +496,7 @@ class InteractableGridTest {
 
     @Test
     fun `WHEN an item is dragged GIVEN preserveSelectMode is false THEN onDragStart is called with the same flag`() {
-        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val handler = mockk<ItemInteractionHandler>(relaxed = true)
         val dragItemOffset = IntOffset(10, 0)
         val reorderState =
             twoTabReorderState(
@@ -513,7 +513,7 @@ class InteractableGridTest {
 
     @Test
     fun `WHEN a drag is cancelled THEN the handler is invoked with a drag cancel call`() {
-        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val handler = mockk<ItemInteractionHandler>(relaxed = true)
         val dragItemOffset = IntOffset(10, 0)
         val reorderState =
             twoTabReorderState(
@@ -531,7 +531,7 @@ class InteractableGridTest {
 
     @Test
     fun `WHEN a large ignored item is placed in the TabsTray THEN the item size is the size of a normal tab`() {
-        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val handler = mockk<ItemInteractionHandler>(relaxed = true)
         val reorderState =
             fakeGridReorderState(
                 mockGridState(
@@ -602,7 +602,7 @@ class InteractableGridTest {
         mockGridItem(key = TabKeys.HEADER, index = 0, size = IntSize(1000, 100), offset = IntOffset(0, 0))
 
     private fun twoTabReorderState(
-        handler: TabInteractionHandler,
+        handler: ItemInteractionHandler,
         alphaTabOffset: IntOffset,
         betaTabOffset: IntOffset,
         itemSize: IntSize = IntSize(10, 10),
@@ -647,12 +647,12 @@ class InteractableGridTest {
 
     private fun fakeGridReorderState(
         gridState: LazyGridState,
-        handler: TabInteractionHandler = NoOpTabInteractionHandler,
+        handler: ItemInteractionHandler = NoOpItemInteractionHandler,
         liveReorderEnabled: Boolean = false,
     ): GridInteractionState {
         return GridInteractionStateImpl(
             gridState = gridState,
-            tabInteractionHandler = handler,
+            itemInteractionHandler = handler,
             scope = scope,
             touchSlop = 0f,
             ignoredItems = defaultIgnoredItems,

@@ -754,7 +754,7 @@ browser.engagement.navigation:
     bug_numbers:
       - 1271313
     description: >
-      The count URI loads triggered in a subsession from the urlbar (awesomebar),
+      The count of URI loads triggered in a subsession from the urlbar (awesomebar),
       broken down by the originating action.
     expires: never
     kind: uint
@@ -773,7 +773,7 @@ browser.engagement.navigation:
     bug_numbers:
       - 1732429
     description: >
-      The count URI loads triggered in a subsession from the urlbar via handoff,
+      The count of URI loads triggered in a subsession from the urlbar via handoff,
       broken down by the originating action.
     expires: never
     kind: uint
@@ -809,7 +809,7 @@ browser.engagement.navigation:
     bug_numbers:
       - 1654680
     description: >
-      The count URI loads triggered in a subsession from the urlbar's search
+      The count of URI loads triggered in a subsession from the urlbar's search
       mode, broken down by the originating action.
     expires: never
     kind: uint
@@ -827,7 +827,7 @@ browser.engagement.navigation:
     bug_numbers:
       - 1271313
     description: >
-      The count URI loads triggered in a subsession from the searchbar,
+      The count of URI loads triggered in a subsession from the searchbar,
       broken down by the originating action.
     expires: never
     kind: uint
@@ -846,7 +846,7 @@ browser.engagement.navigation:
     bug_numbers:
       - 1271313
     description: >
-      The count URI loads triggered in a subsession from about:home,
+      The count of URI loads triggered in a subsession from about:home,
       broken down by the originating action.
     expires: never
     kind: uint
@@ -865,7 +865,7 @@ browser.engagement.navigation:
     bug_numbers:
       - 1271313
     description: >
-      The count URI loads triggered in a subsession from about:newtab,
+      The count of URI loads triggered in a subsession from about:newtab,
       broken down by the originating action.
     expires: never
     kind: uint
@@ -884,7 +884,7 @@ browser.engagement.navigation:
     bug_numbers:
       - 1271313
     description: >
-      The count URI loads triggered in a subsession from the contextmenu,
+      The count of URI loads triggered in a subsession from the contextmenu,
       broken down by the originating action.
     expires: never
     kind: uint
@@ -903,7 +903,7 @@ browser.engagement.navigation:
     bug_numbers:
       - 1492233
     description: >
-      The count URI loads triggered in a subsession from a webextension.
+      The count of URI loads triggered in a subsession from a webextension.
     expires: never
     kind: uint
     keyed: true
@@ -1442,74 +1442,6 @@ pwmgr:
     notification_emails:
       - seceng-telemetry@mozilla.com
       - passwords-dev@mozilla.org
-    release_channel_collection: opt-out
-    products:
-      - 'firefox'
-    record_in_processes:
-      - main
-
-contentblocking:
-  cryptomining_blocking_enabled:
-    bug_numbers:
-      - 1522919
-    description: >
-      True if cryptominer blocking is enabled globally at startup.
-    expires: never
-    kind: boolean
-    notification_emails:
-      - aedelstein@mozilla.com
-      - seceng-telemetry@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - 'firefox'
-      - 'fennec'
-    record_in_processes:
-      - main
-  fingerprinting_blocking_enabled:
-    bug_numbers:
-      - 1522919
-    description: >
-      True if fingerprinter blocking is enabled globally at startup.
-    expires: never
-    kind: boolean
-    notification_emails:
-      - aedelstein@mozilla.com
-      - seceng-telemetry@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - 'firefox'
-      - 'fennec'
-    record_in_processes:
-      - main
-  category:
-    bug_numbers:
-      - 1529425
-    description: >
-      This scalar reports the value of the content blocking category pref (0 = "standard", 1 = "strict", 2 = "custom", 3 = some other value, this is not supported).
-    expires: never
-    kind: uint
-    notification_emails:
-      - aedelstein@mozilla.com
-      - seceng-telemetry@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - 'firefox'
-      - 'fennec'
-    record_in_processes:
-      - main
-  trackers_blocked_count:
-    bug_numbers:
-      - 1577030
-      - 1610894
-      - 1645088
-      - 1678209
-    description: >
-      A count of the number of tracking events blocked.
-    expires: never
-    kind: uint
-    notification_emails:
-      - ewright@mozilla.com
-      - seceng-telemetry@mozilla.com
     release_channel_collection: opt-out
     products:
       - 'firefox'
@@ -2715,7 +2647,7 @@ browser.search.content:
     bug_numbers:
       - 1732429
     description: >
-      The count URI loads triggered in a subsession from the urlbar via handoff,
+      The count of URI loads triggered in a subsession from the urlbar via handoff,
       broken down by the originating action.
     expires: never
     kind: uint
@@ -2982,7 +2914,7 @@ browser.search.withads:
     bug_numbers:
       - 1732429
     description: >
-      The count URI loads triggered in a subsession from the urlbar via handoff,
+      The count of URI loads triggered in a subsession from the urlbar via handoff,
       broken down by the originating action.
     expires: never
     kind: uint
@@ -3217,7 +3149,7 @@ browser.search.adclicks:
     bug_numbers:
       - 1732429
     description: >
-      The count URI loads triggered in a subsession from the urlbar via handoff,
+      The count of URI loads triggered in a subsession from the urlbar via handoff,
       broken down by the originating action.
     expires: never
     kind: uint

@@ -49,7 +49,9 @@ from mozbuild.frontend.l10n_manifest import (
     build_l10n_manifest_from_substs,
     write_l10n_manifest,
 )
+from mozbuild.frontend.reader import SandboxValidationError
 from mozbuild.jar import DeprecatedJarManifest, JarManifestParser
+from mozbuild.licenses import LicenseCollection, LicenseError
 from mozbuild.preprocessor import Preprocessor
 
 
@@ -116,9 +118,21 @@ class CommonBackend(BuildBackend):
         self._configs = set()
         self._generated_sources = set()
         self._l10n_manifest_data = []
+        self._licenses = LicenseCollection()
 
     def consume_object(self, obj):
         self._configs.add(obj.config)
+
+        # A duplicate id is only detectable once a second moz.build has been
+        # read, so unlike the rest of the license validation this cannot happen
+        # in the emitter. Report it the same way the emitter would.
+        try:
+            consumed = self._licenses.add(obj)
+        except LicenseError as error:
+            raise SandboxValidationError(str(error), obj._context)
+        if consumed:
+            self.backend_input_files.update(self._licenses.text_paths)
+            return True
 
         if isinstance(obj, XPIDLModule):
             # TODO bug 1240134 tracks not processing XPIDL files during
@@ -233,6 +247,18 @@ class CommonBackend(BuildBackend):
             for f in obj.files:
                 fh.write(f.target_basename + "\n")
 
+    def _write_licenses_json(self):
+        """Write the tree's LICENSES declarations for the generator and the SBOM.
+
+        Only licenses reachable in this configuration appear, because an
+        unconfigured directory is never traversed.
+        """
+        path = mozpath.join(self.environment.topobjdir, "licenses.json")
+        with self._write_file(path) as fh:
+            json.dump(
+                {"licenses": self._licenses.records()}, fh, sort_keys=True, indent=2
+            )
+
     def consume_finished(self):
         if len(self._idl_manager.modules):
             self._write_rust_xpidl_summary(self._idl_manager)
@@ -256,6 +282,8 @@ class CommonBackend(BuildBackend):
                 ),
             }
             json.dump(d, fh, sort_keys=True, indent=4)
+
+        self._write_licenses_json()
 
         # Write out a file listing generated sources.
         with self._write_file(mozpath.join(topobjdir, "generated-sources.json")) as fh:
@@ -490,8 +518,10 @@ class CommonBackend(BuildBackend):
                 # Prefer a relative path to make the output not depend on the sourcedir.
                 # This makes caching across worktrees possible.
                 if os.path.isabs(s):
-                    s = mozpath.relpath(s, output_directory)
-                f.write(includeTemplate % {"cppfile": s})
+                    rel_path = mozpath.relpath(s, output_directory)
+                else:
+                    rel_path = s
+                f.write(includeTemplate % {"cppfile": rel_path})
                 f.write("\n")
 
     def _write_unified_files(

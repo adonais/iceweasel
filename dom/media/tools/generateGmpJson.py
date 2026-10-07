@@ -80,24 +80,31 @@ def fetch_url_for_cdms(cdms, urlParams, allow_version_mismatch):
                         cdm["target"], version.group(1), any_version
                     )
                 )
+            cdm["version"] = version.group(1)
             cdm["fileName"] = normalizedUrl
             if mirrorUrl and mirrorUrl != normalizedUrl:
                 cdm["fileNameMirror"] = mirrorUrl
     return any_version
 
 
-def fetch_data_for_cdms(cdms, urlParams):
+def hash_cdm(cdm, useSha512: bool):
+    if useSha512:
+        return hashlib.sha512(cdm).hexdigest()
+    return hashlib.sha256(cdm).hexdigest()
+
+
+def fetch_data_for_cdms(cdms, urlParams, useSha512: bool):
     for cdm in cdms:
         if "fileName" in cdm:
             cdm["fileUrl"] = cdm["fileName"].format_map(urlParams)
             response = requests.get(cdm["fileUrl"])
             response.raise_for_status()
-            cdm["hashValue"] = hashlib.sha512(response.content).hexdigest()
+            cdm["hashValue"] = hash_cdm(response.content, useSha512)
             if "fileNameMirror" in cdm:
                 cdm["mirrorUrl"] = cdm["fileNameMirror"].format_map(urlParams)
                 mirrorresponse = requests.get(cdm["mirrorUrl"])
                 mirrorresponse.raise_for_status()
-                mirrorhash = hashlib.sha512(mirrorresponse.content).hexdigest()
+                mirrorhash = hash_cdm(mirrorresponse.content, useSha512)
                 if cdm["hashValue"] != mirrorhash:
                     raise Exception(
                         "Primary hash {} and mirror hash {} differ",
@@ -176,7 +183,7 @@ def calculate_gmpopenh264_json(
     # fmt: on
     cdms = remove_skipped_targets(cdms, skip_targets)
     try:
-        fetch_data_for_cdms(cdms, {"url_base": url_base, "version": version_hash})
+        fetch_data_for_cdms(cdms, {"url_base": url_base, "version": version_hash}, True)
     except Exception as e:
         logging.error("calculate_gmpopenh264_json: could not create JSON due to: %s", e)
         return ""
@@ -205,7 +212,7 @@ def calculate_chrome_component_json(
         version = fetch_url_for_cdms(
             cdms, {"url_base": url_base}, allow_version_mismatch
         )
-        fetch_data_for_cdms(cdms, {})
+        fetch_data_for_cdms(cdms, {}, True)
     except Exception as e:
         logging.error(
             "calculate_chrome_component_json: could not create JSON due to: %s", e
@@ -229,27 +236,71 @@ def calculate_chrome_component_json(
         )
 
 
-def calculate_widevinecdm_component_json(
-    url_base: str, allow_version_mismatch: bool, skip_targets
-) -> str:
+def get_widevine_cdms():
     # fmt: off
-    cdms = [
-        {"target": "Darwin_aarch64-gcc3", "fileName": "{url_base}&os=mac&arch=arm64&os_arch=arm64"},
+    return [
+        {"target": "Darwin_aarch64-gcc3", "fileName": "{url_base}&os=mac&arch=arm64&os_arch=arm64", "taskclusterId": "mac-arm64"},
         {"target": "Darwin_x86_64-gcc3", "alias": "Darwin_x86_64-gcc3-u-i386-x86_64"},
-        {"target": "Darwin_x86_64-gcc3-u-i386-x86_64", "fileName": "{url_base}&os=mac&arch=x64&os_arch=x64"},
-        {"target": "Linux_aarch64-gcc3", "fileName": "{url_base}&os=Linux&arch=arm64&os_arch=arm64"},
-        {"target": "Linux_x86_64-gcc3", "fileName": "{url_base}&os=Linux&arch=x64&os_arch=x64"},
+        {"target": "Darwin_x86_64-gcc3-u-i386-x86_64", "fileName": "{url_base}&os=mac&arch=x64&os_arch=x64", "taskclusterId": "mac"},
+        {"target": "Linux_aarch64-gcc3", "fileName": "{url_base}&os=Linux&arch=arm64&os_arch=arm64", "taskclusterId": "linux-arm64"},
+        {"target": "Linux_x86_64-gcc3", "fileName": "{url_base}&os=Linux&arch=x64&os_arch=x64", "taskclusterId": "linux"},
         {"target": "Linux_x86_64-gcc3-asan", "alias": "Linux_x86_64-gcc3"},
-        {"target": "WINNT_aarch64-msvc-aarch64", "fileName": "{url_base}&os=win&arch=arm64&os_arch=arm64"},
-        {"target": "WINNT_x86-msvc", "fileName": "{url_base}&os=win&arch=x86&os_arch=x86"},
+        {"target": "WINNT_aarch64-msvc-aarch64", "fileName": "{url_base}&os=win&arch=arm64&os_arch=arm64", "taskclusterId": "win-arm64"},
+        {"target": "WINNT_x86-msvc", "fileName": "{url_base}&os=win&arch=x86&os_arch=x86", "taskclusterId": "win32"},
         {"target": "WINNT_x86-msvc-x64", "alias": "WINNT_x86-msvc"},
         {"target": "WINNT_x86-msvc-x86", "alias": "WINNT_x86-msvc"},
-        {"target": "WINNT_x86_64-msvc", "fileName": "{url_base}&os=win&arch=x64&os_arch=x64"},
+        {"target": "WINNT_x86_64-msvc", "fileName": "{url_base}&os=win&arch=x64&os_arch=x64", "taskclusterId": "win64"},
         {"target": "WINNT_x86_64-msvc-x64", "alias": "WINNT_x86_64-msvc"},
         {"target": "WINNT_x86_64-msvc-x64-asan", "alias": "WINNT_x86_64-msvc"},
     ]
     # fmt: on
-    cdms = remove_skipped_targets(cdms, skip_targets)
+
+
+def calculate_widevinecdm_component_yml(
+    url_base: str, allow_version_mismatch: bool, skip_targets
+) -> str:
+    cdms = remove_skipped_targets(get_widevine_cdms(), skip_targets)
+    yml_skip_targets = []
+    for cdm in cdms:
+        if "taskclusterId" not in cdm:
+            yml_skip_targets.append(cdm["target"])
+    cdms = remove_skipped_targets(cdms, yml_skip_targets)
+    try:
+        url_base = url_base.format_map({"guid": "oimompecagnajdejgnnjijobebaeigek"})
+        fetch_url_for_cdms(cdms, {"url_base": url_base}, allow_version_mismatch)
+        fetch_data_for_cdms(cdms, {}, False)
+    except Exception as e:
+        logging.error(
+            "calculate_widevinecdm_component_yml: could not create JSON due to: %s", e
+        )
+        return ""
+    else:
+        cdm_yml = (
+            "# This Source Code Form is subject to the terms of the Mozilla Public\n"
+            + "# License, v. 2.0. If a copy of the MPL was not distributed with this\n"
+            + "# file, You can obtain one at http://mozilla.org/MPL/2.0/.\n"
+            + "---\n"
+        )
+        for cdm in cdms:
+            cdm_yml += (
+                "widevine-{taskclusterId}:\n"
+                + "    description: Widevine plugin for {taskclusterId}\n"
+                + "    artifact-prefix: private/widevine\n"
+                + "    fetch:\n"
+                + "        type: crx3-url\n"
+                + "        url: {fileNameMirror}\n"
+                + "        sha256: {hashValue}\n"
+                + "        size: {filesize}\n"
+                + "        artifact-name: widevine-{taskclusterId}.tar.zst\n"
+                + "        add-prefix: gmp-widevinecdm/{version}/\n\n"
+            ).format_map(cdm)
+        return cdm_yml[:-2]
+
+
+def calculate_widevinecdm_component_json(
+    url_base: str, allow_version_mismatch: bool, skip_targets
+) -> str:
+    cdms = remove_skipped_targets(get_widevine_cdms(), skip_targets)
     return calculate_chrome_component_json(
         "Widevine",
         "widevinecdm",
@@ -307,6 +358,12 @@ def main():
         action="store_true",
         help="allow component update service to return different versions for targets",
     )
+
+    parser.add_argument(
+        "--yml",
+        action="store_true",
+        help="produce yml for taskcluster artifacts",
+    )
     parser.add_argument(
         "--skip-targets",
         action="extend",
@@ -335,24 +392,30 @@ def main():
         url_base = url_base[:-1]
 
     if args.plugin == "openh264":
-        json_result = calculate_gmpopenh264_json(
+        result = calculate_gmpopenh264_json(
             args.version, args.revision, url_base, args.skip_targets
         )
     elif args.plugin == "widevine":
-        json_result = calculate_widevinecdm_component_json(
-            url_base, args.allow_version_mismatch, args.skip_targets
-        )
+        if args.yml:
+            result = calculate_widevinecdm_component_yml(
+                url_base, args.allow_version_mismatch, args.skip_targets
+            )
+        else:
+            result = calculate_widevinecdm_component_json(
+                url_base, args.allow_version_mismatch, args.skip_targets
+            )
     elif args.plugin == "widevine_l1":
-        json_result = calculate_widevinecdm_l1_component_json(
+        result = calculate_widevinecdm_l1_component_json(
             url_base, args.allow_version_mismatch, args.skip_targets
         )
 
-    try:
-        json.loads(json_result)
-    except json.JSONDecodeError as e:
-        logging.error("invalid JSON produced: %s", e)
-    else:
-        print(json_result)
+    if not args.yml:
+        try:
+            json.loads(result)
+        except json.JSONDecodeError as e:
+            logging.error("invalid JSON produced: %s", e)
+
+    print(result)
 
 
 main()

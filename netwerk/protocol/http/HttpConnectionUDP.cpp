@@ -444,14 +444,8 @@ nsresult HttpConnectionUDP::Activate(nsAHttpTransaction* trans, uint32_t caps,
     if (!mExperienced && mHttp3Session && mHttp3Session->IsConnected()) {
       mExperienced = true;
     }
-    if (mBootstrappedTimingsSet) {
-      mBootstrappedTimingsSet = false;
-      if (hTrans) {
-        hTrans->BootstrapTimings(mBootstrappedTimings);
-      }
-    }
-    mBootstrappedTimings = TimingStruct();
   }
+  HandOffConnectPhase(trans);
 
   mTransactionCaps = caps;
   mPriority = pri;

@@ -15,6 +15,7 @@
 #include "mozilla/ToString.h"
 #include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Range.h"
 
 #include "nsDebug.h"
 #include "nsAtom.h"
@@ -22,7 +23,6 @@
 #include "nsUnicodeProperties.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIContent.h"
-#include "nsRange.h"
 #include "nsContentUtils.h"
 #include "nsIFrame.h"
 
@@ -114,7 +114,7 @@ bool NodeOffset::operator==(
          (*rangeBoundaryOffset == static_cast<uint32_t>(mOffset));
 }
 
-bool NodeOffsetRange::operator==(const nsRange& aRange) const {
+bool NodeOffsetRange::operator==(const dom::Range& aRange) const {
   return mBegin == aRange.StartRef() && mEnd == aRange.EndRef();
 }
 
@@ -312,7 +312,7 @@ nsresult mozInlineSpellWordUtil::EnsureWords(NodeOffset aSoftBegin,
 }
 
 nsresult mozInlineSpellWordUtil::MakeRangeForWord(const RealWord& aWord,
-                                                  nsRange** aRange) const {
+                                                  dom::Range** aRange) const {
   NodeOffset begin =
       MapSoftTextOffsetToDOMPosition(aWord.mSoftTextOffset, HINT_BEGIN);
   NodeOffset end = MapSoftTextOffsetToDOMPosition(aWord.EndOffset(), HINT_END);
@@ -330,7 +330,7 @@ void mozInlineSpellWordUtil::MakeNodeOffsetRangeForWord(
 
 nsresult mozInlineSpellWordUtil::GetRangeForWord(nsINode* aWordNode,
                                                  int32_t aWordOffset,
-                                                 nsRange** aRange) {
+                                                 dom::Range** aRange) {
   // Set our soft end and start
   NodeOffset pt(aWordNode, aWordOffset);
 
@@ -406,15 +406,15 @@ bool mozInlineSpellWordUtil::GetNextWord(Word& aWord) {
 //    Convenience function for creating a range over the current document.
 
 nsresult mozInlineSpellWordUtil::MakeRange(NodeOffset aBegin, NodeOffset aEnd,
-                                           nsRange** aRange) const {
+                                           dom::Range** aRange) const {
   NS_ENSURE_ARG_POINTER(aBegin.mNode);
   if (!mDocument) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
   ErrorResult error;
-  RefPtr<nsRange> range = nsRange::Create(aBegin.mNode, aBegin.mOffset,
-                                          aEnd.mNode, aEnd.mOffset, error);
+  RefPtr<dom::Range> range = dom::Range::Create(
+      aBegin.mNode, aBegin.mOffset, aEnd.mNode, aEnd.mOffset, error);
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
   }
@@ -424,12 +424,12 @@ nsresult mozInlineSpellWordUtil::MakeRange(NodeOffset aBegin, NodeOffset aEnd,
 }
 
 // static
-already_AddRefed<nsRange> mozInlineSpellWordUtil::MakeRange(
+already_AddRefed<dom::Range> mozInlineSpellWordUtil::MakeRange(
     const NodeOffsetRange& aRange) {
   IgnoredErrorResult ignoredError;
-  RefPtr<nsRange> range =
-      nsRange::Create(aRange.Begin().Node(), aRange.Begin().Offset(),
-                      aRange.End().Node(), aRange.End().Offset(), ignoredError);
+  RefPtr<dom::Range> range = dom::Range::Create(
+      aRange.Begin().Node(), aRange.Begin().Offset(), aRange.End().Node(),
+      aRange.End().Offset(), ignoredError);
   NS_WARNING_ASSERTION(!ignoredError.Failed(), "Creating a range failed");
   return range.forget();
 }

@@ -5,4 +5,5 @@
 name: performance-infrastructure
 manifest: None
 static-only: True
+hardware-docs: True
 suites: {}

@@ -75,6 +75,12 @@ using namespace mozilla;
 
 static gfx::IntSize kImageSize(640, 480);
 static gfx::IntSize kImageSize4K(3840, 2160);
+// The resolution Gecko computes as the H264 Annex A Table A-1 macroblock-cap
+// for level 5 (mbs=589824, fs=22080) at a 12800x7200-ish source aspect
+// ratio; see bug 2064678. Exceeds Android's real per-frame macroblock
+// budget (see H264EncodesLevel5CapAnnexBRealtime below), independent of the
+// declared level.
+static gfx::IntSize kImageSizeLevel5Cap(3160, 1776);
 // Set codec to avc1.42001E - Base profile, constraint 0, level 30.
 MOZ_RUNINIT const H264Specific kH264SpecificAnnexB(H264_PROFILE_BASE,
                                                    H264_LEVEL::H264_LEVEL_3,
@@ -82,17 +88,24 @@ MOZ_RUNINIT const H264Specific kH264SpecificAnnexB(H264_PROFILE_BASE,
 MOZ_RUNINIT const H264Specific kH264SpecificAVCC(H264_PROFILE_BASE,
                                                  H264_LEVEL::H264_LEVEL_3,
                                                  H264BitStreamFormat::AVC);
+// Same as kH264SpecificAnnexB, but declaring level 5 -- matching
+// kImageSizeLevel5Cap's macroblock budget, unlike level 3's (used by
+// kH264SpecificAnnexB), which is nowhere near enough for that resolution.
+MOZ_RUNINIT const H264Specific kH264SpecificLevel5AnnexB(
+    H264_PROFILE_BASE, H264_LEVEL::H264_LEVEL_5, H264BitStreamFormat::ANNEXB);
 
 class MediaDataEncoderTest : public testing::Test {
  protected:
   void SetUp() override {
     mData.Init(kImageSize);
     mData4K.Init(kImageSize4K);
+    mDataLevel5Cap.Init(kImageSizeLevel5Cap);
   }
 
   void TearDown() override {
     mData.Deinit();
     mData4K.Deinit();
+    mDataLevel5Cap.Deinit();
   }
 
  public:
@@ -198,6 +211,7 @@ class MediaDataEncoderTest : public testing::Test {
  public:
   FrameSource mData;
   FrameSource mData4K;
+  FrameSource mDataLevel5Cap;
 };
 
 already_AddRefed<MediaDataEncoder> CreateVideoEncoder(
@@ -458,7 +472,8 @@ TEST_F(MediaDataEncoderTest, H264Inits) {
 
 static void H264EncodesTest(Usage aUsage,
                             const EncoderConfig::CodecSpecific& aSpecific,
-                            MediaDataEncoderTest::FrameSource& aFrameSource) {
+                            MediaDataEncoderTest::FrameSource& aFrameSource,
+                            bool aToleratesInitFailureOnAndroid = false) {
   ASSERT_TRUE(aSpecific.is<H264Specific>());
   ASSERT_TRUE(aSpecific.as<H264Specific>().mFormat ==
                   H264BitStreamFormat::ANNEXB ||
@@ -472,7 +487,13 @@ static void H264EncodesTest(Usage aUsage,
     RefPtr<MediaDataEncoder> e = CreateH264Encoder(
         aUsage, EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
         aFrameSource.GetSize(), ScalabilityMode::None, aSpecific);
-    EXPECT_TRUE(EnsureInit(e));
+    bool initOk = EnsureInit(e);
+#ifdef MOZ_WIDGET_ANDROID
+    if (!initOk && aToleratesInitFailureOnAndroid) {
+      return;
+    }
+#endif
+    EXPECT_TRUE(initOk);
     MediaDataEncoder::EncodedData output =
         GET_OR_RETURN_ON_ERROR(Encode(e, 1UL, aFrameSource));
     EXPECT_EQ(output.Length(), 1UL);
@@ -533,6 +554,38 @@ TEST_F(MediaDataEncoderTest, H264Encodes4KAVCCRecord) {
 TEST_F(MediaDataEncoderTest, H264Encodes4KAVCCRealtime) {
   SKIP_IF_ANDROID_SW();  // Android SW can't encode 4K.
   H264EncodesTest(Usage::Realtime, AsVariant(kH264SpecificAVCC), mData4K);
+}
+
+// This resolution is well within what H264 level 5 permits, but exceeds the
+// real per-frame macroblock budget Android's encoders actually have
+// (roughly level 4-equivalent, independent of the declared level) -- see
+// bug 2064678. Tolerate a graceful init failure there, but nowhere else:
+// on every other platform this resolution is expected to encode fine.
+//
+// NB: kH264SpecificAnnexB declares level 3, whose macroblock budget is far
+// too small for this resolution -- this deliberately mismatches declared
+// level vs. actual resolution, to check whether that mismatch itself (as
+// opposed to the resolution alone) is what breaks encoder init. Compare
+// against H264EncodesLevel5CapMatchedLevelAnnexBRealtime below.
+TEST_F(MediaDataEncoderTest, H264EncodesLevel5CapAnnexBRealtime) {
+#ifdef XP_MACOSX
+  GTEST_SKIP() << "Bug 2074146: VideoToolbox drops frames at this size";
+#else
+  H264EncodesTest(Usage::Realtime, AsVariant(kH264SpecificAnnexB),
+                  mDataLevel5Cap, /* aToleratesInitFailureOnAndroid */ true);
+#endif
+}
+
+// Same resolution as above, but with a level that actually matches it. Fails
+// the same way on Android, for the same reason: the declared level was never
+// the limiting factor, the platform's real macroblock budget is.
+TEST_F(MediaDataEncoderTest, H264EncodesLevel5CapMatchedLevelAnnexBRealtime) {
+#ifdef XP_MACOSX
+  GTEST_SKIP() << "Bug 2074146: VideoToolbox drops frames at this size";
+#else
+  H264EncodesTest(Usage::Realtime, AsVariant(kH264SpecificLevel5AnnexB),
+                  mDataLevel5Cap, /* aToleratesInitFailureOnAndroid */ true);
+#endif
 }
 
 static void H264EncodeBatchTest(

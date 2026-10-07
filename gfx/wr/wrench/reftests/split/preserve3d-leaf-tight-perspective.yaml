@@ -2,6 +2,8 @@
 # perspective value (perspective: 4) matching the bug 1817905 CSS testcase.
 # The rotated rect's corners land far behind the camera in this setup —
 # this exercises the frustum-cull path with extreme perspective.
+# The intermediate preserves 3D so the perspective reaches the leaf; a flat
+# intermediate would flatten the leaf into its plane first (no perspective).
 ---
 root:
   items:
@@ -12,6 +14,7 @@ root:
         - type: stacking-context
           bounds: 0 0 800 600
           transform: translate(200, 200, 0)
+          transform-style: preserve-3d
           items:
             - type: stacking-context
               bounds: 0 0 360 240

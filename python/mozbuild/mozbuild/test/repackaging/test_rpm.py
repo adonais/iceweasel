@@ -446,6 +446,9 @@ RPMBUILD_COMMAND = [
             "all",
             True,
             [
+                "unshare",
+                "--user",
+                "--map-root-user",
                 "chroot",
                 "/srv/rpm-all",
                 "bash",
@@ -458,6 +461,9 @@ RPMBUILD_COMMAND = [
             "x86",
             True,
             [
+                "unshare",
+                "--user",
+                "--map-root-user",
                 "chroot",
                 "/srv/rpm-x86",
                 "bash",
@@ -470,6 +476,9 @@ RPMBUILD_COMMAND = [
             "x86_64",
             True,
             [
+                "unshare",
+                "--user",
+                "--map-root-user",
                 "chroot",
                 "/srv/rpm-x86_64",
                 "bash",

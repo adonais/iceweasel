@@ -9,3 +9,24 @@ DIRS += [
     "signalr",
     "wamp",
 ]
+
+LICENSED_UNDER += ["apache"]
+LICENSED_UNDER["apache"].paths = [
+    "signalr/HandshakeProtocol.js",
+    "signalr/IHubProtocol.js",
+    "signalr/JSONHubProtocol.js",
+    "signalr/TextMessageFormat.js",
+    "signalr/Utils.js",
+]
+
+LICENSED_UNDER += ["mit"]
+LICENSED_UNDER["mit"].paths = [
+    "socket-io/binary.js",
+    "socket-io/component-emitter.js",
+    "socket-io/index.js",
+    "socket-io/is-buffer.js",
+    "sockjs/index.js",
+    "stomp/byte.js",
+    "stomp/frame.js",
+    "stomp/parser.js",
+]

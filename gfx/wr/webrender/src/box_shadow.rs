@@ -5,37 +5,30 @@ use api::{BorderRadius, BoxShadowClipMode, ClipMode, ColorF};
 use api::units::*;
 use crate::border;
 use crate::command_buffer::CommandBufferIndex;
-use crate::clip::{ClipChainInstance, ClipNodeId};
+use crate::clip::ClipNodeId;
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext};
 use crate::intern::{Handle as InternHandle, InternDebug, Internable};
-use crate::prim_store::{InternablePrimitive, PrimKey, PrimTemplate, PrimTemplateCommonData, PrimitiveScratchBuffer};
+use crate::prim_store::{InternablePrimitive, PrimTemplate, PrimTemplateCommonData, PrimitiveScratchBuffer};
 use crate::prim_store::{PrimitiveKind, PrimitiveStore};
 use crate::quad::{self, QuadDescriptor, QuadTransformState};
+use crate::quad_clip::QuadClipStack;
 use crate::pattern::box_shadow::BoxShadowPatternData;
 use crate::render_task::{RenderTask, RenderTaskKind, MAX_BLUR_STD_DEVIATION};
-use crate::render_backend::DataStores;
 use crate::render_task_cache::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent, to_cache_size};
 use crate::render_target::RenderTargetKind;
 use crate::gpu_types::BlurEdgeMode;
-use crate::scene_building::{SceneBuilder, IsVisible};
+use crate::scene_building::SceneBuilder;
 use crate::space::SpaceSnapper;
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::util::clamp_to_scale_factor;
 
-pub type BoxShadowKey = PrimKey<BoxShadow>;
+// `BoxShadow` and its key live in `webrender_api::interned_prims` so
+// content-process interning can hold them. Re-exported to keep existing
+// references working.
+pub use api::interned_prims::{BoxShadow, BoxShadowKey};
 
 impl InternDebug for BoxShadowKey {}
-
-// `BoxShadow` now lives in `webrender_api::interned_prims` so content-process
-// interning can hold it. Re-exported to keep existing references working.
-pub use api::interned_prims::BoxShadow;
-
-impl IsVisible for BoxShadow {
-    fn is_visible(&self) -> bool {
-        true
-    }
-}
 
 pub type BoxShadowDataHandle = InternHandle<BoxShadow>;
 
@@ -169,7 +162,7 @@ pub fn prepare_box_shadow(
     shadow_data: &BoxShadowData,
     common_data: &PrimTemplateCommonData,
     unsnapped_pattern_rect: &LayoutRect,
-    clip_chain: &ClipChainInstance,
+    clips: &QuadClipStack,
     quad_transform: &mut QuadTransformState,
     frame_context: &FrameBuildingContext,
     pic_context: &PictureContext,
@@ -178,7 +171,6 @@ pub fn prepare_box_shadow(
     prim_spatial_node_index: SpatialNodeIndex,
     device_pixel_scale: DevicePixelScale,
     cmd_buffer_targets: &[CommandBufferIndex],
-    data_stores: &DataStores,
 ) {
     let blur_radius = shadow_data.blur_radius;
     // Build snapped element/inner/outer rects. The shader expects
@@ -302,7 +294,7 @@ pub fn prepare_box_shadow(
     } else {
         0
     };
-    content_scale.0 /= (1u32 << n_downscales) as f32;
+    content_scale.0 /= (n_downscales as f32).exp2();
 
     // Safety cap: reduces content_scale further only for pathological
     // small-blur-huge-element cases where the alloc would exceed the max task size.
@@ -453,18 +445,16 @@ pub fn prepare_box_shadow(
             pattern_rect: prim_rect,
             // `prim_rect` is re-derived here by snapping the element rect and
             // re-inflating, so it differs from the prim rect the clip chain was
-            // built with; `clip_chain.local_coverage_rect` does not apply.
-            bounds: clip_chain.local_clip_rect.intersection_unchecked(&prim_rect),
+            // built with, so the clip chain's own coverage rect does not apply.
+            bounds: clips.local_clip_rect().intersection_unchecked(&prim_rect),
             aligned_aa_edges: common_data.aligned_aa_edges,
             transformed_aa_edges: common_data.transformed_aa_edges,
         },
         &None,
-        clip_chain,
+        clips,
         quad_transform,
-        frame_context,
-        pic_context,
+        frame_context.spatial_tree,
         cmd_buffer_targets,
-        &data_stores.clip,
         frame_state,
         scratch,
     );

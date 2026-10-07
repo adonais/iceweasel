@@ -81,7 +81,7 @@ export class TCPListener {
               reject();
             }
           },
-          { interval: 250, timeout: 5000 }
+          { interval: 250, timeout: 5000, throws: null }
         );
 
         // Since PollPromise doesn't throw when timeout expires,

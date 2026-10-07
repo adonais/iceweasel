@@ -62,6 +62,9 @@ using std::string;
 
 struct ExceptionParameters;
 
+// Check if the code of an EXC_RESOURCE exception represents a fatal exception
+bool IsNonFatalResourceException(int64_t code);
+
 enum HandlerThreadMessage {
   // Message ID telling the handler thread to write a dump.
   kWriteDumpMessage = 0,

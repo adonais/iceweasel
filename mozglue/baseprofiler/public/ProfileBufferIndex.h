@@ -8,6 +8,7 @@
 #include "mozilla/Attributes.h"
 
 #include <cstddef>
+#include <compare>
 #include <cstdint>
 
 namespace mozilla {

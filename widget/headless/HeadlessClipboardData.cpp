@@ -24,11 +24,21 @@ bool HeadlessClipboardData::HasHTML() const { return !mHTML.IsVoid(); }
 
 const nsAString& HeadlessClipboardData::GetHTML() const { return mHTML; }
 
+void HeadlessClipboardData::SetPNG(nsTArray<uint8_t>&& aPNG) {
+  mPNG = std::move(aPNG);
+  mChangeCount++;
+}
+
+bool HeadlessClipboardData::HasPNG() const { return !mPNG.IsEmpty(); }
+
+const nsTArray<uint8_t>& HeadlessClipboardData::GetPNG() const { return mPNG; }
+
 int32_t HeadlessClipboardData::GetChangeCount() const { return mChangeCount; }
 
 void HeadlessClipboardData::Clear() {
   mPlain.SetIsVoid(true);
   mHTML.SetIsVoid(true);
+  mPNG.Clear();
   mChangeCount++;
 }
 

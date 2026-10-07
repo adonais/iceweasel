@@ -385,7 +385,7 @@ class Axis {
 
   // Do not use this function directly, use
   // AsyncPanZoomController::GetAllowedHandoffDirections instead.
-  virtual OverscrollBehavior GetOverscrollBehavior() const = 0;
+  virtual StyleOverscrollBehavior GetOverscrollBehavior() const = 0;
 
   // Adjust a requested overscroll amount for resistance, yielding a smaller
   // actual overscroll amount.
@@ -422,7 +422,7 @@ class AxisX : public Axis {
   SideBits ScrollableDirections() const;
 
  private:
-  OverscrollBehavior GetOverscrollBehavior() const override;
+  StyleOverscrollBehavior GetOverscrollBehavior() const override;
 };
 
 class AxisY : public Axis {
@@ -455,7 +455,7 @@ class AxisY : public Axis {
       const ScreenMargin& aFixedLayerMargins) const;
 
  private:
-  OverscrollBehavior GetOverscrollBehavior() const override;
+  StyleOverscrollBehavior GetOverscrollBehavior() const override;
   ParentLayerCoord GetCompositionLengthWithoutDynamicToolbar() const;
   bool HasDynamicToolbar() const;
 };

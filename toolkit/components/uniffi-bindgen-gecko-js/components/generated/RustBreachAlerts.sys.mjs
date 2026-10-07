@@ -37,6 +37,7 @@ export var UnitTestObjs = {
 
 
 
+
 /**
  * BreachAlertDismissal
  */
@@ -355,7 +356,7 @@ export class BreachAlertsStore extends BreachAlertsStoreInterface {
        
         FfiConverterString.checkType(dbPath);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            68, // uniffi_breach_alerts_fn_constructor_breachalertsstore_new_store
+            101, // uniffi_breach_alerts_fn_constructor_breachalertsstore_new_store
             FfiConverterString.lower(dbPath),
         )
         return handleRustResult(
@@ -371,7 +372,7 @@ export class BreachAlertsStore extends BreachAlertsStoreInterface {
     async clearAllBreachAlertDismissals() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            69, // uniffi_breach_alerts_fn_method_breachalertsstore_clear_all_breach_alert_dismissals
+            102, // uniffi_breach_alerts_fn_method_breachalertsstore_clear_all_breach_alert_dismissals
             FfiConverterTypeBreachAlertsStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -390,7 +391,7 @@ export class BreachAlertsStore extends BreachAlertsStoreInterface {
        
         FfiConverterSequenceString.checkType(breachNames);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            70, // uniffi_breach_alerts_fn_method_breachalertsstore_clear_breach_alert_dismissals
+            103, // uniffi_breach_alerts_fn_method_breachalertsstore_clear_breach_alert_dismissals
             FfiConverterTypeBreachAlertsStore.lowerReceiver(this),
             FfiConverterSequenceString.lower(breachNames),
         )
@@ -407,7 +408,7 @@ export class BreachAlertsStore extends BreachAlertsStoreInterface {
     async close() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            71, // uniffi_breach_alerts_fn_method_breachalertsstore_close
+            104, // uniffi_breach_alerts_fn_method_breachalertsstore_close
             FfiConverterTypeBreachAlertsStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -427,7 +428,7 @@ export class BreachAlertsStore extends BreachAlertsStoreInterface {
        
         FfiConverterSequenceString.checkType(breachNames);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            72, // uniffi_breach_alerts_fn_method_breachalertsstore_get_breach_alert_dismissals
+            105, // uniffi_breach_alerts_fn_method_breachalertsstore_get_breach_alert_dismissals
             FfiConverterTypeBreachAlertsStore.lowerReceiver(this),
             FfiConverterSequenceString.lower(breachNames),
         )
@@ -447,7 +448,7 @@ export class BreachAlertsStore extends BreachAlertsStoreInterface {
        
         FfiConverterSequenceTypeBreachAlertDismissal.checkType(dismissals);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            73, // uniffi_breach_alerts_fn_method_breachalertsstore_set_breach_alert_dismissals
+            106, // uniffi_breach_alerts_fn_method_breachalertsstore_set_breach_alert_dismissals
             FfiConverterTypeBreachAlertsStore.lowerReceiver(this),
             FfiConverterSequenceTypeBreachAlertDismissal.lower(dismissals),
         )
@@ -482,17 +483,15 @@ export class FfiConverterTypeBreachAlertsStore extends FfiConverter {
     }
 
     static read(dataStream) {
-        return this.lift(dataStream.readPointer(6));
+        return this.lift(dataStream.readPointer(4));
     }
 
     static write(dataStream, value) {
-        dataStream.writePointer(6, this.lower(value));
+        dataStream.writePointer(4, this.lower(value));
     }
 
     static computeSize(value) {
         return 8;
     }
 }
-
-
 

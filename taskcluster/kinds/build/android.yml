@@ -163,6 +163,7 @@ android-arm-shippable/opt:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+            MOZ_GENERATE_SBOM: "1"
     run:
         actions: [get-secrets, build, multi-l10n]
         config: [taskcluster_nightly.py]
@@ -193,6 +194,7 @@ android-arm-shippable-lite/opt:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+            MOZ_GENERATE_SBOM: "1"
             PERFHERDER_EXTRA_OPTIONS: lite
     run:
         actions: [get-secrets, build, multi-l10n]
@@ -329,6 +331,7 @@ android-aarch64-shippable/opt:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+            MOZ_GENERATE_SBOM: "1"
     run:
         actions: [get-secrets, build, multi-l10n]
         config: [taskcluster_nightly.py]
@@ -359,6 +362,7 @@ android-aarch64-shippable-lite/opt:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+            MOZ_GENERATE_SBOM: "1"
             PERFHERDER_EXTRA_OPTIONS: lite
     run:
         actions: [get-secrets, build, multi-l10n]
@@ -526,6 +530,7 @@ android-x86_64-shippable/opt:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+            MOZ_GENERATE_SBOM: "1"
     run:
         actions: [get-secrets, build, multi-l10n]
         config: [taskcluster_nightly.py]
@@ -556,6 +561,7 @@ android-x86_64-shippable-lite/opt:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+            MOZ_GENERATE_SBOM: "1"
             PERFHERDER_EXTRA_OPTIONS: lite
     run:
         actions: [get-secrets, build, multi-l10n]

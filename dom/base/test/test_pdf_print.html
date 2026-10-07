@@ -24,7 +24,7 @@
 
     addLoadEvent(function() {
       // blob:// URLs inherit their origin, so the window inside blobFrame
-      // should be same-orgin with us except for the PDF viewer messing with
+      // should be same-origin with us except for the PDF viewer messing with
       // origins.
       const printFunc = blobFrame.contentWindow.print;
       is(typeof printFunc, "function", "Should have a 'print' function");

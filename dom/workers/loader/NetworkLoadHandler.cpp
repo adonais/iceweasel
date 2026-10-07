@@ -53,9 +53,13 @@ NetworkLoadHandler::OnStreamComplete(nsIStreamLoader* aLoader,
                                      nsISupports* aContext, nsresult aStatus,
                                      uint32_t aStringLen,
                                      const uint8_t* aString) {
-  // If we have cancelled, or we have no mRequest, it means that the loader has
-  // shut down and we can exit early. If the cancel result is still NS_OK
-  if (mRequestHandle->IsEmpty()) {
+  AssertIsOnMainThread();
+
+  // If the request has been handed over to the worker thread, it means that
+  // the loader has shut down and we can exit early. This happens when
+  // cancelling the channel failed and the load was finished without us; see
+  // ScriptLoaderRunnable::CancelMainThread().
+  if (mRequestHandle->ExecutionScheduled()) {
     return NS_OK;
   }
   nsresult rv = DataReceivedFromNetwork(aLoader, aStatus, aStringLen, aString);
@@ -67,7 +71,7 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
                                                      uint32_t aStringLen,
                                                      const uint8_t* aString) {
   AssertIsOnMainThread();
-  MOZ_ASSERT(!mRequestHandle->IsEmpty());
+  MOZ_ASSERT(!mRequestHandle->ExecutionScheduled());
 
   if (aStringLen > GetWorkerScriptMaxSizeInBytes()) {
     Document* parentDoc = mWorkerRef->Private()->GetDocument();
@@ -337,14 +341,16 @@ NetworkLoadHandler::OnStartRequest(nsIRequest* aRequest) {
 
 nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
   AssertIsOnMainThread();
-  MOZ_ASSERT(!mRequestHandle->IsEmpty());
-  WorkerLoadContext* loadContext = mRequestHandle->GetContext();
 
   // If one load info cancels or hits an error, it can race with the start
-  // callback coming from another load info.
-  if (mRequestHandle->IsCancelled()) {
+  // callback coming from another load info. The request may even have been
+  // handed over to the worker thread already, in which case we must not touch
+  // it any more and let the caller cancel this channel.
+  if (mRequestHandle->ExecutionScheduled() || mRequestHandle->IsCancelled()) {
     return NS_ERROR_FAILURE;
   }
+
+  WorkerLoadContext* loadContext = mRequestHandle->GetContext();
 
   nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
 

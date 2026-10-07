@@ -25,6 +25,11 @@
 // results, before anything of the second sentence is delivered: its last word
 // must not be withheld and drained together with the next utterance.
 //
+// interimResults is on, so the other half of that split is covered too: the
+// words committed before the <EOU> are delivered as interim results, and an
+// interim only ever occupies the slot after the finals rather than piling up in
+// event.results.
+//
 // pangrams.opus is roughly like this:
 //
 //   0.00 - 0.71s  silence
@@ -121,6 +126,7 @@ add_task(async function last_word_delivered_at_eou() {
 
   const sr = new SpeechRecognition();
   sr.continuous = true;
+  sr.interimResults = true;
   sr.lang = LANG;
 
   let audioStartTs = 0;
@@ -130,14 +136,26 @@ add_task(async function last_word_delivered_at_eou() {
   };
 
   const finals = [];
+  const interims = [];
   const transcript = () => finals.map(f => f.text).join(" ").replace(/\s+/g, " ").trim();
 
   sr.onresult = e => {
     for (let i = e.resultIndex; i < e.results.length; i++) {
+      const text = e.results[i][0].transcript;
       if (e.results[i].isFinal) {
-        const text = e.results[i][0].transcript;
         finals.push({ text, words: words(text), ts: e.timeStamp });
         diag(`final result #${finals.length}: "${text}"`);
+      } else {
+        interims.push({
+          text,
+          words: words(text),
+          index: i,
+          // How many finals the session had delivered when this interim came
+          // in, and how long its event's list was.
+          finalsBefore: finals.length,
+          length: e.results.length,
+        });
+        diag(`interim result at index ${i}: "${text}"`);
       }
     }
     document.getElementById("rec-text").textContent = transcript();
@@ -185,6 +203,38 @@ add_task(async function last_word_delivered_at_eou() {
          `${i < beforeStopCount ? "" : " (end-of-stream flush)"}: "${f.text}"`);
   });
 
+  // https://webaudio.github.io/web-speech-api/#dom-speechrecognitionalternative-transcript
+  // "For continuous recognition, leading or trailing whitespace MUST be
+  // included where necessary such that concatenation of consecutive
+  // SpeechRecognitionResults produces a proper transcript of the session."
+  // words() splits on whitespace, so two utterances run together read as one
+  // word and the two sides differ.
+  const concatenated = finals.map(f => f.text).join("");
+  ok(finals.length > 1, `Two utterances, two results. Got ${finals.length}.`);
+  is(words(concatenated).join(" "), finals.flatMap(f => f.words).join(" "),
+     "Concatenating consecutive result transcripts produces a proper " +
+     `transcript. Got: "${concatenated}"`);
+
+  ok(interims.length,
+     "The words committed inside an utterance were delivered as interim " +
+     `results, before the <EOU> finalized them. Got ${interims.length}.`);
+  const misplaced = interims.filter(
+    r => r.index !== r.finalsBefore || r.length !== r.finalsBefore + 1);
+  is(misplaced.length, 0,
+     "An interim occupies the single slot after the final results, rather " +
+     "than accumulating in event.results. Misplaced: " +
+     misplaced.map(r => `"${r.text}" at ${r.index}/${r.length}`).join(", "));
+  // An interim is the utterance built so far, so the final that closes that
+  // utterance - the one landing in the slot the interim held - extends it.
+  const notAPrefix = interims.filter(
+    r => finals[r.index] &&
+         finals[r.index].words.slice(0, r.words.length).join(" ") !==
+           r.words.join(" "));
+  is(notAPrefix.length, 0,
+     "Every interim is a prefix of the final result that closed its " +
+     "utterance. Not prefixes: " +
+     notAPrefix.map(r => `"${r.text}" vs "${finals[r.index].text}"`).join(", "));
+
   const u1End = finals.findIndex(f => f.words.includes(U1_LAST_WORD));
   isnot(u1End, -1,
         `The first sentence was recognized, ending in "${U1_LAST_WORD}". ` +
@@ -200,6 +250,10 @@ add_task(async function last_word_delivered_at_eou() {
      U1_WORDS.join(" "),
      "The first sentence was delivered whole, before anything of the second: " +
      `its <EOU> closed it. Got: "${transcribed}"`);
+  is(u1End, 0,
+     "The first sentence is one final result, not one per committed word: " +
+     "the model commits words several times per utterance, but only the <EOU> " +
+     `close finalizes them. Got ${u1End + 1} result(s) for it: "${transcribed}"`);
   ok(u1End < beforeStopCount,
      `"${U1_LAST_WORD}" reached the page while the session was still ` +
      `listening, not from the end-of-stream flush. Got: "${transcribed}"`);

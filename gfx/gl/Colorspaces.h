@@ -978,7 +978,10 @@ inline void DequantizeMonotonic(const Span<float> vals) {
   while (next_part_first != tail_begin) {
     const auto part_first = next_part_first;
     // print("part_first: %f\n", *part_first);
-    next_part_first = *SeekNeq(*part_first, part_first, tail_begin);
+    auto next_part_first_opt = SeekNeq(*part_first, part_first, tail_begin);
+    MOZ_ASSERT(next_part_first_opt,
+               "at least one element different from *part_first");
+    next_part_first = *next_part_first_opt;
     // print("next_part_first: %f\n", *next_part_first);
     const auto part =
         Span<float>{part_first, size_t(next_part_first - part_first)};

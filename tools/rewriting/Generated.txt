@@ -42,7 +42,6 @@ mobile/android/**/bin
 mobile/android/**/generated
 mobile/android/**/local.properties
 mobile/android/**/manifest.json
-mobile/android/android-components/components/feature/search/src/main/assets/search/search_telemetry_v2.json
 mobile/android/android-components/components/browser/engine-system/src/main/res/
 mobile/android/android-components/components/browser/errorpages/src/main/res/
 mobile/android/android-components/components/browser/menu/src/main/res/

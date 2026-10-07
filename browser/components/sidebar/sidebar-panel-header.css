@@ -6,6 +6,14 @@
 
 :host {
   padding-block: var(--space-large);
+}
+
+/* Only built-in panels pass a `view`, and only they tighten the header up
+   against the panel above and the content below. Extension panels render this
+   element without a `view` and keep the symmetric padding-block instead, which
+   centers the title and close button: their header band has its own background
+   color, so matching the built-in alignment would visibly grow it. */
+:host([view]) {
   margin-block-start: calc(var(--space-large) * -1);
 }
 
@@ -16,9 +24,11 @@
   -moz-context-properties: fill;
   fill: currentColor;
   font-size: 15px;
-  /* Keep the header (and its close button focus outline) clear of the panel
-     content below, e.g. a search input. */
-  margin-block-end: var(--space-small);
+  :host([view]) & {
+    /* Keep the header (and its close button focus outline) clear of the panel
+       content below, e.g. a search input. */
+    margin-block-end: var(--space-small);
+  }
 
   > h4 {
     margin-block: var(--sidebar-panel-header-heading-margin-block);

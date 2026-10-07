@@ -10,10 +10,6 @@
 
 "use strict";
 
-const { MockEngineManager } = ChromeUtils.importESModule(
-  "resource://testing-common/AIWindowTestUtils.sys.mjs"
-);
-
 let providerStub;
 const DEFAULT_PROVIDER_STUB_RETURN = [
   {
@@ -354,250 +350,49 @@ add_task(async function test_maxResults_total_limit() {
   providerStub.returns(DEFAULT_PROVIDER_STUB_RETURN);
 });
 
-add_task(async function test_suggestions_closes_when_mentions_panel_opens() {
-  const win = await openAIWindow();
-  const browser = win.gBrowser.selectedBrowser;
-
-  await promiseSmartbarSuggestionsOpen(browser, () =>
-    typeInSmartbar(browser, "test")
-  );
-
-  await typeInSmartbar(browser, " @");
-  await waitForMentionsOpen(browser);
-
-  await promiseSmartbarSuggestionsClose(browser);
-
-  await BrowserTestUtils.closeWindow(win);
-});
-
-add_task(
-  async function test_suggestions_reopens_after_mentions_trigger_removed() {
-    const win = await openAIWindow();
-    const browser = win.gBrowser.selectedBrowser;
-
-    await typeInSmartbar(browser, "test @");
-    await waitForMentionsOpen(browser);
-
-    await promiseSmartbarSuggestionsClose(browser);
-
-    await promiseSmartbarSuggestionsOpen(browser, async () => {
-      await BrowserTestUtils.synthesizeKey("KEY_Backspace", {}, browser);
-    });
-
-    await BrowserTestUtils.closeWindow(win);
-  }
-);
-
-add_task(async function test_suggestions_hidden_when_inline_mentions_exists() {
-  const win = await openAIWindow();
-  const browser = win.gBrowser.selectedBrowser;
-
-  await typeInSmartbar(browser, "@");
-  await waitForMentionsOpen(browser);
-
-  await SpecialPowers.spawn(browser, [], async () => {
-    const aiWindowElement = content.document.querySelector("ai-window");
-    const smartbar = aiWindowElement.shadowRoot.querySelector(
-      "#ai-window-smartbar"
-    );
-    const panelList = smartbar.querySelector("smartwindow-panel-list");
-    const panel = panelList.shadowRoot.querySelector("panel-list");
-    const firstItem = panel.querySelector(
-      "panel-item:not(.panel-section-header)"
-    );
-    firstItem.click();
-  });
-
-  await waitForMentionInserted(browser);
-  await typeInSmartbar(browser, " test query");
-
-  await promiseSmartbarSuggestionsClose(browser);
-
-  await BrowserTestUtils.closeWindow(win);
-});
-
-add_task(async function test_suggestions_show_after_inline_mentions_removed() {
+add_task(async function test_mentions_filter_letter_reaches_editor() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
 
   const mentionsOpen = waitForMentionsOpen(browser);
-  await typeInSmartbar(browser, "test @");
+  await typeInSmartbar(browser, "@");
   await mentionsOpen;
 
-  await SpecialPowers.spawn(browser, [], async () => {
-    const aiWindowElement = content.document.querySelector("ai-window");
-    const smartbar = aiWindowElement.shadowRoot.querySelector(
-      "#ai-window-smartbar"
-    );
-    const panelList = smartbar.querySelector("smartwindow-panel-list");
-    const panel = panelList.shadowRoot.querySelector("panel-list");
-    const firstItem = panel.querySelector(
-      "panel-item:not(.panel-section-header)"
-    );
-    firstItem.click();
-  });
+  // The suggestion titles all start with "P", so a panel-list that picked an
+  // item by the first letter of its label would swallow this keystroke.
+  let state = await SpecialPowers.spawn(browser, [], async () => {
+    const aiWindow = content.document.querySelector("ai-window");
+    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+    const panel = smartbar
+      .querySelector("smartwindow-panel-list")
+      .shadowRoot.querySelector("panel-list");
+    const before = smartbar.value;
 
-  await waitForMentionInserted(browser);
-  await BrowserTestUtils.synthesizeKey("KEY_Backspace", {}, browser);
+    EventUtils.sendString("p", content);
+    await new Promise(resolve => content.requestAnimationFrame(resolve));
 
-  await promiseSmartbarSuggestionsOpen(browser, async () => {
-    await BrowserTestUtils.synthesizeKey("KEY_Backspace", {}, browser);
-  });
+    let active = content.document.activeElement;
+    while (active?.shadowRoot?.activeElement) {
+      active = active.shadowRoot.activeElement;
+    }
 
-  await BrowserTestUtils.closeWindow(win);
-});
-
-add_task(async function test_inline_mention_available_via_getAllMentions() {
-  const win = await openAIWindow();
-  const browser = win.gBrowser.selectedBrowser;
-
-  await insertInlineMention(browser);
-
-  const mentions = await getEditorInlineMentions(browser);
-  Assert.equal(mentions.length, 1, "getAllMentions should return one mention");
-  Assert.equal(
-    mentions[0].id,
-    "https://example.com/1",
-    "Mention id should match the selected tab URL"
-  );
-
-  await BrowserTestUtils.closeWindow(win);
-});
-
-// select() must cover a mention chip at the end of the input, even without the
-// trailing space that @-typing normally inserts. Regression test for the
-// selection walk skipping leaf/atom nodes.
-add_task(async function test_select_covers_trailing_inline_mention() {
-  const win = await openAIWindow();
-  const browser = win.gBrowser.selectedBrowser;
-
-  const result = await SpecialPowers.spawn(browser, [], async () => {
-    const aiWindowElement = content.document.querySelector("ai-window");
-    const smartbar = aiWindowElement.shadowRoot.querySelector(
-      "#ai-window-smartbar"
-    );
-    const editor = smartbar.querySelector("moz-multiline-editor");
-
-    editor.value = "hello";
-    editor.insertMention({ type: "default", id: "1", label: "World" }, 5);
-    editor.select();
-
-    const mention = editor.getAllMentions()[0];
-    const sel = editor.view.state.selection;
     return {
-      mentionPos: mention.pos,
-      from: sel.from,
-      to: sel.to,
-      coversChip: sel.from <= mention.pos && sel.to >= mention.pos + 1,
+      before,
+      after: smartbar.value,
+      stillOpen: panel.hasAttribute("open"),
+      activeInPanel: panel.contains(active),
+      activeLocalName: active?.localName,
     };
   });
 
-  Assert.ok(
-    result.coversChip,
-    `select() should cover a trailing mention chip (from=${result.from}, ` +
-      `to=${result.to}, mentionPos=${result.mentionPos})`
+  info(`active element while the panel is open: ${state.activeLocalName}`);
+  Assert.equal(
+    state.after,
+    state.before + "p",
+    "A filter letter reaches the editor while the mention panel is open"
   );
+  Assert.ok(state.stillOpen, "The mention panel stays open");
+  Assert.ok(!state.activeInPanel, "Focus stays outside the mention panel");
 
   await BrowserTestUtils.closeWindow(win);
-});
-
-add_task(
-  async function test_deleted_inline_mention_excluded_from_getAllMentions() {
-    const win = await openAIWindow();
-    const browser = win.gBrowser.selectedBrowser;
-
-    await insertInlineMention(browser);
-
-    // Delete the mention by pressing Backspace twice (once for trailing space,
-    // once for the atomic mention node).
-    await BrowserTestUtils.synthesizeKey("KEY_Backspace", {}, browser);
-    await BrowserTestUtils.synthesizeKey("KEY_Backspace", {}, browser);
-
-    const mentions = await getEditorInlineMentions(browser);
-    Assert.equal(
-      mentions.length,
-      0,
-      "getAllMentions should return empty after deleting the inline mention"
-    );
-
-    await BrowserTestUtils.closeWindow(win);
-  }
-);
-
-// Inline @mention must reach the prompt builder as part of `contextMentions`.
-add_task(async function test_inline_mention_reaches_prompt_builder() {
-  const sb = this.sinon.createSandbox();
-  const injectSpy = sb.spy(
-    this.ChatConversation.prototype,
-    "injectRealTimeContext"
-  );
-  const mockEngineManager = new MockEngineManager();
-  const win = await openAIWindow();
-
-  try {
-    const browser = win.gBrowser.selectedBrowser;
-
-    await insertInlineMention(browser);
-    await typeInSmartbar(browser, " please summarize");
-    await submitSmartbar(browser);
-
-    // Ensure the prompt builder has run.
-    await mockEngineManager.respondTo({ purpose: "chat", response: "ok" });
-
-    const userMessage = injectSpy.firstCall.args[0];
-    const { contextMentions } = userMessage.content;
-    Assert.equal(
-      contextMentions.length,
-      1,
-      "Inline @mention should be included in contextMentions"
-    );
-    Assert.equal(
-      contextMentions[0].url,
-      "https://example.com/1",
-      "Mention URL should match the @mentioned tab"
-    );
-  } finally {
-    mockEngineManager.rejectAllRequests();
-    mockEngineManager.cleanupMocks();
-    await BrowserTestUtils.closeWindow(win);
-    sb.restore();
-  }
-});
-
-// Inline @mention must be resolved to URLs before they are passed to the model.
-add_task(async function test_inline_mention_passed_to_model_as_url() {
-  const mockEngineManager = new MockEngineManager();
-  const win = await openAIWindow();
-
-  try {
-    const browser = win.gBrowser.selectedBrowser;
-
-    await insertInlineMention(browser);
-    await typeInSmartbar(browser, " please summarize");
-    await submitSmartbar(browser);
-
-    const chatRequest = await TestUtils.waitForCondition(() => {
-      const engine = mockEngineManager.engines.get("chat");
-      return engine?.runRequests.size && engine.getNextRequest()[1].request;
-    }, "Chat engine should receive a request");
-
-    const requestText = JSON.stringify(chatRequest);
-    Assert.ok(
-      !requestText.includes("mention:?"),
-      "The mention markdown should not reach the model"
-    );
-
-    const urlToken = await SpecialPowers.spawn(browser, [], () => {
-      const { conversation } = content.document.querySelector("ai-window");
-      return conversation.urlToToken.get("https://example.com/1");
-    });
-    Assert.ok(
-      requestText.includes(urlToken),
-      `The @mentioned URL should reach the model as its token: ${urlToken})`
-    );
-  } finally {
-    mockEngineManager.rejectAllRequests();
-    mockEngineManager.cleanupMocks();
-    await BrowserTestUtils.closeWindow(win);
-  }
 });

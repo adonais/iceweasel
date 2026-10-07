@@ -28,9 +28,10 @@ add_task(function test_blocked_action_only_actions() {
   }
 
   for (const type of [
-    // Both in-tree baseline entries must stay grantable.
+    // The in-tree baseline entries must stay grantable.
     "CONFIRM_LAUNCH_ON_LOGIN",
     "PIN_FIREFOX_TO_TASKBAR",
+    "ENABLE_CLOSED_BROWSER_NOTIFICATIONS",
     // Grantable by design, bounded by the SET_PREF blocklists instead.
     "SET_PREF",
     // Grantable by design, bounded by _isAllowedActionOnlyMessageAction, which

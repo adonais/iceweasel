@@ -9,6 +9,7 @@
 
 #include "mozilla/NotNull.h"
 #include "mozilla/Result.h"
+#include "mozilla/dom/Promise.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsICSSLoaderObserver.h"
@@ -18,9 +19,6 @@ class nsIURI;
 
 namespace mozilla {
 enum class StyleOrigin : uint8_t;
-namespace dom {
-class Promise;
-}
 
 class StyleSheet;
 

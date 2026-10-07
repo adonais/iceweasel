@@ -12,7 +12,7 @@ import sys
 import threading
 import time
 import warnings
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
 from contextlib import contextmanager
 
 # Common prefix in log lines from a Gecko process: "[Child|Parent <pid>: <thread>]"
@@ -485,7 +485,7 @@ class SystemResourceMonitor:
         self.markers = []
         self.processes = []
         self.measurements = []
-        self.phases = OrderedDict()
+        self.phases = {}
 
         self._active_phases = {}
         self._active_markers = {}

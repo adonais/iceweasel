@@ -75,6 +75,7 @@ class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS MOZ_CAPABILITY("mutex")
 
 typedef detail::BaseAutoLock<StaticMutex&> StaticMutexAutoLock;
 typedef detail::BaseAutoUnlock<StaticMutex&> StaticMutexAutoUnlock;
+typedef detail::BaseAutoTryLock<StaticMutex> StaticMutexAutoTryLock;
 
 }  // namespace mozilla
 

@@ -14,6 +14,7 @@
 #include "mozilla/dom/DataTransfer.h"   // for dom::DataTransfer
 #include "mozilla/dom/Element.h"        // for dom::Element
 #include "mozilla/dom/HTMLBRElement.h"  // for dom::HTMLBRElement
+#include "mozilla/dom/Range.h"          // for dom::Range
 #include "mozilla/dom/Selection.h"      // for dom::Selection
 #include "mozilla/dom/Text.h"           // for dom::Text
 
@@ -22,7 +23,6 @@
 #include "nsContentUtils.h"  // for nsContentUtils
 #include "nsDebug.h"         // for NS_WARNING, etc
 #include "nsError.h"         // for NS_SUCCESS_* and NS_ERROR_*
-#include "nsRange.h"         // for nsRange
 #include "nsString.h"        // for nsAString, nsString, etc
 
 class nsITransferable;
@@ -345,7 +345,7 @@ class MOZ_STACK_CLASS AutoSelectionRangeArray final {
     }
   }
 
-  AutoTArray<mozilla::OwningNonNull<nsRange>, 8> mRanges;
+  AutoTArray<mozilla::OwningNonNull<dom::Range>, 8> mRanges;
 };
 
 /******************************************************************************

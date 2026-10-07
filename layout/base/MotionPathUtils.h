@@ -138,6 +138,8 @@ struct OffsetPathData {
         break;
     }
   }
+  OffsetPathData& operator=(const OffsetPathData&) = delete;
+  OffsetPathData& operator=(OffsetPathData&&) = delete;
 
  private:
   OffsetPathData() : mType(Type::None) {}
@@ -155,8 +157,6 @@ struct OffsetPathData {
                  const CSSCoord& aContainReferenceLength)
       : mType(Type::Ray),
         mRay{aRay, aCoordBox, aPosition, aContainReferenceLength} {}
-  OffsetPathData& operator=(const OffsetPathData&) = delete;
-  OffsetPathData& operator=(OffsetPathData&&) = delete;
 };
 
 // MotionPathUtils is a namespace class containing utility functions related to

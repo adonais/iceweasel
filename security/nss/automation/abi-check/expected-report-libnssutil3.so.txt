@@ -1,0 +1,7 @@
+
+3 Added functions:
+
+  [A] 'function void SEC_ASN1DecoderSetMaximumInputSize(SEC_ASN1DecoderContext*, unsigned long int)'    {SEC_ASN1DecoderSetMaximumInputSize@@NSSUTIL_3.130}
+  [A] 'function void SEC_ASN1DecoderSetMaximumNumberOfElements(SEC_ASN1DecoderContext*, unsigned long int)'    {SEC_ASN1DecoderSetMaximumNumberOfElements@@NSSUTIL_3.130}
+  [A] 'function SECStatus SEC_QuickDERDecodeItemWithLimits(PLArenaPool*, void*, const SEC_ASN1Template*, const SECItem*, unsigned long int, unsigned long int)'    {SEC_QuickDERDecodeItemWithLimits@@NSSUTIL_3.130}
+

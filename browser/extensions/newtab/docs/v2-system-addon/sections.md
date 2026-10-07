@@ -37,13 +37,12 @@ object which may have the following properties:
 +--------------------+---------------------+-------------------------------------------------------------------------------------------------------------------+
 | contextMenuOptions | Array of strings    | The menu options to provide in the card context menus.                                                            |
 +--------------------+---------------------+-------------------------------------------------------------------------------------------------------------------+
-| shouldHidePref     | Boolean             | If true, will the section preference in the preferences pane will not be shown.                                   |
-+--------------------+---------------------+-------------------------------------------------------------------------------------------------------------------+
-| pref               | Object              | Configures the section preference to show in the preferences pane. Has properties `titleString` and `descString`. |
-+--------------------+---------------------+-------------------------------------------------------------------------------------------------------------------+
 | emptyState         | Object              | Configures the empty state of the section. Has properties `message` and `icon`.                                   |
 +--------------------+---------------------+-------------------------------------------------------------------------------------------------------------------+
 ```
+
+`addBuiltInSection` also adds a `pref` object to every section, holding `feed`, the name
+of the section's feed pref. Content code reads it to know which pref toggles the section.
 
 ## Section feeds
 

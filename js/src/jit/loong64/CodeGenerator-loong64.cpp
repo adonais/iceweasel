@@ -301,33 +301,6 @@ MoveOperand CodeGeneratorLOONG64::toMoveOperand(LAllocation a) const {
   return MoveOperand(address, kind);
 }
 
-void CodeGeneratorLOONG64::bailoutFrom(Label* label, LSnapshot* snapshot) {
-  MOZ_ASSERT_IF(!masm.oom(), label->used());
-  MOZ_ASSERT_IF(!masm.oom(), !label->bound());
-
-  encode(snapshot);
-
-  InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
-  auto* ool = new (alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
-    // Push snapshotOffset and make sure stack is aligned.
-    masm.subPtr(Imm32(sizeof(Value)), StackPointer);
-    masm.storePtr(ImmWord(snapshot->snapshotOffset()),
-                  Address(StackPointer, 0));
-
-    masm.jump(&deoptLabel_);
-  });
-  addOutOfLineCode(ool,
-                   new (alloc()) BytecodeSite(tree, tree->script()->code()));
-
-  masm.retarget(label, ool->entry());
-}
-
-void CodeGeneratorLOONG64::bailout(LSnapshot* snapshot) {
-  Label label;
-  masm.jump(&label);
-  bailoutFrom(&label, snapshot);
-}
-
 bool CodeGeneratorLOONG64::generateOutOfLineCode() {
   if (!CodeGeneratorShared::generateOutOfLineCode()) {
     return false;
@@ -507,14 +480,14 @@ void CodeGeneratorLOONG64::visitOutOfLineTableSwitch(
 void CodeGeneratorLOONG64::visitOutOfLineWasmTruncateCheck(
     OutOfLineWasmTruncateCheck* ool) {
   if (ool->toType() == MIRType::Int32) {
-    masm.outOfLineWasmTruncateToInt32Check(ool->input(), ool->output(),
-                                           ool->fromType(), ool->flags(),
-                                           ool->rejoin(), ool->trapSiteDesc());
+    masm.outOfLineWasmTruncateToInt32Check(
+        ool->input(), ool->output(), ool->fromType(), ool->flags(),
+        ool->rejoin(), ool->trapSiteDesc(), nullptr, nullptr);
   } else {
     MOZ_ASSERT(ool->toType() == MIRType::Int64);
-    masm.outOfLineWasmTruncateToInt64Check(ool->input(), ool->output64(),
-                                           ool->fromType(), ool->flags(),
-                                           ool->rejoin(), ool->trapSiteDesc());
+    masm.outOfLineWasmTruncateToInt64Check(
+        ool->input(), ool->output64(), ool->fromType(), ool->flags(),
+        ool->rejoin(), ool->trapSiteDesc(), nullptr, nullptr);
   }
 }
 
@@ -1028,11 +1001,13 @@ void CodeGenerator::visitMinMaxD(LMinMaxD* ins) {
 
   const bool handleNaN =
       !ins->mir()->range() || ins->mir()->range()->canBeNaN();
+  const bool handleZero =
+      !ins->mir()->range() || ins->mir()->range()->canBeZero();
 
   if (ins->mir()->isMax()) {
-    masm.maxDouble(second, first, handleNaN);
+    masm.maxDouble(second, first, handleNaN, handleZero);
   } else {
-    masm.minDouble(second, first, handleNaN);
+    masm.minDouble(second, first, handleNaN, handleZero);
   }
 }
 
@@ -1044,11 +1019,13 @@ void CodeGenerator::visitMinMaxF(LMinMaxF* ins) {
 
   const bool handleNaN =
       !ins->mir()->range() || ins->mir()->range()->canBeNaN();
+  const bool handleZero =
+      !ins->mir()->range() || ins->mir()->range()->canBeZero();
 
   if (ins->mir()->isMax()) {
-    masm.maxFloat32(second, first, handleNaN);
+    masm.maxFloat32(second, first, handleNaN, handleZero);
   } else {
-    masm.minFloat32(second, first, handleNaN);
+    masm.minFloat32(second, first, handleNaN, handleZero);
   }
 }
 

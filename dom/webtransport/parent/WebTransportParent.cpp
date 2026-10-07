@@ -12,6 +12,7 @@
 #include "mozilla/dom/WebTransportLog.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/net/WebTransportHash.h"
+#include "mozilla/net/WebTransportSessionProxy.h"
 #include "nsIEventTarget.h"
 #include "nsIOService.h"
 #include "nsIPrincipal.h"
@@ -157,18 +158,50 @@ void WebTransportParent::ActorDestroy(ActorDestroyReason aWhy) {
 // We may not receive this response if the child side is destroyed without
 // `Close` or `Shutdown` being explicitly called.
 IPCResult WebTransportParent::RecvClose(const uint32_t& aCode,
-                                        const nsACString& aReason) {
+                                        const nsACString& aReason,
+                                        CloseResolver&& aResolver) {
   LOG(("Close for %p received, code = %u, reason = %s", this, aCode,
        PromiseFlatCString(aReason).get()));
   if (!mSessionReady) {
     return IPC_FAIL(this, "Close received before session was ready");
   }
+
+  // Close and get stats synchronously
+  Maybe<WebTransportStatsData> stats;
+  if (mWebTransport) {
+    // Cast to access internal method for synchronous close with stats
+    RefPtr<net::WebTransportSessionProxy> proxy =
+        static_cast<net::WebTransportSessionProxy*>(mWebTransport.get());
+
+    WebTransportStatsData statsData;
+    if (proxy->CloseSessionAndGetStats(aCode, aReason, statsData)) {
+      stats = Some(statsData);
+      LOG(("Retrieved stats from close: bytesSent=%llu",
+           (unsigned long long)statsData.bytesSent()));
+    } else {
+      LOG(("No stats available from close"));
+    }
+  }
+
   {
     MutexAutoLock lock(mMutex);
     MOZ_ASSERT(!mClosed);
     mClosed.Flip();
   }
-  mWebTransport->CloseSession(aCode, aReason);
+
+  // Return stats to child
+  LOG(("Returning stats to child: stats.isSome()=%d", stats.isSome()));
+  aResolver(stats);
+
+  // CloseSession() drops the proxy's listener and its queued events, so an
+  // in-flight gather would never call back; settle it with the stats we just
+  // took at close time.
+  ResolvePendingGetStats(stats);
+
+  // Clean up - CloseSession to trigger state cleanup
+  if (mWebTransport) {
+    mWebTransport->CloseSession(aCode, aReason);
+  }
   Close();
   return IPC_OK();
 }
@@ -476,6 +509,34 @@ IPCResult WebTransportParent::RecvCreateSendGroup(uint64_t aGroupId) {
   return IPC_OK();
 }
 
+IPCResult WebTransportParent::RecvGetStats(GetStatsResolver&& aResolver) {
+  LOG(("GetStats for %p", this));
+  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+
+  if (!mWebTransport) {
+    aResolver(Nothing());
+    return IPC_OK();
+  }
+
+  bool gatherAlreadyInFlight = !mGetStatsResolvers.IsEmpty();
+  mGetStatsResolvers.AppendElement(std::move(aResolver));
+  if (gatherAlreadyInFlight) {
+    // A gather is already pending; it will resolve this resolver too once it
+    // completes (see OnStatsAvailable()).
+    return IPC_OK();
+  }
+
+  // This should trigger a callback to OnStatsAvailable; if the request can't
+  // even be dispatched, resolve now instead of leaving mGetStatsResolvers set
+  // (and the child's promise(s) pending) forever.
+  nsresult rv = mWebTransport->GetStats();
+  if (NS_FAILED(rv)) {
+    LOG(("GetStats: dispatch failed: %x", static_cast<uint32_t>(rv)));
+    ResolvePendingGetStats(Nothing());
+  }
+  return IPC_OK();
+}
+
 IPCResult WebTransportParent::RecvCreateUnidirectionalStream(
     int64_t aSendOrder, Maybe<uint64_t> aSendGroupId,
     CreateUnidirectionalStreamResolver&& aResolver) {
@@ -605,14 +666,24 @@ WebTransportParent::OnSessionReady(uint64_t aSessionId) {
 // We receive this notification from the WebTransportSessionProxy if session
 // creation was unsuccessful at the end of
 // WebTransportSessionProxy::OnStopRequest
+// Pointer lifetime: aStats is owned by the caller
+// (WebTransportSessionProxy::OnSessionClosed or
+// WebTransportSessionProxy::CallOnSessionClosed) and remains valid for the
+// duration of this synchronous call. We copy the data when capturing it in
+// lambdas for dispatch to other threads.
 NS_IMETHODIMP
 WebTransportParent::OnSessionClosed(const bool aCleanly,
                                     const uint32_t aErrorCode,
-                                    const nsACString& aReason) {
+                                    const nsACString& aReason,
+                                    nsIWebTransportSessionStats* aStats) {
   nsresult rv = NS_OK;
 
   MOZ_ASSERT(mOwningEventTarget);
   MOZ_ASSERT(!mOwningEventTarget->IsOnCurrentThread());
+
+  WebTransportStatsData* rawStats = nullptr;
+  MOZ_ALWAYS_SUCCEEDS(aStats->GetRawStats(&rawStats));
+  MOZ_ASSERT(rawStats);
 
   // currently we just know if session was closed gracefully or not.
   // we need better error propagation from lower-levels of http3
@@ -624,6 +695,11 @@ WebTransportParent::OnSessionClosed(const bool aCleanly,
          aErrorCode, PromiseFlatCString(aReason).get()));
     // we know we haven't gone Ready yet
     rv = NS_ERROR_FAILURE;
+    // A queued GetStats() would otherwise hang forever. We're on the main
+    // thread here, not yet the socket thread, so dispatch.
+    mSocketThread->Dispatch(NS_NewRunnableFunction(
+        "WebTransportParent::OnSessionClosed",
+        [self = RefPtr{this}] { self->ResolvePendingGetStats(Nothing()); }));
     mOwningEventTarget->Dispatch(NS_NewRunnableFunction(
         "WebTransportParent::OnSessionClosed",
         [self = RefPtr{this}, result = rv] {
@@ -642,9 +718,9 @@ WebTransportParent::OnSessionClosed(const bool aCleanly,
         LOG(("[%p] NotifyRemoteClosed to be called later", this));
         // NotifyRemoteClosed needs to wait until mResolver is invoked.
         mExecuteAfterResolverCallback = [self = RefPtr{this}, aCleanly,
-                                         aErrorCode,
+                                         aErrorCode, statsData = *rawStats,
                                          reason = nsCString{aReason}]() {
-          self->NotifyRemoteClosed(aCleanly, aErrorCode, reason);
+          self->NotifyRemoteClosed(aCleanly, aErrorCode, reason, statsData);
         };
         return NS_OK;
       }
@@ -654,7 +730,7 @@ WebTransportParent::OnSessionClosed(const bool aCleanly,
     // stream associated with the CONNECT request that initiated
     // transport.[[Session]] is in the "Data Recvd" state. [QUIC]
     // XXX not calculated yet
-    NotifyRemoteClosed(aCleanly, aErrorCode, aReason);
+    NotifyRemoteClosed(aCleanly, aErrorCode, aReason, *rawStats);
   }
 
   return NS_OK;
@@ -702,15 +778,23 @@ NS_IMETHODIMP WebTransportParent::OnResetReceived(uint64_t aStreamId,
   return NS_OK;
 }
 
-void WebTransportParent::NotifyRemoteClosed(bool aCleanly, uint32_t aErrorCode,
-                                            const nsACString& aReason) {
+void WebTransportParent::NotifyRemoteClosed(
+    bool aCleanly, uint32_t aErrorCode, const nsACString& aReason,
+    const WebTransportStatsData& aStats) {
   LOG(("webtransport %p session remote closed cleanly=%d code= %u, reason= %s",
        this, aCleanly, aErrorCode, PromiseFlatCString(aReason).get()));
+
+  // Always provide stats since neqo provides valid transport stats.
+  Maybe<WebTransportStatsData> stats = Some(aStats);
+
   mSocketThread->Dispatch(NS_NewRunnableFunction(
       __func__, [self = RefPtr{this}, aErrorCode, reason = nsCString{aReason},
-                 aCleanly]() {
+                 aCleanly, stats = std::move(stats)]() {
+        // The session is gone, so an in-flight gather will never call back;
+        // settle it with the close-time stats.
+        self->ResolvePendingGetStats(stats);
         // Tell the content side we were closed by the server
-        (void)self->SendRemoteClosed(aCleanly, aErrorCode, reason);
+        (void)self->SendRemoteClosed(aCleanly, aErrorCode, reason, stats);
         // Let the other end shut down the IPC channel after RecvClose()
       }));
 }
@@ -911,5 +995,47 @@ NS_IMETHODIMP WebTransportParent::OnMaxDatagramSize(uint64_t aSize) {
   mMaxDatagramSizeResolver(aSize);
   mMaxDatagramSizeResolver = nullptr;
   return NS_OK;
+}
+
+// Pointer lifetime: aStats is owned by the caller
+// (WebTransportSessionProxy::OnStatsAvailable) and remains valid for the
+// duration of this synchronous call, or null if stats could not be gathered.
+// We copy the data into the resolver before returning.
+NS_IMETHODIMP WebTransportParent::OnStatsAvailable(
+    nsIWebTransportSessionStats* aStats) {
+  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+  WebTransportStatsData* rawStats = nullptr;
+  if (aStats) {
+    MOZ_ALWAYS_SUCCEEDS(aStats->GetRawStats(&rawStats));
+  }
+  if (rawStats) {
+    LOG(
+        ("Stats available: bytesSent=%llu, bytesReceived=%llu, minRtt=%f, "
+         "smoothedRtt=%f",
+         (unsigned long long)rawStats->bytesSent(),
+         (unsigned long long)rawStats->bytesReceived(), rawStats->minRtt(),
+         rawStats->smoothedRtt()));
+  } else {
+    LOG(("Stats unavailable"));
+  }
+
+  // The gather can outlive the requests it was started for if the session went
+  // away first (see ResolvePendingGetStats() callers); there is nothing left to
+  // report to.
+  if (mGetStatsResolvers.IsEmpty()) {
+    return NS_OK;
+  }
+
+  ResolvePendingGetStats(rawStats ? Some(*rawStats) : Nothing());
+  return NS_OK;
+}
+
+void WebTransportParent::ResolvePendingGetStats(
+    const Maybe<WebTransportStatsData>& aStats) {
+  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+  nsTArray<GetStatsResolver> resolvers = std::move(mGetStatsResolvers);
+  for (auto& resolver : resolvers) {
+    resolver(aStats);
+  }
 }
 }  // namespace mozilla::dom

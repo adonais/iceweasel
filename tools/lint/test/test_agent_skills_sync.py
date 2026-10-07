@@ -36,6 +36,32 @@ def patch_vcs(linter_module, monkeypatch):
     return _patch
 
 
+@pytest.fixture(autouse=True)
+def track_written_files(linter_module, monkeypatch):
+    """Count every file a test writes as tracked, since tracking is what the
+    linter reads to tell a skill's content from junk. A test that needs an
+    untracked file says so with patch_tracked.
+    """
+
+    def _collect(root):
+        return {
+            p.relative_to(root).as_posix()
+            for prefix in (".claude/skills", ".agents/skills")
+            for p in (root / prefix).rglob("*")
+            if p.is_file()
+        }
+
+    monkeypatch.setattr(linter_module, "_collect_tracked", _collect)
+
+
+@pytest.fixture
+def patch_tracked(linter_module, monkeypatch):
+    def _patch(*paths):
+        monkeypatch.setattr(linter_module, "_collect_tracked", lambda root: set(paths))
+
+    return _patch
+
+
 def _write(path, content):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(content)
@@ -91,6 +117,40 @@ def test_content_mismatch(global_lint, tmp_path):
     assert len(results) == 2
     assert all(r.level == "error" for r in results)
     assert all("differs from" in r.message for r in results)
+
+
+def test_non_markdown_content_mismatch(global_lint, tmp_path):
+    _setup_tree(
+        tmp_path,
+        claude_files={"foo/scripts/run.py": b"claude"},
+        agent_files={"foo/scripts/run.py": b"agent"},
+    )
+    results = global_lint([], root=str(tmp_path))
+    assert len(results) == 2
+    assert all(r.level == "error" for r in results)
+    assert all("differs from" in r.message for r in results)
+
+
+def test_non_markdown_missing_counterpart(global_lint, tmp_path):
+    _setup_tree(tmp_path, claude_files={"foo/scripts/run.py": b"data"})
+    results = global_lint([], root=str(tmp_path))
+    assert len(results) == 1
+    assert results[0].level == "error"
+    assert ".agents/skills/foo/scripts/run.py" in results[0].message
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="Windows has no executable permission bit"
+)
+def test_fix_propagates_executable_mode(global_lint, tmp_path, patch_vcs):
+    patch_vcs(added_or_modified=[".claude/skills/foo/scripts/run.sh"])
+    _setup_tree(tmp_path, claude_files={"foo/scripts/run.sh": b"#!/bin/sh\n"})
+    (tmp_path / ".claude" / "skills" / "foo" / "scripts" / "run.sh").chmod(0o755)
+    results = global_lint([], root=str(tmp_path), fix=True)
+    assert results == []
+    assert fixed == 1
+    mirrored = tmp_path / ".agents" / "skills" / "foo" / "scripts" / "run.sh"
+    assert mirrored.stat().st_mode & 0o111
 
 
 def test_fix_propagates_add_to_agent(global_lint, tmp_path, patch_vcs):
@@ -228,14 +288,67 @@ def test_fix_cannot_resolve_content_mismatch_when_both_changed(
     assert all("resolve manually" in r.message for r in results)
 
 
-def test_non_md_files_are_ignored(global_lint, tmp_path):
+def test_untracked_files_are_ignored(global_lint, tmp_path, patch_tracked):
+    patch_tracked(".claude/skills/foo/SKILL.md", ".agents/skills/foo/SKILL.md")
     _setup_tree(
         tmp_path,
-        claude_files={"foo/SKILL.md": b"same", "foo/.DS_Store": b"noise"},
+        claude_files={
+            "foo/SKILL.md": b"same",
+            "foo/.DS_Store": b"noise",
+            "foo/scripts/__pycache__/run.cpython-314.pyc": b"noise",
+            "foo/scripts/run.py.orig": b"noise",
+        },
         agent_files={"foo/SKILL.md": b"same"},
     )
     results = global_lint([], root=str(tmp_path))
     assert results == []
+
+
+def test_tracked_file_of_any_type_is_synced(global_lint, tmp_path, patch_tracked):
+    patch_tracked(".claude/skills/foo/data/fixture.json")
+    _setup_tree(tmp_path, claude_files={"foo/data/fixture.json": b"{}"})
+    results = global_lint([], root=str(tmp_path))
+    assert len(results) == 1
+    assert ".agents/skills/foo/data/fixture.json" in results[0].message
+
+
+def test_copy_counts_as_present_before_it_is_tracked(
+    global_lint, tmp_path, patch_vcs, patch_tracked
+):
+    patch_vcs(added_or_modified=[".claude/skills/foo/SKILL.md"])
+    patch_tracked(".claude/skills/foo/SKILL.md")
+    _setup_tree(tmp_path, claude_files={"foo/SKILL.md": b"data"})
+    assert global_lint([], root=str(tmp_path), fix=True) == []
+    assert fixed == 1
+    assert global_lint([], root=str(tmp_path)) == []
+
+
+def test_untracked_counterpart_differing_reports_the_difference(
+    global_lint, tmp_path, patch_tracked
+):
+    patch_tracked(".claude/skills/foo/SKILL.md")
+    _setup_tree(
+        tmp_path,
+        claude_files={"foo/SKILL.md": b"c"},
+        agent_files={"foo/SKILL.md": b"a"},
+    )
+    results = global_lint([], root=str(tmp_path))
+    assert len(results) == 2
+    assert all("differs from" in r.message for r in results)
+
+
+def test_nothing_tracked_compares_nothing(global_lint, tmp_path, patch_tracked):
+    patch_tracked()
+    _setup_tree(tmp_path, claude_files={"foo/SKILL.md": b"data"})
+    assert global_lint([], root=str(tmp_path)) == []
+
+
+def test_unreadable_vcs_errors(global_lint, tmp_path, linter_module, monkeypatch):
+    monkeypatch.setattr(linter_module, "_collect_tracked", lambda root: None)
+    _setup_tree(tmp_path, claude_files={"foo/SKILL.md": b"data"})
+    results = global_lint([], root=str(tmp_path))
+    assert len(results) == 1
+    assert "Cannot read which files VCS tracks" in results[0].message
 
 
 def test_mixed_run_partial_resolution(global_lint, tmp_path, patch_vcs):

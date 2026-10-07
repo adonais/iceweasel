@@ -15,7 +15,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
   DevToolsShim: "chrome://devtools-startup/content/DevToolsShim.sys.mjs",
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
-  GenAI: "resource:///modules/GenAI.sys.mjs",
+  GenAI: "moz-src:///browser/components/genai/GenAI.sys.mjs",
   LinkPreview: "moz-src:///browser/components/genai/LinkPreview.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   LoginManagerContextMenu:
@@ -25,6 +25,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ScreenshotsUtils:
     "moz-src:///browser/components/screenshots/ScreenshotsUtils.sys.mjs",
+  SELECTION_MODES:
+    "moz-src:///browser/components/screenshots/ScreenshotsSelectionModes.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
@@ -52,6 +54,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "TEXT_RECOGNITION_ENABLED",
   "dom.text-recognition.enabled",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "AITAB_ENABLED",
+  "browser.smartwindow.aitab.enabled",
   false
 );
 
@@ -936,6 +945,12 @@ export class nsContextMenu {
       showItem: this.showItem.bind(this),
       source: "page",
     });
+    this.showItem(
+      "context-create-aitab",
+      lazy.AITAB_ENABLED &&
+        lazy.AIWindow.isAIWindowActiveAndEnabled(this.window) &&
+        ["http", "https"].includes(this.browser.currentURI.scheme)
+    );
 
     // srcdoc cannot be opened separately due to concerns about web
     // content with about:srcdoc in location bar masquerading as trusted
@@ -1424,6 +1439,12 @@ export class nsContextMenu {
 
     this.showItem("context-sep-screenshots", shouldShow);
     this.showItem("context-take-screenshot", shouldShow);
+    this.showItem(
+      "context-use-mini-window",
+      shouldShow &&
+        Services.prefs.getBoolPref("browser.mini-window.enabled", false) &&
+        !this.document.documentElement.hasAttribute("mini-window")
+    );
   }
 
   initPasswordControlItems() {
@@ -1668,6 +1689,12 @@ export class nsContextMenu {
       "menuitem-screenshot",
       "ContextMenu"
     );
+  }
+
+  useMiniWindow() {
+    lazy.ScreenshotsUtils.toggle(this.browser, "MiniWindowContextMenu", {
+      mode: lazy.SELECTION_MODES.MINI_WINDOW,
+    });
   }
 
   // View Partial Source
@@ -2664,6 +2691,10 @@ export class nsContextMenu {
       dest = "tab";
     }
     this.window.openTrustedLinkIn(drmInfoURL, dest);
+  }
+
+  createAITab() {
+    lazy.AIWindow.createAITab(this.window, [this.browser.currentURI.spec]);
   }
 
   /**

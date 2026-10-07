@@ -1654,10 +1654,7 @@ class DesktopNotificationPermissionPrompt extends PermissionPromptForRequest {
     // never makes the consent prompt fetch a remote URL. Require the requester
     // to be same-origin with the tab's top-level document: mIconURL is that
     // top-level icon, and we must not render one origin's icon next to another
-    // origin's name in a consent prompt. (The platform already blocks cross-
-    // origin-iframe notification prompts via
-    // dom.webnotifications.allowcrossoriginiframe, default false; this enforces
-    // it locally too.)
+    // origin's name in a consent prompt.
     if (
       this.browser.mIconURL &&
       this.browser.contentPrincipal.equals(this.principal)

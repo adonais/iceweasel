@@ -64,9 +64,8 @@ line tool, please follow [Capture a minidump from the command line](#capture-a-m
    icons are registered under "Windows Kits" as below.
 
    ```{image} img/windbg-in-startmenu.png
-:width: 50%
-
-```
+   :width: 50%
+   ```
 
 2. Connect Firefox to the debugger.
 
@@ -234,6 +233,8 @@ of a GPU process.
 
 ```{image} img/process-explorer.png
 ```
+
+(how-to-find-the-location-of-firefox-exe)=
 
 ## How to find the location of firefox.exe
 

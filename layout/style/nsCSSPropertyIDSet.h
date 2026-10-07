@@ -213,6 +213,11 @@ class nsCSSPropertyIDSet {
           mChunk(aOther.mChunk),
           mBit(aOther.mBit) {}
 
+    Iterator() = delete;
+    Iterator(const Iterator&) = delete;
+    Iterator& operator=(const Iterator&) = delete;
+    Iterator& operator=(const Iterator&&) = delete;
+
     static Iterator BeginIterator(const nsCSSPropertyIDSet& aPropertySet) {
       Iterator result(aPropertySet);
 
@@ -269,11 +274,6 @@ class nsCSSPropertyIDSet {
    private:
     explicit Iterator(const nsCSSPropertyIDSet& aPropertySet)
         : mPropertySet(aPropertySet) {}
-
-    Iterator() = delete;
-    Iterator(const Iterator&) = delete;
-    Iterator& operator=(const Iterator&) = delete;
-    Iterator& operator=(const Iterator&&) = delete;
 
     const nsCSSPropertyIDSet& mPropertySet;
     size_t mChunk = 0;

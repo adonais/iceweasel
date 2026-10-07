@@ -28,6 +28,7 @@ class nsAppShellService final : public nsIAppShellService, public nsIObserver {
  protected:
   ~nsAppShellService();
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult JustCreateTopWindow(nsIAppWindow* aParent, nsIURI* aUrl,
                                uint32_t aChromeMask, int32_t aInitialWidth,
                                int32_t aInitialHeight, bool aIsHiddenWindow,

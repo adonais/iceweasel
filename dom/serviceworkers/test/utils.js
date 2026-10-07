@@ -115,6 +115,10 @@ async function fillStorage(cacheBytes, idbBytes) {
   await cache.put("fill", new Response(makeRandomBlob(cacheBytes)));
 
   // ## Fill IDB
+  if (!idbBytes) {
+    return;
+  }
+
   const storeName = "filler";
   let db = await new Promise((resolve, reject) => {
     let openReq = indexedDB.open("filler", 1);
@@ -133,6 +137,8 @@ async function fillStorage(cacheBytes, idbBytes) {
       store.put({ blob: makeRandomBlob(idbBytes) }, "filler-blob");
     };
   });
+
+  db.close();
 }
 
 const messagingChannels = {};

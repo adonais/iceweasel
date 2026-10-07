@@ -1603,9 +1603,49 @@ export class LoginManagerParent extends JSWindowActorParent {
     this.sendAsyncMessage("PasswordManager:repopulateAutocompletePopup");
   }
 
-  async #confirmLoginRemoval() {
+  /**
+   * Resolve a guid the dropdown sent us against the logins this origin is
+   * actually allowed to see. The guid reaches us through the row's
+   * `fillMessageData`, which is authored in the content process, so it must
+   * only ever select from a set the parent computed itself.
+   *
+   * @param {origin} origin The document origin, from the parent-side principal.
+   * @param {string} guid The guid of the row the user chose to remove.
+   * @returns {nsILoginInfo?} The stored login, or null when the guid names one
+   *   this origin was never offered.
+   */
+  async #findRemovableLogin(origin, guid) {
+    if (!origin || !guid) {
+      return null;
+    }
+
+    const [login] = await Services.logins.searchLoginsAsync({ guid });
+    if (!login) {
+      return null;
+    }
+
+    const options = {
+      schemeUpgrades: lazy.LoginHelper.schemeUpgrades,
+      acceptDifferentSubdomains:
+        lazy.LoginHelper.includeOtherSubdomainsInLookup,
+    };
+    if (lazy.LoginHelper.relatedRealmsEnabled) {
+      options.acceptRelatedRealms = true;
+      options.relatedRealms =
+        await lazy.LoginRelatedRealmsParent.findRelatedRealms(origin);
+    }
+    return lazy.LoginHelper.isOriginMatching(login.origin, origin, options)
+      ? login
+      : null;
+  }
+
+  async #confirmLoginRemoval(loginGuid) {
     const browser = this.getRootBrowser();
     const chromeWindow = this.browsingContext.topChromeWindow;
+
+    // Read before awaiting: the prompts below take focus and the actor may be
+    // destroyed by the time they resolve.
+    const origin = this.origin;
     const osAuth = await lazy.AutocompleteRemoveRecord.passwordOSAuthStrings();
     const { isAuthorized } = await lazy.LoginHelper.requestReauth(
       browser,
@@ -1615,11 +1655,23 @@ export class LoginManagerParent extends JSWindowActorParent {
       "delete_autocomplete"
     );
 
-    if (isAuthorized && chromeWindow) {
-      await lazy.AutocompleteRemoveRecord.confirmRemoval(
-        chromeWindow,
-        "password"
-      );
+    if (!isAuthorized || !chromeWindow) {
+      return;
+    }
+
+    const confirmed = await lazy.AutocompleteRemoveRecord.confirmRemoval(
+      chromeWindow,
+      "password"
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    // The login may have been removed elsewhere while the prompts were up, and
+    // an unknown guid is also how a forged message is turned away.
+    const login = await this.#findRemovableLogin(origin, loginGuid);
+    if (login) {
+      await Services.logins.removeLoginAsync(login);
     }
   }
 
@@ -1633,7 +1685,7 @@ export class LoginManagerParent extends JSWindowActorParent {
 
       case "PasswordManager:DeleteLogin": {
         try {
-          await this.#confirmLoginRemoval();
+          await this.#confirmLoginRemoval(data?.loginGuid);
         } catch (ex) {
           lazy.log("Password removal flow failed:", ex);
         } finally {

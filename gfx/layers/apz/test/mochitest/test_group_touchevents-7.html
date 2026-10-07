@@ -9,6 +9,8 @@
   <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
   <script type="application/javascript">
 
+var isWindows = getPlatform() == "windows";
+
 var subtests = [
   {"file": "helper_bug1839095.html",
    "prefs": [...getPrefs("TOUCH_EVENTS:PAN"),
@@ -31,6 +33,48 @@ var subtests = [
   {"file": "helper_bug2052759.html",
    "prefs": [...getPrefs("TOUCH_EVENTS:PAN"),
              ["apz.fastpath_apz_aware_listener.enabled", true]]},
+  {"file": "helper_bug2062598.html",
+   "prefs": [["apz.fling_min_velocity_threshold", "0.0"],
+             ["apz.velocity_relevance_time_ms", 1000],
+             /* The touchstart of the fling can turn into a long-tap, and
+                thus into a context menu, if the touch-move events get held
+                up. */
+             ["ui.click_hold_context_menus.delay", 10000],
+             /* On Windows the touch-end of the fling causes error, maybe
+                due to bug 1875916, so set this pref. */
+             ["apz.test.fails_with_native_injection", isWindows],
+             /* These are necessary to observe overscroll animations */
+             ["apz.test.logging_enabled", true],
+             ["apz.overscroll.damping", 10.0],
+             ["apz.overscroll.spring_stiffness", 50.0]]},
+  {"file": "helper_bug2062598_with_two_axes.html",
+   "prefs": [["apz.fling_min_velocity_threshold", "0.0"],
+             ["apz.velocity_relevance_time_ms", 1000],
+             /* The touchstart of the fling can turn into a long-tap, and
+                thus into a context menu, if the touch-move events get held
+                up. */
+             ["ui.click_hold_context_menus.delay", 10000],
+             /* On Windows the touch-end of the fling causes error, maybe
+                due to bug 1875916, so set this pref. */
+             ["apz.test.fails_with_native_injection", isWindows],
+             /* These are necessary to observe overscroll animations */
+             ["apz.test.logging_enabled", true],
+             ["apz.overscroll.damping", 10.0],
+             ["apz.overscroll.spring_stiffness", 50.0]]},
+  {"file": "helper_bug2062598_with_non_scrollable_middle.html",
+   "prefs": [["apz.fling_min_velocity_threshold", "0.0"],
+             ["apz.velocity_relevance_time_ms", 1000],
+             /* The touchstart of the fling can turn into a long-tap, and
+                thus into a context menu, if the touch-move events get held
+                up. */
+             ["ui.click_hold_context_menus.delay", 10000],
+             /* On Windows the touch-end of the fling causes error, maybe
+                due to bug 1875916, so set this pref. */
+             ["apz.test.fails_with_native_injection", isWindows],
+             /* These are necessary to observe overscroll animations */
+             ["apz.test.logging_enabled", true],
+             ["apz.overscroll.damping", 10.0],
+             ["apz.overscroll.spring_stiffness", 50.0]]},
 
   // Add new subtests here. If this starts timing out because it's taking too
   // long, create a test_group_touchevents-8.html file. Refer to 1423011#c57

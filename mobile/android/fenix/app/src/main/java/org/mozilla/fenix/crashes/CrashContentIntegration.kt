@@ -55,8 +55,12 @@ import org.mozilla.fenix.utils.Settings
  *      //...
  *      val integration = CrashContentIntegration(
  *          // ... other params ...
- *          getTopToolbarHeightValue = { includeTabStrip -> this.getTopToolbarHeight(includeTabStrip) },
- *          getBottomToolbarHeightValue = { includeNavBar -> this.getBottomToolbarHeight(includeNavBar) }
+ *          getTopToolbarHeightValue = { includeTabStripIfAvailable ->
+ *              this.getTopToolbarHeight(includeTabStripIfAvailable)
+ *          },
+ *          getBottomToolbarHeightValue = { includeTabStripIfAvailable, includeNavBarIfEnabled ->
+ *              this.getBottomToolbarHeight(includeTabStripIfAvailable, includeNavBarIfEnabled)
+ *           }
  *      )
  *
  *      // set the view provider. it will be automatically cleared when the lifecycle gets to the
@@ -77,7 +81,11 @@ class CrashContentIntegration(
     private val customTabSessionId: String?,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main,
     private val getTopToolbarHeightValue: (includeTabStripIfAvailable: Boolean) -> Int,
-    private val getBottomToolbarHeightValue: (includeNavBarIfEnabled: Boolean) -> Int,
+    private val getBottomToolbarHeightValue:
+        (
+            includeTabStripIfAvailable: Boolean,
+            includeNavBarIfEnabled: Boolean,
+        ) -> Int,
 ) : LifecycleAwareFeature {
 
     /**
@@ -147,7 +155,7 @@ class CrashContentIntegration(
         with(layoutParams as MarginLayoutParams) {
             // TabStrip and navBar are not used in custom tabs
             topMargin = getTopToolbarHeightValue(customTabSessionId == null)
-            bottomMargin = getBottomToolbarHeightValue(customTabSessionId == null)
+            bottomMargin = getBottomToolbarHeightValue(customTabSessionId == null, customTabSessionId == null)
         }
     }
 }

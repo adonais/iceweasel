@@ -7,8 +7,6 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  IPPExceptionsManager:
-    "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
   IPPProxyManager:
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   IPProtectionService:
@@ -364,7 +362,7 @@ add_task(async function removed_from_toolbar() {
 add_task(async function test_exclusion_toggled() {
   const PERM_NAME = "ipp-vpn";
   Services.perms.removeByType(PERM_NAME);
-  lazy.IPPExceptionsManager.init();
+  IPPSiteRuleManager.init();
 
   await openPanel();
 
@@ -409,7 +407,7 @@ add_task(async function test_exclusion_toggled() {
   await closePanel();
 
   Services.fog.testResetFOG();
-  lazy.IPPExceptionsManager.uninit();
+  IPPSiteRuleManager.uninit();
   Services.perms.removeByType(PERM_NAME);
 });
 
@@ -421,7 +419,7 @@ add_task(async function test_exclusion_added() {
   const PERM_NAME = "ipp-vpn";
   Services.perms.removeByType(PERM_NAME);
 
-  lazy.IPPExceptionsManager.init();
+  IPPSiteRuleManager.init();
   Services.fog.testResetFOG();
 
   const site1 = "https://www.example.com";
@@ -433,7 +431,7 @@ add_task(async function test_exclusion_added() {
     Services.scriptSecurityManager.createContentPrincipalFromOrigin(site2);
 
   // Add first exclusion
-  lazy.IPPExceptionsManager.setExclusion(principal1, true);
+  IPPPermissionRules.setRule(principal1, IPPPrincipalRules.EXCLUDED);
   Assert.equal(
     Glean.ipprotection.exclusionAdded.testGetValue(),
     1,
@@ -441,7 +439,7 @@ add_task(async function test_exclusion_added() {
   );
 
   // Add second exclusion
-  lazy.IPPExceptionsManager.setExclusion(principal2, true);
+  IPPPermissionRules.setRule(principal2, IPPPrincipalRules.EXCLUDED);
   Assert.equal(
     Glean.ipprotection.exclusionAdded.testGetValue(),
     2,
@@ -449,7 +447,7 @@ add_task(async function test_exclusion_added() {
   );
 
   // Remove an exclusion — counter should not increment
-  lazy.IPPExceptionsManager.setExclusion(principal1, false);
+  IPPPermissionRules.setRule(principal1, IPPPrincipalRules.DEFAULT);
   Assert.equal(
     Glean.ipprotection.exclusionAdded.testGetValue(),
     2,
@@ -457,7 +455,7 @@ add_task(async function test_exclusion_added() {
   );
 
   Services.fog.testResetFOG();
-  lazy.IPPExceptionsManager.uninit();
+  IPPSiteRuleManager.uninit();
   Services.perms.removeByType(PERM_NAME);
 });
 

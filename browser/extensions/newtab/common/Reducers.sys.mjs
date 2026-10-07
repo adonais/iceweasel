@@ -325,7 +325,7 @@ export const INITIAL_STATE = {
   RecentSearches: {
     initialized: false,
     /**
-     * @type {[{value: string, lastUsed: number}]}
+     * @type {Array<{value: string, lastUsed: number}>}
      *   Recent searches, newest first, as { value, lastUsed } where lastUsed is
      *   a ms epoch.
      */
@@ -1458,7 +1458,7 @@ function Stocks(prevState = INITIAL_STATE.Stocks, action) {
       return {
         ...prevState,
         searchStatus: action.data.status,
-        searchResults: action.data.values || [],
+        searchResults: action.data.matches || [],
       };
     case at.WIDGETS_STOCKS_SEARCH_CLEAR:
       return {

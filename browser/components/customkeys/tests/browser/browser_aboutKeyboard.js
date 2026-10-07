@@ -1366,3 +1366,132 @@ addAboutKbTask(async function testChangeAndResetUnassigned(tab) {
     );
   });
 });
+
+/**
+ * Assign a shortcut to key_openDownloads and check how it is recorded.
+ *
+ * @param {object} tab The about:keyboard tab.
+ * @param {Array} keyArgs Arguments for EventUtils.synthesizeKey.
+ * @param {string} display The shortcut expected to be shown afterwards.
+ * @param {string} message The message for the assertion on the shortcut.
+ */
+async function checkRecordedKey(tab, keyArgs, display, message) {
+  await SpecialPowers.spawn(tab, [], async () => {
+    content.downloadsRow = content.document.querySelector(
+      '.key[data-id="key_openDownloads"]'
+    );
+    content.downloadsRow.closest(".category").wrappedJSObject.expanded = true;
+    await content.downloadsRow.closest(".category").wrappedJSObject
+      .updateComplete;
+    ok(
+      !content.downloadsRow.classList.contains("customized"),
+      "key_openDownloads is not customized"
+    );
+    info("Clicking Change for key_openDownloads");
+    const input = content.downloadsRow.querySelector(".newKey").wrappedJSObject;
+    const focused = ContentTaskUtils.waitForEvent(input, "focus");
+    const change = content.downloadsRow.querySelector(".change");
+    change.click();
+    await focused;
+    ok(true, "New key input got focus");
+    content.focused = ContentTaskUtils.waitForEvent(change, "focus");
+  });
+  info(`Pressing ${display}`);
+  EventUtils.synthesizeKey(...keyArgs, window);
+  await SpecialPowers.spawn(
+    tab,
+    [display, message],
+    async (_display, _message) => {
+      await content.focused;
+      ok(true, "Change button got focus");
+      ok(
+        content.downloadsRow.classList.contains("customized"),
+        "key_openDownloads is customized"
+      );
+      is(
+        content.downloadsRow.querySelector(".currentShortcut").wrappedJSObject
+          .value,
+        _display,
+        _message
+      );
+    }
+  );
+  CustomKeys.resetAll();
+}
+
+// Test that a key which Alt remaps to a different character is assigned as the
+// key that was pressed, not as the character it produces.
+addAboutKbTask(async function testAltRemappedKey(tab) {
+  await checkRecordedKey(
+    tab,
+    consts.remappedArgs,
+    consts.remappedDisplay,
+    "Key is the key that was pressed, not the character it produced"
+  );
+});
+
+// Test that a digit pressed with Alt and Shift is assigned as the character it
+// produces, since that is the only character which can match the shortcut.
+addAboutKbTask(async function testAltShiftRemappedDigit(tab) {
+  await checkRecordedKey(
+    tab,
+    consts.remappedDigitArgs,
+    consts.remappedDigitDisplay,
+    "Key is the character that the key produced"
+  );
+});
+
+// Test that a character which takes two UTF-16 code units is assigned as that
+// character rather than as a keycode.
+addAboutKbTask(async function testTwoCodeUnitKey(tab) {
+  await checkRecordedKey(
+    tab,
+    consts.twoCodeUnitArgs,
+    consts.twoCodeUnitDisplay,
+    "Key is the two code unit character"
+  );
+});
+
+// Test that a letter pressed with only AltGraph is not a valid shortcut, since
+// AltGraph is not a shortcut modifier.
+addAboutKbTask(async function testAltGraphAloneInvalid(tab) {
+  await SpecialPowers.spawn(tab, [], async () => {
+    content.downloadsRow = content.document.querySelector(
+      '.key[data-id="key_openDownloads"]'
+    );
+    content.downloadsRow.closest(".category").wrappedJSObject.expanded = true;
+    await content.downloadsRow.closest(".category").wrappedJSObject
+      .updateComplete;
+    info("Clicking Change for key_openDownloads");
+    content.input =
+      content.downloadsRow.querySelector(".newKey").wrappedJSObject;
+    const focused = ContentTaskUtils.waitForEvent(content.input, "focus");
+    content.downloadsRow.querySelector(".change").click();
+    await focused;
+    ok(true, "New key input got focus");
+    content.selected = ContentTaskUtils.waitForEvent(
+      content.input.inputEl,
+      "select"
+    );
+  });
+  info("Pressing AltGraph+M");
+  EventUtils.synthesizeKey(
+    "µ",
+    { altGraphKey: true, keyCode: KeyEvent.DOM_VK_M },
+    window
+  );
+  await SpecialPowers.spawn(tab, [], async () => {
+    await content.selected;
+    is(content.input.value, "Invalid", "Input shows invalid");
+    // Editing ends when the input loses focus.
+    content.input.inputEl.blur();
+    await ContentTaskUtils.waitForCondition(
+      () => !content.downloadsRow.classList.contains("editing"),
+      "Editing ended"
+    );
+    ok(
+      !content.downloadsRow.classList.contains("customized"),
+      "key_openDownloads is not customized"
+    );
+  });
+});

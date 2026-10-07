@@ -10,6 +10,8 @@
 
 ["test_geolocation_provider.js"]
 
+["test_geolocation_provider_bad_response.js"]
+
 ["test_geolocation_provider_shutdown.js"]
 
 ["test_geolocation_provider_timeout.js"]

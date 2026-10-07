@@ -233,7 +233,7 @@ hw-p6-aarch64-shippable-startup-chrome-m-shopify-applink-startup:
         tier: 2
     platform: android-hw-p6-13-0-aarch64-shippable/opt
     attributes:
-        cron: true
+        cron: false
     run:
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
@@ -281,7 +281,7 @@ hw-s24-aarch64-shippable-startup-chrome-m-shopify-applink-startup:
         tier: 2
     platform: android-hw-s24-14-0-aarch64-shippable/opt
     attributes:
-        cron: true
+        cron: false
     run:
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&

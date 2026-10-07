@@ -11,6 +11,7 @@
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "nsBaseClipboard.h"
+#include "nsComponentManagerUtils.h"
 #include "nsIClipboard.h"
 #include "nsID.h"
 #include "nsITransferable.h"
@@ -196,7 +197,109 @@ static RefPtr<ClipboardResultPromise> GetClipboardDataIfSmallerThanImpl(
       transferable, &ipcData, true /* aInSyncMessage */, contentParent);
   return ClipboardResultPromise::CreateAndResolve(std::move(ipcData), __func__);
 }
+
+using SetClipboardPromise = MozPromise<nsresult, nsresult, true>;
+
+static RefPtr<SetClipboardPromise> SetClipboardImpl(
+    dom::IPCTransferable&& aTransferable,
+    nsIClipboard::ClipboardType aWhichClipboard,
+    uint64_t aSettingWindowContextId,
+    dom::ThreadsafeContentParentHandle* aSettingContentParent) {
+  AssertIsOnMainThread();
+
+  RefPtr<dom::WindowGlobalParent> window =
+      dom::WindowGlobalParent::GetByInnerWindowId(aSettingWindowContextId);
+  if (!window) {
+    return SetClipboardPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
+  if (window->IsDiscarded()) {
+    NS_WARNING(
+        "discarded window passed to RecvSetClipboard(); not writing to the "
+        "clipboard");
+    return SetClipboardPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
+  if (aSettingContentParent->ChildID() != window->ContentParentId()) {
+    NS_WARNING("incorrect content process passing window to SetClipboard");
+    return SetClipboardPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
+
+  nsCOMPtr<nsIClipboard> clipboard =
+      do_GetService("@mozilla.org/widget/clipboard;1");
+  if (!clipboard) {
+    return SetClipboardPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
+
+  nsresult rv;
+  nsCOMPtr<nsITransferable> trans =
+      do_CreateInstance("@mozilla.org/widget/transferable;1", &rv);
+  if (NS_FAILED(rv)) {
+    return SetClipboardPromise::CreateAndReject(rv, __func__);
+  }
+  trans->Init(nullptr);
+  rv = nsContentUtils::IPCTransferableToTransferable(
+      aTransferable, true /* aAddDataFlavor */, trans,
+      true /* aFilterUnknownFlavors */);
+  if (NS_FAILED(rv)) {
+    return SetClipboardPromise::CreateAndReject(rv, __func__);
+  }
+
+  // nsBaseClipboard runs the content analysis check itself and commits (or
+  // replaces) the clipboard contents when the verdict arrives, so all that is
+  // needed here is to hear about the final result.
+  auto resultPromise = MakeRefPtr<SetClipboardPromise::Private>(__func__);
+  static_cast<nsBaseClipboard*>(clipboard.get())
+      ->SetDataWithCompletion(trans, nullptr /* aOwner */, aWhichClipboard,
+                              window, [resultPromise](nsresult aRv) {
+                                resultPromise->Resolve(aRv, __func__);
+                              });
+  return resultPromise;
+}
 }  // namespace
+
+ipc::IPCResult ClipboardContentAnalysisParent::RecvSetClipboard(
+    dom::IPCTransferable&& aTransferable,
+    const nsIClipboard::ClipboardType& aWhichClipboard,
+    const uint64_t& aSettingWindowContextId, nsresult* aRv) {
+  // Running on a background thread is the whole point: the content process
+  // blocks in its sync call while we wait here for the content analysis
+  // verdict, without the parent's main thread having to SpinEventLoopUntil().
+  // See bug 1901197.
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  if (!mThreadsafeContentParentHandle->ValidatePrincipal(
+          aTransferable.dataPrincipal(),
+          {dom::ValidatePrincipalOptions::AllowNullPtr})) {
+    return dom::ContentParent::PrincipalValidationIpcFail(
+        aTransferable.dataPrincipal(), this, __func__);
+  }
+
+  *aRv = NS_ERROR_FAILURE;
+  bool done = false;
+  Monitor mon("ClipboardContentAnalysisParent::RecvSetClipboard");
+  InvokeAsync(GetMainThreadSerialEventTarget(), __func__,
+              [&]() {
+                return SetClipboardImpl(
+                    std::move(aTransferable), aWhichClipboard,
+                    aSettingWindowContextId, mThreadsafeContentParentHandle);
+              })
+      ->Then(GetMainThreadSerialEventTarget(), __func__,
+             [&](SetClipboardPromise::ResolveOrRejectValue&& aResult) {
+               MonitorAutoLock lock(mon);
+               auto monitor = MakeScopeExit([&]() { mon.Notify(); });
+               *aRv = aResult.IsReject() ? aResult.RejectValue()
+                                         : aResult.ResolveValue();
+               done = true;
+             });
+
+  {
+    MonitorAutoLock lock(mon);
+    while (!done) {
+      mon.Wait();
+    }
+  }
+
+  return IPC_OK();
+}
 
 ipc::IPCResult ClipboardContentAnalysisParent::GetSomeClipboardData(
     nsTArray<nsCString>&& aTypes,

@@ -16,11 +16,15 @@ export const TileList = props => {
   const CONFIGURABLE_STYLES = [
     "background",
     "borderRadius",
+    "color",
+    "display",
     "height",
+    "listStyle",
     "marginBlock",
     "marginBlockStart",
     "marginBlockEnd",
     "marginInline",
+    "marginInlineStart",
     "paddingBlock",
     "paddingBlockStart",
     "paddingBlockEnd",
@@ -32,8 +36,12 @@ export const TileList = props => {
 
   return (
     <div className={"tile-list-container"}>
-      {content.items.map(({ icon, text }, index) => (
-        <div key={index} className="tile-list-item">
+      {content.items.map(({ icon, text, style }, index) => (
+        <div
+          key={index}
+          className="tile-list-item"
+          style={MultiStageUtils.getValidStyle(style, CONFIGURABLE_STYLES)}
+        >
           <div className="tile-list-icon-wrapper">
             <div
               className="tile-list-icon"

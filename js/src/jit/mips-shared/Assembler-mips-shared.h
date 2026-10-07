@@ -104,6 +104,7 @@ static constexpr FloatRegister InvalidFloatReg;
 
 static constexpr Register StackPointer = sp;
 static constexpr Register FramePointer = fp;
+static constexpr Register LinkRegister = ra;
 static constexpr Register ReturnReg = v0;
 static constexpr FloatRegister ReturnSimd128Reg = InvalidFloatReg;
 static constexpr FloatRegister ScratchSimd128Reg = InvalidFloatReg;
@@ -127,6 +128,10 @@ static constexpr Register RegExpExecTestStringReg = CallTempReg1;
 static constexpr Register RegExpSearcherRegExpReg = CallTempReg0;
 static constexpr Register RegExpSearcherStringReg = CallTempReg1;
 static constexpr Register RegExpSearcherLastIndexReg = CallTempReg2;
+
+// Register used by the bailout tail and bailout stubs during stack
+// reconstruction.
+static constexpr Register BailoutStubHandlerReg = CallTempReg0;
 
 static constexpr uint32_t CodeAlignment = 8;
 

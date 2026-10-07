@@ -38,6 +38,8 @@ support-files = [
   "file2_bug414291.html",
 ]
 
+["include:mochitest-xslt.toml"]
+
 ["test_DOMWindowCreated_chromeonly.html"]
 
 ["test_bug42976.html"]
@@ -56,8 +58,6 @@ skip-if = [
 ]
 
 ["test_bug159849.html"]
-
-["test_bug2013707.html"]
 
 ["test_bug260264.html"]
 skip-if = [
@@ -108,8 +108,6 @@ skip-if = [
 skip-if = [
   "condprof", # "The focus should not have been changed with URL=test2_bug369306.htm"
 ]
-
-["test_bug370098.html"]
 
 ["test_bug377539.html"]
 
@@ -281,6 +279,8 @@ skip-if = [
 ]
 
 ["test_bug1840932.html"]
+
+["test_bug2013707.html"]
 
 ["test_devicemotion_multiple_listeners.html"]
 skip-if = [

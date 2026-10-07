@@ -2508,6 +2508,8 @@ add_task(
         corpus_item_id: "decaf-beef",
         scheduled_corpus_item_id: "dead-beef",
         tile_id: 314623757745896,
+        variant_id: 5050,
+        source_section_id: "sourced-section",
         content_redacted: true,
       },
     });
@@ -2539,6 +2541,8 @@ add_task(
           corpus_item_id: "decaf-beef",
           scheduled_corpus_item_id: "dead-beef",
           tile_id: 314623757745896,
+          variant_id: 5050,
+          source_section_id: "sourced-section",
         })
       ),
       "NewTabContentPing passed the expected arguments."
@@ -2756,6 +2760,270 @@ add_task(
   }
 );
 
+/**
+ * Builds a TelemetryFeed whose store reports the redactTileIdForSponsored
+ * trainhop config as enabled.
+ */
+function telemetryFeedWithTileIdRedaction() {
+  let instance = new TelemetryFeed();
+  instance.store = {
+    getState: () => ({
+      Prefs: {
+        values: {
+          trainhopConfig: {
+            newtabPing: { redactTileIdForSponsored: true },
+          },
+        },
+      },
+    }),
+  };
+  return instance;
+}
+
+add_task(
+  async function test_handleTopSitesSponsoredImpressionStats_impression_tile_id_redacted() {
+    info(
+      "TelemetryFeed.handleTopSitesSponsoredImpressionStats redacts the " +
+        "tile_id from the newtab ping for a sponsored top site impression " +
+        "when the redactTileIdForSponsored trainhop config is enabled"
+    );
+
+    let sandbox = sinon.createSandbox();
+    let instance = telemetryFeedWithTileIdRedaction();
+    Services.fog.testResetFOG();
+
+    let data = {
+      type: "impression",
+      tile_id: 42,
+      source: "newtab",
+      position: 1,
+      advertiser: "adnoid ads",
+    };
+    const SESSION_ID = "decafc0ffee";
+    sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
+
+    await instance.handleTopSitesSponsoredImpressionStats({ data });
+
+    let impressions = Glean.topsites.impression.testGetValue();
+    Assert.equal(impressions.length, 1, "Should have recorded 1 impression");
+    Assert.deepEqual(
+      impressions[0].extra,
+      {
+        advertiser_name: "adnoid ads",
+        newtab_visit_id: SESSION_ID,
+        is_sponsored: String(true),
+        position: String(1),
+      },
+      "The tile_id should have been redacted from the newtab ping."
+    );
+
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_handleTopSitesSponsoredImpressionStats_click_tile_id_redacted() {
+    info(
+      "TelemetryFeed.handleTopSitesSponsoredImpressionStats redacts the " +
+        "tile_id from the newtab ping for a sponsored top site click when " +
+        "the redactTileIdForSponsored trainhop config is enabled"
+    );
+
+    let sandbox = sinon.createSandbox();
+    let instance = telemetryFeedWithTileIdRedaction();
+    Services.fog.testResetFOG();
+
+    let data = {
+      type: "click",
+      tile_id: 42,
+      source: "newtab",
+      position: 0,
+      advertiser: "test advertiser",
+    };
+    const SESSION_ID = "decafc0ffee";
+    sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
+
+    await instance.handleTopSitesSponsoredImpressionStats({ data });
+
+    let clicks = Glean.topsites.click.testGetValue();
+    Assert.equal(clicks.length, 1, "Should have recorded 1 click");
+    Assert.deepEqual(
+      clicks[0].extra,
+      {
+        advertiser_name: "test advertiser",
+        newtab_visit_id: SESSION_ID,
+        is_sponsored: String(true),
+        position: String(0),
+      },
+      "The tile_id should have been redacted from the newtab ping."
+    );
+
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_handleAboutSponsoredTopSites_showPrivacyClick_tile_id_redacted() {
+    info(
+      "TelemetryFeed.handleAboutSponsoredTopSites redacts the tile_id from " +
+        "the newtab ping when the redactTileIdForSponsored trainhop config " +
+        "is enabled"
+    );
+
+    let sandbox = sinon.createSandbox();
+    let instance = telemetryFeedWithTileIdRedaction();
+    Services.fog.testResetFOG();
+
+    let data = {
+      position: 42,
+      advertiser_name: "mozilla",
+      tile_id: 4567,
+    };
+
+    const SESSION_ID = "decafc0ffee";
+    sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
+
+    instance.handleAboutSponsoredTopSites({ data });
+
+    let clicks = Glean.topsites.showPrivacyClick.testGetValue();
+    Assert.equal(clicks.length, 1, "Recorded 1 click");
+    Assert.deepEqual(
+      clicks[0].extra,
+      {
+        advertiser_name: data.advertiser_name,
+        newtab_visit_id: SESSION_ID,
+        position: String(data.position),
+      },
+      "The tile_id should have been redacted from the newtab ping."
+    );
+
+    sandbox.restore();
+  }
+);
+
+/**
+ * Every sponsored top sites code path that records a tile_id-bearing event on
+ * the newtab ping. Keep this in sync with the topsites metrics in
+ * metrics.yaml that declare a tile_id extra key.
+ */
+const SPONSORED_TOPSITES_TILE_ID_PATHS = [
+  {
+    name: "topsites.impression",
+    metric: () => Glean.topsites.impression,
+    drive: instance =>
+      instance.handleTopSitesSponsoredImpressionStats({
+        data: {
+          type: "impression",
+          tile_id: 4567,
+          source: "newtab",
+          position: 1,
+          advertiser: "adnoid ads",
+        },
+      }),
+  },
+  {
+    name: "topsites.click",
+    metric: () => Glean.topsites.click,
+    drive: instance =>
+      instance.handleTopSitesSponsoredImpressionStats({
+        data: {
+          type: "click",
+          tile_id: 4567,
+          source: "newtab",
+          position: 0,
+          advertiser: "adnoid ads",
+        },
+      }),
+  },
+  {
+    name: "topsites.dismiss",
+    metric: () => Glean.topsites.dismiss,
+    drive: instance =>
+      instance.handleBlockUrl({
+        source: "TOP_SITES",
+        data: [
+          {
+            is_pocket_card: false,
+            position: 42,
+            advertiser_name: "mozilla",
+            tile_id: 4567,
+            isSponsoredTopSite: 1,
+          },
+        ],
+      }),
+  },
+  {
+    name: "topsites.showPrivacyClick",
+    metric: () => Glean.topsites.showPrivacyClick,
+    drive: instance =>
+      instance.handleAboutSponsoredTopSites({
+        data: {
+          position: 42,
+          advertiser_name: "mozilla",
+          tile_id: 4567,
+        },
+      }),
+  },
+];
+
+add_task(async function test_sponsored_topsites_tile_id_redaction_exhaustive() {
+  info(
+    "Every sponsored top sites event on the newtab ping should have its " +
+      "tile_id redacted when the redactTileIdForSponsored trainhop config " +
+      "is enabled"
+  );
+
+  for (const { name, metric, drive } of SPONSORED_TOPSITES_TILE_ID_PATHS) {
+    let sandbox = sinon.createSandbox();
+    let instance = telemetryFeedWithTileIdRedaction();
+    Services.fog.testResetFOG();
+    sandbox
+      .stub(instance.sessions, "get")
+      .returns({ session_id: "decafc0ffee" });
+
+    await drive(instance);
+
+    let events = metric().testGetValue();
+    Assert.equal(events.length, 1, `Recorded 1 ${name} event`);
+    Assert.ok(
+      !("tile_id" in events[0].extra),
+      `${name} should not carry a tile_id when redaction is enabled`
+    );
+
+    sandbox.restore();
+  }
+});
+
+add_task(
+  async function test_sponsored_topsites_tile_id_retained_without_trainhop_config() {
+    info(
+      "Every sponsored top sites event on the newtab ping should retain its " +
+        "tile_id when the redactTileIdForSponsored trainhop config is absent"
+    );
+
+    for (const { name, metric, drive } of SPONSORED_TOPSITES_TILE_ID_PATHS) {
+      let sandbox = sinon.createSandbox();
+      let instance = new TelemetryFeed();
+      Services.fog.testResetFOG();
+      sandbox
+        .stub(instance.sessions, "get")
+        .returns({ session_id: "decafc0ffee" });
+
+      await drive(instance);
+
+      let events = metric().testGetValue();
+      Assert.equal(events.length, 1, `Recorded 1 ${name} event`);
+      Assert.equal(
+        events[0].extra.tile_id,
+        String(4567),
+        `${name} should carry a tile_id when redaction is disabled`
+      );
+
+      sandbox.restore();
+    }
+  }
+);
+
 add_task(
   async function test_handleAboutSponsoredTopSites_record_showPrivacyClick() {
     info(
@@ -2963,6 +3231,8 @@ add_task(function test_randomizeOrganicContentEvent() {
     is_sponsored: false,
     section_id: "section",
     section_position: 3,
+    variant_id: 0,
+    source_section_id: "src-section",
   });
   const allRecs = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(computeRec);
   sandbox.stub(instance, "getRecommendationCount").returns(allRecs.length);
@@ -3002,12 +3272,16 @@ add_task(function test_randomizeOrganicContentEvent_tracks_layout_name() {
     section: "orig-section",
     section_position: 0,
     layout_name: "orig-layout",
+    variant_id: 0,
+    source_section_id: "orig-source",
   };
   const randomItem = {
     corpus_item_id: "swapped",
     topic: "b",
     is_sponsored: false,
     section: "swapped-section",
+    variant_id: 5050,
+    source_section_id: "swapped-source",
   };
   sandbox.stub(instance, "getRecommendationCount").returns(10);
   sandbox.stub(instance, "getAllRecommendations").returns([randomItem]);
@@ -3028,6 +3302,63 @@ add_task(function test_randomizeOrganicContentEvent_tracks_layout_name() {
     "swapped-layout",
     "layout_name tracks the swapped section"
   );
+  Assert.equal(
+    result.variant_id,
+    5050,
+    "variant_id tracks the swapped section"
+  );
+  Assert.equal(
+    result.source_section_id,
+    "swapped-source",
+    "source_section_id tracks the swapped section"
+  );
+
+  sandbox.restore();
+});
+
+add_task(function test_randomizeOrganicContentEvent_variant_id_popular_today() {
+  info(
+    "randomizeOrganicContentEvent should keep the original variant_id when the " +
+      "section stays Popular Today, since the swapped item's variant would be " +
+      "an impossible section/variant pair"
+  );
+  let sandbox = sinon.createSandbox();
+  let instance = new TelemetryFeed();
+
+  const item = {
+    corpus_item_id: "orig",
+    topic: "a",
+    is_sponsored: false,
+    section: "top_stories_section",
+    variant_id: 0,
+    source_section_id: "orig-origin",
+  };
+  const randomItem = {
+    corpus_item_id: "swapped",
+    topic: "b",
+    is_sponsored: false,
+    section: "sports",
+    variant_id: 5050,
+  };
+  sandbox.stub(instance, "getRecommendationCount").returns(10);
+  sandbox.stub(instance, "getAllRecommendations").returns([randomItem]);
+  instance._privateRandomContentTelemetryProbablityValues = { epsilon: 30 };
+  sandbox.stub(NewTabContentPing, "decideWithProbability").returns(false);
+  sandbox.stub(NewTabContentPing, "secureRandIntInRange").returns(0);
+
+  const result = instance.randomizeOrganicContentEvent(item);
+
+  Assert.equal(
+    result.section,
+    "top_stories_section",
+    "section stays Popular Today"
+  );
+  Assert.equal(
+    result.variant_id,
+    0,
+    "variant_id stays the Popular Today variant, not the swapped item's"
+  );
+  Assert.equal(result.corpus_item_id, "swapped", "content is still swapped");
 
   sandbox.restore();
 });

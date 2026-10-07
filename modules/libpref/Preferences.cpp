@@ -525,44 +525,56 @@ static float ParsePrefFloat(const nsCString& aString, nsresult* aError) {
   return result;
 }
 
-struct PreferenceMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("Preference");
-  }
+struct PreferenceMarker : public BaseMarkerType<PreferenceMarker> {
+  static constexpr const char* Name = "Preference";
+  // "Preference Read" and "Preference Write" both use this type.
+  static constexpr bool ETWStoreName = true;
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"prefName", MS::InputType::CString, "Name"},
+      {"prefKind", MS::InputType::CString, "Kind"},
+      {"prefType", MS::InputType::CString, "Type"},
+      {"prefValue", MS::InputType::CString, "Value"},
+  };
+  static constexpr const char* TableLabel =
+      "{marker.data.prefName}: {marker.data.prefValue} "
+      "({marker.data.prefType})";
   static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
                                    const ProfilerString8View& aPrefName,
                                    const Maybe<PrefValueKind>& aPrefKind,
                                    PrefType aPrefType,
                                    const ProfilerString8View& aPrefValue) {
-    aWriter.StringProperty("prefName", aPrefName);
-    aWriter.StringProperty("prefKind", PrefValueKindToString(aPrefKind));
-    aWriter.StringProperty("prefType", PrefTypeToString(aPrefType));
-    aWriter.StringProperty("prefValue", aPrefValue);
+    StreamJSONMarkerDataImpl(aWriter, aPrefName,
+                             PrefValueKindToString(aPrefKind),
+                             PrefTypeToString(aPrefType), aPrefValue);
   }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormat("prefName", "Name", MS::Format::String);
-    schema.AddKeyLabelFormat("prefKind", "Kind", MS::Format::String);
-    schema.AddKeyLabelFormat("prefType", "Type", MS::Format::String);
-    schema.AddKeyLabelFormat("prefValue", "Value", MS::Format::String);
-    schema.SetTableLabel(
-        "{marker.data.prefName}: {marker.data.prefValue} "
-        "({marker.data.prefType})");
-    return schema;
+
+  static void TranslateMarkerInputToSchema(
+      void* aContext, const ProfilerString8View& aPrefName,
+      const Maybe<PrefValueKind>& aPrefKind, PrefType aPrefType,
+      const ProfilerString8View& aPrefValue) {
+    ETW::OutputMarkerSchema(aContext, PreferenceMarker{}, aPrefName,
+                            PrefValueKindToString(aPrefKind),
+                            PrefTypeToString(aPrefType), aPrefValue);
   }
 
  private:
-  static Span<const char> PrefValueKindToString(
+  static ProfilerString8View PrefValueKindToString(
       const Maybe<PrefValueKind>& aKind) {
     if (aKind) {
-      return *aKind == PrefValueKind::Default ? MakeStringSpan("Default")
-                                              : MakeStringSpan("User");
+      if (*aKind == PrefValueKind::Default) {
+        return "Default";
+      }
+      return "User";
     }
     return "Shared";
   }
 
-  static Span<const char> PrefTypeToString(PrefType type) {
+  static ProfilerString8View PrefTypeToString(PrefType type) {
     switch (type) {
       case PrefType::None:
         return "None";
@@ -3829,8 +3841,11 @@ nsPrefOverrideMap::GetEntry(const nsACString& aPrefName, JSContext* aCx,
           return JS::Int32Value(it->value()->GetPrefValue().Get<int32_t>());
         case PrefType::String: {
           auto str = it->value()->GetPrefValue().Get<nsDependentCString>();
-          return JS::StringValue(
-              JS_NewStringCopyN(aCx, str.get(), str.Length()));
+          JSString* jsStr = JS_NewStringCopyN(aCx, str.get(), str.Length());
+          if (NS_WARN_IF(!jsStr)) {
+            return Err(NS_ERROR_OUT_OF_MEMORY);
+          }
+          return JS::StringValue(jsStr);
         }
         default:
           // Do not expect type NONE
@@ -4330,6 +4345,13 @@ Preferences::CallbackTrieStats Preferences::GetCallbackTrieStatsForTesting() {
   stats.mNodeCount = nodeCount;
   stats.mCallbackCount = callbackCount;
   return stats;
+}
+
+/* static */
+void Preferences::ReapCallbacksForTesting() {
+  if (sPImpl) {
+    nsPrefBranch::ReapAndCompactCallbacks();
+  }
 }
 
 class PreferenceServiceReporter final : public nsIMemoryReporter {

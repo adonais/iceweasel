@@ -3,10 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 pub use lockstore_rs::LockstoreDatastore;
-use lockstore_rs::{KEYSTORE_FILENAME, Keystore, LockstoreError};
+use lockstore_rs::{Keystore, LockstoreError, KEYSTORE_FILENAME};
 use nserror::{
-    NS_ERROR_ABORT, NS_ERROR_FAILURE, NS_ERROR_INVALID_ARG, NS_ERROR_NOT_AVAILABLE,
-    NS_ERROR_NOT_INITIALIZED, NS_OK, nsresult,
+    nsresult, NS_ERROR_ABORT, NS_ERROR_FAILURE, NS_ERROR_INVALID_ARG, NS_ERROR_NOT_AVAILABLE,
+    NS_ERROR_NOT_INITIALIZED, NS_OK,
 };
 use nsstring::{nsACString, nsCString};
 use std::path::PathBuf;
@@ -185,6 +185,31 @@ pub extern "C" fn keystore_is_dek_extractable(
     }
 }
 
+/// Report whether a DEK record exists for `dek_name`. A missing DEK is
+/// reported as `false`, not `NS_ERROR_NOT_AVAILABLE`, and no wrapping KEK
+/// needs to be unlocked -- unlike `keystore_get_dek_automatic`, which cannot
+/// distinguish "no such DEK" from "every wrapping KEK is locked".
+#[no_mangle]
+pub extern "C" fn keystore_dek_exists(
+    handle: &KeystoreHandle,
+    dek_name: &nsACString,
+    out_exists: &mut bool,
+) -> nsresult {
+    if dek_name.is_empty() {
+        log::error!("DEK name cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+
+    let dek_name_str = dek_name.to_utf8();
+    match handle.keystore.dek_exists(&dek_name_str) {
+        Ok(b) => {
+            *out_exists = b;
+            NS_OK
+        }
+        Err(e) => error_to_nsresult(&e),
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn keystore_get_dek(
     handle: &KeystoreHandle,
@@ -201,6 +226,28 @@ pub extern "C" fn keystore_get_dek(
     let kek_ref_str = kek_ref.to_utf8();
 
     match handle.keystore.get_dek(&dek_name_str, &kek_ref_str) {
+        Ok((dek_bytes, _cipher_suite)) => {
+            *ret_dek = ThinVec::from(dek_bytes.as_slice());
+            NS_OK
+        }
+        Err(e) => error_to_nsresult(&e),
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn keystore_get_dek_automatic(
+    handle: &KeystoreHandle,
+    dek_name: &nsACString,
+    ret_dek: &mut ThinVec<u8>,
+) -> nsresult {
+    if dek_name.is_empty() {
+        log::error!("DEK name cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+
+    let dek_name_str = dek_name.to_utf8();
+
+    match handle.keystore.get_dek_automatic(&dek_name_str) {
         Ok((dek_bytes, _cipher_suite)) => {
             *ret_dek = ThinVec::from(dek_bytes.as_slice());
             NS_OK
@@ -324,6 +371,29 @@ pub extern "C" fn keystore_switch_kek(
         .keystore
         .switch_kek(&dek_name_str, &old_str, &new_str)
     {
+        Ok(()) => NS_OK,
+        Err(e) => error_to_nsresult(&e),
+    }
+}
+
+/// Re-wrap every collection currently wrapped under `from_kek_ref` to
+/// `to_kek_ref`. The whole migration runs under a single connection; on
+/// failure the collections already switched are rolled back and the original
+/// error is returned. Both KEKs must already exist and be unlocked. Neither
+/// record is deleted; dropping the drained source KEK is up to the caller.
+#[no_mangle]
+pub extern "C" fn keystore_migrate_deks(
+    handle: &KeystoreHandle,
+    from_kek_ref: &nsACString,
+    to_kek_ref: &nsACString,
+) -> nsresult {
+    if from_kek_ref.is_empty() || to_kek_ref.is_empty() {
+        log::error!("from_kek_ref and to_kek_ref cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+    let from_str = from_kek_ref.to_utf8();
+    let to_str = to_kek_ref.to_utf8();
+    match handle.keystore.migrate_deks(&from_str, &to_str) {
         Ok(()) => NS_OK,
         Err(e) => error_to_nsresult(&e),
     }
@@ -478,6 +548,33 @@ pub extern "C" fn keystore_unlock_kek(
     }
 }
 
+/// Re-wrap the Password KEK at `kek_ref` from `old_secret` to
+/// `new_secret`. The KEK plaintext is unchanged so DEKs wrapped under it
+/// stay valid. `NS_ERROR_INVALID_ARG` means no such record (or a
+/// non-Password / empty kek_ref); `NS_ERROR_ABORT` means `old_secret`
+/// did not unwrap the current record. Lockstore copies both secrets into
+/// its own buffers and zeroises them before returning.
+#[no_mangle]
+pub extern "C" fn keystore_change_kek_password(
+    handle: &KeystoreHandle,
+    kek_ref: &nsACString,
+    old_secret: &nsACString,
+    new_secret: &nsACString,
+) -> nsresult {
+    if kek_ref.is_empty() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    // Zeroizing: the copied secrets are wiped when this function returns.
+    let old_buf = Zeroizing::new(old_secret[..].to_vec());
+    let new_buf = Zeroizing::new(new_secret[..].to_vec());
+    let kek_ref_str = kek_ref.to_utf8();
+    result_to_nsresult(
+        handle
+            .keystore
+            .change_kek_password(&kek_ref_str, &old_buf, &new_buf),
+    )
+}
+
 #[no_mangle]
 pub extern "C" fn keystore_lock_kek(handle: &KeystoreHandle, kek_ref: &nsACString) -> nsresult {
     if kek_ref.is_empty() {
@@ -500,6 +597,29 @@ pub extern "C" fn keystore_is_kek_unlocked(
     match handle.keystore.is_kek_unlocked(&kek_ref_str) {
         Ok(b) => {
             *out_unlocked = b;
+            NS_OK
+        }
+        Err(e) => error_to_nsresult(&e),
+    }
+}
+
+/// Report whether a KEK record exists for `kek_ref`, regardless of
+/// whether it is currently unlocked. Unlike `keystore_is_kek_unlocked`,
+/// this inspects the on-disk record, so it detects a Password KEK that
+/// has never been unlocked this session.
+#[no_mangle]
+pub extern "C" fn keystore_kek_exists(
+    handle: &KeystoreHandle,
+    kek_ref: &nsACString,
+    out_exists: &mut bool,
+) -> nsresult {
+    if kek_ref.is_empty() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    let kek_ref_str = kek_ref.to_utf8();
+    match handle.keystore.kek_exists(&kek_ref_str) {
+        Ok(b) => {
+            *out_exists = b;
             NS_OK
         }
         Err(e) => error_to_nsresult(&e),

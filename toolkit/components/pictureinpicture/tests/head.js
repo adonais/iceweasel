@@ -992,6 +992,12 @@ async function isVideoMuted(browser, videoID) {
   });
 }
 
+async function getVideoCurrentTime(browser, videoID) {
+  return SpecialPowers.spawn(browser, [videoID], async videoID => {
+    return content.document.getElementById(videoID).currentTime;
+  });
+}
+
 /**
  * Initializes videos and text tracks for the current test case.
  * First track is the default track to be loaded onto the video.
@@ -1092,6 +1098,129 @@ function overrideSavedPosition(left, top, width, height) {
   xulStore.setValue(PLAYER_URI, "picture-in-picture", "top", top);
   xulStore.setValue(PLAYER_URI, "picture-in-picture", "width", width);
   xulStore.setValue(PLAYER_URI, "picture-in-picture", "height", height);
+}
+
+/**
+ * Opens a Picture-in-Picture player window for a playing video, runs a test
+ * task, and closes the window when the task finishes.
+ *
+ * @param {object} options
+ * @param {string} options.url
+ *   The test page to load.
+ * @param {string} options.videoId
+ *   The ID of the video to open in Picture-in-Picture.
+ * @param {Array} options.prefs
+ *   Extra prefs to set for the duration of the task.
+ * @param {?Array} options.size
+ *   A [width, height] to resize the player window to before running the task.
+ *   Pass null to leave the window at the size Picture-in-Picture chooses.
+ * @param {Function} taskFn
+ *   The test to run.
+ */
+async function withPipWindow(
+  {
+    url = TEST_PAGE,
+    videoId = "with-controls",
+    prefs = [],
+    size = [640, 360],
+  } = {},
+  taskFn
+) {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "media.videocontrols.picture-in-picture.keyboard-controls.enabled",
+        true,
+      ],
+      [
+        "media.videocontrols.picture-in-picture.improved-video-controls.enabled",
+        true,
+      ],
+      ...prefs,
+    ],
+  });
+
+  await BrowserTestUtils.withNewTab(
+    {
+      url,
+      gBrowser,
+    },
+    async browser => {
+      if (url === TEST_PAGE_WITH_WEBVTT) {
+        await prepareVideosAndWebVTTTracks(browser, videoId);
+      } else {
+        await ensureVideosReady(browser);
+      }
+
+      await SpecialPowers.spawn(browser, [videoId], async videoID => {
+        await content.document.getElementById(videoID).play();
+      });
+
+      let pipWin = await triggerPictureInPicture(browser, videoId);
+      ok(pipWin, "Got Picture-in-Picture window.");
+
+      if (size) {
+        // Controls are hidden at narrow widths and short heights, so resize to
+        // make sure each one is laid out. Picture-in-Picture also sizes the
+        // window itself as it opens, so wait on the dimensions rather than a
+        // resize event, which may already have fired.
+        let [width, height] = size;
+        pipWin.resizeTo(width, height);
+        await TestUtils.waitForCondition(
+          () => pipWin.outerWidth === width && pipWin.outerHeight === height,
+          "Waiting for the player window to be resized"
+        );
+        await pipWin.promiseDocumentFlushed(() => {});
+      }
+
+      await taskFn(browser, pipWin);
+
+      await BrowserTestUtils.closeWindow(pipWin);
+    }
+  );
+
+  await SpecialPowers.popPrefEnv();
+}
+
+/**
+ * Waits for the player window to make a control usable by clearing its hidden and
+ * disabled attributes. Note that controls can have display: none at some
+ * window sizes, but this function does not wait on visibility. This function
+ * can still resolve when a control is visibly missing from the window.
+ *
+ * To know if a control is actually rendered, use checkVisibility() instead.
+ *
+ * @param {Element} button the control to wait for.
+ */
+async function waitForControl(button) {
+  await BrowserTestUtils.waitForMutationCondition(
+    button,
+    { attributeFilter: ["hidden", "disabled"] },
+    () => !button.hidden && !button.disabled,
+    { msg: `Waiting for #${button.id} to be available` }
+  );
+}
+
+/**
+ * Opens a player window settings panel with the keyboard by activating the
+ * button that toggles it.
+ *
+ * @param {Window} pipWin the Picture-in-Picture player window.
+ * @param {Element} button the button that toggles the panel.
+ * @param {Element} panel the panel expected to open.
+ */
+async function openPanelWithKeyboard(pipWin, button, panel) {
+  await waitForControl(button);
+  button.focus();
+
+  let panelVisiblePromise = BrowserTestUtils.waitForMutationCondition(
+    panel,
+    { attributeFilter: ["class"] },
+    () => !panel.classList.contains("hide"),
+    { msg: `Waiting for #${panel.id} to open` }
+  );
+  EventUtils.synthesizeKey(" ", {}, pipWin);
+  await panelVisiblePromise;
 }
 
 /**

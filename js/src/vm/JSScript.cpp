@@ -2390,7 +2390,7 @@ void JSScript::relazify(JSRuntime* rt) {
   // interpreter trampoline which supports lazy scripts.
   MOZ_ASSERT_IF(jit::HasJitBackend(), isUsingInterpreterTrampoline(rt));
 
-  realm()->removeFromCompileQueue(this);
+  realm()->jitRealm().removeFromCompileQueue(this);
 
   // Without bytecode, the script counts are invalid so destroy them if they
   // still exist.

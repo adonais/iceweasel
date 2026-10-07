@@ -13,4 +13,4 @@ typedef enum PRAccessHow {
 } PRAccessHow;
 ```
 
-See [PR_Access](en/PR_Access) for what each of these values mean.
+See [PR_Access](pr_access.md) for what each of these values mean.

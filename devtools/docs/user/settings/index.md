@@ -96,12 +96,12 @@ Truncate DOM attributes
 Default color unit
 : A setting to control how colors are represented in the inspector:
 
-  - Hex
-  - HSL(A)
-  - RGB(A)
-  - HWB
-  - color name
-  - As authored.
+- Hex
+- HSL(A)
+- RGB(A)
+- HWB
+- color name
+- As authored.
 
 Enable layout panel
 : Enable the experimental layout panel. This setting only exists in Firefox Nightly.
@@ -168,9 +168,9 @@ Tab size
 Keybindings
 : Choose the default CodeMirror keybindings or keybindings from one of several popular editors:
 
-  - Vim
-  - Emacs
-  - Sublime Text
+- Vim
+- Emacs
+- Sublime Text
 
 (settings-advanced-settings)=
 

@@ -20,7 +20,10 @@ const {
   REPS: { Rep },
   MODE,
 } = Reps;
-import { translateNodeFrontToGrip } from "devtools/client/inspector/shared/utils";
+import {
+  getSelectorFromGrip,
+  translateNodeFrontToGrip,
+} from "devtools/client/inspector/shared/utils";
 
 import {
   deleteDOMMutationBreakpoint,
@@ -71,6 +74,12 @@ class DOMMutationBreakpointsContents extends Component {
       deleteBreakpoint,
     } = this.props;
     const { enabled, id: breakpointId, nodeFront, mutationType } = breakpoint;
+    const grip = translateNodeFrontToGrip(nodeFront);
+    const checkboxLabel = L10N.getFormatStr(
+      "domMutation.toggle.label",
+      getSelectorFromGrip(grip),
+      localizationTerms[mutationType] || mutationType
+    );
 
     return li(
       {
@@ -80,6 +89,7 @@ class DOMMutationBreakpointsContents extends Component {
         type: "checkbox",
         checked: enabled,
         onChange: () => this.handleBreakpoint(breakpointId, !enabled),
+        "aria-label": checkboxLabel,
       }),
       div(
         {
@@ -90,7 +100,7 @@ class DOMMutationBreakpointsContents extends Component {
             className: "dom-mutation-label",
           },
           Rep({
-            object: translateNodeFrontToGrip(nodeFront),
+            object: grip,
             mode: MODE.TINY,
             onDOMNodeClick: () => openElementInInspector(nodeFront),
             onInspectIconClick: () => openElementInInspector(nodeFront),
@@ -107,6 +117,7 @@ class DOMMutationBreakpointsContents extends Component {
       ),
       React.createElement(CloseButton, {
         handleClick: () => deleteBreakpoint(nodeFront, mutationType),
+        tooltip: L10N.getStr("domMutation.remove.tooltip"),
       })
     );
   }

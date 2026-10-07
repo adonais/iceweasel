@@ -23,107 +23,29 @@ add_setup(async function () {
   });
 });
 
-async function openContextMenuAt(browser, x, y) {
-  const contextMenu = document.getElementById("contentAreaContextMenu");
-  const contextMenuShownPromise = BrowserTestUtils.waitForEvent(
-    contextMenu,
-    "popupshown"
-  );
-  info("Opening context menu at coordinates: " + x + ", " + y);
-  await BrowserTestUtils.synthesizeMouseAtPoint(
-    x,
-    y,
-    { type: "contextmenu", button: 2 },
-    browser
-  );
-  await contextMenuShownPromise;
-  return contextMenu;
-}
+const PDFJS_PAGES_MENUITEMS = [
+  "context-pdfjs-copy-page",
+  "context-pdfjs-cut-page",
+  "context-pdfjs-delete-page",
+  "context-pdfjs-save-page",
+  "context-sep-pdfjs-save-page",
+];
 
-async function getPagesContextMenuItems(
-  browser,
-  box,
-  waitForStatesChanged = false
-) {
-  info(`Opening context menu at the center of box: ${JSON.stringify(box)}`);
-  return new Promise(resolve => {
-    setTimeout(async () => {
-      const { x, y, width, height } = box;
-      const ids = [
-        "context-pdfjs-copy-page",
-        "context-pdfjs-cut-page",
-        "context-pdfjs-delete-page",
-        "context-pdfjs-save-page",
-        "context-sep-pdfjs-save-page",
-      ];
-      let statesChangedPromise;
-      if (waitForStatesChanged) {
-        statesChangedPromise = BrowserTestUtils.waitForContentEvent(
-          browser,
-          "editingstateschanged",
-          false,
-          null,
-          true
-        );
-      }
-
-      await openContextMenuAt(browser, x + width / 2, y + height / 2);
-      if (waitForStatesChanged) {
-        await statesChangedPromise;
-      }
-      const doc = browser.ownerDocument;
-      const results = new Map();
-      for (const id of ids) {
-        results.set(id, doc.getElementById(id) || null);
-      }
-      resolve(results);
-    }, 0);
-  });
-}
-
-async function hideContextMenu(browser) {
-  info("Hiding context menu");
-  await new Promise(resolve =>
-    setTimeout(async () => {
-      const doc = browser.ownerDocument;
-      const contextMenu = doc.getElementById("contentAreaContextMenu");
-      const popupHiddenPromise = BrowserTestUtils.waitForEvent(
-        contextMenu,
-        "popuphidden"
-      );
-      contextMenu.hidePopup();
-      await popupHiddenPromise;
-      resolve();
-    }, 0)
-  );
-}
-
-function assertMenuitems(menuitems, expected) {
-  Assert.deepEqual(
-    [...menuitems.values()]
-      .filter(
-        elmt =>
-          !elmt.id.includes("-sep-") &&
-          !elmt.hidden &&
-          [null, "false"].includes(elmt.getAttribute("disabled"))
-      )
-      .map(elmt => elmt.id),
-    expected
-  );
-}
-
-async function clickOnItem(browser, items, entry) {
-  info(`Clicking on menu item ${entry}`);
-  const editingPromise = BrowserTestUtils.waitForContentEvent(
+/**
+ * Open a context menu and get the pdfjs page entries.
+ *
+ * @param {object} browser
+ * @param {object} box
+ * @param {boolean} waitForStatesChanged
+ * @returns {Promise<Map<string,HTMLElement>>} the pdfjs page menu entries.
+ */
+function getPagesContextMenuItems(browser, box, waitForStatesChanged = false) {
+  return openContextMenuAndGetItems(
     browser,
-    "editingaction",
-    false,
-    null,
-    true
+    box,
+    PDFJS_PAGES_MENUITEMS,
+    waitForStatesChanged
   );
-  const contextMenu = document.getElementById("contentAreaContextMenu");
-  contextMenu.activateItem(items.get(entry));
-  await editingPromise;
 }
 
 async function getThumbnailBox(browser, index) {
@@ -218,7 +140,7 @@ add_task(async function test_pages_context_menu() {
         [...menuitems.values()].every(elmt => elmt.hidden),
         "No visible pages menuitem when no pages are selected"
       );
-      await hideContextMenu(browser);
+      await hideContextMenu();
 
       // Open the sidebar (thumbnails view).
       await click(browser, "#viewsManagerToggleButton");

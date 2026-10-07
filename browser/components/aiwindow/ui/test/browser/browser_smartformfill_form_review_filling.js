@@ -205,6 +205,7 @@ describe("Smart Form Fill form review filling", () => {
         reviewBrowser,
         "ai-smart-form-fill-success-heading"
       );
+      await waitForFormReviewFocus(reviewBrowser, ".form-review-dialog");
 
       const retried = await getFormReviewSnapshot(reviewBrowser);
       Assert.equal(
@@ -230,6 +231,7 @@ describe("Smart Form Fill form review filling", () => {
         reviewBrowser,
         "ai-smart-form-fill-error-heading"
       );
+      await waitForFormReviewFocus(reviewBrowser, ".form-review-dialog");
 
       const snapshot = await getFormReviewSnapshot(reviewBrowser);
       Assert.equal(

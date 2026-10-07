@@ -160,6 +160,11 @@ if CONFIG["MOZ_MEMORY"]:
         "TestAllocReplacement.cpp",
     ]
 
+if CONFIG["MOZ_DIAGNOSTIC_ASSERT_ENABLED"]:
+    UNIFIED_SOURCES += [
+        "TestThreadShutdownAnnotations.cpp",
+    ]
+
 SOURCES += [
     "TestAsyncPlatformPipes.cpp",
     "TestCOMArray.cpp",

@@ -105,7 +105,7 @@ class MediaTransportHandler {
   virtual void AddIceCandidate(const std::string& aTransportId,
                                const std::string& aCandidate,
                                const std::string& aUFrag,
-                               const std::string& aObfuscatedAddress) = 0;
+                               const std::string& aResolvedAddress) = 0;
 
   virtual void UpdateNetworkState(bool aOnline) = 0;
 

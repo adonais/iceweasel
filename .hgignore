@@ -298,6 +298,7 @@ services/app-services/tools/nimbus-gradle-plugin/build
 ^testing/talos/talos/tests/tp5n
 ^testing/talos/talos/tests/pdfpaint/pdfs
 ^testing/talos/talos/tests/devtools/damp\.manifest\.develop
+^testing/talos/talos/tests/perf-reftest/perf_reftest\.manifest\.develop
 ^testing/talos/talos/startup_test/startup_about_home_paint/startup_about_home_paint\.manifest\.develop
 ^testing/talos/talos/webextensions/
 ^talos-venv

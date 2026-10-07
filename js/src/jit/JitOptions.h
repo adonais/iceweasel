@@ -148,8 +148,6 @@ struct DefaultJitOptions {
   // Irregexp shim flags
   bool correctness_fuzzer_suppressions;
   bool enable_regexp_unaligned_accesses;
-  bool js_regexp_modifiers;
-  bool js_regexp_duplicate_named_groups;
   bool js_regexp_buffer_boundaries;
   bool regexp_possessive_quantifier;
   bool regexp_optimization;

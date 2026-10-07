@@ -10,7 +10,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/158a888cad8869a2f
  1 file changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
-index a818ce37c1..44daf1fe03 100644
+index e0a197001d..33760d0764 100644
 --- a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
 +++ b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
 @@ -61,6 +61,13 @@
@@ -26,8 +26,8 @@ index a818ce37c1..44daf1fe03 100644
 +
  namespace webrtc {
  
- namespace {
-@@ -432,7 +439,7 @@ void SharedScreenCastStreamPrivate::OnStreamParamChanged(
+ constexpr int kBytesPerPixel = 4;
+@@ -420,7 +427,7 @@ void SharedScreenCastStreamPrivate::OnStreamParamChanged(
      RTC_LOG(LS_INFO) << sb.Release();
    }
  

@@ -16,7 +16,7 @@ namespace mozilla {
 class ContainerWriter {
  public:
   ContainerWriter() : mInitialized(false), mIsWritingComplete(false) {}
-  virtual ~ContainerWriter() {}
+  virtual ~ContainerWriter() = default;
   // Mapping to DOMMediaStream::TrackTypeHints
   enum {
     CREATE_AUDIO_TRACK = 1 << 0,

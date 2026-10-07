@@ -286,10 +286,7 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
         return allSourceActorsProcessed;
       }
 
-      if (
-        !location.source.isStyleSheet &&
-        !getBreakableLines(location.source.id)
-      ) {
+      if (!location.source.isStyleSheet && !getBreakableLines(location)) {
         return false;
       }
 
@@ -325,11 +322,11 @@ function getVisibleSelectedFrameColumn(dbg) {
  * Assert that a given line is breakable or not.
  * Verify that CodeMirror gutter is grayed out via the empty line classname if not breakable.
  */
-async function assertLineIsBreakable(dbg, file, line, shouldBeBreakable) {
+async function assertLineIsBreakable(dbg, line, shouldBeBreakable) {
   const el = await getNodeAtEditorGutterLine(dbg, line);
   const lineText = `${line}| ${el.innerText.substring(0, 50)}${
     el.innerText.length > 50 ? "…" : ""
-  } — in ${file}`;
+  }`;
   // When a line is not breakable, the "empty-line" class is added
   // and the line is greyed out
   if (shouldBeBreakable) {
@@ -974,14 +971,15 @@ async function stepOver(dbg, pauseOptions) {
  *
  * @memberof mochitest/actions
  * @param {object} dbg
+ * @param {object} pauseOptions
  * @return {Promise}
  * @static
  */
-async function stepIn(dbg) {
+async function stepIn(dbg, pauseOptions) {
   const pauseLine = getVisibleSelectedFrameLine(dbg);
   info(`Stepping in from ${pauseLine}`);
   await dbg.actions.stepIn();
-  return waitForPaused(dbg);
+  return waitForPaused(dbg, null, pauseOptions);
 }
 
 /**
@@ -1091,10 +1089,10 @@ async function navigateToAbsoluteURL(dbg, url, ...sources) {
 }
 
 function getFirstBreakpointColumn(dbg, source, line) {
-  const position = dbg.selectors.getFirstBreakpointPosition(
+  const position = dbg.selectors.getFirstBreakpointPositionForLocationLine(
     createLocation({
-      line,
       source,
+      line,
     })
   );
 
@@ -1992,6 +1990,11 @@ const selectors = {
   excludePatternsInput: ".project-text-search .exclude-patterns-field input",
   fileSearchInput: ".search-bar input",
   fileSearchSummary: ".search-bar .search-field-summary",
+  fileSearchModifiersCaseSensitive:
+    ".search-buttons-bar button.case-sensitive-btn",
+  fileSearchModifiersRegexMatch: ".search-buttons-bar button.regex-match-btn",
+  fileSearchModifiersWholeWordMatch:
+    ".search-buttons-bar button.whole-word-btn",
   watchExpressionsHeader: ".watch-expressions-pane ._header .header-label",
   watchExpressionsAddButton: ".watch-expressions-pane ._header .plus",
   editorNotificationFooter: ".editor-notification-footer",
@@ -2278,17 +2281,10 @@ function toggleObjectInspectorNode(node) {
   );
 }
 
+// Only opens the context menu; callers wait for it with waitForContextMenu.
 function rightClickObjectInspectorNode(dbg, node) {
-  const objectInspector = node.closest(".object-inspector");
-  const properties = objectInspector.querySelectorAll(".node").length;
-
   info(`Right clicking node ${node.innerText}`);
   rightClickEl(dbg, node);
-
-  info(`Waiting for object inspector properties update`);
-  return waitUntil(
-    () => objectInspector.querySelectorAll(".node").length !== properties
-  );
 }
 
 /*******************************************
@@ -2948,7 +2944,10 @@ async function waitForBreakableLine(dbg, source, lineNumber) {
       const currentSource = findSource(dbg, source);
 
       const breakableLines =
-        currentSource && dbg.selectors.getBreakableLines(currentSource.id);
+        currentSource &&
+        dbg.selectors.getBreakableLines(
+          createLocation({ source: currentSource, line: lineNumber })
+        );
 
       return breakableLines && breakableLines.includes(lineNumber);
     },

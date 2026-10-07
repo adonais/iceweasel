@@ -9,16 +9,16 @@
 
 codegenTestX64_IGNOREDxv128_v128(
     [['i8x16.neg', `
-pxor %xmm0, %xmm0
+xorps %xmm0, %xmm0
 psubb %xmm1, %xmm0`],
      ['i16x8.neg', `
-pxor %xmm0, %xmm0
+xorps %xmm0, %xmm0
 psubw %xmm1, %xmm0`],
      ['i32x4.neg', `
-pxor %xmm0, %xmm0
+xorps %xmm0, %xmm0
 psubd %xmm1, %xmm0`],
      ['i64x2.neg', `
-pxor %xmm0, %xmm0
+xorps %xmm0, %xmm0
 psubq %xmm1, %xmm0`]] );
 
 // Floating point negate and absolute value, and bitwise not, prefer for the

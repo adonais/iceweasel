@@ -1,0 +1,96 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: its events neither bubble nor are cancelable</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<pre id="test">
+<script>
+"use strict";
+
+// https://webaudio.github.io/web-speech-api/#speechreco-events
+// "These events do not bubble and are not cancelable."
+//
+// "result" and "nomatch" need a real model, so they are checked in
+// test_stop_returns_result_or_nomatch.html.
+
+// Valid BCP-47, supported by no model, so start() fails with "error".
+const UNSUPPORTED = "xx-XX";
+
+const EVENT_TYPES = [
+  "start", "audiostart", "soundstart", "speechstart", "speechend", "soundend",
+  "audioend", "result", "nomatch", "error", "end",
+];
+
+// Record whatever the session fires, rather than a fixed sequence.
+function record(sr, seen) {
+  for (const type of EVENT_TYPES) {
+    sr.addEventListener(type, e => {
+      seen.push({ type: e.type, bubbles: e.bubbles, cancelable: e.cancelable });
+    });
+  }
+}
+
+function checkAll(seen) {
+  const bubbling = seen.filter(e => e.bubbles).map(e => e.type);
+  is(bubbling.join(", "), "", "no event bubbles");
+  const cancelable = seen.filter(e => e.cancelable).map(e => e.type);
+  is(cancelable.join(", "), "", "no event is cancelable");
+}
+
+add_setup(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.webspeech.recognition.enable", true],
+      ["browser.ml.modelHub.testing", true],
+      ["media.webspeech.recognition.model-download.prompt.testing", true],
+      ["media.navigator.permission.disabled", true],
+    ],
+  });
+});
+
+add_task(async function a_session_that_runs() {
+  const sr = new SpeechRecognition();
+  const seen = [];
+  record(sr, seen);
+
+  await new Promise(resolve => {
+    sr.onstart = resolve;
+    sr.start();
+  });
+  await new Promise(resolve => {
+    sr.onend = resolve;
+    sr.abort();
+  });
+
+  info(`events: ${seen.map(e => e.type).join(", ")}`);
+  ok(seen.some(e => e.type === "start"), "the session fired start");
+  ok(seen.some(e => e.type === "end"), "the session fired end");
+  checkAll(seen);
+});
+
+add_task(async function a_session_that_fails() {
+  const sr = new SpeechRecognition();
+  const seen = [];
+  record(sr, seen);
+  sr.lang = UNSUPPORTED;
+
+  // A session refused before it started fires "error" without "end" (see
+  // DispatchErrorAndEnd), so either event settles the wait.
+  await new Promise(resolve => {
+    sr.onerror = resolve;
+    sr.onend = resolve;
+    sr.start();
+  });
+
+  info(`events: ${seen.map(e => e.type).join(", ")}`);
+  ok(seen.some(e => e.type === "error"), "the refused session fired error");
+  checkAll(seen);
+});
+</script>
+</pre>
+</body>
+</html>

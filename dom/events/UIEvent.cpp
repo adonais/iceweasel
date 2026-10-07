@@ -14,6 +14,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/TextEvents.h"
 #include "nsCOMPtr.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsContentUtils.h"
 #include "nsIContent.h"
 #include "nsIDocShell.h"

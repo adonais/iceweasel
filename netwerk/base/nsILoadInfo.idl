@@ -32,7 +32,7 @@ namespace mozilla {
 namespace dom {
 class ClientInfo;
 class ClientSource;
-struct FeaturePolicyInfo;
+struct PermissionsPolicyInfo;
 class PerformanceStorage;
 struct RemoteType;
 class ServiceWorkerDescriptor;
@@ -61,8 +61,8 @@ native OriginAttributes(mozilla::OriginAttributes);
       native LoadTainting(mozilla::LoadTainting);
       native CSPRef(already_AddRefed<nsIContentSecurityPolicy>);
       native PolicyContainerRef(already_AddRefed<nsIPolicyContainer>);
-      native MaybeFeaturePolicyInfo(mozilla::Maybe<mozilla::dom::FeaturePolicyInfo>);
-[ref] native const_FeaturePolicyInfoRef(const mozilla::dom::FeaturePolicyInfo);
+      native MaybePermissionsPolicyInfo(mozilla::Maybe<mozilla::dom::PermissionsPolicyInfo>);
+[ref] native const_PermissionsPolicyInfoRef(const mozilla::dom::PermissionsPolicyInfo);
       native MaybeRequestMode(mozilla::Maybe<mozilla::dom::RequestMode>);
       native ForceMediaDocument(mozilla::dom::ForceMediaDocument);
 [ref] native RemoteType(mozilla::dom::RemoteType);
@@ -372,6 +372,17 @@ interface nsILoadInfo : nsISupports
   nsIPrincipal FindPrincipalToInherit(in nsIChannel aChannel);
 
   /**
+   * Some callers clobber PrincipalToInherit with a new principal which should
+   * not be validated against triggeringRemoteType.
+   * Those callers use this setter, which sets `isPrincipalToInheritTrusted()`.
+   * The trust flag is not serialized over IPC.
+   */
+  [noscript]
+  void setTrustedPrincipalToInherit(in nsIPrincipal principal);
+  [noscript, notxpcom, nostdcall]
+  boolean isPrincipalToInheritTrusted();
+
+  /**
    * This is the ownerDocument of the LoadingNode. Unless the LoadingNode
    * is a Document, in which case the LoadingDocument is the same as the
    * LoadingNode.
@@ -458,13 +469,9 @@ interface nsILoadInfo : nsISupports
 
 
   /**
-  * The window id and storage access status of the window of the
-  * context that triggered the load. This is used to allow self-initiated
-  * same-origin navigations to propogate their "has storage access" bit
-  * to the next Document.
+  * The window id of the window of the context that triggered the load.
   */
   [infallible] attribute unsigned long long triggeringWindowId;
-  [infallible] attribute boolean triggeringStorageAccess;
 
   /**
    * The classification flags of the first-party context responsible for causing
@@ -1467,16 +1474,45 @@ interface nsILoadInfo : nsISupports
   [notxpcom,nostdcall] CSPRef GetPreloadCsp();
 
   [notxpcom,nostdcall] PolicyContainerRef GetPolicyContainer();
-  [notxpcom,nostdcall] PolicyContainerRef GetPolicyContainerToInherit();
 
   /**
-    * The possibly cross-origin container feature policy required to
-    * initialize the feature policy of a document load.
+   * Hands off from the policyContainerToInherit functionality!
+   *
+   * For navigations, GetPolicyContainerToInherit returns what the spec calls
+   * the "request's client's global object's CSP list", or more precisely a
+   * snapshot of it taken when the navigation starts.  For navigations that
+   * need to inherit their CSP, this is the right CSP to use for the new
+   * document.  We need a way to transfer the CSP from the docshell (where the
+   * navigation starts) to the point where the new document is created and
+   * decides whether to inherit its CSP, and this is the mechanism we use for
+   * that.
+   *
+   * For example:
+   * A document with a CSP triggers a new top-level data: URI load.
+   * We pass the CSP of the document that triggered the load all the
+   * way to docshell. Within docshell we call SetPolicyContainerToInherit() on
+   * the loadinfo. Within Document::InitPolicyContainer() we check if the newly
+   * created document needs to inherit the policy container. If so, we call
+   * GetPolicyContainerToInherit(). Please note that any additonal Meta CSP in
+   * that document will be merged into that CSP. Any subresource loads within
+   * that document subesquently will receive the correct CSP by querying
+   * loadinfo->GetPolicyContainer() from that point on.
+   *
+   * javascript: URLs are the exception: the document they create inherits the
+   * policy container of the document it replaces, so nsJSThunk overrides the
+   * value docshell set here once it knows that document.
+   */
+  [notxpcom,nostdcall] PolicyContainerRef GetPolicyContainerToInherit();
+  [notxpcom,nostdcall] void SetPolicyContainerToInherit(in nsIPolicyContainer aPolicyContainerToInherit);
+
+  /**
+    * The possibly cross-origin container permissions policy required to
+    * initialize the permissions policy of a document load.
     */
   [noscript, nostdcall, notxpcom]
-  MaybeFeaturePolicyInfo GetContainerFeaturePolicyInfo();
+  MaybePermissionsPolicyInfo GetContainerPermissionsPolicyInfo();
   [noscript, nostdcall, notxpcom]
-  void SetContainerFeaturePolicyInfo(in const_FeaturePolicyInfoRef aContainerFeaturePolicy);
+  void SetContainerPermissionsPolicyInfo(in const_PermissionsPolicyInfoRef aContainerPermissionsPolicy);
 
   /**
     * The service worker and fetch specifications require returning the

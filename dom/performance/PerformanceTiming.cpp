@@ -12,6 +12,7 @@
 #include "mozilla/dom/PerformanceResourceTimingBinding.h"
 #include "mozilla/dom/PerformanceTimingBinding.h"
 #include "mozilla/glean/DomPerformanceMetrics.h"
+#include "nsICacheInfoChannel.h"
 #include "nsIDocShell.h"
 #include "nsIDocShellTreeItem.h"
 #include "nsIHttpChannel.h"
@@ -236,6 +237,7 @@ PerformanceTimingData::PerformanceTimingData(nsITimedChannel* aChannel,
     // NOTE: Other fields are set by SetCacheablePropertiesFromHttpChannel,
     // called inside CacheablePerformanceTimingData constructor.
     SetTransferSizeFromHttpChannel(aHttpChannel);
+    SetServedFromCacheFromHttpChannel(aHttpChannel);
   }
 
   bool renderBlocking = false;
@@ -275,6 +277,7 @@ PerformanceTimingData::PerformanceTimingData(
       mResponseEnd(aEndTime),
       mZeroTime(aZeroTime),
       mTransferSize(kLocalCacheTransferSize),
+      mServedFromCache(true),
       mRenderBlockingStatus(aRenderBlockingStatus) {
   if (!StaticPrefs::dom_enable_performance()) {
     mZeroTime = 0;
@@ -326,6 +329,7 @@ PerformanceTimingData::PerformanceTimingData(
       mZeroTime(aIPCData.zeroTime()),
       mFetchStart(aIPCData.fetchStart()),
       mTransferSize(aIPCData.transferSize()),
+      mServedFromCache(aIPCData.servedFromCache()),
       mRenderBlockingStatus(aIPCData.renderBlocking()
                                 ? RenderBlockingStatusType::Blocking
                                 : RenderBlockingStatusType::Non_blocking) {}
@@ -352,7 +356,7 @@ IPCPerformanceTimingData PerformanceTimingData::ToIPC() {
       mEncodedBodySize, mTransferSize, mDecodedBodySize, mResponseStatus,
       mRedirectCount, renderBlocking, mContentType, mAllRedirectsSameOrigin,
       mAllRedirectsPassTAO, mSecureConnection, mBodyInfoAccessAllowed,
-      mTimingAllowed, mInitialized);
+      mTimingAllowed, mInitialized, mServedFromCache);
 }
 
 void CacheablePerformanceTimingData::SetCacheablePropertiesFromHttpChannel(
@@ -389,11 +393,27 @@ void PerformanceTimingData::SetPropertiesFromHttpChannel(
     nsIHttpChannel* aHttpChannel, nsITimedChannel* aChannel) {
   SetCacheablePropertiesFromHttpChannel(aHttpChannel, aChannel);
   SetTransferSizeFromHttpChannel(aHttpChannel);
+  SetServedFromCacheFromHttpChannel(aHttpChannel);
 }
 
 void PerformanceTimingData::SetTransferSizeFromHttpChannel(
     nsIHttpChannel* aHttpChannel) {
   (void)aHttpChannel->GetTransferSize(&mTransferSize);
+}
+
+void PerformanceTimingData::SetServedFromCacheFromHttpChannel(
+    nsIHttpChannel* aHttpChannel) {
+  nsCOMPtr<nsICacheInfoChannel> cacheInfo = do_QueryInterface(aHttpChannel);
+  if (!cacheInfo) {
+    return;
+  }
+  nsICacheInfoChannel::CacheDisposition disposition =
+      nsICacheInfoChannel::kCacheUnresolved;
+  if (NS_FAILED(cacheInfo->GetCacheDisposition(&disposition))) {
+    return;
+  }
+  mServedFromCache = disposition == nsICacheInfoChannel::kCacheHit ||
+                     disposition == nsICacheInfoChannel::kCacheHitViaReval;
 }
 
 PerformanceTiming::~PerformanceTiming() = default;

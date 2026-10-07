@@ -137,8 +137,8 @@ forward.
 Unfortunately more fine-grained restrictions are not available for `chrome`
 URLs.
 
-[chrome-registration]: ../build/buildsystem/chrome-registration
-[resource-map]: ../build/buildsystem/chrome-registration#resource
+[chrome-registration]: /build/buildsystem/chrome-registration.md
+[resource-map]: /build/buildsystem/chrome-registration.md#resource
 [mozbuild-files]: ../build/buildsystem/mozbuild-files
 [searchfox-res-reg]: https://searchfox.org/mozilla-central/search?q=%25+resource&path=jar.mn&case=false&regexp=false
 [jar-manifest-files]: ../build/buildsystem/jar-manifests

@@ -4,6 +4,7 @@
 
 import pathlib
 import shutil
+import subprocess
 
 from mozlint import result
 from mozversioncontrol import (
@@ -27,10 +28,39 @@ def _error(config, path, message):
     )
 
 
-def _walk(base):
-    if not base.is_dir():
-        return []
-    return [p for p in base.rglob("*.md") if p.is_file()]
+def _collect_tracked(root):
+    """Return the repo-relative POSIX paths tracked under either skill
+    directory, or None if VCS cannot answer. The finder wants the repo root,
+    which is all a source checkout has to go on to read .gitignore.
+    """
+    try:
+        repo = get_repository_object(str(root))
+        finder = repo.get_tracked_files_finder(str(root))
+    except (
+        InvalidRepoPath,
+        MissingVCSTool,
+        MissingVCSInfo,
+        subprocess.CalledProcessError,
+    ):
+        return None
+    if finder is None:
+        return set()
+    return {
+        path
+        for prefix in (CLAUDE_SKILLS, AGENT_SKILLS)
+        for path, _ in finder.find(f"{prefix}/**")
+    }
+
+
+def _rels(prefix, tracked):
+    """The tracked paths under prefix, relative to it. An untracked file under
+    a skill is junk, and whether a tracked one exists is a separate question,
+    so a file --fix has just copied counts as present before VCS knows about
+    it.
+    """
+    return {
+        path[len(prefix) + 1 :] for path in tracked if path.startswith(f"{prefix}/")
+    }
 
 
 def _collect_vcs_changes(root):
@@ -58,8 +88,23 @@ def lint(paths, config, fix=None, **lintargs):
 
     vcs_changes = _collect_vcs_changes(root) if fix else None
 
-    claude_rels = {p.relative_to(claude_root).as_posix() for p in _walk(claude_root)}
-    agent_rels = {p.relative_to(agent_root).as_posix() for p in _walk(agent_root)}
+    tracked = _collect_tracked(root)
+    if tracked is None:
+        return {
+            "results": [
+                _error(
+                    config,
+                    claude_root,
+                    "Cannot read which files VCS tracks, which is what tells a "
+                    "skill's own files from junk.",
+                )
+            ],
+            "fixed": 0,
+        }
+
+    rels = _rels(CLAUDE_SKILLS, tracked) | _rels(AGENT_SKILLS, tracked)
+    claude_rels = {rel for rel in rels if (claude_root / rel).is_file()}
+    agent_rels = {rel for rel in rels if (agent_root / rel).is_file()}
 
     results = []
     fixed = 0
@@ -82,7 +127,7 @@ def lint(paths, config, fix=None, **lintargs):
             missing_deleted = missing_display in vcs_changes["deleted"]
             if existing_added and not missing_deleted:
                 missing_path.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(existing_path, missing_path)
+                shutil.copy(existing_path, missing_path)
                 fixed += 1
                 continue
             if missing_deleted and not existing_added:
@@ -123,11 +168,11 @@ def lint(paths, config, fix=None, **lintargs):
             claude_changed = claude_display in vcs_changes["added_or_modified"]
             agent_changed = agent_display in vcs_changes["added_or_modified"]
             if claude_changed and not agent_changed:
-                shutil.copyfile(claude_path, agent_path)
+                shutil.copy(claude_path, agent_path)
                 fixed += 1
                 continue
             if agent_changed and not claude_changed:
-                shutil.copyfile(agent_path, claude_path)
+                shutil.copy(agent_path, claude_path)
                 fixed += 1
                 continue
 

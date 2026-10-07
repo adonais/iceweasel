@@ -745,6 +745,7 @@ void KeymapWrapper::HandleKeymap(uint32_t format, int fd, uint32_t size) {
   if (!xkb_context) {
     MOZ_LOG(gKeyLog, LogLevel::Info,
             ("KeymapWrapper::HandleKeymap(): failed to get xkb_context!"));
+    munmap(mapString, size);
     close(fd);
     return;
   }
@@ -1715,36 +1716,80 @@ void KeymapWrapper::HandleKeyPressEvent(nsWindow* aWindow,
       aWindow->DispatchCommandEvent(nsGkAtoms::Home);
       return;
     case GDK_Copy:
-    case GDK_F16:  // F16, F20, F18, F14 are old keysyms for Copy Cut Paste Undo
-      aWindow->DispatchContentCommandEvent(eContentCommandCopy);
-      MOZ_LOG(gKeyLog, LogLevel::Info,
-              ("  HandleKeyPressEvent(), dispatched \"Copy\" content command "
-               "event"));
+    case GDK_F16: {  // F16, F20, F18, F14 are old keysyms for Copy Cut Paste
+                     // Undo
+      const Result<bool, nsresult> result =
+          aWindow->DispatchContentCommandEvent(eContentCommandCopy);
+      if (result.isOk()) {
+        MOZ_LOG_FMT(gKeyLog, LogLevel::Info,
+                    "  HandleKeyPressEvent(), dispatched \"Copy\" content "
+                    "command event");
+      } else {
+        MOZ_LOG_FMT(gKeyLog, LogLevel::Error,
+                    "  HandleKeyPressEvent(), FAILED to dispatch \"Copy\" "
+                    "content command event");
+      }
       return;
+    }
     case GDK_Cut:
-    case GDK_F20:
-      aWindow->DispatchContentCommandEvent(eContentCommandCut);
-      MOZ_LOG(gKeyLog, LogLevel::Info,
-              ("  HandleKeyPressEvent(), dispatched \"Cut\" content command "
-               "event"));
+    case GDK_F20: {
+      const Result<bool, nsresult> result =
+          aWindow->DispatchContentCommandEvent(eContentCommandCut);
+      if (result.isOk()) {
+        MOZ_LOG_FMT(gKeyLog, LogLevel::Info,
+                    "  HandleKeyPressEvent(), dispatched \"Cut\" content "
+                    "command event");
+      } else {
+        MOZ_LOG_FMT(gKeyLog, LogLevel::Error,
+                    "  HandleKeyPressEvent(), FAILED to dispatch \"Cut\" "
+                    "content command event");
+      }
       return;
+    }
     case GDK_Paste:
-    case GDK_F18:
-      aWindow->DispatchContentCommandEvent(eContentCommandPaste);
-      MOZ_LOG(gKeyLog, LogLevel::Info,
-              ("  HandleKeyPressEvent(), dispatched \"Paste\" content command "
-               "event"));
+    case GDK_F18: {
+      const Result<bool, nsresult> result =
+          aWindow->DispatchContentCommandEvent(eContentCommandPaste);
+      if (result.isOk()) {
+        MOZ_LOG_FMT(gKeyLog, LogLevel::Info,
+                    "  HandleKeyPressEvent(), dispatched \"Paste\" content "
+                    "command event");
+      } else {
+        MOZ_LOG_FMT(gKeyLog, LogLevel::Error,
+                    "  HandleKeyPressEvent(), FAILED to dispatch \"Paste\" "
+                    "content command event");
+      }
       return;
-    case GDK_Redo:
-      aWindow->DispatchContentCommandEvent(eContentCommandRedo);
+    }
+    case GDK_Redo: {
+      const Result<bool, nsresult> result =
+          aWindow->DispatchContentCommandEvent(eContentCommandRedo);
+      if (result.isOk()) {
+        MOZ_LOG_FMT(gKeyLog, LogLevel::Info,
+                    "  HandleKeyPressEvent(), dispatched \"Redo\" content "
+                    "command event");
+      } else {
+        MOZ_LOG_FMT(gKeyLog, LogLevel::Error,
+                    "  HandleKeyPressEvent(), FAILED to dispatch \"Redo\" "
+                    "content command event");
+      }
       return;
+    }
     case GDK_Undo:
-    case GDK_F14:
-      aWindow->DispatchContentCommandEvent(eContentCommandUndo);
-      MOZ_LOG(gKeyLog, LogLevel::Info,
-              ("  HandleKeyPressEvent(), dispatched \"Undo\" content command "
-               "event"));
+    case GDK_F14: {
+      const Result<bool, nsresult> result =
+          aWindow->DispatchContentCommandEvent(eContentCommandUndo);
+      if (result.isOk()) {
+        MOZ_LOG_FMT(gKeyLog, LogLevel::Info,
+                    "  HandleKeyPressEvent(), dispatched \"Undo\" content "
+                    "command event");
+      } else {
+        MOZ_LOG_FMT(gKeyLog, LogLevel::Error,
+                    "  HandleKeyPressEvent(), FAILED to dispatch \"Undo\" "
+                    "content command event");
+      }
       return;
+    }
     default:
       break;
   }

@@ -7465,6 +7465,63 @@
   !endif
 !macroend
 
+/**
+ * Signal the push notification helper installed in $INSTDIR to stop, so that it
+ * can be replaced or removed. Does nothing when the helper is not installed.
+ */
+!macro SignalPushNotificationHelperStop _EXIT_CODE
+  ${If} ${FileExists} "$INSTDIR\notification-helper.exe"
+    nsExec::Exec /TIMEOUT=5000 '"$INSTDIR\notification-helper.exe" --stop'
+    Pop ${_EXIT_CODE}
+  ${EndIf}
+!macroend
+!define SignalPushNotificationHelperStop "!insertmacro SignalPushNotificationHelperStop"
+
+/**
+ * Start a notification helper for every profile recorded in the registry.
+ *
+ * The registry entries have the following format:
+ * "<install directory>|<profile directory>"
+ */
+!define StartPushNotificationHelpers "!insertmacro StartPushNotificationHelpers"
+!macro StartPushNotificationHelpers
+  ${If} ${FileExists} "$INSTDIR\notification-helper.exe"
+    Push $0 ; Index
+    Push $1 ; "<install directory>|<profile directory>"
+    Push $2 ; "<install directory>|"
+    Push $3 ; Length of $2
+    Push $4 ; "<profile directory>"
+
+    ${GetLongPath} "$INSTDIR" $2
+    StrCpy $2 "$2|"
+    StrLen $3 $2
+
+    StrCpy $0 0
+    ${Do}
+      ClearErrors
+      EnumRegValue $1 HKCU "Software\Mozilla\${AppName}\Notification Helper" $0
+      ${If} ${Errors}
+        ${Break}
+      ${EndIf}
+      IntOp $0 $0 + 1
+
+      StrCpy $4 $1 $3
+      ${If} $4 == $2 ; Check if the entry matches our installation directory
+        StrCpy $4 $1 "" $3
+        ${If} ${FileExists} "$4\*.*" ; Check if the directory exists
+          ExecShell "open" "$INSTDIR\notification-helper.exe" '--profile "$4"' SW_HIDE
+        ${EndIf}
+      ${EndIf}
+    ${Loop}
+
+    Pop $4
+    Pop $3
+    Pop $2
+    Pop $1
+    Pop $0
+  ${EndIf}
+!macroend
+
 ################################################################################
 # Helpers for taskbar progress
 

@@ -117,6 +117,31 @@ browser.urlbar.autoFill.adaptiveHistory.useCountThreshold (float, default: 1.0)
 : Threshold for use count of input history that we handle as adaptive history
   autofill. If the use count is this value or more, it will be a candidate.
 
+browser.urlbar.autoFill.adaptiveHistory.urlMinPicks (integer, default: 3)
+
+: Approximate number of times the user must have picked a URL with a path for a
+  given input string before it can be adaptive history autofilled.
+
+  This is not an exact pick count. It is converted into a
+  `moz_inputhistory.use_count` threshold, and use_count decays twice over: once
+  per pick, as `addToInputHistory` applies a factor to the previous value, and
+  again once per `idle-daily`, as `PlacesFrecencyRecalculator` decays every row
+  by `places.frecency.decayRate`. Whether a URL clears the threshold therefore
+  depends on how its picks were spread over time, not just how many there were.
+  Raising this value always makes page autofill rarer, but the number of picks
+  a given user needs depends on their cadence.
+
+browser.urlbar.autoFill.adaptiveHistory.urlPicksAgeDays (integer, default: 14)
+
+: Days of idle decay assumed to have elapsed since the last pick when
+  converting `urlMinPicks` into a use_count threshold.
+
+  The threshold is the use_count left behind by `urlMinPicks` picks made in one
+  sitting and then aged this many days, which is a pessimistic estimate: a user
+  who really did pick the URL that many times clears it even if their picks
+  were spread out. Raising this lowers the threshold and so admits users who
+  pick a URL less often; lowering it raises the threshold.
+
 browser.urlbar.ctrlCanonizesURLs (boolean, default: true)
 
 : Whether using `ctrl` or `command` when hitting return/enter in the URL bar

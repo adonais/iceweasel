@@ -369,10 +369,10 @@ def file_info_schedules(command_context, paths):
 def file_info_reviewers(command_context, paths, rev=None, fmt=None, offline=False):
     """Suggest reviewers for a set of files.
 
-    The reviewers that Phabricator's Herald rules would automatically add for
-    the files (from the reviewer-selector tool's herald_rules.json) are
-    suggested first, followed by the reviewer groups of the modules owning the
-    files according to the in-tree mots database. When neither has anything to
+    The reviewer groups of the modules owning the files, according to the
+    in-tree mots database, are suggested first, followed by the reviewers that
+    Phabricator's Herald rules would automatically add for the files (from the
+    reviewer-selector tool's herald_rules.json). When neither has anything to
     say, this falls back to the individuals and groups that reviewed recent
     patches touching the files, parsed from "r=" trailers in the version control
     history.
@@ -421,14 +421,14 @@ def file_info_reviewers(command_context, paths, rev=None, fmt=None, offline=Fals
 
     if fmt == "json":
         data = {"files": relpaths}
-        if have_herald:
-            data["herald_groups"] = reviewers.reviewers_to_json(herald_groups)
-            data["herald_individuals"] = reviewers.reviewers_to_json(herald_individuals)
         if mots_groups:
             data["mots_groups"] = [
                 {"name": group, "modules": modules}
                 for group, modules in mots_groups.items()
             ]
+        if have_herald:
+            data["herald_groups"] = reviewers.reviewers_to_json(herald_groups)
+            data["herald_individuals"] = reviewers.reviewers_to_json(herald_individuals)
         if not have_herald and not mots_groups:
             data["recent_groups"] = [
                 {"name": name, "count": count} for name, count in recent_groups
@@ -440,19 +440,21 @@ def file_info_reviewers(command_context, paths, rev=None, fmt=None, offline=Fals
         print()
         return
 
+    separator = ""
+    if mots_groups:
+        print("Module reviewer groups (from mots.yaml):")
+        for group, modules in mots_groups.items():
+            print(f"  #{group} ({', '.join(modules)})")
+        separator = "\n"
+
     if have_herald:
-        print("Herald reviewers (automatically added):")
+        print(f"{separator}Herald reviewers (automatically added):")
         for group, blocking in sorted(herald_groups.items()):
             print(f"  #{group}{' (blocking)' if blocking else ''}")
         for name, blocking in sorted(herald_individuals.items()):
             print(f"  {name}{' (blocking)' if blocking else ''}")
     else:
-        print("No Herald reviewers matched.")
-
-    if mots_groups:
-        print("\nModule reviewer groups (from mots.yaml):")
-        for group, modules in mots_groups.items():
-            print(f"  #{group} ({', '.join(modules)})")
+        print(f"{separator}No Herald reviewers matched.")
 
     if have_herald or mots_groups:
         return
@@ -485,18 +487,25 @@ def file_info_reviewers(command_context, paths, rev=None, fmt=None, offline=Fals
     help="Use the cached herald rules without checking for updates",
 )
 def file_info_reviewer_groups(command_context, fmt=None, offline=False):
-    """List the reviewer groups known to the reviewer-selector tool.
+    """List the known reviewer groups.
 
     These are the groups referenced by Phabricator's Herald rules, as scraped
-    into herald_rules.json. The list is the source of truth for valid group
-    names when choosing a reviewer (e.g. "#firefox-build-system-reviewers").
+    into herald_rules.json by the reviewer-selector tool, together with the
+    review groups declared by modules in the in-tree mots database. The list
+    is the source of truth for valid group names when choosing a reviewer
+    (e.g. "#firefox-build-system-reviewers").
     """
     rules_data = reviewers.load_herald_rules(offline=offline)
     if not rules_data:
         print("(herald rules unavailable)", file=sys.stderr)
+
+    mots_config = reviewers.load_mots_config(command_context.topsrcdir)
+    if not rules_data and not mots_config:
         return 1
 
-    groups = sorted(rules_data.get("groups", {}).keys())
+    groups = set((rules_data or {}).get("groups", {}).keys())
+    groups |= reviewers.mots_review_groups(mots_config)
+    groups = sorted(groups)
 
     if fmt == "json":
         json.dump(groups, sys.stdout, indent=2)

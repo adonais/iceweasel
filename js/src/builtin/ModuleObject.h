@@ -65,7 +65,8 @@ class ImportAttribute {
 using ImportAttributeVector = GCVector<ImportAttribute, 0, SystemAllocPolicy>;
 
 // https://tc39.es/proposal-source-phase-imports/#sec-modulerequest-record
-enum class ImportPhase : uint8_t { Source, Evaluation, Limit };
+// https://tc39.es/proposal-defer-import-eval/#modulerequest-record
+enum class ImportPhase : uint8_t { Source, Evaluation, Deferred, Limit };
 
 // Possible value types of [[ImportName]] field in ImportEntry Records and
 // ExportEntry Records.
@@ -295,17 +296,24 @@ using ExportNameVector = GCVector<HeapPtr<JSAtom*>, 0, SystemAllocPolicy>;
 
 class ModuleNamespaceObject : public ProxyObject {
  public:
-  enum ModuleNamespaceSlot { ExportsSlot = 0, BindingsSlot };
+  enum ModuleNamespaceSlot {
+    ExportsSlot = 0,
+    BindingsSlot,
+    DeferredSlot,
+    SlotCount
+  };
 
   static bool isInstance(HandleValue value);
   static ModuleNamespaceObject* create(
       JSContext* cx, Handle<ModuleObject*> module,
       MutableHandle<UniquePtr<ExportNameVector>> exports,
-      MutableHandle<UniquePtr<IndirectBindingMap>> bindings);
+      MutableHandle<UniquePtr<IndirectBindingMap>> bindings,
+      ImportPhase phase = ImportPhase::Evaluation);
 
   ModuleObject& module();
   const ExportNameVector& exports() const;
   IndirectBindingMap& bindings();
+  bool isDeferred() const;
 
   bool addBinding(JSContext* cx, Handle<JSAtom*> exportedName,
                   Handle<ModuleObject*> targetModule,
@@ -447,6 +455,7 @@ class ModuleObject : public NativeObject {
     ScriptSlotIndex = 0,
     ModuleEnvironmentSlotIndex,
     NamespaceSlotIndex,
+    DeferredNamespaceSlotIndex,
     CyclicModuleFieldsSlotIndex,
     SyntheticModuleFieldsSlotIndex,
 #ifdef DEBUG
@@ -462,6 +471,8 @@ class ModuleObject : public NativeObject {
   JS_DEFINE_TYPED_SLOT(ModuleEnvironmentSlotIndex, MODULE_ENVIRONMENT_SLOT,
                        Object);
   JS_DEFINE_TYPED_SLOT(NamespaceSlotIndex, NAMESPACE_SLOT, Object, Undefined);
+  JS_DEFINE_TYPED_SLOT(DeferredNamespaceSlotIndex, DEFERRED_NAMESPACE_SLOT,
+                       Object, Undefined);
   JS_DEFINE_TYPED_SLOT(CyclicModuleFieldsSlotIndex, CYCLIC_MODULE_FIELDS_SLOT,
                        Private, Undefined);
   // `SyntheticModuleFields` if a synthetic module. Otherwise `undefined`.
@@ -509,6 +520,8 @@ class ModuleObject : public NativeObject {
   ModuleEnvironmentObject& initialEnvironment() const;
   ModuleEnvironmentObject* environment() const;
   ModuleNamespaceObject* namespace_();
+  ModuleNamespaceObject* maybeDeferredNamespace() const;
+  void setDeferredNamespace(Handle<ModuleNamespaceObject*> ns);
   JSObject* moduleSource() const;
   bool isSourcePhaseModule() const { return moduleSource() != nullptr; }
   ModuleStatus status() const;
@@ -573,8 +586,9 @@ class ModuleObject : public NativeObject {
 
   static ModuleNamespaceObject* createNamespace(
       JSContext* cx, Handle<ModuleObject*> self,
-      MutableHandle<UniquePtr<ExportNameVector>> exports);
-  void clearNamespaceOnFailure();
+      MutableHandle<UniquePtr<ExportNameVector>> exports,
+      ImportPhase phase = ImportPhase::Evaluation);
+  void clearNamespaceOnFailure(ImportPhase phase);
 
   static bool createEnvironment(JSContext* cx, Handle<ModuleObject*> self);
   static bool createSyntheticEnvironment(JSContext* cx,
@@ -672,7 +686,6 @@ JSObject* GetOrCreateModuleMetaObject(JSContext* cx, HandleObject module);
 JSObject* StartDynamicModuleImport(JSContext* cx, HandleScript script,
                                    HandleValue specifier, HandleValue options,
                                    ImportPhase phase);
-
 }  // namespace js
 
 template <>

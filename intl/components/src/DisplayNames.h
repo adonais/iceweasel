@@ -321,7 +321,7 @@ class DisplayNames final {
   Result<Ok, DisplayNamesError> GetLanguage(
       B& aBuffer, Span<const char> aLanguage,
       Fallback aFallback = Fallback::None) const {
-    static_assert(std::is_same<typename B::CharType, char16_t>::value);
+    static_assert(std::is_same_v<typename B::CharType, char16_t>);
     mozilla::intl::Locale tag;
     if (LocaleParser::TryParseBaseName(aLanguage, tag).isErr()) {
       return Err(DisplayNamesError::InvalidOption);
@@ -383,7 +383,7 @@ class DisplayNames final {
   Result<Ok, DisplayNamesError> GetRegion(
       B& aBuffer, Span<const char> aCode,
       Fallback aFallback = Fallback::None) const {
-    static_assert(std::is_same<typename B::CharType, char16_t>::value);
+    static_assert(std::is_same_v<typename B::CharType, char16_t>);
 
     if (!IsStructurallyValidRegionTag(aCode)) {
       return Err(DisplayNamesError::InvalidOption);
@@ -446,7 +446,7 @@ class DisplayNames final {
   Result<Ok, DisplayNamesError> GetCurrency(
       B& aBuffer, Span<const char> aCurrency,
       Fallback aFallback = Fallback::None) const {
-    static_assert(std::is_same<typename B::CharType, char16_t>::value);
+    static_assert(std::is_same_v<typename B::CharType, char16_t>);
     if (aCurrency.size() != 3) {
       return Err(DisplayNamesError::InvalidOption);
     }
@@ -525,7 +525,7 @@ class DisplayNames final {
   Result<Ok, DisplayNamesError> GetScript(
       B& aBuffer, Span<const char> aScript,
       Fallback aFallback = Fallback::None) const {
-    static_assert(std::is_same<typename B::CharType, char16_t>::value);
+    static_assert(std::is_same_v<typename B::CharType, char16_t>);
 
     if (!IsStructurallyValidScriptTag(aScript)) {
       return Err(DisplayNamesError::InvalidOption);

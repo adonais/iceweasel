@@ -371,3 +371,130 @@ add_task(async function test_password_reveal_button_hidden() {
   info("Closing the sidebar");
   SidebarController.hide();
 });
+
+add_task(async function test_add_login_origin_without_scheme_is_normalized() {
+  const megalist = await openPasswordsSidebar();
+  await waitForSnapshots();
+  await openLoginForm(megalist, false);
+
+  addLogin(megalist, { ...TEST_LOGIN_1, origin: "www.example.com" });
+  await waitForNotification(megalist, "add-login-success");
+
+  const logins = await Services.logins.getAllLogins();
+  is(logins.length, 1, "Login was saved.");
+  is(
+    logins[0].origin,
+    "https://www.example.com",
+    "Scheme-less origin was normalized to https://."
+  );
+
+  LoginTestUtils.clearData();
+  info("Closing the sidebar");
+  SidebarController.hide();
+});
+
+add_task(async function test_add_login_origin_recovers_after_warning() {
+  const megalist = await openPasswordsSidebar();
+  await waitForSnapshots();
+  await openLoginForm(megalist, false);
+
+  info("Submit with an empty origin to raise the warning.");
+  addLogin(megalist, { ...TEST_LOGIN_1, origin: "" });
+  await waitForPopup(megalist, "origin-warning");
+
+  info("Type a scheme-less origin and submit again.");
+  const loginForm = megalist.querySelector("login-form");
+  setInputValue(loginForm, "moz-input-url", "www.example.com");
+  loginForm.shadowRoot
+    .querySelector("moz-button[type=primary]")
+    .buttonEl.click();
+  await waitForNotification(megalist, "add-login-success");
+
+  const logins = await Services.logins.getAllLogins();
+  is(logins.length, 1, "Login was saved on the second attempt.");
+  is(logins[0].origin, "https://www.example.com", "Origin was normalized.");
+
+  LoginTestUtils.clearData();
+  info("Closing the sidebar");
+  SidebarController.hide();
+});
+
+add_task(async function test_add_login_origin_still_invalid_after_prefix() {
+  const megalist = await openPasswordsSidebar();
+  await waitForSnapshots();
+  await openLoginForm(megalist, false);
+
+  info("https://foo bar is not a parseable URL, so the warning must show.");
+  addLogin(megalist, { ...TEST_LOGIN_1, origin: "foo bar" });
+  await waitForPopup(megalist, "origin-warning");
+
+  const logins = await Services.logins.getAllLogins();
+  is(logins.length, 0, "Nothing was saved for an unparseable origin.");
+  ok(
+    megalist.querySelector("login-form"),
+    "Login form stays open so the value can be corrected."
+  );
+
+  LoginTestUtils.clearData();
+  info("Closing the sidebar");
+  SidebarController.hide();
+});
+
+add_task(async function test_add_login_origin_prefixed_on_change() {
+  const megalist = await openPasswordsSidebar();
+  await waitForSnapshots();
+  await openLoginForm(megalist, false);
+
+  const loginForm = megalist.querySelector("login-form");
+  const originField = loginForm.shadowRoot.querySelector("moz-input-url");
+  await originField.updateComplete;
+
+  setInputValue(loginForm, "moz-input-url", "www.example.com");
+  originField.inputEl.dispatchEvent(new Event("change", { bubbles: true }));
+
+  is(
+    originField.inputEl.value,
+    "https://www.example.com",
+    "Prefix reached the input synchronously."
+  );
+  is(
+    originField.value,
+    "https://www.example.com",
+    "Prefix reached the moz-input-url value property."
+  );
+  ok(originField.inputEl.checkValidity(), "Prefixed value is a valid URL.");
+  ok(
+    !loginForm.shadowRoot
+      .querySelector("origin-warning")
+      .classList.contains("invalid-input"),
+    "No origin warning for a value that only needed a scheme."
+  );
+
+  LoginTestUtils.clearData();
+  info("Closing the sidebar");
+  SidebarController.hide();
+});
+
+add_task(async function test_add_login_origin_normalization_cases() {
+  const CASES = [
+    { typed: "example.com/some/path", stored: "https://example.com" },
+    { typed: "http://mochi.test", stored: "http://mochi.test" },
+  ];
+
+  for (const { typed, stored } of CASES) {
+    info(`Adding a login with origin '${typed}'.`);
+    const megalist = await openPasswordsSidebar();
+    await waitForSnapshots();
+    await openLoginForm(megalist, false);
+
+    addLogin(megalist, { ...TEST_LOGIN_1, origin: typed });
+    await waitForNotification(megalist, "add-login-success");
+
+    const logins = await Services.logins.getAllLogins();
+    is(logins.length, 1, `One login stored for '${typed}'.`);
+    is(logins[0].origin, stored, `'${typed}' stored as '${stored}'.`);
+
+    LoginTestUtils.clearData();
+    SidebarController.hide();
+  }
+});

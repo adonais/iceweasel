@@ -14,7 +14,7 @@ kind-dependencies:
     - release-bouncer-aliases
     - release-version-bump
     - release-mark-as-shipped
-    - push-bundle
+    - push-android
     - post-beetmover-components-dummy
 
 task-defaults:

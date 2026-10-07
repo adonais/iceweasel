@@ -17,7 +17,8 @@
 
 namespace mozilla {
 
-using namespace dom;
+using dom::CanvasRenderingContext2D;
+using dom::Element;
 using namespace gfx;
 
 /**

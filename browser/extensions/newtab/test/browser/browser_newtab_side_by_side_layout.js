@@ -12,6 +12,10 @@
  * measures (4 + 4n) columns + (4n + 5) gaps for n cards. Test bodies run in the
  * content process and cannot see helpers from this scope, hence the repeated
  * local probe helpers.
+ *
+ * Every test waits for .layout-content-column.has-feed: the band renders from
+ * prefs alone, while the column stays display: contents, and so measures zero,
+ * until the layout has arrived from the parent process.
  */
 
 function resizeChromeWindowTo(width, height) {
@@ -62,10 +66,11 @@ test_newtab({
   },
 
   test: async function test_side_by_side_content_lead() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     ok(
       band.classList.contains("side-by-side-content-lead"),
@@ -236,10 +241,11 @@ test_newtab({
   },
 
   test: async function test_side_by_side_widgets_lead() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     ok(
       band.classList.contains("side-by-side-widgets-lead"),
@@ -343,10 +349,11 @@ test_newtab({
   },
 
   test: async function test_side_by_side_below_threshold() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     // Measure a probe: --col-width computes to the unresolved "calc(300px / 4)"
     // token stream, and --space-medium is rem-based.
@@ -416,10 +423,11 @@ test_newtab({
   },
 
   test: async function test_side_by_side_with_no_widgets_recenters() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     ok(
       band.classList.contains("side-by-side-content-lead"),
@@ -431,9 +439,9 @@ test_newtab({
     );
 
     const column = content.document.querySelector(".layout-content-column");
-    Assert.notEqual(
-      content.window.getComputedStyle(column, "::before").borderTopColor,
-      "rgba(0, 0, 0, 0)",
+    Assert.equal(
+      content.window.getComputedStyle(column, "::before").content,
+      '""',
       "The lone content section is still framed"
     );
     Assert.equal(
@@ -452,10 +460,11 @@ test_newtab({
 
   // The -five variants are the only ones that reach a fourth content card.
   test: async function test_side_by_side_five_variant_four_cards() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     // Chrome-window resizing tops out well below 1920px on Linux CI, and the layout
     // is container-query driven, so set the query container directly. border-box
@@ -504,10 +513,11 @@ test_newtab({
   // Without side-by-side-five the pair tops out at three content cards, so both
   // the band cap and the content track stay a card narrower than the -five arm.
   test: async function test_side_by_side_four_column_variant_stops_at_three() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     // 1855px of outer-grid, past at-band-fits-pair(4), so the 4-card step would
     // engage if the variant allowed it. Set here rather than by resizing the window,
@@ -583,10 +593,11 @@ test_newtab({
   // The raised cap is scoped to .side-by-side-active, so one section on its own
   // stays at 4 cards rather than stretching to 5.
   test: async function test_single_section_stops_at_four_cards() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     // Wide enough that only the cap can be holding the band back. Set here rather
     // than by resizing the window, which cannot reach it on Linux CI.
@@ -629,10 +640,11 @@ test_newtab({
   // Guards the non-invasive constraint: outside the experiment the new wrapper
   // must generate no box and paint nothing.
   test: async function test_default_layout_is_untouched() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     Assert.equal(
       band.className,
@@ -691,10 +703,11 @@ test_newtab({
   // Guards the at-band-cols(12) cap in _Grid.scss: without it the card count goes
   // 2 -> 3 -> 2 as the window widens.
   test: async function test_side_by_side_holds_two_cards_below_pair() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     // 1035px of outer-grid, inside the [1023.75, 1046.25) window where the ladder
     // reaches three cards but the pair does not yet fit. Set here rather than by

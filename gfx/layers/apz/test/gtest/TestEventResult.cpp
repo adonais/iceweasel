@@ -16,7 +16,8 @@ class APZEventResultTester : public APZCTreeManagerTester {
  protected:
   UniquePtr<ScopedLayerTreeRegistration> registration;
 
-  void UpdateOverscrollBehavior(OverscrollBehavior aX, OverscrollBehavior aY) {
+  void UpdateOverscrollBehavior(StyleOverscrollBehavior aX,
+                                StyleOverscrollBehavior aY) {
     ModifyFrameMetrics(root, [aX, aY](ScrollMetadata& sm, FrameMetrics& _) {
       OverscrollBehaviorInfo overscroll;
       overscroll.mBehaviorX = aX;
@@ -99,8 +100,8 @@ class APZEventResultTester : public APZCTreeManagerTester {
     }
 
     // overscroll-behavior: contain, contain.
-    UpdateOverscrollBehavior(OverscrollBehavior::Contain,
-                             OverscrollBehavior::Contain);
+    UpdateOverscrollBehavior(StyleOverscrollBehavior::Contain,
+                             StyleOverscrollBehavior::Contain);
     {
       QueueMockHitResult(START_SCROLL_ID,
                          {CompositorHitTestFlags::eVisibleToHitTest,
@@ -115,8 +116,8 @@ class APZEventResultTester : public APZCTreeManagerTester {
     }
 
     // overscroll-behavior: none, none.
-    UpdateOverscrollBehavior(OverscrollBehavior::None,
-                             OverscrollBehavior::None);
+    UpdateOverscrollBehavior(StyleOverscrollBehavior::None,
+                             StyleOverscrollBehavior::None);
     {
       QueueMockHitResult(START_SCROLL_ID,
                          {CompositorHitTestFlags::eVisibleToHitTest,
@@ -131,8 +132,8 @@ class APZEventResultTester : public APZCTreeManagerTester {
     }
 
     // overscroll-behavior: auto, none.
-    UpdateOverscrollBehavior(OverscrollBehavior::Auto,
-                             OverscrollBehavior::None);
+    UpdateOverscrollBehavior(StyleOverscrollBehavior::Auto,
+                             StyleOverscrollBehavior::None);
     {
       QueueMockHitResult(START_SCROLL_ID,
                          {CompositorHitTestFlags::eVisibleToHitTest,
@@ -147,8 +148,8 @@ class APZEventResultTester : public APZCTreeManagerTester {
     }
 
     // overscroll-behavior: none, auto.
-    UpdateOverscrollBehavior(OverscrollBehavior::None,
-                             OverscrollBehavior::Auto);
+    UpdateOverscrollBehavior(StyleOverscrollBehavior::None,
+                             StyleOverscrollBehavior::Auto);
     {
       QueueMockHitResult(START_SCROLL_ID,
                          {CompositorHitTestFlags::eVisibleToHitTest,
@@ -259,26 +260,29 @@ TEST_F(APZEventResultTester, OverscrollDirections) {
             EitherScrollDirection);
 
   // overscroll-behavior: contain, contain.
-  UpdateOverscrollBehavior(OverscrollBehavior::Contain,
-                           OverscrollBehavior::Contain);
+  UpdateOverscrollBehavior(StyleOverscrollBehavior::Contain,
+                           StyleOverscrollBehavior::Contain);
   result = Tap(manager, ScreenIntPoint(50, 50), tapDuration);
   EXPECT_EQ(result.GetHandledResult()->mOverscrollDirections,
             ScrollDirections());
 
   // overscroll-behavior: none, none.
-  UpdateOverscrollBehavior(OverscrollBehavior::None, OverscrollBehavior::None);
+  UpdateOverscrollBehavior(StyleOverscrollBehavior::None,
+                           StyleOverscrollBehavior::None);
   result = Tap(manager, ScreenIntPoint(50, 50), tapDuration);
   EXPECT_EQ(result.GetHandledResult()->mOverscrollDirections,
             ScrollDirections());
 
   // overscroll-behavior: auto, none.
-  UpdateOverscrollBehavior(OverscrollBehavior::Auto, OverscrollBehavior::None);
+  UpdateOverscrollBehavior(StyleOverscrollBehavior::Auto,
+                           StyleOverscrollBehavior::None);
   result = Tap(manager, ScreenIntPoint(50, 50), tapDuration);
   EXPECT_EQ(result.GetHandledResult()->mOverscrollDirections,
             HorizontalScrollDirection);
 
   // overscroll-behavior: none, auto.
-  UpdateOverscrollBehavior(OverscrollBehavior::None, OverscrollBehavior::Auto);
+  UpdateOverscrollBehavior(StyleOverscrollBehavior::None,
+                           StyleOverscrollBehavior::Auto);
   result = Tap(manager, ScreenIntPoint(50, 50), tapDuration);
   EXPECT_EQ(result.GetHandledResult()->mOverscrollDirections,
             VerticalScrollDirection);

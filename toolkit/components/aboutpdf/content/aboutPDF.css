@@ -9,7 +9,23 @@ body {
 }
 
 body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background-color: var(--background-color-canvas);
+}
+
+#pdf-notification {
+  flex-shrink: 0;
+  border-radius: 0;
+  border-inline: none;
+  border-block-start: none;
+}
+
+#scroll-container {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 
 #container {
@@ -41,14 +57,28 @@ body {
   padding-inline: var(--space-xlarge);
 }
 
-#logo-lockup {
+#main-view,
+#features-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xlarge);
+}
+
+body:not(.view-features) #features-view,
+body:not(.view-features) #features-back,
+body.view-features #main-view {
+  display: none;
+}
+
+.logo-lockup {
   display: flex;
   flex-direction: column;
   gap: var(--space-small);
 }
 
-#logo-row {
+.logo-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-small);
 
@@ -57,13 +87,30 @@ body {
   }
 }
 
-#firefox-logo {
+#features-cta {
+  margin-inline-start: auto;
+
+  &:dir(rtl) {
+    --button-icon-content: url("chrome://global/skin/icons/shaft-arrow-left.svg");
+  }
+}
+
+#features-back:dir(rtl) {
+  --button-icon-content: url("chrome://global/skin/icons/arrow-right.svg");
+}
+
+.firefox-logo {
   width: var(--size-item-medium);
   height: var(--size-item-medium);
 }
 
 #tagline {
   margin: 0;
+}
+
+#features-intro {
+  margin: 0;
+  color: var(--text-color-deemphasized);
 }
 
 #dropzone {
@@ -165,6 +212,85 @@ body {
   }
 }
 
+#feature-card {
+  /* No design token has a 32px radius. */
+  --card-border-radius: 32px;
+  --card-box-shadow: var(--box-shadow-level-3);
+  --card-padding: var(--space-xlarge);
+}
+
+#feature-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xxlarge);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+}
+
+.feature-icon {
+  box-sizing: content-box;
+  flex-shrink: 0;
+  width: var(--size-item-medium);
+  height: var(--size-item-medium);
+  padding: var(--space-xlarge);
+  border: var(--border-width) solid var(--border-color-transparent);
+  border-radius: var(--border-radius-circle);
+  background-color: var(--background-color-information);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: var(--size-item-medium) var(--size-item-medium);
+  -moz-context-properties: fill;
+  fill: var(--icon-color);
+}
+
+.feature-icon-organize {
+  background-image: url("chrome://global/skin/icons/page-portrait.svg");
+}
+.feature-icon-signatures {
+  background-image: url("chrome://global/skin/icons/signature-24.svg");
+}
+.feature-icon-comments {
+  background-image: url("chrome://global/skin/icons/comment-24.svg");
+}
+.feature-icon-annotate {
+  background-image: url("chrome://global/skin/icons/highlighter-24.svg");
+}
+.feature-icon-images {
+  background-image: url("chrome://global/skin/icons/canvas.svg");
+}
+.feature-icon-view {
+  background-image: url("chrome://global/skin/icons/odd-spreads-24.svg");
+}
+.feature-icon-presentation {
+  background-image: url("chrome://global/skin/icons/presentation-mode-24.svg");
+}
+.feature-icon-details {
+  background-image: url("chrome://global/skin/icons/find-in-page-24.svg");
+}
+
+.feature-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xsmall);
+  min-width: 0;
+
+  h2 {
+    margin: 0;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-color-deemphasized);
+  }
+}
+
 #promo-row {
   display: flex;
   justify-content: center;
@@ -176,6 +302,13 @@ body {
   max-width: 700px;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   --promo-image-size: 100px;
+}
+
+/* Stack features before hiding the side columns. */
+@media (max-width: 1150px) {
+  #feature-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 760px) {
@@ -190,5 +323,15 @@ body {
 
   #col-mid {
     padding-inline: 0;
+  }
+
+  /* Keep Back above the features content. */
+  body.view-features #container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  body.view-features #col-left {
+    display: block;
   }
 }

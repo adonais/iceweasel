@@ -19,6 +19,7 @@ EXPORTS.mozilla.dom += [
 
 if CONFIG["OS_TARGET"] == "WINNT":
     SOURCES += [
+        "Win32SerialOverlappedIO.cpp",
         "Win32SerialParityCheckStream.cpp",
         "Win32SerialPlatformService.cpp",
     ]

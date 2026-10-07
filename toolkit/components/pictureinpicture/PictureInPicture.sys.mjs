@@ -27,7 +27,7 @@ const PLAYER_URI = "chrome://global/content/pictureinpicture/player.xhtml";
 // Currently, we need titlebar="yes" on macOS in order for the player window
 // to be resizable. See bug 1824171.
 const TITLEBAR = AppConstants.platform == "macosx" ? "yes" : "no";
-const PLAYER_FEATURES = `chrome,alwaysontop,lockaspectratio,resizable,dialog,titlebar=${TITLEBAR}`;
+const PLAYER_FEATURES = `chrome,alwaysontop,lockaspectratio,resizable,dialog,mediapip,titlebar=${TITLEBAR}`;
 
 const WINDOW_TYPE = "Toolkit:PictureInPicture";
 const TOGGLE_ENABLED_PREF =
@@ -557,6 +557,17 @@ export var PictureInPicture = {
 
     let gBrowser = browser.getTabBrowser();
     let tab = gBrowser.getTabForBrowser(browser);
+
+    // "Back to tab" is a deliberate request to return to the originating tab.
+    // On macOS the player is a non-activating window (bug 1688932): a plain
+    // window focus marks the originating window active but does not order it in
+    // front of another application's fullscreen Space, so it stays hidden.
+    // Activating the application brings Firefox forward onto that Space.
+    if (AppConstants.platform == "macosx") {
+      Cc["@mozilla.org/widget/macdocksupport;1"]
+        .getService(Ci.nsIMacDockSupport)
+        .activateApplication(true);
+    }
 
     // focus the tab's window
     tab.documentGlobal.focus();

@@ -459,11 +459,6 @@ void Gecko_FillAllImageLayers(nsStyleImageLayers* layers, uint32_t max_len);
 
 void Gecko_LoadData_Drop(mozilla::StyleLoadData*);
 
-void Gecko_nsStyleFont_SetLang(nsStyleFont* font, nsAtom* atom);
-
-void Gecko_nsStyleFont_CopyLangFrom(nsStyleFont* aFont,
-                                    const nsStyleFont* aSource);
-
 mozilla::Length Gecko_nsStyleFont_ComputeMinSize(const nsStyleFont*,
                                                  const mozilla::dom::Document*);
 

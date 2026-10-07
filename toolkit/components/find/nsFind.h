@@ -44,7 +44,7 @@ class nsFind : public nsIFind {
     mSkipNativeAnonymousContent = aSkipNativeAnonymousContent;
   }
 
-  already_AddRefed<nsRange> FindFromRangeBoundaries(
+  already_AddRefed<mozilla::dom::Range> FindFromRangeBoundaries(
       const nsAString& aPatText, const mozilla::RangeBoundary& aStartPoint,
       const mozilla::RangeBoundary& aEndPoint);
 

@@ -3,6 +3,7 @@
  * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 import { createSelector } from "devtools/client/shared/vendor/reselect";
+import { sourceTree } from "../constants";
 
 /**
  * Main selector to build the SourceTree,
@@ -51,7 +52,7 @@ export const getDisplayedSourcesList = createSelector(
   roots => {
     const sources = [];
     function walk(item) {
-      if (item.type == "source") {
+      if (item.type == sourceTree.itemTypes.SOURCE) {
         sources.push(item.source);
       } else {
         for (const child of item.children) {
@@ -132,7 +133,7 @@ function getDirectoryForUniquePath(projectRoot, threadItems) {
 
   function findPathInDirectory(directory, path) {
     for (const child of directory.children) {
-      if (child.type == "directory") {
+      if (child.type == sourceTree.itemTypes.DIRECTORY) {
         // `path` should be the absolute path from the group/domain
         if (child.path == path) {
           return child;

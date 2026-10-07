@@ -4113,7 +4113,8 @@ ssl_NewKeyPair(SECKEYPrivateKey *privKey, SECKEYPublicKey *pubKey)
 sslKeyPair *
 ssl_GetKeyPairRef(sslKeyPair *keyPair)
 {
-    PR_ATOMIC_INCREMENT(&keyPair->refCount);
+    PRInt32 newCount = PR_ATOMIC_INCREMENT(&keyPair->refCount);
+    PORT_ReleaseAssert(newCount > 1);
     return keyPair;
 }
 
@@ -4125,6 +4126,7 @@ ssl_FreeKeyPair(sslKeyPair *keyPair)
     }
 
     PRInt32 newCount = PR_ATOMIC_DECREMENT(&keyPair->refCount);
+    PORT_ReleaseAssert(newCount >= 0);
     if (!newCount) {
         SECKEY_DestroyPrivateKey(keyPair->privKey);
         SECKEY_DestroyPublicKey(keyPair->pubKey);

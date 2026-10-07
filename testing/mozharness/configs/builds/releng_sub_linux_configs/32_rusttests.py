@@ -5,7 +5,6 @@
 import os
 
 config = {
-    "stage_platform": "linux-rusttests",
     #### 32 bit build specific #####
     "env": {
         "MOZBUILD_STATE_PATH": os.path.join(os.getcwd(), ".mozbuild"),

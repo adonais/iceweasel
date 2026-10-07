@@ -37,6 +37,7 @@
 #include "mozilla/glean/WidgetGtkMetrics.h"
 #include "nsAppShell.h"
 #include "nsCSSColorUtils.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsGtkUtils.h"
 #include "nsString.h"
 #include "nsStyleConsts.h"

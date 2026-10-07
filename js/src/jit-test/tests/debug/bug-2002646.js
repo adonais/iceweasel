@@ -1,6 +1,6 @@
 var x = newGlobal({ newCompartment: true });
 Debugger(x).onDebuggerStatement = function (y) {
-  y.script.setBreakpoint(y.script.getLineOffsets(1)[0], {
+  y.script.setBreakpoint(y.script.getPossibleBreakpointOffsets({ line: 1 })[0], {
     hit: function () {},
   });
 };

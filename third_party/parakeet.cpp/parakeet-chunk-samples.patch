@@ -1,0 +1,60 @@
+# Firefox-local: expose the audio one mid-stream encoder chunk spans, so a host
+# that has to decide something per chunk - endpointing, or attributing an <EOU>
+# to the words around it - can feed exactly that much per call. Feeding more
+# decodes several chunks in one call and collapses their events into a single
+# report, which loses the ordering between them. Upstreamable to
+# https://github.com/mudler/parakeet.cpp
+diff --git a/include/parakeet_capi.h b/include/parakeet_capi.h
+--- a/include/parakeet_capi.h
++++ b/include/parakeet_capi.h
+@@ -42,6 +42,9 @@
+ //     Added parakeet_capi_stream_drain_events (typed per-event records with
+ //     is_eob + timestamps, freed with parakeet_capi_free_events) and an
+ //     "events" array in the stream_feed_json / stream_finalize_json documents.
++//
++// v6: added parakeet_capi_stream_chunk_samples, the audio one encoder chunk
++//     spans. Additive.
+ int parakeet_capi_abi_version(void);
+ 
+ // Load a GGUF model. Returns an owning context, or NULL on failure.
+@@ -219,6 +222,11 @@
+ // complete. Does NOT fabricate an <EOU> NeMo's streaming would not emit.
+ char* parakeet_capi_stream_finalize(parakeet_stream* s);
+ 
++// Firefox-local: the audio one mid-stream encoder chunk spans, in 16 kHz
++// samples: feed at most this much per call to get one chunk's events per call
++// (-1 on error).
++int parakeet_capi_stream_chunk_samples(parakeet_stream* s);
++
+ // One <EOU>/<EOB> event emitted by the streaming decoder. <EOU> marks the end
+ // of a complete utterance (the user yielded the turn); <EOB> marks the end of a
+ // backchannel (a short acknowledgment like "uh-huh" while the other party
+diff --git a/src/parakeet_capi.cpp b/src/parakeet_capi.cpp
+--- a/src/parakeet_capi.cpp
++++ b/src/parakeet_capi.cpp
+@@ -31,7 +31,9 @@
+ //     Added stream_drain_events / free_events (typed per-event records) and
+ //     the "events" array in the stream_feed_json / stream_finalize_json
+ //     documents.
+-#define PARAKEET_CAPI_ABI_VERSION 5
++// v6: parakeet_capi_stream_chunk_samples, the audio one encoder chunk spans.
++//     Additive.
++#define PARAKEET_CAPI_ABI_VERSION 6
+ 
+ // The opaque context: a loaded model plus a buffer for the last error message.
+ struct parakeet_ctx {
+@@ -621,6 +623,14 @@
+     }
+ }
+ 
++extern "C" int parakeet_capi_stream_chunk_samples(parakeet_stream* s) {
++    if (!s || !s->sess) return -1;
++    if (!s->ctx || !s->ctx->model) return -1;
++    // A mid-stream chunk is chunk_size() mel frames, each hop_length samples of
++    // audio (the first one is chunk_size_first(), which is smaller).
++    return s->sess->chunk_size() * (int)s->ctx->model->config().hop_length;
++}
++
+ extern "C" int parakeet_capi_stream_drain_events(parakeet_stream* s,
+                                                  parakeet_stream_event** out_events) {
+     if (out_events) *out_events = nullptr;

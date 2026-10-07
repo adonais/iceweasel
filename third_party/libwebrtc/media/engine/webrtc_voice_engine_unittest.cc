@@ -293,7 +293,7 @@ class WebRtcVoiceEngineTestFake : public ::testing::TestWithParam<bool> {
     send_channel_ = engine_->CreateSendChannel(env_, &call_, MediaConfig(),
                                                AudioOptions(), CryptoOptions());
     receive_channel_ = engine_->CreateReceiveChannel(
-        env_, &call_, MediaConfig(), AudioOptions(), CryptoOptions());
+        env_, &call_, MediaConfig(), AudioOptions(), CryptoOptions(), nullptr);
     return true;
   }
 
@@ -3594,7 +3594,7 @@ TEST(WebRtcVoiceEngineTest, StartupShutdown) {
     EXPECT_TRUE(send_channel);
     std::unique_ptr<VoiceMediaReceiveChannelInterface> receive_channel =
         engine.CreateReceiveChannel(env, call.get(), MediaConfig(),
-                                    AudioOptions(), CryptoOptions());
+                                    AudioOptions(), CryptoOptions(), nullptr);
     EXPECT_TRUE(receive_channel);
   }
 }
@@ -3622,7 +3622,7 @@ TEST(WebRtcVoiceEngineTest, StartupShutdownWithExternalADM) {
       EXPECT_TRUE(send_channel);
       std::unique_ptr<VoiceMediaReceiveChannelInterface> receive_channel =
           engine.CreateReceiveChannel(env, call.get(), MediaConfig(),
-                                      AudioOptions(), CryptoOptions());
+                                      AudioOptions(), CryptoOptions(), nullptr);
       EXPECT_TRUE(receive_channel);
     }
     // The engine/channel should have dropped their references.
@@ -3731,7 +3731,7 @@ TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
         Call::Create(CallConfig::CreateSingleThreaded(env));
     WebRtcVoiceReceiveChannel channel(env, &engine, MediaConfig(),
                                       AudioOptions(), CryptoOptions(),
-                                      call.get());
+                                      call.get(), nullptr);
     AudioReceiverParameters parameters;
     parameters.codecs = ReceiveCodecsWithId(engine);
     EXPECT_TRUE(channel.SetReceiverParameters(parameters));

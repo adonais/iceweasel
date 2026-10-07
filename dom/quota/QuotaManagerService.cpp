@@ -1589,6 +1589,37 @@ QuotaManagerService::Estimate(nsIPrincipal* aPrincipal,
 }
 
 NS_IMETHODIMP
+QuotaManagerService::EstimateGroupUsage(nsIPrincipal* aPrincipal,
+                                        nsIQuotaRequest** _retval) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aPrincipal);
+
+  if (NS_WARN_IF(!XRE_IsParentProcess())) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  RefPtr<Request> request = new Request(aPrincipal);
+
+  EstimateGroupUsageParams params;
+
+  nsresult rv =
+      CheckedPrincipalToPrincipalInfo(aPrincipal, params.principalInfo());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  RequestInfo info(request, params);
+
+  rv = InitiateRequest(info);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  request.forget(_retval);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 QuotaManagerService::ListOrigins(nsIQuotaRequest** _retval) {
   MOZ_ASSERT(NS_IsMainThread());
 

@@ -219,6 +219,9 @@ class PromiseCombinatorDataHolder : public NativeObject {
     setFixedSlot(Slot_RemainingElements, Int32Value(remainingCount));
     return remainingCount;
   }
+  void setRemainingCount(int32_t count) {
+    setFixedSlot(Slot_RemainingElements, Int32Value(count));
+  }
 
   static PromiseCombinatorDataHolder* New(
       JSContext* cx, JS::Handle<JSObject*> resultPromise,
@@ -1113,12 +1116,10 @@ class ThenableJob : public MicroTaskEntry {
   enum TargetFunction : int32_t {
     PromiseResolveThenableJob,
     PromiseResolveBuiltinThenableJob,
-#ifdef NIGHTLY_BUILD
     // Job used by SafePromiseResolve (JS::SafeResolve): runs
     // PerformPromiseResolution on `promise` with the resolution value stored
     // in the Thenable slot. The Then slot is unused for this target.
     DeferredResolveJob,
-#endif  // NIGHTLY_BUILD
   };
 
   Value thenable() const { return getFixedSlot(Slots::Thenable); }
@@ -2988,7 +2989,6 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
   return EnqueueJob(cx, thenableJob);
 }
 
-#ifdef NIGHTLY_BUILD
 /**
  * Thenable-curtailment: https://tc39.es/proposal-thenable-curtailment/
  *
@@ -3166,7 +3166,6 @@ bool js::SafeResolvePromise(JSContext* cx, Handle<PromiseObject*> promise,
 
   return EnqueueDeferredResolveJob(cx, promise, resolution);
 }
-#endif  // NIGHTLY_BUILD
 
 [[nodiscard]] static bool AddDummyPromiseReactionForDebugger(
     JSContext* cx, Handle<PromiseObject*> promise,
@@ -3814,6 +3813,15 @@ static JSFunction* NewPromiseCombinatorElementFunction(
 static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
                                              Value* vp);
 
+// https://tc39.es/proposal-defer-import-eval/#sec-create-promise-all-resolve-element
+static JSFunction* CreatePromiseAllResolveElement(
+    JSContext* cx, uint32_t index,
+    Handle<PromiseCombinatorDataHolder*> dataHolder) {
+  return NewPromiseCombinatorElementFunction(
+      cx, PromiseAllResolveElementFunction, dataHolder, index,
+      UndefinedHandleValue);
+}
+
 /**
  * ES2026 draft rev 00146687f225a64e1b1e2d303acc6139a1adee7d
  *
@@ -3912,9 +3920,8 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
       RootedObject nextPromiseObj(cx, promises[index]);
 
       // Steps 5.e-h.
-      JSFunction* resolveFunc = NewPromiseCombinatorElementFunction(
-          cx, PromiseAllResolveElementFunction, dataHolder, index,
-          UndefinedHandleValue);
+      JSFunction* resolveFunc =
+          CreatePromiseAllResolveElement(cx, index, dataHolder);
       if (!resolveFunc) {
         return nullptr;
       }
@@ -3970,6 +3977,95 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
   }
 
   // Step 5.b.iii. Return resultCapability.[[Promise]].
+  return resultCapability.promise();
+}
+
+// https://tc39.es/proposal-defer-import-eval/#sec-safe-perform-promise-all
+[[nodiscard]] JSObject* js::SafePerformPromiseAll(
+    JSContext* cx, JS::HandleObjectVector promises) {
+  // Step 1. Let resultCapability be ! NewPromiseCapability(%Promise%).
+  RootedObject promiseCtor(
+      cx, GlobalObject::getOrCreatePromiseConstructor(cx, cx->global()));
+  if (!promiseCtor) {
+    return nullptr;
+  }
+  Rooted<PromiseCapability> resultCapability(cx);
+  if (!NewPromiseCapability(cx, promiseCtor, &resultCapability, false)) {
+    return nullptr;
+  }
+
+  // Step 2. If promises is empty, then
+  if (promises.empty()) {
+    // Step a. Perform ! Call(resultCapability.[[Resolve]], undefined,
+    //        « CreateArrayFromList(« ») »).
+    RootedObject emptyArray(cx, NewDenseEmptyArray(cx));
+    if (!emptyArray) {
+      return nullptr;
+    }
+    RootedValue emptyArrayVal(cx, ObjectValue(*emptyArray));
+    if (!ResolvePromiseInternal(cx, resultCapability.promise(),
+                                emptyArrayVal)) {
+      return nullptr;
+    }
+
+    // Step b. Return resultCapability.[[Promise]].
+    return resultCapability.promise();
+  }
+
+  uint32_t promiseCount = promises.length();
+
+  // Step 3. Let values be a new empty List.
+  Rooted<PromiseCombinatorElements> values(cx);
+  {
+    auto* valuesArray = NewDenseEmptyArray(cx);
+    if (!valuesArray) {
+      return nullptr;
+    }
+    values.initialize(valuesArray);
+  }
+
+  // Step 4. Let remainingElementsCount be { [[Value]]: number of elements in
+  //         promises }.
+  Rooted<PromiseCombinatorDataHolder*> dataHolder(cx);
+  dataHolder = PromiseCombinatorDataHolder::New(
+      cx, resultCapability.promise(), values, resultCapability.resolve());
+  if (!dataHolder) {
+    return nullptr;
+  }
+  dataHolder->setRemainingCount(promiseCount);
+
+  Rooted<PromiseCapability> resultCapabilityWithoutResolving(cx);
+  resultCapabilityWithoutResolving.promise().set(resultCapability.promise());
+
+  // Step 5. Let index be 0.
+  // Step 6. For each element promise of promises, do
+  for (uint32_t index = 0; index < promiseCount; index++) {
+    // Step 6.a. Append undefined to values.
+    if (!values.pushUndefined(cx)) {
+      return nullptr;
+    }
+
+    // Step 6.b. Let onFulfilled be CreatePromiseAllResolveElement(index,
+    //           values, resultCapability, remainingElementsCount).
+    JSFunction* resolveFunc =
+        CreatePromiseAllResolveElement(cx, index, dataHolder);
+    if (!resolveFunc) {
+      return nullptr;
+    }
+
+    // Step 6.d. Perform PerformPromiseThen(promise, onFulfilled,
+    //           resultCapability.[[Reject]]).
+    RootedValue resolveFunVal(cx, ObjectValue(*resolveFunc));
+    RootedValue rejectFunVal(cx, ObjectValue(*resultCapability.reject()));
+    Rooted<PromiseObject*> nextPromise(cx,
+                                       &promises[index]->as<PromiseObject>());
+    if (!PerformPromiseThen(cx, nextPromise, resolveFunVal, rejectFunVal,
+                            resultCapabilityWithoutResolving)) {
+      return nullptr;
+    }
+  }
+
+  // Step 7. Return resultCapability.[[Promise]].
   return resultCapability.promise();
 }
 
@@ -4734,9 +4830,8 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
     }
 
     // Steps 5.e-k.
-    JSFunction* resolveFunc = NewPromiseCombinatorElementFunction(
-        cx, PromiseAllResolveElementFunction, dataHolder, index,
-        UndefinedHandleValue);
+    JSFunction* resolveFunc =
+        CreatePromiseAllResolveElement(cx, index, dataHolder);
     if (!resolveFunc) {
       return false;
     }
@@ -8378,7 +8473,6 @@ JS_PUBLIC_API bool JS::RunJSMicroTask(JSContext* cx,
                                               &job->thenable().toObject());
         return PromiseResolveBuiltinThenableJob(cx, promise, thenableObj);
       }
-#ifdef NIGHTLY_BUILD
       case ThenableJob::DeferredResolveJob: {
         MOZ_ASSERT(promise->is<PromiseObject>());
         Rooted<PromiseObject*> promiseRooted(cx, &promise->as<PromiseObject>());
@@ -8387,7 +8481,6 @@ JS_PUBLIC_API bool JS::RunJSMicroTask(JSContext* cx,
         }
         return PerformPromiseResolution(cx, promiseRooted, thenable);
       }
-#endif  // NIGHTLY_BUILD
     }
     MOZ_CRASH("Corrupted Target Function");
     return false;

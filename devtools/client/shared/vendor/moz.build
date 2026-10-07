@@ -34,3 +34,39 @@ else:
       'react-prop-types.mjs',
       'react.mjs'
     )
+
+LICENSES += ["node-md5"]
+LICENSES["node-md5"].title = "node-md5 License"
+LICENSES["node-md5"].text = "LICENSE-NOTICE.txt"
+LICENSES["node-md5"].spdx = "BSD-2-Clause"
+LICENSES["node-md5"].notice = """
+<p>This license applies to some of the code in <code>devtools/client/shared/vendor</code>.</p>
+"""
+
+LICENSED_UNDER += [
+    "node-md5",
+]
+
+LICENSED_UNDER += ["dagre-d3"]
+LICENSED_UNDER["dagre-d3"].paths = [
+    "dagre-d3.js",
+]
+
+LICENSED_UNDER += ["mit"]
+LICENSED_UNDER["mit"].paths = [
+    "fuzzaldrin-plus.js",
+    "micromatch/micromatch.js",
+    "react*",
+    "react-router-dom.js",
+    "reselect.js",
+]
+
+LICENSED_UNDER += ["react-redux"]
+LICENSED_UNDER["react-redux"].paths = [
+    "react-redux.js",
+]
+
+LICENSED_UNDER += ["redux"]
+LICENSED_UNDER["redux"].paths = [
+    "redux.js",
+]

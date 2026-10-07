@@ -159,6 +159,38 @@
         );
         initItem.remove();
       });
+
+      add_task(async function testAriaExpandedWithSharedAnchors() {
+        // Prepare additional button.
+        let otherButton = document.createElement("button");
+        otherButton.textContent = "Other button";
+        otherButton.addEventListener("click", e => panelList.toggle(e));
+        anchorButton.after(otherButton);
+
+        // Show panel-list by the anchor button.
+        let shown = BrowserTestUtils.waitForEvent(panelList, "shown");
+        synthesizeMouseAtCenter(anchorButton, {});
+        await shown;
+
+        is(anchorButton.getAttribute("aria-expanded"), "true");
+        is(otherButton.hasAttribute("aria-expanded"), false);
+
+        // Reopen the panel-list by the other button before closing the panel.
+        shown = BrowserTestUtils.waitForEvent(panelList, "shown");
+        synthesizeMouseAtCenter(otherButton, {});
+        await shown;
+
+        is(anchorButton.getAttribute("aria-expanded"), "false");
+        is(otherButton.getAttribute("aria-expanded"), "true");
+
+        // Hide the panel-list.
+        let hidden = BrowserTestUtils.waitForEvent(panelList, "hidden");
+        synthesizeKey("Escape", {});
+        await hidden;
+
+        is(otherButton.getAttribute("aria-expanded"), "false");
+        otherButton.remove();
+      });
     </script>
   </body>
 </html>

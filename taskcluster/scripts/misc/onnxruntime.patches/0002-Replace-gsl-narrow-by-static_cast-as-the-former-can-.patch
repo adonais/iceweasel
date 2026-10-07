@@ -1,20 +1,21 @@
-From 0f02f0a222923dde8f7d81a8f2667dc6c15e8330 Mon Sep 17 00:00:00 2001
+From 5ae494a3bc10c2f73ab542922c0383784e3ea928 Mon Sep 17 00:00:00 2001
 From: serge-sans-paille <sguelton@mozilla.com>
 Date: Tue, 13 May 2025 12:13:22 +0200
-Subject: [PATCH 2/5] Replace gsl::narrow by static_cast, as the former can
+Subject: [PATCH 2/7] Replace gsl::narrow by static_cast, as the former can
  throw exception
 
 ---
- .../core/framework/kernel_type_str_resolver.cc       |  2 +-
- .../graph/runtime_optimization_record_container.cc   |  2 +-
- onnxruntime/core/optimizer/attention_fusion.cc       |  8 ++++----
- .../core/optimizer/embed_layer_norm_fusion.cc        |  6 +++---
- onnxruntime/core/optimizer/nchwc_transformer.cc      | 12 ++++++------
- onnxruntime/core/optimizer/utils.cc                  |  4 ++--
- 6 files changed, 17 insertions(+), 17 deletions(-)
+ .../core/framework/kernel_type_str_resolver.cc   |  2 +-
+ .../runtime_optimization_record_container.cc     |  2 +-
+ onnxruntime/core/optimizer/attention_fusion.cc   |  8 ++++----
+ .../core/optimizer/embed_layer_norm_fusion.cc    |  6 +++---
+ .../optimizer/group_query_attention_fusion.cc    |  8 ++++----
+ onnxruntime/core/optimizer/nchwc_transformer.cc  | 16 ++++++++--------
+ onnxruntime/core/optimizer/utils.cc              |  4 ++--
+ 7 files changed, 23 insertions(+), 23 deletions(-)
 
 diff --git a/onnxruntime/core/framework/kernel_type_str_resolver.cc b/onnxruntime/core/framework/kernel_type_str_resolver.cc
-index 3142f94f28..b64ed160da 100644
+index 3142f94..b64ed16 100644
 --- a/onnxruntime/core/framework/kernel_type_str_resolver.cc
 +++ b/onnxruntime/core/framework/kernel_type_str_resolver.cc
 @@ -167,7 +167,7 @@ Status KernelTypeStrResolver::SaveToOrtFormat(
@@ -27,7 +28,7 @@ index 3142f94f28..b64ed160da 100644
        }
  
 diff --git a/onnxruntime/core/graph/runtime_optimization_record_container.cc b/onnxruntime/core/graph/runtime_optimization_record_container.cc
-index 2d0e1076ee..36a0f37a27 100644
+index 2d0e107..36a0f37 100644
 --- a/onnxruntime/core/graph/runtime_optimization_record_container.cc
 +++ b/onnxruntime/core/graph/runtime_optimization_record_container.cc
 @@ -57,7 +57,7 @@ static Status SaveRuntimeOptimizationRecordToOrtFormat(
@@ -40,19 +41,19 @@ index 2d0e1076ee..36a0f37a27 100644
    const auto fbs_nodes_to_optimize =
        fbs::CreateNodesToOptimizeIndices(builder,
 diff --git a/onnxruntime/core/optimizer/attention_fusion.cc b/onnxruntime/core/optimizer/attention_fusion.cc
-index ff8943de79..6186fb542f 100644
+index 30eaaaf..955fad7 100644
 --- a/onnxruntime/core/optimizer/attention_fusion.cc
 +++ b/onnxruntime/core/optimizer/attention_fusion.cc
-@@ -121,25 +121,25 @@ static NodeArg& MergeQkvWeights(Graph& graph, int64_t hidden_size,
+@@ -748,25 +748,25 @@ static NodeArg& MergeQkvWeights(Graph& graph, int64_t hidden_size,
      const float* k_weight = k_initializer.data<float>();
      const float* v_weight = v_initializer.data<float>();
      std::vector<float> result;
 -    result.reserve(gsl::narrow<size_t>(element_count));
 +    result.reserve(static_cast<size_t>(element_count));
      if (is_matmul) {
-       MergeMatMulWeights<float>(q_weight, k_weight, v_weight, result, hidden_size);
+       optimizer_utils::MergeMatMulWeightsByRow<float>(q_weight, k_weight, v_weight, result, hidden_size, hidden_size, hidden_size);
      } else {
-       MergeWeights<float>(q_weight, k_weight, v_weight, result, hidden_size);
+       optimizer_utils::MergeWeights1d<float>(q_weight, k_weight, v_weight, result, hidden_size, hidden_size);
      }
 -    utils::SetRawDataInTensorProto(initializer, result.data(), gsl::narrow<size_t>(element_count) * sizeof(float));
 +    utils::SetRawDataInTensorProto(initializer, result.data(), static_cast<size_t>(element_count) * sizeof(float));
@@ -64,20 +65,20 @@ index ff8943de79..6186fb542f 100644
 -    result.reserve(gsl::narrow<size_t>(element_count));
 +    result.reserve(static_cast<size_t>(element_count));
      if (is_matmul) {
-       MergeMatMulWeights<MLFloat16>(q_weight, k_weight, v_weight, result, hidden_size);
+       optimizer_utils::MergeMatMulWeightsByRow<MLFloat16>(q_weight, k_weight, v_weight, result, hidden_size, hidden_size, hidden_size);
      } else {
-       MergeWeights<MLFloat16>(q_weight, k_weight, v_weight, result, hidden_size);
+       optimizer_utils::MergeWeights1d<MLFloat16>(q_weight, k_weight, v_weight, result, hidden_size, hidden_size);
      }
 -    utils::SetRawDataInTensorProto(initializer, result.data(), gsl::narrow<size_t>(element_count) * sizeof(MLFloat16));
 +    utils::SetRawDataInTensorProto(initializer, result.data(), static_cast<size_t>(element_count) * sizeof(MLFloat16));
    }
  
-   return graph_utils::AddInitializer(graph, initializer);
+   return graph_utils::AddInitializerWithOrtValue(graph, initializer);
 diff --git a/onnxruntime/core/optimizer/embed_layer_norm_fusion.cc b/onnxruntime/core/optimizer/embed_layer_norm_fusion.cc
-index 103e72072f..d91529273e 100644
+index 421cc1b..8df7116 100644
 --- a/onnxruntime/core/optimizer/embed_layer_norm_fusion.cc
 +++ b/onnxruntime/core/optimizer/embed_layer_norm_fusion.cc
-@@ -431,7 +431,7 @@ template <typename T>
+@@ -446,7 +446,7 @@ template <typename T>
  bool CheckEmbeddingData(const T* data, int64_t batch_size, int64_t element_count) {
    // check that all batches has same data.
    size_t data_length = SafeInt<size_t>(batch_size) * element_count;
@@ -86,7 +87,7 @@ index 103e72072f..d91529273e 100644
      if (data[i] != data[i % element_count]) {
        return false;
      }
-@@ -465,13 +465,13 @@ static NodeArg* ExtractEmbedding(Graph& graph,
+@@ -480,13 +480,13 @@ static NodeArg* ExtractEmbedding(Graph& graph,
      if (!CheckEmbeddingData(data, batch_size, element_count)) {
        return nullptr;
      }
@@ -101,12 +102,48 @@ index 103e72072f..d91529273e 100644
 +    utils::SetRawDataInTensorProto(initializer, data, static_cast<size_t>(element_count) * sizeof(MLFloat16));
    }
  
-   NodeArg& node_arg = graph_utils::AddInitializer(graph, initializer);
+   NodeArg& node_arg = graph_utils::AddInitializerWithOrtValue(graph, initializer);
+diff --git a/onnxruntime/core/optimizer/group_query_attention_fusion.cc b/onnxruntime/core/optimizer/group_query_attention_fusion.cc
+index 0f1e505..043a539 100644
+--- a/onnxruntime/core/optimizer/group_query_attention_fusion.cc
++++ b/onnxruntime/core/optimizer/group_query_attention_fusion.cc
+@@ -44,7 +44,7 @@ static NodeArg& MergeQkvWeightsForMatMul(Graph& graph,
+ 
+   int64_t element_count = input_hidden_size * output_hidden_size;
+   std::vector<MLFloat16> merged_qkv_weight;
+-  merged_qkv_weight.reserve(gsl::narrow<size_t>(element_count));
++  merged_qkv_weight.reserve(static_cast<size_t>(element_count));
+ 
+   optimizer_utils::MergeMatMulWeightsByRow(q_data, k_data, v_data, merged_qkv_weight, input_hidden_size, q_hidden_size, kv_hidden_size);
+   utils::SetRawDataInTensorProto(qkv_weight_initializer, merged_qkv_weight.data(), element_count * sizeof(MLFloat16));
+@@ -119,11 +119,11 @@ static std::vector<NodeArg*> MergeQkvWeightsForMatMulNBits(
+ 
+   int64_t element_count = output_hidden_size * blocks * block_size;
+   std::vector<uint8_t> merged_qkv_weight;
+-  merged_qkv_weight.reserve(gsl::narrow<size_t>(element_count));
++  merged_qkv_weight.reserve(static_cast<size_t>(element_count));
+ 
+   int64_t scale_elements_count = output_hidden_size * blocks;
+   std::vector<MLFloat16> merged_qkv_scale;
+-  merged_qkv_scale.reserve(gsl::narrow<size_t>(scale_elements_count));
++  merged_qkv_scale.reserve(static_cast<size_t>(scale_elements_count));
+ 
+   optimizer_utils::MergeMatMulWeightsByBlocks(q_data, k_data, v_data, merged_qkv_weight, q_hidden_size, kv_hidden_size, blocks, block_size);
+   optimizer_utils::MergeMatMulWeightsByBlocks(q_scale_data, k_scale_data, v_scale_data, merged_qkv_scale, q_hidden_size, kv_hidden_size, blocks, 1);
+@@ -156,7 +156,7 @@ static std::vector<NodeArg*> MergeQkvWeightsForMatMulNBits(
+     qkv_zp_initializer.set_data_type(q_zero_point_tensor->data_type());
+ 
+     std::vector<uint8_t> merged_qkv_zp;
+-    merged_qkv_zp.reserve(gsl::narrow<size_t>(zp_elements_count));
++    merged_qkv_zp.reserve(static_cast<size_t>(zp_elements_count));
+ 
+     optimizer_utils::MergeMatMulWeightsByBlocks(q_zero_points_data, k_zero_points_data, v_zero_points_data,
+                                                 merged_qkv_zp, q_hidden_size, kv_hidden_size, zero_point_blocks, 1);
 diff --git a/onnxruntime/core/optimizer/nchwc_transformer.cc b/onnxruntime/core/optimizer/nchwc_transformer.cc
-index 46f306b92b..436f16661f 100644
+index aa81097..4d0499c 100644
 --- a/onnxruntime/core/optimizer/nchwc_transformer.cc
 +++ b/onnxruntime/core/optimizer/nchwc_transformer.cc
-@@ -415,7 +415,7 @@ void NchwcTransformerImpl::TransformConv(Node& node) {
+@@ -437,7 +437,7 @@ void NchwcTransformerImpl::TransformConv(Node& node) {
      for (size_t i = 2; i < 4; i++) {
        reordered_filter_size *= conv_W_dims[i];
      }
@@ -115,16 +152,16 @@ index 46f306b92b..436f16661f 100644
  
      // Reorder the weights tensor statically.
      if (reorder_filter_OIHWBo) {
-@@ -451,7 +451,7 @@ void NchwcTransformerImpl::TransformConv(Node& node) {
+@@ -473,7 +473,7 @@ void NchwcTransformerImpl::TransformConv(Node& node) {
      } else {
-       Initializer conv_B{*conv_B_tensor_proto, graph_.ModelPath()};
+       Initializer conv_B{graph_, *conv_B_tensor_proto, graph_.ModelPath()};
  
 -      InlinedVector<float> aligned_bias(gsl::narrow<size_t>(nchwc_output_channels));
 +      InlinedVector<float> aligned_bias(static_cast<size_t>(nchwc_output_channels));
        ORT_ENFORCE(output_channels <= nchwc_output_channels, "Buffer overflow");
        std::copy_n(conv_B.data<float>(), output_channels, aligned_bias.data());
  
-@@ -460,7 +460,7 @@ void NchwcTransformerImpl::TransformConv(Node& node) {
+@@ -482,7 +482,7 @@ void NchwcTransformerImpl::TransformConv(Node& node) {
        nchwc_conv_B_tensor_proto.set_data_type(ONNX_NAMESPACE::TensorProto_DataType_FLOAT);
        nchwc_conv_B_tensor_proto.set_name(graph_.GenerateNodeArgName("reorder"));
        utils::SetRawDataInTensorProto(nchwc_conv_B_tensor_proto, aligned_bias.data(),
@@ -133,7 +170,24 @@ index 46f306b92b..436f16661f 100644
  
        nchwc_conv_B_tensor_proto.add_dims(nchwc_output_channels);
  
-@@ -878,7 +878,7 @@ void NchwcTransformerImpl::TransformBatchNormalization(Node& node) {
+@@ -837,14 +837,14 @@ void NchwcTransformerImpl::TransformMul(Node& node) {
+   const size_t nchwc_block_size = MlasNchwcGetBlockSize();
+   const int64_t nchwc_channels = (channels + static_cast<int64_t>(nchwc_block_size) - 1) & ~static_cast<int64_t>(nchwc_block_size - 1);
+ 
+-  InlinedVector<float> padded_scale(gsl::narrow<size_t>(nchwc_channels), 1.0f);
++  InlinedVector<float> padded_scale(static_cast<size_t>(nchwc_channels), 1.0f);
+   std::copy_n(mul_scale.data<float>(), channels, padded_scale.data());
+ 
+   ONNX_NAMESPACE::TensorProto nchwc_conv_W_tensor_proto;
+   nchwc_conv_W_tensor_proto.set_data_type(ONNX_NAMESPACE::TensorProto_DataType_FLOAT);
+   nchwc_conv_W_tensor_proto.set_name(graph_.GenerateNodeArgName("mul_scale"));
+   utils::SetRawDataInTensorProto(nchwc_conv_W_tensor_proto, padded_scale.data(),
+-                                 gsl::narrow<size_t>(nchwc_channels) * sizeof(float));
++                                 static_cast<size_t>(nchwc_channels) * sizeof(float));
+   nchwc_conv_W_tensor_proto.add_dims(nchwc_channels);
+   nchwc_conv_W_tensor_proto.add_dims(1);
+   nchwc_conv_W_tensor_proto.add_dims(1);
+@@ -1128,7 +1128,7 @@ void NchwcTransformerImpl::TransformBatchNormalization(Node& node) {
    const size_t nchwc_block_size = MlasNchwcGetBlockSize();
    const int64_t nchwc_channels = (channels + nchwc_block_size - 1) & ~(nchwc_block_size - 1);
  
@@ -142,7 +196,7 @@ index 46f306b92b..436f16661f 100644
  
    std::copy_n(bn_scale.data<float>(), channels, padded_buffer.data());
  
-@@ -886,7 +886,7 @@ void NchwcTransformerImpl::TransformBatchNormalization(Node& node) {
+@@ -1136,7 +1136,7 @@ void NchwcTransformerImpl::TransformBatchNormalization(Node& node) {
    nchwc_conv_W_tensor_proto.set_data_type(ONNX_NAMESPACE::TensorProto_DataType_FLOAT);
    nchwc_conv_W_tensor_proto.set_name(graph_.GenerateNodeArgName("bn_scale"));
    utils::SetRawDataInTensorProto(nchwc_conv_W_tensor_proto, padded_buffer.data(),
@@ -151,7 +205,7 @@ index 46f306b92b..436f16661f 100644
    nchwc_conv_W_tensor_proto.add_dims(nchwc_channels);
    nchwc_conv_W_tensor_proto.add_dims(1);
    nchwc_conv_W_tensor_proto.add_dims(1);
-@@ -900,7 +900,7 @@ void NchwcTransformerImpl::TransformBatchNormalization(Node& node) {
+@@ -1150,7 +1150,7 @@ void NchwcTransformerImpl::TransformBatchNormalization(Node& node) {
    nchwc_conv_B_tensor_proto.set_data_type(ONNX_NAMESPACE::TensorProto_DataType_FLOAT);
    nchwc_conv_B_tensor_proto.set_name(graph_.GenerateNodeArgName("bn_B"));
    utils::SetRawDataInTensorProto(nchwc_conv_B_tensor_proto, padded_buffer.data(),
@@ -159,9 +213,9 @@ index 46f306b92b..436f16661f 100644
 +                                 static_cast<size_t>(nchwc_channels) * sizeof(float));
    nchwc_conv_B_tensor_proto.add_dims(nchwc_channels);
  
-   auto* nchwc_conv_B_arg = &graph_utils::AddInitializer(graph_, nchwc_conv_B_tensor_proto);
+   auto* nchwc_conv_B_arg = &graph_utils::AddInitializerWithOrtValue(graph_, nchwc_conv_B_tensor_proto);
 diff --git a/onnxruntime/core/optimizer/utils.cc b/onnxruntime/core/optimizer/utils.cc
-index c7e11de348..047d095aaf 100644
+index 68aa6bc..3d34fd2 100644
 --- a/onnxruntime/core/optimizer/utils.cc
 +++ b/onnxruntime/core/optimizer/utils.cc
 @@ -175,11 +175,11 @@ bool AppendTensorFromInitializer(const Graph& graph, const NodeArg& input_arg, I
@@ -179,5 +233,5 @@ index c7e11de348..047d095aaf 100644
        data.push_back(static_cast<int64_t>(val[i]));
      }
 -- 
-2.49.0
+2.55.0
 

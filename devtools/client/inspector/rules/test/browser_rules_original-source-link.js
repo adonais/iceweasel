@@ -86,9 +86,7 @@ async function verifyStyleSheetLink(view, fileName, lineNumber) {
   const expectedTitle = `View source in Style Editor → ${URL_ROOT_SSL}${expectedLocation}`;
 
   info("Verifying that the rule-view stylesheet link is " + expectedLocation);
-  const label = getRuleViewLinkByIndex(view, 1).querySelector(
-    ".ruleview-rule-source-label"
-  );
+  const label = getRuleViewLinkByIndex(view, 1);
   await waitForSuccess(function () {
     return (
       label.textContent == expectedLocation &&

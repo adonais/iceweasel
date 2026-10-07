@@ -31,7 +31,6 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 
-#include <atomic>
 #include <cerrno>
 #include <cstdint>
 #include <cstring>
@@ -40,6 +39,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/str_cat.h"
 #include "api/scoped_refptr.h"
 #include "api/video/video_common.h"
 #include "modules/desktop_capture/desktop_capture_types.h"
@@ -69,10 +69,6 @@ bool IsDMABufEnabled();
 }
 
 namespace webrtc {
-
-namespace {
-std::atomic<bool> g_pipewire_thread_loop_exists{false};
-}  // namespace
 
 constexpr int kBytesPerPixel = 4;
 constexpr int kMaxCursorSize = 1024;
@@ -164,20 +160,18 @@ class SharedScreenCastStreamPrivate {
   std::unique_ptr<SharedMemoryFactory> shared_memory_factory_;
 
   // PipeWire types
+  // Encapsulates the PipeWire thread loop and its associated context, core, and
+  // stream. Each SharedScreenCastStream owns its own PipeWireThreadLoop instance
+  // to provide isolation for multi-display capture.
   struct PipeWireThreadLoop {
-    static std::unique_ptr<PipeWireThreadLoop> Create() {
-      bool expected = false;
-      if (!g_pipewire_thread_loop_exists.compare_exchange_strong(expected,
-                                                                 true)) {
-        RTC_LOG(LS_ERROR) << "PipeWireThreadLoop already exists";
-        return nullptr;
-      }
-
+    static std::unique_ptr<PipeWireThreadLoop> Create(
+        uint32_t stream_node_id) {
+      std::string loop_name =
+          absl::StrCat("pipewire-main-loop-", stream_node_id);
       struct pw_thread_loop* main_loop =
-          pw_thread_loop_new("pipewire-main-loop", nullptr);
+          pw_thread_loop_new(loop_name.c_str(), nullptr);
       if (!main_loop) {
         RTC_LOG(LS_ERROR) << "Failed to create PipeWire main loop";
-        g_pipewire_thread_loop_exists.store(false);
         return nullptr;
       }
 
@@ -186,7 +180,6 @@ class SharedScreenCastStreamPrivate {
       if (!context) {
         pw_thread_loop_destroy(main_loop);
         RTC_LOG(LS_ERROR) << "Failed to create PipeWire context";
-        g_pipewire_thread_loop_exists.store(false);
         return nullptr;
       }
 
@@ -194,7 +187,6 @@ class SharedScreenCastStreamPrivate {
         pw_context_destroy(context);
         pw_thread_loop_destroy(main_loop);
         RTC_LOG(LS_ERROR) << "Failed to start main PipeWire loop";
-        g_pipewire_thread_loop_exists.store(false);
         return nullptr;
       }
 
@@ -204,7 +196,6 @@ class SharedScreenCastStreamPrivate {
     PipeWireThreadLoop(struct pw_thread_loop* main_loop,
                        struct pw_context* context)
         : main_loop(main_loop), context(context) {
-      RTC_CHECK(g_pipewire_thread_loop_exists.load());
       RTC_CHECK(main_loop);
       RTC_CHECK(context);
     }
@@ -215,7 +206,6 @@ class SharedScreenCastStreamPrivate {
     PipeWireThreadLoop& operator=(PipeWireThreadLoop&&) = delete;
 
     ~PipeWireThreadLoop() {
-      RTC_CHECK(g_pipewire_thread_loop_exists.load());
       pw_thread_loop_stop(main_loop);
 
       if (stream) {
@@ -229,8 +219,6 @@ class SharedScreenCastStreamPrivate {
 
       pw_context_destroy(context);
       pw_thread_loop_destroy(main_loop);
-
-      g_pipewire_thread_loop_exists.store(false);
     }
 
     struct pw_thread_loop* const main_loop;
@@ -586,7 +574,7 @@ bool SharedScreenCastStreamPrivate::StartScreenCastStream(
 
   pw_initializer_ = std::make_unique<PipeWireInitializer>();
 
-  pw_ = PipeWireThreadLoop::Create();
+  pw_ = PipeWireThreadLoop::Create(stream_node_id);
   if (!pw_) {
     return false;
   }

@@ -20,8 +20,8 @@ interface ReportBody {
 interface Report {
   [Default] object toJSON
 ();
-  readonly attribute DOMString type;
-  readonly attribute DOMString url;
+  readonly attribute UTF8String type;
+  readonly attribute UTF8String url;
   readonly attribute ReportBody? body;
 };
 
@@ -106,6 +106,20 @@ interface IntegrityViolationReportBody : ReportBody {
   // TODO: Move this to a new interface.
   [Pref="security.waict.enabled"]
   readonly attribute IntegrityViolationReason? reason;
+};
+
+enum ConnectionAllowlistDisposition { "enforce", "report" };
+
+// The specification calls this dictionary ConnectionAllowlistViolationReport.
+// https://wicg.github.io/connection-allowlists/#reporting
+[Exposed=Window, Pref="security.connection_allowlists.enabled"]
+interface ConnectionAllowlistViolationReportBody : ReportBody {
+  [Default] object toJSON();
+  readonly attribute UTF8String url;
+  readonly attribute UTF8String connection;
+  [Frozen, Cached, Constant]
+  readonly attribute sequence<UTF8String> allowlist;
+  readonly attribute ConnectionAllowlistDisposition disposition;
 };
 
 // Used internally to process the JSON

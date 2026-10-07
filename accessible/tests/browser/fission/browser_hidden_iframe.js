@@ -18,7 +18,7 @@ addAccessibleTask(
     let iframeAcc = findAccessibleChildByID(contentDocAcc, DEFAULT_IFRAME_ID);
     let iframeDocAcc = findAccessibleChildByID(
       contentDocAcc,
-      DEFAULT_IFRAME_DOC_BODY_ID
+      DEFAULT_IFRAME_DOC_ID
     );
     ok(!iframeAcc, "IFRAME is hidden and should not be accessible");
     ok(!iframeDocAcc, "IFRAME document is hidden and should not be accessible");
@@ -41,7 +41,7 @@ addAccessibleTask(
     // Wait for the child iframe to layout itself. This can happen during or
     // after the reorder event, depending on timing.
     iframeDocAcc = await TestUtils.waitForCondition(() => {
-      return findAccessibleChildByID(contentDocAcc, DEFAULT_IFRAME_DOC_BODY_ID);
+      return findAccessibleChildByID(contentDocAcc, DEFAULT_IFRAME_DOC_ID);
     });
 
     is(iframeAcc.childCount, 1, "IFRAME accessible should have a single child");

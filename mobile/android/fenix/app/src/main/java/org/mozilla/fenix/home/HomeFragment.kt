@@ -149,6 +149,7 @@ import org.mozilla.fenix.home.toolbar.FenixHomeToolbar
 import org.mozilla.fenix.home.toolbar.HomeNavigationBar
 import org.mozilla.fenix.home.toolbar.HomeToolbarComposable
 import org.mozilla.fenix.home.toolbar.HomeToolbarComposable.Companion.DirectToSearchConfig
+import org.mozilla.fenix.home.toolbar.homepageToolbarColors
 import org.mozilla.fenix.home.topsites.DefaultTopSitesView
 import org.mozilla.fenix.home.topsites.TopSitesBinding
 import org.mozilla.fenix.home.topsites.controller.DefaultTopSiteController
@@ -158,6 +159,7 @@ import org.mozilla.fenix.home.ui.HomeSwipeIntegration
 import org.mozilla.fenix.home.ui.Homepage
 import org.mozilla.fenix.home.ui.WallpaperBackground
 import org.mozilla.fenix.ipprotection.store.Surface as IPProtectionSurface
+import org.mozilla.fenix.ipprotection.ui.IPProtectionBottomSheetFragment
 import org.mozilla.fenix.messaging.DefaultMessageController
 import org.mozilla.fenix.messaging.FenixMessageSurfaceId
 import org.mozilla.fenix.messaging.MessagingFeature
@@ -176,6 +178,7 @@ import org.mozilla.fenix.reviewprompt.ShowReviewPromptBinding
 import org.mozilla.fenix.search.awesomebar.AwesomeBarComposable
 import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
 import org.mozilla.fenix.snackbar.SnackbarBinding
+import org.mozilla.fenix.tabgroups.TabGroupsStrip
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.ui.AccessPoint
 import org.mozilla.fenix.termsofuse.store.DefaultPrivacyNoticeBannerRepository
@@ -730,16 +733,39 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
                                     ToolbarSlot(captureToolbarBounds, { toolbarBoundsInRoot = it }) {
                                         toolbarView.Content()
                                     }
+                                } else {
+                                    if (settings.shouldShowTabStripAtTop) {
+                                        TabStrip()
+                                    }
                                 }
                             },
                             bottomBar = {
+                                val tabGroupsStripColor =
+                                    homepageToolbarColors(
+                                            isPrivateMode = isPrivateMode,
+                                            shouldUseEdgeToEdgeColors = isEdgeToEdgeBackgroundEnabled(),
+                                        )
+                                        .surface
                                 if (isToolbarAtTop) {
                                     ToolbarSlot(captureToolbarBounds, { navbarBoundsInRoot = it }) {
-                                        homeNavigationBar?.Content()
+                                        Column {
+                                            if (settings.shouldShowTabStripAtBottom) {
+                                                TabStrip()
+                                            }
+                                            if (settings.shouldShowTabGroupsStrip) {
+                                                TabGroupsStrip(containerColor = tabGroupsStripColor)
+                                            }
+                                            homeNavigationBar?.Content()
+                                        }
                                     }
                                 } else {
                                     ToolbarSlot(captureToolbarBounds, { toolbarBoundsInRoot = it }) {
-                                        toolbarView.Content()
+                                        Column {
+                                            if (settings.shouldShowTabGroupsStrip) {
+                                                TabGroupsStrip(containerColor = tabGroupsStripColor)
+                                            }
+                                            toolbarView.Content()
+                                        }
                                     }
                                 }
                             },
@@ -945,6 +971,7 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
                         browsingModeManager = (requireActivity() as HomeActivity).browsingModeManager,
                         settings = requireComponents.settings,
                     ),
+                hideWhenKeyboardShown = requireComponents.settings.shouldUseBottomTabStrip,
                 onAddTabClick = {
                     if (requireComponents.settings.enableHomepageAsNewTab) {
                         requireComponents.useCases.fenixBrowserUseCases.addNewHomepageTab(
@@ -1480,8 +1507,7 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
                     )
             },
             navigateToIpProtection = {
-                findNavController()
-                    .navigate(HomeFragmentDirections.actionGlobalIpProtectionDialog(IPProtectionSurface.HOMEPAGE))
+                IPProtectionBottomSheetFragment.showPrompt(fragment = this, surface = IPProtectionSurface.HOMEPAGE)
             },
         )
     }

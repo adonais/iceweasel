@@ -72,7 +72,7 @@ void BinaryReaderLogging::WriteIndent() {
     i -= s_indent_len;
   }
   if (i > 0) {
-    stream_->WriteData(s_indent, indent_);
+    stream_->WriteData(s_indent, i);
   }
 }
 
@@ -255,14 +255,15 @@ Result BinaryReaderLogging::OnImportTag(Index import_index,
                               sig_index);
 }
 
-Result BinaryReaderLogging::OnTable(Index index,
-                                    Type elem_type,
-                                    const Limits* elem_limits) {
+Result BinaryReaderLogging::BeginTable(Index index,
+                                       Type elem_type,
+                                       const Limits* elem_limits,
+                                       TableInitExprStatus init_provided) {
   char buf[100];
   SPrintLimits(buf, sizeof(buf), elem_limits);
   LOGF("OnTable(index: %" PRIindex ", elem_type: %s, %s)\n", index,
        elem_type.GetName().c_str(), buf);
-  return reader_->OnTable(index, elem_type, elem_limits);
+  return reader_->BeginTable(index, elem_type, elem_limits, init_provided);
 }
 
 Result BinaryReaderLogging::OnMemory(Index index,
@@ -318,6 +319,16 @@ Result BinaryReaderLogging::OnBrExpr(Index depth) {
 Result BinaryReaderLogging::OnBrIfExpr(Index depth) {
   LOGF("OnBrIfExpr(depth: %" PRIindex ")\n", depth);
   return reader_->OnBrIfExpr(depth);
+}
+
+Result BinaryReaderLogging::OnBrOnNonNullExpr(Index depth) {
+  LOGF("OnBrOnNonNullExpr(depth: %" PRIindex ")\n", depth);
+  return reader_->OnBrOnNonNullExpr(depth);
+}
+
+Result BinaryReaderLogging::OnBrOnNullExpr(Index depth) {
+  LOGF("OnBrOnNullExpr(depth: %" PRIindex ")\n", depth);
+  return reader_->OnBrOnNullExpr(depth);
 }
 
 Result BinaryReaderLogging::OnBrTableExpr(Index num_targets,
@@ -394,6 +405,39 @@ Result BinaryReaderLogging::OnTryExpr(Type sig_type) {
   return reader_->OnTryExpr(sig_type);
 }
 
+Result BinaryReaderLogging::OnTryTableExpr(Type sig_type,
+                                           const CatchClauseVector& catches) {
+  LOGF("OnTryTableExpr(sig: ");
+  LogType(sig_type);
+  Index count = catches.size();
+  LOGF_NOINDENT(", n: %" PRIindex ", catches: [", count);
+
+  for (auto& catch_ : catches) {
+    auto tag = catch_.tag;
+    auto depth = catch_.depth;
+    switch (catch_.kind) {
+      case CatchKind::Catch:
+        LOGF_NOINDENT("catch %" PRIindex " %" PRIindex, tag, depth);
+        break;
+      case CatchKind::CatchRef:
+        LOGF_NOINDENT("catch_ref %" PRIindex " %" PRIindex, tag, depth);
+        break;
+      case CatchKind::CatchAll:
+        LOGF_NOINDENT("catch_all %" PRIindex, depth);
+        break;
+      case CatchKind::CatchAllRef:
+        LOGF_NOINDENT("catch_all_ref %" PRIindex, depth);
+        break;
+    }
+    if (--count != 0) {
+      LOGF_NOINDENT(", ");
+    }
+  }
+  LOGF_NOINDENT("])\n");
+
+  return reader_->OnTryTableExpr(sig_type, catches);
+}
+
 Result BinaryReaderLogging::OnSimdLaneOpExpr(Opcode opcode, uint64_t value) {
   LOGF("OnSimdLaneOpExpr (lane: %" PRIu64 ")\n", value);
   return reader_->OnSimdLaneOpExpr(opcode, value);
@@ -420,12 +464,10 @@ Result BinaryReaderLogging::OnElemSegmentElemType(Index index, Type elem_type) {
   return reader_->OnElemSegmentElemType(index, elem_type);
 }
 
-Result BinaryReaderLogging::OnDataSegmentData(Index index,
-                                              const void* data,
-                                              Address size) {
+Result BinaryReaderLogging::OnDataSegmentData(Index index, ByteSpan data) {
   LOGF("OnDataSegmentData(index:%" PRIindex ", size:%" PRIaddress ")\n", index,
-       size);
-  return reader_->OnDataSegmentData(index, data, size);
+       static_cast<Address>(data.size()));
+  return reader_->OnDataSegmentData(index, data);
 }
 
 Result BinaryReaderLogging::OnModuleNameSubsection(Index index,
@@ -648,22 +690,20 @@ Result BinaryReaderLogging::BeginCodeMetadataSection(std::string_view name,
   Indent();
   return reader_->BeginCodeMetadataSection(name, size);
 }
-Result BinaryReaderLogging::OnCodeMetadata(Offset code_offset,
-                                           const void* data,
-                                           Address size) {
-  std::string_view content(static_cast<const char*>(data), size);
+Result BinaryReaderLogging::OnCodeMetadata(Offset code_offset, ByteSpan data) {
+  std::string_view content(reinterpret_cast<const char*>(data.data()),
+                           data.size());
   LOGF("OnCodeMetadata(offset: %" PRIzd ", data: \"" PRIstringview "\")\n",
        code_offset, WABT_PRINTF_STRING_VIEW_ARG(content));
-  return reader_->OnCodeMetadata(code_offset, data, size);
+  return reader_->OnCodeMetadata(code_offset, data);
 }
 
 Result BinaryReaderLogging::OnGenericCustomSection(std::string_view name,
-                                                   const void* data,
-                                                   Offset size) {
+                                                   ByteSpan data) {
   LOGF("OnGenericCustomSection(name: \"" PRIstringview "\", size: %" PRIzd
        ")\n",
-       WABT_PRINTF_STRING_VIEW_ARG(name), size);
-  return reader_->OnGenericCustomSection(name, data, size);
+       WABT_PRINTF_STRING_VIEW_ARG(name), data.size());
+  return reader_->OnGenericCustomSection(name, data);
 }
 
 #define DEFINE_BEGIN(name)                        \
@@ -773,6 +813,9 @@ DEFINE_END(EndFunctionSection)
 
 DEFINE_BEGIN(BeginTableSection)
 DEFINE_INDEX(OnTableCount)
+DEFINE_INDEX(BeginTableInitExpr)
+DEFINE_INDEX(EndTableInitExpr)
+DEFINE_INDEX(EndTable)
 DEFINE_END(EndTableSection)
 
 DEFINE_BEGIN(BeginMemorySection)
@@ -799,6 +842,12 @@ DEFINE_INDEX(OnFunctionBodyCount)
 DEFINE_INDEX(EndFunctionBody)
 DEFINE_INDEX(OnLocalDeclCount)
 DEFINE0(EndLocalDecls)
+
+DEFINE_OPCODE(OnUnaryExpr)
+DEFINE_OPCODE(OnBinaryExpr)
+DEFINE_OPCODE(OnTernaryExpr)
+DEFINE_OPCODE(OnQuaternaryExpr)
+
 DEFINE_LOAD_STORE_OPCODE(OnAtomicLoadExpr);
 DEFINE_LOAD_STORE_OPCODE(OnAtomicRmwExpr);
 DEFINE_LOAD_STORE_OPCODE(OnAtomicRmwCmpxchgExpr);
@@ -806,10 +855,9 @@ DEFINE_LOAD_STORE_OPCODE(OnAtomicStoreExpr);
 DEFINE_LOAD_STORE_OPCODE(OnAtomicWaitExpr);
 DEFINE_INDEX_DESC(OnAtomicFenceExpr, "consistency_model");
 DEFINE_LOAD_STORE_OPCODE(OnAtomicNotifyExpr);
-DEFINE_OPCODE(OnBinaryExpr)
 DEFINE_INDEX_DESC(OnCallExpr, "func_index")
 DEFINE_INDEX_INDEX(OnCallIndirectExpr, "sig_index", "table_index")
-DEFINE0(OnCallRefExpr)
+DEFINE_TYPE(OnCallRefExpr)
 DEFINE_INDEX_DESC(OnCatchExpr, "tag_index");
 DEFINE0(OnCatchAllExpr);
 DEFINE_OPCODE(OnCompareExpr)
@@ -838,6 +886,7 @@ DEFINE_INDEX(OnTableGetExpr)
 DEFINE_INDEX(OnTableGrowExpr)
 DEFINE_INDEX(OnTableSizeExpr)
 DEFINE_INDEX_DESC(OnTableFillExpr, "table index")
+DEFINE0(OnRefAsNonNullExpr)
 DEFINE_INDEX(OnRefFuncExpr)
 DEFINE_TYPE(OnRefNullExpr)
 DEFINE0(OnRefIsNullExpr)
@@ -846,14 +895,14 @@ DEFINE_INDEX_DESC(OnRethrowExpr, "depth");
 DEFINE_INDEX_DESC(OnReturnCallExpr, "func_index")
 
 DEFINE_INDEX_INDEX(OnReturnCallIndirectExpr, "sig_index", "table_index")
+DEFINE_TYPE(OnReturnCallRefExpr)
 DEFINE0(OnReturnExpr)
 DEFINE_LOAD_STORE_OPCODE(OnLoadSplatExpr);
 DEFINE_LOAD_STORE_OPCODE(OnLoadZeroExpr);
 DEFINE_LOAD_STORE_OPCODE(OnStoreExpr);
 DEFINE_INDEX_DESC(OnThrowExpr, "tag_index")
 DEFINE0(OnUnreachableExpr)
-DEFINE_OPCODE(OnUnaryExpr)
-DEFINE_OPCODE(OnTernaryExpr)
+DEFINE0(OnThrowRefExpr)
 DEFINE_SIMD_LOAD_STORE_LANE_OPCODE(OnSimdLoadLaneExpr);
 DEFINE_SIMD_LOAD_STORE_LANE_OPCODE(OnSimdStoreLaneExpr);
 DEFINE_END(EndCodeSection)

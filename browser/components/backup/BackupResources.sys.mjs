@@ -9,16 +9,16 @@
  * They must extend the BackupResource base class.
  */
 
-import { AddonsBackupResource } from "resource:///modules/backup/AddonsBackupResource.sys.mjs";
-import { BookmarksBackupResource } from "resource:///modules/backup/BookmarksBackupResource.sys.mjs";
-import { CredentialsAndSecurityBackupResource } from "resource:///modules/backup/CredentialsAndSecurityBackupResource.sys.mjs";
-import { FormHistoryBackupResource } from "resource:///modules/backup/FormHistoryBackupResource.sys.mjs";
-import { MiscDataBackupResource } from "resource:///modules/backup/MiscDataBackupResource.sys.mjs";
-import { PlacesBackupResource } from "resource:///modules/backup/PlacesBackupResource.sys.mjs";
-import { PreferencesBackupResource } from "resource:///modules/backup/PreferencesBackupResource.sys.mjs";
-import { SessionStoreBackupResource } from "resource:///modules/backup/SessionStoreBackupResource.sys.mjs";
-import { SelectableProfileBackupResource } from "resource:///modules/backup/SelectableProfileBackupResource.sys.mjs";
-import { SiteSettingsBackupResource } from "resource:///modules/backup/SiteSettingsBackupResource.sys.mjs";
+import { AddonsBackupResource } from "moz-src:///browser/components/backup/resources/AddonsBackupResource.sys.mjs";
+import { BookmarksBackupResource } from "moz-src:///browser/components/backup/resources/BookmarksBackupResource.sys.mjs";
+import { CredentialsAndSecurityBackupResource } from "moz-src:///browser/components/backup/resources/CredentialsAndSecurityBackupResource.sys.mjs";
+import { FormHistoryBackupResource } from "moz-src:///browser/components/backup/resources/FormHistoryBackupResource.sys.mjs";
+import { MiscDataBackupResource } from "moz-src:///browser/components/backup/resources/MiscDataBackupResource.sys.mjs";
+import { PlacesBackupResource } from "moz-src:///browser/components/backup/resources/PlacesBackupResource.sys.mjs";
+import { PreferencesBackupResource } from "moz-src:///browser/components/backup/resources/PreferencesBackupResource.sys.mjs";
+import { SessionStoreBackupResource } from "moz-src:///browser/components/backup/resources/SessionStoreBackupResource.sys.mjs";
+import { SelectableProfileBackupResource } from "moz-src:///browser/components/backup/resources/SelectableProfileBackupResource.sys.mjs";
+import { SiteSettingsBackupResource } from "moz-src:///browser/components/backup/resources/SiteSettingsBackupResource.sys.mjs";
 
 export {
   AddonsBackupResource,

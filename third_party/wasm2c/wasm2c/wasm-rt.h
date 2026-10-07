@@ -67,14 +67,10 @@ extern "C" {
 #include <windows.h>
 #define WASM_RT_MUTEX CRITICAL_SECTION
 #define WASM_RT_USE_CRITICALSECTION 1
-#elif defined(__APPLE__) || defined(__STDC_NO_THREADS__)
+#else
 #include <pthread.h>
 #define WASM_RT_MUTEX pthread_mutex_t
 #define WASM_RT_USE_PTHREADS 1
-#else
-#include <threads.h>
-#define WASM_RT_MUTEX mtx_t
-#define WASM_RT_USE_C11THREADS 1
 #endif
 
 #endif
@@ -129,11 +125,22 @@ extern "C" {
  * needed (so we can use the guard based range checks below).
  */
 #ifndef WASM_RT_USE_MMAP
-#if UINTPTR_MAX > 0xffffffff && !SUPPORT_MEMORY64
+#if UINTPTR_MAX > 0xffffffff
 #define WASM_RT_USE_MMAP 1
 #else
 #define WASM_RT_USE_MMAP 0
 #endif
+#endif
+
+/**
+ * This macro, if defined, allows the embedder to permit elimination of unused
+ * memory loads. Note, this a non conformant configuration, i.e., this does not
+ * respect Wasm's specification, as Wasm requires all loads (even the eliminated
+ * loads to trap), whereas this configuration could eliminate an out-of-bound
+ * load, and thus allow the Wasm module to not trap. Use with caution.
+ */
+#ifndef WASM_RT_NONCONFORMING_ALLOW_OOB_READ_ELIMINATION
+#define WASM_RT_NONCONFORMING_ALLOW_OOB_READ_ELIMINATION 0
 #endif
 
 /**
@@ -144,15 +151,18 @@ extern "C" {
  *
  * BOUNDS_CHECK: memory accesses are checked with explicit bounds checks.
  *
- * This defaults to GUARD_PAGES as this is the fasest option, iff the
+ * This defaults to GUARD_PAGES as this is the fastest option, iff the
  * requirements of GUARD_PAGES --- 64-bit platforms, MMAP allocation strategy,
- * no 64-bit memories, no big-endian --- are met. This falls back to BOUNDS
- * otherwise.
+ * no 64-bit memories, and platforms with a supported FORCE_READ_STRATEGY
+ * described below --- are met. This falls back to BOUNDS otherwise.
+ *
+ * FORCE_READ_STRATEGY --- either the compiler should be a gcc/clang-like
+ * compiler or the embedder must permit a non-conforming setting (allow dead
+ * read elimination from linear memory)
  */
-
-/** Check if Guard checks are supported */
-#if UINTPTR_MAX > 0xffffffff && WASM_RT_USE_MMAP && !SUPPORT_MEMORY64 && \
-    !WABT_BIG_ENDIAN
+#if UINTPTR_MAX > 0xffffffff && WASM_RT_USE_MMAP &&      \
+    (WASM_RT_NONCONFORMING_ALLOW_OOB_READ_ELIMINATION || \
+     defined(__GNUC__) || defined(__clang__))
 #define WASM_RT_GUARD_PAGES_SUPPORTED 1
 #else
 #define WASM_RT_GUARD_PAGES_SUPPORTED 0
@@ -248,10 +258,11 @@ extern "C" {
 //     eliminates windows for now
 //
 // While more OS can be supported in the future, we only support linux for now
-#if WASM_RT_ALLOW_SEGUE && !WABT_BIG_ENDIAN &&                         \
-    (defined(__x86_64__) || defined(_M_X64)) && __clang__ &&           \
+#if WASM_RT_ALLOW_SEGUE && !WABT_BIG_ENDIAN &&                            \
+    (defined(__x86_64__) || defined(_M_X64)) && __clang__ &&              \
     (__clang_major__ >= 9) && __has_builtin(__builtin_ia32_wrgsbase64) && \
-    !defined(_WIN32) && defined(__linux__)
+    !defined(_WIN32) && !defined(__ANDROID__) &&                          \
+    (defined(__linux__) || defined(__FreeBSD__))
 #define WASM_RT_USE_SEGUE 1
 #else
 #define WASM_RT_USE_SEGUE 0
@@ -270,13 +281,15 @@ extern "C" {
 /**
  * We need to detect and trap stack overflows. If we use a signal handler on
  * POSIX systems, this can detect call stack overflows. On windows, or platforms
- * without a signal handler, we use stack depth counting.
+ * without a signal handler, we use stack depth counting. The s390x big endian
+ * platform additionally seems to have issues with stack guard pages, so we play
+ * it safe and use stack counting on big endian platforms.
  */
 #if !defined(WASM_RT_STACK_DEPTH_COUNT) &&        \
     !defined(WASM_RT_STACK_EXHAUSTION_HANDLER) && \
     !WASM_RT_NONCONFORMING_UNCHECKED_STACK_EXHAUSTION
 
-#if WASM_RT_INSTALL_SIGNAL_HANDLER && !defined(_WIN32)
+#if WASM_RT_INSTALL_SIGNAL_HANDLER && !defined(_WIN32) && !WABT_BIG_ENDIAN
 #define WASM_RT_STACK_EXHAUSTION_HANDLER 1
 #else
 #define WASM_RT_STACK_DEPTH_COUNT 1
@@ -386,6 +399,7 @@ typedef enum {
   WASM_RT_TRAP_INVALID_CONVERSION, /** Conversion from NaN to integer. */
   WASM_RT_TRAP_UNREACHABLE,        /** Unreachable instruction executed. */
   WASM_RT_TRAP_CALL_INDIRECT,      /** Invalid call_indirect, for any reason. */
+  WASM_RT_TRAP_NULL_REF,           /** Null reference. */
   WASM_RT_TRAP_UNCAUGHT_EXCEPTION, /** Exception thrown and not caught. */
   WASM_RT_TRAP_UNALIGNED,          /** Unaligned atomic instruction executed. */
 #if WASM_RT_MERGED_OOB_AND_EXHAUSTION_TRAPS
@@ -404,6 +418,7 @@ typedef enum {
   WASM_RT_V128,
   WASM_RT_FUNCREF,
   WASM_RT_EXTERNREF,
+  WASM_RT_EXNREF,
 } wasm_rt_type_t;
 
 /**
@@ -467,12 +482,14 @@ typedef void* wasm_rt_externref_t;
 typedef struct {
   /** The linear memory data, with a byte length of `size`. */
   uint8_t* data;
+  /** The location after the the reserved space for the linear memory data. */
+  uint8_t* data_end;
+  /** The page size for this Memory object
+      (always 64 KiB without the custom-page-sizes feature) */
+  uint32_t page_size;
   /** The current page count for this Memory object. */
   uint64_t pages;
-  /**
-   * The maximum page count for this Memory object. If there is no maximum,
-   * `max_pages` is 0xffffffffu (i.e. UINT32_MAX).
-   */
+  /** The maximum page count for this Memory object. */
   uint64_t max_pages;
   /** The current size of the linear memory, in bytes. */
   uint64_t size;
@@ -495,12 +512,15 @@ typedef struct {
    * volatile.
    */
   _Atomic volatile uint8_t* data;
+  /** The location one byte after the reserved space for the linear memory data.
+   * This includes any reserved pages that are not yet allocated. */
+  _Atomic volatile uint8_t* data_end;
+  /** The page size for this Memory object
+      (always 64 KiB without the custom-page-sizes feature) */
+  uint32_t page_size;
   /** The current page count for this Memory object. */
   uint64_t pages;
-  /**
-   * The maximum page count for this Memory object. If there is no maximum,
-   * `max_pages` is 0xffffffffu (i.e. UINT32_MAX).
-   */
+  /* The maximum page count for this Memory object. */
   uint64_t max_pages;
   /** The current size of the linear memory, in bytes. */
   uint64_t size;
@@ -568,13 +588,27 @@ typedef struct {
 } wasm_rt_jmp_buf;
 
 #ifndef _WIN32
-#define WASM_RT_SETJMP_SETBUF(buf) sigsetjmp(buf, 1)
+#define WASM_RT_SETJMP_TRAP_SETBUF(buf) sigsetjmp(buf, 1)
+
+/**
+ * On macOS XNU, there is a bug where nested `sigsetjmp` and `siglongjmp` 
+ * across threads that have an allocated alternate signal stack (`SS_ONSTACK`) 
+ * will erroneously cause the kernel to preserve the `SS_ONSTACK` flag in the 
+ * thread state
+ *
+ * See: https://github.com/WebAssembly/wabt/issues/2654
+ * See: https://github.com/golang/go/issues/44501
+ */
+#define WASM_RT_SETJMP_EXN_SETBUF(buf) sigsetjmp(buf, 0)
 #else
-#define WASM_RT_SETJMP_SETBUF(buf) setjmp(buf)
+#define WASM_RT_SETJMP_TRAP_SETBUF(buf) setjmp(buf)
+#define WASM_RT_SETJMP_EXN_SETBUF(buf) setjmp(buf)
 #endif
 
 #define WASM_RT_SETJMP(buf) \
-  ((buf).initialized = true, WASM_RT_SETJMP_SETBUF((buf).buffer))
+  ((buf).initialized = true, WASM_RT_SETJMP_TRAP_SETBUF((buf).buffer))
+#define WASM_RT_SETJMP_EXN(buf) \
+  ((buf).initialized = true, WASM_RT_SETJMP_EXN_SETBUF((buf).buffer))
 
 #ifndef _WIN32
 #define WASM_RT_LONGJMP_UNCHECKED(buf, val) siglongjmp(buf, val)
@@ -600,7 +634,10 @@ WASM_RT_NO_RETURN void wasm_rt_trap(wasm_rt_trap_t);
 /** Return a human readable error string based on a trap type. */
 const char* wasm_rt_strerror(wasm_rt_trap_t trap);
 
-#define wasm_rt_try(target) WASM_RT_SETJMP(target)
+#define wasm_rt_try(target) WASM_RT_SETJMP_EXN(target)
+
+/** WebAssembly's default page size (64 KiB) */
+#define WASM_DEFAULT_PAGE_SIZE 65536
 
 /**
  * Initialize a Memory object with an initial page size of `initial_pages` and
@@ -610,13 +647,14 @@ const char* wasm_rt_strerror(wasm_rt_trap_t trap);
  *    wasm_rt_memory_t my_memory;
  *    // 1 initial page (65536 bytes), and a maximum of 2 pages,
  *    // indexed with an i32
- *    wasm_rt_allocate_memory(&my_memory, 1, 2, false);
+ *    wasm_rt_allocate_memory(&my_memory, 1, 2, false, WASM_DEFAULT_PAGE_SIZE);
  *  ```
  */
 void wasm_rt_allocate_memory(wasm_rt_memory_t*,
                              uint64_t initial_pages,
                              uint64_t max_pages,
-                             bool is64);
+                             bool is64,
+                             uint32_t page_size);
 
 /**
  * Grow a Memory object by `pages`, and return the previous page count. If
@@ -643,7 +681,8 @@ void wasm_rt_free_memory(wasm_rt_memory_t*);
 void wasm_rt_allocate_memory_shared(wasm_rt_shared_memory_t*,
                                     uint64_t initial_pages,
                                     uint64_t max_pages,
-                                    bool is64);
+                                    bool is64,
+                                    uint32_t page_size);
 
 /** Shared memory version of wasm_rt_grow_memory */
 uint64_t wasm_rt_grow_memory_shared(wasm_rt_shared_memory_t*, uint64_t pages);

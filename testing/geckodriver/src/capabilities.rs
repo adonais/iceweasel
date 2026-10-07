@@ -772,7 +772,7 @@ impl FirefoxOptions {
                 None => None,
             };
 
-            android.intent_arguments = match options.get("androidIntentArguments") {
+            let intent_arguments = match options.get("androidIntentArguments") {
                 Some(json) => {
                     let args_array = json.as_array().ok_or_else(|| {
                         WebDriverError::new(
@@ -780,7 +780,7 @@ impl FirefoxOptions {
                             "androidIntentArguments is not an array",
                         )
                     })?;
-                    let args = args_array
+                    args_array
                         .iter()
                         .map(|x| x.as_str().map(|x| x.to_owned()))
                         .collect::<Option<Vec<String>>>()
@@ -789,38 +789,73 @@ impl FirefoxOptions {
                                 ErrorStatus::InvalidArgument,
                                 "androidIntentArguments entries are not all strings",
                             )
-                        })?;
-
-                    Some(args)
+                        })?
                 }
-                None => {
-                    // All GeckoView based applications support this view,
-                    // and allow to open a blank page in a Gecko window.
-                    let mut args = vec![
-                        "-a".to_string(),
-                        "android.intent.action.VIEW".to_string(),
-                        "-d".to_string(),
-                        "about:blank".to_string(),
-                    ];
-                    // Fenix-family builds honor this extra to bypass the onboarding
-                    // flow and other startup interruptions that would otherwise
-                    // block automation (bug 2064609).
-                    if is_fenix_family(package.as_str()) {
-                        args.extend([
-                            "--ez".to_string(),
-                            "automationtest".to_string(),
-                            "true".to_string(),
-                        ]);
-                    }
-                    Some(args)
-                }
+                None => Vec::new(),
             };
+
+            android.intent_arguments = Some(merge_default_intent_arguments(
+                intent_arguments,
+                package.as_str(),
+            ));
 
             Ok(Some(android))
         } else {
             Ok(None)
         }
     }
+}
+
+/// Combines client-supplied Android intent arguments with the defaults required
+/// to launch a GeckoView based application into a blank Gecko window.
+///
+/// A default is only added when the client did not already provide the
+/// corresponding flag, so explicit client values are never overridden:
+/// - `-a` (action) and `-d` (data URI) are single-use per intent.
+/// - `--ez automationtest` (Fenix-family only, bug 2064609) may appear multiple
+///   times, so it is matched by its key name.
+///
+/// See: https://developer.android.com/tools/adb#IntentSpec
+///
+/// Defaults are placed before the client arguments, which keeps the client's
+/// own ordering intact and matches the argument order used when no client
+/// arguments are supplied.
+fn merge_default_intent_arguments(client_args: Vec<String>, package: &str) -> Vec<String> {
+    let mut has_action: bool = false;
+    let mut has_data: bool = false;
+    let mut has_automationtest: bool = false;
+    let mut prev: Option<&str> = None;
+
+    for arg in &client_args {
+        match arg.as_str() {
+            "-a" => has_action = true,
+            "-d" => has_data = true,
+            "automationtest" if prev == Some("--ez") => has_automationtest = true,
+            _ => {}
+        }
+        prev = Some(arg.as_str());
+    }
+
+    let mut args = Vec::new();
+
+    if !has_action {
+        args.extend(["-a".to_string(), "android.intent.action.VIEW".to_string()]);
+    }
+
+    if !has_data {
+        args.extend(["-d".to_string(), "about:blank".to_string()]);
+    }
+
+    if is_fenix_family(package) && !has_automationtest {
+        args.extend([
+            "--ez".to_string(),
+            "automationtest".to_string(),
+            "true".to_string(),
+        ]);
+    }
+
+    args.extend(client_args);
+    args
 }
 
 fn pref_from_json(value: &Value) -> WebDriverResult<Pref> {
@@ -916,18 +951,10 @@ mod tests {
 
     use self::mozprofile::preferences::Pref;
     use super::*;
-    use serde_json::{Map, Value, json};
-    use std::fs::File;
-    use std::io::Read;
+    use crate::test::build_zip;
+    use serde_json::{json, Map, Value};
     use url::{Host, Url};
     use webdriver::capabilities::Capabilities;
-
-    fn example_profile() -> Value {
-        let mut profile_data = Vec::with_capacity(1024);
-        let mut profile = File::open("src/tests/profile.zip").unwrap();
-        profile.read_to_end(&mut profile_data).unwrap();
-        Value::String(BASE64_STANDARD.encode(&profile_data))
-    }
 
     fn make_options(
         firefox_opts: Capabilities,
@@ -1340,7 +1367,7 @@ mod tests {
     }
 
     #[test]
-    fn fx_options_android_intent_arguments_override() {
+    fn fx_options_android_intent_arguments_appends_defaults() {
         let mut firefox_opts = Capabilities::new();
         firefox_opts.insert("androidPackage".into(), json!("foo.bar"));
         firefox_opts.insert("androidIntentArguments".into(), json!(["lorem", "ipsum"]));
@@ -1348,7 +1375,87 @@ mod tests {
         let opts = make_options(firefox_opts, None).expect("valid firefox options");
         assert_eq!(
             opts.android.unwrap().intent_arguments,
-            Some(vec!["lorem".to_string(), "ipsum".to_string()])
+            Some(vec![
+                "-a".to_string(),
+                "android.intent.action.VIEW".to_string(),
+                "-d".to_string(),
+                "about:blank".to_string(),
+                "lorem".to_string(),
+                "ipsum".to_string(),
+            ])
+        );
+    }
+
+    #[test]
+    fn fx_options_android_intent_arguments_appends_automationtest_for_fenix() {
+        let mut firefox_opts = Capabilities::new();
+        firefox_opts.insert("androidPackage".into(), json!("org.mozilla.fenix"));
+        firefox_opts.insert(
+            "androidIntentArguments".into(),
+            json!(["--ez", "somekey", "true"]),
+        );
+
+        let opts = make_options(firefox_opts, None).expect("valid firefox options");
+        assert_eq!(
+            opts.android.unwrap().intent_arguments,
+            Some(vec![
+                "-a".to_string(),
+                "android.intent.action.VIEW".to_string(),
+                "-d".to_string(),
+                "about:blank".to_string(),
+                "--ez".to_string(),
+                "automationtest".to_string(),
+                "true".to_string(),
+                "--ez".to_string(),
+                "somekey".to_string(),
+                "true".to_string(),
+            ])
+        );
+    }
+
+    #[test]
+    fn fx_options_android_intent_arguments_does_not_override_action_and_data() {
+        let mut firefox_opts = Capabilities::new();
+        firefox_opts.insert("androidPackage".into(), json!("foo.bar"));
+        firefox_opts.insert(
+            "androidIntentArguments".into(),
+            json!(["-a", "android.intent.action.MAIN", "-d", "https://example.com/"]),
+        );
+
+        let opts = make_options(firefox_opts, None).expect("valid firefox options");
+        assert_eq!(
+            opts.android.unwrap().intent_arguments,
+            Some(vec![
+                "-a".to_string(),
+                "android.intent.action.MAIN".to_string(),
+                "-d".to_string(),
+                "https://example.com/".to_string(),
+            ])
+        );
+    }
+
+    #[test]
+    fn fx_options_android_intent_arguments_does_not_override_automationtest() {
+        let mut firefox_opts = Capabilities::new();
+        firefox_opts.insert("androidPackage".into(), json!("org.mozilla.fenix"));
+        firefox_opts.insert(
+            "androidIntentArguments".into(),
+            json!(["--ez", "automationtest", "false"]),
+        );
+
+        let opts = make_options(firefox_opts, None)
+            .expect("valid firefox options");
+        assert_eq!(
+            opts.android.unwrap().intent_arguments,
+            Some(vec![
+                "-a".to_string(),
+                "android.intent.action.VIEW".to_string(),
+                "-d".to_string(),
+                "about:blank".to_string(),
+                "--ez".to_string(),
+                "automationtest".to_string(),
+                "false".to_string(),
+            ])
         );
     }
 
@@ -1429,7 +1536,13 @@ mod tests {
 
     #[test]
     fn test_profile() {
-        let encoded_profile = example_profile();
+        let profile_data = build_zip(&[
+            (
+                "user.js",
+                b"user_pref(\"startup.homepage_welcome_url\", \"foo\");\n",
+            ),
+        ]);
+        let encoded_profile = Value::String(BASE64_STANDARD.encode(&profile_data));
         let mut firefox_opts = Capabilities::new();
         firefox_opts.insert("profile".into(), encoded_profile);
 
@@ -1444,7 +1557,7 @@ mod tests {
 
         assert_eq!(
             prefs.get("startup.homepage_welcome_url"),
-            Some(&Pref::new("data:text/html,PASS"))
+            Some(&Pref::new("foo"))
         );
     }
 
@@ -1491,5 +1604,75 @@ mod tests {
         firefox_opts.insert("profile".into(), json!("foo"));
 
         make_options(firefox_opts, None).expect_err("Invalid args");
+    }
+
+    #[test]
+    fn unzip_valid_profile() {
+        let zip_data = build_zip(&[(
+            "user.js", b"user_pref(\"foo\", \"bar\");\n",
+        )]);
+
+        let dest = tempfile::tempdir().unwrap();
+        let dest_path = dest.path().join("profile");
+
+        unzip_buffer(&zip_data, &dest_path).expect("valid zip extraction");
+
+        let content = fs::read_to_string(dest_path.join("user.js")).unwrap();
+        assert!(content.contains("foo"));
+    }
+
+    #[test]
+    fn unzip_rejects_path_traversal() {
+        let zip_data = build_zip(&[
+            ("user.js", b"user_pref(\"foo\", \"bar\");\n"),
+            ("../escape.txt", b"path traversal succeeded"),
+            ("sub/../../escape_via_sub.txt", b"traversal via subdirectory"),
+        ]);
+
+        let dest = tempfile::tempdir().unwrap();
+        let dest_path = dest.path().join("profile");
+        fs::create_dir(&dest_path).unwrap();
+
+        unzip_buffer(&zip_data, &dest_path)
+            .expect_err("ZIP with path traversal entries should be rejected");
+
+        for name in &["../escape.txt", "sub/../../escape_via_sub.txt"] {
+            let escaped_file = dest_path.join(name);
+            assert!(
+                !escaped_file.exists(),
+                "ZIP entry '{}' escaped the profile directory",
+                name
+            );
+        }
+
+        assert_eq!(
+            dest_path.read_dir().unwrap().count(),
+            0,
+            "No files should be extracted from a rejected ZIP"
+        );
+    }
+
+    #[test]
+    fn unzip_rejects_symlink() {
+        let opts = zip::write::SimpleFileOptions::default();
+        let mut buf = Cursor::new(Vec::new());
+        let mut writer = zip::ZipWriter::new(&mut buf);
+
+        writer.add_symlink("link", "/etc/foo", opts).unwrap();
+        writer.finish().unwrap();
+        let zip_data = buf.into_inner();
+
+        let dest = tempfile::tempdir().unwrap();
+        let dest_path = dest.path().join("profile");
+        fs::create_dir(&dest_path).unwrap();
+
+        unzip_buffer(&zip_data, &dest_path)
+            .expect_err("ZIP with symlink entries should be rejected");
+
+        assert_eq!(
+            dest_path.read_dir().unwrap().count(),
+            0,
+            "No files should be extracted from a rejected ZIP"
+        );
     }
 }

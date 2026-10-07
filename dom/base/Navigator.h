@@ -116,7 +116,7 @@ class Navigator final : public nsISupports, public nsWrapperCache {
                      ErrorResult& aRv) const;
   void GetPlatform(nsAString& aPlatform, CallerType aCallerType,
                    ErrorResult& aRv) const;
-  void GetUserAgent(nsAString& aUserAgent, CallerType aCallerType,
+  void GetUserAgent(nsACString& aUserAgent, CallerType aCallerType,
                     ErrorResult& aRv) const;
   bool OnLine();
   void CheckProtocolHandlerAllowed(const nsAString& aScheme,
@@ -148,7 +148,7 @@ class Navigator final : public nsISupports, public nsWrapperCache {
   static nsresult GetUserAgent(nsPIDOMWindowInner* aWindow,
                                Document* aCallerDoc,
                                Maybe<bool> aShouldResistFingerprinting,
-                               nsAString& aUserAgent);
+                               nsACString& aUserAgent);
 
   // Clears the language cache by calling:
   // Navigator_Binding::ClearCachedLanguageValue(this); and

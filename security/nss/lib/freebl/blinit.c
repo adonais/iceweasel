@@ -17,7 +17,7 @@
 #include <intrin.h> /* for _xgetbv() */
 #endif
 
-#if defined(_WIN64) && defined(__aarch64__)
+#if defined(_WIN64) && (defined(__aarch64__) || defined(_M_ARM64))
 #include <windows.h>
 #endif
 
@@ -186,7 +186,7 @@ static unsigned long getauxval(unsigned long type)
 #endif /* defined(__aarch64__) || defined(__arm__) */
 /* clang-format on */
 
-#if defined(__aarch64__)
+#if defined(__aarch64__) || defined(_M_ARM64)
 
 #if defined(__linux__)
 // Defines from hwcap.h in Linux kernel - ARM64
@@ -557,7 +557,7 @@ FreeblInit(void)
 {
 #ifdef NSS_X86_OR_X64
     CheckX86CPUSupport();
-#elif (defined(__aarch64__) || defined(__arm__))
+#elif (defined(__aarch64__) || defined(__arm__) || defined(_M_ARM64))
     CheckARMSupport();
 #elif (defined(__powerpc__))
     CheckPPCSupport();

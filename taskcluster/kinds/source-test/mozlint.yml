@@ -245,8 +245,8 @@ typescript:
             # Files that are likely audited.
             # These should be kept in sync with the list of includes in
             # tools/lint/typescript.yml
-            # Not adding `jsx` for these since we know there's no jsx files in
-            # these directories.
+            # Not adding `jsx` here: these directories either have no jsx files,
+            # or, for newtab, its jsx under content-src/ is not yet included.
             - 'browser/components/places/**/*.*js'
             - 'browser/components/places/**/*.ts'
             - 'browser/components/search/**/*.*js'
@@ -257,6 +257,8 @@ typescript:
             - 'browser/components/tabbrowser/**/*.ts'
             - 'browser/components/urlbar/**/*.*js'
             - 'browser/components/urlbar/**/*.ts'
+            - 'browser/extensions/newtab/**/*.*js'
+            - 'browser/extensions/newtab/**/*.ts'
             - 'toolkit/components/extensions/**/*.*js'
             - 'toolkit/components/extensions/**/*.ts'
             - 'toolkit/components/places/**/*.*js'
@@ -273,9 +275,9 @@ typescript:
             - node-modules
 
 license:
-    description: Check for license blocks in source files.
+    description: Check for license blocks in source files and lint the moz.build license declarations.
     treeherder:
-        symbol: pedantic(license)
+        symbol: legal(license)
     run:
         mach: lint -v -l license -f treeherder -f json:/builds/worker/mozlint.json .
     fetches:
@@ -305,6 +307,9 @@ license:
             - '**/*.webidl'
             - '**/*.xhtml'
             - '**/*.xml'
+            - '**/moz.build'
+            - 'python/mozbuild/mozbuild/licenses.py'
+            - 'tools/lint/license/**'
             - 'tools/lint/license.yml'
 
 lintpref:
@@ -330,7 +335,7 @@ lintpref:
 node-licenses:
     description: Lint for node licenses issues
     treeherder:
-        symbol: misc(node-licenses)
+        symbol: legal(node-licenses)
     run:
         using: run-task
         cwd: '{checkout}'
@@ -456,6 +461,23 @@ python-sites:
         files-changed:
             - 'python/sites/**'
 
+
+spidermonkey:
+    description: "SpiderMonkey #include style, MacroAssembler and bytecode doc checks"
+    treeherder:
+        symbol: js(SM)
+    run:
+        mach: lint -v -l spidermonkey -f treeherder -f json:/builds/worker/mozlint.json .
+    when:
+        files-changed:
+            - 'intl/components/**/*.h'
+            - 'js/public/**'
+            - 'js/src/**'
+            - 'memory/mozalloc/**/*.h'
+            - 'mfbt/**/*.h'
+            - 'mozglue/**/*.h'
+            - 'tools/lint/spidermonkey.yml'
+            - 'tools/lint/spidermonkey/**'
 
 test-manifest:
     description: lint test manifests

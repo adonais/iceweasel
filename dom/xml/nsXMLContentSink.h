@@ -206,6 +206,7 @@ class nsXMLContentSink : public nsContentSink,
   nsTArray<StackNode> mContentStack;
 
   nsCOMPtr<nsIDocumentTransformer> mXSLTProcessor;
+  RefPtr<mozilla::dom::Document> mXSLTResultDocument;
 
   // Holds the children in the prolog until the root element is added, after
   // which they're inserted in the document. However, if we're doing an XSLT

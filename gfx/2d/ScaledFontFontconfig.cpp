@@ -372,7 +372,7 @@ void ScaledFontFontconfig::InstanceData::SetupFontOptions(
 
 bool ScaledFontFontconfig::GetFontInstanceData(FontInstanceDataOutput aCb,
                                                void* aBaton) {
-  std::vector<FontVariation> variations;
+  std::vector<wr::FontVariation> variations;
   if (HasVariationSettings()) {
     UnscaledFontFreeType::GetVariationSettingsFromFace(&variations,
                                                        mFace->GetFace());
@@ -386,7 +386,7 @@ bool ScaledFontFontconfig::GetFontInstanceData(FontInstanceDataOutput aCb,
 bool ScaledFontFontconfig::GetWRFontInstanceOptions(
     Maybe<wr::FontInstanceOptions>* aOutOptions,
     Maybe<wr::FontInstancePlatformOptions>* aOutPlatformOptions,
-    std::vector<FontVariation>* aOutVariations) {
+    std::vector<wr::FontVariation>* aOutVariations) {
   wr::FontInstanceOptions options = {};
   options.render_mode = wr::FontRenderMode::Alpha;
   options.flags = wr::FontInstanceFlags{0};
@@ -480,7 +480,7 @@ bool ScaledFontFontconfig::GetWRFontInstanceOptions(
 
 already_AddRefed<ScaledFont> UnscaledFontFontconfig::CreateScaledFont(
     Float aSize, const uint8_t* aInstanceData, uint32_t aInstanceDataLength,
-    const FontVariation* aVariations, uint32_t aNumVariations) {
+    const wr::FontVariation* aVariations, uint32_t aNumVariations) {
   if (aInstanceDataLength < sizeof(ScaledFontFontconfig::InstanceData)) {
     gfxWarning() << "Fontconfig scaled font instance data is truncated.";
     return nullptr;
@@ -516,7 +516,7 @@ already_AddRefed<ScaledFont> UnscaledFontFontconfig::CreateScaledFont(
 already_AddRefed<ScaledFont> UnscaledFontFontconfig::CreateScaledFontFromWRFont(
     Float aGlyphSize, const wr::FontInstanceOptions* aOptions,
     const wr::FontInstancePlatformOptions* aPlatformOptions,
-    const FontVariation* aVariations, uint32_t aNumVariations) {
+    const wr::FontVariation* aVariations, uint32_t aNumVariations) {
   ScaledFontFontconfig::InstanceData instanceData(aOptions, aPlatformOptions);
   return CreateScaledFont(aGlyphSize, reinterpret_cast<uint8_t*>(&instanceData),
                           sizeof(instanceData), aVariations, aNumVariations);

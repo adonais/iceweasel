@@ -1,0 +1,218 @@
+<!doctype html>
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Test Panel List Access Key Conflicts</title>
+    <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+    <link
+      rel="stylesheet"
+      href="chrome://mochikit/content/tests/SimpleTest/test.css"
+    />
+  </head>
+  <body>
+    <p id="display"></p>
+    <div id="content">
+      <button id="anchor">Anchor</button>
+      <panel-list id="distinct">
+        <panel-item accesskey="o">One</panel-item>
+        <panel-item accesskey="t">Two</panel-item>
+      </panel-list>
+      <panel-list id="none">
+        <panel-item>One</panel-item>
+        <panel-item>Two</panel-item>
+      </panel-list>
+      <panel-list id="duplicate">
+        <panel-item accesskey="t">Two</panel-item>
+        <panel-item accesskey="T">Three</panel-item>
+        <panel-item accesskey="f">Four</panel-item>
+      </panel-list>
+      <panel-list id="mixed">
+        <panel-item accesskey="o">One</panel-item>
+        <panel-item>Two</panel-item>
+        <panel-item>Three</panel-item>
+      </panel-list>
+      <panel-list id="hidden">
+        <panel-item accesskey="o">One</panel-item>
+        <panel-item hidden="">Two</panel-item>
+      </panel-list>
+      <panel-list id="disabled">
+        <panel-item accesskey="o">One</panel-item>
+        <panel-item disabled="">Two</panel-item>
+        <panel-item accesskey="o" disabled="">Four</panel-item>
+      </panel-list>
+      <panel-list id="tracked" accesskey-conflicts-bug="2073885">
+        <panel-item accesskey="o">One</panel-item>
+        <panel-item accesskey="o">Two</panel-item>
+        <panel-item>Three</panel-item>
+      </panel-list>
+      <panel-list id="intended">
+        <panel-item accesskey="o">One</panel-item>
+        <panel-item accesskey="o" intended-duplicate-accesskey=""
+          >Two</panel-item
+        >
+        <panel-item accesskey="o">Four</panel-item>
+      </panel-list>
+      <panel-list id="intended-only">
+        <panel-item accesskey="o">One</panel-item>
+        <panel-item accesskey="o" intended-duplicate-accesskey=""
+          >Two</panel-item
+        >
+      </panel-list>
+    </div>
+    <script class="testbody" type="application/javascript">
+      const { BrowserTestUtils } = ChromeUtils.importESModule(
+        "resource://testing-common/BrowserTestUtils.sys.mjs"
+      );
+      const { Assert } = ChromeUtils.importESModule(
+        "resource://testing-common/Assert.sys.mjs"
+      );
+      const assert = new Assert((err, message) =>
+        ok(!err, err ? err.message : message)
+      );
+
+      async function openAndCollectErrors(id) {
+        let errors = [];
+        let sentinel = new Promise(resolve => {
+          SpecialPowers.registerConsoleListener(msg => {
+            if (msg.message == "SENTINEL") {
+              resolve();
+            } else if (
+              msg.errorMessage?.startsWith("AccessKeyConflictError:")
+            ) {
+              errors.push(msg.errorMessage);
+            }
+          });
+        });
+        let panelList = document.getElementById(id);
+        let shown = BrowserTestUtils.waitForEvent(panelList, "shown");
+        panelList.show(null, document.getElementById("anchor"));
+        await shown;
+        let hidden = BrowserTestUtils.waitForEvent(panelList, "hidden");
+        panelList.hide(undefined, { force: true });
+        await hidden;
+        SpecialPowers.postConsoleSentinel();
+        await sentinel;
+        return errors;
+      }
+
+      add_setup(async function setup() {
+        await customElements.whenDefined("panel-list");
+        await customElements.whenDefined("panel-item");
+      });
+
+      add_task(async function testDistinctAccessKeys() {
+        is(
+          (await openAndCollectErrors("distinct")).length,
+          0,
+          "Distinct accesskeys on every item are fine"
+        );
+      });
+
+      add_task(async function testNoAccessKeys() {
+        is(
+          (await openAndCollectErrors("none")).length,
+          0,
+          "No accesskey on any item is fine"
+        );
+      });
+
+      add_task(async function testDuplicateAccessKey() {
+        let errors = await openAndCollectErrors("duplicate");
+        is(errors.length, 1, "A shared accesskey is reported once");
+        assert.stringContains(
+          errors[0],
+          `panel-list#duplicate: accesskey "t" is shared by "Two", "Three"`,
+          "Message names the key and both items"
+        );
+        assert.stringContains(
+          errors[0],
+          "Fix a shared accesskey",
+          "Message recommends remedies for the problem it found"
+        );
+        ok(
+          !errors[0].includes("Fix a missing accesskey"),
+          "Message recommends nothing for a problem it didn't find"
+        );
+      });
+
+      add_task(async function testIntendedDuplicate() {
+        let errors = await openAndCollectErrors("intended");
+        is(
+          errors.length,
+          1,
+          "Unmarked items sharing the key are still reported"
+        );
+        assert.stringContains(
+          errors[0],
+          `accesskey "o" is shared by "One", "Four"`,
+          "Unmarked items sharing the key are reported"
+        );
+        ok(
+          !errors[0].includes("Two"),
+          "An item with intended-duplicate-accesskey is left out"
+        );
+        is(
+          (await openAndCollectErrors("intended-only")).length,
+          0,
+          "A key shared only with a marked item is not a conflict"
+        );
+      });
+
+      add_task(async function testMixedAccessKeys() {
+        let errors = await openAndCollectErrors("mixed");
+        is(
+          errors.length,
+          1,
+          "Mixing items with and without an accesskey is reported once"
+        );
+        assert.stringContains(
+          errors[0],
+          `"Two", "Three" have no accesskey while "One" does`,
+          "Message names the items on both sides"
+        );
+        assert.stringContains(
+          errors[0],
+          "Fix a missing accesskey",
+          "Message recommends remedies for the problem it found"
+        );
+        ok(
+          !errors[0].includes("Fix a shared accesskey"),
+          "Message recommends nothing for a problem it didn't find"
+        );
+      });
+
+      add_task(async function testHiddenItemIgnored() {
+        is(
+          (await openAndCollectErrors("hidden")).length,
+          0,
+          "A hidden item doesn't count as an item without an accesskey"
+        );
+      });
+
+      add_task(async function testTrackedMenuSkipped() {
+        is(
+          (await openAndCollectErrors("tracked")).length,
+          0,
+          "A panel-list naming its accesskey-conflicts bug is skipped"
+        );
+      });
+
+      add_task(async function testDisabledItems() {
+        let errors = await openAndCollectErrors("disabled");
+        is(errors.length, 1, "Disabled items are checked like any other");
+        assert.stringContains(
+          errors[0],
+          `accesskey "o" is shared by "One", "Four"`,
+          "A disabled item counts for a shared accesskey"
+        );
+        assert.stringContains(
+          errors[0],
+          `"Two" has no accesskey`,
+          "A disabled item counts for a missing accesskey"
+        );
+      });
+    </script>
+  </body>
+</html>

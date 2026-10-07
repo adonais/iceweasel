@@ -12,7 +12,7 @@ const TEST_URL =
   "https://example.com/browser/browser/components/places/tests/browser/keyword_form.html";
 const TEST_URL2 = "https://example.com/browser";
 const TEST_URL3 =
-  "https://example.com/browser/browser/base/content/test/contextMenu/subtst_contextmenu_input.html";
+  "https://example.com/browser/browser/base/content/test/browser-contextMenu/subtst_contextmenu_input.html";
 
 const sentence = "The quick brown fox jumps over the lazy dog.";
 const sentenceFragments = [

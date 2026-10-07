@@ -18,7 +18,6 @@
 
 class mozIStorageAsyncStatement;
 class mozIStorageService;
-class nsICookieTransactionCallback;
 class nsIEffectiveTLDService;
 class nsIURI;
 
@@ -54,8 +53,6 @@ class CookiePersistentStorage final : public CookieStorage,
 
   void RebuildCorruptDB();
   void HandleDBClosed();
-
-  nsresult RunInTransaction(nsICookieTransactionCallback* aCallback) override;
 
   // State of the database connection.
   enum CorruptFlag {

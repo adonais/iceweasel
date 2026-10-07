@@ -1229,11 +1229,11 @@ function shouldUseService() {
   // This function will return true if the mantenance service should be used if
   // all of the following conditions are met:
   // 1) This build was done with the maintenance service enabled
-  // 2) The maintenance service is installed
+  // 2) The maintenance service is installed (this is skipped in automation)
   // 3) The pref for using the service is enabled
   if (
     !AppConstants.MOZ_MAINTENANCE_SERVICE ||
-    !isServiceInstalled() ||
+    (!Cu.isInAutomation && !isServiceInstalled()) ||
     !Services.prefs.getBoolPref(PREF_APP_UPDATE_SERVICE_ENABLED, true)
   ) {
     LOG("shouldUseService - returning false");
@@ -4709,7 +4709,7 @@ export class UpdateManager {
       let activeUpdates = this._loadXMLFileIntoArray(FILE_ACTIVE_UPDATE_XML);
       if (activeUpdates.length) {
         const status = readStatusFile(getReadyUpdateDir());
-
+        console.error(`CPD: got update status: ${status}`);
         // If there are two updates, the first one is the ready update.
         // If there is only 1 update, we don't know which is which. We use the
         // state to figure it out.
@@ -4769,7 +4769,9 @@ export class UpdateManager {
           this._downloadingUpdate.state
       );
     }
-    LOG("UpdateManager:#reload - Reloaded readyUpdate as " + this._readyUpdate);
+    LOG(
+      `UpdateManager:#reload - Reloaded readyUpdate as ${JSON.stringify(this._readyUpdate)}`
+    );
     if (this._readyUpdate) {
       LOG(
         "UpdateManager:#reload - Reloaded readyUpdate state as " +

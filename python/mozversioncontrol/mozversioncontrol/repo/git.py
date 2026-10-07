@@ -626,6 +626,9 @@ class GitRepository(Repository):
 
             # https://git-scm.com/docs/git-config#Documentation/git-config.txt-coreuntrackedCache
             self.set_config_key_value(key="core.untrackedCache", value="true")
+            # https://git-scm.com/docs/git-config#Documentation/git-config.txt-checkoutworkers
+            if not self._run("config", "--get", "checkout.workers", return_codes=[1]):
+                self.set_config_key_value(key="checkout.workers", value="0")
 
             # https://git-scm.com/docs/git-config#Documentation/git-config.txt-corefsmonitor
             if system == "Windows":

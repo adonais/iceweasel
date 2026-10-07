@@ -139,23 +139,30 @@ parent:
 
   // See bug 1316632 comment #33 for why this has to be sync. Otherwise,
   // there are ordering issues with SendPLayerTransactionConstructor.
-  sync NotifyChildCreated(LayersId id)
+  //
+  // |embedderId| is the LayersId of the pipeline that embeds |id|, or an
+  // invalid LayersId if no widget could be found.
+  sync NotifyChildCreated(LayersId id, LayersId embedderId)
     returns (CompositorOptions compositorOptions);
 
   // This version of NotifyChildCreated also performs a layer tree mapping.
   //
   // See bug 1316632 comment #33 for why this has to be sync. Otherwise,
   // there are ordering issues with SendPLayerTransactionConstructor.
-  sync MapAndNotifyChildCreated(LayersId id, ProcessId owner)
+  sync MapAndNotifyChildCreated(LayersId id, LayersId embedderId, ProcessId owner)
     returns (CompositorOptions compositorOptions);
 
-  async AdoptChild(LayersId id);
+  // |embedderId| is |id|'s current embedder, recomputed by the caller at
+  // adopt time -- adopting |id| under a new CompositorBridgeParent can
+  // happen because |id| (a tab) was moved to a different top-level window,
+  // which does change who embeds it.
+  async AdoptChild(LayersId id, LayersId embedderId);
 
   // Same as NotifyChildCreated, but used when child processes need to
   // reassociate layers. This must be synchronous to ensure that the
   // association happens before PLayerTransactions are sent over the
   // cross-process bridge.
-  sync NotifyChildRecreated(LayersId id)
+  sync NotifyChildRecreated(LayersId id, LayersId embedderId)
     returns (CompositorOptions compositorOptions);
 
   async NotifyMemoryPressure();

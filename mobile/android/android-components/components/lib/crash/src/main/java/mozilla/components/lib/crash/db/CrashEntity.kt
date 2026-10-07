@@ -7,14 +7,11 @@ package mozilla.components.lib.crash.db
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.NotSerializableException
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
 import kotlinx.serialization.json.Json
 import mozilla.components.concept.base.crash.Breadcrumb as CrashBreadcrumb
 import mozilla.components.lib.crash.Crash
+import mozilla.components.lib.crash.deserializeThrowable
+import mozilla.components.lib.crash.serialize
 import mozilla.components.support.base.ext.getStacktraceAsString
 
 /**
@@ -132,36 +129,11 @@ internal fun Crash.toEntity(): CrashEntity {
     }
 }
 
-private fun Throwable.serialize(): ByteArray {
-    return try {
-        val byteArrayOutputStream = ByteArrayOutputStream()
-        ObjectOutputStream(byteArrayOutputStream).use { oos ->
-            oos.writeObject(this)
-        }
-        byteArrayOutputStream.toByteArray()
-    } catch (e: NotSerializableException) {
-        // If throwable isn't serializable, then use a placeholder Throwable with
-        // the same stack and include basic name / message data. This gives us
-        // at least some data to understand these crashes in the wild.
-
-        this.forceSerializable().serialize()
-    }
-}
-
 internal fun Throwable.forceSerializable(): Throwable {
     val innerMessage = "${javaClass.name}: $message"
     val altThrowable = CrashReporterUnableToRestoreException(innerMessage)
     altThrowable.stackTrace = stackTrace.clone()
     return altThrowable
-}
-
-private fun ByteArray.deserializeThrowable(): Throwable {
-    val byteArrayInputStream = ByteArrayInputStream(this)
-    val throwable =
-        ObjectInputStream(byteArrayInputStream).use { ois ->
-            ois.readObject()
-        }
-    return throwable as Throwable
 }
 
 private fun CrashEntity.deserializeThrowable(): Throwable {

@@ -176,7 +176,7 @@ might be added:
   elevation.
 
 For information on adding post-update tasks in Firefox, refer to the [helper
-tool](/browser/windows/installer/nsis/doc/Helper.md#PostUpdate) documentation.
+tool](/browser/installer/windows/installer/Helper.md#postupdate) documentation.
 If you change `ExeRelPath` to a different executable, it needs to permit
 unknown command-line arguments in case more are added.
 

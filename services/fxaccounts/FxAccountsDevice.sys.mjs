@@ -267,6 +267,9 @@ export class FxAccountsDevice {
     ) {
       log.warn(`Our commands need to be updated on the server`);
       await this._registerOrUpdateDevice(currentState, accountData);
+    } else if (ourDevice && ourDevice.type != this.getLocalType()) {
+      log.warn(`The device type needs to be updated on the server`);
+      await this._registerOrUpdateDevice(currentState, accountData);
     } else {
       log.trace(`Our push subscription looks OK`);
     }
@@ -444,6 +447,7 @@ export class FxAccountsDevice {
           sessionToken,
           currentDevice.id,
           deviceName,
+          this.getLocalType(),
           deviceOptions
         );
       } else {

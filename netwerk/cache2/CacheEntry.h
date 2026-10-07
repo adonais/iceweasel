@@ -444,6 +444,10 @@ class CacheEntry final : public nsIRunnable,
 
   nsCOMPtr<nsITransportSecurityInfo> mSecurityInfo;
   mozilla::TimeStamp mLoadStart;
+  // Set when mState transitions to REVALIDATING, cleared when it leaves that
+  // state.  Used to self-heal an entry whose revalidating writer went away
+  // without ever calling OnHandleClosed (see bug 2062281).
+  mozilla::TimeStamp mRevalidatingSince MOZ_GUARDED_BY(mLock);
   uint32_t mUseCount{0};
 
   RefPtr<DictionaryCacheEntry> mDict;

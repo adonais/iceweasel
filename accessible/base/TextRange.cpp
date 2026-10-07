@@ -251,7 +251,7 @@ static nsIContent* GetElementAsContentOf(nsINode* aNode) {
   return aNode->GetParentElement();
 }
 
-bool TextRange::AssignDOMRange(nsRange* aRange, bool* aReversed) const {
+bool TextRange::AssignDOMRange(dom::Range* aRange, bool* aReversed) const {
   MOZ_ASSERT(mRoot->IsLocal(), "Not supported for RemoteAccessible");
   bool reversed = EndPoint() < StartPoint();
   if (aReversed) {
@@ -307,7 +307,7 @@ void TextRange::TextRangesFromSelection(dom::Selection* aSelection,
   const uint32_t rangeCount = aSelection->RangeCount();
   for (const uint32_t idx : IntegerRange(rangeCount)) {
     MOZ_ASSERT(aSelection->RangeCount() == rangeCount);
-    const nsRange* DOMRange = aSelection->GetRangeAt(idx);
+    const dom::Range* DOMRange = aSelection->GetRangeAt(idx);
     MOZ_ASSERT(DOMRange);
     HyperTextAccessible* startContainer =
         nsAccUtils::GetTextContainer(DOMRange->GetStartContainer());

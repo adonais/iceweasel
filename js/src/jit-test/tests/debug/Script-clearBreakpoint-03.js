@@ -14,7 +14,7 @@ g.eval("var line0 = Error().lineNumber;\n" +
 
 var hits = 0;
 var handler = {hit: function (frame) { hits++; s.clearBreakpoint(handler); }};
-var offs = s.getLineOffsets(g.line0 + 2);
+var offs = s.getPossibleBreakpointOffsets({ line: g.line0 + 2 });
 for (var i = 0; i < 4; i++) {
     for (var j = 0; j < offs.length; j++)
         s.setBreakpoint(offs[j], handler);

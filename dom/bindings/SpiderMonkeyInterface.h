@@ -50,7 +50,6 @@ struct SpiderMonkeyInterfaceObjectStorage {
     return mWrappedObj;
   }
 
- private:
   SpiderMonkeyInterfaceObjectStorage(
       const SpiderMonkeyInterfaceObjectStorage&) = delete;
 };

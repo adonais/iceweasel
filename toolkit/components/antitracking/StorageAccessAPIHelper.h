@@ -58,13 +58,15 @@ class StorageAccessAPIHelper final {
   AllowAccessForOnParentProcess(
       nsIPrincipal* aPrincipal, dom::BrowsingContext* aParentContext,
       ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
-      const PerformPermissionGrant& aPerformFinalChecks = nullptr);
+      const PerformPermissionGrant& aPerformFinalChecks = nullptr,
+      const Maybe<bool>& aHadPriorUserInteraction = Nothing());
 
   [[nodiscard]] static RefPtr<StorageAccessPermissionGrantPromise>
   AllowAccessForOnChildProcess(
       nsIPrincipal* aPrincipal, dom::BrowsingContext* aParentContext,
       ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
-      const PerformPermissionGrant& aPerformFinalChecks = nullptr);
+      const PerformPermissionGrant& aPerformFinalChecks = nullptr,
+      const Maybe<bool>& aHadPriorUserInteraction = Nothing());
 
   // This function handles tasks that have to be done in the process
   // of the window that we just grant permission for.
@@ -200,7 +202,8 @@ class StorageAccessAPIHelper final {
       nsIPrincipal* aTrackingPrincipal, const nsACString& aTrackingOrigin,
       uint32_t aCookieBehavior,
       ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
-      const PerformPermissionGrant& aPerformFinalChecks = nullptr);
+      const PerformPermissionGrant& aPerformFinalChecks = nullptr,
+      const Maybe<bool>& aHadPriorUserInteraction = Nothing());
 
   [[nodiscard]] static RefPtr<StorageAccessPermissionGrantPromise>
   CompleteAllowAccessForOnChildProcess(
@@ -208,7 +211,8 @@ class StorageAccessAPIHelper final {
       nsIPrincipal* aTrackingPrincipal, const nsACString& aTrackingOrigin,
       uint32_t aCookieBehavior,
       ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
-      const PerformPermissionGrant& aPerformFinalChecks = nullptr);
+      const PerformPermissionGrant& aPerformFinalChecks = nullptr,
+      const Maybe<bool>& aHadPriorUserInteraction = Nothing());
 
   static void UpdateAllowAccessOnCurrentProcess(
       dom::BrowsingContext* aParentContext, const nsACString& aTrackingOrigin);

@@ -194,10 +194,16 @@ support-files = [
 run-if = [
   "os == 'mac'", # Cocoa widget test
 ]
+skip-if = [
+  "headless", # Native menus are disabled in headless mode
+]
 
 ["test_native_context_menus.xhtml"]
 run-if = [
   "os == 'mac'", # Cocoa widget test
+]
+skip-if = [
+  "headless", # Native menus are disabled in headless mode
 ]
 
 ["test_native_key_bindings_mac.html"]

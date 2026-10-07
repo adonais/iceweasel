@@ -152,8 +152,8 @@ class SavedMicroTaskQueue {
 
 // This will return nullptr (and set OutOfMemory) if the save operation
 // fails.
-JS_PUBLIC_API js::UniquePtr<SavedMicroTaskQueue> SaveMicroTaskQueue(
-    JSContext* cx);
+[[nodiscard]] JS_PUBLIC_API js::UniquePtr<SavedMicroTaskQueue>
+SaveMicroTaskQueue(JSContext* cx);
 JS_PUBLIC_API void RestoreMicroTaskQueue(
     JSContext* cx, js::UniquePtr<SavedMicroTaskQueue> savedQueue);
 

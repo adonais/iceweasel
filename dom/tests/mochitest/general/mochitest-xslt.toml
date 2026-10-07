@@ -1,0 +1,8 @@
+[DEFAULT]
+prefs = ["dom.xslt.enabled=true"]
+
+["test_interfaces.html"]
+skip-if = [
+  "http2",
+  "http3",
+]

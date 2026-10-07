@@ -205,8 +205,6 @@ bool GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key) {
     case JSProto_PluralRules:
     case JSProto_RelativeTimeFormat:
     case JSProto_Segmenter:
-      return false;
-
     case JSProto_Temporal:
     case JSProto_Duration:
     case JSProto_Instant:
@@ -217,7 +215,7 @@ bool GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key) {
     case JSProto_PlainYearMonth:
     case JSProto_TemporalNow:
     case JSProto_ZonedDateTime:
-      return !JS::Prefs::experimental_temporal();
+      return false;
 #endif
 
     // Return true if the given constructor has been disabled at run-time.

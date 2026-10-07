@@ -1,0 +1,154 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  --resume-card-border-color: light-dark(var(--color-violet-30), var(--color-violet-60));
+  --resume-card-glow-color: light-dark(
+    color-mix(in srgb, var(--color-violet-50) 45%, transparent),
+    color-mix(in srgb, var(--color-violet-40) 55%, transparent)
+  );
+
+  display: block;
+  height: 100%;
+}
+
+.resume-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: var(--space-large);
+  border: var(--border-width) solid var(--resume-card-border-color);
+  border-radius: var(--border-radius-large);
+  background-color: var(--background-color-box);
+
+  &:hover,
+  &:focus-within {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    box-shadow: 0 0 var(--space-large) var(--resume-card-glow-color);
+
+    .resume-card-dismiss {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+}
+
+.resume-card-dismiss {
+  position: absolute;
+  top: var(--space-large);
+  inset-inline-end: var(--space-small);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-size-medium);
+  height: var(--icon-size-medium);
+  padding: 0;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--border-radius-circle);
+  background-color: transparent;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+
+  @media not (prefers-reduced-motion) {
+    transition: opacity ease 150ms;
+  }
+
+  &:hover {
+    background-color: var(--button-background-color-ghost-hover);
+    border-color: var(--button-border-color-ghost-hover);
+  }
+
+  &:active {
+    background-color: var(--button-background-color-ghost-active);
+  }
+}
+
+.resume-card-dismiss-icon {
+  -moz-context-properties: fill;
+  fill: var(--icon-color);
+  width: var(--icon-size-xsmall);
+  height: var(--icon-size-xsmall);
+}
+
+.resume-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xsmall);
+  min-height: var(--icon-size-medium);
+}
+
+.resume-card-favicons {
+  display: inline-flex;
+  align-items: center;
+}
+
+.resume-card-favicon {
+  -moz-context-properties: fill;
+  fill: var(--icon-color);
+  width: var(--size-item-small);
+  height: var(--size-item-small);
+  border-radius: var(--border-radius-circle);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  margin-inline-end: calc(-1 * var(--space-xsmall));
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  border: var(--border-width) solid var(--background-color-box);
+  background-color: var(--background-color-box);
+}
+
+.resume-card-favicons > :last-child {
+  margin-inline-end: 0;
+}
+
+.resume-card-tab-count {
+  font-size: var(--font-size-small);
+  color: var(--text-color-deemphasized);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  margin-inline-start: var(--space-xsmall);
+}
+
+.resume-card-title {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-color);
+}
+
+.resume-card-description {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight);
+  color: var(--text-color-deemphasized);
+}
+
+.resume-card-actions {
+  display: flex;
+  gap: var(--space-small);
+  margin-block-start: auto;
+  padding-block-start: var(--space-xsmall);
+}
+
+.resume-card-action-button {
+  --button-border-radius: var(--border-radius-circle);
+  --button-background-color: transparent;
+  --button-background-color-hover: color-mix(in srgb, var(--color-violet-50) 15%, transparent);
+  /* moz-button has no default active-state background outside Nova. */
+  --button-background-color-active: color-mix(in srgb, var(--color-violet-50) 25%, transparent);
+  --button-border-color: var(--resume-card-border-color);
+  --button-text-color: var(--text-color);
+}
+
+panel-item {
+  --panel-item-button-padding-inline-start: var(--space-xsmall);
+}

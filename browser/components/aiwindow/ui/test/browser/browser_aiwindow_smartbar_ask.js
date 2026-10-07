@@ -70,12 +70,10 @@ add_task(async function test_arrow_to_ask_preserves_value() {
  * Verified via the Chat.fetchWithHistory call-site (integration-level check).
  */
 add_task(async function test_click_ask_row_picks_result() {
-  const sb = sinon.createSandbox();
+  const fetchWithHistoryStub = sinon.stub(Chat, "fetchWithHistory");
+  const buildStub = sinon.stub(openAIEngine, "build").resolves({});
 
   try {
-    const fetchWithHistoryStub = sb.stub(Chat, "fetchWithHistory");
-    sb.stub(openAIEngine, "build").resolves({});
-
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
@@ -125,7 +123,8 @@ add_task(async function test_click_ask_row_picks_result() {
 
     await BrowserTestUtils.closeWindow(win);
   } finally {
-    sb.restore();
+    fetchWithHistoryStub.restore();
+    buildStub.restore();
   }
 });
 
@@ -134,8 +133,6 @@ add_task(async function test_click_ask_row_picks_result() {
  * submit the query to the chat conversation.
  */
 add_task(async function test_enter_non_heuristic_ask_row_picks_result() {
-  const sb = sinon.createSandbox();
-
   // Return “search” intent so the “ask” row is not a heuristic result.
   const fakeSearchIntentEngine = {
     run() {
@@ -147,13 +144,13 @@ add_task(async function test_enter_non_heuristic_ask_row_picks_result() {
   };
   gIntentEngineStub.resolves(fakeSearchIntentEngine);
 
-  try {
-    const { resolve, promise } = Promise.withResolvers();
-    const fetchWithHistoryStub = sb
-      .stub(Chat, "fetchWithHistory")
-      .callsFake(() => resolve());
-    sb.stub(openAIEngine, "build").resolves({});
+  const { resolve, promise } = Promise.withResolvers();
+  const fetchWithHistoryStub = sinon
+    .stub(Chat, "fetchWithHistory")
+    .callsFake(() => resolve());
+  const buildStub = sinon.stub(openAIEngine, "build").resolves({});
 
+  try {
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
     const query = "test";
@@ -207,6 +204,214 @@ add_task(async function test_enter_non_heuristic_ask_row_picks_result() {
 
     await BrowserTestUtils.closeWindow(win);
   } finally {
-    sb.restore();
+    fetchWithHistoryStub.restore();
+    buildStub.restore();
   }
+});
+
+/**
+ * Smartbar still submits via CTA after the smartbar was blurred.
+ */
+add_task(async function test_blur_then_ask_button_still_asks() {
+  const { resolve, promise } = Promise.withResolvers();
+  const fetchWithHistoryStub = sinon
+    .stub(Chat, "fetchWithHistory")
+    .callsFake(() => resolve());
+  const buildStub = sinon.stub(openAIEngine, "build").resolves({});
+
+  try {
+    const win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    const query = "tell me a random fact about something";
+    await promiseSmartbarSuggestionsOpen(browser, () =>
+      typeInSmartbar(browser, query)
+    );
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      content.document
+        .querySelector("ai-window")
+        .shadowRoot.querySelector("#ai-window-smartbar")
+        .inputField.blur();
+    });
+    await promiseSmartbarSuggestionsClose(browser);
+    await assertSmartbarValue(
+      browser,
+      query,
+      "Blurring should not discard the query"
+    );
+
+    await submitSmartbar(browser, { useButton: true });
+    await promise;
+
+    const conversation = fetchWithHistoryStub.firstCall.args[0].conversation;
+    const messages = conversation.getMessagesInChatCompletionsFormat();
+    const userMessage = messages.findLast(m => m.role === "user");
+    Assert.equal(userMessage.content, query, "Conversation contains the query");
+
+    await BrowserTestUtils.closeWindow(win);
+  } finally {
+    fetchWithHistoryStub.restore();
+    buildStub.restore();
+  }
+});
+
+/**
+ * Blurring the smartbar does not prevent from submitting when focused again.
+ */
+add_task(async function test_blur_then_commit_still_asks() {
+  const { resolve, promise } = Promise.withResolvers();
+  const fetchWithHistoryStub = sinon
+    .stub(Chat, "fetchWithHistory")
+    .callsFake(() => resolve());
+  const buildStub = sinon.stub(openAIEngine, "build").resolves({});
+
+  try {
+    const win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    const query = "tell me a random fact about something";
+    await promiseSmartbarSuggestionsOpen(browser, () =>
+      typeInSmartbar(browser, query)
+    );
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      content.document
+        .querySelector("ai-window")
+        .shadowRoot.querySelector("#ai-window-smartbar")
+        .inputField.blur();
+    });
+    await promiseSmartbarSuggestionsClose(browser);
+    await assertSmartbarValue(
+      browser,
+      query,
+      "Blurring should not discard the query"
+    );
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const smartbar = content.document
+        .querySelector("ai-window")
+        .shadowRoot.querySelector("#ai-window-smartbar");
+      EventUtils.synthesizeMouseAtCenter(smartbar.inputField, {}, content);
+      await ContentTaskUtils.waitForCondition(
+        () => smartbar.focused,
+        "Smartbar should be refocused"
+      );
+    });
+    await submitSmartbar(browser);
+    await promise;
+
+    const conversation = fetchWithHistoryStub.firstCall.args[0].conversation;
+    const messages = conversation.getMessagesInChatCompletionsFormat();
+    const userMessage = messages.findLast(m => m.role === "user");
+    Assert.equal(userMessage.content, query, "Conversation contains the query");
+
+    await BrowserTestUtils.closeWindow(win);
+  } finally {
+    fetchWithHistoryStub.restore();
+    buildStub.restore();
+  }
+});
+
+/**
+ * Dismissing the suggestions by pressing Escape does not discard the query.
+ */
+add_task(async function test_escape_then_commit_still_asks() {
+  const { resolve, promise } = Promise.withResolvers();
+  const fetchWithHistoryStub = sinon
+    .stub(Chat, "fetchWithHistory")
+    .callsFake(() => resolve());
+  const buildStub = sinon.stub(openAIEngine, "build").resolves({});
+
+  try {
+    const win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    const query = "tell me a random fact about something";
+    await promiseSmartbarSuggestionsOpen(browser, () =>
+      typeInSmartbar(browser, query)
+    );
+
+    // First Escape
+    await SpecialPowers.spawn(browser, [], async () => {
+      EventUtils.synthesizeKey("KEY_Escape", {}, content);
+    });
+    await promiseSmartbarSuggestionsClose(browser);
+
+    // Second Escape
+    await SpecialPowers.spawn(browser, [], async () => {
+      EventUtils.synthesizeKey("KEY_Escape", {}, content);
+    });
+    await assertSmartbarValue(
+      browser,
+      query,
+      "Escape should not discard the query"
+    );
+    await SpecialPowers.spawn(browser, [], async () => {
+      const smartbar = content.document
+        .querySelector("ai-window")
+        .shadowRoot.querySelector("#ai-window-smartbar");
+      Assert.equal(
+        smartbar.selectionStart,
+        smartbar.selectionEnd,
+        "Escape should not select the query"
+      );
+    });
+
+    await submitSmartbar(browser);
+    await promise;
+
+    const conversation = fetchWithHistoryStub.firstCall.args[0].conversation;
+    const messages = conversation.getMessagesInChatCompletionsFormat();
+    const userMessage = messages.findLast(m => m.role === "user");
+    Assert.equal(userMessage.content, query, "Conversation contains the query");
+
+    await BrowserTestUtils.closeWindow(win);
+  } finally {
+    fetchWithHistoryStub.restore();
+    buildStub.restore();
+  }
+});
+
+/**
+ * Clicking into the smartbar input when it is not focused inserts a caret.
+ */
+add_task(async function test_refocus_click_does_not_select_all() {
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  const query = "tell me a random fact about something";
+  await promiseSmartbarSuggestionsOpen(browser, () =>
+    typeInSmartbar(browser, query)
+  );
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    content.document
+      .querySelector("ai-window")
+      .shadowRoot.querySelector("#ai-window-smartbar")
+      .inputField.blur();
+  });
+  await promiseSmartbarSuggestionsClose(browser);
+
+  await SpecialPowers.spawn(browser, [query.length], async length => {
+    const smartbar = content.document
+      .querySelector("ai-window")
+      .shadowRoot.querySelector("#ai-window-smartbar");
+    const y = smartbar.inputField.getBoundingClientRect().height / 2;
+    EventUtils.synthesizeMouse(smartbar.inputField, 100, y, {}, content);
+    await ContentTaskUtils.waitForMutationCondition(
+      smartbar,
+      { attributes: true, attributeFilter: ["focused"] },
+      () => smartbar.focused
+    );
+    Assert.equal(
+      smartbar.selectionStart,
+      smartbar.selectionEnd,
+      "Caret is collapsed"
+    );
+    Assert.greater(smartbar.selectionStart, 0, "Caret is not at the start");
+    Assert.less(smartbar.selectionStart, length, "Caret is not at the end");
+  });
+
+  await BrowserTestUtils.closeWindow(win);
 });

@@ -10,6 +10,9 @@ import androidx.core.content.edit
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Instant
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.withContext
 
 /** Internal read/write API for sync state. Only used within sync. */
@@ -18,14 +21,29 @@ internal interface SyncStateStorage {
     /** The last synced [Instant] timestamp or null if we have never been synced */
     var lastSynced: Instant?
 
-    /** Whether or not sync is enabled on this device */
-    var syncEnabled: Boolean
+    /**
+     * Whether or not sync has been explicitly connected through an action. A `null` value indicates that no value has
+     * been stored
+     */
+    val syncConnected: Boolean?
+
+    /** An observable variation of [syncConnected] */
+    val syncConnectedFlow: Flow<Boolean?>
 
     /**
      * Persisted sync state received as a result of a successful sync. The absence of a value indicates that sync has
      * not happened yet
      */
     var persistedSyncState: String?
+
+    /** Stores whether or not sync is connected on this device. */
+    fun storeSyncConnected(connected: Boolean)
+
+    /**
+     * Resets sync storage states. This is different from clearing, because reset sets all values to some initial state,
+     * and does not remove the entries from storage.
+     */
+    fun reset()
 
     /** Clears all sync state. */
     fun clear()
@@ -50,13 +68,33 @@ internal class SharedPrefsSyncStateStorage(private val sharedPrefs: SharedPrefer
             }
         }
 
-    override var syncEnabled: Boolean
-        get() = sharedPrefs.getBoolean(SYNC_ENABLED_KEY, false)
-        set(value) {
-            sharedPrefs.edit {
-                putBoolean(SYNC_ENABLED_KEY, value)
+    /**
+     * Whether or not sync has been explicitly connected through an action. A `null` value indicates that the value has
+     * never been set.
+     *
+     * **Note**: [SyncStateStorage.syncConnected] alone does not represent whether sync should be considered connected
+     * in the app. It only tells us that this value has been set and saved to the storage.
+     *
+     * The true representation of whether sync is truly connected is determined by [SyncManager], and in combination
+     * with other states like presence of an authenticated account, with the right scope, etc.
+     */
+    override val syncConnected: Boolean?
+        get() =
+            if (sharedPrefs.contains(SYNC_CONNECTED_KEY)) sharedPrefs.getBoolean(SYNC_CONNECTED_KEY, false) else null
+
+    override val syncConnectedFlow: Flow<Boolean?>
+        get() = callbackFlow {
+            trySend(syncConnected)
+            val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changedKey ->
+                if (changedKey == null || changedKey == SYNC_CONNECTED_KEY) trySend(syncConnected)
             }
+            sharedPrefs.registerOnSharedPreferenceChangeListener(listener)
+            awaitClose { sharedPrefs.unregisterOnSharedPreferenceChangeListener(listener) }
         }
+
+    override fun storeSyncConnected(connected: Boolean) {
+        sharedPrefs.edit { putBoolean(SYNC_CONNECTED_KEY, connected) }
+    }
 
     override var persistedSyncState: String?
         get() = sharedPrefs.getString(SYNC_STATE_KEY, null)
@@ -66,6 +104,14 @@ internal class SharedPrefsSyncStateStorage(private val sharedPrefs: SharedPrefer
             }
         }
 
+    override fun reset() {
+        sharedPrefs.edit {
+            putLong(SYNC_LAST_SYNCED_KEY, 0)
+            putString(SYNC_STATE_KEY, null)
+            putBoolean(SYNC_CONNECTED_KEY, false)
+        }
+    }
+
     override fun clear() {
         sharedPrefs.edit { clear() }
     }
@@ -74,7 +120,7 @@ internal class SharedPrefsSyncStateStorage(private val sharedPrefs: SharedPrefer
         const val SYNC_STATE_PREFS_KEY = "syncPrefs"
         const val SYNC_LAST_SYNCED_KEY = "lastSynced"
         const val SYNC_STATE_KEY = "persistedState"
-        const val SYNC_ENABLED_KEY = "syncEnabled"
+        const val SYNC_CONNECTED_KEY = "syncConnected"
     }
 
     /**

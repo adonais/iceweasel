@@ -13,7 +13,9 @@
 
 class nsAtom;
 class nsINode;
-class nsRange;
+namespace mozilla::dom {
+class Range;
+}  // namespace mozilla::dom
 
 namespace mozilla {
 class ErrorResult;
@@ -222,7 +224,7 @@ class InspectorUtils {
                                  ErrorResult& aRv);
   static uint64_t GetContentState(GlobalObject& aGlobal, Element& aElement);
 
-  static void GetUsedFontFaces(GlobalObject& aGlobal, nsRange& aRange,
+  static void GetUsedFontFaces(GlobalObject& aGlobal, dom::Range& aRange,
                                uint32_t aMaxRanges,  // max number of ranges to
                                                      // record for each face
                                bool aSkipCollapsedWhitespace,
@@ -334,9 +336,14 @@ class InspectorUtils {
   static void GetComputationStepsSupportedCSSFunctions(
       GlobalObject& aGlobal, nsTArray<nsCString>& aResult);
   static void GetComputationSteps(GlobalObject& aGlobal,
-                                  const nsAString& aExpression, Element&,
+                                  const nsACString& aProperty,
+                                  const nsACString& aExpression, Element&,
                                   const nsAString& aPseudo,
                                   nsTArray<nsCString>& aResult);
+  static void GetSubstitutedValue(GlobalObject& aGlobal,
+                                  const nsACString& aExpression, Element&,
+                                  const nsAString& aPseudo,
+                                  nsACString& aResult);
 };
 
 }  // namespace mozilla::dom

@@ -32,6 +32,9 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
 #include "mozilla/RustCell.h"
+// FIXME: ScrollState is only needed for older libstdc++ versions, remove,
+// eventually...
+#include "mozilla/ScrollState.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/AtomAttributes.h"
 #include "mozilla/dom/BorrowedAttrInfo.h"
@@ -314,7 +317,9 @@ class Element : public FragmentOrElement {
 
   ~Element() {
     NS_ASSERTION(!HasServoData(), "expected ServoData to be cleared earlier");
-    UnlinkCustomElementRegistry(this);
+    MOZ_DIAGNOSTIC_ASSERT(
+        GetCustomElementRegistryState() != CustomElementRegistryState::Scoped,
+        "Scoped registry should have been removed in LastRelease or Unlink");
   }
 
   NS_INLINE_DECL_STATIC_IID(NS_ELEMENT_IID)
@@ -534,6 +539,7 @@ class Element : public FragmentOrElement {
   nsresult BindToTree(BindContext&, nsINode& aParent) override;
   void UnbindFromTree(UnbindContext&) override;
   using nsIContent::UnbindFromTree;
+  void NodeInfoChanged(Document* aOldDoc) override;
 
   // Container Timing (https://wicg.github.io/container-timing/).
   // Returns the nearest strict-ancestor element carrying a `containertiming`
@@ -1849,7 +1855,6 @@ class Element : public FragmentOrElement {
   void SetNullCustomElementRegistry();
   static void TraverseCustomElementRegistry(
       Element* aElement, nsCycleCollectionTraversalCallback& aCb);
-  static void UnlinkCustomElementRegistry(Element* aElement);
 
   Maybe<float> GetLastRememberedBSize() const {
     const nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
@@ -1890,6 +1895,16 @@ class Element : public FragmentOrElement {
     }
   }
 
+  // Scroll state saved from a scroll container frame of this element that got
+  // destroyed for reconstruction, to be restored by the new frame.
+  void SetSavedScrollState(UniquePtr<ScrollState> aState);
+  UniquePtr<ScrollState> TakeSavedScrollState() {
+    if (auto* slots = GetExistingExtendedDOMSlots()) {
+      return std::move(slots->mSavedScrollState);
+    }
+    return nullptr;
+  }
+
   bool TemporarilyVisibleForScrolledIntoViewDescendant() const {
     const auto* slots = GetExistingExtendedDOMSlots();
     return slots && slots->mTemporarilyVisibleForScrolledIntoViewDescendant;
@@ -1923,6 +1938,7 @@ class Element : public FragmentOrElement {
   MOZ_CAN_RUN_SCRIPT void SetScrollLeft(double aScrollLeft);
   MOZ_CAN_RUN_SCRIPT int32_t ScrollWidth();
   MOZ_CAN_RUN_SCRIPT int32_t ScrollHeight();
+  MOZ_CAN_RUN_SCRIPT nsSize GetScrollSize();
   MOZ_CAN_RUN_SCRIPT void MozScrollSnap();
   MOZ_CAN_RUN_SCRIPT int32_t ClientTop() {
     return CSSPixel::FromAppUnits(GetClientAreaRect().y).Rounded();
@@ -2678,6 +2694,7 @@ class Element : public FragmentOrElement {
    */
   virtual void RegUnRegAccessKey(bool aDoReg);
 
+ public:
   // Prevent people from doing pointless checks/casts on Element instances.
   void IsElement() = delete;
   void AsElement() = delete;
@@ -2698,8 +2715,6 @@ class Element : public FragmentOrElement {
    */
   MOZ_CAN_RUN_SCRIPT nsRect GetClientAreaRect();
 
-  /** Gets the scroll size as for the scroll{Width,Height} APIs */
-  MOZ_CAN_RUN_SCRIPT nsSize GetScrollSize();
   /** Gets the scroll position as for the scroll{Top,Left} APIs */
   MOZ_CAN_RUN_SCRIPT nsPoint GetScrollOrigin();
   /** Gets the scroll range as for the scroll{Top,Left}{Min,Max} APIs */

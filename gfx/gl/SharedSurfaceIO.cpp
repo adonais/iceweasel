@@ -9,6 +9,8 @@
 #include "MozFramebuffer.h"
 #include "ScopedGLHelpers.h"
 #include "mozilla/gfx/MacIOSurface.h"
+#include "mozilla/layers/CompositeProcessFencesHolderMap.h"
+#include "mozilla/layers/GpuFence.h"
 #include "mozilla/layers/GpuFenceMTLSharedEvent.h"
 #include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor, etc
 #include "mozilla/layers/LayersTypes.h"
@@ -71,66 +73,113 @@ UniquePtr<SharedSurface_IOSurface> SharedSurface_IOSurface::Create(
 
   auto fb = MozFramebuffer::CreateForBacking(desc.gl, desc.size, 0, false,
                                              false, *target, tex->name);
-  if (!fb) return nullptr;
+  if (!fb) {
+    return nullptr;
+  }
 
-  return AsUnique(
-      new SharedSurface_IOSurface(desc, std::move(fb), std::move(tex), ioSurf));
+  Maybe<layers::CompositeProcessFencesHolderId> fencesHolderId;
+  auto* fencesHolderMap = layers::CompositeProcessFencesHolderMap::Get();
+
+  const bool useFence = [&]() -> bool {
+    if (desc.gl->GetContextType() != GLContextType::EGL) {
+      return false;
+    }
+    const auto& gle = GLContextEGL::Cast(desc.gl);
+    const auto& egl = gle->mEgl;
+    return fencesHolderMap && egl->IsExtensionSupported(
+                                  EGLExtension::ANGLE_metal_shared_event_sync);
+  }();
+
+  if (useFence) {
+    fencesHolderId = Some(layers::CompositeProcessFencesHolderId::GetNext());
+    fencesHolderMap->Register(fencesHolderId.ref());
+  }
+
+  return AsUnique(new SharedSurface_IOSurface(
+      desc, std::move(fb), std::move(tex), ioSurf, fencesHolderId));
 }
 
 SharedSurface_IOSurface::SharedSurface_IOSurface(
-    const SharedSurfaceDesc& desc, UniquePtr<MozFramebuffer> fb,
-    UniquePtr<Texture> tex, const RefPtr<MacIOSurface>& ioSurf)
-    : SharedSurface(desc, std::move(fb)),
-      mTex(std::move(tex)),
-      mIOSurf(ioSurf) {}
+    const SharedSurfaceDesc& aDesc, UniquePtr<MozFramebuffer> aFb,
+    UniquePtr<Texture> aTex, const RefPtr<MacIOSurface>& aIOSurf,
+    const Maybe<layers::CompositeProcessFencesHolderId> aFencesHolderId)
+    : SharedSurface(aDesc, std::move(aFb)),
+      mTex(std::move(aTex)),
+      mIOSurf(aIOSurf),
+      mFencesHolderId(aFencesHolderId) {}
 
-SharedSurface_IOSurface::~SharedSurface_IOSurface() = default;
+SharedSurface_IOSurface::~SharedSurface_IOSurface() {
+  if (mFencesHolderId.isSome()) {
+    auto* fencesHolderMap = layers::CompositeProcessFencesHolderMap::Get();
+    if (fencesHolderMap) {
+      fencesHolderMap->Unregister(mFencesHolderId.ref());
+    } else {
+      gfxCriticalNoteOnce << "CompositeProcessFencesHolderMap does not exist";
+    }
+  }
+}
+
+void SharedSurface_IOSurface::ProducerAcquireImpl() {
+  if (mFencesHolderId.isNothing()) {
+    return;
+  }
+
+  auto* fencesHolderMap = layers::CompositeProcessFencesHolderMap::Get();
+  MOZ_ASSERT(fencesHolderMap);
+  // XXX Add previous fences handling
+  auto fences = fencesHolderMap->TakeAllFencesAndForget(mFencesHolderId.ref());
+}
 
 void SharedSurface_IOSurface::ProducerReleaseImpl() {
   const auto& gl = mDesc.gl;
   if (!gl) return;
   gl->MakeCurrent();
 
-  MOZ_ASSERT(!mGpuFence);
-  if (gl->GetContextType() == GLContextType::EGL) {
+  if (mFencesHolderId.isSome()) {
+    MOZ_ASSERT(gl->GetContextType() == GLContextType::EGL);
+
     const auto& gle = GLContextEGL::Cast(gl);
     const auto& egl = gle->mEgl;
 
-    if (egl->IsExtensionSupported(
-            EGLExtension::ANGLE_metal_shared_event_sync)) {
-      const uint64_t signalValue = 1;
-      const EGLAttrib attribs[] = {
-          LOCAL_EGL_SYNC_METAL_SHARED_EVENT_SIGNAL_VALUE_LO_ANGLE,
-          static_cast<EGLAttrib>(signalValue & 0xFFFFFFFF),
-          LOCAL_EGL_SYNC_METAL_SHARED_EVENT_SIGNAL_VALUE_HI_ANGLE,
-          static_cast<EGLAttrib>(signalValue >> 32), LOCAL_EGL_NONE};
-      const EGLSync sync = egl->fCreateSyncEGL15(
-          LOCAL_EGL_SYNC_METAL_SHARED_EVENT_ANGLE, attribs);
-      if (!sync) {
-        gfxCriticalNote << "Creating EGL_SYNC_METAL_SHARED_EVENT sync failed";
-        gl->fFinish();
-        return;
-      }
-      void* const sharedEvent = egl->fCopyMetalSharedEventANGLE(sync);
-      egl->fDestroySync(sync);
+    MOZ_ASSERT(
+        egl->IsExtensionSupported(EGLExtension::ANGLE_metal_shared_event_sync));
 
-      if (!sharedEvent) {
-        gfxCriticalNote << "eglCopyMetalSharedEventANGLE failed";
-        gl->fFinish();
-        return;
-      }
-      mGpuFence =
-          layers::GpuFenceMTLSharedEvent::Create(sharedEvent, signalValue);
-      if (!mGpuFence) {
-        gfxCriticalNote << "GpuFenceMTLSharedEvent::Create failed";
-        gl->fFinish();
-        return;
-      }
-
-      // We must flush here else the shared event may never be signalled.
-      gl->fFlush();
+    const uint64_t signalValue = 1;
+    const EGLAttrib attribs[] = {
+        LOCAL_EGL_SYNC_METAL_SHARED_EVENT_SIGNAL_VALUE_LO_ANGLE,
+        static_cast<EGLAttrib>(signalValue & 0xFFFFFFFF),
+        LOCAL_EGL_SYNC_METAL_SHARED_EVENT_SIGNAL_VALUE_HI_ANGLE,
+        static_cast<EGLAttrib>(signalValue >> 32), LOCAL_EGL_NONE};
+    const EGLSync sync =
+        egl->fCreateSyncEGL15(LOCAL_EGL_SYNC_METAL_SHARED_EVENT_ANGLE, attribs);
+    if (!sync) {
+      gfxCriticalNote << "Creating EGL_SYNC_METAL_SHARED_EVENT sync failed";
+      gl->fFinish();
       return;
     }
+    void* const sharedEvent = egl->fCopyMetalSharedEventANGLE(sync);
+    egl->fDestroySync(sync);
+
+    if (!sharedEvent) {
+      gfxCriticalNote << "eglCopyMetalSharedEventANGLE failed";
+      gl->fFinish();
+      return;
+    }
+    RefPtr<layers::GpuFence> writeFence =
+        layers::GpuFenceMTLSharedEvent::Create(sharedEvent, signalValue);
+    if (!writeFence) {
+      gfxCriticalNote << "GpuFenceMTLSharedEvent::Create failed";
+      gl->fFinish();
+      return;
+    }
+
+    // We must flush here else the shared event may never be signalled.
+    gl->fFlush();
+
+    auto* fencesHolderMap = layers::CompositeProcessFencesHolderMap::Get();
+    MOZ_ASSERT(fencesHolderMap);
+    fencesHolderMap->SetWriteFence(mFencesHolderId.ref(), writeFence);
+    return;
   }
 
   gl->fFlush();
@@ -141,7 +190,7 @@ SharedSurface_IOSurface::ToSurfaceDescriptor() {
   const bool isOpaque = false;  // RGBA
   return Some(layers::SurfaceDescriptorMacIOSurface(
       mIOSurf->GetIOSurfaceID(), isOpaque, mIOSurf->GetYUVColorSpace(),
-      mIOSurf->GetTransferFunction(), (layers::GpuFence*)nullptr));
+      mIOSurf->GetTransferFunction(), mFencesHolderId));
 }
 
 }  // namespace gl

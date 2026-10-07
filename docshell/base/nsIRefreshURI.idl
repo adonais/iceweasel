@@ -36,6 +36,7 @@ interface nsIRefreshURI : nsISupports {
       * @param aMillis The number of milliseconds by which this refresh would
       *                be delayed if it were not being forced.
       */
+    [can_run_script]
     void forceRefreshURI(in nsIURI aURI, in nsIPrincipal aPrincipal,
                          in unsigned long aMillis);
 

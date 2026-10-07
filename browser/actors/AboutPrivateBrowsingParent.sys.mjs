@@ -26,6 +26,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
+  Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
 });
 
 // We only show the private search banner once per browser session.
@@ -163,6 +164,18 @@ export class AboutPrivateBrowsingParent extends JSWindowActorParent {
       }
       case "IsPromoBlocked": {
         return !ASRouter.isUnblockedMessage(aMessage.data);
+      }
+      case "TRIGGER_MESSAGING_EVENT": {
+        return (async () => {
+          await ASRouter.waitForInitialized;
+          const message = await ASRouter.handleMessageRequest({
+            triggerId: aMessage.data.id,
+            template: "spotlight",
+          });
+          if (message) {
+            await lazy.Spotlight.showSpotlightDialog(browser, message);
+          }
+        })();
       }
     }
 

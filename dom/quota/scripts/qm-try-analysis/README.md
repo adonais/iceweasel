@@ -10,9 +10,24 @@ Follow these step-by-step instructions to ensure you have the necessary requirem
 
 Ensure you have a local clone of mozilla-central.
 If you don't have it yet, refer to [this link](https://firefox-source-docs.mozilla.org/contributing/contribution_quickref.html#bootstrap-a-copy-of-the-firefox-source-code).
+
 Building the project is not necessary for this setup.
 
-### 2. Install rust-code-analysis
+### 2. Obtain Telemetry API Key
+
+Obtain a Telemetry API Key by visiting [Telemetry API Key](https://sql.telemetry.mozilla.org/users/me).
+Save this key for later use in the analysis scripts.
+
+### 3. Obtain Bugzilla API Key (optional)
+
+Obtain your Bugzilla API Key from [Bugzilla User Preferences](https://bugzilla.mozilla.org/userprefs.cgi?tab=apikey).
+
+This is needed only if you plan to submit reports to Bugzilla.
+
+### 4. Install rust-code-analysis
+
+If you're already building Firefox, it means you have all required packages
+installed and you can jump to [Generate output](#generate-output) section.
 
 If not done already, set up Rust by visiting [rustup.rs](https://rustup.rs/).
 Once Rust is installed, install rust-code-analysis using the following command:
@@ -21,14 +36,6 @@ Once Rust is installed, install rust-code-analysis using the following command:
 cargo install --git https://github.com/mozilla/rust-code-analysis --rev 56f182ac570
 ```
 
-### 3. Obtain Telemetry API Key
-
-Obtain a Telemetry API Key by visiting [Telemetry API Key](https://sql.telemetry.mozilla.org/users/me).
-Save this key for later use in the analysis scripts.
-
-### 4. Obtain Bugzilla API Key
-
-Obtain your Bugzilla API Key from [Bugzilla User Preferences](https://bugzilla.mozilla.org/userprefs.cgi?tab=apikey).
 
 ### 5. Install Python
 
@@ -73,15 +80,30 @@ cd mozilla-unified/dom/quota/scripts/qm-try-analysis
 
 The process involves fetching data, analyzing, and reporting. Here's a quick overview:
 
+If you installed packages yourself (instructions 2 -> 6 above):
 ```bash
 # Jump into a poetry shell session
 poetry shell
+````
 
+Alternatively if you're building Firefox, prefix all your commands with
+```
+PYTHONPATH=dom/quota/scripts/qm-try-analysis ./mach python -m
+```
+For example:
+```
+PYTHONPATH=dom/quota/scripts/qm-try-analysis ./mach python -m qm_try_analysis.fetch -k "$REDASH_API_KEY" -d 2 -w output
+```
+
+```
 # Fetch data
 qm-try-analysis fetch [OPTIONS]
 
 # Analyze data
 qm-try-analysis analyze [OPTIONS]
+
+# Optionally render the analysis as an HTML page
+qm-try-analysis html [OPTIONS]
 
 # Report failures to Bugzilla
 qm-try-analysis report [OPTIONS]

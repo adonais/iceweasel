@@ -30,7 +30,12 @@ var badStep = false;
 function test(s, okLine) {
   dbg.onDebuggerStatement = function(frame) {
     frame.onStep = function() {
-      let thisLine = this.script.getOffsetLocation(this.offset).lineNumber;
+      // The debugger only shows stops at recommended breakpoints; ignore
+      // intermediate bytecode whose raw position can be misleading.
+      if (!this.script.getOffsetMetadata(this.offset).isBreakpoint) {
+        return;
+      }
+      let thisLine = this.script.getOffsetMetadata(this.offset).lineNumber;
       // The stop at line 3 is the switch.
       if (thisLine > 3) {
         assertEq(thisLine, okLine)

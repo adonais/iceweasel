@@ -1008,14 +1008,21 @@ class PersistOp final : public PersistRequestBase {
   void GetResponse(RequestResponse& aResponse) override;
 };
 
+// Estimates usage and limit for either an origin (as exposed to content via
+// navigator.storage.estimate()) or its whole group (parent process only).
 class EstimateOp final : public OpenStorageDirectoryHelper<QuotaRequestBase> {
-  const EstimateParams mParams;
+ public:
+  enum class Scope { Origin, Group };
+
+ private:
+  const PrincipalInfo mPrincipalInfo;
+  const Scope mScope;
   OriginMetadata mOriginMetadata;
   std::pair<uint64_t, uint64_t> mUsageAndLimit;
 
  public:
   EstimateOp(MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
-             const EstimateParams& aParams);
+             const PrincipalInfo& aPrincipalInfo, Scope aScope);
 
  private:
   ~EstimateOp() = default;
@@ -1297,7 +1304,17 @@ RefPtr<QuotaRequestBase> CreatePersistOp(
 RefPtr<QuotaRequestBase> CreateEstimateOp(
     MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
     const EstimateParams& aParams) {
-  return MakeRefPtr<EstimateOp>(std::move(aQuotaManager), aParams);
+  return MakeRefPtr<EstimateOp>(std::move(aQuotaManager),
+                                aParams.principalInfo(),
+                                EstimateOp::Scope::Origin);
+}
+
+RefPtr<QuotaRequestBase> CreateEstimateGroupUsageOp(
+    MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
+    const EstimateGroupUsageParams& aParams) {
+  return MakeRefPtr<EstimateOp>(std::move(aQuotaManager),
+                                aParams.principalInfo(),
+                                EstimateOp::Scope::Group);
 }
 
 RefPtr<ResolvableNormalOriginOp<CStringArray, /* IsExclusive */ true>>
@@ -3782,19 +3799,20 @@ void PersistOp::GetResponse(RequestResponse& aResponse) {
 }
 
 EstimateOp::EstimateOp(MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
-                       const EstimateParams& aParams)
+                       const PrincipalInfo& aPrincipalInfo, Scope aScope)
     : OpenStorageDirectoryHelper(std::move(aQuotaManager),
                                  "dom::quota::EstimateOp"),
-      mParams(aParams) {
+      mPrincipalInfo(aPrincipalInfo),
+      mScope(aScope) {
   AssertIsOnOwningThread();
 }
 
 nsresult EstimateOp::DoInit(QuotaManager& aQuotaManager) {
   AssertIsOnOwningThread();
 
-  QM_TRY_UNWRAP(PrincipalMetadata principalMetadata,
-                GetInfoFromValidatedPrincipalInfo(aQuotaManager,
-                                                  mParams.principalInfo()));
+  QM_TRY_UNWRAP(
+      PrincipalMetadata principalMetadata,
+      GetInfoFromValidatedPrincipalInfo(aQuotaManager, mPrincipalInfo));
 
   principalMetadata.AssertInvariants();
 
@@ -3822,8 +3840,11 @@ nsresult EstimateOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
 
   AUTO_PROFILER_LABEL("EstimateOp::DoDirectoryWork", OTHER);
 
-  // Get cached usage (the method doesn't have to stat any files).
-  mUsageAndLimit = aQuotaManager.GetUsageAndLimitForEstimate(mOriginMetadata);
+  // Get cached usage (the methods don't have to stat any files).
+  mUsageAndLimit =
+      mScope == Scope::Group
+          ? aQuotaManager.GetGroupUsageAndLimitForEstimate(mOriginMetadata)
+          : aQuotaManager.GetUsageAndLimitForEstimate(mOriginMetadata);
 
   return NS_OK;
 }

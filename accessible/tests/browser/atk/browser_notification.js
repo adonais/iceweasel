@@ -45,7 +45,7 @@ addAccessibleTask(`<p id="p">p</p>`, async function testAriaNotify(browser) {
   info("doc.ariaNotify c");
   await runPython(`
     global onEvent
-    onEvent = WaitForEvent("object:announcement", "${DEFAULT_CONTENT_DOC_BODY_ID}")
+    onEvent = WaitForEvent("object:announcement", "${DEFAULT_CONTENT_DOC_ID}")
   `);
   await invokeContentTask(browser, [], () => {
     content.document.ariaNotify("c");

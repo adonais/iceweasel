@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.share
 
+import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipDescription
@@ -287,6 +288,7 @@ class DefaultShareController(
     internal fun getShareSubject() =
         shareSubject ?: shareData.filterNot { it.title.isNullOrEmpty() }.joinToString(", ") { it.title.toString() }
 
+    @SuppressLint("InlinedApi")
     private fun copyClipboard() {
         val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clipData = ClipData.newPlainText(getShareSubject(), getShareText())

@@ -13,9 +13,8 @@ The most commonly used surfaces are listed below. "Multistage content" means the
 | [about:welcome](./about-welcome.md) | (page, not a message template) | Yes |
 | [Spotlight](./spotlight.md) | `spotlight` | Yes |
 | [Feature Callout](./feature-callout.md) | `feature_callout` | Yes |
-| [Contextual Feature Recommendation](./contextual-feature-recommendation.md) | `cfr_doorhanger`, `cfr_urlbar_chiclet` | No |
 | [Infobar](./infobars.md) | `infobar` | No |
-| [Toast notification](./contextual-feature-recommendation.md) | `toast_notification` | No |
+| Toast notification | `toast_notification` | No |
 | [Moments page](./moments-page.md) | `update_action` | No |
 | Toolbar badge | `toolbar_badge` | No |
 | [Private browsing newtab](./private-browsing.md) | `pb_newtab` | No |
@@ -31,7 +30,7 @@ Every SMA is dispatched through a single shared handler, [`SpecialMessageActions
 
 There are a few caveats to keep in mind:
 
-- **Allowlisted surfaces.** Some templates only permit a fixed set of actions. For example, the `action_only` template runs an action with no UI, so it is restricted to a small allowlist checked by [`_isAllowedActionOnlyMessageAction`](https://searchfox.org/mozilla-central/source/browser/components/asrouter/modules/ASRouter.sys.mjs) (currently `CONFIRM_LAUNCH_ON_LOGIN`, `PIN_FIREFOX_TO_TASKBAR`, and `SET_DEFAULT_BROWSER`, or a `MULTI_ACTION` whose nested actions are all allowlisted).
+- **Allowlisted surfaces.** Some templates only permit a fixed set of actions. For example, the `action_only` template runs an action with no UI, so it is restricted to a small allowlist checked by [`_isAllowedActionOnlyMessageAction`](https://searchfox.org/mozilla-central/source/browser/components/asrouter/modules/ASRouter.sys.mjs). A `MULTI_ACTION` is accepted only as the top level action and only when every nested action is itself allowlisted. See `ALLOWED_ACTION_MESSAGE_ACTIONS` in `ASRouter.sys.mjs` for the current baseline, which `MessagingSystemAllowlists.sys.mjs` can extend off-train.
 - **Browser context.** The handler acts on the browser the message was shown in. Actions that operate on the current tab or window (for example `OPEN_URL`, `FOCUS_URLBAR`, `BOOKMARK_CURRENT_TAB`, `RELOAD_BROWSER`, and `PIN_CURRENT_TAB`) rely on that browser being a real browser window, and are not meaningful on a surface that is not attached to one.
 - **Platform restrictions.** Some actions are OS-specific regardless of surface (for example `PIN_FIREFOX_TO_START_MENU` and `CREATE_TASKBAR_TAB` are Windows only). These are noted in the [User Actions](/toolkit/components/messaging-system/docs/SpecialMessageActionSchemas/index.md) docs.
 - **`needsAwait` and `navigate: "actionResult"`.** Waiting for an asynchronous action's result before advancing or dismissing a screen is a multistage-content feature. It is honored by the [window-function](#window-functions) surfaces (about:welcome, Spotlight, and Feature Callout) and has no effect on the chrome-only surfaces.

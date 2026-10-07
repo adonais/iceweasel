@@ -102,6 +102,7 @@
 #include "nsIScriptGlobalObject.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsIURI.h"
+#include "nsIWebBrowserPrint.h"
 #include "nsIWebNavigation.h"
 #include "nsIWebProgress.h"
 #include "nsIWidget.h"
@@ -120,10 +121,6 @@
 #include "nsXPCOMPrivate.h"  // for XUL_DLL
 #include "nsXULPopupManager.h"
 #include "prenv.h"
-
-#ifdef NS_PRINTING
-#  include "nsIWebBrowserPrint.h"
-#endif
 
 #if defined(MOZ_TELEMETRY_REPORTING)
 #  include "mozilla/glean/DomMetrics.h"
@@ -695,7 +692,6 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
 
     Document* ownerDoc = mOwnerContent->OwnerDoc();
     if (ownerDoc) {
-      loadState->SetTriggeringStorageAccess(ownerDoc->UsingStorageAccess());
       loadState->SetTriggeringWindowId(ownerDoc->InnerWindowID());
       loadState->SetTriggeringClassificationFlags(
           ownerDoc->GetScriptTrackingFlags());
@@ -3270,10 +3266,6 @@ already_AddRefed<Promise> nsFrameLoader::PrintPreview(
     return nullptr;
   }
 
-#ifndef NS_PRINTING
-  promise->MaybeRejectWithNotSupportedError("Build does not support printing");
-  return promise.forget();
-#else
   auto resolve = [promise](PrintPreviewResultInfo aInfo) {
     using Orientation = dom::PrintPreviewOrientation;
     if (aInfo.sheetCount() > 0) {
@@ -3398,11 +3390,9 @@ already_AddRefed<Promise> nsFrameLoader::PrintPreview(
   }
 
   return promise.forget();
-#endif
 }
 
 void nsFrameLoader::ExitPrintPreview() {
-#ifdef NS_PRINTING
   if (auto* browserParent = GetBrowserParent()) {
     (void)browserParent->SendExitPrintPreview();
     return;
@@ -3416,7 +3406,6 @@ void nsFrameLoader::ExitPrintPreview() {
     return;
   }
   webBrowserPrint->ExitPrintPreview();
-#endif
 }
 
 already_AddRefed<nsIRemoteTab> nsFrameLoader::GetRemoteTab() {

@@ -18,6 +18,15 @@ add_task(async function test_newtab_enabled() {
     "did not get blank for default about:home"
   );
 
+  registerCleanupFunction(async () => {
+    // Pop before removing: removePreloadedBrowser() is a no-op while
+    // browser.newtabpage.enabled is false, and cleanup functions run before the
+    // harness' own flushPrefEnv.
+    await SpecialPowers.popPrefEnv();
+    NewTabPagePreloading.removePreloadedBrowser(window);
+    ok(!gBrowser.preloadedBrowser, "left no preloaded newtab behind");
+  });
+
   await SpecialPowers.pushPrefEnv({
     set: [["browser.newtabpage.enabled", false]],
   });

@@ -18,9 +18,6 @@ class AccessibleWrap : public LocalAccessible {
   AccessibleWrap(nsIContent* aContent, DocAccessible* aDoc);
   virtual ~AccessibleWrap();
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY  // TODO: Mark this as MOZ_CAN_RUN_SCRIPT
-      virtual nsresult HandleAccEvent(AccEvent* aEvent) override;
-
   virtual void Shutdown() override;
 
   virtual bool DoAction(uint8_t aIndex) const override;
@@ -53,11 +50,6 @@ class AccessibleWrap : public LocalAccessible {
 
  protected:
   int32_t mID;
-
- private:
-  void GetTextEquiv(nsString& aText);
-
-  bool HandleLiveRegionEvent(AccEvent* aEvent);
 };
 
 }  // namespace a11y

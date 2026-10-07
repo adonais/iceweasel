@@ -3,33 +3,29 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use crate::{
-    AdapterInformation, BufferMapResult, ByteBuf, DeviceAction, FfiDeviceLostReason,
+    error::{error_to_string, GPUError},
+    make_byte_buf,
+    telemetry::build_telemetry_struct,
+    wgpu_string, AdapterInformation, BufferMapResult, ByteBuf, DeviceAction, FfiDeviceLostReason,
     FfiErrorFilter, FfiPopErrorScopeResultType, FfiSlice, FfiTextureDescriptor, Message,
     PipelineError, QueueWriteAction, QueueWriteDataSource, ServerMessage,
     ShaderModuleCompilationMessage, SwapChainId, TextureAction,
-    error::{GPUError, error_to_string},
-    make_byte_buf,
-    telemetry::build_telemetry_struct,
-    wgpu_string,
 };
 
 use futures_util::StreamExt;
 use nsstring::{nsACString, nsCString};
 
-use wgc::{
-    error::EmptyErrorScopeStack, pipeline::CreateShaderModuleError, resource::BufferAccessError,
-};
+use wgc::{error::EmptyErrorScopeStack, resource::BufferAccessError};
 #[allow(unused_imports)]
 use wgh::Instance;
 use wgpu_core_remote_types::{
-    BufferDescriptor, DeviceDescriptor, ShaderModuleDescriptor, TextureDescriptor,
-    TextureViewDescriptor,
     encoders::{CommandBufferDescriptor, TexelCopyBufferInfo, TexelCopyTextureInfo},
-    id,
+    id, BufferDescriptor, DeviceDescriptor, ShaderModuleDescriptor, TextureDescriptor,
+    TextureViewDescriptor,
 };
 use wgt::{
-    CommandEncoderDescriptor, TexelCopyBufferLayout,
     error::{ErrorFilter, ErrorType, WebGpuError},
+    CommandEncoderDescriptor, TexelCopyBufferLayout,
 };
 
 use std::borrow::Cow;
@@ -747,7 +743,7 @@ fn set_uncaptured_error_handler(global: &Global, device_id: id::DeviceId) {
 }
 
 impl ShaderModuleCompilationMessage {
-    fn new(error: &CreateShaderModuleError, source: &str) -> Self {
+    fn new(value: wgt::CompilationMessage, source: &str) -> Self {
         // The WebGPU spec says that if the message doesn't point to a particular position in
         // the source, the line number, position, offset and lengths should be zero.
         let line_number;
@@ -755,11 +751,11 @@ impl ShaderModuleCompilationMessage {
         let utf16_offset;
         let utf16_length;
 
-        let location = match error {
-            CreateShaderModuleError::Parsing(e) => e.inner.location(source),
-            CreateShaderModuleError::Validation(e) => e.inner.location(source),
-            _ => None,
-        };
+        let wgt::CompilationMessage {
+            message,
+            message_type,
+            location,
+        } = value;
 
         if let Some(location) = location {
             let len_utf16 = |s: &str| s.chars().map(|c| c.len_utf16() as u64).sum();
@@ -779,14 +775,13 @@ impl ShaderModuleCompilationMessage {
             utf16_length = 0;
         }
 
-        let message = error.to_string();
-
         Self {
             line_number,
             line_pos,
             utf16_offset,
             utf16_length,
             message,
+            message_type,
         }
     }
 }
@@ -808,30 +803,18 @@ pub extern "C" fn wgpu_server_device_create_buffer(
         mapped_at_creation: false,
     };
 
-    // global.device_push_error_scope(device_id, ErrorFilter::Validation);
-    // global.device_push_error_scope(device_id, ErrorFilter::OutOfMemory);
-    let (_, error) = global.device_create_buffer(device_id, &desc, buffer_id);
-    match error {
-        Some(error) => {
-            global.buffer_remove(buffer_id);
-            match error.webgpu_error_type() {
-                ErrorType::Internal => unreachable!(),
-                ErrorType::OutOfMemory => false,
-                ErrorType::Validation => panic!("{error}"),
-                ErrorType::DeviceLost => false,
-            }
-        }
-        None => true,
+    global.device_push_error_scope(device_id, ErrorFilter::Validation);
+    global.device_push_error_scope(device_id, ErrorFilter::OutOfMemory);
+    global.device_create_buffer(device_id, &desc, buffer_id);
+    let oom_error = global.device_pop_error_scope(device_id).unwrap();
+    let validation_error = global.device_pop_error_scope(device_id).unwrap();
+    if let Some(validation_error) = validation_error {
+        panic!("{validation_error}");
     }
-    // let oom_error = global.device_pop_error_scope(device_id).unwrap();
-    // let validation_error = global.device_pop_error_scope(device_id).unwrap();
-    // if let Some(validation_error) = validation_error {
-    //     panic!("{validation_error}");
-    // }
-    // if oom_error.is_some() {
-    //     global.buffer_remove(buffer_id);
-    // }
-    // oom_error.is_none()
+    if oom_error.is_some() {
+        global.buffer_remove(buffer_id);
+    }
+    oom_error.is_none()
 }
 
 /// The status code provided to the buffer mapping closure.
@@ -937,7 +920,6 @@ impl HostMap {
 #[no_mangle]
 pub unsafe extern "C" fn wgpu_server_buffer_map(
     global: &Global,
-    device_id: id::DeviceId,
     buffer_id: id::BufferId,
     start: wgt::BufferAddress,
     size: wgt::BufferAddress,
@@ -963,11 +945,7 @@ pub unsafe extern "C" fn wgpu_server_buffer_map(
             map_result_sender.send(result).unwrap();
         })),
     };
-    let result = global.buffer_map_async(buffer_id, start, Some(size), operation);
-
-    if let Err(error) = result {
-        global.device_handle_error(device_id, error, None, "Buffer::map_async");
-    }
+    let _submission_idx_opt = global.buffer_map_async(buffer_id, start, Some(size), operation);
 }
 
 /// Map a buffer, blocking until it is ready for access.
@@ -1014,11 +992,11 @@ pub extern "C" fn wgpu_server_buffer_map_blocking(
     // Submit the map request, and note its submission index.
     let submission_index;
     match global.buffer_map_async(buffer_id, offset, Some(size), op) {
-        Ok(i) => {
+        Some(i) => {
             submission_index = i;
         }
-        Err(err) => {
-            return BufferMapAsyncStatus::from(Err(err));
+        None => {
+            return BufferMapAsyncStatus::Error;
         }
     }
 
@@ -1082,16 +1060,8 @@ pub unsafe extern "C" fn wgpu_server_buffer_get_mapped_range(
 }
 
 #[no_mangle]
-pub extern "C" fn wgpu_server_buffer_unmap(
-    global: &Global,
-    buffer_id: id::BufferId,
-    should_succeed: bool,
-) {
-    if let Err(error) = global.buffer_unmap(buffer_id) {
-        if should_succeed {
-            panic!("{error}");
-        }
-    }
+pub extern "C" fn wgpu_server_buffer_unmap(global: &Global, buffer_id: id::BufferId) {
+    global.buffer_unmap(buffer_id)
 }
 
 #[no_mangle]
@@ -1101,11 +1071,7 @@ pub unsafe extern "C" fn wgpu_server_device_create_texture(
     id_in: id::TextureId,
     desc: &FfiTextureDescriptor,
 ) {
-    let (_, err) = global.device_create_texture(device_id, &desc.to_wgpu(), id_in);
-    if let Some(err) = err {
-        let msg = CString::new(format!("create_texture() failed: {:?}", err)).unwrap();
-        gfx_critical_note(msg.as_ptr());
-    }
+    global.device_create_texture(device_id, &desc.to_wgpu(), id_in);
 }
 
 #[no_mangle]
@@ -1138,12 +1104,9 @@ pub unsafe extern "C" fn wgpu_server_texture_create_view(
             array_layer_count: desc.array_layer_count.map(|ptr| *ptr),
         },
         usage: Some(desc.usage),
+        swizzle: Default::default(),
     };
-    let (_, err) = global.texture_create_view(texture_id, &desc, id_in);
-    if let Some(err) = err {
-        let msg = CString::new(format!("create_view() failed: {:?}", err)).unwrap();
-        gfx_critical_note(msg.as_ptr());
-    }
+    global.texture_create_view(texture_id, &desc, id_in);
 }
 
 #[no_mangle]
@@ -1843,6 +1806,10 @@ impl Global {
                 &desc,
                 wgt::TextureUses::UNINITIALIZED,
                 texture_id,
+                // NOTE: We want `false`, but we can't yet, because
+                // upstream's API isn't quite right yet.
+                /* cleared */
+                true,
             )
         };
         if let Some(err) = error {
@@ -2094,6 +2061,10 @@ impl Global {
                 &desc,
                 wgt::TextureUses::UNINITIALIZED,
                 texture_id,
+                // NOTE: We want `false`, but we can't yet, because
+                // upstream's API isn't quite right yet.
+                /* cleared */
+                true,
             );
             if let Some(err) = error {
                 let msg =
@@ -2147,14 +2118,15 @@ impl Global {
                     return;
                 }
 
-                let (_, error) = self.device_create_buffer(device_id, &desc, buffer_id);
+                self.device_create_buffer(device_id, &desc, buffer_id);
 
                 if needs_shmem {
                     // A `mapped_at_creation` buffer starts out mapped, so the
                     // parent must know to flush the shmem contents back into it
                     // on `unmap()`. If creation failed there is nothing mapped,
-                    // and `buffer_unmap` is expected to fail.
-                    let is_mapped = desc.mapped_at_creation && error.is_none();
+                    // which `buffer_get_mapped_range` reports as an error.
+                    let is_mapped = desc.mapped_at_creation
+                        && self.buffer_get_mapped_range(buffer_id, 0, None).is_ok();
                     unsafe {
                         wgpu_server_set_buffer_map_data(
                             self.owner,
@@ -2168,21 +2140,14 @@ impl Global {
                         );
                     }
                 }
-
-                if let Some(err) = error {
-                    self.device_handle_error(
-                        device_id,
-                        err,
-                        desc.label.as_deref(),
-                        "Device::create_buffer",
-                    );
-                }
             }
             #[allow(unused_variables)]
             DeviceAction::CreateTexture(id, desc, swap_chain_id) => {
                 let desc = if let Some(swap_chain_id) = swap_chain_id {
                     // This should have been checked on the content timeline.
-                    assert!(!desc.usage.contains(wgt::TextureUsages::TRANSIENT_ATTACHMENT));
+                    assert!(!desc
+                        .usage
+                        .contains(wgt::TextureUsages::TRANSIENT_ATTACHMENT));
 
                     // n.b. Just because a swap chain is known, does not mean that the configuration
                     // is valid.
@@ -2291,15 +2256,7 @@ impl Global {
                     };
                 }
 
-                let (_, error) = self.device_create_texture(device_id, &desc, id);
-                if let Some(err) = error {
-                    self.device_handle_error(
-                        device_id,
-                        err,
-                        desc.label.as_deref(),
-                        "Device::create_texture",
-                    );
-                }
+                self.device_create_texture(device_id, &desc, id);
             }
             DeviceAction::CreateExternalTexture(id, desc) => {
                 // Obtain the descriptor from the source. A source ID of `None`
@@ -2361,15 +2318,7 @@ impl Global {
                 self.device_create_sampler(device_id, &desc, id);
             }
             DeviceAction::CreateBindGroupLayout(id, desc) => {
-                let (_, error) = self.device_create_bind_group_layout(device_id, &desc, id);
-                if let Some(err) = error {
-                    self.device_handle_error(
-                        device_id,
-                        err,
-                        desc.label.as_deref(),
-                        "Device::create_bind_group_layout",
-                    );
-                }
+                self.device_create_bind_group_layout(device_id, &desc, id);
             }
             DeviceAction::CreateBindGroupLayoutError(id, label) => {
                 self.create_bind_group_layout_error(device_id, id, label);
@@ -2391,31 +2340,16 @@ impl Global {
                     label,
                     code: code.as_ref().into(),
                 };
-                let (_, error) = self.device_create_shader_module(device_id, &desc, id);
+                self.device_create_shader_module(device_id, &desc, id);
 
-                let compilation_messages = if let Some(err) = error {
-                    // Per spec: "User agents should not include detailed compiler error messages or
-                    // shader text in the message text of validation errors arising here: these details
-                    // are accessible via getCompilationInfo()"
-                    let message = match &err {
-                        CreateShaderModuleError::Parsing(_) => "Parsing error".to_string(),
-                        CreateShaderModuleError::Validation(_) => {
-                            "Shader validation error".to_string()
-                        }
-                        CreateShaderModuleError::Device(device_err) => format!("{device_err:?}"),
-                        _ => format!("{err:?}"),
-                    };
+                let wgt::CompilationInfo {
+                    messages: compilation_messages,
+                } = self.shader_module_compilation_info(id);
 
-                    GPUError {
-                        message: format!("Shader module creation failed: {message}").into(),
-                        r#type: err.webgpu_error_type(),
-                    }
-                    .report(self, device_id);
-
-                    vec![ShaderModuleCompilationMessage::new(&err, code.as_ref())]
-                } else {
-                    Vec::new()
-                };
+                let compilation_messages = compilation_messages
+                    .into_iter()
+                    .map(|m| ShaderModuleCompilationMessage::new(m, &code))
+                    .collect();
 
                 *response_byte_buf = make_byte_buf(&ServerMessage::CreateShaderModuleResponse(
                     id,
@@ -2425,17 +2359,14 @@ impl Global {
             DeviceAction::CreateComputePipeline(id, desc, is_async) => {
                 if is_async {
                     let result = self.device_create_compute_pipeline_or_error(device_id, &desc, id);
-                    let error = result
-                        .err()
-                        .filter(|e| !matches!(e.webgpu_error_type(), ErrorType::DeviceLost))
-                        .map(|e| -> _ {
-                            let is_validation_error =
-                                matches!(e.webgpu_error_type(), ErrorType::Validation);
-                            PipelineError {
-                                is_validation_error,
-                                error: error_to_string(e),
-                            }
-                        });
+                    let error = result.err().map(|e| -> _ {
+                        let is_validation_error =
+                            matches!(e.webgpu_error_type(), ErrorType::Validation);
+                        PipelineError {
+                            is_validation_error,
+                            error: error_to_string(e),
+                        }
+                    });
                     *response_byte_buf =
                         make_byte_buf(&ServerMessage::CreateComputePipelineResponse {
                             pipeline_id: id,
@@ -2446,49 +2377,30 @@ impl Global {
                 }
             }
             DeviceAction::CreateRenderPipeline(id, desc, is_async) => {
-                let (_, error) = self.device_create_render_pipeline(device_id, &desc, id);
-
                 if is_async {
-                    let error = error
-                        .filter(|e| !matches!(e.webgpu_error_type(), ErrorType::DeviceLost))
-                        .map(|e| -> _ {
-                            let is_validation_error =
-                                matches!(e.webgpu_error_type(), ErrorType::Validation);
-                            PipelineError {
-                                is_validation_error,
-                                error: error_to_string(e),
-                            }
-                        });
+                    let result = self.create_render_pipeline_or_error(device_id, &desc, id);
+                    let error = result.err().map(|e| -> _ {
+                        let is_validation_error =
+                            matches!(e.webgpu_error_type(), ErrorType::Validation);
+                        PipelineError {
+                            is_validation_error,
+                            error: error_to_string(e),
+                        }
+                    });
                     *response_byte_buf =
                         make_byte_buf(&ServerMessage::CreateRenderPipelineResponse {
                             pipeline_id: id,
                             error,
                         });
                 } else {
-                    if let Some(err) = error {
-                        self.device_handle_error(
-                            device_id,
-                            err,
-                            desc.label.as_deref(),
-                            "Device::create_render_pipeline",
-                        );
-                    }
+                    self.device_create_render_pipeline(device_id, &desc, id);
                 }
             }
             DeviceAction::CreateRenderBundleEncoder(id, desc) => {
-                self.device_create_render_bundle_encoder(device_id, &desc, id)
-                    .expect("content timeline should have validated this");
+                self.device_create_render_bundle_encoder(device_id, &desc, id);
             }
             DeviceAction::CreateQuerySet(id, desc) => {
-                let (_, error) = self.device_create_query_set(device_id, &desc, id);
-                if let Some(err) = error {
-                    self.device_handle_error(
-                        device_id,
-                        err,
-                        desc.label.as_deref(),
-                        "Device::create_query_set",
-                    );
-                }
+                self.device_create_query_set(device_id, &desc, id);
             }
             DeviceAction::CreateCommandEncoder(id, desc) => {
                 self.device_create_command_encoder(device_id, &desc, id);
@@ -2528,23 +2440,10 @@ impl Global {
         }
     }
 
-    fn texture_action(
-        &self,
-        device_id: id::DeviceId,
-        self_id: id::TextureId,
-        action: TextureAction,
-    ) {
+    fn texture_action(&self, self_id: id::TextureId, action: TextureAction) {
         match action {
             TextureAction::CreateView(id, desc) => {
-                let (_, error) = self.texture_create_view(self_id, &desc, id);
-                if let Some(err) = error {
-                    self.device_handle_error(
-                        device_id,
-                        err,
-                        desc.label.as_deref(),
-                        "Texture::create_view",
-                    );
-                }
+                self.texture_create_view(self_id, &desc, id);
             }
         }
     }
@@ -2683,10 +2582,7 @@ fn process_buffer_map(global: &Global, msg: Message, response_byte_buf: &mut Byt
             map_result_sender.send(result).unwrap();
         })),
     };
-    let result = global.buffer_map_async(buffer_id, offset, Some(size), operation);
-    if let Err(error) = result {
-        global.device_handle_error(device_id, error, None, "Buffer::map_async");
-    }
+    global.buffer_map_async(buffer_id, offset, Some(size), operation);
 }
 
 unsafe fn process_message(
@@ -2845,8 +2741,8 @@ unsafe fn process_message(
         Message::Device(id, action) => {
             global.device_action(id, action, shmem_mappings, response_byte_buf)
         }
-        Message::Texture(device_id, id, action) => {
-            global.texture_action(device_id, id, action);
+        Message::Texture(id, action) => {
+            global.texture_action(id, action);
         }
         Message::RenderBundleEncoder(id, cmd) => {
             global.handle_render_bundle_encoder_command(id, cmd);
@@ -3242,7 +3138,7 @@ fn enqueue_signal_semaphores_destruction(
     let device = global.resolve_device_id(device_id);
     let queue = global.resolve_queue_id(queue_id);
 
-    if !submission_errored {
+    if submission_errored {
         // Unregister the pending signals so that a later submission on this
         // queue does not signal them. This is a no-op for any semaphore that a
         // batch already consumed before `queue_submit` reported the failure.
@@ -3425,6 +3321,7 @@ pub unsafe extern "C" fn wgpu_server_device_import_texture_from_shared_handle(
         &desc,
         wgt::TextureUses::UNINITIALIZED,
         id_in,
+        /* cleared */ true,
     );
     if let Some(err) = error {
         let msg = CString::new(format!("texture_from_hal() failed: {:?}", err)).unwrap();
@@ -3467,17 +3364,17 @@ pub unsafe extern "C" fn wgpu_server_device_wait_fence_from_shared_handle(
 mod macos {
     use std::ffi::CString;
 
-    use super::{Global, emit_critical_invalid_note, gfx_critical_note};
+    use super::{emit_critical_invalid_note, gfx_critical_note, Global};
     use crate::{
-        FfiTextureDescriptor, SwapChainId,
         server::{
             wgpu_server_ensure_shared_texture_for_swap_chain,
             wgpu_server_get_external_io_surface_id,
         },
+        FfiTextureDescriptor, SwapChainId,
     };
 
     use objc2::{
-        rc::{Retained, autoreleasepool},
+        rc::{autoreleasepool, Retained},
         runtime::ProtocolObject,
     };
     use objc2_foundation::NSString;
@@ -3486,7 +3383,7 @@ mod macos {
         MTLDevice as _, MTLPixelFormat, MTLResource, MTLStorageMode, MTLTexture,
         MTLTextureDescriptor, MTLTextureType, MTLTextureUsage,
     };
-    use wgpu_core_remote_types::{TextureDescriptor, id};
+    use wgpu_core_remote_types::{id, TextureDescriptor};
 
     /// Imports a Metal texture from the specified plane of an IOSurface.
     #[no_mangle]
@@ -3575,6 +3472,7 @@ mod macos {
                 &desc,
                 wgt::TextureUses::UNINITIALIZED,
                 id_in,
+                /* cleared */ true,
             )
         };
         if let Some(err) = error {
@@ -3691,6 +3589,10 @@ mod macos {
                     &desc,
                     wgt::TextureUses::UNINITIALIZED,
                     texture_id,
+                    // NOTE: We want `false`, but we can't yet, because
+                    // upstream's API isn't quite right yet.
+                    /* cleared */
+                    true,
                 )
             };
             if let Some(err) = error {

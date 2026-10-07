@@ -189,8 +189,19 @@ extern SECStatus
 SEC_PKCS12DecoderUpdate(SEC_PKCS12DecoderContext *p12dcx, unsigned char *data,
                         unsigned long len);
 
+/* Sets the maximum size of any single element the decoder will allocate.
+ * The limit is also applied to the nested PKCS#7 and safeContents decoders
+ * used while decoding this PFX.
+ * Set to 0 to indicate there is no limit. */
 extern SECStatus SEC_PKCS12DecoderSetMaxElementLen(SEC_PKCS12DecoderContext *p12dcx,
                                                    unsigned long maxLen);
+
+/* Sets the maximum number of bytes that may be fed to the decoder.
+ * The limit is also applied to the nested PKCS#7 and safeContents decoders
+ * used while decoding this PFX.
+ * Set to 0 to indicate there is no limit. */
+extern SECStatus SEC_PKCS12DecoderSetMaxInputSize(SEC_PKCS12DecoderContext *p12dcx,
+                                                  unsigned long maxInputSize);
 
 extern void
 SEC_PKCS12DecoderFinish(SEC_PKCS12DecoderContext *p12dcx);

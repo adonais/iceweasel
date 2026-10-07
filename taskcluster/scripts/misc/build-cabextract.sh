@@ -5,7 +5,8 @@ set -x -e -v
 PROJECT="cabextract"
 
 pushd "${MOZ_FETCHES_DIR}/${PROJECT}"
-./configure
+export PATH="$MOZ_FETCHES_DIR/clang/bin:$PATH"
+./configure CC="clang --sysroot=$MOZ_FETCHES_DIR/sysroot-x86_64-linux-gnu" AR=llvm-ar RANLIB=llvm-ranlib LDFLAGS=-fuse-ld=lld
 make
 popd
 

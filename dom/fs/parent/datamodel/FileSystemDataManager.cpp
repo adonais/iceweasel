@@ -19,6 +19,7 @@
 #include "mozIStorageService.h"
 #include "mozStorageCID.h"
 #include "mozilla/Result.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/FileSystemLog.h"
 #include "mozilla/dom/FileSystemManagerParent.h"
@@ -462,6 +463,17 @@ Result<FileId, QMResult> FileSystemDataManager::LockShared(
   }
 
   auto& count = mSharedLocks.LookupOrInsert(aEntryId);
+
+  // LookupOrInsert may have created a new entry with count 0. If any of the
+  // operations below fail, we must remove it so IsLocked() doesn't see a
+  // stale zero-count entry. When count > 0, another shared lock already
+  // exists and the entry must stay.
+  auto removeOnFailure = MakeScopeExit([&] {
+    if (count == 0) {
+      mSharedLocks.Remove(aEntryId);
+    }
+  });
+
   if (!(1u + CheckedUint32(count)).isValid()) {  // don't make the count invalid
     return Err(QMResult(NS_ERROR_UNEXPECTED));
   }
@@ -475,6 +487,7 @@ Result<FileId, QMResult> FileSystemDataManager::LockShared(
   // quota usage until the (external) blocker is gone or the file is removed.
   QM_TRY(QM_TO_RESULT(mDatabaseManager->BeginUsageTracking(fileId)));
 
+  removeOnFailure.release();
   ++count;
   LOG_VERBOSE(("SharedLock %u", count));
 

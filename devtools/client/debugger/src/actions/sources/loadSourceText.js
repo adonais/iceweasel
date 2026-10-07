@@ -254,3 +254,43 @@ export function loadSourceText(source, sourceActor) {
     return dispatch(loadGeneratedSourceText(sourceActor));
   };
 }
+
+export function removeGeneratedSourceText(actorId) {
+  return {
+    type: "REMOVE_GENERATED_SOURCE_TEXT",
+    actorId,
+  };
+}
+
+/**
+ * Force refreshing the text content for a given source actor,
+ * without unnecessary intermediate state change.
+ *
+ * Similar to `loadGeneratedSourceTextPromise`, but avoid the intermediate
+ * "start" state related to PROMISE middleware.
+ *
+ * @param {object} sourceActor
+ */
+export function forceRefreshGeneratedSourceText(sourceActor) {
+  return async thunkArgs => {
+    const { dispatch, getState } = thunkArgs;
+    const epoch = getSourcesEpoch(getState());
+
+    const sourceTextContent = await loadGeneratedSource(sourceActor);
+    await dispatch({
+      type: "LOAD_GENERATED_SOURCE_TEXT",
+      sourceActor,
+      epoch,
+
+      // Reproduce the PROMISE middleware output, without the intermediate "start" promise state:
+      status: "done",
+      value: sourceTextContent,
+    });
+
+    await onSourceTextContentAvailable(
+      sourceActor.sourceObject,
+      sourceActor,
+      thunkArgs
+    );
+  };
+}

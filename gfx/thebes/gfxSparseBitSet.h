@@ -132,8 +132,8 @@ class gfxSparseBitSet {
         continue;
       }
       const Block& block = mBlocks[mBlockIndex[i]];
-      for (uint32_t index = 0; index < BLOCK_SIZE; index++) {
-        if (block.mBits[index]) {
+      for (unsigned char mBit : block.mBits) {
+        if (mBit) {
           return true;
         }
       }
@@ -368,6 +368,11 @@ class SharedBitSet {
     return new (aBuffer) SharedBitSet(aBitset);
   }
 
+  // We never manage SharedBitSet as a "normal" object, it's a view onto a
+  // buffer of shared memory. So we should never be trying to call this.
+  ~SharedBitSet() = delete;
+  SharedBitSet() = delete;
+
   bool test(uint32_t aIndex) const {
     const auto i = static_cast<uint16_t>(aIndex / BLOCK_SIZE_BITS);
     if (i >= mBlockIndexCount) {
@@ -413,7 +418,6 @@ class SharedBitSet {
 
  private:
   friend class gfxSparseBitSet;
-  SharedBitSet() = delete;
 
   explicit SharedBitSet(const gfxSparseBitSet& aBitset)
       : mBlockIndexCount(
@@ -432,10 +436,6 @@ class SharedBitSet {
       }
     }
   }
-
-  // We never manage SharedBitSet as a "normal" object, it's a view onto a
-  // buffer of shared memory. So we should never be trying to call this.
-  ~SharedBitSet() = delete;
 
   uint16_t mBlockIndexCount;
   uint16_t mBlockCount;

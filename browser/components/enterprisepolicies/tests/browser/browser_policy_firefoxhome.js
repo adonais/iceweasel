@@ -154,34 +154,14 @@ add_task(async function test_firefoxhome_preferences_set() {
   });
 
   await BrowserTestUtils.withNewTab("about:preferences#home", async browser => {
-    const srdEnabled = Services.prefs.getBoolPref(
-      "browser.settings-redesign.enabled",
-      false
-    );
-    // Legacy uses XUL <checkbox preference=...> bound to a pref. The Settings
-    // Redesign exposes the same prefs through differently-named settings
-    // backed by moz-checkbox elements with the friendly setting id.
-    const data = srdEnabled
-      ? {
-          Search: "webSearch",
-          TopSites: "shortcuts",
-          SponsoredTopSites: "sponsoredShortcuts",
-          Highlights: "recentActivity",
-        }
-      : {
-          Search: "browser.newtabpage.activity-stream.showSearch",
-          TopSites: "browser.newtabpage.activity-stream.feeds.topsites",
-          SponsoredTopSites:
-            "browser.newtabpage.activity-stream.showSponsoredTopSites",
-          Highlights:
-            "browser.newtabpage.activity-stream.feeds.section.highlights",
-        };
+    const data = {
+      Search: "webSearch",
+      TopSites: "shortcuts",
+      SponsoredTopSites: "sponsoredShortcuts",
+      Highlights: "recentActivity",
+    };
     for (let [section, key] of Object.entries(data)) {
-      const el = srdEnabled
-        ? browser.contentDocument.getElementById(key)
-        : browser.contentDocument.querySelector(
-            `checkbox[preference='${key}']`
-          );
+      const el = browser.contentDocument.getElementById(key);
       ok(el, `${section} control should be in the DOM`);
       is(
         !!(el.disabled || el.hasAttribute("disabled")),
@@ -201,8 +181,6 @@ add_task(async function test_firefoxhome_preferences_set() {
 add_task(async function test_firefoxhome_widgets_blocked() {
   await SpecialPowers.pushPrefEnv({
     set: [
-      // Widget toggles only exist in the Settings Redesign UI.
-      ["browser.settings-redesign.enabled", true],
       // Stand in for a rollout that has made these two widgets available.
       ["browser.newtabpage.activity-stream.widgets.system.enabled", true],
       ["browser.newtabpage.activity-stream.widgets.system.lists.enabled", true],
@@ -296,11 +274,6 @@ add_task(async function test_firefoxhome_customize_panel_locked() {
 });
 
 add_task(async function test_firefoxhome_support_firefox_sponsored_locked() {
-  // The supportFirefox setting only exists in the Settings Redesign UI.
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-
   await setupPolicyEngineWithJson({
     policies: {
       FirefoxHome: {

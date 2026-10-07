@@ -248,8 +248,6 @@ function Privacy({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
     return value > displayCap ? `${displayCap}+` : `${value}`;
   };
   const displayCount = formatCount(displayValue);
-  // Same readout without the animation, for the screen-reader copy.
-  const stableCount = formatCount(trackersToday);
 
   // The user turned off every blocking option in about:preferences#privacy, so
   // nothing is being counted (Bug 2063525). This outranks every layout below:
@@ -623,6 +621,7 @@ function Privacy({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
             iconSrc="chrome://global/skin/icons/more.svg"
             menuId="privacy-context-menu"
             type="ghost"
+            data-l10n-id="newtab-privacy-widget-menu-button"
           />
           <panel-list className="panel-list-no-icons" id="privacy-context-menu">
             {widgetsMayBeMaximized && (
@@ -718,17 +717,9 @@ function Privacy({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
                       tip layout where it moves into the tip. */}
                   {iconBesideCount &&
                     privacyImage(icon || "shieldCheck", tiltKit)}
-                  {/* The count-up mutates this text every frame, and
-                      newtab-privacy-trackers-blocked-today uses $count for
-                      plural selection only — so this span is the sole place
-                      the number exists. Hide the animating copy and expose a
-                      stable one, or AT can read a transient value. */}
-                  <span className="privacy-count-number" aria-hidden="true">
-                    {displayCount}
-                  </span>
-                  <span className="privacy-count-number-a11y">
-                    {stableCount}
-                  </span>
+                  {/* newtab-privacy-trackers-blocked-today uses $count for plural selection only,
+                  so this span is the sole place the number exists. */}
+                  <span className="privacy-count-number">{displayCount}</span>
                   {isCelebrating ? (
                     <CelebrationSparkles
                       classNamePrefix="privacy-celebration"

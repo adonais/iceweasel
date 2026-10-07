@@ -16,6 +16,7 @@
 #define mozilla_RootedRefPtr_h_
 
 #include "js/GCPolicyAPI.h"
+#include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
 #include "mozilla/RefPtr.h"
 

@@ -311,6 +311,7 @@ add_task(async function test_revert_restores_added_and_changed_logins() {
   Assert.equal(extra.number_of_logins_updated, "1");
   Assert.equal(extra.number_of_logins_skipped, "1");
   Assert.equal(extra.number_of_logins_failed, "0");
+  Assert.equal(extra.number_of_logins_to_delete, "0");
   Assert.equal(extra.attempt, "0", "first attempt");
   Assert.equal(
     extra.restore_version,
@@ -426,6 +427,42 @@ add_task(async function test_restore_leaves_a_deleted_login_deleted() {
   const { extra } = Glean.pwmgr.rustRestoreStatus.testGetValue()[0];
   Assert.equal(extra.end_state, "Restored");
   Assert.equal(extra.number_of_logins_skipped, "1");
+});
+
+// Logins deleted while Rust was primary are counted, not acted on: the JSON
+// store keeps its stale copy and the login survives the revert.
+add_task(async function test_restore_counts_the_logins_it_would_delete() {
+  resetState();
+  Services.prefs.setBoolPref(PREF_ACTIVE, true);
+  const json = makeJsonStorage({
+    logins: [
+      loginWithMeta({ guid: "{kept}" }),
+      loginWithMeta({ guid: "{deleted-in-rust}", username: "gone" }),
+    ],
+  });
+  const rust = makeRustStorage({ logins: [loginWithMeta({ guid: "{kept}" })] });
+
+  await new LoginStorageMigrator(json, rust).run();
+
+  await TestUtils.waitForCondition(
+    () =>
+      Services.prefs.getIntPref(PREF_RESTORE_VERSION, 0) === restoreTarget(),
+    "the restore ran"
+  );
+  Assert.equal(json.addedLogins.length, 0, "nothing to add");
+  Assert.equal(
+    json.modifiedLogins.length,
+    0,
+    "the login Rust no longer has is left alone in the JSON store"
+  );
+
+  const { extra } = Glean.pwmgr.rustRestoreStatus.testGetValue()[0];
+  Assert.equal(extra.number_of_logins_to_delete, "1");
+  Assert.equal(
+    extra.number_of_logins_skipped,
+    "1",
+    "the login both stores still have"
+  );
 });
 
 add_task(async function test_restore_is_skipped_for_an_empty_rust_store() {

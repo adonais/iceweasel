@@ -38,6 +38,9 @@ class BrowserThumbnailsFacts {
         /** The user started a horizontal toolbar swipe to switch tabs. */
         const val SWIPE_TO_SWITCH_TABS = "swipe_to_switch_tabs"
 
+        /** The tab is leaving the foreground — either deselected or the hosting app was paused. */
+        const val TAB_BACKGROUNDED = "tab_backgrounded"
+
         /** Any other consumer calling `requestScreenshot()` directly. */
         const val EXTERNAL_REQUEST = "external_request"
     }

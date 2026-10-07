@@ -13,14 +13,7 @@ registerCleanupFunction(() => {
 });
 
 add_setup(async function () {
-  let settingsRedesignEnabled = Services.prefs.getBoolPref(
-    "browser.settings-redesign.enabled",
-    false
-  );
-  await openPreferencesViaOpenPreferencesAPI(
-    settingsRedesignEnabled ? "home" : "general",
-    { leaveOpen: true }
-  );
+  await openPreferencesViaOpenPreferencesAPI("home", { leaveOpen: true });
 });
 
 add_task(async function test_startup_browser_restore() {

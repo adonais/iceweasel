@@ -5,16 +5,22 @@
 package org.mozilla.fenix.tabgroups
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTabGroup
@@ -27,6 +33,8 @@ class TabGroupsPageTest {
 
     @get:Rule val composeTestRule = createComposeRule()
 
+    private val context = InstrumentationRegistry.getInstrumentation().targetContext
+
     @Test
     fun verifyEmptyState() {
         composeTestRule.setContent {
@@ -37,6 +45,7 @@ class TabGroupsPageTest {
                     onEditTabGroupClick = {},
                     onShareTabGroupClick = {},
                     onDeleteTabGroupClick = {},
+                    onCollectionsMigrationCardDismiss = {},
                 )
             }
         }
@@ -61,6 +70,7 @@ class TabGroupsPageTest {
                     onEditTabGroupClick = {},
                     onShareTabGroupClick = {},
                     onDeleteTabGroupClick = {},
+                    onCollectionsMigrationCardDismiss = {},
                 )
             }
         }
@@ -88,6 +98,7 @@ class TabGroupsPageTest {
                     },
                     onEditTabGroupClick = {},
                     onShareTabGroupClick = {},
+                    onCollectionsMigrationCardDismiss = {},
                 )
             }
         }
@@ -116,6 +127,7 @@ class TabGroupsPageTest {
                         clickedGroup = it
                     },
                     onShareTabGroupClick = {},
+                    onCollectionsMigrationCardDismiss = {},
                 )
             }
         }
@@ -125,5 +137,82 @@ class TabGroupsPageTest {
 
         assertTrue(editClicked)
         assertEquals(group, clickedGroup)
+    }
+
+    @Test
+    fun verifyCollectionsMigrationCardHiddenByDefault() {
+        val group = createTabGroup(title = "Group 1")
+
+        composeTestRule.setContent {
+            FirefoxTheme {
+                TabGroupsPage(
+                    state = TabsTrayState.TabGroupState(groups = listOf(group)),
+                    onTabGroupClick = {},
+                    onEditTabGroupClick = {},
+                    onShareTabGroupClick = {},
+                    onDeleteTabGroupClick = {},
+                    onCollectionsMigrationCardDismiss = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.COLLECTIONS_MIGRATION_CARD).assertDoesNotExist()
+    }
+
+    @Test
+    fun verifyCollectionsMigrationCardDisplayed() {
+        val group = createTabGroup(title = "Group 1")
+        val title = context.getString(R.string.collections_migration_homepage_banner_title)
+        val message = context.getString(R.string.collections_migration_homepage_card_message)
+
+        composeTestRule.setContent {
+            FirefoxTheme {
+                TabGroupsPage(
+                    state =
+                        TabsTrayState.TabGroupState(
+                            groups = listOf(group),
+                            showCollectionsMigrationCard = true,
+                        ),
+                    onTabGroupClick = {},
+                    onEditTabGroupClick = {},
+                    onShareTabGroupClick = {},
+                    onDeleteTabGroupClick = {},
+                    onCollectionsMigrationCardDismiss = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.COLLECTIONS_MIGRATION_CARD).assertIsDisplayed()
+        composeTestRule.onNodeWithText(title).assertIsDisplayed()
+        composeTestRule.onNodeWithText(message).assertIsDisplayed()
+    }
+
+    @Test
+    fun verifyCollectionsMigrationCardDismiss() {
+        val group = createTabGroup(title = "Group 1")
+        var dismissed = false
+
+        composeTestRule.setContent {
+            FirefoxTheme {
+                TabGroupsPage(
+                    state =
+                        TabsTrayState.TabGroupState(
+                            groups = listOf(group),
+                            showCollectionsMigrationCard = true,
+                        ),
+                    onTabGroupClick = {},
+                    onEditTabGroupClick = {},
+                    onShareTabGroupClick = {},
+                    onDeleteTabGroupClick = {},
+                    onCollectionsMigrationCardDismiss = { dismissed = true },
+                )
+            }
+        }
+
+        composeTestRule
+            .onNode(hasClickAction() and hasAnyAncestor(hasTestTag(TabsTrayTestTag.COLLECTIONS_MIGRATION_CARD)))
+            .performClick()
+
+        assertTrue(dismissed)
     }
 }

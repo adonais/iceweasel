@@ -276,26 +276,27 @@ async function migrateEnrollmentsToSql() {
  * the prefs set by the enrollment.
  *
  * @param {string} migration The name of the migration.
- * @param {string} slug The slug of the rollout.
+ * @param {string[]} slugs The slug of the rollout(s) to migrate out of.
  */
-function graduateLabs(migration, slug) {
+function graduateLabs(migration, slugs) {
   if (isBackgroundTaskMode()) {
     // This migration does not apply to background task mode.
     lazy.log.debug(`${migration}: skipping (is background task mode)`);
     return;
   }
 
-  const enrollment = lazy.ExperimentAPI.manager.store.get(slug);
-  if (!enrollment?.active) {
-    lazy.log.debug(`${migration}: skipping (no or inactive enrollment)`);
-    return;
-  }
+  for (const slug of slugs) {
+    const enrollment = lazy.ExperimentAPI.manager.store.get(slug);
+    if (!enrollment?.active) {
+      continue;
+    }
 
-  lazy.ExperimentAPI.manager._unenroll(
-    enrollment,
-    lazy.UnenrollmentCause.Migration(migration),
-    { unsetEnrollmentPrefs: false }
-  );
+    lazy.ExperimentAPI.manager._unenroll(
+      enrollment,
+      lazy.UnenrollmentCause.Migration(migration),
+      { unsetEnrollmentPrefs: false }
+    );
+  }
 }
 
 /**
@@ -310,7 +311,7 @@ function graduateLabs(migration, slug) {
  * update to exactly 145.
  */
 function migrateGraduateFirefoxLabsAutoPip(migration) {
-  graduateLabs(migration, "firefox-labs-auto-pip");
+  graduateLabs(migration, ["firefox-labs-auto-pip"]);
 }
 
 /**
@@ -320,13 +321,13 @@ function migrateGraduateFirefoxLabsAutoPip(migration) {
  * default in Nightly. We need to unenroll users without resetting the prefs
  * controlled by the feature.
  */
-function migrateGraduateFirefoxLabsJPEGXL(migration) {
+function migrateGraduateFirefoxLabsJPEGXLNightly(migration) {
   if (!AppConstants.MOZ_JXL) {
     lazy.log.debug(`${migration}: skipping (MOZ_JXL disabled)`);
     return;
   }
 
-  graduateLabs(migration, "firefox-labs-jpeg-xl");
+  graduateLabs(migration, ["firefox-labs-jpeg-xl"]);
 }
 
 function migrateRestorePrefFlipsBug2054546(migration) {
@@ -394,6 +395,19 @@ function migrateRestorePrefFlipsBug2054546(migration) {
     // reset this pref for all users.
     Services.prefs.clearUserPref("network.cookie.CHIPS.enabled");
   }
+}
+
+function migrateGraduateFirefoxLabsJPEGXLAllChannels(migration) {
+  if (!AppConstants.MOZ_JXL) {
+    lazy.log.debug(`${migration}: skipping (MOZ_JXL disabled)`);
+    return;
+  }
+
+  graduateLabs(migration, [
+    "firefox-labs-jpeg-xl-beta",
+    "firefox-labs-jpeg-xl-deved",
+    "firefox-labs-jpeg-xl-release",
+  ]);
 }
 
 /**
@@ -619,9 +633,13 @@ export const NimbusMigrations = {
       ),
       migration(
         "graduate-firefox-labs-jpeg-xl",
-        migrateGraduateFirefoxLabsJPEGXL
+        migrateGraduateFirefoxLabsJPEGXLNightly
       ),
       migration("bug-2054546-mitigation", migrateRestorePrefFlipsBug2054546),
+      migration(
+        "graduate-firefox-labs-jpeg-xl-all-channels",
+        migrateGraduateFirefoxLabsJPEGXLAllChannels
+      ),
     ],
 
     [Phase.AFTER_REMOTE_SETTINGS_UPDATE]: [

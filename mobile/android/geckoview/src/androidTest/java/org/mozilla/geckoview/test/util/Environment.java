@@ -50,6 +50,10 @@ public class Environment {
     return BuildConfig.DEBUG_BUILD;
   }
 
+  public boolean isCoverageBuild() {
+    return BuildConfig.MOZ_CODE_COVERAGE;
+  }
+
   public boolean isX86() {
     final String abi = Build.SUPPORTED_ABIS[0];
     return abi.startsWith("x86");

@@ -12,7 +12,6 @@ modules_tests_resources = [
   "audio_coding/testfile16kHz.pcm",
   "audio_coding/testfile32kHz.pcm",
   "audio_coding/teststereo32kHz.pcm",
-  "foreman_cif.yuv",
 ]
 group("modules_tests_data") {
   data = modules_tests_resources

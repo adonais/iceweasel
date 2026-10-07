@@ -270,7 +270,7 @@ class CDMProxy {
     MOZ_ASSERT(NS_IsMainThread());
   }
 
-  virtual ~CDMProxy() {}
+  virtual ~CDMProxy() = default;
 
   // Helper to enforce that a raw pointer is only accessed on the main thread.
   template <class Type>

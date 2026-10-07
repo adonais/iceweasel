@@ -1,6 +1,9 @@
 "use strict";
 
-const MIRROR_PREF = "privacy.trackingprotection.content.mirror.enabled";
+const MIRROR_PREF = "privacy.trackingprotection.content.mirror.mode";
+const MIRROR_OFF = 0;
+const MIRROR_ON = 1;
+const MIRROR_HANDOVER = 2;
 const PROT_ENABLED = "privacy.trackingprotection.content.protection.enabled";
 const PROT_ENGINES = "privacy.trackingprotection.content.protection.engines";
 const PROT_ENGINES_PBM =
@@ -9,6 +12,7 @@ const ANNO_ENABLED = "privacy.trackingprotection.content.annotation.enabled";
 const ANNO_ENGINES = "privacy.trackingprotection.content.annotation.engines";
 const ANNO_ENGINES_PBM =
   "privacy.trackingprotection.content.annotation.engines.pbmode";
+const OWNS_PREFS = "privacy.trackingprotection.content.mirror.owns_prefs";
 
 // The content prefs the mirror writes. They are included in every pushPrefEnv
 // that enables the mirror so popping the environment restores them - the mirror
@@ -61,7 +65,11 @@ function flushMirror() {
 async function enableMirror(overrides = {}) {
   const etp = { ...ETP_OFF, ...overrides };
   await SpecialPowers.pushPrefEnv({
-    set: [...Object.entries(etp), [MIRROR_PREF, true], ...CONTENT_PREF_RESET],
+    set: [
+      ...Object.entries(etp),
+      [MIRROR_PREF, MIRROR_ON],
+      ...CONTENT_PREF_RESET,
+    ],
   });
   await flushMirror();
 }
@@ -78,6 +86,9 @@ add_setup(async function () {
     for (const [pref] of CONTENT_PREF_RESET) {
       Services.prefs.clearUserPref(pref);
     }
+    // The mirror's ownership marker is a hidden pref, so it is not part of the
+    // pushPrefEnv above; clear it by hand in case a task left it claimed.
+    Services.prefs.clearUserPref(OWNS_PREFS);
   });
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
@@ -87,11 +98,11 @@ add_setup(async function () {
   BrowserTestUtils.removeTab(tab);
 });
 
-// With the master pref off (the default), changing an ETP pref must NOT touch
+// With the mode off (the default), changing an ETP pref must NOT touch
 // the content prefs.
 add_task(async function test_mirror_off_leaves_content_prefs_untouched() {
-  // Make sure the mirror is disabled first.
-  await SpecialPowers.pushPrefEnv({ set: [[MIRROR_PREF, false]] });
+  // Make sure the mirror is off first.
+  await SpecialPowers.pushPrefEnv({ set: [[MIRROR_PREF, MIRROR_OFF]] });
 
   // Then flip an ETP pref; with the mirror off it must not touch content prefs.
   await SpecialPowers.pushPrefEnv({
@@ -349,33 +360,55 @@ add_task(async function test_exceptions_apply_to_pbm_list() {
   );
 });
 
-// Turning the master pref off leaves the last derived content prefs in place;
-// the mirror simply stops updating them.
-add_task(async function test_disable_keeps_last_values() {
+// Switching the mode to off releases the mirrored prefs: the mirror clears
+// its user values so they fall back to the default branch.
+add_task(async function test_disable_releases_content_prefs() {
   await enableMirror({ "privacy.trackingprotection.enabled": true });
   is(
     Services.prefs.getStringPref(PROT_ENGINES),
     "trackers",
-    "mirror derived trackers while on"
+    "mirrored trackers while on"
   );
   is(
     Services.prefs.getBoolPref(PROT_ENABLED),
     true,
     "protection enabled while on"
   );
+  ok(
+    Services.prefs.getBoolPref(OWNS_PREFS, false),
+    "mirror claimed the mirrored prefs while on"
+  );
 
-  // Disable the mirror and verify the content prefs are kept.
-  await SpecialPowers.pushPrefEnv({ set: [[MIRROR_PREF, false]] });
+  // Disable the mirror and verify the content prefs are given back.
+  await SpecialPowers.pushPrefEnv({ set: [[MIRROR_PREF, MIRROR_OFF]] });
   await flushMirror();
+  ok(
+    !Services.prefs.prefHasUserValue(PROT_ENGINES),
+    "protection.engines has no user value left after disable"
+  );
   is(
     Services.prefs.getStringPref(PROT_ENGINES),
-    "trackers",
-    "protection.engines kept after disable"
+    "test_block",
+    "protection.engines fell back to its default"
   );
   is(
     Services.prefs.getBoolPref(PROT_ENABLED),
-    true,
-    "protection still enabled after mirror off"
+    false,
+    "protection disabled again after mirror off"
+  );
+  is(
+    Services.prefs.getStringPref(ANNO_ENGINES),
+    "test_annotate",
+    "annotation.engines fell back to its default"
+  );
+  is(
+    Services.prefs.getBoolPref(ANNO_ENABLED),
+    false,
+    "annotation disabled again after mirror off"
+  );
+  ok(
+    !Services.prefs.getBoolPref(OWNS_PREFS, false),
+    "mirror released its ownership marker"
   );
 
   // Further ETP changes while disabled must not update the content prefs.
@@ -385,7 +418,123 @@ add_task(async function test_disable_keeps_last_values() {
   await flushMirror();
   is(
     Services.prefs.getStringPref(PROT_ENGINES),
-    "trackers",
+    "test_block",
     "ETP change ignored while mirror off"
+  );
+});
+
+// Re-enabling after a release recomputes from scratch rather than resurrecting
+// the values the previous enable had mirrored.
+add_task(async function test_reenable_after_release_recomputes() {
+  await enableMirror({ "privacy.trackingprotection.enabled": true });
+  is(
+    Services.prefs.getStringPref(PROT_ENGINES),
+    "trackers",
+    "first enable mirrors trackers"
+  );
+
+  await SpecialPowers.pushPrefEnv({ set: [[MIRROR_PREF, MIRROR_OFF]] });
+  await flushMirror();
+  is(
+    Services.prefs.getStringPref(PROT_ENGINES),
+    "test_block",
+    "released back to the default"
+  );
+
+  await enableMirror({
+    "privacy.trackingprotection.cryptomining.enabled": true,
+  });
+  is(
+    Services.prefs.getStringPref(PROT_ENGINES),
+    "cryptominers",
+    "second enable mirrors only from the current ETP state"
+  );
+  ok(
+    Services.prefs.getBoolPref(OWNS_PREFS, false),
+    "mirror re-claimed the mirrored prefs"
+  );
+});
+
+// An unrecognized mode is treated as off, so a bad value releases the mirrored
+// prefs rather than stranding them.
+add_task(async function test_unknown_mode_behaves_as_off() {
+  await enableMirror({ "privacy.trackingprotection.enabled": true });
+  ok(
+    Services.prefs.getBoolPref(OWNS_PREFS, false),
+    "mirror claimed the mirrored prefs while on"
+  );
+
+  await SpecialPowers.pushPrefEnv({ set: [[MIRROR_PREF, 99]] });
+  await flushMirror();
+  is(
+    Services.prefs.getStringPref(PROT_ENGINES),
+    "test_block",
+    "unknown mode released the mirrored prefs"
+  );
+  ok(
+    !Services.prefs.getBoolPref(OWNS_PREFS, false),
+    "unknown mode dropped the claim"
+  );
+});
+
+// Handover stops the mirror without touching the mirrored values: they stay
+// behind as ordinary user prefs. The claim is dropped, so a later switch to
+// off leaves them alone instead of clearing what is now the user's own state.
+add_task(async function test_handover_retains_content_prefs() {
+  await enableMirror({ "privacy.trackingprotection.enabled": true });
+  is(
+    Services.prefs.getStringPref(PROT_ENGINES),
+    "trackers",
+    "mirrored trackers while on"
+  );
+  ok(
+    Services.prefs.getBoolPref(OWNS_PREFS, false),
+    "mirror claimed the mirrored prefs while on"
+  );
+
+  await SpecialPowers.pushPrefEnv({ set: [[MIRROR_PREF, MIRROR_HANDOVER]] });
+  await flushMirror();
+  is(
+    Services.prefs.getStringPref(PROT_ENGINES),
+    "trackers",
+    "handover keeps the mirrored engines"
+  );
+  is(
+    Services.prefs.getBoolPref(PROT_ENABLED),
+    true,
+    "handover keeps protection enabled"
+  );
+  ok(
+    Services.prefs.prefHasUserValue(PROT_ENGINES),
+    "the mirrored values stay as user prefs"
+  );
+  ok(
+    !Services.prefs.getBoolPref(OWNS_PREFS, false),
+    "handover drops the mirror's claim"
+  );
+
+  // The mirror is down, so ETP changes no longer propagate.
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.trackingprotection.cryptomining.enabled", true]],
+  });
+  await flushMirror();
+  is(
+    Services.prefs.getStringPref(PROT_ENGINES),
+    "trackers",
+    "ETP change ignored after handover"
+  );
+
+  // Dropping to off after a handover must not reclaim and clear the values.
+  await SpecialPowers.pushPrefEnv({ set: [[MIRROR_PREF, MIRROR_OFF]] });
+  await flushMirror();
+  is(
+    Services.prefs.getStringPref(PROT_ENGINES),
+    "trackers",
+    "off after handover leaves the handed-over values alone"
+  );
+  is(
+    Services.prefs.getBoolPref(PROT_ENABLED),
+    true,
+    "protection still enabled after off following handover"
   );
 });

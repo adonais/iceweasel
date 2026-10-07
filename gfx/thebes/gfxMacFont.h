@@ -56,8 +56,6 @@ class gfxMacFont final : public gfxFont {
  protected:
   ~gfxMacFont() override;
 
-  const Metrics& GetHorizontalMetrics() const override { return mMetrics; }
-
   // override to prefer CoreText shaping with fonts that depend on AAT
   bool ShapeText(const char16_t* aText, uint32_t aOffset, uint32_t aLength,
                  Script aScript, nsAtom* aLanguage, bool aVertical,
@@ -82,8 +80,6 @@ class gfxMacFont final : public gfxFont {
   CTFontRef mCTFont;
 
   mozilla::UniquePtr<gfxFontShaper> mCoreTextShaper;
-
-  Metrics mMetrics;
 
   bool mVariationFont;  // true if font has OpenType variations
 };

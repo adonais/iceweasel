@@ -628,7 +628,7 @@ RefPtr<AndroidImageReader> GpuProcessAndroidImageReaderMap::GetImageReader(
   if (it == mImageReaders.end()) {
     return nullptr;
   }
-  return it->second->mImageReader;
+  return RefPtr<AndroidImageReader>(it->second->mImageReader);
 }
 
 bool GpuProcessAndroidImageReaderMap::MaybeReleaseFrameToCodec(
@@ -663,8 +663,13 @@ RefPtr<AndroidImageConsumer> GpuProcessAndroidImageReaderMap::GetImageConsumer(
     return nullptr;
   }
 
+  RefPtr<AndroidImageReader> imageReader(holder->mImageReader);
+  if (!imageReader) {
+    return nullptr;
+  }
+
   RefPtr<AndroidImageConsumer> imageConsumer;
-  imageConsumer = AndroidImageConsumer::Create(holder->mImageReader, aGL);
+  imageConsumer = AndroidImageConsumer::Create(imageReader, aGL);
   if (!imageConsumer) {
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
     return nullptr;
@@ -694,7 +699,7 @@ void GpuProcessAndroidImageReaderMap::UnregisterImageConsumer(
 
 GpuProcessAndroidImageReaderMap::ImageReaderHolder::ImageReaderHolder(
     AndroidImageReader* aImageReader)
-    : mImageReader(aImageReader) {}
+    : mImageReader(RefPtr<AndroidImageReader>(aImageReader)) {}
 
 GpuProcessAndroidImageReaderMap::ImageReaderHolder::~ImageReaderHolder() {}
 

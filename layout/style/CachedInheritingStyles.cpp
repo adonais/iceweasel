@@ -10,6 +10,13 @@
 #include "nsWindowSizes.h"
 
 namespace mozilla {
+CachedInheritingStyles::~CachedInheritingStyles() {
+  if (IsIndirect()) {
+    delete AsIndirect();
+  } else if (!IsEmpty() && !IsNullDirect()) {
+    RefPtr<ComputedStyle> ref = dont_AddRef(AsDirect());
+  }
+}
 
 void CachedInheritingStyles::Insert(ComputedStyle* aStyle,
                                     PseudoStyleType aType,

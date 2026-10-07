@@ -1,11 +1,11 @@
-fuzzy-if(Android,0-8,0-30) fails-if(useDrawSnapshot) == background-image-zoom-1.html background-image-zoom-1-ref.html
+fuzzy-if(Android,0-8,0-30) == background-image-zoom-1.html background-image-zoom-1-ref.html
 fails-if(useDrawSnapshot) == background-image-zoom-2.html about:blank
 == image-in-iframe-1.html image-in-iframe-1-ref.html
 == image-seam-1a.html image-seam-1-ref.html
 == image-seam-1b.html image-seam-1-ref.html
 fuzzy-if(Android,0-255,0-154) == image-seam-2.html  image-seam-2-ref.html  # Bug 1128229
-fails-if(useDrawSnapshot) == image-zoom-1.html image-zoom-1-ref.html
-fails-if(useDrawSnapshot) == image-zoom-2.html image-zoom-1-ref.html
+== image-zoom-1.html image-zoom-1-ref.html
+== image-zoom-2.html image-zoom-1-ref.html
 == invalid-url-image-1.html invalid-url-image-1-ref.html
 == sync-image-switch-1a.html sync-image-switch-1-ref.html
 == sync-image-switch-1b.html sync-image-switch-1-ref.html
@@ -43,24 +43,24 @@ fuzzy(0-1,0-1) == image-orientation-dynamic.html image-orientation-dynamic-ref.h
 
 # <img srcset> tests
 == image-srcset-basic-selection-0.1x.html image-srcset-basic-selection-0.1x-ref.html
-fails-if(useDrawSnapshot) == image-srcset-basic-selection-2x.html image-srcset-basic-selection-2x-ref.html
+== image-srcset-basic-selection-2x.html image-srcset-basic-selection-2x-ref.html
 == image-srcset-basic-selection-0.5x.html image-srcset-basic-selection-0.5x-ref.html
 == image-srcset-basic-selection-0.6x.html image-srcset-basic-selection-0.6x-ref.html
-fails-if(useDrawSnapshot) == image-srcset-basic-selection-1.5x.html image-srcset-basic-selection-1.5x-ref.html
+== image-srcset-basic-selection-1.5x.html image-srcset-basic-selection-1.5x-ref.html
 == image-srcset-basic-selection-1x.html image-srcset-basic-selection-1x-ref.html
 == image-srcset-basic-selection-width-0.5x.html image-srcset-basic-selection-width-0.5x-ref.html
-fails-if(useDrawSnapshot) == image-srcset-basic-selection-width-10x.html image-srcset-basic-selection-width-10x-ref.html
-fails-if(useDrawSnapshot) == image-srcset-basic-selection-width-2x.html image-srcset-basic-selection-width-2x-ref.html
+== image-srcset-basic-selection-width-10x.html image-srcset-basic-selection-width-10x-ref.html
+== image-srcset-basic-selection-width-2x.html image-srcset-basic-selection-width-2x-ref.html
 == image-srcset-basic-selection-width-1x.html image-srcset-basic-selection-width-1x-ref.html
-fails-if(useDrawSnapshot) == image-srcset-default-2x.html image-srcset-default-2x-ref.html
+== image-srcset-default-2x.html image-srcset-default-2x-ref.html
 == image-srcset-default-1x.html image-srcset-default-1x-ref.html
-fails-if(useDrawSnapshot) == image-srcset-default-src-2x.html image-srcset-default-src-2x-ref.html
+== image-srcset-default-src-2x.html image-srcset-default-src-2x-ref.html
 == image-srcset-default-src-1x.html image-srcset-default-src-1x-ref.html
-fails-if(useDrawSnapshot) == image-srcset-isize.html image-srcset-isize-ref.html
-fails-if(useDrawSnapshot) == image-srcset-svg-3x.html image-srcset-svg-3x-ref.html
+== image-srcset-isize.html image-srcset-isize-ref.html
+== image-srcset-svg-3x.html image-srcset-svg-3x-ref.html
 == image-srcset-svg-2x.html image-srcset-svg-2x-ref.html
 == image-srcset-svg-1x.html image-srcset-svg-1x-ref.html
-fails-if(useDrawSnapshot) == image-srcset-svg-default-2x.html image-srcset-svg-default-2x-ref.html
+== image-srcset-svg-default-2x.html image-srcset-svg-default-2x-ref.html
 == image-srcset-svg-default-1x.html image-srcset-svg-default-1x-ref.html
 
 == image-resize-percent-height.html image-resize-ref.html
@@ -70,4 +70,19 @@ skip-if(Android) == chrome://reftest/content/image/moz-broken-matching-1.html ch
 skip-if(Android) == chrome://reftest/content/image/moz-broken-matching-lazy-load.html chrome://reftest/content/image/moz-broken-matching-1-ref.html
 
 == img-invalidation-local-transform-1.html img-invalidation-local-transform-1-ref.html
+
+# An image under a reference frame whose origin is not on a device pixel is
+# rasterized a device pixel taller than the rect it snaps to. WebRender draws
+# that texture 1:1 from the snapped origin and clips the surplus rather than
+# resampling the whole image to fit; the reference is that raster, on the grid,
+# clipped to the snapped height (bug 2070683).
+pref(layout.disable-pixel-alignment,true) pref(layout.css.devPixelsPerPx,"1.0") == image-refframe-fractional-raster-1.html?100.6,0 image-fractional-raster-1-ref.html?101,201,200
+
+# The same for a fractional scroll offset, which shifts the phase by a different
+# route: the scroll offset is normalized out of the item in app units and
+# re-applied by WebRender rounded to a whole device pixel, so the image snaps a
+# row above where the unscrolled arithmetic puts it and its raster is again a
+# row taller than the snapped rect. That is where WebRender snaps to, so the
+# pairing only holds on the WebRender path.
+skip-if(useDrawSnapshot) pref(layout.disable-pixel-alignment,true) pref(layout.css.devPixelsPerPx,"1.0") == image-scrolled-fractional-raster-1.html?300.5,0.5 image-fractional-raster-1-ref.html?300,201,200
 == unknown-protocol.html unknown-protocol-ref.html

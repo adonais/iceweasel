@@ -309,6 +309,7 @@ shared/android/workmanager_faq
 
 adrs/0000-template
 adrs/0001-kotlin-test
+adrs/0002-global-organized-tab-data
 rfcs/0000-template
 rfcs/0015-android-rfc-process
 shared/rfc/wallpapers_v2_network_improvements

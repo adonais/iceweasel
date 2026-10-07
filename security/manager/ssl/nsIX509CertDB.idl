@@ -109,6 +109,7 @@ interface nsIX509CertDB : nsISupports {
    *  @param type The type of the certificate, see constants in nsIX509Cert
    *  @param ctx A UI context.
    */
+  [can_run_script]
   void importCertificates([array, size_is(length)] in octet data,
                           in unsigned long length,
                           in unsigned long type,
@@ -195,7 +196,7 @@ interface nsIX509CertDB : nsISupports {
    *  @param aType Describes the type of certificate that is going to
    *               be imported. See type constants in nsIX509Cert.
    */
-  [must_use]
+  [can_run_script, must_use]
   void importCertsFromFile(in nsIFile aFile,
                            in unsigned long aType);
 

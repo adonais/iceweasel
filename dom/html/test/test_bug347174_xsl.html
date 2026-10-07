@@ -21,6 +21,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=347174
 // Test of readyState of XML document transformed via XSLT to HTML
 // this test passes in IE7
 window.readyStateText = [];
+let frameDidFireDOMContentLoaded = false;
 
 function showMessage(msg) {
     window.readyStateText.push(msg);
@@ -33,6 +34,7 @@ function frameScriptTag(readyState) {
 }
 
 function frameLoad(readyState) {
+  ok(frameDidFireDOMContentLoaded, "DOMContentLoaded should fire before load");
   is(readyState, "complete", "document.readyState should be 'complete' on load");
   showMessage("load: " + readyState);
   SimpleTest.finish();
@@ -43,6 +45,7 @@ function frameReadyStateChange(readyState) {
 }
 
 function frameDOMContentLoaded(readyState) {
+  frameDidFireDOMContentLoaded = true;
   is(readyState, "interactive", "document.readyState should be 'interactive' on DOMContentLoaded");
   showMessage("DOMContentLoaded: " + readyState);
 }

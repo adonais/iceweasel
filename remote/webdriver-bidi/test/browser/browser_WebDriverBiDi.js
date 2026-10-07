@@ -124,3 +124,80 @@ add_task(async function test_createSession() {
     { capabilities, isBidi: true }
   );
 });
+
+add_task(async function test_createSession_dynamicStart() {
+  const { UserContextManager } = ChromeUtils.importESModule(
+    "chrome://remote/content/shared/UserContextManager.sys.mjs"
+  );
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["remote.experimental.dynamicstart.prompt.enabled", false]],
+  });
+
+  // Fake agent for a server started at runtime for something else than browser
+  // automation. Keep `running` false so that no path handler is registered.
+  const dynamicStartAgent = {
+    browserStartupFinished: Promise.resolve(),
+    isBrowserAutomationRunning: false,
+    isDynamicStartRunning: true,
+    running: false,
+  };
+
+  const createDynamicStartSession = async () => {
+    const wdBiDi = new WebDriverBiDi(dynamicStartAgent);
+    await wdBiDi.createSession({}, new Set(["bidi"]));
+    return wdBiDi;
+  };
+
+  const wdBiDi = await createDynamicStartSession();
+  const userContext = wdBiDi.session.userContext;
+
+  try {
+    ok(userContext, "The session is restricted to a user context");
+    isnot(userContext, "default", "The default user context was not reused");
+    is(
+      userContext,
+      wdBiDi.session.capabilities.get("moz:userContext"),
+      "The user context id is exposed as the moz:userContext capability"
+    );
+    ok(
+      UserContextManager.getUserContextIds().includes(userContext),
+      "The user context is known by the UserContextManager"
+    );
+    Assert.deepEqual(
+      UserContextManager.getUserContextIdsByName("remote-control-container"),
+      [userContext],
+      "A single container was created for the expected name"
+    );
+
+    wdBiDi.deleteSession();
+
+    // The container is reused for subsequent sessions.
+    const otherWdBiDi = await createDynamicStartSession();
+    is(
+      otherWdBiDi.session.userContext,
+      userContext,
+      "The same user context is reused for a new session"
+    );
+    otherWdBiDi.deleteSession();
+  } finally {
+    UserContextManager.removeUserContext(userContext);
+  }
+});
+
+add_task(async function test_createSession_noDynamicStart() {
+  await runBiDiTest(
+    wdBiDi => {
+      is(
+        wdBiDi.session.userContext,
+        null,
+        "Sessions for browser automation are not restricted to a user context"
+      );
+      ok(
+        !wdBiDi.session.capabilities.has("moz:userContext"),
+        "The moz:userContext capability is not returned"
+      );
+    },
+    { isBidi: true }
+  );
+});

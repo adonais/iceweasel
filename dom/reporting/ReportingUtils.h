@@ -24,7 +24,7 @@ class ReportingUtils final {
                                     nsACString& outStrippedFileName);
 
   static void Report(nsIGlobalObject* aGlobal, nsAtom* aType,
-                     const nsAString& aGroupName, const nsAString& aURL,
+                     const nsACString& aGroupName, const nsACString& aURL,
                      ReportBody* aBody);
 
   /**

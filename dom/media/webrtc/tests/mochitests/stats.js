@@ -1447,7 +1447,7 @@ function pedanticChecks(report) {
         "max-mbps",
       ];
       // AV1 parameters:
-      //  https://aomediacodec.github.io/av1-rtp-spec/#721-mapping-of-media-subtype-parameters-to-sdp
+      //  https://aomediacodec.github.io/av1-rtp-spec/#sdp-mapping-media-subtype
       const av1Params = ["profile", "level-idx", "tier"];
       // Check that the parameters are as expected. AV1 may have no parameters.
       for (const param of (stat.sdpFmtpLine || "").split(";")) {
@@ -1893,11 +1893,13 @@ function pedanticChecks(report) {
     ) {
       info(`candidate is ${JSON.stringify(stat)}`);
 
-      // address
-      ok(
-        stat.address,
-        `${stat.type} has address. value=${stat.address} ` + `(${stat.kind})`
-      );
+      if (stat.candidateType != "prflx") {
+        // address
+        ok(
+          stat.address,
+          `${stat.type} has address. value=${stat.address} (${stat.kind})`
+        );
+      }
 
       // protocol
       ok(

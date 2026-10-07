@@ -6,6 +6,7 @@
 #define SwipeTracker_h
 
 #include "EventForwards.h"
+#include "InputData.h"
 #include "Units.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
@@ -17,8 +18,6 @@ class nsIWidget;
 class nsRefreshDriver;
 
 namespace mozilla {
-
-class PanGestureInput;
 
 /**
  * SwipeTracker turns PanGestureInput events into swipe events
@@ -97,6 +96,7 @@ class SwipeTracker final : public nsARefreshObserver {
   bool mEventsAreControllingSwipe = true;
   bool mEventsHaveStartedNewGesture = false;
   bool mRegisteredWithRefreshDriver = false;
+  bool mLastComputedSwipeSuccess = false;
 };
 
 struct SwipeEventQueue {

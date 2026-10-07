@@ -34,7 +34,6 @@ constructor(
     private lateinit var fontDecrementButton: AppCompatButton
     private lateinit var fontGroup: RadioGroup
     private lateinit var colorSchemeGroup: RadioGroup
-    private lateinit var listenButton: AppCompatButton
 
     private var view: View? = null
 
@@ -116,10 +115,10 @@ constructor(
      *
      * @return true if the inflation was completed, false if the view was already inflated.
      */
-    override fun tryInflate(isListenEnabled: Boolean): Boolean {
+    override fun tryInflate(): Boolean {
         return if (view == null) {
             view = View.inflate(context, R.layout.mozac_feature_readerview_view, this)
-            bindViews(isListenEnabled)
+            bindViews()
             true
         } else {
             false
@@ -133,7 +132,7 @@ constructor(
         super.onFocusChanged(gainFocus, direction, previouslyFocusedRect)
     }
 
-    private fun bindViews(isListenEnabled: Boolean) {
+    private fun bindViews() {
         fontGroup =
             applyCheckedListener(R.id.mozac_feature_readerview_font_group) { checkedId ->
                 val fontType =
@@ -163,15 +162,6 @@ constructor(
             applyClickListener(R.id.mozac_feature_readerview_font_size_decrease) {
                 listener?.onFontSizeDecreased()?.let { setFontSize(it) }
             }
-        listenButton = findViewById(R.id.mozac_feature_readerview_listen)
-        if (isListenEnabled) {
-            listenButton.apply {
-                visibility = VISIBLE
-                setOnClickListener { listener?.onListenClicked() }
-            }
-        } else {
-            listenButton.visibility = GONE
-        }
     }
 
     private inline fun applyClickListener(

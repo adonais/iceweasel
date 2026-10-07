@@ -7,12 +7,11 @@
 
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/WorkerRef.h"
 #include "nsISupportsImpl.h"
 
 namespace mozilla::dom {
-class ThreadSafeWorkerRef;
 class WorkerPrivate;
-class WeakWorkerRef;
 
 class WorkerDocumentListener final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WorkerDocumentListener)

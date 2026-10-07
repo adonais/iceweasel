@@ -30,7 +30,7 @@ class MLServices(Layer):
     """
 
     name = "ml-services"
-    activated = True
+    activated = False
 
     def setup(self):
         os.environ["MOZ_REMOTE_SETTINGS_DEVTOOLS"] = "1"

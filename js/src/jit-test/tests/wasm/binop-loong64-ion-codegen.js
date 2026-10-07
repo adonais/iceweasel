@@ -386,14 +386,10 @@ for ( [ty, const0, a, b, c, d] of
       "f",
       `and             \\$t6, \\$a0, \\$a1
        bne             \\$t6, \\$zero, \\d+ -> ${HEX}+
-       ${NopIns}
        bge             \\$zero, \\$zero, \\d+ -> ${HEX}+
-       ${NopIns}
        ${NopIns}
        addi.w          \\$a0, \\$zero, 1
        beq             \\$zero, \\$zero, \\d+ -> ${HEX}+
-       ${NopIns}
-       ${NopIns}
        ${NopIns}
        addi.w          \\$a0, \\$zero, 0`);
   assertEq(wasmEvalText(m).exports.f(a, a), 1)
@@ -431,14 +427,10 @@ for ( [ty, imm, expect] of
       "f",
       `${expect}
        bne             \\$t6, \\$zero, \\d+ -> ${HEX}+
-       ${NopIns}
        bge             \\$zero, \\$zero, \\d+ -> ${HEX}+
-       ${NopIns}
        ${NopIns}
        addi.w          \\$a0, \\$zero, 1
        beq             \\$zero, \\$zero, \\d+ -> ${HEX}+
-       ${NopIns}
-       ${NopIns}
        ${NopIns}
        addi.w          \\$a0, \\$zero, 0`);
 }
@@ -484,14 +476,10 @@ for ( [ty, cmpOp, imm, expect] of
       m,
       "f",
       `${expect}
-       ${NopIns}
        bge             \\$zero, \\$zero, \\d+ -> ${HEX}+
-       ${NopIns}
        ${NopIns}
        addi.w          \\$a0, \\$zero, 1
        beq             \\$zero, \\$zero, \\d+ -> ${HEX}+
-       ${NopIns}
-       ${NopIns}
        ${NopIns}
        addi.w          \\$a0, \\$zero, 0`);
 }
@@ -543,14 +531,10 @@ for ( [imm, expect] of
       `${expect}
        and             \\$t6, \\$a0, \\$t6
        bne             \\$t6, \\$zero, \\d+ -> ${HEX}+
-       ${NopIns}
        bge             \\$zero, \\$zero, \\d+ -> ${HEX}+
-       ${NopIns}
        ${NopIns}
        addi.w          \\$a0, \\$zero, 1
        beq             \\$zero, \\$zero, \\d+ -> ${HEX}+
-       ${NopIns}
-       ${NopIns}
        ${NopIns}
        addi.w          \\$a0, \\$zero, 0`);
 }

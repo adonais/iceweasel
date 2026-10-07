@@ -763,13 +763,6 @@ double AudioContext::CurrentTime() {
       rawTime, GetRandomTimelineSeed(), mRTPCallerType);
 }
 
-nsISerialEventTarget* AudioContext::GetMainThread() const {
-  if (nsIGlobalObject* global = GetRelevantGlobal()) {
-    return global->SerialEventTarget();
-  }
-  return GetCurrentSerialEventTarget();
-}
-
 void AudioContext::DisconnectFromOwner() {
   mIsDisconnecting = true;
   MaybeClearPageAwakeRequest();
@@ -1069,13 +1062,20 @@ void AudioContext::SuspendInternal(void* aPromise,
   auto promise = Graph()->ApplyAudioContextOperation(
       DestinationTrack(), std::move(tracks), AudioContextOperation::Suspend);
   if ((aFlags & AudioContextOperationFlags::SendStateChange)) {
-    promise->Then(
-        GetMainThread(), "AudioContext::OnStateChanged",
-        [self = RefPtr<AudioContext>(this),
-         aPromise](AudioContextState aNewState) {
-          self->OnStateChanged(aPromise, aNewState);
-        },
-        [] { MOZ_CRASH("Unexpected rejection"); });
+    promise
+        // The graph requires us to handle the promise on a tail-dispatchable
+        // thread, but tail-dispatched tasks are not interleaved with
+        // microtask checkpoints or stable state (bug 2072929), so relay as a
+        // regular task to make JS behave as expected in the event callback.
+        ->Map(AbstractThread::MainThread(),
+              "AudioContext::OnStateChanged tail-dispatch",
+              [](AudioContextState aValue) { return aValue; })
+        ->Then(
+            GetMainThreadSerialEventTarget(), "AudioContext::OnStateChanged",
+            [self = RefPtr(this), aPromise](AudioContextState aNewState) {
+              self->OnStateChanged(aPromise, aNewState);
+            },
+            [] { MOZ_CRASH("Unexpected rejection"); });
   }
 }
 
@@ -1156,9 +1156,16 @@ void AudioContext::ResumeInternal() {
   Graph()
       ->ApplyAudioContextOperation(DestinationTrack(), std::move(tracks),
                                    AudioContextOperation::Resume)
+      // The graph requires us to handle the promise on a tail-dispatchable
+      // thread, but tail-dispatched tasks are not interleaved with
+      // microtask checkpoints or stable state (bug 2072929), so relay as a
+      // regular task to make JS behave as expected in the event callback.
+      ->Map(AbstractThread::MainThread(),
+            "AudioContext::OnStateChanged tail-dispatch",
+            [](AudioContextState aValue) { return aValue; })
       ->Then(
-          GetMainThread(), "AudioContext::OnStateChanged",
-          [self = RefPtr<AudioContext>(this)](AudioContextState aNewState) {
+          GetMainThreadSerialEventTarget(), "AudioContext::OnStateChanged",
+          [self = RefPtr(this)](AudioContextState aNewState) {
             self->OnStateChanged(nullptr, aNewState);
           },
           [] {});  // Promise may be rejected after graph shutdown.
@@ -1252,13 +1259,20 @@ void AudioContext::CloseInternal(void* aPromise,
     auto promise = Graph()->ApplyAudioContextOperation(
         ds, std::move(tracks), AudioContextOperation::Close);
     if ((aFlags & AudioContextOperationFlags::SendStateChange)) {
-      promise->Then(
-          GetMainThread(), "AudioContext::OnStateChanged",
-          [self = RefPtr<AudioContext>(this),
-           aPromise](AudioContextState aNewState) {
-            self->OnStateChanged(aPromise, aNewState);
-          },
-          [] {});  // Promise may be rejected after graph shutdown.
+      promise
+          // The graph requires us to handle the promise on a tail-dispatchable
+          // thread, but tail-dispatched tasks are not interleaved with
+          // microtask checkpoints or stable state (bug 2072929), so relay as a
+          // regular task to make JS behave as expected in the event callback.
+          ->Map(AbstractThread::MainThread(),
+                "AudioContext::OnStateChanged tail-dispatch",
+                [](AudioContextState aValue) { return aValue; })
+          ->Then(
+              GetMainThreadSerialEventTarget(), "AudioContext::OnStateChanged",
+              [self = RefPtr(this), aPromise](AudioContextState aNewState) {
+                self->OnStateChanged(aPromise, aNewState);
+              },
+              [] {});  // Promise may be rejected after graph shutdown.
     }
   }
   mCloseCalled = true;

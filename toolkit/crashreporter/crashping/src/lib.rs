@@ -155,8 +155,9 @@ fn set_metrics_from_annotations(annotations: &serde_json::Value) -> anyhow::Resu
     let mut meta_annotations = serde_json::Map::default();
     for annotation in ANNOTATIONS {
         if let Some(value) = annotations.get(annotation.key) {
-            (annotation.set_glean_metric)(value)?;
-            meta_annotations.insert(annotation.key.to_owned(), value.clone());
+            let sanitized_value = annotations::sanitize(annotation, value);
+            (annotation.set_glean_metric)(sanitized_value.as_ref())?;
+            meta_annotations.insert(annotation.key.to_owned(), sanitized_value.into_owned());
         }
     }
     glean_metrics::meta::annotations.set(glean_metrics::meta::AnnotationsObject {
@@ -408,6 +409,75 @@ mod test {
         });
     }
 
+    #[test]
+    fn java_exception_sanitization() {
+        glean_test(|| {
+            let annotations = serde_json::json!({
+                "JavaException": r#"{
+                    "exception": {
+                        "values": [
+                            {
+                                "stacktrace": {
+                                    "value": "POISON",
+                                    "module": "foo.bar",
+                                    "type": "FooBarType",
+                                    "frames": [{
+                                        "module": "org.mozilla",
+                                        "function": "FooBar",
+                                        "in_app": true,
+                                        "lineno": 42,
+                                        "filename": "FooBar.java"
+                                    }]
+                                }
+                            },
+                            {
+                                "stacktrace": {
+                                    "value": "POISON",
+                                    "module": "foo.bar2",
+                                    "type": "FooBar2Type",
+                                    "frames": [{
+                                        "module": "org.mozilla",
+                                        "function": "FooBar2",
+                                        "in_app": true,
+                                        "lineno": 43,
+                                        "filename": "FooBar2.java"
+                                    }]
+                                }
+                            }
+                        ]
+                    }
+                }"#
+            });
+
+            // Check that the payload doesn't contain "POISON"
+            let success = SoftAssert::new(false, "one or more failures occurred");
+            let metrics_tested = SoftAssert::new(true, "test_before_next_send did not run");
+            {
+                let success = success.clone();
+                let metrics_tested = metrics_tested.clone();
+                test_before_next_send(move |_| {
+                    let meta_annotations = glean_metrics::meta::annotations
+                        .test_get_value(Some("crash".into()))
+                        .expect("no meta annotations");
+                    success.assert(
+                        !meta_annotations.to_string().contains("POISON"),
+                        "JavaException not sanitized in meta annotations",
+                    );
+                    let exc = glean_metrics::crash::java_exception
+                        .test_get_value(Some("crash".into()))
+                        .expect("no java exception");
+                    success.assert(
+                        !exc.to_string().contains("POISON"),
+                        "JavaException not sanitized in metric",
+                    );
+                    metrics_tested.clear();
+                });
+            }
+
+            send(&annotations, Some("crash")).expect("failed to set metrics");
+        });
+    }
+
     fn test_annotation(
         annotation: &'static crate::annotations::Annotation,
         value: serde_json::Value,
@@ -506,7 +576,6 @@ mod test {
             => {
                 "throwables": [
                     {
-                        "message": "something went wrong",
                         "type_name": "foo.bar.FooBarType",
                         "stack": [
                             {

@@ -38,9 +38,6 @@ prefs = [
 ["browser_dbg-inline-exceptions.js"]
 
 ["browser_dbg-inline-preview.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1607636
-]
 
 ["browser_dbg-inline-script-offset.js"]
 
@@ -71,9 +68,6 @@ fail-if = [
 ["browser_dbg-many-breakpoints-same-line.js"]
 
 ["browser_dbg-merge-scopes.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-message-run-to-completion.js"]
 
@@ -101,9 +95,6 @@ fail-if = [
 ["browser_dbg-overrides-original.js"]
 
 ["browser_dbg-overrides.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-pause-exceptions.js"]
 
@@ -122,9 +113,6 @@ fail-if = [
 ["browser_dbg-paused-overlay.js"]
 
 ["browser_dbg-pretty-print-auto.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-pretty-print-breakpoints-columns.js"]
 fail-if = [
@@ -151,11 +139,6 @@ fail-if = [
 ["browser_dbg-pretty-print-paused.js"]
 
 ["browser_dbg-pretty-print-sourcemap.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1817966
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && ccov", # Bug 1817966
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && ccov", # Bug 1817966
-]
 
 ["browser_dbg-pretty-print.js"]
 
@@ -164,19 +147,10 @@ skip-if = [
 ["browser_dbg-preview-frame.js"]
 
 ["browser_dbg-preview-getter.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-preview-invalid-tokens.js"]
-skip-if = [
-  "debug", # Bug 1958748 intermittent toolbox documents leaks
-]
 
 ["browser_dbg-preview-jump-to-definition.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-preview-module.js"]
 
@@ -185,31 +159,20 @@ fail-if = [
 ["browser_dbg-preview-multiple-frames.js"]
 
 ["browser_dbg-preview-multiple-threads.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 .threads-pane .thread is not accessible
-]
 
 ["browser_dbg-preview-source-maps.js"]
 
 ["browser_dbg-preview-switch.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1849028 .theme-twisty is inconsistently not accessible
-]
 
 ["browser_dbg-preview-wrapped-lines.js"]
-skip-if = [
-  "true", # Bug 1985564 the test is flaky
-]
-# fail-if = ["a11y_checks"] # Bug 1860733 splitter element is not focusable
 
 ["browser_dbg-preview.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-project-root.js"]
 
 ["browser_dbg-project-search.js"]
+
+["browser_dbg-sources-with-many-actors.js"]
 fail-if = [
   "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
 ]

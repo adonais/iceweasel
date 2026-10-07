@@ -2,13 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { BackupResource } from "resource:///modules/backup/BackupResource.sys.mjs";
+import { BackupResource } from "moz-src:///browser/components/backup/resources/BackupResource.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  BackupService: "resource:///modules/backup/BackupService.sys.mjs",
+  BackupService: "moz-src:///browser/components/backup/BackupService.sys.mjs",
   OSKeyStore: "resource://gre/modules/OSKeyStore.sys.mjs",
 });
 
@@ -49,6 +49,7 @@ export class CredentialsAndSecurityBackupResource extends BackupResource {
       "key4.db",
       "credentialstate.sqlite",
       "logins.db",
+      "autofill.db",
     ];
     await BackupResource.copySqliteDatabases(
       profilePath,
@@ -80,6 +81,7 @@ export class CredentialsAndSecurityBackupResource extends BackupResource {
       "key4.db",
       "credentialstate.sqlite",
       "logins.db",
+      "autofill.db",
     ];
 
     if (await IOUtils.exists(AUTOFILL_RECORDS_PATH)) {
@@ -150,6 +152,7 @@ export class CredentialsAndSecurityBackupResource extends BackupResource {
       "autofill-profiles.json",
       "credentialstate.sqlite",
       "logins.db",
+      "autofill.db",
     ];
     let credentialsSize = 0;
 

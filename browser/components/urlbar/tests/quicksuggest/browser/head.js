@@ -11,8 +11,8 @@ Services.scriptloader.loadSubScript(
 );
 
 ChromeUtils.defineESModuleGetters(this, {
-  CONTEXTUAL_SERVICES_PING_TYPES:
-    "resource:///modules/PartnerLinkAttribution.sys.mjs",
+  QUICK_SUGGEST_PING_TYPE:
+    "moz-src:///browser/components/urlbar/private/AmpSuggestions.sys.mjs",
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
@@ -612,13 +612,13 @@ function assertQuickSuggestPing(expectedPing) {
     "Sanity check: The expected ping should have a 'pingType'"
   );
   switch (expectedPing.pingType) {
-    case CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION:
+    case QUICK_SUGGEST_PING_TYPE.IMPRESSION:
       expectedKeys.push("isClicked", "reportingUrl");
       break;
-    case CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION:
+    case QUICK_SUGGEST_PING_TYPE.CLICK:
       expectedKeys.push("reportingUrl");
       break;
-    case CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK:
+    case QUICK_SUGGEST_PING_TYPE.BLOCK:
       expectedKeys.push("iabCategory");
       break;
   }

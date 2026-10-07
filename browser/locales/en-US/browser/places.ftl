@@ -22,14 +22,14 @@ places-open-in-window =
   .accesskey = N
 places-open-in-private-window =
   .label = Open in New Private Window
-  .accesskey = P
+  .accesskey = v
 
 places-empty-bookmarks-folder =
   .label = (Empty)
 
 places-add-bookmark =
   .label = Add Bookmark…
-  .accesskey = B
+  .accesskey = k
 places-add-folder-contextmenu =
   .label = Add Folder…
   .accesskey = F
@@ -294,6 +294,7 @@ places-locked-prompt = The bookmarks and history system will not be functional b
 
 # Share is a verb here. Meaning to "Share" the bookmark "Folder"
 # .badge used to promote the sharing menu item; keep it as short as possible.
-places-share-folder2 =
+places-share-folder3 =
   .label = Share Folder
+  .accesskey = a
   .badge = New

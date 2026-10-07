@@ -7,6 +7,11 @@
 // Disable scroll axis lock, WebDriver should be able to scroll arbitrary
 // directions.
 user_pref("apz.axis_lock.mode", 0);
+// Use zero movement tolerance before a touch is treated as a pan, so that in
+// automation touch events scroll from exactly the position they are dispatched
+// without small movements first being absorbed.
+user_pref("apz.touch_move_tolerance", "0.0");
+user_pref("apz.touch_start_tolerance", "0.0");
 // Don't use the new tab page but about:blank for opened tabs
 user_pref("browser.newtabpage.enabled", false);
 // Don't restore the last open set of tabs if the browser has crashed

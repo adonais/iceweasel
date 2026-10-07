@@ -542,6 +542,7 @@ ProtectedAuthCancelObserver::Observe(nsISupports*, const char*,
 
 }  // namespace
 
+MOZ_CAN_RUN_SCRIPT
 static char* ShowProtectedAuthPrompt(PK11SlotInfo* slot) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(slot);
@@ -654,8 +655,7 @@ NS_IMPL_ISUPPORTS(PK11PasswordPromptRunnable, nsIRunnable)
 
 bool PK11PasswordPromptRunnable::mRunning = false;
 
-NS_IMETHODIMP
-PK11PasswordPromptRunnable::Run() {
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP PK11PasswordPromptRunnable::Run() {
   MOZ_ASSERT(NS_IsMainThread());
   if (!NS_IsMainThread()) {
     return NS_ERROR_NOT_SAME_THREAD;

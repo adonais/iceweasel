@@ -137,7 +137,7 @@ See also:
 The source code for push is available under the following paths in mozilla-central:
 
 * [`dom/push/`](https://searchfox.org/firefox-main/source/dom/push/)
-* [`mobile/shared/components/geckoview/GeckoViewPush.sys.mjs`](mobile/shared/components/geckoview/GeckoViewPush.sys.mjs)
+* [`mobile/shared/components/geckoview/GeckoViewPush.sys.mjs`](https://searchfox.org/firefox-main/source/mobile/shared/components/geckoview/GeckoViewPush.sys.mjs)
 * [`mobile/android/geckoview/src/main/java/org/mozilla/geckoview/WebPush*.java`](https://searchfox.org/firefox-main/source/mobile/android/geckoview/src/main/java/org/mozilla/geckoview/)
 * Under `mobile/android/android-components/components`:
   * [`feature/push/src/main/java/mozilla/components/feature/push/`](https://searchfox.org/firefox-main/source/mobile/android/android-components/components/feature/push/src/main/java/mozilla/components/feature/push/)

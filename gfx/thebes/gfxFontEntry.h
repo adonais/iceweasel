@@ -25,6 +25,7 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/RWLock.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
@@ -751,7 +752,10 @@ class gfxFontEntry {
     if (!mSkrifaFontInitialized) {
       mozilla::AutoWriteLock lock(mLock);
       if (!mSkrifaFontInitialized) {
-        InitSkrifaFontFace();
+        if (mozilla::StaticPrefs::
+                gfx_font_rendering_fontations_enabled_AtStartup()) {
+          InitSkrifaFontFace();
+        }
         mSkrifaFontInitialized = true;
       }
     }
@@ -834,12 +838,13 @@ class gfxFontEntry {
   // Set the Skrifa font ref and hold on to the memory mapping, unless the
   // face has already been set, in which case the passed font and mapping
   // are discarded.
-  void SetSkrifaFont(SkrifaFontRef* aSkrifaFont,
+  // Returns true if the font was set, false if it was discarded.
+  bool SetSkrifaFont(SkrifaFontRef* aSkrifaFont,
                      mozilla::MemoryMappedFile&& aSkrifaFontFile);
 
   // Set the Skrifa font ref with no memmap'd file. Used for webfonts when
   // mIsDataUserFont is true.
-  void SetSkrifaFont(SkrifaFontRef* aSkrifaFont);
+  bool SetSkrifaFont(SkrifaFontRef* aSkrifaFont);
 
   // Attempt to initialize a SkrifaFontRef for this resource, and record it
   // via SetSkrifaFont.

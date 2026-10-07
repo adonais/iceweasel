@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<meta charset="utf-8">
+<body>
+<script>
+  function tick() {
+    return new Promise(resolve => setTimeout(resolve, 0));
+  }
+
+  async function go() {
+    const frame = document.createElement("iframe");
+    const loaded = new Promise(resolve =>
+      frame.addEventListener("load", resolve, { once: true })
+    );
+    frame.src = "2073079-iframe.html";
+    document.body.appendChild(frame);
+    await loaded;
+
+    const controller = frame.contentWindow.startConsuming();
+    // Let the reader issue its read request before the global goes away.
+    await tick();
+    await tick();
+
+    // Tearing down the global releases the reader's pipe. That happens off a
+    // runnable, so give it time rather than a fixed number of ticks.
+    frame.remove();
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // The read request is still registered on the stream, but the reader
+    // behind it has released its output pipe along with the global.
+    try {
+      controller.enqueue(new Uint8Array([1]));
+    } catch (e) {}
+
+    await tick();
+    document.documentElement.classList.remove("reftest-wait");
+  }
+
+  go();
+</script>
+</body>
+</html>

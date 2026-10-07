@@ -18,19 +18,6 @@ export function initialSourcesState() {
   /* eslint sort-keys: "error" */
   return {
     /**
-     * List of all breakpoint positions for all sources (generated and original).
-     * Map of source id (string) to dictionary object whose keys are line numbers
-     * and values of array of positions.
-     * A position is an object made with two attributes:
-     * location and generatedLocation. Both refering to breakpoint positions
-     * in original and generated sources.
-     * In case of generated source, the two location will be the same.
-     *
-     * Map(source id => Dictionary(int => array<Position>))
-     */
-    mutableBreakpointPositions: new Map(),
-
-    /**
      * Set(Source ID: string)
      *
      * This is a list of IDs for the style sheet sources which have been disabled and
@@ -230,34 +217,6 @@ function update(state = initialSourcesState(), action) {
       };
     }
 
-    case "ADD_BREAKPOINT_POSITIONS": {
-      // Merge existing and new reported position if some where already stored
-      let positions = state.mutableBreakpointPositions.get(action.source.id);
-      if (positions) {
-        positions = { ...positions, ...action.positions };
-      } else {
-        positions = action.positions;
-      }
-
-      state.mutableBreakpointPositions.set(action.source.id, positions);
-
-      return {
-        ...state,
-      };
-    }
-
-    case "CLEAR_BREAKPOINT_POSITIONS": {
-      if (!state.mutableBreakpointPositions.has(action.source.id)) {
-        return state;
-      }
-
-      state.mutableBreakpointPositions.delete(action.source.id);
-
-      return {
-        ...state,
-      };
-    }
-
     case "REMOVE_SOURCES": {
       return removeSourcesAndActors(state, action);
     }
@@ -314,7 +273,6 @@ function removeSourcesAndActors(state, action) {
     mutableOriginalSources,
     mutableSourceActors,
     mutableOriginalBreakableLines,
-    mutableBreakpointPositions,
   } = state;
 
   const newState = { ...state };
@@ -359,29 +317,7 @@ function removeSourcesAndActors(state, action) {
         originalSourceIds = originalSourceIds.filter(id => id != sourceId);
         mutableOriginalSources.set(generatedSourceId, originalSourceIds);
       }
-
-      // We should also remove the mapped location from the breakpoint positions
-      //
-      // `mutableBreakpointPositions` is a Map keyed per generated source id
-      //   `generatedBreakpointPositions` is a Array
-      //     `position` is an object with `location` and `generatedLocation` attributes
-      const generatedBreakpointPositions =
-        mutableBreakpointPositions.get(generatedSourceId);
-      if (generatedBreakpointPositions) {
-        for (const line in generatedBreakpointPositions) {
-          for (const position of generatedBreakpointPositions[line]) {
-            // Only clear the original mapped location if that's a breakpoint
-            // for the currently removed original source. This generated/bundle source
-            // may have breakpoints for many original sources.
-            if (position.location.source == removedSource) {
-              position.location = position.generatedLocation;
-            }
-          }
-        }
-      }
     }
-
-    mutableBreakpointPositions.delete(sourceId);
 
     if (
       action.resetSelectedLocation &&
@@ -439,17 +375,6 @@ function insertSourceActors(state, action) {
       mutableSourceActors.set(sourceId, [...existing, sourceActor]);
     } else {
       mutableSourceActors.set(sourceId, [sourceActor]);
-    }
-  }
-
-  const scriptActors = sourceActors.filter(
-    item => item.introductionType === "scriptElement"
-  );
-  if (scriptActors.length) {
-    // If new HTML sources are being added, we need to clear the breakpoint
-    // positions since the new source is a <script> with new breakpoints.
-    for (const { sourceObject } of scriptActors) {
-      state.mutableBreakpointPositions.delete(sourceObject.id);
     }
   }
 

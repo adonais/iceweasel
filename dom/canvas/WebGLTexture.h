@@ -242,7 +242,8 @@ class WebGLTexture final : public WebGLContextBoundObject,
   // CompressedTexSubImage iff `sub`
   void CompressedTexImage(bool sub, GLenum imageTarget, uint32_t level,
                           GLenum formatEnum, const uvec3& offset,
-                          const uvec3& size, const Range<const uint8_t>& src,
+                          const uvec3& size,
+                          const mozilla::Range<const uint8_t>& src,
                           const uint32_t pboImageSize,
                           const Maybe<uint64_t>& pboOffset);
 

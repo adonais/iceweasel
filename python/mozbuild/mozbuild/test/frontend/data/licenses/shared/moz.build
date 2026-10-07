@@ -1,0 +1,4 @@
+LICENSES += ["MIT"]
+LICENSES["MIT"].title = "MIT License"
+LICENSES["MIT"].text = "mit.txt"
+LICENSES["MIT"].spdx = "MIT"

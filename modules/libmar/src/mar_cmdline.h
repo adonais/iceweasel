@@ -5,7 +5,7 @@
 #ifndef MAR_CMDLINE_H_
 #define MAR_CMDLINE_H_
 
-/* We use NSPR here just to import the definition of uint32_t */
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

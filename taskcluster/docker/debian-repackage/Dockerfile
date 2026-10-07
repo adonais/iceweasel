@@ -1,6 +1,7 @@
 FROM $DOCKER_IMAGE_PARENT
 MAINTAINER Mozilla Releng <release@mozilla.com>
 
+VOLUME /builds/worker/checkouts
 VOLUME /builds/worker/workspace
 
 # At the moment the Firefox build sysroot for i386 and amd64 use jessie and arm64 uses buster.

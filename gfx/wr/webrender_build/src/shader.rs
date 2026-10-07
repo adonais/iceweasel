@@ -97,36 +97,60 @@ impl ShaderSourceMap {
         self.current_line += 1;
     }
 
-    pub fn query(&self, output_line: usize) -> (String, usize) {
+    /// Map a line of the expanded source back to the file and line it came
+    /// from. Returns `None` if no range has been recorded, which happens only
+    /// for a map that was never fed a source.
+    pub fn query(&self, output_line: usize) -> Option<(String, usize)> {
         assert!(output_line >= 1);
-        for i in 0..self.ranges.len() - 1 {
-            let previous = &self.ranges[i];
-            let next = &self.ranges[i + 1];
+        for window in self.ranges.windows(2) {
+            let (previous, next) = (&window[0], &window[1]);
             if output_line >= previous.output_line && output_line < next.output_line {
                 let line_offset = output_line - previous.output_line;
-                return (previous.filename.clone(), previous.input_line + line_offset);
+                return Some((previous.filename.clone(), previous.input_line + line_offset));
             }
         }
 
-        let last = self.ranges.last().unwrap();
-        let line_offset = output_line - last.output_line;
-        (last.filename.clone(), last.input_line + line_offset)
+        let last = self.ranges.last()?;
+        let line_offset = output_line.checked_sub(last.output_line)?;
+        Some((last.filename.clone(), last.input_line + line_offset))
+    }
+
+    /// Parse a driver shader log into one entry per line, resolving the
+    /// locations drivers report in the expanded source back to the `.glsl`
+    /// file and line they were written in.
+    ///
+    /// Lines whose format no driver pattern matches are kept verbatim with no
+    /// location, so an unrecognized driver loses the line number rather than
+    /// the message.
+    pub fn map_log(&self, log: &str) -> Vec<ShaderLogLine> {
+        log.lines()
+            .filter(|line| !line.trim().is_empty())
+            .map(|line| match parse_log_line(line) {
+                Some((output_line, column, message)) => {
+                    let location = self.query(output_line as usize);
+                    ShaderLogLine {
+                        file: location.as_ref().map(|(file, _)| file.clone()),
+                        line: location.map(|(_, line)| line as u32),
+                        column,
+                        message,
+                    }
+                }
+                None => ShaderLogLine {
+                    file: None,
+                    line: None,
+                    column: None,
+                    message: line.to_string(),
+                },
+            })
+            .collect()
     }
 
     pub fn process_log(&self, log: &str) -> String {
         let mut output = String::new();
 
-        let re = regex::Regex::new(r#"^0:([0-9]+)\(([0-9]+)\): (.*)$"#).unwrap();
-        for line in log.lines() {
-            if let Some(captures) = re.captures(line) {
-                let (_, [line_number, column_number, error_str]) = captures.extract();
-                let output_line = line_number.parse::<usize>().unwrap();
-                let (filename, input_line) = self.query(output_line);
-                output.push_str(format!("{}:{}:{}: {}\n", filename, input_line, column_number, error_str).as_str());
-            } else {
-                output.push_str(line);
-                output.push('\n');
-            }
+        for entry in self.map_log(log) {
+            output.push_str(&entry.to_string());
+            output.push('\n');
         }
 
         output
@@ -137,6 +161,78 @@ impl ShaderSourceMap {
             println!("range: {}:{} -> output:{}", range.filename, range.input_line, range.output_line);
         }
     }
+}
+
+/// One line of a driver's shader compile or link log, with the location it
+/// refers to resolved back to the `.glsl` file it was written in.
+///
+/// `file` and `line` are `None` when the line carried no location, either
+/// because it is prose (drivers like to append summary lines) or because it
+/// used a format none of the known drivers use.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ShaderLogLine {
+    pub file: Option<String>,
+    pub line: Option<u32>,
+    pub column: Option<u32>,
+    pub message: String,
+}
+
+impl ::std::fmt::Display for ShaderLogLine {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match (&self.file, self.line, self.column) {
+            (Some(file), Some(line), Some(column)) => {
+                write!(f, "{}:{}:{}: {}", file, line, column, self.message)
+            }
+            (Some(file), Some(line), None) => {
+                write!(f, "{}:{}: {}", file, line, self.message)
+            }
+            _ => write!(f, "{}", self.message),
+        }
+    }
+}
+
+lazy_static! {
+    // Mesa, and the reference GLSL compiler: `0:123(45): error: ...`. The
+    // leading 0 is the index of the source string passed to glShaderSource,
+    // of which WR only ever passes one.
+    static ref MESA_LOG_LINE: regex::Regex =
+        regex::Regex::new(r"^0:([0-9]+)\(([0-9]+)\):\s*(.*)$").unwrap();
+    // NVIDIA: `0(123) : error C1503: ...`. No column.
+    static ref NVIDIA_LOG_LINE: regex::Regex =
+        regex::Regex::new(r"^0\(([0-9]+)\)\s*:\s*(.*)$").unwrap();
+    // ANGLE and most ESSL compilers: `ERROR: 0:123: 'foo' : ...`. No column;
+    // the severity is kept in the message, as it is the only place it appears.
+    static ref ANGLE_LOG_LINE: regex::Regex =
+        regex::Regex::new(r"^(ERROR|WARNING):\s*0:([0-9]+):\s*(.*)$").unwrap();
+}
+
+/// Extract `(line in the expanded source, column, message)` from one line of a
+/// driver log, or `None` if it matches no known driver's format.
+fn parse_log_line(line: &str) -> Option<(u32, Option<u32>, String)> {
+    if let Some(captures) = MESA_LOG_LINE.captures(line) {
+        let (_, [output_line, column, message]) = captures.extract();
+        return Some((
+            output_line.parse().ok()?,
+            column.parse().ok(),
+            message.to_string(),
+        ));
+    }
+
+    if let Some(captures) = NVIDIA_LOG_LINE.captures(line) {
+        let (_, [output_line, message]) = captures.extract();
+        return Some((output_line.parse().ok()?, None, message.to_string()));
+    }
+
+    if let Some(captures) = ANGLE_LOG_LINE.captures(line) {
+        let (_, [severity, output_line, message]) = captures.extract();
+        return Some((
+            output_line.parse().ok()?,
+            None,
+            format!("{}: {}", severity.to_lowercase(), message),
+        ));
+    }
+
+    None
 }
 
 pub struct ShaderSourceParser {
@@ -177,6 +273,36 @@ impl ShaderSourceParser {
                 output(line);
                 output("\n");
                 source_map.next_line();
+            }
+        }
+    }
+}
+
+/// Collect the set of `.glsl` files that `base_filename` pulls in through
+/// `#include`, including `base_filename` itself.
+pub fn shader_include_closure<G: Fn(&str) -> Cow<'static, str>>(
+    base_filename: &str,
+    get_source: &G,
+) -> HashSet<String> {
+    let mut included = HashSet::new();
+    collect_includes(base_filename, get_source, &mut included);
+    included
+}
+
+fn collect_includes<G: Fn(&str) -> Cow<'static, str>>(
+    filename: &str,
+    get_source: &G,
+    included: &mut HashSet<String>,
+) {
+    if !included.insert(filename.to_string()) {
+        return;
+    }
+
+    let source = get_source(filename);
+    for line in source.lines() {
+        if let Some(imports) = line.strip_prefix(SHADER_IMPORT) {
+            for import in imports.split(',') {
+                collect_includes(import, get_source, included);
             }
         }
     }
@@ -333,4 +459,110 @@ pub fn build_shader_main_string<F: FnMut(&str), G: Fn(&str) -> Cow<'static, str>
        source_map,
        output
    );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A source map for a two-file expansion: `__prefix__` occupies output
+    /// lines 1-2, `shared.glsl` lines 3-4 (starting at its own line 1), and
+    /// `ps_quad_textured.glsl` from line 5 (starting at its own line 7).
+    fn test_source_map() -> ShaderSourceMap {
+        let mut map = ShaderSourceMap::new();
+        map.start_range("__prefix__".to_string(), 1);
+        map.next_line();
+        map.next_line();
+        map.start_range("shared.glsl".to_string(), 1);
+        map.next_line();
+        map.next_line();
+        map.start_range("ps_quad_textured.glsl".to_string(), 7);
+        map.next_line();
+        map.next_line();
+        map
+    }
+
+    #[test]
+    fn query_resolves_ranges() {
+        let map = test_source_map();
+        assert_eq!(map.query(1), Some(("__prefix__".to_string(), 1)));
+        assert_eq!(map.query(2), Some(("__prefix__".to_string(), 2)));
+        assert_eq!(map.query(3), Some(("shared.glsl".to_string(), 1)));
+        assert_eq!(map.query(4), Some(("shared.glsl".to_string(), 2)));
+        assert_eq!(map.query(5), Some(("ps_quad_textured.glsl".to_string(), 7)));
+        assert_eq!(map.query(6), Some(("ps_quad_textured.glsl".to_string(), 8)));
+    }
+
+    #[test]
+    fn query_of_empty_map_is_none() {
+        assert_eq!(ShaderSourceMap::new().query(1), None);
+    }
+
+    #[test]
+    fn maps_mesa_log() {
+        let map = test_source_map();
+        let log = "0:5(12): error: syntax error, unexpected '}'\n";
+        assert_eq!(
+            map.map_log(log),
+            vec![ShaderLogLine {
+                file: Some("ps_quad_textured.glsl".to_string()),
+                line: Some(7),
+                column: Some(12),
+                message: "error: syntax error, unexpected '}'".to_string(),
+            }],
+        );
+    }
+
+    #[test]
+    fn maps_nvidia_log() {
+        let map = test_source_map();
+        let log = "0(3) : error C1503: undefined variable \"foo\"\n";
+        assert_eq!(
+            map.map_log(log),
+            vec![ShaderLogLine {
+                file: Some("shared.glsl".to_string()),
+                line: Some(1),
+                column: None,
+                message: "error C1503: undefined variable \"foo\"".to_string(),
+            }],
+        );
+    }
+
+    #[test]
+    fn maps_angle_log() {
+        let map = test_source_map();
+        let log = "ERROR: 0:6: 'vColor' : undeclared identifier\n";
+        assert_eq!(
+            map.map_log(log),
+            vec![ShaderLogLine {
+                file: Some("ps_quad_textured.glsl".to_string()),
+                line: Some(8),
+                column: None,
+                message: "error: 'vColor' : undeclared identifier".to_string(),
+            }],
+        );
+    }
+
+    #[test]
+    fn keeps_unrecognized_lines_verbatim() {
+        let map = test_source_map();
+        let log = "1 error generated.\n\n0:4(1): error: real one\n";
+        assert_eq!(
+            map.map_log(log),
+            vec![
+                ShaderLogLine {
+                    file: None,
+                    line: None,
+                    column: None,
+                    message: "1 error generated.".to_string(),
+                },
+                ShaderLogLine {
+                    file: Some("shared.glsl".to_string()),
+                    line: Some(2),
+                    column: Some(1),
+                    message: "error: real one".to_string(),
+                },
+            ],
+        );
+    }
 }

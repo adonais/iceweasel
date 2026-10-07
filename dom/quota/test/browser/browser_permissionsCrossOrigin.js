@@ -24,8 +24,8 @@ addTest(async function testNoPermissionPrompt() {
       SpecialPowers.pushPrefEnv(
         {
           set: [
-            ["dom.security.featurePolicy.header.enabled", true],
-            ["dom.security.featurePolicy.webidl.enabled", true],
+            ["dom.security.permissionsPolicy.header.enabled", true],
+            ["dom.security.permissionsPolicy.webidl.enabled", true],
           ],
         },
         r

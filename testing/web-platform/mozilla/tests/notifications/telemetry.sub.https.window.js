@@ -3,12 +3,10 @@
 // META: script=/resources/testdriver-vendor.js
 // META: script=/notifications/resources/helpers.js
 // META: script=resources/MockAlertsService.js
-// META: script=resources/SiteCategory.js
 
 async function overrideSiteCategory(t, category) {
   await GleanTest.testResetFOG();
   await MockAlertsService.register(t);
-  await SiteCategory.register(t);
   await SpecialPowers.pushPrefEnv({
     set: [[
       "toolkit.telemetry.site_categories",

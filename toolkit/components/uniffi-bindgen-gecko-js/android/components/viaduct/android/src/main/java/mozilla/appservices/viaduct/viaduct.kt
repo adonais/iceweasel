@@ -106,6 +106,43 @@ internal open class ForeignBytes : Structure() {
 
     class ByValue : ForeignBytes(), Structure.ByValue
 }
+
+// Converter for `&[u8]` / `[ByRef] bytes` arguments.
+//
+// Only `lower` is valid — zero-copy byte buffers only flow foreign -> Rust,
+// and only in argument position. `lift`, `read`, `write`, and
+// `allocationSize` have no sound implementation here and all panic at
+// runtime. The `FfiConverter` interface is implemented so that the
+// compiler enforces the full method set (rather than relying on eyeball).
+//
+// The provided `ByteBuffer` MUST be direct — only direct buffers have a
+// stable native address that JNA can expose via `getDirectBufferPointer`.
+// The returned `ForeignBytes.ByValue` is only valid for the duration of
+// the FFI call; the Rust side treats it as a borrow.
+internal object FfiConverterByRefBytes : FfiConverter<java.nio.ByteBuffer, ForeignBytes.ByValue> {
+    override fun lower(value: java.nio.ByteBuffer): ForeignBytes.ByValue {
+        require(value.isDirect) { "UniFFI zero-copy &[u8] requires a direct ByteBuffer. Use ByteBuffer.allocateDirect()." }
+        val remaining = value.remaining()
+        val fb = ForeignBytes.ByValue()
+        fb.len = remaining
+        // Zero-length direct buffers: skip getDirectBufferPointer (platform-variable behavior)
+        // and pass null. The Rust side treats (null, 0) as &[].
+        fb.data = if (remaining == 0) null else com.sun.jna.Native.getDirectBufferPointer(value)
+        return fb
+    }
+
+    override fun lift(value: ForeignBytes.ByValue): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be lifted: zero-copy &[u8] only flows foreign->Rust")
+
+    override fun read(buf: java.nio.ByteBuffer): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be read from a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun write(value: java.nio.ByteBuffer, buf: java.nio.ByteBuffer): Unit =
+        error("ByRef bytes cannot be written to a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun allocationSize(value: java.nio.ByteBuffer): ULong =
+        error("ByRef bytes have no RustBuffer allocation size: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+}
 /**
  * The FfiConverter interface handles converter types to and from the FFI
  *
@@ -665,23 +702,23 @@ internal object IntegrityCheckingUniffiLib {
         uniffiCheckContractApiVersion(this)
     }
     external fun uniffi_viaduct_checksum_func_send_ohttp_request(
-    ): Short
+    ): Int
     external fun uniffi_viaduct_checksum_func_init_backend(
-    ): Short
+    ): Int
     external fun uniffi_viaduct_checksum_func_clear_ohttp_channels(
-    ): Short
+    ): Int
     external fun uniffi_viaduct_checksum_func_configure_default_ohttp_channels(
-    ): Short
+    ): Int
     external fun uniffi_viaduct_checksum_func_configure_ohttp_channel(
-    ): Short
+    ): Int
     external fun uniffi_viaduct_checksum_func_list_ohttp_channels(
-    ): Short
+    ): Int
     external fun uniffi_viaduct_checksum_func_allow_android_emulator_loopback(
-    ): Short
+    ): Int
     external fun uniffi_viaduct_checksum_func_set_global_default_user_agent(
-    ): Short
+    ): Int
     external fun uniffi_viaduct_checksum_method_backend_send_request(
-    ): Short
+    ): Int
     external fun ffi_viaduct_uniffi_contract_version(
     ): Int
 
@@ -740,7 +777,7 @@ internal object UniffiLib {
     external fun ffi_viaduct_rust_future_free_u8(`handle`: Long,
     ): Unit
     external fun ffi_viaduct_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Byte
+    ): Int
     external fun ffi_viaduct_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
     external fun ffi_viaduct_rust_future_cancel_i8(`handle`: Long,
@@ -756,7 +793,7 @@ internal object UniffiLib {
     external fun ffi_viaduct_rust_future_free_u16(`handle`: Long,
     ): Unit
     external fun ffi_viaduct_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Short
+    ): Int
     external fun ffi_viaduct_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
     external fun ffi_viaduct_rust_future_cancel_i16(`handle`: Long,
@@ -1166,6 +1203,10 @@ public object FfiConverterUShort: FfiConverter<UShort, Short> {
         return value.toUShort()
     }
 
+    fun lift(value: Int): UShort {
+        return value.toUShort()
+    }
+
     override fun read(buf: ByteBuffer): UShort {
         return lift(buf.getShort())
     }
@@ -1414,6 +1455,11 @@ open class BackendImpl: Disposable, AutoCloseable, Backend
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
 
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
     override fun destroy() {
         // Only allow a single call to this method.
         // TODO: maybe we should log a warning if called more than once?
@@ -1487,7 +1533,9 @@ open class BackendImpl: Disposable, AutoCloseable, Backend
         callWithHandle { uniffiHandle ->
             UniffiLib.uniffi_viaduct_fn_method_backend_send_request(
                 uniffiHandle,
-                FfiConverterTypeRequest.lower(`request`),FfiConverterTypeClientSettings.lower(`settings`),
+                
+        FfiConverterTypeRequest.lower(`request`),
+        FfiConverterTypeClientSettings.lower(`settings`),
             )
         },
         { future, callback, continuation -> UniffiLib.ffi_viaduct_rust_future_poll_rust_buffer(future, callback, continuation) },
@@ -2313,21 +2361,11 @@ public object FfiConverterMapStringString: FfiConverterRustBuffer<Map<kotlin.Str
 
 
 
-/**
- * Typealias from the type name used in the UDL file to the builtin type.  This
- * is needed because the UDL type name is used in function/method signatures.
- * It's also what we have an external type that references a custom type.
- */
 public typealias Headers = Map<kotlin.String, kotlin.String>
 public typealias FfiConverterTypeHeaders = FfiConverterMapStringString
 
 
 
-/**
- * Typealias from the type name used in the UDL file to the builtin type.  This
- * is needed because the UDL type name is used in function/method signatures.
- * It's also what we have an external type that references a custom type.
- */
 public typealias ViaductUrl = kotlin.String
 public typealias FfiConverterTypeViaductUrl = FfiConverterString
 
@@ -2365,7 +2403,9 @@ public typealias FfiConverterTypeViaductUrl = FfiConverterString
     @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
      suspend fun `sendOhttpRequest`(`request`: Request, `channel`: kotlin.String) : Response {
         return uniffiRustCallAsync(
-        UniffiLib.uniffi_viaduct_fn_func_send_ohttp_request(FfiConverterTypeRequest.lower(`request`),FfiConverterString.lower(`channel`),),
+        UniffiLib.uniffi_viaduct_fn_func_send_ohttp_request(
+        FfiConverterTypeRequest.lower(`request`),
+        FfiConverterString.lower(`channel`),),
         { future, callback, continuation -> UniffiLib.ffi_viaduct_rust_future_poll_rust_buffer(future, callback, continuation) },
         { future, continuation -> UniffiLib.ffi_viaduct_rust_future_complete_rust_buffer(future, continuation) },
         { future -> UniffiLib.ffi_viaduct_rust_future_free_rust_buffer(future) },
@@ -2380,6 +2420,7 @@ public typealias FfiConverterTypeViaductUrl = FfiConverterString
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_viaduct_fn_func_init_backend(
     
+        
         FfiConverterTypeBackend.lower(`backend`),_status)
 }
     
@@ -2422,7 +2463,9 @@ public typealias FfiConverterTypeViaductUrl = FfiConverterString
     uniffiRustCallWithError(ViaductException) { _status ->
     UniffiLib.uniffi_viaduct_fn_func_configure_ohttp_channel(
     
-        FfiConverterString.lower(`channel`),FfiConverterTypeOhttpConfig.lower(`config`),_status)
+        
+        FfiConverterString.lower(`channel`),
+        FfiConverterTypeOhttpConfig.lower(`config`),_status)
 }
     
     
@@ -2462,6 +2505,7 @@ public typealias FfiConverterTypeViaductUrl = FfiConverterString
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_viaduct_fn_func_set_global_default_user_agent(
     
+        
         FfiConverterString.lower(`userAgent`),_status)
 }
     

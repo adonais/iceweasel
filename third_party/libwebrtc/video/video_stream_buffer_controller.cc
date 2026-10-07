@@ -132,6 +132,11 @@ void VideoStreamBufferController::Stop() {
   decoder_ready_for_new_frame_ = false;
 }
 
+bool VideoStreamBufferController::stopped() const {
+  RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
+  return frame_decode_scheduler_->stopped();
+}
+
 void VideoStreamBufferController::SetProtectionMode(
     VCMVideoProtection protection_mode) {
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);

@@ -130,6 +130,7 @@
   MACRO(Async, "'async'")                                              \
   MACRO(Await, "'await'")                                              \
   MACRO(Each, "'each'")                                                \
+  MACRO(Defer, "'defer'")                                              \
   MACRO(From, "'from'")                                                \
   MACRO(Get, "'get'")                                                  \
   MACRO(Let, "'let'")                                                  \

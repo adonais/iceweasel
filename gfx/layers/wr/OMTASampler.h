@@ -13,6 +13,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/layers/CompositorAnimationStorage.h"
 #include "mozilla/layers/OMTAController.h"     // for OMTAController
 #include "mozilla/webrender/WebRenderTypes.h"  // For WrWindowId, WrEpoch, etc.
 
@@ -27,7 +28,6 @@ class TransactionWrapper;
 
 namespace layers {
 class Animation;
-class CompositorAnimationStorage;
 class OMTAValue;
 struct CompositorAnimationIdsForEpoch;
 struct LayersId;

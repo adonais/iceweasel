@@ -95,6 +95,8 @@ public:
     // the same CPU backend the compute path uses. Returns false on failure.
     bool realize_weights(ggml_backend_t backend);
     bool weights_realized() const { return weights_buf_ != nullptr; }
+    // Bytes the loaded weights occupy, for memory reporting.
+    size_t weights_bytes() const;
 private:
     // Parse metadata + tensors from an already-opened gguf_. Shared by load()
     // and load_fd().

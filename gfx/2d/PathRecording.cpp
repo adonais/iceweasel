@@ -145,9 +145,10 @@ bool PathOps::CheckedStreamToSink(PathSink& aPathSink) const {
 }
 #undef CHECKED_NEXT_PARAMS
 
-PathOps PathOps::TransformedCopy(const Matrix& aTransform) const {
-  PathOps newPathOps;
-  MOZ_ALWAYS_TRUE(newPathOps.mPathData.reserve(mPathData.length()));
+void PathOps::TransformedCopyTo(const Matrix& aTransform,
+                                PathOps& aDest) const {
+  MOZ_RELEASE_ASSERT(
+      aDest.mPathData.reserve(aDest.mPathData.length() + mPathData.length()));
   const uint8_t* nextByte = mPathData.begin();
   const uint8_t* end = mPathData.end();
   while (nextByte < end) {
@@ -156,43 +157,41 @@ PathOps PathOps::TransformedCopy(const Matrix& aTransform) const {
     switch (opType) {
       case OpType::OP_MOVETO: {
         NEXT_PARAMS(Point)
-        newPathOps.MoveTo(aTransform.TransformPoint(params));
+        aDest.MoveTo(aTransform.TransformPoint(params));
         break;
       }
       case OpType::OP_LINETO: {
         NEXT_PARAMS(Point)
-        newPathOps.LineTo(aTransform.TransformPoint(params));
+        aDest.LineTo(aTransform.TransformPoint(params));
         break;
       }
       case OpType::OP_BEZIERTO: {
         NEXT_PARAMS(ThreePoints)
-        newPathOps.BezierTo(aTransform.TransformPoint(params.p1),
-                            aTransform.TransformPoint(params.p2),
-                            aTransform.TransformPoint(params.p3));
+        aDest.BezierTo(aTransform.TransformPoint(params.p1),
+                       aTransform.TransformPoint(params.p2),
+                       aTransform.TransformPoint(params.p3));
         break;
       }
       case OpType::OP_QUADRATICBEZIERTO: {
         NEXT_PARAMS(TwoPoints)
-        newPathOps.QuadraticBezierTo(aTransform.TransformPoint(params.p1),
-                                     aTransform.TransformPoint(params.p2));
+        aDest.QuadraticBezierTo(aTransform.TransformPoint(params.p1),
+                                aTransform.TransformPoint(params.p2));
         break;
       }
       case OpType::OP_ARC_CW:
       case OpType::OP_ARC_CCW: {
         NEXT_PARAMS(ArcParams)
-        newPathOps.Arc(params.transform * aTransform, params.startAngle,
-                       params.endAngle, opType == OpType::OP_ARC_CCW);
+        aDest.Arc(params.transform * aTransform, params.startAngle,
+                  params.endAngle, opType == OpType::OP_ARC_CCW);
         break;
       }
       case OpType::OP_CLOSE:
-        newPathOps.Close();
+        aDest.Close();
         break;
       default:
         MOZ_CRASH("We control mOpTypes, so this should never happen.");
     }
   }
-
-  return newPathOps;
 }
 
 #define MODIFY_NEXT_PARAMS(_type)                      \
@@ -317,6 +316,52 @@ Maybe<Path::Line> PathOps::AsLine() const {
 
   return Nothing();
 }
+
+Maybe<Rect> PathOps::AsRect() const {
+  if (mPathData.length() !=
+      4 * (sizeof(OpType) + sizeof(Point)) + sizeof(OpType)) {
+    return Nothing();
+  }
+
+  const uint8_t* nextByte = mPathData.begin();
+  Point pts[4];
+  for (size_t i = 0; i < 4; ++i) {
+    const OpType opType = *reinterpret_cast<const OpType*>(nextByte);
+    nextByte += sizeof(OpType);
+    if (opType != (i == 0 ? OpType::OP_MOVETO : OpType::OP_LINETO)) {
+      return Nothing();
+    }
+    NEXT_PARAMS(Point)
+    pts[i] = params;
+  }
+  if (*reinterpret_cast<const OpType*>(nextByte) != OpType::OP_CLOSE) {
+    return Nothing();
+  }
+
+  // This mirrors Skia's check for trivial rect contours.
+  const Point v0 = pts[1] - pts[0];
+  const Point v1 = pts[2] - pts[1];
+  const Point v2 = pts[3] - pts[2];
+  const Point v3 = pts[0] - pts[3];
+  auto axisAlignedOrthogonal = [](const Point& aA, const Point& aB) {
+    // Assuming A is axis-aligned, check whether B is orthogonal to it.
+    return ((aA.x == 0) != (aB.x == 0)) && ((aA.y == 0) != (aB.y == 0));
+  };
+  // Check if the vectors are axis-aligned and form right angles.
+  if (((v0.x == 0) != (v0.y == 0)) && axisAlignedOrthogonal(v0, v1) &&
+      axisAlignedOrthogonal(v1, v2) && axisAlignedOrthogonal(v2, v3)) {
+    const float left = std::min(pts[0].x, pts[2].x);
+    const float top = std::min(pts[0].y, pts[2].y);
+    const float right = std::max(pts[0].x, pts[2].x);
+    const float bottom = std::max(pts[0].y, pts[2].y);
+    const Rect rect(left, top, right - left, bottom - top);
+    // Ensure rect conversion from points to origin/size is lossless.
+    if (rect.XMost() == right && rect.YMost() == bottom) {
+      return Some(rect);
+    }
+  }
+  return Nothing();
+}
 #undef NEXT_PARAMS
 
 size_t PathOps::NumberOfOps() const {
@@ -374,69 +419,115 @@ bool PathOps::IsEmpty() const {
 }
 
 void PathBuilderRecording::MoveTo(const Point& aPoint) {
-  mPathOps.MoveTo(aPoint);
+  mPath->mPathOps.MoveTo(aPoint);
   mBeginPoint = aPoint;
   mCurrentPoint = aPoint;
 }
 
 void PathBuilderRecording::LineTo(const Point& aPoint) {
-  mPathOps.LineTo(aPoint);
+  mPath->mPathOps.LineTo(aPoint);
   mCurrentPoint = aPoint;
 }
 
 void PathBuilderRecording::BezierTo(const Point& aCP1, const Point& aCP2,
                                     const Point& aCP3) {
-  mPathOps.BezierTo(aCP1, aCP2, aCP3);
+  mPath->mPathOps.BezierTo(aCP1, aCP2, aCP3);
   mCurrentPoint = aCP3;
 }
 
 void PathBuilderRecording::QuadraticBezierTo(const Point& aCP1,
                                              const Point& aCP2) {
-  mPathOps.QuadraticBezierTo(aCP1, aCP2);
+  mPath->mPathOps.QuadraticBezierTo(aCP1, aCP2);
   mCurrentPoint = aCP2;
 }
 
 void PathBuilderRecording::Close() {
-  mPathOps.Close();
+  mPath->mPathOps.Close();
   mCurrentPoint = mBeginPoint;
 }
 
 void PathBuilderRecording::Arc(const Point& aOrigin, float aRadius,
                                float aStartAngle, float aEndAngle,
                                bool aAntiClockwise) {
-  mPathOps.Arc(aOrigin, aRadius, aStartAngle, aEndAngle, aAntiClockwise);
-
+  mPath->mPathOps.Arc(aOrigin, aRadius, aStartAngle, aEndAngle, aAntiClockwise);
   mCurrentPoint = aOrigin + Point(cosf(aEndAngle), sinf(aEndAngle)) * aRadius;
 }
 
-already_AddRefed<Path> PathBuilderRecording::Finish() {
-  return MakeAndAddRef<PathRecording>(mBackendType, std::move(mPathOps),
-                                      mFillRule, mCurrentPoint, mBeginPoint);
+PathBuilderRecording::PathBuilderRecording(BackendType aBackend,
+                                           FillRule aFillRule)
+    : PathBuilder(aFillRule),
+      mBackendType(aBackend),
+      mPath(MakeAndAddRef<PathRecording>(aBackend, aFillRule)) {}
+
+PathBuilderRecording::PathBuilderRecording(
+    BackendType aBackend, FillRule aFillRule,
+    already_AddRefed<PathRecording> aPath)
+    : PathBuilder(aFillRule), mBackendType(aBackend), mPath(aPath) {
+  mPath->ResetCachedState();
+  mCurrentPoint = mPath->mCurrentPoint;
+  mBeginPoint = mPath->mBeginPoint;
 }
 
-bool PathBuilderRecording::Reset(FillRule aFillRule) {
-  mFillRule = aFillRule;
-  mPathOps.Clear();
+already_AddRefed<Path> PathBuilderRecording::Finish() {
+  mPath->mFillRule = mFillRule;
+  mPath->mCurrentPoint = mCurrentPoint;
+  mPath->mBeginPoint = mBeginPoint;
+  return mPath.forget();
+}
+
+void PathBuilderRecording::Reset(FillRule aFillRule) {
+  SetFillRule(aFillRule);
   mCurrentPoint = Point();
   mBeginPoint = Point();
-  return true;
-}
-
-PathRecording::PathRecording(BackendType aBackend, PathOps&& aOps,
-                             FillRule aFillRule, const Point& aCurrentPoint,
-                             const Point& aBeginPoint)
-    : mBackendType(aBackend),
-      mPathOps(std::move(aOps)),
-      mFillRule(aFillRule),
-      mCurrentPoint(aCurrentPoint),
-      mBeginPoint(aBeginPoint) {}
-
-PathRecording::~PathRecording() {
-  for (size_t i = 0; i < mStoredRecorders.size(); i++) {
-    mStoredRecorders[i]->RemoveStoredObject(this);
-    mStoredRecorders[i]->RecordEvent(RecordedPathDestruction(this));
+  if (!mPath) {
+    mPath = new PathRecording(mBackendType, mFillRule);
+  } else {
+    mPath->mPathOps.Clear();
   }
 }
+
+void PathBuilderRecording::RecyclePath(already_AddRefed<Path> aPath) {
+  RefPtr<Path> pathRef(aPath);
+  // Only recycle the path if this is the last remaining reference to it
+  // and if the PathBuilder is not building an existing path.
+  if (pathRef->GetBackendType() == GetBackendType() && pathRef->hasOneRef() &&
+      !mPath) {
+    mPath = pathRef.forget().downcast<PathRecording>();
+    // Before the path can be recycled, remove any references to its old
+    // identity.
+    mPath->ResetCachedState();
+  }
+}
+
+void PathBuilderRecording::Transform(const Matrix& aTransform) {
+  mPath->mPathOps.TransformInPlace(aTransform);
+  mCurrentPoint = aTransform.TransformPoint(mCurrentPoint);
+  mBeginPoint = aTransform.TransformPoint(mBeginPoint);
+}
+
+PathRecording::PathRecording(BackendType aBackend, FillRule aFillRule)
+    : Path(aFillRule), mBackendType(aBackend) {}
+
+PathRecording::PathRecording(BackendType aBackend, FillRule aFillRule,
+                             const Point& aCurrentPoint,
+                             const Point& aBeginPoint, const PathOps& aPathOps)
+    : Path(aFillRule, aCurrentPoint, aBeginPoint),
+      mBackendType(aBackend),
+      mPathOps(aPathOps) {}
+
+// Ensure any state referring to the path's identity is cleared before reuse.
+void PathRecording::ResetCachedState() {
+  if (!mStoredRecorders.empty()) {
+    for (size_t i = 0; i < mStoredRecorders.size(); i++) {
+      mStoredRecorders[i]->RemoveStoredObject(this);
+      mStoredRecorders[i]->RecordEvent(RecordedPathDestruction(this));
+    }
+    mStoredRecorders.clear();
+  }
+  mPath = nullptr;
+}
+
+PathRecording::~PathRecording() { ResetCachedState(); }
 
 void PathRecording::EnsurePath() const {
   if (mPath) {
@@ -455,40 +546,38 @@ void PathRecording::EnsurePath() const {
   }
 }
 
+already_AddRefed<PathBuilder> PathRecording::MoveToBuilder(
+    FillRule aFillRule, already_AddRefed<PathBuilder> aBuilder) {
+  RefPtr builder(aBuilder.downcast<PathBuilderRecording>());
+  if (builder) {
+    ResetCachedState();
+    builder->mBackendType = mBackendType;
+    builder->mFillRule = aFillRule;
+    builder->mPath = do_AddRef(this);
+    builder->mCurrentPoint = mCurrentPoint;
+    builder->mBeginPoint = mBeginPoint;
+  } else {
+    builder = MakeRefPtr<PathBuilderRecording>(mBackendType, aFillRule,
+                                               do_AddRef(this));
+  }
+  return builder.forget();
+}
+
 already_AddRefed<PathBuilder> PathRecording::CopyToBuilder(
-    FillRule aFillRule) const {
-  RefPtr recording = MakeRefPtr<PathBuilderRecording>(
-      mBackendType, PathOps(mPathOps), aFillRule);
-  recording->SetCurrentPoint(mCurrentPoint);
-  recording->SetBeginPoint(mBeginPoint);
-  return recording.forget();
+    FillRule aFillRule, already_AddRefed<PathBuilder> aBuilder) const {
+  RefPtr path = MakeRefPtr<PathRecording>(mBackendType, aFillRule,
+                                          mCurrentPoint, mBeginPoint, mPathOps);
+  return path->MoveToBuilder(aFillRule, std::move(aBuilder));
 }
 
 already_AddRefed<PathBuilder> PathRecording::TransformedCopyToBuilder(
-    const Matrix& aTransform, FillRule aFillRule) const {
-  RefPtr recording = MakeRefPtr<PathBuilderRecording>(
-      mBackendType, mPathOps.TransformedCopy(aTransform), aFillRule);
-  recording->SetCurrentPoint(aTransform.TransformPoint(mCurrentPoint));
-  recording->SetBeginPoint(aTransform.TransformPoint(mBeginPoint));
-  return recording.forget();
-}
-
-already_AddRefed<PathBuilder> PathRecording::MoveToBuilder(FillRule aFillRule) {
-  RefPtr recording = MakeRefPtr<PathBuilderRecording>(
-      mBackendType, std::move(mPathOps), aFillRule);
-  recording->SetCurrentPoint(mCurrentPoint);
-  recording->SetBeginPoint(mBeginPoint);
-  return recording.forget();
-}
-
-already_AddRefed<PathBuilder> PathRecording::TransformedMoveToBuilder(
-    const Matrix& aTransform, FillRule aFillRule) {
-  mPathOps.TransformInPlace(aTransform);
-  RefPtr recording = MakeRefPtr<PathBuilderRecording>(
-      mBackendType, std::move(mPathOps), aFillRule);
-  recording->SetCurrentPoint(aTransform.TransformPoint(mCurrentPoint));
-  recording->SetBeginPoint(aTransform.TransformPoint(mBeginPoint));
-  return recording.forget();
+    const Matrix& aTransform, FillRule aFillRule,
+    already_AddRefed<PathBuilder> aBuilder) const {
+  RefPtr path = MakeRefPtr<PathRecording>(
+      mBackendType, aFillRule, aTransform.TransformPoint(mCurrentPoint),
+      aTransform.TransformPoint(mBeginPoint));
+  mPathOps.TransformedCopyTo(aTransform, path->mPathOps);
+  return path->MoveToBuilder(aFillRule, std::move(aBuilder));
 }
 
 }  // namespace gfx

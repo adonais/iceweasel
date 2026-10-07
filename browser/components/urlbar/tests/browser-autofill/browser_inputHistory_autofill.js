@@ -9,7 +9,10 @@ let addToInputHistorySpy;
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.autoFill.adaptiveHistory.enabled", true]],
+    set: [
+      ["browser.urlbar.autoFill.adaptiveHistory.enabled", true],
+      ["browser.urlbar.autoFill.adaptiveHistory.urlMinPicks", 1],
+    ],
   });
 
   await PlacesUtils.bookmarks.eraseEverything();

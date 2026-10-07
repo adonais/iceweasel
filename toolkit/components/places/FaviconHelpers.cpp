@@ -946,8 +946,9 @@ AsyncGetFaviconForPageRunnable::Run() {
   UniquePtr<ConnectionAdapter> adapter;
   if (!mOnConcurrentConn) {
     RefPtr<Database> DB = Database::GetDatabase();
-    MOZ_ASSERT(DB);
-    adapter = MakeUnique<ConnectionAdapter>(DB);
+    if (DB) {
+      adapter = MakeUnique<ConnectionAdapter>(DB);
+    }
   } else {
     auto conn = ConcurrentConnection::GetInstance();
     MOZ_ASSERT(conn);
@@ -955,8 +956,8 @@ AsyncGetFaviconForPageRunnable::Run() {
       adapter = MakeUnique<ConnectionAdapter>(conn.value());
     }
   }
-  // In certain circumstances, like when ConcurrentConnection is initialized
-  // during shutdown, we may not have a connection.
+  // In certain circumstances, like when the database or ConcurrentConnection
+  // is being shut down, we may not have a connection.
   if (!adapter) {
     return (rv = NS_ERROR_UNEXPECTED);
   }

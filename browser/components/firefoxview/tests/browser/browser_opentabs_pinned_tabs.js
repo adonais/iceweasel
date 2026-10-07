@@ -3,7 +3,7 @@
 
 let pageWithAlert =
   // eslint-disable-next-line sdl/no-insecure-url
-  "http://example.com/browser/browser/base/content/test/tabPrompts/openPromptOffTimeout.html";
+  "http://example.com/browser/browser/base/content/test/browser-tabPrompts/openPromptOffTimeout.html";
 let pageWithSound =
   "http://mochi.test:8888/browser/dom/base/test/file_audioLoop.html";
 

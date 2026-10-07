@@ -6,7 +6,6 @@ BROWSER_CHROME_MANIFESTS += [
     "browser/browser.toml",
     "browser/disable_app_update/browser.toml",
     "browser/disable_default_bookmarks/browser.toml",
-    "browser/disable_developer_tools/browser.toml",
     "browser/disable_forget_button/browser.toml",
     "browser/disable_fxscreenshots/browser.toml",
     "browser/hardware_acceleration/browser.toml",

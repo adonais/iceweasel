@@ -555,7 +555,7 @@ RenderedFrameId RenderCompositorANGLE::EndFrame(
   return frameId;
 }
 
-RefPtr<layers::Fence> RenderCompositorANGLE::GetAndResetReleaseFence() {
+RefPtr<layers::Fence> RenderCompositorANGLE::GetAndResetReadFence() {
   RefPtr<layers::Fence> fence;
   if (mFence) {
     fence = mFence->CloneFromHandle();

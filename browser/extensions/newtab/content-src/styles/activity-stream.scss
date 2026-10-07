@@ -247,4 +247,9 @@ panel-list:not(:defined) {
 @import './nova/CardSections';
 @import './nova/DSCard';
 
+// @experiment(remove) { bug 2069496 }
+// After nova/CardSections: reuses its nova-section-card-medium mixin, and the
+// cell overrides have to win over the story card rules.
+@import '../components/Widgets/WidgetsRowAd';
+
 // stylelint-enable no-invalid-position-at-import-rule

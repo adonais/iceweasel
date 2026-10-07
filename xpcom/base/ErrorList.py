@@ -346,6 +346,10 @@ with modules["NETWORK"]:
     errors["NS_ERROR_NET_HTTP3_PROTOCOL_ERROR"] = FAILURE(84)
     # A timeout error code that can be used to cancel requests.
     errors["NS_ERROR_NET_TIMEOUT_EXTERNAL"] = FAILURE(85)
+    # An HTTP/2 or HTTP/3 session was closed without a clean shutdown (e.g. no
+    # GOAWAY) and no response bytes were received for the stream, so it is
+    # safe to retry on a new connection.
+    errors["NS_ERROR_NET_UNCLEAN_SHUTDOWN"] = FAILURE(101)
     # An error related to HTTPS-only mode
     errors["NS_ERROR_HTTPS_ONLY"] = FAILURE(86)
     # A WebSocket connection is failed.
@@ -372,6 +376,10 @@ with modules["NETWORK"]:
     # error means the connect itself never had a chance to succeed, so it
     # must not be routed through that (unrelated) content-permission flow.
     errors["NS_ERROR_OS_LOCAL_NETWORK_ACCESS_DENIED"] = FAILURE(95)
+    # The request body can only be sent once, so the request cannot be
+    # retried, resubmitted with credentials, or carried on a connection that
+    # would need its length up front.
+    errors["NS_ERROR_NET_BODY_NOT_REPLAYABLE"] = FAILURE(96)
 
     # XXX really need to better rationalize these error codes.  are consumers of
     # necko really expected to know how to discern the meaning of these??

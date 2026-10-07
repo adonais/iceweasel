@@ -19,6 +19,8 @@ const MenuItem = require("resource://devtools/client/framework/menu-item.js");
  *           Screen x coordinate of the menu on the screen.
  * @property {number} screenY
  *           Screen y coordinate of the menu on the screen.
+ * @property {number} accesskeyConflictsBug
+ *           Passed to the Menu and its submenus, see menu.js.
  */
 function showMenu(items, options) {
   if (items.length === 0) {
@@ -26,7 +28,9 @@ function showMenu(items, options) {
   }
 
   // Build the menu object from provided menu items.
-  const menu = new Menu();
+  const menu = new Menu({
+    accesskeyConflictsBug: options.accesskeyConflictsBug,
+  });
   items.forEach(item => {
     if (item == "-") {
       item = { type: "separator" };
@@ -36,7 +40,9 @@ function showMenu(items, options) {
     const subItems = item.submenu;
 
     if (subItems) {
-      const subMenu = new Menu();
+      const subMenu = new Menu({
+        accesskeyConflictsBug: options.accesskeyConflictsBug,
+      });
       subItems.forEach(subItem => {
         subMenu.append(new MenuItem(subItem));
       });

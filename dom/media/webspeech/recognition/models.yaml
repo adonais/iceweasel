@@ -179,7 +179,8 @@ models:
       - fi-FI
       - fi
       - no-NO
-      - no
+      # Quoted: YAML reads a bare no as false.
+      - "no"
       - nb-NO
       - nb
       - nn-NO

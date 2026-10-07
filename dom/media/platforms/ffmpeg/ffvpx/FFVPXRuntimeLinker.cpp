@@ -171,8 +171,13 @@ already_AddRefed<PlatformEncoderModule> FFVPXRuntimeLinker::CreateEncoder() {
 void FFVPXRuntimeLinker::GetFFTFuncs(FFmpegFFTFuncs* aOutFuncs) {
   []() MOZ_NO_THREAD_SAFETY_ANALYSIS {
     MOZ_ASSERT(sLinkStatus != LinkStatus_INIT);
+    MOZ_RELEASE_ASSERT(sLinkStatus == LinkStatus_SUCCEEDED,
+                       "ffvpx failed to load, no FFT available");
   }();
-  MOZ_ASSERT(sFFVPXLib.av_tx_init && sFFVPXLib.av_tx_uninit);
+  // libmozavutil always exports these, so their absence means a broken or
+  // mismatched library rather than a configuration we can fall back from.
+  MOZ_RELEASE_ASSERT(sFFVPXLib.av_tx_init && sFFVPXLib.av_tx_uninit,
+                     "ffvpx loaded without av_tx_init/av_tx_uninit");
   aOutFuncs->init = sFFVPXLib.av_tx_init;
   aOutFuncs->uninit = sFFVPXLib.av_tx_uninit;
 }

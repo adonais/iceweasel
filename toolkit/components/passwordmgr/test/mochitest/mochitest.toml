@@ -45,8 +45,8 @@ support-files = [
   "pwmgr_common_parent.js",
   "../authenticate.sjs",
 ]
-skip-if = [
-  "os == 'android'", # Don't run on GeckoView
+run-if = [
+  "os != 'android'", # GeckoView does not use the desktop password manager
 ]
 
 # Note: new tests should use scheme = https unless they have a specific reason not to

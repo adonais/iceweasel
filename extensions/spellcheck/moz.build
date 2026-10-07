@@ -15,3 +15,8 @@ SPHINX_TREES["/extensions/spellcheck"] = "docs"
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Spelling checker")
+
+LICENSED_UNDER += ["hunspell-en"]
+LICENSED_UNDER["hunspell-en"].paths = [
+    "locales/en-US/hunspell",
+]

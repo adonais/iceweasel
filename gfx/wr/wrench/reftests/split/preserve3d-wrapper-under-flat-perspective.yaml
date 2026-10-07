@@ -1,8 +1,10 @@
 # Regression test for bug 1817905, case f:
-# perspective ancestor + intermediate flat translate-Z + preserve-3d wrapper
+# perspective ancestor + intermediate preserve-3d translate-Z + preserve-3d wrapper
 # whose child has the actual rotateY. Different SC structure from the leaf
 # case but same root cause: plane splitter previously baked perspective into
 # polygon coords before BSP.
+# The intermediate preserves 3D so the perspective reaches the leaf; a flat
+# intermediate would flatten the leaf into its plane first (no perspective).
 ---
 root:
   items:
@@ -13,6 +15,7 @@ root:
         - type: stacking-context
           bounds: 0 0 800 600
           transform: translate(200, 200, 0)
+          transform-style: preserve-3d
           items:
             - type: stacking-context
               bounds: 0 0 360 240

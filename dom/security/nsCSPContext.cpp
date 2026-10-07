@@ -1274,8 +1274,10 @@ nsresult nsCSPContext::SendReportsToEndpoints(
   RefPtr<CSPViolationReportBody> body =
       new CSPViolationReportBody(window->AsGlobal(), aViolationEventInit);
 
-  ReportingUtils::Report(window->AsGlobal(), nsGkAtoms::cspViolation,
-                         reportGroup, aViolationEventInit.mDocumentURI, body);
+  ReportingUtils::Report(
+      window->AsGlobal(), nsGkAtoms::cspViolation,
+      NS_ConvertUTF16toUTF8(reportGroup),
+      NS_ConvertUTF16toUTF8(aViolationEventInit.mDocumentURI), body);
   return NS_OK;
 }
 

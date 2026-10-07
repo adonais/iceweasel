@@ -12,7 +12,6 @@ import signal
 import subprocess
 import sys
 import tempfile
-from collections import OrderedDict
 
 import mozlog
 import mozprofile
@@ -271,7 +270,7 @@ class MochaOutputHandler:
 
         self.logger = logger
         self.proc = None
-        self.test_results = OrderedDict()
+        self.test_results = {}
         self.expected = expected
         self.unexpected_skips = set()
 

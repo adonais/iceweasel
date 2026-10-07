@@ -60,6 +60,10 @@ toolkit/components/formautofill/shared/CreditCardRuleset.sys.mjs
 **/*.inc.xhtml
 **/*.inc.html
 
+# Verbatim upstream license notices rendered by about:license. Some are
+# fragments prettier cannot parse.
+toolkit/content/licenses/*.html
+
 # Ignore preprocessed xhtml/html files
 browser/base/content/aboutDialog.xhtml
 browser/base/content/browser.xhtml
@@ -83,7 +87,6 @@ security/manager/pki/resources/content/exceptionDialog.xhtml
 toolkit/components/pictureinpicture/content/player.xhtml
 toolkit/content/aboutSupport.xhtml
 toolkit/content/buildconfig.html
-toolkit/content/license.html
 toolkit/mozapps/downloads/content/unknownContentType.xhtml
 toolkit/mozapps/update/content/updateElevation.xhtml
 toolkit/profile/content/createProfileWizard.xhtml
@@ -163,31 +166,31 @@ accessible/tests/mochitest/tree/test_txtctrl.html
 accessible/tests/mochitest/treeupdate/test_delayed_removal.html
 browser/base/content/appmenu-viewcache.inc.xhtml
 browser/base/content/swipe-navigation.inc.xhtml
-browser/base/content/test/about/dummy_page.html
-browser/base/content/test/contextMenu/subtst_contextmenu.html
-browser/base/content/test/favicons/datauri-favicon.html
-browser/base/content/test/favicons/file_bug970276_popup1.html
-browser/base/content/test/fullscreen/open_and_focus_helper.html
-browser/base/content/test/general/browser_tab_dragdrop_embed.html
-browser/base/content/test/general/dummy_page.html
-browser/base/content/test/general/file_documentnavigation_frameset.html
-browser/base/content/test/outOfProcess/file_base.html
-browser/base/content/test/outOfProcess/file_frame2.html
-browser/base/content/test/outOfProcess/file_innerframe.html
-browser/base/content/test/pageinfo/svg_image.html
-browser/base/content/test/permissions/temporary_permissions_frame.html
-browser/base/content/test/permissions/temporary_permissions_subframe.html
-browser/base/content/test/plugins/plugin_bug797677.html
-browser/base/content/test/sanitize/dummy_page.html
-browser/base/content/test/siteIdentity/dummy_iframe_page.html
-browser/base/content/test/siteIdentity/dummy_page.html
-browser/base/content/test/siteIdentity/test-mixedcontent-securityerrors.html
-browser/base/content/test/siteIdentity/test_mcb_double_redirect_image.html
-browser/base/content/test/siteIdentity/test_mcb_redirect_image.html
-browser/base/content/test/siteIdentity/test_no_mcb_for_loopback.html
-browser/base/content/test/siteIdentity/test_no_mcb_for_onions.html
-browser/base/content/test/static/dummy_page.html
-browser/base/content/test/webrtc/get_user_media_in_xorigin_frame_ancestor.html
+browser/base/content/test/browser-about/dummy_page.html
+browser/base/content/test/browser-contextMenu/subtst_contextmenu.html
+browser/base/content/test/browser-favicons/datauri-favicon.html
+browser/base/content/test/browser-favicons/file_bug970276_popup1.html
+browser/base/content/test/browser-fullscreen/open_and_focus_helper.html
+browser/base/content/test/browser-general/browser_tab_dragdrop_embed.html
+browser/base/content/test/browser-general/dummy_page.html
+browser/base/content/test/browser-general/file_documentnavigation_frameset.html
+browser/base/content/test/browser-outOfProcess/file_base.html
+browser/base/content/test/browser-outOfProcess/file_frame2.html
+browser/base/content/test/browser-outOfProcess/file_innerframe.html
+browser/base/content/test/browser-pageinfo/svg_image.html
+browser/base/content/test/browser-permissions/temporary_permissions_frame.html
+browser/base/content/test/browser-permissions/temporary_permissions_subframe.html
+browser/base/content/test/browser-plugins/plugin_bug797677.html
+browser/base/content/test/browser-sanitize/dummy_page.html
+browser/base/content/test/browser-siteIdentity/dummy_iframe_page.html
+browser/base/content/test/browser-siteIdentity/dummy_page.html
+browser/base/content/test/browser-siteIdentity/test-mixedcontent-securityerrors.html
+browser/base/content/test/browser-siteIdentity/test_mcb_double_redirect_image.html
+browser/base/content/test/browser-siteIdentity/test_mcb_redirect_image.html
+browser/base/content/test/browser-siteIdentity/test_no_mcb_for_loopback.html
+browser/base/content/test/browser-siteIdentity/test_no_mcb_for_onions.html
+browser/base/content/test/browser-static/dummy_page.html
+browser/base/content/test/browser-webrtc/get_user_media_in_xorigin_frame_ancestor.html
 browser/components/aboutlogins/content/aboutLogins.html
 browser/components/extensions/test/browser/file_dummy.html
 browser/components/extensions/test/browser/file_find_frames.html
@@ -1013,8 +1016,8 @@ build/pgo/js-input/
 browser/app/
 browser/branding/**/firefox-branding.js
 # Gzipped test file.
-browser/base/content/test/general/gZipOfflineChild.html
-browser/base/content/test/urlbar/file_blank_but_not_blank.html
+browser/base/content/test/browser-general/gZipOfflineChild.html
+browser/components/urlbar/tests/browser/file_blank_but_not_blank.html
 # Test files that are really json not js, and don't need to be linted.
 browser/components/sessionstore/test/unit/data/sessionstore_valid.js
 browser/components/sessionstore/test/unit/data/sessionstore_invalid.js
@@ -1603,7 +1606,6 @@ mobile/android/**/bin
 mobile/android/**/generated
 mobile/android/**/local.properties
 mobile/android/**/manifest.json
-mobile/android/android-components/components/feature/search/src/main/assets/search/search_telemetry_v2.json
 mobile/android/android-components/components/browser/engine-system/src/main/res/
 mobile/android/android-components/components/browser/errorpages/src/main/res/
 mobile/android/android-components/components/browser/menu/src/main/res/

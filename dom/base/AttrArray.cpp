@@ -15,6 +15,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ServoBindings.h"
 #include "nsContentUtils.h"  // nsAutoScriptBlocker
+#include "nsNodeInfoManager.h"
 #include "nsString.h"
 #include "nsUnicharUtils.h"
 
@@ -277,33 +278,20 @@ int32_t AttrArray::IndexOfAttr(const nsAtom* aLocalName,
   return -1;
 }
 
-void AttrArray::Compact() {
-  if (!HasImpl()) {
-    return;
+void AttrArray::NodeInfoChanged(nsNodeInfoManager* aManager) {
+  for (InternalAttr& attr : Attrs()) {
+    if (attr.mName.IsAtom()) {
+      continue;
+    }
+    mozilla::dom::NodeInfo* oldNi = attr.mName.NodeInfo();
+    if (oldNi->NodeInfoManager() == aManager) {
+      continue;
+    }
+    RefPtr<mozilla::dom::NodeInfo> ni =
+        aManager->GetNodeInfo(oldNi->NameAtom(), oldNi->GetPrefixAtom(),
+                              oldNi->NamespaceID(), oldNi->NodeType());
+    attr.mName.SetTo(ni);
   }
-
-  Impl* impl = GetImpl();
-  if (!impl->mAttrCount && !impl->mMappedAttributeBits) {
-    Clear();
-    return;
-  }
-
-  // Nothing to do.
-  if (impl->mAttrCount == impl->mCapacity) {
-    return;
-  }
-
-  // Extract the real pointer for realloc
-  Impl* oldImpl = mImpl.release();
-
-  Impl* newImpl = static_cast<Impl*>(
-      realloc(oldImpl, Impl::AllocationSizeForAttributes(oldImpl->mAttrCount)));
-  if (!newImpl) {
-    SetImpl(oldImpl);
-    return;
-  }
-  newImpl->mCapacity = newImpl->mAttrCount;
-  SetImpl(newImpl);
 }
 
 nsresult AttrArray::EnsureCapacityToClone(const AttrArray& aOther) {

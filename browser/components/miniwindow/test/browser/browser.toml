@@ -1,0 +1,36 @@
+[DEFAULT]
+support-files = [
+  "head.js",
+  "mini-window-crop-target.html",
+  "mini-window-redirect.html",
+]
+prefs = [
+  "browser.mini-window.enabled=true",
+  "browser.mini-window.log=true",
+]
+
+["browser_cropped_navigation.js"]
+
+["browser_framing.js"]
+
+["browser_last_tab.js"]
+
+["browser_open_close.js"]
+
+["browser_origin_close.js"]
+
+["browser_placement.js"]
+
+["browser_region_entry.js"]
+
+["browser_restore_vs_close.js"]
+
+["browser_reveal.js"]
+
+["browser_sessionstore.js"]
+
+["browser_sidebar.js"]
+
+["browser_toolbar.js"]
+
+["browser_toolbar_button.js"]

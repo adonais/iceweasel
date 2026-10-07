@@ -13,7 +13,8 @@ add_task(async function () {
   await selectSource(dbg, TEST_PAGE);
 
   // Ensure that breakable lines are correct when loading against an already loaded page
-  await assertBreakableLines(dbg, TEST_PAGE, 16, [
+  await selectSource(dbg, TEST_PAGE);
+  await assertBreakableLines(dbg, 16, [
     ...getRange(3, 5),
     ...getRange(11, 13),
     15,
@@ -22,7 +23,9 @@ add_task(async function () {
   await reload(dbg, TEST_PAGE);
 
   // Also verify they are fine after reload
-  await assertBreakableLines(dbg, TEST_PAGE, 16, [
+  // recall selectSource to ensure the breakable lines are updated after reload
+  await selectSource(dbg, TEST_PAGE);
+  await assertBreakableLines(dbg, 16, [
     ...getRange(3, 5),
     ...getRange(11, 13),
     15,

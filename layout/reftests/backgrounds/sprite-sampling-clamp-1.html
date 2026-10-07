@@ -1,0 +1,25 @@
+<!DOCTYPE HTML>
+<!--
+    Any copyright is dedicated to the Public Domain.
+    http://creativecommons.org/licenses/publicdomain/
+    -->
+<html reftest-zoom="1.1">
+<head>
+<meta charset="utf-8">
+<title>Bug 1452337: sampling a sprite sheet cell must not pull in its neighbours</title>
+<style>
+html, body { margin: 0; background: white; }
+/* The centre cell of the sheet is green and every neighbour is red, so any
+   red pixel means filtering sampled outside the cell. The fractional zoom is
+   what makes the sampling non-integer. */
+div {
+  width: 16px;
+  height: 16px;
+  background-image: url(sprite-sampling-clamp.png);
+  background-position: -16px -16px;
+  background-repeat: no-repeat;
+}
+</style>
+</head>
+<body><div></div></body>
+</html>

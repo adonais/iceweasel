@@ -13,6 +13,13 @@ namespace mozilla {
 #if defined(_M_AMD64) || defined(_M_ARM64)
 MFBT_API void WindowsStackWalkInitialization();
 
+/**
+ * Part of WindowsStackWalkInitialization(). Independently callable to allow
+ * sandboxed processes to set up the hooks before delayed mitigations that may
+ * restrict dynamic code usage kick in.
+ */
+MFBT_API bool InstallStackWalkSuppressionHooks();
+
 MFBT_API bool CollectStackWalkLocks(Array<void*, 2>& aStackWalkLocks);
 
 MFBT_API void* ExtractLockFromCurrentCpuContext(void* aContext);

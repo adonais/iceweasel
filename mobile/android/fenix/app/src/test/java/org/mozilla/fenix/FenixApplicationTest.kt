@@ -189,9 +189,9 @@ class FenixApplicationTest {
         every { settings.shouldUseLightTheme } returns true
         every { settings.signedInFxaAccount } returns true
         every { settings.showRecentTabsFeature } returns true
-        every { settings.showBookmarksHomeFeature } returns true
+        every { settings.showBookmarksHomeFeature } returns false
         every { settings.showTopSitesFeature } returns true
-        every { settings.historyMetadataUIFeature } returns true
+        every { settings.historyMetadataUIFeature } returns false
         every { settings.showPocketRecommendationsFeature } returns true
         every { settings.showContileFeature } returns true
         every { application.reportHomeScreenMetrics(settings) } just Runs

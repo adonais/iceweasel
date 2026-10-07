@@ -131,12 +131,6 @@ struct NSSCertificateStr {
     nssDecodedCert *decoding;
 };
 
-struct NSSPrivateKeyStr;
-
-struct NSSPublicKeyStr;
-
-struct NSSSymmetricKeyStr;
-
 typedef struct nssTDCertificateCacheStr nssTDCertificateCache;
 
 struct NSSTrustDomainStr {

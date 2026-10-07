@@ -15,7 +15,6 @@
  * provide pointers to the two ntdll-internal SRW locks acquired by
  * RtlLookupFunctionEntry. These locks are LdrpInvertedFunctionTableSRWLock and
  * RtlpDynamicFunctionTableLock -- we don't need to know which one is which.
- * Until InitializeStackWalkLocks function is called, strategy (2) is used.
  *
  * See comment in StackWalk.cpp
  */
@@ -28,7 +27,7 @@ void InitializeStackWalkLocks(const mozilla::Array<void*, 2>& aStackWalkLocks);
  * putting them under the scope of a AutoSuppressStackWalking object. Any code
  * path that may do an exclusive acquire of LdrpInvertedFunctionTableSRWLock or
  * RtlpDynamicFunctionTableLock should be marked this way, to ensure that
- * strategy (2) can properly mitigate all deadlock scenarios.
+ * strategy (2) can properly mitigate known deadlock scenarios.
  *
  * See comment in StackWalk.cpp
  */

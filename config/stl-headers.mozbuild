@@ -47,6 +47,7 @@ stl_headers = [
     "shared_mutex",
     "stack",
     "string",
+    "system_error",
     "thread",
     "tuple",
     "type_traits",

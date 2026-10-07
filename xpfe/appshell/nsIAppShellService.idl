@@ -37,6 +37,7 @@ interface nsIAppShellService : nsISupports
    * @param aInitialHeight like aInitialWidth, but subtly different.
    */
   const long SIZE_TO_CONTENT = -1;
+  [can_run_script]
   nsIAppWindow createTopLevelWindow(in nsIAppWindow aParent,
                                     in nsIURI aUrl,
                                     in uint32_t aChromeMask,
@@ -54,7 +55,7 @@ interface nsIAppShellService : nsISupports
   nsIWindowlessBrowser createWindowlessBrowser([optional] in boolean aIsChrome,
                                                [optional] in uint32_t aChromeMask);
 
-  [noscript]
+  [can_run_script, noscript]
   void createHiddenWindow();
 
   [noscript]

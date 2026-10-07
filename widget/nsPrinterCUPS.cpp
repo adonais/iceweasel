@@ -8,6 +8,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_print.h"
 #include "mozilla/gfx/2D.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsPaper.h"
 #include "nsPrintSettingsImpl.h"
 #include "nsPrinterBase.h"

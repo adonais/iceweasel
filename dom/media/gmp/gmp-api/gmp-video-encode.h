@@ -43,7 +43,7 @@
 // ALL METHODS MUST BE CALLED ON THE MAIN THREAD
 class GMPVideoEncoderCallback {
  public:
-  virtual ~GMPVideoEncoderCallback() {}
+  virtual ~GMPVideoEncoderCallback() = default;
 
   virtual void Encoded(GMPVideoEncodedFrame* aEncodedFrame,
                        const uint8_t* aCodecSpecificInfo,
@@ -65,7 +65,7 @@ class GMPVideoEncoderCallback {
 // ALL METHODS MUST BE CALLED ON THE MAIN THREAD
 class GMPVideoEncoder {
  public:
-  virtual ~GMPVideoEncoder() {}
+  virtual ~GMPVideoEncoder() = default;
 
   // Initialize the encoder with the information from the VideoCodec.
   //

@@ -2000,10 +2000,11 @@ bool js::gc::IsCurrentlyAnimating(const TimeStamp& lastAnimationTime,
          currentTime < (lastAnimationTime + oneSecond);
 }
 
-static bool DiscardedCodeRecently(Zone* zone, const TimeStamp& currentTime) {
+static bool DiscardedCodeRecently(Realm* realm, const TimeStamp& currentTime) {
+  TimeStamp lastDiscarded = realm->jitRealm().lastDiscardedCodeTime();
   static const auto thirtySeconds = TimeDuration::FromSeconds(30);
-  return !zone->lastDiscardedCodeTime().IsNull() &&
-         currentTime < (zone->lastDiscardedCodeTime() + thirtySeconds);
+  return !lastDiscarded.IsNull() &&
+         currentTime < (lastDiscarded + thirtySeconds);
 }
 
 bool GCRuntime::shouldCompact() {
@@ -2721,33 +2722,8 @@ void GCRuntime::purgeRuntime() {
   marker().unmarkGrayStack.clearAndFree();
 }
 
-bool GCRuntime::shouldPreserveJITCode(Realm* realm,
-                                      const TimeStamp& currentTime,
-                                      bool canAllocateMoreCode,
-                                      bool isActiveCompartment) {
-  // During shutdown, we must clean everything up, for the sake of leak
-  // detection.
-  if (isShutdownGC()) {
-    return false;
-  }
-
-  // A shrinking GC is trying to clear out as much as it can, and so we should
-  // not preserve JIT code here!
-  if (isShrinkingGC()) {
-    return false;
-  }
-
-  // We are close to our allocatable code limit, so let's try to clean it out.
-  if (!canAllocateMoreCode) {
-    return false;
-  }
-
-  // The topmost frame of JIT code is in this compartment, and so we should
-  // try to preserve this zone's code.
-  if (isActiveCompartment) {
-    return true;
-  }
-
+bool GCRuntime::shouldRealmPreserveJitCode(Realm* realm,
+                                           const TimeStamp& currentTime) {
   // The gcPreserveJitCode testing function was used.
   if (alwaysPreserveCode) {
     return true;
@@ -2762,7 +2738,7 @@ bool GCRuntime::shouldPreserveJITCode(Realm* realm,
   // we can preserve jit code; however we shouldn't hold onto JIT code forever
   // during animation.
   if (IsCurrentlyAnimating(realm->lastAnimationTime, currentTime) &&
-      DiscardedCodeRecently(realm->zone(), currentTime)) {
+      DiscardedCodeRecently(realm, currentTime)) {
     return true;
   }
 
@@ -2957,15 +2933,82 @@ bool GCRuntime::prepareZonesForCollection(bool* isFullOut) {
   return any;
 }
 
+void GCRuntime::setRealmPreserveJitCodeFlags(Zone* zone,
+                                             const TimeStamp& currentTime,
+                                             bool canAllocateMoreCode) {
+  MOZ_ASSERT(!zone->isAnyRealmPreservingCode());
+
+  // During shutdown, we must clean everything up, for the sake of leak
+  // detection.
+  if (isShutdownGC()) {
+    return;
+  }
+
+  // A shrinking GC is trying to clear out as much as it can, and so we should
+  // not preserve JIT code here!
+  if (isShrinkingGC()) {
+    return;
+  }
+
+  // We are close to our allocatable code limit, so let's try to clean it out.
+  if (!canAllocateMoreCode) {
+    return;
+  }
+
+  // We're able to preserve JIT code, so check the heuristics for each realm.
+  bool preservingAllRealms = true;
+  for (RealmsInZoneIter r(zone); !r.done(); r.next()) {
+    if (shouldRealmPreserveJitCode(r, currentTime)) {
+      r->jitRealm().setPreservingCode(true);
+    } else {
+      preservingAllRealms = false;
+    }
+  }
+  if (preservingAllRealms) {
+    return;
+  }
+
+  // Also preserve JIT code for realms that have JS JIT frames on the stack.
+  JSContext* cx = rt->mainContextFromOwnThread();
+  for (jit::JitActivationIterator iter(cx); !iter.done(); ++iter) {
+    if (iter->compartment()->zone() != zone) {
+      continue;
+    }
+    for (OnlyJSJitFrameIter frames(iter); !frames.done(); ++frames) {
+      const jit::JSJitFrameIter& frame = frames.frame();
+      if (frame.isScripted()) {
+        frame.script()->realm()->jitRealm().setPreservingCode(true);
+      }
+    }
+  }
+}
+
+void GCRuntime::clearRealmPreserveJitCodeFlags(Zone* zone) {
+  for (RealmsInZoneIter r(zone); !r.done(); r.next()) {
+    r->jitRealm().setPreservingCode(false);
+  }
+}
+
 // Update JIT Code state for GC: A few different actions are combined here to
 // minimize the number of iterations over zones & scripts that required.
 void GCRuntime::maybeDiscardJitCodeForGC() {
   size_t nurserySiteResetCount = 0;
   size_t pretenuredSiteResetCount = 0;
 
+  // Discard JIT code more aggressively if the process is approaching its
+  // executable code limit.
+  bool canAllocateMoreCode = jit::CanLikelyAllocateMoreExecutableMemory();
+  TimeStamp currentTime = TimeStamp::Now();
+
   js::CancelOffThreadCompile(rt, JS::Zone::Prepare);
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_DISCARD_CODE);
+
+    // Set the preserve-code flag for each realm that should preserve JIT code.
+    // Code outside this scope assumes these flags are cleared.
+    setRealmPreserveJitCodeFlags(zone, currentTime, canAllocateMoreCode);
+    auto clearFlags =
+        MakeScopeExit([&] { clearRealmPreserveJitCodeFlags(zone); });
 
     // We may need to reset allocation sites and discard JIT code to recover if
     // we find object lifetimes have changed.
@@ -2973,16 +3016,11 @@ void GCRuntime::maybeDiscardJitCodeForGC() {
     bool resetNurserySites = pz.shouldResetNurseryAllocSites();
     bool resetPretenuredSites = pz.shouldResetPretenuredAllocSites();
 
-    if (!zone->isPreservingCode()) {
-      Zone::JitDiscardOptions options;
-      options.discardJitScripts = true;
-      options.resetNurseryAllocSites = resetNurserySites;
-      options.resetPretenuredAllocSites = resetPretenuredSites;
-      zone->forceDiscardJitCode(rt->gcContext(), options);
-    } else if (resetNurserySites || resetPretenuredSites) {
-      zone->resetAllocSitesAndInvalidate(resetNurserySites,
-                                         resetPretenuredSites);
-    }
+    Zone::JitDiscardOptions options;
+    options.discardJitScripts = true;
+    options.resetNurseryAllocSites = resetNurserySites;
+    options.resetPretenuredAllocSites = resetPretenuredSites;
+    zone->discardJitCode(rt->gcContext(), options);
 
     if (resetNurserySites) {
       nurserySiteResetCount++;
@@ -3184,21 +3222,6 @@ void BackgroundUnmarkTask::unmark() {
 void GCRuntime::endPreparePhase() {
   MOZ_ASSERT(unmarkTask.isIdle());
 
-  for (GCZonesIter zone(this); !zone.done(); zone.next()) {
-    zone->setPreservingCode(false);
-  }
-
-  // Discard JIT code more aggressively if the process is approaching its
-  // executable code limit.
-  bool canAllocateMoreCode = jit::CanLikelyAllocateMoreExecutableMemory();
-  auto currentTime = TimeStamp::Now();
-
-  Compartment* activeCompartment = nullptr;
-  jit::JitActivationIterator activation(rt->mainContextFromOwnThread());
-  if (!activation.done()) {
-    activeCompartment = activation->compartment();
-  }
-
   for (CompartmentsIter c(rt); !c.done(); c.next()) {
     c->gcState.scheduledForDestruction = false;
     c->gcState.maybeAlive = false;
@@ -3206,14 +3229,9 @@ void GCRuntime::endPreparePhase() {
     if (c->invisibleToDebugger()) {
       c->gcState.maybeAlive = true;  // Presumed to be a system compartment.
     }
-    bool isActiveCompartment = c == activeCompartment;
     for (RealmsInCompartmentIter r(c); !r.done(); r.next()) {
       if (r->shouldTraceGlobal() || !r->zone()->isGCScheduled()) {
         c->gcState.maybeAlive = true;
-      }
-      if (shouldPreserveJITCode(r, currentTime, canAllocateMoreCode,
-                                isActiveCompartment)) {
-        r->zone()->setPreservingCode(true);
       }
       if (r->hasBeenEnteredIgnoringJit()) {
         c->gcState.hasEnteredRealm = true;

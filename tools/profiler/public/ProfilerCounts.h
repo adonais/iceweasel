@@ -80,7 +80,7 @@ class BaseProfilerCount {
     // Can't call profiler_* here since this may be non-xul-library
   }
 
-  virtual ~BaseProfilerCount() {}
+  virtual ~BaseProfilerCount() = default;
 
   struct CountSample {
     int64_t count;

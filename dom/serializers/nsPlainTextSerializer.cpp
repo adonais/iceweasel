@@ -25,6 +25,7 @@
 #include "mozilla/intl/Segmenter.h"
 #include "mozilla/intl/UnicodeProperties.h"
 #include "nsCRT.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsComputedDOMStyle.h"
 #include "nsContentUtils.h"
 #include "nsDebug.h"

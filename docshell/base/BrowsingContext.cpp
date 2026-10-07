@@ -25,6 +25,7 @@
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/BrowsingContextBinding.h"
+#include "mozilla/dom/ChromeUtils.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Document.h"
@@ -314,6 +315,11 @@ bool BrowsingContext::IsOwnedByProcess() const {
          !nsDocShell::Cast(mDocShell)->WillChangeProcess();
 }
 
+bool BrowsingContext::IsScriptClosable() const {
+  return GetTopLevelCreatedByWebContent() ||
+         (mChildSessionHistory && mChildSessionHistory->Count() == 1);
+}
+
 bool BrowsingContext::SameOriginWithTop() {
   MOZ_ASSERT(IsInProcess());
   // If the top BrowsingContext is not same-process to us, it is cross-origin
@@ -402,7 +408,6 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
   if (aParent) {
     MOZ_DIAGNOSTIC_ASSERT(parentBC->Group() == group);
     MOZ_DIAGNOSTIC_ASSERT(parentBC->mType == aType);
-    fields.Get<IDX_EmbedderInnerWindowId>() = aParent->WindowID();
     // Non-toplevel content documents are always embededed within content.
     fields.Get<IDX_EmbeddedInContentDocument>() =
         parentBC->mType == Type::Content;
@@ -780,7 +785,7 @@ static bool OwnerAllowsFullscreen(const Element& aEmbedder) {
     return !aEmbedder.HasAttr(nsGkAtoms::disablefullscreen);
   }
   if (aEmbedder.IsHTMLElement(nsGkAtoms::iframe)) {
-    // This is controlled by feature policy.
+    // This is controlled by permissions policy.
     return true;
   }
   if (const auto* embed = HTMLEmbedElement::FromNode(aEmbedder)) {
@@ -804,10 +809,6 @@ void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
     txn.SetEmbedderElementType(Some(aEmbedder->LocalName()));
     txn.SetEmbeddedInContentDocument(
         aEmbedder->OwnerDoc()->IsContentDocument());
-    if (nsCOMPtr<nsPIDOMWindowInner> inner =
-            do_QueryInterface(aEmbedder->GetDocumentGlobal())) {
-      txn.SetEmbedderInnerWindowId(inner->WindowID());
-    }
     txn.SetFullscreenAllowedByOwner(OwnerAllowsFullscreen(*aEmbedder));
     if (XRE_IsParentProcess() && aEmbedder->IsXULElement() && IsTopContent()) {
       nsAutoString messageManagerGroup;
@@ -830,10 +831,10 @@ void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
     }
 
     MOZ_ALWAYS_SUCCEEDS(txn.Commit(this));
-  }
 
-  if (XRE_IsParentProcess() && IsTopContent()) {
-    Canonical()->MaybeSetPermanentKey(aEmbedder);
+    if (XRE_IsParentProcess() && IsTopContent()) {
+      Canonical()->SetCrossGroupEmbedderElement(aEmbedder);
+    }
   }
 
   mEmbedderElement = aEmbedder;
@@ -1223,7 +1224,7 @@ void BrowsingContext::PrepareForProcessChange() {
 }
 
 bool BrowsingContext::IsTargetable() const {
-  return !GetClosed() && AncestorsAreCurrent();
+  return !GetClosed() && AncestorsAreCurrent() && !Top()->GetIsPrinting();
 }
 
 void BrowsingContext::SetOpener(BrowsingContext* aOpener) {
@@ -2175,20 +2176,31 @@ bool BrowsingContext::RemoveRootFromBFCacheSync() {
   return false;
 }
 
-nsresult BrowsingContext::CheckSandboxFlags(nsDocShellLoadState* aLoadState) {
+nsresult BrowsingContext::EnsureSourceSandboxAllowsNavigation(
+    nsDocShellLoadState* aLoadState, bool aForClose) {
   const auto& sourceBC = aLoadState->SourceBrowsingContext();
   if (sourceBC.IsNull()) {
     return NS_OK;
   }
+  return EnsureSourceSandboxAllowsNavigation(sourceBC.GetMaybeDiscarded(),
+                                             aForClose);
+}
 
+nsresult BrowsingContext::EnsureSourceSandboxAllowsNavigation(
+    BrowsingContext* aSourceBC, bool aForClose) {
   // We might be called after the source BC has been discarded, but before we've
   // destroyed our in-process instance of the BrowsingContext object in some
   // situations (e.g. after creating a new pop-up with window.open while the
   // window is being closed). In these situations we want to still perform the
   // sandboxing check against our in-process copy. If we've forgotten about the
   // context already, assume it is sanboxed. (bug 1643450)
-  BrowsingContext* bc = sourceBC.GetMaybeDiscarded();
-  if (!bc || bc->IsSandboxedFrom(this)) {
+  if (!aSourceBC || aSourceBC->IsSandboxedFrom(this)) {
+    nsPrintfCString msg(
+        "Blocked attempt to %s another window from a sandboxed frame.",
+        aForClose ? "close" : "navigate");
+    nsContentUtils::ReportToConsoleNonLocalized(
+        NS_ConvertUTF8toUTF16(msg), nsIScriptError::errorFlag, "Window"_ns,
+        aSourceBC ? aSourceBC->GetExtantDocument() : nullptr);
     return NS_ERROR_DOM_SECURITY_ERR;
   }
   return NS_OK;
@@ -2318,7 +2330,7 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
   // triggering the load, and we don't want the target process to have to trust
   // the triggering process to do the appropriate checks for the
   // BrowsingContext's sandbox flags.
-  MOZ_TRY(CheckSandboxFlags(aLoadState));
+  MOZ_TRY(EnsureSourceSandboxAllowsNavigation(aLoadState));
   SetTriggeringAndInheritPrincipals(aLoadState->TriggeringPrincipal(),
                                     aLoadState->PrincipalToInherit(),
                                     aLoadState->GetLoadIdentifier());
@@ -2344,7 +2356,7 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
     if (!effectiveRemoteType.IsNotRemote() &&
         !ContentTriggeredURILoadIsAllowed(aLoadState->URI(),
                                           effectiveRemoteType)) {
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#ifdef DEBUG
       nsAutoCString aboutModuleOrScheme;
       if (aLoadState->URI()->SchemeIs("about")) {
         (void)NS_GetAboutModuleName(aLoadState->URI(), aboutModuleOrScheme);
@@ -2479,7 +2491,7 @@ nsresult BrowsingContext::InternalLoad(nsDocShellLoadState* aLoadState) {
   // triggering the load, and we don't want the target process to have to trust
   // the triggering process to do the appropriate checks for the
   // BrowsingContext's sandbox flags.
-  MOZ_TRY(CheckSandboxFlags(aLoadState));
+  MOZ_TRY(EnsureSourceSandboxAllowsNavigation(aLoadState));
 
   const auto& sourceBC = aLoadState->SourceBrowsingContext();
 
@@ -2599,7 +2611,6 @@ BrowsingContext::CheckURLAndCreateLoadState(nsIURI* aURI,
       aSourceDocument->ConsumeTextDirectiveUserActivation() ||
       loadState->HasValidUserGestureActivation());
   loadState->SetTriggeringWindowId(aSourceDocument->InnerWindowID());
-  loadState->SetTriggeringStorageAccess(aSourceDocument->UsingStorageAccess());
   loadState->SetTriggeringClassificationFlags(
       aSourceDocument->GetScriptTrackingFlags());
 
@@ -2741,10 +2752,20 @@ void BrowsingContext::Close(CallerType aCallerType, ErrorResult& aError) {
     return;
   }
 
+  if (RefPtr<nsGlobalWindowInner> callerInner =
+          nsContentUtils::IncumbentInnerWindow()) {
+    if (BrowsingContext* callerBC = callerInner->GetBrowsingContext()) {
+      if (NS_FAILED(EnsureSourceSandboxAllowsNavigation(callerBC, true))) {
+        return;
+      }
+    }
+  }
+
   // This is a bit of a hack for webcompat. Content needs to see an updated
   // |window.closed| value as early as possible, so we set this before we
   // actually send the DOMWindowClose event, which happens in the process where
   // the document for this browsing context is loaded.
+  // XXX bug 2074011, close might fail / get canceled but closed stays true.
   MOZ_ALWAYS_SUCCEEDS(SetClosed(true));
 
   if (ContentChild* cc = ContentChild::GetSingleton()) {
@@ -3690,12 +3711,12 @@ void BrowsingContext::DidSet(FieldIndex<IDX_OverrideDPPX>, float aOldValue) {
   PresContextAffectingFieldChanged();
 }
 
-void BrowsingContext::SetCustomUserAgent(const nsAString& aUserAgent,
+void BrowsingContext::SetCustomUserAgent(const nsACString& aUserAgent,
                                          ErrorResult& aRv) {
   Top()->SetUserAgentOverride(aUserAgent, aRv);
 }
 
-nsresult BrowsingContext::SetCustomUserAgent(const nsAString& aUserAgent) {
+nsresult BrowsingContext::SetCustomUserAgent(const nsACString& aUserAgent) {
   return Top()->SetUserAgentOverride(aUserAgent);
 }
 
@@ -3854,18 +3875,32 @@ bool BrowsingContext::WatchedByDevTools() {
   return Top()->GetWatchedByDevToolsInternal();
 }
 
-// Enforce that the watchedByDevTools BC field can only be set on the top level
-// Browsing Context.
 bool BrowsingContext::CanSet(FieldIndex<IDX_WatchedByDevToolsInternal>,
                              const bool& aWatchedByDevTools,
                              ContentParent* aSource) {
-  return IsTop();
+  // Can only be enabled or disabled from the Parent Process and only on top
+  // level BC. Also can only be enabled when at least one DevTools is currently
+  // active.
+  return XRE_IsParentProcess() && !aSource && IsTop() &&
+         (!aWatchedByDevTools || ChromeUtils::IsDevToolsOpened());
 }
 void BrowsingContext::SetWatchedByDevTools(bool aWatchedByDevTools,
                                            ErrorResult& aRv) {
   if (!IsTop()) {
     aRv.ThrowInvalidModificationError(
         "watchedByDevTools can only be set on top BrowsingContext");
+    return;
+  }
+  // The check is `CanSet` isn't enough to block modifications done from the
+  // parent process
+  if (!XRE_IsParentProcess()) {
+    aRv.ThrowInvalidModificationError(
+        "watchedByDevTools can only be set from the parent process");
+    return;
+  }
+  if (aWatchedByDevTools && !ChromeUtils::IsDevToolsOpened()) {
+    aRv.ThrowInvalidModificationError(
+        "watchedByDevTools can only be set when DevTools are opened");
     return;
   }
   SetWatchedByDevToolsInternal(aWatchedByDevTools, aRv);
@@ -3961,8 +3996,8 @@ bool BrowsingContext::CanSet(FieldIndex<IDX_UseGlobalHistory>,
 }
 
 auto BrowsingContext::CanSet(FieldIndex<IDX_UserAgentOverride>,
-                             const nsString& aUserAgent, ContentParent* aSource)
-    -> CanSetResult {
+                             const nsCString& aUserAgent,
+                             ContentParent* aSource) -> CanSetResult {
   if (!IsTop()) {
     return CanSetResult::Deny;
   }
@@ -3986,18 +4021,6 @@ bool BrowsingContext::CheckOnlyEmbedderCanSet(ContentParent* aSource) {
     return Canonical()->IsEmbeddedInProcess(childId);
   }
   return mEmbeddedByThisProcess;
-}
-
-bool BrowsingContext::CanSet(FieldIndex<IDX_EmbedderInnerWindowId>,
-                             const uint64_t& aValue, ContentParent* aSource) {
-  // If we have a parent window, our embedder inner window ID must match it.
-  if (mParentWindow) {
-    return mParentWindow->Id() == aValue;
-  }
-
-  // For toplevel BrowsingContext instances, this value may only be set by the
-  // parent process, or initialized to `0`.
-  return CheckOnlyEmbedderCanSet(aSource);
 }
 
 bool BrowsingContext::CanSet(FieldIndex<IDX_EmbedderElementType>,

@@ -181,7 +181,7 @@ commits.
 
 The list is stored in
 
-[https://searchfox.org/firefox-main/source/.hg-annotate-ignore-revs](/en-US/docs/)
+<https://searchfox.org/firefox-main/source/.hg-annotate-ignore-revs>
 
 Commit messages should also contain the string
 
@@ -196,7 +196,7 @@ $ hg log --template '{node} - {author|person} - {desc|strip|firstline}\n'
 ### With git
 
 The list is stored in
-[https://searchfox.org/firefox-main/source/.git-blame-ignore-revs](/en-US/docs/)
+<https://searchfox.org/firefox-main/source/.git-blame-ignore-revs>
 and contains git revisions for both gecko-dev and the git cinnabar
 repository.
 

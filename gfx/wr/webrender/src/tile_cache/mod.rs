@@ -1070,7 +1070,7 @@ impl TileCacheInstance {
         let pic_rect = surface.unclipped_local_rect;
 
         self.surface_index = surface_index;
-        self.visibility_node_index = surface.visibility_spatial_node_index;
+        self.visibility_node_index = surface.raster_spatial_node_index;
         self.local_rect = pic_rect;
         self.local_clip_rect = PictureRect::max_rect();
         self.deferred_dirty_tests.clear();
@@ -1099,8 +1099,8 @@ impl TileCacheInstance {
             .unmap(&frame_context.global_screen_device_rect)
             .expect("unable to unmap screen rect");
 
-        let pic_to_vis_mapper = SpaceMapper::new_with_target(
-            surface.visibility_spatial_node_index,
+        let pic_to_raster_mapper = SpaceMapper::new_with_target(
+            surface.raster_spatial_node_index,
             self.spatial_node_index,
             surface.culling_rect,
             frame_context.spatial_tree,
@@ -1126,7 +1126,7 @@ impl TileCacheInstance {
             frame_state.clip_store.set_active_clips(
                 self.spatial_node_index,
                 map_local_to_picture.ref_spatial_node_index,
-                surface.visibility_spatial_node_index,
+                surface.raster_spatial_node_index,
                 &mut clip_snapper,
                 clip_snap,
                 tile_clip_node_id,
@@ -1141,7 +1141,7 @@ impl TileCacheInstance {
             let clip_chain_instance = frame_state.clip_store.build_clip_chain_instance(
                 pic_rect.cast_unit(),
                 &map_local_to_picture,
-                &pic_to_vis_mapper,
+                &pic_to_raster_mapper,
                 &mut frame_state.frame_gpu_data.f32,
                 frame_state.resource_cache,
                 &surface.culling_rect,
@@ -2695,7 +2695,7 @@ impl TileCacheInstance {
             }
             PrimitiveKind::TextRun { .. } => {
                 // A text run under an animated transform is rasterized in local
-                // space (see TextRunTemplate::get_raster_space_for_prim, bug
+                // space (see TextRun::get_raster_space_for_prim, bug
                 // 2053638). Record that as a dependency so the tile invalidates
                 // when the animation ends and the text returns to the crisp
                 // device path - the raster-space flip alone changes neither

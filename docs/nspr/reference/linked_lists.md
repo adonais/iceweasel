@@ -4,8 +4,8 @@ inserting and removing elements from the list. The macros are not thread
 safe. The caller must provide for mutually-exclusive access to the list,
 and for the nodes being added and removed from the list.
 
-- [Linked List Types](#Linked_List_Types)
-- [Linked List Macros](#Linked_List_Macros)
+- [Linked List Types](#linked-list-types)
+- [Linked List Macros](#linked-list-macros)
 
 (linked-list-types)=
 

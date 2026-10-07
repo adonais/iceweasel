@@ -181,6 +181,13 @@
       }
     },
     "link": {
+      "border": {
+        "radius": {
+          "focus": {
+            "Value": "{border/radius/xsmall}"
+          }
+        }
+      },
       "focus": {
         "outline": {
           "offset": {
@@ -433,11 +440,11 @@
     "color": {
       "accent": {
         "attention": {
-          "Light": "{color/green/40}",
-          "Dark": "{color/green/30}",
+          "Light": "{color/green/50}",
+          "Dark": "{color/green/20}",
           "HCM": "{AccentColor}",
-          "Private": "{color/green/30}",
-          "Smart Light (WIP)": "{color/green/40}"
+          "Private": "{color/green/50}",
+          "Smart Light (WIP)": "{color/green/20}"
         },
         "primary": {
           "Light": "{color/violet/50}",

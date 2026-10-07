@@ -55,7 +55,8 @@ static char* getenv(const char* name) {
 // *****************************
 // Runtime configuration options.
 
-size_t opt_dirty_max = DIRTY_MAX_DEFAULT;
+// Set in malloc_init_hard() once the page size is known.
+size_t opt_dirty_max;
 
 #ifdef MALLOC_RUNTIME_CONFIG
 bool opt_junk = OPT_JUNK_DEFAULT;

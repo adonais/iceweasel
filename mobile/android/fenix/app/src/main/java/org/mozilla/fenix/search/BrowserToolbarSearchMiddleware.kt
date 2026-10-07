@@ -207,10 +207,6 @@ class BrowserToolbarSearchMiddleware(
                     appStore.dispatch(AppAction.QrScannerAction.QrScannerDismissed)
                 }
                 observeQRScannerInputJob?.cancel()
-                if (observeLensInputJob?.isActive == true) {
-                    appStore.dispatch(AppAction.LensAction.LensDismissed)
-                }
-                observeLensInputJob?.cancel()
                 observeVoiceInputJob?.cancel()
             }
 
@@ -605,7 +601,12 @@ class BrowserToolbarSearchMiddleware(
                         )
                         components.useCases.fenixBrowserUseCases.loadUrlOrSearch(
                             searchTermOrURL = it.qrScannerState.lastScanData,
-                            newTab = appStore.state.searchState.sourceTabId == null,
+                            newTab =
+                                if (settings.enableHomepageAsNewTab) {
+                                    false
+                                } else {
+                                    appStore.state.searchState.sourceTabId == null
+                                },
                             flags = EngineSession.LoadUrlFlags.external(),
                             private = browsingModeManager.mode.isPrivate,
                         )
@@ -623,14 +624,10 @@ class BrowserToolbarSearchMiddleware(
                     if (!it.lensState.resultUrl.isNullOrEmpty()) {
                         observeLensInputJob?.cancel()
 
-                        val resultUrl = it.lensState.resultUrl
+                        // LensImageSearch already opened and selected the result tab, so only bring
+                        // the browser to the front. This job dies with the toolbar's view; the tab
+                        // survives that, this navigation doesn't.
                         appStore.dispatch(AppAction.LensAction.LensResultConsumed)
-                        components.useCases.fenixBrowserUseCases.loadUrlOrSearch(
-                            searchTermOrURL = resultUrl,
-                            newTab = appStore.state.searchState.sourceTabId == null,
-                            flags = EngineSession.LoadUrlFlags.external(),
-                            private = browsingModeManager.mode.isPrivate,
-                        )
                         navController.navigate(R.id.action_global_browser)
                     }
                 }

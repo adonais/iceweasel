@@ -32,6 +32,7 @@ class PKCS11ModuleParent final : public PPKCS11ModuleParent,
 
   ipc::IPCResult RecvPromptPassword(nsCString&& aTokenName,
                                     PromptPasswordResolver&& aResolver);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   ipc::IPCResult RecvShowProtectedAuthPrompt(nsCString&& aTokenName,
                                              uint64_t id);
   ipc::IPCResult RecvDismissProtectedAuthPrompt(uint64_t id);

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<body>
+<canvas id="canvas1" width="128" height="128"></canvas>
+<script type="text/javascript">
+let ctx1 = canvas1.getContext("2d")
+ctx1.filter="hue-rotate(0deg)"
+ctx1.fillStyle="green"
+ctx1.fillRect(0,40,100,20)
+ctx1.filter="hue-rotate(45deg)"
+ctx1.fillRect(40,0,20,100)
+</script>
+</body>
+</html>

@@ -97,7 +97,7 @@ PrimitiveHeader fetch_prim_header(int index) {
 
 struct VertexInfo {
     vec2 local_pos;
-    vec4 world_pos;
+    vec4 raster_pos;
 };
 
 VertexInfo write_vertex(vec2 local_pos,
@@ -108,20 +108,20 @@ VertexInfo write_vertex(vec2 local_pos,
     // Clamp to the two local clip rects.
     vec2 clamped_local_pos = rect_clamp(local_clip_rect, local_pos);
 
-    // Transform the current vertex to world space.
-    vec4 world_pos = transform.m * vec4(clamped_local_pos, 0.0, 1.0);
+    // Transform the current vertex to raster space.
+    vec4 raster_pos = transform.m * vec4(clamped_local_pos, 0.0, 1.0);
 
-    // Convert the world positions to device pixel space.
-    vec2 device_pos = world_pos.xy * task.device_pixel_scale;
+    // Convert the raster positions to device pixel space.
+    vec2 device_pos = raster_pos.xy * task.device_pixel_scale;
 
     // Apply offsets for the render task to get correct screen location.
     vec2 final_offset = -task.content_origin + task.task_rect.p0;
 
-    gl_Position = uTransform * vec4(device_pos + final_offset * world_pos.w, z * world_pos.w, world_pos.w);
+    gl_Position = uTransform * vec4(device_pos + final_offset * raster_pos.w, z * raster_pos.w, raster_pos.w);
 
     VertexInfo vi = VertexInfo(
         clamped_local_pos,
-        world_pos
+        raster_pos
     );
 
     return vi;
@@ -180,7 +180,7 @@ RectWithEndpoint clip_and_init_antialiasing(RectWithEndpoint segment_rect,
     return segment_rect;
 }
 
-void write_clip(vec4 world_pos, ClipArea area, PictureTask task) {
+void write_clip(vec4 raster_pos, ClipArea area, PictureTask task) {
 #ifdef SWGL_CLIP_MASK
     swgl_clipMask(
         sClipMask,
@@ -189,8 +189,8 @@ void write_clip(vec4 world_pos, ClipArea area, PictureTask task) {
         rect_size(area.task_rect)
     );
 #else
-    vec2 uv = world_pos.xy * area.device_pixel_scale +
-        world_pos.w * (area.task_rect.p0 - area.screen_origin);
+    vec2 uv = raster_pos.xy * area.device_pixel_scale +
+        raster_pos.w * (area.task_rect.p0 - area.screen_origin);
     vClipMaskUvBounds = vec4(
         area.task_rect.p0,
         area.task_rect.p1

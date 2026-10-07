@@ -17,7 +17,8 @@
           "default": "0.867rem"
         },
         "platform": {
-          "default": "unset"
+          "default": "1rem",
+          "comment": "macOS 11px, Windows 12px, Linux overridden to >= 11px"
         }
       }
     },

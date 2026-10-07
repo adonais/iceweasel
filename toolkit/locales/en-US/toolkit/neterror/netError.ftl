@@ -99,9 +99,6 @@ neterror-load-osx-permission = If you are trying to load a local network page, p
 
 neterror-http-error-page = Check to make sure you’ve typed the website address correctly.
 neterror-http-empty-response = Check to make sure you’ve typed the website address correctly and try again in a few moments.
-# Variables:
-#   $hostname (String) - Hostname of the website to which the user was trying to connect.
-neterror-http-empty-response-description = { $hostname } sent back an empty page.
 
 neterror-captive-portal = You must log in to this network before you can access the internet.
 

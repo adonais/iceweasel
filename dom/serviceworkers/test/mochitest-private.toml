@@ -8,8 +8,8 @@ prefs = [
 ]
 dupe-manifest = true
 # we do need to skip xorigin tests because dfpi is on in here too
-skip-if = [
-  "xorigin",
+run-if = [
+  "!xorigin",
 ]
 tags = "dom-serviceworkers-api dom-serviceworkers-api-private"
 

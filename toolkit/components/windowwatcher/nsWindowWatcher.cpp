@@ -434,7 +434,8 @@ nsresult nsWindowWatcher::CreateChromeWindow(nsIWebBrowserChrome* aParentChrome,
     }
   }
   nsCOMPtr<nsIWebBrowserChrome> newWindowChrome;
-  nsresult rv = mWindowCreator->CreateChromeWindow(
+  nsCOMPtr windowCreator = mWindowCreator;
+  nsresult rv = windowCreator->CreateChromeWindow(
       aParentChrome, aChromeFlags, aOpenWindowInfo, &cancel,
       getter_AddRefs(newWindowChrome));
 
@@ -2020,6 +2021,9 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForSystem(
   if (aFeatures.GetBoolWithDefault("alwaysontop", false)) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_ALWAYS_ON_TOP;
   }
+  if (aFeatures.GetBoolWithDefault("mediapip", false)) {
+    chromeFlags |= nsIWebBrowserChrome::CHROME_MEDIA_PIP;
+  }
   if (aFeatures.GetBoolWithDefault("chrome", false)) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_OPENAS_CHROME;
   }
@@ -2071,8 +2075,6 @@ already_AddRefed<nsDocShellLoadState> nsWindowWatcher::CreateLoadState(
     if (nsCOMPtr<nsPIDOMWindowInner> parentInnerWin =
             aParent->GetCurrentInnerWindow()) {
       loadState->SetTriggeringWindowId(parentInnerWin->WindowID());
-      loadState->SetTriggeringStorageAccess(
-          parentInnerWin->UsingStorageAccess());
     }
 
     if (RefPtr<BrowsingContext> parentBC = aParent->GetBrowsingContext()) {

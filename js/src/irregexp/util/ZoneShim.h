@@ -31,7 +31,7 @@ class MOZ_STACK_CLASS Zone {
     js::AutoEnterOOMUnsafeRegion oomUnsafe;
     void* memory = inner().alloc(sizeof(T));
     if (!memory) {
-      oomUnsafe.crash("Irregexp Zone::New");
+      oomUnsafe.crash(sizeof(T), "Irregexp Zone::New");
     }
     return new (memory) T(std::forward<Args>(args)...);
   }
@@ -41,13 +41,14 @@ class MOZ_STACK_CLASS Zone {
   T* AllocateArray(size_t length) {
     js::LifoAlloc::AutoFallibleScope fallible(&inner());
     js::AutoEnterOOMUnsafeRegion oomUnsafe;
-    size_t numBytes = length * sizeof(T);
-    if (MOZ_UNLIKELY(numBytes > INT_MAX)) {
+    size_t numBytes;
+    if (!mozilla::SafeMul(length, sizeof(T), &numBytes) ||
+        numBytes > INT32_MAX) {
       oomUnsafe.crash("Irregexp Zone::AllocateArray");
     }
-    void* memory = inner().alloc(length * sizeof(T));
+    void* memory = inner().alloc(numBytes);
     if (MOZ_UNLIKELY(!memory)) {
-      oomUnsafe.crash("Irregexp Zone::New");
+      oomUnsafe.crash(numBytes, "Irregexp Zone::AllocateArray");
     }
     return static_cast<T*>(memory);
   }
@@ -243,9 +244,13 @@ class ZoneList final : public ZoneObject {
   template <typename CompareFunction>
   void StableSort(CompareFunction cmp, size_t start, size_t length) {
     js::AutoEnterOOMUnsafeRegion oomUnsafe;
-    T* scratch = static_cast<T*>(js_malloc(length * sizeof(T)));
-    if (!scratch) {
+    size_t numBytes;
+    if (!mozilla::SafeMul(length, sizeof(T), &numBytes)) {
       oomUnsafe.crash("Irregexp stable sort scratch space");
+    }
+    T* scratch = static_cast<T*>(js_malloc(numBytes));
+    if (!scratch) {
+      oomUnsafe.crash(numBytes, "Irregexp stable sort scratch space");
     }
     auto comparator = [cmp](const T& a, const T& b, bool* lessOrEqual) {
       *lessOrEqual = cmp(&a, &b) <= 0;

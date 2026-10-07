@@ -1,0 +1,12 @@
+[package]
+name = "without-category"
+version = "0.1.0"
+authors = [
+  "The Mozilla Project Developers",
+]
+
+[[bin]]
+name = "without-category"
+
+[dependencies]
+mozilla-central-workspace-hack = { version = "0.1", features = ["without-category"], optional = true }

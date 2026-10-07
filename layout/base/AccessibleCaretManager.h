@@ -251,7 +251,7 @@ class AccessibleCaretManager {
    *                    at the first non-selectable element in selectable node.
    */
   FrameAndOffset GetFirstVisibleLeafFrameOrUnselectableChildFrame(
-      nsRange& aRange, nsIContent** aOutContent = nullptr,
+      dom::Range& aRange, nsIContent** aOutContent = nullptr,
       int32_t* aOutOffsetInContent = nullptr) const;
 
   /**
@@ -284,7 +284,7 @@ class AccessibleCaretManager {
    *                    the last non-selectable element in selectable node.
    */
   FrameAndOffset GetLastVisibleLeafFrameOrUnselectableChildFrame(
-      nsRange& aRange, nsIContent** aOutContent = nullptr,
+      dom::Range& aRange, nsIContent** aOutContent = nullptr,
       int32_t* aOutOffsetInContent = nullptr) const;
 
   MOZ_CAN_RUN_SCRIPT nsresult DragCaretInternal(const nsPoint& aPoint);

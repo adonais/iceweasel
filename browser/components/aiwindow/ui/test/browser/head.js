@@ -604,6 +604,8 @@ async function stubResumeActivityGeneration(sb, { fxAccountToken } = {}) {
     {
       id: "memory-1",
       memory_summary: "Research project",
+      lifetime_accessed_count: 0,
+      recent_accessed_counts: {},
       source_ids: {
         history_source_ids: urls
           .slice(0, 4)
@@ -613,6 +615,8 @@ async function stubResumeActivityGeneration(sb, { fxAccountToken } = {}) {
     {
       id: "memory-2",
       memory_summary: "Trip planning",
+      lifetime_accessed_count: 0,
+      recent_accessed_counts: {},
       source_ids: {
         history_source_ids: [PlacesUtils.history.hashURL(urls[4].url)],
       },
@@ -665,15 +669,20 @@ async function stubResumeActivityGenerationPool(sb, memoryCount) {
  * @param {object} sb - Sinon sandbox, owned and restored by the caller
  * @param {Function} run - Async callback invoked with
  *   {win, browser, aiWindow, buttons}
+ * @param {object} [options]
+ * @param {?string} [options.fxAccountToken] - Token for mock-server-backed
+ *   chat completion.
  */
-async function testResumeActivityClick(sb, run) {
+async function testResumeActivityClick(sb, run, { fxAccountToken } = {}) {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.smartwindow.memories.generateFromConversation", true],
       ["browser.smartwindow.memories.generateFromHistory", true],
     ],
   });
-  const resumeActivityStubs = await stubResumeActivityGeneration(sb);
+  const resumeActivityStubs = await stubResumeActivityGeneration(sb, {
+    fxAccountToken,
+  });
   let win;
   try {
     win = await openAIWindow();

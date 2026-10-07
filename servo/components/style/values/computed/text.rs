@@ -25,10 +25,11 @@ use style_traits::{CssString, CssWriter, ToCss};
 use thin_vec::ThinVec;
 
 pub use crate::values::specified::text::{
-    HyphenateCharacter, LineBreak, MozControlCharacterVisibility, OverflowWrap, RubyPosition,
-    TextAlignLast, TextAutospace, TextBoxEdge, TextBoxTrim, TextDecorationLine,
-    TextDecorationSkipInk, TextEmphasisPosition, TextJustify, TextOverflow, TextTransform,
-    TextUnderlinePosition, WordBreak,
+    HyphenateCharacter, Hyphens, LineBreak, MozControlCharacterVisibility, OverflowWrap, RubyAlign,
+    RubyPosition, TextAlignLast, TextAutospace, TextBoxEdge, TextBoxTrim, TextCombineUpright,
+    TextDecorationLine, TextDecorationSkipInk, TextDecorationStyle, TextEmphasisPosition,
+    TextJustify, TextOverflow, TextRendering, TextSecurity, TextSizeAdjust, TextTransform,
+    TextUnderlinePosition, TextWrapMode, TextWrapStyle, UnicodeBidi, WhiteSpaceCollapse, WordBreak,
 };
 
 /// A computed value for the `initial-letter` property.
@@ -49,7 +50,7 @@ impl ToAnimatedValue for TextDecorationInset {
                 let font_size_px = context
                     .style
                     .get_font()
-                    .clone_font_size()
+                    .slow_clone_font_size()
                     .computed_size()
                     .px();
                 #[cfg(feature = "gecko")]

@@ -9,8 +9,6 @@ path:browser/config/version.txt
 
 # Result from `grep -hr %include taskcluster/docker | grep -v " taskcluster/" | sort -u`
 path:python/mozbuild/mozbuild/action/tooltool.py
-path:testing/mozharness/external_tools/performance-artifact-schema.json
-path:testing/mozharness/external_tools/robustcheckout.py
 
 # Required for the webrender docker image
 path:gfx/wr/ci-scripts/docker-image/setup.sh

@@ -6,6 +6,7 @@
 #define SELF_REF_H
 
 #include "mozilla/Attributes.h"
+#include "nsDebug.h"
 
 namespace mozilla {
 

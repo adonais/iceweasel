@@ -68,7 +68,7 @@ const kSubviewEvents = ["ViewShowing", "ViewHiding"];
  * The current version. We can use this to auto-add new default widgets as necessary.
  * (would be const but isn't because of testing purposes)
  */
-var kVersion = 26;
+var kVersion = 28;
 
 /**
  * Buttons removed from built-ins by version they were removed. kVersion must be
@@ -927,6 +927,122 @@ var CustomizableUIInternal = {
         CustomizableUIInternal.saveHorizontalTabStripState(
           insertBeforeAllTabs(horizontalSnapshot)
         );
+      }
+    }
+
+    // The Organize Tabs button reached the defaults after these profiles were
+    // saved, so instead of landing in its default slot it was appended after
+    // the Smart Window switcher, or into the hidden tab strip when tabs are
+    // vertical. Put it back beside the switcher.
+    if (currentVersion < 27) {
+      const organizeTabs = "smartwindow-group-tabs-button";
+      const switcher = "ai-window-toggle";
+      const areaPlacements = area => {
+        const placements = gSavedState.placements[area];
+        return Array.isArray(placements) ? placements : [];
+      };
+      const tabstrip = areaPlacements(CustomizableUI.AREA_TABSTRIP);
+      const navbar = areaPlacements(CustomizableUI.AREA_NAVBAR);
+
+      const placeBeforeSwitcher = (placements, reserveSlot) => {
+        const switcherIndex = placements.indexOf(switcher);
+        if (switcherIndex == -1) {
+          return;
+        }
+        let appendedIndex = switcherIndex + 1;
+        if (placements[appendedIndex] == "sidebar-button") {
+          appendedIndex++;
+        }
+        const buttonIndex = placements.indexOf(organizeTabs);
+        if (buttonIndex == appendedIndex) {
+          placements.splice(buttonIndex, 1);
+          placements.splice(switcherIndex, 0, organizeTabs);
+        } else if (buttonIndex == -1 && reserveSlot) {
+          placements.splice(switcherIndex, 0, organizeTabs);
+        }
+      };
+
+      if (
+        CustomizableUI.verticalTabsEnabled &&
+        tabstrip.includes(organizeTabs) &&
+        !navbar.includes(organizeTabs) &&
+        navbar.includes(switcher)
+      ) {
+        tabstrip.splice(tabstrip.indexOf(organizeTabs), 1);
+        navbar.splice(navbar.indexOf(switcher), 0, organizeTabs);
+      }
+      const neverCreated =
+        !gSeenWidgets.has(organizeTabs) &&
+        !Object.values(gSavedState.placements).some(
+          placements =>
+            Array.isArray(placements) && placements.includes(organizeTabs)
+        );
+      placeBeforeSwitcher(tabstrip, neverCreated);
+      placeBeforeSwitcher(navbar, neverCreated);
+
+      // A snapshot taken before the button existed lacks it for that reason,
+      // not because the user removed it, so go by where the button is now.
+      const isPlaced =
+        tabstrip.includes(organizeTabs) || navbar.includes(organizeTabs);
+
+      const horizontalSnapshot =
+        CustomizableUIInternal.getSavedHorizontalSnapshotState();
+      if (horizontalSnapshot.length) {
+        placeBeforeSwitcher(horizontalSnapshot, isPlaced);
+        CustomizableUIInternal.saveHorizontalTabStripState(horizontalSnapshot);
+      }
+
+      const verticalSnapshot =
+        CustomizableUIInternal.getSavedVerticalSnapshotState();
+      if (verticalSnapshot.length) {
+        placeBeforeSwitcher(verticalSnapshot, isPlaced);
+        CustomizableUIInternal.saveNavBarWhenVerticalTabsState(
+          verticalSnapshot
+        );
+      }
+    }
+
+    // The version 26 migration above anchored the flexible space to the
+    // alltabs-button, so profiles that had removed that button kept no space
+    // at all between the tab strip and the window controls. Put one back at
+    // the end of the tab strip for them.
+    if (currentVersion < 28) {
+      let restoreFlexibleSpace = placements => {
+        // The live tab strip placements are empty while tabs are vertical, and
+        // a corrupt saved state can hold anything.
+        if (!Array.isArray(placements) || !placements.length) {
+          return;
+        }
+        // Version 26 had its anchor when there is an alltabs-button, so a
+        // space missing here is one the user removed on purpose.
+        if (placements.includes("alltabs-button")) {
+          return;
+        }
+        // Any flexible space left after the tabs already does this job,
+        // wherever in the strip the user put it.
+        let afterTabs = placements.slice(
+          placements.indexOf("tabbrowser-tabs") + 1
+        );
+        if (
+          !afterTabs.some(id =>
+            CustomizableUIInternal.matchingSpecials(id, "spring")
+          )
+        ) {
+          placements.push("spring");
+        }
+      };
+
+      restoreFlexibleSpace(
+        gSavedState.placements[CustomizableUI.AREA_TABSTRIP]
+      );
+
+      // Users currently in vertical tabs keep their horizontal layout in the
+      // snapshot rather than in the live tab strip placements.
+      let horizontalSnapshot =
+        CustomizableUIInternal.getSavedHorizontalSnapshotState();
+      if (horizontalSnapshot.length) {
+        restoreFlexibleSpace(horizontalSnapshot);
+        CustomizableUIInternal.saveHorizontalTabStripState(horizontalSnapshot);
       }
     }
   },

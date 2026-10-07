@@ -13,7 +13,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <span>
 
 #include "absl/strings/string_view.h"
@@ -103,16 +102,8 @@ void AudioEncoder::OnReceivedTargetAudioBitrate(int target_audio_bitrate_bps) {
   OnReceivedUplinkAllocation(update);
 }
 
-void AudioEncoder::OnReceivedUplinkBandwidth(
-    int /* target_audio_bitrate_bps */,
-    std::optional<int64_t> /* bwe_period_ms */) {}
-
-void AudioEncoder::OnReceivedUplinkAllocation(BitrateAllocationUpdate update) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  OnReceivedUplinkBandwidth(update.target_bitrate.bps(), std::nullopt);
-#pragma clang diagnostic pop
-}
+void AudioEncoder::OnReceivedUplinkAllocation(
+    BitrateAllocationUpdate /* update */) {}
 
 void AudioEncoder::OnReceivedRtt(int /* rtt_ms */) {}
 

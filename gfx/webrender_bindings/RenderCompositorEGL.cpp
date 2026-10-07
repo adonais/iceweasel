@@ -292,7 +292,7 @@ void RenderCompositorEGL::MaybeWaitingForPendingReadFence(
   mWaitingForPendingReadFence.emplace_back(aTexture);
 }
 
-RefPtr<layers::Fence> RenderCompositorEGL::GetAndResetReleaseFence() {
+RefPtr<layers::Fence> RenderCompositorEGL::GetAndResetReadFence() {
 #ifdef MOZ_WIDGET_ANDROID
   if (mReleaseFence && !mWaitingForPendingReadFence.empty()) {
     auto* fileFence = mReleaseFence->AsFenceFileHandle();

@@ -264,6 +264,7 @@
 #include "nsIPermissionManager.h"
 #include "nsIPrefBranch.h"
 #include "nsIPrincipal.h"
+#include "nsIPrintSettings.h"
 #include "nsIPrompt.h"
 #include "nsIRunnable.h"
 #include "nsIScreen.h"
@@ -320,10 +321,6 @@
 #include "prtypes.h"
 #include "xpcprivate.h"
 #include "xpcpublic.h"
-
-#ifdef NS_PRINTING
-#  include "nsIPrintSettings.h"
-#endif
 
 #ifdef MOZ_WEBSPEECH
 #  include "mozilla/dom/SpeechSynthesis.h"

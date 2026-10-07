@@ -33,6 +33,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/HTMLTemplateElement.h"
 #include "mozilla/dom/Highlight.h"
@@ -40,6 +41,7 @@
 #include "mozilla/dom/InspectorFontFace.h"
 #include "mozilla/dom/InspectorUtilsBinding.h"
 #include "mozilla/dom/LinkStyle.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/gfx/Matrix.h"
 #include "nsArray.h"
@@ -58,7 +60,6 @@
 #include "nsNameSpaceManager.h"
 #include "nsPresContext.h"
 #include "nsQueryObject.h"
-#include "nsRange.h"
 #include "nsString.h"
 #include "nsStyleUtil.h"
 
@@ -920,7 +921,7 @@ uint64_t InspectorUtils::GetContentState(GlobalObject& aGlobalObject,
 
 /* static */
 void InspectorUtils::GetUsedFontFaces(GlobalObject& aGlobalObject,
-                                      nsRange& aRange, uint32_t aMaxRanges,
+                                      Range& aRange, uint32_t aMaxRanges,
                                       bool aSkipCollapsedWhitespace,
                                       nsLayoutUtils::UsedFontFaceList& aResult,
                                       ErrorResult& aRv) {
@@ -1411,7 +1412,8 @@ void InspectorUtils::GetAnchorFor(GlobalObject&, Element& aElement,
     name = NS_Atomize(aName);
     scopedName = {name, StyleCascadeLevel::Default()};
   }
-  anchor = frame->PresShell()->GetAnchorPosAnchor(scopedName, frame);
+  anchor = frame->PresShell()->GetAnchorPosAnchor(scopedName, frame,
+                                                  frame->GetDepthInFrameTree());
   if (!anchor) {
     return;
   }
@@ -1437,10 +1439,202 @@ void InspectorUtils::GetComputationStepsSupportedCSSFunctions(
     GlobalObject& aGlobalObject, nsTArray<nsCString>& aResult) {
   Servo_GetComputationStepsSupportedCSSFunctions(&aResult);
 }
+enum class PercentageBasisAxis {
+  // Physical axes — independent of writing mode.
+  Width,
+  Height,
+  // Logical axes — resolved against the containing block's writing mode.
+  Inline,
+  Block,
+};
+
+static constexpr float kNoPercentageBasis =
+    std::numeric_limits<float>::quiet_NaN();
+
+static float GetContainingBlockPercentageBasis(Element& aElement,
+                                               PercentageBasisAxis aAxis) {
+  nsIFrame* frame = aElement.GetPrimaryFrame(FlushType::Layout);
+  nsIFrame* cb = frame ? frame->GetContainingBlock() : nullptr;
+  if (!cb) {
+    return kNoPercentageBasis;
+  }
+  nsRect contentRect = cb->GetContentRect();
+  nscoord basis;
+  switch (aAxis) {
+    case PercentageBasisAxis::Width:
+      basis = contentRect.width;
+      break;
+    case PercentageBasisAxis::Height: {
+      // Percentage heights resolve to `auto` when the containing block's height
+      // is indefinite (unless the element is absolutely positioned). For now,
+      // just bail out in such case.
+      if (!frame->IsAbsolutelyPositioned() &&
+          cb->StylePosition()->mHeight.BehavesLikeInitialValueOnBlockAxis()) {
+        return kNoPercentageBasis;
+      }
+      basis = contentRect.height;
+      break;
+    }
+    case PercentageBasisAxis::Inline:
+      basis = cb->GetWritingMode().IsVertical() ? contentRect.height
+                                                : contentRect.width;
+      break;
+    case PercentageBasisAxis::Block: {
+      bool cbIsVertical = cb->GetWritingMode().IsVertical();
+      // Percentage block-sizes resolve to `auto` when the containing block's
+      // block-size is indefinite (unless the element is absolutely positioned).
+      // For now, just bail out in such case.
+      const StyleSize& cbBlockSize = cbIsVertical
+                                         ? cb->StylePosition()->mWidth
+                                         : cb->StylePosition()->mHeight;
+      if (!frame->IsAbsolutelyPositioned() &&
+          cbBlockSize.BehavesLikeInitialValueOnBlockAxis()) {
+        return kNoPercentageBasis;
+      }
+      basis = cbIsVertical ? contentRect.width : contentRect.height;
+      break;
+    }
+  }
+  return CSSPixel::FromAppUnits(basis);
+}
+
+static float GetTextDecorationInsetPercentageBasis(
+    Element& aElement, const ComputedStyle& aComputedStyle) {
+  // When box-decoration-break is `clone`, `text-decoration-inset` percentages
+  // resolve against each fragment's individual inline-size , which we can't
+  // compute here.
+  if (aComputedStyle.StyleBorder()->mBoxDecorationBreak ==
+      StyleBoxDecorationBreak::Clone) {
+    return kNoPercentageBasis;
+  }
+
+  nsIFrame* frame = aElement.GetPrimaryFrame(FlushType::Layout);
+  if (!frame) {
+    return kNoPercentageBasis;
+  }
+  nsRect contentRect = frame->GetContentRect();
+  bool isVertical = frame->GetWritingMode().IsVertical();
+  nscoord basis = isVertical ? contentRect.height : contentRect.width;
+  return CSSPixel::FromAppUnits(basis);
+}
+
+static float GetParentFontSizePercentageBasis(
+    Element& aElement, const PseudoStyleRequest& aPseudo) {
+  RefPtr<const ComputedStyle> parentStyle;
+  // For a pseudo-element, `font-size` percentage resolves against its
+  // originating element's own font-size.
+  if (!aPseudo.IsNotPseudo()) {
+    parentStyle = GetCleanComputedStyleForElement(
+        &aElement, PseudoStyleRequest::NotPseudo());
+  } else if (Element* parent = aElement.GetFlattenedTreeParentElement()) {
+    // For non pseudo-element, we resolve against the parent element's
+    // font-size.
+    parentStyle = GetCleanComputedStyleForElement(
+        parent, PseudoStyleRequest::NotPseudo());
+  }
+  if (!parentStyle) {
+    return kNoPercentageBasis;
+  }
+  return parentStyle->StyleFont()->mFont.size.ToCSSPixels();
+}
+
+// Returns the percentage basis (in CSS pixels) that a property percentage value
+// computes to. This returns NaN if we can't compute it or if it doesn't make
+// sense in the context of an element.
+static float GetPercentageBasisFor(const nsACString& aProperty,
+                                   Element& aElement,
+                                   const PseudoStyleRequest& aPseudo,
+                                   const ComputedStyle& aComputedStyle) {
+  NonCustomCSSPropertyId propertyId = nsCSSProps::LookupProperty(aProperty);
+  if (propertyId == eCSSProperty_UNKNOWN) {
+    return kNoPercentageBasis;
+  }
+  switch (propertyId) {
+    case eCSSProperty_width:
+    case eCSSProperty_min_width:
+    case eCSSProperty_max_width:
+    case eCSSProperty_margin_left:
+    case eCSSProperty_margin_right:
+    // Physical margin (and padding) percentages always resolve against the
+    // containing block's width, even for the top/bottom longhands.
+    case eCSSProperty_margin_top:
+    case eCSSProperty_margin_bottom:
+    case eCSSProperty_padding_left:
+    case eCSSProperty_padding_right:
+    case eCSSProperty_padding_top:
+    case eCSSProperty_padding_bottom:
+    case eCSSProperty_text_indent:
+    case eCSSProperty_left:
+    case eCSSProperty_right:
+      return GetContainingBlockPercentageBasis(aElement,
+                                               PercentageBasisAxis::Width);
+    case eCSSProperty_height:
+    case eCSSProperty_min_height:
+    case eCSSProperty_max_height:
+    case eCSSProperty_top:
+    case eCSSProperty_bottom:
+      return GetContainingBlockPercentageBasis(aElement,
+                                               PercentageBasisAxis::Height);
+
+    case eCSSProperty_inline_size:
+    case eCSSProperty_min_inline_size:
+    case eCSSProperty_max_inline_size:
+    case eCSSProperty_margin_inline_start:
+    case eCSSProperty_margin_inline_end:
+    case eCSSProperty_margin_block_start:
+    case eCSSProperty_margin_block_end:
+    case eCSSProperty_padding_inline_start:
+    case eCSSProperty_padding_inline_end:
+    case eCSSProperty_padding_block_start:
+    case eCSSProperty_padding_block_end:
+    case eCSSProperty_inset_inline_start:
+    case eCSSProperty_inset_inline_end:
+      return GetContainingBlockPercentageBasis(aElement,
+                                               PercentageBasisAxis::Inline);
+
+    case eCSSProperty_block_size:
+    case eCSSProperty_min_block_size:
+    case eCSSProperty_max_block_size:
+    case eCSSProperty_inset_block_start:
+    case eCSSProperty_inset_block_end:
+      return GetContainingBlockPercentageBasis(aElement,
+                                               PercentageBasisAxis::Block);
+    case eCSSProperty_line_height:
+      // `<percentage>`/`<number>` line-heights resolve against the
+      // element's own font-size.
+      return aComputedStyle.StyleFont()->mFont.size.ToCSSPixels();
+    case eCSSProperty_font_size:
+      return GetParentFontSizePercentageBasis(aElement, aPseudo);
+    case eCSSProperty_text_decoration_inset:
+      return GetTextDecorationInsetPercentageBasis(aElement, aComputedStyle);
+    // These shorthands group sub-properties that all share the same percentage
+    // basis, so we can provide a meaningful result despite being shorthands.
+    case eCSSProperty_inset_inline:
+    case eCSSProperty_margin_inline:
+    case eCSSProperty_padding_inline:
+    // block-direction margin/padding percentages also resolve
+    // against the containing block's inline-size.
+    case eCSSProperty_margin_block:
+    case eCSSProperty_padding_block:
+    case eCSSProperty_margin:
+    case eCSSProperty_padding:
+      return GetContainingBlockPercentageBasis(aElement,
+                                               PercentageBasisAxis::Inline);
+    case eCSSProperty_inset_block:
+      return GetContainingBlockPercentageBasis(aElement,
+                                               PercentageBasisAxis::Block);
+    // This will be hit for shorthand whose longhand would map to different axis
+    // (e.g. border-radius) and other properties for which % computation isn't
+    // supported yet (e.g. background-position-*)
+    default:
+      return kNoPercentageBasis;
+  }
+}
 
 /* static */
 void InspectorUtils::GetComputationSteps(GlobalObject& aGlobalObject,
-                                         const nsAString& aExpression,
+                                         const nsACString& aProperty,
+                                         const nsACString& aExpression,
                                          Element& aElement,
                                          const nsAString& aPseudo,
                                          nsTArray<nsCString>& aResult) {
@@ -1463,7 +1657,49 @@ void InspectorUtils::GetComputationSteps(GlobalObject& aGlobalObject,
     return;
   }
 
+  float percentageBasis =
+      GetPercentageBasisFor(aProperty, aElement, *pseudo, *computedStyle);
+
   Servo_GetComputationSteps(&aExpression, &aElement, pseudo->mType,
+                            computedStyle, doc->EnsureStyleSet().RawData(),
+                            percentageBasis, &aResult);
+}
+
+/* static */
+void InspectorUtils::GetSubstitutedValue(GlobalObject& aGlobalObject,
+                                         const nsACString& aExpression,
+                                         Element& aElement,
+                                         const nsAString& aPseudo,
+                                         nsACString& aResult) {
+  Document* doc = aElement.GetComposedDoc();
+  if (!doc) {
+    // Return null when the computation couldn't be done so we can differentiate
+    // from valid empty strings.
+    aResult.SetIsVoid(true);
+    return;
+  }
+
+  auto pseudo = PseudoStyleRequest::Parse(
+      aPseudo, aElement.OwnerDoc()->DefaultStyleAttrURLData());
+  if (!pseudo) {
+    // Return null when the computation couldn't be done so we can differentiate
+    // from valid empty strings.
+    aResult.SetIsVoid(true);
+    return;
+  }
+
+  RefPtr<const ComputedStyle> computedStyle =
+      GetCleanComputedStyleForElement(&aElement, *pseudo);
+  if (!computedStyle) {
+    // This can fail for elements that are not in the document or
+    // if the document they're in doesn't have a presshell.
+    // Return null when the computation couldn't be done so we can differentiate
+    // from valid empty strings.
+    aResult.SetIsVoid(true);
+    return;
+  }
+
+  Servo_GetSubstitutedValue(&aExpression, &aElement, pseudo->mType,
                             computedStyle, doc->EnsureStyleSet().RawData(),
                             &aResult);
 }

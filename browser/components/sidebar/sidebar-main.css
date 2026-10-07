@@ -40,7 +40,7 @@
       /* TODO: These --space-* tokens should use semantic names shared with tabs.css */
       width: var(
         --sidebar-expanded-launcher-width,
-        calc(var(--tab-pinned-horizontal-count) * var(--tab-pinned-min-width-expanded) + 2 * var(--tab-pinned-container-margin-inline-expanded) + 1px)
+        calc(var(--tab-pinned-horizontal-count) * var(--tab-pinned-min-width-expanded) + 2 * var(--tab-container-margin-inline-pinned-expanded) + 1px)
       );
     }
 
@@ -59,7 +59,7 @@
   background-size: var(--sidebar-divider-size);
   background-position: var(--sidebar-divider-position);
   background-repeat: no-repeat;
-  margin-inline: var(--tab-inner-inline-margin);
+  margin-inline: var(--tab-margin-inline-inner);
   margin-block-end: var(--space-small);
   min-height: 2px;
   @media -moz-pref("browser.nova.enabled") {

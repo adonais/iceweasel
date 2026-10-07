@@ -47,7 +47,7 @@ export function rawSuggestionUrlMatches(
 FfiConverterString.checkType(rawUrl);
 FfiConverterString.checkType(cookedUrl);
 const result = UniFFIScaffolding.callSync(
-    177, // uniffi_suggest_fn_func_raw_suggestion_url_matches
+    27, // uniffi_suggest_fn_func_raw_suggestion_url_matches
     FfiConverterString.lower(rawUrl),
     FfiConverterString.lower(cookedUrl),
 )
@@ -57,6 +57,7 @@ return handleRustResult(
     null,
 )
 }
+
 
 
 
@@ -660,7 +661,7 @@ export class Geoname {
          * their corresponding codes. For example, Liverpool has two admin
          * divisions: "ENG" at level 1 and "H8" at level 2. They would be
          * represented in this map with entries `(1, "ENG")` and `(2, "H8")`.
-         * @type {object}
+         * @type {Map}
          */
         this.adminDivisionCodes = adminDivisionCodes;
         /**
@@ -971,7 +972,7 @@ export class GeonameAlternates {
          * Names for the geoname's admin divisions. This is parallel to
          * `Geoname::admin_division_codes`. If there are no names in the ingested
          * data for an admin division, then it will be absent from this map.
-         * @type {object}
+         * @type {Map}
          */
         this.adminDivisions = adminDivisions;
     }
@@ -4150,7 +4151,7 @@ export class SuggestStore extends SuggestStoreInterface {
         FfiConverterString.checkType(path);
         FfiConverterTypeRemoteSettingsService.checkType(remoteSettingsService);
         const result = UniFFIScaffolding.callSync(
-            178, // uniffi_suggest_fn_constructor_suggeststore_new
+            221, // uniffi_suggest_fn_constructor_suggeststore_new
             FfiConverterString.lower(path),
             FfiConverterTypeRemoteSettingsService.lower(remoteSettingsService),
         )
@@ -4168,7 +4169,7 @@ export class SuggestStore extends SuggestStoreInterface {
     async anyDismissedSuggestions() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            179, // uniffi_suggest_fn_method_suggeststore_any_dismissed_suggestions
+            222, // uniffi_suggest_fn_method_suggeststore_any_dismissed_suggestions
             FfiConverterTypeSuggestStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -4184,7 +4185,7 @@ export class SuggestStore extends SuggestStoreInterface {
     async clear() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            180, // uniffi_suggest_fn_method_suggeststore_clear
+            223, // uniffi_suggest_fn_method_suggeststore_clear
             FfiConverterTypeSuggestStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -4200,7 +4201,7 @@ export class SuggestStore extends SuggestStoreInterface {
     async clearDismissedSuggestions() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            181, // uniffi_suggest_fn_method_suggeststore_clear_dismissed_suggestions
+            224, // uniffi_suggest_fn_method_suggeststore_clear_dismissed_suggestions
             FfiConverterTypeSuggestStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -4225,7 +4226,7 @@ export class SuggestStore extends SuggestStoreInterface {
        
         FfiConverterString.checkType(key);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            182, // uniffi_suggest_fn_method_suggeststore_dismiss_by_key
+            225, // uniffi_suggest_fn_method_suggeststore_dismiss_by_key
             FfiConverterTypeSuggestStore.lowerReceiver(this),
             FfiConverterString.lower(key),
         )
@@ -4247,7 +4248,7 @@ export class SuggestStore extends SuggestStoreInterface {
        
         FfiConverterTypeSuggestion.checkType(suggestion);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            183, // uniffi_suggest_fn_method_suggeststore_dismiss_by_suggestion
+            226, // uniffi_suggest_fn_method_suggeststore_dismiss_by_suggestion
             FfiConverterTypeSuggestStore.lowerReceiver(this),
             FfiConverterTypeSuggestion.lower(suggestion),
         )
@@ -4272,7 +4273,7 @@ export class SuggestStore extends SuggestStoreInterface {
        
         FfiConverterString.checkType(suggestionUrl);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            184, // uniffi_suggest_fn_method_suggeststore_dismiss_suggestion
+            227, // uniffi_suggest_fn_method_suggeststore_dismiss_suggestion
             FfiConverterTypeSuggestStore.lowerReceiver(this),
             FfiConverterString.lower(suggestionUrl),
         )
@@ -4295,7 +4296,7 @@ export class SuggestStore extends SuggestStoreInterface {
        
         FfiConverterTypeGeoname.checkType(geoname);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            185, // uniffi_suggest_fn_method_suggeststore_fetch_geoname_alternates
+            228, // uniffi_suggest_fn_method_suggeststore_fetch_geoname_alternates
             FfiConverterTypeSuggestStore.lowerReceiver(this),
             FfiConverterTypeGeoname.lower(geoname),
         )
@@ -4325,7 +4326,7 @@ export class SuggestStore extends SuggestStoreInterface {
         FfiConverterBoolean.checkType(matchNamePrefix);
         FfiConverterOptionalSequenceTypeGeoname.checkType(filter);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            186, // uniffi_suggest_fn_method_suggeststore_fetch_geonames
+            229, // uniffi_suggest_fn_method_suggeststore_fetch_geonames
             FfiConverterTypeSuggestStore.lowerReceiver(this),
             FfiConverterString.lower(query),
             FfiConverterBoolean.lower(matchNamePrefix),
@@ -4345,7 +4346,7 @@ export class SuggestStore extends SuggestStoreInterface {
     async fetchGlobalConfig() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            187, // uniffi_suggest_fn_method_suggeststore_fetch_global_config
+            230, // uniffi_suggest_fn_method_suggeststore_fetch_global_config
             FfiConverterTypeSuggestStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -4365,7 +4366,7 @@ export class SuggestStore extends SuggestStoreInterface {
        
         FfiConverterTypeSuggestionProvider.checkType(provider);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            188, // uniffi_suggest_fn_method_suggeststore_fetch_provider_config
+            231, // uniffi_suggest_fn_method_suggeststore_fetch_provider_config
             FfiConverterTypeSuggestStore.lowerReceiver(this),
             FfiConverterTypeSuggestionProvider.lower(provider),
         )
@@ -4386,7 +4387,7 @@ export class SuggestStore extends SuggestStoreInterface {
        
         FfiConverterTypeSuggestIngestionConstraints.checkType(constraints);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            189, // uniffi_suggest_fn_method_suggeststore_ingest
+            232, // uniffi_suggest_fn_method_suggeststore_ingest
             FfiConverterTypeSuggestStore.lowerReceiver(this),
             FfiConverterTypeSuggestIngestionConstraints.lower(constraints),
         )
@@ -4410,7 +4411,7 @@ export class SuggestStore extends SuggestStoreInterface {
        
         FfiConverterOptionalTypeInterruptKind.checkType(kind);
         const result = UniFFIScaffolding.callSync(
-            190, // uniffi_suggest_fn_method_suggeststore_interrupt
+            233, // uniffi_suggest_fn_method_suggeststore_interrupt
             FfiConverterTypeSuggestStore.lowerReceiver(this),
             FfiConverterOptionalTypeInterruptKind.lower(kind),
         )
@@ -4436,7 +4437,7 @@ export class SuggestStore extends SuggestStoreInterface {
        
         FfiConverterString.checkType(key);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            191, // uniffi_suggest_fn_method_suggeststore_is_dismissed_by_key
+            234, // uniffi_suggest_fn_method_suggeststore_is_dismissed_by_key
             FfiConverterTypeSuggestStore.lowerReceiver(this),
             FfiConverterString.lower(key),
         )
@@ -4461,7 +4462,7 @@ export class SuggestStore extends SuggestStoreInterface {
        
         FfiConverterTypeSuggestion.checkType(suggestion);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            192, // uniffi_suggest_fn_method_suggeststore_is_dismissed_by_suggestion
+            235, // uniffi_suggest_fn_method_suggeststore_is_dismissed_by_suggestion
             FfiConverterTypeSuggestStore.lowerReceiver(this),
             FfiConverterTypeSuggestion.lower(suggestion),
         )
@@ -4482,7 +4483,7 @@ export class SuggestStore extends SuggestStoreInterface {
        
         FfiConverterTypeSuggestionQuery.checkType(query);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            193, // uniffi_suggest_fn_method_suggeststore_query
+            236, // uniffi_suggest_fn_method_suggeststore_query
             FfiConverterTypeSuggestStore.lowerReceiver(this),
             FfiConverterTypeSuggestionQuery.lower(query),
         )
@@ -4503,7 +4504,7 @@ export class SuggestStore extends SuggestStoreInterface {
        
         FfiConverterTypeSuggestionQuery.checkType(query);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            194, // uniffi_suggest_fn_method_suggeststore_query_with_metrics
+            237, // uniffi_suggest_fn_method_suggeststore_query_with_metrics
             FfiConverterTypeSuggestStore.lowerReceiver(this),
             FfiConverterTypeSuggestionQuery.lower(query),
         )
@@ -4538,11 +4539,11 @@ export class FfiConverterTypeSuggestStore extends FfiConverter {
     }
 
     static read(dataStream) {
-        return this.lift(dataStream.readPointer(21));
+        return this.lift(dataStream.readPointer(20));
     }
 
     static write(dataStream, value) {
-        dataStream.writePointer(21, this.lower(value));
+        dataStream.writePointer(20, this.lower(value));
     }
 
     static computeSize(value) {
@@ -4667,7 +4668,7 @@ export class SuggestStoreBuilder extends SuggestStoreBuilderInterface {
     static init() {
        
         const result = UniFFIScaffolding.callSync(
-            195, // uniffi_suggest_fn_constructor_suggeststorebuilder_new
+            238, // uniffi_suggest_fn_constructor_suggeststorebuilder_new
         )
         return handleRustResult(
             result,
@@ -4683,7 +4684,7 @@ export class SuggestStoreBuilder extends SuggestStoreBuilderInterface {
     build() {
        
         const result = UniFFIScaffolding.callSync(
-            196, // uniffi_suggest_fn_method_suggeststorebuilder_build
+            239, // uniffi_suggest_fn_method_suggeststorebuilder_build
             FfiConverterTypeSuggestStoreBuilder.lowerReceiver(this),
         )
         return handleRustResult(
@@ -4703,7 +4704,7 @@ export class SuggestStoreBuilder extends SuggestStoreBuilderInterface {
        
         FfiConverterString.checkType(path);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            197, // uniffi_suggest_fn_method_suggeststorebuilder_cache_path
+            240, // uniffi_suggest_fn_method_suggeststorebuilder_cache_path
             FfiConverterTypeSuggestStoreBuilder.lowerReceiver(this),
             FfiConverterString.lower(path),
         )
@@ -4724,7 +4725,7 @@ export class SuggestStoreBuilder extends SuggestStoreBuilderInterface {
        
         FfiConverterString.checkType(path);
         const result = UniFFIScaffolding.callSync(
-            198, // uniffi_suggest_fn_method_suggeststorebuilder_data_path
+            241, // uniffi_suggest_fn_method_suggeststorebuilder_data_path
             FfiConverterTypeSuggestStoreBuilder.lowerReceiver(this),
             FfiConverterString.lower(path),
         )
@@ -4752,7 +4753,7 @@ export class SuggestStoreBuilder extends SuggestStoreBuilderInterface {
         FfiConverterString.checkType(library);
         FfiConverterOptionalString.checkType(entryPoint);
         const result = UniFFIScaffolding.callSync(
-            199, // uniffi_suggest_fn_method_suggeststorebuilder_load_extension
+            242, // uniffi_suggest_fn_method_suggeststorebuilder_load_extension
             FfiConverterTypeSuggestStoreBuilder.lowerReceiver(this),
             FfiConverterString.lower(library),
             FfiConverterOptionalString.lower(entryPoint),
@@ -4774,7 +4775,7 @@ export class SuggestStoreBuilder extends SuggestStoreBuilderInterface {
        
         FfiConverterString.checkType(bucketName);
         const result = UniFFIScaffolding.callSync(
-            200, // uniffi_suggest_fn_method_suggeststorebuilder_remote_settings_bucket_name
+            243, // uniffi_suggest_fn_method_suggeststorebuilder_remote_settings_bucket_name
             FfiConverterTypeSuggestStoreBuilder.lowerReceiver(this),
             FfiConverterString.lower(bucketName),
         )
@@ -4795,7 +4796,7 @@ export class SuggestStoreBuilder extends SuggestStoreBuilderInterface {
        
         FfiConverterTypeRemoteSettingsServer.checkType(server);
         const result = UniFFIScaffolding.callSync(
-            201, // uniffi_suggest_fn_method_suggeststorebuilder_remote_settings_server
+            244, // uniffi_suggest_fn_method_suggeststorebuilder_remote_settings_server
             FfiConverterTypeSuggestStoreBuilder.lowerReceiver(this),
             FfiConverterTypeRemoteSettingsServer.lower(server),
         )
@@ -4816,7 +4817,7 @@ export class SuggestStoreBuilder extends SuggestStoreBuilderInterface {
        
         FfiConverterTypeRemoteSettingsService.checkType(rsService);
         const result = UniFFIScaffolding.callSync(
-            202, // uniffi_suggest_fn_method_suggeststorebuilder_remote_settings_service
+            245, // uniffi_suggest_fn_method_suggeststorebuilder_remote_settings_service
             FfiConverterTypeSuggestStoreBuilder.lowerReceiver(this),
             FfiConverterTypeRemoteSettingsService.lower(rsService),
         )
@@ -4851,11 +4852,11 @@ export class FfiConverterTypeSuggestStoreBuilder extends FfiConverter {
     }
 
     static read(dataStream) {
-        return this.lift(dataStream.readPointer(22));
+        return this.lift(dataStream.readPointer(21));
     }
 
     static write(dataStream, value) {
-        dataStream.writePointer(22, this.lower(value));
+        dataStream.writePointer(21, this.lower(value));
     }
 
     static computeSize(value) {

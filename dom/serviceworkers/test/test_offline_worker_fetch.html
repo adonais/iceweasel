@@ -1,0 +1,84 @@
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Bug 2067202 - offline fetch() from a controlled dedicated worker must reach the service worker</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="utils.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<script>
+
+const SCOPE = "offline_worker_fetch/";
+
+// The offline flag must be flipped in the parent process: FetchService, which
+// worker fetches are proxied through, only lives there.
+function setOffline(offline) {
+  return SpecialPowers.spawnChrome([offline], value => {
+    Services.io.offline = value;
+  });
+}
+
+function runProbes(frame) {
+  const result = new Promise(resolve => {
+    window.addEventListener("message", e => resolve(e.data), { once: true });
+  });
+  frame.contentWindow.postMessage("probe", "*");
+  return result;
+}
+
+function checkProbes(res, when) {
+  ok(res.page.controlled, `${when}: the page is controlled`);
+  is(res.page.body, "sw", `${when}: the page fetch was intercepted`);
+  ok(res.worker.controlled, `${when}: the dedicated worker is controlled`);
+  is(res.worker.body, "sw",
+     `${when}: the worker fetch was intercepted, got ${JSON.stringify(res.worker)}`);
+}
+
+async function runTest() {
+  const reg = await navigator.serviceWorker.register(SCOPE + "sw.js",
+                                                     { scope: SCOPE });
+  await waitForState(reg.installing || reg.waiting || reg.active, "activated");
+
+  const frame = document.createElement("iframe");
+  const loaded = new Promise(resolve => { frame.onload = resolve; });
+  frame.src = SCOPE + "frame.html";
+  document.body.appendChild(frame);
+  await loaded;
+
+  checkProbes(await runProbes(frame), "online");
+
+  // Nothing is loaded or started while offline: the document, the dedicated
+  // worker and the service worker are all up and proven working above.
+  await setOffline(true);
+  let offlineResult;
+  try {
+    offlineResult = await runProbes(frame);
+  } finally {
+    await setOffline(false);
+  }
+  checkProbes(offlineResult, "offline");
+
+  frame.remove();
+  await reg.unregister();
+}
+
+SimpleTest.waitForExplicitFinish();
+onload = function() {
+  SpecialPowers.pushPrefEnv({"set": [
+    ["dom.serviceWorkers.exemptFromPerDomainMax", true],
+    ["dom.serviceWorkers.enabled", true],
+    ["dom.serviceWorkers.testing.enabled", true],
+  ]}, () => {
+    runTest().catch(e => ok(false, "Unexpected error: " + e))
+             .then(SimpleTest.finish);
+  });
+};
+
+</script>
+</body>
+</html>

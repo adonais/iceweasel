@@ -43,6 +43,7 @@
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/image/ImageMemoryReporter.h"
+#include "mozilla/layers/CompositeProcessFencesHolderMap.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/CompositorManagerChild.h"
 #include "mozilla/layers/CompositorThread.h"
@@ -72,7 +73,6 @@
 
 #if defined(XP_WIN)
 #  include "gfxWindowsPlatform.h"
-#  include "mozilla/layers/CompositeProcessFencesHolderMap.h"
 #  include "mozilla/widget/WinWindowOcclusionTracker.h"
 #elif defined(XP_DARWIN)
 #  include "gfxPlatformMac.h"
@@ -1346,7 +1346,7 @@ void gfxPlatform::InitLayersIPC() {
     }
 #endif
     if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
-#if defined(XP_WIN)
+#if defined(XP_WIN) || defined(XP_MACOSX)
       CompositeProcessFencesHolderMap::Init();
 #endif
       RemoteTextureMap::Init();
@@ -1403,8 +1403,12 @@ void gfxPlatform::ShutdownLayersIPC() {
           nsDependentCString(
               StaticPrefs::GetPrefName_gfx_webrender_blob_tile_size()));
     }
-#if defined(XP_WIN)
+
+#if defined(XP_WIN) || defined(XP_MACOSX)
     CompositeProcessFencesHolderMap::Shutdown();
+#endif
+
+#if defined(XP_WIN)
     widget::WinWindowOcclusionTracker::ShutDown();
 #endif
   } else {
@@ -2507,7 +2511,8 @@ void gfxPlatform::InitGPUProcessPrefs() {
     return;
   }
 
-  if (IsHeadless()) {
+  if (IsHeadless() &&
+      !StaticPrefs::layers_gpu_process_allow_headless_AtStartup()) {
     gpuProc.ForceDisable(FeatureStatus::Blocked, "Headless mode is enabled",
                          "FEATURE_FAILURE_HEADLESS_MODE"_ns);
     return;
@@ -4228,7 +4233,7 @@ void gfxPlatform::DisableGPUProcess() {
       "Disabled by fallback to GPU Process disabled",
       "FEATURE_FAILURE_DISABLED_BY_FALLBACK_GPU_PROCESS_DISABLED"_ns);
 
-#if defined(XP_WIN)
+#if defined(XP_WIN) || defined(XP_MACOSX)
   CompositeProcessFencesHolderMap::Init();
 #endif
   RemoteTextureMap::Init();

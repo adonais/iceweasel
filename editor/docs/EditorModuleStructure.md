@@ -145,9 +145,9 @@ These classes are exposed with `mozilla/EditorDOMPoint.h`.
 
 ### EditorDOMRange, EditorRawDOMRange, EditorDOMRangeInTexts, EditorRawDOMRangeInTexts
 
-It represents 2 points in a DOM tree with 2 `Editor*DOMPoint(InText)`. Different from `nsRange`,
+It represents 2 points in a DOM tree with 2 `Editor*DOMPoint(InText)`. Different from `Range`,
 the instances do not track the DOM tree changes. Therefore, the initialization is much faster than
-`nsRange` and can be in the stack.
+`Range` and can be in the stack.
 
 These classes are exposed with `mozilla/EditorDOMPoint.h`.
 

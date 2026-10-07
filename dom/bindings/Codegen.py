@@ -6153,6 +6153,12 @@ def getJSToNativeConversionInfo(
               $*{notSequence}
             }
             ${sequenceType} &arr${nestingLevel} = ${arrayRef};
+            if (mozilla::Maybe<uint32_t> sizeHint${nestingLevel} = iter${nestingLevel}.sizeHint()) {
+              if (!arr${nestingLevel}.SetCapacity(*sizeHint${nestingLevel}, mozilla::fallible)) {
+                JS_ReportOutOfMemory(cx);
+                $*{exceptionCode}
+              }
+            }
             JS::Rooted<JS::Value> temp${nestingLevel}(cx);
             while (true) {
               bool done${nestingLevel};

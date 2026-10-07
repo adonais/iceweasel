@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!--
+     Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/
+-->
+<html class="reftest-wait">
+<title>A large image inside a masked SVG group is not rasterized again when a sibling changes</title>
+<body style="margin: 0">
+<svg width="700" height="500">
+  <mask id="m">
+    <rect width="700" height="500" fill="white"/>
+  </mask>
+  <g mask="url(#m)">
+    <image id="img" class="reftest-no-paint" x="20" y="20" width="600" height="400"/>
+    <!-- The stroke keeps this rect off the native WebRender path. Its bounds
+         cover the image, so moving it invalidates the image area. -->
+    <rect id="overlay" x="0" y="0" width="660" height="460" fill="none"
+          stroke="black" stroke-width="4"/>
+  </g>
+</svg>
+<script>
+  const canvas = document.createElement("canvas");
+  canvas.width = 600;
+  canvas.height = 400;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "green";
+  ctx.fillRect(0, 0, 600, 400);
+  ctx.fillStyle = "blue";
+  ctx.fillRect(100, 100, 400, 200);
+
+  let loaded = false;
+  let invalidated = false;
+  function maybeFinish() {
+    if (!loaded || !invalidated) {
+      return;
+    }
+    document.getElementById("overlay").setAttribute("x", "30");
+    document.documentElement.classList.remove("reftest-wait");
+  }
+  const img = document.getElementById("img");
+  img.addEventListener("load", () => {
+    loaded = true;
+    maybeFinish();
+  }, { once: true });
+  document.addEventListener("MozReftestInvalidate", () => {
+    invalidated = true;
+    maybeFinish();
+  }, { once: true });
+  img.setAttribute("href", canvas.toDataURL());
+</script>
+</body>
+</html>

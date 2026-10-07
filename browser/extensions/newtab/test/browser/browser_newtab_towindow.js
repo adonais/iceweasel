@@ -1,6 +1,11 @@
 // This test simulates opening the newtab page and moving it to a new window.
 // Links in the page should still work.
 
+// The only site setTestTopSites configures, and the only one this test may
+// click. Addressed by URL because tiles pinned by an earlier test can also be
+// in the row.
+const TEST_URL = "https://example.com/";
+
 add_task(async function test_newtab_to_window() {
   await setTestTopSites();
 
@@ -23,33 +28,8 @@ add_task(async function test_newtab_to_window() {
     "about:newtab moved to window"
   );
 
-  // Wait for top sites to render in the new window before clicking.
-  await SpecialPowers.spawn(
-    newWindow.gBrowser.selectedBrowser,
-    [],
-    async () => {
-      await ContentTaskUtils.waitForCondition(
-        () => content.document.querySelector(".top-sites a"),
-        "Top site link should appear"
-      );
-    }
-  );
-
-  let tabPromise = BrowserTestUtils.waitForNewTab(
-    newWindow.gBrowser,
-    "https://example.com/",
-    true
-  );
-
-  await BrowserTestUtils.synthesizeMouse(
-    `.top-sites a`,
-    2,
-    2,
-    { accelKey: true },
-    newWindow.gBrowser.selectedBrowser
-  );
-
-  await tabPromise;
+  await waitForTopSiteLink(newWindow.gBrowser, TEST_URL);
+  await openTopSiteInNewTab(newWindow.gBrowser, TEST_URL);
 
   is(newWindow.gBrowser.tabs.length, 2, "second page is opened");
 

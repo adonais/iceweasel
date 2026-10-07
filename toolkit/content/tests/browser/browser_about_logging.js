@@ -279,6 +279,80 @@ add_task(async function testURLParameters() {
   clearLoggingPrefs();
 });
 
+// A URL can carry both an explicit module list and a logging preset. The
+// module list switches the dropdown to "custom", but the preset must still be
+// honoured, because the profiler threads to record are taken from it.
+add_task(async function testPresetAndModulesInURL() {
+  const modules =
+    "timestamp,sync,nsHttp:5,nsWebSocket:5,nsSocketTransport:5,nsHostResolver:5";
+  const url =
+    PAGE +
+    "?modules=" +
+    encodeURIComponent(modules) +
+    "&preset=websocket&output=profiler";
+
+  await BrowserTestUtils.withNewTab(url, async browser => {
+    await SpecialPowers.spawn(browser, [modules], async modulesInURL => {
+      let $ = content.document.querySelector.bind(content.document);
+      Assert.equal(
+        content.settings().loggingPreset,
+        "websocket",
+        "When both modules and a preset are passed via URL params, the preset is kept in the logging manager settings."
+      );
+      Assert.equal(
+        $("#log-modules").value,
+        modulesInURL,
+        "The explicit module list from the URL params takes precedence over the preset's module list."
+      );
+    });
+
+    let profilerOpenedPromise = BrowserTestUtils.waitForNewTab(
+      gBrowser,
+      "https://example.com/",
+      false
+    );
+    SpecialPowers.spawn(browser, [], async () => {
+      let $ = content.document.querySelector.bind(content.document);
+      // Override the URL the profiler uses to avoid hitting external
+      // resources (and crash).
+      await SpecialPowers.pushPrefEnv({
+        set: [
+          ["devtools.performance.recording.ui-base-url", "https://example.com"],
+          ["devtools.performance.recording.ui-base-url-path", "/"],
+        ],
+      });
+      $("#toggle-logging-button").click();
+      // Wait for the profiler to start. This can be very slow.
+      await content.profilerPromise();
+      // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+      await new Promise(resolve => content.setTimeout(resolve, 200));
+      $("#toggle-logging-button").click();
+    });
+    let tab = await profilerOpenedPromise;
+    await BrowserTestUtils.removeTab(tab);
+  });
+
+  Assert.equal(
+    Services.prefs.getCharPref(
+      "devtools.performance.recording.preset.aboutlogging"
+    ),
+    "networking",
+    "The profiler preset associated with the logging preset from the URL params is used."
+  );
+  const threads = JSON.parse(
+    Services.prefs.getCharPref(
+      "devtools.performance.recording.threads.aboutlogging"
+    )
+  );
+  for (const thread of ["Socket Thread", "DNS Resolver", "Cache2 I/O"]) {
+    Assert.ok(
+      threads.includes(thread),
+      `The threads of the profiler preset are recorded (${thread}).`
+    );
+  }
+  clearLoggingPrefs();
+});
+
 // Test various things related to presets: that it's populated correctly, that
 // setting presets work in terms of UI, but also that it sets the logging.*
 // prefs correctly.
@@ -377,6 +451,77 @@ add_task(async function testAboutLoggingPresets() {
           `${mod} was effectively set`
         );
       }
+    });
+  });
+  clearLoggingPrefs();
+});
+
+// Test that a preset flagged with `javascriptTracing` checks the JavaScript
+// tracing checkbox without persisting it, so that selecting another preset
+// goes back to the preference the user set.
+add_task(async function testPresetChecksJavascriptTracing() {
+  await BrowserTestUtils.withNewTab(PAGE, async browser => {
+    await SpecialPowers.spawn(browser, [], async () => {
+      let $ = content.document.querySelector.bind(content.document);
+      const checkbox = $("#with-javascript-tracing-checkbox");
+      const presetsDropdown = $("#logging-preset-dropdown");
+      // Selecting a preset happens in "onchange", asynchronously.
+      const selectPreset = async preset => {
+        presetsDropdown.value = preset;
+        presetsDropdown.dispatchEvent(new content.Event("change"));
+        // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+        await new Promise(resolve => content.setTimeout(resolve, 0));
+      };
+
+      Assert.ok(
+        !checkbox.checked,
+        "The JavaScript tracing checkbox isn't checked at load time."
+      );
+      Assert.ok(
+        content.presets().vpn.javascriptTracing,
+        "The vpn preset is flagged to enable JavaScript tracing."
+      );
+
+      await selectPreset("vpn");
+      Assert.ok(
+        checkbox.checked,
+        "Selecting the vpn preset checks the JavaScript tracing checkbox."
+      );
+      Assert.ok(
+        !Services.prefs.getBoolPref("logging.config.javascriptTracing", false),
+        "Selecting the vpn preset doesn't set the JavaScript tracing preference."
+      );
+
+      await selectPreset("networking");
+      Assert.ok(
+        !checkbox.checked,
+        "Selecting another preset unchecks the JavaScript tracing checkbox."
+      );
+
+      Services.prefs.setBoolPref("logging.config.javascriptTracing", true);
+      await selectPreset("vpn");
+      await selectPreset("networking");
+      Assert.ok(
+        checkbox.checked,
+        "A preset switch keeps the JavaScript tracing preference the user set."
+      );
+    });
+  });
+  clearLoggingPrefs();
+});
+
+// Test that a preset persisted from a previous session is reflected in the
+// JavaScript tracing checkbox at load time, even though the preset dropdown
+// itself is not restored from the preference.
+add_task(async function testPersistedPresetChecksJavascriptTracing() {
+  Services.prefs.setCharPref("logging.config.preset", "vpn");
+  await BrowserTestUtils.withNewTab(PAGE, async browser => {
+    await SpecialPowers.spawn(browser, [], async () => {
+      Assert.ok(
+        content.document.querySelector("#with-javascript-tracing-checkbox")
+          .checked,
+        "A persisted preset checks the JavaScript tracing checkbox at load time."
+      );
     });
   });
   clearLoggingPrefs();

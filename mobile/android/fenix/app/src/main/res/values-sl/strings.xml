@@ -273,6 +273,8 @@
   <string name="browser_main_menu_content_description_navigation_header">Krmarjenje</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Zapri meni zavihkov po meri</string>
+  <!-- URL bar indicator shown on a cached version of the website, when the tab is reloading, but the content is not live yet -->
+  <string name="browser_toolbar_cached_page_indicator">Predpomnjeno</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
   <string name="browser_menu_bookmark_this_page_2">Dodaj stran med zaznamke</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
@@ -1465,6 +1467,12 @@
   <string name="opening_screen_last_tab_summary">Odpri na zadnjem zavihku</string>
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">Po štirih urah odpri na domači strani</string>
+  <!--
+    Tab organization
+
+    Category header for the preferences that control how tabs are organized
+  -->
+  <string name="preferences_tab_organization">Organiziranost zavihkov</string>
   <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
   <string name="preferences_inactive_tabs_toggle_title">Nedejavni zavihki</string>
   <!--
@@ -4618,6 +4626,12 @@
   <string name="pdf_tools_signature_clear_button">Izbriši</string>
   <!-- The text for the button that adds the signature the user has typed to the PDF. -->
   <string name="pdf_tools_signature_add_button">Dodaj</string>
+  <!--
+    Listen to page
+
+    Content description for the reader mode panel: a group of buttons floating over the content
+  -->
+  <string name="reader_mode_panel_content_description">Možnosti bralnega načina</string>
   <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
   <string name="reader_mode_panel_listen_content_description">Preberi naglas</string>
   <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->

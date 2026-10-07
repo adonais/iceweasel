@@ -33,6 +33,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
 ]
 
+["browser_mini_window_mode.js"]
+
 ["browser_overlay_keyboard_test.js"]
 
 ["browser_screenshots_download_filenames.js"]

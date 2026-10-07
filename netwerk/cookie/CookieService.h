@@ -76,7 +76,7 @@ class CookieService final : public nsICookieService,
       nsIURI* aHostURI, bool aIsForeign, bool aIsThirdPartyTrackingResource,
       bool aIsThirdPartySocialTrackingResource,
       bool aStorageAccessPermissionGranted, const nsACString& aCookieHeader,
-      const int aNumOfCookies, const OriginAttributes& aOriginAttrs,
+      bool aHasExistingCookies, const OriginAttributes& aOriginAttrs,
       uint32_t* aRejectedReason);
 
   void GetCookiesForURI(nsIURI* aHostURI, nsIChannel* aChannel, bool aIsForeign,

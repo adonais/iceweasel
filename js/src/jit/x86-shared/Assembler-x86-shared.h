@@ -9,6 +9,7 @@
 #include "mozilla/MathAlgorithms.h"
 
 #include <cstddef>
+#include <type_traits>
 
 #include "jit/shared/Assembler-shared.h"
 #include "jit/shared/IonAssemblerBuffer.h"  // jit::BufferOffset
@@ -2338,6 +2339,22 @@ class AssemblerX86Shared : public AssemblerShared {
     masm.pop_r(src.encoding());
   }
   void pop(const Address& src) { masm.pop_m(src.offset, src.base.encoding()); }
+
+  template <typename... Regs>
+  void pushRegs(const Regs&... regs) {
+    static_assert((std::is_convertible_v<Regs, Register> && ...));
+    static_assert(sizeof...(Regs) > 0);
+
+    (push(regs), ...);
+  }
+
+  template <typename... Regs>
+  void popRegs(const Regs&... regs) {
+    static_assert((std::is_convertible_v<Regs, Register> && ...));
+    static_assert(sizeof...(Regs) > 0);
+
+    (pop(regs), ...);
+  }
 
   void pushFlags() { masm.push_flags(); }
   void popFlags() { masm.pop_flags(); }

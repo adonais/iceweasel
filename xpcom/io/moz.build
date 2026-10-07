@@ -181,3 +181,8 @@ LOCAL_INCLUDES += [
     "../components",
     "/toolkit/xre",
 ]
+
+LICENSED_UNDER += ["xdg"]
+LICENSED_UNDER["xdg"].paths = [
+    "SpecialSystemDirectory.cpp",
+]

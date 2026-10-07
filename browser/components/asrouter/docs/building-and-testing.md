@@ -107,7 +107,7 @@ Browser tests
 -----------------------------------
 
 These tests are used to test UI-related behaviour in Firefox for Desktop. See
-[Browser chrome mochitests](/testing/docs/browser-chrome/index.md). These can be
+[Browser chrome mochitests](/testing/browser-chrome/index.md). These can be
 run individually by using
 
 ```

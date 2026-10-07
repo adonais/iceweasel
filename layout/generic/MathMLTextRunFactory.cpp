@@ -447,9 +447,9 @@ void MathMLTextRunFactory::RebuildTextRun(
       bool foundDTLS = false;
       // We respect ssty settings explicitly set by the user
       for (uint32_t i = 0; i < font.fontFeatureSettings.Length(); i++) {
-        if (font.fontFeatureSettings[i].mTag == TT_SSTY) {
+        if (font.fontFeatureSettings[i].tag == TT_SSTY) {
           foundSSTY = true;
-        } else if (font.fontFeatureSettings[i].mTag == TT_DTLS) {
+        } else if (font.fontFeatureSettings[i].tag == TT_DTLS) {
           foundDTLS = true;
         }
       }
@@ -489,8 +489,8 @@ void MathMLTextRunFactory::RebuildTextRun(
         }
         if (sstyLevel) {
           gfxFontFeature settingSSTY;
-          settingSSTY.mTag = TT_SSTY;
-          settingSSTY.mValue = sstyLevel;
+          settingSSTY.tag = TT_SSTY;
+          settingSSTY.value = sstyLevel;
           font.fontFeatureSettings.AppendElement(settingSSTY);
         }
       }
@@ -506,8 +506,8 @@ void MathMLTextRunFactory::RebuildTextRun(
       */
       if ((mFlags & MATH_FONT_FEATURE_DTLS) && !foundDTLS) {
         gfxFontFeature settingDTLS;
-        settingDTLS.mTag = TT_DTLS;
-        settingDTLS.mValue = 1;
+        settingDTLS.tag = TT_DTLS;
+        settingDTLS.value = 1;
         font.fontFeatureSettings.AppendElement(settingDTLS);
       }
     }

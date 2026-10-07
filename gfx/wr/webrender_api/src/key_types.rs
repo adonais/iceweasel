@@ -80,7 +80,7 @@ impl EdgeMask {
 }
 
 /// Fields common to every interned primitive key.
-#[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash, Deserialize, Serialize)]
+#[derive(Debug, Copy, Clone, Eq, MallocSizeOf, PartialEq, Hash, Deserialize, Serialize)]
 pub struct PrimKeyCommonData {
     pub flags: PrimitiveFlags,
     pub aligned_aa_edges: EdgeMask,
@@ -442,7 +442,7 @@ impl From<WorldPoint> for PointKey {
 
 /// A hashable size for use as a fragment of an interning key; the raw `f32`
 /// bits are hashed.
-#[derive(Copy, Debug, Clone, MallocSizeOf, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Debug, Default, Clone, MallocSizeOf, PartialEq, Serialize, Deserialize, PeekPoke)]
 pub struct SizeKey {
     w: f32,
     h: f32,
@@ -469,11 +469,24 @@ impl<U> From<Size2D<f32, U>> for SizeKey {
     }
 }
 
+/// The visible part of an image, as a fraction of the whole image on each axis,
+/// for use as a fragment of an interning key.
+///
+/// A fraction rather than image pixels because the size the image is finally
+/// rasterized at is not known until frame build, and resolving a pixel rect
+/// against the wrong size scales the primitive rather than just restricting
+/// sampling (bug 1452337, bug 2061491).
+#[derive(Copy, Debug, Clone, MallocSizeOf, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct SubRectKey {
+    pub min: PointKey,
+    pub max: PointKey,
+}
+
 /// A hashable image stretch size for use as a fragment of an interning key. The
 /// per-axis `fills_*` flags mean the axis fills the primitive rect (resolved at
 /// frame build); when both are set the stored `size` is normalised to zero so
 /// primitives of different sizes still intern to the same key.
-#[derive(Copy, Debug, Clone, MallocSizeOf, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Copy, Debug, Default, Clone, MallocSizeOf, PartialEq, Eq, Hash, Serialize, Deserialize, PeekPoke)]
 pub struct StretchSizeKey {
     pub size: SizeKey,
     pub fills_width: bool,
@@ -489,6 +502,16 @@ impl StretchSizeKey {
             fills_width: true,
             fills_height: true,
         }
+    }
+
+    /// The tile size against `prim_rect`: a filling axis takes the rect's
+    /// extent, the other keeps the stored size.
+    pub fn resolve(&self, prim_rect: &LayoutRect) -> LayoutSize {
+        let stored: LayoutSize = self.size.into();
+        LayoutSize::new(
+            if self.fills_width { prim_rect.width() } else { stored.width },
+            if self.fills_height { prim_rect.height() } else { stored.height },
+        )
     }
 }
 

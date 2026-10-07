@@ -1,0 +1,10 @@
+[DEFAULT]
+support-files = [
+  "empty.html",
+  "kennedy-appolo.opus",
+]
+
+["browser_speech_recognition_perf.js"]
+# The parakeet-asr tag is what makes runtests.py start the local model hub.
+tags = "parakeet-asr"
+disabled = "Disabled as we want to run this only as perftest, not regular CI"

@@ -1,19 +1,6 @@
 // nsDoTestsForAutoCompleteWithComposition tests autocomplete with composition.
 // Users must include SimpleTest.js and EventUtils.js.
-
-function waitForCondition(condition, nextTest) {
-  var tries = 0;
-  var interval = setInterval(function () {
-    if (condition() || tries >= 30) {
-      moveOn();
-    }
-    tries++;
-  }, 100);
-  var moveOn = function () {
-    clearInterval(interval);
-    nextTest();
-  };
-}
+/* globals TestUtils */
 
 function nsDoTestsForAutoCompleteWithComposition(
   aDescription,
@@ -71,12 +58,12 @@ nsDoTestsForAutoCompleteWithComposition.prototype = {
     test.execute(this._window);
 
     if (test.popup) {
-      waitForCondition(
+      SimpleTest.waitForCondition(
         () => this._controller.input.popupOpen,
         this._checkResult.bind(this)
       );
     } else {
-      waitForCondition(
+      SimpleTest.waitForCondition(
         () =>
           this._controller.searchStatus !=
           Ci.nsIAutoCompleteController.STATUS_SEARCHING,

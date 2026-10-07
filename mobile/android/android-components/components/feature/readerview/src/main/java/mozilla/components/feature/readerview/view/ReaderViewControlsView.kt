@@ -38,7 +38,7 @@ interface ReaderViewControlsView {
      *
      * @return true if the inflation was completed, false if the view was already inflated.
      */
-    fun tryInflate(isListenEnabled: Boolean): Boolean
+    fun tryInflate(): Boolean
 
     interface Listener {
         /** Invoked when the user selects a new font type. */
@@ -60,8 +60,5 @@ interface ReaderViewControlsView {
 
         /** Invoked when the user selects a new color scheme. */
         fun onColorSchemeChanged(scheme: ColorScheme)
-
-        /** Invoked when the listen button is clicked. */
-        fun onListenClicked()
     }
 }

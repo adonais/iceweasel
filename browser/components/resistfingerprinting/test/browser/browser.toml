@@ -106,10 +106,6 @@ skip-if = [
 
 ["browser_efficientcanvascompare_iframes.js"]
 
-["browser_exslt_time_precision.js"]
-
-["browser_exslt_timezone_load.js"]
-
 ["browser_hwconcurrency_etp_iframes.js"]
 
 ["browser_hwconcurrency_iframes.js"]
@@ -176,3 +172,5 @@ https_first_disabled = true
 ["browser_spoofing_keyboard_event.js"]
 
 ["browser_timezone.js"]
+
+["include:browser-xslt.toml"]

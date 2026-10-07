@@ -691,9 +691,7 @@ class WebConsoleUI extends EventEmitter {
   }
 
   _initShortcuts() {
-    const shortcuts = new KeyShortcuts({
-      window: this.window,
-    });
+    const shortcuts = new KeyShortcuts(this.window);
 
     for (const clearShortcut of this.getClearKeyShortcuts()) {
       shortcuts.on(clearShortcut, event => this.clearOutput(true, event));

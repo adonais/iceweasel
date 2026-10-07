@@ -10,9 +10,8 @@ import android.transition.TransitionInflater
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
+import androidx.fragment.compose.content
 import mozilla.components.browser.state.state.ExternalAppType
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.focus.GleanMetrics.Onboarding
@@ -60,15 +59,7 @@ class OnboardingFirstFragment : Fragment() {
                     selectedTabId = requireComponents.store.state.selectedTabId,
                 )
             )
-        return ComposeView(requireContext()).apply {
-            isTransitionGroup = true
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        (view as ComposeView).setContent {
+        return content {
             FocusTheme {
                 OnBoardingFirstScreenCompose(
                     termsOfServiceOnClick = { openLearnMore(termsOfServiceUrl) },
@@ -80,6 +71,7 @@ class OnboardingFirstFragment : Fragment() {
                 )
             }
         }
+            .apply { isTransitionGroup = true }
     }
 
     /** Companion object for the [OnboardingFirstFragment]. */

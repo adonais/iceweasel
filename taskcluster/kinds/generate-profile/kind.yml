@@ -19,7 +19,6 @@ transforms:
 
 
 task-defaults:
-    run-on-repo-type: [hg]
     run-on-projects: []
     treeherder:
         symbol: Bpgo(run)
@@ -27,7 +26,6 @@ task-defaults:
         tier: 1
     use-python: default
     run:
-        clone-with: hg
     fetches:
         fetch:
             - pgo-extended-corpus

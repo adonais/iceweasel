@@ -64,11 +64,17 @@ trustpanel:
     notification_emails: *trustpanel_emails
     expires: never
     extra_keys:
+      first_site_load_in_tab:
+        description: >
+          Whether this is the first page of a site that the user's visiting
+          (triggering the full longform animation), vs. a subsequent navigation
+          showing only the shortform count animation.
+        type: boolean
       first_visit:
         description: >
-          Whether this is the user's first visit to the site, triggering the
-          full longform animation, vs. a return visit showing only the
-          shortform count animation.
+          Whether this is the user's first visit to the site vs. a return visit.
+          This used to be the trigger for the full longform animation, and is
+          preserved to be able to compare historically.
         type: boolean
   breach_alert_shield_animated:
     type: event

@@ -23,7 +23,3 @@ browser.jar:
   content/builtin-themes/aiwindow-nova/aiwindow-theme-nova.css  (aiwindow-nova/aiwindow-theme-nova.css)
 
   content/builtin-themes/privatewindow/manifest.json            (privatewindow/manifest.json)
-
-%  resource extra-themes-previews %content/extra-themes-previews/
-
-  content/extra-themes-previews                        (extra-themes-previews/*.svg)

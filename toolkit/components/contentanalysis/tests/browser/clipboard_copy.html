@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<div id="content">
+  <div id="copySource">Some <b>bold</b> text</div>
+  <a id="copyLink" href="https://example.com/some/link">a link</a>
+  <input id="testInput" type="text" value="Text field contents">
+  <textarea id="testTextArea">Text area contents</textarea>
+  <div id="pasteTarget" contenteditable="true"></div>
+</div>
+<script class="testbody" type="application/javascript">
+function selectCopySource() {
+  let range = document.createRange();
+  range.selectNodeContents(document.getElementById("copySource"));
+  let selection = document.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+// Selects part of #copySource. The node arguments are "first" or "last",
+// naming its first ("Some ") or last (" text") text node.
+function selectPartOfCopySource(startNode, startOffset, endNode, endOffset) {
+  let source = document.getElementById("copySource");
+  let nodeFor = which =>
+    which == "first" ? source.firstChild : source.lastChild;
+  let range = document.createRange();
+  range.setStart(nodeFor(startNode), startOffset);
+  range.setEnd(nodeFor(endNode), endOffset);
+  let selection = document.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+</script>
+
+</body>
+</html>

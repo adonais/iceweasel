@@ -1092,9 +1092,9 @@ slugid==2.0.0 \
     #   -c ../third_party/python/requirements.txt
     #   taskcluster
     #   taskcluster-taskgraph
-taskcluster==93.1.5 \
-    --hash=sha256:1b7ed171f5c22a5fdae60618f81a12b0ec27e3f6347539d0d823f26ff41a1d7b \
-    --hash=sha256:e16606e13ad4881211fdc52ebaab8b05df7a56681ecbb236897f1c56e1149779
+taskcluster==110.0.0 \
+    --hash=sha256:04d32762b56f5bdff73e75c7542c1557abaf36f5f4d0c2f0a4e39fd12fc9fd11 \
+    --hash=sha256:f982a2d13379c3c5f72ab98c5d95264116f8765854345cf86eab95992cc1e7a8
     # via
     #   -c ../third_party/python/requirements.txt
     #   taskcluster-taskgraph

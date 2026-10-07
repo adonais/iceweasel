@@ -127,7 +127,8 @@ NS_IMPL_RELEASE_INHERITED(nsXMLContentSink, nsContentSink)
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(nsXMLContentSink, nsContentSink,
                                    mCurrentHead, mDocElement, mLastTextNode,
-                                   mContentStack, mDocumentChildren)
+                                   mContentStack, mDocumentChildren,
+                                   mXSLTResultDocument)
 
 // nsIContentSink
 NS_IMETHODIMP
@@ -305,6 +306,7 @@ nsXMLContentSink::DidBuildModel(bool aTerminated) {
     mDocument->RemoveObserver(this);
     mIsDocumentObserver = false;
 
+    const RefPtr<nsXMLContentSink> kungFuDeathGrip(this);
     RefPtr<Document> doc = mDocument;
     if (!mDeferredLayoutStart && doc->IsBeingUsedAsImage()) {
       // Eagerly layout image documents, so that layout-triggered loads have a
@@ -312,7 +314,7 @@ nsXMLContentSink::DidBuildModel(bool aTerminated) {
       doc->FlushPendingNotifications(FlushType::Layout);
     }
 
-    doc->EndLoad();
+    doc->EndLoad(/* aFireDOMContentLoadedSync = */ !aTerminated);
 
     DropParserAndPerfHint();
   }
@@ -329,7 +331,10 @@ nsresult nsXMLContentSink::OnDocumentCreated(Document* aSourceDocument,
   // Make sure that we haven't loaded a new document into the documentviewer
   // after starting the XSLT transform.
   if (viewer && viewer->GetDocument() == aSourceDocument) {
-    return viewer->SetDocumentInternal(aResultDocument, true);
+    nsresult rv = viewer->SetDocumentInternal(aResultDocument, true);
+    NS_ENSURE_SUCCESS(rv, rv);
+    mXSLTResultDocument = aResultDocument;
+    aResultDocument->BeginLoad();
   }
   return NS_OK;
 }
@@ -340,6 +345,7 @@ nsresult nsXMLContentSink::OnTransformDone(Document* aSourceDocument,
   MOZ_ASSERT(aResultDocument,
              "Don't notify about transform end without a document.");
 
+  RefPtr<Document> transformedDocument = mXSLTResultDocument.forget();
   mDocumentChildren.Clear();
 
   nsCOMPtr<nsIDocumentViewer> viewer;
@@ -402,11 +408,16 @@ nsresult nsXMLContentSink::OnTransformDone(Document* aSourceDocument,
     ScrollToRef();
   }
 
-  originalDocument->EndLoad();
+  const RefPtr<nsXMLContentSink> kungFuDeathGrip(this);
+  originalDocument->EndLoad(/* aFireDOMContentLoadedSync = */ true);
   if (blockingOnload) {
     // This UnblockOnload call corresponds to the BlockOnload call in
     // nsContentSink::WillBuildModelImpl.
     originalDocument->UnblockOnload(true);
+  }
+  // On failure, aResultDocument is a separate error document.
+  if (transformedDocument && transformedDocument->IsExpectingEndLoad()) {
+    transformedDocument->EndLoad(/* aFireDOMContentLoadedSync = */ true);
   }
 
   DropParserAndPerfHint();
@@ -619,6 +630,7 @@ nsresult nsXMLContentSink::CloseElement(nsIContent* aContent) {
   // properly (eg form state restoration).
   if (nsIContent::RequiresDoneAddingChildren(nodeInfo->NamespaceID(),
                                              nodeInfo->NameAtom())) {
+    nsAutoScriptBlocker scriptBlocker;
     aContent->DoneAddingChildren(HaveNotifiedForCurrentContent());
   }
 

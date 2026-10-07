@@ -18,6 +18,7 @@ dependencies {
     implementation project(":components:support-base")
 
     implementation libs.androidx.annotation
+    implementation libs.androidx.core
     implementation libs.kotlinx.coroutines
 
     testImplementation project(":components:support-test")

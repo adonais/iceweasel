@@ -173,6 +173,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     //".air", exec // Adobe AIR installer; excluded from apprep checks.
     ".apk",  // Android package
     //".app", exec  // Executable application
+    //".appcontent-ms", exec
     ".applescript",
     //".application", exec // MS ClickOnce
     //".appref-ms", exec // MS ClickOnce

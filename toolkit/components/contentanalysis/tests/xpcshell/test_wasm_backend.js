@@ -206,7 +206,7 @@ add_task(async function test_text_paste_to_unlisted_domain_is_allowed() {
       makeRequest({
         analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
         reason: Ci.nsIContentAnalysisRequest.eClipboardPaste,
-        operationTypeForDisplay: Ci.nsIContentAnalysisRequest.eClipboard,
+        operationTypeForDisplay: Ci.nsIContentAnalysisRequest.ePasteClipboard,
         urlSpec: "https://example.com/",
         textContent: "some pasted text",
       }),
@@ -233,7 +233,7 @@ add_task(async function test_text_paste_with_confidential_marker_is_blocked() {
       makeRequest({
         analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
         reason: Ci.nsIContentAnalysisRequest.eClipboardPaste,
-        operationTypeForDisplay: Ci.nsIContentAnalysisRequest.eClipboard,
+        operationTypeForDisplay: Ci.nsIContentAnalysisRequest.ePasteClipboard,
         urlSpec: "https://example.com/",
         textContent: "top secret plan: CONFIDENTIAL launch details",
       }),
@@ -337,7 +337,7 @@ add_task(async function test_diagnostic_info_tracks_successful_analysis() {
       makeRequest({
         analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
         reason: Ci.nsIContentAnalysisRequest.eClipboardPaste,
-        operationTypeForDisplay: Ci.nsIContentAnalysisRequest.eClipboard,
+        operationTypeForDisplay: Ci.nsIContentAnalysisRequest.ePasteClipboard,
         urlSpec: "https://example.com/",
         textContent: "some more pasted text",
       }),
@@ -373,7 +373,7 @@ add_task(async function test_diagnostic_info_on_signature_failure() {
       makeRequest({
         analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
         reason: Ci.nsIContentAnalysisRequest.eClipboardPaste,
-        operationTypeForDisplay: Ci.nsIContentAnalysisRequest.eClipboard,
+        operationTypeForDisplay: Ci.nsIContentAnalysisRequest.ePasteClipboard,
         urlSpec: "https://example.com/",
         textContent: "text that can't be analyzed",
       }),
@@ -406,7 +406,7 @@ add_task(async function test_succeeds_with_signature_check_if_signed() {
       makeRequest({
         analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
         reason: Ci.nsIContentAnalysisRequest.eClipboardPaste,
-        operationTypeForDisplay: Ci.nsIContentAnalysisRequest.eClipboard,
+        operationTypeForDisplay: Ci.nsIContentAnalysisRequest.ePasteClipboard,
         urlSpec: "https://example.com/",
         textContent: "text that can't be analyzed",
       }),

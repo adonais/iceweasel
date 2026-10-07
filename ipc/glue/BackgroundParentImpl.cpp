@@ -922,13 +922,14 @@ BackgroundParentImpl::AllocPCacheStorageParent(
                                               aPrincipalInfo);
 }
 
-PMessagePortParent* BackgroundParentImpl::AllocPMessagePortParent(
-    const nsID& aUUID, const nsID& aDestinationUUID,
-    const uint32_t& aSequenceID) {
+already_AddRefed<PMessagePortParent>
+BackgroundParentImpl::AllocPMessagePortParent(const nsID& aUUID,
+                                              const nsID& aDestinationUUID,
+                                              const uint32_t& aSequenceID) {
   AssertIsInMainProcess();
   AssertIsOnBackgroundThread();
 
-  return new MessagePortParent(aUUID);
+  return MakeAndAddRef<MessagePortParent>(aUUID);
 }
 
 mozilla::ipc::IPCResult BackgroundParentImpl::RecvPMessagePortConstructor(
@@ -942,16 +943,6 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPMessagePortConstructor(
     return IPC_FAIL_NO_REASON(this);
   }
   return IPC_OK();
-}
-
-bool BackgroundParentImpl::DeallocPMessagePortParent(
-    PMessagePortParent* aActor) {
-  AssertIsInMainProcess();
-  AssertIsOnBackgroundThread();
-  MOZ_ASSERT(aActor);
-
-  delete mozilla::ipc::ActorCast<MessagePortParent>(aActor);
-  return true;
 }
 
 mozilla::ipc::IPCResult BackgroundParentImpl::RecvMessagePortForceClose(

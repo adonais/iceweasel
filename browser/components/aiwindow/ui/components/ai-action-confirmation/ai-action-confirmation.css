@@ -4,6 +4,8 @@
 
 :host {
   display: block;
+  /* Keep descendant z-indexes within this component. */
+  isolation: isolate;
 
   @media not (forced-colors) {
     --ai-action-confirmation-accent-color: var(--smartwindow-text-color-accent-primary, light-dark(var(--color-violet-90), var(--color-violet-20)));

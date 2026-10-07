@@ -4,8 +4,43 @@
 
 import {
   isSpaceOverridden,
+  selectWidgetsRowAd,
   SPACE_IDS,
 } from "resource://newtab/common/PageLayoutVariants.mjs";
+
+/**
+ * A copy of the layout rows holding only the named sections. Components with no
+ * sections left, and rows left with no components, are dropped so the caller can
+ * tell an empty feed from a full one by the row count alone.
+ *
+ * @param {Array} layoutRender - rows from selectLayoutRender
+ * @param {string[]} sectionKeys - sectionKeys to keep
+ * @returns {Array}
+ */
+export function keepOnlySections(layoutRender, sectionKeys) {
+  const keep = new Set(sectionKeys);
+  return layoutRender.reduce((rows, row) => {
+    const components = (row.components ?? []).reduce((kept, component) => {
+      const sections = component?.data?.sections;
+      if (!sections) {
+        kept.push(component);
+        return kept;
+      }
+      const filtered = sections.filter(section => keep.has(section.sectionKey));
+      if (filtered.length) {
+        kept.push({
+          ...component,
+          data: { ...component.data, sections: filtered },
+        });
+      }
+      return kept;
+    }, []);
+    if (components.length) {
+      rows.push({ ...row, components });
+    }
+    return rows;
+  }, []);
+}
 
 export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
   const { layout, feeds, spocs } = state;
@@ -162,8 +197,13 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
         // Since banner-type ads are placed by row and don't use the normal spoc position,
         // dont combine with content
         const excludedSpocs = ["billboard", "leaderboard"];
+        // @experiment(remove) { bug 2069496 }
+        // The widgets row takes one ad off the top, so every story ad shifts
+        // up a position. It is the same object the row renders, so drop that
+        // one item and leave any other ad sharing its url in place.
+        const rowAd = selectWidgetsRowAd(prefs, spocs);
         const filteredSpocs = spocsData?.items?.filter(
-          item => !excludedSpocs.includes(item.format)
+          item => !excludedSpocs.includes(item.format) && item !== rowAd
         );
         result = fillSpocPositionsForPlacement(
           result,

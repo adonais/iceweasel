@@ -1,0 +1,7 @@
+LICENSES += ["mylib"]
+LICENSES["mylib"].title = "My Lib License"
+LICENSES["mylib"].text = "notice.txt"
+
+# The flags above and below share one dict keyed by the id, so this second
+# declaration would silently win.
+LICENSES += ["mylib"]

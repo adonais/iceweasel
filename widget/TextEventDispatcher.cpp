@@ -5,6 +5,7 @@
 #include "TextEventDispatcher.h"
 
 #include "IMEData.h"
+#include "MiscEvents.h"
 #include "PuppetWidget.h"
 #include "TextEvents.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -274,6 +275,96 @@ Maybe<WritingMode> TextEventDispatcher::MaybeQueryWritingModeAtSelection()
   }
 
   return Some(querySelectedTextEvent.mReply->mWritingMode);
+}
+
+void TextEventDispatcher::DispatchSetSelectionEvent(
+    WidgetSelectionEvent& aEvent) {
+  MOZ_ASSERT(mWidget == aEvent.mWidget);
+  aEvent.mDispatchedByTextEventDispatcher = true;
+  DispatchEvent(mWidget, aEvent);
+}
+
+bool TextEventDispatcher::DispatchSetSelectionEvent(
+    uint32_t aOffset, uint32_t aLength,
+    ExpandToClusterBoundary aExpandToClusterBoundary,
+    RangeDirection aRangeDirection,
+    int16_t aReason /* = 0 (nsISelectionListener::NO_REASON) */) {
+  static_assert(nsISelectionListener::NO_REASON == 0);
+  WidgetSelectionEvent event(true, eSetSelection, mWidget);
+  event.mOffset = aOffset;
+  event.mLength = aLength;
+  event.mExpandToClusterBoundary = aExpandToClusterBoundary;
+  event.mDirection = aRangeDirection;
+  event.mReason = aReason;
+  DispatchSetSelectionEvent(event);
+  return event.mSucceeded;
+}
+
+void TextEventDispatcher::DispatchContentCommandEvent(
+    WidgetContentCommandEvent& aEvent) {
+  MOZ_ASSERT(mWidget == aEvent.mWidget);
+  aEvent.mDispatchedByTextEventDispatcher = true;
+  DispatchEvent(mWidget, aEvent);
+}
+
+Result<bool, nsresult> TextEventDispatcher::DispatchContentCommandEvent(
+    EventMessage aMessage,
+    OnlyEnabledCheck aOnlyEnabledCheck /* = OnlyEnabledCheck::No */) {
+  WidgetContentCommandEvent commandEvent(true, aMessage, mWidget,
+                                         aOnlyEnabledCheck);
+  DispatchContentCommandEvent(commandEvent);
+  if (!commandEvent.mSucceeded) [[unlikely]] {
+    return Err(NS_ERROR_FAILURE);
+  }
+  return commandEvent.mIsEnabled;
+}
+
+Result<bool, nsresult> TextEventDispatcher::DispatchInsertTextCommandEvent(
+    const nsAString& aString,
+    OnlyEnabledCheck aOnlyEnabledCheck /* = OnlyEnabledCheck::No */) {
+  WidgetContentCommandEvent commandEvent(true, eContentCommandInsertText,
+                                         mWidget, aOnlyEnabledCheck);
+  commandEvent.mString.emplace(aString);
+  DispatchContentCommandEvent(commandEvent);
+  if (!commandEvent.mSucceeded) [[unlikely]] {
+    return Err(NS_ERROR_FAILURE);
+  }
+  return commandEvent.mIsEnabled;
+}
+
+Result<bool, nsresult> TextEventDispatcher::DispatchReplaceTextCommandEvent(
+    const nsAString& aString, const nsAString& aOriginalSelectedString,
+    uint32_t aOffset, PreventSetSelection aPreventSetSelection,
+    OnlyEnabledCheck aOnlyEnabledCheck /* = OnlyEnabledCheck::No */) {
+  WidgetContentCommandEvent commandEvent(true, eContentCommandReplaceText,
+                                         mWidget, aOnlyEnabledCheck);
+  commandEvent.mString.emplace(aString);
+  commandEvent.mSelection.mReplaceSrcString = aOriginalSelectedString;
+  commandEvent.mSelection.mOffset = aOffset;
+  commandEvent.mSelection.mPreventSetSelection = aPreventSetSelection;
+  DispatchContentCommandEvent(commandEvent);
+  if (!commandEvent.mSucceeded) [[unlikely]] {
+    return Err(NS_ERROR_FAILURE);
+  }
+  return commandEvent.mIsEnabled;
+}
+
+Result<bool, nsresult>
+TextEventDispatcher::DispatchPasteTransferableCommandEvent(
+    nsITransferable* aTransferable,
+    const TimeStamp& aTimeStamp /* = TimeStamp() */,
+    OnlyEnabledCheck aOnlyEnabledCheck /* = OnlyEnabledCheck::No */) {
+  WidgetContentCommandEvent commandEvent(true, eContentCommandPasteTransferable,
+                                         mWidget, aOnlyEnabledCheck);
+  commandEvent.mTransferable = aTransferable;
+  if (!aTimeStamp.IsNull()) {
+    commandEvent.mTimeStamp = aTimeStamp;
+  }
+  DispatchContentCommandEvent(commandEvent);
+  if (!commandEvent.mSucceeded) [[unlikely]] {
+    return Err(NS_ERROR_FAILURE);
+  }
+  return commandEvent.mIsEnabled;
 }
 
 nsEventStatus TextEventDispatcher::DispatchEvent(nsIWidget* aWidget,

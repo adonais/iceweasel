@@ -11,7 +11,7 @@ namespace js {
 namespace jit {
 
 // ICStubSpace is an abstraction for allocation policy and storage for CacheIR
-// stub data. Each JitZone has a single ICStubSpace.
+// stub data. Each JitRealm has a single ICStubSpace.
 class ICStubSpace {
   static constexpr size_t DefaultChunkSize = 4096;
   LifoAlloc allocator_{DefaultChunkSize, js::BackgroundMallocArena};

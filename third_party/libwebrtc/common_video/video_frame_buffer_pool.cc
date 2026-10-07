@@ -139,8 +139,10 @@ scoped_refptr<I420Buffer> VideoFrameBufferPool::CreateI420Buffer(int width,
   if (buffers_.size() >= max_number_of_buffers_)
     return nullptr;
   // Allocate new buffer.
-  scoped_refptr<I420Buffer> buffer =
-      make_ref_counted<I420Buffer>(width, height);
+  scoped_refptr<I420Buffer> buffer = I420Buffer::CreateOrNull(width, height);
+  if (!buffer) {
+    return nullptr;
+  }
 
   if (zero_initialize_)
     buffer->InitializeData();

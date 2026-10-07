@@ -194,12 +194,19 @@
 
   @media (prefers-reduced-motion: no-preference) {
     // We need customize-animate-enter and customize-animate-exit to fix bug 1868232
-    // These first 2 classes happen only while the element is animating.
-    &.customize-animate-enter,
-    &.customize-animate-exit,
-    // We only add these so the css is visible for inspecting while not animating.
+    // These classes happen only while the element is animating. We only add the
+    // -done ones so the css is visible for inspecting while not animating.
     // Otherwise it's difficult to see and inspect this css because the transition is so fast.
-    &.customize-animate-enter-done,
+    &.customize-animate-enter,
+    &.customize-animate-enter-done {
+      transition: transform 250ms $customize-menu-slide-bezier;
+    }
+
+    // Only the way out transitions visibility, so the panel stays visible while
+    // it slides away. On the way in the transition would hold visibility at
+    // hidden for the first style resolution, leaving the close button
+    // unfocusable when the panel finishes opening.
+    &.customize-animate-exit,
     &.customize-animate-exit-done {
       transition: transform 250ms $customize-menu-slide-bezier, visibility 250ms;
     }
@@ -336,6 +343,9 @@
     min-height: 0;
     overflow-y: auto;
     padding-inline: var(--space-xlarge);
+    // Bug 2061155: Reserve padding at the bottom to prevent Manage settings footer
+    // from overlapping controls.
+    padding-block-end: calc(var(--space-xlarge) * 2);
   }
 
   .wallpapers-section h2 {

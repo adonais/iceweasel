@@ -23,14 +23,19 @@ use std::cmp::min;
 use std::ffi::CString;
 use std::mem::{size_of, ManuallyDrop};
 
-#[derive(Clone)]
+// No annotation comes close to this size. The lengths are read from the crashed
+// process, which may have been updating its annotations at the time, so a
+// larger value means the entry is garbage.
+const MAX_ANNOTATION_SIZE: usize = 1024 * 1024;
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum AnnotationData {
     Empty,
     ByteBuffer(Vec<u8>),
     String(CString),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct CAnnotation {
     #[allow(dead_code)] // This is implicitly stored to and used externally
     pub id: u32,
@@ -62,8 +67,8 @@ pub fn retrieve_annotations(
     }
 
     let vec_pointer = annotation_table.get_ptr();
-    let length = annotation_table.len();
-    let mut annotations = Vec::<CAnnotation>::with_capacity(min(max_annotations, length));
+    let length = min(annotation_table.len(), max_annotations);
+    let mut annotations = Vec::<CAnnotation>::with_capacity(length);
 
     for i in 0..length {
         let annotation_address = unsafe { vec_pointer.add(i) };
@@ -148,6 +153,10 @@ fn read_annotation(
             }
         }
         ANNOTATION_CONTENTS_BYTEBUFFER | ANNOTATION_CONTENTS_OWNEDBYTEBUFFER => {
+            if raw_annotation.len > MAX_ANNOTATION_SIZE {
+                return Err(AnnotationsRetrievalError::InvalidData);
+            }
+
             if raw_annotation.len > 0 {
                 let buffer = copy_bytebuffer(reader, raw_annotation.address, raw_annotation.len)?;
                 annotation.data = AnnotationData::ByteBuffer(buffer);
@@ -174,6 +183,10 @@ fn copy_nscstring(
     // HACK: This assumes the layout of the nsCString object
     let length_address = address + size_of::<usize>();
     let length = reader.copy_object::<u32>(length_address)?;
+
+    if length as usize > MAX_ANNOTATION_SIZE {
+        return Err(process_reader::error::ReadError::TooLarge);
+    }
 
     if length > 0 {
         let data_address = reader.copy_object::<usize>(address)?;

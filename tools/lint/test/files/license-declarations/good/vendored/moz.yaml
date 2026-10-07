@@ -1,0 +1,4 @@
+schema: 1
+origin:
+  name: vendored-good
+  license: MPL-1.1

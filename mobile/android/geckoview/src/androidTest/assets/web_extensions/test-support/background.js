@@ -95,8 +95,8 @@ const APIS = {
   TeardownAlertsService() {
     return browser.test.teardownAlertsService();
   },
-  NotifyUserGestureActivation({ tab }) {
-    return browser.test.notifyUserGestureActivation(tab.id);
+  ShowPicker({ tab, selector }) {
+    return browser.test.showPicker(tab.id, selector);
   },
   SaveTrackingDBEvents({ log }) {
     return browser.test.saveTrackingDBEvents(log);

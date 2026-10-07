@@ -64,4 +64,5 @@ are defined in the
 ```{eval-rst}
 .. autoclass:: mozbuild.mozconfig.MozconfigLoader
    :members: read_mozconfig
+   :no-index:
 ```

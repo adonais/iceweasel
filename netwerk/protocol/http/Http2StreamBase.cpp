@@ -252,6 +252,11 @@ nsresult Http2StreamBase::ReadSegments(nsAHttpSegmentReader* reader,
              "complete, "
              "mUpstreamState=%x\n",
              this, mStreamID, mUpstreamState));
+        // Retire the "length unknown" sentinel now the body is over, so that
+        // UpdateTransportSendEvents() fires NS_NET_STATUS_WAITING_FOR.
+        if (mRequestBodyLenRemaining < 0) {
+          mRequestBodyLenRemaining = 0;
+        }
         if (mSentFin) {
           ChangeState(UPSTREAM_COMPLETE);
         } else {
@@ -1261,11 +1266,18 @@ nsresult Http2StreamBase::OnReadSegment(const char* buf, uint32_t count,
       if (!dataLength && mRequestBodyLenRemaining) {
         return NS_BASE_STREAM_WOULD_BLOCK;
       }
-      if (dataLength > mRequestBodyLenRemaining) {
-        return NS_ERROR_UNEXPECTED;
+      // mRequestBodyLenRemaining < 0 means streaming upload with unknown
+      // length; skip the length-bookkeeping and let END_STREAM be driven by
+      // the 0-byte read that ends the body, via the FIN path in ReadSegments().
+      if (mRequestBodyLenRemaining >= 0) {
+        if (static_cast<int64_t>(dataLength) > mRequestBodyLenRemaining) {
+          return NS_ERROR_UNEXPECTED;
+        }
+        mRequestBodyLenRemaining -= dataLength;
+        GenerateDataFrameHeader(dataLength, !mRequestBodyLenRemaining);
+      } else {
+        GenerateDataFrameHeader(dataLength, false);
       }
-      mRequestBodyLenRemaining -= dataLength;
-      GenerateDataFrameHeader(dataLength, !mRequestBodyLenRemaining);
       ChangeState(SENDING_BODY);
       [[fallthrough]];
 

@@ -52,3 +52,7 @@ if CONFIG['JS_CODEGEN_X64'] or CONFIG['JS_CODEGEN_X86']:
     # -Wtautological-value-range-compare, but we need to disable it for Zydis.
     if "-Wtautological-constant-in-range-compare" in CONFIG["WARNINGS_CFLAGS"]:
         CFLAGS += ["-Wno-tautological-value-range-compare"]
+
+LICENSED_UNDER += [
+    "mit",
+]

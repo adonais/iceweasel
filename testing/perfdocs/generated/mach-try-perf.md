@@ -1,5 +1,11 @@
 # Mach Try Perf
 
+```{toctree}
+:titlesonly: true
+
+standard-workflow
+```
+
 ```{contents}
 :depth: 2
 :local: true

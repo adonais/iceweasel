@@ -598,7 +598,7 @@ class TSFTextStore final : public TSFTextStoreBase,
     // For eKeyboardEvent
     MSG mKeyMsg;
     // For eSetSelection
-    bool mSelectionReversed;
+    RangeDirection mSelectionRangeDirection;
     // For eCompositionUpdate
     bool mIncomplete;
     // For eCompositionStart

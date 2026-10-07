@@ -71,7 +71,7 @@ class RendererOGL {
   void WaitForGPU();
 
   /// This can be called on the render thread only.
-  RefPtr<layers::Fence> GetAndResetReleaseFence();
+  RefPtr<layers::Fence> GetAndResetReadFence();
 
   /// This can be called on the render thread only.
   RenderedFrameId GetLastCompletedFrameId();

@@ -5,6 +5,7 @@
 import {
   WIDGET_REGISTRY,
   getWidgetOrder,
+  isWeatherAvailable,
   isWidgetAddable,
   isWidgetEnabled,
   isWidgetToggleVisible,
@@ -49,6 +50,14 @@ describe("isWidgetToggleVisible", () => {
     expect(
       isWidgetToggleVisible(listsWidget, {
         trainhopConfig: { widgetsSettings: { listsVisible: true } },
+      })
+    ).toBe(true);
+  });
+
+  it("is true via the legacy widgetsConfig override", () => {
+    expect(
+      isWidgetToggleVisible(listsWidget, {
+        widgetsConfig: { listsEnabled: true },
       })
     ).toBe(true);
   });
@@ -418,6 +427,16 @@ describe("isWidgetAddable", () => {
       isWidgetAddable(privacy, {
         [privacy.systemEnabledPref]: false,
         trainhopConfig: { widgetPrivacy: { visible: true } },
+      })
+    ).toBe(true);
+  });
+
+  it("is addable when revealed via the dedicated widgetRecentSearches namespace", () => {
+    const recentSearches = WIDGET_REGISTRY.find(w => w.id === "recentSearches");
+    expect(
+      isWidgetAddable(recentSearches, {
+        [recentSearches.systemEnabledPref]: false,
+        trainhopConfig: { widgetRecentSearches: { visible: true } },
       })
     ).toBe(true);
   });
@@ -956,5 +975,82 @@ describe("resolvePrivacyCelebrationThreshold", () => {
     ).toBe(20);
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
+  });
+});
+
+describe("WIDGET_REGISTRY about:preferences fields", () => {
+  const activeWidgets = WIDGET_REGISTRY.filter(w => !w.retired);
+
+  it("gives every non-retired entry a prefsL10nId", () => {
+    for (const widget of activeWidgets) {
+      expect(typeof widget.prefsL10nId).toBe("string");
+      expect(widget.prefsL10nId).toMatch(/^home-prefs-/);
+    }
+  });
+
+  it("keeps prefsL10nId unique across entries", () => {
+    const ids = activeWidgets.map(w => w.prefsL10nId);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe("WIDGET_REGISTRY customize panel fields", () => {
+  const activeWidgets = WIDGET_REGISTRY.filter(w => !w.retired);
+
+  // Literal values, so a renamed source fails this test.
+  const EXPECTED_EVENT_SOURCES = {
+    pictureOfTheDay: "WIDGET_PICTURE_OF_THE_DAY",
+    clocks: "WIDGET_CLOCKS",
+    lists: "WIDGET_LISTS",
+    focusTimer: "WIDGET_TIMER",
+    weather: "WEATHER",
+    privacy: "WIDGET_PRIVACY",
+    crossword: "WIDGET_CROSSWORD",
+    stocks: "WIDGET_STOCKS",
+    recentSearches: "WIDGET_RECENT_SEARCHES",
+  };
+
+  it("gives every active entry a customizeL10nId", () => {
+    for (const widget of activeWidgets) {
+      expect(typeof widget.customizeL10nId).toBe("string");
+      expect(widget.customizeL10nId).toMatch(/^newtab-custom-widget-/);
+    }
+  });
+
+  it("keeps customizeL10nId unique across entries", () => {
+    const ids = activeWidgets.map(w => w.customizeL10nId);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("carries today's customizeEventSource for every active entry", () => {
+    expect(
+      Object.fromEntries(activeWidgets.map(w => [w.id, w.customizeEventSource]))
+    ).toEqual(EXPECTED_EVENT_SOURCES);
+  });
+});
+
+describe("isWeatherAvailable", () => {
+  it("is false when nothing reveals the weather toggle", () => {
+    expect(isWeatherAvailable({})).toBe(false);
+  });
+
+  it("is true via the system.showWeather pref", () => {
+    expect(isWeatherAvailable({ "system.showWeather": true })).toBe(true);
+  });
+
+  it("is true via trainhopConfig.weather.enabled", () => {
+    expect(
+      isWeatherAvailable({
+        trainhopConfig: { weather: { enabled: true } },
+      })
+    ).toBe(true);
+  });
+
+  it("is true via the widgetsSettings.weatherVisible override", () => {
+    expect(
+      isWeatherAvailable({
+        trainhopConfig: { widgetsSettings: { weatherVisible: true } },
+      })
+    ).toBe(true);
   });
 });

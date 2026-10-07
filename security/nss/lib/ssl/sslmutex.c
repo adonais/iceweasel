@@ -309,46 +309,15 @@ sslMutex_Lock(sslMutex* pMutex)
 /* on Windows, we need to find the optimal type of locking mechanism to use
  for the sslMutex.
 
- There are 3 cases :
+ There are 2 cases :
  1) single-process, use a PRLock, as for all other platforms
- 2) Win95 multi-process, use a Win32 mutex
- 3) on WINNT multi-process, use a PRLock + a Win32 mutex
+ 2) multi-process, use a Win32 mutex
 
 */
 
-#ifdef WINNT
-
 SECStatus
-sslMutex_2LevelInit(sslMutex *sem)
+sslMutex_Init(sslMutex* pMutex, int shared)
 {
-    /*  the following adds a PRLock to sslMutex . This is done in each
-        process of a multi-process server and is only needed on WINNT, if
-        using fibers. We can't tell if native threads or fibers are used, so
-        we always do it on WINNT
-    */
-    PR_ASSERT(sem);
-    if (sem) {
-        /* we need to reset the sslLock in the children or the single_process init
-           function below will assert */
-        sem->u.sslLock = NULL;
-    }
-    return single_process_sslMutex_Init(sem);
-}
-
-static SECStatus
-sslMutex_2LevelDestroy(sslMutex *sem)
-{
-    return single_process_sslMutex_Destroy(sem);
-}
-
-#endif
-
-SECStatus
-sslMutex_Init(sslMutex *pMutex, int shared)
-{
-#ifdef WINNT
-    SECStatus retvalue;
-#endif
     HANDLE hMutex;
     SECURITY_ATTRIBUTES attributes = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
 
@@ -361,13 +330,6 @@ sslMutex_Init(sslMutex *pMutex, int shared)
     if (PR_FALSE == pMutex->isMultiProcess) {
         return single_process_sslMutex_Init(pMutex);
     }
-
-#ifdef WINNT
-    /*  we need a lock on WINNT for fibers in the parent process */
-    retvalue = sslMutex_2LevelInit(pMutex);
-    if (SECSuccess != retvalue)
-        return SECFailure;
-#endif
 
     if (!pMutex || ((hMutex = pMutex->u.sslMutx) != 0 &&
                     hMutex !=
@@ -387,7 +349,7 @@ sslMutex_Init(sslMutex *pMutex, int shared)
 }
 
 SECStatus
-sslMutex_Destroy(sslMutex *pMutex, PRBool processLocal)
+sslMutex_Destroy(sslMutex* pMutex, PRBool processLocal)
 {
     HANDLE hMutex;
     int rv;
@@ -403,12 +365,7 @@ sslMutex_Destroy(sslMutex *pMutex, PRBool processLocal)
         return single_process_sslMutex_Destroy(pMutex);
     }
 
-/*  multi-process mode */
-#ifdef WINNT
-    /* on NT, get rid of the PRLock used for fibers within a process */
-    retvalue = sslMutex_2LevelDestroy(pMutex);
-#endif
-
+    /*  multi-process mode */
     PR_ASSERT(pMutex->u.sslMutx != 0 &&
               pMutex->u.sslMutx != INVALID_HANDLE_VALUE);
     if ((hMutex = pMutex->u.sslMutx) == 0 || hMutex == INVALID_HANDLE_VALUE) {
@@ -428,7 +385,7 @@ sslMutex_Destroy(sslMutex *pMutex, PRBool processLocal)
 }
 
 int
-sslMutex_Unlock(sslMutex *pMutex)
+sslMutex_Unlock(sslMutex* pMutex)
 {
     BOOL success = FALSE;
     HANDLE hMutex;
@@ -454,22 +411,16 @@ sslMutex_Unlock(sslMutex *pMutex)
         nss_MD_win32_map_default_error(GetLastError());
         return SECFailure;
     }
-#ifdef WINNT
-    return single_process_sslMutex_Unlock(pMutex);
-/* release PRLock for other fibers in the process */
-#else
     return SECSuccess;
-#endif
 }
 
 int
-sslMutex_Lock(sslMutex *pMutex)
+sslMutex_Lock(sslMutex* pMutex)
 {
     HANDLE hMutex;
     DWORD event;
     DWORD lastError;
     SECStatus rv;
-    SECStatus retvalue = SECSuccess;
 
     PR_ASSERT(pMutex != 0);
     if (!pMutex) {
@@ -480,10 +431,6 @@ sslMutex_Lock(sslMutex *pMutex)
     if (PR_FALSE == pMutex->isMultiProcess) {
         return single_process_sslMutex_Lock(pMutex);
     }
-#ifdef WINNT
-    /* lock first to preserve from other threads/fibers in the same process */
-    retvalue = single_process_sslMutex_Lock(pMutex);
-#endif
     PR_ASSERT(pMutex->u.sslMutx != 0 &&
               pMutex->u.sslMutx != INVALID_HANDLE_VALUE);
     if ((hMutex = pMutex->u.sslMutx) == 0 || hMutex == INVALID_HANDLE_VALUE) {
@@ -515,7 +462,7 @@ sslMutex_Lock(sslMutex *pMutex)
             break;
     }
 
-    if (!(SECSuccess == retvalue && SECSuccess == rv)) {
+    if (SECSuccess != rv) {
         return SECFailure;
     }
 

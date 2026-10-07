@@ -860,7 +860,8 @@ static bool RecomputePosition(nsIFrame* aFrame) {
   // are dirty (i.e. they will be reflowed), or aren't affected by position
   // styles.
   if (aFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY |
-                              NS_FRAME_SVG_LAYOUT)) {
+                              NS_FRAME_SVG_LAYOUT) ||
+      aFrame->IsInSVGTextSubtree()) {
     return true;
   }
 

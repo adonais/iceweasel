@@ -256,6 +256,8 @@ prefs = [
   "dom.navigation.navigationRateLimit.count=0",
 ]
 
+["include:mochitest-xslt.toml"]
+
 ["test_301_redirect.html"]
 skip-if = [
   "http2",
@@ -343,15 +345,6 @@ skip-if = [
   "http3",
 ]
 
-["test_bug663567.html"]
-skip-if = [
-  "os == 'win' && os_version == '10.2009' && arch == 'x86_64' && debug && fission && xorigin", # Bug 1716406 - New fission platform triage
-  "os == 'win' && os_version == '11.26100' && arch == 'x86' && debug && fission && xorigin", # Bug 1716406 - New fission platform triage
-  "os == 'win' && os_version == '11.26200' && arch == 'x86' && debug && fission && xorigin", # Bug 1716406 - New fission platform triage
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && fission && xorigin", # Bug 1716406 - New fission platform triage
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug && fission && xorigin", # Bug 1716406 - New fission platform triage
-]
-
 ["test_bug802872.html"]
 skip-if = [
   "http2",
@@ -372,13 +365,6 @@ skip-if = [
 ["test_bug888172.html"]
 
 ["test_bug909029.html"]
-
-["test_bug910139.html"]
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && opt && verify-standalone",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt && verify-standalone",
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt && verify-standalone",
-]
 
 ["test_bug941404.html"]
 
@@ -851,11 +837,4 @@ support-files = [
 skip-if = [
   "http2",
   "http3",
-]
-
-["test_xslt_inherits_csp.html"]
-support-files = [
-  "file_xslt_inherits_csp.xml",
-  "file_xslt_inherits_csp.xml^headers^",
-  "file_xslt_inherits_csp.xsl",
 ]

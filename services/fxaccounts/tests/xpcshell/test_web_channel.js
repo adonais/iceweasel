@@ -526,10 +526,10 @@ add_test(function test_helpers_should_allow_relink_different_email() {
 add_task(async function test_helpers_login_without_customize_sync() {
   let helpers = new FxAccountsWebChannelHelpers({
     fxAccounts: {
-      getSignedInUser() {
-        return Promise.resolve(null);
-      },
       _internal: {
+        getUserAccountData() {
+          return Promise.resolve(null);
+        },
         setSignedInUser(accountData) {
           return new Promise(resolve => {
             // ensure fxAccounts is informed of the new user being signed in.
@@ -573,10 +573,10 @@ add_task(async function test_helpers_login_without_customize_sync() {
 add_task(async function test_helpers_login_set_previous_account_hash() {
   let helpers = new FxAccountsWebChannelHelpers({
     fxAccounts: {
-      getSignedInUser() {
-        return Promise.resolve(null);
-      },
       _internal: {
+        getUserAccountData() {
+          return Promise.resolve(null);
+        },
         setSignedInUser() {
           return new Promise(resolve => {
             // previously signed in user preference is updated.
@@ -621,10 +621,10 @@ add_task(async function test_helpers_login_set_previous_account_hash() {
 add_task(async function test_helpers_login_another_user_signed_in() {
   let helpers = new FxAccountsWebChannelHelpers({
     fxAccounts: {
-      getSignedInUser() {
-        return Promise.resolve({ uid: "foo" });
-      },
       _internal: {
+        getUserAccountData() {
+          return Promise.resolve({ uid: "foo" });
+        },
         setSignedInUser(accountData) {
           return new Promise(resolve => {
             // ensure fxAccounts is informed of the new user being signed in.
@@ -668,13 +668,14 @@ add_task(async function test_helpers_login_same_user_signed_in() {
 
   let helpers = new FxAccountsWebChannelHelpers({
     fxAccounts: {
-      getSignedInUser() {
-        return Promise.resolve({
-          uid: "testuser",
-          email: "testuser@testuser.com",
-        });
-      },
       _internal: {
+        getUserAccountData() {
+          return Promise.resolve({
+            uid: "testuser",
+            email: "testuser@testuser.com",
+            sessionToken: "session-token",
+          });
+        },
         updateUserAccountData(accountData) {
           updateUserAccountDataCalled = true;
           Assert.equal(accountData.email, "testuser@testuser.com");
@@ -704,6 +705,7 @@ add_task(async function test_helpers_login_same_user_signed_in() {
   await helpers.login({
     uid: "testuser",
     email: "testuser@testuser.com",
+    sessionToken: "session-token",
     verifiedCanLinkAccount: true,
     customizeSync: false,
   });
@@ -719,10 +721,133 @@ add_task(async function test_helpers_login_same_user_signed_in() {
   );
 });
 
+// Replacing a stored session must clean up its device without resetting the
+// account state.
+add_task(async function test_helpers_login_same_user_new_session_token() {
+  const setSignedInUser = sinon.stub().resolves();
+  const updateUserAccountData = sinon.stub().resolves();
+  const signOut = sinon.stub().resolves();
+
+  let helpers = new FxAccountsWebChannelHelpers({
+    fxAccounts: {
+      _internal: {
+        getUserAccountData() {
+          return Promise.resolve({
+            uid: "testuser",
+            email: "testuser@testuser.com",
+            sessionToken: "old-session-token",
+          });
+        },
+        updateUserAccountData,
+        setSignedInUser,
+        fxAccountsClient: { signOut },
+      },
+      telemetry: {
+        recordConnection: sinon.spy(),
+      },
+    },
+    weaveXPCOM: {
+      whenLoaded() {},
+      Weave: {
+        Service: {
+          configure() {},
+        },
+      },
+    },
+  });
+  helpers._disconnect = sinon.spy();
+
+  await helpers.login({
+    uid: "testuser",
+    email: "testuser@testuser.com",
+    sessionToken: "new-session-token",
+    verifiedCanLinkAccount: true,
+    customizeSync: false,
+  });
+
+  Assert.ok(
+    updateUserAccountData.calledOnce,
+    "updateUserAccountData should be called"
+  );
+  const newAccountData = updateUserAccountData.firstCall.args[0];
+  Assert.equal(newAccountData.sessionToken, "new-session-token");
+  Assert.equal(newAccountData.device, null, "the old device is forgotten");
+  Assert.equal(newAccountData.encryptedSendTabKeys, null);
+
+  Assert.ok(
+    signOut.calledOnceWith("old-session-token"),
+    "the previous session should be destroyed"
+  );
+  sinon.assert.callOrder(updateUserAccountData, signOut);
+  Assert.ok(!setSignedInUser.called, "setSignedInUser should not be called");
+  Assert.ok(
+    !helpers._disconnect.called,
+    "the same user should not be disconnected"
+  );
+});
+
+// Reauthentication drops the stored session token but preserves the device.
+add_task(async function test_helpers_login_same_user_reauth() {
+  const setSignedInUser = sinon.stub().resolves();
+  const updateUserAccountData = sinon.stub().resolves();
+  const signOut = sinon.stub().resolves();
+
+  let helpers = new FxAccountsWebChannelHelpers({
+    fxAccounts: {
+      _internal: {
+        getUserAccountData() {
+          return Promise.resolve({
+            uid: "testuser",
+            email: "testuser@testuser.com",
+            device: { id: "device-id" },
+          });
+        },
+        updateUserAccountData,
+        setSignedInUser,
+        fxAccountsClient: { signOut },
+      },
+      telemetry: {
+        recordConnection: sinon.spy(),
+      },
+    },
+    weaveXPCOM: {
+      whenLoaded() {},
+      Weave: {
+        Service: {
+          configure() {},
+        },
+      },
+    },
+  });
+  helpers._disconnect = sinon.spy();
+
+  await helpers.login({
+    uid: "testuser",
+    email: "testuser@testuser.com",
+    sessionToken: "new-session-token",
+    verifiedCanLinkAccount: true,
+    customizeSync: false,
+  });
+
+  Assert.ok(
+    updateUserAccountData.calledOnce,
+    "updateUserAccountData should be called"
+  );
+  Assert.ok(
+    !("device" in updateUserAccountData.firstCall.args[0]),
+    "the existing device should be left alone"
+  );
+  Assert.ok(!signOut.called, "there's no previous session to destroy");
+  Assert.ok(!setSignedInUser.called, "setSignedInUser should not be called");
+});
+
 add_task(async function test_helpers_login_with_customize_sync() {
   let helpers = new FxAccountsWebChannelHelpers({
     fxAccounts: {
       _internal: {
+        getUserAccountData() {
+          return Promise.resolve(null);
+        },
         setSignedInUser(accountData) {
           return new Promise(resolve => {
             // ensure fxAccounts is informed of the new user being signed in.
@@ -734,9 +859,6 @@ add_task(async function test_helpers_login_with_customize_sync() {
             resolve();
           });
         },
-      },
-      getSignedInUser() {
-        return Promise.resolve(null);
       },
       telemetry: {
         recordConnection: sinon.spy(),
@@ -768,6 +890,9 @@ add_task(async function test_helpers_persist_requested_services() {
   const helpers = new FxAccountsWebChannelHelpers({
     fxAccounts: {
       _internal: {
+        async getUserAccountData() {
+          return accountData;
+        },
         async setSignedInUser(newAccountData) {
           accountData = newAccountData;
           return accountData;
@@ -776,9 +901,9 @@ add_task(async function test_helpers_persist_requested_services() {
           accountData = { ...accountData, ...updatedFields };
           return accountData;
         },
-      },
-      async getSignedInUser() {
-        return accountData;
+        fxAccountsClient: {
+          async signOut() {},
+        },
       },
       telemetry: {
         recordConnection() {},
@@ -795,6 +920,7 @@ add_task(async function test_helpers_persist_requested_services() {
   await helpers.login({
     uid: "auid",
     email: "testuser@testuser.com",
+    sessionToken: "the-first-session-token",
     verifiedCanLinkAccount: true,
     services: {
       first_only: { x: 10 }, // this data is not in the update below.
@@ -819,6 +945,25 @@ add_task(async function test_helpers_persist_requested_services() {
     },
   });
   // the version with the data should remain.
+  Assert.deepEqual(JSON.parse(accountData.requestedServices), {
+    first_only: { x: 10 },
+    sync: { important: true },
+    new: { name: "opted in" },
+  });
+
+  // Replacing the session must preserve services collected earlier in the flow.
+  await helpers.login({
+    uid: "auid",
+    email: "testuser@testuser.com",
+    sessionToken: "a-new-session-token",
+    verifiedCanLinkAccount: true,
+    services: {
+      sync: {},
+    },
+  });
+
+  Assert.equal(accountData.sessionToken, "a-new-session-token");
+  Assert.equal(accountData.device, null);
   Assert.deepEqual(JSON.parse(accountData.requestedServices), {
     first_only: { x: 10 },
     sync: { important: true },

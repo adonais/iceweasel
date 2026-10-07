@@ -42,8 +42,20 @@ struct ModuleErrorInfo {
   bool isCircular = false;
 };
 
-ModuleNamespaceObject* GetOrCreateModuleNamespace(JSContext* cx,
-                                                  Handle<ModuleObject*> module);
+ModuleNamespaceObject* GetOrCreateModuleNamespace(
+    JSContext* cx, Handle<ModuleObject*> module,
+    ImportPhase phase = ImportPhase::Evaluation);
+
+ModuleObject* GetImportedModule(JSContext* cx, Handle<ModuleObject*> referrer,
+                                Handle<ModuleRequestObject*> moduleRequest);
+
+// https://tc39.es/proposal-defer-import-eval/#sec-EvaluateModuleSync
+// Synchronously evaluates module, throwing a TypeError before evaluating if
+// module's evaluation would not return an already settled promise.
+bool EvaluateModuleSync(JSContext* cx, Handle<ModuleObject*> module);
+
+// https://tc39.es/proposal-defer-import-eval/#sec-IsModuleSCCEvaluated
+bool IsModuleSCCEvaluated(ModuleObject* module);
 
 void AsyncModuleExecutionFulfilled(JSContext* cx, Handle<ModuleObject*> module);
 
@@ -65,7 +77,7 @@ bool LoadRequestedModules(JSContext* cx, Handle<ModuleObject*> module,
                           MutableHandle<JSObject*> promiseOut);
 
 bool HostLoadImportedModule(
-    JSContext* cx, Handle<JSScript*> referrer, Handle<JSObject*> moduleRequest,
+    JSContext* cx, Handle<Value> referrer, Handle<JSObject*> moduleRequest,
     Handle<Value> hostDefined, Handle<Value> payload, uint32_t lineNumber = 0,
     JS::ColumnNumberOneOrigin columnNumber = JS::ColumnNumberOneOrigin());
 

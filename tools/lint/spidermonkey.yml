@@ -1,0 +1,52 @@
+---
+spidermonkey-style:
+    description: >
+        Check that SpiderMonkey #include directives use the right path and form,
+        are correctly ordered, and don't form header cycles
+    include:
+        - intl/components
+        - js/public
+        - js/src
+        - memory/mozalloc
+        - mfbt
+        - mozglue
+    exclude:
+        - js/src/ctypes/libffi
+        - js/src/editline
+        - js/src/vtune
+        - js/src/xsum
+        - js/src/zydis
+    extensions:
+        - c
+        - cpp
+        - h
+        - msg
+        - tbl
+    support-files:
+        - 'tools/lint/spidermonkey/**'
+    type: global
+    payload: spidermonkey:style
+
+spidermonkey-macroassembler:
+    description: >
+        Check that MacroAssembler methods declared in MacroAssembler.h are
+        defined for every architecture that claims to define them
+    include:
+        - js/src/jit
+    extensions:
+        - cpp
+        - h
+    support-files:
+        - 'tools/lint/spidermonkey/**'
+    type: global
+    payload: spidermonkey:macroassembler
+
+spidermonkey-opcode:
+    description: Check the bytecode documentation in js/src/vm/Opcodes.h
+    include:
+        - js/src/vm/Opcodes.h
+        - js/src/vm/jsopcode.py
+    support-files:
+        - 'tools/lint/spidermonkey/**'
+    type: global
+    payload: spidermonkey:opcode

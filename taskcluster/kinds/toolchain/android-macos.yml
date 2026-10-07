@@ -3,26 +3,27 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ---
 task-defaults:
-    worker-type: b-osx-arm64
+    worker-type: b-linux-docker-amd
     worker:
+        docker-image: {in-tree: android-build}
         max-run-time: 1800
 
-macosx64-jdk-repack:
+macosx64-aarch64-jdk-repack:
     description: "Java JDK (macOS) repack toolchain build"
     treeherder:
-        symbol: TL(jdk-macos)
+        symbol: TMA64(jdk)
     run:
         using: toolchain-script
         script: repack-jdk-macos.sh
         resources:
             - 'python/mozboot/**/*android*'
         toolchain-artifact: project/gecko/jdk/jdk-macos.tar.zst
-        toolchain-alias: macosx64-jdk
+        toolchain-alias: macosx64-aarch64-jdk
 
-macosx64-android-sdk-repack:
+macosx64-aarch64-android-sdk-repack:
     description: "Android SDK (macOS) repack toolchain build"
     treeherder:
-        symbol: TL(android-sdk-macos)
+        symbol: TMA64(android-sdk)
     run:
         using: toolchain-script
         script: repack-android-sdk-macos.sh
@@ -32,12 +33,12 @@ macosx64-android-sdk-repack:
         toolchain-alias: android-sdk-macos
     fetches:
         toolchain:
-            - macosx64-jdk-repack
+            - linux64-jdk-repack
 
-macosx64-android-avd-arm64-repack:
+macosx64-aarch64-android-avd-arm64-repack:
     description: "Android AVD arm64 (macOS) repack toolchain build"
     treeherder:
-        symbol: TL(avd-arm64-macos)
+        symbol: TMA64(avd-arm64)
     run:
         using: toolchain-script
         script: repack-android-avd-macos.sh
@@ -50,12 +51,12 @@ macosx64-android-avd-arm64-repack:
         toolchain-alias: android-avd-arm64-macos
     fetches:
         toolchain:
-            - macosx64-jdk-repack
+            - linux64-jdk-repack
 
-macosx64-android-system-image-arm64-repack:
+macosx64-aarch64-android-system-image-arm64-repack:
     description: "Android System Images arm64 (macOS) repack toolchain build"
     treeherder:
-        symbol: TL(arm64-avd-img-macos)
+        symbol: TMA64(avd-img-arm64)
     run:
         using: toolchain-script
         script: repack-android-system-images-macos.sh
@@ -68,4 +69,4 @@ macosx64-android-system-image-arm64-repack:
         toolchain-alias: android-system-image-arm64-macos
     fetches:
         toolchain:
-            - macosx64-jdk-repack
+            - linux64-jdk-repack

@@ -1,0 +1,55 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+plugins {
+    id 'com.android.library'
+    alias(libs.plugins.dependency.analysis)
+    alias(libs.plugins.ksp)
+}
+
+android {
+    defaultConfig {
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas".toString())
+            arg("room.generateKotlin", "true")
+        }
+    }
+
+    sourceSets {
+        test.assets.srcDirs += files("$projectDir/schemas".toString())
+    }
+
+    testFixtures {
+        enable = true
+    }
+
+    namespace = 'mozilla.components.feature.tabgroups.storage'
+}
+
+dependencies {
+    implementation project(':components:support-utils')
+
+    implementation libs.androidx.room.runtime
+    ksp libs.androidx.room.compiler
+    implementation libs.kotlinx.coroutines
+
+    testImplementation libs.androidx.room.testing
+    testImplementation libs.androidx.test.core
+    testImplementation libs.androidx.test.junit
+    testImplementation platform(libs.junit.bom)
+    testImplementation libs.junit4
+    testRuntimeOnly libs.junit.platform.launcher
+    testRuntimeOnly libs.junit.vintage
+    testImplementation libs.kotlin.test
+    testImplementation libs.kotlinx.coroutines.test
+    testImplementation libs.robolectric
+
+    testFixturesImplementation project(':components:support-utils')
+    testFixturesImplementation libs.androidx.room.runtime
+    testFixturesImplementation libs.kotlinx.coroutines
+}
+
+apply from: '../../../common-config.gradle'
+apply from: '../../../publish.gradle'
+ext.configurePublish(config.componentsGroupId, project.name, project.ext.description)

@@ -136,6 +136,13 @@ IPCResult FetchParent::RecvFetchOp(FetchOpArgs&& aArgs) {
                     "RecvFetchOp FORCE_ALLOWED_DTD not allowed from content");
   }
 
+  if (contentHandle && InternalRequest::IsNavigationContentPolicy(
+                           aArgs.request().contentPolicyType())) {
+    return IPC_FAIL(this,
+                    "RecvFetchOp navigation content policy type not allowed "
+                    "from content");
+  }
+
   mRequest = MakeSafeRefPtr<InternalRequest>(std::move(aArgs.request()));
   mIsWorkerFetch = aArgs.isWorkerRequest();
   mPrincipalInfo = std::move(aArgs.principalInfo());

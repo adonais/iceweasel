@@ -18,7 +18,7 @@ monitoring, console logs, user input simulation, and Firefox logging. It isn't
 complete yet, but can already be useful.
 
 This documentation refers to the official Mozilla MCP for
-Firefox development: https://github.com/mozilla/firefox-devtools-mcp
+Firefox development: <https://github.com/mozilla/firefox-devtools-mcp>
 
 ### Key Features
 

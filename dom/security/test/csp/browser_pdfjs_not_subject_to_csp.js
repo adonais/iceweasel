@@ -39,6 +39,22 @@ add_task(async function () {
         let cspJSON = pdfFrame.contentDocument.cspJSON;
         ok(cspJSON.includes("script-src"), "found script-src directive");
         ok(cspJSON.includes("allowPDF"), "found script-src nonce value");
+
+        // 4) Ensure the inherited CSP does not block a chrome: module.
+        const chromeScriptLoaded = await new Promise(resolve => {
+          const script = pdfFrame.contentDocument.createElement("script");
+          script.type = "module";
+          script.src = "chrome://global/content/elements/moz-message-bar.mjs";
+          script.addEventListener("load", () => resolve(true), { once: true });
+          script.addEventListener("error", () => resolve(false), {
+            once: true,
+          });
+          pdfFrame.contentDocument.head.append(script);
+        });
+        ok(
+          chromeScriptLoaded,
+          "chrome: module script loaded despite the page CSP"
+        );
       });
 
       await SpecialPowers.spawn(browser, [], async () => {

@@ -1,0 +1,16 @@
+LICENSED_UNDER += ["fixture"]
+
+LICENSED_UNDER += [
+    "typo",
+]
+LICENSED_UNDER += ["also-missing"]
+LICENSED_UNDER["also-missing"].paths = ["b.c"]
+
+LICENSES += ["spdx-typo"]
+LICENSES["spdx-typo"].title = "Typo License"
+LICENSES["spdx-typo"].text = "typo.txt"
+LICENSES["spdx-typo"].spdx = "Apache2"
+
+LICENSED_UNDER = ["assign-typo"]
+
+DEFINES["APP_LICENSE_BLOCK"] = "%s/content/app-license.html" % SRCDIR

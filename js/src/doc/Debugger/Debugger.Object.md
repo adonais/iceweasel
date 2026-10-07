@@ -284,13 +284,6 @@ resolved by calling its `resolve` or `reject` resolving functions from
 script. If the referent is not a [`Promise`][promise], throw a `TypeError`
 exception.
 
-### `promiseID`
-If the referent is a [`Promise`][promise], this is a process-unique
-identifier for the [`Promise`][promise]. With e10s, the same id can
-potentially be assigned to multiple [`Promise`][promise] instances, if
-those instances were created in different processes. If the referent is
-not a [`Promise`][promise], throw a `TypeError` exception.
-
 ### `promiseDependentPromises`
 If the referent is a [`Promise`][promise], this is an `Array` of
 `Debugger.Objects` referring to the promises directly depending on the

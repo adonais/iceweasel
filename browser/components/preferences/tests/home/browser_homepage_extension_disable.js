@@ -9,12 +9,6 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const ADDON_ID = "newtab-disable@tests.mozilla.org";
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-});
-
 add_task(async function test_disable_extension_reverts_dropdown() {
   let extension = ExtensionTestUtils.loadExtension({
     useAddonManager: "permanent",

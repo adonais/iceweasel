@@ -7,6 +7,24 @@
 
 interface nsIFile;
 
+/*
+ * One shortcut reported by nsIWindowsShellService::enumerateInstallShortcuts.
+ */
+[scriptable, uuid(607f986f-13e8-48da-aa94-2f1d880be508)]
+interface nsIInstallShortcutInfo : nsISupports
+{
+  /*
+   * Absolute path to the .lnk file.
+   */
+  readonly attribute AString path;
+
+  /*
+   * The scanned folder the shortcut was found in; see
+   * nsIWindowsShellService::enumerateInstallShortcuts for the values.
+   */
+  readonly attribute AString location;
+};
+
 [scriptable, uuid(fb9b59db-5a91-4e67-92b6-35e7d6e6d3fd)]
 interface nsIWindowsShellService : nsIShellService
 {
@@ -534,21 +552,24 @@ interface nsIWindowsShellService : nsIShellService
                           in unsigned short aIconResourceId);
 
   /*
-   * Enumerate the .lnk files for this install across the per-user shortcut
-   * locations (taskbar pin folder, Desktop, Start Menu Programs) whose AUMID
-   * matches aAppUserModelId and whose target matches the currently running
-   * executable.
+   * Enumerate the .lnk files for this install across the shortcut locations
+   * that can govern the taskbar icon, whose AUMID matches aAppUserModelId and
+   * whose target matches the currently running executable.
    *
-   * Common (all-users) locations are not currently scanned: they typically
-   * require elevation to modify, and changing them would alter the icon that
-   * other users on the machine see. The intended use is "find every shortcut I
-   * am allowed to update without prompting."
+   * Each result carries the scanned folder the shortcut was found in:
+   * "Desktop" (per-user Desktop), "Programs" (per-user Start Menu Programs),
+   * "CommonPrograms" (all-users Start Menu Programs), or "Taskbar"
+   * (taskbar pin folder).
+   *
+   * "CommonPrograms" shortcuts typically require elevation to modify, and
+   * changing them would alter the icon that other users on the machine see,
+   * so callers that write shortcuts must skip them.
    *
    * @param aAppUserModelId
    *        AUMID identifying this install's shortcuts.
    *
-   * @returns {Promise<Array<AString>>} Resolves with absolute paths to all
-   *          matching shortcuts. May be empty.
+   * @returns {Promise<Array<nsIInstallShortcutInfo>>} Resolves with one entry
+   *          per matching shortcut. May be empty.
    *
    * @throws NS_ERROR_NOT_SAME_THREAD if not run on the main thread.
    * @rejects NS_ERROR_FAILURE on Windows API initialization failure.

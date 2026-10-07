@@ -1,0 +1,78 @@
+# Expose the size of the loaded weights, for about:memory. Upstreamable to https://github.com/mudler/parakeet.cpp
+diff --git a/include/parakeet_capi.h b/include/parakeet_capi.h
+--- a/include/parakeet_capi.h
++++ b/include/parakeet_capi.h
+@@ -1,6 +1,8 @@
+ #ifndef PARAKEET_CAPI_H
+ #define PARAKEET_CAPI_H
+ 
++#include <stddef.h>
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+@@ -54,6 +56,9 @@
+ // Free a context obtained from parakeet_capi_load. Safe on NULL.
+ void parakeet_capi_free(parakeet_ctx* ctx);
+ 
++// Bytes the context's weights occupy, for memory reporting. 0 on NULL.
++size_t parakeet_capi_weights_bytes(const parakeet_ctx* ctx);
++
+ // Transcribe a WAV file. `decoder` selects the head:
+ //   0 = default (by arch: transducer for tdt/rnnt/hybrid, CTC for ctc),
+ //   1 = ctc (force CTC head),
+diff --git a/src/model.hpp b/src/model.hpp
+--- a/src/model.hpp
++++ b/src/model.hpp
+@@ -93,6 +93,8 @@
+     // The underlying loaded GGUF. Exposed so the streaming C-API can build a
+     // pk::StreamingSession (and a MelFrontend) over the same load-once model.
+     const ModelLoader& loader() const { return loader_; }
++    // Bytes the loaded weights occupy, for memory reporting.
++    size_t weights_bytes() const { return loader_.weights_bytes(); }
+ 
+     // Non-copyable (owns the GGUF mapping).
+     Model(const Model&) = delete;
+diff --git a/src/model_loader.hpp b/src/model_loader.hpp
+--- a/src/model_loader.hpp
++++ b/src/model_loader.hpp
+@@ -95,6 +95,8 @@
+     // the same CPU backend the compute path uses. Returns false on failure.
+     bool realize_weights(ggml_backend_t backend);
+     bool weights_realized() const { return weights_buf_ != nullptr; }
++    // Bytes the loaded weights occupy, for memory reporting.
++    size_t weights_bytes() const;
+ private:
+     // Parse metadata + tensors from an already-opened gguf_. Shared by load()
+     // and load_fd().
+diff --git a/src/model_loader.cpp b/src/model_loader.cpp
+--- a/src/model_loader.cpp
++++ b/src/model_loader.cpp
+@@ -71,6 +71,12 @@
+     if(device_ctx_) ggml_free(device_ctx_);
+     if(gguf_) gguf_free(gguf_); if(ctx_) ggml_free(ctx_);
+ }
++// The backend buffer once realized, else ctx_'s mem_buffer.
++size_t ModelLoader::weights_bytes() const {
++    if (weights_buf_) return ggml_backend_buffer_get_size(weights_buf_);
++    return ctx_ ? ggml_get_mem_size(ctx_) : 0;
++}
++
+ bool ModelLoader::realize_weights(ggml_backend_t backend){
+     if(weights_buf_) return true;                       // idempotent
+     if(!backend || !ctx_){ PK_LOG("realize_weights: null backend/ctx"); return false; }
+diff --git a/src/parakeet_capi.cpp b/src/parakeet_capi.cpp
+--- a/src/parakeet_capi.cpp
++++ b/src/parakeet_capi.cpp
+@@ -225,6 +225,11 @@
+     }
+ }
+ 
++extern "C" size_t parakeet_capi_weights_bytes(const parakeet_ctx* ctx) {
++    if (!ctx || !ctx->model) return 0;
++    return ctx->model->weights_bytes();
++}
++
+ // Firefox-local: load from an already-open fd (sandboxed host).
+ extern "C" parakeet_ctx* parakeet_capi_load_fd(int fd) {
+     if (fd < 0) return nullptr;

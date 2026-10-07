@@ -282,6 +282,12 @@ sidebar-main,
 :root {
   --sidebar-launcher-button-padding-inline: round(var(--space-medium), 0.5px);
 
+  @media -moz-pref("sidebar.verticalTabs") {
+    /* Vertical tabs need device pixel aligned margins on *both* sides.
+     * Otherwise, they may not be properly centered. */
+    --sidebar-launcher-button-padding-inline: round(var(--space-medium), env(hairline));
+  }
+
   &[uidensity="compact"] {
     /* 32px icon button + 2 * 2px = 36px collapsed sidebar. */
     --sidebar-launcher-button-padding-inline: 2px;
@@ -303,7 +309,7 @@ sidebar-main,
    * at the fixed width tabs.css pins the strip to. */
   @media -moz-pref("browser.nova.enabled") and -moz-pref("sidebar.verticalTabs") {
     &:not([uidensity="touch"]) {
-      --sidebar-launcher-button-padding-inline: var(--tab-inner-inline-margin);
+      --sidebar-launcher-button-padding-inline: var(--tab-margin-inline-inner);
     }
   }
 }
@@ -332,34 +338,40 @@ sidebar-main,
      * so it has to paint whichever surface body does. Nova hands body the
      * toolbar color when there's no theme accent for it to defer to, see
      * browser-shared.css. */
-    --sidebar-launcher-surface-color: var(--toolbox-background-color);
-
-    @media -moz-pref("browser.nova.enabled") and (not (-moz-native-theme)) {
-      :root:not([lwtheme]) & {
-        --sidebar-launcher-surface-color: var(--toolbar-background-color);
-      }
-    }
-
-    background-color: var(--sidebar-launcher-surface-color);
     position: relative;
     inset: 0;
     inset-inline-end: unset;
 
-    /* We only want to apply these styles in two scenarios:
-      * When the sidebar is expanded AND hovered
-      * When the sidebar is in the process of moving from expanded to collapsed
-    */
+    /* Make sure the colors match the toolbox and they are opaque.
+     * TODO(bug 2070647): Consider moving this to the
+     * launcher-expanded/ongoing-animations block. */
+    color: var(--toolbox-text-color);
+    background-image: var(--toolbox-background-gradient), image(var(--toolbox-background-color));
+    background-size:
+      100vw 100vh,
+      auto;
+    /* With Windows Mica, the toolbox background is not guaranteed to be opaque.
+     * Make sure there's some opaque backdrop that matches our color scheme.
+     * These colors match the "transparency effects disabled" mica backdrop on
+     * Windows 11, which is as good as we can make it. */
+    background-color: light-dark(#e8e8e8, #202020);
+
+    &[sidebar-positionend]:-moz-locale-dir(ltr),
+    &:not([sidebar-positionend]):-moz-locale-dir(rtl) {
+      background-position-x: 100%;
+    }
+
+    &[sidebar-positionend] {
+      inset-inline-start: unset;
+      inset-inline-end: 0;
+    }
+
+    /* We only want to apply these styles when the sidebar is expanded or in the
+     * process of moving from expanded to collapsed */
     &[sidebar-launcher-expanded],
-    &[sidebar-ongoing-animations]:not([sidebar-launcher-expanded]) {
+    &[sidebar-ongoing-animations] {
       z-index: var(--browser-area-z-index-sidebar-expand-on-hover);
       position: absolute;
-      color: var(--toolbox-text-color);
-      /* With Windows Mica, the toolbox background is not guaranteed to be
-       * opaque. Make sure there's some opaque backdrop that matches our color
-       * scheme. These colors match the "transparency effects disabled" mica
-       * backdrop on Windows 11, which is as good as we can make it. */
-      background-image: image(var(--sidebar-launcher-surface-color));
-      background-color: light-dark(#e8e8e8, #202020);
 
       &:not([sidebar-positionend]) {
         border-inline-end: 0.01px solid var(--sidebar-border-color);
@@ -370,16 +382,11 @@ sidebar-main,
       }
     }
 
-    :root[lwtheme] & {
-      @media not -moz-pref("browser.nova.enabled") {
+    @media not -moz-pref("browser.nova.enabled") {
+      :root[lwtheme] & {
         border-radius: unset;
         border-inline: unset;
       }
-    }
-
-    &[sidebar-positionend] {
-      inset-inline-start: unset;
-      inset-inline-end: 0;
     }
   }
 

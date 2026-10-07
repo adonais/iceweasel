@@ -13,7 +13,7 @@ $tags:
 newtab.search:
   issued:
     type: event
-    description: >
+    description: |
       When Firefox was asked to issue a search from a Search Access Point (SAP)
       on a newtab page.
       Doesn't record searches in Private Browsing Mode unless
@@ -39,7 +39,7 @@ newtab.search:
     expires: never
     extra_keys:
       newtab_visit_id: &newtab_visit_id
-        description: >
+        description: |
           The id of the newtab visit that originated the search.
           Should always be present for handoff searches and for searches from
           the New Tab search bar.
@@ -48,7 +48,7 @@ newtab.search:
           set to `false`), the active newtab visit id is unknown.
         type: string
       search_access_point: &search_access_point
-        description: >
+        description: |
           One of the search access points available on the new tab like
           * `urlbar_handoff`
           * `about_home`
@@ -56,7 +56,7 @@ newtab.search:
           * `newtab_searchbar`
         type: string
       telemetry_id: &telemetry_id
-        description: >
+        description: |
           The search engine's `telemetryId`, like `google-b-d`.
           This is set to be a telemetry-specific id for config engines,
           and is `other-<name>` for others (where `<name>` is the engine's
@@ -68,7 +68,7 @@ newtab.search:
 newtab.search.ad:
   impression:
     type: event
-    description: >
+    description: |
       Recorded when a newtab visit resulted in a search that
       loaded a Search Engine Result Page (SERP) that contains an ad link.
       And the SERP is visible.
@@ -95,11 +95,11 @@ newtab.search.ad:
       newtab_visit_id: *newtab_visit_id
       search_access_point: *search_access_point
       is_follow_on: &is_follow_on
-        description: >
+        description: |
           Whether the preceding search happened on a search results page.
         type: boolean
       is_tagged: &is_tagged
-        description: >
+        description: |
           Whether the preceding search was tagged with a partner code.
         type: boolean
       telemetry_id: *telemetry_id
@@ -108,7 +108,7 @@ newtab.search.ad:
 
   click:
     type: event
-    description: >
+    description: |
       Recorded when an ad link is clicked on a Search Engine Result Page (SERP)
       which was loaded by a seach that began on a newtab page.
     bugs:
@@ -142,7 +142,7 @@ newtab.search.ad:
 sap:
   counts:
     type: event
-    description: >
+    description: |
       Recorded search counts when a user initiates a search from a search access
       point (SAP). It does not guarantee that the search engine result page was
       loaded successfully (use SERP telemetry).
@@ -150,10 +150,12 @@ sap:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1938929
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2008925
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2061005
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069142
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1938929
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2008925
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2061005
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069142
     data_sensitivity:
       - interaction
     notification_emails:
@@ -162,7 +164,7 @@ sap:
     expires: never
     extra_keys:
       source:
-        description: >
+        description: |
           The search access point from which the user initiated the search.
           Possible values are:
           `about_home`,
@@ -173,9 +175,10 @@ sap:
           `errorpage`,
           `newtab_searchbar`,
           `searchbar`,
-          `smartbar`
-          `smartwindow_assistant`
+          `smartbar`,
+          `smartwindow_assistant`,
           `system`,
+          `text_selection`,
           `urlbar`,
           `urlbar_handoff`,
           `urlbar_persisted`,
@@ -189,30 +192,30 @@ sap:
           These were changed to be consistent with other search telemetry reporting.
         type: string
       provider_id:
-        description: >
+        description: |
           The identifier of the search engine provider that is being used for the
           search. Note this may be different to the identifier of the provider in
           SERP reports. For user installed engines, this will be the string `other`.
         type: string
       provider_name:
-        description: >
+        description: |
           The name of the search engine provider that is being used for the search.
         type: string
       partner_code:
-        description: >
+        description: |
           The partner code, if defined/known, that is being used for the search.
           Not all search engines have partner codes. May be empty for engines that
           are overridden by a third-party add-on or OpenSearch engine.
         type: string
       overridden_by_third_party:
-        description: >
+        description: |
           Set to true if the search engine has been allowed to be overridden by
           a third-party add-on or OpenSearch engine.
         type: boolean
 
   deprecated_counts:
     type: labeled_counter
-    description: >
+    description: |
       This is deprecated metric that should not be incoporated into dashboards.
       Use the `sap.counts` event instead.
 
@@ -251,7 +254,7 @@ sap:
 
   search_form_counts:
     type: event
-    description: >
+    description: |
       Records how often users visit the homepages of search engines (also
       known as SearchForm) using a SAP. It only counts how many visits were
       initiated, not how many homepages were loaded successfully.
@@ -266,13 +269,13 @@ sap:
     expires: never
     extra_keys:
       source:
-        description: >
+        description: |
           The search access point from which the user initiated the search.
           Possible values are `newtab_searchbar`, `searchbar`, `smartbar` and
           `urlbar`.
         type: string
       provider_id:
-        description: >
+        description: |
           The identifier of the search engine provider that is being used for the
           search. Note this may be different to the identifier of the provider in
           SERP reports. For user installed engines, this will be the string `other`.
@@ -281,7 +284,7 @@ sap:
 sap.impression_counts:
   contextmenu_visual:
     type: labeled_counter
-    description: >
+    description: |
       Count of impressions of the visual search context menu item. The counter's
       label is the engine's identifier if the engine is known at the time of
       impression and it's an app-provided engine. Otherwise the label is "none".
@@ -299,7 +302,7 @@ sap.impression_counts:
 serp:
   impression:
     type: event
-    description: >
+    description: |
       Recorded when a search engine results page (SERP) is shown to a user.
       The feature began rolling out to all users with Firefox 115, and was
       permanently enabled in Firefox 119.
@@ -312,12 +315,14 @@ serp:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1851495
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2008925
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2061005
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069142
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1813162
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1824543
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1851495
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2008925
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2061005
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069142
     data_sensitivity:
       - interaction
     notification_emails:
@@ -326,24 +331,24 @@ serp:
     expires: never
     extra_keys:
       impression_id: &impression_id
-        description: >
+        description: |
           A uuid to link SERP events to user's engagement events.
         type: string
       provider:
-        description: >
+        description: |
           The name of the provider.
         type: string
       tagged:
-        description: >
+        description: |
           Whether the search is tagged (true) or organic (false).
         type: boolean
       partner_code:
-        description: >
+        description: |
           Any partner_code parsing in the URL or an empty string if not
           available.
         type: string
       source:
-        description: >
+        description: |
           How the user arrived at the SERP. A value of `unknown` means we can't
           determine the source. The possible values are:
           `contextmenu`,
@@ -359,6 +364,7 @@ serp:
           `smartwindow_assistant`,
           `newtab_search_widget`,
           `system`,
+          `text_selection`,
           `urlbar`,
           `urlbar_handoff`,
           `urlbar_persisted`,
@@ -368,7 +374,7 @@ serp:
           `webextension`
         type: string
       search_mode:
-        description: >
+        description: |
           The mode which the search page is in. If it is in the normal search
           mode, then no value is reported. Possible values are:
           `image_search`.
@@ -402,7 +408,7 @@ serp:
 
   engagement:
     type: event
-    description: >
+    description: |
       Recorded user actions on a SERP.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1814773
@@ -423,7 +429,7 @@ serp:
     extra_keys:
       impression_id: *impression_id
       action:
-        description: >
+        description: |
           The action taken on the page.
           Possible values are:
           `clicked`,
@@ -434,7 +440,7 @@ serp:
           `submitted`.
         type: string
       target:
-        description: >
+        description: |
           The target component used to trigger the action.
           Possible values are:
           `ad_carousel`,
@@ -459,7 +465,7 @@ serp:
 
   ad_impression:
     type: event
-    description: >
+    description: |
       Recorded when a user loads a SERP and ads are detected.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1816728
@@ -479,7 +485,7 @@ serp:
     extra_keys:
       impression_id: *impression_id
       component:
-        description: >
+        description: |
           Type of components on a SERP. Possible values are:
           `ad_carousel`,
           `ad_image_row`,
@@ -499,25 +505,25 @@ serp:
           in an iframe rather than as inline links.
         type: string
       ads_loaded:
-        description: >
+        description: |
           Number of ads loaded for this component. They may or
           may not be visible on the page.
         type: quantity
       ads_visible:
-        description: >
+        description: |
           Number of ads visible for this component. An ad can be
           considered visible if was within the browser window
           by the time the impression was recorded.
         type: quantity
       ads_hidden:
-        description: >
+        description: |
           Number of ads hidden for this component. These are ads that
           are loaded in the DOM but hidden via CSS and/or Javascript.
         type: quantity
 
   abandonment:
     type: event
-    description: >
+    description: |
       Recorded when there is no engagement with the SERP before the tab is
       closed, the window is closed, the app is closed, or the tab is navigated
       away from.
@@ -534,7 +540,7 @@ serp:
     extra_keys:
       impression_id: *impression_id
       reason:
-        description: >
+        description: |
           Why the SERP is deemed abandoned.
           Possible values are:
           `tab_close`, `window_close`, `navigation`
@@ -543,7 +549,7 @@ serp:
   categorization_duration:
     type: timing_distribution
     time_unit: millisecond
-    description: >
+    description: |
       The time it takes to categorize elements on a SERP.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1834100
@@ -557,7 +563,7 @@ serp:
 
   categorization:
     type: event
-    description: >
+    description: |
       A high-level categorization of a SERP (a best guess as to its topic),
       using buckets such as "sports" or "travel".
     bugs:
@@ -575,96 +581,96 @@ serp:
     expires: never
     extra_keys:
       sponsored_category:
-        description: >
+        description: |
           An index corresponding to a broad category for the SERP, derived from
           sponsored domains.
         type: quantity
       sponsored_num_domains:
-        description: >
+        description: |
           The total number of sponsored domains used in the categorization
           process for the SERP.
         type: quantity
       sponsored_num_unknown:
-        description: >
+        description: |
           The count of sponsored domains extracted from the SERP that are not
           found in the domain-to-categories mapping.
         type: quantity
       sponsored_num_inconclusive:
-        description: >
+        description: |
           The count of sponsored domains extracted from the SERP that are found
           in the domain-to-categories mapping but are deemed inconclusive.
         type: quantity
       organic_category:
-        description: >
+        description: |
           An index corresponding to a broad category for the SERP, derived from
           organic domains.
         type: quantity
       organic_num_domains:
-        description: >
+        description: |
           The total number of organic domains used in the categorization
           process for the SERP.
         type: quantity
       organic_num_unknown:
-        description: >
+        description: |
           The count of organic domains extracted from the SERP that are not
           found in the domain-to-categories mapping.
         type: quantity
       organic_num_inconclusive:
-        description: >
+        description: |
           The count of organic domains extracted from the SERP that are found
           in the domain-to-categories mapping but are deemed inconclusive.
         type: quantity
       region:
-        description: >
+        description: |
           A two-letter country code indicating where the SERP was loaded.
         type: string
       channel:
-        description: >
+        description: |
           The type of update channel, for example: “nightly”, “beta”, “release”.
         type: string
       provider:
-        description: >
+        description: |
           The name of the provider.
         type: string
       tagged:
-        description: >
+        description: |
           Whether the search is tagged (true) or organic (false).
         type: boolean
       partner_code:
-        description: >
+        description: |
           Any partner_code parsing in the URL or an empty string if not
           available.
         type: string
       app_version:
-        description: >
+        description: |
           The Firefox major version used, for example: 126.
         type: quantity
       mappings_version:
-        description: >
+        description: |
           Version number for the Remote Settings attachments used to generate
           the domain-to-categories map used in the SERP categorization process.
         type: quantity
       is_shopping_page:
-        description: >
+        description: |
           Indicates if the page is a shopping page.
         type: boolean
       num_ads_hidden:
-        description: >
+        description: |
           Number of ads hidden on the page at the time of categorizing the
           page.
         type: quantity
       num_ads_loaded:
-        description: >
+        description: |
           Number of ads loaded on the page at the time of categorizing the
           page.
         type: quantity
       num_ads_visible:
-        description: >
+        description: |
           Number of ads visible on the page at the time of categorizing the
           page.
         type: quantity
       num_ads_clicked:
-        description: >
+        description: |
           Number of ads clicked on the page.
         type: quantity
     send_in_pings:
@@ -672,7 +678,7 @@ serp:
 
   ads_blocked_count:
     type: labeled_counter
-    description: >
+    description: |
       Counts the specific type of block.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1907097
@@ -691,7 +697,7 @@ serp:
 
   experiment_info:
     type: object
-    description: >
+    description: |
       Whether the client is enrolled in a specified experiment and if so, which
       branch the client is assigned to. The target experiment is specified in
       the Nimbus config by creating a "targetExperiment" key and setting its
@@ -718,7 +724,7 @@ serp:
 
   categorization_no_map_found:
     type: counter
-    description: >
+    description: |
       A count incremented upon a SERP categorization event being recorded
       without a corresponding impression event being recorded. This metric
       effectively counts missing impressions due to issues with the
@@ -739,7 +745,7 @@ serp:
 search_with:
   reporting_url:
     type: url
-    description: >
+    description: |
       The external url to report this interaction to.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1870138
@@ -755,7 +761,7 @@ search_with:
 
   context_id:
     type: uuid
-    description: >
+    description: |
       An identifier for Contextual Services user interaction pings. This is
       used internally for counting unique users as well as for anti-fraud. It
       is shared with other Contextual Services. It is not shared externally.
@@ -774,8 +780,8 @@ search_with:
 browser.engagement.navigation:
   urlbar:
     type: labeled_counter
-    description: >
-      The count URI loads triggered in a subsession from the urlbar,
+    description: |
+      The count of URI loads triggered in a subsession from the urlbar,
       broken down by the originating action.
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.engagement.navigation.urlbar.
@@ -791,8 +797,8 @@ browser.engagement.navigation:
 
   urlbar_handoff:
     type: labeled_counter
-    description: >
-      The count URI loads triggered in a subsession from the urlbar via
+    description: |
+      The count of URI loads triggered in a subsession from the urlbar via
       handoff, broken down by the originating action.
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.engagement.navigation.urlbar_handoff.
@@ -808,7 +814,7 @@ browser.engagement.navigation:
 
   urlbar_persisted:
     type: labeled_counter
-    description: >
+    description: |
       The count of URI loads triggered in a subsession from the urlbar
       after the search term was shown in the urlbar, broken down by the
       originating action.
@@ -826,8 +832,8 @@ browser.engagement.navigation:
 
   urlbar_searchmode:
     type: labeled_counter
-    description: >
-      The count URI loads triggered in a subsession from the urlbar's
+    description: |
+      The count of URI loads triggered in a subsession from the urlbar's
       search mode, broken down by the originating action.
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.engagement.navigation.urlbar_searchmode.
@@ -843,8 +849,8 @@ browser.engagement.navigation:
 
   searchbar:
     type: labeled_counter
-    description: >
-      The count URI loads triggered in a subsession from the searchbar,
+    description: |
+      The count of URI loads triggered in a subsession from the searchbar,
       broken down by the originating action.
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.engagement.navigation.searchbar.
@@ -860,8 +866,8 @@ browser.engagement.navigation:
 
   about_home:
     type: labeled_counter
-    description: >
-      The count URI loads triggered in a subsession from about:home,
+    description: |
+      The count of URI loads triggered in a subsession from about:home,
       broken down by the originating action.
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.engagement.navigation.about_home.
@@ -877,8 +883,8 @@ browser.engagement.navigation:
 
   about_newtab:
     type: labeled_counter
-    description: >
-      The count URI loads triggered in a subsession from about:newtab,
+    description: |
+      The count of URI loads triggered in a subsession from about:newtab,
       broken down by the originating action.
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.engagement.navigation.about_newtab.
@@ -896,7 +902,7 @@ browser.engagement.navigation:
     type: labeled_counter
     data_sensitivity:
       - interaction
-    description: >
+    description: |
       The count URI loads triggered in a subsession from a search widget on
       about:newtab, broken down by the originating action.
     bugs:
@@ -910,8 +916,8 @@ browser.engagement.navigation:
 
   contextmenu:
     type: labeled_counter
-    description: >
-      The count URI loads triggered in a subsession from the contextmenu,
+    description: |
+      The count of URI loads triggered in a subsession from the contextmenu,
       broken down by the originating action.
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.engagement.navigation.contextmenu.
@@ -927,7 +933,7 @@ browser.engagement.navigation:
 
   contextmenu_visual:
     type: labeled_counter
-    description: >
+    description: |
       The count of URI loads triggered in a subsession from the context menu's
       visual search menuitem, broken down by the originating action.
     data_sensitivity:
@@ -943,8 +949,8 @@ browser.engagement.navigation:
 
   webextension:
     type: labeled_counter
-    description: >
-      The count URI loads triggered in a subsession from a webextension.
+    description: |
+      The count of URI loads triggered in a subsession from a webextension.
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.engagement.navigation.webextension.
     bugs:
@@ -959,8 +965,8 @@ browser.engagement.navigation:
 
   smartwindow_assistant:
     type: labeled_counter
-    description: >
-      The count URI loads triggered in a subsession from the AI window assistant
+    description: |
+      The count of URI loads triggered in a subsession from the AI window assistant
       search handoff button.
     bugs:
       - https://bugzil.la/2001519
@@ -973,8 +979,8 @@ browser.engagement.navigation:
 
   smartbar:
     type: labeled_counter
-    description: >
-      The count URI loads triggered in a subsession from the smartbar,
+    description: |
+      The count of URI loads triggered in a subsession from the smartbar,
       broken down by the originating action.
     bugs:
       - https://bugzil.la/2008925
@@ -987,8 +993,8 @@ browser.engagement.navigation:
 
   newtab_searchbar:
     type: labeled_counter
-    description: >
-      The count URI loads triggered in a subsession from the New Tab search
+    description: |
+      The count of URI loads triggered in a subsession from the New Tab search
       bar, broken down by the originating action.
     data_sensitivity:
       - interaction
@@ -1003,8 +1009,8 @@ browser.engagement.navigation:
 
   errorpage:
     type: labeled_counter
-    description: >
-      The count URI loads triggered in a subsession from the search CTA on
+    description: |
+      The count of URI loads triggered in a subsession from the search CTA on
       a network error page, broken down by the originating action.
     bugs:
       - https://bugzil.la/2061005
@@ -1015,10 +1021,26 @@ browser.engagement.navigation:
       - rev-data@mozilla.com
     expires: never
 
+  text_selection:
+    type: labeled_counter
+    description: |
+      The count of URI loads triggered from the actions menu shown when text
+      is selected on a page, broken down by the originating action.
+    data_sensitivity:
+      - interaction
+    bugs:
+      - https://bugzil.la/2069142
+    data_reviews:
+      - https://bugzil.la/2069142
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - rev-data@mozilla.com
+    expires: never
+
 browser.search.content:
   urlbar:
     type: labeled_counter
-    description: >
+    description: |
       Records counts for in-content searches where the search was most
       likely started from the urlbar. The key format is
       <provider>:[tagged|tagged-follow-on|organic]:[code|other|none]
@@ -1045,8 +1067,8 @@ browser.search.content:
 
   urlbar_handoff:
     type: labeled_counter
-    description: >
-      The count URI loads triggered in a subsession from the urlbar via
+    description: |
+      The count of URI loads triggered in a subsession from the urlbar via
       handoff, broken down by the originating action.
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.search.content.urlbar_handoff.
@@ -1062,7 +1084,7 @@ browser.search.content:
 
   urlbar_persisted:
     type: labeled_counter
-    description: >
+    description: |
       Records counts for in-content searches where the search was most
       likely started from the urlbar after the search term was shown in
       the urlbar. The key format is
@@ -1082,7 +1104,7 @@ browser.search.content:
 
   urlbar_searchmode:
     type: labeled_counter
-    description: >
+    description: |
       Records counts for in-content searches where the search was most
       likely started from the urlbar in search mode. The key format is
       <provider>:[tagged|tagged-follow-on|organic]:[code|other|none]
@@ -1109,7 +1131,7 @@ browser.search.content:
 
   searchbar:
     type: labeled_counter
-    description: >
+    description: |
       Records counts for in-content searches where the search was most
       likely started from the search bar. The key format is
       <provider>:[tagged|tagged-follow-on|organic]:[code|other|none]
@@ -1136,7 +1158,7 @@ browser.search.content:
 
   about_home:
     type: labeled_counter
-    description: >
+    description: |
       Records counts for in-content searches where the search was most
       likely started from the about:home. The key format is
       <provider>:[tagged|tagged-follow-on|organic]:[code|other|none]
@@ -1163,7 +1185,7 @@ browser.search.content:
 
   about_newtab:
     type: labeled_counter
-    description: >
+    description: |
       Records counts for in-content searches where the search was most
       likely started from the about:newtab. The key format is
       <provider>:[tagged|tagged-follow-on|organic]:[code|other|none]
@@ -1190,7 +1212,7 @@ browser.search.content:
 
   contextmenu:
     type: labeled_counter
-    description: >
+    description: |
       Records counts for in-content searches where the search was most
       likely started from the context menu. The key format is
       <provider>:[tagged|tagged-follow-on|organic]:[code|other|none]
@@ -1217,7 +1239,7 @@ browser.search.content:
 
   contextmenu_visual:
     type: labeled_counter
-    description: >
+    description: |
       Records counts for in-content visual searches where the search was most
       likely started from the context menu. The key format is the same as for
       the `contextmenu` labeled counter.
@@ -1234,7 +1256,7 @@ browser.search.content:
 
   webextension:
     type: labeled_counter
-    description: >
+    description: |
       Records counts for in-content searches where the search was most
       likely started from a webextension. The key format is
       <provider>:[tagged|tagged-follow-on|organic]:[code|other|none]
@@ -1261,7 +1283,7 @@ browser.search.content:
 
   system:
     type: labeled_counter
-    description: >
+    description: |
       Records counts for in-content searches where the search was most
       likely started from the system, e.g. command line. The key format is
       <provider>:[tagged|tagged-follow-on|organic]:[code|other|none]
@@ -1288,7 +1310,7 @@ browser.search.content:
 
   tabhistory:
     type: labeled_counter
-    description: >
+    description: |
       Records counts for in-content searches where the search was loaded
       from the tab history. The key format is
       <provider>:[tagged|tagged-follow-on|organic]:[code|other|none]
@@ -1307,7 +1329,7 @@ browser.search.content:
 
   reload:
     type: labeled_counter
-    description: >
+    description: |
       Records counts for in-content searches where the search was loaded
       by reloading the page. The key format is
       <provider>:[tagged|tagged-follow-on|organic]:[code|other|none]
@@ -1326,7 +1348,7 @@ browser.search.content:
 
   unknown:
     type: labeled_counter
-    description: >
+    description: |
       Records counts for in-content searches where the search was started
       from a place that could not be determined or not categorized by the
       other scalars. The key format is
@@ -1355,7 +1377,7 @@ browser.search.content:
 browser.search.withads:
   urlbar:
     type: labeled_counter
-    description: >
+    description: |
       Records counts of SERP pages with adverts displayed where the search
       was started from the urlbar. The key format is
       ‘<provider>:<tagged|organic>’
@@ -1374,8 +1396,8 @@ browser.search.withads:
 
   urlbar_handoff:
     type: labeled_counter
-    description: >
-      The count URI loads triggered in a subsession from the urlbar via
+    description: |
+      The count of URI loads triggered in a subsession from the urlbar via
       handoff, broken down by the originating action.
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.search.withads.urlbar_handoff.
@@ -1391,7 +1413,7 @@ browser.search.withads:
 
   urlbar_persisted:
     type: labeled_counter
-    description: >
+    description: |
       Records counts of SERP pages with adverts displayed where the search
       was started from the urlbar after the search term was shown in the
       urlbar. The key format is ‘<provider>:<tagged|organic>’
@@ -1410,7 +1432,7 @@ browser.search.withads:
 
   urlbar_searchmode:
     type: labeled_counter
-    description: >
+    description: |
       Records counts of SERP pages with adverts displayed where the search
       was started from the urlbar in search mode. The key format is
       ‘<provider>:<tagged|organic>’
@@ -1429,7 +1451,7 @@ browser.search.withads:
 
   searchbar:
     type: labeled_counter
-    description: >
+    description: |
       Records counts of SERP pages with adverts displayed where the search
       was started from the search bar. The key format is
       ‘<provider>:<tagged|organic>’
@@ -1448,7 +1470,7 @@ browser.search.withads:
 
   about_home:
     type: labeled_counter
-    description: >
+    description: |
       Records counts of SERP pages with adverts displayed where the search
       was started from about:home. The key format is
       ‘<provider>:<tagged|organic>’
@@ -1467,7 +1489,7 @@ browser.search.withads:
 
   about_newtab:
     type: labeled_counter
-    description: >
+    description: |
       Records counts of SERP pages with adverts displayed where the search
       was started from about:newtab. The key format is
       ‘<provider>:<tagged|organic>’
@@ -1486,7 +1508,7 @@ browser.search.withads:
 
   contextmenu:
     type: labeled_counter
-    description: >
+    description: |
       Records counts of SERP pages with adverts displayed where the search
       was started from the context menu. The key format is
       ‘<provider>:<tagged|organic>’
@@ -1505,7 +1527,7 @@ browser.search.withads:
 
   contextmenu_visual:
     type: labeled_counter
-    description: >
+    description: |
       Records counts of visual-search SERP pages with adverts displayed where
       the search was started from the context menu. The key format is the same
       as for the `contextmenu` labeled counter.
@@ -1522,7 +1544,7 @@ browser.search.withads:
 
   webextension:
     type: labeled_counter
-    description: >
+    description: |
       Records counts of SERP pages with adverts displayed where the search
       was started from a webextension. The key format is
       ‘<provider>:<tagged|organic>’. See
@@ -1541,7 +1563,7 @@ browser.search.withads:
 
   system:
     type: labeled_counter
-    description: >
+    description: |
       Records counts of SERP pages with adverts displayed where the search
       was started from the system, e.g. command line. The key format is
       ‘<provider>:<tagged|organic>’.
@@ -1560,7 +1582,7 @@ browser.search.withads:
 
   tabhistory:
     type: labeled_counter
-    description: >
+    description: |
       Records counts of SERP pages with adverts displayed where the search
       was loaded from the tab history. The key format is
       ‘<provider>:<tagged|organic>’
@@ -1579,7 +1601,7 @@ browser.search.withads:
 
   reload:
     type: labeled_counter
-    description: >
+    description: |
       Records counts of SERP pages with adverts displayed where the search
       was loaded by reloading the page. The key format is
       ‘<provider>:<tagged|organic>’
@@ -1598,7 +1620,7 @@ browser.search.withads:
 
   unknown:
     type: labeled_counter
-    description: >
+    description: |
       Records counts of SERP pages with adverts displayed where the search
       was started from a place not categorized by the other scalars. The
       key format is ‘<provider>:<tagged|organic>’. See
@@ -1618,7 +1640,7 @@ browser.search.withads:
 browser.search.adclicks:
   urlbar:
     type: labeled_counter
-    description: >
+    description: |
       Records clicks of adverts on SERP pages where the search was started
       from the urlbar. The key format is ‘<provider>:<tagged|organic>’. See
       https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
@@ -1636,8 +1658,8 @@ browser.search.adclicks:
 
   urlbar_handoff:
     type: labeled_counter
-    description: >
-      The count URI loads triggered in a subsession from the urlbar via
+    description: |
+      The count of URI loads triggered in a subsession from the urlbar via
       handoff, broken down by the originating action.
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.search.adclicks.urlbar_handoff.
@@ -1653,7 +1675,7 @@ browser.search.adclicks:
 
   urlbar_persisted:
     type: labeled_counter
-    description: >
+    description: |
       Records clicks of adverts on SERP pages where the search was started
       from the urlbar after the search term was shown in the urlbar. The
       key format is ‘<provider>:<tagged|organic>’
@@ -1672,7 +1694,7 @@ browser.search.adclicks:
 
   urlbar_searchmode:
     type: labeled_counter
-    description: >
+    description: |
       Records clicks of adverts on SERP pages where the search was started
       from the urlbar in search mode. The key format is
       ‘<provider>:<tagged|organic>’
@@ -1691,7 +1713,7 @@ browser.search.adclicks:
 
   searchbar:
     type: labeled_counter
-    description: >
+    description: |
       Records clicks of adverts on SERP pages where the search was started
       from the search bar. The key format is ‘<provider>:<tagged|organic>’
       See https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
@@ -1709,7 +1731,7 @@ browser.search.adclicks:
 
   about_home:
     type: labeled_counter
-    description: >
+    description: |
       Records clicks of adverts on SERP pages where the search was started
       from about:home. The key format is ‘<provider>:<tagged|organic>’. See
       https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
@@ -1727,7 +1749,7 @@ browser.search.adclicks:
 
   about_newtab:
     type: labeled_counter
-    description: >
+    description: |
       Records clicks of adverts on SERP pages where the search was started
       from about:newtab. The key format is ‘<provider>:<tagged|organic>’
       See https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
@@ -1745,7 +1767,7 @@ browser.search.adclicks:
 
   contextmenu:
     type: labeled_counter
-    description: >
+    description: |
       Records clicks of adverts on SERP pages where the search was started
       from the context menu. The key format is
       ‘<provider>:<tagged|organic>’. See
@@ -1764,7 +1786,7 @@ browser.search.adclicks:
 
   contextmenu_visual:
     type: labeled_counter
-    description: >
+    description: |
       Records clicks of adverts on visual-search SERP pages where the search was
       started from the context menu. The key format is the same as for the
       `contextmenu` labeled counter.
@@ -1781,7 +1803,7 @@ browser.search.adclicks:
 
   webextension:
     type: labeled_counter
-    description: >
+    description: |
       Records clicks of adverts on SERP pages where the search was started
       from a webextension. The key format is ‘<provider>:<tagged|organic>’
       See https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
@@ -1799,7 +1821,7 @@ browser.search.adclicks:
 
   system:
     type: labeled_counter
-    description: >
+    description: |
       Records clicks of adverts on SERP pages where the search was started
       from the system, e.g. command line. The key format is
       ‘<provider>:<tagged|organic>’
@@ -1818,7 +1840,7 @@ browser.search.adclicks:
 
   tabhistory:
     type: labeled_counter
-    description: >
+    description: |
       Records clicks of adverts on SERP pages where the search was loaded
       from the tab history. The key format is
       ‘<provider>:<tagged|organic>’
@@ -1837,7 +1859,7 @@ browser.search.adclicks:
 
   reload:
     type: labeled_counter
-    description: >
+    description: |
       Records clicks of adverts on SERP pages where the search was loaded
       by reloading the page. The key format is
       ‘<provider>:<tagged|organic>’
@@ -1856,7 +1878,7 @@ browser.search.adclicks:
 
   unknown:
     type: labeled_counter
-    description: >
+    description: |
       Records clicks of adverts on SERP pages where the search was started
       from a place not categorized by the other scalars. The key format is
       ‘<provider>:<tagged|organic>’
@@ -1876,7 +1898,7 @@ browser.search.adclicks:
 urlbar.searchmode:
   bookmarkmenu:
     type: labeled_counter
-    description: >
+    description: |
       A keyed uint recording how many times the user entered a particular
       search mode after selecing the Search Bookmarks menu item in the
       Library menu.
@@ -1893,7 +1915,7 @@ urlbar.searchmode:
 
   handoff:
     type: labeled_counter
-    description: >
+    description: |
       A keyed uint recording how many times the user entered a particular
       search mode after being handed off from the search bar on the new
       tab page.
@@ -1912,7 +1934,7 @@ urlbar.searchmode:
 
   keywordoffer:
     type: labeled_counter
-    description: >
+    description: |
       A keyed uint recording how many times the user entered a particular
       search mode after selecting a keyword offer result. The scalar key
       for local search modes entered using a restrict keyword will be
@@ -1933,7 +1955,7 @@ urlbar.searchmode:
 
   messaging_system:
     type: labeled_counter
-    description: >
+    description: |
       A keyed uint recording how many times the user entered a particular search mode
       through the messaging system.
     data_sensitivity:
@@ -1948,7 +1970,7 @@ urlbar.searchmode:
 
   oneoff:
     type: labeled_counter
-    description: >
+    description: |
       A keyed uint recording how many times the user entered a particular
       search mode after selecting a one-off.
       This metric was generated to correspond to the Legacy Telemetry
@@ -1964,7 +1986,7 @@ urlbar.searchmode:
 
   searchbutton:
     type: labeled_counter
-    description: >
+    description: |
       A keyed uint recording how many times the user entered a particular
       search mode by unified search button.
       This metric was generated to correspond to the Legacy Telemetry
@@ -1980,7 +2002,7 @@ urlbar.searchmode:
 
   shortcut:
     type: labeled_counter
-    description: >
+    description: |
       A keyed uint recording how many times the user entered a particular
       search mode after pressing a keyboard shortcut.
       This metric was generated to correspond to the Legacy Telemetry
@@ -1996,7 +2018,7 @@ urlbar.searchmode:
 
   tabmenu:
     type: labeled_counter
-    description: >
+    description: |
       A keyed uint recording how many times the user entered a particular
       search mode after selecting the Search Tabs menu item in the Tab
       Overflow menu.
@@ -2013,7 +2035,7 @@ urlbar.searchmode:
 
   tabtosearch:
     type: labeled_counter
-    description: >
+    description: |
       A keyed uint recording how many times the user entered a particular
       search mode after selecting a tab-to-search result.
       This metric was generated to correspond to the Legacy Telemetry
@@ -2029,7 +2051,7 @@ urlbar.searchmode:
 
   tabtosearch_onboard:
     type: labeled_counter
-    description: >
+    description: |
       A keyed uint recording how many times the user entered a particular
       search mode after selecting a tab-to-search onboarding result.
       This metric was generated to correspond to the Legacy Telemetry
@@ -2045,7 +2067,7 @@ urlbar.searchmode:
 
   topsites_newtab:
     type: labeled_counter
-    description: >
+    description: |
       A keyed uint recording how many times the user entered a particular
       search mode after selecting a search shortcut Top Site on the New
       Tab Page.
@@ -2062,7 +2084,7 @@ urlbar.searchmode:
 
   topsites_urlbar:
     type: labeled_counter
-    description: >
+    description: |
       A keyed uint recording how many times the user entered a particular
       search mode after selecting a search shortcut Top Site in the
       Urlbar.
@@ -2079,7 +2101,7 @@ urlbar.searchmode:
 
   touchbar:
     type: labeled_counter
-    description: >
+    description: |
       A keyed uint recording how many times the user entered a particular
       search mode after selecting a search shortcut on the macOS Touch
       Bar.
@@ -2096,7 +2118,7 @@ urlbar.searchmode:
 
   typed:
     type: labeled_counter
-    description: >
+    description: |
       A keyed uint recording how many times the user entered a particular
       search mode after typing an alias. The scalar keys for local search
       modes entered by typing a restrict keyword will be suffixed with
@@ -2119,7 +2141,7 @@ urlbar.searchmode:
 
   historymenu:
     type: labeled_counter
-    description: >
+    description: |
       A keyed uint recording how many times the user entered a particular
       search mode after selecing the Search History menu item in a History
       menu.
@@ -2136,7 +2158,7 @@ urlbar.searchmode:
 
   other:
     type: labeled_counter
-    description: >
+    description: |
       A keyed uint recording how many times the user entered a particular
       search mode from an unknown entry point. If values appear for this
       probe in Telemetry, we should review the entry points to search
@@ -2155,7 +2177,7 @@ urlbar.searchmode:
 searchbar:
   selected_result_method:
     type: labeled_counter
-    description: >
+    description: |
       The input method the user used to select a result in the searchbar.
       'enter' => The user hit the Enter key without choosing a result in the
       popup. 'enterSelection' => The user chose a result and then hit the Enter

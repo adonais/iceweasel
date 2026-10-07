@@ -20,10 +20,12 @@
 #include "nsIClassifiedChannel.h"
 #include "nsIContentClassifierService.h"
 #include "nsIContentClassifierRemoteSettingsClient.h"
+#include "nsIMemoryReporter.h"
 #include "nsISupportsImpl.h"
 #include "nsLiteralString.h"
 #include "nsTArray.h"
 #include "nsTHashMap.h"
+#include "nsCharSeparatedTokenizer.h"
 
 #include "mozilla/ContentClassifierEngine.h"
 
@@ -236,11 +238,13 @@ class ContentClassifierProbeReport final
 };
 
 class ContentClassifierService final : public nsIAsyncShutdownBlocker,
-                                       public nsIContentClassifierService {
+                                       public nsIContentClassifierService,
+                                       public nsIMemoryReporter {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
   NS_DECL_NSICONTENTCLASSIFIERSERVICE
+  NS_DECL_NSIMEMORYREPORTER
 
   static already_AddRefed<ContentClassifierService> GetInstance();
 
@@ -289,7 +293,8 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   // trailing exception engines see the propagated matched_rule.
   ContentClassifierResult ClassifyWithEngines(
       const nsTArray<RefPtr<ContentClassifierEngine>>& aEngines,
-      const ContentClassifierRequest& aRequest, bool aIndependentEngines);
+      const ContentClassifierRequest& aRequest, bool aIndependentEngines)
+      MOZ_REQUIRES(mLock);
 
   // Take a fresh pref snapshot, decide which active features need to be
   // (re)built — either because they have no engine yet, or because one of

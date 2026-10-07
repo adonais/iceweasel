@@ -9,6 +9,7 @@
 #include "Pivot.h"
 #include "Relation.h"
 #include "TextLeafRange.h"
+#include "mozilla/Monitor.h"
 #include "mozilla/a11y/CacheConstants.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/a11y/DocManager.h"
@@ -48,6 +49,48 @@ static constexpr uint64_t kNecessaryBoundsDomains =
     CacheDomain::ScrollPosition | CacheDomain::APZ;
 static constexpr uint64_t kNecessaryStateDomains =
     CacheDomain::State | CacheDomain::Viewport;
+
+void RemoteAccessible::AssertActiveThread() const {
+#ifdef ANDROID
+  // The RemoteAccessible tree is touched from both the main thread and the
+  // Android UI thread, but never concurrently. Whichever of those threads is
+  // currently doing so holds nsAccessibilityService::GetAndroidMonitor().
+  //
+  // DocAccessibleParent is exempted from this on the main thread because its
+  // refcount is also touched by generic IPDL actor lifecycle code which can't
+  // be made to acquire this lock; it isn't specific to accessibility. That code
+  // only runs before the doc is reachable from the tree (and thus before it is
+  // reachable from the Android UI thread) or after it has already been removed
+  // from the tree, so it can't race with the Android UI thread.
+  if (!(NS_IsMainThread() && IsDoc())) {
+    nsAccessibilityService::GetAndroidMonitor().AssertCurrentThreadOwns();
+  }
+#else
+  MOZ_ASSERT(NS_IsMainThread());
+#endif
+}
+
+NS_IMETHODIMP_(MozExternalRefCountType) RemoteAccessible::AddRef(void) {
+  MOZ_ASSERT_TYPE_OK_FOR_REFCOUNTING(RemoteAccessible)
+  MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");
+  AssertActiveThread();
+  ++mRefCnt;
+  NS_LOG_ADDREF(this, mRefCnt, "RemoteAccessible", sizeof(*this));
+  return mRefCnt;
+}
+
+NS_IMETHODIMP_(MozExternalRefCountType) RemoteAccessible::Release(void) {
+  MOZ_ASSERT(int32_t(mRefCnt) > 0, "dup release");
+  AssertActiveThread();
+  --mRefCnt;
+  NS_LOG_RELEASE(this, mRefCnt, "RemoteAccessible");
+  if (mRefCnt == 0) {
+    mRefCnt = 1; /* stabilize */
+    delete this;
+    return 0;
+  }
+  return mRefCnt;
+}
 
 void RemoteAccessible::Shutdown() {
   MOZ_DIAGNOSTIC_ASSERT(!IsDoc());

@@ -100,7 +100,8 @@ struct State {
     /// Helpers queued but not yet finished. The caller waits for zero.
     outstanding: usize,
     /// First error reported by any participant. Once set, no further indices are
-    /// handed out, so the remaining work is abandoned.
+    /// handed out, though a participant already inside `run_ordered`'s loop over
+    /// jxl-rs's own counter keeps going.
     err: Option<Error>,
 }
 
@@ -313,6 +314,10 @@ impl JxlParallelRunner for PoolRunner {
             Some(pool) => run_in_parallel(pool, num, fun),
             None => (0..num).try_for_each(fun),
         }
+    }
+
+    fn num_threads(&self) -> usize {
+        participant_count()
     }
 }
 

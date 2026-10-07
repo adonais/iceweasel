@@ -390,11 +390,10 @@ add_task(async function test_css_order() {
       "end_1.css (cached) applies before frame.onload"
     );
     // document_end scripts do not block the parser, so frame.onload can fire
-    // while style_2.css and style_3.css are still compiling.
-    // TODO: What if style compilation is fast, and beats frame.onload?
-    Assert.equal(
-      style.getPropertyValue("--css-end-23"),
-      "",
+    // while end_2.css and end_3.css are still compiling. Whether they applied
+    // before frame.onload depends on how fast end_2.css compiles.
+    Assert.ok(
+      ["", "3"].includes(style.getPropertyValue("--css-end-23")),
       "end_3.css (cached, blocked on end_2.css) does not block frame.onload"
     );
   });

@@ -256,12 +256,12 @@ class Cell {
   void dump() const;
 #endif
 
+  // Cells are destroyed by the GC. Do not delete them directly.
+  void operator delete(void*) = delete;
+
  protected:
   uintptr_t address() const;
 
- private:
-  // Cells are destroyed by the GC. Do not delete them directly.
-  void operator delete(void*) = delete;
 } JS_HAZ_GC_THING;
 
 // A GC TenuredCell gets behaviors that are valid for things in the Tenured
@@ -1020,9 +1020,6 @@ class MOZ_RAII AutoMarkingLock {
   JSRuntime* runtime = nullptr;
 #endif
 
-  AutoMarkingLock(const AutoMarkingLock& other) = delete;
-  AutoMarkingLock& operator=(const AutoMarkingLock& other) = delete;
-
  public:
   // Take the lock if concurrent marking is currently happening in zone |zone|.
   AutoMarkingLock(JS::Zone* zone, LightLock& markingLock) {
@@ -1050,6 +1047,9 @@ class MOZ_RAII AutoMarkingLock {
     }
 #endif
   }
+
+  AutoMarkingLock(const AutoMarkingLock& other) = delete;
+  AutoMarkingLock& operator=(const AutoMarkingLock& other) = delete;
 };
 
 } /* namespace gc */

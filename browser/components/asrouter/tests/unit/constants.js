@@ -4,7 +4,7 @@ export const PARENT_TO_CHILD_MESSAGE_NAME = "ASRouter:parent-to-child";
 export const FAKE_LOCAL_MESSAGES = [
   {
     id: "foo",
-    template: "milestone_message",
+    template: "fake_template",
     content: { title: "Foo", body: "Foo123" },
   },
   {
@@ -80,57 +80,4 @@ export const FAKE_REMOTE_SETTINGS_PROVIDER = {
   type: "remote-settings",
   collection: "collectionname",
   enabled: true,
-};
-
-const notificationText = new String("Fake notification text"); // eslint-disable-line
-notificationText.attributes = { tooltiptext: "Fake tooltip text" };
-
-export const FAKE_RECOMMENDATION = {
-  id: "fake_id",
-  template: "cfr_doorhanger",
-  content: {
-    category: "cfrDummy",
-    bucket_id: "fake_bucket_id",
-    notification_text: notificationText,
-    info_icon: {
-      label: "Fake Info Icon Label",
-      sumo_path: "a_help_path_fragment",
-    },
-    heading_text: "Fake Heading Text",
-    icon_class: "Fake Icon class",
-    addon: {
-      title: "Fake Addon Title",
-      author: "Fake Addon Author",
-      icon: "a_path_to_some_icon",
-      rating: "4.2",
-      users: "1234",
-      amo_url: "a_path_to_amo",
-    },
-    descriptionDetails: {
-      steps: [{ string_id: "cfr-features-step1" }],
-    },
-    text: "Here is the recommendation text body",
-    buttons: {
-      primary: {
-        label: { string_id: "primary_button_id" },
-        action: {
-          id: "primary_action",
-          data: {},
-        },
-      },
-      secondary: [
-        {
-          label: { string_id: "secondary_button_id" },
-          action: { id: "secondary_action" },
-        },
-        {
-          label: { string_id: "secondary_button_id_2" },
-        },
-        {
-          label: { string_id: "secondary_button_id_3" },
-          action: { id: "secondary_action" },
-        },
-      ],
-    },
-  },
 };

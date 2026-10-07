@@ -1337,6 +1337,11 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   void RemoveNodeFromChainIfNeeded(ElementState aState,
                                    nsIContent* aContentRemoved, bool aNotify);
 
+  // Tells the hovered document's speculation rules that the deepest hovered
+  // node is about to become aNewHover, so that it can start or cancel the
+  // hover delay for a moderate eagerness prefetch.
+  void NotifySpeculationRulesOfHover(nsIContent* aNewHover);
+
   [[nodiscard]] bool IsEventOutsideDragThreshold(
       const WidgetInputEvent& aEvent) const;
 

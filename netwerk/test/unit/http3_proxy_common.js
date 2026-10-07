@@ -501,8 +501,6 @@ async function test_http_connect_websocket() {
 
 async function test_inner_connection_fallback(ServerClass) {
   info("Running test_inner_connection_fallback");
-  let h3Port = Services.env.get("MOZHTTP3_PORT_NO_RESPONSE");
-  info(`h3Port = ${h3Port}`);
 
   // Register the connect-udp proxy.
   pps.registerFilter(proxyFilter, 10);
@@ -510,8 +508,11 @@ async function test_inner_connection_fallback(ServerClass) {
   let httpsProxy = new NodeHTTP2ProxyServer();
   await httpsProxy.startWithoutProxyFilter(proxyPort);
 
+  // The H3 attempt must get no response while the TCP fallback reaches server.
   let server = new ServerClass();
-  await server.start(h3Port);
+  await server.startWithNoResponseUdpPort();
+  let h3Port = server.port();
+  info(`h3Port = ${h3Port}`);
 
   // Register multiple endpoints
   await server.registerPathHandler("/concurrent1", (req, resp) => {

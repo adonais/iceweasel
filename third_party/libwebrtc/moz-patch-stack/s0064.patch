@@ -9,7 +9,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/5a52e1b0c808edfda
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/video/task_queue_frame_decode_scheduler.cc b/video/task_queue_frame_decode_scheduler.cc
-index 569e1c62fc..8473f9291e 100644
+index fd08d65dea..d970777429 100644
 --- a/video/task_queue_frame_decode_scheduler.cc
 +++ b/video/task_queue_frame_decode_scheduler.cc
 @@ -43,7 +43,8 @@ void TaskQueueFrameDecodeScheduler::ScheduleFrame(

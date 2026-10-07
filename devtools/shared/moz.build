@@ -76,3 +76,14 @@ DevToolsModules(
 
 with Files("**"):
     BUG_COMPONENT = ("DevTools", "General")
+
+LICENSED_UNDER += ["mit"]
+LICENSED_UNDER["mit"].paths = [
+    "natural-sort.js",
+    "node-properties/node-properties.js",
+]
+
+LICENSED_UNDER += ["sprintf.js"]
+LICENSED_UNDER["sprintf.js"].paths = [
+    "sprintfjs/sprintf.js",
+]

@@ -16,14 +16,13 @@
 #include "nsINode.h"
 
 class nsPresContext;
-class nsRange;
-
 struct nsRect;
 
 namespace mozilla {
 
 namespace dom {
 class Element;
+class Range;
 }  // namespace dom
 
 /*
@@ -99,7 +98,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
     }
 
     nsresult SetEndAfter(nsIContent* aEndContainer);
-    void SetStartAndEnd(const nsRange* aRange);
+    void SetStartAndEnd(const dom::Range* aRange);
     nsresult SetStartAndEnd(const RawRangeBoundary& aStart,
                             const RawRangeBoundary& aEnd);
 
@@ -206,7 +205,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
    *                            SelectionType::eNormal.
    * @return The first valid range of aNormalSelection.
    */
-  MOZ_CAN_RUN_SCRIPT Result<nsRange*, nsresult> InitRootContent(
+  MOZ_CAN_RUN_SCRIPT Result<dom::Range*, nsresult> InitRootContent(
       const Selection& aNormalSelection);
 
  public:
@@ -216,9 +215,9 @@ class MOZ_STACK_CLASS ContentEventHandler {
   // RawNodePosition stores a pair of node and offset in the node.
   // When mNode is an element and mOffset is 0, the start position means after
   // the open tag of mNode.
-  // This is useful to receive one or more sets of them instead of nsRange.
-  // This type is intended to be used for short-lived operations, and is thus
-  // marked MOZ_STACK_CLASS.
+  // This is useful to receive one or more sets of them instead of
+  // dom::Range. This type is intended to be used for short-lived
+  // operations, and is thus marked MOZ_STACK_CLASS.
   struct MOZ_STACK_CLASS RawNodePosition : public RawRangeBoundary {
     // Only when mNode is an element node and mOffset is 0, mAfterOpenTag is
     // referred.
@@ -362,11 +361,11 @@ class MOZ_STACK_CLASS ContentEventHandler {
 
   // Get the range between start offset and end offset
   MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<nsRange> GetRangeFromFlatTextOffset(
+  already_AddRefed<dom::Range> GetRangeFromFlatTextOffset(
       WidgetContentCommandEvent* aEvent, uint32_t aOffset, uint32_t aLength);
 
   // Get the contents of aRange as plain text.
-  nsresult GenerateFlatTextContent(const nsRange* aRange, nsString& aString);
+  nsresult GenerateFlatTextContent(const dom::Range* aRange, nsString& aString);
 
  protected:
   // Get the text length of aTextNode.
@@ -447,17 +446,20 @@ class MOZ_STACK_CLASS ContentEventHandler {
    * ConvertFlatTextOffsetToUnsafeDOMRange() instead of
    * ConvertFlatTextOffsetToDOMRangeBase<RangeType, TextNodeType>().
    */
+  // FIXME: Use ExpandToClusterBoundary for aExpandToClusterBoundaries.
   template <typename RangeType, typename TextNodeType>
   Result<DOMRangeAndAdjustedOffsetInFlattenedTextBase<RangeType, TextNodeType>,
          nsresult>
   ConvertFlatTextOffsetToDOMRangeBase(uint32_t aOffset, uint32_t aLength,
                                       bool aExpandToClusterBoundaries);
+  // FIXME: Use ExpandToClusterBoundary for aExpandToClusterBoundaries.
   MOZ_ALWAYS_INLINE Result<DOMRangeAndAdjustedOffsetInFlattenedText, nsresult>
   ConvertFlatTextOffsetToDOMRange(uint32_t aOffset, uint32_t aLength,
                                   bool aExpandToClusterBoundaries) {
     return ConvertFlatTextOffsetToDOMRangeBase<SimpleRange, RefPtr<dom::Text>>(
         aOffset, aLength, aExpandToClusterBoundaries);
   }
+  // FIXME: Use ExpandToClusterBoundary for aExpandToClusterBoundaries.
   MOZ_ALWAYS_INLINE
   Result<UnsafeDOMRangeAndAdjustedOffsetInFlattenedText, nsresult>
   ConvertFlatTextOffsetToUnsafeDOMRange(uint32_t aOffset, uint32_t aLength,

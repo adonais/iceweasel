@@ -457,6 +457,8 @@ class nsMenuPopupFrame final : public nsBlockFrame, public nsIWidgetListener {
 
   void WillDispatchPopupPositioned() { mPendingPositionedEvent = false; }
 
+  static void FlipAnchorForRTL(int8_t& aPopupAnchor, int8_t& aPopupAlignment);
+
  protected:
   void InitPositionFromAnchorAlign(const nsAString& aAnchor,
                                    const nsAString& aAlign);

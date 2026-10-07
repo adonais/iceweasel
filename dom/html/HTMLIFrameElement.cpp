@@ -10,8 +10,8 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/DOMIntersectionObserver.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/FeaturePolicy.h"
 #include "mozilla/dom/HTMLIFrameElementBinding.h"
+#include "mozilla/dom/PermissionsPolicy.h"
 #include "mozilla/dom/TrustedTypeUtils.h"
 #include "mozilla/dom/TrustedTypesConstants.h"
 #include "nsContentUtils.h"
@@ -28,13 +28,13 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(HTMLIFrameElement)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLIFrameElement,
                                                   nsGenericHTMLFrameElement)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFeaturePolicy)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPermissionsPolicy)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSandbox)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLIFrameElement,
                                                 nsGenericHTMLFrameElement)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mFeaturePolicy)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPermissionsPolicy)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSandbox)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -55,11 +55,11 @@ const DOMTokenListSupportedToken HTMLIFrameElement::sSupportedSandboxTokens[] =
 HTMLIFrameElement::HTMLIFrameElement(
     already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, FromParser aFromParser)
     : nsGenericHTMLFrameElement(std::move(aNodeInfo), aFromParser) {
-  // We always need a featurePolicy, even if not exposed.
-  mFeaturePolicy = new mozilla::dom::FeaturePolicy(this);
-  nsCOMPtr<nsIPrincipal> origin = GetFeaturePolicyDefaultOrigin();
+  // We always need a permissionsPolicy, even if not exposed.
+  mPermissionsPolicy = new mozilla::dom::PermissionsPolicy(this);
+  nsCOMPtr<nsIPrincipal> origin = GetPermissionsPolicyDefaultOrigin();
   MOZ_ASSERT(origin);
-  mFeaturePolicy->SetDefaultOrigin(origin);
+  mPermissionsPolicy->SetDefaultOrigin(origin);
 }
 
 HTMLIFrameElement::~HTMLIFrameElement() = default;
@@ -67,7 +67,7 @@ HTMLIFrameElement::~HTMLIFrameElement() = default;
 NS_IMPL_ELEMENT_CLONE(HTMLIFrameElement)
 
 void HTMLIFrameElement::BindToBrowsingContext(BrowsingContext*) {
-  RefreshFeaturePolicy(true /* parse the feature policy attribute */);
+  RefreshPermissionsPolicy(true /* parse the permissions policy attribute */);
   RefreshEmbedderReferrerPolicy(
       ReferrerPolicyFromAttr(GetParsedAttr(nsGkAtoms::referrerpolicy)));
 }
@@ -191,9 +191,11 @@ void HTMLIFrameElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
 
     if (aName == nsGkAtoms::allow || aName == nsGkAtoms::src ||
         aName == nsGkAtoms::srcdoc || aName == nsGkAtoms::sandbox) {
-      RefreshFeaturePolicy(true /* parse the feature policy attribute */);
+      RefreshPermissionsPolicy(
+          true /* parse the permissions policy attribute */);
     } else if (aName == nsGkAtoms::allowfullscreen) {
-      RefreshFeaturePolicy(false /* parse the feature policy attribute */);
+      RefreshPermissionsPolicy(
+          false /* parse the permissions policy attribute */);
     }
   }
 
@@ -242,11 +244,11 @@ JSObject* HTMLIFrameElement::WrapNode(JSContext* aCx,
   return HTMLIFrameElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-mozilla::dom::FeaturePolicy* HTMLIFrameElement::FeaturePolicy() const {
-  return mFeaturePolicy;
+mozilla::dom::PermissionsPolicy* HTMLIFrameElement::PermissionsPolicy() const {
+  return mPermissionsPolicy;
 }
 
-void HTMLIFrameElement::MaybeStoreCrossOriginFeaturePolicy() {
+void HTMLIFrameElement::MaybeStoreCrossOriginPermissionsPolicy() {
   if (!mFrameLoader) {
     return;
   }
@@ -264,13 +266,13 @@ void HTMLIFrameElement::MaybeStoreCrossOriginFeaturePolicy() {
   }
 
   if (ContentChild* cc = ContentChild::GetSingleton()) {
-    (void)cc->SendSetContainerFeaturePolicy(
-        browsingContext, Some(mFeaturePolicy->ToFeaturePolicyInfo()));
+    (void)cc->SendSetContainerPermissionsPolicy(
+        browsingContext, Some(mPermissionsPolicy->ToPermissionsPolicyInfo()));
   }
 }
 
 already_AddRefed<nsIPrincipal>
-HTMLIFrameElement::GetFeaturePolicyDefaultOrigin() const {
+HTMLIFrameElement::GetPermissionsPolicyDefaultOrigin() const {
   nsCOMPtr<nsIPrincipal> principal;
 
   if (HasAttr(nsGkAtoms::srcdoc)) {
@@ -291,31 +293,31 @@ HTMLIFrameElement::GetFeaturePolicyDefaultOrigin() const {
   return principal.forget();
 }
 
-void HTMLIFrameElement::RefreshFeaturePolicy(bool aParseAllowAttribute) {
+void HTMLIFrameElement::RefreshPermissionsPolicy(bool aParseAllowAttribute) {
   if (aParseAllowAttribute) {
-    mFeaturePolicy->ResetDeclaredPolicy();
+    mPermissionsPolicy->ResetDeclaredPolicy();
 
     // The origin can change if 'src' and 'srcdoc' attributes change.
-    nsCOMPtr<nsIPrincipal> origin = GetFeaturePolicyDefaultOrigin();
+    nsCOMPtr<nsIPrincipal> origin = GetPermissionsPolicyDefaultOrigin();
     MOZ_ASSERT(origin);
-    mFeaturePolicy->SetDefaultOrigin(origin);
+    mPermissionsPolicy->SetDefaultOrigin(origin);
 
     nsAutoString allow;
     GetAttr(nsGkAtoms::allow, allow);
 
     if (!allow.IsEmpty()) {
-      // Set or reset the FeaturePolicy directives.
-      mFeaturePolicy->SetDeclaredAttributePolicy(OwnerDoc(), allow,
-                                                 NodePrincipal(), origin);
+      // Set or reset the PermissionsPolicy directives.
+      mPermissionsPolicy->SetDeclaredAttributePolicy(OwnerDoc(), allow,
+                                                     NodePrincipal(), origin);
     }
   }
 
   if (AllowFullscreen()) {
-    mFeaturePolicy->MaybeSetAllowedPolicy(u"fullscreen"_ns);
+    mPermissionsPolicy->MaybeSetAllowedPolicy(u"fullscreen"_ns);
   }
 
-  mFeaturePolicy->InheritPolicy(OwnerDoc()->FeaturePolicy());
-  MaybeStoreCrossOriginFeaturePolicy();
+  mPermissionsPolicy->InheritPolicy(OwnerDoc()->PermissionsPolicy());
+  MaybeStoreCrossOriginPermissionsPolicy();
 }
 
 void HTMLIFrameElement::RefreshEmbedderReferrerPolicy(ReferrerPolicy aPolicy) {

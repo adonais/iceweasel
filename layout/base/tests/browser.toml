@@ -56,7 +56,7 @@ skip-if = [
 ]
 support-files = [
   "!/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js",
-  "!/browser/base/content/test/forms/head.js"
+  "!/browser/base/content/test/browser-forms/head.js"
 ]
 tags = "bleedover"
 

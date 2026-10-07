@@ -85,7 +85,7 @@ diff --git a/media/ffvpx/libavcodec/mediacodec_wrapper.h b/media/ffvpx/libavcode
 diff --git a/media/ffvpx/libavcodec/mediacodecenc.c b/media/ffvpx/libavcodec/mediacodecenc.c
 --- a/media/ffvpx/libavcodec/mediacodecenc.c
 +++ b/media/ffvpx/libavcodec/mediacodecenc.c
-@@ -785,6 +785,13 @@ static int mediacodec_send(AVCodecContext *avctx,
+@@ -785,6 +785,15 @@ static int mediacodec_send(AVCodecContext *avctx,
          copy_frame_to_buffer(avctx, frame, input_buf, input_size);
  
          pts = av_rescale_q(frame->pts, avctx->time_base, AV_TIME_BASE_Q);

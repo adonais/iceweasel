@@ -11,7 +11,7 @@ support-files = [
 ]
 scheme = "https"
 prefs = [
-  "dom.security.featurePolicy.webidl.enabled=true",
+  "dom.security.permissionsPolicy.webidl.enabled=true",
   "security.webauth.webauthn=true",
   "security.webauth.webauthn_enable_softtoken=true",
   "security.webauth.webauthn_enable_usbtoken=false",
@@ -66,7 +66,7 @@ run-if = [
 
 ["test_webauthn_crossorigin_featurepolicy.html"]
 fail-if = [
-  "xorigin", # Cross-origin use of WebAuthn requires a feature policy.
+  "xorigin", # Cross-origin use of WebAuthn requires a permissions policy.
 ]
 
 ["test_webauthn_ctap2_omitted_credential_id.html"]
@@ -159,5 +159,5 @@ run-if = [
 
 ["test_webauthn_webdriver_virtual_authenticator.html"]
 fail-if = [
-  "xorigin", # Cross-origin use of WebAuthn requires a feature policy.
+  "xorigin", # Cross-origin use of WebAuthn requires a permissions policy.
 ]

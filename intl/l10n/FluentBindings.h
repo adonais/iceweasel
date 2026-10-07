@@ -5,6 +5,9 @@
 #ifndef mozilla_intl_l10n_FluentBindings_h
 #define mozilla_intl_l10n_FluentBindings_h
 
+#include "nsTArray.h"
+#include "nsTString.h"
+
 #include "mozilla/intl/fluent_ffi_generated.h"
 
 #include "mozilla/RefPtr.h"

@@ -1740,7 +1740,8 @@ nsresult WebSocketChannel::ProcessInput(uint8_t* buffer, uint32_t count) {
             finBit, rsvBit1, rsvBit2, rsvBit3, opcode, maskBit, mask, utf8Data);
 
         if (frame) {
-          mService->FrameReceived(mSerial, mInnerWindowID, frame.forget());
+          mService->FrameReceived(mSerial, mInnerWindowID, mHttpChannelId,
+                                  frame.forget());
         }
 
         if (nsCOMPtr<nsIEventTarget> target = GetTargetThread()) {
@@ -1803,7 +1804,8 @@ nsresult WebSocketChannel::ProcessInput(uint8_t* buffer, uint32_t count) {
         if (frame) {
           // We send the frame immediately becuase we want to have it dispatched
           // before the CallOnServerClose.
-          mService->FrameReceived(mSerial, mInnerWindowID, frame.forget());
+          mService->FrameReceived(mSerial, mInnerWindowID, mHttpChannelId,
+                                  frame.forget());
           frame = nullptr;
         }
 
@@ -1847,7 +1849,8 @@ nsresult WebSocketChannel::ProcessInput(uint8_t* buffer, uint32_t count) {
       }
 
       if (frame) {
-        mService->FrameReceived(mSerial, mInnerWindowID, frame.forget());
+        mService->FrameReceived(mSerial, mInnerWindowID, mHttpChannelId,
+                                frame.forget());
       }
     } else if (opcode == nsIWebSocketFrame::OPCODE_BINARY) {
       if (RefPtr<BaseWebSocketChannel::ListenerAndContextContainer> listener =
@@ -1881,7 +1884,8 @@ nsresult WebSocketChannel::ProcessInput(uint8_t* buffer, uint32_t count) {
             mService->CreateFrameIfNeeded(finBit, rsvBit1, rsvBit2, rsvBit3,
                                           opcode, maskBit, mask, binaryData);
         if (frame) {
-          mService->FrameReceived(mSerial, mInnerWindowID, frame.forget());
+          mService->FrameReceived(mSerial, mInnerWindowID, mHttpChannelId,
+                                  frame.forget());
         }
 
         if (nsCOMPtr<nsIEventTarget> target = GetTargetThread()) {
@@ -2242,7 +2246,8 @@ void WebSocketChannel::PrimeNewOutgoingMessage() {
       mCurrentOut->OrigLength());
 
   if (frame) {
-    mService->FrameSent(mSerial, mInnerWindowID, frame.forget());
+    mService->FrameSent(mSerial, mInnerWindowID, mHttpChannelId,
+                        frame.forget());
   }
 
   if (mask) {

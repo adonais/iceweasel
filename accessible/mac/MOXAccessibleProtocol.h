@@ -173,6 +173,9 @@
 // AXVisited
 - (NSNumber* _Nullable)moxVisited;
 
+// AXGrabbed
+- (NSNumber* _Nullable)moxGrabbed;
+
 // AXExpanded
 - (NSNumber* _Nullable)moxExpanded;
 

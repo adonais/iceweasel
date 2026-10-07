@@ -14,7 +14,7 @@ ChromeUtils.defineLazyGetter(
 );
 ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
   console.createInstance({
-    prefix: "GuardianTypes",
+    prefix: "IPP_GuardianTypes",
     maxLogLevel: Services.prefs.getBoolPref("browser.ipProtection.log", false)
       ? "Debug"
       : "Warn",

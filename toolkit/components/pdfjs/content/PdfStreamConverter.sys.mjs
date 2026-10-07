@@ -44,6 +44,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
   NetworkManager: "resource://pdf.js/PdfJsNetwork.sys.mjs",
   PdfJs: "resource://pdf.js/PdfJs.sys.mjs",
+  PdfJsFeaturesNotification:
+    "resource://pdf.js/PdfJsFeaturesNotification.sys.mjs",
   PdfJsTelemetryContent: "resource://pdf.js/PdfJsTelemetry.sys.mjs",
   PdfSandbox: "resource://pdf.js/PdfSandbox.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
@@ -256,6 +258,13 @@ class PrefObserver {
         type: "bool",
         dispatchToParent: true,
       });
+      // Reaching the impression limit must not close open bars.
+      this.#prefs.set(lazy.PdfJsFeaturesNotification.IMPRESSION_COUNT_PREF, {
+        name: "featuresNotificationDismissed",
+        getValue: () => lazy.PdfJsFeaturesNotification.isConsumed(),
+        dispatchToContent: true,
+        shouldDispatchToContent: value => value,
+      });
     }
     for (const pref of this.#prefs.keys()) {
       Services.prefs.addObserver(pref, this, /* aHoldWeak = */ true);
@@ -271,24 +280,37 @@ class PrefObserver {
     if (!actor) {
       return;
     }
-    const { name, type, dispatchToContent, dispatchToParent } =
-      this.#prefs.get(aPrefName) || {};
+    const {
+      name,
+      type,
+      getValue,
+      dispatchToContent,
+      shouldDispatchToContent,
+      dispatchToParent,
+    } = this.#prefs.get(aPrefName) || {};
     if (!name) {
       return;
     }
     let value;
-    switch (type) {
-      case "bool": {
-        value = Services.prefs.getBoolPref(aPrefName);
-        break;
-      }
-      case "int": {
-        value = Services.prefs.getIntPref(aPrefName);
-        break;
+    if (getValue) {
+      value = getValue();
+    } else {
+      switch (type) {
+        case "bool": {
+          value = Services.prefs.getBoolPref(aPrefName);
+          break;
+        }
+        case "int": {
+          value = Services.prefs.getIntPref(aPrefName);
+          break;
+        }
       }
     }
     const data = { name, value };
-    if (dispatchToContent) {
+    if (
+      dispatchToContent &&
+      (!shouldDispatchToContent || shouldDispatchToContent(value))
+    ) {
       actor.dispatchEvent("updatedPreference", data);
     }
     if (dispatchToParent) {
@@ -546,6 +568,7 @@ class ChromeActions {
     // Avoid inline-image baseline space.
     img.style.display = "block";
     img.src = svgUrl;
+    return img;
   }
 
   #makeElementForText({ text, color, fontFamily, fontSize }, parent, doc) {
@@ -617,6 +640,7 @@ class ChromeActions {
       );
       iframeDoc.body.style.margin = "0";
 
+      const images = [];
       for (const pdfData of entries) {
         const { width: fieldWidth, height: fieldHeight } = pdfData;
         const pageDiv = iframeDoc.createElement("div");
@@ -644,10 +668,13 @@ class ChromeActions {
         if (typeof pdfData.text === "string" && pdfData.text !== "") {
           this.#makeElementForText(pdfData, div, iframeDoc);
         } else {
-          this.#makeElementForSVG(pdfData, div, iframeDoc);
+          images.push(this.#makeElementForSVG(pdfData, div, iframeDoc));
         }
       }
       iframeDoc.body.append(fragment);
+
+      // Prevent printing before SVG images finish decoding.
+      await Promise.all(images.map(img => img.decode()));
 
       const buffer = await actor.sendQuery("PDFJS:Parent:printToPDF", {
         id: iframeWindow.browsingContext.id,
@@ -798,6 +825,11 @@ class ChromeActions {
     actor?.sendAsyncMessage("PDFJS:Parent:reportText", data);
   }
 
+  openAboutPdfFeatures() {
+    const actor = getActor(this.domWindow);
+    actor?.sendAsyncMessage("PDFJS:Parent:openAboutPdfFeatures");
+  }
+
   updateFindControlState(data) {
     if (!this.supportsIntegratedFind()) {
       return;
@@ -892,10 +924,27 @@ class ChromeActions {
       }
     }
 
+    if ("featuresNotificationDismissed" in currentPrefs) {
+      currentPrefs.featuresNotificationDismissed =
+        !(await this.#claimFeaturesNotification());
+    }
+
     sendResponse({
       browserPrefs,
       prefs: currentPrefs,
     });
+  }
+
+  // Claim an impression in the parent before exposing the notification.
+  async #claimFeaturesNotification() {
+    if (this.isMobile() || this.domWindow !== this.domWindow.top) {
+      return false;
+    }
+    return (
+      (await getActor(this.domWindow)?.sendQuery(
+        "PDFJS:Parent:claimFeaturesNotification"
+      )) === true
+    );
   }
 
   async setPreferences(data, sendResponse) {

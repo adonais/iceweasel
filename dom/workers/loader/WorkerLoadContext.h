@@ -14,6 +14,7 @@
 #include "nsIChannel.h"
 #include "nsIInputStream.h"
 #include "nsIRequest.h"
+#include "nsThreadUtils.h"
 
 class nsIReferrerInfo;
 class nsIURI;
@@ -176,14 +177,28 @@ class ThreadSafeRequestHandle final {
   ThreadSafeRequestHandle(JS::loader::ScriptLoadRequest* aRequest,
                           nsISerialEventTarget* aSyncTarget);
 
-  JS::loader::ScriptLoadRequest* GetRequest() const { return mRequest; }
+  JS::loader::ScriptLoadRequest* GetRequest() const {
+    AssertRequestNotHandedOff();
+    return mRequest;
+  }
 
   WorkerLoadContext* GetContext();
 
-  bool IsEmpty() { return !mRequest; }
+  bool IsEmpty() const {
+    AssertRequestNotHandedOff();
+    return !mRequest;
+  }
 
   // Sets the owning runnable. Called on the main thread before loading begins.
   void SetRunnable(workerinternals::loader::ScriptLoaderRunnable* aRunnable);
+
+  // Whether this handle has been handed off to a ScriptExecutorRunnable, after
+  // which the request belongs to the worker thread. Main thread only; this is
+  // the only race-free way for main-thread code to test the handoff, see the
+  // comment on mRequest.
+  bool ExecutionScheduled() const;
+
+  void SetExecutionScheduled();
 
   // Runnable controls
   nsresult OnStreamComplete(nsresult aStatus);
@@ -204,10 +219,14 @@ class ThreadSafeRequestHandle final {
 
   already_AddRefed<workerinternals::loader::CacheCreator> GetCacheCreator();
 
-  bool mExecutionScheduled = false;
-
  private:
   ~ThreadSafeRequestHandle();
+
+  // Main-thread code must stop looking at the request, its WorkerLoadContext
+  // and anything else it owns once the handle has been handed off.
+  void AssertRequestNotHandedOff() const {
+    MOZ_ASSERT_IF(NS_IsMainThread(), !mExecutionScheduled);
+  }
 
   // Protects mRunnable, which is read on the main thread by the accessors above
   // but cleared on the worker thread by ReleaseRequest(). Without this lock the
@@ -217,6 +236,17 @@ class ThreadSafeRequestHandle final {
   RefPtr<workerinternals::loader::ScriptLoaderRunnable> mRunnable
       MOZ_GUARDED_BY(mMutex);
 
+  // Only ever set on the main thread, and set before the handle is handed to
+  // the ScriptExecutorRunnable that releases the request, which is what makes
+  // it safe to read on the main thread without synchronization.
+  bool mExecutionScheduled = false;
+
+  // The request is released on the worker thread by ReleaseRequest(), which
+  // only runs once the handle has been handed off to a ScriptExecutorRunnable,
+  // and the worker may drop the last reference to it immediately afterwards.
+  // Main-thread code therefore cannot test mRequest to decide whether the
+  // request is still around: that read races with the worker thread and can
+  // hand back an already freed request. Gate on ExecutionScheduled() instead.
   RefPtr<JS::loader::ScriptLoadRequest> mRequest;
   nsCOMPtr<nsISerialEventTarget> mOwningEventTarget;
 };

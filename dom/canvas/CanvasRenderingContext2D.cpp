@@ -693,6 +693,14 @@ class AdjustedTarget {
  public:
   using ContextState = CanvasRenderingContext2D::ContextState;
 
+  // When optimization is allowed, bounds are only needed if there is a filter.
+  // Otherwise, there if there is an optimized shadow, it does not needs bounds.
+  static inline bool NeedToCalculateBounds(CanvasRenderingContext2D* aCtx,
+                                           bool aAllowOptimization = false) {
+    return aAllowOptimization ? aCtx->NeedToApplyFilter()
+                              : aCtx->NeedToCalculateBounds();
+  }
+
   explicit AdjustedTarget(CanvasRenderingContext2D* aCtx,
                           const gfx::Rect* aBounds = nullptr,
                           bool aAllowOptimization = false)
@@ -1198,14 +1206,14 @@ static CapStyle CanvasToGfx(CanvasLineCap aCap) {
   }
 }
 
-static uint8_t CanvasToGfx(CanvasFontKerning aKerning) {
+static StyleFontKerning CanvasToGfx(CanvasFontKerning aKerning) {
   switch (aKerning) {
     case CanvasFontKerning::Auto:
-      return NS_FONT_KERNING_AUTO;
+      return StyleFontKerning::Auto;
     case CanvasFontKerning::Normal:
-      return NS_FONT_KERNING_NORMAL;
+      return StyleFontKerning::Normal;
     case CanvasFontKerning::None:
-      return NS_FONT_KERNING_NONE;
+      return StyleFontKerning::None;
     default:
       MOZ_CRASH("unknown kerning!");
   }
@@ -1877,6 +1885,7 @@ bool CanvasRenderingContext2D::EnsureTarget(ErrorResult& aError,
 void CanvasRenderingContext2D::SetInitialState() {
   // Set up the initial canvas defaults
   mPathBuilder = nullptr;
+  mRecycledPathBuilder = nullptr;
   mPath = nullptr;
   mPathPruned = false;
   mPathTransform = Matrix();
@@ -3296,9 +3305,8 @@ void CanvasRenderingContext2D::UpdateFilter(bool aFlushIfNeeded) {
   auto lineHeight = currentFontStyle
                         ? currentFontStyle->StyleFont()->mLineHeight
                         : StyleLineHeight::Normal();
-  auto* language = currentFontStyle
-                       ? currentFontStyle->StyleFont()->mLanguage.get()
-                       : nullptr;
+  auto* language =
+      currentFontStyle ? currentFontStyle->StyleFont()->GetLangAtom() : nullptr;
   bool explicitLanguage =
       state.fontComputedStyle &&
       state.fontComputedStyle->StyleFont()->mExplicitLanguage;
@@ -3551,8 +3559,16 @@ void CanvasRenderingContext2D::StrokeRect(double aX, double aY, double aW,
 //
 
 void CanvasRenderingContext2D::BeginPath() {
-  mPath = nullptr;
-  mPathBuilder = nullptr;
+  if (mPathBuilder) {
+    mRecycledPathBuilder = std::move(mPathBuilder);
+  } else {
+    mPathBuilder = nullptr;
+  }
+  if (mPath && mPath->hasOneRef() && mRecycledPathBuilder) {
+    mRecycledPathBuilder->RecyclePath(mPath.forget());
+  } else {
+    mPath = nullptr;
+  }
   mPathPruned = false;
 }
 
@@ -3562,7 +3578,7 @@ void CanvasRenderingContext2D::FillImpl(const gfx::Path& aPath) {
     return;
   }
 
-  const bool needBounds = NeedToCalculateBounds();
+  const bool needBounds = AdjustedTarget::NeedToCalculateBounds(this, true);
   gfx::Rect bounds;
   if (needBounds) {
     bounds = aPath.GetBounds(mTarget->GetTransform());
@@ -3613,7 +3629,7 @@ void CanvasRenderingContext2D::StrokeImpl(const gfx::Path& aPath) {
     return;
   }
 
-  const bool needBounds = NeedToCalculateBounds();
+  const bool needBounds = AdjustedTarget::NeedToCalculateBounds(this, true);
   if (!IsTargetValid()) {
     return;
   }
@@ -3647,34 +3663,6 @@ void CanvasRenderingContext2D::StrokeImpl(const gfx::Path& aPath) {
 
 void CanvasRenderingContext2D::Stroke() {
   mFeatureUsage |= CanvasFeatureUsage::Stroke;
-
-  if (mPathBuilder && !mPath && !mPathPruned && !mPathTransformDirty &&
-      IsTargetValid()) {
-    Maybe<Path::Circle> circle = mPathBuilder->AsCircle();
-    Maybe<Path::Line> line = circle ? Nothing() : mPathBuilder->AsLine();
-    if ((circle && circle->closed) || line) {
-      if (!NeedToCalculateBounds()) {
-        const ContextState& state = CurrentState();
-        StrokeOptions strokeOptions(
-            state.lineWidth, CanvasToGfx(state.lineJoin),
-            CanvasToGfx(state.lineCap), state.miterLimit, state.dash.Length(),
-            state.dash.Elements(), state.dashOffset);
-        if (circle) {
-          mTarget->StrokeCircle(
-              circle->origin, circle->radius,
-              CanvasGeneralPattern().ForStyle(this, Style::STROKE, mTarget),
-              strokeOptions, DrawOptions(state.globalAlpha, state.op));
-        } else {
-          mTarget->StrokeLine(
-              line->origin, line->destination,
-              CanvasGeneralPattern().ForStyle(this, Style::STROKE, mTarget),
-              strokeOptions, DrawOptions(state.globalAlpha, state.op));
-        }
-        Redraw();
-        return;
-      }
-    }
-  }
 
   EnsureTargetAndUserSpacePath();
   if (!IsTargetValid()) {
@@ -4165,7 +4153,8 @@ bool CanvasRenderingContext2D::EnsureWritablePath() {
       mPathBuilder = mTarget->CreatePathBuilder(fillRule);
     }
   } else {
-    mPathBuilder = Path::ToBuilder(mPath.forget(), fillRule);
+    mPathBuilder = Path::ToBuilder(mPath.forget(), fillRule,
+                                   mRecycledPathBuilder.forget());
   }
   return true;
 }
@@ -4173,10 +4162,8 @@ bool CanvasRenderingContext2D::EnsureWritablePath() {
 already_AddRefed<PathBuilder>
 CanvasRenderingContext2D::CreateOrRecyclePathBuilder(FillRule aFillRule) {
   if (mRecycledPathBuilder) {
-    if (mRecycledPathBuilder->Reset(aFillRule)) {
-      return mRecycledPathBuilder.forget();
-    }
-    mRecycledPathBuilder = nullptr;
+    mRecycledPathBuilder->Reset(aFillRule);
+    return mRecycledPathBuilder.forget();
   }
   return Factory::CreatePathBuilder(mPathType, aFillRule);
 }
@@ -4211,12 +4198,18 @@ void CanvasRenderingContext2D::EnsureUserSpacePath(
   if (mPathBuilder) {
     EnsureCapped();
     RefPtr<PathBuilder> builder = mPathBuilder.forget();
+    if (builder->GetFillRule() != fillRule) {
+      builder->SetFillRule(fillRule);
+    }
     mPath = builder->Finish();
     mRecycledPathBuilder = std::move(builder);
   }
 
   if (mPath && mPath->GetFillRule() != fillRule) {
-    Path::SetFillRule(mPath, fillRule);
+    RefPtr<PathBuilder> builder = Path::ToBuilder(
+        mPath.forget(), fillRule, mRecycledPathBuilder.forget());
+    mPath = builder->Finish();
+    mRecycledPathBuilder = std::move(builder);
   }
 
   NS_ASSERTION(mPath, "mPath should exist");
@@ -4224,9 +4217,10 @@ void CanvasRenderingContext2D::EnsureUserSpacePath(
 
 void CanvasRenderingContext2D::TransformCurrentPath(const Matrix& aTransform) {
   if (mPathBuilder) {
-    mPathBuilder = Path::ToBuilder(mPathBuilder->Finish(), aTransform);
+    mPathBuilder->Transform(aTransform);
   } else if (mPath) {
-    mPathBuilder = Path::ToBuilder(mPath.forget(), aTransform);
+    mPathBuilder = Path::ToBuilder(mPath.forget(), aTransform,
+                                   mRecycledPathBuilder.forget());
   }
 }
 
@@ -4372,22 +4366,22 @@ bool CanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
       // Leave whatever the shorthand set.
       break;
     case CanvasFontVariantCaps::Small_caps:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_SMALL_CAPS;
+      resizedFont.variantCaps = StyleFontVariantCaps::SmallCaps;
       break;
     case CanvasFontVariantCaps::All_small_caps:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_ALL_SMALL_CAPS;
+      resizedFont.variantCaps = StyleFontVariantCaps::AllSmallCaps;
       break;
     case CanvasFontVariantCaps::Petite_caps:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_PETITE_CAPS;
+      resizedFont.variantCaps = StyleFontVariantCaps::PetiteCaps;
       break;
     case CanvasFontVariantCaps::All_petite_caps:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_ALL_PETITE_CAPS;
+      resizedFont.variantCaps = StyleFontVariantCaps::AllPetiteCaps;
       break;
     case CanvasFontVariantCaps::Unicase:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_UNICASE;
+      resizedFont.variantCaps = StyleFontVariantCaps::Unicase;
       break;
     case CanvasFontVariantCaps::Titling_caps:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_TITLING_CAPS;
+      resizedFont.variantCaps = StyleFontVariantCaps::TitlingCaps;
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("unknown caps value");
@@ -4449,7 +4443,7 @@ static void SerializeFontForCanvas(const StyleFontFamilyList& aList,
     aUsedFont.Append(" ");
   }
 
-  if (aStyle.variantCaps == NS_FONT_VARIANT_CAPS_SMALL_CAPS) {
+  if (aStyle.variantCaps == StyleFontVariantCaps::SmallCaps) {
     aUsedFont.Append("small-caps ");
   }
 
@@ -4501,6 +4495,18 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
     fontFaceSetImpl->FlushUserFontSet();
   }
 
+  auto& state = CurrentState();
+
+  // The fontGroup may be stale, which we can check by comparing the
+  // visibility provider set on its creation against the current
+  // visibility provider. Use this opportunity to destroy the old
+  // fontGroup so we can create a new one later and store it in the
+  // cache.
+  if (state.fontGroup &&
+      state.fontGroup->GetFontVisibilityProvider() != mOffscreenCanvas) {
+    state.fontGroup = nullptr;
+  }
+
   // Try to short-circuit the case where the exact same font is being re-
   // specified, and no other relevant properties have changed.
   if (FontIsUnchanged(aFont, fontFaceSetImpl)) {
@@ -4512,7 +4518,6 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
     mFontGroupCache = MakeUnique<FontGroupCache>();
   }
 
-  auto& state = CurrentState();
   FontGroupCacheKey key(
       aFont, state.resolvedFontLang, state.fontWidth, state.fontVariantCaps,
       state.fontKerning,
@@ -4588,26 +4593,26 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
   // the available values); see https://github.com/whatwg/html/issues/8103.
   switch (state.fontVariantCaps) {
     case CanvasFontVariantCaps::Normal:
-      fontStyle.variantCaps = smallCaps ? NS_FONT_VARIANT_CAPS_SMALL_CAPS
-                                        : NS_FONT_VARIANT_CAPS_NORMAL;
+      fontStyle.variantCaps = smallCaps ? StyleFontVariantCaps::SmallCaps
+                                        : StyleFontVariantCaps::Normal;
       break;
     case CanvasFontVariantCaps::Small_caps:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_SMALL_CAPS;
+      fontStyle.variantCaps = StyleFontVariantCaps::SmallCaps;
       break;
     case CanvasFontVariantCaps::All_small_caps:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_ALL_SMALL_CAPS;
+      fontStyle.variantCaps = StyleFontVariantCaps::AllSmallCaps;
       break;
     case CanvasFontVariantCaps::Petite_caps:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_PETITE_CAPS;
+      fontStyle.variantCaps = StyleFontVariantCaps::PetiteCaps;
       break;
     case CanvasFontVariantCaps::All_petite_caps:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_ALL_PETITE_CAPS;
+      fontStyle.variantCaps = StyleFontVariantCaps::AllPetiteCaps;
       break;
     case CanvasFontVariantCaps::Unicase:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_UNICASE;
+      fontStyle.variantCaps = StyleFontVariantCaps::Unicase;
       break;
     case CanvasFontVariantCaps::Titling_caps:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_TITLING_CAPS;
+      fontStyle.variantCaps = StyleFontVariantCaps::TitlingCaps;
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("unknown caps value");
@@ -4615,17 +4620,17 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
   }
   // If variantCaps is set, we need to disable a gfxFont fast-path.
   fontStyle.noFallbackVariantFeatures =
-      (fontStyle.variantCaps == NS_FONT_VARIANT_CAPS_NORMAL);
+      (fontStyle.variantCaps == StyleFontVariantCaps::Normal);
 
   // Set the kerning feature, if required by the fontKerning attribute.
   gfxFontFeature setting{TRUETYPE_TAG('k', 'e', 'r', 'n'), 0};
   switch (state.fontKerning) {
     case CanvasFontKerning::None:
-      setting.mValue = 0;
+      setting.value = 0;
       fontStyle.featureSettings.AppendElement(setting);
       break;
     case CanvasFontKerning::Normal:
-      setting.mValue = 1;
+      setting.value = 1;
       fontStyle.featureSettings.AppendElement(setting);
       break;
     default:
@@ -5573,8 +5578,26 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
   if (currentFont.IsEmpty()) {
     currentFont = kDefaultFontStyle;
   }
-  if (!SetFontInternal(currentFont, err) || err.Failed()) {
-    err.SuppressException();
+
+  bool fontWasSet = SetFontInternal(currentFont, err) && !err.Failed();
+  err.SuppressException();
+  // SetFontInternal may flush and run script, which could change or
+  // destroy the current PresShell.
+  if (GetPresShell() != presShell || (presShell && presShell->IsDestroying())) {
+    // We can't rely on the cached fontGroup (which uses the old PresShell).
+    // Mark fontWasSet false so we create the fontGroup, and clear out the
+    // possibly stale pointers we use to create a new fontGroup.
+    fontWasSet = false;
+    presShell = GetPresShell();
+    presContext = presShell ? presShell->GetPresContext() : nullptr;
+    if (presContext) {
+      visProvider = presContext;
+    } else {
+      visProvider = mOffscreenCanvas;
+    }
+  }
+
+  if (!fontWasSet) {
     // XXX Should we get a default lang from the prescontext or something?
     nsAtom* language = nsGkAtoms::x_western;
     bool explicitLanguage = false;
@@ -6856,12 +6879,6 @@ void CanvasRenderingContext2D::EnsureErrorTarget() {
   MOZ_ASSERT(errorTarget, "Failed to allocate the error target!");
 
   sErrorTarget.set(errorTarget.forget().take());
-}
-
-void CanvasRenderingContext2D::FillRuleChanged() {
-  if (mPath) {
-    mPathBuilder = Path::ToBuilder(mPath.forget(), CurrentState().fillRule);
-  }
 }
 
 void CanvasRenderingContext2D::PutImageData(ImageData& aImageData, int32_t aDx,

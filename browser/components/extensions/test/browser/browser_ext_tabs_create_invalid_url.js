@@ -4,50 +4,37 @@ const FILE_URL = Services.io.newFileURI(
   new FileUtils.File(getTestFilePath("file_dummy.html"))
 ).spec;
 
-async function testTabsCreateInvalidURL(tabsCreateURL) {
-  let extension = ExtensionTestUtils.loadExtension({
+function loadTestExtension() {
+  return ExtensionTestUtils.loadExtension({
     manifest: {
       permissions: ["tabs"],
     },
 
     background: function () {
-      browser.test.sendMessage("ready");
-      browser.test.onMessage.addListener((msg, tabsCreateURL) => {
-        browser.tabs.create({ url: tabsCreateURL }, tab => {
-          browser.test.assertEq(
-            undefined,
-            tab,
-            "on error tab should be undefined"
-          );
-          browser.test.assertTrue(
-            /Illegal URL/.test(browser.runtime.lastError.message),
-            "runtime.lastError should report the expected error message"
-          );
-
+      async function testInvalidUrl(tabsCreateURL) {
+        let promise = browser.tabs.create({ url: tabsCreateURL });
+        promise.then(tab => {
           // Remove the opened tab is any.
-          if (tab) {
-            browser.tabs.remove(tab.id);
-          }
-          browser.test.sendMessage("done");
+          browser.tabs.remove(tab);
         });
+        await browser.test.assertRejects(
+          promise,
+          /Illegal URL/,
+          `Should get rejection for tabs.create with: ${tabsCreateURL}`
+        );
+        browser.test.sendMessage("created");
+      }
+      browser.test.onMessage.addListener((msg, tabsCreateURL) => {
+        browser.test.assertEq(msg, "create", `tabs.create: ${tabsCreateURL}`);
+        testInvalidUrl(tabsCreateURL);
       });
     },
   });
-
-  await extension.startup();
-
-  await extension.awaitMessage("ready");
-
-  info(`test tab.create on invalid URL "${tabsCreateURL}"`);
-
-  extension.sendMessage("start", tabsCreateURL);
-  await extension.awaitMessage("done");
-
-  await extension.unload();
 }
 
-add_task(async function () {
-  info("Start testing tabs.create on invalid URLs");
+add_task(async function test_invalid_url_in_tabs_create() {
+  let extension = loadTestExtension();
+  await extension.startup();
 
   let dataURLPage = `data:text/html,
     <!DOCTYPE html>
@@ -67,11 +54,16 @@ add_task(async function () {
     },
     { tabsCreateURL: dataURLPage },
     { tabsCreateURL: FILE_URL },
+    { tabsCreateURL: `view-source:${FILE_URL}` },
+    // FILE_URL is not a real jar archive, but for validation we only look at
+    // the URL structure, so it doesn't matter.
+    { tabsCreateURL: `view-source:jar:${FILE_URL}!/inside.txt` },
   ];
 
   for (let { tabsCreateURL } of testCases) {
-    await testTabsCreateInvalidURL(tabsCreateURL);
+    extension.sendMessage("create", tabsCreateURL);
+    await extension.awaitMessage("created");
   }
 
-  info("done");
+  await extension.unload();
 });

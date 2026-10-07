@@ -8,14 +8,14 @@
 
 // The ArchiveUtils module is designed to be imported in both worker and
 // main thread contexts.
-import { ArchiveUtils } from "resource:///modules/backup/ArchiveUtils.sys.mjs";
+import { ArchiveUtils } from "moz-src:///browser/components/backup/ArchiveUtils.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(
   lazy,
   {
-    BackupError: "resource:///modules/backup/BackupError.mjs",
+    BackupError: "moz-src:///browser/components/backup/BackupError.mjs",
     ERRORS: "chrome://browser/content/backup/backup-constants.mjs",
   },
   { global: "contextual" }

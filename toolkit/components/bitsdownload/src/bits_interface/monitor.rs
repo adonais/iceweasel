@@ -88,7 +88,10 @@ fn status_to_request_result(
             }
             _ => (Some(ErrorType::BitsStateUnexpected), None),
         },
-        Ok(Err(_)) => (Some(ErrorType::FailedToGetJobStatus), None),
+        Ok(Err(message)) => (Some(ErrorType::FailedToGetJobStatus), Some(message.hr)),
+        Err(PipeError::ConnectBcm(error)) => {
+            (Some(ErrorType::FailedToConnectToBcm), Some(error.code()))
+        }
         Err(pipe_error) => (Some(pipe_error.into()), None),
     }
 }

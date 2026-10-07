@@ -38,13 +38,15 @@ This is how OSX formats map to libyuv
 
 The following is extracted from video_common.h as a complete list of formats supported by libyuv.
     enum FourCC {
-      // 10 Primary YUV formats: 5 planar, 2 biplanar, 2 packed.
+      // 12 Primary YUV formats: 5 planar, 4 biplanar, 2 packed.
       FOURCC_I420 = FOURCC('I', '4', '2', '0'),
       FOURCC_I422 = FOURCC('I', '4', '2', '2'),
       FOURCC_I444 = FOURCC('I', '4', '4', '4'),
       FOURCC_I400 = FOURCC('I', '4', '0', '0'),
       FOURCC_NV21 = FOURCC('N', 'V', '2', '1'),
       FOURCC_NV12 = FOURCC('N', 'V', '1', '2'),
+      FOURCC_NV16 = FOURCC('N', 'V', '1', '6'),
+      FOURCC_NV24 = FOURCC('N', 'V', '2', '4'),
       FOURCC_YUY2 = FOURCC('Y', 'U', 'Y', '2'),
       FOURCC_UYVY = FOURCC('U', 'Y', 'V', 'Y'),
       FOURCC_H010 = FOURCC('H', '0', '1', '0'),  // unofficial fourcc. 10 bit lsb
@@ -144,13 +146,13 @@ A fourcc provided by capturer, can be thought of string, e.g. "ARGB".
 
 On little endian machines, as an int, this would have 'A' in the lowest byte.  The FOURCC macro reverses the order:
 
-    #define FOURCC(a, b, c, d) (((uint32)(a)) | ((uint32)(b) << 8) | ((uint32)(c) << 16) | ((uint32)(d) << 24))
+    #define FOURCC(a, b, c, d) (((uint32_t)(a)) | ((uint32_t)(b) << 8) | ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
 
-So the "ARGB" string, read as an uint32, is
+So the "ARGB" string, read as an uint32_t, is
 
     FOURCC_ARGB = FOURCC('A', 'R', 'G', 'B')
 
-If you were to read ARGB pixels as uint32's, the alpha would be in the high byte, and the blue in the lowest byte.  In memory, these are stored little endian, so 'B' is first, then 'G', 'R' and 'A' last.
+If you were to read ARGB pixels as uint32_t's, the alpha would be in the high byte, and the blue in the lowest byte.  In memory, these are stored little endian, so 'B' is first, then 'G', 'R' and 'A' last.
 
 When calling conversion functions, the names match the FOURCC, so in this case it would be I420ToARGB().
 

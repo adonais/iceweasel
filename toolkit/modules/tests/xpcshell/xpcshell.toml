@@ -151,6 +151,12 @@ tags = "os_integration"
 
 ["test_UrlUtils.js"]
 
+["test_WindowsLaunchOnLogin_missingExecutables.js"]
+run-if = [
+  "os == 'win'", # Test of a Windows-specific feature
+]
+tags = "os_integration"
+
 ["test_firstStartup.js"]
 
 ["test_firstStartup_categoryTasks.js"]

@@ -13,22 +13,20 @@ const CHROME_ONLY_PROPERTIES = [
   "-moz-default-appearance",
   "-moz-user-focus",
   "-moz-window-dragging",
+  "-moz-control-character-visibility",
+  "-moz-context-properties",
 ];
 
 const UA_ONLY_PROPERTIES = [
   "-x-span",
   "-x-lang",
   "-x-text-scale",
-  "-moz-control-character-visibility",
   "-moz-top-layer",
   "-moz-script-level",
   "-moz-math-display",
   "-moz-math-variant",
   "-moz-inert",
   "-moz-min-font-size-ratio",
-  // TODO: This should ideally be in CHROME_ONLY_PROPERTIES, but due to how
-  // [Pref] and [ChromeOnly] interact in WebIDL, the former wins.
-  "-moz-context-properties",
 ];
 
 function testInWin(win) {

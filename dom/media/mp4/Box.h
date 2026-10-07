@@ -9,11 +9,11 @@
 
 #include "AtomType.h"
 #include "BufferReader.h"
+#include "ByteStream.h"
 #include "MediaResource.h"
 #include "nsTArray.h"
 
 namespace mozilla {
-class ByteStream;
 
 class BumpAllocator {
  public:

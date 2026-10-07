@@ -328,6 +328,13 @@ async function clickAt(browser, x, y, n = 1) {
 async function clickOn(browser, selector) {
   await waitForSelector(browser, selector);
   info(`Click on: ${selector}`);
+  await SpecialPowers.spawn(browser, [selector], sel => {
+    content.document.querySelector(sel).scrollIntoView({
+      behavior: "instant",
+      block: "nearest",
+      inline: "nearest",
+    });
+  });
   // Resolve the target and dispatch its click in the same content query.
   await BrowserTestUtils.synthesizeMouseAtCenter(selector, {}, browser);
   await TestUtils.waitForTick();
@@ -565,4 +572,164 @@ function waitForTimeout(browser, n) {
     content.setTimeout(resolve, n);
     return promise;
   });
+}
+
+/**
+ * A window which hasn't received its dimensions from the parent process yet has
+ * a zero-sized viewport, and one whose painting is still suppressed has an empty
+ * display list. In both cases hit-testing a synthesized mouse event finds no
+ * frame at all, so the event is dispatched to the document itself and the
+ * context menu code bails out before opening the menu (bug 1478596). Hit-testing
+ * starts at the top-level document, hence the walk through the ancestors.
+ *
+ * @param {object} target a browser element or a browsing context.
+ */
+async function waitForHitTestableContent(target) {
+  const contexts = [];
+  for (let context = target.browsingContext ?? target; context; ) {
+    contexts.unshift(context);
+    context = context.parent;
+  }
+  for (const context of contexts) {
+    await SpecialPowers.spawn(context, [], async function () {
+      const { ContentTaskUtils } = ChromeUtils.importESModule(
+        "resource://testing-common/ContentTaskUtils.sys.mjs"
+      );
+      await ContentTaskUtils.waitForCondition(
+        () =>
+          !content.windowUtils.paintingSuppressed &&
+          content.innerWidth &&
+          content.innerHeight,
+        "The window must be hit-testable"
+      );
+    });
+  }
+}
+
+/**
+ * Open the content context menu at the given point.
+ *
+ * This is a modified version from browser_contextmenuFillLogins.js.
+ *
+ * @param {object} browser a browser element or a browsing context.
+ * @param {number} x
+ * @param {number} y
+ * @returns {Promise<HTMLElement>} the context menu.
+ */
+async function openContextMenuAt(browser, x, y) {
+  const contextMenu = document.getElementById("contentAreaContextMenu");
+
+  await waitForHitTestableContent(browser);
+
+  const contextMenuShownPromise = BrowserTestUtils.waitForEvent(
+    contextMenu,
+    "popupshown"
+  );
+
+  info(`Opening context menu at coordinates: ${x}, ${y}`);
+  await BrowserTestUtils.synthesizeMouseAtPoint(
+    x,
+    y,
+    {
+      type: "contextmenu",
+      button: 2,
+    },
+    browser
+  );
+
+  await contextMenuShownPromise;
+  return contextMenu;
+}
+
+/**
+ * Open a context menu at the center of the given box and collect the given
+ * menu entries.
+ *
+ * @param {object} browser a browser element or a browsing context.
+ * @param {object} box
+ * @param {Array<string>} ids the entries to collect.
+ * @param {boolean} waitForStatesChanged wait for the pdf.js editing states.
+ * @returns {Promise<Map<string,HTMLElement>>} the collected menu entries.
+ */
+async function openContextMenuAndGetItems(
+  browser,
+  box,
+  ids,
+  waitForStatesChanged = false
+) {
+  info(`Opening context menu at the center of box: ${JSON.stringify(box)}`);
+  await new Promise(resolve => setTimeout(resolve, 0));
+
+  const statesChangedPromise = waitForStatesChanged
+    ? BrowserTestUtils.waitForContentEvent(
+        browser,
+        "editingstateschanged",
+        false,
+        null,
+        true
+      )
+    : null;
+
+  const { x, y, width, height } = box;
+  await openContextMenuAt(browser, x + width / 2, y + height / 2);
+  await statesChangedPromise;
+
+  return new Map(ids.map(id => [id, document.getElementById(id) || null]));
+}
+
+/**
+ * Hide the context menu.
+ */
+async function hideContextMenu() {
+  info("Hiding context menu");
+  await new Promise(resolve => setTimeout(resolve, 0));
+
+  const contextMenu = document.getElementById("contentAreaContextMenu");
+  const popupHiddenPromise = BrowserTestUtils.waitForEvent(
+    contextMenu,
+    "popuphidden"
+  );
+  contextMenu.hidePopup();
+  await popupHiddenPromise;
+}
+
+/**
+ * Asserts that the enabled pdfjs menuitems are the expected ones.
+ *
+ * @param {Map<string,HTMLElement>} menuitems
+ * @param {Array<string>} expected
+ */
+function assertMenuitems(menuitems, expected) {
+  Assert.deepEqual(
+    [...menuitems.values()]
+      .filter(
+        elmt =>
+          !elmt.id.includes("-sep-") &&
+          !elmt.hidden &&
+          [null, "false"].includes(elmt.getAttribute("disabled"))
+      )
+      .map(elmt => elmt.id),
+    expected
+  );
+}
+
+/**
+ * Activate a context menu entry and wait for the editing action it triggers.
+ *
+ * @param {object} browser a browser element or a browsing context.
+ * @param {Map<string,HTMLElement>} items
+ * @param {string} entry
+ */
+async function clickOnItem(browser, items, entry) {
+  info(`Clicking on menu item ${entry}`);
+  const editingPromise = BrowserTestUtils.waitForContentEvent(
+    browser,
+    "editingaction",
+    false,
+    null,
+    true
+  );
+  const contextMenu = document.getElementById("contentAreaContextMenu");
+  contextMenu.activateItem(items.get(entry));
+  await editingPromise;
 }

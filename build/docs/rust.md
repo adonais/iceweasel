@@ -4,9 +4,9 @@
 
 This page explains how to add, build, link, and vendor Rust crates.
 
-The [code documentation](../../writing-rust-code) explains how to write and
+The [code documentation](/writing-rust-code/index.md) explains how to write and
 work with Rust code in Firefox. The
-[test documentation](../../testing-rust-code) explains how to test and debug
+[test documentation](/testing-rust-code/index.md) explains how to test and debug
 Rust code in Firefox.
 
 ## Linking Rust crates into libxul

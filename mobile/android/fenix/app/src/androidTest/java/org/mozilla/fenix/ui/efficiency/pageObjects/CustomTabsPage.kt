@@ -16,6 +16,7 @@ import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.PageStateTracker
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationArrival
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationGraph
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRoutePurpose
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
@@ -44,6 +45,15 @@ class CustomTabsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestR
             steps = listOf(),
             arrival = NavigationArrival.EDGE_COMPLETION,
         )
+    }
+
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): CustomTabsPage {
+        super.navigateToPage(url, forceNavigation, navigationOptions)
+        return this
     }
 
     fun launchCustomTab(url: String, customMenuItemLabel: String = ""): CustomTabsPage {
@@ -96,6 +106,11 @@ class CustomTabsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestR
 
     fun verifyWebContent(text: String): CustomTabsPage {
         mozVerify(BrowserPageSelectors.PAGE_CONTENT(text))
+        return this
+    }
+
+    fun verifyUrl(url: String): CustomTabsPage {
+        mozVerify(CustomTabsSelectors.TOOLBAR_URL(url))
         return this
     }
 

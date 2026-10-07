@@ -2391,21 +2391,6 @@ nsresult CookiePersistentStorage::CreateTableForSchemaVersion5() {
       "inBrowserElement)"));
 }
 
-nsresult CookiePersistentStorage::RunInTransaction(
-    nsICookieTransactionCallback* aCallback) {
-  if (NS_WARN_IF(!mDBConn)) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  nsresult rv = aCallback->Callback();
-
-  // Whatever the callback did is buffered in the write queue: write it out as
-  // a single batch instead of waiting for the timer.
-  mWriteQueue->FlushNow();
-
-  return NS_FAILED(rv) ? NS_ERROR_FAILURE : NS_OK;
-}
-
 // purges expired and old cookies in a batch operation.
 already_AddRefed<nsIArray> CookiePersistentStorage::PurgeCookies(
     int64_t aCurrentTimeInUsec, uint16_t aMaxNumberOfCookies,

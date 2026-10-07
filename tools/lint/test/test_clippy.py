@@ -1,9 +1,13 @@
 from unittest import mock
 
 import mozunit
+import pytest
 
 LINTER = "clippy"
 fixed = 0
+
+BUILD_FINISHED_OK = 'Compiling foo\n{"reason":"build-finished","success":true}\n'
+BUILD_FINISHED_FAILED = '{"reason":"build-finished","success":false}\n'
 
 
 def test_good(lint, config, paths):
@@ -118,7 +122,7 @@ def test_gkrust_invocation_keeps_going_and_demotes_dwarnings(tmpdir):
     def fake_run(args, **kwargs):
         captured["args"] = args
         captured["env"] = kwargs.get("env") or {}
-        return mock.Mock(returncode=0, stdout="", stderr="")
+        return mock.Mock(returncode=0, stdout=BUILD_FINISHED_OK, stderr="")
 
     config = {"warn": ["needless_return", "items_after_statements"], "deny": []}
     pg = clippy.PathGroup("gkrust", str(tmpdir))
@@ -202,6 +206,55 @@ def test_driver_flags_default_when_lists_absent():
     import clippy
 
     assert clippy.get_clippy_driver_flags({}) == []
+
+
+def test_check_clippy_ran_judges_by_output_not_exit_code():
+    """`mach cargo clippy` exits 0 even when cargo fails, and a crate with
+    lint errors makes cargo exit non-zero even though clippy ran fine. Only
+    the absence of any cargo JSON output means clippy never executed."""
+    import clippy
+
+    log = mock.MagicMock()
+
+    with pytest.raises(RuntimeError):
+        clippy.check_clippy_ran(
+            mock.Mock(returncode=0, stdout="", stderr="error: no such command"),
+            "gkrust",
+            log,
+        )
+    log.error.assert_called_once()
+
+    clippy.check_clippy_ran(
+        mock.Mock(returncode=101, stdout=BUILD_FINISHED_FAILED, stderr=""),
+        "gkrust",
+        mock.MagicMock(),
+    )
+
+
+def test_fixed_counter_uses_build_finished_message(tmpdir):
+    """The --fix bookkeeping reads cargo's build-finished message rather than
+    the exit code mach swallows."""
+    import clippy
+
+    def run_with(stdout):
+        results = {"results": [], "fixed": 0}
+        with mock.patch.object(
+            clippy.subprocess,
+            "run",
+            return_value=mock.Mock(returncode=0, stdout=stdout, stderr=""),
+        ):
+            clippy.lint_crate(
+                clippy.PathGroup("some-crate", str(tmpdir)),
+                {},
+                mock.MagicMock(),
+                True,
+                str(tmpdir),
+                results,
+            )
+        return results["fixed"]
+
+    assert run_with(BUILD_FINISHED_OK) == 1
+    assert run_with(BUILD_FINISHED_FAILED) == 0
 
 
 if __name__ == "__main__":

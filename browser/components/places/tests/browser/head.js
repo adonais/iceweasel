@@ -428,7 +428,7 @@ function promisePlacesInitComplete() {
   return placesInitCompleteObserved;
 }
 
-// Function copied from browser/base/content/test/general/head.js.
+// Function copied from browser/base/content/test/browser-general/head.js.
 function promisePopupShown(popup) {
   return new Promise(resolve => {
     if (popup.state == "open") {
@@ -443,7 +443,7 @@ function promisePopupShown(popup) {
   });
 }
 
-// Function copied from browser/base/content/test/general/head.js.
+// Function copied from browser/base/content/test/browser-general/head.js.
 function promisePopupHidden(popup) {
   return new Promise(resolve => {
     let onPopupHidden = () => {

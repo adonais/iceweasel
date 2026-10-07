@@ -550,11 +550,6 @@ class BrowserParent final : public PBrowserParent,
       const double& aDeltaY, const int32_t& aModifierFlags,
       const Maybe<uint64_t>& aCallbackId);
 
-  mozilla::ipc::IPCResult RecvLockNativePointer(
-      const nsIWidget::NativePointerLockMode& aNativePointerLockMode);
-
-  mozilla::ipc::IPCResult RecvUnlockNativePointer();
-
   mozilla::ipc::IPCResult RecvSetNativePointerLockMode(
       const nsIWidget::NativePointerLockMode& aNativePointerLockMode);
 
@@ -713,6 +708,13 @@ class BrowserParent final : public PBrowserParent,
   bool GetPriorityHint();
   void SetPriorityHint(bool aPriorityHint);
   void PreserveLayers(bool aPreserveLayers);
+  bool IsPreservingLayers() const { return mIsPreservingLayers; }
+  // Applies the layer state of the BrowserParent this one replaces. Unlike
+  // SetRenderLayers, this stops rendering layers even while they are
+  // preserved, since the replaced BrowserParent's state already accounts for
+  // that.
+  void TransferLayerState(bool aRenderLayers, bool aPreserveLayers,
+                          bool aPriorityHint);
   void NotifyResolutionChanged();
   void NotifyTransparencyChanged();
 
@@ -807,8 +809,6 @@ class BrowserParent final : public PBrowserParent,
   // Parent (SendRealDragEvent) -> Child -> Parent (RecvDropLinks)
   // and have to ensure that the child did not modify links to be loaded.
   bool QueryDropLinksForVerification();
-
-  void UnlockNativePointer();
 
  private:
   // This is used when APZ needs to find the BrowserParent associated with a
@@ -1014,14 +1014,6 @@ class BrowserParent final : public PBrowserParent,
   // BrowserChild was not ready to handle it. We will resend it when the next
   // time we fire a mouse event and the BrowserChild is ready.
   bool mIsMouseEnterIntoWidgetEventSuppressed : 1;
-
-  // True after RecvLockNativePointer has been called and until
-  // UnlockNativePointer has been called.
-  bool mLockedNativePointer : 1;
-
-  // True after mLockedNativePointer is changed to `false` and reset to false
-  // once we receive a native mouse move request.
-  bool mWaitingForNativeMouseMoveAfterUnlock : 1;
 
   // True between ShowTooltip and HideTooltip messages.
   bool mShowingTooltip : 1;

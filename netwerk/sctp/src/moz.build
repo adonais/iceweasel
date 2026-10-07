@@ -63,3 +63,18 @@ if CONFIG['OS_TARGET'] in ('Linux', 'Android'):
     DEFINES['_GNU_SOURCE'] = 1
 elif CONFIG['OS_TARGET'] == 'Darwin':
     DEFINES['__APPLE_USE_RFC_2292'] = 1
+
+LICENSES += ["sctp"]
+LICENSES["sctp"].title = "SCTP Licenses"
+# Unlike the other vendored libraries, this cannot point at the library's own
+# LICENSE.md: the notice reproduces the copyright headers the sources carry --
+# FreeBSD, Cisco, the WIDE project -- which that file, covering the usrsctp
+# code alone, does not.
+LICENSES["sctp"].text = "LICENSE-NOTICE.txt"
+LICENSES["sctp"].notice = """
+<p>These licenses apply to certain files in the directory <code>netwerk/sctp/src/</code>.</p>
+"""
+
+LICENSED_UNDER += [
+    "sctp",
+]

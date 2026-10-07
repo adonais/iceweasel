@@ -194,6 +194,16 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
    */
   uint32_t CountRenderedRows();
 
+  /**
+   * This is a superset of
+   * https://html.spec.whatwg.org/#concept-select-option-list, which holds only
+   * option elements.
+   * Chrome-only: the UA select popups use it so that they need not reimplement
+   * the traversal.
+   */
+  void GetListItems(HTMLOptGroupElement* aGroup,
+                    nsTArray<RefPtr<Element>>& aResult);
+
   int32_t SelectedIndex() const;
   // During removal handling we might need to ignore some options that are
   // getting removed.

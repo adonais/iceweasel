@@ -69,7 +69,7 @@ class AsyncImagePipelineManager final {
   void NotifyPipelinesUpdated(RefPtr<const wr::WebRenderPipelineInfo> aInfo,
                               wr::RenderedFrameId aLatestFrameId,
                               wr::RenderedFrameId aLastCompletedFrameId,
-                              RefPtr<Fence>&& aFence);
+                              RefPtr<Fence>&& aReadFence);
 
   // This is run on the compositor thread to process mRenderSubmittedUpdates. We
   // make this public because we need to invoke it from other places.
@@ -285,11 +285,11 @@ class AsyncImagePipelineManager final {
 
   struct WebRenderPipelineInfoHolder {
     WebRenderPipelineInfoHolder(RefPtr<const wr::WebRenderPipelineInfo>&& aInfo,
-                                RefPtr<Fence>&& aFence);
+                                RefPtr<Fence>&& aReadFence);
     ~WebRenderPipelineInfoHolder();
     WebRenderPipelineInfoHolder(WebRenderPipelineInfoHolder&&) = default;
     RefPtr<const wr::WebRenderPipelineInfo> mInfo;
-    RefPtr<Fence> mFence;
+    RefPtr<Fence> mReadFence;
   };
 
   std::vector<std::pair<wr::RenderedFrameId, WebRenderPipelineInfoHolder>>

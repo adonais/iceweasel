@@ -11,28 +11,22 @@ Some parts of the environment must be fetched asynchronously at startup. We don'
 This currently affects the following sections:
 
 - profile
-- add-ons
-- services
 
 Structure:
 
 ```js
 {
   build: {
-    applicationId: <string>, // nsIXULAppInfo.ID
-    applicationName: <string>, // "Firefox"
+    applicationId: "",
+    applicationName: "",
     architecture: <string>, // e.g. "x86", build architecture for the active build
     buildId: <string>, // e.g. "20141126041045"
-    version: <string>, // e.g. "35.0"
-    vendor: <string>, // e.g. "Mozilla"
-    displayVersion: <string>, // e.g. "35.0b1"
-    platformVersion: <string>, // e.g. "35.0"
+    version: "00.",
+    vendor: null,
+    platformVersion: "00.",
     xpcomAbi: <string>, // e.g. "x86-msvc"
-    updaterAvailable: <bool>, // Whether the app was built with app update available (MOZ_UPDATER)
   },
   settings: {
-    addonCompatibilityCheckEnabled: <bool>, // Whether application compatibility is respected for add-ons
-    blocklistEnabled: <bool>, // true on failure
     isDefaultBrowser: <bool>, // whether Firefox is the default browser. Checked once near startup. On Windows, this is operationalized as whether Firefox is the default HTTP protocol handler and the default HTML file handler.
     defaultSearchEngine: <string>, // e.g. "yahoo"
     defaultSearchEngineData: {, // data about the current default engine
@@ -40,28 +34,10 @@ Structure:
       loadPath: <string>, // where the engine line is located; missing if no default
       submissionURL: <string> // set for default engines or well known search domains
     },
-    defaultPrivateSearchEngine: <string>, // e.g. "duckduckgo"
-    defaultPrivateSearchEngine: {,
-      // data about the current default engine for private browsing mode. Same as defaultSearchEngineData.
-    },
-    launcherProcessState: <integer>, // optional, values correspond to values of mozilla::LauncherRegistryInfo::EnabledState enum
-    e10sEnabled: <bool>, // whether e10s is on, i.e. browser tabs open by default in a different process
-    e10sMultiProcesses: <integer>, // Maximum number of processes that will be launched for regular web content
-    fissionEnabled: <bool>, // whether fission is enabled this session, and subframes can load in a different process
     locale: <string>, // e.g. "it", null on failure
-    intl: {
-      requestedLocales: [ <string>, ... ], // The locales that are being requested.
-      availableLocales: [ <string>, ... ], // The locales that are available for use.
-      appLocales: [ <string>, ... ], // The negotiated locales that are being used.
-      systemLocales: [ <string>, ... ], // The locales for the OS.
-      regionalPrefsLocales: [ <string>, ... ], // The regional preferences for the OS.
-      acceptLanguages: [ <string>, ... ], // The languages for the Accept-Languages header.
-    },
     update: {
       channel: <string>, // e.g. "release", null on failure
       enabled: <bool>, // true on failure
-      autoDownload: <bool>, // true on failure
-      background: <bool>, // Indicates whether updates may be installed when Firefox is not running.
     },
     userPrefs: {
       // Only prefs which are changed are listed in this block
@@ -82,22 +58,9 @@ Structure:
       msstoresignedin: <boolean>, // optional, only present if the installation was done through the Microsoft Store, and was able to retrieve the "campaign ID" it was first installed with. this value is "true" if the user was signed into the Microsoft Store when they first installed, and false otherwise
       dlsource: <string>, // identifier that indicate where installations of Firefox originate
     },
-    sandbox: {
-      effectiveContentProcessLevel: <integer>,
-      contentWin32kLockdownState: <integer>,
-    }
-  },
-  // Optional, missing if fetching the information failed or had not yet completed.
-  services: {
-    // True if the user has a firefox account
-    accountEnabled: <bool>,
-    // True if the user has sync enabled.
-    syncEnabled: <bool>
   },
   profile: {
     creationDate: <integer>, // integer days since UNIX epoch, e.g. 16446
-    resetDate: <integer>, // integer days since UNIX epoch, e.g. 16446 - optional
-    firstUseDate: <integer>, // integer days since UNIX epoch, e.g. 16446 - optional
     recoveredFromBackup: <integer>, // integer days since UNIX epoch, e.g. 16446 - optional
   },
   partner: { // This section may not be immediately available on startup
@@ -112,11 +75,7 @@ Structure:
   },
   system: {
     memoryMB: <number>,
-    virtualMaxMB: <number>, // windows-only
     isWow64: <bool>, // windows-only
-    isWowARM64: <bool>, // windows-only
-    hasWinPackageId: <bool>, // windows-only
-    winPackageFamilyName: <string>, // windows-only
     cpu: {
         count: <number>,  // desktop only, e.g. 8, or null on failure - logical cpus
         cores: <number>, // desktop only, e.g., 4, or null on failure - physical cores
@@ -126,43 +85,13 @@ Structure:
         family: <number>, // desktop only, null on failure
         model: <number, // desktop only, null on failure
         stepping: <number>, // desktop only, null on failure
-        l2cacheKB: <number>, // L2 cache size in KB, only on windows & mac
-        l3cacheKB: <number>, // desktop only, L3 cache size in KB
-        speedMHz: <number>, // desktop only, cpu clock speed in MHz
-        extensions: [
-          <string>,
-          ...
-          // as applicable:
-          // "hasMMX", "hasSSE", "hasSSE2", "hasSSE3", "hasSSSE3",
-          // "hasSSE4A", "hasSSE4_1", "hasSSE4_2", "hasAVX", "hasAVX2",
-          // "hasAES", "hasEDSP", "hasARMv6", "hasARMv7", "hasNEON"
-        ],
     },
     os: {
         name: <string>, // "Windows_NT" or null on failure
         version: <string>, // e.g. "6.1", null on failure
         windowsBuildNumber: <number>, // windows only or null on failure
-        windowsUBR: <number>, // windows 10 only or null on failure
-        locale: <string>, // "en" or null on failure
         distro: <string>, // linux only, or null on failure
         distroVersion: <string>, // linux only, or null on failure
-    },
-    hdd: {
-      profile: { // hdd where the profile folder is located
-          model: <string>, // windows only or null on failure
-          revision: <string>, // windows only or null on failure
-          type: <string>, // "SSD" or "HDD" windows only or null on failure
-      },
-      binary:  { // hdd where the application binary is located
-          model: <string>, // windows only or null on failure
-          revision: <string>, // windows only or null on failure
-          type: <string>, // "SSD" or "HDD" windows only or null on failure
-      },
-      system:  { // hdd where the system files are located
-          model: <string>, // windows only or null on failure
-          revision: <string>, // windows only or null on failure
-          type: <string>, // "SSD" or "HDD" windows only or null on failure
-      },
     },
     gfx: {
         DWriteEnabled: <bool>, // null on failure
@@ -240,12 +169,6 @@ Structure:
           }
         },
       },
-    appleModelId: <string>, // Mac only or null on failure
-    sec: { // This feature is Windows only
-      antivirus: [ <string>, ... ],    // null if unavailable on platform: Product name(s) of registered antivirus programs
-      antispyware: [ <string>, ... ],  // null if unavailable on platform: Product name(s) of registered antispyware programs
-      firewall: [ <string>, ... ],     // null if unavailable on platform: Product name(s) of registered firewall programs
-    },
   },
   experiments: {
     "<experiment id>": { branch: "<branch>", type: "<type>", enrollmentId: "<id>" },
@@ -296,16 +219,6 @@ The object contains:
   For privacy, we don't record this for user-installed engines.
 
 `loadPath` and `submissionURL` are not present if `name` is `NONE`.
-
-### defaultPrivateSearchEngineData
-
-This contains the data identifying the engine current set as the default for
-private browsing mode. This may be the same engine as set for normal browsing
-mode.
-
-This object contains the same information as `defaultSearchEngineData`. It
-is only reported if the `browser.search.separatePrivateDefault.enabled`
-preference is set to `true`.
 
 ### userPrefs
 
@@ -363,34 +276,6 @@ Attribution data is used to link installations of Firefox with the source that t
 
 The attribution data is included in some versions of the default Firefox installer for Windows (the "stub" installer) and stored as part of the installation. All platforms other than Windows and also Windows installations that did not use the stub installer do not have this data and will not include the `attribution` object.
 
-### sandbox
-
-This object contains data about the state of Firefox's sandbox.
-
-Specific keys are:
-
-- `effectiveContentProcessLevel`: The meanings of the values are OS dependent. Details of the meanings can be found in the [Firefox prefs file](https://hg.mozilla.org/mozilla-central/file/tip/browser/app/profile/firefox.js). The value here is the effective value, not the raw value, some platforms enforce a minimum sandbox level. If there is an error calculating this, it will be `null`.
-
-- `contentWin32kLockdownState`: The status of Win32k Lockdown for Content process.
-
-  - LockdownEnabled = 1 - After Firefox 98, this value will no longer appear in Telemetry.
-  - MissingWebRender = 2
-  - OperatingSystemNotSupported = 3
-  - PrefNotSet = 4 - After Firefox 98, this value will no longer appear in Telemetry.
-  - MissingRemoteWebGL = 5 - From Firefox 152 onwards, this value will no longer appear in Telemetry.
-  - MissingNonNativeTheming = 6
-  - DisabledByEnvVar = 7 - MOZ_ENABLE_WIN32K is set
-  - DisabledBySafeMode = 8 - From Firefox 140 onwards, this value will no longer appear in Telemetry.
-  - DisabledByE10S = 9 - E10S is disabled for whatever reason
-  - DisabledByUserPref = 10 - The user manually set security.sandbox.content.win32k-disable to false
-  - EnabledByUserPref = 11 - The user manually set security.sandbox.content.win32k-disable to true
-  - DisabledByControlGroup = 12 - The user is in the Control Group, so it is disabled
-  - EnabledByTreatmentGroup = 13 - The user is in the Treatment Group, so it is enabled
-  - DisabledByDefault = 14 - The default value of the pref is false
-  - EnabledByDefault = 15 - The default value of the pref is true
-  - DecodersArentRemote = 16 - Some decoder is not remoted to RDD Process (checks PDMFactory::AllDecodersAreRemote)
-  - IncompatibleMitigationPolicy = 17 - Some incompatible Windows Exploit Mitigation policies are enabled
-
 ## profile
 
 ### creationDate
@@ -403,18 +288,6 @@ If the timestamp file does not exist all files in the profile directory are scan
 The oldest creation or modification date of the scanned files is then taken to be the profile creation date.
 This has been shown to sometimes be inaccurate ([bug 1449739](https://bugzilla.mozilla.org/show_bug.cgi?id=1449739)).
 :::
-
-### resetDate
-
-The time of the last reset time for the profile. If the profile has never been
-reset this field will not be present.
-It's read from a file-stored timestamp from the client's profile directory.
-
-### firstUseDate
-
-The time of the first use of profile. If this is an old profile where we can't
-determine this this field will not be present.
-It's read from a file-stored timestamp from the client's profile directory.
 
 ### recoveredFromBackup
 
@@ -442,11 +315,6 @@ This object contains operating system information.
 - `name`: the name of the OS.
 - `version`: a string representing the OS version.
 - `windowsBuildNumber`: the Windows build number.
-- `windowsUBR`: the Windows UBR number, only available for Windows >= 10. This value is incremented by Windows cumulative updates patches.
-- `installYear`: the Windows only integer representing the year the OS was installed.
-- `locale`: the string representing the OS locale.
-- `hasPrefetch`: the Windows-only boolean representing whether or not the OS-based prefetch application start-up optimization is set to use the default settings.
-- `hasSuperfetch`: the Windows-only boolean representing whether or not the OS-based superfetch application start-up optimization service is running and using the default settings.
 
 ## experiments
 
@@ -462,6 +330,9 @@ In the event any of these fields are truncated, a warning is printed to the cons
 Note that this list includes other types of deliveries, including Normandy rollouts and Nimbus feature defaults.
 
 ## Version History
+
+- Firefox 158:
+  - Removed many fields and set ones unable to be removed to small, stable values. ([bug 2068624](https://bugzilla.mozilla.org/show_bug.cgi?id=2068624)
 
 - Firefox 155:
 

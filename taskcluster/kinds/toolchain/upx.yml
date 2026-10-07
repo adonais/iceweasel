@@ -20,6 +20,10 @@ linux64-upx:
     treeherder:
         symbol: TL(upx)
     worker-type: b-linux-docker-amd
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-toolchain-sysroot
 
 win64-upx:
     treeherder:

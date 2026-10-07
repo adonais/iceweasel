@@ -134,7 +134,7 @@ add_task(async function test_widgets_timer_toggle() {
 
   let { win, tab } = await openHomePreferences();
 
-  let timerWrapper = getSettingControl("timer", win);
+  let timerWrapper = getSettingControl("focusTimer", win);
   ok(
     !timerWrapper || BrowserTestUtils.isHidden(timerWrapper),
     "Timer control is hidden when system pref is false"
@@ -151,14 +151,14 @@ add_task(async function test_widgets_timer_toggle() {
 
   ({ win, tab } = await openHomePreferences());
 
-  timerWrapper = await settingControlRenders("timer", win);
+  timerWrapper = await settingControlRenders("focusTimer", win);
   ok(timerWrapper, "Timer control exists when system pref is true");
   ok(
     BrowserTestUtils.isVisible(timerWrapper),
     "Timer control is visible when system pref is true"
   );
 
-  let timerControl = await settingControlRenders("timer", win);
+  let timerControl = await settingControlRenders("focusTimer", win);
 
   let checkbox = timerControl.controlEl;
   ok(checkbox, "Timer checkbox control exists");

@@ -9,10 +9,18 @@
 #include "secerr.h"
 
 /* old gcc doesn't support some poly64x2_t intrinsic */
-#if defined(__aarch64__) && defined(IS_LITTLE_ENDIAN) && \
-    (defined(__clang__) || defined(__GNUC__) && __GNUC__ > 6)
+#if (defined(__aarch64__) || defined(_M_ARM64)) && defined(IS_LITTLE_ENDIAN) && \
+    (defined(__clang__) || (defined(__GNUC__) && __GNUC__ > 6) || defined(_MSC_VER))
 
 #include <arm_neon.h>
+
+#ifdef _MSC_VER
+#include <intrin.h>
+#define __builtin_bswap64(x) _byteswap_uint64(x)
+#define GHASH_POLY64(x) (x)
+#else
+#define GHASH_POLY64(x) (poly64_t)(x)
+#endif
 
 PRBool
 platform_ghash_support()
@@ -48,15 +56,15 @@ gcm_HashMult_hw(gcmHashContext *ghash, const unsigned char *buf,
 
         /* Do binary mult ghash->X = Ci * ghash->H. */
         z_low = vreinterpretq_u8_p128(
-            vmull_p64((poly64_t)vget_low_p64(vreinterpretq_p64_u64(ci)),
-                      (poly64_t)vget_low_p64(vreinterpretq_p64_u64(h))));
+            vmull_p64(GHASH_POLY64(vget_low_p64(vreinterpretq_p64_u64(ci))),
+                      GHASH_POLY64(vget_low_p64(vreinterpretq_p64_u64(h)))));
         z_high = vreinterpretq_u8_p128(
             vmull_high_p64(vreinterpretq_p64_u64(ci), vreinterpretq_p64_u64(h)));
         t1 = vreinterpretq_p64_u8(
             vextq_u8(vreinterpretq_u8_u64(h), vreinterpretq_u8_u64(h), 8));
         t_low = vreinterpretq_u8_p128(
-            vmull_p64((poly64_t)vget_low_p64(vreinterpretq_p64_u64(ci)),
-                      (poly64_t)vget_low_p64(t1)));
+            vmull_p64(GHASH_POLY64(vget_low_p64(vreinterpretq_p64_u64(ci))),
+                      GHASH_POLY64(vget_low_p64(t1))));
         t_high = vreinterpretq_u8_p128(vmull_high_p64(vreinterpretq_p64_u64(ci), t1));
         t2 = veorq_u8(t_high, t_low);
         z_low = veorq_u8(z_low, vextq_u8(zero, t2, 8));
@@ -68,8 +76,8 @@ gcm_HashMult_hw(gcmHashContext *ghash, const unsigned char *buf,
         z_low = veorq_u8(z_low, vextq_u8(zero, t2, 8));
         ci = veorq_u64(vreinterpretq_u64_u8(z_low),
                        vreinterpretq_u64_p128(
-                           vmull_p64((poly64_t)vget_low_p64(vreinterpretq_p64_u8(z_high)),
-                                     (poly64_t)vget_low_p64(p))));
+                           vmull_p64(GHASH_POLY64(vget_low_p64(vreinterpretq_p64_u8(z_high))),
+                                     GHASH_POLY64(vget_low_p64(p)))));
     }
 
     ghash->x = ci;

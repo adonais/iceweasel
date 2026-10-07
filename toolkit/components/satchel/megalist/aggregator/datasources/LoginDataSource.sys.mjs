@@ -571,11 +571,7 @@ export class LoginDataSource extends DataSourceBase {
       reason
     );
 
-    let { name, extra = {}, value = null } = telemetryEvent;
-    if (value) {
-      extra.value = value;
-    }
-    Glean.pwmgr[name].record(extra);
+    LoginHelper.recordReauthTelemetryEvent(telemetryEvent);
 
     if (!isAuthorized) {
       return;

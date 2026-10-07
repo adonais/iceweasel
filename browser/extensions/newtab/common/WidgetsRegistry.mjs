@@ -18,6 +18,9 @@
  *
  *   id                — unique string key used in prefs and the order pref
  *   telemetryName     — the name sent in Glean events (snake_case; may differ from id)
+ *   prefsL10nId       — Fluent id of the toggle label in about:preferences (Firefox Home > Widgets)
+ *   customizeL10nId   — Fluent id of the toggle label in the New Tab customize panel
+ *   customizeEventSource — source sent with the PREF_CHANGED event when the customize panel toggle flips
  *   order             — default render position (0-indexed); used when widgets.order is empty
  *   enabledPref       — the user-facing pref that toggles this widget on/off
  *   sizePref          — the pref that stores the user's chosen size (empty string = not set)
@@ -64,12 +67,26 @@
  * 4. Add the component to WIDGET_ROW_COMPONENTS in WidgetsComponentRegistry.jsx.
  * 5. If it has a sidebar variant, set hasSidebar: true and add its component
  *    to WIDGET_SIDEBAR_COMPONENTS in WidgetsComponentRegistry.jsx.
+ * 6. Add its two labels to browser/locales/en-US/browser/newtab/newtab.ftl as
+ *    attribute-only messages (.label = ...): an about:preferences one alongside
+ *    the other widget settings labels, and a customize panel one alongside the
+ *    other newtab-custom-widget-*-toggle strings. Then set prefsL10nId and
+ *    customizeL10nId.
+ *
+ *    Set customizeEventSource to WIDGET_ plus telemetryName in upper case
+ *    (WIDGET_PICTURE_OF_THE_DAY). It ships as the PREF_CHANGED telemetry
+ *    source, so pick it once. Weather (WEATHER) and the timer (WIDGET_TIMER)
+ *    predate this rule.
+ *
+ *    Both the toggle under Firefox Home > Widgets and the customize panel
+ *    toggle are generated from the entry, so lib/AboutPreferences.sys.mjs and
+ *    WidgetsManagementPanel.jsx need no edit.
  *
  * RETIRING A WIDGET
  * Set retired: true on its entry. Turn its feed off separately in
  * lib/ActivityStream.sys.mjs — feeds read their own prefs, not the registry.
- * Keep the entry until the code goes: unguarded WIDGET_REGISTRY.find() call
- * sites throw on a missing entry.
+ * Keep the entry until the code goes: code that looks a widget up in
+ * WIDGET_REGISTRY throws if the entry is missing.
  *
  * ADDING A NEW PER-WIDGET DIMENSION (e.g. "scale")
  * 1. Add scalePref and trainhopScaleKey fields to each registry entry.
@@ -163,6 +180,9 @@ export const PREF_WIDGETS_SYSTEM_RECENT_SEARCHES_ENABLED =
  * @typedef {object} WidgetRegistryEntry
  * @property {string} id - Unique key used in prefs and the order pref.
  * @property {string} telemetryName - Snake_case name sent in Glean events. May differ from id (e.g. "focus_timer" for id "focusTimer").
+ * @property {string} [prefsL10nId] - Fluent id of the widget's toggle label in about:preferences (Firefox Home > Widgets). The message carries a .label attribute. Required unless the entry is retired.
+ * @property {string} [customizeL10nId] - Fluent id of the widget's customize panel toggle label. The message carries a .label attribute. Required unless the entry is retired.
+ * @property {string} [customizeEventSource] - Source sent with the PREF_CHANGED user event when the widget's customize panel toggle flips. Required unless the entry is retired.
  * @property {number} order - Default render position (0-indexed).
  * @property {string} enabledPref - User-facing pref that toggles this widget on/off.
  * @property {string} sizePref - Pref that stores the user's chosen size ("" = not yet set).
@@ -170,13 +190,15 @@ export const PREF_WIDGETS_SYSTEM_RECENT_SEARCHES_ENABLED =
  * @property {string[]} validSizes - Sizes this widget supports.
  * @property {boolean} hasSidebar - When true, the widget moves to the sidebar at size "small".
  * @property {string} systemEnabledPref - Operator pref that gates the widget independently of the user pref.
- * @property {string} trainhopEnabledKey - Key in trainhopConfig.widgets.* for the enabled override.
+ * @property {string} trainhopEnabledKey - Key in trainhopConfig.widgets.* for the enabled override. Also the id of the generated about:preferences system-pref setting.
  * @property {string|null} trainhopSizeKey - Key in trainhopConfig.widgets.* for the size default suggestion.
  * @property {string|null} trainhopSidebarKey - Key in trainhopConfig.widgets.* for the hasSidebar override.
  * @property {string} widgetsSettingsVisibleKey - Key in trainhopConfig.widgetsSettings.* that additively reveals this widget's toggle in the settings UIs (does not enable the widget).
  * @property {string} widgetsSettingsEnabledKey - Key in trainhopConfig.widgetsSettings.* that overrides this widget's default enabled value (written to the pref default branch; an explicit user toggle still wins).
+ * @property {boolean} [requiresHistory] - When true, the widget is hidden entirely on profiles that record no history. See isWidgetDataUnavailable.
+ * @property {boolean} [requiresWidgetSearchSap] - When true, the widget is hidden entirely on hosts whose search code is too old to generate accurate partner codes. See isWidgetDataUnavailable.
  * @property {boolean} [retired] - When true the widget never renders and gets no settings or devtools toggle, whatever its prefs and trainhopConfig say.
- * @property {string|null} [trainhopNamespace] - When set, the widget ships its whole config in one dedicated object at trainhopConfig.<namespace>. Its `enabled` overrides the default value of enabledPref on the default branch (user toggle still wins, like widgetsSettings.*Enabled); `visible` reveals the widget (isWidgetAddable) without writing a pref; `size` is read by resolveWidgetSize. Picture of the Day, Crossword and Privacy use this today.
+ * @property {string|null} [trainhopNamespace] - When set, the widget ships its whole config in one dedicated object at trainhopConfig.<namespace>. Its `enabled` overrides the default value of enabledPref on the default branch (user toggle still wins, like widgetsSettings.*Enabled); `visible` reveals the widget (isWidgetAddable) without writing a pref; `size` is read by resolveWidgetSize. Picture of the Day, Crossword, Privacy and Recent Searches use this today.
  */
 
 /** @type {WidgetRegistryEntry[]} */
@@ -184,6 +206,9 @@ export const WIDGET_REGISTRY = [
   {
     id: "pictureOfTheDay",
     telemetryName: "picture_of_the_day",
+    prefsL10nId: "home-prefs-picture-header",
+    customizeL10nId: "newtab-custom-widget-picture-toggle",
+    customizeEventSource: "WIDGET_PICTURE_OF_THE_DAY",
     order: 0,
     enabledPref: PREF_WIDGETS_PICTURE_OF_THE_DAY_ENABLED,
     sizePref: PREF_PICTURE_OF_THE_DAY_SIZE,
@@ -219,6 +244,9 @@ export const WIDGET_REGISTRY = [
   {
     id: "clocks",
     telemetryName: "clocks",
+    prefsL10nId: "home-prefs-clocks-header",
+    customizeL10nId: "newtab-custom-widget-clock-toggle",
+    customizeEventSource: "WIDGET_CLOCKS",
     order: 2,
     enabledPref: PREF_WIDGETS_CLOCKS_ENABLED,
     sizePref: PREF_CLOCKS_SIZE,
@@ -235,6 +263,9 @@ export const WIDGET_REGISTRY = [
   {
     id: "lists",
     telemetryName: "lists",
+    prefsL10nId: "home-prefs-lists-header",
+    customizeL10nId: "newtab-custom-widget-lists-toggle",
+    customizeEventSource: "WIDGET_LISTS",
     order: 3,
     enabledPref: PREF_WIDGETS_LISTS_ENABLED,
     sizePref: PREF_LISTS_SIZE,
@@ -251,6 +282,9 @@ export const WIDGET_REGISTRY = [
   {
     id: "focusTimer",
     telemetryName: "focus_timer",
+    prefsL10nId: "home-prefs-timer-header",
+    customizeL10nId: "newtab-custom-widget-timer-toggle",
+    customizeEventSource: "WIDGET_TIMER",
     order: 4,
     enabledPref: PREF_WIDGETS_TIMER_ENABLED,
     sizePref: PREF_FOCUS_TIMER_SIZE,
@@ -267,6 +301,9 @@ export const WIDGET_REGISTRY = [
   {
     id: "weather",
     telemetryName: "weather",
+    prefsL10nId: "home-prefs-weather-header-srd",
+    customizeL10nId: "newtab-custom-widget-weather-toggle",
+    customizeEventSource: "WEATHER",
     order: 5,
     enabledPref: PREF_WIDGETS_WEATHER_ENABLED,
     sizePref: PREF_WEATHER_SIZE,
@@ -283,6 +320,9 @@ export const WIDGET_REGISTRY = [
   {
     id: "privacy",
     telemetryName: "privacy",
+    prefsL10nId: "home-prefs-privacy-header",
+    customizeL10nId: "newtab-custom-widget-privacy-toggle",
+    customizeEventSource: "WIDGET_PRIVACY",
     order: 6,
     enabledPref: PREF_WIDGETS_PRIVACY_ENABLED,
     sizePref: PREF_PRIVACY_SIZE,
@@ -301,6 +341,9 @@ export const WIDGET_REGISTRY = [
   {
     id: "crossword",
     telemetryName: "crossword",
+    prefsL10nId: "home-prefs-crossword-widget-header",
+    customizeL10nId: "newtab-custom-widget-crossword-toggle",
+    customizeEventSource: "WIDGET_CROSSWORD",
     order: 7,
     enabledPref: PREF_WIDGETS_CROSSWORD_ENABLED,
     sizePref: PREF_CROSSWORD_SIZE,
@@ -318,6 +361,9 @@ export const WIDGET_REGISTRY = [
   {
     id: "stocks",
     telemetryName: "stocks",
+    prefsL10nId: "home-prefs-stocks-header",
+    customizeL10nId: "newtab-custom-widget-stocks-toggle",
+    customizeEventSource: "WIDGET_STOCKS",
     order: 8,
     enabledPref: PREF_WIDGETS_STOCKS_ENABLED,
     sizePref: PREF_STOCKS_SIZE,
@@ -334,6 +380,9 @@ export const WIDGET_REGISTRY = [
   {
     id: "recentSearches",
     telemetryName: "recent_searches",
+    prefsL10nId: "home-prefs-search-widget-header",
+    customizeL10nId: "newtab-custom-widget-search-toggle",
+    customizeEventSource: "WIDGET_RECENT_SEARCHES",
     order: 9,
     enabledPref: PREF_WIDGETS_RECENT_SEARCHES_ENABLED,
     sizePref: PREF_RECENT_SEARCHES_SIZE,
@@ -346,6 +395,7 @@ export const WIDGET_REGISTRY = [
     trainhopSidebarKey: null,
     widgetsSettingsVisibleKey: "recentSearchesVisible",
     widgetsSettingsEnabledKey: "recentSearchesEnabled",
+    trainhopNamespace: "widgetRecentSearches",
     // @backward-compat { version 157 } See isWidgetSearchSapHostSupported in
     // PrefsFeed.sys.mjs.
     requiresWidgetSearchSap: true,
@@ -463,6 +513,24 @@ export function isWidgetToggleVisible(widget, prefs) {
   return Boolean(
     isWidgetAddable(widget, prefs) ||
     prefs.widgetsConfig?.[widget.trainhopEnabledKey]
+  );
+}
+
+/**
+ * Returns true if Weather may be shown at all: when system.showWeather or
+ * trainhopConfig.weather.enabled is set, or when widgetsSettings.weatherVisible
+ * overrides both. Base.jsx uses it for the customize menu's Weather row and
+ * the page-level Weather styling; the widgets panel uses it for its Weather
+ * toggle.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+export function isWeatherAvailable(prefs) {
+  return Boolean(
+    prefs["system.showWeather"] ||
+    prefs.trainhopConfig?.weather?.enabled ||
+    prefs.trainhopConfig?.widgetsSettings?.weatherVisible
   );
 }
 

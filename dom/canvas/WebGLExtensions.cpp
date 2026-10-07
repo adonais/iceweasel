@@ -669,6 +669,19 @@ void main() {}
 
 // -
 
+WebGLExtensionPolygonOffsetClamp::WebGLExtensionPolygonOffsetClamp(
+    WebGLContext* webgl)
+    : WebGLExtensionBase(webgl) {
+  MOZ_ASSERT(IsSupported(webgl), "Don't construct extension if unsupported.");
+}
+
+bool WebGLExtensionPolygonOffsetClamp::IsSupported(
+    const WebGLContext* const webgl) {
+  return webgl->GL()->IsSupported(gl::GLFeature::polygon_offset_clamp);
+}
+
+// -
+
 WebGLExtensionInstancedArrays::WebGLExtensionInstancedArrays(
     WebGLContext* webgl)
     : WebGLExtensionBase(webgl) {

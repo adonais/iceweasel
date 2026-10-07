@@ -47,6 +47,8 @@ pub enum PipeError {
     WriteCount(usize, u32),
     #[error("Windows API error")]
     Api(HResult),
+    #[error("Failed to connect to BITS: {0}")]
+    ConnectBcm(HResult),
 }
 
 impl From<HResult> for PipeError {

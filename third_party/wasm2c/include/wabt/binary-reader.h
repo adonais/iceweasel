@@ -59,14 +59,24 @@ struct TypeMut {
 };
 using TypeMutVector = std::vector<TypeMut>;
 
+struct CatchClause {
+  CatchKind kind;
+  Index tag;
+  Index depth;
+};
+using CatchClauseVector = std::vector<CatchClause>;
+
+enum class TableInitExprStatus {
+  TableWithInitExpression,
+  TableWithoutInitExpression,
+};
+
 class BinaryReaderDelegate {
  public:
   struct State {
-    State(const uint8_t* data, Offset size)
-        : data(data), size(size), offset(0) {}
+    explicit State(ByteSpan data) : data(data), offset(0) {}
 
-    const uint8_t* data;
-    Offset size;
+    ByteSpan data;
     Offset offset;
   };
 
@@ -149,9 +159,13 @@ class BinaryReaderDelegate {
   /* Table section */
   virtual Result BeginTableSection(Offset size) = 0;
   virtual Result OnTableCount(Index count) = 0;
-  virtual Result OnTable(Index index,
-                         Type elem_type,
-                         const Limits* elem_limits) = 0;
+  virtual Result BeginTable(Index index,
+                            Type elem_type,
+                            const Limits* elem_limits,
+                            TableInitExprStatus init_provided) = 0;
+  virtual Result BeginTableInitExpr(Index index) = 0;
+  virtual Result EndTableInitExpr(Index index) = 0;
+  virtual Result EndTable(Index index) = 0;
   virtual Result EndTableSection() = 0;
 
   /* Memory section */
@@ -214,6 +228,12 @@ class BinaryReaderDelegate {
   virtual Result OnOpcodeV128(v128 value) = 0;
   virtual Result OnOpcodeBlockSig(Type sig_type) = 0;
   virtual Result OnOpcodeType(Type type) = 0;
+
+  virtual Result OnUnaryExpr(Opcode opcode) = 0;
+  virtual Result OnBinaryExpr(Opcode opcode) = 0;
+  virtual Result OnTernaryExpr(Opcode opcode) = 0;
+  virtual Result OnQuaternaryExpr(Opcode opcode) = 0;
+
   virtual Result OnAtomicLoadExpr(Opcode opcode,
                                   Index memidx,
                                   Address alignment_log2,
@@ -239,16 +259,17 @@ class BinaryReaderDelegate {
                                     Index memidx,
                                     Address alignment_log2,
                                     Address offset) = 0;
-  virtual Result OnBinaryExpr(Opcode opcode) = 0;
   virtual Result OnBlockExpr(Type sig_type) = 0;
   virtual Result OnBrExpr(Index depth) = 0;
   virtual Result OnBrIfExpr(Index depth) = 0;
+  virtual Result OnBrOnNonNullExpr(Index depth) = 0;
+  virtual Result OnBrOnNullExpr(Index depth) = 0;
   virtual Result OnBrTableExpr(Index num_targets,
                                Index* target_depths,
                                Index default_target_depth) = 0;
   virtual Result OnCallExpr(Index func_index) = 0;
   virtual Result OnCallIndirectExpr(Index sig_index, Index table_index) = 0;
-  virtual Result OnCallRefExpr() = 0;
+  virtual Result OnCallRefExpr(Type sig_type) = 0;
   virtual Result OnCatchExpr(Index tag_index) = 0;
   virtual Result OnCatchAllExpr() = 0;
   virtual Result OnCompareExpr(Opcode opcode) = 0;
@@ -287,6 +308,7 @@ class BinaryReaderDelegate {
   virtual Result OnTableGrowExpr(Index table_index) = 0;
   virtual Result OnTableSizeExpr(Index table_index) = 0;
   virtual Result OnTableFillExpr(Index table_index) = 0;
+  virtual Result OnRefAsNonNullExpr() = 0;
   virtual Result OnRefFuncExpr(Index func_index) = 0;
   virtual Result OnRefNullExpr(Type type) = 0;
   virtual Result OnRefIsNullExpr() = 0;
@@ -296,16 +318,18 @@ class BinaryReaderDelegate {
   virtual Result OnReturnCallExpr(Index func_index) = 0;
   virtual Result OnReturnCallIndirectExpr(Index sig_index,
                                           Index table_index) = 0;
+  virtual Result OnReturnCallRefExpr(Type sig_type) = 0;
   virtual Result OnSelectExpr(Index result_count, Type* result_types) = 0;
   virtual Result OnStoreExpr(Opcode opcode,
                              Index memidx,
                              Address alignment_log2,
                              Address offset) = 0;
   virtual Result OnThrowExpr(Index tag_index) = 0;
+  virtual Result OnThrowRefExpr() = 0;
   virtual Result OnTryExpr(Type sig_type) = 0;
+  virtual Result OnTryTableExpr(Type sig_type,
+                                const CatchClauseVector& catches) = 0;
 
-  virtual Result OnUnaryExpr(Opcode opcode) = 0;
-  virtual Result OnTernaryExpr(Opcode opcode) = 0;
   virtual Result OnUnreachableExpr() = 0;
   virtual Result EndFunctionBody(Index index) = 0;
   virtual Result EndCodeSection() = 0;
@@ -356,9 +380,7 @@ class BinaryReaderDelegate {
                                   uint8_t flags) = 0;
   virtual Result BeginDataSegmentInitExpr(Index index) = 0;
   virtual Result EndDataSegmentInitExpr(Index index) = 0;
-  virtual Result OnDataSegmentData(Index index,
-                                   const void* data,
-                                   Address size) = 0;
+  virtual Result OnDataSegmentData(Index index, ByteSpan data) = 0;
   virtual Result EndDataSegment(Index index) = 0;
   virtual Result EndDataSection() = 0;
 
@@ -431,8 +453,7 @@ class BinaryReaderDelegate {
   /* Generic custom section */
   virtual Result BeginGenericCustomSection(Offset size) = 0;
   virtual Result OnGenericCustomSection(std::string_view name,
-                                        const void* data,
-                                        Offset size) = 0;
+                                        ByteSpan data) = 0;
   virtual Result EndGenericCustomSection() = 0;
 
   /* Linking section */
@@ -488,16 +509,13 @@ class BinaryReaderDelegate {
                                           Offset size) = 0;
   virtual Result OnCodeMetadataFuncCount(Index count) = 0;
   virtual Result OnCodeMetadataCount(Index function_index, Index count) = 0;
-  virtual Result OnCodeMetadata(Offset offset,
-                                const void* data,
-                                Address size) = 0;
+  virtual Result OnCodeMetadata(Offset offset, ByteSpan data) = 0;
   virtual Result EndCodeMetadataSection() = 0;
 
   const State* state = nullptr;
 };
 
-Result ReadBinary(const void* data,
-                  size_t size,
+Result ReadBinary(ByteSpan data,
                   BinaryReaderDelegate* reader,
                   const ReadBinaryOptions& options);
 

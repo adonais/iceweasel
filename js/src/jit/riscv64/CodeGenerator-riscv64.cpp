@@ -59,33 +59,6 @@ MoveOperand CodeGeneratorRiscv64::toMoveOperand(LAllocation a) const {
   return MoveOperand(address, kind);
 }
 
-void CodeGeneratorRiscv64::bailoutFrom(Label* label, LSnapshot* snapshot) {
-  MOZ_ASSERT_IF(!masm.oom(), label->used());
-  MOZ_ASSERT_IF(!masm.oom(), !label->bound());
-
-  encode(snapshot);
-
-  InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
-  auto* ool = new (alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
-    // Push snapshotOffset and make sure stack is aligned.
-    masm.subPtr(Imm32(sizeof(Value)), StackPointer);
-    masm.storePtr(ImmWord(snapshot->snapshotOffset()),
-                  Address(StackPointer, 0));
-
-    masm.jump(&deoptLabel_);
-  });
-  addOutOfLineCode(ool,
-                   new (alloc()) BytecodeSite(tree, tree->script()->code()));
-
-  masm.retarget(label, ool->entry());
-}
-
-void CodeGeneratorRiscv64::bailout(LSnapshot* snapshot) {
-  Label label;
-  masm.jump(&label);
-  bailoutFrom(&label, snapshot);
-}
-
 bool CodeGeneratorRiscv64::generateOutOfLineCode() {
   if (!CodeGeneratorShared::generateOutOfLineCode()) {
     return false;
@@ -497,7 +470,7 @@ void CodeGenerator::visitDivPowTwoI64(LDivPowTwoI64* ins) {
       masm.bind(&ok);
       masm.neg(dest, lhs);
     } else {
-      masm.mv(dest, lhs);
+      masm.ma_mv(dest, lhs);
     }
   }
 }
@@ -551,7 +524,7 @@ void CodeGenerator::visitModPowTwoI64(LModPowTwoI64* ins) {
       !ins->mir()->isUnsigned() && ins->mir()->canBeNegativeDividend();
 
   if (shift == 0) {
-    masm.mv(out, zero);
+    masm.ma_mv(out, zero);
     return;
   }
 
@@ -1371,7 +1344,7 @@ void CodeGenerator::visitDivConstantI(LDivConstantI* ins) {
     if (mir->trapOnError()) {
       masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
     } else if (mir->canTruncateInfinities()) {
-      masm.mv(output, zero);
+      masm.ma_mv(output, zero);
     } else {
       MOZ_ASSERT(mir->fallible());
       bailout(ins->snapshot());
@@ -1461,7 +1434,7 @@ void CodeGenerator::visitModConstantI(LModConstantI* ins) {
     if (mir->trapOnError()) {
       masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
     } else if (mir->isTruncated()) {
-      masm.mv(output, zero);
+      masm.ma_mv(output, zero);
     } else {
       MOZ_ASSERT(mir->fallible());
       bailout(ins->snapshot());
@@ -1499,7 +1472,7 @@ void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
     if (canBeNegative && !mir->isTruncated()) {
       bailoutTest32(Assembler::Signed, in, in, ins->snapshot());
     }
-    masm.mv(out, zero);
+    masm.ma_mv(out, zero);
     return;
   }
 
@@ -2394,7 +2367,7 @@ void CodeGenerator::visitUDivConstant(LUDivConstant* ins) {
     if (ins->mir()->trapOnError()) {
       masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
     } else if (mir->canTruncateInfinities()) {
-      masm.mv(output, zero);
+      masm.ma_mv(output, zero);
     } else {
       MOZ_ASSERT(mir->fallible());
       bailout(ins->snapshot());
@@ -2465,7 +2438,7 @@ void CodeGenerator::visitUModConstant(LUModConstant* ins) {
     if (ins->mir()->trapOnError()) {
       masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
     } else if (mir->isTruncated()) {
-      masm.mv(output, zero);
+      masm.ma_mv(output, zero);
     } else {
       MOZ_ASSERT(mir->fallible());
       bailout(ins->snapshot());

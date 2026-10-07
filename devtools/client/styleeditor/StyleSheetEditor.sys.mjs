@@ -99,6 +99,7 @@ export class StyleSheetEditor extends EventEmitter {
     this._window = win;
     this._isNew = this.styleSheet.isNew;
     this.styleSheetFriendlyIndex = styleSheetFriendlyIndex;
+    this._telemetryEditedPingForSource = false;
 
     // True when we've just set the editor text based on a style-applied
     // event from the StyleSheetActor.
@@ -655,6 +656,12 @@ export class StyleSheetEditor extends EventEmitter {
         this.transitionsEnabled,
         STYLE_SHEET_UPDATE_CAUSED_BY_STYLE_EDITOR
       );
+      // This tries to ensure only one ping per resource sent to Glean,
+      // even if the user edits the same source multiple times.
+      if (!this._telemetryEditedPingForSource) {
+        Glean.devtoolsStyleeditorStylesheets.stylesheetsEditedCount.add(1);
+        this._telemetryEditedPingForSource = true;
+      }
 
       // Clear any existing mappings from automatic CSS prettification
       // because they were likely invalided by manually editing the stylesheet.

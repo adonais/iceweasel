@@ -21,6 +21,10 @@ class CDMCaps {
   CDMCaps();
   ~CDMCaps();
 
+  // It is not safe to copy this object.
+  CDMCaps(const CDMCaps&) = delete;
+  CDMCaps& operator=(const CDMCaps&) = delete;
+
   struct KeyStatus {
     KeyStatus(const CencKeyId& aId, const nsString& aSessionId,
               dom::MediaKeyStatus aStatus)
@@ -67,10 +71,6 @@ class CDMCaps {
   nsTArray<KeyStatus> mKeyStatuses;
 
   nsTArray<WaitForKeys> mWaitForKeys;
-
-  // It is not safe to copy this object.
-  CDMCaps(const CDMCaps&) = delete;
-  CDMCaps& operator=(const CDMCaps&) = delete;
 };
 
 }  // namespace mozilla

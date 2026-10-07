@@ -80,7 +80,7 @@ Every app needs to define a minimum supported SDK version. This is usually a tra
 
 Focus will support Android versions 5 and higher (API 21+). This decisions is primarily driven by the following platform features that are not available on earlier versions of Android:
 
-* [WebView.shouldInterceptRequest()](shouldInterceptRequest): Our content blocking content uses the implementation of the callback that lets us inspect the request object. This implementation is only available on Android 21+.
+* [WebView.shouldInterceptRequest()](https://developer.android.com/reference/android/webkit/WebViewClient#shouldInterceptRequest(android.webkit.WebView,%20android.webkit.WebResourceRequest)): Our content blocking content uses the implementation of the callback that lets us inspect the request object. This implementation is only available on Android 21+.
 
 * [UI features](https://developer.android.com/training/material/shadows-clipping.html) like `elevation` allow us to build and prototype a "material" UI without needing to backport functionality.
 

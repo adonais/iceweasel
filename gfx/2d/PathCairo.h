@@ -31,7 +31,9 @@ class PathBuilderCairo : public PathBuilder {
            float aEndAngle, bool aAntiClockwise = false) override;
   already_AddRefed<Path> Finish() override;
 
-  bool Reset(FillRule aFillRule) override;
+  void Reset(FillRule aFillRule) override;
+
+  void Transform(const Matrix& aTransform) override;
 
   BackendType GetBackendType() const override { return BackendType::CAIRO; }
 
@@ -39,10 +41,11 @@ class PathBuilderCairo : public PathBuilder {
 
   static already_AddRefed<PathBuilder> Create(FillRule aFillRule);
 
+  void AppendPath(cairo_path_t* aPath);
+
  private:  // data
   friend class PathCairo;
 
-  FillRule mFillRule;
   std::vector<cairo_path_data_t> mPathData;
 };
 
@@ -52,15 +55,14 @@ class PathCairo : public Path {
 
   PathCairo(FillRule aFillRule, std::vector<cairo_path_data_t>& aPathData,
             const Point& aCurrentPoint, const Point& aBeginPoint);
-  explicit PathCairo(cairo_t* aContext);
+  explicit PathCairo(cairo_path_t* aPath);
   virtual ~PathCairo();
 
   BackendType GetBackendType() const override { return BackendType::CAIRO; }
 
   already_AddRefed<PathBuilder> CopyToBuilder(
-      FillRule aFillRule) const override;
-  already_AddRefed<PathBuilder> TransformedCopyToBuilder(
-      const Matrix& aTransform, FillRule aFillRule) const override;
+      FillRule aFillRule,
+      already_AddRefed<PathBuilder> aBuilder) const override;
 
   bool ContainsPoint(const Point& aPoint,
                      const Matrix& aTransform) const override;
@@ -76,24 +78,16 @@ class PathCairo : public Path {
 
   void StreamToSink(PathSink* aSink) const override;
 
-  FillRule GetFillRule() const override { return mFillRule; }
-
   void SetPathOnContext(cairo_t* aContext) const;
-
-  void AppendPathToBuilder(PathBuilderCairo* aBuilder,
-                           const Matrix* aTransform = nullptr) const;
 
   bool IsEmpty() const override;
 
  private:
   void EnsureContainingContext(const Matrix& aTransform) const;
 
-  FillRule mFillRule;
   std::vector<cairo_path_data_t> mPathData;
   mutable cairo_t* mContainingContext;
   mutable Matrix mContainingTransform;
-  Point mCurrentPoint;
-  Point mBeginPoint;
 };
 
 }  // namespace gfx

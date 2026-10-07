@@ -10,7 +10,7 @@ from textwrap import dedent
 import mozunit
 import pytest
 from manifestparser import read_ini
-from manifestparser.util import evaluate_list_from_string
+from manifestparser.util import evaluate_list_from_string, split_manifest_list
 
 
 @pytest.fixture(scope="module")
@@ -98,6 +98,21 @@ def test_string_to_list_conversion_failures(test_manifest, failure, parse_manife
     parsed_tests = parse_manifest(test_manifest)
     with pytest.raises(failure):
         evaluate_list_from_string(parsed_tests[0][1]["cats"])
+
+
+@pytest.mark.parametrize(
+    "value, expected_list",
+    [
+        ["", []],
+        ["\n  MOZ_LOG=nsHttp:5\n", ["MOZ_LOG=nsHttp:5"]],
+        [
+            "\n  MOZ_LOG=nsHttp:5\n  MOZ_PROFILER_STARTUP_FILTERS=GeckoMain,DOM Worker\n",
+            ["MOZ_LOG=nsHttp:5", "MOZ_PROFILER_STARTUP_FILTERS=GeckoMain,DOM Worker"],
+        ],
+    ],
+)
+def test_split_manifest_list(value, expected_list):
+    assert split_manifest_list(value) == expected_list
 
 
 if __name__ == "__main__":

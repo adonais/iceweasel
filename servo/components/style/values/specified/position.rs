@@ -2160,9 +2160,13 @@ impl Inset {
         {
             return Ok(Self::LengthPercentage(l));
         }
-        if input.try_parse(|i| i.expect_ident_matching("auto")).is_ok() {
-            return Ok(Self::Auto);
-        }
+        match input.try_parse(|i| i.expect_ident_matching("auto")) {
+            Ok(_) => return Ok(Self::Auto),
+            Err(e) if !crate::pref!("layout.css.anchor-positioning.enabled", gecko = true) => {
+                return Err(e.into());
+            },
+            Err(_) => (),
+        };
         Self::parse_anchor_functions_quirky(context, input, allow_quirks)
     }
 
@@ -2183,6 +2187,10 @@ impl Inset {
         input: &mut Parser,
         allow_quirks: AllowQuirks,
     ) -> Result<Self, ParseError> {
+        debug_assert!(
+            crate::pref!("layout.css.anchor-positioning.enabled", gecko = true),
+            "How are we parsing with pref off?"
+        );
         if let Ok(inner) = input.try_parse(|i| AnchorFunction::parse(context, i)) {
             return Ok(Self::AnchorFunction(Box::new(inner)));
         }
@@ -2208,6 +2216,9 @@ pub type AnchorFunction = GenericAnchorFunction<specified::Percentage, Inset>;
 
 impl Parse for AnchorFunction {
     fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
+        if !crate::pref!("layout.css.anchor-positioning.enabled", gecko = true) {
+            return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
+        }
         input.expect_function_matching("anchor")?;
         input.parse_nested_block(|i| {
             let target_element = i.try_parse(|i| DashedIdent::parse(context, i)).ok();
@@ -2232,4 +2243,90 @@ impl Parse for AnchorFunction {
             })
         })
     }
+}
+
+/// https://drafts.csswg.org/css-flexbox/#flex-direction-property
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum FlexDirection {
+    Row,
+    RowReverse,
+    Column,
+    ColumnReverse,
+}
+
+/// https://drafts.csswg.org/css-ui/#propdef-box-sizing
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum BoxSizing {
+    ContentBox,
+    BorderBox,
+}
+
+/// https://drafts.csswg.org/css-images/#propdef-object-fit
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum ObjectFit {
+    Fill,
+    Contain,
+    Cover,
+    None,
+    ScaleDown,
 }

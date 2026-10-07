@@ -45,7 +45,7 @@ In Signtool's metainfo file, you would have a line like this:
 <blockquote><pre>
 ForwardCompatible { IRIX:6.2:mips Solaris:5.5.1:sparc }
 Platforms {
-	WINNT::x86 {
+	WIN95::x86 {
 		ModuleName { "Fortezza Module" }
 		ModuleFile { win32/fort32.dll }
 		DefaultMechanismFlags{0x0001}
@@ -155,8 +155,7 @@ NSPR changes, you will have to add some special code to deal with this case.
 <li>SOLARIS (sparc)
 <li>SONY (mips)
 <li>SUNOS (sparc)
-<li>WIN95 (x86)
-<li>WINNT (x86)
+<li>WIN95 (x86, x86-64), the historical NSPR name for all Windows versions
 </ul>
 </code>
 Examples of valid platform strings: <code>IRIX:6.2:mips, Solaris:5.5.1:sparc,

@@ -24,6 +24,7 @@ import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.concept.engine.Engine
 import mozilla.components.feature.tab.collections.Tab
 import mozilla.components.feature.tab.collections.TabCollection
+import mozilla.components.feature.tabgroups.storage.fakes.FakeTabGroupRepository
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.test.fakes.engine.FakeEngine
 import mozilla.components.support.utils.FakeDateTimeProvider
@@ -35,7 +36,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.components.TabCollectionStorage
 import org.mozilla.fenix.home.collections.migration.fake.FakeCollectionsMigrationRepository
-import org.mozilla.fenix.tabgroups.fakes.FakeTabGroupRepository
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 
 @OptIn(ExperimentalCoroutinesApi::class)

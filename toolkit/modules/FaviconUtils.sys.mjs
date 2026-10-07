@@ -25,10 +25,13 @@ export const TRUSTED_FAVICON_SCHEMES = Object.freeze([
  *   The URL to (remotely) load the image from.
  * @param {object} options
  *   Further configuration options for loading.
- * @param {number} options.size
+ * @param {number} [options.size]
  *   Either the desired maximum size of the final image or the desired actual
- *   size, depending on the value of the `stretch` option. This is required and
- *   should be > 0.
+ *   size, depending on the value of the `stretch` option. If `stretch` is
+ *   falsey, this can be undefined, in which case the image will be decoded at
+ *   its intrinsic size. However, note that SVGs without a `width` and `height`
+ *   on their `<svg>` have no intrinsic size, and an undefined `size` will cause
+ *   those image loads to fail.
  * @param {boolean} [options.stretch]
  *   Controls how the image will be resized along with the `size` option. If
  *   true (the default) or the image lacks an intrinsic size, it will be

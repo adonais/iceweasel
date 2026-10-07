@@ -69,7 +69,22 @@
         "value": {
           "light": "{color.gray.70}",
           "dark": "{color.gray.0}",
-          "nativeTheme": "currentColor"
+          "nativeTheme": "currentColor",
+          "forcedColors": "{button.text.color.@base}"
+        }
+      },
+      "hover": {
+        "ignoreFigma": "TODO: Fix Figma tokens sync script issues, see bug 2072751",
+        "value": {
+          "default": "{toolbarbutton.icon.fill.@base}",
+          "forcedColors": "{button.text.color.ghost.hover}"
+        }
+      },
+      "active": {
+        "ignoreFigma": "TODO: Fix Figma tokens sync script issues, see bug 2072751",
+        "value": {
+          "default": "{toolbarbutton.icon.fill.@base}",
+          "forcedColors": "{button.text.color.ghost.active}"
         }
       },
       "attention": {
@@ -123,6 +138,12 @@
           "default": "color-mix(in srgb, currentColor 30%, transparent)",
           "forcedColors": "{button.background.color.ghost.active}",
           "nativeTheme": "{button.background.color.ghost.active}"
+        }
+      },
+      "disabled": {
+        "value": {
+          "default": "{toolbarbutton.background.color.@base}",
+          "forcedColors": "{button.background.color.disabled}"
         }
       }
     }

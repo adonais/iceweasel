@@ -5,6 +5,8 @@
 #ifndef VideoLimits_h
 #define VideoLimits_h
 
+#include <cstdint>
+
 namespace mozilla {
 
 // The maximum height and width of the video. Used for

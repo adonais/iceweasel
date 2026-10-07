@@ -23,14 +23,14 @@ fuzzy(0-1,0-342) == percent-2.html percent-2-ref.html
 fuzzy(0-1,0-343) == percent-3.html percent-3-ref.html
 
 # more serious tests, using SVG reference
-fuzzy(17-30,58-70) == border-circle-2.html border-circle-2-ref.xhtml
+fuzzy(0-30,0-70) == border-circle-2.html border-circle-2-ref.xhtml
 fuzzy(61-63,248-1013) == curved-stripe-border.html curved-stripe-border-ref.svg # bug 459945
 
 # Corners
-fuzzy(17-30,47-58) == corner-1.html corner-1-ref.svg # bottom corners different radius than top corners
-fuzzy(18-30,49-57) == corner-2.html corner-2-ref.svg # right corners different radius than left corners; see bug 500804
-fuzzy(18-23,90-105) == corner-3.html corner-3-ref.svg
-fuzzy(12-13,83-108) == corner-4.html corner-4-ref.svg
+fuzzy(0-30,0-58) == corner-1.html corner-1-ref.svg # bottom corners different radius than top corners
+fuzzy(0-30,0-57) == corner-2.html corner-2-ref.svg # right corners different radius than left corners; see bug 500804
+fuzzy(0-23,0-105) == corner-3.html corner-3-ref.svg
+fuzzy(0-13,0-108) == corner-4.html corner-4-ref.svg
 
 # Test that radii too long are reduced
 == border-reduce-height.html border-reduce-height-ref.html
@@ -39,7 +39,7 @@ fuzzy(12-13,83-108) == corner-4.html corner-4-ref.svg
 fails == clipping-1.html clipping-1-ref.html # background color should completely fill box; bug 466572
 != clipping-2.html about:blank # background color clipped to inner/outer border, can't get
 # great tests for this due to antialiasing problems described in bug 466572
-fuzzy(17-30,58-111) == clipping-3.html clipping-3-ref.xhtml # edge of border-radius clips an underlying object's background
+fuzzy(0-30,0-111) == clipping-3.html clipping-3-ref.xhtml # edge of border-radius clips an underlying object's background
 
 # Tests for clipping the contents of replaced elements and overflow!=visible
 != clipping-4-ref.html clipping-4-notref.html
@@ -93,4 +93,4 @@ fuzzy(0-1,0-9) == curved-border-background-nogap.html curved-border-background-n
 
 fuzzy(0-1,0-4) == color-layer-1a.html color-layer-1-ref.html
 
-fuzzy-if(!useDrawSnapshot&&!geckoview,1-1,104-162) == corner-split.html corner-split-ref.svg
+fuzzy-if(!useDrawSnapshot&&!geckoview,0-12,0-162) == corner-split.html corner-split-ref.svg

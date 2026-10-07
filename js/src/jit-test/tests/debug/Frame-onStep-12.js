@@ -41,10 +41,10 @@ g.eval("function nothing() { }\n");
 
 var log = '';
 dbg.onDebuggerStatement = function(frame) {
-  let debugLine = frame.script.getOffsetLocation(frame.offset).lineNumber;
+  let debugLine = frame.script.getOffsetMetadata(frame.offset).lineNumber;
   frame.onStep = function() {
-    let foundLine = this.script.getOffsetLocation(this.offset).lineNumber;
-    if (this.script.getLineOffsets(foundLine).indexOf(this.offset) >= 0) {
+    let foundLine = this.script.getOffsetMetadata(this.offset).lineNumber;
+    if (this.script.getPossibleBreakpointOffsets({ line: foundLine }).indexOf(this.offset) >= 0) {
       log += (foundLine - debugLine).toString(16);
     }
   };
@@ -60,6 +60,10 @@ function testOne(name, body, expected) {
 
 
 
+// Note: under getPossibleBreakpoints, finally/catch/else header lines have
+// no recommended breakpoint locations, so no stops are reported on them;
+// what matters here is that no stops ever appear inside the unreachable
+// loop body (+2..+5).
 // Test the instructions at the end of a "try".
 testOne("testTryFinally",
         `try {
@@ -67,7 +71,7 @@ testOne("testTryFinally",
          } finally {            // +6
          }                      // +7
          nothing();             // +8
-        `, "1689");
+        `, "189");
 
 // The same but without a finally clause.
 testOne("testTryCatch",
@@ -87,7 +91,7 @@ testOne("testCatchFinally",
          } finally {            // +6
          }                      // +7
          nothing();             // +8
-        `, "1689");
+        `, "189");
 
 // Test the instruction at the end of a "finally" clause.
 testOne("testFinally",

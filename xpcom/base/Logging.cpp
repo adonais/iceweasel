@@ -296,6 +296,8 @@ void empty_va(va_list* va, ...) {
 
 struct LogMarker : public BaseMarkerType<LogMarker> {
   static constexpr const char* Name = "Log";
+  // Call sites pass the log module's name, so ETW must keep that name.
+  static constexpr bool ETWStoreName = true;
   static constexpr const char* TableLabel =
       "[{marker.data.level}] {marker.name}: {marker.data.message}";
   static constexpr const char* ColorField = "color";

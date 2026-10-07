@@ -397,16 +397,22 @@ URIFixup.prototype = {
           fixupConsecutiveDotsHost(info);
           return info;
         }
+        // " and * are accepted by the URL parser but are not valid DNS name
+        // characters. When keyword search is available, prefer it over
+        // attempting a connection that will fail at DNS resolution.
+        if (
+          keywordLookupRequested(fixupFlags) &&
+          /["*]/.test(info.fixedURI.host) &&
+          tryKeywordFixupForURIInfo(info.originalInput, info, isPrivateContext)
+        ) {
+          fixupConsecutiveDotsHost(info);
+          return info;
+        }
       }
     }
 
     // Handle "www.<something>" as a URI.
-    const asciiHost = info.fixedURI?.asciiHost;
-    if (
-      asciiHost?.length > 4 &&
-      asciiHost?.startsWith("www.") &&
-      asciiHost?.lastIndexOf(".") == 3
-    ) {
+    if (isWwwOnlyHostname(info.fixedURI?.asciiHost)) {
       return info;
     }
 
@@ -422,9 +428,7 @@ URIFixup.prototype = {
 
     // See if it is a keyword and whether a keyword must be fixed up.
     if (
-      keywordFixupEnabled(fixupFlags) &&
-      fixupFlags &
-        (FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP | FIXUP_FLAG_FORCE_KEYWORD_LOOKUP) &&
+      keywordLookupRequested(fixupFlags) &&
       !inputHadDuffProtocol &&
       !checkSuffix(info).suffix &&
       keywordURIFixup(uriString, info, isPrivateContext)
@@ -443,11 +447,7 @@ URIFixup.prototype = {
 
     // If we still haven't been able to construct a valid URI, try to force a
     // keyword match.
-    if (
-      keywordFixupEnabled(fixupFlags) &&
-      fixupFlags &
-        (FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP | FIXUP_FLAG_FORCE_KEYWORD_LOOKUP)
-    ) {
+    if (keywordLookupRequested(fixupFlags)) {
       tryKeywordFixupForURIInfo(info.originalInput, info, isPrivateContext);
     }
 
@@ -1011,6 +1011,22 @@ function makeURIWithFixedLocalHosts(uriString, fixupFlags) {
   return uri;
 }
 
+function keywordLookupRequested(fixupFlags) {
+  return (
+    keywordFixupEnabled(fixupFlags) &&
+    !!(
+      fixupFlags &
+      (FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP | FIXUP_FLAG_FORCE_KEYWORD_LOOKUP)
+    )
+  );
+}
+
+function isWwwOnlyHostname(host) {
+  return (
+    host?.length > 4 && host.startsWith("www.") && host.lastIndexOf(".") == 3
+  );
+}
+
 /**
  * Whether keyword lookup is enabled, either by the keyword.enabled pref or
  * because it's forced via fixup flags.
@@ -1306,9 +1322,12 @@ function maybeAddPrefixAndSuffix(oldHost) {
   let numDots = (oldHost.match(/\./g) || []).length;
   if (numDots == 0) {
     newHost = prefix + oldHost + suffix;
-    Glean.urlfixup.suffix.get("fixup", suffix).add(1);
-  } else if (numDots == 1 && !oldHost.startsWith(prefix)) {
-    newHost = prefix + oldHost;
+  } else if (numDots == 1) {
+    if (prefix && oldHost == prefix) {
+      newHost = oldHost + suffix;
+    } else if (suffix && !oldHost.startsWith(prefix)) {
+      newHost = prefix + oldHost;
+    }
   }
   return newHost ? newHost : oldHost;
 }

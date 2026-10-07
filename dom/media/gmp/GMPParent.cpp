@@ -16,7 +16,6 @@
 #include "mozilla/FOGIPC.h"
 #include "mozilla/dom/KeySystemNames.h"
 #include "mozilla/dom/WidevineCDMManifestBinding.h"
-#include "mozilla/ipc/CrashReporterHost.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)

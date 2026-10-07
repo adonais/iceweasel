@@ -81,18 +81,14 @@ class MOZ_STACK_CLASS ServoCSSAnimationBuilder final {
     MOZ_ASSERT(aComputedStyle);
   }
 
+  const ComputedStyle* Style() const { return mComputedStyle; }
+
   bool BuildKeyframes(const Element& aElement, nsPresContext* aPresContext,
                       nsAtom* aName,
                       const StyleComputedTimingFunction& aTimingFunction,
                       nsTArray<Keyframe>& aKeyframes) {
     return aPresContext->StyleSet()->GetKeyframesForName(
         aElement, *mComputedStyle, aName, aTimingFunction, aKeyframes);
-  }
-  void SetKeyframes(KeyframeEffect& aEffect, nsTArray<Keyframe>&& aKeyframes,
-                    const dom::AnimationTimeline* aTimeline,
-                    const dom::AnimationRange& aRange) {
-    aEffect.SetKeyframes(std::move(aKeyframes), mComputedStyle, aTimeline,
-                         &aRange);
   }
 
   // Currently all the animation building code in this file is based on
@@ -178,7 +174,8 @@ static void UpdateOldAnimationPropertiesWithNew(
     CSSAnimation& aOld, TimingParams&& aNewTiming,
     nsTArray<Keyframe>&& aNewKeyframes, bool aNewIsStylePaused,
     CSSAnimationProperties aOverriddenProperties,
-    ServoCSSAnimationBuilder& aBuilder, dom::AnimationTimeline* aTimeline,
+    ServoCSSAnimationBuilder& aBuilder, const NonOwningAnimationTarget& aTarget,
+    dom::AnimationTimeline* aTimeline,
     const dom::ScopedTimelineName& aTimelineName,
     const StyleComputedTimingFunction& aNewTimingFunction,
     dom::CompositeOperation aNewComposite, dom::AnimationRange&& aTimelineRange,
@@ -196,9 +193,7 @@ static void UpdateOldAnimationPropertiesWithNew(
 
   // Update the old from the new so we can keep the original object
   // identity (and any expando properties attached to it).
-  if (aOld.GetEffect()) {
-    dom::AnimationEffect* oldEffect = aOld.GetEffect();
-
+  if (dom::AnimationEffect* oldEffect = aOld.GetEffect()) {
     // Copy across the changes that are not overridden
     TimingParams updatedTiming = oldEffect->SpecifiedTiming();
     if (~aOverriddenProperties & CSSAnimationProperties::Duration) {
@@ -222,8 +217,13 @@ static void UpdateOldAnimationPropertiesWithNew(
 
     if (KeyframeEffect* oldKeyframeEffect = oldEffect->AsKeyframeEffect()) {
       if (~aOverriddenProperties & CSSAnimationProperties::Keyframes) {
-        aBuilder.SetKeyframes(*oldKeyframeEffect, std::move(aNewKeyframes),
-                              aTimeline, aTimelineRange);
+        // FIXME(emilio): Should we update the effect target on top if different
+        // or something?
+        auto* style = oldKeyframeEffect->GetAnimationTarget() == aTarget
+                          ? aBuilder.Style()
+                          : nullptr;
+        oldKeyframeEffect->SetKeyframes(std::move(aNewKeyframes), style,
+                                        aTimeline, &aTimelineRange);
 
         // The default timing function and default composite for CSS Keyframes
         // processing.
@@ -441,7 +441,7 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
     // In order to honor what the spec said, we'd copy more data over.
     UpdateOldAnimationPropertiesWithNew(
         *oldAnim, std::move(timing), std::move(keyframes), isStylePaused,
-        oldAnim->PropertiesOverridenByJS(), aBuilder, timeline.get(),
+        oldAnim->PropertiesOverridenByJS(), aBuilder, aTarget, timeline.get(),
         timelineName, timingFunction, composition, std::move(range),
         aTimelineNamesToAnimationMap);
     // For now, only name-referenced timeline, or `none`, which is represented
@@ -457,8 +457,8 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
       std::move(timing), effectOptions);
   effect->SetDefaultTimingFunction(timingFunction);
   effect->SetDefaultComposite(composition);
-
-  aBuilder.SetKeyframes(*effect, std::move(keyframes), timeline, range);
+  effect->KeyframeEffect::SetKeyframes(std::move(keyframes), aBuilder.Style(),
+                                       timeline, &range);
 
   auto animation = MakeRefPtr<CSSAnimation>(
       aPresContext->Document()->GetScopeObject(), animationName);
@@ -574,6 +574,10 @@ static void UpdateNamedTimelineAnimation(
     return;
   }
   const auto target = aAnimation->GetTargetForAnimation();
+  if (MOZ_UNLIKELY(!target.mElement)) {
+    // Animation likely does not have an associated effect.
+    return;
+  }
   // Ok, we know at least one timeline by this name got updated, which may
   // change our lookup result. Lookup by our scoped name again.
   const RefPtr<dom::AnimationTimeline> newTimeline =
@@ -643,6 +647,8 @@ void nsAnimationManager::UpdateDeferredTimelineChanges() {
   if (mAnimationsWithDeferredUpdate.IsEmpty()) {
     return;
   }
+  // This is unneeded once we resolve Bug 2033912.
+  nsAutoScriptBlocker scriptBlocker;
   auto* document = mPresContext->Document();
   for (auto* animation : mAnimationsWithDeferredUpdate) {
     if (!animation->GetTimelineName().mName) {

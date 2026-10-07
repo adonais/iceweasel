@@ -11,6 +11,7 @@ from mozbuild.frontend.reviewers import (
     known_review_groups,
     mots_groups_for_files,
     mots_modules_for_files,
+    mots_review_groups,
     parse_reviewers_from_subjects,
 )
 
@@ -471,6 +472,33 @@ class TestKnownReviewGroups(unittest.TestCase):
 
     def test_no_sources(self):
         self.assertEqual(known_review_groups(), set())
+
+
+class TestMotsReviewGroups(unittest.TestCase):
+    def test_collects_from_nested_modules(self):
+        config = {
+            "modules": [
+                _module(
+                    "layout",
+                    ["layout/**/*"],
+                    meta={"review_group": "layout-reviewers"},
+                    submodules=[
+                        _module(
+                            "mathml",
+                            ["layout/mathml/**/*"],
+                            meta={"review_group": "firefox-svg-reviewers"},
+                        )
+                    ],
+                ),
+                _module("nogroup", ["dom/**/*"], meta={}),
+            ]
+        }
+        self.assertEqual(
+            mots_review_groups(config), {"layout-reviewers", "firefox-svg-reviewers"}
+        )
+
+    def test_no_config(self):
+        self.assertEqual(mots_review_groups(None), set())
 
 
 class TestParseReviewersFromSubjects(unittest.TestCase):

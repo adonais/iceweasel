@@ -384,3 +384,11 @@ SECOID_FindOIDTagFromDescripton;
 ;+    local:
 ;+       *;
 ;+};
+;+NSSUTIL_3.130 {         # NSS Utilities 3.130 release
+;+    global:
+SEC_QuickDERDecodeItemWithLimits;
+SEC_ASN1DecoderSetMaximumNumberOfElements;
+SEC_ASN1DecoderSetMaximumInputSize;
+;+    local:
+;+       *;
+;+};

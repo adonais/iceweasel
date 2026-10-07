@@ -119,7 +119,8 @@
       // Document relation updates on ARIA attribute change.
       testRelated("aria-labelledby",
                   RELATION_LABELLED_BY, RELATION_LABEL_FOR,
-                  document, "body", "dependent1", "dependent2");
+                  document, document.documentElement,
+                  "dependent1", "dependent2");
 
       // Insert related accessibles into tree.
       await insertRelated("aria-labelledby", "dependent3", true,

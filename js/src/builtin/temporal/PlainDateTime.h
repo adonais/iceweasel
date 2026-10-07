@@ -49,6 +49,8 @@ class PlainDateTimeObject : public NativeObject {
    * Extract the time fields from this PlainDateTime object.
    */
   Time time() const {
+    // Keep this in sync with `MacroAssembler::unpackTime` in
+    // jit/MacroAssembler.cpp.
     auto packed = PackedTime{mozilla::BitwiseCast<uint64_t>(
         getFixedSlotTyped(PACKED_TIME_SLOT).toDouble())};
     return PackedTime::unpack(packed);

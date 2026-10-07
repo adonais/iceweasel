@@ -17,10 +17,7 @@ interface PerformanceResourceTiming : PerformanceEntry
   readonly attribute DOMString initiatorType;
 
   // https://w3c.github.io/resource-timing/#dom-performanceresourcetiming-deliverytype
-  // Own pref, independent of dom.speculation_rules.enabled: this partial
-  // implementation only ever reports "navigational-prefetch", never "cache"
-  // (bug 1914120), so it must not turn on automatically when speculation
-  // rules ships.
+  // Own pref, independent of dom.speculation_rules.enabled.
   [Pref="dom.performance.deliverytype.enabled"]
   readonly attribute DOMString deliveryType;
 

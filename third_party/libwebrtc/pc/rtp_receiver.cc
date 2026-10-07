@@ -66,6 +66,16 @@ std::optional<uint32_t> RtpReceiverBase::ssrc() const {
   return signaled_ssrc_;
 }
 
+std::optional<uint32_t> RtpReceiverBase::ssrc_s() const {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
+  return ssrc_s_;
+}
+
+void RtpReceiverBase::SetSsrc_s(uint32_t ssrc) {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
+  ssrc_s_ = ssrc;
+}
+
 void RtpReceiverBase::SetFrameDecryptor(
     scoped_refptr<FrameDecryptorInterface> frame_decryptor) {
   RTC_DCHECK_RUN_ON(worker_thread_);

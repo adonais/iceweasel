@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -28,6 +29,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
@@ -35,11 +37,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDataType
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices.TABLET
 import androidx.compose.ui.tooling.preview.Preview
@@ -196,11 +200,19 @@ private fun SignatureField(state: TextFieldState) {
             textStyle = signatureStyle,
             lineLimits = TextFieldLineLimits.SingleLine,
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            keyboardOptions =
+                KeyboardOptions(
+                    autoCorrectEnabled = false,
+                    keyboardType = KeyboardType.PersonName,
+                ),
             modifier =
                 Modifier.fillMaxWidth()
                     .testTag(PdfToolsTestTag.SIGNATURE_INPUT)
                     .focusRequester(focusRequester)
-                    .semantics { contentDescription = placeholder },
+                    .semantics {
+                        contentDescription = placeholder
+                        contentDataType = ContentDataType.None
+                    },
         )
     }
 }

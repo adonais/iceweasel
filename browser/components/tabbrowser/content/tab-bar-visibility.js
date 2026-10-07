@@ -8,7 +8,8 @@ var TabBarVisibility = {
   update(force = false) {
     let isPopup = !window.toolbar.visible;
     let isTaskbarTab = document.documentElement.hasAttribute("taskbartab");
-    let isSingleTabWindow = isPopup || isTaskbarTab;
+    let isMiniWindow = document.documentElement.hasAttribute("mini-window");
+    let isSingleTabWindow = isPopup || isTaskbarTab || isMiniWindow;
 
     let hasVerticalTabs =
       !isSingleTabWindow &&

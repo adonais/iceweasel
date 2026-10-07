@@ -134,7 +134,7 @@ class AsyncCallbackMethodHandlerBase {
    private:
     UniquePtr<AsyncCallbackMethodHandlerBase> mHandler;
 
-    ~PromiseHandler() = default;
+    ~PromiseHandler();
   };
 };
 

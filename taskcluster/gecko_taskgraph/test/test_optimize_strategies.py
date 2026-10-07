@@ -2,6 +2,7 @@
 # http://creativecommons.org/publicdomain/zero/1.0/
 
 
+import json
 import time
 from datetime import datetime
 from time import mktime
@@ -11,8 +12,11 @@ from mozunit import main
 from taskgraph.optimize.base import registry
 from taskgraph.task import Task
 from taskgraph.util.copy import deepcopy
+from taskgraph.util.python_path import find_object
+from taskgraph.util.yaml import load_yaml
 
-from gecko_taskgraph.optimize import project
+from gecko_taskgraph import GECKO
+from gecko_taskgraph.optimize import experimental, perf_batching, project
 from gecko_taskgraph.optimize.backstop import SkipUnlessBackstop, SkipUnlessPushInterval
 from gecko_taskgraph.optimize.bugbug import (
     FALLBACK,
@@ -22,6 +26,10 @@ from gecko_taskgraph.optimize.bugbug import (
 )
 from gecko_taskgraph.optimize.docs import SkipUnlessSphinxJs
 from gecko_taskgraph.optimize.mozlint import SkipUnlessMozlint
+from gecko_taskgraph.optimize.perf_batching import (
+    PERF_CADENCE_STRATEGIES,
+    SkipUnlessTimeSinceLastBatch,
+)
 from gecko_taskgraph.optimize.strategies import SkipUnlessMissing, SkipUnlessSchedules
 from gecko_taskgraph.util.backstop import BACKSTOP_PUSH_INTERVAL
 from gecko_taskgraph.util.bugbug import (
@@ -515,6 +523,134 @@ def test_project_autoland_test(monkeypatch, responses, params):
         t.label for t in default_tasks if not opt.should_remove_task(t, params, {})
     }
     assert scheduled == {"task-0-label", "task-1-label"}
+
+
+perf_batch_tasks = list(
+    generate_tasks(
+        {"attributes": {"unittest_suite": "raptor"}},
+        {"attributes": {"unittest_suite": "talos"}},
+        {"attributes": {"unittest_suite": "awsy"}},
+        {"attributes": {"perftest_name": "browsertime"}},
+        {"attributes": {"unittest_suite": "mochitest-plain"}},
+        {"attributes": {"build_type": "opt"}},
+    )
+)
+
+
+def test_perf_cadence_aliases(params):
+    """The perf-cadence aliases behave identically to the strategies they
+    wrap, so assigning them to perf tasks changes nothing until a shadow
+    scheduler (or later, production) overrides them."""
+    task = perf_batch_tasks[0]
+    pairs = [
+        ("perf-cadence-android", "skip-unless-android-perftest-backstop"),
+        ("perf-cadence-backstop", "skip-unless-backstop"),
+        ("perf-cadence-expanded", "skip-unless-expanded"),
+    ]
+    for backstop in (True, False):
+        for pushlog_id in (10, 11, 20):
+            params["backstop"] = backstop
+            params["android_perftest_backstop"] = backstop
+            params["pushlog_id"] = pushlog_id
+            for alias, original in pairs:
+                assert bool(
+                    registry[alias].should_remove_task(task, params, None)
+                ) == bool(registry[original].should_remove_task(task, params, None))
+
+    # perf-cadence-default forwards to the default `test` strategy.
+    assert registry["perf-cadence-default"].substrategies[0] is registry["test"]
+
+
+def test_perf_cadence_default_mirrors_test():
+    """Wherever `test` is overridden, talos/awsy (judged through
+    perf-cadence-default) get the identical override."""
+    assert project.autoland["perf-cadence-default"] is project.autoland["test"]
+    assert project.beta["perf-cadence-default"] is project.beta["test"]
+    assert (
+        experimental.bugbug_reduced["perf-cadence-default"]
+        is experimental.bugbug_reduced["test"]
+    )
+
+
+def test_perf_batch_overrides():
+    overrides = experimental.perf_fixed_batch_10
+    assert overrides["build"] is project.autoland["build"]
+    assert overrides["test"] is project.autoland["test"]
+
+    batch = overrides["perf-cadence-expanded"]
+    assert isinstance(batch, SkipUnlessPushInterval)
+    assert batch.push_interval == 10
+    for name in PERF_CADENCE_STRATEGIES:
+        assert overrides[name] is batch
+
+
+def test_skip_unless_time_since_last_batch(monkeypatch, params):
+    saved = []
+    monkeypatch.setattr(perf_batching, "save_state", saved.append)
+
+    def set_state(state):
+        monkeypatch.setattr(perf_batching, "load_state", lambda *args: state)
+
+    task = perf_batch_tasks[0]
+    params["pushdate"] = 1000000
+
+    # Cold start: kept, the current push becomes the last batch.
+    opt = SkipUnlessTimeSinceLastBatch(5.5, "perf_time_batch_5_5h")
+    params["pushlog_id"] = 100
+    set_state(None)
+    assert not opt.should_remove_task(task, params, None)
+    assert saved[-1]["batched"] and saved[-1]["cold_start"]
+    assert saved[-1]["last_batch"]["pushlog_id"] == 100
+
+    # Not enough time since the last batch: removed, last batch carried over.
+    opt = SkipUnlessTimeSinceLastBatch(5.5, "perf_time_batch_5_5h")
+    params["pushlog_id"] = 101
+    set_state({"last_batch": {"pushlog_id": 90, "pushdate": 1000000 - 19800 + 60}})
+    assert opt.should_remove_task(task, params, None)
+    assert not saved[-1]["batched"] and not saved[-1]["cold_start"]
+    assert saved[-1]["last_batch"]["pushlog_id"] == 90
+
+    # Interval elapsed: kept, the last batch advances to the current push.
+    opt = SkipUnlessTimeSinceLastBatch(5.5, "perf_time_batch_5_5h")
+    params["pushlog_id"] = 102
+    set_state({"last_batch": {"pushlog_id": 90, "pushdate": 1000000 - 19800}})
+    assert not opt.should_remove_task(task, params, None)
+    assert saved[-1]["batched"]
+    assert saved[-1]["last_batch"]["pushlog_id"] == 102
+
+    # The decision and state are computed once per push.
+    assert len(saved) == 3
+    assert not opt.should_remove_task(task, params, None)
+    assert len(saved) == 3
+
+
+def test_save_state(monkeypatch, tmp_path):
+    monkeypatch.delenv(perf_batching.STATE_PATH_ENVVAR, raising=False)
+    perf_batching.save_state({"batched": True})
+
+    state_path = tmp_path / "state" / "state.json"
+    monkeypatch.setenv(perf_batching.STATE_PATH_ENVVAR, str(state_path))
+    perf_batching.save_state({"batched": True})
+    assert json.loads(state_path.read_text()) == {"batched": True}
+
+
+def test_shadow_scheduler_strategies_resolve():
+    """Every strategy referenced by a shadow scheduler task resolves to a
+    non-empty strategy override dict."""
+    tasks = load_yaml(
+        GECKO, "taskcluster", "kinds", "source-test", "shadow-scheduler.yml"
+    )
+    strategies = {
+        name: task["worker"]["env"]["TASKGRAPH_OPTIMIZE_STRATEGIES"]
+        for name, task in tasks.items()
+        if name != "task-defaults"
+    }
+    assert strategies
+
+    for name, strategy_path in strategies.items():
+        overrides = find_object(strategy_path)
+        assert isinstance(overrides, dict), name
+        assert overrides, name
 
 
 @pytest.mark.parametrize(

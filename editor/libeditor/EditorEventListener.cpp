@@ -29,6 +29,7 @@
 #include "mozilla/dom/EventTarget.h"  // for EventTarget
 #include "mozilla/dom/HTMLTextAreaElement.h"
 #include "mozilla/dom/MouseEvent.h"  // for MouseEvent
+#include "mozilla/dom/Range.h"       // for dom::Range
 #include "mozilla/dom/Selection.h"
 
 #include "nsAString.h"
@@ -41,13 +42,12 @@
 #include "nsIContentInlines.h"    // for nsINode::IsInDesignMode()
 #include "nsIController.h"        // for nsIController
 #include "nsID.h"
-#include "nsIFormControl.h"   // for nsIFormControl, etc.
-#include "nsINode.h"          // for nsINode, etc.
-#include "nsIWidget.h"        // for nsIWidget
-#include "nsLiteralString.h"  // for NS_LITERAL_STRING
-#include "nsPIWindowRoot.h"   // for nsPIWindowRoot
-#include "nsPrintfCString.h"  // for nsPrintfCString
-#include "nsRange.h"
+#include "nsIFormControl.h"         // for nsIFormControl, etc.
+#include "nsINode.h"                // for nsINode, etc.
+#include "nsIWidget.h"              // for nsIWidget
+#include "nsLiteralString.h"        // for NS_LITERAL_STRING
+#include "nsPIWindowRoot.h"         // for nsPIWindowRoot
+#include "nsPrintfCString.h"        // for nsPrintfCString
 #include "nsServiceManagerUtils.h"  // for do_GetService
 #include "nsString.h"               // for nsAutoString
 #include "nsQueryObject.h"          // for do_QueryObject

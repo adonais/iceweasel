@@ -11,6 +11,14 @@
 @namespace xul url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 @namespace html url("http://www.w3.org/1999/xhtml");
 
+:root {
+  @layer tokens-foundation {
+    /* Allow a smaller font size since root font size is usually larger than
+     * Windows/macOS, but don't go below 11px. */
+    --font-size-small: max(0.9rem, 11px);
+  }
+}
+
 @media (-moz-menubar-drag) {
   xul|toolbar[type="menubar"] {
     -moz-window-dragging: drag;

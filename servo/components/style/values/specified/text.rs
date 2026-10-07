@@ -566,10 +566,10 @@ impl ToComputedValue for TextAlign {
                 if _context.builder.is_root_element {
                     return TextAlignKeyword::Start;
                 }
-                let parent = _context
+                let parent = *_context
                     .builder
                     .get_parent_inherited_text()
-                    .clone_text_align();
+                    .get_text_align();
                 let ltr = _context.builder.inherited_writing_mode().is_bidi_ltr();
                 match (parent, ltr) {
                     (TextAlignKeyword::Start, true) => TextAlignKeyword::Left,
@@ -580,10 +580,10 @@ impl ToComputedValue for TextAlign {
                 }
             },
             TextAlign::MozCenterOrInherit => {
-                let parent = _context
+                let parent = *_context
                     .builder
                     .get_parent_inherited_text()
-                    .clone_text_align();
+                    .get_text_align();
                 if parent == TextAlignKeyword::Start {
                     TextAlignKeyword::Center
                 } else {
@@ -697,7 +697,7 @@ impl ToComputedValue for TextEmphasisStyle {
                     //
                     // Also should probably use WritingMode::is_vertical rather
                     // than the computed value of the `writing-mode` property.
-                    if context.style().get_inherited_box().clone_writing_mode()
+                    if *context.style().get_inherited_box().get_writing_mode()
                         == SpecifiedWritingMode::HorizontalTb
                     {
                         TextEmphasisShapeKeyword::Circle
@@ -1557,4 +1557,329 @@ impl TextBoxTrim {
     pub fn none() -> Self {
         TextBoxTrim::NONE
     }
+}
+
+/// https://drafts.csswg.org/css-text/#propdef-hyphens
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum Hyphens {
+    Manual,
+    None,
+    Auto,
+}
+
+/// https://drafts.csswg.org/css-size-adjust/#adjustment-control
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum TextSizeAdjust {
+    Auto,
+    None,
+}
+
+/// https://drafts.csswg.org/css-ruby/#ruby-align-property
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum RubyAlign {
+    SpaceAround,
+    Start,
+    Center,
+    SpaceBetween,
+}
+
+/// https://drafts.csswg.org/css-writing-modes-3/#text-combine-upright
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum TextCombineUpright {
+    None,
+    All,
+}
+
+/// https://svgwg.org/svg2-draft/painting.html#TextRenderingProperty
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum TextRendering {
+    Auto,
+    Optimizespeed,
+    Optimizelegibility,
+    Geometricprecision,
+}
+
+/// https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/-webkit-text-security
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum TextSecurity {
+    None,
+    Circle,
+    Disc,
+    Square,
+}
+
+/// https://drafts.csswg.org/css-text-4/#propdef-text-wrap-mode
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum TextWrapMode {
+    Wrap,
+    Nowrap,
+}
+
+/// https://drafts.csswg.org/css-text-4/#text-wrap-style
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum TextWrapStyle {
+    Auto,
+    Stable,
+    Balance,
+}
+
+/// https://drafts.csswg.org/css-writing-modes/#propdef-unicode-bidi
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum UnicodeBidi {
+    Normal,
+    Embed,
+    Isolate,
+    BidiOverride,
+    IsolateOverride,
+    Plaintext,
+}
+
+/// https://drafts.csswg.org/css-text-decor/#propdef-text-decoration-style
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum TextDecorationStyle {
+    // The discriminants are exposed through the LookAndFeel underline style
+    // integers, so keep them stable.
+    #[css(keyword = "-moz-none")]
+    None = 0,
+    Dotted = 1,
+    Dashed = 2,
+    Solid = 3,
+    Double = 4,
+    Wavy = 5,
+}
+
+/// Max valid value for TextDecorationStyle, see above.
+pub const MAX_LINE_STYLE: i32 = 5;
+
+/// https://drafts.csswg.org/css-text-4/#propdef-white-space-collapse
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum WhiteSpaceCollapse {
+    Collapse,
+    // TODO: Discard is not yet supported.
+    Preserve,
+    PreserveBreaks,
+    BreakSpaces,
+    #[cfg(feature = "gecko")]
+    #[cfg_attr(feature = "gecko", parse(aliases = "-moz-pre-space"))]
+    PreserveSpaces,
 }

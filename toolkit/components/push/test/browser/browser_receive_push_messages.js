@@ -427,3 +427,54 @@ add_task(async function test_receive_push_messages_until_total_timeout() {
     "Push messages are received until the total timeout"
   );
 });
+
+async function inChildProcess(callback) {
+  let appinfo = sinon.stub(Services, "appinfo").value({
+    processType: Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT,
+  });
+
+  try {
+    return await callback();
+  } finally {
+    appinfo.restore();
+  }
+}
+
+add_task(async function test_push_messages_not_received_in_child_process() {
+  ok(
+    !(await inChildProcess(() =>
+      pushMessagesAreReceived(Ci.nsICommandLine.STATE_INITIAL_LAUNCH)
+    )),
+    "Push messages are not received"
+  );
+});
+
+add_task(async function test_not_kept_alive_in_child_process() {
+  Assert.deepEqual(
+    await inChildProcess(() =>
+      survivalAreaUsage(Ci.nsICommandLine.STATE_INITIAL_LAUNCH)
+    ),
+    { entered: false, exited: false },
+    "Firefox is not kept alive"
+  );
+});
+
+add_task(async function test_argument_not_handled_in_child_process() {
+  let cmdLine = Cu.createCommandLine(
+    ["--receive-push-messages"],
+    null,
+    Ci.nsICommandLine.STATE_INITIAL_LAUNCH
+  );
+
+  await inChildProcess(() =>
+    Cc[RECEIVE_PUSH_MESSAGES_CONTRACT_ID].getService(
+      Ci.nsICommandLineHandler
+    ).handle(cmdLine)
+  );
+
+  is(
+    cmdLine.findFlag("receive-push-messages", false),
+    0,
+    "The argument is left unhandled"
+  );
+});

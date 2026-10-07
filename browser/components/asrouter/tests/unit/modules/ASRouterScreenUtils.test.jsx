@@ -148,8 +148,8 @@ describe("ASRouterScreenUtils", () => {
     });
   });
 
-  describe("filterMultiSelectTargeting", () => {
-    it("should keep checkboxes without targeting", async () => {
+  describe("filterTileTargeting", () => {
+    it("should keep multiselect checkboxes without targeting", async () => {
       const testScreen = {
         content: {
           tiles: {
@@ -159,7 +159,7 @@ describe("ASRouterScreenUtils", () => {
         },
       };
       const stub = sandbox.stub(ASRouterScreenUtils, "evaluateScreenTargeting");
-      await ASRouterScreenUtils.filterMultiSelectTargeting(testScreen);
+      await ASRouterScreenUtils.filterTileTargeting(testScreen);
       assert.notCalled(stub);
       assert.deepEqual(
         testScreen.content.tiles.data.map(checkbox => checkbox.id),
@@ -181,7 +181,7 @@ describe("ASRouterScreenUtils", () => {
       sandbox
         .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
         .callsFake(targeting => targeting);
-      await ASRouterScreenUtils.filterMultiSelectTargeting(testScreen);
+      await ASRouterScreenUtils.filterTileTargeting(testScreen);
       assert.isUndefined(testScreen.content.tiles);
     });
     it("should handle an array of tiles, dropping only emptied multiselects", async () => {
@@ -203,7 +203,7 @@ describe("ASRouterScreenUtils", () => {
       sandbox
         .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
         .callsFake(targeting => targeting);
-      await ASRouterScreenUtils.filterMultiSelectTargeting(testScreen);
+      await ASRouterScreenUtils.filterTileTargeting(testScreen);
       assert.deepEqual(
         testScreen.content.tiles.map(t => t.type),
         ["multiselect", "theme"]
@@ -213,9 +213,92 @@ describe("ASRouterScreenUtils", () => {
         ["checkbox-2"]
       );
     });
+    it("should keep a single-select tile item with no targeting", async () => {
+      const testScreen = {
+        content: {
+          tiles: {
+            type: "single-select",
+            data: [{ id: "item-1" }, { id: "item-2" }],
+          },
+        },
+      };
+      const stub = sandbox.stub(ASRouterScreenUtils, "evaluateScreenTargeting");
+      await ASRouterScreenUtils.filterTileTargeting(testScreen);
+      assert.notCalled(stub);
+      assert.deepEqual(
+        testScreen.content.tiles.data.map(item => item.id),
+        ["item-1", "item-2"]
+      );
+    });
+    it("should remove the single-select tile when all items are filtered out", async () => {
+      const testScreen = {
+        content: {
+          tiles: {
+            type: "single-select",
+            data: [
+              { id: "item-1", targeting: false },
+              { id: "item-2", targeting: false },
+            ],
+          },
+        },
+      };
+      sandbox
+        .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
+        .callsFake(targeting => targeting);
+      await ASRouterScreenUtils.filterTileTargeting(testScreen);
+      assert.isUndefined(testScreen.content.tiles);
+    });
+    it("should handle an array of tiles, dropping only emptied single-selects", async () => {
+      const testScreen = {
+        content: {
+          tiles: [
+            {
+              type: "single-select",
+              data: [{ id: "item-1", targeting: false }],
+            },
+            {
+              type: "single-select",
+              data: [{ id: "item-2", targeting: true }],
+            },
+            { type: "theme", data: [] },
+          ],
+        },
+      };
+      sandbox
+        .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
+        .callsFake(targeting => targeting);
+      await ASRouterScreenUtils.filterTileTargeting(testScreen);
+      assert.deepEqual(
+        testScreen.content.tiles.map(t => t.type),
+        ["single-select", "theme"]
+      );
+      assert.deepEqual(
+        testScreen.content.tiles[0].data.map(item => item.id),
+        ["item-2"]
+      );
+    });
+    it("should remove the single-select selected item if it's filtered out", async () => {
+      const testScreen = {
+        content: {
+          tiles: {
+            type: "single-select",
+            selected: "item-1",
+            data: [
+              { id: "item-1", targeting: false },
+              { id: "item-2", targeting: true },
+            ],
+          },
+        },
+      };
+      sandbox
+        .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
+        .callsFake(targeting => targeting);
+      await ASRouterScreenUtils.filterTileTargeting(testScreen);
+      assert.isUndefined(testScreen.content.tiles.selected);
+    });
     it("should be a no-op for screens without tiles", async () => {
       const testScreen = { content: {} };
-      await ASRouterScreenUtils.filterMultiSelectTargeting(testScreen);
+      await ASRouterScreenUtils.filterTileTargeting(testScreen);
       assert.isUndefined(testScreen.content.tiles);
     });
   });

@@ -285,7 +285,7 @@ class BrowserToolbarMiddleware(
                 clipboard.extractURL()?.let {
                     fenixBrowserUseCases.loadUrlOrSearch(
                         searchTermOrURL = it,
-                        newTab = true,
+                        newTab = !settings.enableHomepageAsNewTab,
                         private = browsingModeManager.mode == Private,
                         searchEngine = reconcileSelectedEngine(),
                     )

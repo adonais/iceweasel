@@ -7,8 +7,12 @@ document.addEventListener(
   () => {
     const lazy = {};
     ChromeUtils.defineESModuleGetters(lazy, {
+      AIWindow:
+        "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
       ContentSharingUtils:
         "moz-src:///browser/components/sharing/ContentSharingUtils.sys.mjs",
+      MiniWindowManager:
+        "moz-src:///browser/components/miniwindow/MiniWindowManager.sys.mjs",
       TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
       TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
     });
@@ -117,6 +121,14 @@ document.addEventListener(
         case "context_shareSelectedTabs":
           lazy.ContentSharingUtils.handleShareTabs(TabContextMenu.contextTabs);
           break;
+        case "context_createAITab":
+          lazy.AIWindow.createAITab(
+            window,
+            TabContextMenu.contextTabs.map(
+              tab => tab.linkedBrowser.currentURI.spec
+            )
+          );
+          break;
         case "context_bookmarkTab":
           PlacesCommandHook.bookmarkTabs([TabContextMenu.contextTab]);
           break;
@@ -150,6 +162,9 @@ document.addEventListener(
               gBrowser.TabMetrics.METRIC_SOURCE.TAB_MENU
             ),
           });
+          break;
+        case "context_openTabInMiniWindow":
+          lazy.MiniWindowManager.popTab(TabContextMenu.contextTab);
           break;
         case "context_selectAllTabs":
           gBrowser.selectAllTabs();

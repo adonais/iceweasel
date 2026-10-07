@@ -1,0 +1,18 @@
+# Step 1 of the pipeline recycling sequence: each frame retires the previous
+# iframe pipeline and introduces a new one, with the removal sent as its own
+# transaction. See invalidation.list.
+---
+root:
+  items:
+    - type: iframe
+      bounds: [0, 0, 500, 200]
+      id: [1, 3]
+pipelines:
+  - id: [1, 3]
+    items:
+      - type: text
+        origin: [20, 100]
+        text: "Alpha"
+        font: "../reftests/text/FreeSans.ttf"
+        size: 40
+        color: [255, 255, 255, 1]

@@ -89,10 +89,29 @@ namespace ipc {
   IntegrityPolicyEntry? reportOnly;
 };
 
+[Comparable] struct ConnectionAllowlistEntry {
+  // The serialized URL patterns, which are re-parsed by the receiver.
+  nsCString[] patterns;
+  bool matchesResponseOrigin;
+  nsCString reportingEndpoint;
+  bool allowRedirects;
+  bool allowWebRTC;
+};
+
+[Comparable] struct ConnectionAllowlistsArgs
+{
+  ConnectionAllowlistEntry? enforcement;
+  ConnectionAllowlistEntry? reportOnly;
+  // The response URL of the document the allowlists were applied to, which
+  // `response-origin` resolves against. Empty when unknown.
+  nsCString responseURISpec;
+};
+
 [Comparable] struct PolicyContainerArgs
 {
   CSPInfo? csp;
   IntegrityPolicyArgs? integrityPolicy;
+  ConnectionAllowlistsArgs? connectionAllowlists;
   IPAddressSpace ipAddressSpace;
 };
 

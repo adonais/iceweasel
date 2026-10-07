@@ -1,9 +1,11 @@
 import mozunit
+import pytest
 
 LINTER = "license"
 fixed = 0
 
 
+@pytest.mark.lint_config(name="license")
 def test_lint_license(lint, paths):
     results = lint(paths())
     print(results)
@@ -20,6 +22,7 @@ def test_lint_license(lint, paths):
     assert "bad.js" in results[2].relpath
 
 
+@pytest.mark.lint_config(name="license")
 def test_lint_license_fix(lint, paths, create_temp_file):
     contents = """let foo = 0;"""
     path = create_temp_file(contents, "lint_license_test_tmp_file.js")

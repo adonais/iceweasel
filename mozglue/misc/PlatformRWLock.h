@@ -18,6 +18,12 @@ class RWLockImpl {
   explicit MFBT_API RWLockImpl();
   MFBT_API ~RWLockImpl();
 
+  RWLockImpl(const RWLockImpl&) = delete;
+  void operator=(const RWLockImpl&) = delete;
+  RWLockImpl(RWLockImpl&&) = delete;
+  void operator=(RWLockImpl&&) = delete;
+  bool operator==(const RWLockImpl& rhs) = delete;
+
  protected:
   [[nodiscard]] MFBT_API bool tryReadLock();
   MFBT_API void readLock();
@@ -28,12 +34,6 @@ class RWLockImpl {
   MFBT_API void writeUnlock();
 
  private:
-  RWLockImpl(const RWLockImpl&) = delete;
-  void operator=(const RWLockImpl&) = delete;
-  RWLockImpl(RWLockImpl&&) = delete;
-  void operator=(RWLockImpl&&) = delete;
-  bool operator==(const RWLockImpl& rhs) = delete;
-
 #ifndef XP_WIN
   pthread_rwlock_t mRWLock;
 #else

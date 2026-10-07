@@ -184,6 +184,10 @@ class MozillaSocorroServiceTest {
                 )
             )
 
+            val boundary = request.substringBefore("\r\n").removePrefix("--")
+            assert(request.endsWith("\r\n--$boundary--\r\n"))
+            assert(!request.contains("\r\n\r\n--$boundary--"))
+
             verify(service).report(crash)
             verify(service).sendReport(crash, null, "dump.path", "extras.path", true, true)
         } finally {
@@ -848,5 +852,49 @@ class MozillaSocorroServiceTest {
         } finally {
             mockWebServer.close()
         }
+    }
+
+    @Test
+    fun `MozillaSocorroService reports throwables that have no stack trace`() {
+        val mockWebServer = MockWebServer()
+
+        try {
+            mockWebServer.enqueue(MockResponse(code = 200, body = "CrashID=bp-00000000-0000-0000-0000-000000000000"))
+            mockWebServer.start()
+            val service =
+                MozillaSocorroService(
+                    testContext,
+                    "Test App",
+                    serverUrl = mockWebServer.url("/").toString(),
+                )
+
+            val throwable = StacklessException("Job was cancelled")
+            assertEquals(0, throwable.stackTrace.size)
+
+            service.report(Crash.UncaughtExceptionCrash(123456, throwable, arrayListOf()))
+
+            val body = ByteArrayInputStream(mockWebServer.takeRequest().body!!.toByteArray())
+            val request = GZIPInputStream(body).reader().readText()
+
+            assert(
+                request.contains("name=JavaStackTrace\r\n\r\n${StacklessException::class.java.name}: Job was cancelled")
+            )
+            assert(request.contains("\tat \$Missing.<stackTrace>(Unknown Source)"))
+            assert(request.contains("\"type\":\"StacklessException\""))
+            assert(request.contains("\"module\":\"\$Missing\""))
+        } finally {
+            mockWebServer.close()
+        }
+    }
+}
+
+/**
+ * Mirrors kotlinx.coroutines' `JobCancellationException`, which clears its own stack trace unless the coroutines
+ * library is in debug mode.
+ */
+private class StacklessException(message: String) : RuntimeException(message) {
+    override fun fillInStackTrace(): Throwable {
+        stackTrace = emptyArray()
+        return this
     }
 }

@@ -8,6 +8,7 @@
 #include "js/TypeDecls.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/RefPtr.h"
+#include "nsAtom.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"
@@ -25,8 +26,8 @@ class Report final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Report)
 
-  Report(nsIGlobalObject* aGlobal, const nsAString& aType,
-         const nsAString& aURL, ReportBody* aBody);
+  Report(nsIGlobalObject* aGlobal, nsAtom* aType, const nsACString& aURL,
+         ReportBody* aBody);
 
   already_AddRefed<Report> Clone();
 
@@ -35,10 +36,10 @@ class Report final : public nsISupports, public nsWrapperCache {
 
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
-  const nsString& Type() const;
+  nsAtom* Type() const;
 
-  void GetType(nsAString& aType) const;
-  void GetUrl(nsAString& aURL) const;
+  void GetType(nsACString& aType) const;
+  void GetUrl(nsACString& aURL) const;
 
   ReportBody* GetBody() const;
 
@@ -47,8 +48,8 @@ class Report final : public nsISupports, public nsWrapperCache {
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
 
-  nsString mType;
-  nsString mURL;
+  const RefPtr<nsAtom> mType;
+  nsCString mURL;
   RefPtr<ReportBody> mBody;
 };
 

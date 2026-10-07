@@ -110,9 +110,9 @@ class Navigation final : public DOMEventTargetHelper {
            *mCurrentEntryIndex != mEntries.Length() - 1;
   }
 
-  void Navigate(JSContext* aCx, const nsAString& aUrl,
-                const NavigationNavigateOptions& aOptions,
-                NavigationResult& aResult);
+  MOZ_CAN_RUN_SCRIPT void Navigate(JSContext* aCx, const nsAString& aUrl,
+                                   const NavigationNavigateOptions& aOptions,
+                                   NavigationResult& aResult);
 
   MOZ_CAN_RUN_SCRIPT void Reload(JSContext* aCx,
                                  const NavigationReloadOptions& aOptions,

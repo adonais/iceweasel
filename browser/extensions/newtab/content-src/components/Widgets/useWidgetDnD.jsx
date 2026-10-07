@@ -57,14 +57,21 @@ export function useWidgetDnD({ widgetOrder, prefs, dispatch, enabled = true }) {
     dispatch(ac.SetPref(PREF_WIDGETS_ORDER, newOrder.join(",")));
   }
 
-  const { containerRef, draggedId, getItemProps } = usePointerReorder({
-    order: effectiveOrder,
-    onCommit: commitOrder,
-    itemSelector: "[data-widget-id]",
-    idAttr: "widgetId",
-    ignoreSelector: INTERACTIVE_DESCENDANT_SELECTOR,
-    enabled,
-  });
+  const { containerRef, draggedId, previewOrder, getItemProps } =
+    usePointerReorder({
+      order: effectiveOrder,
+      onCommit: commitOrder,
+      itemSelector: "[data-widget-id]",
+      idAttr: "widgetId",
+      ignoreSelector: INTERACTIVE_DESCENDANT_SELECTOR,
+      enabled,
+    });
 
-  return { effectiveOrder, containerRef, draggedId, getItemProps };
+  return {
+    effectiveOrder,
+    containerRef,
+    draggedId,
+    previewOrder,
+    getItemProps,
+  };
 }

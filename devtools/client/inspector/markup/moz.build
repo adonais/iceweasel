@@ -19,3 +19,8 @@ BROWSER_CHROME_MANIFESTS += [
     "test/events/browser.toml",
     "test/shadowdom/browser.toml",
 ]
+
+LICENSED_UNDER += ["diff"]
+LICENSED_UNDER["diff"].paths = [
+    "test/events/helper_diff.js",
+]

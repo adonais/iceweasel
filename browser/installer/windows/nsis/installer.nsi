@@ -68,6 +68,7 @@ Var FinishPhaseEnd
 Var InstallResult
 Var LaunchedNewApp
 Var PostSigningData
+Var NotificationHelperStopExitCode
 
 ; By defining NO_STARTMENU_DIR an installer that doesn't provide an option for
 ; an application's Start Menu PROGRAMS directory and doesn't define the
@@ -962,6 +963,10 @@ Function CheckExistingInstall
       Sleep 5000
     ${EndIf}
 
+!ifdef MOZ_PUSH_NOTIFICATION_HELPER
+    ${SignalPushNotificationHelperStop} $NotificationHelperStopExitCode
+!endif
+
     ${PushFilesToCheck}
 
     ; Store the return value in $TmpVal so it is less likely to be accidentally
@@ -1570,7 +1575,7 @@ Function .onInit
   StrCpy $LaunchedNewApp false
   ; initialize postSigningData to explicitly say that it comes from the full installer
   StrCpy $PostSigningData "full_installer:unset"
-
+  StrCpy $NotificationHelperStopExitCode "unset"
 
   StrCpy $PageName ""
   StrCpy $LANGUAGE 0

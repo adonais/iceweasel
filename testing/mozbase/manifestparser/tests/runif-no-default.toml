@@ -1,0 +1,6 @@
+[DEFAULT]
+
+[test1]
+run-if = ["os == 'linux'", "os == 'win'"]
+[test2]
+run-if = "os == 'mac'"

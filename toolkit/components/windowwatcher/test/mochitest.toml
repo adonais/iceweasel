@@ -1,7 +1,7 @@
 [DEFAULT]
 tags = "openwindow"
-skip-if = [
-  "os == 'android'", # Fennec doesn't support web content opening new windows (See bug 1277544 for details)
+run-if = [
+  "os != 'android'", # web content cannot open new top-level windows on Android (bug 1277544)
 ]
 
 ["test_blank_named_window.html"]

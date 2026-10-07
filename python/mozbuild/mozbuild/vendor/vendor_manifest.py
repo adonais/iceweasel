@@ -29,7 +29,7 @@ from mozbuild.vendor.rewrite_mozbuild import (
 )
 
 DEFAULT_EXCLUDE_FILES = [".git*", ".git*/**", "**/.cvsignore"]
-DEFAULT_KEEP_FILES = ["**/moz.build", "**/moz.yaml"]
+DEFAULT_KEEP_FILES = ["**/moz.build", "**/moz.yaml", "**/LICENSE-NOTICE.txt"]
 DEFAULT_INCLUDE_FILES = []
 
 
@@ -516,10 +516,10 @@ class VendorManifest(MozbuildObject):
 
                 self.logInfo({"vd": vendor_dir}, "Cleaning {vd} to import changes.")
                 # We use double asterisk wildcard here to get complete list of recursive contents
-                for file in self.convert_patterns_to_paths(vendor_dir, ["**"]):
-                    file = mozpath.normsep(file)
-                    if file not in to_keep:
-                        mozfile.remove(file)
+                for path in self.convert_patterns_to_paths(vendor_dir, ["**"]):
+                    norm_path = mozpath.normsep(path)
+                    if norm_path not in to_keep:
+                        mozfile.remove(norm_path)
 
                 self.logInfo({"vd": vendor_dir}, "Unpacking upstream files for {vd}.")
 

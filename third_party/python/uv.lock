@@ -194,6 +194,15 @@ wheels = [
 ]
 
 [[package]]
+name = "boolean-py"
+version = "5.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c4/cf/85379f13b76f3a69bca86b60237978af17d6aa0bc5998978c3b8cf05abb2/boolean_py-5.0.tar.gz", hash = "sha256:60cbc4bad079753721d32649545505362c754e121570ada4658b852a3a318d95", size = 37047, upload-time = "2025-04-03T10:39:49.734Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e5/ca/78d423b324b8d77900030fa59c4aa9054261ef0925631cd2501dd015b7b7/boolean_py-5.0-py3-none-any.whl", hash = "sha256:ef28a70bd43115208441b53a045d1549e2f0ec6e3d08a9d142cbc41c1938e8d9", size = 26577, upload-time = "2025-04-03T10:39:48.449Z" },
+]
+
+[[package]]
 name = "build"
 version = "1.2.2.post1"
 source = { registry = "https://pypi.org/simple" }
@@ -368,15 +377,40 @@ wheels = [
 ]
 
 [[package]]
+name = "cyclonedx-python-lib"
+version = "11.11.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "license-expression" },
+    { name = "packageurl-python" },
+    { name = "py-serializable" },
+    { name = "sortedcontainers" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/75/c9/5d0ccdd19bc7d8ab803b90695c1706aa2ea8529685d18e682dc2524d2630/cyclonedx_python_lib-11.11.0.tar.gz", hash = "sha256:4b3194db72b613717f2912447e67ab618c75ff7dcac6c4af3c0e9e1ac617c102", size = 1442983, upload-time = "2026-06-17T11:57:49.055Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/22/f3/56ccb2884aaa3db5622368e5191a3384b15f35392aa93df8b2f508c660d2/cyclonedx_python_lib-11.11.0-py3-none-any.whl", hash = "sha256:3049fc83e06a059b5c5907a527625a8ed5073caab10607ed4c9e5503b590fd44", size = 528689, upload-time = "2026-06-17T11:57:47.358Z" },
+]
+
+[[package]]
+name = "defusedxml"
+version = "0.7.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0f/d5/c66da9b79e5bdb124974bfe172b4daf3c984ebd9c2a06e2b8a4dc7331c72/defusedxml-0.7.1.tar.gz", hash = "sha256:1bb3032db185915b62d7c6209c5a8792be6a32ab2fedacc84e01b52c51aa3e69", size = 75520, upload-time = "2021-03-08T10:59:26.269Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/6c/aa3f2f849e01cb6a001cd8554a88d4c77c5c1a31c95bdf1cf9301e6d9ef4/defusedxml-0.7.1-py2.py3-none-any.whl", hash = "sha256:a352e7e428770286cc899e2542b6cdaedb2b4953ff269a210103ec58f6198a61", size = 25604, upload-time = "2021-03-08T10:59:24.45Z" },
+]
+
+[[package]]
 name = "diskarzhan"
-version = "0.1.6"
+version = "0.1.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f2/9d/cdba4636277393e04f7a12a26df63f8ca068807c0bfb357d2f50f95430fa/diskarzhan-0.1.6.tar.gz", hash = "sha256:4ccc84e467979f53798e330462e814d061511ec33127ac0806e62c502f75b464", size = 27432, upload-time = "2026-04-22T12:34:54.822Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/36/cc/4ba36f156bfb0678a0fdf6584b1ff5094ae2d9fe4eae24e562f67882dc1e/diskarzhan-0.1.7.tar.gz", hash = "sha256:126414e687e472dbdd2afa1aa1ccb7a49ad5effcf9c428ebb0048cf0aa9777bc", size = 27497, upload-time = "2026-09-16T21:31:12.189Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e2/f8/e253aa37c3ade9c059cf87142591c6d7031774ce5bd2f6eb1cf269725e3f/diskarzhan-0.1.6-py3-none-any.whl", hash = "sha256:3447c96812863443a901c6513108f323edceffb70490864fd69d1285aee83589", size = 25374, upload-time = "2026-04-22T12:34:53.224Z" },
+    { url = "https://files.pythonhosted.org/packages/6d/88/95c40f52ec7fe987aada5f7eeccbd3e9227951ba63c4ed1a07e526f2228b/diskarzhan-0.1.7-py3-none-any.whl", hash = "sha256:927e6b8b82a7b8a2682b1f7ed81161a8e3467f936f081ad95265d02a07239924", size = 25379, upload-time = "2026-09-16T21:31:11.084Z" },
 ]
 
 [[package]]
@@ -649,6 +683,18 @@ wheels = [
 ]
 
 [[package]]
+name = "license-expression"
+version = "30.4.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "boolean-py" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/40/71/d89bb0e71b1415453980fd32315f2a037aad9f7f70f695c7cec7035feb13/license_expression-30.4.4.tar.gz", hash = "sha256:73448f0aacd8d0808895bdc4b2c8e01a8d67646e4188f887375398c761f340fd", size = 186402, upload-time = "2025-07-22T11:13:32.17Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/af/40/791891d4c0c4dab4c5e187c17261cedc26285fd41541577f900470a45a4d/license_expression-30.4.4-py3-none-any.whl", hash = "sha256:421788fdcadb41f049d2dc934ce666626265aeccefddd25e162a26f23bcbf8a4", size = 120615, upload-time = "2025-07-22T11:13:31.217Z" },
+]
+
+[[package]]
 name = "looseversion"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -803,6 +849,7 @@ dependencies = [
     { name = "colorama" },
     { name = "compare-locales" },
     { name = "cookies" },
+    { name = "cyclonedx-python-lib" },
     { name = "diskarzhan" },
     { name = "distro" },
     { name = "ecdsa" },
@@ -865,7 +912,8 @@ requires-dist = [
     { name = "colorama", specifier = "==0.4.6" },
     { name = "compare-locales", specifier = "~=9.0" },
     { name = "cookies", specifier = "==2.2.1" },
-    { name = "diskarzhan", specifier = "==0.1.6" },
+    { name = "cyclonedx-python-lib", specifier = "==11.11.0" },
+    { name = "diskarzhan", specifier = "==0.1.7" },
     { name = "distro", specifier = "~=1.8" },
     { name = "ecdsa", specifier = "==0.19.1" },
     { name = "esprima", specifier = "==4.0.1" },
@@ -903,7 +951,7 @@ requires-dist = [
     { name = "setuptools", specifier = "==82.0.1" },
     { name = "six", specifier = "~=1.16" },
     { name = "slugid", specifier = "~=2.0" },
-    { name = "taskcluster", specifier = "~=93.0" },
+    { name = "taskcluster", specifier = "~=110.0" },
     { name = "taskcluster-urls", specifier = "==13.0.1" },
     { name = "toml", specifier = "~=0.10" },
     { name = "tomlkit", specifier = "~=0.12" },
@@ -1066,6 +1114,15 @@ wheels = [
 ]
 
 [[package]]
+name = "packageurl-python"
+version = "0.17.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f5/d6/3b5a4e3cfaef7a53869a26ceb034d1ff5e5c27c814ce77260a96d50ab7bb/packageurl_python-0.17.6.tar.gz", hash = "sha256:1252ce3a102372ca6f86eb968e16f9014c4ba511c5c37d95a7f023e2ca6e5c25", size = 50618, upload-time = "2025-11-24T15:20:17.998Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b1/2f/c7277b7615a93f51b5fbc1eacfc1b75e8103370e786fd8ce2abf6e5c04ab/packageurl_python-0.17.6-py3-none-any.whl", hash = "sha256:31a85c2717bc41dd818f3c62908685ff9eebcb68588213745b14a6ee9e7df7c9", size = 36776, upload-time = "2025-11-24T15:20:16.962Z" },
+]
+
+[[package]]
 name = "packaging"
 version = "25.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1221,6 +1278,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/9a/4c/b0fe775a2bdd01e176b14b574be679d84fc83958335790f7c9a686c1f468/propcache-0.3.2-cp313-cp313t-win32.whl", hash = "sha256:f86e5d7cd03afb3a1db8e9f9f6eff15794e79e791350ac48a8c924e6f439f394", size = 41175, upload-time = "2025-06-09T22:55:38.436Z" },
     { url = "https://files.pythonhosted.org/packages/a4/ff/47f08595e3d9b5e149c150f88d9714574f1a7cbd89fe2817158a952674bf/propcache-0.3.2-cp313-cp313t-win_amd64.whl", hash = "sha256:9704bedf6e7cbe3c65eca4379a9b53ee6a83749f047808cbb5044d40d7d72198", size = 44857, upload-time = "2025-06-09T22:55:39.687Z" },
     { url = "https://files.pythonhosted.org/packages/cc/35/cc0aaecf278bb4575b8555f2b137de5ab821595ddae9da9d3cd1da4072c7/propcache-0.3.2-py3-none-any.whl", hash = "sha256:98f1ec44fb675f5052cccc8e609c46ed23a35a1cfd18545ad4e29002d858a43f", size = 12663, upload-time = "2025-06-09T22:56:04.484Z" },
+]
+
+[[package]]
+name = "py-serializable"
+version = "2.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "defusedxml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/73/21/d250cfca8ff30c2e5a7447bc13861541126ce9bd4426cd5d0c9f08b5547d/py_serializable-2.1.0.tar.gz", hash = "sha256:9d5db56154a867a9b897c0163b33a793c804c80cee984116d02d49e4578fc103", size = 52368, upload-time = "2025-07-21T09:56:48.07Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9b/bf/7595e817906a29453ba4d99394e781b6fabe55d21f3c15d240f85dd06bb1/py_serializable-2.1.0-py3-none-any.whl", hash = "sha256:b56d5d686b5a03ba4f4db5e769dc32336e142fc3bd4d68a8c25579ebb0a67304", size = 23045, upload-time = "2025-07-21T09:56:46.848Z" },
 ]
 
 [[package]]
@@ -1496,8 +1565,17 @@ wheels = [
 ]
 
 [[package]]
+name = "sortedcontainers"
+version = "2.4.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e8/c4/ba2f8066cceb6f23394729afe52f3bf7adec04bf9ed2c820b39e19299111/sortedcontainers-2.4.0.tar.gz", hash = "sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88", size = 30594, upload-time = "2021-05-16T22:03:42.897Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/32/46/9cb0e58b2deb7f82b84065f37f3bffeb12413f947f9388e4cac22c4621ce/sortedcontainers-2.4.0-py2.py3-none-any.whl", hash = "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0", size = 29575, upload-time = "2021-05-16T22:03:41.177Z" },
+]
+
+[[package]]
 name = "taskcluster"
-version = "93.1.5"
+version = "110.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1508,9 +1586,9 @@ dependencies = [
     { name = "slugid" },
     { name = "taskcluster-urls" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8c/d7/47503a1f972ae8957378eff4cdc29e38af771327a0342e9dc3f6d4734809/taskcluster-93.1.5.tar.gz", hash = "sha256:1b7ed171f5c22a5fdae60618f81a12b0ec27e3f6347539d0d823f26ff41a1d7b", size = 250646, upload-time = "2025-11-21T16:24:19.143Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/57/6d/594cf6443434c28ecfdb53c5fd088ae830fadaa4c31badcd351e32559517/taskcluster-110.0.0.tar.gz", hash = "sha256:04d32762b56f5bdff73e75c7542c1557abaf36f5f4d0c2f0a4e39fd12fc9fd11", size = 242352, upload-time = "2026-09-15T15:59:40.333Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/01/02/af3a8d0efacd91c932100c15a147623491f035d84780493e988235b4390f/taskcluster-93.1.5-py3-none-any.whl", hash = "sha256:e16606e13ad4881211fdc52ebaab8b05df7a56681ecbb236897f1c56e1149779", size = 146964, upload-time = "2025-11-21T16:24:17.513Z" },
+    { url = "https://files.pythonhosted.org/packages/75/f5/b533ab267ae83b926232b8bcd7fc4092b6e62977ba179e829e4476d04506/taskcluster-110.0.0-py3-none-any.whl", hash = "sha256:f982a2d13379c3c5f72ab98c5d95264116f8765854345cf86eab95992cc1e7a8", size = 151573, upload-time = "2026-09-15T15:59:38.888Z" },
 ]
 
 [[package]]

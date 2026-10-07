@@ -12,10 +12,11 @@
 #include "nsIClassOfService.h"
 
 namespace mozilla::net {
-struct NetworkMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("Network");
-  }
+struct NetworkMarker : public BaseMarkerType<NetworkMarker> {
+  static constexpr const char* Name = "Network";
+  static constexpr bool UseSpecialFrontendLocation = true;
+  static constexpr bool ETWStoreName = true;
+
   static void StreamJSONMarkerData(
       baseprofiler::SpliceableJSONWriter& aWriter, mozilla::TimeStamp aStart,
       mozilla::TimeStamp aEnd, int64_t aID, const ProfilerString8View& aURI,
@@ -127,9 +128,6 @@ struct NetworkMarker {
       aWriter.TimeProperty("responseStart", aTimings.responseStart);
       aWriter.TimeProperty("responseEnd", aTimings.responseEnd);
     }
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    return MarkerSchema::SpecialFrontendLocation{};
   }
 
   static Span<const char> GetNetworkState(NetworkLoadType aType) {

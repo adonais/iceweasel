@@ -36,7 +36,6 @@ Teams that write shared Rust components are responsible for maintaining their he
 This includes monitoring error reports and working with application teams to maintain integrations as the application code changes.
 Error reports are currently only available for Android, but we will soon be extending this to all platforms.
 
-
 ```{toctree}
 :titlesonly:
 :maxdepth: 1

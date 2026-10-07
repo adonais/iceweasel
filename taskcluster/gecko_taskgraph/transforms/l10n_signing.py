@@ -46,6 +46,11 @@ def define_upstream_artifacts(config, jobs):
         if dep_job.attributes.get("chunk_locales"):
             # Used for l10n attribute passthrough
             job["attributes"]["chunk_locales"] = dep_job.attributes.get("chunk_locales")
+        elif dep_job.attributes.get("all_locales"):
+            # The non-shippable `l10n` kind is unchunked and carries `all_locales`
+            # instead; forward it so downstream fan-out (e.g. repackage-deb-l10n)
+            # has a locale list to split on.
+            job["attributes"]["all_locales"] = dep_job.attributes.get("all_locales")
 
         # The shippable `l10n` kind is chunked and carries `chunk_locales`; the
         # non-shippable `l10n` kind is unchunked, so fall back to `all_locales`.

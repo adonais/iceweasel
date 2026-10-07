@@ -11,9 +11,9 @@
 
 #include "mozilla/ContentIterator.h"
 #include "mozilla/OwningNonNull.h"
+#include "mozilla/dom/Range.h"
 #include "nsIContent.h"
 #include "nsINode.h"
-#include "nsRange.h"
 
 // from vs/Windows Kits/10/.../rpcndr.h
 #ifdef small
@@ -49,7 +49,7 @@ DOMIterator::DOMIterator(nsINode& aNode) : mIter(&mPostOrderIter) {
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
-nsresult DOMIterator::Init(nsRange& aRange) { return mIter->Init(&aRange); }
+nsresult DOMIterator::Init(dom::Range& aRange) { return mIter->Init(&aRange); }
 
 nsresult DOMIterator::Init(const RawRangeBoundary& aStartRef,
                            const RawRangeBoundary& aEndRef) {
@@ -82,7 +82,7 @@ void DOMIterator::AppendNodesToArray(
 
 DOMSubtreeIterator::DOMSubtreeIterator() { mIter = &mSubtreeIter; }
 
-nsresult DOMSubtreeIterator::Init(nsRange& aRange) {
+nsresult DOMSubtreeIterator::Init(dom::Range& aRange) {
   return mIter->Init(&aRange);
 }
 

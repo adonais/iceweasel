@@ -1,0 +1,11 @@
+[package]
+name = "dom_push"
+version = "0.1.0"
+edition = "2024"
+rust-version.workspace = true
+
+[dependencies]
+nsstring = { path = "../../../xpcom/rust/nsstring" }
+serde_json = "1"
+serde = "1"
+thin-vec = { version = "0.2", features = ["gecko-ffi", "serde"] }

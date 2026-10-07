@@ -98,14 +98,6 @@ async function getMessageValidators(skipValidation) {
       "./content-src/templates/OnboardingMessage/BookmarksBarButton.schema.json",
       { common: true }
     ),
-    cfr_doorhanger: await getValidator(
-      "./content-src/templates/CFR/templates/ExtensionDoorhanger.schema.json",
-      { common: true }
-    ),
-    cfr_urlbar_chiclet: await getValidator(
-      "./content-src/templates/CFR/templates/CFRUrlbarChiclet.schema.json",
-      { common: true }
-    ),
     infobar: await getValidator(
       "./content-src/templates/InfoBar/InfoBar.schema.json",
       { common: true }
@@ -144,8 +136,6 @@ async function getMessageValidators(skipValidation) {
       { common: true }
     ),
   };
-
-  messageValidators.milestone_message = messageValidators.cfr_doorhanger;
 
   return { experimentValidator, messageValidators };
 }

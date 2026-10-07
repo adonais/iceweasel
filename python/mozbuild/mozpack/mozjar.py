@@ -319,6 +319,9 @@ class JarFileReader:
         """
         return self.uncompressed_data.seek(pos, whence)
 
+    def flush(self):
+        pass
+
     def close(self):
         """
         Free the uncompressed data buffer.

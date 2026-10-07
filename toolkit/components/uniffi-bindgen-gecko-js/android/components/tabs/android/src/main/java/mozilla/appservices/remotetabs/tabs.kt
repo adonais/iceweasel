@@ -102,6 +102,43 @@ internal open class ForeignBytes : Structure() {
 
     class ByValue : ForeignBytes(), Structure.ByValue
 }
+
+// Converter for `&[u8]` / `[ByRef] bytes` arguments.
+//
+// Only `lower` is valid — zero-copy byte buffers only flow foreign -> Rust,
+// and only in argument position. `lift`, `read`, `write`, and
+// `allocationSize` have no sound implementation here and all panic at
+// runtime. The `FfiConverter` interface is implemented so that the
+// compiler enforces the full method set (rather than relying on eyeball).
+//
+// The provided `ByteBuffer` MUST be direct — only direct buffers have a
+// stable native address that JNA can expose via `getDirectBufferPointer`.
+// The returned `ForeignBytes.ByValue` is only valid for the duration of
+// the FFI call; the Rust side treats it as a borrow.
+internal object FfiConverterByRefBytes : FfiConverter<java.nio.ByteBuffer, ForeignBytes.ByValue> {
+    override fun lower(value: java.nio.ByteBuffer): ForeignBytes.ByValue {
+        require(value.isDirect) { "UniFFI zero-copy &[u8] requires a direct ByteBuffer. Use ByteBuffer.allocateDirect()." }
+        val remaining = value.remaining()
+        val fb = ForeignBytes.ByValue()
+        fb.len = remaining
+        // Zero-length direct buffers: skip getDirectBufferPointer (platform-variable behavior)
+        // and pass null. The Rust side treats (null, 0) as &[].
+        fb.data = if (remaining == 0) null else com.sun.jna.Native.getDirectBufferPointer(value)
+        return fb
+    }
+
+    override fun lift(value: ForeignBytes.ByValue): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be lifted: zero-copy &[u8] only flows foreign->Rust")
+
+    override fun read(buf: java.nio.ByteBuffer): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be read from a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun write(value: java.nio.ByteBuffer, buf: java.nio.ByteBuffer): Unit =
+        error("ByRef bytes cannot be written to a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun allocationSize(value: java.nio.ByteBuffer): ULong =
+        error("ByRef bytes have no RustBuffer allocation size: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+}
 /**
  * The FfiConverter interface handles converter types to and from the FFI
  *
@@ -639,57 +676,57 @@ internal object IntegrityCheckingUniffiLib {
         uniffiCheckContractApiVersion(this)
     }
     external fun uniffi_tabs_checksum_method_remotecommandstore_add_remote_command(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_remotecommandstore_add_remote_command_at(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_remotecommandstore_get_unsent_commands(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_remotecommandstore_remove_remote_command(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_remotecommandstore_set_pending_command_sent(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsbridgedengine_apply(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsbridgedengine_ensure_current_sync_id(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsbridgedengine_last_sync(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsbridgedengine_reset(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsbridgedengine_reset_last_sync(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsbridgedengine_reset_sync_id(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsbridgedengine_set_clients(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsbridgedengine_set_uploaded(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsbridgedengine_store_incoming(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsbridgedengine_sync_finished(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsbridgedengine_sync_id(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsbridgedengine_sync_started(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsbridgedengine_wipe(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsstore_bridged_engine(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsstore_close_connection(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsstore_get_all(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsstore_new_remote_command_store(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsstore_register_with_sync_manager(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsstore_set_local_tabs(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_method_tabsstore_set_local_tabs_info(
-    ): Short
+    ): Int
     external fun uniffi_tabs_checksum_constructor_tabsstore_new(
-    ): Short
+    ): Int
     external fun ffi_tabs_uniffi_contract_version(
     ): Int
 
@@ -788,7 +825,7 @@ internal object UniffiLib {
     external fun ffi_tabs_rust_future_free_u8(`handle`: Long,
     ): Unit
     external fun ffi_tabs_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Byte
+    ): Int
     external fun ffi_tabs_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
     external fun ffi_tabs_rust_future_cancel_i8(`handle`: Long,
@@ -804,7 +841,7 @@ internal object UniffiLib {
     external fun ffi_tabs_rust_future_free_u16(`handle`: Long,
     ): Unit
     external fun ffi_tabs_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Short
+    ): Int
     external fun ffi_tabs_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
     external fun ffi_tabs_rust_future_cancel_i16(`handle`: Long,
@@ -1330,6 +1367,11 @@ open class RemoteCommandStore: Disposable, AutoCloseable, RemoteCommandStoreInte
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
 
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
     override fun destroy() {
         // Only allow a single call to this method.
         // TODO: maybe we should log a warning if called more than once?
@@ -1405,7 +1447,9 @@ open class RemoteCommandStore: Disposable, AutoCloseable, RemoteCommandStoreInte
     uniffiRustCallWithError(TabsApiException) { _status ->
     UniffiLib.uniffi_tabs_fn_method_remotecommandstore_add_remote_command(
         it,
-        FfiConverterString.lower(`deviceId`),FfiConverterTypeRemoteCommand.lower(`command`),_status)
+        
+        FfiConverterString.lower(`deviceId`),
+        FfiConverterTypeRemoteCommand.lower(`command`),_status)
 }
     }
     )
@@ -1422,7 +1466,10 @@ open class RemoteCommandStore: Disposable, AutoCloseable, RemoteCommandStoreInte
     uniffiRustCallWithError(TabsApiException) { _status ->
     UniffiLib.uniffi_tabs_fn_method_remotecommandstore_add_remote_command_at(
         it,
-        FfiConverterString.lower(`deviceId`),FfiConverterTypeRemoteCommand.lower(`command`),FfiConverterTypeTimestamp.lower(`when`),_status)
+        
+        FfiConverterString.lower(`deviceId`),
+        FfiConverterTypeRemoteCommand.lower(`command`),
+        FfiConverterTypeTimestamp.lower(`when`),_status)
 }
     }
     )
@@ -1457,7 +1504,9 @@ open class RemoteCommandStore: Disposable, AutoCloseable, RemoteCommandStoreInte
     uniffiRustCallWithError(TabsApiException) { _status ->
     UniffiLib.uniffi_tabs_fn_method_remotecommandstore_remove_remote_command(
         it,
-        FfiConverterString.lower(`deviceId`),FfiConverterTypeRemoteCommand.lower(`command`),_status)
+        
+        FfiConverterString.lower(`deviceId`),
+        FfiConverterTypeRemoteCommand.lower(`command`),_status)
 }
     }
     )
@@ -1474,6 +1523,7 @@ open class RemoteCommandStore: Disposable, AutoCloseable, RemoteCommandStoreInte
     uniffiRustCallWithError(TabsApiException) { _status ->
     UniffiLib.uniffi_tabs_fn_method_remotecommandstore_set_pending_command_sent(
         it,
+        
         FfiConverterTypePendingCommand.lower(`command`),_status)
 }
     }
@@ -1691,6 +1741,11 @@ open class TabsBridgedEngine: Disposable, AutoCloseable, TabsBridgedEngineInterf
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
 
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
     override fun destroy() {
         // Only allow a single call to this method.
         // TODO: maybe we should log a warning if called more than once?
@@ -1763,6 +1818,7 @@ open class TabsBridgedEngine: Disposable, AutoCloseable, TabsBridgedEngineInterf
     uniffiRustCallWithError(TabsApiException) { _status ->
     UniffiLib.uniffi_tabs_fn_method_tabsbridgedengine_apply(
         it,
+        
         FfiConverterLong.lower(`serverModifiedMillis`),_status)
 }
     }
@@ -1777,6 +1833,7 @@ open class TabsBridgedEngine: Disposable, AutoCloseable, TabsBridgedEngineInterf
     uniffiRustCallWithError(TabsApiException) { _status ->
     UniffiLib.uniffi_tabs_fn_method_tabsbridgedengine_ensure_current_sync_id(
         it,
+        
         FfiConverterString.lower(`newSyncId`),_status)
 }
     }
@@ -1845,6 +1902,7 @@ open class TabsBridgedEngine: Disposable, AutoCloseable, TabsBridgedEngineInterf
     uniffiRustCallWithError(TabsApiException) { _status ->
     UniffiLib.uniffi_tabs_fn_method_tabsbridgedengine_set_clients(
         it,
+        
         FfiConverterString.lower(`clientData`),_status)
 }
     }
@@ -1858,7 +1916,9 @@ open class TabsBridgedEngine: Disposable, AutoCloseable, TabsBridgedEngineInterf
     uniffiRustCallWithError(TabsApiException) { _status ->
     UniffiLib.uniffi_tabs_fn_method_tabsbridgedengine_set_uploaded(
         it,
-        FfiConverterLong.lower(`newTimestamp`),FfiConverterSequenceString.lower(`uploadedIds`),_status)
+        
+        FfiConverterLong.lower(`newTimestamp`),
+        FfiConverterSequenceString.lower(`uploadedIds`),_status)
 }
     }
     
@@ -1871,6 +1931,7 @@ open class TabsBridgedEngine: Disposable, AutoCloseable, TabsBridgedEngineInterf
     uniffiRustCallWithError(TabsApiException) { _status ->
     UniffiLib.uniffi_tabs_fn_method_tabsbridgedengine_store_incoming(
         it,
+        
         FfiConverterSequenceString.lower(`incomingEnvelopesAsJson`),_status)
 }
     }
@@ -2118,6 +2179,7 @@ open class TabsStore: Disposable, AutoCloseable, TabsStoreInterface
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_tabs_fn_constructor_tabsstore_new(
     
+        
         FfiConverterString.lower(`path`),_status)
 }
     )
@@ -2127,6 +2189,11 @@ open class TabsStore: Disposable, AutoCloseable, TabsStoreInterface
 
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
+
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
 
     override fun destroy() {
         // Only allow a single call to this method.
@@ -2265,6 +2332,7 @@ open class TabsStore: Disposable, AutoCloseable, TabsStoreInterface
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_tabs_fn_method_tabsstore_set_local_tabs(
         it,
+        
         FfiConverterSequenceTypeRemoteTabRecord.lower(`remoteTabs`),_status)
 }
     }
@@ -2280,6 +2348,7 @@ open class TabsStore: Disposable, AutoCloseable, TabsStoreInterface
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_tabs_fn_method_tabsstore_set_local_tabs_info(
         it,
+        
         FfiConverterTypeLocalTabsInfo.lower(`info`),_status)
 }
     }
@@ -2701,7 +2770,7 @@ public object FfiConverterTypeRemoteCommand : FfiConverterRustBuffer<RemoteComma
         }
     }
 
-    override fun allocationSize(value: RemoteCommand) = when(value) {
+    override fun allocationSize(value: RemoteCommand): ULong = when(value) {
         is RemoteCommand.CloseTab -> {
             // Add the size for the Int that specifies the variant plus the size needed for all fields
             (
@@ -3117,11 +3186,6 @@ public object FfiConverterMapStringTypeWindow: FfiConverterRustBuffer<Map<kotlin
 
 
 
-/**
- * Typealias from the type name used in the UDL file to the builtin type.  This
- * is needed because the UDL type name is used in function/method signatures.
- * It's also what we have an external type that references a custom type.
- */
 public typealias Timestamp = kotlin.Long
 public typealias FfiConverterTypeTimestamp = FfiConverterLong
 

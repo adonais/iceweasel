@@ -1062,6 +1062,30 @@ SEC_PKCS7DecoderStart(SEC_PKCS7DecoderContentCallback cb, void *cb_arg,
     return p7dcx;
 }
 
+SECStatus
+SEC_PKCS7DecoderSetMaxInputSize(SEC_PKCS7DecoderContext *p7dcx,
+                                unsigned long max_input_size)
+{
+    if (!p7dcx || !p7dcx->dcx) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+    SEC_ASN1DecoderSetMaximumInputSize(p7dcx->dcx, max_input_size);
+    return SECSuccess;
+}
+
+SECStatus
+SEC_PKCS7DecoderSetMaxElementLen(SEC_PKCS7DecoderContext *p7dcx,
+                                 unsigned long max_element_len)
+{
+    if (!p7dcx || !p7dcx->dcx) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+    SEC_ASN1DecoderSetMaximumElementSize(p7dcx->dcx, max_element_len);
+    return SECSuccess;
+}
+
 /*
  * Do the next chunk of PKCS7 decoding.  If there is a problem, set
  * an error and return a failure status.  Note that in the case of

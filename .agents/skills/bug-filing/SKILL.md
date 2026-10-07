@@ -63,13 +63,23 @@ created under their own account with a chance to review and adjust.
    `enter_bug.cgi` field as a `field=value` argument; it URL-encodes the values and
    opens the form in the browser (cross-platform, so Linux, macOS, and Windows all work):
    ```
-   python3 .agents/skills/bug-filing/file-bug.py product=<P> component=<C> \
-       bug_type=<T> short_desc=<summary> comment=<description>
+   python3 .agents/skills/bug-filing/file-bug.py 'product=<P>' 'component=<C>' \
+       'bug_type=<T>' 'short_desc=<summary>' 'comment=<description>'
    ```
+   - Single-quote every `field=value` argument.
    - Write `short_desc` and `comment` as plain text, with markdown backticks around
      code identifiers; the script does all the encoding.
    - Any form field works, so add more as the bug needs them, e.g. `blocked=<bug>`
      (blocks), `dependson=<bug>` (depends on), or `see_also=<url>`.
+
+   The script opens the form and prints a one-line confirmation. **Never paste the
+   URL into your reply**: a prefilled form carries the whole description
+   percent-encoded in its query string, which puts the URL past the length at which
+   a terminal stops linkifying it, so the reader gets an unclickable wall of `%20`.
+   It also costs you: those characters stay resident in your context and are re-sent
+   with every later request in the session. Report the summary and the component
+   instead - and don't compress the description to shorten the URL, which nobody
+   was meant to read.
 
    The user reviews and submits the form to create the bug, then provides the bug number.
 

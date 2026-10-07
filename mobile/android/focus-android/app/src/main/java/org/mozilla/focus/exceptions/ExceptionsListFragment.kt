@@ -19,6 +19,7 @@ import androidx.annotation.LayoutRes
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.ItemTouchHelper.SimpleCallback
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -36,6 +37,7 @@ import org.mozilla.focus.ext.showToolbar
 import org.mozilla.focus.settings.BaseSettingsLikeFragment
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.state.Screen
+import org.mozilla.focus.utils.ListDiffCallback
 import org.mozilla.focus.utils.ViewUtils
 
 private const val REMOVE_EXCEPTIONS_DISABLED_ALPHA = 0.5f
@@ -195,8 +197,9 @@ open class ExceptionsListFragment : BaseSettingsLikeFragment() {
         fun refresh(context: Context, body: (() -> Unit)? = null) {
             viewLifecycleOwner.lifecycleScope.launch {
                 context.components.trackingProtectionUseCases.fetchExceptions {
+                    val diff = DiffUtil.calculateDiff(ListDiffCallback(exceptions, it) { exception -> exception.url })
                     exceptions = it
-                    notifyDataSetChanged()
+                    diff.dispatchUpdatesTo(this@DomainListAdapter)
                     body?.invoke()
                 }
             }

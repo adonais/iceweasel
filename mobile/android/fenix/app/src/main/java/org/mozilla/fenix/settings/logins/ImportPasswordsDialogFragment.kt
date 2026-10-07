@@ -8,8 +8,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.compose.content
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.coroutineScope
+import androidx.lifecycle.withStarted
+import kotlinx.coroutines.launch
 import mozilla.components.concept.passwords.file.PasswordsFileImporter
 import mozilla.components.feature.password.importer.PasswordsImporter
 import mozilla.components.feature.password.importer.PasswordsImporterResult
@@ -30,7 +35,7 @@ internal class ImportPasswordsDialogFragment : DialogFragment() {
                 ),
             onFinished = { result ->
                 parentFragmentManager.setFragmentResult(REQUEST_KEY, encodeResult(result))
-                dismiss()
+                dismissWhenStarted(lifecycle) { dismiss() }
             },
         )
     }
@@ -65,4 +70,9 @@ internal class ImportPasswordsDialogFragment : DialogFragment() {
                 }
             }
     }
+}
+
+@VisibleForTesting
+internal fun dismissWhenStarted(lifecycle: Lifecycle, dismiss: () -> Unit) {
+    lifecycle.coroutineScope.launch { lifecycle.withStarted(dismiss) }
 }

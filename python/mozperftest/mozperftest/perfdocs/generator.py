@@ -6,6 +6,7 @@ import re
 import shutil
 import tempfile
 
+from mozperftest.perfdocs.hardware import HardwareDocs
 from mozperftest.perfdocs.logger import PerfDocLogger
 from mozperftest.perfdocs.utils import (
     ON_TRY,
@@ -126,6 +127,11 @@ class Generator:
             # Insert documentation into `.md` file
             framework_rst = re.sub(
                 r"{documentation}", "\n".join(documentation), rst_content
+            )
+            framework_rst = re.sub(
+                r"{hardware_documentation}",
+                "\n".join(HardwareDocs().build_hardware_documentation()),
+                framework_rst,
             )
             frameworks_info[yaml_content["name"]] = {
                 "dynamic": framework_rst,

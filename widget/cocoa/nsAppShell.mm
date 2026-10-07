@@ -185,6 +185,77 @@ void OnUncaughtException(NSException* aException) {
   [super run];
 }
 
+// Whether the override below is in effect. This is the lever to pull if the
+// limitation documented there turns out to matter more than the behaviour it
+// buys; with it off, every request reaches AppKit's handler as before.
+static bool PiPPlayerHandlesAccessibilityFrontmost() {
+  return mozilla::StaticPrefs::
+      widget_macos_pip_player_accessibility_frontmost_enabled();
+}
+
+// An assistive technology that moves its cursor onto the Picture-in-Picture
+// player asks, through the accessibility API, for this application to be made
+// frontmost (bug 1688932). AppKit's implementation of that request activates
+// the application in a way that makes the window server leave the fullscreen
+// Space the player is floating over, even though the player -- a non-activating
+// window on that Space -- is the only window of ours the user can see, and even
+// when no other window of ours is ordered in at all. A plain in-process
+// activation does not have that effect: the player becomes key, Gecko treats it
+// as active (see nsWindowMap.mm), the accessibility focus lands in the player,
+// and the user stays on the Space they were looking at. That is also the state
+// a click on the player produces. So when the player is our only window on the
+// active Space, handle the request that way and leave AppKit's handler out of
+// it -- also when we already consider ourselves active: the assistive
+// technology asks again once the first request did not make us frontmost as
+// far as the window server is concerned, and that repeat must not reach
+// AppKit's handler either.
+//
+// The limitation this carries, for the accessibility team to weigh in on:
+// NSAccessibilityFrontmostAttribute is the handler for every accessibility
+// client, not only for an assistive technology moving its cursor. `tell
+// application "System Events" to set frontmost of process "Firefox" to true`
+// and the automation built on it arrive here as well, and they carry nothing
+// that distinguishes them from the assistive technology's request. So while a
+// player is our only window on the active Space, a request of that kind is
+// answered by making the player key rather than by activating in the way the
+// window server acts on, and a user whose browser window is on another Space
+// cannot get to it that way for as long as the player is open. Every other
+// route to the browser window is unaffected: Cmd-Tab, the Dock, the Window
+// menu and clicking the window itself do not go through this property. Set
+// widget.macos.pip-player-accessibility-frontmost.enabled to false to hand
+// these requests back to AppKit.
+- (void)setAccessibilityFrontmost:(BOOL)aFrontmost {
+  if (aFrontmost && PiPPlayerHandlesAccessibilityFrontmost()) {
+    NSWindow* playerOnActiveSpace = nil;
+    BOOL otherWindowOnActiveSpace = NO;
+    for (NSWindow* window in self.windows) {
+      if (!window.isVisible || !window.isOnActiveSpace) {
+        continue;
+      }
+      if ([window isKindOfClass:[BaseWindow class]] &&
+          (window.styleMask & NSWindowStyleMaskNonactivatingPanel)) {
+        playerOnActiveSpace = window;
+      } else if ([window isKindOfClass:[BaseWindow class]] &&
+                 ![window isKindOfClass:[PopupWindow class]]) {
+        // PopupWindow derives from BaseWindow, but a menu, autocomplete popup
+        // or tooltip is not a window the user could be looking at instead of
+        // the player, and one of them being up must not turn this off.
+        otherWindowOnActiveSpace = YES;
+      }
+    }
+    if (playerOnActiveSpace && !otherWindowOnActiveSpace) {
+      if (!self.isActive) {
+        [self activateIgnoringOtherApps:YES];
+      }
+      if (!playerOnActiveSpace.isKeyWindow) {
+        [playerOnActiveSpace makeKeyAndOrderFront:nil];
+      }
+      return;
+    }
+  }
+  [super setAccessibilityFrontmost:aFrontmost];
+}
+
 - (void)sendEvent:(NSEvent*)anEvent {
   mozilla::BackgroundHangMonitor().NotifyActivity();
   [super sendEvent:anEvent];

@@ -100,7 +100,7 @@ skip-if = [
 
 ["browser_bookmark_titles.js"]
 https_first_disabled = true
-support-files = ["../../../../base/content/test/general/dummy_page.html"]
+support-files = ["../../../../base/content/test/browser-general/dummy_page.html"]
 
 ["browser_bookmarklet_windowOpen.js"]
 support-files = ["bookmarklet_windowOpen_dummy.html"]

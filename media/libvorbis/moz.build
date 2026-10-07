@@ -60,3 +60,7 @@ if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
 
 # Add libFuzzer configuration directives
 #include('/tools/fuzzing/libfuzzer-config.mozbuild')
+
+LICENSED_UNDER += [
+    "xiph",
+]

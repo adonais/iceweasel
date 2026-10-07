@@ -32,20 +32,17 @@ import mozilla.components.compose.menu.data.MenuItemBadge
 import mozilla.components.compose.menu.data.MenuItemSummary
 
 @Composable
-internal fun MenuListItemBadge(
-    badge: MenuItemBadge?,
-    state: MenuItemState,
-) {
+internal fun MenuListItemBadge(badge: MenuItemBadge?) {
     if (badge != null) {
         Text(
             text = badge.text.value,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = badge.state.contentColor,
             style = AcornTheme.typography.headline8,
             overflow = TextOverflow.Ellipsis,
             maxLines = 1,
             modifier =
                 Modifier.clip(shape = MaterialTheme.shapes.extraLarge)
-                    .background(state.badgeContainerColor)
+                    .background(badge.state.badgeContainerColor)
                     .padding(
                         horizontal = AcornTheme.layout.space.static200,
                         vertical = AcornTheme.layout.space.static100,

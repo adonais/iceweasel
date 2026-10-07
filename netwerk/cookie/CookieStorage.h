@@ -9,6 +9,7 @@
 
 #include "CookieCommons.h"
 #include "CookieKey.h"
+#include "mozilla/net/Cookie.h"
 #include "nsICookieNotification.h"
 #include "nsIObserver.h"
 #include "nsTHashtable.h"
@@ -16,13 +17,11 @@
 
 class nsIArray;
 class nsICookie;
-class nsICookieTransactionCallback;
 class nsIPrefBranch;
 
 namespace mozilla {
 namespace net {
 
-class Cookie;
 class CookieParser;
 
 // Inherit from CookieKey so this can be stored in nsTHashTable
@@ -71,12 +70,6 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
                                       const nsACString& aName,
                                       const nsACString& aPath);
 
-  uint32_t CountCookiesFromHost(const nsACString& aBaseDomain,
-                                uint32_t aPrivateBrowsingId);
-
-  bool HasCookiesForSite(const nsACString& aBaseDomain,
-                         const OriginAttributesPattern& aPattern);
-
   uint32_t CountCookieBytesNotMatchingCookie(const Cookie& cookie,
                                              const nsACString& baseDomain);
 
@@ -85,6 +78,14 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
   void GetCookiesFromHost(const nsACString& aBaseDomain,
                           const OriginAttributes& aOriginAttributes,
                           nsTArray<RefPtr<Cookie>>& aCookies);
+
+  void ForEachCookie(const nsACString& aBaseDomain,
+                     const OriginAttributes& aOriginAttributes,
+                     const std::function<bool(Cookie*)>& aCallback);
+
+  void ForEachCookie(const nsACString& aBaseDomain,
+                     const OriginAttributesPattern& aPattern,
+                     const std::function<bool(Cookie*)>& aCallback);
 
   void GetCookiesWithOriginAttributes(const OriginAttributesPattern& aPattern,
                                       const nsACString& aBaseDomain,
@@ -150,9 +151,6 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
   virtual void Close() = 0;
 
   virtual void EnsureInitialized() = 0;
-
-  virtual nsresult RunInTransaction(
-      nsICookieTransactionCallback* aCallback) = 0;
 
  protected:
   // stores the CookieEntry entryclass and an index into the cookie array within

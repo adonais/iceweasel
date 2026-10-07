@@ -5,7 +5,8 @@
 use anyhow::{bail, Result};
 use crash_helper_common::{
     messages::{self},
-    ApplicationInfo, BreakpadString, GeckoChildId, IPCClientChannel, IPCConnector, RawIPCConnector,
+    ApplicationInfo, BreakpadString, FromRawThreadHandle, GeckoChildId, IPCClientChannel,
+    IPCConnector, RawIPCConnector, RawThreadHandle, ThreadHandle,
 };
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use minidump_writer::minidump_writer::{AuxvType, DirectAuxvDumpInfo};
@@ -90,9 +91,7 @@ impl CrashHelperClient {
         let message = messages::TransferMinidump::new(id);
         self.connector.send_message(message)?;
 
-        let reply = self
-            .connector
-            .recv_reply::<messages::TransferMinidumpReply>()?;
+        let reply = self.connector.recv_reply::<messages::MinidumpReply>()?;
 
         if reply.path.is_empty() {
             // TODO: We should return Result<Option<CrashReport>> instead of
@@ -103,6 +102,28 @@ impl CrashHelperClient {
         Ok(CrashReport {
             path: reply.path.into_raw(),
             error: reply.error.map_or(null_mut(), |error| error.into_raw()),
+        })
+    }
+
+    fn generate_crash_report(
+        &mut self,
+        id: GeckoChildId,
+        target_thread: ThreadHandle,
+    ) -> Result<CrashReport> {
+        let message = messages::GenerateMinidump::new(id, target_thread);
+        self.connector.send_message(message)?;
+
+        let reply = self.connector.recv_reply::<messages::MinidumpReply>()?;
+
+        if reply.path.is_empty() {
+            // TODO: We should return Result<Option<CrashReport>> instead of
+            // this. Semantics would be better once we interact with Rust
+            bail!("Minidump for id {id:} could not be generated");
+        }
+
+        Ok(CrashReport {
+            path: reply.path.into_raw(),
+            error: reply.error.map_or(null_mut(), CString::into_raw),
         })
     }
 }
@@ -294,6 +315,31 @@ pub unsafe extern "C" fn release_crash_report(crash_report: *mut CrashReport) {
 
     if !crash_report.error.is_null() {
         let _error = CString::from_raw(crash_report.error);
+    }
+}
+
+/// Generate a minidump for the process specified by `id`.
+///
+/// # Safety
+///
+/// The `client` parameter must be a valid pointer to the crash helper client
+/// object returned by the [`crash_helper_launch()`] or
+/// [`crash_helper_connect()`] functions. The `target_thread` parameter must be
+/// a valid platform-specific thread handle.
+#[no_mangle]
+pub unsafe extern "C" fn generate_crash_report(
+    client: *mut CrashHelperClient,
+    id: GeckoChildId,
+    target_thread: RawThreadHandle,
+) -> *mut CrashReport {
+    let client = client.as_mut().unwrap();
+    let target_thread = ThreadHandle::from_raw_handle(target_thread);
+    if let Ok(crash_report) = client.generate_crash_report(id, target_thread) {
+        // The object will be owned by the C++ code from now on, until it is
+        // passed back in `release_crash_report`.
+        Box::into_raw(Box::new(crash_report))
+    } else {
+        null_mut()
     }
 }
 

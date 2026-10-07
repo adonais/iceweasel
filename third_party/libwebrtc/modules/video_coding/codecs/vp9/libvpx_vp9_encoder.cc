@@ -9,6 +9,8 @@
  *
  */
 
+#include "api/units/time_delta.h"
+#include "modules/video_coding/utility/frame_sampler.h"
 #ifdef RTC_ENABLE_VP9
 
 #include "modules/video_coding/codecs/vp9/libvpx_vp9_encoder.h"
@@ -66,7 +68,6 @@
 #include "rtc_base/containers/flat_map.h"
 #include "rtc_base/experiments/field_trial_list.h"
 #include "rtc_base/experiments/field_trial_parser.h"
-#include "rtc_base/experiments/psnr_experiment.h"
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -294,8 +295,7 @@ LibvpxVp9Encoder::LibvpxVp9Encoder(const Environment& env,
       num_steady_state_frames_(0),
       config_changed_(true),
       encoder_info_override_(env.field_trials()),
-      psnr_experiment_(env.field_trials()),
-      psnr_frame_sampler_(psnr_experiment_.SamplingInterval()),
+      psnr_frame_sampler_(FrameSampler::kDefaultPsnrFrameSamplingInterval),
       post_encode_frame_drop_(!env.field_trials().IsDisabled(
           "WebRTC-LibvpxVp9Encoder-PostEncodeFrameDrop")) {
   codec_ = {};
@@ -1189,6 +1189,13 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
     scaled_image = input_image.video_frame_buffer()->Scale(
         codec_.spatialLayers[num_active_spatial_layers_ - 1].width,
         codec_.spatialLayers[num_active_spatial_layers_ - 1].height);
+    if (!scaled_image) {
+      RTC_LOG(LS_ERROR) << "Failed to scale "
+                        << VideoFrameBufferTypeToString(
+                               input_image.video_frame_buffer()->type())
+                        << " image. Can't encode frame.";
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
   }
 
   RTC_DCHECK_EQ(scaled_image->width(), config_->g_w);
@@ -1263,8 +1270,7 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
     flags = VPX_EFLAG_FORCE_KF;
   }
 #if defined(WEBRTC_ENCODER_PSNR_STATS) && defined(VPX_EFLAG_CALCULATE_PSNR)
-  if (psnr_experiment_.IsEnabled() &&
-      psnr_frame_sampler_.ShouldBeSampled(input_image)) {
+  if (psnr_frame_sampler_.ShouldBeSampled(input_image)) {
     flags |= VPX_EFLAG_CALCULATE_PSNR;
   }
 #endif

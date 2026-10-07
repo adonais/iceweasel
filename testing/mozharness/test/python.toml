@@ -3,11 +3,7 @@ subsuite = "mozharness"
 
 ["test_base_config.py"]
 
-["test_base_diskutils.py"]
-
 ["test_base_log.py"]
-
-["test_base_parallel.py"]
 
 ["test_base_python.py"]
 

@@ -13,6 +13,7 @@
 #include "mozilla/ClipboardWriteRequestChild.h"
 #include "mozilla/Components.h"
 #include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/net/CookieJarSettings.h"
@@ -41,12 +42,39 @@ nsClipboardProxy::SetData(nsITransferable* aTransferable,
   a11y::Compatibility::SuppressA11yForClipboardCopy();
 #endif
 
-  ContentChild* child = ContentChild::GetSingleton();
   IPCTransferable ipcTransferable;
   nsContentUtils::TransferableToIPCTransferable(aTransferable, &ipcTransferable,
                                                 false, nullptr);
-  child->SendSetClipboard(std::move(ipcTransferable), aWhichClipboard,
-                          aWindowContext);
+
+  // When content analysis may need to check this copy, wait for the verdict
+  // and report it, as pages expect the copy to be complete when
+  // execCommand("copy") returns, and the editor relies on SetData failing to
+  // avoid deleting the selection for a blocked cut. These conditions mirror
+  // nsBaseClipboard::NeedsCopyContentAnalysis so that copies the parent
+  // wouldn't analyze anyway don't pay for a sync round trip.
+  if (MOZ_UNLIKELY(nsIContentAnalysis::MightBeActive()) &&
+      aWhichClipboard == nsIClipboard::kGlobalClipboard && aWindowContext &&
+      mozilla::StaticPrefs::
+          browser_contentanalysis_interception_point_clipboard_copy_enabled()) {
+    if (aWindowContext->IsDiscarded()) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+    RefPtr<ClipboardContentAnalysisChild> contentAnalysis =
+        ClipboardContentAnalysisChild::GetOrCreate();
+    if (!contentAnalysis) {
+      return NS_ERROR_FAILURE;
+    }
+    nsresult rv = NS_ERROR_FAILURE;
+    if (!contentAnalysis->SendSetClipboard(
+            std::move(ipcTransferable), aWhichClipboard,
+            aWindowContext->InnerWindowId(), &rv)) {
+      return NS_ERROR_FAILURE;
+    }
+    return rv;
+  }
+
+  ContentChild::GetSingleton()->SendSetClipboard(
+      std::move(ipcTransferable), aWhichClipboard, aWindowContext);
   return NS_OK;
 }
 

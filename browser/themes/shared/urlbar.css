@@ -14,6 +14,7 @@
   --urlbar-container-min-width: 310px;
 
   --urlbar-basic-component-size: calc(var(--urlbar-height) - 2 * var(--urlbar-input-container-padding));
+  --urlbar-component-gap: calc(var(--urlbar-input-container-padding) - var(--urlbar-input-container-border-width));
   --urlbar-icon-padding: calc((var(--urlbar-basic-component-size) - 16px) / 2);
 
   /* Usually we wouldn't need snapping border widths manually, but we use this
@@ -48,6 +49,7 @@
   @media not -moz-pref("browser.nova.enabled") {
     --urlbar-basic-component-size: calc(var(--urlbar-height) - 2 * (var(--urlbar-input-container-border-width) + var(--urlbar-input-container-padding)));
     --urlbar-icon-padding: calc((var(--urlbar-height) - 2px /* border */ - 2px /* padding */ - 16px /* icon */) / 2);
+    --urlbar-component-gap: 0px;
     --urlbar-input-container-padding: round(up, 1px, env(hairline));
     --urlbar-background-overhang-open: 0px;
   }
@@ -68,6 +70,10 @@
        being in the nav bar, so we use the smaller not-yet-default value from
        below as if the trust panel was enabled. */
     --urlbar-container-min-width: 275px;
+  }
+  &[mini-window] {
+    /* The address bar is read-only in mini-window mode. */
+    --urlbar-background-color: transparent;
   }
   /* Enabling the trust panel saves up to two icons in the front part of the
      address bar.
@@ -180,8 +186,7 @@ toolbar[inactive="true"] .urlbar,
 #urlbar:not([actiontype="extension"]) > .urlbar-input-container > #urlbar-label-box > #urlbar-label-extension,
 .urlbar-input-container[pageproxystate="invalid"] > #page-action-buttons > .urlbar-page-action:not(#share-button),
 #identity-box.chromeUI ~ #page-action-buttons > .urlbar-page-action:not(#star-button-box, #split-view-button, #share-button),
-#urlbar[usertyping] > .urlbar-input-container > #page-action-buttons > #urlbar-zoom-button,
-#urlbar[usertyping] > .urlbar-input-container > #page-action-buttons > .urlbar-page-action,
+#urlbar[usertyping] > .urlbar-input-container > #page-action-buttons,
 .urlbar:not([usertyping]) > .urlbar-input-container > .urlbar-go-button,
 .urlbar:not(#searchbar-new, [focused]) > .urlbar-input-container > .urlbar-go-button,
 #urlbar-revert-button-container {
@@ -262,7 +267,8 @@ toolbar[inactive="true"] .urlbar,
   --urlbar-container-padding-block: 0px;
   --urlbar-input-container-padding: 10px;
   --urlbar-basic-component-size: calc(var(--urlbar-height) - 2 * var(--urlbar-input-container-padding));
-  --urlbarview-border-radius: calc(var(--urlbar-height) / 2);
+  --urlbar-border-radius: calc(var(--urlbar-height) / 2);
+  --urlbarview-border-radius: var(--urlbar-border-radius);
 
   /* When the input isn't in a toolbar, it can't use a background that may have
      significant transparency since it counts on the toolbar background behind
@@ -271,13 +277,47 @@ toolbar[inactive="true"] .urlbar,
   --urlbar-background-color-focus: var(--input-text-background-color);
   --toolbar-field-text-color: var(--input-text-color);
   --toolbar-field-text-color-focus: var(--input-text-color);
-  --toolbar-field-border-color: var(--input-text-border-color);
+  --toolbar-field-border-color: var(--border-color-deemphasized);
 
   /* The selected row's background and text have to stay a pair, so both come
      from the list item tokens. The action text follows the input. */
   --urlbarview-background-color-selected: var(--background-color-list-item-hover);
   --urlbarview-text-color-selected: var(--text-color-list-item-hover);
   --urlbarview-text-color-action: var(--input-text-color);
+}
+
+/* Variant B of the New Tab search bar puts the search engine button on its own
+   row above the input and paints a card behind both. Both are positioned out of
+   the slot the page gives the search bar, so the slot keeps its size and the
+   input stays where the page puts it. */
+.urlbar[variant-b] {
+  --urlbar-card-padding-inline: 80px;
+  --urlbar-card-padding-block-start: var(--space-small);
+  --urlbar-card-padding-block-end: var(--space-xlarge);
+  --urlbar-card-row-height: var(--size-item-xlarge);
+  --urlbar-card-row-gap: var(--space-medium);
+
+  /* Keeps the card, which paints behind the search bar's own boxes, above the
+     page. */
+  isolation: isolate;
+
+  /* A page that draws the card itself sets --urlbar-card-display: none. */
+  &::before {
+    content: "";
+    display: var(--urlbar-card-display, block);
+    position: absolute;
+    z-index: -1;
+    inset-block-start: calc(-1 * (var(--urlbar-card-padding-block-start) + var(--urlbar-card-row-height) + var(--urlbar-card-row-gap)));
+    inset-block-end: calc(-1 * var(--urlbar-card-padding-block-end));
+    inset-inline: calc(-1 * var(--urlbar-card-padding-inline));
+    background-color: var(--background-color-box);
+    border-radius: var(--border-radius-xlarge);
+  }
+
+  /* The button's row is positioned out of the container. */
+  > .urlbar-input-container {
+    overflow: visible;
+  }
 }
 
 .urlbar-background {
@@ -288,6 +328,10 @@ toolbar[inactive="true"] .urlbar,
   background-clip: border-box;
   border-radius: var(--urlbar-background-border-radius);
   border: var(--urlbar-background-border);
+
+  .urlbar[in-page]:not([popover-open]) > & {
+    background-clip: padding-box;
+  }
 
   .urlbar:is([focused], [open]) > & {
     background-color: var(--urlbar-background-color-focus);
@@ -362,6 +406,12 @@ toolbar[inactive="true"] .urlbar,
 
   .urlbar[popover-open][focused] > & {
     outline: var(--urlbar-input-container-outline-open-focused);
+  }
+
+  /* Only the address bar has site-info pills to separate. The in-page bar
+     and the search bar have nothing to separate. */
+  #urlbar > & {
+    column-gap: var(--urlbar-component-gap);
   }
 }
 
@@ -599,19 +649,34 @@ toolbar[inactive="true"] .urlbar,
 }
 
 .urlbar-input-box {
-  /* The box spans the container, so the buttons after it stay at its end, and
-     is a flex container, so the input fills it. */
+  /* The box takes the space the site-info slot and the buttons leave, so they
+     keep their content width in a narrow window and the buttons stay at the
+     box's end, and is a flex container, so the input fills it. */
   display: flex;
-  flex-grow: 1;
+  flex: 1;
   min-width: 0;
   height: 100%;
   margin-inline-start: var(--urlbar-input-gap);
+  cursor: text;
+
+  /* With the search engine button on its own row, a plain glass marks the
+     input's start. */
+  .urlbar[variant-b] & {
+    background: url("chrome://global/skin/icons/search-glass.svg") no-repeat left var(--space-xsmall) center;
+    -moz-context-properties: fill;
+    fill: var(--text-color-deemphasized);
+    padding-inline-start: calc(var(--space-xsmall) + var(--icon-size) + var(--space-medium));
+
+    &:dir(rtl) {
+      background-position-x: right var(--space-xsmall);
+    }
+  }
 
   #urlbar & {
     /* Show the url scheme in a static box when overflowing to the left */
     position: relative;
     direction: ltr;
-    margin-inline-end: var(--urlbar-input-gap);
+    margin-inline: calc(var(--urlbar-input-gap) - var(--urlbar-component-gap));
   }
 
   :root[customizing] & {
@@ -645,6 +710,22 @@ toolbar[inactive="true"] .urlbar,
    * remains as wide. */
   :root[customizing] & {
     width: calc(var(--urlbar-container-min-width) - 30px);
+  }
+
+  /* A mini window centres the address bar rather than letting it span the
+   * bar, then narrows and finally drops it as the window gets too small to
+   * hold it alongside the navigation and mini-window buttons. */
+  :root[mini-window] & {
+    max-width: 60%;
+    margin-inline: auto;
+
+    @media (width < 400px) {
+      max-width: 80%;
+    }
+
+    @media (width < 150px) {
+      display: none;
+    }
   }
 }
 
@@ -974,166 +1055,6 @@ toolbar[inactive="true"] .urlbar,
   }
 }
 
-/**
- * Contextual Feature Recommendation
- *
- * Animate the recommendation icon to expand outwards and display a text label.
- * Fake the effect of a smoothly expanding width without animating any widths
- * by (continuously) animating only `mask-position-x` and `transform`.
- *
- * In a few places, transition a property using the timing-function `step-start`
- * while collapsed and `step-end` while expanded in order to (discretely) modify
- * the value while expanded and while transitioning in either direction.
- *
- * This UI is part of an experiment launching in LTR locales only. Fixing the
- * RTL issues is tracked by Bug 1485725.
- */
-
-:root {
-  --cfr-animation-duration: 0.35s;
-  --cfr-button-addons-icon: url(chrome://activity-stream/content/data/content/assets/glyph-webextension-16.svg);
-  --cfr-button-features-icon: url(chrome://browser/content/asrouter/assets/glyph-cfr-feature-16.svg);
-  --cfr-button-highlights-icon: url(chrome://global/skin/icons/highlights.svg);
-  --cfr-active-color: #0060df;
-  --cfr-active-text-color: white;
-}
-
-#contextual-feature-recommendation {
-  width: 28px;
-  margin-inline-start: 0;
-  transition: margin-inline-start step-end var(--cfr-animation-duration);
-
-  #urlbar[cfr-recommendation-state="expanded"] & {
-    width: auto;
-    margin-inline-start: calc(var(--cfr-label-width) * -1);
-    transition: margin-inline-start step-start var(--cfr-animation-duration);
-  }
-
-  &[data-cfr-icon="recommendations-icon"] {
-    width: auto;
-
-    #cfr-button {
-      list-style-image: var(--cfr-button-features-icon);
-      align-items: center;
-    }
-  }
-
-  &[data-cfr-icon="highlights-icon"] {
-    width: auto;
-
-    #cfr-button {
-      list-style-image: var(--cfr-button-highlights-icon);
-      align-items: center;
-    }
-  }
-
-  &[data-cfr-icon="webextensions-icon"] #cfr-button {
-    list-style-image: var(--cfr-button-addons-icon);
-  }
-}
-
-#cfr-button {
-  transition-property: fill, fill-opacity, transform;
-  transition-timing-function: ease-in-out;
-  transition-duration: var(--cfr-animation-duration);
-
-  #urlbar[cfr-recommendation-state="expanded"] & {
-    background-color: transparent;
-    transform: translateX(calc(var(--cfr-label-width) * -1));
-
-    &:dir(rtl) {
-      transform: translateX(calc(var(--cfr-label-width)));
-    }
-
-    &,
-    .urlbar-icon {
-      fill: var(--cfr-active-text-color);
-      fill-opacity: 1;
-    }
-  }
-
-  #urlbar[cfr-recommendation-state="collapsed"] & {
-    animation: cfr-button-fade-through-active-color calc(3 * var(--cfr-animation-duration));
-  }
-}
-
-@keyframes cfr-button-fade-through-active-color {
-  33% {
-    fill-opacity: 1;
-    fill: var(--cfr-active-color);
-  }
-  67% {
-    fill-opacity: 1;
-    fill: var(--cfr-active-color);
-  }
-}
-
-#cfr-label-container {
-  width: 0;
-  overflow: hidden;
-  border-radius: var(--urlbar-inner-border-radius);
-  padding-inline-start: 28px;
-  mask-image: linear-gradient(to right, transparent 0, black 0);
-  mask-position-x: var(--cfr-label-width);
-  mask-repeat: no-repeat;
-  transition-property: background-color, mask-position-x, width, margin-inline-end;
-  transition-timing-function: ease-in-out, ease-in-out, step-end, step-end;
-  transition-duration: var(--cfr-animation-duration);
-  align-items: center;
-
-  &:dir(rtl) {
-    mask-position-x: calc(var(--cfr-label-width) * -1);
-  }
-
-  #urlbar[cfr-recommendation-state="expanded"] & {
-    width: calc(var(--cfr-label-width) + 28px);
-    background-color: var(--cfr-active-color);
-    margin-inline-end: -28px;
-    mask-position-x: 0;
-    transition-timing-function: ease-in-out, ease-in-out, step-start, step-start;
-  }
-}
-
-#cfr-label {
-  margin: 0;
-  padding: 3px 5px;
-  padding-inline-start: 0;
-  color: white;
-  mask-image: linear-gradient(to right, transparent 0, black 0);
-  mask-position-x: var(--cfr-label-width);
-  mask-repeat: no-repeat;
-  transition: mask-position-x ease-in-out var(--cfr-animation-duration);
-
-  &:dir(rtl) {
-    mask-position-x: calc(var(--cfr-label-width) * -1);
-  }
-
-  #urlbar[cfr-recommendation-state="expanded"] & {
-    mask-position-x: 0;
-  }
-}
-
-/* Shift the url-bar text fading to stop the recommendation overlapping */
-#urlbar[cfr-recommendation-state] .urlbar-input {
-  /* A mask-image is usually only defined for the url bar when text overflows.
-     We need to re-define the mask image here so that it shows up correctly when
-     we transition to or from an `expanded` state (in which the right end of the
-     url bar may be obscured without overflow). */
-  mask-image: linear-gradient(to left, transparent, black 3ch);
-  transition: mask-position-x ease-in-out var(--cfr-animation-duration);
-
-  :dir(rtl) > & {
-    mask-image: linear-gradient(to right, transparent, black 3ch);
-  }
-}
-#urlbar[cfr-recommendation-state="expanded"] .urlbar-input {
-  mask-position-x: calc(var(--cfr-label-width) * -1);
-
-  :dir(rtl) > & {
-    mask-position-x: calc(var(--cfr-label-width));
-  }
-}
-
 /* Persisted Search revert button */
 
 #urlbar-revert-button {
@@ -1449,6 +1370,14 @@ toolbar[inactive="true"] .urlbar,
     display: flex;
     align-items: center;
     gap: var(--space-small);
+
+    @media -moz-pref("browser.urlbar.unifiedSearchButton.always") {
+      gap: var(--space-xsmall);
+    }
+
+    .urlbar:is([sap-name="searchbar"], [sap-name="newtab_searchbar"]) & {
+      gap: var(--space-xsmall);
+    }
   }
 
   &[offscreen] {
@@ -1460,6 +1389,68 @@ toolbar[inactive="true"] .urlbar,
   .urlbar:not([sap-name="searchbar"], [sap-name="newtab_searchbar"]) & {
     @media (not -moz-pref("browser.urlbar.searchModeSwitcher.featureGate")) and (not -moz-pref("browser.urlbar.scotchBonnet.enableOverride")) {
       display: none;
+    }
+  }
+
+  .urlbar[variant-a] & {
+    --button-border-color-muted: var(--border-color-deemphasized);
+    --button-border-color-muted-hover: var(--border-color-deemphasized);
+    --button-border-color-muted-active: var(--border-color-deemphasized);
+    --button-border-color-muted-selected: var(--border-color-deemphasized);
+
+    &::part(button) {
+      background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.3));
+      background-origin: border-box;
+      box-shadow: var(--box-shadow-level-1), var(--box-shadow-level-2);
+      cursor: pointer;
+
+      @media (prefers-color-scheme: dark) {
+        background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.4));
+      }
+    }
+
+    /* The label's UA cursor would otherwise stop the button's from reaching the
+       slotted content. */
+    &::part(moz-button-label) {
+      cursor: inherit;
+    }
+
+    > .searchmode-switcher-content {
+      /* Put the engine name before the dropmarker. */
+      > .searchmode-switcher-title {
+        order: -1;
+      }
+    }
+  }
+
+  /* The button's own row above the input, centered over the input container
+     and clearing it by the card's row gap. A page that can't show the row sets
+     --urlbar-button-row-visibility: hidden. */
+  .urlbar[variant-b] & {
+    visibility: var(--urlbar-button-row-visibility, visible);
+    position: absolute;
+    inset-block-end: calc(100% + var(--urlbar-card-row-gap));
+    inset-inline: 0;
+    margin-inline: auto;
+    width: fit-content;
+    height: var(--urlbar-card-row-height);
+    --button-padding: 0 var(--space-medium);
+    --button-border-radius: var(--border-radius-medium);
+
+    &::part(button) {
+      cursor: pointer;
+    }
+
+    &::part(moz-button-label) {
+      cursor: inherit;
+    }
+
+    > .searchmode-switcher-content {
+      gap: var(--space-large);
+
+      > .searchmode-switcher-title {
+        order: -1;
+      }
     }
   }
 
@@ -1476,6 +1467,59 @@ toolbar[inactive="true"] .urlbar,
   }
 }
 
+/* The wordmark of the engine the switcher shows, in place of its icon and name.
+   The image comes from this sheet because a chrome: URL a node in a content
+   document loads, as on about:newtab, is refused. Each aspect ratio is the
+   image's viewBox, so the box is sized before the image has loaded. */
+.searchmode-switcher-wordmark {
+  display: none;
+  height: var(--icon-size-large);
+  background: no-repeat center / contain;
+
+  .searchmode-switcher[wordmark] & {
+    display: block;
+  }
+
+  .urlbar[variant-b] & {
+    height: var(--icon-size-xlarge);
+  }
+
+  .searchmode-switcher[wordmark="bing"] & {
+    background-image: url("chrome://browser/skin/urlbar/engine-wordmarks/Bing.svg");
+    aspect-ratio: 138 / 62;
+  }
+
+  .searchmode-switcher[wordmark="ddg"] & {
+    background-image: url("chrome://browser/skin/urlbar/engine-wordmarks/DuckDuckGo.svg");
+    aspect-ratio: 286 / 62;
+  }
+
+  .searchmode-switcher[wordmark="ebay"] & {
+    background-image: url("chrome://browser/skin/urlbar/engine-wordmarks/eBay.svg");
+    aspect-ratio: 133 / 62.08;
+  }
+
+  .searchmode-switcher[wordmark="google"] & {
+    background-image: url("chrome://browser/skin/urlbar/engine-wordmarks/Google.svg");
+    aspect-ratio: 173 / 62.08;
+  }
+
+  .searchmode-switcher[wordmark="perplexity"] & {
+    background-image: url("chrome://browser/skin/urlbar/engine-wordmarks/Perplexity.svg");
+    aspect-ratio: 230 / 62.08;
+  }
+
+  .searchmode-switcher[wordmark="startpage"] & {
+    background-image: url("chrome://browser/skin/urlbar/engine-wordmarks/Startpage.svg");
+    aspect-ratio: 211 / 62;
+  }
+
+  .searchmode-switcher[wordmark="wikipedia"] & {
+    background-image: url("chrome://browser/skin/urlbar/engine-wordmarks/Wikipedia.svg");
+    aspect-ratio: 233 / 62.08;
+  }
+}
+
 .searchmode-switcher-title {
   display: none;
   margin: 0;
@@ -1485,9 +1529,15 @@ toolbar[inactive="true"] .urlbar,
   max-width: var(--search-engine-name-max-width);
 
   @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
-    .urlbar:not(#searchbar-new)[searchmode] & {
+    .urlbar:not([sap-name="searchbar"], [sap-name="newtab_searchbar"])[searchmode] & {
       display: block;
     }
+  }
+
+  /* The New Tab variants name the engine next to its icon, whether or not the
+     input is in search mode. */
+  .urlbar:is([variant-a], [variant-b]) .searchmode-switcher:not([wordmark]) &:not(:empty) {
+    display: block;
   }
 }
 
@@ -1498,7 +1548,7 @@ toolbar[inactive="true"] .urlbar,
   align-self: center;
 
   @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
-    .urlbar[searchmode] & {
+    .urlbar:not([sap-name="searchbar"], [sap-name="newtab_searchbar"])[searchmode] & {
       display: revert;
     }
   }
@@ -1513,11 +1563,7 @@ toolbar[inactive="true"] .urlbar,
     transition: 300ms transform ease-in-out;
   }
 
-  @media -moz-pref("browser.urlbar.unifiedSearchButton.always") {
-    margin-inline-start: calc(var(--space-xsmall) * -1);
-  }
-
-  .urlbar[searchmode] & {
+  .urlbar:not([sap-name="searchbar"], [sap-name="newtab_searchbar"])[searchmode] & {
     @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
       display: none;
     }

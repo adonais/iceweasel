@@ -597,7 +597,7 @@ class ShareControllerTest {
 
             every {
                 sendTabUseCases.sendToDeviceAsync(
-                    any(),
+                    any<String>(),
                     any<List<TabData>>(),
                 )
             } returns CompletableDeferred(true)

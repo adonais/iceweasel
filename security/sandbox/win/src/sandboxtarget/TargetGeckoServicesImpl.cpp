@@ -17,7 +17,7 @@ namespace geckoprofiler::markers {
 
 struct SandboxSyscall : public mozilla::BaseMarkerType<SandboxSyscall> {
   static constexpr const char* Name = "sandboxsyscall";
-  static constexpr bool StoreName = true;
+  static constexpr bool ETWStoreName = true;
 
   using MS = mozilla::MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {

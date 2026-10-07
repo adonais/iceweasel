@@ -5,6 +5,7 @@
 #ifndef GFX_OGLSHADERCONFIG_H
 #define GFX_OGLSHADERCONFIG_H
 
+#include "GLTypes.h"
 #include "ImageTypes.h"
 #include "gfxTypes.h"
 #include "mozilla/Assertions.h"  // for MOZ_ASSERT, etc

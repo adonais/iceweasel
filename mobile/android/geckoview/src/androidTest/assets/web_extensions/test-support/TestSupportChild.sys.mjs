@@ -88,8 +88,14 @@ export class TestSupportChild extends GeckoViewActorChild {
         }
         return Promise.resolve();
       }
-      case "NotifyUserGestureActivation": {
+      case "ShowPicker": {
+        const { selector } = aMsg.data;
+        const element = this.document.querySelector(selector);
+        if (!element) {
+          throw new Error("No element for " + selector);
+        }
         this.document.notifyUserGestureActivation();
+        element.showPicker();
         return Promise.resolve();
       }
     }

@@ -11,6 +11,7 @@
 #include "PerformanceRecorder.h"
 #include "VideoEngine.h"
 #include "VideoFrameUtils.h"
+#include "api/video/i420_buffer.h"
 #include "api/video/video_frame_buffer.h"
 #include "common/browser_logging/WebRtcLog.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
@@ -769,9 +770,58 @@ void AggregateCapturer::OnFrame(const webrtc::VideoFrame& aVideoFrame) {
         MEDIA_RT);
   }
 
+  if (parentsAndIds.empty()) {
+    // No consumer wants this frame, so don't pay for rotating it or for the
+    // ToI420() in InitFrameBufferProperties.
+    return;
+  }
+
+  // Straighten the frame here rather than in the backends. Some of them
+  // deliver straight to DeliverCapturedFrame and so never reach
+  // VideoCaptureImpl::IncomingFrame, which is where libwebrtc would have
+  // applied SetApplyRotation for us, and IncomingFrame allocates a full buffer
+  // per frame regardless. Doing it once here covers every backend and every
+  // consumer of this capturer.
+  const webrtc::VideoRotation originalRotationRequired = aVideoFrame.rotation();
+  bool rotationApplied = false;
+  webrtc::VideoFrame frame = aVideoFrame;
+  if (originalRotationRequired != webrtc::kVideoRotation_0 &&
+      StaticPrefs::media_webrtc_capture_apply_rotation()) {
+    PerformanceRecorder<CopyVideoStage> rec(
+        "AggregateCapturer::ApplyRotation"_ns, mTrackingId, aVideoFrame.width(),
+        aVideoFrame.height());
+    // Convert explicitly rather than letting I420Buffer::Rotate do it: its
+    // VideoFrameBuffer overload dereferences GetI420(), which is a downcast
+    // and returns null for any buffer that is not already I420, such as the
+    // native buffers the fake and macOS backends deliver.
+    webrtc::scoped_refptr<webrtc::I420BufferInterface> i420 =
+        aVideoFrame.video_frame_buffer()->ToI420();
+    MOZ_DIAGNOSTIC_ASSERT(i420,
+                          "Capture backends are expected to deliver a buffer "
+                          "we can convert to I420; without one we cannot "
+                          "straighten the frame and the consumer gets it "
+                          "sideways.");
+    if (webrtc::scoped_refptr<webrtc::I420Buffer> rotated =
+            i420 ? webrtc::I420Buffer::Rotate(*i420, originalRotationRequired)
+                 : nullptr) {
+      frame = webrtc::VideoFrame::Builder()
+                  .set_video_frame_buffer(std::move(rotated))
+                  .set_rotation(webrtc::kVideoRotation_0)
+                  .set_timestamp_us(aVideoFrame.timestamp_us())
+                  .set_rtp_timestamp(aVideoFrame.rtp_timestamp())
+                  .set_ntp_time_ms(aVideoFrame.ntp_time_ms())
+                  .build();
+      rotationApplied = true;
+      rec.Record();
+    }
+    // On allocation failure the frame goes out unrotated, with rotationApplied
+    // still telling the consumer what is left to do.
+  }
+
   // Get frame properties
   camera::VideoFrameProperties properties;
-  VideoFrameUtils::InitFrameBufferProperties(aVideoFrame, properties);
+  VideoFrameUtils::InitFrameBufferProperties(frame, originalRotationRequired,
+                                             rotationApplied, properties);
 
   for (auto it = parentsAndIds.begin(); it != parentsAndIds.end();) {
     const auto& parent = it->first;
@@ -797,10 +847,10 @@ void AggregateCapturer::OnFrame(const webrtc::VideoFrame& aVideoFrame) {
       // Shared memory buffers of the right size are available, do the copy
       // here.
       PerformanceRecorder<CopyVideoStage> rec(
-          "CamerasParent::VideoFrameToShmem"_ns, mTrackingId,
-          aVideoFrame.width(), aVideoFrame.height());
-      VideoFrameUtils::CopyVideoFrameBuffers(
-          shMemBuffer.GetBytes(), properties.bufferSize(), aVideoFrame);
+          "CamerasParent::VideoFrameToShmem"_ns, mTrackingId, frame.width(),
+          frame.height());
+      VideoFrameUtils::CopyVideoFrameBuffers(shMemBuffer.GetBytes(),
+                                             properties.bufferSize(), frame);
       rec.Record();
       runnable = new DeliverFrameRunnable(
           do_AddRef(parent), mCapEngine, mCaptureId, std::move(ids),
@@ -809,7 +859,7 @@ void AggregateCapturer::OnFrame(const webrtc::VideoFrame& aVideoFrame) {
     if (!runnable) {
       runnable = new DeliverFrameRunnable(do_AddRef(parent), mCapEngine,
                                           mCaptureId, std::move(ids),
-                                          mTrackingId, aVideoFrame, properties);
+                                          mTrackingId, frame, properties);
     }
     nsIEventTarget* target = parent->GetBackgroundEventTarget();
     target->Dispatch(runnable, NS_DISPATCH_NORMAL);

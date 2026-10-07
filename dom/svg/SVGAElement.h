@@ -5,8 +5,8 @@
 #ifndef DOM_SVG_SVGAELEMENT_H_
 #define DOM_SVG_SVGAELEMENT_H_
 
-#include "Link.h"
 #include "SVGAnimatedString.h"
+#include "mozilla/dom/Link.h"
 #include "mozilla/dom/SVGGraphicsElement.h"
 #include "nsDOMTokenList.h"
 

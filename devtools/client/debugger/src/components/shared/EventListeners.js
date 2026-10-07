@@ -266,6 +266,8 @@ class EventListeners extends Component {
       button(
         {
           className: "event-listener-expand",
+          "aria-label": category.name,
+          "aria-expanded": expanded,
           onClick: () => this.onCategoryToggle(category.name),
         },
         React.createElement(DebuggerImage, {

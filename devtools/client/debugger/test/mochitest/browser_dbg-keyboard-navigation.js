@@ -18,6 +18,11 @@ add_task(async function () {
     focusableEditorElementSelector
   );
 
+  // The code folding buttons are rendered from the syntax tree, which is parsed
+  // incrementally, so until the document is fully loaded the gutter holds no
+  // focusable button and shift+tab reaches the source header instead.
+  await waitForDocumentLoadComplete(dbg);
+
   info("Focus on the editor");
   focusableEditorElement.focus();
 
@@ -28,10 +33,11 @@ add_task(async function () {
   );
   pressKey(dbg, "ShiftTab");
 
+  // A selector lookup would match the gutter's hidden spacer button.
   is(
     doc.activeElement.className,
-    findElementWithSelector(dbg, ".cm6-dt-foldgutter__toggle-button").className,
-    "The left sidebar toggle button is focused"
+    "cm6-dt-foldgutter__toggle-button",
+    "The code folding toggle button in the gutter is focused"
   );
 
   info("Press tab to navigate back to the editor");

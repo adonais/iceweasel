@@ -18,7 +18,7 @@ void NS_NewSyncedBookmarksMerger(mozISyncedBookmarksMerger** aResult);
 namespace mozilla {
 namespace places {
 
-already_AddRefed<mozISyncedBookmarksMerger> NewSyncedBookmarksMerger() {
+inline already_AddRefed<mozISyncedBookmarksMerger> NewSyncedBookmarksMerger() {
   nsCOMPtr<mozISyncedBookmarksMerger> merger;
   NS_NewSyncedBookmarksMerger(getter_AddRefs(merger));
   return merger.forget();

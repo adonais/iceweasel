@@ -195,8 +195,6 @@ function treatAsSafeArgument(entry, varName, csuName)
         ["Gecko_nsStyleFilter_SetURLValue", "aEffects", null],
         ["Gecko_nsStyleSVG_SetDashArrayLength", "aSvg", null],
         ["Gecko_nsStyleSVG_CopyDashArray", "aDst", null],
-        ["Gecko_nsStyleFont_SetLang", "aFont", null],
-        ["Gecko_nsStyleFont_CopyLangFrom", "aFont", null],
         ["Gecko_ClearWillChange", "aDisplay", null],
         ["Gecko_AppendWillChange", "aDisplay", null],
         ["Gecko_CopyWillChangeFrom", "aDest", null],

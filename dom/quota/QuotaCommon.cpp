@@ -595,8 +595,9 @@ void LogError(const nsACString& aExpr, const Maybe<nsresult> aMaybeRv,
     // match locations across versions, but they might be large.
 
     // New extra entries (with potentially sensitive content) can't be easily
-    // (accidentally) added because they would have to be added to Events.yaml
-    // under "dom.quota.try" which would require a data review.
+    // (accidentally) added because they would have to be added to the
+    // error_step extra_keys in dom/quota/metrics.yaml, which would require a
+    // data review.
 
     mozilla::glean::dom_quota_try::ErrorStepExtra extra;
     extra.context = Some(MOZ_NO_VALIDATE(

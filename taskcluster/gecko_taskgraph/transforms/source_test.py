@@ -301,13 +301,22 @@ def handle_shell(config, jobs):
 
 
 @transforms.add
-def set_code_review_env(config, jobs):
+def handle_code_review(config, jobs):
     """
-    Add a CODE_REVIEW environment variable when running in code-review bot mode
+    Resolve code-review attribute and add a CODE_REVIEW environment variable when
+    running in code-review bot mode.
     """
     is_code_review = config.params["target_tasks_method"] == "codereview"
 
     for job in jobs:
+        resolve_keyed_by(
+            job,
+            "attributes.code-review",
+            item_name=job["name"],
+            project=config.params["project"],
+            level=config.params["level"],
+        )
+
         attrs = job.get("attributes", {})
         if is_code_review and attrs.get("code-review") is True:
             env = job["worker"].setdefault("env", {})

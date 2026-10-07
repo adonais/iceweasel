@@ -325,13 +325,13 @@ void MediaTransportHandlerIPC::SendPacket(const std::string& aTransportId,
 
 void MediaTransportHandlerIPC::AddIceCandidate(
     const std::string& aTransportId, const std::string& aCandidate,
-    const std::string& aUfrag, const std::string& aObfuscatedAddress) {
+    const std::string& aUfrag, const std::string& aResolvedAddress) {
   mInitPromise->Then(
       mThread, __func__,
       [=, this, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
         if (mChild) {
           mChild->SendAddIceCandidate(aTransportId, aCandidate, aUfrag,
-                                      aObfuscatedAddress);
+                                      aResolvedAddress);
         }
       },
       [](const nsCString& aError) {});

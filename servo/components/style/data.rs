@@ -189,7 +189,7 @@ impl ElementStyles {
 
     /// Whether this element `display` value is `none`.
     pub fn is_display_none(&self) -> bool {
-        self.primary().get_box().clone_display().is_none()
+        self.primary().get_box().get_display().is_none()
     }
 
     /// Whether this element uses viewport units.
@@ -227,7 +227,7 @@ impl ElementStyles {
 
     /// Whether this element uses sibling-count() or sibling-index().
     pub fn uses_tree_counting_function(&self, t: TreeCountingFunction) -> bool {
-        let usage_from_flags = |flags: ComputedValueFlags| -> bool {
+        let usage_from_flags = |flags: ComputedValueFlags| {
             if t == TreeCountingFunction::SiblingCount
                 && flags.intersects(ComputedValueFlags::USES_SIBLING_COUNT)
             {
@@ -241,14 +241,36 @@ impl ElementStyles {
             false
         };
 
-        let primary = self.primary();
-        let mut usage = usage_from_flags(primary.flags);
-
-        for pseudo_style in self.pseudos.as_array().iter().flatten() {
-            usage |= usage_from_flags(pseudo_style.flags);
+        if usage_from_flags(self.primary().flags) {
+            return true;
         }
 
-        usage
+        for pseudo_style in self.pseudos.as_array().iter().flatten() {
+            if usage_from_flags(pseudo_style.flags) {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    /// Whether this element's styles use an element-scoped `random()`.
+    pub fn uses_element_scoped_random(&self) -> bool {
+        let usage_from_flags = |flags: ComputedValueFlags| {
+            flags.intersects(ComputedValueFlags::USES_ELEMENT_SCOPED_RANDOM)
+        };
+
+        if usage_from_flags(self.primary().flags) {
+            return true;
+        }
+
+        for pseudo_style in self.pseudos.as_array().iter().flatten() {
+            if usage_from_flags(pseudo_style.flags) {
+                return true;
+            }
+        }
+
+        false
     }
 
     #[cfg(feature = "gecko")]
@@ -673,7 +695,7 @@ impl ElementData {
             .styles
             .primary()
             .get_box()
-            .clone_container_type()
+            .get_container_type()
             .is_normal()
         {
             return false;

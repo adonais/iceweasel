@@ -41,18 +41,22 @@ function getIndividualPrefName(name) {
 }
 const kInterceptionPoints = [
   "clipboard",
+  "clipboard_copy",
   "download",
   "drag_and_drop",
   "file_upload",
   "print",
 ];
-// Everything is on by default except download.
-let kInterceptionPointsOnByDefault = kInterceptionPoints.slice();
-kInterceptionPointsOnByDefault.splice(
-  kInterceptionPointsOnByDefault.indexOf("download"),
-  1
+// Everything is on by default except download and clipboard_copy.
+const kInterceptionPointsOffByDefault = ["clipboard_copy", "download"];
+const kInterceptionPointsOnByDefault = kInterceptionPoints.filter(
+  point => !kInterceptionPointsOffByDefault.includes(point)
 );
-const kInterceptionPointsPlainTextOnly = ["clipboard", "drag_and_drop"];
+const kInterceptionPointsPlainTextOnly = [
+  "clipboard",
+  "clipboard_copy",
+  "drag_and_drop",
+];
 
 const ca = Cc["@mozilla.org/contentanalysis;1"].getService(
   Ci.nsIContentAnalysis
@@ -94,7 +98,8 @@ add_task(async function test_ca_active() {
   });
   ok(ca.isActive, "CA is active when enabled by enterprise policy pref");
   for (let interceptionPoint of kInterceptionPoints) {
-    const shouldBeEnabledByDefault = interceptionPoint !== "download";
+    const shouldBeEnabledByDefault =
+      !kInterceptionPointsOffByDefault.includes(interceptionPoint);
     is(
       Services.prefs.getBoolPref(
         `browser.contentanalysis.interception_point.${interceptionPoint}.enabled`
@@ -183,14 +188,11 @@ add_task(
       "A DLP agent",
       "agentName default"
     );
-    is(
-      Glean.contentAnalysis.interceptionPointsTurnedOff.testGetValue().length,
-      1,
-      "interceptionPointsTurnedOff default"
-    );
-    is(
-      Glean.contentAnalysis.interceptionPointsTurnedOff.testGetValue()[0],
-      "browser.contentanalysis.interception_point.download.enabled",
+    Assert.deepEqual(
+      Glean.contentAnalysis.interceptionPointsTurnedOff.testGetValue(),
+      kInterceptionPointsOffByDefault.map(
+        point => `browser.contentanalysis.interception_point.${point}.enabled`
+      ),
       "interceptionPointsTurnedOff default"
     );
     ok(
@@ -254,6 +256,10 @@ add_task(async function test_ca_enterprise_config() {
         InterceptionPoints: {
           Clipboard: {
             Enabled: false,
+            PlainTextOnly: false,
+          },
+          ClipboardCopy: {
+            Enabled: true,
             PlainTextOnly: false,
           },
           Download: {
@@ -339,7 +345,8 @@ add_task(async function test_ca_enterprise_config() {
       Services.prefs.getBoolPref(
         `browser.contentanalysis.interception_point.${interceptionPoint}.enabled`
       ),
-      interceptionPoint === "download",
+      interceptionPoint === "download" ||
+        interceptionPoint === "clipboard_copy",
       `${interceptionPoint} interception point match`
     );
   }
@@ -355,6 +362,104 @@ add_task(async function test_ca_enterprise_config() {
 
   PoliciesPrefTracker.stop();
 });
+
+// An interception point omitted from InterceptionPoints falls back to a
+// per-entry default. That default is `true` for the interception points that
+// predate per-entry defaults, but must be `false` for ones that are off by
+// default, so policy files written before they existed don't silently opt in.
+const kInterceptionPointsOmittedFallsBackToOff = ["clipboard_copy"];
+
+add_task(async function test_ca_enterprise_config_omitted_interception_point() {
+  PoliciesPrefTracker.start();
+
+  // This is a little awkward, because setting a policy with just empty objects
+  // in it is considered to be empty, and nothing will take effect (see
+  // PoliciesProvider.hasPolicies()). So add a non-empty key (here "PipePathName")
+  // just so that doesn't happen for testing purposes.
+  await EnterprisePolicyTesting.setupPolicyEngineWithJson({
+    policies: {
+      ContentAnalysis: {
+        InterceptionPoints: {},
+        PipePathName: "abc",
+      },
+    },
+  });
+
+  for (let interceptionPoint of kInterceptionPoints) {
+    is(
+      Services.prefs.getBoolPref(
+        `browser.contentanalysis.interception_point.${interceptionPoint}.enabled`
+      ),
+      !kInterceptionPointsOmittedFallsBackToOff.includes(interceptionPoint),
+      `${interceptionPoint} enabled falls back to its default`
+    );
+  }
+  for (let interceptionPoint of kInterceptionPointsPlainTextOnly) {
+    is(
+      Services.prefs.getBoolPref(
+        `browser.contentanalysis.interception_point.${interceptionPoint}.plain_text_only`
+      ),
+      true,
+      `${interceptionPoint} plain_text_only falls back to its default`
+    );
+  }
+
+  PoliciesPrefTracker.stop();
+});
+
+add_task(
+  async function test_ca_enterprise_config_only_download_interception_point() {
+    PoliciesPrefTracker.start();
+
+    await EnterprisePolicyTesting.setupPolicyEngineWithJson({
+      policies: {
+        ContentAnalysis: {
+          InterceptionPoints: {
+            Download: {
+              Enabled: false,
+            },
+          },
+        },
+      },
+    });
+
+    for (let interceptionPoint of kInterceptionPoints) {
+      // Don't test Download, because we explicitly set it
+      if (interceptionPoint !== "download") {
+        is(
+          Services.prefs.getBoolPref(
+            `browser.contentanalysis.interception_point.${interceptionPoint}.enabled`
+          ),
+          !kInterceptionPointsOmittedFallsBackToOff.includes(interceptionPoint),
+          `${interceptionPoint} enabled falls back to its default`
+        );
+      }
+    }
+    // Note that we're glossing over a bug here; if InterceptionPoints is not specified, then
+    // downloads default to not enabled (as intended), but if InterceptionPoints is specified
+    // but "Download" is not part of that key, then downloads get set to enabled. This is wrong
+    // but we don't want to change any defaults now.
+    is(
+      Services.prefs.getBoolPref(
+        `browser.contentanalysis.interception_point.download.enabled`
+      ),
+      false,
+      `download explicitly set to false`
+    );
+
+    for (let interceptionPoint of kInterceptionPointsPlainTextOnly) {
+      is(
+        Services.prefs.getBoolPref(
+          `browser.contentanalysis.interception_point.${interceptionPoint}.plain_text_only`
+        ),
+        true,
+        `${interceptionPoint} plain_text_only falls back to its default`
+      );
+    }
+
+    PoliciesPrefTracker.stop();
+  }
+);
 
 add_task(async function test_ca_enterprise_config_telemetry() {
   PoliciesPrefTracker.start();
@@ -384,6 +489,10 @@ add_task(async function test_ca_enterprise_config_telemetry() {
         InterceptionPoints: {
           Clipboard: {
             Enabled: false,
+            PlainTextOnly: false,
+          },
+          ClipboardCopy: {
+            Enabled: true,
             PlainTextOnly: false,
           },
           Download: {

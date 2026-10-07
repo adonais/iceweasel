@@ -5,6 +5,9 @@ run-if = [
 head = "head.js"
 firefox-appdir = "browser"
 support-files = ["data/engine.xml"]
+# The shipped engines contribute tab-to-search rows to queries that prefix
+# their domain, which these tests don't account for.
+prefs = ["browser.urlbar.suggest.engines=false"]
 
 ["test_000_frecency.js"]
 
@@ -203,8 +206,10 @@ requesttimeoutfactor = 2  # Slow on Linux and Windows
 ["test_providerRecentSearches.js"]
 
 ["test_providerTabToSearch.js"]
+prefs = ["browser.urlbar.suggest.engines=true"]
 
 ["test_providerTabToSearch_partialHost.js"]
+prefs = ["browser.urlbar.suggest.engines=true"]
 
 ["test_provider_notification.js"]
 

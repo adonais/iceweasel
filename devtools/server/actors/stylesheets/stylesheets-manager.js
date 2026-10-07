@@ -485,7 +485,7 @@ class StyleSheetsManager extends EventEmitter {
     if (kind !== UPDATE_PRESERVING_RULES) {
       ({ atRules, ruleCount } =
         this.getStyleSheetRuleCountAndAtRules(styleSheet));
-      this.#notifyPropertyChanged(resourceId, "ruleCount", ruleCount);
+      this.#notifyPropertyChanged(resourceId, "ruleCount", ruleCount, cause);
     }
 
     if (transition) {
@@ -926,12 +926,14 @@ class StyleSheetsManager extends EventEmitter {
    *        The property that was changed
    * @param {string} value
    *        The value of the property
+   * @param {cause} value
+   *        The panel which initiated the change notification. This is optional.
    */
-  #notifyPropertyChanged(resourceId, property, value) {
+  #notifyPropertyChanged(resourceId, property, value, cause = "") {
     this.#onStyleSheetUpdated({
       resourceId,
       updateKind: "property-change",
-      updates: { resourceUpdates: { [property]: value } },
+      updates: { resourceUpdates: { [property]: value, event: { cause } } },
     });
   }
 

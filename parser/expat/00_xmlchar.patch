@@ -1,7 +1,7 @@
 diff --git a/expat/lib/expat_external.h b/expat/lib/expat_external.h
 --- a/expat/lib/expat_external.h
 +++ b/expat/lib/expat_external.h
-@@ -138,6 +138,9 @@ extern "C" {
+@@ -140,6 +140,9 @@ extern "C" {
  #    endif
  #  endif
  
@@ -11,7 +11,7 @@ diff --git a/expat/lib/expat_external.h b/expat/lib/expat_external.h
  #  ifdef XML_UNICODE /* Information is UTF-16 encoded. */
  #    ifdef XML_UNICODE_WCHAR_T
  typedef wchar_t XML_Char;
-@@ -151,6 +154,9 @@ typedef char XML_Char;
+@@ -153,6 +156,9 @@ typedef char XML_Char;
  typedef char XML_LChar;
  #  endif   /* XML_UNICODE */
  
@@ -24,7 +24,7 @@ diff --git a/expat/lib/expat_external.h b/expat/lib/expat_external.h
 diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
 --- a/expat/lib/xmlparse.c
 +++ b/expat/lib/xmlparse.c
-@@ -194,6 +194,9 @@ typedef char ICHAR;
+@@ -200,6 +200,9 @@ typedef char ICHAR;
  
  #endif
  
@@ -34,13 +34,13 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  #ifdef XML_UNICODE
  
  #  ifdef XML_UNICODE_WCHAR_T
-@@ -211,6 +214,9 @@ typedef char ICHAR;
+@@ -217,6 +220,9 @@ typedef char ICHAR;
  
  #endif
  
 +#endif
 +/* END MOZILLA CHANGE */
 +
- #ifdef XML_LARGE_SIZE
- #  define XML_INDEX_MAX LLONG_MAX
- #else
+ /* Round up n to be a multiple of sz, where sz is a power of 2. */
+ #define ROUND_UP(n, sz) (((n) + ((sz) - 1)) & ~((sz) - 1))
+ 

@@ -1,0 +1,43 @@
+<script>
+const DB_NAME = 'nice_testdb_' + Date.now();
+function openDB(name, version) {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(name, version);
+        req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('store')) {
+                const store = db.createObjectStore('store', {
+                    autoIncrement: true
+                });
+            }
+        };
+        req.onsuccess = (e) => resolve(e.target.result);
+    });
+}
+async function doOperations(db) {
+    try {
+        const tx = db.transaction('store', 'readwrite');
+        const store = tx.objectStore('store');
+        for (let i = 0; i < 20; i++) {
+            store.add({});
+        }
+        const cursorReq = store.openCursor();
+        await new Promise((resolve) => {
+            cursorReq.onsuccess = (e) => {
+                const cursor = e.target.result;
+                if (cursor) {
+                    try { cursor.continue(); } catch (ex) { }
+                }
+            };
+        });
+    } catch (e) {}
+}
+async function test() {
+    const db1 = await openDB(DB_NAME, 1);
+    for (let i = 0; i < 10; i++) {
+        doOperations(db1).catch(() => {});
+    }
+    try { const db2 = await openDB(DB_NAME, 2); } catch (e) {}
+}
+test();
+</script>

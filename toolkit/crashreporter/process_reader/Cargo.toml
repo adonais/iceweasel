@@ -26,4 +26,4 @@ windows-sys = { version = "0.61", features = [
 mozilla-central-workspace-hack = { version = "0.1", optional = true }
 
 [target."cfg(target_os = \"macos\")".dependencies]
-mach2 = { version = "0.4" }
+mach2 = { version = "0.6" }

@@ -186,7 +186,10 @@ class JS_PUBLIC_API JSTracer {
   // override them to receive notifications when an edge of each type is
   // visited.
   //
-  // The caller updates the edge with the return value (if different).
+  // The implementation may update |*thingp| with a different pointer.
+  //
+  // A return value of false indicates than an existing edge should be removed
+  // (e.g. when the referent is dying). The edge is not updated in this case.
   //
   // In C++, overriding a method hides all methods in the base class with that
   // name, not just methods with that signature. Thus, the typed edge methods
@@ -197,6 +200,11 @@ class JS_PUBLIC_API JSTracer {
   virtual bool on##name##Edge(type** thingp, const char* name) = 0;
   JS_FOR_EACH_TRACEKIND(DEFINE_ON_EDGE_METHOD)
 #undef DEFINE_ON_EDGE_METHOD
+
+  // Buffers have no TraceKind of their own and so are not covered by
+  // the macro above. Tracers that care about buffer edges should override
+  // this. The default behavior is to ignore these edges.
+  virtual bool onBufferEdge(void** bufferp, const char* name) { return true; }
 
  protected:
   JSTracer(JSRuntime* rt, JS::TracerKind kind,

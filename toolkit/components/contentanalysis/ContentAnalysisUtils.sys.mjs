@@ -11,6 +11,30 @@
  */
 // @ts-check
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
+const lazy = {};
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "clipboardCopyEnabled",
+  "browser.contentanalysis.interception_point.clipboard_copy.enabled",
+  false
+);
+
+ChromeUtils.defineLazyGetter(lazy, "l10n", function () {
+  return new Localization(
+    ["toolkit/contentanalysis/contentanalysis.ftl"],
+    true
+  );
+});
+
+ChromeUtils.defineLazyGetter(lazy, "clipboardHelper", function () {
+  return Cc["@mozilla.org/widget/clipboardhelper;1"].getService(
+    Ci.nsIClipboardHelper
+  );
+});
+
 export const ContentAnalysisUtils = {
   /**
    * Builds an nsIContentAnalysisRequest from the given parameters.
@@ -104,7 +128,7 @@ export const ContentAnalysisUtils = {
               {
                 analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
                 operationTypeForDisplay: isPaste
-                  ? Ci.nsIContentAnalysisRequest.eClipboard
+                  ? Ci.nsIContentAnalysisRequest.ePasteClipboard
                   : Ci.nsIContentAnalysisRequest.eDroppedText,
                 reason: isPaste
                   ? Ci.nsIContentAnalysisRequest.eClipboardPaste
@@ -142,5 +166,120 @@ export const ContentAnalysisUtils = {
     };
     textElement.addEventListener("paste", caEventChecker);
     textElement.addEventListener("drop", caEventChecker);
+
+    // Copying back out of this element needs analyzing too.
+    this.setupContentAnalysisEventsForCopyFromElement(
+      textElement,
+      browsingContext
+    );
+  },
+
+  /**
+   * Sets up Content Analysis to monitor copying (and cutting) text out of a
+   * chrome element and send it on to Content Analysis for approval.
+   *
+   * Chrome copies are exempt from the check in nsBaseClipboard::SetData -- that
+   * exemption is what keeps copying from the URL bar, about: pages and the like
+   * from being analyzed. But a few chrome surfaces display content-supplied
+   * text (a prompt()'s default value, an alert()'s message), so those have to
+   * opt in here, the same way they do for paste.
+   *
+   * @param {Element} element The DOM element to monitor.
+   * @param {CanonicalBrowsingContext} browsingContext The browsing context the
+   *        element's content came from. Used for the URL reported to the agent
+   *        and to show the "DLP busy" dialog.
+   */
+  setupContentAnalysisEventsForCopyFromElement(element, browsingContext) {
+    if (!element) {
+      return;
+    }
+    let caCopyChecker = async event => {
+      // Do not use a lazy service getter for this, because tests set up different
+      // mocks, so if multiple tests run that call into this we can end up calling
+      // into an old mock.
+      const contentAnalysis = Cc["@mozilla.org/contentanalysis;1"].getService(
+        Ci.nsIContentAnalysis
+      );
+      if (!contentAnalysis.isActive || !lazy.clipboardCopyEnabled) {
+        return;
+      }
+
+      // A more specific handler (one registered on a text input inside this
+      // element) has already claimed this copy and will analyze it, so don't
+      // analyze or write it a second time.
+      if (event.contentAnalysisHandled) {
+        return;
+      }
+
+      const isCut = event.type == "cut";
+      const isTextInput = typeof element.selectionStart == "number";
+      let data;
+      let startIndex = 0;
+      let endIndex = 0;
+      if (isTextInput) {
+        // Selections can be forward or backward, so use min/max
+        startIndex = Math.min(element.selectionStart, element.selectionEnd);
+        endIndex = Math.max(element.selectionStart, element.selectionEnd);
+        data = element.value.substring(startIndex, endIndex);
+      } else {
+        data = element.ownerDocument.getSelection().toString();
+      }
+      if (!data || !data.length) {
+        return;
+      }
+
+      // Stop the copy. We write to the clipboard ourselves once the agent has
+      // answered, so nothing reaches it before then.
+      event.preventDefault();
+      event.contentAnalysisHandled = true;
+
+      try {
+        const response = await contentAnalysis.analyzeContentRequests(
+          [
+            this.createContentAnalysisRequest(
+              {
+                analysisType: Ci.nsIContentAnalysisRequest.eDataCopied,
+                operationTypeForDisplay:
+                  Ci.nsIContentAnalysisRequest.eCopyClipboard,
+                reason: Ci.nsIContentAnalysisRequest.eClipboardCopy,
+                url: browsingContext
+                  ? contentAnalysis.getURIForBrowsingContext(browsingContext)
+                  : undefined,
+                windowGlobalParent: browsingContext?.currentWindowContext,
+              },
+              { textContent: data }
+            ),
+          ],
+          true
+        );
+        if (response.shouldAllowContent) {
+          // No window context, so this write is not analyzed a second time by
+          // nsBaseClipboard::SetData.
+          lazy.clipboardHelper.copyString(data);
+          if (isCut && isTextInput) {
+            element.value =
+              element.value.slice(0, startIndex) +
+              element.value.slice(endIndex);
+            element.focus();
+            element.setSelectionRange(startIndex, startIndex);
+          }
+          return;
+        }
+        // Replace the clipboard contents, so the user can't silently paste
+        // whatever was there beforehand. Note that a blocked cut leaves the
+        // text in place since we weren't able to copy it to the clipboard
+        // and we don't want the user to lose their data. (although it is
+        // restorable with an undo, this may not be obvious)
+        lazy.clipboardHelper.copyString(
+          lazy.l10n.formatValueSync(
+            "contentanalysis-clipboard-copy-blocked-replacement"
+          )
+        );
+      } catch (error) {
+        console.error("Content analysis request returned error: ", error);
+      }
+    };
+    element.addEventListener("copy", caCopyChecker);
+    element.addEventListener("cut", caCopyChecker);
   },
 };

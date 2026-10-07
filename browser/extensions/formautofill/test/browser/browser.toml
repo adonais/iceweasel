@@ -23,6 +23,8 @@ support-files = [
   "../fixtures/**",
 ]
 
+["browser_address_migration.js"]
+
 ["browser_autocomplete_footer.js"]
 skip-if = [
   "verify-standalone",

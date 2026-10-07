@@ -87,7 +87,7 @@ GpuProcessTextureId GpuProcessTextureId::GetNext() {
 
 /* static */
 CompositeProcessFencesHolderId CompositeProcessFencesHolderId::GetNext() {
-  if (!XRE_IsGPUProcess()) {
+  if (!XRE_IsGPUProcess() && !XRE_IsParentProcess()) {
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
     return CompositeProcessFencesHolderId{};
   }

@@ -296,18 +296,6 @@
     }
   }
 
-  // The visible number is aria-hidden while it counts up, so this stable copy
-  // is what assistive tech reads. No shared visually-hidden mixin exists here;
-  // FocusTimer declares its own the same way.
-  .privacy-count-number-a11y {
-    clip-path: inset(50%);
-    height: 1px;
-    overflow: hidden;
-    position: absolute;
-    white-space: nowrap;
-    width: 1px;
-  }
-
   .privacy-count-text > :last-child {
     align-items: center;
     display: inline-flex;

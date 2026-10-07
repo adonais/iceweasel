@@ -254,5 +254,104 @@ def test_decision_parameters_note_invalid_json(
             decision.get_decision_parameters(FAKE_GRAPH_CONFIG, opts)
 
 
+@patch("gecko_taskgraph.decision.get_repository")
+def test_decision_parameters_git_files_changed_base(mock_get_repository, options):
+    mock_repo = MagicMock()
+    mock_repo.NULL_REVISION = "0" * 40
+    mock_repo.get_commit_message.return_value = "commit message"
+    mock_repo.get_changed_files.return_value = ["python/mozboot/mozboot/debian.py"]
+    mock_get_repository.return_value = mock_repo
+
+    opts = {
+        **options,
+        "base_repository": "https://github.com/mozilla-firefox/firefox",
+        "head_repository": "https://github.com/mozilla-firefox/firefox",
+        "base_rev": "0" * 40,
+        "project": "firefox",
+        "repository_type": "git",
+        "tasks_for": "github-push",
+        "allow_parameter_override": True,
+    }
+    ttc = {"version": 2, "parameters": {"base_rev": "cafe"}}
+    with MockedOpen({TTC_FILE: json.dumps(ttc)}):
+        params = decision.get_decision_parameters(FAKE_GRAPH_CONFIG, opts)
+
+    assert params["base_rev"] == "cafe"
+    mock_repo.get_changed_files.assert_called_once_with(rev="abcd", base="cafe")
+    assert params["files_changed"] == ["python/mozboot/mozboot/debian.py"]
+
+
+@pytest.fixture
+def bundle_env(monkeypatch, tmp_path):
+    artifacts = tmp_path / "artifacts"
+    monkeypatch.setattr(decision, "ARTIFACTS_DIR", str(artifacts))
+    bundle_path = artifacts / "checkout.bundle"
+    proc = MagicMock()
+
+    def fake_popen(args, **kwargs):
+        bundle_path.write_bytes(b"partial")
+        kwargs["stdout"].write(b"680 changesets found\n")
+        return proc
+
+    popen = MagicMock(side_effect=fake_popen)
+    monkeypatch.setattr(decision.subprocess, "Popen", popen)
+    return popen, proc, bundle_path
+
+
+def test_source_bundle_success(bundle_env):
+    popen, proc, bundle_path = bundle_env
+    proc.wait.return_value = 0
+
+    with decision.source_bundle("abcd", "hg"):
+        pass
+
+    args = popen.call_args[0][0]
+    assert args[:6] == ["hg", "--cwd", decision.GECKO, "bundle", "--type", "gzip-v2"]
+    assert args[args.index("--rev") + 1] == "abcd"
+    assert args[-1] == str(bundle_path)
+    assert bundle_path.exists()
+
+
+def test_source_bundle_hg_failure(bundle_env):
+    popen, proc, bundle_path = bundle_env
+    proc.wait.return_value = 1
+
+    with decision.source_bundle("abcd", "hg"):
+        pass
+
+    assert not bundle_path.exists()
+
+
+def test_source_bundle_body_raises(bundle_env):
+    popen, proc, bundle_path = bundle_env
+    proc.wait.return_value = -9
+
+    with pytest.raises(RuntimeError):
+        with decision.source_bundle("abcd", "hg"):
+            raise RuntimeError("graph generation failed")
+
+    assert not bundle_path.exists()
+
+
+def test_source_bundle_popen_error(bundle_env):
+    popen, proc, bundle_path = bundle_env
+    popen.side_effect = OSError("hg not found")
+    body_ran = False
+
+    with decision.source_bundle("abcd", "hg"):
+        body_ran = True
+
+    assert body_ran
+
+
+def test_source_bundle_not_hg(bundle_env):
+    popen, proc, bundle_path = bundle_env
+
+    with decision.source_bundle("abcd", "git"):
+        pass
+
+    assert not bundle_path.exists()
+
+
 if __name__ == "__main__":
     main()

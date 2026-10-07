@@ -623,9 +623,10 @@ WebRenderCommandsResult SVGImageFrame::CreateWebRenderCommands(
   }
 
   Maybe<ImageIntRegion> region;
+  bool rasterizedForDest = false;
   IntSize decodeSize = nsLayoutUtils::ComputeImageContainerDrawingParameters(
-      mImageContainer, this, destRect, clipRect, aSc, flags, svgContext,
-      region);
+      mImageContainer, this, destRect, clipRect, aSc, flags, svgContext, region,
+      &rasterizedForDest);
 
   if (nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest()) {
     Element* element = GetContent()->AsElement();
@@ -669,9 +670,9 @@ WebRenderCommandsResult SVGImageFrame::CreateWebRenderCommands(
     // failure will be due to resource constraints and fallback is unlikely to
     // help us. Hence we can ignore the return value from PushImage.
     if (provider) {
-      aManager->CommandBuilder().PushImageProvider(aItem, provider, drawResult,
-                                                   aBuilder, aResources,
-                                                   destRect, clipRect);
+      aManager->CommandBuilder().PushImageProvider(
+          aItem, provider, drawResult, aBuilder, aResources, destRect, clipRect,
+          rasterizedForDest && !region);
     }
   }
 

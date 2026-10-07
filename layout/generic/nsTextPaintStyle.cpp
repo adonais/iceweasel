@@ -612,12 +612,12 @@ bool nsTextPaintStyle::GetSelectionUnderline(nsIFrame* aFrame,
   const StyleIDs& styleIDs = SelectionStyleIDs[aIndex];
 
   nscolor color = LookAndFeel::Color(styleIDs.mLine, aFrame);
-  const int32_t lineStyle = LookAndFeel::GetInt(styleIDs.mLineStyle);
-  auto style = static_cast<StyleTextDecorationStyle>(lineStyle);
-  if (lineStyle > static_cast<int32_t>(StyleTextDecorationStyle::Sentinel)) {
+  int32_t lineStyle = LookAndFeel::GetInt(styleIDs.mLineStyle);
+  if (lineStyle < 0 || lineStyle > StyleMAX_LINE_STYLE) {
     NS_ERROR("Invalid underline style value is specified");
-    style = StyleTextDecorationStyle::Solid;
+    lineStyle = int32_t(StyleTextDecorationStyle::Solid);
   }
+  const auto style = static_cast<StyleTextDecorationStyle>(lineStyle);
   float size = LookAndFeel::GetFloat(styleIDs.mLineRelativeSize);
 
   NS_ASSERTION(size, "selection underline relative size must be larger than 0");

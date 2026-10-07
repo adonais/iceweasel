@@ -25,6 +25,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   IndexedDB: "resource://gre/modules/IndexedDB.sys.mjs",
   MLUninstallService: "chrome://global/content/ml/Utils.sys.mjs",
   MultiProgressAggregator: "chrome://global/content/ml/Utils.sys.mjs",
+  PdfJsFeaturesNotification:
+    "resource://pdf.js/PdfJsFeaturesNotification.sys.mjs",
   PdfJsGuessAltTextFeature: "resource://pdf.js/PdfJsAIFeature.sys.mjs",
   PdfJsPrint: "resource://pdf.js/PdfJsPrint.sys.mjs",
   Progress: "chrome://global/content/ml/Utils.sys.mjs",
@@ -56,15 +58,17 @@ let gFindTypes = [
   "finddiacriticmatchingchange",
 ];
 
-// Defence-in-depth bounds for the signature-verification IPC handlers
-// below. Even though only our own viewer code is expected to call them,
-// the IPC boundary is privileged (chrome receives content-supplied
-// data) so we reject obviously malformed shapes before reaching NSS or
-// `about:certificate`. The validators below are exported so xpcshell
-// can exercise them without having to instantiate the JSWindowActor.
+// Defence-in-depth validation for content-supplied signature and alt-text IPC
+// payloads before they reach NSS, `about:certificate`, or the ML engine.
+// Exported for direct xpcshell coverage.
 const MAX_CERTS_PER_VIEW = 16;
 const MAX_DER_BASE64_LEN = 64 * 1024; // 64 KiB / cert is far above any real chain.
 const BASE64_RE = /^[A-Za-z0-9+/=]+$/;
+
+// The four properties sent by the viewer for an ImageData buffer.
+const ML_GUESS_KEYS = ["data", "width", "height", "channels"];
+// RawImage supports one to four channels.
+const MAX_ML_GUESS_CHANNELS = 4;
 
 // `instanceof Uint8Array` is unreliable across realms (xpcshell exercises
 // these validators from another global); brand-check a byte view instead.
@@ -116,6 +120,44 @@ export function filterCertsForView(data) {
       BASE64_RE.test(d)
   );
   return certs.length ? certs : null;
+}
+
+/**
+ * Validate an `mlGuess` IPC payload before forwarding it to the ML engine.
+ *
+ * The image-to-text pipeline calls `RawImage.fromURL()` when `url` is present,
+ * while the viewer sends only pixel data and geometry. Reject unknown
+ * properties and require the geometry to match `data`.
+ *
+ * @param {*} request Content-supplied object.
+ * @returns {boolean} `true` for a valid
+ *   `{data, width, height, channels}` request.
+ * Exported for unit tests.
+ * @internal
+ */
+export function validateMLGuessRequest(request) {
+  if (request === null || typeof request !== "object") {
+    return false;
+  }
+  const keys = Reflect.ownKeys(request);
+  if (
+    keys.length !== ML_GUESS_KEYS.length ||
+    !keys.every(key => ML_GUESS_KEYS.includes(key))
+  ) {
+    return false;
+  }
+  const { data, width, height, channels } = request;
+  return (
+    isBytes(data) &&
+    Number.isInteger(width) &&
+    width > 0 &&
+    Number.isInteger(height) &&
+    height > 0 &&
+    Number.isInteger(channels) &&
+    channels > 0 &&
+    channels <= MAX_ML_GUESS_CHANNELS &&
+    data.length === width * height * channels
+  );
 }
 
 export class PdfJsParent extends JSWindowActorParent {
@@ -204,8 +246,31 @@ export class PdfJsParent extends JSWindowActorParent {
           aMsg.data.height
         );
       }
+      case "PDFJS:Parent:openAboutPdfFeatures":
+        return this._openAboutPdfFeatures();
+      case "PDFJS:Parent:claimFeaturesNotification":
+        return this._claimFeaturesNotification();
     }
     return undefined;
+  }
+
+  _openAboutPdfFeatures() {
+    // Do not let an embedded viewer navigate the top-level tab.
+    if (this.browsingContext !== this.browsingContext.top) {
+      return;
+    }
+    const browser = this.browser;
+    browser?.documentGlobal.openTrustedLinkIn("about:pdf#features", "current", {
+      targetBrowser: browser,
+    });
+  }
+
+  _claimFeaturesNotification() {
+    if (!lazy.PdfJsFeaturesNotification.isEligible()) {
+      return false;
+    }
+    lazy.PdfJsFeaturesNotification.recordImpression();
+    return true;
   }
 
   _viewPdfCertificate({ data }) {
@@ -225,7 +290,7 @@ export class PdfJsParent extends JSWindowActorParent {
       const params = certs.map(d => `cert=${encodeURIComponent(d)}`).join("&");
       const url = `about:certificate?${params}`;
       const browser = this.browser;
-      let win = browser?.ownerGlobal;
+      let win = browser?.documentGlobal;
       if (!win?.openTrustedLinkIn) {
         win = Services.wm.getMostRecentBrowserWindow();
       }
@@ -479,6 +544,10 @@ export class PdfJsParent extends JSWindowActorParent {
     if (!data || typeof data !== "object") {
       return;
     }
+    // Map the viewer's dismissal flag to the shared impression state.
+    if (data.featuresNotificationDismissed === true) {
+      lazy.PdfJsFeaturesNotification.consume();
+    }
     const branch = Services.prefs.getBranch("pdfjs.");
     for (const [key, value] of Object.entries(data)) {
       if (!this.#mutablePreferences.has(key)) {
@@ -512,8 +581,9 @@ export class PdfJsParent extends JSWindowActorParent {
     PdfJsTelemetry.report(data);
   }
 
-  async _mlGuess({ data: { service, request } }) {
-    if (service !== IMAGE_TO_TEXT_TASK) {
+  async _mlGuess({ data }) {
+    const { service, request } = data ?? {};
+    if (service !== IMAGE_TO_TEXT_TASK || !validateMLGuessRequest(request)) {
       return null;
     }
     try {

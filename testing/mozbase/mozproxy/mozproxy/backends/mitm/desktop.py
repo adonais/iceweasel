@@ -27,6 +27,18 @@ POLICIES_CONTENT_ON = """{
   }
 }"""
 
+POLICIES_CONTENT_DIRECT = """{
+  "policies": {
+    "Certificates": {
+      "Install": ["%(cert)s"]
+    },
+    "Proxy": {
+      "Mode": "none",
+      "Locked": true
+    }
+  }
+}"""
+
 
 POLICIES_CONTENT_OFF = """{
   "policies": {
@@ -112,6 +124,8 @@ class MitmproxyDesktop(Mitmproxy):
             sys.exit()
 
     def _policies_content(self):
+        if self.playback_mode == "direct":
+            return POLICIES_CONTENT_DIRECT % {"cert": self.cert_path}
         return POLICIES_CONTENT_ON % {
             "cert": self.cert_path,
             "host": self.host,

@@ -20,6 +20,14 @@ DEFAULT_SECRET = "project/bhr/aggregation-gcp-key"
 # Index route this task publishes to, used to pick up the previous run's
 # timeseries state so the roll-up stays incremental.
 DEFAULT_STATE_INDEX = "gecko.v2.mozilla-central.latest.firefox.bhr-aggregate"
+# Where a run pinned to a build date publishes, and the run-day offsets the
+# daily cron's own routes need instead. A day re-run through the action is
+# found by the first; a day only the cron ever produced, by the second.
+BUILD_INDEX = "gecko.v2.mozilla-central.bhr-aggregate.build.{date}"
+PUSHDATE_INDEX = (
+    "gecko.v2.mozilla-central.pushdate.{run_day}.latest.firefox.bhr-aggregate"
+)
+RUN_DAY_OFFSETS = (4, 3, 5, 6)
 
 
 def _env_float(name, default):
@@ -90,6 +98,32 @@ def _fetch_previous_state(index_route, name, path):
         print(f"Fetched previous timeseries state ({len(data)} bytes)", flush=True)
         return True
     print("No previous timeseries state:\n  " + "\n  ".join(errors), flush=True)
+    return False
+
+
+def _artifact_routes(date):
+    """Index routes that might hold the daily artifact for a build date."""
+    yield BUILD_INDEX.format(date=date)
+    day = datetime.datetime.strptime(date, "%Y%m%d").date()
+    for offset in RUN_DAY_OFFSETS:
+        run_day = day + datetime.timedelta(days=offset)
+        yield PUSHDATE_INDEX.format(run_day=run_day.strftime("%Y.%m.%d"))
+
+
+def _fetch_indexed_artifact(date, name, path):
+    """Download one day's published artifact, returning True if it was found."""
+    for route in _artifact_routes(date):
+        for with_api_prefix in (True, False):
+            url = _state_url(route, name, with_api_prefix)
+            try:
+                with urllib.request.urlopen(url, timeout=900) as response:
+                    data = response.read()
+            except (urllib.error.URLError, urllib.error.HTTPError):
+                continue
+            with open(path, "wb") as artifact:
+                artifact.write(data)
+            print(f"Fetched {name} ({len(data)} bytes) from {route}", flush=True)
+            return True
     return False
 
 
@@ -164,6 +198,15 @@ def main():
         default=_env_int("BHR_TIMESERIES_TOP_COUNT", 500),
     )
     parser.add_argument(
+        "--timeseries-refill-dates",
+        default=os.environ.get("BHR_TIMESERIES_REFILL_DATES", ""),
+        help=(
+            "Comma-separated YYYYMMDD build dates to recompute in the roll-up. "
+            "State keeps whatever a day's first run produced, so a backfilled "
+            "or re-run day only reaches the timeseries when named here."
+        ),
+    )
+    parser.add_argument(
         "--timeseries-state-index",
         default=os.environ.get("BHR_TIMESERIES_STATE_INDEX", DEFAULT_STATE_INDEX),
     )
@@ -225,10 +268,25 @@ def main():
         os.path.join(args.output_dir, state_name),
     )
 
-    # The day just written is the only new input; every earlier day in the
-    # window is already summarized in the state fetched above.
+    # Days being recomputed need their artifacts alongside today's, since the
+    # roll-up reads them from disk. Anything that cannot be fetched is dropped
+    # rather than failing the run: its state entry then simply stays as it was.
+    refill_dates = [
+        d.strip() for d in args.timeseries_refill_dates.split(",") if d.strip()
+    ]
+    fetched = []
+    for date in refill_dates:
+        name = f"hangs_{args.output_tag}_{date}.json"
+        if _fetch_indexed_artifact(date, name, os.path.join(args.output_dir, name)):
+            fetched.append(date)
+        else:
+            print(f"No published artifact for {date}; leaving its state", flush=True)
+
+    # Beyond those, the day just written is the only new input; every earlier
+    # day in the window is already summarized in the state fetched above.
     print(
-        f"Rolling up the last {args.timeseries_window_days} days",
+        f"Rolling up the last {args.timeseries_window_days} days"
+        + (f", recomputing {len(fetched)} of them" if fetched else ""),
         flush=True,
     )
     bhr_timeseries.build_timeseries(
@@ -238,6 +296,7 @@ def main():
         end_date=build_date,
         window_days=args.timeseries_window_days,
         top_count=args.timeseries_top_count,
+        refill_dates=fetched,
     )
 
 

@@ -222,6 +222,12 @@ class DnsAndConnectSocket final : public ConnectionAttempt,
   bool mSkipDnsResolution = false;
   bool mProxyNotTransparent = false;
   bool mProxyTransparentResolvesHost = false;
+
+  // The DNS and TCP spans observed while setting up the transport. They seed
+  // the timings of the connection this socket creates, which completes them
+  // with the TLS spans (nsHttpConnection::SetEvent) and hands them to the
+  // transaction it is activated with.
+  TimingStruct mObservedTimings;
 };
 
 }  // namespace net

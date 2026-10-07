@@ -107,6 +107,15 @@ impl ItemUid {
     pub fn get_uid(&self) -> u64 {
         self.uid
     }
+
+    /// Wrap an id from a counter the caller guarantees is unique, for interning
+    /// schemes that mint their own rather than deriving one from a handle.
+    /// `Handle::uid` packs an index and an epoch, which only works because one
+    /// interner owns the whole index space; see `DlStore::uid` for a scheme that
+    /// cannot make that assumption.
+    pub fn from_counter(id: u64) -> Self {
+        ItemUid { uid: id }
+    }
 }
 
 impl std::fmt::Debug for ItemUid {
@@ -418,8 +427,10 @@ impl<I: Internable> ops::Index<Handle<I>> for Interner<I> {
 
 /// Meta-macro to enumerate the various interner identifiers and types.
 ///
-/// IMPORTANT: Keep this synchronized with the list in mozilla-central located at
-/// gfx/webrender_bindings/webrender_ffi.h
+/// This list drives the interners and data stores that exist. The memory
+/// report's field list is `enumerate_interning_report_fields!` below, kept
+/// separate so that a type can leave this list without changing the report's
+/// layout, which C++ mirrors by hand.
 ///
 /// Note that this could be a lot less verbose if concat_idents! were stable. :-(
 #[macro_export]
@@ -447,8 +458,41 @@ macro_rules! enumerate_interners {
     }
 }
 
+/// The fields of the per-type interning memory report, one per interned type.
+///
+/// A superset of `enumerate_interners!`, in the same order, since a type's
+/// entry here outlives its interner: the report is `#[repr(C)]` and mirrored by
+/// hand in C++, so its layout must not change when a type stops being interned
+/// on the scene builder. A field nothing writes reports zero.
+///
+/// IMPORTANT: Keep this synchronized with the list in mozilla-central located at
+/// gfx/webrender_bindings/webrender_ffi.h
+macro_rules! enumerate_interning_report_fields {
+    ($macro_name: ident) => {
+        $macro_name! {
+            clip,
+            prim,
+            normal_border,
+            image_border,
+            image,
+            yuv_image,
+            line_decoration,
+            linear_grad,
+            radial_grad,
+            conic_grad,
+            picture,
+            text_run,
+            filter_data,
+            backdrop_capture,
+            backdrop_render,
+            polygon,
+            box_shadow,
+        }
+    }
+}
+
 macro_rules! declare_interning_memory_report {
-    ( $( $name:ident: $ty:ident, )+ ) => {
+    ( $( $name:ident, )+ ) => {
         ///
         #[repr(C)]
         #[derive(AddAssign, Clone, Debug, Default)]
@@ -461,7 +505,7 @@ macro_rules! declare_interning_memory_report {
     }
 }
 
-enumerate_interners!(declare_interning_memory_report);
+enumerate_interning_report_fields!(declare_interning_memory_report);
 
 /// Memory report for interning-related data structures.
 /// cbindgen:derive-eq=false

@@ -939,7 +939,6 @@
       "chrome://global/content/elements/checkbox.js",
       "chrome://global/content/elements/menu.js",
       "chrome://global/content/elements/menupopup.js",
-      "chrome://global/content/elements/moz-input-box.js",
       "chrome://global/content/elements/notificationbox.js",
       "chrome://global/content/elements/panel.js",
       "chrome://global/content/elements/popupnotification.js",

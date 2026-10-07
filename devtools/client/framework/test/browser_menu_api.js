@@ -54,6 +54,7 @@ async function testMenuPopup(toolbox) {
     new MenuItem({
       id: "menu-item-1",
       label: "Normal Item",
+      accesskey: "n",
       click: () => {
         info("Click callback has fired for menu item");
         clickFired = true;
@@ -61,15 +62,18 @@ async function testMenuPopup(toolbox) {
     }),
     new MenuItem({
       label: "Checked Item",
+      accesskey: "c",
       type: "checkbox",
       checked: true,
     }),
     new MenuItem({
       label: "Radio Item",
+      accesskey: "r",
       type: "radio",
     }),
     new MenuItem({
       label: "Disabled Item",
+      accesskey: "d",
       disabled: true,
     }),
     new MenuItem({

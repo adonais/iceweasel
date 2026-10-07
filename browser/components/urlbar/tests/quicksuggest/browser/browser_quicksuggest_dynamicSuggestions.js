@@ -242,7 +242,10 @@ function assertUI(row, payload) {
   Assert.equal(titleElement.textContent, payload.title);
 
   const faviconElement = row.querySelector(".urlbarView-favicon");
-  Assert.equal(faviconElement.src, payload.icon);
+  UrlbarTestUtils.checkImageUrl(
+    faviconElement.src,
+    UrlbarTestUtils.makeMozRemoteImageUrl(payload.icon)
+  );
 
   const urlElement = row.querySelector(".urlbarView-url");
   const displayUrl = payload.shouldShowUrl

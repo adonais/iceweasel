@@ -5,15 +5,12 @@
 #ifndef mozilla_layers_ContentProcessController_h
 #define mozilla_layers_ContentProcessController_h
 
+#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/layers/GeckoContentController.h"
 
 class nsIObserver;
 
 namespace mozilla {
-
-namespace dom {
-class BrowserChild;
-}  // namespace dom
 
 namespace layers {
 

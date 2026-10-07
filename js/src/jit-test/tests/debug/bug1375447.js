@@ -13,6 +13,6 @@ var script = gw.getOwnPropertyDescriptor("f").value.script;
 var handler = {
     hit: function() {}
 };
-var offs = script.getLineOffsets(g.line0 + 4);
+var offs = script.getPossibleBreakpointOffsets({ line: g.line0 + 4 });
 for (var i = 0; i < offs.length; i++) script.setBreakpoint(offs[i], handler);
 assertEq(g.f(), undefined);

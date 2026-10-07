@@ -6,8 +6,8 @@ package org.mozilla.samples.browser.request
 
 import android.content.Context
 import mozilla.components.browser.errorpages.ErrorPages
-import mozilla.components.browser.errorpages.ErrorType
 import mozilla.components.concept.engine.EngineSession
+import mozilla.components.concept.engine.request.ErrorType
 import mozilla.components.concept.engine.request.RequestInterceptor
 import mozilla.components.concept.engine.request.RequestInterceptor.ErrorResponse
 import mozilla.components.concept.engine.request.RequestInterceptor.InterceptionResponse

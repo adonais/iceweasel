@@ -862,6 +862,33 @@ This tests the login manager in a secure setting using https. A similar test fil
     let credential = await webauthnPromise;
     is(credential.type, "public-key", "received a webauthn credential");
   });
+
+  add_named_task("webauthn standalone", async () => {
+    await setStoredLoginsDuringTask();
+    const form = setContentForTask(`<form id="form1" action="https://autocomplete">
+    <input type="text" name="uname" autocomplete="webauthn">
+  </form>`);
+
+    let authenticatorId = await addVirtualAuthenticator();
+    addCredential(authenticatorId, document.domain);
+
+    let challenge = crypto.getRandomValues(new Uint8Array(16));
+    let publicKey = { challenge, rpId: document.domain };
+    let webauthnPromise = navigator.credentials.get( { publicKey, mediation: "conditional" });
+
+    const autofillResult = await formAutofillResult(form.id);
+    is(autofillResult, "no_saved_logins", "form has not been filled due to no saved logins");
+
+    form.uname.focus();
+    await popupByArrowDown();
+
+    synthesizeKey("KEY_ArrowDown");
+    synthesizeKey("KEY_Enter");
+    await untilAutocompletePopupClosed();
+
+    let credential = await webauthnPromise;
+    is(credential.type, "public-key", "received a webauthn credential");
+  });
 </script>
 </pre>
 </body>

@@ -536,4 +536,108 @@ TEST(CharacterDataBufferTest, SafeAPIsChar1b)
   EXPECT_EQ(characterDataBuffer.SafeCharAt(100), u'\0');
 }
 
+TEST(CharacterDataBufferTest, EqualsString1b)
+{
+  const RefPtr<Document> doc = CreateHTMLDoc();
+  const RefPtr<nsTextNode> textNode = doc->CreateTextNode(EmptyString());
+  MOZ_RELEASE_ASSERT(textNode);
+  CharacterDataBuffer& characterDataBuffer =
+      const_cast<CharacterDataBuffer&>(textNode->DataBuffer());
+
+  MOZ_RELEASE_ASSERT(!characterDataBuffer.Is2b());
+  EXPECT_EQ(characterDataBuffer.Equals(EmptyString()), true);
+  EXPECT_EQ(characterDataBuffer.Equals(u"a"_ns), false);
+
+  characterDataBuffer.SetTo(u"abc"_ns, /* aUpdateBidi = */ false,
+                            /* aForce2b = */ false);
+  MOZ_RELEASE_ASSERT(!characterDataBuffer.Is2b());
+  EXPECT_EQ(characterDataBuffer.Equals(u"abc"_ns), true);
+  EXPECT_EQ(characterDataBuffer.Equals(u"abcd"_ns), false);
+  EXPECT_EQ(characterDataBuffer.Equals(u"ab"_ns), false);
+  EXPECT_EQ(characterDataBuffer.Equals(EmptyString()), false);
+
+  characterDataBuffer.SetTo(u"\xC0"_ns + u"bc"_ns, /* aUpdateBidi = */ false,
+                            /* aForce2b = */ false);
+  MOZ_RELEASE_ASSERT(!characterDataBuffer.Is2b());
+  EXPECT_EQ(characterDataBuffer.Equals(u"\xC0"_ns + u"bc"_ns), true);
+  EXPECT_EQ(characterDataBuffer.Equals(u"abc"_ns), false);
+  EXPECT_EQ(characterDataBuffer.Equals(EmptyString()), false);
+}
+
+TEST(CharacterDataBufferTest, EqualsString2b)
+{
+  const RefPtr<Document> doc = CreateHTMLDoc();
+  const RefPtr<nsTextNode> textNode = doc->CreateTextNode(EmptyString());
+  MOZ_RELEASE_ASSERT(textNode);
+  CharacterDataBuffer& characterDataBuffer =
+      const_cast<CharacterDataBuffer&>(textNode->DataBuffer());
+
+  characterDataBuffer.SetTo(u"abc"_ns, /* aUpdateBidi = */ false,
+                            /* aForce2b = */ true);
+  MOZ_RELEASE_ASSERT(characterDataBuffer.Is2b());
+  EXPECT_EQ(characterDataBuffer.Equals(u"abc"_ns), true);
+  EXPECT_EQ(characterDataBuffer.Equals(u"abcd"_ns), false);
+  EXPECT_EQ(characterDataBuffer.Equals(u"ab"_ns), false);
+  EXPECT_EQ(characterDataBuffer.Equals(EmptyString()), false);
+
+  characterDataBuffer.SetTo(u"\xC0"_ns + u"bc"_ns, /* aUpdateBidi = */ false,
+                            /* aForce2b = */ true);
+  MOZ_RELEASE_ASSERT(characterDataBuffer.Is2b());
+  EXPECT_EQ(characterDataBuffer.Equals(u"\xC0"_ns + u"bc"_ns), true);
+  EXPECT_EQ(characterDataBuffer.Equals(u"abc"_ns), false);
+  EXPECT_EQ(characterDataBuffer.Equals(EmptyString()), false);
+}
+
+TEST(CharacterDataBufferTest, EqualsCString1b)
+{
+  const RefPtr<Document> doc = CreateHTMLDoc();
+  const RefPtr<nsTextNode> textNode = doc->CreateTextNode(EmptyString());
+  MOZ_RELEASE_ASSERT(textNode);
+  CharacterDataBuffer& characterDataBuffer =
+      const_cast<CharacterDataBuffer&>(textNode->DataBuffer());
+
+  MOZ_RELEASE_ASSERT(!characterDataBuffer.Is2b());
+  EXPECT_EQ(characterDataBuffer.Equals(EmptyCString()), true);
+  EXPECT_EQ(characterDataBuffer.Equals("a"_ns), false);
+
+  characterDataBuffer.SetTo(u"abc"_ns, /* aUpdateBidi = */ false,
+                            /* aForce2b = */ false);
+  MOZ_RELEASE_ASSERT(!characterDataBuffer.Is2b());
+  EXPECT_EQ(characterDataBuffer.Equals("abc"_ns), true);
+  EXPECT_EQ(characterDataBuffer.Equals("abcd"_ns), false);
+  EXPECT_EQ(characterDataBuffer.Equals("ab"_ns), false);
+  EXPECT_EQ(characterDataBuffer.Equals(EmptyCString()), false);
+
+  characterDataBuffer.SetTo(u"\xC0"_ns + u"bc"_ns, /* aUpdateBidi = */ false,
+                            /* aForce2b = */ false);
+  MOZ_RELEASE_ASSERT(!characterDataBuffer.Is2b());
+  EXPECT_EQ(characterDataBuffer.Equals("\xC0"_ns + "bc"_ns), true);
+  EXPECT_EQ(characterDataBuffer.Equals("abc"_ns), false);
+  EXPECT_EQ(characterDataBuffer.Equals(EmptyCString()), false);
+}
+
+TEST(CharacterDataBufferTest, EqualsCString2b)
+{
+  const RefPtr<Document> doc = CreateHTMLDoc();
+  const RefPtr<nsTextNode> textNode = doc->CreateTextNode(EmptyString());
+  MOZ_RELEASE_ASSERT(textNode);
+  CharacterDataBuffer& characterDataBuffer =
+      const_cast<CharacterDataBuffer&>(textNode->DataBuffer());
+
+  characterDataBuffer.SetTo(u"abc"_ns, /* aUpdateBidi = */ false,
+                            /* aForce2b = */ true);
+  MOZ_RELEASE_ASSERT(characterDataBuffer.Is2b());
+  EXPECT_EQ(characterDataBuffer.Equals("abc"_ns), true);
+  EXPECT_EQ(characterDataBuffer.Equals("abcd"_ns), false);
+  EXPECT_EQ(characterDataBuffer.Equals("ab"_ns), false);
+  EXPECT_EQ(characterDataBuffer.Equals(EmptyCString()), false);
+
+  characterDataBuffer.SetTo(u"\xC0"_ns + u"bc"_ns, /* aUpdateBidi = */ false,
+                            /* aForce2b = */ true);
+  MOZ_RELEASE_ASSERT(characterDataBuffer.Is2b());
+  EXPECT_EQ(characterDataBuffer.Equals("\xC0"_ns + "bc"_ns), true);
+  EXPECT_EQ(characterDataBuffer.Equals("abc"_ns), false);
+  EXPECT_EQ(characterDataBuffer.Equals(EmptyCString()), false);
+}
+
 };  // namespace mozilla::dom

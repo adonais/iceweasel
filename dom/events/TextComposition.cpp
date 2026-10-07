@@ -261,20 +261,22 @@ void TextComposition::DispatchEvent(
   }
   RefPtr<nsINode> node = mNode;
   RefPtr<nsPresContext> presContext = mPresContext;
-  if (auto* element = nsGenericHTMLElement::FromNode(node)) {
-    if (RefPtr<dom::EditContext> editContext = element->GetEditContext()) {
-      // Only compositionstart and compositionend are sent to EditContext
-      if (aDispatchEvent->mMessage == eCompositionStart) {
-        editContext->StartComposition(*aDispatchEvent);
-      } else if (aDispatchEvent->mMessage == eCompositionEnd) {
-        editContext->EndComposition(*aDispatchEvent);
-      }
-      // Internally, we want to dispatch this event to the EditContext's
-      // associated element, since that is what the EditorEventListener is
-      // listening to. But according to the spec, composition events should only
-      // be dispatched to the EditContext.
-      aDispatchEvent->mFlags.mOnlySystemGroupDispatch = true;
+  // Note that the active EditContext can be different from
+  // node->GetEditContext() since this can be called after changing node's
+  // EditContext but before updating the active EditContext.
+  if (RefPtr<dom::EditContext> editContext =
+          node->OwnerDoc()->GetActiveEditContext()) {
+    // Only compositionstart and compositionend are sent to EditContext
+    if (aDispatchEvent->mMessage == eCompositionStart) {
+      editContext->StartComposition(*aDispatchEvent);
+    } else if (aDispatchEvent->mMessage == eCompositionEnd) {
+      editContext->EndComposition(*aDispatchEvent);
     }
+    // Internally, we want to dispatch this event to the EditContext's
+    // associated element, since that is what the EditorEventListener is
+    // listening to. But according to the spec, composition events should only
+    // be dispatched to the EditContext.
+    aDispatchEvent->mFlags.mOnlySystemGroupDispatch = true;
   }
   EventDispatcher::Dispatch(node, presContext, aDispatchEvent, nullptr, aStatus,
                             aCallBack);
@@ -577,6 +579,8 @@ void TextComposition::DispatchCompositionEvent(
 void TextComposition::HandleSelectionEvent(
     nsPresContext* aPresContext, BrowserParent* aBrowserParent,
     WidgetSelectionEvent* aSelectionEvent) {
+  MOZ_DIAGNOSTIC_ASSERT(aSelectionEvent->DispatchedByValidDispatcher());
+
   // If the content is a container of BrowserParent, composition should be in
   // the remote process.
   if (aBrowserParent) {
@@ -870,7 +874,7 @@ RawRangeBoundary TextComposition::FirstIMESelectionStartRef() const {
     return RawRangeBoundary();
   }
 
-  const nsRange* firstRange = nullptr;
+  const dom::Range* firstRange = nullptr;
   static const SelectionType kIMESelectionTypes[] = {
       SelectionType::eIMERawClause, SelectionType::eIMESelectedRawClause,
       SelectionType::eIMEConvertedClause, SelectionType::eIMESelectedClause};
@@ -883,7 +887,7 @@ RawRangeBoundary TextComposition::FirstIMESelectionStartRef() const {
     const uint32_t rangeCount = selection->RangeCount();
     for (const uint32_t i : IntegerRange(rangeCount)) {
       MOZ_ASSERT(selection->RangeCount() == rangeCount);
-      const nsRange* range = selection->GetRangeAt(i);
+      const dom::Range* range = selection->GetRangeAt(i);
       MOZ_ASSERT(range);
       if (MOZ_UNLIKELY(NS_WARN_IF(!range)) ||
           MOZ_UNLIKELY(NS_WARN_IF(!range->GetStartContainer()))) {
@@ -933,7 +937,7 @@ RawRangeBoundary TextComposition::LastIMESelectionEndRef() const {
     return RawRangeBoundary();
   }
 
-  const nsRange* lastRange = nullptr;
+  const dom::Range* lastRange = nullptr;
   static const SelectionType kIMESelectionTypes[] = {
       SelectionType::eIMERawClause, SelectionType::eIMESelectedRawClause,
       SelectionType::eIMEConvertedClause, SelectionType::eIMESelectedClause};
@@ -946,7 +950,7 @@ RawRangeBoundary TextComposition::LastIMESelectionEndRef() const {
     const uint32_t rangeCount = selection->RangeCount();
     for (const uint32_t i : IntegerRange(rangeCount)) {
       MOZ_ASSERT(selection->RangeCount() == rangeCount);
-      const nsRange* range = selection->GetRangeAt(i);
+      const dom::Range* range = selection->GetRangeAt(i);
       MOZ_ASSERT(range);
       if (MOZ_UNLIKELY(NS_WARN_IF(!range)) ||
           MOZ_UNLIKELY(NS_WARN_IF(!range->GetEndContainer()))) {

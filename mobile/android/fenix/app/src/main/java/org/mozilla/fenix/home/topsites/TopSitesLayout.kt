@@ -13,6 +13,12 @@ internal const val TOP_SITES_MIN_COLUMNS = 4
 /** Maximum number of shortcut columns to show. */
 internal const val TOP_SITES_MAX_COLUMNS = 8
 
+/** Rows of shortcuts the homepage shows before the grid is expanded. */
+internal const val TOP_SITES_COLLAPSED_ROWS = 2
+
+/** Number of shortcuts the homepage shows before the grid is expanded, for a row of [columns] shortcuts. */
+internal fun collapsedTopSitesCount(columns: Int) = columns * TOP_SITES_COLLAPSED_ROWS
+
 /** Fixed gap between adjacent shortcuts. */
 internal val TOP_SITES_SPACING = 8.dp
 

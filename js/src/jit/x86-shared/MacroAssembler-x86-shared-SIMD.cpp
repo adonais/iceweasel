@@ -24,7 +24,7 @@ void MacroAssemblerX86Shared::splatX16(Register input, FloatRegister output) {
     vbroadcastb(Operand(output), output);
     return;
   }
-  vpxor(scratch, scratch, scratch);
+  vxorps(scratch, scratch, scratch);
   vpshufb(scratch, output, output);
 }
 
@@ -1292,14 +1292,14 @@ void MacroAssemblerX86Shared::unsignedConvertInt32x4ToFloat32x4(
     FloatRegister src, FloatRegister dest) {
   ScratchSimd128Scope scratch(asMasm());
   src = asMasm().moveSimd128IntIfNotAVX(src, dest);
-  vpxor(Operand(scratch), scratch, scratch);  // extract low bits
-  vpblendw(0x55, src, scratch, scratch);      //   into scratch
-  vpsubd(Operand(scratch), src, dest);        //     and high bits into dest
-  vcvtdq2ps(scratch, scratch);                // convert low bits
-  vpsrld(Imm32(1), dest, dest);               // get high into unsigned range
-  vcvtdq2ps(dest, dest);                      //   convert
-  vaddps(Operand(dest), dest, dest);          //     and back into signed
-  vaddps(Operand(scratch), dest, dest);       // combine high+low: may round
+  vxorps(Operand(scratch), scratch, scratch);  // extract low bits
+  vpblendw(0x55, src, scratch, scratch);       //   into scratch
+  vpsubd(Operand(scratch), src, dest);         //     and high bits into dest
+  vcvtdq2ps(scratch, scratch);                 // convert low bits
+  vpsrld(Imm32(1), dest, dest);                // get high into unsigned range
+  vcvtdq2ps(dest, dest);                       //   convert
+  vaddps(Operand(dest), dest, dest);           //     and back into signed
+  vaddps(Operand(scratch), dest, dest);        // combine high+low: may round
 }
 
 void MacroAssemblerX86Shared::truncSatFloat32x4ToInt32x4(FloatRegister src,
@@ -1379,7 +1379,7 @@ void MacroAssemblerX86Shared::unsignedTruncSatFloat32x4ToInt32x4(
   // zero where the result should be zero or is less than 80000000h, 7FFFFFFF
   // where the result overflows, and will have the converted biased result in
   // other lanes (for input values >= 80000000h).
-  vpxor(Operand(scratch), scratch, scratch);
+  vxorps(Operand(scratch), scratch, scratch);
   vpmaxsd(Operand(scratch), temp, temp);
 
   // Convert. Overflow lanes above 7FFFFFFFh will be 80000000h, other lanes will
@@ -1438,7 +1438,7 @@ void MacroAssemblerX86Shared::unsignedTruncSatFloat64x2ToInt32x4(
     FloatRegister src, FloatRegister temp, FloatRegister dest) {
   src = asMasm().moveSimd128FloatIfNotAVX(src, dest);
 
-  vxorpd(temp, temp, temp);
+  vxorps(temp, temp, temp);
   vmaxpd(Operand(temp), src, dest);
 
   asMasm().vminpdSimd128(SimdConstant::SplatX2(4294967295.0), dest, dest);

@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/quota/QuotaManager.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
+#include "nsCharSeparatedTokenizer.h"
 
 namespace mozilla::dom::quota {
 

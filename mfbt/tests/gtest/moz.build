@@ -4,12 +4,15 @@
 
 UNIFIED_SOURCES += [
     "TestBuffer.cpp",
-    "TestFormattingAndStreaming.cpp",
     "TestLinkedList.cpp",
     "TestReverseIterator.cpp",
     "TestSpan.cpp",
     "TestTainting.cpp",
     "TestUniquePtrExtensions.cpp",
+]
+
+SOURCES += [
+    "TestFormattingAndStreaming.cpp",
 ]
 
 SOURCES += [
@@ -35,3 +38,8 @@ if CONFIG["CC_TYPE"] == "gcc":
     CXXFLAGS += ["-Wno-stringop-overread"]
 
 FINAL_LIBRARY = "xul-gtest"
+
+LICENSED_UNDER += ["mit"]
+LICENSED_UNDER["mit"].paths = [
+    "TestSpan.cpp",
+]

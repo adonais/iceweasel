@@ -25,9 +25,9 @@ class nsRefreshTimer : public nsITimerCallback, public nsINamed {
 
   int32_t GetDelay() { return mDelay; }
 
-  RefPtr<nsDocShell> mDocShell;
-  nsCOMPtr<nsIURI> mURI;
-  nsCOMPtr<nsIPrincipal> mPrincipal;
+  MOZ_KNOWN_LIVE RefPtr<nsDocShell> mDocShell;
+  MOZ_KNOWN_LIVE nsCOMPtr<nsIURI> mURI;
+  MOZ_KNOWN_LIVE nsCOMPtr<nsIPrincipal> mPrincipal;
   int32_t mDelay;
 
  private:

@@ -185,6 +185,7 @@ if (rtc_include_tests) {
       "../api:rtc_error_matchers",
       "../api:rtp_header_extension_id",
       "../api:rtp_headers",
+      "../api:rtp_packet_info",
       "../api:rtp_parameters",
       "../api:scoped_refptr",
       "../api:simulated_network_api",

@@ -2845,6 +2845,34 @@ nsWindowsShellService::SetShortcutsIcon(
   return NS_OK;
 }
 
+// A single enumerateInstallShortcuts result.
+class InstallShortcutInfo final : public nsIInstallShortcutInfo {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIINSTALLSHORTCUTINFO
+
+  InstallShortcutInfo(const nsAString& aPath, const nsAString& aLocation)
+      : mPath(aPath), mLocation(aLocation) {}
+
+ private:
+  ~InstallShortcutInfo() = default;
+
+  const nsString mPath;
+  const nsString mLocation;
+};
+
+NS_IMPL_ISUPPORTS(InstallShortcutInfo, nsIInstallShortcutInfo)
+
+NS_IMETHODIMP InstallShortcutInfo::GetPath(nsAString& aPath) {
+  aPath = mPath;
+  return NS_OK;
+}
+
+NS_IMETHODIMP InstallShortcutInfo::GetLocation(nsAString& aLocation) {
+  aLocation = mLocation;
+  return NS_OK;
+}
+
 static void CollectMatchingShortcutsInDir(const nsAString& aDirPath,
                                           [[maybe_unused]] const nsAString& aAUMID,
                                           const wchar_t aExePath[MAXPATHLEN],
@@ -2934,8 +2962,8 @@ static void CollectMatchingShortcutsInDir(const nsAString& aDirPath,
   FindClose(hFindFile);
 }
 
-static nsresult EnumerateInstallShortcutsImpl(const nsAString& aAUMID,
-                                              nsTArray<nsString>& aOut) {
+static nsresult EnumerateInstallShortcutsImpl(
+    const nsAString& aAUMID, nsTArray<RefPtr<InstallShortcutInfo>>& aOut) {
   wchar_t exePath[MAXPATHLEN] = {};
   if (NS_FAILED(BinaryPath::GetLong(exePath))) {
     return NS_ERROR_FAILURE;
@@ -2944,16 +2972,31 @@ static nsresult EnumerateInstallShortcutsImpl(const nsAString& aAUMID,
   nsAutoString shortcutSubstring;
   shortcutSubstring.AssignLiteral(MOZ_APP_DISPLAYNAME);
 
-  KNOWNFOLDERID folderIds[] = {FOLDERID_Desktop, FOLDERID_Programs};
-  for (KNOWNFOLDERID folderId : folderIds) {
+  auto collectTagged = [&](const nsAString& aDirPath,
+                           const char16_t* aLocation) {
+    nsTArray<nsString> paths;
+    CollectMatchingShortcutsInDir(aDirPath, aAUMID, exePath, shortcutSubstring,
+                                  paths);
+    for (const nsString& path : paths) {
+      aOut.AppendElement(
+          new InstallShortcutInfo(path, nsDependentString(aLocation)));
+    }
+  };
+
+  struct {
+    KNOWNFOLDERID folderId;
+    const char16_t* location;
+  } folders[] = {{FOLDERID_Desktop, u"Desktop"},
+                 {FOLDERID_Programs, u"Programs"},
+                 {FOLDERID_CommonPrograms, u"CommonPrograms"}};
+  for (const auto& folder : folders) {
     UniquePtr<wchar_t, mozilla::CoTaskMemFreeDeleter> folderPath;
-    HRESULT hr = SHGetKnownFolderPath(folderId, SHGFP_TYPE_CURRENT, nullptr,
-                                      getter_Transfers(folderPath));
+    HRESULT hr = SHGetKnownFolderPath(folder.folderId, SHGFP_TYPE_CURRENT,
+                                      nullptr, getter_Transfers(folderPath));
     if (FAILED(hr)) {
       continue;
     }
-    CollectMatchingShortcutsInDir(nsDependentString(folderPath.get()), aAUMID,
-                                  exePath, shortcutSubstring, aOut);
+    collectTagged(nsDependentString(folderPath.get()), folder.location);
   }
 
   UniquePtr<wchar_t, mozilla::CoTaskMemFreeDeleter> appDataPath;
@@ -2964,8 +3007,7 @@ static nsresult EnumerateInstallShortcutsImpl(const nsAString& aAUMID,
     taskbarPath.AppendLiteral(
         "\\TaskBar");
     if (taskbarPath.Length() < MAX_PATH) {
-      CollectMatchingShortcutsInDir(taskbarPath, aAUMID, exePath,
-                                    shortcutSubstring, aOut);
+      collectTagged(taskbarPath, u"Taskbar");
     }
   }
 
@@ -2995,7 +3037,7 @@ nsWindowsShellService::EnumerateInstallShortcuts(
           "EnumerateInstallShortcuts",
           [aAppUserModelId = nsString{aAppUserModelId},
            promiseHolder = std::move(promiseHolder)] {
-            nsTArray<nsString> results;
+            nsTArray<RefPtr<InstallShortcutInfo>> results;
             nsresult rv =
                 EnumerateInstallShortcutsImpl(aAppUserModelId, results);
 

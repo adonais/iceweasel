@@ -3,6 +3,11 @@
 
 "use strict";
 
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/toolkit/components/printing/tests/head.js",
+  this
+);
+
 // Selecting one panel of a split view must not resize either panel's content
 // area. Decoration that distinguishes the selected panel from the non-selected
 // one has to be drawn without taking up layout space, otherwise every
@@ -223,5 +228,61 @@ add_task(async function test_selecting_a_panel_does_not_resize_content() {
       hasSeparator(tab2),
       "Deselected panel still draws a separator around its content area."
     );
+  });
+});
+
+/**
+ * Bounding rect of a dialog box, as a plain object so it can be compared with
+ * Assert.deepEqual after the underlying DOMRect has changed.
+ *
+ * @param {Element} box
+ * @returns {{x: number, y: number, width: number, height: number}}
+ */
+function dialogBoxRect(box) {
+  const { x, y, width, height } = box.getBoundingClientRect();
+  return { x, y, width, height };
+}
+
+// A tab-modal dialog anchored to one split view panel must not move when the
+// other panel is selected and deselected (bug 2004297).
+add_task(async function test_selecting_a_panel_does_not_move_its_dialog() {
+  await SpecialPowers.pushPrefEnv({ set: [["browser.nova.enabled", true]] });
+
+  const tab1 = BrowserTestUtils.addTab(gBrowser, PAGE);
+  const tab2 = BrowserTestUtils.addTab(gBrowser, PAGE);
+  await Promise.all([
+    BrowserTestUtils.browserLoaded(tab1.linkedBrowser),
+    BrowserTestUtils.browserLoaded(tab2.linkedBrowser),
+  ]);
+
+  await withSplitView(tab1, tab2, async () => {
+    const helper = new PrintHelper(tab1.linkedBrowser);
+    await helper.startPrint();
+    helper.assertDialogOpen();
+
+    await window.promiseDocumentFlushed(() => {});
+    const initialRect = dialogBoxRect(helper.dialog._box);
+
+    info("Select the second panel.");
+    await BrowserTestUtils.switchTab(gBrowser, tab2);
+    helper.assertDialogOpen();
+    await window.promiseDocumentFlushed(() => {});
+    Assert.deepEqual(
+      dialogBoxRect(helper.dialog._box),
+      initialRect,
+      "Print dialog did not move when its panel was deselected."
+    );
+
+    info("Select the first panel again.");
+    await BrowserTestUtils.switchTab(gBrowser, tab1);
+    helper.assertDialogOpen();
+    await window.promiseDocumentFlushed(() => {});
+    Assert.deepEqual(
+      dialogBoxRect(helper.dialog._box),
+      initialRect,
+      "Print dialog did not move when its panel was reselected."
+    );
+
+    await helper.closeDialog();
   });
 });

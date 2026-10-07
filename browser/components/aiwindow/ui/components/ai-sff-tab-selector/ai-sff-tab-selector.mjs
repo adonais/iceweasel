@@ -71,7 +71,9 @@ export class AiSffTabSelector extends MozLitElement {
     return html`
       <moz-box-group
         type="list"
-        class=${scrollable ? "tab-selector-tabs-scrollable" : ""}
+        class=${scrollable
+          ? "tab-selector-tabs-scrollable ai-smart-form-fill-other-tabs"
+          : "ai-smart-form-fill-suggested-tabs"}
       >
         <moz-box-item slot="header">
           <h2

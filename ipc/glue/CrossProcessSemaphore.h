@@ -87,9 +87,13 @@ class CrossProcessSemaphore {
  private:
   friend struct IPC::ParamTraits<CrossProcessSemaphore>;
 
+  // Prevent clang-tidy from thinking those are unimplemented constructors when
+  // analyzing only headers.
+  // NOLINTBEGIN(modernize-use-equals-delete)
   CrossProcessSemaphore();
   CrossProcessSemaphore(const CrossProcessSemaphore&);
   CrossProcessSemaphore& operator=(const CrossProcessSemaphore&);
+  // NOLINTEND(modernize-use-equals-delete)
 
 #if defined(XP_WIN)
   explicit CrossProcessSemaphore(HANDLE aSemaphore);

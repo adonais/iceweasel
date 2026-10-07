@@ -1,0 +1,13 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Bug 1918915: display content on a page served from an allowlisted host</title>
+</head>
+<body>
+  <img id="same-host"
+       src="http://example.com/browser/dom/security/test/mixedcontentblocker/file_scheme_probe.sjs">
+  <img id="other-host"
+       src="http://example.org/browser/dom/security/test/mixedcontentblocker/file_scheme_probe.sjs">
+</body>
+</html>

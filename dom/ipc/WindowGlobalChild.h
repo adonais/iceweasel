@@ -221,6 +221,10 @@ class WindowGlobalChild final : public WindowGlobalActor,
       GetModelContextToolsResolver&& aResolver);
 
   // TODO: Use MOZ_CAN_RUN_SCRIPT when it gains IPDL support (bug 1539864)
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult RecvGetContentMetrics(
+      GetContentMetricsResolver&& aResolver);
+
+  // TODO: Use MOZ_CAN_RUN_SCRIPT when it gains IPDL support (bug 1539864)
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvInvokeModelContextTool(
       const nsCString& aToolName, NotNull<StructuredCloneData*> aInput,
@@ -245,7 +249,7 @@ class WindowGlobalChild final : public WindowGlobalActor,
   RefPtr<nsGlobalWindowInner> mWindowGlobal;
   RefPtr<dom::WindowContext> mWindowContext;
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
-  RefPtr<dom::FeaturePolicy> mContainerFeaturePolicy;
+  RefPtr<dom::PermissionsPolicy> mContainerPermissionsPolicy;
   nsCOMPtr<nsIURI> mDocumentURI;
   nsTArray<RefPtr<DocumentLanguageMetadataRequest>>
       mDocumentLanguageMetadataRequests;

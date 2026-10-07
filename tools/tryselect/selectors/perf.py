@@ -995,14 +995,14 @@ class PerfParser(CompareParser):
 
         return max(set.intersection(*map(__substrings, tasks)), key=len)
 
-    def set_categories_for_test(full_task_graph_path, tests):
-        """Parses the full task-graph to find all tasks that run this test.
+    def set_categories_for_test(full_task_set_path, tests):
+        """Parses the full task set to find all tasks that run this test.
 
         Returns a new category for the test to replace our existing ones.
         """
         print("Searching for requested tests in the generated tasks...")
-        with full_task_graph_path.open() as f:
-            full_task_graph = json.load(f)
+        with full_task_set_path.open() as f:
+            full_task_set = json.load(f)
 
         all_tasks = set()
         categories = {}
@@ -1010,7 +1010,7 @@ class PerfParser(CompareParser):
             tasks = set()
             found_suite = ""
 
-            for task_label, task_info in full_task_graph.items():
+            for task_label, task_info in full_task_set.items():
                 cmds = task_info.get("task", {}).get("payload", {}).get("command", [])
                 for suite, suite_info in PerfParser.suites.items():
                     if suite_info["task-specifier"] not in task_label:
@@ -1526,11 +1526,11 @@ class PerfParser(CompareParser):
             fzf,
             preview_script=PREVIEW_SCRIPT,
         )
-        full_task_graph = pathlib.Path(cache_dir, "full_task_graph")
+        full_task_set = pathlib.Path(cache_dir, "full_task_set")
 
         if kwargs.get("tests"):
             all_tasks = PerfParser.set_categories_for_test(
-                full_task_graph, kwargs.get("tests")
+                full_task_set, kwargs.get("tests")
             )
             if not all_tasks:
                 print("Could not find any tasks for the requested tests")

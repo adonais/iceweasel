@@ -19,6 +19,8 @@
 
 /* Fullpage: browser collapsed (0 height) until chat starts, showing prompts and smartbar */
 :host([mode="fullpage"]) {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-base-design-tokens */
+  box-shadow: inset 0 80px 80px -80px color-mix(in srgb, light-dark(var(--color-violet-70), var(--color-violet-50)) 60%, transparent);
   grid-template-areas:
     "browser"
     "."
@@ -26,9 +28,12 @@
     "smartbar"
     "prompts"
     "topsites"
+    "promo"
+    "resume-section"
     "."
     "footer";
-  grid-template-rows: 0 1fr auto auto auto auto 1fr auto;
+  /* Preserve space above the heading as the resume section grows. */
+  grid-template-rows: 0 minmax(var(--space-xlarge), 1fr) auto auto auto auto auto auto 1fr auto;
   align-content: stretch;
 }
 
@@ -306,6 +311,20 @@ smartwindow-topsites {
   }
 }
 
+smartwindow-resume-section {
+  grid-area: resume-section;
+  width: 100%;
+
+  :host(.chat-active) & {
+    display: none;
+  }
+}
+
+/* Align the card grid with the content above it. */
+:host([mode="fullpage"]) smartwindow-resume-section {
+  max-width: var(--smartwindow-content-max-width);
+}
+
 smartwindow-footer {
   grid-area: footer;
   width: 100%;
@@ -314,9 +333,13 @@ smartwindow-footer {
 }
 
 smartwindow-promo {
-  grid-area: footer;
+  grid-area: promo;
   max-width: 580px;
   margin-block-end: calc(var(--space-small) + 20px);
+
+  :host(.chat-active) & {
+    display: none;
+  }
 }
 
 .sr-only {

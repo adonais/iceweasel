@@ -5,8 +5,8 @@
 #include "ScriptableContentIterator.h"
 
 #include "mozilla/ContentIterator.h"
+#include "mozilla/dom/Range.h"
 #include "nsINode.h"
-#include "nsRange.h"
 
 namespace mozilla {
 
@@ -96,7 +96,8 @@ ScriptableContentIterator::InitWithRootNode(IteratorType aType,
 }
 
 NS_IMETHODIMP
-ScriptableContentIterator::InitWithRange(IteratorType aType, nsRange* aRange) {
+ScriptableContentIterator::InitWithRange(IteratorType aType,
+                                         dom::Range* aRange) {
   if (aType == NOT_INITIALIZED ||
       (mIteratorType != NOT_INITIALIZED && aType != mIteratorType)) {
     return NS_ERROR_INVALID_ARG;
@@ -108,7 +109,7 @@ ScriptableContentIterator::InitWithRange(IteratorType aType, nsRange* aRange) {
 
 NS_IMETHODIMP
 ScriptableContentIterator::InitWithRangeAllowCrossShadowBoundary(
-    IteratorType aType, nsRange* aRange) {
+    IteratorType aType, dom::Range* aRange) {
   if (aType == NOT_INITIALIZED ||
       (mIteratorType != NOT_INITIALIZED && aType != mIteratorType) ||
       aType != SUBTREE_ITERATOR) {

@@ -12,8 +12,6 @@ support-files = [
   "head.js",
   "head-common.js",
   "addons/pl-dictionary.xpi",
-  "addons/set_homepage.xpi",
-  "addons/set_newtab.xpi",
 ]
 tags = "os_integration"
 

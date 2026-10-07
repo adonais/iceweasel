@@ -776,7 +776,32 @@ export class SidebarBookmarks extends SidebarPage {
     // ancestor folders expanded before we scroll to the row.
     this.requestUpdate();
     await this.updateComplete;
+    await this.#renderAncestorChain(fetchInfo, guid);
     await this.#scrollAndFocusBookmarkRow(guid);
+  }
+
+  /**
+   * Walk from the root list down to the target's parent, forcing each list to
+   * render the virtual-list chunk holding the next folder in the path. Without
+   * this, a folder or row far enough down a long list never renders and can't
+   * be found, selected or scrolled to.
+   *
+   * @param {object} fetchInfo A Places fetch result with `path` included.
+   * @param {string} guid The guid of the bookmark being revealed.
+   */
+  async #renderAncestorChain(fetchInfo, guid) {
+    // `path` runs from a folder the sidebar shows at top level down to and
+    // including the bookmark's parent.
+    let list = this.bookmarkList;
+    for (const ancestor of fetchInfo.path ?? []) {
+      // A folder Places reports can be missing from the rendered tree (see
+      // renderItemForGuid), leaving nothing deeper to descend into.
+      if (!(await list?.renderItemForGuid(ancestor.guid))) {
+        return;
+      }
+      list = list.findSublistForGuid(ancestor.guid);
+    }
+    await list?.renderItemForGuid(guid);
   }
 
   async #scrollAndFocusBookmarkRow(guid) {

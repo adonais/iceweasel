@@ -147,8 +147,17 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1787039
 ]
 
+["test_getUserMedia_sourceGrantedGlean.html"]
+
+["test_getUserMedia_sourceGrantedGlean_displayCapture.html"]
+run-if = [
+  "os != 'android'", # no screenshare, windowshare, or tabshare on android
+]
+
 ["test_getUserMedia_spinEventLoop.html"]
 
 ["test_getUserMedia_trackCloneCleanup.html"]
 
 ["test_getUserMedia_trackEnded.html"]
+
+["test_getUserMedia_videoOrientation.html"]

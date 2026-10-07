@@ -86,3 +86,26 @@ add_task(function test_mozUrlFormat() {
     );
   }
 });
+
+add_task(function test_mozUrl() {
+  info("Testing custom string format 'moz-url'");
+  const schema = { type: "string", format: "moz-url" };
+
+  for (const url of [
+    "https://münchen.example/",
+    "https://example.com/über",
+    "file:///C:/path with space/x.html",
+    "https://example.com/?q={x}",
+    "https://example.com/%PRODUCT%/",
+  ]) {
+    Assert.ok(
+      JsonSchema.validate(url, schema).valid,
+      `${url} validates as a moz-url`
+    );
+  }
+
+  Assert.ok(
+    !JsonSchema.validate("not a url", schema).valid,
+    "A string the URL parser rejects does not validate"
+  );
+});

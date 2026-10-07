@@ -24,17 +24,29 @@ linux64-rust-1.90:
             '--target', 'aarch64-unknown-linux-gnu',
             '--target', 'wasm32-wasip1',
         ]
-        toolchain-alias:
-            - linux64-rust-base
-            - linux64-rust-toolchain
+        toolchain-alias: linux64-rust-base
 
-linux64-rust-macos-1.90:
-    description: "rust repack with macos-cross support"
+linux64-rust-1.91:
     treeherder:
-        symbol: TL(rust-macos-1.90)
+        symbol: TL(rust-1.91)
     run:
         arguments: [
-            '--channel', '1.90.0',
+            '--channel', '1.91.0',
+            '--host', 'x86_64-unknown-linux-gnu',
+            '--target', 'x86_64-unknown-linux-gnu',
+            '--target', 'i686-unknown-linux-gnu',
+            '--target', 'aarch64-unknown-linux-gnu',
+            '--target', 'wasm32-wasip1',
+        ]
+        toolchain-alias: linux64-rust-toolchain
+
+linux64-rust-macos-1.91:
+    description: "rust repack with macos-cross support"
+    treeherder:
+        symbol: TL(rust-macos-1.91)
+    run:
+        arguments: [
+            '--channel', '1.91.0',
             '--host', 'x86_64-unknown-linux-gnu',
             '--target', 'x86_64-unknown-linux-gnu',
             '--target', 'x86_64-apple-darwin',
@@ -42,13 +54,13 @@ linux64-rust-macos-1.90:
         ]
         toolchain-alias: linux64-rust-macos-toolchain
 
-linux64-rust-windows-1.90:
+linux64-rust-windows-1.91:
     description: "rust repack with windows-cross support"
     treeherder:
-        symbol: TL(rust-win-1.90)
+        symbol: TL(rust-win-1.91)
     run:
         arguments: [
-            '--channel', '1.90.0',
+            '--channel', '1.91.0',
             '--host', 'x86_64-unknown-linux-gnu',
             '--target', 'x86_64-unknown-linux-gnu',
             '--target', 'x86_64-pc-windows-msvc',
@@ -320,7 +332,7 @@ macosx64-rust-1.95:
 
 mingw32-rust-1.95:
     treeherder:
-        symbol: TMW(rust)
+        symbol: TWM(rust)
     run:
         arguments: [
             '--channel', '1.95.0',
@@ -588,7 +600,7 @@ mingw32-rust-nightly:
     attributes:
         cached_task: false
     treeherder:
-        symbol: TMW(rust-nightly)
+        symbol: TWM(rust-nightly)
     run:
         arguments: [
             '--channel', 'nightly', '--allow-generic-channel',

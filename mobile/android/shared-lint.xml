@@ -104,4 +104,11 @@
     <issue id="ModifierParameter" severity="error" />
     <issue id="PrivateResource" severity="error" />
 
+    <!-- Both apps disable language splits in their bundle block, which is this check's own escape hatch,
+         but lint does not pick that up and reports the first runtime locale change it finds. -->
+    <issue id="AppBundleLocaleChanges" severity="ignore" />
+    <!-- The wordmark is a vector in drawable-night and a bitmap per density everywhere else. -->
+    <issue id="IconXmlAndPng">
+        <ignore regexp="ic_logo_wordmark_normal" />
+    </issue>
 </lint>

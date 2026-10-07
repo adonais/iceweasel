@@ -1498,9 +1498,6 @@ export var PushService = {
         this._notifySubscriptionChangeObservers(record);
       }
       if (!record.isExpired()) {
-        if (!record.systemRecord) {
-          Glean.webPush.unsubscribedByClearingData.add();
-        }
         // Only unregister active registrations, since we already told the
         // server about expired ones.
         this._backgroundUnregister(

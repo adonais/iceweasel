@@ -21,12 +21,12 @@ var script = gw.getOwnPropertyDescriptor("f").value.script;
 print("Debugger's view:");
 print("----------------");
 for (var i = script.startLine; i <= script.startLine + script.lineCount; i++) {
-  print("Line " + i + ": " + JSON.stringify(script.getLineOffsets(i)));
+  print("Line " + i + ": " + JSON.stringify(script.getPossibleBreakpointOffsets({ line: i })));
 }
 
 var hits = 0;
 var handler = {hit: function () { hits++; }};
-var offs = script.getLineOffsets(g.line0 + 4);
+var offs = script.getPossibleBreakpointOffsets({ line: g.line0 + 4 });
 for (var i = 0; i < offs.length; i++)
     script.setBreakpoint(offs[i], handler);
 

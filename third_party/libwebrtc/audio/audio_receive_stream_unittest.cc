@@ -181,9 +181,6 @@ struct ConfigHelper {
   MockChannelReceive* channel_receive() { return channel_receive_; }
 
   void SetupMockForGetStats() {
-    using ::testing::DoAll;
-    using ::testing::SetArgPointee;
-
     ASSERT_TRUE(channel_receive_);
     EXPECT_CALL(*channel_receive_, GetRTCPStatistics())
         .WillOnce(Return(kChannelStats));

@@ -92,11 +92,25 @@ if (rtc_include_tests) {
     ]
   }
 
+  rtc_library("control_handler_unittest") {
+    testonly = true
+    sources = [ "control_handler_unittest.cc" ]
+    deps = [
+      ":control_handler",
+      "../../../api/transport:network_control",
+      "../../../api/units:data_rate",
+      "../../../api/units:time_delta",
+      "../../../api/units:timestamp",
+      "../../../test:test_support",
+    ]
+  }
+
   rtc_library("congestion_controller_unittests") {
     testonly = true
 
     sources = []
     deps = [
+      ":control_handler_unittest",
       ":transport_feedback_adapter_unittest",
       ":transport_feedback_demuxer_unittest",
     ]

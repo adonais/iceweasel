@@ -1,0 +1,258 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  --monitor-row-background: var(--table-row-background-color);
+  --monitor-row-background-new: var(--button-background-color-menu-hover);
+  --monitor-row-border-color: var(--card-border-color);
+
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-small);
+}
+
+.monitor-list-view {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .monitor-list-view.slide-in-back {
+    animation: monitor-view-slide-from-right 200ms ease-out;
+
+    :host(:dir(rtl)) & {
+      animation-name: monitor-view-slide-from-left;
+    }
+  }
+
+  agent-monitor-item.slide-in-forward {
+    animation: monitor-view-slide-from-left 200ms ease-out;
+
+    :host(:dir(rtl)) & {
+      animation-name: monitor-view-slide-from-right;
+    }
+  }
+}
+
+@keyframes monitor-view-slide-from-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes monitor-view-slide-from-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+.monitor-section-label {
+  padding: var(--space-xsmall) var(--space-medium);
+  margin-inline-start: var(--space-medium);
+  color: var(--text-color-deemphasized);
+}
+
+.monitor-empty {
+  --monitor-empty-background: var(--background-color-box);
+  --monitor-empty-border-color: var(--border-color);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin: var(--space-large) var(--space-medium);
+  padding: var(--space-xxlarge) var(--button-padding-inline) var(--space-xlarge);
+  background-color: var(--monitor-empty-background);
+  border: var(--border-width) solid var(--monitor-empty-border-color);
+  border-radius: var(--border-radius-medium);
+  color: var(--text-color-deemphasized);
+
+  @media not (prefers-contrast) {
+    --monitor-empty-background: light-dark(var(--color-violet-0), color-mix(in srgb, var(--color-violet-50) 12%, transparent));
+    --monitor-empty-border-color: light-dark(var(--color-violet-10), color-mix(in srgb, var(--color-violet-50) 35%, transparent));
+  }
+}
+
+.monitor-empty-kit {
+  width: var(--size-layout-small);
+  height: var(--size-layout-xsmall);
+  max-width: 100%;
+  background-image: url("chrome://browser/content/aiwindow/assets/agent-watch-empty.svg");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+
+  @media (forced-colors: active) {
+    display: none;
+  }
+}
+
+.monitor-empty-title {
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-large) 0 var(--space-medium);
+  margin: 0;
+}
+
+.monitor-empty-description {
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-small);
+}
+
+.monitor-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+  padding: var(--space-small) var(--space-medium);
+}
+
+.monitor-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  width: 100%;
+  padding: var(--panel-menuitem-padding);
+  border: var(--border-width) solid var(--monitor-row-border-color);
+  border-radius: var(--border-radius-medium);
+  background-color: var(--monitor-row-background);
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+
+  &:hover:not([aria-disabled="true"]) {
+    background-color: var(--button-background-color-hover);
+    color: var(--button-text-color-hover);
+  }
+
+  &:active:not([aria-disabled="true"]) {
+    background-color: var(--button-background-color-active);
+    color: var(--button-text-color-active);
+  }
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+  }
+
+  &[aria-disabled="true"] {
+    cursor: default;
+  }
+
+  &[data-just-created] {
+    animation: monitor-row-arrive 2.5s ease-out;
+  }
+}
+
+@keyframes monitor-row-arrive {
+  from {
+    background-color: var(--monitor-row-background-new);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monitor-row[data-just-created] {
+    animation: none;
+  }
+}
+
+.monitor-row-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.monitor-row-title {
+  font-weight: var(--font-weight-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.monitor-row-meta {
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-small);
+}
+
+.monitor-row-result {
+  flex-shrink: 0;
+  color: var(--text-color-deemphasized);
+
+  &.match {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xsmall);
+    font-weight: var(--font-weight-semibold);
+  }
+}
+
+.monitor-row-match-dot {
+  width: var(--icon-size-xsmall);
+  aspect-ratio: 1;
+  -moz-context-properties: fill;
+  fill: var(--icon-color-success);
+  background: url("chrome://browser/skin/notification-fill-12.svg") no-repeat center;
+  background-size: var(--icon-size-xsmall);
+}
+
+.monitor-footer {
+  display: flex;
+  flex-direction: column;
+  border-top: var(--border-width) solid var(--border-color-deemphasized);
+  padding: var(--space-small) 0;
+  margin-top: var(--space-small);
+}
+
+.monitor-footer-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-medium);
+  padding: var(--panel-menuitem-padding);
+  border: none;
+  border-radius: 0;
+  margin: var(--space-xsmall) 0;
+  background-color: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+
+  &:hover:not([disabled]) {
+    background-color: var(--button-background-color-hover);
+    color: var(--button-text-color-hover);
+    border-radius: var(--border-radius-medium);
+  }
+
+  &[disabled] {
+    opacity: var(--opacity-deemphasized-strong);
+  }
+}
+
+.monitor-footer-count {
+  margin-inline-start: auto;
+  color: var(--text-color-deemphasized);
+}
+
+.monitor-footer-icon {
+  width: var(--icon-size-medium);
+  height: var(--icon-size-medium);
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+
+.monitor-footer-chevron {
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+  background-image: url("chrome://global/skin/icons/arrow-right-12.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  -moz-context-properties: fill;
+  fill: currentColor;
+  color: var(--text-color-deemphasized);
+
+  :host(:dir(rtl)) & {
+    background-image: url("chrome://global/skin/icons/arrow-left-12.svg");
+  }
+}

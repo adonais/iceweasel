@@ -37,6 +37,10 @@ namespace mozilla {
 NS_IMPL_ISUPPORTS(BounceTrackingProtectionStorage, nsIAsyncShutdownBlocker,
                   nsIObserver);
 
+BounceTrackingProtectionStorage::BounceTrackingProtectionStorage()
+    : mMonitor("mozilla::BounceTrackingProtectionStorage::mMonitor"),
+      mPendingWrites(0) {};
+
 RefPtr<BounceTrackingStateGlobal>
 BounceTrackingProtectionStorage::GetStateGlobal(nsIPrincipal* aPrincipal) {
   MOZ_ASSERT(aPrincipal);

@@ -1,8 +1,8 @@
 [DEFAULT]
-# Disable for Http/3 since Http/3 tests require to run with https.
-skip-if = [
-  "http2",
-  "http3",
+# Mixed content needs plain http subresources, which the http2 and http3
+# variants upgrade to https.
+run-if = [
+  "!http2 && !http3",
 ]
 prefs = [
   "security.mixed_content.upgrade_display_content=false",

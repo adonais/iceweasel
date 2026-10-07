@@ -18,11 +18,6 @@ import { isWallpaperLibraryEnabled } from "lib/Wallpapers/WallpaperLibraryPref.m
 // that older reply from moving focus to the wrong image.
 let uploadRequestSeq = 0;
 
-// Tiles per row in "Your images". The stylesheet reads it through
-// --your-images-columns, the way Top Sites sizes its grid from
-// --top-sites-max-per-row, so the layout and the arrow keys share one number.
-const YOUR_IMAGES_COLUMNS = 3;
-
 const PREF_WALLPAPER_UPLOADED_PREVIOUSLY =
   "newtabWallpapers.customWallpaper.uploadedPreviously";
 
@@ -82,6 +77,50 @@ function debounce(func, wait) {
   };
 }
 
+// Cells per visual row in the wallpaper picker grids. The stylesheet reads it
+// through --your-images-columns, the way Top Sites uses
+// --top-sites-max-per-row, so the layout and the arrow keys share one number.
+const GRID_COLUMN_COUNT = 3;
+
+export function chunkIntoRows(items, columnCount) {
+  const rows = [];
+  for (let i = 0; i < items.length; i += columnCount) {
+    rows.push(items.slice(i, i + columnCount));
+  }
+  return rows;
+}
+
+// Resolves which cell a layout grid navigation key moves focus to, following
+// https://www.w3.org/WAI/ARIA/apg/patterns/grid/ pattern.
+export function getNextGridIndex(event, index, count, columnCount) {
+  let { key } = event;
+  if (document.dir === "rtl" && (key === "ArrowRight" || key === "ArrowLeft")) {
+    key = key === "ArrowRight" ? "ArrowLeft" : "ArrowRight";
+  }
+  const lastIndex = count - 1;
+  const rowStart = index - (index % columnCount);
+  switch (key) {
+    case "ArrowRight":
+      return Math.min(index + 1, lastIndex);
+    case "ArrowLeft":
+      return Math.max(index - 1, 0);
+    case "ArrowDown":
+      // Never clamps to the last cell: on a short bottom row that would move
+      // focus sideways as well as down.
+      return index + columnCount <= lastIndex ? index + columnCount : index;
+    case "ArrowUp":
+      return index >= columnCount ? index - columnCount : index;
+    case "Home":
+      return event.ctrlKey ? 0 : rowStart;
+    case "End":
+      return event.ctrlKey
+        ? lastIndex
+        : Math.min(rowStart + columnCount - 1, lastIndex);
+    default:
+      return null;
+  }
+}
+
 export class _WallpaperCategories extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -113,7 +152,10 @@ export class _WallpaperCategories extends React.PureComponent {
       inputType: "radio",
       activeId: null,
       customWallpaperErrorType: null,
+      // Roving tabindex for the two layout grids: only the cell at this index
+      // is in the tab order, and the arrow keys move it.
       focusedCategoryIndex: 0,
+      focusedWallpaperIndex: 0,
       pendingRemoveIndex: null,
       pendingRemoveFilename: null,
       savedFocusIndex: 0,
@@ -162,13 +204,15 @@ export class _WallpaperCategories extends React.PureComponent {
     // An upload or a removal changes the library, so the thumbnails for it are
     // stale. Compared by filename, so a fresh array holding the same images
     // does not ask forever. The applied pref is the second trigger: a page
-    // restored from the startup cache never sees the library broadcast.
+    // restored from the startup cache never sees the library broadcast. Only
+    // when there is nothing to show, because applying leaves the library alone
+    // and re-fetched bytes mint new blob URLs that every tile has to reload.
     const appliedFilename =
       this.props.Prefs.values["newtabWallpapers.customWallpaper.uuid"] || "";
     const prevAppliedFilename =
       prevProps.Prefs.values["newtabWallpapers.customWallpaper.uuid"] || "";
     if (
-      appliedFilename !== prevAppliedFilename ||
+      (appliedFilename !== prevAppliedFilename && !this.hasThumbnails()) ||
       this.libraryFilenames(this.props.Wallpapers.customWallpapers) !==
         this.libraryFilenames(prevProps.Wallpapers.customWallpapers)
     ) {
@@ -262,98 +306,46 @@ export class _WallpaperCategories extends React.PureComponent {
   }
 
   focusCategory(focusIndex) {
-    if (!this.categoryRef) {
-      return;
-    }
-
-    const el = this.categoryRef[focusIndex];
-    if (el) {
-      el.focus();
-    }
+    this.categoryRef[focusIndex]?.focus();
   }
 
-  // function implementing arrow navigation for wallpaper category selection
-  handleCategoryKeyDown(event, category) {
-    const getIndex = this.categoryRef.findIndex(cat => cat.id === category);
-    if (getIndex === -1) {
-      return; // prevents errors if wallpaper index isn't found when navigating with arrow keys
+  // Keyboard handling for the category grid.
+  // preventDefault keeps the arrows from scrolling the panel.
+  handleCategoryKeyDown(event, index, count) {
+    const nextIndex = getNextGridIndex(event, index, count, GRID_COLUMN_COUNT);
+    if (nextIndex === null) {
+      return;
     }
-
-    const isRTL = document.dir === "rtl"; // returns true if page language is right-to-left
-    let eventKey = event.key;
-
-    if (eventKey === "ArrowRight" || eventKey === "ArrowLeft") {
-      if (isRTL) {
-        eventKey = eventKey === "ArrowRight" ? "ArrowLeft" : "ArrowRight";
-      }
+    event.preventDefault();
+    if (nextIndex === index) {
+      return;
     }
-
-    let nextIndex = getIndex;
-
-    if (eventKey === "ArrowRight") {
-      nextIndex =
-        getIndex + 1 < this.categoryRef.length ? getIndex + 1 : getIndex;
-    } else if (eventKey === "ArrowLeft") {
-      nextIndex = getIndex - 1 >= 0 ? getIndex - 1 : getIndex;
-    }
-
     this.setState({ focusedCategoryIndex: nextIndex }, () =>
       this.focusCategory(nextIndex)
     );
   }
 
-  // function implementing arrow navigation for wallpaper selection
-  handleWallpaperKeyDown(event, title) {
-    if (event.key === "Tab") {
-      if (event.shiftKey) {
-        event.preventDefault();
-        this.arrowButtonRef.current?.focus();
-      } else {
-        event.preventDefault(); // prevent tabbing within wallpaper selection. We should only be using the Tab key to tab between groups
-      }
+  handleWallpaperKeyDown(event, index, count) {
+    const nextIndex = getNextGridIndex(event, index, count, GRID_COLUMN_COUNT);
+    if (nextIndex === null) {
       return;
     }
-
-    const isRTL = document.dir === "rtl"; // returns true if page language is right-to-left
-    let eventKey = event.key;
-
-    if (eventKey === "ArrowRight" || eventKey === "ArrowLeft") {
-      if (isRTL) {
-        eventKey = eventKey === "ArrowRight" ? "ArrowLeft" : "ArrowRight";
+    event.preventDefault();
+    if (nextIndex === index) {
+      return;
+    }
+    this.setState({ focusedWallpaperIndex: nextIndex }, () => {
+      const cell = this.wallpaperRef[nextIndex];
+      if (!cell) {
+        return;
       }
-    }
-
-    const getIndex = this.wallpaperRef.findIndex(
-      wallpaper => wallpaper.id === title
-    );
-
-    if (getIndex === -1) {
-      return; // prevents errors if wallpaper index isn't found when navigating with arrow keys
-    }
-
-    // the set layout of columns per row for the wallpaper selection
-    const columnCount = 3;
-    let nextIndex = getIndex;
-
-    if (eventKey === "ArrowRight") {
-      nextIndex =
-        getIndex + 1 < this.wallpaperRef.length ? getIndex + 1 : getIndex;
-    } else if (eventKey === "ArrowLeft") {
-      nextIndex = getIndex - 1 >= 0 ? getIndex - 1 : getIndex;
-    } else if (eventKey === "ArrowDown") {
-      nextIndex =
-        getIndex + columnCount < this.wallpaperRef.length
-          ? getIndex + columnCount
-          : getIndex;
-    } else if (eventKey === "ArrowUp") {
-      nextIndex =
-        getIndex - columnCount >= 0 ? getIndex - columnCount : getIndex;
-    }
-
-    this.wallpaperRef[nextIndex].tabIndex = 0;
-    this.wallpaperRef[getIndex].tabIndex = -1;
-    this.wallpaperRef[nextIndex].focus();
-    this.wallpaperRef[nextIndex].click();
+      cell.focus();
+      // Clicking a radio applies that wallpaper. The color input is only
+      // focused, because clicking it would open the color picker dialog.
+      if (cell.type === "radio") {
+        cell.click();
+      }
+    });
   }
 
   handleReset() {
@@ -414,6 +406,14 @@ export class _WallpaperCategories extends React.PureComponent {
 
   // The library lives in a folder the page cannot load from, so the picker asks
   // for the thumbnail bytes and turns them into object URLs here.
+  // A startup cache restore leaves this empty, or holding plain objects that
+  // createObjectURL rejects. Either way there is nothing to paint.
+  hasThumbnails() {
+    return (this.props.Wallpapers.customWallpaperThumbnails || []).some(
+      ({ file }) => file instanceof globalThis.Blob
+    );
+  }
+
   requestThumbnails() {
     // The picker is mounted on every new tab, so asking on mount would read the
     // whole library once per tab, for a panel nobody opened.
@@ -616,8 +616,11 @@ export class _WallpaperCategories extends React.PureComponent {
     // picks up the same bidi isolation the remove button's copy of it gets.
     return (
       <label
+        id={`${id}-label`}
         htmlFor={id}
         className="sr-only"
+        // Hidden from assistive technology; the control is named from this text through aria-labelledby
+        aria-hidden="true"
         data-l10n-id={
           fallbackName
             ? "newtab-wallpaper-your-images-item"
@@ -716,31 +719,13 @@ export class _WallpaperCategories extends React.PureComponent {
   // Arrow key navigation for "Your images". The last tile adds an image, so it
   // is focused rather than activated.
   handleSavedWallpaperKeyDown(event, index) {
-    const isRTL = document.dir === "rtl";
-    let eventKey = event.key;
-
-    if (eventKey === "ArrowRight" || eventKey === "ArrowLeft") {
-      if (isRTL) {
-        eventKey = eventKey === "ArrowRight" ? "ArrowLeft" : "ArrowRight";
-      }
-    }
-
-    const columnCount = YOUR_IMAGES_COLUMNS;
-    let nextIndex = index;
-
-    if (eventKey === "ArrowRight") {
-      nextIndex = Math.min(index + 1, this.savedWallpaperRef.length - 1);
-    } else if (eventKey === "ArrowLeft") {
-      nextIndex = Math.max(index - 1, 0);
-    } else if (eventKey === "ArrowDown") {
-      // Only ever straight down. Clamping to the last tile would move sideways
-      // as well, whenever the bottom row is short.
-      const below = index + columnCount;
-      nextIndex = below < this.savedWallpaperRef.length ? below : index;
-    } else if (eventKey === "ArrowUp") {
-      const above = index - columnCount;
-      nextIndex = above >= 0 ? above : index;
-    } else {
+    const nextIndex = getNextGridIndex(
+      event,
+      index,
+      this.savedWallpaperRef.length,
+      GRID_COLUMN_COUNT
+    );
+    if (nextIndex === null) {
       return;
     }
 
@@ -761,6 +746,52 @@ export class _WallpaperCategories extends React.PureComponent {
     });
   }
 
+  // The wallpaper cells a category renders, in grid order. render() and
+  // openCategory share it so the tab stop cannot point at a different cell
+  // than the grid draws.
+  categoryWallpapers(categoryId) {
+    const prefs = this.props.Prefs.values;
+    const activeGroups = resolveWallpaperVisibilityGroups(prefs);
+    const offered = (this.props.Wallpapers.wallpaperList || []).filter(
+      wallpaper =>
+        wallpaper.category === categoryId &&
+        isWallpaperOffered(wallpaper, activeGroups)
+    );
+    // the last item of the solid colors category should be the color picker
+    if (
+      prefs["newtabWallpapers.customColor.enabled"] &&
+      categoryId === "solid-colors"
+    ) {
+      while (
+        offered.length &&
+        offered.length % GRID_COLUMN_COUNT !== GRID_COLUMN_COUNT - 1
+      ) {
+        offered.pop();
+      }
+    }
+    return offered;
+  }
+
+  // Which cell a category should open on. The applied wallpaper usually belongs
+  // to a different category, so this falls back to the first cell.
+  appliedWallpaperIndex(categoryId) {
+    const { activeWallpaper } = this.props;
+    if (!activeWallpaper) {
+      return 0;
+    }
+    // A custom color is applied through the color input, which is the last cell
+    // of the Colors grid rather than one of the wallpapers.
+    if (activeWallpaper.startsWith("solid-color-picker")) {
+      return categoryId === "solid-colors"
+        ? this.categoryWallpapers(categoryId).length
+        : 0;
+    }
+    const appliedIndex = this.categoryWallpapers(categoryId).findIndex(
+      wallpaper => wallpaper.title === activeWallpaper
+    );
+    return Math.max(appliedIndex, 0);
+  }
+
   // Open a wallpaper category subpanel. `fromUser` distinguishes a real category
   // click (records telemetry) from a programmatic deep-link via a CTA.
   openCategory(categoryId, { fromUser = true } = {}) {
@@ -768,7 +799,10 @@ export class _WallpaperCategories extends React.PureComponent {
     const applied = this.appliedSavedWallpaper;
     const appliedIndex = applied ? this.savedWallpapers.indexOf(applied) : 0;
 
-    this.setState({ savedFocusIndex: Math.max(appliedIndex, 0) });
+    this.setState({
+      savedFocusIndex: Math.max(appliedIndex, 0),
+      focusedWallpaperIndex: this.appliedWallpaperIndex(categoryId),
+    });
     this.props.openPanel(categoryId);
 
     if (fromUser) {
@@ -950,7 +984,7 @@ export class _WallpaperCategories extends React.PureComponent {
     return (
       <fieldset
         className="your-images"
-        style={{ "--your-images-columns": YOUR_IMAGES_COLUMNS }}
+        style={{ "--your-images-columns": GRID_COLUMN_COUNT }}
       >
         <legend
           className="sr-only"
@@ -994,6 +1028,7 @@ export class _WallpaperCategories extends React.PureComponent {
                 checked={isApplied}
                 className="wallpaper-input"
                 tabIndex={index === this.state.savedFocusIndex ? 0 : -1}
+                aria-labelledby={`${id}-label`}
               />
               {this.renderSavedWallpaperLabel(id, wallpaper)}
               <moz-button
@@ -1030,9 +1065,13 @@ export class _WallpaperCategories extends React.PureComponent {
             tabIndex={
               savedWallpapers.length === this.state.savedFocusIndex ? 0 : -1
             }
+            aria-labelledby="your-images-add-label"
           />
           <label
+            id="your-images-add-label"
             htmlFor="your-images-add"
+            // Deliberately hidden from assistive technology even though the text is visible
+            aria-hidden="true"
             data-l10n-id="newtab-wallpaper-add-an-image"
           ></label>
         </div>
@@ -1078,18 +1117,7 @@ export class _WallpaperCategories extends React.PureComponent {
     // Enable custom color select if pref'ed on
     let showColorPicker = prefs["newtabWallpapers.customColor.enabled"];
     const activeGroups = resolveWallpaperVisibilityGroups(prefs);
-    let filteredWallpapers = wallpaperList.filter(
-      wallpaper =>
-        wallpaper.category === activeCategory &&
-        isWallpaperOffered(wallpaper, activeGroups)
-    );
-    function reduceColorsToFitCustomColorInput(arr) {
-      // Reduce the amount of custom colors to make space for the custom color picker
-      while (arr.length && arr.length % 3 !== 2) {
-        arr.pop();
-      }
-      return arr;
-    }
+    const filteredWallpapers = this.categoryWallpapers(activeCategory);
 
     let wallpaperCustomSolidColorHex = null;
 
@@ -1101,15 +1129,6 @@ export class _WallpaperCategories extends React.PureComponent {
       showColorPicker = true;
       const regex = /#([a-fA-F0-9]{6})/;
       [wallpaperCustomSolidColorHex] = selectedWallpaper.match(regex);
-    }
-
-    // Remove last item of solid colors to make space for custom color picker
-    if (
-      prefs["newtabWallpapers.customColor.enabled"] &&
-      activeCategory === "solid-colors"
-    ) {
-      filteredWallpapers =
-        reduceColorsToFitCustomColorInput(filteredWallpapers);
     }
 
     // Bug 1953012 - If nothing selected, default to color of customize panel
@@ -1133,34 +1152,266 @@ export class _WallpaperCategories extends React.PureComponent {
       }
     }
 
-    let colorPickerInput =
-      showColorPicker && activeCategory === "solid-colors" ? (
-        <div
-          className={`theme-custom-color-picker ${initStateClassname}`}
-          ref={this.customColorPickerRef}
-        >
-          <input
-            onInput={this.handleColorInput}
-            onChange={this.debouncedHandleChange}
-            onClick={() => this.setActiveId("solid-color-picker")} //
-            type="color"
-            name={`wallpaper-solid-color-picker`}
-            id="solid-color-picker"
-            // aria-checked is not applicable for input[type="color"] elements
-            aria-current={this.state.activeId === "solid-color-picker"}
-            value={wallpaperCustomSolidColorHex || starterColorHex}
+    // The custom color input is the last cell of the Colors grid and now takes
+    // part in the roving index.
+    const showCustomColorPicker =
+      showColorPicker && activeCategory === "solid-colors";
+    const colorPickerIndex = filteredWallpapers.length;
+    const wallpaperCellCount =
+      filteredWallpapers.length + (showCustomColorPicker ? 1 : 0);
+    const focusedWallpaperIndex = Math.min(
+      this.state.focusedWallpaperIndex,
+      Math.max(wallpaperCellCount - 1, 0)
+    );
+
+    const colorPickerInput = showCustomColorPicker ? (
+      <div
+        role="gridcell"
+        key="solid-color-picker"
+        className={`theme-custom-color-picker ${initStateClassname}`}
+        ref={this.customColorPickerRef}
+      >
+        <input
+          ref={el => {
+            this.customColorInput.current = el;
+            if (el) {
+              this.wallpaperRef[colorPickerIndex] = el;
+            }
+          }}
+          onInput={this.handleColorInput}
+          onChange={this.debouncedHandleChange}
+          onClick={() => this.setActiveId("solid-color-picker")} //
+          onKeyDown={e =>
+            this.handleWallpaperKeyDown(e, colorPickerIndex, wallpaperCellCount)
+          }
+          type="color"
+          name={`wallpaper-solid-color-picker`}
+          id="solid-color-picker"
+          // aria-checked is not applicable for input[type="color"] elements
+          aria-current={this.state.activeId === "solid-color-picker"}
+          value={wallpaperCustomSolidColorHex || starterColorHex}
+          className={`wallpaper-input
+            ${this.state.activeId === "solid-color-picker" ? "active" : ""}`}
+          tabIndex={focusedWallpaperIndex === colorPickerIndex ? 0 : -1}
+          aria-labelledby="solid-color-picker-label"
+        />
+        <label
+          id="solid-color-picker-label"
+          htmlFor="solid-color-picker"
+          // Deliberately hidden from assistive technology even though the text is visible
+          aria-hidden="true"
+          data-l10n-id="newtab-wallpaper-custom-color"
+        ></label>
+      </div>
+    ) : null;
+
+    // Both pickers follow the ARIA layout grid pattern
+    // (https://www.w3.org/WAI/ARIA/apg/patterns/grid/): grid > row > gridcell,
+    // each cell holding exactly one control.
+    // Clamped so a shrinking category list cannot leave the grid without a tab
+    // stop, the same way focusedWallpaperIndex is clamped.
+    const focusedCategoryIndex = Math.min(
+      this.state.focusedCategoryIndex,
+      Math.max(categories.length - 1, 0)
+    );
+    const categoryCells = categories.map((category, index) => {
+      const filteredList = wallpaperList.filter(
+        wallpaper =>
+          wallpaper.category === category &&
+          isWallpaperOffered(wallpaper, activeGroups)
+      );
+      const sortedList = this.sortWallpapersByOrder(filteredList);
+      const activeWallpaperObj =
+        activeWallpaper && sortedList.find(wp => wp.title === activeWallpaper);
+      // Detect custom solid color
+      const isCustomSolidColor =
+        category === "solid-colors" &&
+        activeWallpaper.startsWith("solid-color-picker");
+      const thumbnail = activeWallpaperObj || sortedList[0];
+      // The custom wallpaper tile adds an image until something is
+      // saved, and is the "Your images" folder after that.
+      const isYourImagesFolder =
+        category === WALLPAPER_CATEGORIES.CustomWallpaper &&
+        showYourImagesFolder;
+      let fluent_id;
+      if (category === WALLPAPER_CATEGORIES.CustomWallpaper) {
+        // @nova-cleanup(remove-conditional): Remove novaEnabled conditional and always use newtab-wallpaper-add-an-image
+        const addImageFluentID = novaEnabled
+          ? "newtab-wallpaper-add-an-image"
+          : "newtab-wallpaper-upload-image";
+        fluent_id = isYourImagesFolder
+          ? "newtab-wallpaper-your-images"
+          : addImageFluentID;
+      } else {
+        fluent_id = this.categoryFluentID(category);
+      }
+      let style = {};
+      // Thumbnails arrive from the parent after the panel opens, so the
+      // folder has nothing to show for a moment on the first open.
+      let folderHasPreview = false;
+      if (isYourImagesFolder) {
+        // The applied image and its URL reach the page ahead of the
+        // library, so prefer them. A library thumbnail can still be the
+        // previous image, which would show the wrong picture entirely.
+        const appliedUrl =
+          prefs["newtabWallpapers.wallpaper"] === "custom"
+            ? this.props.Wallpapers.uploadedWallpaper
+            : null;
+        const preview = this.appliedSavedWallpaper || savedWallpapers[0];
+        const previewUrl = appliedUrl || this.thumbnailUrl(preview.filename);
+        if (previewUrl) {
+          folderHasPreview = true;
+          style.backgroundImage = `url(${previewUrl})`;
+          style.backgroundPosition = appliedUrl
+            ? prefs["newtabWallpapers.customWallpaper.position"] || "center"
+            : preview.position;
+        }
+      } else if (thumbnail?.wallpaperUrl) {
+        style.backgroundImage = `url(${thumbnail?.thumbnail || thumbnail?.wallpaperUrl})`;
+        style.backgroundPosition = thumbnail.background_position || "center";
+      } else {
+        style.backgroundColor = thumbnail?.solid_color || "";
+      }
+      // If custom solid color is active, override the thumbnail to the chosen hex
+      if (isCustomSolidColor) {
+        const hex = activeWallpaper.split("solid-color-picker-")[1] || "";
+        style.backgroundColor = hex;
+      }
+      const isCategorySelected =
+        wallpapersUserEnabled &&
+        (activeWallpaperObj ||
+          isCustomSolidColor ||
+          (isYourImagesFolder && this.appliedSavedWallpaper));
+      return (
+        <div role="gridcell" key={category}>
+          <button
+            // Fluent only tidies the attributes of elements it is still
+            // translating, so dropping data-l10n-id when this stops
+            // being the folder would strand its aria-label on the node.
+            // A new key means a new element with nothing left over.
+            key={isYourImagesFolder ? "your-images" : "add-an-image"}
+            ref={el => {
+              if (el) {
+                this.categoryRef[index] = el;
+              }
+            }}
+            id={category}
+            style={style}
+            onKeyDown={e =>
+              this.handleCategoryKeyDown(e, index, categories.length)
+            }
+            // Add overrides for custom wallpaper upload UI
+            onClick={event => {
+              this.setState({ focusedCategoryIndex: index });
+              if (
+                category !== WALLPAPER_CATEGORIES.CustomWallpaper ||
+                isYourImagesFolder
+              ) {
+                this.handleCategory(event);
+              } else {
+                this.handleUpload();
+              }
+            }}
             className={`wallpaper-input
-              ${this.state.activeId === "solid-color-picker" ? "active" : ""}`}
-            ref={this.customColorInput}
+                      ${category === WALLPAPER_CATEGORIES.CustomWallpaper && (!isYourImagesFolder || !folderHasPreview) ? "theme-custom-wallpaper" : ""}
+                      ${isYourImagesFolder ? "your-images-folder" : ""}
+                      ${isCategorySelected ? "selected" : ""}`}
+            tabIndex={focusedCategoryIndex === index ? 0 : -1}
+            // The folder tile is named by Fluent through data-l10n-id below,
+            // so the hidden label only names the other tiles.
+            aria-labelledby={
+              isYourImagesFolder ? undefined : `${category}-label`
+            }
+            data-l10n-id={
+              isYourImagesFolder
+                ? "newtab-wallpaper-your-images-folder"
+                : undefined
+            }
+            aria-expanded={
+              // The upload tile opens a file picker rather than the
+              // subpanel, so it is the one tile this does not describe.
+              isYourImagesFolder ||
+              category !== WALLPAPER_CATEGORIES.CustomWallpaper
+                ? activeCategory === category
+                : undefined
+            }
           />
           <label
-            htmlFor="solid-color-picker"
-            data-l10n-id="newtab-wallpaper-custom-color"
-          ></label>
+            id={`${category}-label`}
+            htmlFor={category}
+            // Deliberately hidden from assistive technology even though the text is visible
+            aria-hidden="true"
+            data-l10n-id={fluent_id}
+          >
+            {fluent_id}
+          </label>
         </div>
-      ) : (
-        ""
       );
+    });
+
+    // Same structure for the wallpaper grid. The sorted position is the cell
+    // index; the color input, when shown, is appended as the last cell.
+    const wallpaperCells = this.sortWallpapersByOrder(filteredWallpapers).map(
+      (
+        {
+          background_position,
+          fluent_id,
+          solid_color,
+          theme,
+          title,
+          thumbnail,
+          wallpaperUrl,
+        },
+        index
+      ) => {
+        let style = {};
+        if (wallpaperUrl) {
+          style.backgroundImage = `url(${thumbnail || wallpaperUrl})`;
+          style.backgroundPosition = background_position || "center";
+        } else {
+          style.backgroundColor = solid_color || "";
+        }
+        // Named from the hidden label the same way as the category buttons.
+        return (
+          <div role="gridcell" key={title}>
+            <input
+              ref={el => {
+                if (el) {
+                  this.wallpaperRef[index] = el;
+                }
+              }}
+              onChange={this.handleChange}
+              onKeyDown={e =>
+                this.handleWallpaperKeyDown(e, index, wallpaperCellCount)
+              }
+              style={style}
+              type="radio"
+              name={`wallpaper-${activeCategory}`}
+              id={title}
+              value={title}
+              checked={wallpapersUserEnabled && title === activeWallpaper}
+              className={`wallpaper-input theme-${theme} ${this.state.activeId === title ? "active" : ""}`}
+              onClick={() => this.setActiveId(title)} //
+              tabIndex={focusedWallpaperIndex === index ? 0 : -1}
+              aria-labelledby={`${title}-label`}
+            />
+            <label
+              id={`${title}-label`}
+              htmlFor={title}
+              className="sr-only"
+              // Hidden from assistive technology; the control is named from this text through aria-labelledby
+              aria-hidden="true"
+              data-l10n-id={fluent_id}
+            >
+              {fluent_id}
+            </label>
+          </div>
+        );
+      }
+    );
+    if (colorPickerInput) {
+      wallpaperCells.push(colorPickerInput);
+    }
 
     return (
       // @nova-cleanup(remove-conditional): Remove nova-enabled class from root div
@@ -1181,141 +1432,23 @@ export class _WallpaperCategories extends React.PureComponent {
             )
           }
         </div>
-        <div
-          role="grid"
-          aria-label="Wallpaper category selection. Use arrow keys to navigate."
-        >
-          <fieldset className="category-list">
-            {categories.map((category, index) => {
-              const filteredList = wallpaperList.filter(
-                wallpaper =>
-                  wallpaper.category === category &&
-                  isWallpaperOffered(wallpaper, activeGroups)
-              );
-              const sortedList = this.sortWallpapersByOrder(filteredList);
-              const activeWallpaperObj =
-                activeWallpaper &&
-                sortedList.find(wp => wp.title === activeWallpaper);
-              // Detect custom solid color
-              const isCustomSolidColor =
-                category === "solid-colors" &&
-                activeWallpaper.startsWith("solid-color-picker");
-              const thumbnail = activeWallpaperObj || sortedList[0];
-              // The custom wallpaper tile adds an image until something is
-              // saved, and is the "Your images" folder after that.
-              const isYourImagesFolder =
-                category === WALLPAPER_CATEGORIES.CustomWallpaper &&
-                showYourImagesFolder;
-              let fluent_id;
-              if (category === WALLPAPER_CATEGORIES.CustomWallpaper) {
-                // @nova-cleanup(remove-conditional): Remove novaEnabled conditional and always use newtab-wallpaper-add-an-image
-                const addImageFluentID = novaEnabled
-                  ? "newtab-wallpaper-add-an-image"
-                  : "newtab-wallpaper-upload-image";
-                fluent_id = isYourImagesFolder
-                  ? "newtab-wallpaper-your-images"
-                  : addImageFluentID;
-              } else {
-                fluent_id = this.categoryFluentID(category);
-              }
-              let style = {};
-              // Thumbnails arrive from the parent after the panel opens, so the
-              // folder has nothing to show for a moment on the first open.
-              let folderHasPreview = false;
-              if (isYourImagesFolder) {
-                // The applied image and its URL reach the page ahead of the
-                // library, so prefer them. A library thumbnail can still be the
-                // previous image, which would show the wrong picture entirely.
-                const appliedUrl =
-                  prefs["newtabWallpapers.wallpaper"] === "custom"
-                    ? this.props.Wallpapers.uploadedWallpaper
-                    : null;
-                const preview =
-                  this.appliedSavedWallpaper || savedWallpapers[0];
-                const previewUrl =
-                  appliedUrl || this.thumbnailUrl(preview.filename);
-                if (previewUrl) {
-                  folderHasPreview = true;
-                  style.backgroundImage = `url(${previewUrl})`;
-                  style.backgroundPosition = appliedUrl
-                    ? prefs["newtabWallpapers.customWallpaper.position"] ||
-                      "center"
-                    : preview.position;
-                }
-              } else if (thumbnail?.wallpaperUrl) {
-                style.backgroundImage = `url(${thumbnail?.thumbnail || thumbnail?.wallpaperUrl})`;
-                style.backgroundPosition =
-                  thumbnail.background_position || "center";
-              } else {
-                style.backgroundColor = thumbnail?.solid_color || "";
-              }
-              // If custom solid color is active, override the thumbnail to the chosen hex
-              if (isCustomSolidColor) {
-                const hex =
-                  activeWallpaper.split("solid-color-picker-")[1] || "";
-                style.backgroundColor = hex;
-              }
-              const isCategorySelected =
-                wallpapersUserEnabled &&
-                (activeWallpaperObj ||
-                  isCustomSolidColor ||
-                  (isYourImagesFolder && this.appliedSavedWallpaper));
-              return (
-                <div key={category}>
-                  <button
-                    // Fluent only tidies the attributes of elements it is still
-                    // translating, so dropping data-l10n-id when this stops
-                    // being the folder would strand its aria-label on the node.
-                    // A new key means a new element with nothing left over.
-                    key={isYourImagesFolder ? "your-images" : "add-an-image"}
-                    ref={el => {
-                      if (el) {
-                        this.categoryRef[index] = el;
-                      }
-                    }}
-                    id={category}
-                    style={style}
-                    onKeyDown={e => this.handleCategoryKeyDown(e, category)}
-                    // Add overrides for custom wallpaper upload UI
-                    onClick={event => {
-                      this.setState({ focusedCategoryIndex: index });
-                      if (
-                        category !== WALLPAPER_CATEGORIES.CustomWallpaper ||
-                        isYourImagesFolder
-                      ) {
-                        this.handleCategory(event);
-                      } else {
-                        this.handleUpload();
-                      }
-                    }}
-                    className={`wallpaper-input
-                      ${category === WALLPAPER_CATEGORIES.CustomWallpaper && (!isYourImagesFolder || !folderHasPreview) ? "theme-custom-wallpaper" : ""}
-                      ${isYourImagesFolder ? "your-images-folder" : ""}
-                      ${isCategorySelected ? "selected" : ""}`}
-                    tabIndex={
-                      this.state.focusedCategoryIndex === index ? 0 : -1
-                    }
-                    data-l10n-id={
-                      isYourImagesFolder
-                        ? "newtab-wallpaper-your-images-folder"
-                        : undefined
-                    }
-                    aria-expanded={
-                      // The upload tile opens a file picker rather than the
-                      // subpanel, so it is the one tile this does not describe.
-                      isYourImagesFolder ||
-                      category !== WALLPAPER_CATEGORIES.CustomWallpaper
-                        ? activeCategory === category
-                        : undefined
-                    }
-                  />
-                  <label htmlFor={category} data-l10n-id={fluent_id}>
-                    {fluent_id}
-                  </label>
+        <div>
+          {/* Each row is its own three-column CSS grid and the container
+              stacks the rows, so the layout matches the row/cell structure
+              the accessibility tree needs. */}
+          <div
+            role="grid"
+            className="category-list"
+            data-l10n-id="newtab-wallpaper-category-list"
+          >
+            {chunkIntoRows(categoryCells, GRID_COLUMN_COUNT).map(
+              (row, rowIndex) => (
+                <div role="row" className="wallpaper-grid-row" key={rowIndex}>
+                  {row}
                 </div>
-              );
-            })}
-          </fieldset>
+              )
+            )}
+          </div>
           {!showYourImagesFolder &&
             this.renderCustomWallpaperError("customWallpaperError")}
         </div>
@@ -1344,88 +1477,45 @@ export class _WallpaperCategories extends React.PureComponent {
                     data-l10n-id="newtab-customize-panel-back-button"
                     onClick={this.handleBack}
                   />
-                  <h2 data-l10n-id={activeCategoryFluentID}></h2>
+                  <h2
+                    id="wallpaper-list-title"
+                    data-l10n-id={activeCategoryFluentID}
+                  ></h2>
                 </div>
               ) : (
                 <button
                   ref={this.arrowButtonRef}
+                  id="wallpaper-list-title"
                   className="arrow-button"
                   data-l10n-id={activeCategoryFluentID}
                   onClick={this.handleBack}
                 />
               )
             }
-            <div
-              role="grid"
-              aria-label="Wallpaper selection. Use arrow keys to navigate."
-            >
-              {activeCategory === WALLPAPER_CATEGORIES.CustomWallpaper ? (
-                this.renderYourImages()
-              ) : (
-                <fieldset>
-                  {this.sortWallpapersByOrder(filteredWallpapers).map(
-                    (
-                      {
-                        background_position,
-                        fluent_id,
-                        solid_color,
-                        theme,
-                        title,
-                        thumbnail,
-                        wallpaperUrl,
-                      },
-                      index
-                    ) => {
-                      let style = {};
-                      if (wallpaperUrl) {
-                        style.backgroundImage = `url(${thumbnail || wallpaperUrl})`;
-                        style.backgroundPosition =
-                          background_position || "center";
-                      } else {
-                        style.backgroundColor = solid_color || "";
-                      }
-                      return (
-                        <React.Fragment key={title}>
-                          <input
-                            ref={el => {
-                              if (el) {
-                                this.wallpaperRef[index] = el;
-                              }
-                            }}
-                            onChange={this.handleChange}
-                            onKeyDown={e =>
-                              this.handleWallpaperKeyDown(e, title)
-                            }
-                            style={style}
-                            type="radio"
-                            name={`wallpaper-${title}`}
-                            id={title}
-                            value={title}
-                            checked={
-                              wallpapersUserEnabled && title === activeWallpaper
-                            }
-                            aria-checked={
-                              wallpapersUserEnabled && title === activeWallpaper
-                            }
-                            className={`wallpaper-input theme-${theme} ${this.state.activeId === title ? "active" : ""}`}
-                            onClick={() => this.setActiveId(title)} //
-                            tabIndex={index === 0 ? 0 : -1} //the first wallpaper in the array will have a tabindex of 0 so we can tab into it. The rest will have a tabindex of -1
-                          />
-                          <label
-                            htmlFor={title}
-                            className="sr-only"
-                            data-l10n-id={fluent_id}
-                          >
-                            {fluent_id}
-                          </label>
-                        </React.Fragment>
-                      );
-                    }
-                  )}
-                  {colorPickerInput}
-                </fieldset>
-              )}
-            </div>
+            {/* "Your images" keeps its own list. Every other category is a
+                layout grid like the category picker, named by the heading
+                above it. */}
+            {activeCategory === WALLPAPER_CATEGORIES.CustomWallpaper ? (
+              this.renderYourImages()
+            ) : (
+              <div
+                role="grid"
+                className="wallpaper-grid"
+                aria-labelledby="wallpaper-list-title"
+              >
+                {chunkIntoRows(wallpaperCells, GRID_COLUMN_COUNT).map(
+                  (row, rowIndex) => (
+                    <div
+                      role="row"
+                      className="wallpaper-grid-row"
+                      key={rowIndex}
+                    >
+                      {row}
+                    </div>
+                  )
+                )}
+              </div>
+            )}
             {activeCategory === WALLPAPER_CATEGORIES.CustomWallpaper &&
               this.renderCustomWallpaperError("yourImagesWallpaperError")}
           </section>

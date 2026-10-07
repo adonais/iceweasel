@@ -515,6 +515,28 @@ add_task(async function test_printToPDF_svg_ignores_nonstring_text() {
   );
 });
 
+add_task(async function test_printToPDF_svg_load_failure() {
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:blank" },
+    async browser => {
+      await waitForPdfJS(browser, pdfUrl);
+
+      const svgUrl = "data:image/svg+xml," + encodeURIComponent("<svg");
+      const response = await dispatchPrintToPDF(browser, [
+        { data: { width: 100, height: 100, svgUrl } },
+      ]);
+
+      Assert.strictEqual(
+        response,
+        null,
+        "An SVG that fails to load should yield a null response"
+      );
+
+      await waitForPdfJSClose(browser);
+    }
+  );
+});
+
 // Per-job settings must not become defaults for later print jobs.
 add_task(async function test_printToPDF_does_not_persist_print_settings() {
   const PRINTER_BRANCH = "print.printer_Mozilla_Save_to_PDF.";

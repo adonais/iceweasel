@@ -17,12 +17,8 @@ body {
 }
 
 #navigator-toolbox {
-  --smartwindow-box-shadow: light-dark(var(--color-violet-70), var(--color-violet-50));
-
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: color-mix(in srgb, var(--ai-background-color) 80%, transparent) !important;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  box-shadow: 0 0 80px 0 color-mix(in srgb, var(--smartwindow-box-shadow) 60%, transparent);
 }
 
 .tab-preview-thumbnail-container > canvas {
@@ -30,13 +26,6 @@ body {
   background-color: var(--ai-background-color);
 }
 
-#tabbrowser-tabpanels > :not(.split-view-panel) .browserContainer {
-  --chrome-box-shadow: light-dark(color-mix(in srgb, var(--color-violet-60) 15%, transparent), color-mix(in srgb, var(--color-violet-40) 15%, transparent));
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  box-shadow: 0 0 14px 0 var(--chrome-box-shadow);
-
-  :root[aiwindow-immersive-view] & {
-    --chrome-content-separator-color: transparent;
-    box-shadow: none;
-  }
+:root[aiwindow-immersive-view] #tabbrowser-tabpanels > :not(.split-view-panel) .browserContainer {
+  --chrome-content-separator-color: transparent;
 }

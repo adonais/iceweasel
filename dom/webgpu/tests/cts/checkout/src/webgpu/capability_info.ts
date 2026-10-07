@@ -371,6 +371,7 @@ export const kVertexFormatInfo: {
   // 32 bit packed
   'unorm10-10-10-2': [           'packed',  'unorm',                4,          4, 'vec4<f32>'],
   'unorm8x4-bgra':   [           'packed',  'unorm',                4,          4, 'vec4<f32>'],
+  'snorm10-10-10-2': [           'packed',  'snorm',                4,          4, 'vec4<f32>'],
 } as const);
 /** List of all GPUVertexFormat values. */
 export const kVertexFormats = keysOf(kVertexFormatInfo);
@@ -993,6 +994,7 @@ export const kKnownWGSLLanguageFeatures = [
   'immediate_address_space',
   'fragment_depth',
   'buffer_view',
+  // This list should be kept in sync with .eslintrc.cjs.
 ] as const;
 
 export type WGSLLanguageFeature = (typeof kKnownWGSLLanguageFeatures)[number];

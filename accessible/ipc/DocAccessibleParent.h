@@ -171,7 +171,7 @@ class DocAccessibleParent : public RemoteAccessible,
       const uint64_t& aID, nsTArray<TextRangeData>&& aSelection);
 
   mozilla::ipc::IPCResult RecvRoleChangedEvent(
-      const a11y::role& aRole, const uint8_t& aRoleMapEntryIndex);
+      const uint8_t& aRoleMapEntryIndex);
 
   mozilla::ipc::IPCResult RecvBindChildDoc(
       NotNull<PDocAccessibleParent*> aChildDoc, const uint64_t& aID);
@@ -363,9 +363,7 @@ class DocAccessibleParent : public RemoteAccessible,
    */
   bool RequestDomainsIfInactive(uint64_t aRequiredCacheDomains);
 
-#ifdef MOZ_ENABLE_SKIA_PDF
   mozilla::ipc::IPCResult RecvPrinting();
-#endif
 
   enum class AllowConstruction {
     Disallow,

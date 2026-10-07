@@ -87,5 +87,17 @@ def test_global_skipped_directory(lint, lintdir, filedir):
     assert len(result.issues) == 0
 
 
+def test_global_directory_without_extensions(lint, lintdir, filedir, path):
+    # A linter that declares no extensions has nothing to filter a directory
+    # by, which is not the same as having nothing to lint. The payload lints
+    # what it is handed, so these issues also show the directory was expanded.
+    lint.read(os.path.join(lintdir, "global_no_extensions.yml"))
+    result = lint.roll([filedir])
+    assert result.failed == set()
+    assert path("foobar.js") in result.issues
+    assert path("foobar.py") in result.issues
+    assert path("no_foobar.js") not in result.issues
+
+
 if __name__ == "__main__":
     mozunit.main()

@@ -556,7 +556,7 @@ const renderSingleSecondaryCTAButton = ({
 }) => {
   let buttonStyling = button?.has_arrow_icon ? `secondary arrow-icon` : `secondary`;
   const isPrimary = button?.style === "primary";
-  const isTextLink = !["split", "callout", "center-large"].includes(content.position) && content.tiles?.type !== "addons-picker" && !isPrimary;
+  const isTextLink = !["split", "callout", "center-large", "card-stack"].includes(content.position) && content.tiles?.type !== "addons-picker" && !isPrimary;
   const isSplitButton = content.submenu_button?.attached_to === targetElement;
   let className = "secondary-cta";
   if (position) {
@@ -1290,6 +1290,34 @@ const CORNER_IMAGE_POSITIONS = new Set(["bottom-left", "bottom-right", "top-left
 const DEFAULT_CORNER_IMAGE_POSITION = "bottom-right";
 const CORNER_IMAGE_ENTRANCE_ANIMATIONS = new Set(["none", "fade", "slide-block", "slide-inline", "slide-corner", "zoom"]);
 const DEFAULT_CORNER_IMAGE_ENTRANCE_ANIMATION = "none";
+// Direction-relative aliases for the positions above, mapped to [ltr, rtl] so
+// that `*-end` follows the reading direction the way inset-inline-end would.
+const CORNER_IMAGE_LOGICAL_POSITIONS = new Map([["bottom-start", ["bottom-left", "bottom-right"]], ["bottom-end", ["bottom-right", "bottom-left"]], ["top-start", ["top-left", "top-right"]], ["top-end", ["top-right", "top-left"]]]);
+
+/**
+ * Resolves a corner_image position to one of CORNER_IMAGE_POSITIONS, so the
+ * rendered class is always a physical corner. Unsupported values fall back
+ * to bottom-right.
+ */
+function resolveCornerImagePosition(position) {
+  const logical = CORNER_IMAGE_LOGICAL_POSITIONS.get(position);
+  if (logical) {
+    const isRTL = typeof document !== "undefined" && document.documentElement.matches(":dir(rtl)");
+    return logical[isRTL ? 1 : 0];
+  }
+  return CORNER_IMAGE_POSITIONS.has(position) ? position : DEFAULT_CORNER_IMAGE_POSITION;
+}
+
+/**
+ * Applies an image's `rtl` overrides when the document is right-to-left.
+ */
+function resolveDirectionalImage(image) {
+  const isRTL = typeof document !== "undefined" && document.documentElement.matches(":dir(rtl)");
+  return isRTL && image?.rtl ? {
+    ...image,
+    ...image.rtl
+  } : image;
+}
 const MultiStageProtonScreen = props => {
   const {
     autoAdvance,
@@ -1643,21 +1671,22 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       ref: titleRef
     }));
   }
-  renderPicture({
-    imageURL = "chrome://branding/content/about-logo.svg",
-    darkModeImageURL,
-    reducedMotionImageURL,
-    darkModeReducedMotionImageURL,
-    videoURL,
-    alt = "",
-    width,
-    height,
-    marginBlock,
-    marginInline,
-    style,
-    imgStyle,
-    className = "logo-container"
-  }) {
+  renderPicture(image) {
+    const {
+      imageURL = "chrome://branding/content/about-logo.svg",
+      darkModeImageURL,
+      reducedMotionImageURL,
+      darkModeReducedMotionImageURL,
+      videoURL,
+      alt = "",
+      width,
+      height,
+      marginBlock,
+      marginInline,
+      style,
+      imgStyle,
+      className = "logo-container"
+    } = resolveDirectionalImage(image);
     function getLoadingStrategy() {
       for (let url of [imageURL, darkModeImageURL, reducedMotionImageURL, darkModeReducedMotionImageURL]) {
         if (_lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.getLoadingStrategyFor(url) === "lazy") {
@@ -1740,9 +1769,9 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       className: "noodle yellow-circle"
     }));
   }
-  renderCornerImage() {
+  renderCornerImage(anchor) {
     const cornerImage = this.props.content.corner_image;
-    const position = CORNER_IMAGE_POSITIONS.has(cornerImage.position) ? cornerImage.position : DEFAULT_CORNER_IMAGE_POSITION;
+    const position = resolveCornerImagePosition(cornerImage.position);
     const entranceAnimation = cornerImage.entrance_animation ?? {};
     const entranceType = CORNER_IMAGE_ENTRANCE_ANIMATIONS.has(entranceAnimation.type) ? entranceAnimation.type : DEFAULT_CORNER_IMAGE_ENTRANCE_ANIMATION;
     return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
@@ -1752,6 +1781,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       darkModeImageURL: cornerImage.darkModeImageURL,
       reducedMotionImageURL: cornerImage.reducedMotionImageURL,
       darkModeReducedMotionImageURL: cornerImage.darkModeReducedMotionImageURL,
+      rtl: cornerImage.rtl,
       height: cornerImage.height,
       width: cornerImage.width,
       marginBlock: cornerImage.marginBlock,
@@ -1764,7 +1794,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
         "--corner-image-entrance-delay": entranceAnimation.delay,
         ...cornerImage.style
       },
-      className: `corner-image ${position} entrance-${entranceType}`
+      className: `corner-image ${position}${anchor === "screen" ? ` entrance-${entranceType}` : ""}`
     }));
   }
   renderLanguageSwitcher() {
@@ -1847,8 +1877,9 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
   }
   getEffectiveBackground(content) {
     if (content.position !== "split") {
-      const combinedBackground = content.background && content.zap_border ? `linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(${content.background}) padding-box` : content.background;
-      const combinedBackgroundStatic = content.background_static && content.zap_border ? `linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(${content.background_static}) padding-box` : content.background_static;
+      const gradient = content.zap_border_gradient || "linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%)";
+      const combinedBackground = content.background && content.zap_border ? `${gradient} border-box border-area, image(${content.background}) padding-box` : content.background;
+      const combinedBackgroundStatic = content.background_static && content.zap_border ? `${gradient} border-box border-area, image(${content.background_static}) padding-box` : content.background_static;
       return this.props.animationsPaused && content.background_static ? combinedBackgroundStatic : combinedBackground;
     }
     return this.props.animationsPaused && content.background_static ? content.background_static : content.background;
@@ -2019,7 +2050,14 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     } = this.props;
     const includeNoodles = content.has_noodles;
     const isCenterLargeFullscreen = content.position === "center-large" && !!content.fullscreen;
-    const includeCornerImage = !!content.corner_image && isCenterLargeFullscreen;
+    // Where the corner image is anchored, which decides where it gets rendered.
+    // The fullscreen FRO layout anchors to the window, so its container stays a
+    // child of .screen. Every other layout anchors to the card instead, which
+    // means rendering inside .section-main (the positioned card wrapper).
+    let cornerImageAnchor = null;
+    if (content.corner_image) {
+      cornerImageAnchor = isCenterLargeFullscreen ? "screen" : "card";
+    }
     const secondaryCTATop = content.secondary_button_top ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__.SecondaryCTA, {
       content: content,
       handleAction: this.props.handleAction,
@@ -2064,16 +2102,16 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
         this.mainContentHeader = input;
       },
       "no-rdm": content.no_rdm ? "" : null
-    }, includeCornerImage ? this.renderCornerImage() : null, isCenterPosition ? null : this.renderSecondarySection(content), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    }, cornerImageAnchor === "screen" ? this.renderCornerImage("screen") : null, isCenterPosition ? null : this.renderSecondarySection(content), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: `section-main ${isEmbeddedMigration ? "embedded-migration" : ""}${isSystemPromptStyleSpotlight ? "system-prompt-spotlight" : ""}`,
       "hide-secondary-section": content.hide_secondary_section ? String(content.hide_secondary_section) : null,
       role: "document",
       style: content.screen_style && _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.getValidStyle(content.screen_style, ["width", "padding", "height"])
-    }, isCenterLargeFullscreen ? null : secondaryCTATop, includeNoodles ? this.renderNoodles() : null, content.more_button ? this.renderMoreButton() : null, content.dismiss_button && !content.reverse_split ? this.renderDismissButton() : null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    }, cornerImageAnchor === "card" ? this.renderCornerImage("card") : null, isCenterLargeFullscreen ? null : secondaryCTATop, includeNoodles ? this.renderNoodles() : null, content.more_button ? this.renderMoreButton() : null, content.dismiss_button && !content.reverse_split ? this.renderDismissButton() : null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: `main-content ${hideStepsIndicator ? "no-steps" : ""}`,
       style: {
         background: isCenterPosition && !isCenterLargeFullscreen && this.getEffectiveBackground(content) ? this.getEffectiveBackground(content) : null,
-        width: content.width && content.position !== "split" ? content.width : null,
+        width: content.width && !["split", "card-stack"].includes(content.position) ? content.width : null,
         paddingBlock: content.split_content_padding_block ? content.split_content_padding_block : null,
         paddingInline: content.split_content_padding_inline ? content.split_content_padding_inline : null,
         justifyContent: screenStyleJustifyContent
@@ -2203,7 +2241,7 @@ const buttonPropTypes = prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___defa
 });
 const screenContentShape = {
   // The layout position of the screen.
-  position: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOf(["center", "center-large", "split", "callout"]),
+  position: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOf(["center", "center-large", "split", "callout", "card-stack"]),
   // If true, the screens are displayed in fullscreen.
   fullscreen: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().bool),
   // If true, the progress bar will be shown. Defaults to true.
@@ -2291,6 +2329,10 @@ const screenContentShape = {
   // 'absolute_position' or 'arrow_position'. There is no effect if HCM or a
   // custom theme add-on is enabled.
   zap_shadow: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().bool),
+  // If present, a custom gradient to use in conjuction with the
+  // 'background' and 'zap_border' properties. Only applied if
+  // both other properties are present.
+  zap_border_gradient: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
   // An optional object representing a large illustration to show above other
   // content.
   logo: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().shape({
@@ -2306,6 +2348,15 @@ const screenContentShape = {
     // Ignored (falls back to the image URLs above) for users who prefer reduced
     // motion.
     videoURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    // Right-to-left replacements for any of the URLs above, applied over them
+    // when the document is RTL. Omitted keys keep their base value.
+    rtl: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().shape({
+      imageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      darkModeImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      reducedMotionImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      darkModeReducedMotionImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      videoURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string)
+    }),
     // The <img> alt text.
     alt: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOfType([(prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string), (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().object)]),
     // The CSS style overriding the width property.
@@ -2314,8 +2365,8 @@ const screenContentShape = {
     height: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string)
   }),
   // An optional object representing an illustration anchored to a corner of the
-  // screen. Only rendered for screens with 'position' set to 'center-large' and
-  // 'fullscreen' set to true, which are the only ones that style it.
+  // screen. The fullscreen center-large layout anchors it to the window; every
+  // other layout anchors it to the card.
   corner_image: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().shape({
     // The image URL.
     imageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
@@ -2325,8 +2376,19 @@ const screenContentShape = {
     reducedMotionImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
     // The dark mode reduced motion image URL.
     darkModeReducedMotionImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    // Right-to-left replacements for any of the URLs above, applied over them
+    // when the document is RTL. Omitted keys keep their base value.
+    rtl: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().shape({
+      imageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      darkModeImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      reducedMotionImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      darkModeReducedMotionImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string)
+    }),
     // The corner the illustration is anchored to. Defaults to 'bottom-right'.
-    position: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOf(["bottom-left", "bottom-right", "top-left", "top-right"]),
+    // The -start/-end values are direction-relative and resolve against the
+    // text direction, so they mirror in RTL; the left/right values are always
+    // that physical corner.
+    position: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOf(["bottom-left", "bottom-right", "top-left", "top-right", "bottom-start", "bottom-end", "top-start", "top-end"]),
     // The CSS style overriding the width property.
     width: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
     // The CSS style overriding the height property.
@@ -5415,6 +5477,12 @@ const SingleSelect = ({
     }
     const selected = theme && theme === activeTheme || isSingleSelect && activeSingleSelectSelections[singleSelectId] === value;
     const valOrObj = val => typeof val === "object" ? val : {};
+    const iconStyle = _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_4__.MultiStageUtils.getValidStyle(icon, CONFIGURABLE_STYLES);
+    if (icon?.darkModeBackground) {
+      iconStyle["--single-select-icon-background"] = icon.background;
+      iconStyle["--single-select-icon-background-dark"] = icon.darkModeBackground;
+      delete iconStyle.background;
+    }
     const handleClick = evt => {
       if (isSingleSelect) {
         setActiveSingleSelectSelection(value, singleSelectId); // Update selection for the specific component
@@ -5432,7 +5500,7 @@ const SingleSelect = ({
       key: value + (isSingleSelect ? "" : label),
       text: valOrObj(tooltip)
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("label", {
-      className: `select-item ${type}`,
+      className: `select-item ${type} ${selected ? " selected" : ""}`,
       onKeyDown: e => handleKeyDown(e),
       style: {
         ..._lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_4__.MultiStageUtils.getValidStyle(style, CONFIGURABLE_STYLES),
@@ -5455,8 +5523,8 @@ const SingleSelect = ({
       disabled: inert,
       onClick: e => handleClick(e)
     })), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: `icon ${selected ? " selected" : ""} ${value}`,
-      style: _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_4__.MultiStageUtils.getValidStyle(icon, CONFIGURABLE_STYLES)
+      className: `icon ${icon?.darkModeBackground ? " has-dark-background" : ""} ${selected ? " selected" : ""} ${value}`,
+      style: iconStyle
     }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
       text: label
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
@@ -5511,7 +5579,6 @@ const TileButton = props => {
     let mockEvent = {
       currentTarget: ref.current,
       source: event.target.id,
-      name: "command",
       action: content.action
     };
     handleAction(mockEvent);
@@ -5554,15 +5621,17 @@ const TileList = props => {
   if (!content) {
     return null;
   }
-  const CONFIGURABLE_STYLES = ["background", "borderRadius", "height", "marginBlock", "marginBlockStart", "marginBlockEnd", "marginInline", "paddingBlock", "paddingBlockStart", "paddingBlockEnd", "paddingInline", "paddingInlineStart", "paddingInlineEnd", "width"];
+  const CONFIGURABLE_STYLES = ["background", "borderRadius", "color", "display", "height", "listStyle", "marginBlock", "marginBlockStart", "marginBlockEnd", "marginInline", "marginInlineStart", "paddingBlock", "paddingBlockStart", "paddingBlockEnd", "paddingInline", "paddingInlineStart", "paddingInlineEnd", "width"];
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "tile-list-container"
   }, content.items.map(({
     icon,
-    text
+    text,
+    style
   }, index) => /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     key: index,
-    className: "tile-list-item"
+    className: "tile-list-item",
+    style: _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_1__.MultiStageUtils.getValidStyle(style, CONFIGURABLE_STYLES)
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "tile-list-icon-wrapper"
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {

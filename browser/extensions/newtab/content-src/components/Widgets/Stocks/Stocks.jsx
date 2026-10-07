@@ -31,7 +31,7 @@ import { WidgetMenuFooter } from "../WidgetMenuFooter";
 import { SizeSubmenu } from "../SizeSubmenu";
 import { StockTicker } from "./StockTicker";
 import { StockSearch } from "./StockSearch";
-import { useStockSearch } from "./useStockSearch";
+import { focusOnceRendered, useStockSearch } from "./useStockSearch";
 import { StocksError } from "./StocksError";
 
 const STOCKS_ENTRY = WIDGET_REGISTRY.find(w => w.id === "stocks");
@@ -98,6 +98,9 @@ function Stocks({
   );
   const pendingWriteRef = useRef(null);
   const [announcement, setAnnouncement] = useState(null);
+  const [selectedList, setSelectedList] = useState(() =>
+    savedSymbols.length ? "watchlist" : "markets"
+  );
   // Index of the removed Watchlist row whose neighbour should receive focus next.
   const focusRemoveIndexRef = useRef(null);
   // Index of the added Markets row whose next add button should receive focus.
@@ -110,6 +113,8 @@ function Stocks({
     open: openSearch,
     close: closeSearch,
     submit: submitSearch,
+    searchButtonRef,
+    emptySearchButtonRef,
   } = useStockSearch({ dispatch, recordUserAction, menuButtonRef });
 
   useEffect(() => {
@@ -167,25 +172,23 @@ function Stocks({
     const reconciled = new Set(watchlistReconciledSymbols);
     return savedSymbols.every(s => reconciled.has(s));
   }, [savedSymbols, watchlistReconciledSymbols]);
-  // While the watchlist is loading, show a loading row for each saved symbol
-  // that hasn't resolved yet, or a few loading rows if none have resolved.
+  // A saved symbol the feed already looked up and found nothing for gets no
+  // placeholder, since nothing would ever fill it in.
   const watchlistPendingCount = useMemo(() => {
-    if (watchlistReady) {
-      return 0;
-    }
+    const reconciled = new Set(watchlistReconciledSymbols);
+    const pending = savedSymbols.filter(
+      s => !reconciled.has(s) && !bySymbol.has(s)
+    ).length;
     return matchedRows.length
-      ? Math.max(savedSymbols.length - matchedRows.length, 0)
-      : Math.min(savedSymbols.length, STOCKS_PLACEHOLDER_COUNT);
-  }, [watchlistReady, matchedRows.length, savedSymbols.length]);
+      ? pending
+      : Math.min(pending, STOCKS_PLACEHOLDER_COUNT);
+  }, [savedSymbols, watchlistReconciledSymbols, bySymbol, matchedRows.length]);
 
   const mediumWatchlistRows = matchedRows.slice(0, STOCKS_PLACEHOLDER_COUNT);
-  const mediumWatchlistPendingCount = watchlistReady
-    ? 0
-    : Math.max(
-        Math.min(STOCKS_PLACEHOLDER_COUNT, savedSymbols.length) -
-          mediumWatchlistRows.length,
-        0
-      );
+  const mediumWatchlistPendingCount = Math.min(
+    watchlistPendingCount,
+    STOCKS_PLACEHOLDER_COUNT - mediumWatchlistRows.length
+  );
 
   const handleToggleWatchlist = useCallback(
     (symbol, tickerName) => {
@@ -231,9 +234,6 @@ function Stocks({
   );
 
   // Switching lists counts as an interaction; reselecting the current list does not.
-  const [selectedList, setSelectedList] = useState(() =>
-    savedSymbols.length ? "watchlist" : "markets"
-  );
   const handleSelectList = useCallback(
     list => {
       if (list === selectedList) {
@@ -248,13 +248,13 @@ function Stocks({
   const selectedListL10nId = STOCKS_LISTS.find(
     l => l.id === selectedList
   ).l10nId;
-  // How many saved symbols the dropdown counts: all of them while the watchlist
-  // is loading, then only the ones that resolved once it has loaded.
-  const savedInFeed = watchlistReady ? matchedRows.length : savedSymbols.length;
   const atWatchlistLimit = savedSymbols.length >= MAX_STOCKS_WATCHLIST;
-  const showDropdown = widgetSize !== "small" && savedInFeed > 0;
-  const activeList =
-    showDropdown && selectedList === "watchlist" ? "watchlist" : "markets";
+  const showDropdown = widgetSize !== "small";
+  const activeList = showDropdown ? selectedList : "markets";
+  // Show the empty state instead of a bare list once nothing has resolved and
+  // nothing is still loading.
+  const showWatchlistEmpty =
+    activeList === "watchlist" && !matchedRows.length && !watchlistPendingCount;
 
   // Small size shows a single ticker.
   const chosenSymbol = savedSymbols.length
@@ -274,29 +274,20 @@ function Stocks({
       ? watchlistReady && !chosenRow
       : (!tickers.length && hasLoadedSnapshot) ||
         (!!chosenSymbol && !!tickers.length && !chosenRow));
-  // Suppress the default error only when a resolved watchlist row is on screen,
-  // so the watchlist still shows even if the default feed failed.
+  // Suppress the default error while the Watchlist shows rows or its empty
+  // state, so the watchlist still appears even if the default feed failed.
   const watchlistRowShown =
     (widgetSize === "small" && chosenIsSaved && !!chosenRow) ||
     (widgetSize !== "small" &&
       activeList === "watchlist" &&
-      !!matchedRows.length);
+      (!!matchedRows.length || showWatchlistEmpty));
   // Show the error box from one place so switching error states doesn't report it
   // to telemetry twice.
   const showAnyError = (showError && !watchlistRowShown) || smallError;
 
-  // Return to Markets when there's nothing to show (the watchlist emptied, or
-  // none of its symbols resolved) so the next add starts there with the
-  // confirmation animation. A size change with a non-empty watchlist keeps the
-  // selection.
-  useEffect(() => {
-    if (!savedInFeed && selectedList !== "markets") {
-      setSelectedList("markets");
-    }
-  }, [savedInFeed, selectedList]);
-
-  // After a removal re-renders the Watchlist, move focus to a neighbouring remove button,
-  // or to the widget menu button if the list collapsed back to Markets.
+  // After a removal re-renders the Watchlist, move focus to a neighbouring
+  // remove button, or, if none remain, to the empty state's Search button or
+  // the widget menu button.
   useLayoutEffect(() => {
     const index = focusRemoveIndexRef.current;
     if (index === null) {
@@ -309,12 +300,10 @@ function Stocks({
       index >= 0 && buttons.length
         ? buttons[Math.min(index, buttons.length - 1)]
         : null;
-    if (target) {
-      target.focus();
-    } else {
-      menuButtonRef.current?.focus();
-    }
-  }, [matchedRows]);
+    focusOnceRendered(
+      target ?? emptySearchButtonRef.current ?? menuButtonRef.current
+    );
+  }, [matchedRows, emptySearchButtonRef]);
 
   // After an add re-renders Markets, move focus to the next add button, or to the widget
   // menu button if none remain (e.g., the watchlist just reached its limit).
@@ -359,9 +348,9 @@ function Stocks({
     [dispatch, recordUserAction, handleInteraction]
   );
 
-  function handleSearchTickers() {
-    recordUserAction("search_tickers", { source: "context_menu" });
-    openSearch();
+  function handleSearchTickers(source, openerRef) {
+    recordUserAction("search_tickers", { source });
+    openSearch(openerRef);
     handleInteraction();
   }
 
@@ -398,6 +387,31 @@ function Stocks({
   }
 
   function renderWatchlist() {
+    if (showWatchlistEmpty) {
+      return (
+        <div className="stocks-watchlist-empty">
+          <img
+            className="stocks-watchlist-empty-image"
+            src="chrome://newtab/content/data/content/assets/kit-stocks-watchlist.svg"
+            alt=""
+          />
+          <p
+            className="stocks-watchlist-empty-text"
+            data-l10n-id="newtab-stocks-watchlist-empty"
+          />
+          <moz-button
+            ref={emptySearchButtonRef}
+            className="stocks-watchlist-empty-search"
+            type="primary"
+            iconSrc="chrome://global/skin/icons/search-glass.svg"
+            data-l10n-id="newtab-stocks-watchlist-empty-search"
+            onClick={() =>
+              handleSearchTickers("empty_state", emptySearchButtonRef)
+            }
+          />
+        </div>
+      );
+    }
     if (widgetSize === "medium") {
       return (
         <ul
@@ -427,6 +441,8 @@ function Stocks({
       <ul
         ref={watchlistRef}
         aria-busy={!watchlistReady}
+        aria-labelledby="stocks-widget-label"
+        tabIndex={0}
         className={`stocks-list stocks-list--watchlist${
           !matchedRows.length && !watchlistReady ? " stocks-list--loading" : ""
         }`}
@@ -501,7 +517,7 @@ function Stocks({
                 <>
                   <moz-button
                     className="stocks-list-button"
-                    type="ghost"
+                    type="default"
                     size="small"
                     iconSrc="chrome://global/skin/icons/arrow-down-12.svg"
                     iconPosition="end"
@@ -522,6 +538,17 @@ function Stocks({
                   </panel-list>
                 </>
               )}
+              {showDropdown && !showWatchlistEmpty && (
+                <moz-button
+                  ref={searchButtonRef}
+                  className="stocks-search-button"
+                  type="primary"
+                  size="small"
+                  iconSrc="chrome://global/skin/icons/search-glass.svg"
+                  data-l10n-id="newtab-stocks-search-button"
+                  onClick={() => handleSearchTickers("widget", searchButtonRef)}
+                />
+              )}
             </div>
             <div className="stocks-context-menu-wrapper">
               <moz-button
@@ -539,7 +566,9 @@ function Stocks({
               >
                 <panel-item
                   data-l10n-id="newtab-stocks-menu-search-stocks"
-                  onClick={handleSearchTickers}
+                  onClick={() =>
+                    handleSearchTickers("context_menu", menuButtonRef)
+                  }
                 />
                 <WidgetMenuFooter
                   dispatch={dispatch}

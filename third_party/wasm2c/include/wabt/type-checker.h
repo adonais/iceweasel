@@ -20,6 +20,7 @@
 #include <functional>
 #include <type_traits>
 #include <vector>
+#include <map>
 
 #include "wabt/common.h"
 #include "wabt/feature.h"
@@ -30,6 +31,18 @@ namespace wabt {
 class TypeChecker {
  public:
   using ErrorCallback = std::function<void(const char* msg)>;
+
+  struct FuncType {
+    FuncType() = default;
+    FuncType(const TypeVector& params,
+             const TypeVector& results,
+             Index type_index)
+        : params(params), results(results), type_index(type_index) {}
+
+    TypeVector params;
+    TypeVector results;
+    Index type_index;
+  };
 
   struct Label {
     Label(LabelType,
@@ -46,9 +59,11 @@ class TypeChecker {
     TypeVector result_types;
     size_t type_stack_limit;
     bool unreachable;
+    std::vector<bool> local_ref_is_set_;
   };
 
-  explicit TypeChecker(const Features& features) : features_(features) {}
+  explicit TypeChecker(const Features& features, std::map<Index, FuncType>& func_types)
+    : features_(features), func_types_(func_types) {}
 
   void set_error_callback(const ErrorCallback& error_callback) {
     error_callback_ = error_callback;
@@ -62,6 +77,10 @@ class TypeChecker {
   Result GetCatchCount(Index depth, Index* out_depth);
 
   Result BeginFunction(const TypeVector& sig);
+  Result OnUnary(Opcode);
+  Result OnBinary(Opcode);
+  Result OnQuaternary(Opcode);
+  Result OnTernary(Opcode);
   Result OnAtomicFence(uint32_t consistency_model);
   Result OnAtomicLoad(Opcode, const Limits& limits);
   Result OnAtomicNotify(Opcode, const Limits& limits);
@@ -69,10 +88,11 @@ class TypeChecker {
   Result OnAtomicRmw(Opcode, const Limits& limits);
   Result OnAtomicRmwCmpxchg(Opcode, const Limits& limits);
   Result OnAtomicWait(Opcode, const Limits& limits);
-  Result OnBinary(Opcode);
   Result OnBlock(const TypeVector& param_types, const TypeVector& result_types);
   Result OnBr(Index depth);
   Result OnBrIf(Index depth);
+  Result OnBrOnNonNull(Index depth);
+  Result OnBrOnNull(Index depth);
   Result BeginBrTable();
   Result OnBrTableTarget(Index depth);
   Result EndBrTable();
@@ -80,11 +100,17 @@ class TypeChecker {
   Result OnCallIndirect(const TypeVector& param_types,
                         const TypeVector& result_types,
                         const Limits& table_limits);
-  Result OnIndexedFuncRef(Index* out_index);
+  Result OnCallRef(Type type,
+                   const TypeVector& param_types,
+                   const TypeVector& result_types);
   Result OnReturnCall(const TypeVector& param_types,
                       const TypeVector& result_types);
   Result OnReturnCallIndirect(const TypeVector& param_types,
-                              const TypeVector& result_types);
+                              const TypeVector& result_types,
+                              const Limits& table_limits);
+  Result OnReturnCallRef(Type type,
+                         const TypeVector& param_types,
+                         const TypeVector& result_types);
   Result OnCatch(const TypeVector& sig);
   Result OnCompare(Opcode);
   Result OnConst(Type);
@@ -115,28 +141,33 @@ class TypeChecker {
   Result OnTableGrow(Type elem_type, const Limits& limits);
   Result OnTableSize(const Limits& limits);
   Result OnTableFill(Type elem_type, const Limits& limits);
-  Result OnRefFuncExpr(Index func_type, bool force_generic_funcref);
+  Result OnRefFuncExpr(Index func_type);
+  Result OnRefAsNonNullExpr();
   Result OnRefNullExpr(Type type);
   Result OnRefIsNullExpr();
   Result OnRethrow(Index depth);
   Result OnReturn();
   Result OnSelect(const TypeVector& result_types);
+  Result OnSelectCondition();
   Result OnSimdLaneOp(Opcode, uint64_t);
   Result OnSimdLoadLane(Opcode, const Limits& limits, uint64_t);
   Result OnSimdStoreLane(Opcode, const Limits& limits, uint64_t);
   Result OnSimdShuffleOp(Opcode, v128);
   Result OnStore(Opcode, const Limits& limits);
-  Result OnTernary(Opcode);
   Result OnThrow(const TypeVector& sig);
+  Result OnThrowRef();
   Result OnTry(const TypeVector& param_types, const TypeVector& result_types);
-  Result OnUnary(Opcode);
+  Result OnTryTableCatch(const TypeVector& sig, Index);
+  Result BeginTryTable(const TypeVector& param_types);
+  Result EndTryTable(const TypeVector& param_types,
+                     const TypeVector& result_types);
   Result OnUnreachable();
   Result EndFunction();
 
   Result BeginInitExpr(Type type);
   Result EndInitExpr();
 
-  static Result CheckType(Type actual, Type expected);
+  Result CheckType(Type actual, Type expected);
 
  private:
   void WABT_PRINTF_FORMAT(2, 3) PrintError(const char* fmt, ...);
@@ -146,7 +177,7 @@ class TypeChecker {
   void PushLabel(LabelType label_type,
                  const TypeVector& param_types,
                  const TypeVector& result_types);
-  Result PopLabel();
+  void PopLabel();
   Result CheckLabelType(Label* label, LabelType label_type);
   Result Check2LabelTypes(Label* label,
                           LabelType label_type1,
@@ -167,18 +198,31 @@ class TypeChecker {
   Result PopAndCheckCall(const TypeVector& param_types,
                          const TypeVector& result_types,
                          const char* desc);
+  Result PopAndCheckReturnCall(const TypeVector& result_types,
+                               const char* desc);
   Result PopAndCheck1Type(Type expected, const char* desc);
   Result PopAndCheck2Types(Type expected1, Type expected2, const char* desc);
   Result PopAndCheck3Types(Type expected1,
                            Type expected2,
                            Type expected3,
                            const char* desc);
+  Result PopAndCheck4Types(Type expected1,
+                           Type expected2,
+                           Type expected3,
+                           Type expected4,
+                           const char* desc);
+  Result PopAndCheckReference(Type* actual, const char* desc);
   Result CheckOpcode1(Opcode opcode, const Limits* limits = nullptr);
   Result CheckOpcode2(Opcode opcode, const Limits* limits = nullptr);
   Result CheckOpcode3(Opcode opcode,
                       const Limits* limits1 = nullptr,
                       const Limits* limits2 = nullptr,
                       const Limits* limits3 = nullptr);
+  Result CheckOpcode4(Opcode opcode,
+                      const Limits* limits1 = nullptr,
+                      const Limits* limits2 = nullptr,
+                      const Limits* limits3 = nullptr,
+                      const Limits* limits4 = nullptr);
   Result OnEnd(Label* label, const char* sig_desc, const char* end_desc);
 
   template <typename... Args>
@@ -205,6 +249,7 @@ class TypeChecker {
   // to represent "any".
   TypeVector* br_table_sig_ = nullptr;
   Features features_;
+  std::map<Index, FuncType>& func_types_;
 };
 
 }  // namespace wabt

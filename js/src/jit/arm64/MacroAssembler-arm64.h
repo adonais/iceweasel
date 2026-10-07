@@ -5,6 +5,10 @@
 #ifndef jit_arm64_MacroAssembler_arm64_h
 #define jit_arm64_MacroAssembler_arm64_h
 
+#include <tuple>
+#include <type_traits>
+#include <utility>
+
 #include "jit/arm64/Assembler-arm64.h"
 #include "jit/arm64/vixl/MacroAssembler-vixl.h"
 #include "jit/AtomicOp.h"
@@ -27,6 +31,9 @@ namespace jit {
 // Import VIXL operands directly into the jit namespace for shared code.
 using vixl::MemOperand;
 using vixl::Operand;
+
+using js::wasm::FaultingCodeRange;
+using js::wasm::FaultingCodeRangePair;
 
 struct ImmShiftedTag : public ImmWord {
   explicit ImmShiftedTag(JSValueType type)
@@ -205,6 +212,93 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     MOZ_ASSERT(f.isDouble() || f.isSingle(), "simd128 is not supported");
     // We pop the entire Dx register even when storing a Sx.
     vixl::MacroAssembler::Pop(ARMFPRegister(f, 64));
+  }
+
+  template <typename... Regs>
+  void pushRegs(const Regs&... regs) {
+    constexpr size_t N = sizeof...(Regs);
+    static_assert((std::is_convertible_v<Regs, Register> && ...));
+    static_assert(0 < N && N <= 4);
+
+#if defined(XP_DARWIN)
+    // Store-to-load forwarding is broken when either the store or the load is
+    // paired (STP and LDP) on some Apple Silicon. See also Bug 2073458 and
+    // <https://lemire.me/blog/2024/04/29/careful-with-pair-of-registers-instructions-on-apple-silicon/>.
+    // Thus, use N single stores, fusing the stack adjustment into the first
+    // access.
+
+    if (((static_cast<Register>(regs) == getStackPointer()) || ...)) {
+      (push(regs), ...);
+      return;
+    }
+
+    const vixl::Register& stackPointer = GetStackPointer64();
+
+    constexpr size_t RegSize = sizeof(intptr_t);
+    constexpr int32_t Bytes = N * RegSize;
+
+    // Mirrors vixl::MacroAssembler::PrepareForPush().
+    MOZ_ASSERT_IF(stackPointer.Is(vixl::sp), Bytes % 16 == 0);
+    if (!stackPointer.Is(vixl::sp)) {
+      BumpSystemStackPointer(Bytes);
+    }
+
+    const auto pack = std::forward_as_tuple(regs...);
+    // str regs[N-1], [SP, #-(8*N)]!
+    Str(ARMRegister(std::get<N - 1>(pack), 64),
+        MemOperand(stackPointer, -Bytes, vixl::PreIndex));
+    // str regs[N-2], [SP, #8]        ; I=0
+    // str regs[N-3], [SP, #16]       ; I=1
+    // ...
+    // str regs[0], [SP, #(8*(N-1))]  ; I=N-2
+    [&]<size_t... ISeq>(std::index_sequence<ISeq...>) {
+      (storePtr(std::get<N - 2 - ISeq>(pack),
+                Address(getStackPointer(), RegSize * (ISeq + 1))),
+       ...);
+    }(std::make_index_sequence<N - 1>{});
+#else
+    push(regs...);
+#endif
+  }
+
+  template <typename... Regs>
+  void popRegs(const Regs&... regs) {
+    constexpr size_t N = sizeof...(Regs);
+    static_assert((std::is_convertible_v<Regs, Register> && ...));
+    static_assert(0 < N && N <= 4);
+
+#if defined(XP_DARWIN)
+    // See pushRegs() above.
+
+    if (((static_cast<Register>(regs) == getStackPointer()) || ...)) {
+      (pop(regs), ...);
+      return;
+    }
+
+    const vixl::Register& stackPointer = GetStackPointer64();
+
+    constexpr size_t RegSize = sizeof(intptr_t);
+    constexpr int32_t Bytes = N * RegSize;
+
+    // Mirrors vixl::MacroAssembler::PrepareForPop().
+    MOZ_ASSERT_IF(stackPointer.Is(vixl::sp), Bytes % 16 == 0);
+
+    const auto pack = std::forward_as_tuple(regs...);
+    // ldr regs[N-1], [SP, #(8*(N-1))]  ; I=0
+    // ldr regs[N-2], [SP, #(8*(N-2))]  ; I=1
+    // ...
+    // ldr regs[1], [SP, #8]            ; I=N-2
+    [&]<size_t... ISeq>(std::index_sequence<ISeq...>) {
+      (loadPtr(Address(getStackPointer(), RegSize * (N - 1 - ISeq)),
+               std::get<N - 1 - ISeq>(pack)),
+       ...);
+    }(std::make_index_sequence<N - 1>{});
+    // ldr regs[0], [SP], #(8*N)
+    Ldr(ARMRegister(std::get<0>(pack), 64),
+        MemOperand(stackPointer, Bytes, vixl::PostIndex));
+#else
+    pop(regs...);
+#endif
   }
 
   // Update sp with the value of the current active stack pointer, if necessary.
@@ -2006,14 +2100,18 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   void profilerEnterFrame(Register framePtr, Register scratch);
   void profilerExitFrame();
 
-  void wasmLoadImpl(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                    Register ptr, AnyRegister outany, Register64 out64);
-  void wasmLoadImpl(const wasm::MemoryAccessDesc& access, MemOperand srcAddr,
-                    AnyRegister outany, Register64 out64);
-  void wasmStoreImpl(const wasm::MemoryAccessDesc& access, AnyRegister valany,
-                     Register64 val64, Register memoryBase, Register ptr);
-  void wasmStoreImpl(const wasm::MemoryAccessDesc& access, MemOperand destAddr,
-                     AnyRegister valany, Register64 val64);
+  FaultingCodeRange wasmLoadImpl(const wasm::MemoryAccessDesc& access,
+                                 Register memoryBase, Register ptr,
+                                 AnyRegister outany, Register64 out64);
+  FaultingCodeRange wasmLoadImpl(const wasm::MemoryAccessDesc& access,
+                                 MemOperand srcAddr, AnyRegister outany,
+                                 Register64 out64);
+  FaultingCodeRange wasmStoreImpl(const wasm::MemoryAccessDesc& access,
+                                  AnyRegister valany, Register64 val64,
+                                  Register memoryBase, Register ptr);
+  FaultingCodeRange wasmStoreImpl(const wasm::MemoryAccessDesc& access,
+                                  MemOperand destAddr, AnyRegister valany,
+                                  Register64 val64);
   // The complete address is in `address`, and `access` is used for its type
   // attributes only; its `offset` is ignored.
   void wasmLoadAbsolute(const wasm::MemoryAccessDesc& access,

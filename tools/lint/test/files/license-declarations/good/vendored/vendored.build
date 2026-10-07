@@ -1,0 +1,5 @@
+LICENSES += ["vendored-subcomponent"]
+LICENSES["vendored-subcomponent"].title = "Sub-Component License"
+LICENSES["vendored-subcomponent"].text = "LICENSE-NOTICE.txt"
+LICENSES["vendored-subcomponent"].spdx = "BSD-2-Clause"
+LICENSES["vendored-subcomponent"].subcomponent = True

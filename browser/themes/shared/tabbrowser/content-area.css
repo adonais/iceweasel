@@ -82,11 +82,12 @@
     }
   }
 
-  /* Splitter between split-view panels. The active panel's 2px focus outline
-   * extends into the splitter margin on the active panel's side, so we widen
-   * that side's margin to 3px (2px outline + 1px clear) and keep the other
-   * side at 1px. See the [splitview-selected-column] rules below for the
-   * asymmetric overrides. */
+  /* Splitter between split-view panels. The active panel's focus outline
+   * (--focus-outline-width minus the panel border already inside its box)
+   * extends 1px into the splitter margin on the active panel's side, so we
+   * widen that side's margin to 2px (1px outline + 1px clear) and keep the
+   * other side at 1px. See the [splitview-selected-column] rules below for
+   * the asymmetric overrides. */
   #tabbrowser-tabpanels[splitview] .split-view-splitter {
     background-color: transparent;
     border: none;
@@ -107,15 +108,15 @@
   }
 
   /* When column-0 is selected, its right outline extends into the splitter's
-   * inline-start margin: widen that side to 3px (2px outline + 1px clear). */
+   * inline-start margin: widen that side to 2px (1px outline + 1px clear). */
   :root[splitview-selected-column="0"] #tabbrowser-tabpanels[splitview] .split-view-splitter {
-    margin-inline-start: 3px;
+    margin-inline-start: 2px;
   }
 
   /* When column-1 is selected, its left outline extends into the splitter's
-   * inline-end margin: widen that side to 3px (2px outline + 1px clear). */
+   * inline-end margin: widen that side to 2px (1px outline + 1px clear). */
   :root[splitview-selected-column="1"] #tabbrowser-tabpanels[splitview] .split-view-splitter {
-    margin-inline-end: 3px;
+    margin-inline-end: 2px;
   }
 }
 
@@ -409,6 +410,13 @@
     /* Ensure any dialogs are clipped in an inactive/not-selected panel. */
     :root:not([inDOMFullscreen]) & > .split-view-panel:not(.deck-selected) {
       overflow: clip;
+
+      /* Match the .browserContainer's radius so its card box-shadow (added
+       * under nova) gets clipped along the same rounded shape instead of
+       * leaving unclipped shadow in the square corners of this ancestor. */
+      @media -moz-pref("browser.nova.enabled") {
+        border-radius: var(--border-radius-medium);
+      }
     }
 
     /* Ensure split view panels can display in fullscreen mode */
@@ -428,6 +436,8 @@
 
       & > .browserContainer {
         border-radius: 0;
+        border: none;
+        outline: none;
       }
     }
 
@@ -495,12 +505,17 @@
     border-radius: var(--border-radius-medium);
   }
 
-  /* Skip the outline on the active panel so its focus outline can sit flush
-   * against the content without a visible gap. We use outline not border to
-   * avoid changing the dimensions of the non-selected panel's content box. */
-  #tabbrowser-tabpanels[splitview] .split-view-panel:not(.deck-selected) > .browserContainer {
-    outline: var(--border-width) solid var(--chrome-content-separator-color);
-    outline-offset: calc(-1 * var(--border-width));
+  /* Maintain border around panels to avoid content box changing when activated */
+  #tabbrowser-tabpanels[splitview] .split-view-panel > .browserContainer {
+    border: var(--border-width) solid var(--chrome-content-separator-color);
+  }
+
+  /* Set active panel border color to match the focus outline, and reduce the
+   * outline width by the border width so the two combined still total
+   * --focus-outline-width, keeping the same expected ring size. */
+  #tabbrowser-tabpanels[splitview] .split-view-panel.deck-selected > .browserContainer {
+    border-color: var(--focus-outline-color);
+    outline-width: calc(var(--focus-outline-width) - var(--border-width));
   }
 
   /* In split view the notification box is inside the panel's browserContainer.
@@ -510,6 +525,13 @@
     border-block-start: none;
     border-block-end: var(--border-width) solid var(--chrome-content-separator-color);
     --info-bar-background-color: var(--toolbar-background-color);
+  }
+
+  /* Make sure the split-view-footer aligns with the true outer edge after
+   * factoring in the browserContainer's border width. */
+  #tabbrowser-tabpanels[splitview] .split-view-panel:not(.deck-selected) > .browserContainer split-view-footer {
+    inset-block-end: calc(-1 * var(--border-width));
+    inset-inline-end: calc(-1 * var(--border-width));
   }
 }
 
@@ -711,21 +733,26 @@ split-view-footer {
 #selection-shortcut-action-panel {
   --panel-subview-body-padding: 0;
 
+  /* panel-subview-body stacks its children, but the actions sit in a row. */
+  & > .panel-subview-body {
+    flex-direction: row;
+  }
+
   &[ime-hiding] {
     opacity: 0;
     pointer-events: none;
     -moz-window-shadow: none;
   }
-}
 
-#ai-action-button {
-  --button-min-height: 34px;
-  --button-size-icon: 34px;
-  --button-border-radius: 7px;
-  margin: 1px;
+  moz-button {
+    --button-min-height: 34px;
+    --button-size-icon: 34px;
+    --button-border-radius: 7px;
+    margin: 1px;
 
-  @media -moz-pref("browser.nova.enabled") {
-    --button-border-radius: var(--border-radius-xlarge);
+    @media -moz-pref("browser.nova.enabled") {
+      --button-border-radius: var(--border-radius-xlarge);
+    }
   }
 }
 
@@ -852,7 +879,7 @@ split-view-footer {
     margin-top: -5px;
 
     /* When the dialog is in a splitview, the offset is a little larger */
-    .deck-selected.split-view-panel & {
+    .split-view-panel & {
       margin-top: -8px;
     }
   }
@@ -929,6 +956,40 @@ split-view-footer {
 .dialogOverlay[topmost="true"],
 #window-modal-dialog::backdrop {
   background-color: var(--background-color-overlay);
+}
+
+@media -moz-pref("browser.nova.enabled") {
+  #tabbrowser-tabpanels > :not(.split-view-panel) .dialogOverlay[topmost="true"] {
+    border-radius: 0;
+  }
+
+  :root:not([inDOMFullscreen], [inFullscreen]) {
+    #tabbrowser-tabbox:is([sidebar-shown], [sidebar-panel-open]):not([sidebar-positionend])
+      #tabbrowser-tabpanels
+      > :not(.split-view-panel)
+      .dialogOverlay[topmost="true"] {
+      border-start-start-radius: calc(var(--border-radius-medium) - var(--border-width));
+    }
+
+    #tabbrowser-tabbox:is([sidebar-positionend]:is([sidebar-shown], [sidebar-panel-open]), [ai-window-open])
+      #tabbrowser-tabpanels
+      > :not(.split-view-panel)
+      .dialogOverlay[topmost="true"] {
+      border-start-end-radius: calc(var(--border-radius-medium) - var(--border-width));
+    }
+
+    #tabbrowser-tabpanels[splitview] .split-view-panel .dialogOverlay[topmost="true"] {
+      border-radius: calc(var(--border-radius-medium) - var(--border-width));
+    }
+
+    #tabbrowser-tabpanels[splitview] .split-view-panel.deck-selected .dialogOverlay[topmost="true"] {
+      border-radius: var(--border-radius-medium);
+    }
+  }
+
+  :root:is([inDOMFullscreen], [inFullscreen]) .dialogOverlay[topmost="true"] {
+    border-radius: 0;
+  }
 }
 
 .dialogOverlay[hideContent="true"][topmost="true"] {

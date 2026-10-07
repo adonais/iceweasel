@@ -55,6 +55,8 @@ class TypedEventHandler {
 
   ~TypedEventHandler() { ReleaseHandler(); }
 
+  void operator=(const TypedEventHandler&) = delete;
+
   HandlerType Type() const { return HandlerType(mBits & eTypeBits); }
 
   bool HasEventHandler() const { return !!Ptr(); }
@@ -117,8 +119,6 @@ class TypedEventHandler {
   }
 
  private:
-  void operator=(const TypedEventHandler&) = delete;
-
   void ReleaseHandler() {
     nsISupports* ptr = Ptr();
     NS_IF_RELEASE(ptr);

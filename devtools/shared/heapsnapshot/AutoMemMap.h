@@ -39,13 +39,13 @@ class MOZ_RAII AutoMemMap {
   PRFileMap* fileMap;
   void* addr;
 
-  AutoMemMap(const AutoMemMap& aOther) = delete;
-  void operator=(const AutoMemMap& aOther) = delete;
-
  public:
   explicit AutoMemMap()
       : fileSize(0), fd(nullptr), fileMap(nullptr), addr(nullptr) {};
   ~AutoMemMap();
+
+  AutoMemMap(const AutoMemMap& aOther) = delete;
+  void operator=(const AutoMemMap& aOther) = delete;
 
   // Initialize this AutoMemMap.
   nsresult init(nsIFile* file, int flags = PR_RDONLY, int mode = 0,

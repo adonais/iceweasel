@@ -25,8 +25,6 @@ namespace widget {
 
 class PlatformCompositorWidgetDelegate : public CompositorWidgetDelegate {
  public:
-  virtual void NotifyClientSizeChanged(
-      const LayoutDeviceIntSize& aClientSize) = 0;
   virtual void NotifyFullscreenChanged(bool aIsFullscreen) = 0;
   virtual GtkCompositorWidget* AsGtkCompositorWidget() { return nullptr; };
 

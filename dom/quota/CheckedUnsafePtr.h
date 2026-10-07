@@ -8,6 +8,7 @@
 #define mozilla_CheckedUnsafePtr_h
 
 #include <cstddef>
+#include <source_location>
 #include <type_traits>
 #include <utility>
 
@@ -20,28 +21,6 @@
 #include "nsContentUtils.h"
 #include "nsString.h"
 #include "nsTArray.h"
-
-#if defined __has_builtin
-#  if __has_builtin(__builtin_FUNCTION)
-#    define bt_function __builtin_FUNCTION()
-#  else
-#    define bt_function "__builtin_FUNCTION() is undefined"
-#  endif
-#  if __has_builtin(__builtin_FILE)
-#    define bt_file __builtin_FILE()
-#  else
-#    define bt_file "__builtin_FILE() is undefined"
-#  endif
-#  if __has_builtin(__builtin_LINE)
-#    define bt_line __builtin_LINE()
-#  else
-#    define bt_line -1
-#  endif
-#else
-#  define bt_function "__builtin_FUNCTION() is undefined"
-#  define bt_file "__builtin_FILE() is undefined"
-#  define bt_line -1
-#endif
 
 namespace mozilla {
 enum class CheckingSupport {
@@ -153,8 +132,10 @@ struct CheckedUnsafePtrCheckData {
 class CheckedUnsafePtrBaseCheckingEnabled {
   friend class CheckedUnsafePtrBaseAccess;
 
- protected:
+ public:
   CheckedUnsafePtrBaseCheckingEnabled() = delete;
+
+ protected:
   CheckedUnsafePtrBaseCheckingEnabled(
       const CheckedUnsafePtrBaseCheckingEnabled& aOther) = default;
   CheckedUnsafePtrBaseCheckingEnabled(const char* aFunction, const char* aFile,
@@ -171,7 +152,7 @@ class CheckedUnsafePtrBaseCheckingEnabled {
 
   template <typename Ptr>
   using DisableForCheckedUnsafePtr = std::enable_if_t<
-      !std::is_base_of<CheckedUnsafePtrBaseCheckingEnabled, Ptr>::value>;
+      !std::is_base_of_v<CheckedUnsafePtrBaseCheckingEnabled, Ptr>>;
 
   // When constructing an CheckedUnsafePtr from a different kind of pointer it's
   // not possible to determine whether it's dangling; therefore it's undefined
@@ -222,8 +203,7 @@ class CheckedUnsafePtrBase;
 
 template <typename T, typename U, typename S = std::nullptr_t>
 using EnableIfCompatible = std::enable_if_t<
-    std::is_base_of<
-        T, std::remove_reference_t<decltype(*std::declval<U>())>>::value,
+    std::is_base_of_v<T, std::remove_reference_t<decltype(*std::declval<U>())>>,
     S>;
 
 template <typename T>
@@ -231,9 +211,11 @@ class CheckedUnsafePtrBase<T, CheckingSupport::Enabled>
     : detail::CheckedUnsafePtrBaseCheckingEnabled {
  public:
   MOZ_IMPLICIT constexpr CheckedUnsafePtrBase(
-      const std::nullptr_t = nullptr, const char* aFunction = bt_function,
-      const char* aFile = bt_file, const int32_t aLine = bt_line)
-      : detail::CheckedUnsafePtrBaseCheckingEnabled(aFunction, aFile, aLine),
+      const std::nullptr_t = nullptr,
+      const std::source_location& aLoc = std::source_location::current())
+      : detail::CheckedUnsafePtrBaseCheckingEnabled(
+            aLoc.function_name(), aLoc.file_name(),
+            static_cast<int>(aLoc.line())),
         mRawPtr(nullptr) {
     if (StaticPrefs::dom_checkedUnsafePtr_dumpStacks_enabled()) {
       MozStackWalk(CheckedUnsafePtrStackCallback, CallerPC(), 0,
@@ -242,11 +224,12 @@ class CheckedUnsafePtrBase<T, CheckingSupport::Enabled>
   }
 
   template <typename U, typename = EnableIfCompatible<T, U>>
-  MOZ_IMPLICIT CheckedUnsafePtrBase(const U& aPtr,
-                                    const char* aFunction = bt_function,
-                                    const char* aFile = bt_file,
-                                    const int32_t aLine = bt_line)
-      : detail::CheckedUnsafePtrBaseCheckingEnabled(aFunction, aFile, aLine) {
+  MOZ_IMPLICIT CheckedUnsafePtrBase(
+      const U& aPtr,
+      const std::source_location& aLoc = std::source_location::current())
+      : detail::CheckedUnsafePtrBaseCheckingEnabled(
+            aLoc.function_name(), aLoc.file_name(),
+            static_cast<int>(aLoc.line())) {
     if (StaticPrefs::dom_checkedUnsafePtr_dumpStacks_enabled()) {
       MozStackWalk(CheckedUnsafePtrStackCallback, CallerPC(), 0,
                    &mCreationStack);
@@ -254,11 +237,12 @@ class CheckedUnsafePtrBase<T, CheckingSupport::Enabled>
     Set(aPtr);
   }
 
-  CheckedUnsafePtrBase(const CheckedUnsafePtrBase& aOther,
-                       const char* aFunction = bt_function,
-                       const char* aFile = bt_file,
-                       const int32_t aLine = bt_line)
-      : detail::CheckedUnsafePtrBaseCheckingEnabled(aFunction, aFile, aLine) {
+  CheckedUnsafePtrBase(
+      const CheckedUnsafePtrBase& aOther,
+      const std::source_location& aLoc = std::source_location::current())
+      : detail::CheckedUnsafePtrBaseCheckingEnabled(
+            aLoc.function_name(), aLoc.file_name(),
+            static_cast<int>(aLoc.line())) {
     if (StaticPrefs::dom_checkedUnsafePtr_dumpStacks_enabled()) {
       MozStackWalk(CheckedUnsafePtrStackCallback, CallerPC(), 0,
                    &mCreationStack);
@@ -407,7 +391,7 @@ class MOZ_EMPTY_BASES CheckCheckedUnsafePtrs
  protected:
   static constexpr bool ShouldCheck() {
     static_assert(
-        std::is_base_of<CheckCheckedUnsafePtrs, Derived>::value,
+        std::is_base_of_v<CheckCheckedUnsafePtrs, Derived>,
         "cannot instantiate with a type that's not a subclass of this class");
     return true;
   }
@@ -525,7 +509,7 @@ class MOZ_EMPTY_BASES SupportsCheckedUnsafePtr
 template <typename T>
 class CheckedUnsafePtr : public detail::CheckedUnsafePtrBase<T> {
   static_assert(
-      std::is_base_of<detail::SupportsCheckedUnsafePtrTag, T>::value,
+      std::is_base_of_v<detail::SupportsCheckedUnsafePtrTag, T>,
       "type T must be derived from instantiation of SupportsCheckedUnsafePtr");
 
  public:

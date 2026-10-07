@@ -9,7 +9,7 @@ function selectedTextEventPromises(stateChangeType, id) {
     waitForMacEventWithInfo("AXSelectedTextChanged", (elem, info) => {
       return (
         info.AXTextStateChangeType == stateChangeType &&
-        elem.getAttributeValue("AXDOMIdentifier") == "body"
+        elem.getAttributeValue("AXDOMIdentifier") == currentContentDoc()
       );
     }),
     waitForMacEventWithInfo("AXSelectedTextChanged", (elem, info) => {
@@ -183,7 +183,7 @@ addAccessibleTask(
   async (browser, accDoc) => {
     let evt = Promise.all([
       waitForMacEvent("AXFocusedUIElementChanged", "input"),
-      waitForMacEvent("AXSelectedTextChanged", "body"),
+      waitForMacEvent("AXSelectedTextChanged", currentContentDoc()),
       waitForMacEvent("AXSelectedTextChanged", "input"),
     ]);
     await SpecialPowers.spawn(browser, [], () => {

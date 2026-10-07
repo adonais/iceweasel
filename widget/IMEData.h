@@ -774,6 +774,7 @@ struct IMENotification final {
 
     bool mIsInitialized;
     bool mHasRange;
+    // FIXME: Use RangeDirection enum class.
     bool mReversed;
     bool mCausedByComposition;
     bool mCausedBySelectionEvent;

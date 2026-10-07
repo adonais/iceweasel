@@ -17,7 +17,6 @@ export const TileButton = props => {
     let mockEvent = {
       currentTarget: ref.current,
       source: event.target.id,
-      name: "command",
       action: content.action,
     };
     handleAction(mockEvent);

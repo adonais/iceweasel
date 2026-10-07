@@ -273,6 +273,48 @@ $glyph-forward: url('chrome://browser/skin/forward.svg');
   }
 }
 
+// In variant B the page draws the search bar's card itself, with the geometry
+// of the search bar's own card, so it can reach past the search bar and under
+// the logo and the widgets. Anchored to the search bar, it follows it once the
+// search sticks.
+.nova-outer-wrapper.search-has-own-row {
+  --search-card-overhang: #{$search-card-overhang};
+
+  moz-urlbar {
+    --urlbar-card-display: none;
+
+    anchor-name: --newtab-search-anchor;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    position-anchor: --newtab-search-anchor;
+    inset-block-start: calc(anchor(start) - (var(--space-small) + var(--size-item-xlarge) + var(--space-medium)));
+    inset-block-end: calc(anchor(end) - var(--space-xlarge));
+    inset-inline-start: calc(anchor(start) - var(--search-card-overhang));
+    inset-inline-end: calc(anchor(end) - var(--search-card-overhang));
+    border-radius: var(--border-radius-xlarge);
+    background-color: var(--newtab-background-card);
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  // Once the search sticks, the stuck backdrop is the card, and the button row
+  // above the input has scrolled out of the viewport.
+  @media (height > 700px) {
+    &.stuck-search {
+      .urlbar {
+        --urlbar-button-row-visibility: hidden;
+      }
+
+      &::after {
+        display: none;
+      }
+    }
+  }
+}
+
 @media (height > 700px) {
   .activity-stream .fixed-search {
     .search-wrapper {

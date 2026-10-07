@@ -125,6 +125,6 @@ export function showTabContextMenu(event, source) {
       },
     ];
 
-    showMenu(event, buildMenu(items));
+    showMenu(event, buildMenu(items), { accesskeyConflictsBug: 2073896 });
   };
 }

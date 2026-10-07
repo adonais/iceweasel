@@ -12,6 +12,8 @@ import "chrome://browser/content/aiwindow/components/smartwindow-promo.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/smartwindow-topsites.mjs";
 // eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/smartwindow-resume-section.mjs";
+// eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/kit-mention.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/smartwindow-history-menu.mjs";
@@ -138,7 +140,7 @@ ChromeUtils.defineLazyGetter(lazy, "log", function () {
  */
 
 /**
- * @typedef {"button" | "enter" | "follow-up" | "resume" | "retry" | "shortcuts" | "starter" | "suggestion"} ChatSubmitType
+ * @typedef {"button" | "enter" | "follow-up" | "menu" | "resume" | "retry" | "shortcuts" | "starter" | "suggestion"} ChatSubmitType
  */
 
 const MODE = {
@@ -171,6 +173,7 @@ const PREF_HIDE_TOP_SITES = "browser.smartwindow.hideTopSites";
 const PREF_TOPSITES_FEED_ENABLED =
   "browser.newtabpage.activity-stream.feeds.topsites";
 const PREF_AGENT_ENABLED = "browser.smartwindow.agent.enabled";
+const PREF_RESUME_CARDS = "browser.smartwindow.resumeCards.enabled";
 const MAX_INTERACTION_COUNT = 1000;
 const HISTORY_MENU_MAX_RECENT_CHATS = 6;
 
@@ -188,6 +191,8 @@ const MAX_TOP_SITES = 8;
 const MAX_PILL_COUNT = 6;
 // Show 3 undismissed candidates from the larger generated pool.
 const MAX_RESUME_PILLS_DISPLAYED = 3;
+// Show up to 4 cards from the generated pool.
+const MAX_RESUME_CARDS_DISPLAYED = 4;
 // TEMP: English-only workaround. Remove once resume headlines support
 // localization - see Bug 2066263.
 const RESUME_HEADLINE_PREFIX_RE = /^\s*pick\s+up\b[\s:;,.—-]*/iu;
@@ -244,6 +249,7 @@ export class AIWindow extends MozLitElement {
     availableModels: { type: Object, state: true },
     selectedModelId: { type: String, state: true },
     topSites: { type: Array, state: true },
+    resumeCards: { type: Array, state: true },
     startersResolved: { type: Boolean, state: true },
     recentChats: { type: Array, state: true },
   };
@@ -476,6 +482,13 @@ export class AIWindow extends MozLitElement {
       PREF_AGENT_ENABLED,
       false
     );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "resumeCardsPref",
+      PREF_RESUME_CARDS,
+      false,
+      () => this.requestUpdate()
+    );
     // TODO Bug 2053495: remove with mistral release pref
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
@@ -499,6 +512,7 @@ export class AIWindow extends MozLitElement {
     this.mode = this.#detectModeFromContext();
     this.showStarters = false;
     this.topSites = [];
+    this.resumeCards = [];
     this.startersResolved = false;
     this.recentChats = [];
     this.showFooter = this.mode === MODE.FULLPAGE;
@@ -1390,11 +1404,26 @@ export class AIWindow extends MozLitElement {
           starters = sidebarStarters;
         }
       } else if (resumeStartersPromise) {
-        const resumeStarters = this.#resumeActivitiesToStarterPrompts(
+        const resumeActivities = this.#filterResumeActivities(
           await resumeStartersPromise
-        ).slice(0, MAX_RESUME_PILLS_DISPLAYED);
+        );
 
-        if (selectedTab === this.#getCurrentTab()) {
+        if (abortController.signal.aborted) {
+          return;
+        }
+
+        // TODO Bug 2067871: this is already the permanent path; drop the
+        // pill fallback below once cards ship for real.
+        this.resumeCards = resumeActivities.slice(
+          0,
+          MAX_RESUME_CARDS_DISPLAYED
+        );
+
+        // The temporary pref replaces resume pills with cards.
+        if (!this.resumeCardsPref && selectedTab === this.#getCurrentTab()) {
+          const resumeStarters = this.#resumeActivitiesToStarterPrompts(
+            resumeActivities
+          ).slice(0, MAX_RESUME_PILLS_DISPLAYED);
           starters = [...resumeStarters, ...starters].slice(0, MAX_PILL_COUNT);
         }
       }
@@ -1409,27 +1438,24 @@ export class AIWindow extends MozLitElement {
     }
   }
 
-  #resumeActivitiesToStarterPrompts(resumeActivities) {
-    return resumeActivities.flatMap(({ memory, content }) => {
-      if (
-        !content.headline.trim() ||
-        lazy.isResumeActivityMemoryDismissed(memory.id)
-      ) {
-        return [];
-      }
+  #filterResumeActivities(resumeActivities) {
+    return resumeActivities.filter(
+      ({ memory, content }) =>
+        content.headline.trim() &&
+        !lazy.isResumeActivityMemoryDismissed(memory.id)
+    );
+  }
 
-      return [
-        {
-          text: content.headline,
-          type: "resume",
-          previewIcons: content.previewTabs.map(({ url }) => ({
-            iconSrc: `page-icon:${url}`,
-          })),
-          memory,
-          content,
-        },
-      ];
-    });
+  #resumeActivitiesToStarterPrompts(resumeActivities) {
+    return resumeActivities.map(({ memory, content }) => ({
+      text: content.headline,
+      type: "resume",
+      previewIcons: content.previewTabs.map(({ url }) => ({
+        iconSrc: `page-icon:${url}`,
+      })),
+      memory,
+      content,
+    }));
   }
 
   /**
@@ -1793,11 +1819,12 @@ export class AIWindow extends MozLitElement {
         })
       ) {
         // This command renders the monitor chat UI, so switch to the chat
-        // layout as if communication has started
-        if (
-          this.mode === MODE.FULLPAGE &&
-          !this.classList.contains("chat-active")
-        ) {
+        // layout as if communication has started. This must run in every mode
+        // (matching the regular chat path in #generatePrompt), not just
+        // fullpage: in the sidebar it is what applies chat-active and lets
+        // #updateBrowserTabbable put the chat browser hosting the card back in
+        // the tab order, so keyboard users can reach the task-creation form.
+        if (!this.classList.contains("chat-active")) {
           this.#initActiveChatlayout();
         }
         return;
@@ -2070,6 +2097,10 @@ export class AIWindow extends MozLitElement {
   async #generateResumeActivityConversation(resumePrompt) {
     const conversationAtClick = this.#conversation;
     let conversation = null;
+    // Only the memory-driven builder composes a bespoke system prompt that has
+    // to survive the request; the plain fallback leaves the system prompt to
+    // #fetchAIResponse, which builds it for the model it resolves.
+    let hasBespokeSystemPrompt = false;
     this.#isGeneratingResumeActivityConversation = true;
     try {
       if (this.#resumeActivityMemoriesEnabled) {
@@ -2081,6 +2112,7 @@ export class AIWindow extends MozLitElement {
             },
             conversationAtClick?.id
           );
+          hasBespokeSystemPrompt = !!conversation;
         } catch (e) {
           lazy.log.error(
             "[Prompts] Failed to create resume-activity conversation:",
@@ -2127,9 +2159,8 @@ export class AIWindow extends MozLitElement {
       resumePrompt.text.replace(RESUME_HEADLINE_PREFIX_RE, "").trim() ||
       resumePrompt.text.trim();
 
-    // The conversation was built with its own bespoke system prompt and its
-    // user turn already appended, so the request only needs real-time context
-    // injected before it goes out.
+    // The conversation was built with its user turn already appended, so the
+    // request only needs real-time context injected before it goes out.
     const userMessage = conversation.messages.at(-1);
     await conversation.injectRealTimeContext(userMessage, {});
     this.openConversation(conversation);
@@ -2137,7 +2168,7 @@ export class AIWindow extends MozLitElement {
       text: userMessage?.content?.body ?? resumePrompt.content.headline,
       submitType: "resume",
       skipPromptGeneration: true,
-      skipSystemPromptRefresh: true,
+      skipSystemPromptRefresh: hasBespokeSystemPrompt,
       assistantToolUIData: {
         uiType: "tab-group-confirmation",
         toolCallId: `resume-activity-${resumePrompt.memory.id}`,
@@ -2158,6 +2189,10 @@ export class AIWindow extends MozLitElement {
    * no memory content in the system prompt - used when memories are
    * toggled off, or as a fallback if the memory-driven builder fails.
    *
+   * The engine is left for #fetchAIResponse to build, so the system prompt
+   * loaded here is a placeholder that keeps the system message ahead of the
+   * user turn; #fetchAIResponse rewrites it for the model it resolves.
+   *
    * @param {object} resumePrompt
    * @param {string} [conversationId] - Id to reuse for the new conversation,
    *   so telemetry keeps the chat_id of the conversation the pill was clicked
@@ -2165,16 +2200,10 @@ export class AIWindow extends MozLitElement {
    * @returns {Promise<ChatConversation>}
    */
   async #buildPlainResumeConversation(resumePrompt, conversationId) {
-    const { engine, parameters } = await lazy.buildEngineForFeature(
-      lazy.MODEL_FEATURES.CHAT,
-      { flowId: null, modelChoiceIdOverride: this.#selectedModelChoiceId }
-    );
     const conversation = new lazy.ChatConversation({
       ...(conversationId ? { id: conversationId } : {}),
       title: resumePrompt.content.headline,
     });
-    conversation.engine = engine;
-    conversation.parameters = parameters;
     await conversation.loadSystemPrompt();
     conversation.addUserMessage(resumePrompt.content.headline);
     conversation.securityProperties.setPrivateData();
@@ -3520,12 +3549,16 @@ export class AIWindow extends MozLitElement {
     if (!this.showFooter) {
       return "";
     }
-    if (this.promoMessage) {
-      return html`<smartwindow-promo
-        .message=${this.promoMessage}
-      ></smartwindow-promo>`;
-    }
     return html`<smartwindow-footer></smartwindow-footer>`;
+  }
+
+  #promoTemplate() {
+    if (!this.promoMessage) {
+      return "";
+    }
+    return html`<smartwindow-promo
+      .message=${this.promoMessage}
+    ></smartwindow-promo>`;
   }
 
   render() {
@@ -3602,6 +3635,14 @@ export class AIWindow extends MozLitElement {
                     @SmartWindowTopSites:site-selected=${this
                       .#handleTopSiteSelected}
                   ></smartwindow-topsites>
+                `
+              : ""}
+            ${this.#promoTemplate()}
+            ${this.resumeCardsPref
+              ? html`
+                  <smartwindow-resume-section
+                    .cards=${this.resumeCards}
+                  ></smartwindow-resume-section>
                 `
               : ""}
           `}

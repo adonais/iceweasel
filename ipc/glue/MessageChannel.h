@@ -5,6 +5,7 @@
 #ifndef ipc_glue_MessageChannel_h
 #define ipc_glue_MessageChannel_h
 
+#include "ETWTools.h"
 #include "ipc/EnumSerializer.h"
 #include "mozilla/BaseProfilerMarkers.h"
 #include "mozilla/LinkedList.h"
@@ -770,10 +771,46 @@ struct ParamTraits<mozilla::ipc::ResponseRejectReason>
 
 namespace geckoprofiler::markers {
 
-struct IPCMarker {
-  static constexpr mozilla::Span<const char> MarkerTypeName() {
-    return mozilla::MakeStringSpan("IPC");
+struct IPCMarker : public mozilla::BaseMarkerType<IPCMarker> {
+  static constexpr const char* Name = "IPC";
+  static constexpr bool UseSpecialFrontendLocation = true;
+
+  using MS = mozilla::MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      // This payload still streams a startTime and endTime property because it
+      // made the migration to MarkerTiming on the front-end easier.
+      {"startTime", MS::InputType::TimeStamp, nullptr, MS::Format::Time},
+      {"endTime", MS::InputType::TimeStamp, nullptr, MS::Format::Time},
+      {"otherPid", MS::InputType::Int32, nullptr, MS::Format::Integer},
+      {"messageSeqno", MS::InputType::Int64, nullptr, MS::Format::Integer},
+      // These four are plain strings rather than unique strings, because
+      // profiler.firefox.com reads them straight off the raw payload when it
+      // correlates IPC markers, before it resolves any unique string.
+      {"messageType", MS::InputType::CString},
+      {"side", MS::InputType::CString},
+      {"direction", MS::InputType::CString},
+      {"phase", MS::InputType::CString},
+      {"sync", MS::InputType::Boolean},
+      {"threadId", MS::InputType::Int64, nullptr, MS::Format::Integer},
+  };
+
+  static void TranslateMarkerInputToSchema(
+      void* aContext, mozilla::TimeStamp aStart, mozilla::TimeStamp aEnd,
+      int32_t aOtherPid, IPC::Message::seqno_t aMessageSeqno,
+      IPC::Message::msgid_t aMessageType, mozilla::ipc::Side aSide,
+      mozilla::ipc::MessageDirection aDirection,
+      mozilla::ipc::MessagePhase aPhase, bool aSync,
+      mozilla::MarkerThreadId aOriginThreadId) {
+    ETW::OutputMarkerSchema(
+        aContext, IPCMarker{}, aStart, aEnd, aOtherPid,
+        static_cast<int64_t>(aMessageSeqno),
+        mozilla::ProfilerString8View::WrapNullTerminatedString(
+            IPC::StringFromIPCMessageType(aMessageType)),
+        IPCSideToString(aSide), IPCDirectionToString(aDirection),
+        IPCPhaseToString(aPhase), aSync,
+        static_cast<int64_t>(aOriginThreadId.ThreadId().ToNumber()));
   }
+
   static void StreamJSONMarkerData(
       mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
       mozilla::TimeStamp aStart, mozilla::TimeStamp aEnd, int32_t aOtherPid,
@@ -781,24 +818,12 @@ struct IPCMarker {
       mozilla::ipc::Side aSide, mozilla::ipc::MessageDirection aDirection,
       mozilla::ipc::MessagePhase aPhase, bool aSync,
       mozilla::MarkerThreadId aOriginThreadId) {
-    using namespace mozilla::ipc;
-    // This payload still streams a startTime and endTime property because it
-    // made the migration to MarkerTiming on the front-end easier.
-    aWriter.TimeProperty("startTime", aStart);
-    aWriter.TimeProperty("endTime", aEnd);
-
-    aWriter.IntProperty("otherPid", aOtherPid);
-    aWriter.IntProperty("messageSeqno", aMessageSeqno);
-    aWriter.StringProperty(
-        "messageType",
-        mozilla::MakeStringSpan(IPC::StringFromIPCMessageType(aMessageType)));
-    aWriter.StringProperty("side", IPCSideToString(aSide));
-    aWriter.StringProperty("direction",
-                           aDirection == MessageDirection::eSending
-                               ? mozilla::MakeStringSpan("sending")
-                               : mozilla::MakeStringSpan("receiving"));
-    aWriter.StringProperty("phase", IPCPhaseToString(aPhase));
-    aWriter.BoolProperty("sync", aSync);
+    StreamJSONMarkerDataImpl(
+        aWriter, aStart, aEnd, aOtherPid, static_cast<int64_t>(aMessageSeqno),
+        mozilla::ProfilerString8View::WrapNullTerminatedString(
+            IPC::StringFromIPCMessageType(aMessageType)),
+        IPCSideToString(aSide), IPCDirectionToString(aDirection),
+        IPCPhaseToString(aPhase), aSync);
     if (!aOriginThreadId.IsUnspecified()) {
       // Tech note: If `ToNumber()` returns a uint64_t, the conversion to
       // int64_t is "implementation-defined" before C++20. This is acceptable
@@ -809,37 +834,48 @@ struct IPCMarker {
           static_cast<int64_t>(aOriginThreadId.ThreadId().ToNumber()));
     }
   }
-  static mozilla::MarkerSchema MarkerTypeDisplay() {
-    return mozilla::MarkerSchema::SpecialFrontendLocation{};
-  }
 
  private:
-  static mozilla::Span<const char> IPCSideToString(mozilla::ipc::Side aSide) {
+  static mozilla::ProfilerString8View IPCSideToString(
+      mozilla::ipc::Side aSide) {
     switch (aSide) {
       case mozilla::ipc::ParentSide:
-        return mozilla::MakeStringSpan("parent");
+        return "parent";
       case mozilla::ipc::ChildSide:
-        return mozilla::MakeStringSpan("child");
+        return "child";
       case mozilla::ipc::UnknownSide:
-        return mozilla::MakeStringSpan("unknown");
+        return "unknown";
       default:
         MOZ_ASSERT_UNREACHABLE("Invalid IPC side");
-        return mozilla::MakeStringSpan("<invalid IPC side>");
+        return "<invalid IPC side>";
     }
   }
 
-  static mozilla::Span<const char> IPCPhaseToString(
+  static mozilla::ProfilerString8View IPCDirectionToString(
+      mozilla::ipc::MessageDirection aDirection) {
+    switch (aDirection) {
+      case mozilla::ipc::MessageDirection::eSending:
+        return "sending";
+      case mozilla::ipc::MessageDirection::eReceiving:
+        return "receiving";
+      default:
+        MOZ_ASSERT_UNREACHABLE("Invalid IPC direction");
+        return "<invalid IPC direction>";
+    }
+  }
+
+  static mozilla::ProfilerString8View IPCPhaseToString(
       mozilla::ipc::MessagePhase aPhase) {
     switch (aPhase) {
       case mozilla::ipc::MessagePhase::Endpoint:
-        return mozilla::MakeStringSpan("endpoint");
+        return "endpoint";
       case mozilla::ipc::MessagePhase::TransferStart:
-        return mozilla::MakeStringSpan("transferStart");
+        return "transferStart";
       case mozilla::ipc::MessagePhase::TransferEnd:
-        return mozilla::MakeStringSpan("transferEnd");
+        return "transferEnd";
       default:
         MOZ_ASSERT_UNREACHABLE("Invalid IPC phase");
-        return mozilla::MakeStringSpan("<invalid IPC phase>");
+        return "<invalid IPC phase>";
     }
   }
 };

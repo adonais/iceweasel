@@ -82,6 +82,23 @@ const JSClass* js::jit::InlinableNativeGuardToClass(InlinableNative native) {
   }
 }
 
+#define NATIVE_STRING_CASE(native) \
+  case InlinableNative::native:    \
+    return #native;
+
+const char* js::jit::InlinableNativeToString(InlinableNative native) {
+  switch (native) {
+    INLINABLE_NATIVE_LIST(NATIVE_STRING_CASE)
+
+    case InlinableNative::Limit:
+      break;
+  }
+
+  MOZ_CRASH("Unknown native");
+}
+
+#undef NATIVE_STRING_CASE
+
 // Returns true if |native| can be inlined cross-realm. Especially inlined
 // natives that can allocate objects or throw exceptions shouldn't be inlined
 // cross-realm without a careful analysis because we might use the wrong realm!
@@ -265,6 +282,30 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
     case InlinableNative::DateGetSeconds:
     case InlinableNative::DateNow:
     case InlinableNative::DateParse:
+    case InlinableNative::DurationYears:
+    case InlinableNative::DurationMonths:
+    case InlinableNative::DurationWeeks:
+    case InlinableNative::DurationDays:
+    case InlinableNative::DurationHours:
+    case InlinableNative::DurationMinutes:
+    case InlinableNative::DurationSeconds:
+    case InlinableNative::DurationMilliseconds:
+    case InlinableNative::DurationMicroseconds:
+    case InlinableNative::DurationNanoseconds:
+    case InlinableNative::PlainTimeHour:
+    case InlinableNative::PlainTimeMinute:
+    case InlinableNative::PlainTimeSecond:
+    case InlinableNative::PlainTimeMillisecond:
+    case InlinableNative::PlainTimeMicrosecond:
+    case InlinableNative::PlainTimeNanosecond:
+    case InlinableNative::PlainDateTimeHour:
+    case InlinableNative::PlainDateTimeMinute:
+    case InlinableNative::PlainDateTimeSecond:
+    case InlinableNative::PlainDateTimeMillisecond:
+    case InlinableNative::PlainDateTimeMicrosecond:
+    case InlinableNative::PlainDateTimeNanosecond:
+    case InlinableNative::InstantEpochMilliseconds:
+    case InlinableNative::ZonedDateTimeEpochMilliseconds:
     case InlinableNative::FunctionBind:
     case InlinableNative::MapConstructor:
     case InlinableNative::MapGet:

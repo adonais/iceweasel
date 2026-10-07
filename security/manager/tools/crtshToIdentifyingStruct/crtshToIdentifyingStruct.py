@@ -26,8 +26,6 @@ from cryptography.x509.oid import NameOID
 from pyasn1.codec.der import decoder, encoder
 from pyasn1_modules import pem, rfc5280
 
-assert sys.version_info >= (3, 2), "Requires Python 3.2 or later"
-
 
 def hex_string_for_struct(bytes):
     return [f"0x{x:02X}" for x in bytes]

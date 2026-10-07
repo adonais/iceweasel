@@ -1048,6 +1048,17 @@ static const struct EVInfo kEVInfos[] = {
     "MFoxCzAJBgNVBAYTAkpQMSYwJAYDVQQKEx1TRUNPTSBUcnVzdCBTeXN0ZW1zIENv"
     "LiwgTHRkLjEjMCEGA1UEAxMaU0VDT00gVExTIEVDQyBSb290IENBIDIwMjQ=",
     "AIF6LO+PI3pE",
+  },
+  {
+    // CN=SwissSign RSA TLS Root CA 2022 - 1,O=SwissSign AG,C=CH
+    "2.23.140.1.1",
+    "CA/Browser Forum EV OID",
+    { 0x19, 0x31, 0x44, 0xF4, 0x31, 0xE0, 0xFD, 0xDB, 0x74, 0x07, 0x17,
+      0xD4, 0xDE, 0x92, 0x6A, 0x57, 0x11, 0x33, 0x88, 0x4B, 0x43, 0x60,
+      0xD3, 0x0E, 0x27, 0x29, 0x13, 0xCB, 0xE6, 0x60, 0xCE, 0x41 },
+    "MFExCzAJBgNVBAYTAkNIMRUwEwYDVQQKEwxTd2lzc1NpZ24gQUcxKzApBgNVBAMT"
+    "IlN3aXNzU2lnbiBSU0EgVExTIFJvb3QgQ0EgMjAyMiAtIDE=",
+    "Q/oMX04bgBhE79G0TzUfRPSA7cs=",
   }
     // clang-format on
 };

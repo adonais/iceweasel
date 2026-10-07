@@ -14,6 +14,10 @@ namespace JS {
 /**
  * Set a private value associated with a script. Note that this value is shared
  * by all nested scripts compiled from a single source file.
+ *
+ * The value must not be a module object: the referrer passed to the
+ * HostLoadImportedModule hook is either a module record or a classic script's
+ * private value, and JS::GetReferrerPrivate distinguishes the two by type.
  */
 extern JS_PUBLIC_API void SetScriptPrivate(JSScript* script,
                                            const JS::Value& value);

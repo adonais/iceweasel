@@ -1331,7 +1331,7 @@ class EditorDOMPointBase final {
 
   /**
    * This operator should be used if API of other modules take RawRangeBoundary,
-   * e.g., methods of Selection and nsRange.
+   * e.g., methods of Selection and dom::Range.
    */
   operator const RawRangeBoundary() const { return ToRawRangeBoundary(); }
   const RawRangeBoundary ToRawRangeBoundary() const {
@@ -1375,9 +1375,9 @@ class EditorDOMPointBase final {
     return RawRangeBoundary::EndOfParent(*mParent);
   }
 
-  already_AddRefed<nsRange> CreateCollapsedRange(ErrorResult& aRv) const {
+  already_AddRefed<dom::Range> CreateCollapsedRange(ErrorResult& aRv) const {
     const RawRangeBoundary boundary = ToRawRangeBoundary();
-    RefPtr<nsRange> range = nsRange::Create(boundary, boundary, aRv);
+    RefPtr<dom::Range> range = dom::Range::Create(boundary, boundary, aRv);
     if (MOZ_UNLIKELY(aRv.Failed() || !range)) {
       return nullptr;
     }
@@ -1807,15 +1807,15 @@ class EditorDOMRangeBase final {
     return true;
   }
 
-  already_AddRefed<nsRange> CreateRange(ErrorResult& aRv) const {
-    RefPtr<nsRange> range = nsRange::Create(mStart.ToRawRangeBoundary(),
-                                            mEnd.ToRawRangeBoundary(), aRv);
+  already_AddRefed<dom::Range> CreateRange(ErrorResult& aRv) const {
+    RefPtr<dom::Range> range = dom::Range::Create(
+        mStart.ToRawRangeBoundary(), mEnd.ToRawRangeBoundary(), aRv);
     if (MOZ_UNLIKELY(aRv.Failed() || !range)) {
       return nullptr;
     }
     return range.forget();
   }
-  nsresult SetToRange(nsRange& aRange) const {
+  nsresult SetToRange(dom::Range& aRange) const {
     return aRange.SetStartAndEnd(mStart.ToRawRangeBoundary(),
                                  mEnd.ToRawRangeBoundary());
   }

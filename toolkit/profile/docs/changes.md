@@ -1,5 +1,7 @@
 # Profiles Service Changes
 
+(consistent-profiles-ini)=
+
 ## Consistent profiles.ini
 
 Prior to Gecko 67 the Toolkit Profile Service loaded data from `profiles.ini` into a custom

@@ -35,12 +35,12 @@
 #include "gfxFontFeatures.h"      // for gfxFontFeature
 #include "gfxFontSrcPrincipal.h"  // for gfxFontSrcPrincipal
 #include "gfxFontSrcURI.h"        // for gfxFontSrcURI
+#include "gfxFontVariations.h"    // for gfxFontVariation
 #include "mozilla/Assertions.h"  // for AssertionConditionType, MOZ_ASSERT_HELPER2, MOZ_ASSERT, MOZ_ASSERT_UNREACHABLE, MOZ_ASSER...
-#include "mozilla/HashFunctions.h"      // for HashBytes, HashGeneric
-#include "mozilla/TimeStamp.h"          // for TimeStamp
-#include "mozilla/gfx/FontVariation.h"  // for FontVariation
-#include "nsDebug.h"                    // for NS_WARNING
-#include "nsIReferrerInfo.h"            // for nsIReferrerInfo
+#include "mozilla/HashFunctions.h"  // for HashBytes, HashGeneric
+#include "mozilla/TimeStamp.h"      // for TimeStamp
+#include "nsDebug.h"                // for NS_WARNING
+#include "nsIReferrerInfo.h"        // for nsIReferrerInfo
 
 class gfxFont;
 class gfxUserFontSet;
@@ -474,10 +474,10 @@ class gfxUserFontSet {
       }
 
       static uint32_t HashVariations(
-          const nsTArray<mozilla::gfx::FontVariation>& aVariations) {
+          const nsTArray<gfxFontVariation>& aVariations) {
         return mozilla::HashBytes(
             aVariations.Elements(),
-            aVariations.Length() * sizeof(mozilla::gfx::FontVariation));
+            aVariations.Length() * sizeof(gfxFontVariation));
       }
 
       RefPtr<gfxFontSrcURI> mURI;

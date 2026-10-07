@@ -19,7 +19,7 @@ namespace loader {
 
 class OutputBuffer {
  public:
-  OutputBuffer() {}
+  OutputBuffer() = default;
 
   uint8_t* write(size_t size) {
     auto buf = data.AppendElements(size);

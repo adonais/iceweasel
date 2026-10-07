@@ -131,6 +131,10 @@ class TransportLayerDtls final : public TransportLayer {
 
   bool HasFingerprintError() const { return mHasFingerprintError; }
 
+  // True when our error state was caused by DTLS sending or receiving a
+  // DTLS alert, see https://www.rfc-editor.org/info/rfc9846/#section-6.2
+  bool HasDtlsFailureError() const { return mHasDtlsFailureError; }
+
   const std::string& GetErrorDescription() const { return mErrorDescription; }
 
  protected:
@@ -212,6 +216,7 @@ class TransportLayerDtls final : public TransportLayer {
   Maybe<SSLAlertDescription> mReceivedAlert;
   std::string mErrorDescription;
   bool mHasFingerprintError = false;
+  bool mHasDtlsFailureError = false;
 };
 
 }  // namespace mozilla

@@ -37,7 +37,6 @@
 
 using namespace wabt;
 
-static int s_verbose;
 static std::string s_infile;
 static std::string s_outfile;
 static unsigned int s_num_outputs = 1;
@@ -58,9 +57,12 @@ examples:
 )";
 
 static const std::string supported_features[] = {
-    "multi-memory", "multi-value", "sign-extension", "saturating-float-to-int",
-    "exceptions",   "memory64",    "extended-const", "simd",
-    "threads",      "tail-call"};
+    "multi-memory",      "multi-value",
+    "sign-extension",    "saturating-float-to-int",
+    "exceptions",        "memory64",
+    "extended-const",    "simd",
+    "threads",           "tail-call",
+    "custom-page-sizes", "compact-imports"};
 
 static bool IsFeatureSupported(const std::string& feature) {
   return std::find(std::begin(supported_features), std::end(supported_features),
@@ -70,10 +72,8 @@ static bool IsFeatureSupported(const std::string& feature) {
 static void ParseOptions(int argc, char** argv) {
   OptionParser parser("wasm2c", s_description);
 
-  parser.AddOption('v', "verbose", "Use multiple times for more info", []() {
-    s_verbose++;
-    s_log_stream = FileStream::CreateStderr();
-  });
+  parser.AddOption('v', "verbose", "Use multiple times for more info",
+                   []() { s_log_stream = FileStream::CreateStderr(); });
   parser.AddOption(
       'o', "output", "FILENAME",
       "Output file for the generated C source file, by default use stdout",
@@ -87,7 +87,7 @@ static void ParseOptions(int argc, char** argv) {
   parser.AddOption(
       'n', "module-name", "MODNAME",
       "Unique name for the module being generated. This name is prefixed to\n"
-      "each of the generaed C symbols. By default, the module name from the\n"
+      "each of the generated C symbols. By default, the module name from the\n"
       "names section is used. If that is not present the name of the input\n"
       "file is used as the default.\n",
       [](const char* argument) { s_write_c_options.module_name = argument; });
@@ -132,13 +132,13 @@ Result Wasm2cMain(Errors& errors) {
   ReadBinaryOptions options(s_write_c_options.features, s_log_stream.get(),
                             s_read_debug_names, kStopOnFirstError,
                             kFailOnCustomSectionError);
-  CHECK_RESULT(ReadBinaryIr(s_infile.c_str(), file_data.data(),
-                            file_data.size(), options, &errors, &module));
+  CHECK_RESULT(
+      ReadBinaryIr(s_infile.c_str(), file_data, options, &errors, &module));
   CHECK_RESULT(ValidateModule(&module, &errors, s_write_c_options.features));
   CHECK_RESULT(GenerateNames(&module));
   /* TODO(binji): This shouldn't fail; if a name can't be applied
    * (because the index is invalid, say) it should just be skipped. */
-  ApplyNames(&module);
+  (void)ApplyNames(&module);
 
   if (!s_outfile.empty()) {
     std::string header_name_full =

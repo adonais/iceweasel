@@ -209,9 +209,11 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
   };
   ContextInfo GetContextInfo();
 
-  bool CreateActor(const ContextInfo& aInfo);
-  void LoadImageAndShow(Promise* aPromise, ContextInfo&& aInfo);
-  void SendShow(Promise* aPromise, Maybe<IPCImage>&& aIcon);
+  WeakPtr<notification::NotificationChild> CreateActor(
+      const ContextInfo& aInfo);
+  void LoadImageAndShow(NotNull<Promise*> aPromise, ContextInfo&& aInfo);
+  void SendShow(NotNull<Promise*> aPromise, Maybe<IPCImage>&& aIcon,
+                ContextInfo&& aInfo);
 
   // Resolve possibly-relative URL either for icon or navigate.
   static already_AddRefed<nsIURI> ResolveURL(nsIGlobalObject* aGlobal,

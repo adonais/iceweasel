@@ -21,6 +21,7 @@
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/RestyleManager.h"
+#include "mozilla/ScrollState.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TouchEvents.h"
@@ -60,7 +61,7 @@
 #include "nsString.h"
 #include "nsXULElement.h"
 #ifdef DEBUG
-#  include "nsRange.h"
+#  include "mozilla/dom/Range.h"
 #endif
 
 #include "ChildIterator.h"
@@ -796,6 +797,10 @@ size_t FragmentOrElement::nsExtendedDOMSlots::SizeOfExcludingThis(
     n += aMallocSizeOf(mControllers);
   }
 
+  if (mSavedScrollState) {
+    n += aMallocSizeOf(mSavedScrollState.get());
+  }
+
   if (mLabelsList) {
     n += mLabelsList->SizeOfIncludingThis(aMallocSizeOf);
   }
@@ -1435,7 +1440,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FragmentOrElement)
     if (MOZ_UNLIKELY(element->HasFlag(ELEMENT_HAS_EDIT_CONTEXT))) {
       element->ClearEditContext();
     }
-    Element::UnlinkCustomElementRegistry(element);
+    CustomElementRegistry::RemoveScopedRegistry(*element);
   }
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END

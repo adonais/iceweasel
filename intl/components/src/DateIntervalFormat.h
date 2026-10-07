@@ -47,6 +47,10 @@ class DateIntervalFormat final {
 
   ~DateIntervalFormat();
 
+  DateIntervalFormat() = delete;
+  DateIntervalFormat(const DateIntervalFormat&) = delete;
+  DateIntervalFormat& operator=(const DateIntervalFormat&) = delete;
+
   /**
    * Format a date-time range between two Calendar objects.
    *
@@ -109,11 +113,8 @@ class DateIntervalFormat final {
                                 DateTimePartVector& aParts) const;
 
  private:
-  DateIntervalFormat() = delete;
   explicit DateIntervalFormat(UDateIntervalFormat* aDif)
       : mDateIntervalFormat(aDif) {}
-  DateIntervalFormat(const DateIntervalFormat&) = delete;
-  DateIntervalFormat& operator=(const DateIntervalFormat&) = delete;
 
   ICUPointer<UDateIntervalFormat> mDateIntervalFormat =
       ICUPointer<UDateIntervalFormat>(nullptr);

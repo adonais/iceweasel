@@ -669,6 +669,16 @@ uint32_t HTMLSelectElement::CountRenderedRows() {
   return count;
 }
 
+void HTMLSelectElement::GetListItems(HTMLOptGroupElement* aGroup,
+                                     nsTArray<RefPtr<Element>>& aResult) {
+  if (aGroup && !IsOptionListItem(*aGroup, *this)) {
+    return;
+  }
+  nsINode& root = aGroup ? static_cast<nsINode&>(*aGroup) : *this;
+  ForEachOptionListItem(root,
+                        [&](Element& aItem) { aResult.AppendElement(&aItem); });
+}
+
 HTMLOptionElement* HTMLSelectElement::GetSelectedOption(
     IgnoredOptionList aIgnored) const {
   uint32_t len = Length();
@@ -682,6 +692,7 @@ HTMLOptionElement* HTMLSelectElement::GetSelectedOption(
 }
 
 int32_t HTMLSelectElement::SelectedIndex() const {
+  nsAutoScriptBlocker scriptBlocker;
   uint32_t len = Length();
   for (uint32_t i = 0; i < len; ++i) {
     if (Item(i)->Selected()) {
@@ -692,6 +703,7 @@ int32_t HTMLSelectElement::SelectedIndex() const {
 }
 
 void HTMLSelectElement::SetSelectedIndex(int32_t aIdx) {
+  nsAutoScriptBlocker scriptBlocker;
   SetSelectedIndexInternal(aIdx, true);
   // https://html.spec.whatwg.org/#dom-select-selectedindex
   // Step 4: Run update a select's descendant selectedcontent elements.
@@ -805,6 +817,8 @@ void HTMLSelectElement::OnOptionSelected(int32_t aIndex, bool aSelected,
 bool HTMLSelectElement::SetOptionsSelectedByIndex(int32_t aStartIndex,
                                                   int32_t aEndIndex,
                                                   OptionFlags aOptionsMask) {
+  MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript(),
+             "Callers must hold a script blocker");
 #if 0
   printf("SetOption(%d-%d, %c, ClearAll=%c)\n", aStartIndex, aEndIndex,
                                       (aOptionsMask.contains(OptionFlag::IsSelected) ? 'Y' : 'N'),
@@ -972,6 +986,7 @@ void HTMLSelectElement::GetValue(nsAString& aValue) const {
 
 // https://html.spec.whatwg.org/#dom-select-value
 void HTMLSelectElement::SetValue(const nsAString& aValue) {
+  nsAutoScriptBlocker scriptBlocker;
   uint32_t length = Length();
   int32_t matchIndex = -1;
   for (uint32_t i = 0; i < length; i++) {
@@ -1387,31 +1402,34 @@ void HTMLSelectElement::RestoreStateTo(const SelectContentData& aNewSelected) {
 
 NS_IMETHODIMP
 HTMLSelectElement::Reset() {
-  //
-  // Cycle through the options array and reset the options
-  //
-  uint32_t numOptions = Length();
+  {
+    nsAutoScriptBlocker scriptBlocker;
+    //
+    // Cycle through the options array and reset the options
+    //
+    uint32_t numOptions = Length();
 
-  for (uint32_t i = 0; i < numOptions; i++) {
-    RefPtr<HTMLOptionElement> option = Item(i);
-    if (option) {
-      //
-      // Reset the option to its default value
-      //
+    for (uint32_t i = 0; i < numOptions; i++) {
+      RefPtr<HTMLOptionElement> option = Item(i);
+      if (option) {
+        //
+        // Reset the option to its default value
+        //
 
-      OptionFlags mask = {OptionFlag::SetDisabled, OptionFlag::Notify,
-                          OptionFlag::NoReselect};
-      if (option->DefaultSelected()) {
-        mask += OptionFlag::IsSelected;
+        OptionFlags mask = {OptionFlag::SetDisabled, OptionFlag::Notify,
+                            OptionFlag::NoReselect};
+        if (option->DefaultSelected()) {
+          mask += OptionFlag::IsSelected;
+        }
+
+        SetOptionsSelectedByIndex(i, i, mask);
+        option->SetSelectedChanged(false);
       }
-
-      SetOptionsSelectedByIndex(i, i, mask);
-      option->SetSelectedChanged(false);
     }
-  }
 
-  // https://html.spec.whatwg.org/#concept-form-reset-control step 3
-  RunSelectednessSettingAlgorithm();
+    // https://html.spec.whatwg.org/#concept-form-reset-control step 3
+    RunSelectednessSettingAlgorithm();
+  }
 
   OnSelectionChanged();
   SetUserInteracted(false);
@@ -2103,6 +2121,7 @@ void HTMLSelectElement::RemoveOptionFromListBoxSelection(
 
 bool HTMLSelectElement::ExtendedSelection(int32_t aStartIndex,
                                           int32_t aEndIndex, bool aClearAll) {
+  nsAutoScriptBlocker scriptBlocker;
   OptionFlags mask = OptionFlag::Notify;
   mask += OptionFlag::IsSelected;
   if (aClearAll) {
@@ -2112,6 +2131,7 @@ bool HTMLSelectElement::ExtendedSelection(int32_t aStartIndex,
 }
 
 bool HTMLSelectElement::ToggleOptionSelected(int32_t aIndex) {
+  nsAutoScriptBlocker scriptBlocker;
   RefPtr<HTMLOptionElement> option = Item(static_cast<uint32_t>(aIndex));
   NS_ENSURE_TRUE(option, false);
 
@@ -2527,15 +2547,18 @@ nsresult HTMLSelectElement::HandleKeyPress(EventChainPostVisitor& aVisitor) {
                     });
     if (isSelectAll) {
       using OptionFlag = HTMLSelectElement::OptionFlag;
-      uint32_t numOptions = Length();
-      if (numOptions) {
-        HTMLSelectElement::OptionFlags mask = {
-            OptionFlag::IsSelected, OptionFlag::ClearAll, OptionFlag::Notify};
-        const bool wasChanged = SetOptionsSelectedByIndex(
-            0, AssertedCast<int32_t>(numOptions - 1), mask);
-        if (wasChanged) {
-          UserFinishedInteracting(/* aChanged = */ true);
+      bool wasChanged = false;
+      {
+        nsAutoScriptBlocker scriptBlocker;
+        if (uint32_t numOptions = Length()) {
+          HTMLSelectElement::OptionFlags mask = {
+              OptionFlag::IsSelected, OptionFlag::ClearAll, OptionFlag::Notify};
+          wasChanged = SetOptionsSelectedByIndex(
+              0, AssertedCast<int32_t>(numOptions - 1), mask);
         }
+      }
+      if (wasChanged) {
+        UserFinishedInteracting(/* aChanged = */ true);
       }
       aVisitor.mEvent->PreventDefault();
     }

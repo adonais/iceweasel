@@ -5,6 +5,7 @@
 import os
 import shutil
 import sys
+import tempfile
 from datetime import date, timedelta
 from pathlib import Path
 from subprocess import CalledProcessError
@@ -333,6 +334,28 @@ def test_build_test_list():
         assert any(http_filename in Path(f).name for f in files)
     finally:
         shutil.rmtree(tmp_dir)
+
+
+def test_build_test_list_on_try_mapping():
+    # A source directory can hold tests of several mochitest flavors, which
+    # land in different subdirectories of the test package.
+    with tempfile.TemporaryDirectory() as tmp:
+        packaged = Path(
+            tmp, "mochitest", "browser", "dom", "media", "test", "browser_perf.js"
+        )
+        packaged.parent.mkdir(parents=True)
+        packaged.touch()
+
+        cwd = os.getcwd()
+        os.chdir(tmp)
+        try:
+            with mock.patch("mozperftest.utils.ON_TRY", True):
+                files, tmp_dir = build_test_list(["dom/media/test/browser_perf.js"])
+        finally:
+            os.chdir(cwd)
+
+        assert tmp_dir is None
+        assert files == [str(packaged.resolve())]
 
 
 def test_convert_day():

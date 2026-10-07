@@ -116,6 +116,23 @@ add_task(async function test_meta_schema_catches_violations() {
         examples: ["example"],
         "x-restart-required": true,
       },
+      EmptyNotes: {
+        description,
+        "x-category": "Miscellaneous",
+        "x-compatibility": {
+          ...compat,
+          firefox: { version_added: "60", notes: "" },
+        },
+        examples: ["example"],
+        "x-restart-required": true,
+      },
+      EmptyNotesArray: {
+        description,
+        "x-category": "Miscellaneous",
+        "x-compatibility": { ...compat, notes: [] },
+        examples: ["example"],
+        "x-restart-required": true,
+      },
       UnknownChannel: {
         description,
         "x-category": "Miscellaneous",
@@ -156,6 +173,8 @@ add_task(async function test_meta_schema_catches_violations() {
     ["MissingVersionAdded", "required"],
     ["BadVersionString", "pattern"],
     ["BadVersionType", "type"],
+    ["EmptyNotes", "minLength"],
+    ["EmptyNotesArray", "minItems"],
     ["UnknownChannel", "additionalProperties"],
     ["MissingRestartRequired", "required"],
     ["BadRestartRequiredType", "type"],

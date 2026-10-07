@@ -287,6 +287,19 @@ describe("<ComponentPerfTimer>", () => {
         expect(callback).not.toHaveBeenCalled();
         mockRaf.step({ count: 1 });
       }));
+
+    it("should not request a frame when the document is hidden", () => {
+      const hidden = jest
+        .spyOn(document, "hidden", "get")
+        .mockReturnValue(true);
+      const callback = jest.fn();
+
+      ref.current._afterFramePaint(callback);
+      mockRaf.step({ count: 1 });
+
+      expect(callback).not.toHaveBeenCalled();
+      hidden.mockRestore();
+    });
   });
 
   describe("#_sendBadStateEvent", () => {

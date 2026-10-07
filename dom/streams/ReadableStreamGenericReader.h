@@ -22,8 +22,7 @@ class ReadableStreamGenericReader : public nsISupports {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ReadableStreamGenericReader)
 
-  explicit ReadableStreamGenericReader(nsCOMPtr<nsIGlobalObject> aGlobal)
-      : mGlobal(std::move(aGlobal)) {}
+  explicit ReadableStreamGenericReader(nsCOMPtr<nsIGlobalObject> aGlobal);
 
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
@@ -38,13 +37,9 @@ class ReadableStreamGenericReader : public nsISupports {
   }
 
   ReadableStream* GetStream() { return mStream; }
-  void SetStream(already_AddRefed<ReadableStream> aStream) {
-    mStream = aStream;
-  }
-  void SetStream(ReadableStream* aStream) {
-    RefPtr<ReadableStream> stream(aStream);
-    SetStream(stream.forget());
-  }
+  void SetStream(already_AddRefed<ReadableStream> aStream);
+
+  void SetStream(ReadableStream* aStream);
 
   // IDL Methods
   already_AddRefed<Promise> Closed() const;

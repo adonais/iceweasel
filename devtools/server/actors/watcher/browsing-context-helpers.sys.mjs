@@ -320,8 +320,17 @@ export function isWindowGlobalPartOfContext(
  * @param {object} sessionContext
  *        The Session Context to help know what is debugged.
  *        See devtools/server/actors/watcher/session-context.js
+ * @param {object} options
+ * @param {object} options.onlyTopLevelBrowsingContext
+ *                 If true, return only the top level browsing context.
+ *                 i.e. the ones with no parent.
+ *                 For BrowserElement, it will only be the immediate BrowsingContext of the BrowserElement.
+ *                 For "all" session type, it will be all top level windows and tabs BrowsingContexts.
  */
-export function getAllBrowsingContextsForContext(sessionContext) {
+export function getAllBrowsingContextsForContext(
+  sessionContext,
+  { onlyTopLevelBrowsingContext = false } = {}
+) {
   const browsingContexts = [];
 
   // For a given BrowsingContext, add the `browsingContext`
@@ -330,10 +339,15 @@ export function getAllBrowsingContextsForContext(sessionContext) {
     if (browsingContexts.includes(browsingContext)) {
       return;
     }
+    if (onlyTopLevelBrowsingContext && browsingContext.parent) {
+      return;
+    }
     browsingContexts.push(browsingContext);
 
-    for (const child of browsingContext.children) {
-      walk(child);
+    if (!onlyTopLevelBrowsingContext) {
+      for (const child of browsingContext.children) {
+        walk(child);
+      }
     }
 
     if (
@@ -365,7 +379,11 @@ export function getAllBrowsingContextsForContext(sessionContext) {
       // devtools/client/responsive/test/browser/browser_navigation.js covers this with fission enabled.
       const realTopBrowsingContext =
         topBrowsingContext.embedderElement.browsingContext;
-      walk(realTopBrowsingContext);
+      if (onlyTopLevelBrowsingContext) {
+        browsingContexts.push(realTopBrowsingContext);
+      } else {
+        walk(realTopBrowsingContext);
+      }
     }
   } else if (
     sessionContext.type == "all" ||

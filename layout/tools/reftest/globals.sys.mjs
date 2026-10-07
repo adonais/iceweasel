@@ -50,6 +50,7 @@ export const globals = {
   g: {
     loadTimeout: 0,
     timeoutHook: null,
+    focusTimeout: null,
     remote: false,
     ignoreWindowSize: false,
     shuffle: false,

@@ -27,9 +27,9 @@ from mozboot.bootstrap import MOZCONFIG_SUGGESTION_TEMPLATE
 # We need the NDK version in multiple different places, and it's inconvenient
 # to pass down the NDK version to all relevant places, so we have this global
 # variable.
-NDK_VERSION = "r29"
-CMDLINE_TOOLS_VERSION_STRING = "21.0"
-CMDLINE_TOOLS_VERSION = "15641748"
+NDK_VERSION = "r30"
+CMDLINE_TOOLS_VERSION_STRING = "23.0"
+CMDLINE_TOOLS_VERSION = "16111833"
 
 BUNDLETOOL_VERSION = "1.18.3"
 BUNDLETOOL_URL = f"https://github.com/google/bundletool/releases/download/{BUNDLETOOL_VERSION}/bundletool-all-{BUNDLETOOL_VERSION}.jar"
@@ -52,8 +52,8 @@ AVD_HOME_PATH = Path(
 )
 
 JAVA_VERSION_MAJOR = "17"
-JAVA_VERSION_MINOR = "0.18"
-JAVA_VERSION_PATCH = "8"
+JAVA_VERSION_MINOR = "0.20.1"
+JAVA_VERSION_PATCH = "1"
 
 ANDROID_NDK_EXISTS = """
 Looks like you have the correct version of the Android NDK installed at:
@@ -334,9 +334,9 @@ def get_os_name_for_android():
     return os_name
 
 
-def get_os_tag_for_android(os_name: str):
+def get_os_tag_for_android(os_name: str, os_arch: str):
     os_tag_map = {
-        "macosx": "mac",
+        "macosx": f"mac_{os_arch}",
         "windows": "win",
     }
     return os_tag_map.get(os_name, os_name)
@@ -367,7 +367,7 @@ def ensure_android(
             "Google does not distribute emulator binary for ARM64 Windows. "
             "See also https://issuetracker.google.com/issues/264614669."
         )
-    os_tag = get_os_tag_for_android(os_name)
+    os_tag = get_os_tag_for_android(os_name, os_arch)
 
     # Check for Android NDK only if we are not in artifact mode.
     if not artifact_mode:
@@ -787,6 +787,19 @@ def main():
         help="If true, list installed packages.",
     )
 
+    parser.add_argument(
+        "--os-name",
+        dest="os_name",
+        choices=["linux", "macosx", "windows"],
+        help="Download the JDK for the specified OS rather than the host OS. Requires --jdk-only.",
+    )
+    parser.add_argument(
+        "--os-arch",
+        dest="os_arch",
+        choices=["x86_64", "arm64"],
+        help="Download the JDK for the specified CPU architecture rather than the host's. Requires --jdk-only.",
+    )
+
     exclusive_group = parser.add_mutually_exclusive_group()
 
     exclusive_group.add_argument(
@@ -816,9 +829,12 @@ def main():
     if options.artifact_mode and options.emulator_only:
         raise NotImplementedError("Use no options to install the SDK and emulators.")
 
-    os_name = get_os_name_for_android()
-    os_tag = get_os_tag_for_android(os_name)
-    os_arch = platform.machine()
+    if (options.os_name or options.os_arch) and not options.jdk_only:
+        parser.error("--os-name and --os-arch are only supported with --jdk-only.")
+
+    os_name = options.os_name or get_os_name_for_android()
+    os_arch = options.os_arch or platform.machine()
+    os_tag = get_os_tag_for_android(os_name, os_arch)
 
     avd_manifest_path = (
         Path(options.avd_manifest_path) if options.avd_manifest_path else None
@@ -898,7 +914,7 @@ def ensure_java(os_name: str, os_arch: str):
         ext = "zip" if os_name == "windows" else "tar.gz"
 
         # e.g. https://github.com/adoptium/temurin17-binaries/releases/
-        #      download/jdk-17.0.18%2B8/OpenJDK17U-jdk_x64_linux_hotspot_17.0.18_8.tar.gz
+        #      download/jdk-17.0.20.1%2B1/OpenJDK17U-jdk_x64_linux_hotspot_17.0.20.1_1.tar.gz
         java_url = (
             f"https://github.com/adoptium/temurin{JAVA_VERSION_MAJOR}-binaries/releases/"
             f"download/jdk-{JAVA_VERSION_MAJOR}.{JAVA_VERSION_MINOR}%2B{JAVA_VERSION_PATCH}/"
@@ -974,7 +990,7 @@ def ensure_gradle_jdk_installations(
 
 
 def get_java_bin_path(os_name: str, toolchain_path: Path):
-    # Like jdk-17.0.18+8
+    # Like jdk-17.0.20.1+1
     jdk_folder = f"jdk-{JAVA_VERSION_MAJOR}.{JAVA_VERSION_MINOR}+{JAVA_VERSION_PATCH}"
 
     java_path = toolchain_path / "jdk" / jdk_folder

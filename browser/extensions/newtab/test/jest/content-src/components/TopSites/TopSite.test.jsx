@@ -4,10 +4,61 @@ import {
   TopSite,
   TopSiteLink,
   TopSiteAddButton,
+  TopSitePlaceholder,
   _TopSiteList as TopSiteList,
 } from "content-src/components/TopSites/TopSite";
 import { buildTopSitesList } from "content-src/components/TopSites/TopSiteListContainer";
+import { INTERSECTION_RATIO } from "content-src/components/TopSites/TopSiteImpressionWrapper";
+import { PanelListItems } from "content-src/components/LinkMenu/PanelListItems";
 import { actionTypes as at } from "common/Actions.mjs";
+import {
+  TOP_SITES_DEFAULT_ROWS,
+  TOP_SITES_MAX_SITES_PER_ROW,
+} from "common/Reducers.sys.mjs";
+import React from "react";
+
+const perfSvc = {
+  mark() {},
+  getMostRecentAbsMarkStartByName() {},
+};
+
+// Mirrors the legacy shared DEFAULT_PROPS spread into the <TopSiteList> tests.
+// The unconnected _TopSiteList reads App/Prefs off props, so they are supplied
+// directly here.
+const DEFAULT_PROPS = {
+  Prefs: { values: { featureConfig: {} } },
+  TopSites: { initialized: true, rows: [] },
+  App: {
+    isForStartupCache: false,
+  },
+  TopSitesRows: TOP_SITES_DEFAULT_ROWS,
+  TopSitesMaxSitesPerRow: TOP_SITES_MAX_SITES_PER_ROW,
+  topSiteIconType: () => "no_image",
+  dispatch() {},
+  perfSvc,
+};
+
+// Walks the React element tree returned by a class instance's render() and
+// returns the first element whose type matches `type`. Lets us read the props
+// passed to a child component (e.g. PanelListItems) without mounting it, mirroring the
+// legacy enzyme wrapper.find(Component).props().
+function findElementByType(node, type) {
+  if (!node || typeof node !== "object") {
+    return null;
+  }
+  if (node.type === type) {
+    return node;
+  }
+  const { children } = node.props || {};
+  const childArray = Array.isArray(children) ? children : [children];
+  for (const child of childArray) {
+    const found = findElementByType(child, type);
+    if (found) {
+      return found;
+    }
+  }
+  return null;
+}
 
 const DEFAULT_LINK = {
   url: "https://example.com",
@@ -42,20 +93,626 @@ function renderList(sites) {
   );
 }
 
+describe("<TopSiteLink>", () => {
+  let link;
+  beforeEach(() => {
+    link = { url: "https://foo.com", screenshot: "foo.jpg", hostname: "foo" };
+  });
+  it("should add the right url", () => {
+    link.url = "https://www.foobar.org";
+    const { container } = render(<TopSiteLink link={link} />);
+    expect(container.querySelector("a")).toHaveAttribute(
+      "href",
+      "https://www.foobar.org"
+    );
+  });
+  it("should not add the url to the href if it a search shortcut", () => {
+    link.searchTopSite = true;
+    const { container } = render(<TopSiteLink link={link} />);
+    expect(container.querySelector("a").hasAttribute("href")).toBe(false);
+  });
+  it("should have rtl direction automatically set for text", () => {
+    const { container } = render(<TopSiteLink link={link} />);
+    expect(container.querySelector("[dir='auto']")).toBeInTheDocument();
+  });
+  it("should render a title", () => {
+    const { container } = render(<TopSiteLink link={link} title="foobar" />);
+    expect(container.querySelector(".title").textContent).toBe("foobar");
+  });
+  it("should have only the title as the text of the link", () => {
+    const { container } = render(<TopSiteLink link={link} title="foobar" />);
+    expect(container.querySelector("a").textContent).toBe("foobar");
+  });
+  it("should render the pin icon for pinned links", () => {
+    link.isPinned = true;
+    link.pinnedIndex = 7;
+    const { container } = render(<TopSiteLink link={link} />);
+    expect(container.querySelectorAll(".icon-pin-small")).toHaveLength(1);
+  });
+  it("should not render the pin icon for non pinned links", () => {
+    link.isPinned = false;
+    const { container } = render(<TopSiteLink link={link} />);
+    expect(container.querySelectorAll(".icon-pin-small")).toHaveLength(0);
+  });
+  it("should render the first letter of the title as a fallback for missing icons", () => {
+    const { container } = render(<TopSiteLink link={link} title={"foo"} />);
+    expect(container.querySelector(".icon-wrapper")).toHaveAttribute(
+      "data-fallback",
+      "f"
+    );
+  });
+  it("should render the tippy top icon if provided and not a small icon", () => {
+    link.tippyTopIcon = "foo.png";
+    link.backgroundColor = "#FFFFFF";
+    const { container } = render(<TopSiteLink link={link} />);
+    expect(container.querySelectorAll(".screenshot")).toHaveLength(0);
+    expect(container.querySelectorAll(".default-icon")).toHaveLength(0);
+    const tippyTop = container.querySelector(".rich-icon");
+    expect(tippyTop.style.backgroundImage).toBe("url(foo.png)");
+    // The DOM reads the color back as rgb(), not the input hex "#FFFFFF".
+    expect(tippyTop.style.backgroundColor).toBe("rgb(255, 255, 255)");
+  });
+  it("should render a rich icon if provided and not a small icon", () => {
+    link.favicon = "foo.png";
+    link.faviconSize = 196;
+    link.backgroundColor = "#FFFFFF";
+    const { container } = render(<TopSiteLink link={link} />);
+    expect(container.querySelectorAll(".screenshot")).toHaveLength(0);
+    expect(container.querySelectorAll(".default-icon")).toHaveLength(0);
+    const richIcon = container.querySelector(".rich-icon");
+    expect(richIcon.style.backgroundImage).toBe("url(foo.png)");
+    expect(richIcon.style.backgroundColor).toBe("rgb(255, 255, 255)");
+  });
+  it("should not render a rich icon if it is smaller than 96x96", () => {
+    link.favicon = "foo.png";
+    link.faviconSize = 48;
+    link.backgroundColor = "#FFFFFF";
+    const { container } = render(<TopSiteLink link={link} />);
+    expect(container.querySelectorAll(".default-icon")).toHaveLength(1);
+    expect(container.querySelectorAll(".rich-icon")).toHaveLength(0);
+  });
+  it("should apply just the default class name to the outer link if props.className is falsey", () => {
+    const { container } = render(<TopSiteLink className={false} />);
+    expect(container.querySelector("li")).toHaveClass("top-site-outer");
+  });
+  it("should add props.className to the outer link element", () => {
+    const { container } = render(<TopSiteLink className="foo bar" />);
+    expect(container.querySelector("li")).toHaveClass(
+      "top-site-outer",
+      "foo",
+      "bar"
+    );
+  });
+  describe("#_allowDrop", () => {
+    let ref;
+    let event;
+    let rerender;
+    beforeEach(() => {
+      event = {
+        dataTransfer: {
+          types: ["text/topsite-index"],
+        },
+      };
+      ref = React.createRef();
+      ({ rerender } = render(
+        <TopSiteLink isDraggable={true} onDragEvent={() => {}} ref={ref} />
+      ));
+    });
+    it("should be droppable for basic case", () => {
+      const result = ref.current._allowDrop(event);
+      expect(result).toBe(true);
+    });
+    it("should not be droppable for sponsored_position", () => {
+      rerender(
+        <TopSiteLink
+          isDraggable={true}
+          onDragEvent={() => {}}
+          link={{ sponsored_position: 1 }}
+          ref={ref}
+        />
+      );
+      const result = ref.current._allowDrop(event);
+      expect(result).toBe(false);
+    });
+    it("should not be droppable for link.type", () => {
+      rerender(
+        <TopSiteLink
+          isDraggable={true}
+          onDragEvent={() => {}}
+          link={{ type: "SPOC" }}
+          ref={ref}
+        />
+      );
+      const result = ref.current._allowDrop(event);
+      expect(result).toBe(false);
+    });
+  });
+  describe("#onDragEvent", () => {
+    let ref;
+    let rerender;
+    let simulate;
+    beforeEach(() => {
+      ref = React.createRef();
+      ({ rerender } = render(
+        <TopSiteLink isDraggable={true} onDragEvent={() => {}} ref={ref} />
+      ));
+      simulate = type => {
+        const event = {
+          dataTransfer: { setData() {}, types: { includes() {} } },
+          preventDefault() {
+            this.prevented = true;
+          },
+          target: { blur() {} },
+          type,
+        };
+        ref.current.onDragEvent(event);
+        return event;
+      };
+    });
+    it("should allow clicks without dragging", () => {
+      simulate("mousedown");
+      simulate("mouseup");
+
+      const event = simulate("click");
+
+      expect(event.prevented).toBeFalsy();
+    });
+    it("should prevent clicks after dragging", () => {
+      simulate("mousedown");
+      simulate("dragstart");
+      simulate("dragenter");
+      simulate("drop");
+      simulate("dragend");
+      simulate("mouseup");
+
+      const event = simulate("click");
+
+      expect(event.prevented).toBeTruthy();
+    });
+    it("should allow clicks after dragging then clicking", () => {
+      simulate("mousedown");
+      simulate("dragstart");
+      simulate("dragenter");
+      simulate("drop");
+      simulate("dragend");
+      simulate("mouseup");
+      simulate("click");
+
+      simulate("mousedown");
+      simulate("mouseup");
+
+      const event = simulate("click");
+
+      expect(event.prevented).toBeFalsy();
+    });
+    it("should prevent dragging with sponsored_position from dragstart", () => {
+      const preventDefault = jest.fn();
+      // eslint-disable-next-line no-shadow
+      const blur = jest.fn();
+      rerender(
+        <TopSiteLink
+          isDraggable={true}
+          onDragEvent={() => {}}
+          link={{ sponsored_position: 1 }}
+          ref={ref}
+        />
+      );
+      ref.current.onDragEvent({
+        type: "dragstart",
+        preventDefault,
+        target: { blur },
+      });
+      expect(preventDefault).toHaveBeenCalledTimes(1);
+      expect(blur).toHaveBeenCalledTimes(1);
+      expect(ref.current.dragged).toBeUndefined();
+    });
+    it("should prevent dragging with link.shim from dragstart", () => {
+      const preventDefault = jest.fn();
+      // eslint-disable-next-line no-shadow
+      const blur = jest.fn();
+      rerender(
+        <TopSiteLink
+          isDraggable={true}
+          onDragEvent={() => {}}
+          link={{ type: "SPOC" }}
+          ref={ref}
+        />
+      );
+      ref.current.onDragEvent({
+        type: "dragstart",
+        preventDefault,
+        target: { blur },
+      });
+      expect(preventDefault).toHaveBeenCalledTimes(1);
+      expect(blur).toHaveBeenCalledTimes(1);
+      expect(ref.current.dragged).toBeUndefined();
+    });
+  });
+
+  describe("#generateColor", () => {
+    let colors;
+    beforeEach(() => {
+      colors = "#0090ED,#FF4F5F,#2AC3A2";
+    });
+
+    it("should generate a random color but always pick the same color for the same string", () => {
+      const { container } = render(
+        <TopSiteLink colors={colors} title={"food"} link={link} />
+      );
+
+      const iconWrapper = container.querySelector(".icon-wrapper");
+      expect(iconWrapper).toHaveAttribute("data-fallback", "f");
+      // colors.split(",")[1] === "#FF4F5F"
+      expect(iconWrapper.style.backgroundColor).toBe("rgb(255, 79, 95)");
+      expect(true).toBe(true);
+    });
+
+    it("should generate a different random color", () => {
+      const { container } = render(
+        <TopSiteLink colors={colors} title={"fam"} link={link} />
+      );
+
+      // colors.split(",")[2] === "#2AC3A2"
+      expect(
+        container.querySelector(".icon-wrapper").style.backgroundColor
+      ).toBe("rgb(42, 195, 162)");
+      expect(true).toBe(true);
+    });
+
+    it("should generate a third random color", () => {
+      const { container } = render(
+        <TopSiteLink colors={colors} title={"foo"} />
+      );
+
+      const iconWrapper = container.querySelector(".icon-wrapper");
+      expect(iconWrapper).toHaveAttribute("data-fallback", "f");
+      // colors.split(",")[0] === "#0090ED"
+      expect(iconWrapper.style.backgroundColor).toBe("rgb(0, 144, 237)");
+      expect(true).toBe(true);
+    });
+  });
+});
+
 describe("<TopSite>", () => {
-  it("should render", () => {
-    const { container } = render(
+  let link;
+  beforeEach(() => {
+    link = { url: "https://foo.com", screenshot: "foo.jpg", hostname: "foo" };
+  });
+
+  // Build IntersectionObserver class with the arg `entries` for the intersect callback.
+  function buildIntersectionObserver(entries) {
+    return class {
+      constructor(callback) {
+        this.callback = callback;
+      }
+
+      observe() {
+        this.callback(entries);
+      }
+
+      unobserve() {}
+    };
+  }
+
+  // The legacy test shallow-rendered <TopSite>; RTL does a full mount, so its
+  // connected children need a redux Provider. A ref exposes the instance for the
+  // white-box PanelListItems-prop assertions.
+  function renderTopSite(props, ref) {
+    return render(
       <WrapWithProvider>
         <TopSite
-          link={DEFAULT_LINK}
-          index={0}
           dispatch={jest.fn()}
           onDragEvent={jest.fn()}
-          activeIndex={-1}
+          {...props}
+          ref={ref}
         />
       </WrapWithProvider>
     );
+  }
+
+  it("should render a TopSite", () => {
+    const { container } = renderTopSite({ link });
     expect(container.querySelector(".top-site-outer")).toBeInTheDocument();
+  });
+
+  it("should render a shortened title based off the url", () => {
+    link.url = "https://www.foobar.org";
+    link.hostname = "foobar";
+    link.eTLD = "org";
+    const { container } = renderTopSite({ link });
+
+    expect(container.querySelector(".title-label").textContent).toBe("foobar");
+  });
+
+  it("should parse args for fluent correctly", () => {
+    const title = '"fluent"';
+    link.hostname = title;
+
+    const { container } = renderTopSite({ link });
+    const button = container.querySelector(
+      "button[data-l10n-id='newtab-menu-content-tooltip']"
+    );
+    expect(button).toHaveAttribute("data-l10n-args", JSON.stringify({ title }));
+  });
+
+  it("should have .active class, on top-site-outer if context menu is open", () => {
+    const { container } = renderTopSite({ link, index: 1, activeIndex: 1 });
+    expect(container.querySelector(".top-site-outer")).toHaveClass("active");
+  });
+  it("should not add .active class, on top-site-outer if context menu is closed", () => {
+    const { container } = renderTopSite({ link, index: 1 });
+    expect(container.querySelector(".top-site-outer")).not.toHaveClass(
+      "active"
+    );
+  });
+  it("should render a plain button menu trigger alongside a panel-list", () => {
+    const { container } = renderTopSite({ link, index: 0 });
+    const button = container.querySelector("button.context-menu-button");
+    expect(button).toBeInTheDocument();
+    expect(container.querySelector("panel-list")).toBeInTheDocument();
+    expect(button).toHaveAttribute("aria-haspopup", "menu");
+    // Bug 2062844: a plain button rather than moz-button, so the tile can tell
+    // keyboard focus from pointer focus with :focus-visible.
+    expect(container.querySelector("moz-button")).not.toBeInTheDocument();
+  });
+  it("should toggle the panel-list from the menu button", () => {
+    const ref = React.createRef();
+    const { container } = renderTopSite({ link, index: 0 }, ref);
+    const toggle = jest.fn();
+    ref.current.panelListRef.current = { toggle };
+    const button = container.querySelector("button.context-menu-button");
+
+    // Opens on mousedown, not click: panel-list hides on any document mousedown
+    // outside the panel, so a click-based toggle would reopen it immediately.
+    fireEvent.mouseDown(button, { button: 0 });
+    expect(toggle).toHaveBeenCalledTimes(1);
+
+    // A non-primary button should not open it.
+    fireEvent.mouseDown(button, { button: 2 });
+    expect(toggle).toHaveBeenCalledTimes(1);
+
+    // Keyboard activation passes the event so panel-list can tell it apart from
+    // a pointer open and focus the first item.
+    fireEvent.keyDown(button, { key: "Enter" });
+    expect(toggle).toHaveBeenCalledTimes(2);
+    expect(toggle.mock.calls[1][0]).toMatchObject({ type: "keydown" });
+  });
+  it("should register the menu button as the panel-list's popover invoker", () => {
+    const ref = React.createRef();
+    renderTopSite({ link, index: 0 }, ref);
+
+    // panel-list is a popover="auto". Without the invoker relationship the
+    // platform light-dismisses it on pointerup, immediately after our mousedown
+    // opened it, because a click on the trigger counts as a click outside the
+    // popover. This cannot be covered by a synthesizeMouse test: light dismiss
+    // only runs for trusted pointer events.
+    expect(ref.current.menuButtonRef.current.popoverTargetElement).toBe(
+      ref.current.panelListRef.current
+    );
+  });
+  it("should open the menu from a synthetic click", () => {
+    const ref = React.createRef();
+    const { container } = renderTopSite({ link, index: 0 }, ref);
+    const toggle = jest.fn();
+    ref.current.panelListRef.current = { toggle };
+    const button = container.querySelector("button.context-menu-button");
+
+    // A programmatic .click() produces no mousedown and carries detail 0. Tests
+    // and callers rely on it, so it has to open the menu.
+    fireEvent.click(button, { detail: 0 });
+    expect(toggle).toHaveBeenCalledTimes(1);
+
+    // A real mouse click was already handled on mousedown, so the click that
+    // follows it must not toggle the menu back closed.
+    fireEvent.click(button, { detail: 1 });
+    expect(toggle).toHaveBeenCalledTimes(1);
+  });
+  it("should render the menu options via PanelListItems", () => {
+    const ref = React.createRef();
+    renderTopSite({ link, index: 0 }, ref);
+    const itemsProps = findElementByType(
+      ref.current.render(),
+      PanelListItems
+    ).props;
+    expect(Array.isArray(itemsProps.options)).toBe(true);
+    expect(itemsProps.options.length).toBeGreaterThanOrEqual(1);
+  });
+  it("should render the correct menu options for an organic top site", () => {
+    const { container } = renderTopSite({ link, index: 0 });
+    // TOP_SITES_CONTEXT_MENU_OPTIONS has two Separators, rendered as <hr>.
+    expect(container.querySelectorAll("hr")).toHaveLength(2);
+    expect(
+      container.querySelectorAll("panel-item").length
+    ).toBeGreaterThanOrEqual(1);
+  });
+  it("should record impressions for visible organic Top Sites", () => {
+    const dispatch = jest.fn();
+    renderTopSite({
+      link,
+      index: 3,
+      dispatch,
+      IntersectionObserver: buildIntersectionObserver([
+        {
+          isIntersecting: true,
+          intersectionRatio: INTERSECTION_RATIO,
+        },
+      ]),
+      document: {
+        visibilityState: "visible",
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+      },
+    });
+
+    expect(dispatch).toHaveBeenCalledTimes(1);
+
+    const [[action]] = dispatch.mock.calls;
+    expect(action.type).toBe(at.TOP_SITES_ORGANIC_IMPRESSION_STATS);
+
+    expect(action.data.type).toBe("impression");
+    expect(action.data.source).toBe("newtab");
+    expect(action.data.position).toBe(3);
+  });
+  it("should record impressions for visible sponsored Top Sites", () => {
+    const dispatch = jest.fn();
+    renderTopSite({
+      link: Object.assign({}, link, {
+        sponsored_position: 2,
+        sponsored_tile_id: 12345,
+        sponsored_impression_url: "https://impression.example.com/",
+      }),
+      index: 3,
+      dispatch,
+      IntersectionObserver: buildIntersectionObserver([
+        {
+          isIntersecting: true,
+          intersectionRatio: INTERSECTION_RATIO,
+        },
+      ]),
+      document: {
+        visibilityState: "visible",
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+      },
+    });
+
+    expect(dispatch).toHaveBeenCalledTimes(1);
+
+    const [[action]] = dispatch.mock.calls;
+    expect(action.type).toBe(at.TOP_SITES_SPONSORED_IMPRESSION_STATS);
+
+    expect(action.data.type).toBe("impression");
+    expect(action.data.tile_id).toBe(12345);
+    expect(action.data.source).toBe("newtab");
+    expect(action.data.position).toBe(3);
+    expect(action.data.reporting_url).toBe("https://impression.example.com/");
+    expect(action.data.advertiser).toBe("foo");
+  });
+
+  describe("#onLinkClick", () => {
+    function clickLink(props) {
+      const dispatch = jest.fn();
+      const { container } = renderTopSite({ ...props, dispatch });
+      // Ignore any impression pings fired while mounting; only the click matters.
+      dispatch.mockClear();
+      fireEvent.click(container.querySelector("a.top-site-button"));
+      return dispatch;
+    }
+
+    it("should call dispatch when the link is clicked", () => {
+      const dispatch = clickLink({ link, index: 3 });
+
+      const [[userEvent]] = dispatch.mock.calls;
+      expect(userEvent.type).toBe(at.TELEMETRY_USER_EVENT);
+      expect(userEvent.data.event).toBe("CLICK");
+      expect(userEvent.data.source).toBe("TOP_SITES");
+      expect(userEvent.data.action_position).toBe(3);
+
+      const [, [openLink]] = dispatch.mock.calls;
+      expect(openLink.type).toBe(at.OPEN_LINK);
+
+      // Organic Top Site click event.
+      const [, , [organicClick]] = dispatch.mock.calls;
+      expect(organicClick.type).toBe(at.TOP_SITES_ORGANIC_IMPRESSION_STATS);
+      expect(organicClick.data.type).toBe("click");
+      expect(organicClick.data.source).toBe("newtab");
+      expect(organicClick.data.position).toBe(3);
+    });
+    it("should dispatch a UserEventAction with the right data", () => {
+      const dispatch = clickLink({
+        link: Object.assign({}, link, {
+          iconType: "rich_icon",
+          isPinned: true,
+        }),
+        index: 3,
+      });
+
+      const [[action]] = dispatch.mock.calls;
+      expect(action.type).toBe(at.TELEMETRY_USER_EVENT);
+      expect(action.data.event).toBe("CLICK");
+      expect(action.data.source).toBe("TOP_SITES");
+      expect(action.data.action_position).toBe(3);
+      expect(action.data.value.card_type).toBe("pinned");
+      expect(action.data.value.icon_type).toBe("rich_icon");
+    });
+    it("should dispatch a UserEventAction with the right data for search top site", () => {
+      const siteInfo = {
+        iconType: "tippytop",
+        isPinned: true,
+        searchTopSite: true,
+        hostname: "google",
+        label: "@google",
+      };
+      const dispatch = clickLink({
+        link: Object.assign({}, link, siteInfo),
+        index: 3,
+      });
+
+      const [[action]] = dispatch.mock.calls;
+      expect(action.type).toBe(at.TELEMETRY_USER_EVENT);
+      expect(action.data.event).toBe("CLICK");
+      expect(action.data.source).toBe("TOP_SITES");
+      expect(action.data.action_position).toBe(3);
+      expect(action.data.value.card_type).toBe("search");
+      expect(action.data.value.icon_type).toBe("tippytop");
+      expect(action.data.value.search_vendor).toBe("google");
+    });
+    it("should dispatch a UserEventAction with the right data for SPOC top site", () => {
+      const siteInfo = {
+        id: 1,
+        iconType: "custom_screenshot",
+        type: "SPOC",
+        pos: 1,
+        label: "test advertiser",
+        shim: { click: "shim_click_id" },
+      };
+      const dispatch = clickLink({
+        link: Object.assign({}, link, siteInfo),
+        index: 0,
+      });
+
+      const [[action]] = dispatch.mock.calls;
+      expect(action.type).toBe(at.TELEMETRY_USER_EVENT);
+      expect(action.data.event).toBe("CLICK");
+      expect(action.data.source).toBe("TOP_SITES");
+      expect(action.data.action_position).toBe(0);
+      expect(action.data.value.card_type).toBe("spoc");
+      expect(action.data.value.icon_type).toBe("custom_screenshot");
+
+      // Pocket SPOC click event.
+      const [, , [pocketClick]] = dispatch.mock.calls;
+      expect(pocketClick.type).toBe(at.TELEMETRY_IMPRESSION_STATS);
+      expect(pocketClick.data.click).toBe(0);
+      expect(pocketClick.data.source).toBe("TOP_SITES");
+
+      const [, , , [dsUserEvent]] = dispatch.mock.calls;
+      expect(dsUserEvent.type).toBe(at.DISCOVERY_STREAM_USER_EVENT);
+      expect(dsUserEvent.data.event).toBe("CLICK");
+      expect(dsUserEvent.data.action_position).toBe(1);
+      expect(dsUserEvent.data.source).toBe("TOP_SITES");
+      expect(dsUserEvent.data.value.card_type).toBe("spoc");
+      expect(dsUserEvent.data.value.tile_id).toBe(1);
+      expect(dsUserEvent.data.value.shim).toBe("shim_click_id");
+
+      // Topsite SPOC click event.
+      const [, , , , [sponsoredClick]] = dispatch.mock.calls;
+      expect(sponsoredClick.type).toBe(at.TOP_SITES_SPONSORED_IMPRESSION_STATS);
+      expect(sponsoredClick.data.type).toBe("click");
+      expect(sponsoredClick.data.tile_id).toBe(1);
+      expect(sponsoredClick.data.source).toBe("newtab");
+      expect(sponsoredClick.data.position).toBe(1);
+      expect(sponsoredClick.data.advertiser).toBe("test advertiser");
+    });
+    it("should dispatch OPEN_LINK with the right data", () => {
+      const dispatch = clickLink({
+        link: Object.assign({}, link, { typedBonus: true }),
+        index: 3,
+      });
+
+      const [, [action]] = dispatch.mock.calls;
+      expect(action.type).toBe(at.OPEN_LINK);
+      expect(action.data.typedBonus).toBe(true);
+    });
   });
 });
 
@@ -248,5 +905,244 @@ describe("TopSiteLink #_allowDrop with grouped pins", () => {
     const link = makeLink({ isPinned: false });
     link.dragged = true;
     expect(link._allowDrop(topsiteDrag)).toBe(false);
+  });
+});
+
+describe("<TopSiteList>", () => {
+  const APP = { isForStartupCache: { App: false } };
+
+  it("should render a TopSiteList element", () => {
+    const { container } = render(
+      <WrapWithProvider>
+        <TopSiteList {...DEFAULT_PROPS} sites={[]} App={APP} />
+      </WrapWithProvider>
+    );
+    expect(container.querySelector(".top-sites-list")).toBeInTheDocument();
+  });
+  it("should render a TopSite for each link with the right url", () => {
+    const rows = [{ url: "https://foo.com" }, { url: "https://bar.com" }];
+    const { container } = render(
+      <WrapWithProvider>
+        <TopSiteList {...DEFAULT_PROPS} sites={rows} App={APP} />
+      </WrapWithProvider>
+    );
+    const links = container.querySelectorAll("a.top-site-button[href]");
+    expect(links).toHaveLength(2);
+    rows.forEach((row, i) => expect(links[i]).toHaveAttribute("href", row.url));
+  });
+  it("should render the sliced list it is given", () => {
+    const rows = [];
+    for (
+      let i = 0;
+      i < TOP_SITES_DEFAULT_ROWS * TOP_SITES_MAX_SITES_PER_ROW + 3;
+      i++
+    ) {
+      rows.push({ url: `https://foo${i}.com` });
+    }
+    const sites = buildTopSitesList(
+      rows,
+      TOP_SITES_DEFAULT_ROWS,
+      TOP_SITES_MAX_SITES_PER_ROW
+    );
+    const { container } = render(
+      <WrapWithProvider>
+        <TopSiteList
+          {...DEFAULT_PROPS}
+          sites={sites}
+          TopSitesRows={TOP_SITES_DEFAULT_ROWS}
+          App={APP}
+        />
+      </WrapWithProvider>
+    );
+    expect(container.querySelectorAll("a.top-site-button[href]")).toHaveLength(
+      TOP_SITES_DEFAULT_ROWS * TOP_SITES_MAX_SITES_PER_ROW
+    );
+  });
+  it("should render an Add button when the list includes one", () => {
+    const rows = [{ url: "https://foo.com" }, { url: "https://bar.com" }];
+    const sites = buildTopSitesList(rows, 1, TOP_SITES_MAX_SITES_PER_ROW);
+    const { container } = render(
+      <WrapWithProvider>
+        <TopSiteList
+          {...DEFAULT_PROPS}
+          sites={sites}
+          TopSitesRows={1}
+          App={APP}
+        />
+      </WrapWithProvider>
+    );
+    expect(container.querySelectorAll("a.top-site-button[href]")).toHaveLength(
+      2
+    );
+    expect(container.querySelectorAll(".add-button")).toHaveLength(1);
+  });
+  it("should fill sponsored top sites with placeholders while rendering for startup cache", () => {
+    const rows = [
+      { url: "https://sponsored01.com", sponsored_position: 1 },
+      { url: "https://sponsored02.com", sponsored_position: 2 },
+      { url: "https://sponsored03.com", type: "SPOC" },
+      { url: "https://foo.com" },
+      { url: "https://bar.com" },
+    ];
+    const sites = buildTopSitesList(rows, 1, TOP_SITES_MAX_SITES_PER_ROW);
+    const { container } = render(
+      <WrapWithProvider>
+        <TopSiteList
+          {...DEFAULT_PROPS}
+          sites={sites}
+          TopSitesRows={1}
+          App={{ isForStartupCache: { TopSites: true } }}
+        />
+      </WrapWithProvider>
+    );
+    expect(container.querySelectorAll("a.top-site-button[href]")).toHaveLength(
+      2
+    );
+    expect(container.querySelectorAll(".placeholder")).toHaveLength(3);
+  });
+  it("should add a className hide-for-narrow to sites after 6/row", () => {
+    const rows = [];
+    for (let i = 0; i < TOP_SITES_MAX_SITES_PER_ROW; i++) {
+      rows.push({ url: `https://foo${i}.com` });
+    }
+    const sites = buildTopSitesList(rows, 1, TOP_SITES_MAX_SITES_PER_ROW);
+    const { container } = render(
+      <WrapWithProvider>
+        <TopSiteList
+          {...DEFAULT_PROPS}
+          sites={sites}
+          TopSitesRows={1}
+          App={APP}
+        />
+      </WrapWithProvider>
+    );
+    expect(container.querySelectorAll("li.hide-for-narrow")).toHaveLength(2);
+  });
+
+  describe("Keyboard navigation", () => {
+    let listRef;
+    let instance;
+    let focusTargets;
+    let rerender;
+    let rows;
+
+    beforeEach(() => {
+      rows = [
+        { url: "https://foo.com" },
+        { url: "https://bar.com" },
+        { url: "https://baz.com" },
+      ];
+      listRef = React.createRef();
+      ({ rerender } = render(
+        <WrapWithProvider>
+          <TopSiteList
+            {...DEFAULT_PROPS}
+            sites={rows}
+            App={APP}
+            ref={listRef}
+          />
+        </WrapWithProvider>
+      ));
+      instance = listRef.current;
+
+      // The flat focus order onKeyDown walks: tile links and the add button
+      // (both matched by "a, .add-button") in DOM order.
+      focusTargets = [
+        { focus: jest.fn(), tabIndex: -1 },
+        { focus: jest.fn(), tabIndex: -1 },
+        { focus: jest.fn(), tabIndex: -1 },
+      ];
+      instance.focusRef = { querySelectorAll: () => focusTargets };
+    });
+
+    it("should navigate to the next focus target with ArrowRight", () => {
+      instance.onKeyDown({ key: "ArrowRight", target: focusTargets[0] });
+
+      expect(focusTargets[1].focus).toHaveBeenCalledTimes(1);
+      expect(focusTargets[1].tabIndex).toBe(0);
+    });
+
+    it("should navigate to the previous focus target with ArrowLeft", () => {
+      instance.onKeyDown({ key: "ArrowLeft", target: focusTargets[1] });
+
+      expect(focusTargets[0].focus).toHaveBeenCalledTimes(1);
+      expect(focusTargets[0].tabIndex).toBe(0);
+    });
+
+    it("should reset the roving focus index when the row count changes", () => {
+      // A stale focusedIndex (from a now-removed row) would leave the row with
+      // no tab stop; changing the row count re-homes it to the first tile.
+      act(() => {
+        instance.setState({ focusedIndex: 15 });
+      });
+      rerender(
+        <WrapWithProvider>
+          <TopSiteList
+            {...DEFAULT_PROPS}
+            sites={rows}
+            App={APP}
+            TopSitesRows={2}
+            ref={listRef}
+          />
+        </WrapWithProvider>
+      );
+      expect(instance.state.focusedIndex).toBe(0);
+    });
+  });
+});
+
+describe("TopSiteAddButton", () => {
+  it("should dispatch a TOP_SITES_EDIT action when the addbutton is clicked", () => {
+    const dispatch = jest.fn();
+    const { container } = render(
+      <TopSiteAddButton dispatch={dispatch} index={7} />
+    );
+
+    fireEvent.click(container.querySelector("moz-button"));
+
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledWith({
+      type: at.TOP_SITES_EDIT,
+      data: { index: 7 },
+    });
+  });
+
+  it("renders an in-grid tile with a large button", () => {
+    const { container } = render(
+      <TopSiteAddButton inGrid={true} index={3} dispatch={jest.fn()} />
+    );
+    const button = container.querySelector("li.add-button-tile moz-button");
+    expect(button).toBeInTheDocument();
+    expect(button).toHaveAttribute("size", "large");
+  });
+
+  it("renders a hover overlay (default size) when not in-grid", () => {
+    const { container } = render(
+      <TopSiteAddButton index={8} dispatch={jest.fn()} />
+    );
+    const overlay = container.querySelector("div.add-button-hidden");
+    expect(overlay).toBeInTheDocument();
+    expect(
+      container.querySelector("li.add-button-tile")
+    ).not.toBeInTheDocument();
+    expect(overlay.querySelector("moz-button").hasAttribute("size")).toBe(
+      false
+    );
+  });
+});
+
+describe("<TopSitePlaceholder>", () => {
+  it("should render a placeholder top-site tile", () => {
+    const { container } = render(<TopSitePlaceholder />);
+    expect(
+      container.querySelector("li.top-site-outer.placeholder")
+    ).toBeInTheDocument();
+  });
+
+  it("should merge props.className with the placeholder class", () => {
+    const { container } = render(<TopSitePlaceholder className="foo" />);
+    expect(
+      container.querySelector("li.top-site-outer.placeholder.foo")
+    ).toBeInTheDocument();
   });
 });

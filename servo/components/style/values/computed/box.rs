@@ -18,11 +18,13 @@ use std::fmt;
 use style_traits::{CssWriter, ToCss};
 
 pub use crate::values::specified::box_::{
-    AlignmentBaseline, Appearance, BaselineSource, BreakBetween, BreakWithin, Clear, Contain,
-    ContainerName, ContainerType, ContentVisibility, Display, DominantBaseline, Float, MarginTrim,
-    Overflow, OverflowAnchor, OverscrollBehavior, PositionProperty, ScrollSnapAlign,
-    ScrollSnapAxis, ScrollSnapStop, ScrollSnapStrictness, ScrollSnapType, ScrollbarGutter,
-    TouchAction, WillChange, WritingModeProperty,
+    AlignmentBaseline, Appearance, BackfaceVisibility, BaselineSource, BoxAlign, BoxCollapse,
+    BoxDirection, BoxOrient, BoxPack, BreakBetween, BreakWithin, Clear, Contain, ContainerName,
+    ContainerType, ContentVisibility, DirectionProperty, Display, DominantBaseline, Float,
+    ImageOrientation, Isolation, MarginTrim, Orient, Overflow, OverflowAnchor, OverscrollBehavior,
+    PositionProperty, ScrollBehavior, ScrollSnapAlign, ScrollSnapAxis, ScrollSnapStop,
+    ScrollSnapStrictness, ScrollSnapType, ScrollbarGutter, TextOrientation, TopLayer, TouchAction,
+    Visibility, WillChange, WritingModeProperty,
 };
 
 /// A computed value for the `baseline-shift` property.

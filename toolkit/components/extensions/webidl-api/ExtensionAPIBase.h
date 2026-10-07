@@ -8,6 +8,7 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/FunctionBinding.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
+#include "mozilla/extensions/ExtensionBrowser.h"
 #include "mozilla/ErrorResult.h"
 
 class nsIGlobalObject;
@@ -50,7 +51,6 @@ class ExtensionAPICallFunctionNoReturn;
 class ExtensionAPICallSyncFunction;
 class ExtensionAPICallAsyncFunction;
 class ExtensionAPIGetProperty;
-class ExtensionBrowser;
 class ExtensionEventManager;
 class ExtensionPort;
 class ExtensionSetting;

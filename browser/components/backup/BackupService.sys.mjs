@@ -2,16 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import * as DefaultBackupResources from "resource:///modules/backup/BackupResources.sys.mjs";
+import * as DefaultBackupResources from "moz-src:///browser/components/backup/BackupResources.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-import { BackupResource } from "resource:///modules/backup/BackupResource.sys.mjs";
+import { BackupResource } from "moz-src:///browser/components/backup/resources/BackupResource.sys.mjs";
 import {
   MeasurementUtils,
   BYTES_IN_KILOBYTE,
   BYTES_IN_MEGABYTE,
   BYTES_IN_MEBIBYTE,
-} from "resource:///modules/backup/MeasurementUtils.sys.mjs";
+} from "moz-src:///browser/components/backup/MeasurementUtils.sys.mjs";
 
 import {
   ERRORS,
@@ -19,7 +19,7 @@ import {
   RESTORE_STEPS,
   errorString,
 } from "chrome://browser/content/backup/backup-constants.mjs";
-import { BackupError } from "resource:///modules/backup/BackupError.mjs";
+import { BackupError } from "moz-src:///browser/components/backup/BackupError.mjs";
 
 const BACKUP_DIR_PREF_NAME = "browser.backup.location";
 const BACKUP_ERROR_CODE_PREF_NAME = "browser.backup.errorCode";
@@ -73,10 +73,11 @@ ChromeUtils.defineLazyGetter(lazy, "fxAccounts", () => {
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
-  ArchiveDecryptor: "resource:///modules/backup/ArchiveEncryption.sys.mjs",
+  ArchiveDecryptor:
+    "moz-src:///browser/components/backup/ArchiveEncryption.sys.mjs",
   ArchiveEncryptionState:
-    "resource:///modules/backup/ArchiveEncryptionState.sys.mjs",
-  ArchiveUtils: "resource:///modules/backup/ArchiveUtils.sys.mjs",
+    "moz-src:///browser/components/backup/ArchiveEncryptionState.sys.mjs",
+  ArchiveUtils: "moz-src:///browser/components/backup/ArchiveUtils.sys.mjs",
   BasePromiseWorker: "resource://gre/modules/PromiseWorker.sys.mjs",
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
@@ -875,7 +876,11 @@ export class BackupService extends EventTarget {
     backupInProgress: false,
     scheduledBackupsEnabled: lazy.scheduledBackupsPref,
     encryptionEnabled: false,
-    /** @type {number?} Number of seconds since UNIX epoch */
+    /**
+     * Number of seconds since UNIX epoch
+     *
+     * @type {number?}
+     */
     lastBackupDate: null,
     lastBackupFileName: lazy.lastBackupFileName,
     supportBaseLink: Services.urlFormatter.formatURLPref("app.support.baseURL"),
@@ -2539,7 +2544,7 @@ export class BackupService extends EventTarget {
     );
 
     let worker = new lazy.BasePromiseWorker(
-      "resource:///modules/backup/Archive.worker.mjs",
+      "moz-src:///browser/components/backup/Archive.worker.mjs",
       { type: "module" }
     );
     worker.ExceptionHandlers[BackupError.name] = BackupError.fromMsg;
@@ -2840,7 +2845,7 @@ export class BackupService extends EventTarget {
    */
   async sampleArchive(archivePath) {
     let worker = new lazy.BasePromiseWorker(
-      "resource:///modules/backup/Archive.worker.mjs",
+      "moz-src:///browser/components/backup/Archive.worker.mjs",
       { type: "module" }
     );
     worker.ExceptionHandlers[BackupError.name] = BackupError.fromMsg;

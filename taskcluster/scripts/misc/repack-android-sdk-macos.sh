@@ -4,17 +4,19 @@ set -x -e -v
 # This script is for fetching and repacking the Android SDK (for macOS),
 # the tools required to produce Android packages.
 
-cd $GECKO_PATH
-
-export UPLOAD_DIR=${UPLOAD_DIR:-../artifacts}
 mkdir -p $UPLOAD_DIR
 
-rm -rf $HOME/.mozbuild/jdk
-cp -rp $MOZ_FETCHES_DIR/jdk $HOME/.mozbuild/
+rm -rf /builds/worker/.mozbuild/jdk
+cp -rp $MOZ_FETCHES_DIR/jdk /builds/worker/.mozbuild/
 
-# Populate $HOME/.mozbuild/android-sdk-macosx.
+export REPO_OS_OVERRIDE=macosx_arm64
+
+# Populate /builds/worker/.mozbuild/android-sdk-linux.
+cd $GECKO_PATH
 ./mach python python/mozboot/mozboot/android.py --artifact-mode --no-interactive --list-packages
 
-tar cavf $UPLOAD_DIR/android-sdk-macos.tar.zst -C $HOME/.mozbuild android-sdk-macosx bundletool.jar
+mv /builds/worker/.mozbuild/android-sdk-linux /builds/worker/.mozbuild/android-sdk-macosx
+
+tar cavf $UPLOAD_DIR/android-sdk-macos.tar.zst -C /builds/worker/.mozbuild android-sdk-macosx bundletool.jar
 
 ls -al $UPLOAD_DIR

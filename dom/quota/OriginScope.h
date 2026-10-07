@@ -36,6 +36,8 @@ class OriginScope {
 
     Origin(Origin&& aOther) = default;
 
+    bool operator==(const OriginScope& aOther) = delete;
+
     const PrincipalMetadata& GetPrincipalMetadata() const {
       return mPrincipalMetadata;
     }
@@ -408,8 +410,6 @@ class OriginScope {
     PatternMatcher patternMatcher(aOther);
     return mData.match(PatternMatcher(aOther));
   }
-
-  bool operator==(const OriginScope& aOther) = delete;
 };
 
 }  // namespace mozilla::dom::quota

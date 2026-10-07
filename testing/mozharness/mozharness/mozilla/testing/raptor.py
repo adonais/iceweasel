@@ -13,7 +13,6 @@ import pathlib
 import re
 import subprocess
 import sys
-import tempfile
 from shutil import copyfile, rmtree
 
 from mozsystemmonitor.resourcemonitor import SystemResourceMonitor
@@ -21,7 +20,7 @@ from mozsystemmonitor.resourcemonitor import SystemResourceMonitor
 import mozharness
 from mozharness.base.errors import PythonErrorList
 from mozharness.base.log import CRITICAL, DEBUG, ERROR, INFO, OutputParser
-from mozharness.base.python import Python3Virtualenv
+from mozharness.base.python import perfherder_schema_path
 from mozharness.base.vcs.vcsbase import MercurialScript
 from mozharness.mozilla.automation import (
     EXIT_STATUS_DICT,
@@ -78,9 +77,7 @@ FFMPEG_LOCAL_CACHE = {
 }
 
 
-class Raptor(
-    TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin, Python3Virtualenv
-):
+class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
     """
     Install and run Raptor tests
     """
@@ -919,34 +916,6 @@ class Raptor(
         self.device.install_app(str(cstm_car_m_apk))
         self.info("Custom Chromium-as-Release for Android successfully installed")
 
-    def download_chrome_android(self):
-        # Fetch the APK
-        tmpdir = tempfile.mkdtemp()
-        self.tooltool_fetch(
-            os.path.join(
-                self.raptor_path,
-                "raptor",
-                "tooltool-manifests",
-                "chrome-android",
-                "chrome87.manifest",
-            ),
-            output_dir=tmpdir,
-        )
-        files = os.listdir(tmpdir)
-        if len(files) > 1:
-            raise Exception(
-                "Found more than one chrome APK file after tooltool download"
-            )
-        chromeapk = os.path.join(tmpdir, files[0])
-
-        # Disable verification and install the APK
-        self.device.shell_output("settings put global verifier_verify_adb_installs 0")
-        self.install_android_app(chromeapk, replace=True)
-
-        # Re-enable verification and delete the temporary directory
-        self.device.shell_output("settings put global verifier_verify_adb_installs 1")
-        rmtree(tmpdir)
-
     def install_safari_technology_preview(self):
         """Ensure latest version of Safari TP binary is running in CI"""
 
@@ -1320,15 +1289,7 @@ class Raptor(
         # Add modules required for visual metrics. Packages with non-Python
         # components are particularly fussy about python version.
         py3_minor = sys.version_info.minor
-        if py3_minor <= 7:
-            modules.extend([
-                "numpy==1.16.1",
-                "Pillow==6.1.0",
-                "scipy==1.2.3",
-                "pyssim==0.4",
-                "opencv-python==4.5.4.60",
-            ])
-        elif py3_minor <= 11:
+        if py3_minor <= 11:
             modules.extend([
                 "numpy==1.23.5",
                 "Pillow==9.2.0",
@@ -1470,6 +1431,7 @@ class Raptor(
         # mitmproxy needs path to mozharness when installing the cert, and tooltool
         env["SCRIPTSPATH"] = scripts_path
         env["EXTERNALTOOLSPATH"] = external_tools_path
+        env["PERFHERDER_SCHEMA_PATH"] = perfherder_schema_path()
 
         # xpcshell may come from local build, or fetched from build artifacts in
         # the case of CI.

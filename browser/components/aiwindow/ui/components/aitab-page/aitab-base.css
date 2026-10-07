@@ -1,0 +1,121 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* Loaded into shadow roots as well as the page, so both scopes are matched.
+   font-family inherits, so everything picks this up and h1/h2 override it. */
+:host,
+:root {
+  color: var(--button-text-color);
+  font-family: -apple-system, "Ubuntu Sans", "Noto Sans", Inter, Roboto, "Helvetica Neue", "Arial Nova", "Nimbus Sans", Arial, sans-serif;
+
+  @media (forced-colors) {
+    --aitab-eyebrow-text-color: ButtonText;
+    --aitab-text-color-deemphasized: ButtonText;
+  }
+
+  @media not (forced-colors) {
+    --aitab-text-color-deemphasized: light-dark(var(--color-gray-50), var(--color-gray-20));
+    --aitab-eyebrow-text-color: light-dark(var(--color-violet-60), var(--color-violet-30));
+  }
+
+  --aitab-heading-1: 64px;
+  --aitab-heading-2: 48px;
+  --aitab-heading-3: 32px;
+  --aitab-heading-4: var(--font-size-xlarge);
+  --aitab-heading-5: var(--font-size-large);
+  --aitab-heading-6: var(--font-size-root);
+  --aitab-body: var(--font-size-large);
+
+  @container aitab-page (width >= 900px) {
+    --aitab-heading-1: 80px;
+    --aitab-heading-2: 64px;
+    --aitab-heading-3: 36px;
+  }
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span,
+p {
+  margin: 0;
+}
+
+h1,
+h2,
+.aitab-heading-1,
+.aitab-heading-2 {
+  /* TODO Bug 2072395
+  Commenting out for now until we can make a decision regarding implementation that is secure and performant. */
+  /* font-family: "Mozilla Headline", sans-serif; */
+  font-weight: var(--font-weight-semibold);
+  font-style: normal;
+  /* font-variation-settings: "wdth" 75; */
+}
+
+h3,
+h4,
+h5,
+h6,
+.aitab-heading-3,
+.aitab-heading-4,
+.aitab-heading-5,
+.aitab-heading-6 {
+  font-weight: var(--font-weight-semibold);
+}
+
+h1,
+.aitab-heading-1 {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  font-size: var(--aitab-heading-1);
+}
+
+h2,
+.aitab-heading-2 {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  font-size: var(--aitab-heading-2);
+}
+
+h3,
+.aitab-heading-3 {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  font-size: var(--aitab-heading-3);
+}
+
+h4,
+.aitab-heading-4 {
+  font-size: var(--aitab-heading-4);
+}
+
+h5,
+.aitab-heading-5 {
+  font-size: var(--aitab-heading-5);
+  font-weight: var(--font-weight-bold);
+}
+
+h6,
+.aitab-heading-6 {
+  font-size: var(--aitab-heading-6);
+}
+
+span,
+p {
+  font-size: var(--aitab-body);
+}
+
+.aitab-eyebrow {
+  margin: 0;
+  color: var(--aitab-eyebrow-text-color);
+  font-size: var(--aitab-heading-6);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.aitab-deemphasized {
+  color: var(--aitab-text-color-deemphasized);
+}

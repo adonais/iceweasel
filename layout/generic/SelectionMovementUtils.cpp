@@ -444,7 +444,7 @@ RawRangeBoundary SelectionMovementUtils::GetFirstVisiblePointAtLeaf(
   // Iterate start of each node in the range so that the following loop checks
   // containers first, then, inner containers and leaf nodes.
   UnsafePreContentIterator iter;
-  if (aRange.IsDynamicRange()) {
+  if (aRange.IsRange()) {
     if (NS_WARN_IF(NS_FAILED(iter.InitWithoutValidatingPoints(
             aRange.StartRef().AsRaw(), aRange.EndRef().AsRaw())))) {
       return {nullptr, nullptr};
@@ -565,7 +565,7 @@ RawRangeBoundary SelectionMovementUtils::GetLastVisiblePointAtLeaf(
   // Iterate end of each node in the range so that the following loop checks
   // containers first, then, inner containers and leaf nodes.
   UnsafePostContentIterator iter;
-  if (aRange.IsDynamicRange()) {
+  if (aRange.IsRange()) {
     if (NS_WARN_IF(NS_FAILED(iter.InitWithoutValidatingPoints(
             aRange.StartRef().AsRaw(), aRange.EndRef().AsRaw())))) {
       return {nullptr, nullptr};

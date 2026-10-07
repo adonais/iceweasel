@@ -6,6 +6,8 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   BreachAlertStorage: "resource://gre/modules/BreachAlertStore.sys.mjs",
+  BreachAlertsData:
+    "moz-src:///toolkit/components/passwordmgr/BreachAlertsData.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   ContentBlockingAllowList:
     "resource://gre/modules/ContentBlockingAllowList.sys.mjs",
@@ -18,7 +20,6 @@ ChromeUtils.defineESModuleGetters(this, {
   privacyMetricsStatsCategories:
     "moz-src:///browser/components/protections/PrivacyMetricsService.sys.mjs",
   QWACs: "resource://gre/modules/psm/QWACs.sys.mjs",
-  RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   SiteDataManager: "resource:///modules/SiteDataManager.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
@@ -147,22 +148,13 @@ class TrustPanel {
    */
   #clearFxaOauthClientCache = false;
   #breachAlertStoragePromise = null;
-  #isFirstVisit = false;
   // False until the blocker check completes; while false a secure page shows the
   // neutral "scanning" shield rather than the check-mark.
   #blockersChecked = false;
-  // Guards against a stale run overwriting a fresher count.
-  #toolbarTrackerCountUpdateId = 0;
   // True while navigating within the same site, so the icon stays static.
   #sameSiteNavigation = false;
-  /**
-   * We don't want to add the `has-blocked-trackers` class before we add the `first-visit` class,
-   * because otherwise the animation choreography gets out of sync (specifically, the
-   * `show-shortform-tracker-count` animation will start, causing the short form of the
-   * "blocked trackers" pill to show up too soon). Thus, we'll have to await this Promise
-   * before we update the tracker count.
-   */
-  #firstVisitPromise = Promise.resolve();
+  /** True while navigating within the same tab, false when changing URLs due to switching tabs. */
+  #sameTabNavigation = false;
 
   /**
    * If the document is using a qualified website authentication certificate
@@ -200,6 +192,8 @@ class TrustPanel {
     Fingerprinting,
     Cryptomining,
   };
+
+  #breachAlertsData = new BreachAlertsData();
 
   init() {
     for (let blocker of Object.values(this.#blockers)) {
@@ -300,7 +294,7 @@ class TrustPanel {
       this.anyDetected = this.anyDetected || blocker.isDetected(event);
     }
 
-    void this.#updateToolbarTrackerCount();
+    this.#updateToolbarTrackerCount();
     if (this.#popup) {
       await this.#updatePopup();
     }
@@ -489,18 +483,14 @@ class TrustPanel {
    * 2. Set `this.#blockersChecked` and call `#updateUrlBarIcon`, to ensure
    *    the scanning state gets resolved to the final secure/insecure state.
    */
-  async onNavigationComplete() {
+  onNavigationComplete() {
     if (!this.#enabled || !this.#uri) {
       return;
     }
     if (!this.#trackerCountEnabled) {
       return;
     }
-    const uri = this.#uri;
-    await this.#updateToolbarTrackerCount();
-    if (this.#uri !== uri) {
-      return;
-    }
+    this.#updateToolbarTrackerCount();
     if (!this.#blockersChecked) {
       this.#blockersChecked = true;
       this.#updateUrlbarIcon();
@@ -525,11 +515,13 @@ class TrustPanel {
     }
 
     const browser = gBrowser.selectedBrowser;
+    this.#sameTabNavigation =
+      this.#lastBrowser === null || browser === this.#lastBrowser;
     this.#sameSiteNavigation =
       // If the user visits the same site in different tabs, then switches between those tabs,
       // that results in two `updateIdentity` calls with the same site, but that should not
       // be considered a same-site navigation:
-      browser === this.#lastBrowser && this.#isSameSite(uri, this.#uri);
+      this.#sameTabNavigation && this.#isSameSite(uri, this.#uri);
     this.#lastBrowser = browser;
 
     this.#state = state;
@@ -545,7 +537,6 @@ class TrustPanel {
     if (this.#sameSiteNavigation) {
       this.#blockersChecked = true;
     }
-    this.#isFirstVisit = false;
     // #blockersChecked is reset in resetIconForNavigation, not here, so tab
     // switches and re-fired security changes don't re-enter scanning.
     this.#updateUrlbarIcon();
@@ -559,11 +550,7 @@ class TrustPanel {
     // (This function will update the icon by itself when it resolves, so we don't have to await it here.)
     void this.#checkForBreaches(uri);
 
-    // Only re-check first-visit on a cross-site navigation.
-    if (!this.#sameSiteNavigation) {
-      this.#firstVisitPromise = this.#markFirstVisit();
-    }
-    void this.#updateToolbarTrackerCount();
+    this.#updateToolbarTrackerCount();
   }
 
   /** Asynchronous check for the current page's breached status, updating the address bar icon if the page was breached */
@@ -619,10 +606,10 @@ class TrustPanel {
     if (this.#isAboutNetErrorPage || this.#isCertUserOverridden) {
       targetClasses.add("warning");
     }
-    if (this.#isFirstVisit) {
-      targetClasses.add("first-visit");
+    if (this.#sameTabNavigation && !this.#sameSiteNavigation) {
+      targetClasses.add("entry-page");
     }
-    // Added after "first-visit" so the tracker-count pill animation stays in sync.
+    // Added after "entry-page" so the tracker-count pill animation stays in sync.
     if (this.#trackerCountEnabled && this.#computeTrackerCount() > 0) {
       targetClasses.add("has-blocked-trackers");
     }
@@ -674,8 +661,11 @@ class TrustPanel {
       browser.lastTrackerCountShownURI !== this.#uri?.spec
     ) {
       browser.lastTrackerCountShownURI = this.#uri?.spec;
-      Glean.trustpanel.trackerCountShown.record({
-        first_visit: targetClasses.has("first-visit"),
+      this.#isFirstVisit(this.#uri.host).then(isFirstVisit => {
+        Glean.trustpanel.trackerCountShown.record({
+          first_site_load_in_tab: targetClasses.has("entry-page"),
+          first_visit: isFirstVisit,
+        });
       });
     }
 
@@ -811,7 +801,7 @@ class TrustPanel {
 
     // Ensure the toolbar tracker count is fully up-to-date and aligns with the
     // trust panel's count:
-    void this.#updateToolbarTrackerCount();
+    this.#updateToolbarTrackerCount();
 
     this.#updateBlockerView();
   }
@@ -827,58 +817,11 @@ class TrustPanel {
     return logEntriesToCount.length;
   }
 
-  async #markFirstVisit() {
-    if (!this.#uriHasHost) {
-      this.#isFirstVisit = false;
-      this.#updateUrlbarIcon();
-      return;
-    }
-    const uri = this.#uri;
-    const revHost = uri.host.split("").reverse().join("") + ".";
-    const conn = await PlacesUtils.promiseDBConnection();
-    const rows = await conn.executeCached(
-      // Check if the current host was visited before,
-      // but not in the last 20 seconds.
-      // (So that we don't show the long-form tracker count
-      // after the user already got the chance to see it on this site.)
-      `SELECT 1 FROM moz_historyvisits v
-         JOIN moz_places h ON h.id = v.place_id
-         WHERE h.rev_host = :revHost
-         AND v.visit_date < ((strftime('%s', 'now') - 20) * 1000000)
-         LIMIT 1`,
-      {
-        revHost,
-      }
-    );
-    if (!this.#uriHasHost || this.#uri.host !== uri.host) {
-      // If the URL has changed while executing the query above, abort.
-      return;
-    }
-    // Also treat as a first visit if the tracker count has never been shown,
-    // so the user gets the long-form UI even on a return visit.
-    const browser = gBrowser.selectedBrowser;
-    this.#isFirstVisit =
-      (rows.length === 0 || !UrlbarPrefs.get("trackerCountShown")) &&
-      browser.lastFirstVisitURI !== uri.spec;
-    if (this.#isFirstVisit) {
-      browser.lastFirstVisitURI = uri.spec;
-    }
-    this.#updateUrlbarIcon();
-  }
-
-  async #updateToolbarTrackerCount() {
+  #updateToolbarTrackerCount() {
     if (!this.#trackerCountEnabled) {
       return;
     }
-    const uri = this.#uri;
-    // Tag this run so that if a newer one starts while we're awaiting below,
-    // this now-stale run bails instead of clobbering the fresher count.
-    const updateId = ++this.#toolbarTrackerCountUpdateId;
-    await this.#firstVisitPromise;
     let count = this.#computeTrackerCount();
-    if (this.#uri !== uri || this.#toolbarTrackerCountUpdateId !== updateId) {
-      return;
-    }
 
     // A blocked tracker resolves the scanning shield straight into the reveal.
     if (count > 0) {
@@ -1152,6 +1095,22 @@ class TrustPanel {
     return (
       (await this.#hasMonitorAccount()) || (await this.#hasStoredPasswords())
     );
+  }
+
+  async #isFirstVisit(host) {
+    const revHost = host.split("").reverse().join("") + ".";
+    const conn = await PlacesUtils.promiseDBConnection();
+    const rows = await conn.executeCached(
+      // Check if the current host was visited before.
+      // (With a margin of 2 seconds, in case the current visit was already recorded.)
+      `SELECT 1 FROM moz_historyvisits v
+         JOIN moz_places h ON h.id = v.place_id
+         WHERE h.rev_host = :revHost
+         AND v.visit_date < (unixepoch('now', '-2 seconds') * 1000000)
+         LIMIT 1`,
+      { revHost }
+    );
+    return rows.length === 0;
   }
 
   #isSecurePage() {
@@ -2084,20 +2043,8 @@ class TrustPanel {
     return this.#breachAlertStoragePromise;
   }
 
-  async #getBreachedWebsites() {
-    const REMOTE_SETTINGS_COLLECTION = "fxmonitor-breaches";
-
-    try {
-      const breaches = await RemoteSettings(REMOTE_SETTINGS_COLLECTION).get();
-      return breaches;
-    } catch (ex) {
-      console.error("Could not get breach data from Remote Settings:", ex);
-      return [];
-    }
-  }
-
   async #getApplicableBreaches(site) {
-    const breaches = await this.#getBreachedWebsites();
+    const breaches = await this.#breachAlertsData.getAllBreaches();
 
     if (!site || !breaches.length) {
       return [];

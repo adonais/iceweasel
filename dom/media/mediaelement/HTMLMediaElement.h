@@ -85,7 +85,6 @@ class nsILoadGroup;
 class nsIRunnable;
 class nsISerialEventTarget;
 class nsITimer;
-class nsRange;
 
 namespace mozilla::dom {
 

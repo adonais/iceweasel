@@ -102,6 +102,43 @@ internal open class ForeignBytes : Structure() {
 
     class ByValue : ForeignBytes(), Structure.ByValue
 }
+
+// Converter for `&[u8]` / `[ByRef] bytes` arguments.
+//
+// Only `lower` is valid — zero-copy byte buffers only flow foreign -> Rust,
+// and only in argument position. `lift`, `read`, `write`, and
+// `allocationSize` have no sound implementation here and all panic at
+// runtime. The `FfiConverter` interface is implemented so that the
+// compiler enforces the full method set (rather than relying on eyeball).
+//
+// The provided `ByteBuffer` MUST be direct — only direct buffers have a
+// stable native address that JNA can expose via `getDirectBufferPointer`.
+// The returned `ForeignBytes.ByValue` is only valid for the duration of
+// the FFI call; the Rust side treats it as a borrow.
+internal object FfiConverterByRefBytes : FfiConverter<java.nio.ByteBuffer, ForeignBytes.ByValue> {
+    override fun lower(value: java.nio.ByteBuffer): ForeignBytes.ByValue {
+        require(value.isDirect) { "UniFFI zero-copy &[u8] requires a direct ByteBuffer. Use ByteBuffer.allocateDirect()." }
+        val remaining = value.remaining()
+        val fb = ForeignBytes.ByValue()
+        fb.len = remaining
+        // Zero-length direct buffers: skip getDirectBufferPointer (platform-variable behavior)
+        // and pass null. The Rust side treats (null, 0) as &[].
+        fb.data = if (remaining == 0) null else com.sun.jna.Native.getDirectBufferPointer(value)
+        return fb
+    }
+
+    override fun lift(value: ForeignBytes.ByValue): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be lifted: zero-copy &[u8] only flows foreign->Rust")
+
+    override fun read(buf: java.nio.ByteBuffer): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be read from a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun write(value: java.nio.ByteBuffer, buf: java.nio.ByteBuffer): Unit =
+        error("ByRef bytes cannot be written to a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun allocationSize(value: java.nio.ByteBuffer): ULong =
+        error("ByRef bytes have no RustBuffer allocation size: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+}
 /**
  * The FfiConverter interface handles converter types to and from the FFI
  *
@@ -639,19 +676,19 @@ internal object IntegrityCheckingUniffiLib {
         uniffiCheckContractApiVersion(this)
     }
     external fun uniffi_relay_checksum_method_relayclient_accept_terms(
-    ): Short
+    ): Int
     external fun uniffi_relay_checksum_method_relayclient_create_address(
-    ): Short
+    ): Int
     external fun uniffi_relay_checksum_method_relayclient_fetch_addresses(
-    ): Short
+    ): Int
     external fun uniffi_relay_checksum_method_relayclient_fetch_profile(
-    ): Short
+    ): Int
     external fun uniffi_relay_checksum_method_relayremotesettingsclient_should_show_relay(
-    ): Short
+    ): Int
     external fun uniffi_relay_checksum_constructor_relayclient_new(
-    ): Short
+    ): Int
     external fun uniffi_relay_checksum_constructor_relayremotesettingsclient_new(
-    ): Short
+    ): Int
     external fun ffi_relay_uniffi_contract_version(
     ): Int
 
@@ -708,7 +745,7 @@ internal object UniffiLib {
     external fun ffi_relay_rust_future_free_u8(`handle`: Long,
     ): Unit
     external fun ffi_relay_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Byte
+    ): Int
     external fun ffi_relay_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
     external fun ffi_relay_rust_future_cancel_i8(`handle`: Long,
@@ -724,7 +761,7 @@ internal object UniffiLib {
     external fun ffi_relay_rust_future_free_u16(`handle`: Long,
     ): Unit
     external fun ffi_relay_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Short
+    ): Int
     external fun ffi_relay_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
     external fun ffi_relay_rust_future_cancel_i16(`handle`: Long,
@@ -971,6 +1008,10 @@ private class JavaLangRefCleanable(
  */
 public object FfiConverterUShort: FfiConverter<UShort, Short> {
     override fun lift(value: Short): UShort {
+        return value.toUShort()
+    }
+
+    fun lift(value: Int): UShort {
         return value.toUShort()
     }
 
@@ -1328,7 +1369,9 @@ open class RelayClient: Disposable, AutoCloseable, RelayClientInterface
     uniffiRustCallWithError(RelayApiException) { _status ->
     UniffiLib.uniffi_relay_fn_constructor_relayclient_new(
     
-        FfiConverterString.lower(`serverUrl`),FfiConverterOptionalString.lower(`authToken`),_status)
+        
+        FfiConverterString.lower(`serverUrl`),
+        FfiConverterOptionalString.lower(`authToken`),_status)
 }
     )
 
@@ -1337,6 +1380,11 @@ open class RelayClient: Disposable, AutoCloseable, RelayClientInterface
 
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
+
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
 
     override fun destroy() {
         // Only allow a single call to this method.
@@ -1450,7 +1498,10 @@ open class RelayClient: Disposable, AutoCloseable, RelayClientInterface
     uniffiRustCallWithError(RelayApiException) { _status ->
     UniffiLib.uniffi_relay_fn_method_relayclient_create_address(
         it,
-        FfiConverterString.lower(`description`),FfiConverterString.lower(`generatedFor`),FfiConverterString.lower(`usedOn`),_status)
+        
+        FfiConverterString.lower(`description`),
+        FfiConverterString.lower(`generatedFor`),
+        FfiConverterString.lower(`usedOn`),_status)
 }
     }
     )
@@ -1758,6 +1809,7 @@ open class RelayRemoteSettingsClient: Disposable, AutoCloseable, RelayRemoteSett
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_relay_fn_constructor_relayremotesettingsclient_new(
     
+        
         FfiConverterTypeRemoteSettingsService.lower(`rsService`),_status)
 }
     )
@@ -1767,6 +1819,11 @@ open class RelayRemoteSettingsClient: Disposable, AutoCloseable, RelayRemoteSett
 
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
+
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
 
     override fun destroy() {
         // Only allow a single call to this method.
@@ -1898,7 +1955,10 @@ open class RelayRemoteSettingsClient: Disposable, AutoCloseable, RelayRemoteSett
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_relay_fn_method_relayremotesettingsclient_should_show_relay(
         it,
-        FfiConverterString.lower(`host`),FfiConverterString.lower(`domain`),FfiConverterBoolean.lower(`isRelayUser`),_status)
+        
+        FfiConverterString.lower(`host`),
+        FfiConverterString.lower(`domain`),
+        FfiConverterBoolean.lower(`isRelayUser`),_status)
 }
     }
     )

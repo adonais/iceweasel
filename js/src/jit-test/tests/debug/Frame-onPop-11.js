@@ -7,7 +7,7 @@ var log;
 
 // Set a breakpoint at the start of g.f
 var gf = gw.makeDebuggeeValue(g.f);
-var fStartOffset = gf.script.getLineOffsets(gf.script.startLine)[0];
+var fStartOffset = gf.script.getPossibleBreakpointOffsets({ line: gf.script.startLine })[0];
 gf.script.setBreakpoint(fStartOffset, {
     hit: function handleHit(frame) {
         log += 'b';

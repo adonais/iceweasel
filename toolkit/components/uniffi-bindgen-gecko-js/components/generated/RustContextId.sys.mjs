@@ -36,6 +36,7 @@ export var UnitTestObjs = {
 
 
 
+
 /**
  * ApiError
  */
@@ -162,7 +163,7 @@ export class ContextIdComponent extends ContextIdComponentInterface {
         FfiConverterBoolean.checkType(runningInTestAutomation);
         FfiConverterTypeContextIdCallback.checkType(callback);
         const result = UniFFIScaffolding.callSync(
-            74, // uniffi_context_id_fn_constructor_contextidcomponent_new
+            107, // uniffi_context_id_fn_constructor_contextidcomponent_new
             FfiConverterString.lower(initContextId),
             FfiConverterInt64.lower(creationTimestampS),
             FfiConverterBoolean.lower(runningInTestAutomation),
@@ -181,7 +182,7 @@ export class ContextIdComponent extends ContextIdComponentInterface {
     async forceRotation() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            75, // uniffi_context_id_fn_method_contextidcomponent_force_rotation
+            108, // uniffi_context_id_fn_method_contextidcomponent_force_rotation
             FfiConverterTypeContextIDComponent.lowerReceiver(this),
         )
         return handleRustResult(
@@ -201,7 +202,7 @@ export class ContextIdComponent extends ContextIdComponentInterface {
        
         FfiConverterUInt8.checkType(rotationDaysInS);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            76, // uniffi_context_id_fn_method_contextidcomponent_request
+            109, // uniffi_context_id_fn_method_contextidcomponent_request
             FfiConverterTypeContextIDComponent.lowerReceiver(this),
             FfiConverterUInt8.lower(rotationDaysInS),
         )
@@ -219,7 +220,7 @@ export class ContextIdComponent extends ContextIdComponentInterface {
     async unsetCallback() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            77, // uniffi_context_id_fn_method_contextidcomponent_unset_callback
+            110, // uniffi_context_id_fn_method_contextidcomponent_unset_callback
             FfiConverterTypeContextIDComponent.lowerReceiver(this),
         )
         return handleRustResult(
@@ -253,11 +254,11 @@ export class FfiConverterTypeContextIDComponent extends FfiConverter {
     }
 
     static read(dataStream) {
-        return this.lift(dataStream.readPointer(7));
+        return this.lift(dataStream.readPointer(5));
     }
 
     static write(dataStream, value) {
-        dataStream.writePointer(7, this.lower(value));
+        dataStream.writePointer(5, this.lower(value));
     }
 
     static computeSize(value) {
@@ -299,11 +300,11 @@ export class FfiConverterTypeContextIdCallback extends FfiConverter {
         if (!(callbackObj instanceof ContextIdCallback)) {
             throw new UniFFITypeError("expected 'ContextIdCallback' subclass");
         }
-        return uniffiCallbackHandlerContextIdContextIdCallback.storeCallbackObj(callbackObj)
+        return uniffiCallbackHandlerContextIdCallback.storeCallbackObj(callbackObj)
     }
 
     static lift(handleId) {
-        return uniffiCallbackHandlerContextIdContextIdCallback.takeCallbackObj(handleId)
+        return uniffiCallbackHandlerContextIdCallback.takeCallbackObj(handleId)
     }
 
     static read(dataStream) {
@@ -318,9 +319,9 @@ export class FfiConverterTypeContextIdCallback extends FfiConverter {
         return 8;
     }
 }
-const uniffiCallbackHandlerContextIdContextIdCallback = new UniFFICallbackHandler(
+const uniffiCallbackHandlerContextIdCallback = new UniFFICallbackHandler(
     "ContextIdCallback",
-    3,
+    1,
     [
         new UniFFICallbackMethodHandler(
             "persist",
@@ -347,6 +348,6 @@ const uniffiCallbackHandlerContextIdContextIdCallback = new UniFFICallbackHandle
 );
 
 // Allow the shutdown-related functionality to be tested in the unit tests
-UnitTestObjs.uniffiCallbackHandlerContextIdContextIdCallback = uniffiCallbackHandlerContextIdContextIdCallback;
+UnitTestObjs.uniffiCallbackHandlerContextIdCallback = uniffiCallbackHandlerContextIdCallback;
 
 

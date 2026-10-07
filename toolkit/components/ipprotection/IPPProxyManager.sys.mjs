@@ -136,7 +136,7 @@ const LOG_PREF = "browser.ipProtection.log";
 
 ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
   return console.createInstance({
-    prefix: "IPPProxyManager",
+    prefix: "IPP_ProxyManager",
     maxLogLevel: Services.prefs.getBoolPref(LOG_PREF, false) ? "Debug" : "Warn",
   });
 });
@@ -394,15 +394,14 @@ class IPPProxyManagerSingleton extends EventTarget {
     }
 
     this.#activationAbortController = new AbortController();
-    const abortSignal = this.#activationAbortController.signal;
+    const abortController = this.#activationAbortController;
+    const abortSignal = abortController.signal;
 
-    // Abort the activation if it takes more than 30 seconds, or if the user cancels it.
-    lazy.setTimeout(
-      () => {
-        this.#activationAbortController?.abort(ERRORS.TIMEOUT);
-      },
-      Temporal.Duration.from({ seconds: 30 }).total("milliseconds")
-    );
+    // Abort the activation if it exceeds the guardian timeout, or if the user
+    // cancels it.
+    const timeoutId = lazy.setTimeout(() => {
+      abortController.abort(ERRORS.TIMEOUT);
+    }, lazy.timeout);
 
     this.#setState(IPPProxyStates.ACTIVATING);
 
@@ -448,6 +447,7 @@ class IPPProxyManagerSingleton extends EventTarget {
         }
       )
       .finally(() => {
+        lazy.clearTimeout(timeoutId);
         this.#activatingPromise = null;
         this.#activationAbortController = null;
       });
@@ -955,7 +955,9 @@ class IPPProxyManagerSingleton extends EventTarget {
     this.#rotation?.controller.abort();
 
     const isString = typeof error === "string";
-    this.#errorType = isString ? ERRORS.from(error) : ERRORS.GENERIC;
+    // Keep the kind in a local: updateState() below clears #errorType.
+    const errorType = isString ? ERRORS.from(error) : ERRORS.GENERIC;
+    this.#errorType = errorType;
 
     if (this.#state === IPPProxyStates.ACTIVE) {
       // If the proxy is active, switch to the error state.
@@ -971,7 +973,10 @@ class IPPProxyManagerSingleton extends EventTarget {
     const stack = isString
       ? ""
       : stackSource(error?.stack ?? new Error().stack);
-    Glean.ipprotection.error.record({ source: stack || "ProxyManager" });
+    Glean.ipprotection.error.record({
+      source: stack || "ProxyManager",
+      reason: errorType,
+    });
   }
 
   /**

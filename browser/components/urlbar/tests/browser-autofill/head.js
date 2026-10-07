@@ -101,6 +101,7 @@ async function adaptiveAutofillSetup() {
       ["browser.urlbar.autoFill.adaptiveHistory.enabled", true],
       ["browser.urlbar.autoFill.adaptiveHistory.minCharsThreshold", 0],
       ["browser.urlbar.autoFill.adaptiveHistory.useCountThreshold", 0],
+      ["browser.urlbar.autoFill.adaptiveHistory.urlMinPicks", 1],
     ],
   });
 

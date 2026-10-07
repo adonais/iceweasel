@@ -158,6 +158,16 @@ function commonDialogOnLoad() {
       ui.loginTextbox,
       args.owningBrowsingContext
     );
+    // The message text comes from the page and is selectable, so copying out of
+    // alert()/confirm()/prompt() needs to be analyzed as well.
+    // This is registered on the root rather than on #infoBody because the
+    // copy event is dispatched at the element holding the
+    // start of the selection, so a selection spanning #infoTitle into
+    // #infoBody would otherwise slip past unanalyzed.
+    lazy.ContentAnalysisUtils.setupContentAnalysisEventsForCopyFromElement(
+      document.documentElement,
+      args.owningBrowsingContext
+    );
   }
 
   window.getAttention();

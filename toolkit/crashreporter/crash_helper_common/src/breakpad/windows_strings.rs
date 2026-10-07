@@ -25,15 +25,17 @@ impl BreakpadString for OsString {
         }
 
         let wchars: Vec<u16> = bytes
-            .chunks_exact(2)
-            .map(|chunk| {
-                // SAFETY: We're splitting into exact 2 bytes chunks
-                let chunk: [u8; 2] = unsafe { chunk.try_into().unwrap_unchecked() };
-                u16::from_ne_bytes(chunk)
-            })
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|chunk| u16::from_ne_bytes(*chunk))
             .collect();
 
         Ok(OsString::from_wide(&wchars))
+    }
+
+    fn len(&self) -> usize {
+        self.as_os_str().encode_wide().count()
     }
 
     unsafe fn from_ptr(ptr: *const BreakpadChar) -> OsString {

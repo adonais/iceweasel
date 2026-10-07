@@ -11,6 +11,7 @@
 #include <cstdint>
 
 #include "ErrorList.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "mozilla/Span.h"
 #include "mozilla/dom/quota/CipherStrategy.h"

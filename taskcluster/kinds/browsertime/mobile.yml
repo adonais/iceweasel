@@ -61,7 +61,7 @@ task-defaults:
             # Bug 1635749, disable window recorder temporarily
             - --browsertime-no-ffwindowrecorder
     optimization:
-        skip-unless-android-perftest-backstop: null
+        perf-cadence-android: null
     limit-platforms:
         by-app:
             chrome-m:
@@ -79,7 +79,7 @@ task-defaults:
                             - android-sdk-macos
                             - android-system-image-arm64-macos
                             - android-avd-arm64-macos
-                            - macosx64-jdk-repack
+                            - macosx64-aarch64-jdk-repack
                             - macosx64-aarch64-minidump-stackwalk
                             - macosx64-aarch64-fix-stacks
                             - linux64-hostutils
@@ -93,7 +93,7 @@ task-defaults:
                             - android-sdk-macos
                             - android-system-image-arm64-macos
                             - android-avd-arm64-macos
-                            - macosx64-jdk-repack
+                            - macosx64-aarch64-jdk-repack
                             - macosx64-aarch64-minidump-stackwalk
                             - macosx64-aarch64-fix-stacks
                             - linux64-hostutils
@@ -531,12 +531,19 @@ browsertime-benchmark-jetstream3:
                 by-app:
                     fenix: [trunk-only]
                     default: []
+            android-em-14-arm64.*shippable.*:
+                by-app:
+                    fenix: [autoland]
+                    default: []
             default: []
     treeherder-symbol: Btime()
     tier:
-        by-app:
-            fenix: 2
-            default: 3
+        by-test-platform:
+            android-em-14-arm64.*: 3
+            default:
+                by-app:
+                    fenix: 2
+                    default: 3
 
 browsertime-benchmark-unity-webgl-mobile:
     description: Browsertime Unity WebGL on Android

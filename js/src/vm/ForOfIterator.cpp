@@ -4,6 +4,8 @@
 
 #include "js/ForOfIterator.h"
 
+#include <algorithm>
+
 #include "js/Exception.h"
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "vm/Interpreter.h"
@@ -139,6 +141,15 @@ bool ForOfIterator::next(MutableHandleValue vp, bool* done) {
   }
 
   return GetProperty(cx_, resultObj, resultObj, cx_->names().value, vp);
+}
+
+mozilla::Maybe<uint32_t> ForOfIterator::sizeHint() const {
+  if (!isOptimizedArray_) {
+    return mozilla::Nothing();
+  }
+  ArrayObject* arr = &iteratorOrArray_->as<ArrayObject>();
+  return mozilla::Some(
+      std::min(arr->length(), arr->getDenseInitializedLength()));
 }
 
 void ForOfIterator::closeThrow() {

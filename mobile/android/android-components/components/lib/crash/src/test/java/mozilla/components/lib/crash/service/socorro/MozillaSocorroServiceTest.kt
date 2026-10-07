@@ -184,12 +184,19 @@ class MozillaSocorroServiceTest {
             assert(request.contains("name=Android_Device\r\n\r\nrobolectric"))
             assert(request.contains("name=CrashType\r\n\r\n$FATAL_NATIVE_CRASH_TYPE"))
             assert(request.contains("name=CrashTime\r\n\r\n123"))
+            assert(request.contains("name=OS\r\n\r\nAndroid"))
+            assert(request.contains("name=OSVersion\r\n\r\n"))
+            assert(request.contains("name=CPUArchitecture\r\n\r\n"))
             assert(request.contains("name=useragent_locale\r\n\r\nen-US"))
             assert(
                 request.contains(
                     "name=Breadcrumbs\r\n\r\n[{\"timestamp\":\"2018-06-12T19:30:00\",\"message\":\"Hello World\",\"category\":\"\",\"level\":\"Debug\",\"type\":\"Default\",\"data\":{}}]"
                 )
             )
+
+            val boundary = request.substringBefore("\r\n").removePrefix("--")
+            assert(request.endsWith("\r\n--$boundary--\r\n"))
+            assert(!request.contains("\r\n\r\n--$boundary--"))
 
             verify(service).report(crash)
             verify(service).sendReport(crash)
@@ -542,6 +549,9 @@ class MozillaSocorroServiceTest {
             assert(request.contains("name=Android_Device\r\n\r\nrobolectric"))
             assert(request.contains("name=CrashType\r\n\r\n$UNCAUGHT_EXCEPTION_TYPE"))
             assert(request.contains("name=CrashTime\r\n\r\n123"))
+            assert(request.contains("name=OS\r\n\r\nAndroid"))
+            assert(request.contains("name=OSVersion\r\n\r\n"))
+            assert(request.contains("name=CPUArchitecture\r\n\r\n"))
             assert(request.contains("name=useragent_locale\r\n\r\nen-US"))
 
             verify(service).report(crash)
@@ -844,5 +854,49 @@ class MozillaSocorroServiceTest {
         } finally {
             mockWebServer.close()
         }
+    }
+
+    @Test
+    fun `MozillaSocorroService reports throwables that have no stack trace`() {
+        val mockWebServer = MockWebServer()
+
+        try {
+            mockWebServer.enqueue(MockResponse(code = 200, body = "CrashID=bp-00000000-0000-0000-0000-000000000000"))
+            mockWebServer.start()
+            val service =
+                MozillaSocorroService(
+                    testContext,
+                    "Test App",
+                    serverUrl = mockWebServer.url("/").toString(),
+                )
+
+            val throwable = StacklessException("Job was cancelled")
+            assertEquals(0, throwable.stackTrace.size)
+
+            service.report(Crash.UncaughtExceptionCrash(123456, throwable, arrayListOf()))
+
+            val body = ByteArrayInputStream(mockWebServer.takeRequest().body!!.toByteArray())
+            val request = GZIPInputStream(body).reader().readText()
+
+            assert(
+                request.contains("name=JavaStackTrace\r\n\r\n${StacklessException::class.java.name}: Job was cancelled")
+            )
+            assert(request.contains("\tat \$Missing.<stackTrace>(Unknown Source)"))
+            assert(request.contains("\"type\":\"StacklessException\""))
+            assert(request.contains("\"module\":\"\$Missing\""))
+        } finally {
+            mockWebServer.close()
+        }
+    }
+}
+
+/**
+ * Mirrors kotlinx.coroutines' `JobCancellationException`, which clears its own stack trace unless the coroutines
+ * library is in debug mode.
+ */
+private class StacklessException(message: String) : RuntimeException(message) {
+    override fun fillInStackTrace(): Throwable {
+        stackTrace = emptyArray()
+        return this
     }
 }

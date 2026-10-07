@@ -2,7 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import {
+  UrlbarProvider,
+  UrlbarUtils,
+} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -89,9 +92,9 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
    *
    * @param {UrlbarQueryContext} queryContext
    * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
-   *   Callback invoked by the provider to add a new result.
+   * @param {UrlbarParentController} controller
    */
-  async startQuery(queryContext, addCallback) {
+  async startQuery(queryContext, addCallback, controller) {
     let instance = this.queryInstance;
     let searchString = this._trimmedSearchString;
 
@@ -118,7 +121,7 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
         break;
       }
 
-      let result = await this.#makeResult(queryContext, suggestion);
+      let result = await this.#makeResult(queryContext, suggestion, controller);
       if (instance != this.queryInstance) {
         return;
       }
@@ -304,12 +307,14 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
   /**
    * This is called only for dynamic result types.
    *
-   * @param {UrlbarResult} result The result whose view will be updated.
-   * @returns {object} An object describing the view update.
+   * @param {UrlbarResult} result
+   * @param {UrlbarParentController} controller
+   * @returns {object}
    */
-  getViewUpdate(result) {
+  getViewUpdate(result, controller) {
     return lazy.QuickSuggest.getFeatureByResult(result)?.getViewUpdate?.(
-      result
+      result,
+      controller
     );
   }
 
@@ -349,7 +354,7 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
     return suggestion.provider;
   }
 
-  async #makeResult(queryContext, suggestion) {
+  async #makeResult(queryContext, suggestion, controller) {
     let result = null;
     let feature = lazy.QuickSuggest.getFeatureBySource(suggestion);
     if (!feature) {
@@ -385,8 +390,15 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
     result.payload.telemetryType = this.#getSuggestionTelemetryType(suggestion);
 
     // Handle icons here unless the feature already did.
-    result.payload.icon ||= suggestion.icon;
     result.payload.iconBlob ||= suggestion.icon_blob;
+    result.payload.icon ||= suggestion.icon;
+    if (result.payload.icon) {
+      result.payload.icon = UrlbarUtils.getRemoteIconUrl(
+        result.payload.icon,
+        lazy.UrlbarShared.TOP_PICK_ICON_SIZE,
+        controller
+      );
+    }
 
     switch (suggestion.source) {
       case "merino":

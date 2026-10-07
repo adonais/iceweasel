@@ -87,6 +87,39 @@ Provides users with set of mutually exclusive options.
 
 ![About Welcome Multiselect](./aboutwelcome-single-select-picker.png)
 
+Individual items can opt in to conditional rendering with a `targeting`
+property containing a JEXL expression, the same way screen-level `targeting`
+works. An item is rendered only when its expression evaluates to a truthy
+value; items without a `targeting` property are always shown.
+```js
+tiles: {
+  type: "single-select",
+  data: [
+    {
+      id: "split-view",
+      targeting: "firefoxVersion >= 150",
+      type: "carousel-card",
+      label: { raw: "Split View" },
+      body: {
+        raw: "Two tabs side by side, right where you need them. Finally.",
+      },
+    },
+    {
+      id: "tab-groups",
+      type: "carousel-card",
+      label: { raw: "Tab Groups" },
+      body: { raw: "Keep related tabs together in named groups." },
+    },
+  ],
+}
+```
+
+##### Carousel Card
+
+The `carousel-card` type displays a single select tile inside a card with a full bleed image, label, body, and an optional button. These cards, along with navigation pills, are consumed by the `carousel` layout and supported with horizontal scrolling navigation.
+
+![Carousel Card](./carousel-card.png)
+
 #### Theme Picker
 Allows users to select from a set of themes to personalize the browser’s appearance.
 

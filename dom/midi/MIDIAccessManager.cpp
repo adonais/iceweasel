@@ -7,10 +7,10 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticPrefs_midi.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/MIDIAccess.h"
 #include "mozilla/dom/MIDIManagerChild.h"
 #include "mozilla/dom/MIDIPermissionRequest.h"
+#include "mozilla/dom/PermissionsPolicyUtils.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/Endpoint.h"
@@ -70,7 +70,7 @@ already_AddRefed<Promise> MIDIAccessManager::RequestMIDIAccess(
   }
 #endif
 
-  if (!FeaturePolicyUtils::IsFeatureAllowed(doc, u"midi"_ns)) {
+  if (!PermissionsPolicyUtils::IsFeatureAllowed(doc, u"midi"_ns)) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
   }

@@ -44,6 +44,9 @@ enum class SVGBBoxFlag : uint16_t {
   // bounds of the elements children. This flag will cause the
   // element's bounds to be returned instead.
   UseFrameBoundsForOuterSVG,
+  // Get the bounds of text content rather than the bounds of the entire
+  // text frame.
+  TextContentBounds,
   // Normally GetBBox will return values that apply CSS Zoom.
   // This flag will cause the unzoomed element's bounds to be returned instead.
   DisregardCSSZoom,

@@ -31,7 +31,7 @@ mozilla::ipc::IPCResult WebIdentityChild::RecvOpenContinuationWindow(
 
   // Open a popup via the window opening this to the provided URL, resolving
   // with the new browsing context if we can get one.
-  nsGlobalWindowOuter* outer = nsGlobalWindowOuter::GetOuterWindowWithId(
+  RefPtr outer = nsGlobalWindowOuter::GetOuterWindowWithId(
       window->GetWindowContext()->OuterWindowId());
   RefPtr<BrowsingContext> newBC;
   nsresult rv = outer->OpenJS(aContinueURI->GetSpecOrDefault(), u"_blank"_ns,

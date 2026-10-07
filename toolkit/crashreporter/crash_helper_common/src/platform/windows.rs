@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use crate::{AsProcessReaderHandle, Pid, IO_TIMEOUT};
+use crate::{AsRawProcessHandle, AsRawThreadHandle, FromRawThreadHandle, Pid, IO_TIMEOUT};
 use std::{
     ffi::{CStr, CString, OsString},
     mem::{zeroed, MaybeUninit},
@@ -16,19 +16,21 @@ use std::{
 use thiserror::Error;
 use windows_sys::Win32::{
     Foundation::{
-        GetLastError, ERROR_BROKEN_PIPE, ERROR_IO_PENDING, ERROR_NOT_FOUND, ERROR_PIPE_CONNECTED,
-        FALSE, HANDLE, WAIT_TIMEOUT, WIN32_ERROR,
+        DuplicateHandle, GetLastError, DUPLICATE_SAME_ACCESS, ERROR_BROKEN_PIPE, ERROR_IO_PENDING,
+        ERROR_NOT_FOUND, ERROR_PIPE_CONNECTED, FALSE, HANDLE, INVALID_HANDLE_VALUE, TRUE,
+        WAIT_TIMEOUT, WIN32_ERROR,
     },
     Storage::FileSystem::{ReadFile, WriteFile},
     System::{
         Pipes::ConnectNamedPipe,
-        Threading::{CreateEventA, ResetEvent, SetEvent, INFINITE},
+        Threading::{CreateEventA, GetCurrentProcess, ResetEvent, SetEvent, INFINITE},
         IO::{CancelIoEx, GetOverlappedResultEx, OVERLAPPED},
     },
 };
 
 pub(crate) const PROCESS_RENDEZVOUS_ANCILLARY_DATA_LEN: usize = 1;
 
+pub type RawProcessHandle = HANDLE;
 #[repr(transparent)]
 pub struct ProcessHandle(pub OwnedHandle);
 
@@ -51,17 +53,62 @@ impl ProcessHandle {
             OwnedHandle::from_raw_handle(handle as RawHandle)
         }))
     }
+
+    /// Returns a handle to the current process. This handle *can* be shared.
+    pub fn current_process() -> Result<Self, PlatformError> {
+        let mut handle: HANDLE = INVALID_HANDLE_VALUE;
+        // SAFETY: handle is stack-allocated, and GetCurrentProcess
+        // presumably returns safe pseudohandles
+        let res = unsafe {
+            DuplicateHandle(
+                GetCurrentProcess(),
+                GetCurrentProcess(),
+                GetCurrentProcess(),
+                &mut handle,
+                /* dwDesiredAccess */ 0,
+                /* bInheritHandle */ TRUE,
+                DUPLICATE_SAME_ACCESS,
+            )
+        };
+
+        if res == FALSE {
+            return Err(PlatformError::DuplicateHandleFailed(get_last_error()));
+        }
+
+        // SAFETY: we checked the error status so handle must be valid.
+        Ok(ProcessHandle(unsafe {
+            OwnedHandle::from_raw_handle(handle as RawHandle)
+        }))
+    }
 }
 
-impl AsProcessReaderHandle for ProcessHandle {
-    fn as_handle(&self) -> process_reader::ProcessHandle {
-        self.0.as_raw_handle() as process_reader::ProcessHandle
+impl AsRawProcessHandle for ProcessHandle {
+    fn as_raw_handle(&self) -> RawProcessHandle {
+        self.0.as_raw_handle() as HANDLE
     }
 }
 
 impl Clone for ProcessHandle {
     fn clone(&self) -> Self {
         ProcessHandle(self.0.try_clone().unwrap())
+    }
+}
+
+// Windows supports proper thread handles but for the time being we stick to
+// thread IDs for compatibility with Breakpad interfaces.
+pub type RawThreadHandle = i32;
+#[repr(transparent)]
+pub struct ThreadHandle(pub i32);
+
+impl AsRawThreadHandle for ThreadHandle {
+    fn as_raw_handle(&self) -> RawThreadHandle {
+        self.0
+    }
+}
+
+impl FromRawThreadHandle for ThreadHandle {
+    unsafe fn from_raw_handle(handle: RawThreadHandle) -> ThreadHandle {
+        ThreadHandle(handle)
     }
 }
 
@@ -374,8 +421,19 @@ impl OverlappedOperation {
         Self::sched_recv_internal(handle, None, expected_size)
     }
 
-    pub(crate) fn collect_recv(mut self) -> Vec<u8> {
-        self.buffer.take().expect("Missing receive buffer")
+    pub(crate) fn collect_recv(mut self, len: usize) -> Vec<u8> {
+        let mut buffer = self.buffer.take().expect("Missing receive buffer");
+
+        // We assert here because if this happens then we've hit a logic bug in
+        // our code. The size of the receive operation and buffer length are
+        // tied together so this should never happen.
+        assert!(
+            len <= buffer.len(),
+            "More bytes received than the buffer would allow"
+        );
+
+        buffer.truncate(len);
+        buffer
     }
 
     pub(crate) fn send(

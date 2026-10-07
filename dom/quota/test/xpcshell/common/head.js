@@ -318,6 +318,13 @@ function estimateOrigin(principal, callback) {
   return request;
 }
 
+function estimateGroupUsage(principal, callback) {
+  let request = SpecialPowers._getQuotaManager().estimateGroupUsage(principal);
+  request.callback = callback;
+
+  return request;
+}
+
 function listOrigins(callback) {
   let request = SpecialPowers._getQuotaManager().listOrigins(callback);
   request.callback = callback;

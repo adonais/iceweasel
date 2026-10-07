@@ -117,7 +117,7 @@ addMessageListener("init", ({ domain }) => {
     Ci.nsICookie.SCHEME_HTTPS
   );
   is(
-    cs.countCookiesFromHost(domain),
+    cs.countCookiesFromHost(domain, {}),
     1,
     "number of cookies for domain " + domain
   );

@@ -16,6 +16,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.appservices.fxaclient.DeviceConfig as ASDeviceConfig
@@ -48,6 +50,7 @@ import mozilla.components.service.fxa.StorageWrapper
 import mozilla.components.service.fxa.emitSyncFailedFact
 import mozilla.components.service.fxa.into
 import mozilla.components.service.fxa.sync.SharedPrefsSyncStateStorage
+import mozilla.components.service.fxa.sync.SyncConnectionState
 import mozilla.components.service.fxa.sync.SyncManager
 import mozilla.components.service.fxa.sync.SyncReason
 import mozilla.components.service.fxa.sync.SyncStateStorage
@@ -149,6 +152,11 @@ open class FxaAccountManager(
     // Note that trying to perform a sync while account isn't authenticated will not succeed.
     @GuardedBy("this") private var syncManager: SyncManager? = null
 
+    /** Emits whether sync is connected on this device. */
+    val syncConnectionState: StateFlow<SyncConnectionState> by lazy {
+        syncManager?.syncConnectionState ?: MutableStateFlow(SyncConnectionState.Uninitialized)
+    }
+
     /** Provider for retrieving a [SyncStateStorage] instance. */
     private val syncStateStorageProvider by lazy {
         SharedPrefsSyncStateStorage.SingletonProvider(context, coroutineContext)
@@ -228,6 +236,9 @@ open class FxaAccountManager(
                         }
                         syncManager?.now(reason, debounce, customEngineSubset)
                     }
+
+                    // refresh profile on explicit "sync now" action
+                    refreshProfile(ignoreCache = true)
                 }
                 else -> logger.info("Ignoring syncNow request, not in the right state: $s")
             }
@@ -262,6 +273,8 @@ open class FxaAccountManager(
     /** Call this after registering your observers, and before interacting with this class. */
     suspend fun start() =
         withContext(coroutineContext) {
+            syncManager?.initialize()
+
             processQueue(Event.Account.Start)
 
             if (!isAccountManagerReady) {
@@ -652,6 +665,7 @@ open class FxaAccountManager(
         return WorkManagerSyncManager(
             context = context,
             syncConfig = config,
+            syncStateStorageProvider = syncStateStorageProvider,
             coroutineContext = coroutineContext,
         )
     }

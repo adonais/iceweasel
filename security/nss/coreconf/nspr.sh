@@ -8,6 +8,7 @@
 nspr_cflags=
 nspr_cxxflags=
 nspr_ldflags=
+nspr_opt=
 
 # Try to avoid bmake on OS X and BSD systems
 if hash gmake 2>/dev/null; then
@@ -19,6 +20,9 @@ nspr_set_flags()
     nspr_cflags="$CFLAGS $@"
     nspr_cxxflags="$CXXFLAGS $@"
     nspr_ldflags="$LDFLAGS $@"
+    if [[ "$platform" = *_NT* ]]; then
+        nspr_opt="--enable-win32-target=WIN95" # Use the same NSPR Windows target as Gecko.
+    fi
 }
 
 # Echo the path from $2 to $1, given two absolute, symlink-free directories.
@@ -75,7 +79,13 @@ nspr_build()
     fi
     if [ "$target_arch" = "x64" ]; then
         extra_params+=(--enable-64bit)
+    elif [ "$target_arch" = "arm64" ] || [ "$target_arch" = "aarch64" ]; then
+        extra_params+=(--enable-64bit)
+        if [ "$msvc" = 1 ]; then
+            extra_params+=(--host=aarch64-pc-mingw32)
+        fi
     fi
+    extra_params+=($nspr_opt)
 
     if [[ -n "$CC" && -n "$build_tools_cc" && "$CC" != "$build_tools_cc" ]]; then
         # If build_tools_cc is specified, we expect CC to include a target
@@ -124,6 +134,12 @@ set_nspr_path()
 {
     local include=$(echo "$1" | cut -d: -f1)
     local lib=$(echo "$1" | cut -d: -f2)
+    # Only the WINNT target defines WINNT in prcpucfg.h.
+    if [[ "$platform" = *_NT* ]] && [ -f "$include/prcpucfg.h" ] &&
+           grep -q 'define WINNT' "$include/prcpucfg.h"; then
+        echo "$include is a WINNT-target NSPR; NSS only supports WIN95." 1>&2
+        exit 1
+    fi
     gyp_params+=(-Dnspr_include_dir="$include")
     gyp_params+=(-Dnspr_lib_dir="$lib")
 }

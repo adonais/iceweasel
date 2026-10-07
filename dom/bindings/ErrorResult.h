@@ -200,6 +200,11 @@ class TErrorResult {
 
   explicit TErrorResult(nsresult aRv) : TErrorResult() { AssignErrorCode(aRv); }
 
+  // Not to be implemented, to make sure people always pass this by
+  // reference, not by value.
+  TErrorResult(const TErrorResult&) = delete;
+  void operator=(const TErrorResult&) = delete;
+
   operator ErrorResult&();
   operator const ErrorResult&() const;
   operator OOMReporter&();
@@ -655,11 +660,6 @@ class TErrorResult {
   // The thread that created this TErrorResult
   NS_DECL_OWNINGTHREAD;
 #endif
-
-  // Not to be implemented, to make sure people always pass this by
-  // reference, not by value.
-  TErrorResult(const TErrorResult&) = delete;
-  void operator=(const TErrorResult&) = delete;
 } JS_HAZ_ROOTED;
 
 struct JustAssertCleanupPolicy {

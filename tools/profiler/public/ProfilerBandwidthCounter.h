@@ -41,10 +41,17 @@ namespace geckoprofiler::markers {
 
 using namespace mozilla;
 
-struct NetworkIOMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("NetIO");
-  }
+struct NetworkIOMarker : public BaseMarkerType<NetworkIOMarker> {
+  static constexpr const char* Name = "NetIO";
+
+  using MS = MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"read", MS::InputType::Int64, "Read", MS::Format::Bytes},
+      {"written", MS::InputType::Int64, "Written", MS::Format::Bytes},
+  };
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+
   static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
                                    int64_t aRead, int64_t aWritten) {
     if (aRead) {
@@ -55,14 +62,10 @@ struct NetworkIOMarker {
     }
   }
 
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-
-    schema.AddKeyLabelFormat("read", "Read", MS::Format::Bytes);
-    schema.AddKeyLabelFormat("written", "Written", MS::Format::Bytes);
-
-    return schema;
+  // Removable once bug 2071910 converts payload arguments.
+  static void TranslateMarkerInputToSchema(void* aContext, int64_t aRead,
+                                           int64_t aWritten) {
+    ETW::OutputMarkerSchema(aContext, NetworkIOMarker{}, aRead, aWritten);
   }
 };
 

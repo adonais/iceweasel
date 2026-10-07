@@ -86,6 +86,7 @@ using ::testing::Return;
 using ::testing::SaveArg;
 using ::testing::Sequence;
 using ::testing::SizeIs;
+using ::testing::WithArg;
 
 constexpr int64_t kDefaultInitialBitrateBps = 333000;
 constexpr double kDefaultBitratePriority = 0.5;
@@ -546,7 +547,6 @@ TEST_F(VideoSendStreamImplTest,
   // VideoSendStreamImpl gets an allocated bitrate.
   const uint32_t kBitrateBps = 100000;
   EXPECT_CALL(rtp_video_sender_, GetPayloadBitrateBps())
-      .Times(1)
       .WillOnce(Return(kBitrateBps));
   static_cast<BitrateAllocatorObserver*>(vss_impl.get())
       ->OnBitrateUpdated(CreateAllocation(kBitrateBps));
@@ -880,7 +880,6 @@ TEST_F(VideoSendStreamImplTest, ForwardsVideoBitrateAllocationWhenEnabled) {
   // Unpause encoder, allocation should be passed through.
   const uint32_t kBitrateBps = 100000;
   EXPECT_CALL(rtp_video_sender_, GetPayloadBitrateBps())
-      .Times(1)
       .WillOnce(Return(kBitrateBps));
   static_cast<BitrateAllocatorObserver*>(vss_impl.get())
       ->OnBitrateUpdated(CreateAllocation(kBitrateBps));
@@ -889,7 +888,6 @@ TEST_F(VideoSendStreamImplTest, ForwardsVideoBitrateAllocationWhenEnabled) {
   time_controller_.AdvanceTime(TimeDelta::Zero());
   // Pause encoder again, and block allocations.
   EXPECT_CALL(rtp_video_sender_, GetPayloadBitrateBps())
-      .Times(1)
       .WillOnce(Return(0));
   static_cast<BitrateAllocatorObserver*>(vss_impl.get())
       ->OnBitrateUpdated(CreateAllocation(0));
@@ -906,7 +904,6 @@ TEST_F(VideoSendStreamImplTest, ThrottlesVideoBitrateAllocationWhenTooSimilar) {
   // Unpause encoder, to allows allocations to be passed through.
   const uint32_t kBitrateBps = 100000;
   EXPECT_CALL(rtp_video_sender_, GetPayloadBitrateBps())
-      .Times(1)
       .WillOnce(Return(kBitrateBps));
   static_cast<BitrateAllocatorObserver*>(vss_impl.get())
       ->OnBitrateUpdated(CreateAllocation(kBitrateBps));
@@ -965,7 +962,6 @@ TEST_F(VideoSendStreamImplTest, ForwardsVideoBitrateAllocationOnLayerChange) {
   // Unpause encoder, to allows allocations to be passed through.
   const uint32_t kBitrateBps = 100000;
   EXPECT_CALL(rtp_video_sender_, GetPayloadBitrateBps())
-      .Times(1)
       .WillOnce(Return(kBitrateBps));
   static_cast<BitrateAllocatorObserver*>(vss_impl.get())
       ->OnBitrateUpdated(CreateAllocation(kBitrateBps));
@@ -1269,7 +1265,6 @@ TEST_F(VideoSendStreamImplTest, DisablesPaddingOnPausedEncoder) {
   // Unpause encoder.
   const uint32_t kBitrateBps = 100000;
   EXPECT_CALL(rtp_video_sender_, GetPayloadBitrateBps())
-      .Times(1)
       .WillOnce(Return(kBitrateBps));
   static_cast<BitrateAllocatorObserver*>(vss_impl.get())
       ->OnBitrateUpdated(CreateAllocation(kBitrateBps));
@@ -1299,7 +1294,6 @@ TEST_F(VideoSendStreamImplTest, KeepAliveOnFrameDropped) {
   vss_impl->Start();
   const uint32_t kBitrateBps = 100000;
   EXPECT_CALL(rtp_video_sender_, GetPayloadBitrateBps())
-      .Times(1)
       .WillOnce(Return(kBitrateBps));
   static_cast<BitrateAllocatorObserver*>(vss_impl.get())
       ->OnBitrateUpdated(CreateAllocation(kBitrateBps));
@@ -1475,8 +1469,10 @@ TEST_F(VideoSendStreamImplTest, GeneratesKeyframePerStreamWhenFeatureEnabled) {
 
   RtpSenderObservers observers;
   EXPECT_CALL(transport_controller_, CreateRtpVideoSender)
-      .WillOnce(::testing::DoAll(::testing::SaveArg<5>(&observers),
-                                 ::testing::Return(&rtp_video_sender_)));
+      .WillOnce(WithArg<5>([&](const RtpSenderObservers& obs) {
+        observers = obs;
+        return &rtp_video_sender_;
+      }));
 
   VideoEncoderConfig encoder_config = TestVideoEncoderConfig();
   encoder_config.simulcast_layers.push_back(VideoStream());  // total 2 layers
@@ -1505,8 +1501,10 @@ TEST_F(VideoSendStreamImplTest,
 
   RtpSenderObservers observers;
   EXPECT_CALL(transport_controller_, CreateRtpVideoSender)
-      .WillOnce(::testing::DoAll(::testing::SaveArg<5>(&observers),
-                                 ::testing::Return(&rtp_video_sender_)));
+      .WillOnce(WithArg<5>([&](const RtpSenderObservers& obs) {
+        observers = obs;
+        return &rtp_video_sender_;
+      }));
 
   VideoEncoderConfig encoder_config = TestVideoEncoderConfig();
   encoder_config.simulcast_layers.push_back(VideoStream());  // total 2 layers

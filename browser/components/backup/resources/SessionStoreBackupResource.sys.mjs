@@ -7,7 +7,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import {
   BackupResource,
   bytesToFuzzyKilobytes,
-} from "resource:///modules/backup/BackupResource.sys.mjs";
+} from "moz-src:///browser/components/backup/resources/BackupResource.sys.mjs";
 
 const lazy = {};
 

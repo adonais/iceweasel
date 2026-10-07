@@ -2,8 +2,8 @@ In addition to the mutex type {ref}`PRLock`, NSPR provides a special type,
 {ref}`PRMonitor`, for use in Java programming. This chapter describes the
 NSPR API for creation and manipulation of a mutex of type {ref}`PRMonitor`.
 
-- [Monitor Type](#Monitor_Type)
-- [Monitor Functions](#Monitor_Functions)
+- [Monitor Type](#monitor-type)
+- [Monitor Functions](#monitor-functions)
 
 With a mutex of type {ref}`PRLock`, a single thread may enter the monitor
 only once before it exits, and the mutex can have multiple associated
@@ -30,7 +30,7 @@ monitored data.
 
 For an introduction to NSPR thread synchronization, including locks and
 condition variables, see [Introduction to
-NSPR](Introduction_to_NSPR).
+NSPR](introduction_to_nspr.md).
 
 (monitor-type)=
 

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Test synthesized touch input</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<script src="/tests/SimpleTest/EventUtils.js"></script>
+<script src="/tests/SimpleTest/paint_listener.js"></script>
+<script src="/tests/gfx/layers/apz/test/mochitest/apz_test_utils.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css" />
+<style>
+  #container {
+    width: 200px;
+    height: 200px;
+    background-color: green;
+  }
+</style>
+<div id="container"></div>
+<script>
+function waitForEvent(aTarget, aEvent, aCheckFn) {
+  return new Promise(aResolve => {
+    aTarget.addEventListener(aEvent, function(e) {
+      info(`${aEvent} received`);
+      aCheckFn(e);
+      aResolve();
+    }, { once: true });
+  });
+}
+
+add_setup(async function init() {
+  await waitUntilApzStable();
+});
+
+add_task(async function test_movement() {
+  const container = document.getElementById("container");
+  for (const isAsync of [true, false]) {
+    info(`isAsync: ${isAsync}`);
+    const point = { x: 10, y: 10 };
+    const event = { asyncEnabled: isAsync, isSynthesized: false };
+
+    // movement should always report 0,0 for non-move event.
+    const promises = [
+      waitForEvent(container, "pointerdown", (aEvent) => {
+        is(aEvent.movementX, 0, `check movementX for ${aEvent.type}`);
+        is(aEvent.movementY, 0, `check movementX for ${aEvent.type}`);
+      }),
+      waitForEvent(container, "pointerup", (aEvent) => {
+        is(aEvent.movementX, 0, `check movementX for ${aEvent.type}`);
+        is(aEvent.movementY, 0, `check movementX for ${aEvent.type}`);
+      }),
+    ];
+    synthesizeMouse(container, point.x, point.y, { ...event, type: "mousedown", movementX: 10, movementY: 10 });
+    synthesizeMouse(container, point.x, point.y, { ...event, type: "mousemove" });
+    synthesizeMouse(container, point.x, point.y, { ...event, type: "mouseup", movementX: 10, movementY: 10 });
+    await Promise.all(promises);
+
+    for (const [offsetX, offsetY] of [[5, 10], [15, 20]]) {
+      info(`testing offsetX=${offsetX}, offsetY=${offsetY}`);
+      point.x += offsetX;
+      point.y += offsetY;
+      let promise = waitForEvent(container, "pointermove", (aEvent) => {
+        is(aEvent.movementX, offsetX, `check movementX for ${aEvent.type}`);
+        is(aEvent.movementY, offsetY, `check movementX for ${aEvent.type}`);
+      });
+      synthesizeMouse(container, point.x, point.y, { ...event, type: "mousemove" });
+      await promise;
+
+      point.x += offsetX;
+      point.y += offsetY;
+      const movement = { x: 30, y: 30 };
+      info(`testing movementX=${movement.x}, movementY=${movement.y}`);
+      promise = waitForEvent(container, "pointermove", (aEvent) => {
+        is(aEvent.movementX, movement.x, `check movementX for ${aEvent.type}`);
+        is(aEvent.movementY, movement.y, `check movementX for ${aEvent.type}`);
+      });
+      synthesizeMouse(container, point.x, point.y, { ...event, type: "mousemove", movementX: movement.x, movementY: movement.y });
+      await promise;
+    }
+  }
+});
+</script>

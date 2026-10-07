@@ -24,15 +24,15 @@ function test(s, expected) {
       frame.onStep = undefined;
     };
 
-    let debugLine = frame.script.getOffsetLocation(frame.offset).lineNumber;
+    let debugLine = frame.script.getOffsetMetadata(frame.offset).lineNumber;
     frame.onStep = function() {
       // Only examine stops at entry points for the line.
-      let lineNo = this.script.getOffsetLocation(this.offset).lineNumber;
-      if (this.script.getLineOffsets(lineNo).indexOf(this.offset) < 0) {
+      let lineNo = this.script.getOffsetMetadata(this.offset).lineNumber;
+      if (this.script.getPossibleBreakpointOffsets({ line: lineNo }).indexOf(this.offset) < 0) {
         return undefined;
       }
 
-      let delta = this.script.getOffsetLocation(this.offset).lineNumber - debugLine;
+      let delta = this.script.getOffsetMetadata(this.offset).lineNumber - debugLine;
       result += delta;
     };
   };
@@ -40,4 +40,6 @@ function test(s, expected) {
   assertEq(result, expected);
 }
 
-test('f()', '2124');
+// The bare for(;;) head has no recommended breakpoint under
+// getPossibleBreakpoints, so stepping won't report a stop on it.
+test('f()', '2224');

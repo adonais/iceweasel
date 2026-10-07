@@ -2657,6 +2657,17 @@ void AppWindow::SizeModeChanged(nsSizeMode aSizeMode) {
   // then need to be different.
 }
 
+void AppWindow::FullscreenChangeFailed(bool aInFullscreen) {
+  // NotChanging means our own fullscreen state never moved, so no change of
+  // ours is going to finish and tell the window that its request is over. Do
+  // that here instead. When our state did move, SizeModeChanged() has already
+  // started a change that calls FinishFullscreenChange() when it completes,
+  // and calling it twice would send a second fullscreen event.
+  if (mFullscreenChangeState == FullscreenChangeState::NotChanging) {
+    FinishFullscreenChange(aInFullscreen);
+  }
+}
+
 void AppWindow::FullscreenWillChange(bool aInFullscreen) {
   if (mDocShell) {
     if (nsCOMPtr<nsPIDOMWindowOuter> ourWindow = mDocShell->GetWindow()) {
@@ -3165,6 +3176,12 @@ bool AppWindow::WidgetListenerDelegate::RequestWindowClose(nsIWidget* aWidget) {
 void AppWindow::WidgetListenerDelegate::SizeModeChanged(nsSizeMode aSizeMode) {
   RefPtr<AppWindow> holder = mAppWindow;
   holder->SizeModeChanged(aSizeMode);
+}
+
+void AppWindow::WidgetListenerDelegate::FullscreenChangeFailed(
+    bool aInFullscreen) {
+  RefPtr<AppWindow> holder = mAppWindow;
+  holder->FullscreenChangeFailed(aInFullscreen);
 }
 
 void AppWindow::WidgetListenerDelegate::MacFullscreenMenubarOverlapChanged(

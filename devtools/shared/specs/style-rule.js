@@ -70,9 +70,10 @@ const styleRuleSpec = generateActorSpec({
     },
     getCssExplainersData: {
       request: {
-        expression: Arg(0, "string"),
-        pseudo: Arg(1, "nullable:string"),
-        inheritedNode: Arg(2, "nullable:domnode"),
+        property: Arg(0, "string"),
+        expression: Arg(1, "string"),
+        pseudo: Arg(2, "nullable:string"),
+        inheritedNode: Arg(3, "nullable:domnode"),
       },
       response: {
         steps: RetVal("array:string"),

@@ -15,7 +15,7 @@ dbg.onDebuggerStatement = function (frame) {
     else
         assertEq(s, script);
 
-    var offs = s.getLineOffsets(g.line0 + 3);
+    var offs = s.getPossibleBreakpointOffsets({ line: g.line0 + 3 });
     for (var i = 0; i < 3; i++) {
         handlers[i] = handler(i);
         for (var j = 0; j < offs.length; j++)

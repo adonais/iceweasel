@@ -29,10 +29,7 @@ dictionary RTCLocalSessionDescriptionInit {
 interface RTCSessionDescription {
   [Throws]
   constructor(RTCSessionDescriptionInit descriptionInitDict);
-
-  // These should be readonly, but writing causes deprecation warnings for a bit
-  attribute RTCSdpType type;
-  attribute DOMString sdp;
-
+  readonly attribute RTCSdpType type;
+  readonly attribute DOMString sdp;
   [Default] object toJSON();
 };

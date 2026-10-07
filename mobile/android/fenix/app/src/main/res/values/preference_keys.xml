@@ -143,7 +143,6 @@
     <string name="pref_key_marketing_telemetry_selection_made" translatable="false">pref_key_marketing_telemetry_selection_made</string>
     <string name="pref_key_learn_about_marketing_telemetry" translatable="false">pref_key_learn_about_marketing_telemetry</string>
     <string name="pref_key_daily_usage_ping" translatable="false">pref_key_daily_usage_ping</string>
-    <string name="pref_key_crash_reporter" translatable="false">pref_key_crash_reporter</string>
 
     <!-- Account Settings -->
     <string name="pref_key_account_category" translatable="false">pref_key_account_category</string>
@@ -208,6 +207,10 @@
     <string name="pref_key_toolbar_expanded" translatable="false">pref_key_toolbar_expanded</string>
     <string name="pref_key_toolbar_focus_mode" translatable="false">pref_key_toolbar_focus_mode</string>
 
+    <!-- Tab bar Settings -->
+    <string name="pref_key_tab_bar_top" translatable="false">pref_key_tab_bar_top</string>
+    <string name="pref_key_tab_bar_bottom" translatable="false">pref_key_tab_bar_bottom</string>
+
     <!-- App icon settings-->
     <string name="pref_key_app_icon">pref_key_app_icon</string>
 
@@ -228,7 +231,7 @@
     <string name="pref_key_customization_preference_screen" translatable="false">pref_key_customization_preference_screen</string>
     <string name="pref_key_website_pull_to_refresh" translatable="false">pref_key_website_pull_to_refresh</string>
     <string name="pref_key_tab_strip_show" translatable="false">pref_key_tab_strip_show</string>
-    <string name="pref_key_tab_strip_message" translatable="false">pref_key_tab_strip_message</string>
+    <string name="pref_key_tab_strip_location" translatable="false">pref_key_tab_strip_location</string>
     <string name="pref_key_dynamic_toolbar" translatable="false">pref_key_dynamic_toolbar</string>
     <string name="pref_key_use_scroll_data_for_dynamic_toolbar" translatable="false">pref_key_use_scroll_data_for_dynamic_toolbar</string>
     <string name="pref_key_swipe_toolbar_switch_tabs" translatable="false">pref_key_swipe_toolbar_switch_tabs</string>
@@ -361,6 +364,7 @@
     <string name="pref_key_is_user_moloco_attributed" translatable="false">pref_key_is_user_moloco_attributed</string>
     <string name="pref_key_is_user_rakuten_attributed" translatable="false">pref_key_is_user_rakuten_attributed</string>
     <string name="pref_key_is_user_skyflag_attributed" translatable="false">pref_key_is_user_skyflag_attributed</string>
+    <string name="pref_key_is_user_pairing_campaign_attributed" translatable="false">pref_key_is_user_pairing_campaign_attributed</string>
     <string name="pref_key_referral_ping_submitted" translatable="false">pref_key_referral_ping_submitted</string>
     <string name="pref_key_referral_code" translatable="false">pref_key_referral_code</string>
 
@@ -455,7 +459,6 @@
     <string name="pref_key_start_on_home_always" translatable="false">pref_key_start_on_home_always</string>
     <string name="pref_key_start_on_home_never" translatable="false">pref_key_start_on_home_never</string>
     <string name="pref_key_camera_permissions_needed" translatable="false">pref_key_camera_permissions_needed</string>
-    <string name="pref_key_inactive_tabs_category" translatable="false">pref_key_inactive_tabs_category</string>
     <string name="pref_key_inactive_tabs" translatable="false">pref_key_inactive_tabs</string>
 
     <string name="pref_key_return_to_browser" translatable="false">pref_key_return_to_browser</string>
@@ -483,7 +486,6 @@
     <string name="pref_key_enable_ads_client_for_stories" translatable="false">pref_key_enable_ads_client_for_stories</string>
     <string name="pref_key_enable_add_shortcuts_improvement" translatable="false">pref_key_enable_add_shortcuts_improvement</string>
     <string name="pref_key_show_more_shortcuts" translatable="false">pref_key_show_more_shortcuts</string>
-    <string name="pref_key_enable_merino_client" translatable="false">pref_key_enable_merino_client</string>
     <string name="pref_key_enable_homepage_weather_widget" translatable="false">pref_key_enable_homepage_weather_widget</string>
     <string name="pref_key_show_homepage_weather_widget" translatable="false">pref_key_show_homepage_weather_widget</string>
     <string name="pref_key_use_minimal_bottom_toolbar_while_entering_text" translatable="false">pref_key_use_minimal_bottom_toolbar_while_entering_text</string>"
@@ -500,6 +502,7 @@
     <string name="pref_key_enable_homepage_trending_recent_search" translatable="false">pref_key_enable_homepage_trending_recent_search</string>
     <string name="pref_key_enable_oled_theme" translatable="false">pref_key_enable_oled_theme</string>
     <string name="pref_key_enable_pdf_tools" translatable="false">pref_key_enable_pdf_tools</string>
+    <string name="pref_key_enable_menu_customization" translatable="false">pref_key_enable_menu_customization</string>
     <!-- Preference for the feature flag -->
     <string name="pref_key_enable_shake_to_summarize" translatable="false">pref_key_enable_shake_to_summarize</string>
     <string name="pref_key_enable_weekly_privacy_notification" translatable="false">pref_key_enable_weekly_privacy_notification</string>
@@ -609,6 +612,10 @@
     <!-- Tab Manager-->
     <string name="pref_key_tab_manager_opening_animation" translatable="false">pref_key_tab_manager_opening_animation</string>
 
+    <!-- Tab reload cover -->
+    <string name="pref_key_tab_reload_cover_enabled" translatable="false">pref_key_tab_reload_cover_enabled</string>
+    <string name="pref_key_tab_reload_cover_scroll_aware_enabled" translatable="false">pref_key_tab_reload_cover_scroll_aware_enabled</string>
+
     <!-- Private Mode and Stories Entry Point -->
     <string name="pref_key_private_mode_and_stories_entry_point" translatable="false">pref_key_private_mode_and_stories_entry_point</string>
     <string name="pref_key_news_button_foreground_count" translatable="false">pref_key_news_button_foreground_count</string>
@@ -620,6 +627,7 @@
     <string name="pref_key_tab_groups_live_reorder" translatable="false">pref_key_tab_groups_live_reorder</string>
     <string name="pref_key_tab_groups_onboarding" translatable="false">pref_key_tab_groups_onboarding</string>
     <string name="pref_key_tab_groups_strip" translatable="false">pref_key_tab_groups_strip</string>
+    <string name="pref_key_show_tab_groups_in_menu" translatable="false">pref_key_show_tab_groups_in_menu</string>
 
     <!-- Native Share Sheet -->
     <string name="pref_key_native_share_sheet" translatable="false">pref_key_native_share_sheet</string>

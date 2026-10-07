@@ -17,11 +17,11 @@ If you have an `ErrorType` already at hand, and you want to generate an error pa
 
 ```kotlin
 val errorType: ErrorType = ErrorType.Unknown
-ErrorPages.createErrorPage(context, errorType)
+ErrorPages.createUrlEncodedErrorPage(context, errorType)
 
 // OR
 
-ErrorPages.createErrorPage(context, errorType, R.raw.custom_html, R.raw.custom_css)
+ErrorPages.createUrlEncodedErrorPage(context, errorType, uri, "custom_page.html")
 ```
 
 If you want to use your own custom HTML template, make sure that you have the following attributes within percentage values (`%`) added to your document so that they can be populated by the engine:
@@ -60,13 +60,19 @@ val settings = DefaultSettings(
             errorType: ErrorType,
             uri: String?
         ): RequestInterceptor.ErrorResponse? =
-             RequestInterceptor.ErrorResponse(ErrorPages.createErrorPage(context, errorType))
+             RequestInterceptor.ErrorResponse(ErrorPages.createUrlEncodedErrorPage(context, errorType, uri))
     }
 )
 GeckoEngine(settings)
 ```
 
 See the `ErrorType` enum for the full list of supported error types.
+
+### Configuring localized strings
+
+This package provides a default set of localized error message strings via the `DefaultErrorStringsProvider()`
+implementation.  Consumers can pass an alternate `ErrorStringsProvider` implementation to
+`createUrlEncodedErrorPage(errorStringsProvider = ...)` to configure these localized error message strings.
 
 ### Archived-copy query parameters
 
@@ -79,6 +85,10 @@ applicable, so templates must treat them as optional:
 - `archiveUrl` - A privacy-cleaned (scheme, host, port and path only) version of the failed URL
   to look up an archived copy for.
 - `archiveCheckButtonLabel` - Localized label for the button that triggers the lookup.
+- `archiveDescriptionMessage` - Localized sentence explaining what the button does, including the
+  name of the archive service.
+- `archiveDescriptionLinkLabel` - The name of the archive service as it appears in
+  `archiveDescriptionMessage`, so templates can turn that part of the sentence into a link.
 - `archiveCheckingLabel` - Localized label shown while the lookup is in progress.
 - `archiveNotFoundMessage` - Localized message shown when no archived copy was found.
 - `archiveSearchWebLabel` - Localized label for the link that searches the web instead.

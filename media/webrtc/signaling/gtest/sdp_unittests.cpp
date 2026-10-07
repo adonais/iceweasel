@@ -1605,7 +1605,7 @@ class NewSdpTest
         const auto secondResults = secondParser->Parse(os.str());
         // Whether we expected the parse to work or not, it should
         // succeed the second time if it succeeded the first.
-        ASSERT_TRUE(!!Sdp())
+        ASSERT_TRUE(!!secondResults->Sdp())
         << "Parse failed on second pass, SDP was: " << std::endl
         << os.str() << std::endl
         << "Errors were: " << IntSerializeParseErrors(secondResults);
@@ -2061,7 +2061,7 @@ MOZ_RUNINIT const std::vector<std::string> kBasicAV1AudioVideoOfferLines = {
     "a=rtcp:62454 IN IP4 162.222.183.171",
     "a=end-of-candidates",
     "a=ssrc:5150",
-    "m=video 9 RTP/SAVPF 99 122 123",
+    "m=video 9 RTP/SAVPF 98 122 123",
     "c=IN IP6 ::1",
     "a=fingerprint:sha-1 "
     "DF:FA:FB:08:3B:3C:54:1D:D7:D4:05:77:A0:72:9B:14:08:6D:0F:4C",
@@ -2133,15 +2133,55 @@ MOZ_RUNINIT const std::string kBasicAudioVideoOfferLinefeedOnly =
 TEST_P(NewSdpTest, BasicAudioVideoSdpParse) { ParseSdp(kBasicAudioVideoOffer); }
 
 MOZ_RUNINIT const std::string kAv1AudioVideoOffer =
-    joinSdp(kBasicAudioVideoOfferLines, "\r\n");
+    joinSdp(kBasicAV1AudioVideoOfferLines, "\r\n");
 
 MOZ_RUNINIT const std::string kAv1AudioVideoOfferLinefeedOnly =
-    joinSdp(kBasicAudioVideoOfferLines, "\n");
+    joinSdp(kBasicAV1AudioVideoOfferLines, "\n");
 
 TEST_P(NewSdpTest, Av1AudioVideoSdpParse) { ParseSdp(kAv1AudioVideoOffer); }
 
 TEST_P(NewSdpTest, Av1AudioVideoSdpParseLinefeedOnly) {
   ParseSdp(kAv1AudioVideoOfferLinefeedOnly);
+}
+
+TEST_P(NewSdpTest, CheckAv1Fmtp) {
+  // https://aomediacodec.github.io/av1-rtp-spec/#sdp-parameters
+  // The parsers disagree on out-of-range parameters: sipcc ignores them, while
+  // the rust parser rejects the whole SDP. See bug 2067241.
+  for (const auto* outOfRange : {"profile=3", "level-idx=32", "tier=2"}) {
+    ParseSdp(
+        kVideoSdp + "a=rtpmap:99 AV1/90000\r\na=fmtp:99 " + outOfRange + "\r\n",
+        false);
+    if (!ResultsAreFromSipcc()) {
+      ASSERT_FALSE(!!Sdp())
+      << "Expected a parse failure for " << outOfRange;
+      continue;
+    }
+    ASSERT_TRUE(!!Sdp())
+    << "Parse failed for " << outOfRange << ": " << SerializeParseErrors();
+    const auto* ignored = Sdp()->GetMediaSection(0).FindFmtp("99");
+    ASSERT_TRUE(ignored);
+    const auto& ignoredAv1 =
+        static_cast<const SdpFmtpAttributeList::Av1Parameters&>(*ignored);
+    EXPECT_TRUE(ignoredAv1.profile.isNothing()) << outOfRange;
+    EXPECT_TRUE(ignoredAv1.levelIdx.isNothing()) << outOfRange;
+    EXPECT_TRUE(ignoredAv1.tier.isNothing()) << outOfRange;
+  }
+
+  ParseSdp(kVideoSdp +
+           "a=rtpmap:99 AV1/90000\r\na=fmtp:99 "
+           "profile=0;level-idx=9;tier=0\r\n");
+
+  const SdpMediaSection& msec = Sdp()->GetMediaSection(0);
+  const auto* params = msec.FindFmtp("99");
+  ASSERT_TRUE(params);
+  ASSERT_EQ(SdpRtpmapAttributeList::kAV1, params->codec_type);
+
+  const auto& av1 =
+      static_cast<const SdpFmtpAttributeList::Av1Parameters&>(*params);
+  ASSERT_EQ(Some(static_cast<uint8_t>(0)), av1.profile);
+  ASSERT_EQ(Some(static_cast<uint8_t>(9)), av1.levelIdx);
+  ASSERT_EQ(Some(static_cast<uint8_t>(0)), av1.tier);
 }
 
 TEST_P(NewSdpTest, CheckRemoveFmtp) {

@@ -1,0 +1,11 @@
+LICENSES += ["fixture"]
+LICENSES["fixture"].title = "Fixture License"
+LICENSES["fixture"].text = "fixture.txt"
+LICENSES["fixture"].spdx = "MIT OR Apache-2.0"
+
+LICENSED_UNDER += ["fixture"]
+LICENSED_UNDER["fixture"].paths = [
+    "a.c",
+]
+
+LICENSED_UNDER += ["assigned"]

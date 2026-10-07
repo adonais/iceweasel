@@ -125,6 +125,38 @@ add_task(async function () {
   is(dbg.win.document.activeElement.tagName, "INPUT", "Search field focused");
 });
 
+// Asserts a search a regular expression which has the potential of triggering an infinite loop
+// does not hang the debugger file search.
+add_task(async function infinteLoopFileSearchHangs() {
+  const dbg = await initDebugger(
+    "doc-large-sources.html",
+    "codemirror-bundle.js"
+  );
+
+  info("Select the minified bundle");
+  await selectSource(dbg, "codemirror-bundle.js");
+
+  info("Open file search");
+  pressKey(dbg, "fileSearch");
+  type(dbg, "$");
+
+  info("Enable search modifiers");
+  await clickElement(dbg, "fileSearchModifiersRegexMatch");
+
+  await waitUntil(
+    () =>
+      dbg.win.document.querySelector(".search-bar .search-field-summary")
+        .innerText !== "No results found"
+  );
+
+  is(
+    dbg.win.document.querySelector(".search-bar .search-field-summary")
+      .innerText,
+    "1 of 2 results",
+    "The search summary is correct"
+  );
+});
+
 async function navigateWithKey(dbg, key, expectedLine) {
   pressKey(dbg, key);
   await waitForCursorPosition(dbg, expectedLine);

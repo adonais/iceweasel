@@ -42,7 +42,8 @@ class WebTransportParent : public PWebTransportParent,
               std::function<void(std::tuple<const nsresult&, const uint8_t&>)>&&
                   aResolver);
 
-  IPCResult RecvClose(const uint32_t& aCode, const nsACString& aReason);
+  IPCResult RecvClose(const uint32_t& aCode, const nsACString& aReason,
+                      CloseResolver&& aResolver);
 
   IPCResult RecvSetSendOrder(uint64_t aStreamId, int64_t aSendOrder);
 
@@ -53,6 +54,8 @@ class WebTransportParent : public PWebTransportParent,
   IPCResult RecvExportKeyingMaterial(nsTArray<uint8_t>&& aLabel,
                                      Maybe<nsTArray<uint8_t>>&& aContext,
                                      ExportKeyingMaterialResolver&& aResolver);
+
+  IPCResult RecvGetStats(GetStatsResolver&& aResolver);
 
   IPCResult RecvCreateUnidirectionalStream(
       int64_t aSendOrder, Maybe<uint64_t> aSendGroupId,
@@ -92,7 +95,12 @@ class WebTransportParent : public PWebTransportParent,
 
  private:
   void NotifyRemoteClosed(bool aCleanly, uint32_t aErrorCode,
-                          const nsACString& aReason);
+                          const nsACString& aReason,
+                          const WebTransportStatsData& aStats);
+
+  // Settles and clears every resolver waiting on the in-flight gather. Must be
+  // called on the socket thread.
+  void ResolvePendingGetStats(const Maybe<WebTransportStatsData>& aStats);
 
   using ResolveType = std::tuple<const nsresult&, const uint8_t&>;
   nsCOMPtr<nsISerialEventTarget> mSocketThread;
@@ -106,6 +114,10 @@ class WebTransportParent : public PWebTransportParent,
   std::function<void()> mExecuteAfterResolverCallback MOZ_GUARDED_BY(mMutex);
   OutgoingDatagramResolver mOutgoingDatagramResolver;
   GetMaxDatagramSizeResolver mMaxDatagramSizeResolver;
+  // Resolvers for in-flight GetStats() requests; only one gather runs at a
+  // time, so concurrent calls share it. Socket thread only; drained via
+  // ResolvePendingGetStats().
+  nsTArray<GetStatsResolver> mGetStatsResolvers;
   FlippedOnce<false> mClosed MOZ_GUARDED_BY(mMutex);
 
   nsCOMPtr<nsIWebTransport> mWebTransport;

@@ -15,7 +15,7 @@
 #include "nsStubMutationObserver.h"
 #include "nsThreadUtils.h"
 #ifdef MOZ_DOM_LIST
-#  include "nsRange.h"
+#  include "mozilla/dom/Range.h"
 #endif
 
 using namespace mozilla;

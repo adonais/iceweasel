@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<script>
+  // Returns the controller of the stream being read, so that the opener can
+  // enqueue into it once this global is gone.
+  function startConsuming() {
+    let controller;
+    const stream = new ReadableStream({
+      start(c) {
+        controller = c;
+      },
+    });
+    new Response(stream).arrayBuffer().then(
+      () => {},
+      () => {}
+    );
+    return controller;
+  }
+</script>

@@ -1,0 +1,13 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<script>
+document.addEventListener("DOMContentLoaded",
+                          () => parent.postMessage("DOMContentLoaded", "*"));
+// Terminate the parse. See bug 344305.
+window.stop();
+</script>
+</head>
+<body></body>
+</html>

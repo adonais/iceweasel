@@ -10,9 +10,9 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1"
-askama = { version = "0.14", default-features = false, features = ["config"] }
+askama = { version = "0.16", default-features = false, features = ["alloc", "config", "derive"] }
 clap = { version = "4", default-features = false, features = ["std", "derive", "cargo"] }
-cargo_metadata = "0.19"
+cargo_metadata = "0.23"
 extend = "1.1"
 heck = "0.5"
 indexmap = { version = "2.2", features = ["serde"] }
@@ -21,7 +21,7 @@ uniffi = { workspace = true }
 uniffi_bindgen = { workspace = true }
 uniffi_pipeline = { workspace = true }
 serde = "1"
-toml = "0.5"
+toml = "1"
 camino = "1.0.8"
 
 mozilla-central-workspace-hack = { version = "0.1", features = ["uniffi-bindgen-gecko-js"], optional = true }

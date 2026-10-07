@@ -69,4 +69,4 @@ a try run failing due to a simple linting issue.
 
 [mozlint]: /code-quality/lint/mozlint.md
 [eslint]: /code-quality/lint/linters/eslint.md
-[enable automatic linting]: /code-quality/lint/usage.md#using-a-vcs-hook
+[enable automatic linting]: /code-quality/lint/usage.md#using-a-git-hook

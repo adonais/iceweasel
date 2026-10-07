@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html id="default-content-doc-id">
+<head>
+  <meta charset="utf-8">
+  <title>MathML Accessibility Test Page</title>
+  <style>
+    mphantom, annotation, annotation-xml {
+      display: inline-block;
+      visibility: visible;
+    }
+  </style>
+</head>
+<body id="body">
+  <math id="math">
+    <a id="a-href" href="https://mozilla.org"><mi>x</mi></a>
+    <a id="a-row"><mi>a</mi><mo>=</mo><mi>b</mi></a>
+    <a id="a-onclick" onclick="void(0)"><mi>a</mi><mo>=</mo><mi>b</mi></a>
+
+    <ms id="ms">text</ms>
+    <mpadded id="mpadded"><mi>x</mi></mpadded>
+    <mphantom id="mphantom"><mi>x</mi></mphantom>
+
+    <mmultiscripts id="mmultiscripts">
+      <mi>R</mi>
+
+      <mi>i</mi>
+      <none id="none"/>
+
+      <mprescripts id="mprescripts"/>
+
+      <mi>j</mi>
+      <mi>k</mi>
+    </mmultiscripts>
+
+    <mspace id="mspace"/>
+
+    <semantics id="semantics">
+      <mrow>
+        <msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mi>y</mi>
+      </mrow>
+      <annotation-xml id="annotation-xml" encoding="MathML-Content">
+        <apply><plus/><ci>x</ci><ci>y</ci></apply>
+      </annotation-xml>
+      <annotation id="annotation" encoding="application/x-tex">x^{2} + y</annotation>
+    </semantics>
+
+    <maction id="maction" actiontype="toggle" selection="1">
+      <mfrac><mn>6</mn><mn>8</mn></mfrac>
+    </maction>
+  </math>
+</body>
+</html>

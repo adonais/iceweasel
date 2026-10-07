@@ -17,6 +17,46 @@ class Harness(SingleTestMixin):
         self.per_test_coverage = per_test_coverage
 
 
+class TestChunkSuites(unittest.TestCase):
+    def chunk(self, suites, total_chunks, this_chunk):
+        harness = Harness()
+        harness.suites = suites
+        return harness._chunk_suites(total_chunks, this_chunk)
+
+    def test_chunks_together_cover_each_test_once(self):
+        tests = ["test_%02d.js" % i for i in range(23)]
+        seen = []
+        for n in range(1, 4):
+            seen.extend(self.chunk({"xpcshell": list(tests)}, 3, n).get("xpcshell", []))
+
+        self.assertEqual(sorted(seen), sorted(tests))
+        self.assertEqual(len(seen), len(set(seen)))
+
+    def test_chunk_does_not_depend_on_insertion_order(self):
+        """find_modified_tests builds the suites by iterating a set, whose
+        order varies between processes, so two tasks of the same push would
+        otherwise slice different lists."""
+        tests = ["test_%02d.js" % i for i in range(23)]
+
+        self.assertEqual(
+            self.chunk({"xpcshell": list(tests)}, 3, 2),
+            self.chunk({"xpcshell": list(reversed(tests))}, 3, 2),
+        )
+
+    def test_tests_are_split_across_suites(self):
+        suites = {"mochitest-plain": ["b.js", "a.js"], "xpcshell": ["d.js", "c.js"]}
+
+        self.assertEqual(
+            self.chunk(dict(suites), 2, 1), {"mochitest-plain": ["a.js", "b.js"]}
+        )
+        self.assertEqual(self.chunk(dict(suites), 2, 2), {"xpcshell": ["c.js", "d.js"]})
+
+    def test_a_single_chunk_runs_everything(self):
+        suites = {"xpcshell": ["b.js", "a.js"]}
+
+        self.assertEqual(self.chunk(suites, 1, 1), {"xpcshell": ["a.js", "b.js"]})
+
+
 class TestTestSummaryLogs(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.mkdtemp(suffix=".mozharness")

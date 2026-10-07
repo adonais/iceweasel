@@ -31,8 +31,13 @@ async function runSanityChecksInParent() {
 add_task(async function test_sanity_checks() {
   const result = await runSanityChecksInParent();
 
+  const hwEncoderEnabled =
+    SpecialPowers.getBoolPref("media.use-remote-encoder.video.platform") &&
+    SpecialPowers.getBoolPref("media.gpu-process-encoder");
+  const expected = hwEncoderEnabled ? "Passed" : "PassedNoHardwareEncoder";
+
   info(`sanity test result: ${result}`);
-  is(result, "Passed", "the graphics sanity test should pass");
+  is(result, expected, "the graphics sanity test should pass");
 });
 
 </script>

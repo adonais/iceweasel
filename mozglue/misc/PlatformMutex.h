@@ -5,6 +5,10 @@
 #ifndef mozilla_PlatformMutex_h
 #define mozilla_PlatformMutex_h
 
+#if defined(XP_WIN)
+#  include <atomic>
+#endif
+
 #include "mozilla/Types.h"
 
 #if defined(XP_WIN)
@@ -21,8 +25,18 @@ class ConditionVariableImpl;
 
 class MutexImpl {
  public:
+#if defined(XP_WIN)
+  constexpr MutexImpl() = default;
+#else
   explicit MFBT_API MutexImpl();
+#endif
   MFBT_API ~MutexImpl();
+
+  MutexImpl(const MutexImpl&) = delete;
+  void operator=(const MutexImpl&) = delete;
+  MutexImpl(MutexImpl&&) = delete;
+  void operator=(MutexImpl&&) = delete;
+  bool operator==(const MutexImpl& rhs) = delete;
 
  protected:
   MFBT_API void lock();
@@ -31,18 +45,18 @@ class MutexImpl {
   // through the PLT.
   MFBT_API bool tryLock();
 
- private:
-  MutexImpl(const MutexImpl&) = delete;
-  void operator=(const MutexImpl&) = delete;
-  MutexImpl(MutexImpl&&) = delete;
-  void operator=(MutexImpl&&) = delete;
-  bool operator==(const MutexImpl& rhs) = delete;
+#if defined(XP_WIN)
+  void reset() { mFutex.mValue.store(0, std::memory_order_relaxed); }
+#endif
 
+ private:
   void mutexLock();
   bool mutexTryLock();
 
 #if defined(XP_WIN)
   SmallFutex mFutex;
+  static_assert(std::atomic<uint8_t>::is_always_lock_free);
+  static_assert(sizeof(std::atomic<uint8_t>) == sizeof(uint8_t));
 #elif !defined(__wasi__)
   pthread_mutex_t mMutex;
 #endif

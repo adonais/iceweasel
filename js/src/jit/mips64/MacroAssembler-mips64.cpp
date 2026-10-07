@@ -2911,9 +2911,9 @@ void MacroAssembler::wasmTruncateFloat32ToUInt32(FloatRegister input,
   ma_b(scratch, Imm32(0), oolEntry, Assembler::NotEqual);
 }
 
-void MacroAssembler::wasmLoadI64(const wasm::MemoryAccessDesc& access,
-                                 Register memoryBase, Register ptr,
-                                 Register ptrScratch, Register64 output) {
+FaultingCodeRange MacroAssembler::wasmLoadI64(
+    const wasm::MemoryAccessDesc& access, Register memoryBase, Register ptr,
+    Register ptrScratch, Register64 output) {
   wasmLoadI64Impl(access, memoryBase, ptr, ptrScratch, output, InvalidReg);
 }
 
@@ -2924,9 +2924,9 @@ void MacroAssembler::wasmUnalignedLoadI64(const wasm::MemoryAccessDesc& access,
   wasmLoadI64Impl(access, memoryBase, ptr, ptrScratch, output, tmp);
 }
 
-void MacroAssembler::wasmStoreI64(const wasm::MemoryAccessDesc& access,
-                                  Register64 value, Register memoryBase,
-                                  Register ptr, Register ptrScratch) {
+FaultingCodeRange MacroAssembler::wasmStoreI64(
+    const wasm::MemoryAccessDesc& access, Register64 value, Register memoryBase,
+    Register ptr, Register ptrScratch) {
   wasmStoreI64Impl(access, value, memoryBase, ptr, ptrScratch, InvalidReg);
 }
 
@@ -3180,20 +3180,16 @@ static void CompareExchange64(MacroAssembler& masm,
   masm.bind(&exit);
 }
 
-void MacroAssembler::wasmCompareExchange64(const wasm::MemoryAccessDesc& access,
-                                           const Address& mem,
-                                           Register64 expect,
-                                           Register64 replace,
-                                           Register64 output) {
+FaultingCodeRange MacroAssembler::wasmCompareExchange64(
+    const wasm::MemoryAccessDesc& access, const Address& mem, Register64 expect,
+    Register64 replace, Register64 output) {
   CompareExchange64(*this, &access, access.sync(), mem, expect, replace,
                     output);
 }
 
-void MacroAssembler::wasmCompareExchange64(const wasm::MemoryAccessDesc& access,
-                                           const BaseIndex& mem,
-                                           Register64 expect,
-                                           Register64 replace,
-                                           Register64 output) {
+FaultingCodeRange MacroAssembler::wasmCompareExchange64(
+    const wasm::MemoryAccessDesc& access, const BaseIndex& mem,
+    Register64 expect, Register64 replace, Register64 output) {
   CompareExchange64(*this, &access, access.sync(), mem, expect, replace,
                     output);
 }
@@ -3251,15 +3247,15 @@ static void WasmAtomicExchange64(MacroAssembler& masm,
   AtomicExchange64(masm, &access, access.sync(), mem, value, output);
 }
 
-void MacroAssembler::wasmAtomicExchange64(const wasm::MemoryAccessDesc& access,
-                                          const Address& mem, Register64 src,
-                                          Register64 output) {
+FaultingCodeRange MacroAssembler::wasmAtomicExchange64(
+    const wasm::MemoryAccessDesc& access, const Address& mem, Register64 src,
+    Register64 output) {
   WasmAtomicExchange64(*this, access, mem, src, output);
 }
 
-void MacroAssembler::wasmAtomicExchange64(const wasm::MemoryAccessDesc& access,
-                                          const BaseIndex& mem, Register64 src,
-                                          Register64 output) {
+FaultingCodeRange MacroAssembler::wasmAtomicExchange64(
+    const wasm::MemoryAccessDesc& access, const BaseIndex& mem, Register64 src,
+    Register64 output) {
   WasmAtomicExchange64(*this, access, mem, src, output);
 }
 
@@ -3326,17 +3322,15 @@ static void AtomicFetchOp64(MacroAssembler& masm,
   masm.memoryBarrierAfter(sync);
 }
 
-void MacroAssembler::wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access,
-                                         AtomicOp op, Register64 value,
-                                         const Address& mem, Register64 temp,
-                                         Register64 output) {
+FaultingCodeRange MacroAssembler::wasmAtomicFetchOp64(
+    const wasm::MemoryAccessDesc& access, AtomicOp op, Register64 value,
+    const Address& mem, Register64 temp, Register64 output) {
   AtomicFetchOp64(*this, &access, access.sync(), op, value, mem, temp, output);
 }
 
-void MacroAssembler::wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access,
-                                         AtomicOp op, Register64 value,
-                                         const BaseIndex& mem, Register64 temp,
-                                         Register64 output) {
+FaultingCodeRange MacroAssembler::wasmAtomicFetchOp64(
+    const wasm::MemoryAccessDesc& access, AtomicOp op, Register64 value,
+    const BaseIndex& mem, Register64 temp, Register64 output) {
   AtomicFetchOp64(*this, &access, access.sync(), op, value, mem, temp, output);
 }
 

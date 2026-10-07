@@ -1,0 +1,10 @@
+[DEFAULT]
+run-if = "os != 'android'" # a comment
+
+[test7]
+[test8]
+run-if = "!condprof" # another comment
+[test9]
+foo = "bar"
+[test10]
+run-if = ["os == 'linux'", "os == 'win'"]

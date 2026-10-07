@@ -15,19 +15,26 @@ openssl_src=${MOZ_FETCHES_DIR}/openssl-source
 
 export PATH=${clang_bindir}:${PATH}
 export CC=clang
+export AR=llvm-ar
+export RANLIB=llvm-ranlib
 
-case `uname -m` in
-    arm64 | aarch64)
+target=$1
+case "$target" in
+    aarch64-apple-darwin)
         macosx_version_min=11.0
         openssl_target=darwin64-arm64-cc
         ;;
-    *)
+    x86_64-apple-darwin)
         macosx_version_min=10.15
         openssl_target=darwin64-x86_64-cc
         ;;
+    *)
+        echo "ERROR: unsupported target $target" >&2
+        exit 1
+        ;;
 esac
 
-sysroot_flags="-isysroot ${MOZ_FETCHES_DIR}/MacOSX26.5.sdk -mmacosx-version-min=${macosx_version_min}"
+sysroot_flags="--target=${target} -isysroot ${MOZ_FETCHES_DIR}/MacOSX26.5.sdk -mmacosx-version-min=${macosx_version_min}"
 export CFLAGS=${sysroot_flags}
 export LDFLAGS="-fuse-ld=lld ${sysroot_flags}"
 
@@ -44,4 +51,4 @@ make
 make DESTDIR=${work_dir} install_sw
 cd ${work_dir}
 
-$(dirname $0)/pack.sh ${tardir}
+$GECKO_PATH/taskcluster/scripts/misc/pack.sh ${tardir}

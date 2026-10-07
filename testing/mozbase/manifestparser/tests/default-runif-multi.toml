@@ -1,0 +1,8 @@
+[DEFAULT]
+run-if = ["os == 'linux'", "os == 'win'"]
+
+[test1]
+[test2]
+run-if = "debug"
+[test3]
+run-if = ["debug", "!ccov"]

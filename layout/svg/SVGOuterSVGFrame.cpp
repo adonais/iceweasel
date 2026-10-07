@@ -130,47 +130,41 @@ NS_QUERYFRAME_TAIL_INHERITING(SVGDisplayContainerFrame)
 //----------------------------------------------------------------------
 // nsIFrame methods
 
-nscoord SVGOuterSVGFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
-                                         IntrinsicISizeType aType) {
-  if (aType == IntrinsicISizeType::MinISize) {
-    return GetIntrinsicSize().ISize(GetWritingMode()).valueOr(0);
+nscoord SVGOuterSVGFrame::IntrinsicISize(const IntrinsicSizeInput&,
+                                         IntrinsicISizeType) {
+  const auto wm = GetWritingMode();
+  const auto intrinsic = GetIntrinsicSize();
+  if (auto isize = intrinsic.ISize(wm)) {
+    return *isize;
   }
-
-  nscoord result;
-  SVGSVGElement* svg = static_cast<SVGSVGElement*>(GetContent());
-  WritingMode wm = GetWritingMode();
+  if (auto bsize = intrinsic.BSize(wm)) {
+    if (auto ratio = GetIntrinsicRatio()) {
+      return ratio.ComputeRatioDependentSize(LogicalAxis::Inline, wm, *bsize,
+                                             LogicalSize(wm));
+    }
+  }
+  auto* svg = static_cast<SVGSVGElement*>(GetContent());
   const SVGAnimatedLength& isize =
       wm.IsVertical() ? svg->mLengthAttributes[SVGSVGElement::ATTR_HEIGHT]
                       : svg->mLengthAttributes[SVGSVGElement::ATTR_WIDTH];
-
-  if (Maybe<nscoord> containISize =
-          ContainSizeAxesIfApplicable().ContainIntrinsicISize(*this)) {
-    result = *containISize;
-  } else if (isize.IsPercentage()) {
+  if (isize.IsPercentage()) {
     // If we are here, our inline size attribute is a percentage either
     // explicitly (via an attribute value) or implicitly (by being unset, which
     // is treated as 100%). The following if-condition, deciding to return
     // either the fallback intrinsic size or zero, is made to match blink and
     // webkit's behavior for webcompat.
+    // FIXME(emilio): Why is this right? Shouldn't we be looking at the CSS
+    // property?
     if (isize.IsExplicitlySet() ||
         StylePosition()
             ->ISize(wm, AnchorPosResolutionParams::From(this))
             ->HasPercent() ||
         !GetAspectRatio()) {
-      result = wm.IsVertical() ? kFallbackIntrinsicSize.height
-                               : kFallbackIntrinsicSize.width;
-    } else {
-      result = nscoord(0);
-    }
-  } else {
-    result =
-        nsPresContext::CSSPixelsToAppUnits(isize.GetAnimValueWithZoom(svg));
-    if (result < 0) {
-      result = nscoord(0);
+      return wm.IsVertical() ? kFallbackIntrinsicSize.height
+                             : kFallbackIntrinsicSize.width;
     }
   }
-
-  return result;
+  return 0;
 }
 
 /* virtual */

@@ -16,22 +16,12 @@
     }
   },
   "margin": {
-    "block": {
-      "start": {
-        "value": "4px"
-      },
-      "end": {
-        "value": {
-          "default": "4px",
-          "nova": {
-            "comment": "There is no equivalent value for this token in Figma",
-            "value": "0"
-          }
-        }
+    "value": {
+      "default": "4px",
+      "nova": {
+        "comment": "There is no equivalent value for this token in Figma",
+        "value": "0"
       }
-    },
-    "inline": {
-      "value": "4px"
     }
   }
 }

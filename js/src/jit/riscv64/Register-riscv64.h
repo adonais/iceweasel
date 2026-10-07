@@ -84,6 +84,7 @@ static constexpr FloatRegister InvalidFloatReg{};
 
 static constexpr Register StackPointer{Registers::sp};
 static constexpr Register FramePointer{Registers::fp};
+static constexpr Register LinkRegister{Registers::ra};
 static constexpr Register ReturnReg{Registers::a0};
 // Scratch register used for runtime call patching.
 // See MacroAssembler::patchNopToCall and MacroAssembler::PatchWrite_NearCall.
@@ -142,6 +143,10 @@ static constexpr Register RegExpExecTestStringReg = CallTempReg1;
 static constexpr Register RegExpSearcherRegExpReg = CallTempReg0;
 static constexpr Register RegExpSearcherStringReg = CallTempReg1;
 static constexpr Register RegExpSearcherLastIndexReg = CallTempReg2;
+
+// Register used by the bailout tail and bailout stubs during stack
+// reconstruction.
+static constexpr Register BailoutStubHandlerReg = CallTempReg0;
 
 static constexpr Register JSReturnReg_Type{Registers::a3};
 static constexpr Register JSReturnReg_Data{Registers::s2};

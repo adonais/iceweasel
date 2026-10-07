@@ -5,6 +5,7 @@
 package org.mozilla.fenix.ui.efficiency.devtools
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -70,8 +71,8 @@ class NavigationGraphContractTest : BaseTest() {
 
         val failure = runCatching(builder::build).exceptionOrNull()
 
-        assertTrue(failure is IllegalStateException)
-        assertTrue(failure?.message.orEmpty().contains("MissingPage"))
+        assertIs<IllegalStateException>(failure)
+        assertTrue(failure.message.orEmpty().contains("MissingPage"))
     }
 
     @Test
@@ -80,8 +81,8 @@ class NavigationGraphContractTest : BaseTest() {
 
         val failure = runCatching { builder.register("SourcePage", "TargetPage", emptyList()) }.exceptionOrNull()
 
-        assertTrue(failure is IllegalArgumentException)
-        assertTrue(failure?.message.orEmpty().contains("must declare how arrival is observed"))
+        assertIs<IllegalArgumentException>(failure)
+        assertTrue(failure.message.orEmpty().contains("must declare how arrival is observed"))
     }
 
     @Test
@@ -100,7 +101,7 @@ class NavigationGraphContractTest : BaseTest() {
             NavigationRouteId("HomePage->BookmarksPage#with-searchable-bookmark"),
             edge?.routeId,
         )
-        assertTrue(edge?.effects?.single() is NavigationEffect.CreateBookmark)
+        assertIs<NavigationEffect.CreateBookmark>(edge?.effects?.single())
     }
 
     @Test
@@ -154,8 +155,8 @@ class NavigationGraphContractTest : BaseTest() {
         }
             .exceptionOrNull()
 
-        assertTrue(failure is IllegalStateException)
-        assertTrue(failure?.message.orEmpty().contains("DuplicateSource->DuplicateTarget"))
+        assertIs<IllegalStateException>(failure)
+        assertTrue(failure.message.orEmpty().contains("DuplicateSource->DuplicateTarget"))
     }
 
     @Test

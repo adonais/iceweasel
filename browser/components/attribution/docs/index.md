@@ -115,7 +115,7 @@ macOS attribution is implemented by adding a `com.apple.application-instance` ex
 
 Firefox installs done through the Microsoft Store support extracting campaign IDs that may be embedded into them. This allows us to attribute installs through different channels by providing particular links to the Microsoft Store with attribution data included. For example:
 
-[ms-windows-store://pdp/?productid=9NZVDKPMR9RD&cid=source%3Dgoogle.com%26medium%3Dorganic%26campaign%3D(not%20set)%26content%3D(not%20set)](<ms-windows-store://pdp/?productid=9NZVDKPMR9RD&cid=source%3Dgoogle.com%26medium%3Dorganic%26campaign%3D(not%20set)%26content%3D(not%20set)>)
+`ms-windows-store://pdp/?productid=9NZVDKPMR9RD&cid=source%3Dgoogle.com%26medium%3Dorganic%26campaign%3D(not%20set)%26content%3D(not%20set)`
 
 [https://www.microsoft.com/store/apps/9NZVDKPMR9RD?cid=source%3Dgoogle.com%26medium%3Dorganic%26campaign%3D(not%20set)%26content%3D(not%20set)](<https://www.microsoft.com/store/apps/9NZVDKPMR9RD?cid=source%3Dgoogle.com%26medium%3Dorganic%26campaign%3D(not%20set)%26content%3D(not%20set)>)
 

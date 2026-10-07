@@ -184,15 +184,15 @@ void MacroAssembler::convertIntPtrToDouble(Register src, FloatRegister dest) {
   MOZ_CRASH();
 }
 
-void MacroAssembler::wasmAtomicLoad64(const wasm::MemoryAccessDesc& access,
-                                      const Address& mem, Register64 temp,
-                                      Register64 output) {
+FaultingCodeRange MacroAssembler::wasmAtomicLoad64(
+    const wasm::MemoryAccessDesc& access, const Address& mem, Register64 temp,
+    Register64 output) {
   MOZ_CRASH();
 }
 
-void MacroAssembler::wasmAtomicLoad64(const wasm::MemoryAccessDesc& access,
-                                      const BaseIndex& mem, Register64 temp,
-                                      Register64 output) {
+FaultingCodeRange MacroAssembler::wasmAtomicLoad64(
+    const wasm::MemoryAccessDesc& access, const BaseIndex& mem, Register64 temp,
+    Register64 output) {
   MOZ_CRASH();
 }
 
@@ -309,15 +309,15 @@ void MacroAssembler::wasmTruncateDoubleToInt32(FloatRegister input,
   MOZ_CRASH();
 }
 
-void MacroAssembler::wasmAtomicExchange64(const wasm::MemoryAccessDesc& access,
-                                          const Address& mem, Register64 value,
-                                          Register64 output) {
+FaultingCodeRange MacroAssembler::wasmAtomicExchange64(
+    const wasm::MemoryAccessDesc& access, const Address& mem, Register64 value,
+    Register64 output) {
   MOZ_CRASH();
 }
 
-void MacroAssembler::wasmAtomicExchange64(const wasm::MemoryAccessDesc& access,
-                                          const BaseIndex& mem,
-                                          Register64 value, Register64 output) {
+FaultingCodeRange MacroAssembler::wasmAtomicExchange64(
+    const wasm::MemoryAccessDesc& access, const BaseIndex& mem,
+    Register64 value, Register64 output) {
   MOZ_CRASH();
 }
 
@@ -475,19 +475,15 @@ void MacroAssembler::moveValue(const Value& src, const ValueOperand& dest) {
   MOZ_CRASH();
 }
 
-void MacroAssembler::wasmCompareExchange64(const wasm::MemoryAccessDesc& access,
-                                           const Address& mem,
-                                           Register64 expected,
-                                           Register64 replacement,
-                                           Register64 output) {
+FaultingCodeRange MacroAssembler::wasmCompareExchange64(
+    const wasm::MemoryAccessDesc& access, const Address& mem,
+    Register64 expected, Register64 replacement, Register64 output) {
   MOZ_CRASH();
 }
 
-void MacroAssembler::wasmCompareExchange64(const wasm::MemoryAccessDesc& access,
-                                           const BaseIndex& mem,
-                                           Register64 expected,
-                                           Register64 replacement,
-                                           Register64 output) {
+FaultingCodeRange MacroAssembler::wasmCompareExchange64(
+    const wasm::MemoryAccessDesc& access, const BaseIndex& mem,
+    Register64 expected, Register64 replacement, Register64 output) {
   MOZ_CRASH();
 }
 

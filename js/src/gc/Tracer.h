@@ -111,6 +111,11 @@ typename PtrBaseGCType<T>::type* ConvertToBase(T* thingp) {
 JS_FOR_EACH_TRACEKIND(DEFINE_TRACE_FUNCTION)
 #undef DEFINE_TRACE_FUNCTION
 
+MOZ_ALWAYS_INLINE bool TraceBufferEdgeInternal(JSTracer* trc, void** bufferp,
+                                               const char* name) {
+  return trc->onBufferEdge(bufferp, name);
+}
+
 bool TraceEdgeInternal(JSTracer* trc, Value* thingp, const char* name);
 bool TraceEdgeInternal(JSTracer* trc, jsid* thingp, const char* name);
 bool TraceEdgeInternal(JSTracer* trc, TaggedProto* thingp, const char* name);
@@ -203,7 +208,7 @@ template <typename T>
 void TraceBufferRoot(JSTracer* trc, JS::Zone* zone, T** bufferp,
                      const char* name) {
   void** ptrp = reinterpret_cast<void**>(bufferp);
-  gc::TraceBufferEdgeInternal(trc, ptrp, name);
+  MOZ_ALWAYS_TRUE(gc::TraceBufferEdgeInternal(trc, ptrp, name));
 }
 
 template <typename T>
@@ -315,16 +320,16 @@ void TraceRootRange(JSTracer* trc, size_t len, T* vec, const char* name) {
 // Note that this doesn't trace the contents of the alloc.
 // TODO: Unify this with other TraceEdge methods.
 template <typename T>
-T* TraceBufferEdge(JSTracer* trc, T** bufferp, const char* name) {
+void TraceBufferEdge(JSTracer* trc, T** bufferp, const char* name) {
   void** ptrp = reinterpret_cast<void**>(bufferp);
-  void* ptr = gc::TraceBufferEdgeInternal(trc, ptrp, name);
-  return static_cast<T*>(ptr);
+  MOZ_ALWAYS_TRUE(gc::TraceBufferEdgeInternal(trc, ptrp, name));
 }
 template <typename T>
 void TraceEdgeAndBuffer(JSTracer* trc, GCBuffer<T>* bufferp, const char* name) {
   static_assert(std::is_pointer_v<T>);
-  T ptr = TraceBufferEdge(trc, bufferp->unbarrieredAddress(), name);
-  if (ptr) {
+  T* addr = bufferp->unbarrieredAddress();
+  TraceBufferEdge(trc, addr, name);
+  if (T ptr = *addr) {
     ptr->trace(trc);
   }
 }

@@ -75,14 +75,14 @@ add_task(function test_numeric_field_keeps_its_integer() {
   Assert.strictEqual(assertValid(0, schema), 0, "0 stays an integer");
 });
 
-add_task(function test_uri_format_hydrates_to_url_object() {
-  const schema = { type: "string", format: "uri" };
+add_task(function test_moz_url_format_hydrates_to_url_object() {
+  const schema = { type: "string", format: "moz-url" };
 
   const parsed = assertValid("https://example.com/path", schema);
-  Assert.ok(URL.isInstance(parsed), "a uri-formatted string becomes a URL");
+  Assert.ok(URL.isInstance(parsed), "a moz-url string becomes a URL");
   Assert.equal(parsed.href, "https://example.com/path");
 
-  // format:uri is permissive (intranet/private/file), unlike the built-in
+  // format:moz-url is permissive (intranet/private/file), unlike the built-in
   // "url" format; enterprise policies rely on accepting these.
   Assert.ok(URL.isInstance(assertValid("http://192.168.1.1", schema)));
   Assert.ok(URL.isInstance(assertValid("file:///C:/path", schema)));
@@ -93,7 +93,7 @@ add_task(function test_uri_format_hydrates_to_url_object() {
 add_task(function test_uri_or_empty() {
   const schema = {
     type: "string",
-    anyOf: [{ format: "uri" }, { maxLength: 0 }],
+    anyOf: [{ format: "moz-url" }, { maxLength: 0 }],
   };
 
   Assert.strictEqual(assertValid("", schema), "", "empty string is allowed");
@@ -156,7 +156,10 @@ add_task(function test_list_drops_invalid_entries_and_keeps_the_rest() {
 });
 
 add_task(function test_list_of_uris_drops_invalid_keeps_valid_as_urls() {
-  const schema = { type: "array", items: { type: "string", format: "uri" } };
+  const schema = {
+    type: "array",
+    items: { type: "string", format: "moz-url" },
+  };
 
   const parsed = assertValid(
     ["https://a.com", "not a url", "https://b.com"],

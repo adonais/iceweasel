@@ -7,6 +7,7 @@ package org.mozilla.fenix.tabstray.redux.state
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Immutable
 import mozilla.components.lib.state.State
+import org.mozilla.fenix.tabgroups.TabGroupTelemetry
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
@@ -202,23 +203,25 @@ data class TabsTrayState(
      * @property hasViewedTabGroupsPage Whether the user has viewed the Tab Groups page.
      * @property skipUngroupConfirmation Whether the ungroup confirmation dialog should be skipped.
      * @property hasRecordedOnboardingImpression Whether an onboarding impression has been recorded this session.
+     * @property showCollectionsMigrationCard Whether the Collections to Tab Groups migration card is shown.
      * @property enteringGroupId Recently created group id, to be referenced for animations. Cleared after entrance
      *   animations are played.
      * @property dragProcessingState The lifecycle state of tab-group drag handling
      */
     @Immutable
     data class TabGroupState(
-        val groups: List<TabsTrayItem.TabGroup> = emptyList(),
-        val formState: TabGroupFormState? = null,
+        override val groups: List<TabsTrayItem.TabGroup> = emptyList(),
+        override val formState: TabGroupFormState? = null,
         internal val hasUserDismissedTabGroupOnboarding: Boolean = false,
         internal val tabGroupOnboardingImpressionCount: Int = 0,
         internal val hasUserEverHadOneTabGroup: Boolean = false,
         internal val hasViewedTabGroupsPage: Boolean = false,
         internal val skipUngroupConfirmation: Boolean = false,
         internal val hasRecordedOnboardingImpression: Boolean = false,
+        val showCollectionsMigrationCard: Boolean = false,
         val enteringGroupId: String? = null,
         val dragProcessingState: DragProcessingState = DragProcessingState.UNINITIALIZED,
-    )
+    ) : TabGroupTelemetry.TabGroupTelemetryContext
 
     /** State for the drag handling flow for Tab Groups. */
     enum class DragProcessingState {

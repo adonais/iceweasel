@@ -64,7 +64,7 @@ nsString nsQuoteNode::Text() {
       }
     }
     const intl::Quotes* quotes =
-        intl::QuotesForLang(frame->StyleFont()->mLanguage);
+        intl::QuotesForLang(frame->StyleFont()->GetLangAtom());
     // If we don't have quote-mark data for the language, use built-in
     // defaults.
     if (!quotes) {

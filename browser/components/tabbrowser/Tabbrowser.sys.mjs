@@ -22,6 +22,8 @@ const lazy = XPCOMUtils.declareLazy({
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
   FaviconUtils: "moz-src:///toolkit/modules/FaviconUtils.sys.mjs",
   KeyboardLockUtils: "resource://gre/modules/KeyboardLockUtils.sys.mjs",
+  MiniWindowManager:
+    "moz-src:///browser/components/miniwindow/MiniWindowManager.sys.mjs",
   NewTabPagePreloading:
     "moz-src:///browser/components/tabbrowser/NewTabPagePreloading.sys.mjs",
   notificationEnableDelay: {
@@ -231,6 +233,7 @@ export class Tabbrowser {
   }
 
   init() {
+    /** @type {MozTabbrowserTabs} */
     this.tabContainer = this.document.getElementById("tabbrowser-tabs");
     this.tabGroupMenu = this.document.getElementById("tab-group-editor");
     this.tabNoteMenu = this.document.getElementById("tab-note-menu");
@@ -2881,13 +2884,6 @@ export class Tabbrowser {
       aBrowser.urlbarChangeTracker.startedLoad();
     }
 
-    // This shouldn't really be necessary, however, this has the side effect
-    // of sending MozLayerTreeReady / MozLayerTreeCleared events for remote
-    // frames, which the tab switcher depends on.
-    //
-    // eslint-disable-next-line no-self-assign
-    aBrowser.docShellIsActive = aBrowser.docShellIsActive;
-
     // Create a new tab progress listener for the new browser we just injected,
     // since tab progress listeners have logic for handling the initial about:blank
     // load
@@ -3470,6 +3466,8 @@ export class Tabbrowser {
     aTab.removeAttribute("linkedpanel");
 
     this.#createLazyBrowser(aTab);
+
+    this._switcher?.onTabDiscarded(aTab);
 
     let evt = new this.documentGlobal.CustomEvent("TabBrowserDiscarded", {
       bubbles: true,
@@ -4268,6 +4266,12 @@ export class Tabbrowser {
       options.skipPermitUnload = true;
     }
 
+    // Deleting a group closes the tabs in it. If the group happens to hold
+    // every tab in the window, we still only want the tabs to close, because
+    // the user asked to delete a group and not to close the window. A caller
+    // can still ask for the old behaviour.
+    options.closeWindowWithLastTab ??= false;
+
     if (group.tabs.length == this.tabs.length) {
       // explicit calls to removeTabGroup are not expected to save groups.
       // if removing this group closes a window, we need to tell the window
@@ -4982,7 +4986,7 @@ export class Tabbrowser {
 
       // Re-use existing selected tab if possible to avoid the overhead of
       // selecting a new tab. For now, we only do this for horizontal tabs;
-      // we'll let tabs.js handle pinning for vertical tabs until we unify
+      // we'll let tabs.mjs handle pinning for vertical tabs until we unify
       // the logic for both horizontal and vertical tabs in bug 1910097.
       if (
         select &&
@@ -5585,13 +5589,31 @@ export class Tabbrowser {
     return tabsToEnd;
   }
 
+  /**
+   * A restoring browser sits on about:blank until its page commits, so its
+   * URI says nothing about duplicates yet.
+   *
+   * @param {MozTabbrowserTab} tab
+   * @returns {nsIURI|null}
+   */
+  #uriForDuplicateCheck(tab) {
+    let uri = tab.linkedBrowser?.currentURI;
+    if (!uri) {
+      return null;
+    }
+    if (uri.spec == "about:blank" && lazy.SessionStore.isTabRestoring(tab)) {
+      return null;
+    }
+    return uri;
+  }
+
   getDuplicateTabsToClose(aTab) {
     // One would think that a set is better, but it would need to copy all
     // the strings instead of just keeping references to the nsIURI objects,
     // and the array is presumed to be small anyways.
     let keys = [];
     let keyForTab = tab => {
-      let uri = tab.linkedBrowser?.currentURI;
+      let uri = this.#uriForDuplicateCheck(tab);
       if (!uri) {
         return null;
       }
@@ -5651,7 +5673,7 @@ export class Tabbrowser {
     /** @type {Map<string, Set<number>>} */
     let userContextIdsPerUri = new Map();
     for (let tab of lastSeenTabs) {
-      const uri = tab.linkedBrowser?.currentURI;
+      const uri = this.#uriForDuplicateCheck(tab);
       if (!uri) {
         // Can't tell if it's a duplicate without a URI.
         // Safest to leave it be.
@@ -6083,6 +6105,9 @@ export class Tabbrowser {
    * @param {boolean} [options.skipGroupCheck]
    *   Skip separate processing of whole tab groups from the set of tabs.
    *   Used by removeTabGroup.
+   * @param {boolean} [options.closeWindowWithLastTab]
+   *   Whether closing every tab in the window should close the window too.
+   *   Defaults to the `browser.tabs.closeWindowWithLastTab` preference.
    * @param {TabMetricsContext} [options.metricsContext]
    *   The context for the operation for telemetry purposes
    * @see Tabbrowser.runBeforeUnloadForTabs
@@ -6095,6 +6120,7 @@ export class Tabbrowser {
       skipPermitUnload = false,
       skipSessionStore = false,
       skipGroupCheck = false,
+      closeWindowWithLastTab,
       metricsContext,
     } = {}
   ) {
@@ -6102,7 +6128,8 @@ export class Tabbrowser {
     // can be considered equivalent to closing the window.
     if (
       this.tabs.length == tabs.length &&
-      Services.prefs.getBoolPref("browser.tabs.closeWindowWithLastTab")
+      (closeWindowWithLastTab ??
+        Services.prefs.getBoolPref("browser.tabs.closeWindowWithLastTab"))
     ) {
       this.documentGlobal.closeWindow(
         true,
@@ -6187,6 +6214,10 @@ export class Tabbrowser {
         prewarmed: true,
         skipPermitUnload,
         skipSessionStore,
+        // removeTab decides on its own whether to close the window when it
+        // takes the last tab, so pass this along or it will close the window
+        // even when we were asked not to.
+        closeWindowWithLastTab,
         metricsContext: this.TabMetrics.decomposedContext(metricsContext),
       };
 
@@ -6323,6 +6354,15 @@ export class Tabbrowser {
     let tabWidth =
       this.documentGlobal.windowUtils.getBoundsWithoutFlushing(aTab).width;
     let isLastTab = this.#isLastTabInWindow(aTab);
+    if (
+      isLastTab &&
+      Services.prefs.getBoolPref("browser.mini-window.enabled", false) &&
+      lazy.MiniWindowManager.maybeMoveOldestMiniWindow(this.documentGlobal)
+    ) {
+      // Mini window kept this window open by moving one of its popped tabs back
+      // into it, so aTab is no longer the last tab.
+      isLastTab = false;
+    }
     if (
       !this.#beginRemoveTab(aTab, {
         closeWindowFastpath: true,
@@ -7040,6 +7080,16 @@ export class Tabbrowser {
       tab => !excludeTabs.has(tab)
     );
 
+    // Filter out tabs the user explicitly unloaded if there are other
+    // tabs left
+    const nonDiscardedTabs = Array.prototype.filter.call(
+      remainingTabs,
+      tab => !tab.hasAttribute("discarded")
+    );
+    if (nonDiscardedTabs.length) {
+      remainingTabs = nonDiscardedTabs;
+    }
+
     if (Services.prefs.getBoolPref("browser.tabs.selectMRUOnClose", false)) {
       let mruTab = remainingTabs
         .filter(t => t !== aTab)
@@ -7653,11 +7703,17 @@ export class Tabbrowser {
    * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabbrowserTabGroupLabel} aTab
    * @param {object} [options={}]
    *   Key-value pairs that will be serialized into the features string.
+   * @param {boolean} [options.replaceLastTab=false]
+   *   When true, opens a newtab to prevent the window from closing.
    */
-  replaceTabWithWindow(aTab, options = {}) {
+  replaceTabWithWindow(aTab, { replaceLastTab = false, ...features } = {}) {
     if (this.tabs.length == 1) {
-      return null;
+      if (!replaceLastTab) {
+        return null;
+      }
+      this.addTrustedTab(this.documentGlobal.BROWSER_NEW_TAB_URL);
     }
+
     // TODO bug 1967925: Consider handling the case where aTab is a tab group
     // and also the only tab group in its window.
 
@@ -7673,7 +7729,7 @@ export class Tabbrowser {
     args.appendElement(/** @type {nsISupports} */ (aTab.splitview ?? aTab));
     return lazy.BrowserWindowTracker.openWindow({
       private: lazy.PrivateBrowsingUtils.isWindowPrivate(this.documentGlobal),
-      features: Object.entries(options)
+      features: Object.entries(features)
         .map(([key, value]) => `${key}=${value}`)
         .join(","),
       openerWindow: this.documentGlobal,
@@ -7816,9 +7872,10 @@ export class Tabbrowser {
   }
 
   /**
+   * Whether the element is the `<label>` in a `<tab-group>`.
+   *
    * @param {Element} element
-   * @returns {boolean}
-   *   `true` if element is the `<label>` in a `<tab-group>`
+   * @returns {element is MozTabbrowserTabGroupLabel}
    */
   isTabGroupLabel(element) {
     return !!element?.classList?.contains("tab-group-label");
@@ -8917,7 +8974,7 @@ export class Tabbrowser {
       this.#multiSelectChangeSelected = false;
       this.#multiSelectChangeAdditions.clear();
       this.#multiSelectChangeRemovals.clear();
-      this.dispatchEvent(
+      this.tabContainer.dispatchEvent(
         new this.documentGlobal.CustomEvent("TabMultiSelect", {
           bubbles: true,
         })
@@ -10001,13 +10058,6 @@ export class Tabbrowser {
         if (hadStartedLoad) {
           browser.urlbarChangeTracker.startedLoad();
         }
-
-        // This shouldn't really be necessary, however, this has the side effect
-        // of sending MozLayerTreeReady / MozLayerTreeCleared events for remote
-        // frames, which the tab switcher depends on.
-        //
-        // eslint-disable-next-line no-self-assign
-        browser.docShellIsActive = browser.docShellIsActive;
 
         // Create a new tab progress listener for the new browser we just
         // injected, since tab progress listeners have logic for handling the

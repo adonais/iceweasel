@@ -674,7 +674,6 @@ struct ZoneStats {
   MACRO(Other, MallocHeap, zoneObject)                     \
   MACRO(Other, MallocHeap, regexpZone)                     \
   MACRO(Other, MallocHeap, jitZone)                        \
-  MACRO(Other, MallocHeap, cacheIRStubs)                   \
   MACRO(Other, MallocHeap, objectFuses)                    \
   MACRO(Other, MallocHeap, uniqueIdMap)                    \
   MACRO(Other, MallocHeap, initialPropMapTable)            \
@@ -772,6 +771,7 @@ struct RealmStats {
   MACRO(Other, NonHeap, scriptsGCBuffers)       \
   MACRO(Other, MallocHeap, baselineData)        \
   MACRO(Other, MallocHeap, allocSites)          \
+  MACRO(Other, MallocHeap, cacheIRStubs)        \
   MACRO(Other, MallocHeap, ionData)             \
   MACRO(Other, MallocHeap, jitScripts)          \
   MACRO(Other, MallocHeap, realmObject)         \

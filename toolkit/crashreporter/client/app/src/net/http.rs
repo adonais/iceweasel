@@ -264,6 +264,13 @@ impl<'a> RequestBuilder<'a> {
 
         cmd.arg("--fail");
         cmd.args(["--user-agent", user_agent()]);
+        // `--silent` disables the progress output and errors, and `--show-error` re-enables errors.
+        // In case of error, we don't want stderr (which is logged) to be noisy with progress
+        // status.
+        //
+        // `--no-progress-meter` is available since curl 7.67 (~2019), however just in case for
+        // compatibility, we'll use the less verbose option (`--silent` also silences warnings).
+        cmd.args(["--silent", "--show-error"]);
 
         match self {
             Self::MimePost { parts } => {

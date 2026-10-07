@@ -170,6 +170,18 @@ typedef struct sec_ASN1Template_struct {
 /* Maximum depth of nested SEQUENCEs and SETs */
 #define SEC_ASN1D_MAX_DEPTH 32
 
+/* Default maximum size (in bytes) of any single ASN.1 element. Prevents
+ * allocation of unrealistically large buffers. Callers that need to handle
+ * larger inputs must opt out by calling
+ * SEC_ASN1DecoderSetMaximumElementSize(cx, 0). */
+#define SEC_ASN1D_MAX_INPUT_SIZE (256UL * 1024 * 1024)
+
+/* Default maximum number of elements in any single SEQUENCE OF or SET OF
+ * group. Prevents allocation of unrealistically large pointer arrays.
+ * Callers that need to handle larger collections must opt out by calling
+ * SEC_ASN1DecoderSetMaximumNumberOfElements(cx, 0). */
+#define SEC_ASN1D_MAX_ELEMENTS 1000000UL
+
 /*
 ** Function used for SEC_ASN1_DYNAMIC.
 ** "arg" is a pointer to the structure being encoded/decoded

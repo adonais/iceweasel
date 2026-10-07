@@ -41,6 +41,8 @@ support-files = [
 
 ["browser_inputHistory_emptystring.js"]
 
+["browser_originInView.js"]
+
 ["browser_originToAdaptive.js"]
 
 ["browser_paste.js"]

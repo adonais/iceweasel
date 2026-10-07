@@ -17,7 +17,7 @@ export const newtabFileHeader = () => {
   let backwardCompatString = [
     "/*",
     " * @backward-compat { version 155 }",
-    " * Nova design token overrides are gated on the `browser.design-tokens.nova` pref in",
+    " * Nova design token overrides are gated on the `browser.nova.enabled` pref in",
     " * tokens-shared.css, which is NOT enabled when HNT ships its Nova experience (gated",
     " * on `browser.newtabpage.activity-stream.nova.enabled`). Since the newtab extension",
     " * can train-hop, it cannot rely on toolkit CSS behind a pref gate. This file provides",

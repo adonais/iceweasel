@@ -1289,6 +1289,8 @@ bool SharedContextWebgl::ReadInto(uint8_t* aDstData, int32_t aDstStride,
   webgl::ReadPixelsDesc desc;
   desc.srcOffset = *ivec2::From(aBounds);
   desc.size = *uvec2::FromSize(aBounds);
+  desc.pi.format = aFormat == SurfaceFormat::A8 ? LOCAL_GL_RED : LOCAL_GL_RGBA;
+  desc.pi.type = LOCAL_GL_UNSIGNED_BYTE;
   desc.packState.rowLength = aDstStride / BytesPerPixel(aFormat);
   bool success = true;
   if (aBuffer) {

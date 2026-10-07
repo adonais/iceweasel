@@ -212,11 +212,15 @@
     <style name="NormalTheme" parent="NormalThemeBase" />
 
     <style name="BaseDialogStyle.Private" parent="BaseDialogStyle">
-        <item name="android:background">?attr/layer2</item>
+        <item name="alertDialogStyle">@style/MaterialAlertDialog.App.Private</item>
         <item name="materialAlertDialogTitleTextStyle">@style/MaterialAlertDialog.App.Title.Text.Private</item>
         <item name="buttonBarPositiveButtonStyle">@style/PrivateDialogButtonStyle</item>
         <item name="buttonBarNegativeButtonStyle">@style/PrivateDialogButtonStyle</item>
         <item name="materialAlertDialogBodyTextStyle">@style/MaterialAlertDialog.App.Body.Text.Private</item>
+    </style>
+
+    <style name="MaterialAlertDialog.App.Private" parent="MaterialAlertDialog.Material3">
+        <item name="backgroundTint">?attr/layer2</item>
     </style>
 
     <style name="PrivateDialogButtonStyle" parent="Widget.Material3.Button.TextButton.Dialog">
@@ -254,7 +258,6 @@
     <style name="BaseDialogStyle" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="materialAlertDialogTitleTextStyle">@style/MaterialAlertDialog.App.Title.Text</item>
         <item name="materialAlertDialogBodyTextStyle">@style/MaterialAlertDialog.App.Body.Text</item>
-        <item name="android:background">?attr/colorSurfaceContainerHigh</item>
         <item name="colorAccent">?accent</item>
         <item name="buttonBarPositiveButtonStyle">@style/DialogButtonStyle</item>
         <item name="buttonBarNegativeButtonStyle">@style/DialogButtonStyle</item>
@@ -783,5 +786,16 @@
 
     <style name="RadioButtonStyle" parent="Widget.Material3.CompoundButton.RadioButton">
         <item name="buttonTint">@color/compound_button_tint</item>
+    </style>
+
+   <!-- Style for the Tab Group flow that hides the dialog window in favor of a bottom sheet. -->
+    <style name="TabGroupFlowDialogStyle" parent="Theme.MaterialComponents.DayNight.Dialog">
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
     </style>
 </resources>

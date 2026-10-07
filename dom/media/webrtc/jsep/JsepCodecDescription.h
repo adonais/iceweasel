@@ -9,7 +9,10 @@
 #include <set>
 #include <string>
 
+#include "mozilla/Casting.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/media/webrtc/AV1FmtpParser.h"
+#include "mozilla/media/webrtc/H264FmtpParser.h"
 #include "mozilla/net/DataChannelProtocol.h"
 #include "nsCRT.h"
 #include "nsString.h"
@@ -54,6 +57,8 @@ class JsepCodecPreferences {
 
     // Video codec support
     os << "  AV1Enabled: " << (aPrefs.AV1Enabled() ? "true" : "false") << "\n";
+    os << "  AV1Preferred: " << (aPrefs.AV1Preferred() ? "true" : "false")
+       << "\n";
     os << "  H264Enabled: " << (aPrefs.H264Enabled() ? "true" : "false")
        << "\n";
     os << "  SoftwareH264Enabled: "
@@ -594,13 +599,16 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
 
   static UniquePtr<JsepVideoCodecDescription> CreateDefaultAV1(
       const JsepCodecPreferences& aPrefs) {
-    // AV1 has no required RFC 8851 parameters
-    // See:
-    // https://aomediacodec.github.io/av1-rtp-spec/#722-rid-restrictions-mapping-for-av1
+    // AV1 has no required RFC 8851 parameters, but we declare our decode
+    // capabilities via profile/level-idx/tier so the remote sender knows
+    // what it may send us. See:
+    // https://aomediacodec.github.io/av1-rtp-spec/#sdp-parameters
     auto codec = MakeUnique<JsepVideoCodecDescription>("99", "AV1", 90000);
     codec->mEnabled = aPrefs.AV1Enabled();
     codec->mStronglyPreferred = aPrefs.AV1Preferred();
-    codec->mAv1Config.mProfile = Nothing();
+    codec->mAv1Config.mProfile = Some(uint8_t(0));
+    codec->mAv1Config.mLevelIdx = Some(uint8_t(9));  // Level 4.1
+    codec->mAv1Config.mTier = Some(uint8_t(0));
     if (aPrefs.UseRtx()) {
       codec->EnableRtx("100");
     }
@@ -799,10 +807,10 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
         MOZ_RELEASE_ASSERT(aFmtp->codec_type == SdpRtpmapAttributeList::kAV1);
         av1Params =
             static_cast<const SdpFmtpAttributeList::Av1Parameters&>(*aFmtp);
-        av1Params.profile = mAv1Config.mProfile;
-        av1Params.levelIdx = mAv1Config.mLevelIdx;
-        av1Params.tier = mAv1Config.mTier;
       }
+      av1Params.profile = mAv1Config.mProfile;
+      av1Params.levelIdx = mAv1Config.mLevelIdx;
+      av1Params.tier = mAv1Config.mTier;
       aFmtp = av1Params.Clone();
     }
   }
@@ -1077,33 +1085,6 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
     NegotiateRtcpFb(remote, &mOtherFbTypes);
   }
 
-  // Some parameters are hierarchical, meaning that a lower value reflects a
-  // lower capability.  In these cases, we want the sender to use the lower of
-  // the two values. There is also an implied default value which may be higher
-  // than the signaled value.
-  template <typename T>
-  static auto NegotiateHierarchicalParam(const sdp::Direction direction,
-                                         const Maybe<T>& localParam,
-                                         const Maybe<T>& remoteParam,
-                                         const T& defaultValue) -> Maybe<T> {
-    const auto maybe_min = [&](const Maybe<T>& a,
-                               const Maybe<T>& b) -> Maybe<T> {
-      auto val = std::min(a.valueOr(defaultValue), b.valueOr(defaultValue));
-      if (val == defaultValue) {
-        // Are we using defaultValue because we fell back on it, or because it
-        // was actually signaled?
-        if (a != Some(defaultValue) && b != Some(defaultValue)) {
-          return Nothing();
-        }
-      }
-      return Some(val);
-    };
-    if (direction == sdp::kSend) {
-      return maybe_min(localParam, remoteParam);
-    }
-    return localParam;
-  }
-
   bool Negotiate(const std::string& pt, const SdpMediaSection& remoteMsection,
                  bool remoteIsOffer,
                  Maybe<const SdpMediaSection&> localMsection) override {
@@ -1115,8 +1096,9 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
 
       // Level is negotiated symmetrically if level asymmetry is disallowed
       if (!h264Params.level_asymmetry_allowed) {
-        SetSaneH264Level(std::min(GetSaneH264Level(h264Params.profile_level_id),
-                                  GetSaneH264Level(mProfileLevelId)),
+        SetSaneH264Level(ClampToSupportedH264Level(std::min(
+                             GetSaneH264Level(h264Params.profile_level_id),
+                             GetSaneH264Level(mProfileLevelId))),
                          &mProfileLevelId);
       }
 
@@ -1130,8 +1112,26 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
         mSpropParameterSets = h264Params.sprop_parameter_sets;
         // Only do this if we didn't symmetrically negotiate above
         if (h264Params.level_asymmetry_allowed) {
-          SetSaneH264Level(GetSaneH264Level(h264Params.profile_level_id),
+          SetSaneH264Level(ClampToSupportedH264Level(
+                               GetSaneH264Level(h264Params.profile_level_id)),
                            &mProfileLevelId);
+        }
+        // The negotiated level implies a macroblocks-per-frame/-second cap
+        // (Annex A Table A-1) even when the remote didn't explicitly signal
+        // max-fs/max-mbps (the common case). Combine with any explicit
+        // signal by taking the tighter of the two, so we never ask the
+        // encoder for more than the level permits.
+        if (Maybe<H264MacroblockLimits> levelLimits =
+                H264MacroblockLimitsForLevel(SaneH264LevelToH264Level(
+                    GetSaneH264Level(mProfileLevelId)))) {
+          if (!mConstraints.maxFs ||
+              mConstraints.maxFs > levelLimits->mMaxMacroblocksPerFrame) {
+            mConstraints.maxFs = levelLimits->mMaxMacroblocksPerFrame;
+          }
+          if (!mConstraints.maxMbps ||
+              mConstraints.maxMbps > levelLimits->mMaxMacroblocksPerSecond) {
+            mConstraints.maxMbps = levelLimits->mMaxMacroblocksPerSecond;
+          }
         }
       } else {
         // TODO(bug 1143709): max-recv-level support
@@ -1149,28 +1149,25 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
         }
       }
     } else if (mName == "AV1") {
-      using Av1Params = SdpFmtpAttributeList::Av1Parameters;
-      Av1Params av1Params(GetAv1Parameters(mDefaultPt, remoteMsection));
-
-      Maybe<SdpFmtpAttributeList::Av1Parameters> localParams =
-          localMsection.isSome()
-              ? Some(GetAv1Parameters(mDefaultPt, *localMsection))
-              : Nothing();
-      auto localProfile =
-          localParams.isSome() ? localParams.value().profile : Nothing();
-      auto localLevelIdx =
-          localParams.isSome() ? localParams.value().levelIdx : Nothing();
-      auto tier = localParams.isSome() ? localParams.value().tier : Nothing();
-
-      av1Params.profile = NegotiateHierarchicalParam(
-          mDirection, localProfile, av1Params.profile,
-          Av1Params::kDefaultProfile);
-      av1Params.levelIdx = NegotiateHierarchicalParam(
-          mDirection, localLevelIdx, av1Params.levelIdx,
-          Av1Params::kDefaultLevelIdx);
-      av1Params.tier = NegotiateHierarchicalParam(
-          mDirection, tier, av1Params.tier, Av1Params::kDefaultTier);
-      mAv1Config = Av1Config(av1Params);
+      // Per
+      // https://aomediacodec.github.io/av1-rtp-spec/#sdp-offer-answer,
+      // these parameters are receiver-declared and asymmetric, unlike
+      // VP8/VP9's hierarchically negotiated max-fs/max-fr. When sending, we
+      // adopt whatever the remote receiver declared (spec defaults apply for
+      // anything it left unset). When receiving, mAv1Config already holds
+      // what we ourselves declare, and is not derived from the remote side.
+      if (mDirection == sdp::kSend) {
+        mAv1Config = Av1Config(GetAv1Parameters(mDefaultPt, remoteMsection));
+        // The negotiated level implies a block-count/rate cap (Annex A.3)
+        // that we need to respect when encoding, so we never ask the
+        // encoder for more than the remote declared it can receive.
+        if (Maybe<AV1BlockLimits> levelLimits =
+                AV1BlockLimitsForLevel(mAv1Config.LevelIdxOrDefault())) {
+          mConstraints.maxFs = levelLimits->mMaxFs;
+          mConstraints.maxMbps =
+              SaturatingCast<uint32_t>(levelLimits->mMaxBlocksPerSecond);
+        }
+      }
     }
 
     if (mRtxEnabled && (mDirection == sdp::kSend || remoteIsOffer)) {
@@ -1233,6 +1230,31 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
     }
 
     *profileLevelId = (*profileLevelId & ~levelMask) | level;
+  }
+
+  // Converts a "sane" H264 level (see GetSaneH264Level) to the H264_LEVEL
+  // enum used by H264FmtpParser's Annex A Table A-1 data.
+  static H264_LEVEL SaneH264LevelToH264Level(uint32_t saneLevel) {
+    if (saneLevel == 0xAB) {
+      return H264_LEVEL::H264_LEVEL_1_b;
+    }
+    return static_cast<H264_LEVEL>(saneLevel >> 4);
+  }
+
+  // A remote peer can declare an H264 level (e.g. 6.0+) that exceeds what
+  // libwebrtc's own H264Level enum (and our Annex A Table A-1 data, which
+  // mirrors it) can represent. Rather than adopt an unrepresentable level,
+  // clamp down to the highest level we can actually express: since higher
+  // H.264 levels are strict supersets of lower levels' capability
+  // requirements, encoding at our highest representable level is always
+  // acceptable to a decoder that declared support for a higher one.
+  static uint32_t ClampToSupportedH264Level(uint32_t aSaneLevel) {
+    if (H264MacroblockLimitsForLevel(SaneH264LevelToH264Level(aSaneLevel))) {
+      return aSaneLevel;
+    }
+    // 0x640034 -- high, level 5.2. The highest level our Annex A Table A-1
+    // data (and libwebrtc's H264Level enum) covers.
+    return GetSaneH264Level(0x640034);
   }
 
   enum Subprofile {
@@ -1425,12 +1447,20 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
         : mProfile(aParams.profile),
           mLevelIdx(aParams.levelIdx),
           mTier(aParams.tier) {}
-    auto ProfileOrDefault() const -> uint8_t { return mProfile.valueOr(0); }
-    auto LevelIdxDefault() const -> uint8_t { return mLevelIdx.valueOr(5); }
-    auto TierOrDefault() const -> uint8_t { return mTier.valueOr(0); }
+    auto ProfileOrDefault() const -> uint8_t {
+      return mProfile.valueOr(
+          SdpFmtpAttributeList::Av1Parameters::kDefaultProfile);
+    }
+    auto LevelIdxOrDefault() const -> uint8_t {
+      return mLevelIdx.valueOr(
+          SdpFmtpAttributeList::Av1Parameters::kDefaultLevelIdx);
+    }
+    auto TierOrDefault() const -> uint8_t {
+      return mTier.valueOr(SdpFmtpAttributeList::Av1Parameters::kDefaultTier);
+    }
     auto operator==(const Av1Config& aOther) const -> bool {
       return ProfileOrDefault() == aOther.ProfileOrDefault() &&
-             LevelIdxDefault() == aOther.LevelIdxDefault() &&
+             LevelIdxOrDefault() == aOther.LevelIdxOrDefault() &&
              TierOrDefault() == aOther.TierOrDefault();
     }
   } mAv1Config;

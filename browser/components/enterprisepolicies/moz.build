@@ -15,6 +15,7 @@ DIRS += [
 TEST_DIRS += ["tests"]
 
 EXTRA_JS_MODULES.policies += [
+    "EphemeralContainerWatcher.sys.mjs",
     "Policies.sys.mjs",
 ]
 

@@ -34,6 +34,8 @@ class DocAccessibleChild : public PDocAccessibleChild {
     SendShutdown();
   }
 
+  DocAccessible* GetDocAccessible() const { return mDoc; }
+
   /**
    * Serializes a shown tree and pushes the show event data to the mutation
    * event queue with PushMutationEventData. This function may push multiple

@@ -60,14 +60,12 @@ void ReportingUtils::StripLocationFileName(
 
 // static
 void ReportingUtils::Report(nsIGlobalObject* aGlobal, nsAtom* aType,
-                            const nsAString& aGroupName, const nsAString& aURL,
-                            ReportBody* aBody) {
+                            const nsACString& aGroupName,
+                            const nsACString& aURL, ReportBody* aBody) {
   MOZ_RELEASE_ASSERT(aGlobal && aBody);
 
-  nsDependentAtomString type(aType);
-
   RefPtr<mozilla::dom::Report> report =
-      new mozilla::dom::Report(aGlobal, type, aURL, aBody);
+      new mozilla::dom::Report(aGlobal, aType, aURL, aBody);
   aGlobal->BroadcastReport(report);
 
   // No endpoint to send them to.
@@ -87,8 +85,8 @@ void ReportingUtils::Report(nsIGlobalObject* aGlobal, nsAtom* aType,
     associatedBrowsingContextId = workerPrivate->AssociatedBrowsingContextID();
   }
 
-  ReportDeliver::AttemptDelivery(aGlobal, type, aGroupName, aURL, aBody,
-                                 associatedBrowsingContextId);
+  ReportDeliver::AttemptDelivery(aGlobal, nsAutoAtomCString(aType), aGroupName,
+                                 aURL, aBody, associatedBrowsingContextId);
 }
 
 /* static */
@@ -111,8 +109,9 @@ void ReportingUtils::DeserializeSecurityViolationEventAndReport(
 
   RefPtr<CSPViolationReportBody> body =
       new CSPViolationReportBody(aGlobal, violationEventInit);
-  ReportingUtils::Report(aGlobal, nsGkAtoms::cspViolation, aReportGroupName,
-                         violationEventInit.mDocumentURI, body);
+  ReportingUtils::Report(
+      aGlobal, nsGkAtoms::cspViolation, NS_ConvertUTF16toUTF8(aReportGroupName),
+      NS_ConvertUTF16toUTF8(violationEventInit.mDocumentURI), body);
 }
 
 }  // namespace mozilla::dom

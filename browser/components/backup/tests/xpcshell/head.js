@@ -5,9 +5,11 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
-  BackupService: "resource:///modules/backup/BackupService.sys.mjs",
-  BackupResource: "resource:///modules/backup/BackupResource.sys.mjs",
-  MeasurementUtils: "resource:///modules/backup/MeasurementUtils.sys.mjs",
+  BackupService: "moz-src:///browser/components/backup/BackupService.sys.mjs",
+  BackupResource:
+    "moz-src:///browser/components/backup/resources/BackupResource.sys.mjs",
+  MeasurementUtils:
+    "moz-src:///browser/components/backup/MeasurementUtils.sys.mjs",
   Sqlite: "resource://gre/modules/Sqlite.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
   OSKeyStoreTestUtils: "resource://testing-common/OSKeyStoreTestUtils.sys.mjs",

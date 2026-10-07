@@ -23,6 +23,7 @@ using SVGPathElementBase = SVGGeometryElement;
 
 class SVGPathElement final : public SVGPathElementBase {
   using Path = mozilla::gfx::Path;
+  using Element::UnsetAttr;
 
  protected:
   friend nsresult(::NS_NewSVGPathElement(

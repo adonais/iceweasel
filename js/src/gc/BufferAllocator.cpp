@@ -18,7 +18,6 @@
 #include "gc/GCInternals.h"
 #include "gc/GCLock.h"
 #include "gc/PublicIterators.h"
-#include "gc/Tenuring.h"
 #include "gc/Zone.h"
 #include "js/HeapAPI.h"
 #include "util/Poison.h"
@@ -729,28 +728,16 @@ void* BufferAllocator::allocInGC(size_t bytes, bool nurseryOwned) {
   MOZ_ASSERT_IF(zone->isGCMarkingOrSweeping(), majorState == State::Marking);
   checkAccess();
 
-  void* result;
   if (IsLargeAllocSize(bytes)) {
-    result = allocLarge(bytes, nurseryOwned, true);
-  } else if (IsSmallAllocSize(bytes)) {
-    result = allocSmall(bytes, nurseryOwned, true);
-  } else {
-    result = allocMedium(bytes, nurseryOwned, true);
+    void* result = allocLarge(bytes, nurseryOwned, true);
+    return result;
   }
 
-  if (!result) {
-    return nullptr;
+  if (IsSmallAllocSize(bytes)) {
+    return allocSmall(bytes, nurseryOwned, true);
   }
 
-  // Barrier to mark nursery-owned allocations that happen during collection. We
-  // don't need to do this for tenured-owned allocations because we don't sweep
-  // tenured-owned allocations that happened after the start of a major
-  // collection.
-  if (nurseryOwned) {
-    markNurseryOwnedAlloc(result, true);
-  }
-
-  return result;
+  return allocMedium(bytes, nurseryOwned, true);
 }
 
 inline Zone* LargeBuffer::zone() {
@@ -939,7 +926,7 @@ bool BufferAllocator::isNurseryOwned(void* alloc) {
   return chunk->isNurseryOwned(alloc);
 }
 
-void BufferAllocator::markNurseryOwnedAlloc(void* alloc, bool nurseryOwned) {
+void BufferAllocator::promoteNurseryOwnedAlloc(void* alloc, bool nurseryOwned) {
   MOZ_ASSERT(alloc);
   MOZ_ASSERT(isNurseryOwned(alloc));
   MOZ_ASSERT(minorState == State::Marking);
@@ -947,21 +934,21 @@ void BufferAllocator::markNurseryOwnedAlloc(void* alloc, bool nurseryOwned) {
   if (IsLargeAlloc(alloc)) {
     LargeBuffer* buffer = lookupLargeBuffer(alloc);
     MOZ_ASSERT(buffer->zone() == zone);
-    markLargeNurseryOwnedBuffer(buffer, nurseryOwned);
+    promoteLargeNurseryOwnedBuffer(buffer, nurseryOwned);
     return;
   }
 
   if (IsSmallAlloc(alloc)) {
-    markSmallNurseryOwnedBuffer(alloc, nurseryOwned);
+    promoteSmallNurseryOwnedBuffer(alloc, nurseryOwned);
     return;
   }
 
   MOZ_ASSERT(IsMediumAlloc(alloc));
-  markMediumNurseryOwnedBuffer(alloc, nurseryOwned);
+  promoteMediumNurseryOwnedBuffer(alloc, nurseryOwned);
 }
 
-void BufferAllocator::markSmallNurseryOwnedBuffer(void* alloc,
-                                                  bool nurseryOwned) {
+void BufferAllocator::promoteSmallNurseryOwnedBuffer(void* alloc,
+                                                     bool nurseryOwned) {
 #ifdef DEBUG
   BufferChunk* chunk = BufferChunk::from(alloc);
   MOZ_ASSERT(chunk->zone == zone);
@@ -972,12 +959,9 @@ void BufferAllocator::markSmallNurseryOwnedBuffer(void* alloc,
   MOZ_ASSERT(region->hasNurseryOwnedAllocs());
   MOZ_ASSERT(region->isNurseryOwned(alloc));
 
-  if (region->isMarked(alloc)) {
-    MOZ_ASSERT(nurseryOwned);
-    return;
-  }
-
+  // Owner promoted to tenured heap.
   if (!nurseryOwned) {
+    MOZ_ASSERT(!region->isMarked(alloc));
     region->setNurseryOwned(alloc, false);
     // If all nursery owned allocations in the region were tenured then
     // chunk->isNurseryOwned(region) will now be stale. It will be updated when
@@ -985,37 +969,38 @@ void BufferAllocator::markSmallNurseryOwnedBuffer(void* alloc,
     return;
   }
 
+  // Owner remains within the nursery.
   region->setMarked(alloc);
 }
 
-void BufferAllocator::markMediumNurseryOwnedBuffer(void* alloc,
-                                                   bool nurseryOwned) {
+void BufferAllocator::promoteMediumNurseryOwnedBuffer(void* alloc,
+                                                      bool nurseryOwned) {
   BufferChunk* chunk = BufferChunk::from(alloc);
   MOZ_ASSERT(chunk->zone == zone);
   MOZ_ASSERT(chunk->hasNurseryOwnedAllocs);
   MOZ_ASSERT(chunk->isAllocated(alloc));
   MOZ_ASSERT(chunk->isNurseryOwned(alloc));
 
-  if (chunk->isMarked(alloc)) {
-    MOZ_ASSERT(nurseryOwned);
-    return;
-  }
-
   size_t size = chunk->allocBytes(alloc);
   increaseHeapSize(size, nurseryOwned, false, false);
 
+  // Owner promoted to tenured heap.
   if (!nurseryOwned) {
+    MOZ_ASSERT(!chunk->isMarked(alloc));
+
     // Change the allocation to a tenured owned one. This prevents sweeping in a
     // minor collection.
     chunk->setNurseryOwned(alloc, false);
+
     return;
   }
 
+  // Owner remains within the nursery.
   chunk->setMarked(alloc);
 }
 
-void BufferAllocator::markLargeNurseryOwnedBuffer(LargeBuffer* buffer,
-                                                  bool nurseryOwned) {
+void BufferAllocator::promoteLargeNurseryOwnedBuffer(LargeBuffer* buffer,
+                                                     bool nurseryOwned) {
   MOZ_ASSERT(buffer->isNurseryOwned);
 
   // The buffer metadata is held in a small buffer. Check whether it has already
@@ -1028,13 +1013,14 @@ void BufferAllocator::markLargeNurseryOwnedBuffer(LargeBuffer* buffer,
     return;
   }
 
-  markSmallNurseryOwnedBuffer(buffer, nurseryOwned);
+  promoteSmallNurseryOwnedBuffer(buffer, nurseryOwned);
 
   largeNurseryAllocsToSweep.ref().remove(buffer);
 
   size_t usableSize = buffer->allocBytes();
   increaseHeapSize(usableSize, nurseryOwned, false, false);
 
+  // Owner promoted to tenured heap.
   if (!nurseryOwned) {
     buffer->isNurseryOwned = false;
     buffer->allocatedDuringCollection = majorState != State::NotCollecting;
@@ -1042,6 +1028,7 @@ void BufferAllocator::markLargeNurseryOwnedBuffer(LargeBuffer* buffer,
     return;
   }
 
+  // Owner remains within the nursery.
   largeNurseryAllocs.ref().pushBack(buffer);
 }
 
@@ -1062,16 +1049,11 @@ bool BufferAllocator::isMarkedBlack(void* alloc) {
 }
 
 /* static */
-void* BufferAllocator::TraceEdge(JSTracer* trc, void** bufferp,
+bool BufferAllocator::MarkBuffer(JSTracer* trc, void** bufferp,
                                  const char* name) {
-  // Buffers are conceptually part of the owning cell and are not reported to
-  // the tracer.
-
-  // TODO: This should be unified with the rest of the tracing system.
-
   MOZ_ASSERT(bufferp);
 
-  void* buffer = *bufferp;
+  void* buffer;
 #ifdef JS_GC_CONCURRENT_MARKING
   // Conservatively perform an atomic load even when marking is not concurrent.
   buffer = __atomic_load_n(bufferp, __ATOMIC_RELAXED);
@@ -1080,101 +1062,100 @@ void* BufferAllocator::TraceEdge(JSTracer* trc, void** bufferp,
 #endif
 
   if (!buffer) {
-    return nullptr;
+    return true;
   }
 
   if (!IsLargeAlloc(buffer) &&
       js::gc::detail::GetGCAddressChunkBase(buffer)->isNurseryChunk()) {
     // JSObject slots and elements can be allocated in the nursery and this is
     // handled separately.
-    return buffer;
+    return true;
   }
 
   MOZ_ASSERT(IsBufferAlloc(buffer));
 
   if (MOZ_UNLIKELY(IsLargeAlloc(buffer))) {
-    TraceLargeAlloc(trc, bufferp, name);
-    return buffer;
+    LargeBuffer* largeBuffer = LookupLargeBuffer(trc, buffer);
+    Zone* zone = largeBuffer->zoneFromAnyThread();  // May be parallel marking.
+    if (zone->isGCMarking() && !largeBuffer->isNurseryOwned) {
+      zone->bufferAllocator.markLargeTenuredBuffer(largeBuffer);
+    }
+    return true;
   }
 
   BufferChunk* chunk = BufferChunk::from(buffer);
-  BufferAllocator& allocator = chunk->zone->bufferAllocator;
+  Zone* zone = chunk->zone;
+  if (!zone->isGCMarking()) {
+    return true;
+  }
 
   if (IsSmallAlloc(buffer)) {
-    allocator.traceSmallAlloc(trc, buffer, name);
-    return buffer;
-  }
-
-  allocator.traceMediumAlloc(trc, buffer, name);
-  return buffer;
-}
-
-void BufferAllocator::traceSmallAlloc(JSTracer* trc, void* alloc,
-                                      const char* name) {
-  auto* region = SmallBufferRegion::from(alloc);
-
-  if (trc->isTenuringTracer()) {
-    if (region->isNurseryOwned(alloc)) {
-      bool nurseryOwned = TenuringTracer::From(trc)->sourceIsInNursery.value();
-      markSmallNurseryOwnedBuffer(alloc, nurseryOwned);
+    auto* region = SmallBufferRegion::from(buffer);
+    if (!region->isNurseryOwned(buffer)) {
+      zone->bufferAllocator.markSmallTenuredAlloc(buffer);
     }
-    return;
+    return true;
   }
 
-  if (trc->isMarkingTracer()) {
-    if (zone->isGCMarking() && !region->isNurseryOwned(alloc)) {
-      markSmallTenuredAlloc(alloc);
-    }
-    return;
+  if (!chunk->isNurseryOwned(buffer)) {
+    zone->bufferAllocator.markMediumTenuredAlloc(buffer);
   }
-}
-
-void BufferAllocator::traceMediumAlloc(JSTracer* trc, void* alloc,
-                                       const char* name) {
-  BufferChunk* chunk = BufferChunk::from(alloc);
-
-  if (trc->isTenuringTracer()) {
-    if (chunk->isNurseryOwned(alloc)) {
-      bool nurseryOwned = TenuringTracer::From(trc)->sourceIsInNursery.value();
-      markMediumNurseryOwnedBuffer(alloc, nurseryOwned);
-    }
-    return;
-  }
-
-  if (trc->isMarkingTracer()) {
-    if (zone->isGCMarking() && !chunk->isNurseryOwned(alloc)) {
-      markMediumTenuredAlloc(alloc);
-    }
-    return;
-  }
+  return true;
 }
 
 /* static */
-void BufferAllocator::TraceLargeAlloc(JSTracer* trc, void** allocp,
-                                      const char* name) {
-  void* alloc = *allocp;
-  BufferAllocatorRuntime* runtime = &trc->runtime()->gc.bufferRuntime();
-  LargeBuffer* buffer = runtime->lookupLargeBuffer(alloc);
-  Zone* zone = buffer->zoneFromAnyThread();  // May be parallel marking here.
-  zone->bufferAllocator.traceLargeBuffer(trc, buffer, name);
+bool BufferAllocator::PromoteBuffer(JSTracer* trc, void** bufferp,
+                                    const char* name,
+                                    mozilla::Maybe<bool> nurseryOwned) {
+  MOZ_ASSERT(bufferp);
+
+  void* buffer = *bufferp;
+  if (!buffer) {
+    return true;
+  }
+
+  if (!IsLargeAlloc(buffer) &&
+      js::gc::detail::GetGCAddressChunkBase(buffer)->isNurseryChunk()) {
+    // JSObject slots and elements can be allocated in the nursery and this is
+    // handled separately.
+    return true;
+  }
+
+  MOZ_ASSERT(IsBufferAlloc(buffer));
+
+  if (MOZ_UNLIKELY(IsLargeAlloc(buffer))) {
+    LargeBuffer* largeBuffer = LookupLargeBuffer(trc, buffer);
+    if (largeBuffer->isNurseryOwned) {
+      Zone* zone = largeBuffer->zoneFromAnyThread();
+      zone->bufferAllocator.promoteLargeNurseryOwnedBuffer(
+          largeBuffer, nurseryOwned.value());
+    }
+    return true;
+  }
+
+  BufferChunk* chunk = BufferChunk::from(buffer);
+  Zone* zone = chunk->zone;
+
+  if (IsSmallAlloc(buffer)) {
+    auto* region = SmallBufferRegion::from(buffer);
+    if (region->isNurseryOwned(buffer)) {
+      zone->bufferAllocator.promoteSmallNurseryOwnedBuffer(
+          buffer, nurseryOwned.value());
+    }
+    return true;
+  }
+
+  if (chunk->isNurseryOwned(buffer)) {
+    zone->bufferAllocator.promoteMediumNurseryOwnedBuffer(buffer,
+                                                          nurseryOwned.value());
+  }
+  return true;
 }
 
-void BufferAllocator::traceLargeBuffer(JSTracer* trc, LargeBuffer* buffer,
-                                       const char* name) {
-  if (trc->isTenuringTracer()) {
-    if (buffer->isNurseryOwned) {
-      bool nurseryOwned = TenuringTracer::From(trc)->sourceIsInNursery.value();
-      markLargeNurseryOwnedBuffer(buffer, nurseryOwned);
-    }
-    return;
-  }
-
-  if (trc->isMarkingTracer()) {
-    if (zone->isGCMarking() && !buffer->isNurseryOwned) {
-      markLargeTenuredBuffer(buffer);
-    }
-    return;
-  }
+/* static */
+LargeBuffer* BufferAllocator::LookupLargeBuffer(JSTracer* trc, void* alloc) {
+  BufferAllocatorRuntime* runtime = &trc->runtime()->gc.bufferRuntime();
+  return runtime->lookupLargeBuffer(alloc);
 }
 
 bool BufferAllocator::markTenuredAlloc(void* alloc) {
@@ -2147,8 +2128,16 @@ void* BufferAllocator::allocSmall(size_t bytes, bool nurseryOwned, bool inGC) {
   // Heap size updates are done for the small buffer region as a whole, not
   // individual allocations within it.
 
-  MOZ_ASSERT(!region->isMarked(alloc));
   MOZ_ASSERT(IsSmallAlloc(alloc));
+  MOZ_ASSERT(!region->isMarked(alloc));
+
+  // Barrier to mark nursery-owned allocations that happen during collection. We
+  // don't need to do this for tenured-owned allocations because we don't sweep
+  // tenured-owned allocations that happened after the start of a major
+  // collection.
+  if (inGC && nurseryOwned) {
+    region->setMarked(alloc);
+  }
 
   return alloc;
 }
@@ -2229,6 +2218,14 @@ void* BufferAllocator::allocMedium(size_t bytes, bool nurseryOwned, bool inGC) {
   }
 
   setAllocated(alloc, bytes, nurseryOwned, inGC);
+
+  // Barrier to mark nursery-owned allocations that happen during collection.
+  // See the comment in allocSmall.
+  if (inGC && nurseryOwned) {
+    BufferChunk* chunk = BufferChunk::from(alloc);
+    chunk->setMarked(alloc);
+  }
+
   return alloc;
 }
 
@@ -3590,6 +3587,13 @@ void* BufferAllocator::allocLarge(size_t requestedBytes, bool nurseryOwned,
   increaseHeapSize(bytes, nurseryOwned, checkThresholds, false);
 
   MOZ_ASSERT(IsLargeAlloc(alloc));
+
+  // Barrier to mark nursery-owned allocations that happen during collection.
+  // See the comment in allocSmall.
+  if (inGC && nurseryOwned) {
+    buffer->isMarked = true;
+  }
+
   return alloc;
 }
 

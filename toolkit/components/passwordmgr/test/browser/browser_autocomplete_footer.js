@@ -127,3 +127,43 @@ add_task(async function test_autocomplete_footer_keydown() {
     }
   );
 });
+
+add_task(async function test_show_logins_recorded_once_per_open() {
+  Services.fog.testResetFOG();
+  let url = TEST_ORIGIN + BASIC_FORM_PAGE_PATH;
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url },
+    async function (browser) {
+      let popup = document.getElementById("PopupAutoComplete");
+      await openACPopup(popup, browser, "#form-basic-username");
+
+      // Typing narrows the results while the popup stays open. The parent-side
+      // matchCount changing is the barrier that the redraw was processed.
+      let initialCount = popup.view.matchCount;
+      await BrowserTestUtils.synthesizeKey("u", {}, browser);
+      await BrowserTestUtils.synthesizeKey("x", {}, browser);
+      await TestUtils.waitForCondition(
+        () => popup.view.matchCount != initialCount,
+        "waiting for the popup to redraw with the narrowed results"
+      );
+      await closePopup(popup);
+
+      await SpecialPowers.spawn(browser, [], () => {
+        const field = content.document.querySelector("#form-basic-username");
+        field.value = "";
+        field.blur();
+      });
+      await openACPopup(popup, browser, "#form-basic-username");
+      await closePopup(popup);
+    }
+  );
+
+  await Services.fog.testFlushAllChildren();
+  const events = Glean.formAutocomplete.showLogins.testGetValue() ?? [];
+  Assert.equal(events.length, 1, "one event recorded when the popup opened");
+  Assert.greaterOrEqual(
+    Number(events[0].extra.value),
+    0,
+    "the event carries the time until the popup was shown"
+  );
+});

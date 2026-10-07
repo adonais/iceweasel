@@ -38,6 +38,7 @@
 #include "gc/AllocKind.h"
 #include "gc/Barrier.h"
 #include "gc/GCEnum.h"
+#include "jit/InlinableNatives.h"
 #include "js/CallArgs.h"
 #include "js/CallNonGenericMethod.h"
 #include "js/Class.h"
@@ -4201,16 +4202,19 @@ static const JSFunctionSpec Duration_prototype_methods[] = {
 };
 
 static const JSPropertySpec Duration_prototype_properties[] = {
-    JS_PSG("years", Duration_years, 0),
-    JS_PSG("months", Duration_months, 0),
-    JS_PSG("weeks", Duration_weeks, 0),
-    JS_PSG("days", Duration_days, 0),
-    JS_PSG("hours", Duration_hours, 0),
-    JS_PSG("minutes", Duration_minutes, 0),
-    JS_PSG("seconds", Duration_seconds, 0),
-    JS_PSG("milliseconds", Duration_milliseconds, 0),
-    JS_PSG("microseconds", Duration_microseconds, 0),
-    JS_PSG("nanoseconds", Duration_nanoseconds, 0),
+    JS_INLINABLE_PSG("years", Duration_years, 0, DurationYears),
+    JS_INLINABLE_PSG("months", Duration_months, 0, DurationMonths),
+    JS_INLINABLE_PSG("weeks", Duration_weeks, 0, DurationWeeks),
+    JS_INLINABLE_PSG("days", Duration_days, 0, DurationDays),
+    JS_INLINABLE_PSG("hours", Duration_hours, 0, DurationHours),
+    JS_INLINABLE_PSG("minutes", Duration_minutes, 0, DurationMinutes),
+    JS_INLINABLE_PSG("seconds", Duration_seconds, 0, DurationSeconds),
+    JS_INLINABLE_PSG("milliseconds", Duration_milliseconds, 0,
+                     DurationMilliseconds),
+    JS_INLINABLE_PSG("microseconds", Duration_microseconds, 0,
+                     DurationMicroseconds),
+    JS_INLINABLE_PSG("nanoseconds", Duration_nanoseconds, 0,
+                     DurationNanoseconds),
     JS_PSG("sign", Duration_sign, 0),
     JS_PSG("blank", Duration_blank, 0),
     JS_STRING_SYM_PS(toStringTag, "Temporal.Duration", JSPROP_READONLY),

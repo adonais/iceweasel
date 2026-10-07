@@ -168,17 +168,35 @@ if [ -z "${INIT_SOURCED}" -o "${INIT_SOURCED}" != "TRUE" ]; then
         esac
     }
 
+    # Returns 0 if no core file has appeared since the last scan, 1 otherwise.
+    #
+    # Called often enough that walking ${HOSTDIR} dominates runtime in suites
+    # with many files, so the walk is rate-limited to one every
+    # NSS_CORE_SCAN_INTERVAL seconds. Pass "force" to scan regardless, for
+    # checkpoints that have to be exact.
     detect_core()
     {
-        [ ! -f $CORELIST_FILE ] && touch $CORELIST_FILE
-        mv $CORELIST_FILE ${CORELIST_FILE}.old
-        coreStr=`find $HOSTDIR -type f -name '*core*'`
-        res=0
-        if [ -n "$coreStr" ]; then
-            sum $coreStr > $CORELIST_FILE
-            res=`cat $CORELIST_FILE ${CORELIST_FILE}.old | sort | uniq -u | wc -l`
+        [ "${NSS_DETECT_CORE}" = "1" ] || return 0
+        if [ "$1" != "force" -a -n "${_core_scanned_at}" ]; then
+            [ $(( SECONDS - _core_scanned_at )) -ge ${NSS_CORE_SCAN_INTERVAL} ] || return 0
         fi
-        return $res
+        _core_scanned_at=${SECONDS}
+
+        local cores seen=
+        cores=`find ${HOSTDIR} -type f -name '*core*'`
+        if [ -z "${cores}" ]; then
+            [ -f "${CORELIST_FILE}" ] && rm -f ${CORELIST_FILE}
+            return 0
+        fi
+
+        # Checksum rather than just list the paths, so that a core overwritten
+        # in place is still reported.
+        cores=`sum ${cores}`
+        [ -f "${CORELIST_FILE}" ] && seen=`cat ${CORELIST_FILE}`
+        [ "${cores}" = "${seen}" ] && return 0
+
+        echo "${cores}" > ${CORELIST_FILE}
+        return 1
     }
 
 #html functions to give the resultfiles a consistant look
@@ -225,16 +243,23 @@ if [ -z "${INIT_SOURCED}" -o "${INIT_SOURCED}" != "TRUE" ]; then
         html "<TR><TD>#${MSG_ID}: $1 ${HTML_UNKNOWN}"
         echo "${SCRIPTNAME}: #${MSG_ID}: $* - UNKNOWN"
     }
+    # Returns 1, so that callers skip their own result line.
+    html_report_core()
+    {
+        increase_msg_id
+        html "<TR><TD>#${MSG_ID}: $* ${HTML_FAILED_CORE}"
+        echo "${SCRIPTNAME}: #${MSG_ID}: $* - Core file is detected - FAILED"
+        return 1
+    }
     html_detect_core()
     {
-        detect_core
-        if [ $? -ne 0 ]; then
-            increase_msg_id
-            html "<TR><TD>#${MSG_ID}: $* ${HTML_FAILED_CORE}"
-            echo "${SCRIPTNAME}: #${MSG_ID}: $* - Core file is detected - FAILED"
-            return 1
-        fi
-        return 0
+        detect_core || html_report_core "$@"
+    }
+    # As html_detect_core, but ignores the scan rate limit. Use where a core
+    # has to be attributed to this exact point rather than a later test.
+    html_detect_core_force()
+    {
+        detect_core force || html_report_core "$@"
     }
     html_head()
     {
@@ -436,6 +461,9 @@ NSS=trustOrder=100
     common=${QADIR}/common
     COMMON=${TEST_COMMON-$common}
     export COMMON
+
+    TSAN_SUPPRESSIONS_FILE=${COMMON}/tsan_suppressions.txt
+    export TSAN_OPTIONS="suppressions=${TSAN_SUPPRESSIONS_FILE}"
 
     DIST=${DIST-${MOZILLA_ROOT}/dist}
     TESTDIR=${TESTDIR-${MOZILLA_ROOT}/tests_results/security}
@@ -831,9 +859,16 @@ NSS=trustOrder=100
     fi
     #################################################
 
+    # Only scan for core files where we enable them; elsewhere detect_core()
+    # can never find anything. Override to force it either way.
     if [ "${OS_ARCH}" != "WINNT" -a "${OS_ARCH}" != "Android" ]; then
         ulimit -c unlimited
+        NSS_DETECT_CORE=${NSS_DETECT_CORE:-1}
+    else
+        NSS_DETECT_CORE=${NSS_DETECT_CORE:-0}
     fi
+    NSS_CORE_SCAN_INTERVAL=${NSS_CORE_SCAN_INTERVAL:-2}
+    _core_scanned_at=      # empty until the first scan, which is never skipped
 
     SCRIPTNAME=$0
     INIT_SOURCED=TRUE   #whatever one does - NEVER export this one please

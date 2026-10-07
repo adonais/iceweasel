@@ -24,7 +24,7 @@ let dbg = new Debugger(g);
 dbg.onEnterFrame = frame => {
     log.push(frame.callee.name + " in");
     frame.onStep = () => {
-        let line = frame.script.getOffsetLocation(frame.offset).lineNumber;
+        let line = frame.script.getOffsetMetadata(frame.offset).lineNumber;
         if (previousLine != line) { // We stepped to a new line.
             log.push(line);
             previousLine = line;
@@ -40,6 +40,6 @@ assertEq(
     log.join(", "),
     "f in, 8, 9, z in, 1, z out, " +
     "9, 10, z in, 1, 2, 3, z out, " +
-    "10, 11, z in, 3, 2, 4, 5, z out, " +  // not sure why we hit line 2 here, source notes bug maybe
+    "10, 11, z in, 3, 4, 5, z out, " +  // exception unwinding correctly reports no stop at the try header (line 2)
     "11, 12, f out"
 );

@@ -980,7 +980,10 @@ export class Query {
     // live in another process.
     if (result.type == lazy.UrlbarShared.RESULT_TYPE.DYNAMIC) {
       result.payload.viewTemplate = provider.getViewTemplate(result);
-      result.payload.viewUpdate = provider.getViewUpdate(result);
+      result.payload.viewUpdate = provider.getViewUpdate(
+        result,
+        this.controller
+      );
     }
     let commands = provider.tryMethod(
       "getResultCommands",

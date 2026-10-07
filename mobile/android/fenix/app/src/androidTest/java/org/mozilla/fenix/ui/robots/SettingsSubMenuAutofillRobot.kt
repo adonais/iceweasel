@@ -15,7 +15,6 @@ import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -55,7 +54,6 @@ import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.click
 import org.mozilla.fenix.helpers.ext.clearAndSetText
-import org.mozilla.fenix.helpers.waitUntilDisplayed
 import org.mozilla.fenix.settings.address.ui.edit.EditAddressTestTag
 import org.mozilla.fenix.settings.creditcards.ui.CreditCardEditorTestTags
 import org.mozilla.fenix.ui.efficiency.data.AddressDetails
@@ -196,47 +194,36 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
 
     @OptIn(ExperimentalTestApi::class)
     fun verifyAddAddressView() {
-        Log.i(TAG, "verifyAddAddressView: Trying to perform \"Close soft keyboard\" action")
-        // Closing the keyboard to ensure full visibility of the "Add address" view
-        waitForKeyboardDismiss()
-        Log.i(TAG, "verifyAddAddressView: Performed \"Close soft keyboard\" action")
+        // The address structure arrives from Gecko asynchronously and the form holds no fields until it lands. Gating
+        // on a field existing means the first-field focus - and the keyboard it raises - happens before the dismiss
+        // below rather than after it, while the assertions are running.
+        Log.i(TAG, "verifyAddAddressView: Waiting for $waitingTime ms for the address form to be populated")
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag(EditAddressTestTag.EMAIL_FIELD), waitingTime)
+        Log.i(TAG, "verifyAddAddressView: The address form was populated")
+
+        // The top bar is outside the form's lazy list, so it is laid out regardless of how far the form is scrolled.
         listOf(
                 composeTestRule.navigateBackButton(),
                 composeTestRule.addAddressToolbarTitle(),
                 composeTestRule.toolbarCheckmarkButton(),
-                composeTestRule.nameTextInput(),
-                composeTestRule.streetAddressTextInput(),
-                composeTestRule.cityTextInput(),
-                composeTestRule.subRegionDropDown(),
-                composeTestRule.zipCodeTextInput(),
-                composeTestRule.countryDropDown(),
-                composeTestRule.phoneTextInput(),
             )
             .forEach { it.assertIsDisplayed() }
-        composeTestRule.addressForm().performScrollToNode(hasTestTag(EditAddressTestTag.EMAIL_FIELD))
-        composeTestRule.waitUntilDisplayed(composeTestRule.emailTextInput())
-        composeTestRule.emailTextInput().assertIsDisplayed()
 
-        // Use performScrollToNode on the form container to handle lazy-list off-screen items.
-        composeTestRule.addressForm().performScrollToNode(hasTestTag(EditAddressTestTag.SAVE_BUTTON))
-        composeTestRule.waitForIdle()
-        composeTestRule.addressForm().performScrollToNode(hasTestTag(EditAddressTestTag.CANCEL_BUTTON))
-        composeTestRule.waitForIdle()
+        addressFormTags.forEach { tag ->
+            composeTestRule.onAddressFormNode(tag) { assertIsDisplayed() }
+        }
         Log.i(TAG, "verifyAddAddressView: Verified the \"Add address\" view items")
     }
 
     fun verifyCountryOption(country: String) {
-        Log.i(TAG, "verifyCountryOption: Trying to perform \"Close soft keyboard\" action")
-        // Closing the keyboard to ensure full visibility of the "Add address" view
-        waitForKeyboardDismiss()
-        composeTestRule.waitForIdle()
-        Log.i(TAG, "verifyCountryOption: Performed \"Close soft keyboard\" action")
-        assertUIObjectExists(itemContainingText(country))
+        Log.i(TAG, "verifyCountryOption: Trying to verify that country: $country is displayed")
+        composeTestRule.onAddressFormNode(EditAddressTestTag.COUNTRY_FIELD) { assert(hasText(country)) }
+        Log.i(TAG, "verifyCountryOption: Verified that country: $country is displayed")
     }
 
     fun verifyStateOption(state: String) {
         Log.i(TAG, "verifyStateOption: Trying to verify that state: $state is displayed")
-        composeTestRule.subRegionDropDown().assert(hasText(state))
+        composeTestRule.onAddressFormNode(EditAddressTestTag.ADDRESS_LEVEL1_FIELD) { assert(hasText(state)) }
         Log.i(TAG, "verifyStateOption: Verified that state: $state is displayed")
     }
 
@@ -258,48 +245,23 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
 
     @OptIn(ExperimentalTestApi::class)
     fun verifyEditAddressView() {
+        // The edit screen fetches the address structure from Gecko too, so the form holds no fields until it lands.
+        Log.i(TAG, "verifyEditAddressView: Waiting for $waitingTime ms for the address form to be populated")
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag(EditAddressTestTag.EMAIL_FIELD), waitingTime)
+        Log.i(TAG, "verifyEditAddressView: The address form was populated")
+
         Log.i(TAG, "verifyEditAddressView: Trying to verify that the \"Edit address\" items are displayed")
         listOf(
                 composeTestRule.navigateBackButton(),
                 composeTestRule.editAddressToolbarTitle(),
                 composeTestRule.toolbarCheckmarkButton(),
                 composeTestRule.toolbarDeleteAddressButton(),
-                composeTestRule.nameTextInput(),
-                composeTestRule.streetAddressTextInput(),
-                composeTestRule.cityTextInput(),
-                composeTestRule.subRegionDropDown(),
             )
             .forEach { it.assertIsDisplayed() }
 
-        Log.i(
-            TAG,
-            "verifyEditAddressView: Trying to click device back button to dismiss keyboard using device back button",
-        )
-        mDevice.pressBack()
-        Log.i(TAG, "verifyEditAddressView: Clicked device back button to dismiss keyboard using device back button")
-        waitForAppWindowToBeUpdated()
-
-        listOf(
-                composeTestRule.zipCodeTextInput(),
-                composeTestRule.countryDropDown(),
-                composeTestRule.phoneTextInput(),
-            )
-            .forEach { it.assertIsDisplayed() }
-        composeTestRule.addressForm().performScrollToNode(hasTestTag(EditAddressTestTag.EMAIL_FIELD))
-        composeTestRule.waitUntilDisplayed(composeTestRule.emailTextInput())
-        composeTestRule.emailTextInput().assertIsDisplayed()
-
-        if (composeTestRule.saveButton().isNotDisplayed()) {
-            composeTestRule.saveButton().performScrollTo()
-            composeTestRule.waitForIdle()
-            mDevice.waitForIdle()
+        addressFormTags.forEach { tag ->
+            composeTestRule.onAddressFormNode(tag) { assertIsDisplayed() }
         }
-
-        listOf(
-                composeTestRule.saveButton(),
-                composeTestRule.cancelButton(),
-            )
-            .forEach { it.assertIsDisplayed() }
         Log.i(TAG, "verifyEditAddressView: Verified that the \"Edit address\" items are displayed")
     }
 
@@ -376,7 +338,7 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
     fun clickSubRegionOption(subRegion: String) {
         clickDropdownOption(
             composeTestRule = composeTestRule,
-            dropDown = { composeTestRule.subRegionDropDown() },
+            dropDownTag = EditAddressTestTag.ADDRESS_LEVEL1_FIELD,
             optionText = subRegion,
             logTag = "clickSubRegionOption",
             errorMessage = "Sub-region option \"$subRegion\" not found after 3 attempts",
@@ -394,7 +356,7 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
     fun clickCountryOption(country: String) {
         clickDropdownOption(
             composeTestRule = composeTestRule,
-            dropDown = { composeTestRule.countryDropDown() },
+            dropDownTag = EditAddressTestTag.COUNTRY_FIELD,
             optionText = country,
             logTag = "clickCountryOption",
             errorMessage = "Country option \"$country\" not found after 3 attempts",
@@ -433,13 +395,13 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(EditAddressTestTag.NAME_FIELD), waitingTimeLong)
         Log.i(TAG, "fillAndSaveAddress: Waited for $waitingTimeLong ms for \"Name\" text field to exist")
         Log.i(TAG, "fillAndSaveAddress: Trying to set \"Name\" to $name")
-        composeTestRule.nameTextInput().performTextInput(name)
+        composeTestRule.onAddressFormNode(EditAddressTestTag.NAME_FIELD) { performTextInput(name) }
         Log.i(TAG, "fillAndSaveAddress: \"Name\" was set to $name")
         Log.i(TAG, "fillAndSaveAddress: Trying to set \"Street Address\" to $streetAddress")
-        composeTestRule.streetAddressTextInput().performTextInput(streetAddress)
+        composeTestRule.onAddressFormNode(EditAddressTestTag.STREET_ADDRESS_FIELD) { performTextInput(streetAddress) }
         Log.i(TAG, "fillAndSaveAddress: \"Street Address\" was set to $streetAddress")
         Log.i(TAG, "fillAndSaveAddress: Trying to set \"City\" to $city")
-        composeTestRule.cityTextInput().performTextInput(city)
+        composeTestRule.onAddressFormNode(EditAddressTestTag.ADDRESS_LEVEL2_FIELD) { performTextInput(city) }
         Log.i(TAG, "fillAndSaveAddress: \"City\" was set to $city")
         Log.i(TAG, "fillAndSaveAddress: Trying to click $country dropdown option")
         clickCountryOption(country)
@@ -449,30 +411,16 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         Log.i(TAG, "fillAndSaveAddress: Clicked $state dropdown option")
         composeTestRule.waitForIdle()
         Log.i(TAG, "fillAndSaveAddress: Trying to set \"Zip\" to $zipCode")
-        composeTestRule.zipCodeTextInput().performTextInput(zipCode)
+        composeTestRule.onAddressFormNode(EditAddressTestTag.POSTAL_CODE_FIELD) { performTextInput(zipCode) }
         Log.i(TAG, "fillAndSaveAddress: \"Zip\" was set to $zipCode")
-        waitForKeyboardDismiss()
-        composeTestRule.waitForIdle()
         Log.i(TAG, "fillAndSaveAddress: Trying to set \"Phone\" to $phoneNumber")
-        composeTestRule.phoneTextInput().performTextInput(phoneNumber)
+        composeTestRule.onAddressFormNode(EditAddressTestTag.TEL_FIELD) { performTextInput(phoneNumber) }
         Log.i(TAG, "fillAndSaveAddress: \"Phone\" was set to $phoneNumber")
-        composeTestRule.waitForIdle()
-        Log.i(TAG, "fillAndSaveAddress: Trying to close the keyboard.")
-        waitForKeyboardDismiss()
-        composeTestRule.waitForIdle()
-        Log.i(TAG, "fillAndSaveAddress: Closed the keyboard.")
         Log.i(TAG, "fillAndSaveAddress: Trying to set \"Email\" to $emailAddress")
-        composeTestRule.emailTextInput().performTextInput(emailAddress)
+        composeTestRule.onAddressFormNode(EditAddressTestTag.EMAIL_FIELD) { performTextInput(emailAddress) }
         Log.i(TAG, "fillAndSaveAddress: \"Email\" was set to $emailAddress")
-        Log.i(TAG, "fillAndSaveAddress: Trying to close the keyboard.")
-        waitForKeyboardDismiss()
-        composeTestRule.waitForIdle()
-        Log.i(TAG, "fillAndSaveAddress: Closed the keyboard.")
         Log.i(TAG, "fillAndSaveAddress: Trying to click the \"Save\" button")
-        if (composeTestRule.saveButton().isNotDisplayed()) {
-            composeTestRule.saveButton().performScrollTo()
-        }
-        composeTestRule.saveButton().performClick()
+        composeTestRule.onAddressFormNode(EditAddressTestTag.SAVE_BUTTON) { performClick() }
         Log.i(TAG, "fillAndSaveAddress: Clicked the \"Save\" button")
         Log.i(TAG, "fillAndSaveAddress: Waiting for $waitingTime ms for for \"Manage addresses\" button to exist")
         manageAddressesButton().waitForExists(waitingTime)
@@ -838,27 +786,62 @@ private fun navigateBackButton() = itemWithDescription(getStringResource(R.strin
 
 private fun ComposeTestRule.navigateBackButton() = onNodeWithContentDescription("Navigate back")
 
-private fun ComposeTestRule.nameTextInput() = onNodeWithTag(EditAddressTestTag.NAME_FIELD)
-
-private fun ComposeTestRule.streetAddressTextInput() = onNodeWithTag(EditAddressTestTag.STREET_ADDRESS_FIELD)
-
-private fun ComposeTestRule.cityTextInput() = onNodeWithTag(EditAddressTestTag.ADDRESS_LEVEL2_FIELD)
-
-private fun ComposeTestRule.subRegionDropDown() = onNodeWithTag(EditAddressTestTag.ADDRESS_LEVEL1_FIELD)
-
-private fun ComposeTestRule.zipCodeTextInput() = onNodeWithTag(EditAddressTestTag.POSTAL_CODE_FIELD)
-
 private fun ComposeTestRule.countryDropDown() = onNodeWithTag(EditAddressTestTag.COUNTRY_FIELD)
-
-private fun ComposeTestRule.phoneTextInput() = onNodeWithTag(EditAddressTestTag.TEL_FIELD)
-
-private fun ComposeTestRule.emailTextInput() = onNodeWithTag(EditAddressTestTag.EMAIL_FIELD)
 
 private fun ComposeTestRule.addressForm() = onNodeWithTag(EditAddressTestTag.FORM)
 
-private fun ComposeTestRule.saveButton() = onNodeWithTag(EditAddressTestTag.SAVE_BUTTON)
+/**
+ * The address form's fields and buttons, in the order the US address structure renders them. Gecko supplies the
+ * country-specific fields and appends country, tel and email; the buttons are the form's trailing row. Organization is
+ * rendered for the US but is not covered by the view assertions.
+ */
+private val addressFormTags =
+    listOf(
+        EditAddressTestTag.NAME_FIELD,
+        EditAddressTestTag.STREET_ADDRESS_FIELD,
+        EditAddressTestTag.ADDRESS_LEVEL2_FIELD,
+        EditAddressTestTag.ADDRESS_LEVEL1_FIELD,
+        EditAddressTestTag.POSTAL_CODE_FIELD,
+        EditAddressTestTag.COUNTRY_FIELD,
+        EditAddressTestTag.TEL_FIELD,
+        EditAddressTestTag.EMAIL_FIELD,
+        EditAddressTestTag.SAVE_BUTTON,
+        EditAddressTestTag.CANCEL_BUTTON,
+    )
 
-private fun ComposeTestRule.cancelButton() = onNodeWithTag(EditAddressTestTag.CANCEL_BUTTON)
+private const val ADDRESS_FORM_ACTION_ATTEMPTS = 3
+private const val ADDRESS_FORM_SETTLE_MS = 300L
+
+/**
+ * Scrolls the address form until the node tagged [tag] is inside the viewport, then runs [action] on it.
+ *
+ * The form is a lazy list whose viewport is inset by the soft keyboard, and neither can be relied on to hold still. A
+ * field that is off-screen is not composed at all, so it has no node to assert on or interact with; and focusing a
+ * field raises the IME, whose insets animate in over the following ~120 ms and can scroll the node straight back out of
+ * the viewport - decomposing it - after it has been scrolled to but before [action] resolves it.
+ *
+ * So the scroll and the action are retried together: a later attempt runs against a settled viewport, because by then
+ * the keyboard has finished appearing.
+ */
+private fun ComposeTestRule.onAddressFormNode(tag: String, action: SemanticsNodeInteraction.() -> Unit) {
+    var lastError: AssertionError? = null
+    repeat(ADDRESS_FORM_ACTION_ATTEMPTS) { attempt ->
+        if (attempt > 0) {
+            SystemClock.sleep(ADDRESS_FORM_SETTLE_MS)
+        }
+        try {
+            addressForm().performScrollToNode(hasTestTag(tag))
+            waitForIdle()
+            onNodeWithTag(tag).action()
+            return
+        } catch (e: AssertionError) {
+            lastError = e
+            Log.w(TAG, "onAddressFormNode: attempt ${attempt + 1} on $tag failed: ${e.message?.take(160)}")
+        }
+    }
+    val message = "onAddressFormNode: could not act on $tag after $ADDRESS_FORM_ACTION_ATTEMPTS attempts"
+    throw AssertionError(message, lastError)
+}
 
 private fun ComposeTestRule.toolbarDeleteAddressButton() = onNodeWithTag(EditAddressTestTag.TOPBAR_DELETE_BUTTON)
 
@@ -930,7 +913,7 @@ private fun ComposeTestRule.expiryYearOption(expiryYear: String) =
 @OptIn(ExperimentalTestApi::class)
 private fun clickDropdownOption(
     composeTestRule: ComposeTestRule,
-    dropDown: () -> SemanticsNodeInteraction,
+    dropDownTag: String,
     optionText: String,
     logTag: String,
     errorMessage: String,
@@ -949,7 +932,9 @@ private fun clickDropdownOption(
             runCatching { waitForPopupToDismiss(composeTestRule, timeoutMs = 2_000L) }
                 .onFailure { Log.w(TAG, "$logTag: inter-attempt waitForPopupToDismiss timed out: $it") }
         }
-        dropDown().performTouchInput { click() }
+        // Scroll inside the loop, not before it: a retry re-clicks the trigger, which may have been scrolled out of
+        // the viewport - and so out of the lazy list's composition - by the attempt that failed.
+        composeTestRule.onAddressFormNode(dropDownTag) { performTouchInput { click() } }
 
         try {
             composeTestRule.waitUntilAtLeastOneExists(hasText(optionText), 5_000L)
@@ -1004,38 +989,59 @@ private fun waitForPopupToDismiss(composeTestRule: ComposeTestRule, timeoutMs: L
     throw AssertionError("waitForPopupToDismiss: popup did not dismiss within ${timeoutMs}ms")
 }
 
+private const val KEYBOARD_POLL_INTERVAL_MS = 300L
+private const val KEYBOARD_ABSENT_STABLE_POLLS = 3
+private const val KEYBOARD_MAX_CLOSE_ATTEMPTS = 5
+
 /**
- * Closes the soft keyboard and waits until the IME window is fully gone from the window hierarchy. On slow emulators
- * (e.g. Firebase Test Lab) the hide animation can take ~9 s; polling here prevents the IME animation from dismissing a
- * dropdown popup that opens immediately after.
+ * Closes the soft keyboard and waits until the IME window has been absent from the window hierarchy for
+ * [KEYBOARD_ABSENT_STABLE_POLLS] consecutive polls. On slow emulators (e.g. Firebase Test Lab) the hide animation can
+ * take ~9 s; polling here prevents the IME animation from dismissing a dropdown popup that opens immediately after.
+ *
+ * Absence has to hold across several polls rather than on a single sample, because a caller can arrive before the
+ * keyboard has appeared at all: a screen that focuses a field once asynchronously loaded data lands will raise the IME
+ * after a single absent sample would already have returned.
+ *
+ * This is best-effort, and callers must not depend on it for a node's visibility. A focused Compose text field
+ * re-requests the IME through the window insets API, so it can come back at any point after this returns; scroll the
+ * node into the viewport with [ComposeTestRule.onAddressFormNode] instead.
  */
 private fun waitForKeyboardDismiss(timeoutMs: Long = 15000L) {
-    Log.i(TAG, "waitForKeyboardDismiss: Trying to close the soft keyboard")
+    val deadline = SystemClock.elapsedRealtime() + timeoutMs
+    var absentPolls = 0
+    var closeAttempts = 1
+
+    // Close once before polling. The IME window is not in the accessibility window list until the show sequence
+    // finishes - some 650 ms after the IME was asked to appear - so a poll taken while it is still animating in
+    // reports it absent, and closing only on a positive poll would never close it at all.
+    Log.i(TAG, "waitForKeyboardDismiss: Trying to close the soft keyboard (attempt $closeAttempts)")
     closeSoftKeyboard()
     Log.i(TAG, "waitForKeyboardDismiss: Successfully closed the soft keyboard")
-
     waitForAppWindowToBeUpdated()
 
-    val startTime = SystemClock.elapsedRealtime()
-    var polled = 0
-    while (SystemClock.elapsedRealtime() - startTime < timeoutMs) {
+    while (SystemClock.elapsedRealtime() < deadline) {
         val hasImeWindow =
             InstrumentationRegistry.getInstrumentation().uiAutomation.windows.any {
                 it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD
             }
-        if (!hasImeWindow) {
-            if (polled > 0) {
-                Log.i(
-                    TAG,
-                    "waitForKeyboardDismiss: keyboard gone after ${SystemClock.elapsedRealtime() - startTime}ms ($polled polls)",
-                )
-            } else {
-                Log.i(TAG, "waitForKeyboardDismiss: keyboard was not present")
+        if (hasImeWindow) {
+            absentPolls = 0
+            if (closeAttempts < KEYBOARD_MAX_CLOSE_ATTEMPTS) {
+                closeAttempts++
+                Log.i(TAG, "waitForKeyboardDismiss: Trying to close the soft keyboard (attempt $closeAttempts)")
+                closeSoftKeyboard()
+                Log.i(TAG, "waitForKeyboardDismiss: Successfully closed the soft keyboard")
+                waitForAppWindowToBeUpdated()
+                continue
             }
-            return
+        } else {
+            absentPolls++
+            if (absentPolls >= KEYBOARD_ABSENT_STABLE_POLLS) {
+                Log.i(TAG, "waitForKeyboardDismiss: keyboard absent for $absentPolls consecutive polls")
+                return
+            }
         }
-        polled++
-        SystemClock.sleep(300)
+        SystemClock.sleep(KEYBOARD_POLL_INTERVAL_MS)
     }
-    throw AssertionError("waitForKeyboardDismiss: keyboard did not dismiss within ${timeoutMs}ms")
+    throw AssertionError("waitForKeyboardDismiss: keyboard did not stay dismissed within ${timeoutMs}ms")
 }

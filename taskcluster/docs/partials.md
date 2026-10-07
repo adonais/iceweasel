@@ -120,10 +120,10 @@ Otherwise, it will depend on `repackage-signing`.
 The legacy implementation (called "Funsize") used `mbsdiff` for
 diffing. The `zucchini_partial_rollout` transform controls which
 implementation is active for each release channel, based on the
-`LEGACY_PARTIALS_PROJECTS` set:
+`ZUCCHINI_PARTIALS_PROJECTS` set:
 
-- **mozilla-central, mozilla-beta** (nightly): uses `partials-zucchini`
-- **mozilla-release, ESR channels**: uses legacy `partials`
+- **mozilla-central** (nightly): uses `partials-zucchini`
+- **elsewhere**: uses legacy `partials`
 
 The transform exposes two sequences:
 
@@ -136,5 +136,5 @@ The transform exposes two sequences:
   drops the zucchini-derived signing tasks while keeping the legacy ones.
 
 As zucchini partials are validated on nightly, the rollout will expand
-to other channels by removing entries from the
-`LEGACY_PARTIALS_PROJECTS` set in the rollout transform.
+to other channels by adding entries to the
+`ZUCCHINI_PARTIALS_PROJECTS` set in the rollout transform.

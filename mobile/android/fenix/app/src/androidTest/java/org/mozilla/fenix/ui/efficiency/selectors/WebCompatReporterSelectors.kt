@@ -19,6 +19,7 @@ object WebCompatReporterSelectors : SelectorContainer {
     enum class Group : SelectorGroup {
         REPORTER_VIEW_ITEMS,
         REPORTER_FORM,
+        SOMETHING_ELSE_REASON_FORM,
         EDIT_URLDIALOG,
     }
 
@@ -27,7 +28,7 @@ object WebCompatReporterSelectors : SelectorContainer {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.webcompat_reporter_label_url),
             description = "Report broken site URL label",
-            groups = setOf(Group.REPORTER_VIEW_ITEMS, Group.REPORTER_FORM),
+            groups = setOf(Group.REPORTER_VIEW_ITEMS, Group.REPORTER_FORM, Group.SOMETHING_ELSE_REASON_FORM),
             readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
         )
 
@@ -36,7 +37,7 @@ object WebCompatReporterSelectors : SelectorContainer {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.webcompat_reporter_label_whats_broken_3),
             description = "Report broken site \"What's not working?\" label",
-            groups = setOf(Group.REPORTER_VIEW_ITEMS, Group.REPORTER_FORM),
+            groups = setOf(Group.REPORTER_VIEW_ITEMS, Group.REPORTER_FORM, Group.SOMETHING_ELSE_REASON_FORM),
             readiness = PageReadinessProfiles.READY_CONTENT,
         )
 
@@ -53,7 +54,7 @@ object WebCompatReporterSelectors : SelectorContainer {
                     getStringResource(R.string.webcompat_reporter_learn_more),
                 ) + " " + getStringResource(composeBaseR.string.mozac_compose_base_link_text_links_available),
             description = "Report broken site description",
-            groups = setOf(Group.REPORTER_VIEW_ITEMS, Group.REPORTER_FORM),
+            groups = setOf(Group.REPORTER_VIEW_ITEMS, Group.REPORTER_FORM, Group.SOMETHING_ELSE_REASON_FORM),
             readiness = PageReadinessProfiles.READY_CONTENT,
         )
 
@@ -99,12 +100,20 @@ object WebCompatReporterSelectors : SelectorContainer {
             groups = setOf(Group.REPORTER_FORM),
         )
 
+    val DESCRIBE_PROBLEM_MANDATORY_LABEL =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+            value = getStringResource(R.string.webcompat_reporter_label_mandatory_description),
+            description = "Report broken site mandatory description label",
+            groups = setOf(Group.SOMETHING_ELSE_REASON_FORM),
+        )
+
     val DESCRIPTION_INPUT_BOX =
         Selector(
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_DESCRIPTION_INPUT,
             description = "Report broken site description input box",
-            groups = setOf(Group.REPORTER_FORM),
+            groups = setOf(Group.REPORTER_FORM, Group.SOMETHING_ELSE_REASON_FORM),
         )
 
     val ITEMS_BLOCKED_BY_TRACKING_PROTECTION_DESCRIPTION =
@@ -112,7 +121,7 @@ object WebCompatReporterSelectors : SelectorContainer {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.webcompat_reporter_etp_checkbox_text_2),
             description = "Report broken site items blocked by tracking protection",
-            groups = setOf(Group.REPORTER_FORM),
+            groups = setOf(Group.REPORTER_FORM, Group.SOMETHING_ELSE_REASON_FORM),
         )
 
     val ITEMS_BLOCKED_BY_TRACKING_PROTECTION_CHECKBOX =
@@ -120,7 +129,7 @@ object WebCompatReporterSelectors : SelectorContainer {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_INCLUDE_ETP_BLOCKED_URLS_CHECKBOX,
             description = "Report broken site items blocked by tracking protection checkbox",
-            groups = setOf(Group.REPORTER_FORM),
+            groups = setOf(Group.REPORTER_FORM, Group.SOMETHING_ELSE_REASON_FORM),
         )
 
     val PREVIEW_REPORT_BUTTON =
@@ -128,7 +137,7 @@ object WebCompatReporterSelectors : SelectorContainer {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.webcompat_reporter_preview_report),
             description = "Report broken site preview report button",
-            groups = setOf(Group.REPORTER_FORM),
+            groups = setOf(Group.REPORTER_FORM, Group.SOMETHING_ELSE_REASON_FORM),
         )
 
     val SEND_REPORT_BUTTON =
@@ -136,6 +145,29 @@ object WebCompatReporterSelectors : SelectorContainer {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_SEND_BUTTON,
             description = "Report broken site send report button",
+            groups = setOf(Group.REPORTER_FORM, Group.SOMETHING_ELSE_REASON_FORM),
+        )
+
+    val DESCRIBE_PROBLEM_ERROR_MESSAGE =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+            value = getStringResource(R.string.webcompat_reporter_description_error),
+            description = "Report broken site description error message",
+            groups = setOf(Group.SOMETHING_ELSE_REASON_FORM),
+        )
+
+    val REPORT_SENT_SNACK_BAR_MESSAGE =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+            value = getStringResource(R.string.crash_reporting_snack_bar_message),
+            description = "Report broken site sent snack bar message",
+        )
+
+    val CLOSE_REPORT_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+            value = "Close",
+            description = "Report broken site close report button",
             groups = setOf(Group.REPORTER_FORM),
         )
 }

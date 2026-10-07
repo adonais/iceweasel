@@ -359,7 +359,6 @@ class MOZ_RAII AutoProfilerRegisterThread final {
 
   ~AutoProfilerRegisterThread() { profiler_unregister_thread(); }
 
- private:
   AutoProfilerRegisterThread(const AutoProfilerRegisterThread&) = delete;
   AutoProfilerRegisterThread& operator=(const AutoProfilerRegisterThread&) =
       delete;

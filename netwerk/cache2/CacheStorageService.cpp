@@ -12,10 +12,13 @@
 #include "CacheLog.h"
 #include "CacheObserver.h"
 #include "CacheStorage.h"
+#include "Dictionary.h"
 #include "ErrorList.h"
+#include "LoadContextInfo.h"
 #include "mozilla/AtomicBitfields.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/OriginAttributes.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StoragePrincipalHelper.h"
@@ -2632,23 +2635,37 @@ CacheStorageService::ClearDictionaryCacheMemory() {
 }
 
 NS_IMETHODIMP
-CacheStorageService::CorruptDictionaryHash(const nsACString& aURI) {
+CacheStorageService::CorruptDictionaryHash(
+    const nsACString& aURI, JS::Handle<JS::Value> aOriginAttributes,
+    JSContext* aCx) {
   LOG(("CacheStorageService::CorruptDictionaryHash [uri=%s]",
        PromiseFlatCString(aURI).get()));
+  OriginAttributes attrs;
+  if (!attrs.Init(aCx, aOriginAttributes)) {
+    return NS_ERROR_INVALID_ARG;
+  }
   RefPtr<DictionaryCache> cache = DictionaryCache::GetInstance();
   if (cache) {
-    cache->CorruptHashForTesting(aURI);
+    RefPtr<LoadContextInfo> lci = GetLoadContextInfo(false, attrs);
+    cache->CorruptHashForTesting(aURI, lci);
   }
   return NS_OK;
 }
 
 NS_IMETHODIMP
-CacheStorageService::ClearDictionaryDataForTesting(const nsACString& aURI) {
+CacheStorageService::ClearDictionaryDataForTesting(
+    const nsACString& aURI, JS::Handle<JS::Value> aOriginAttributes,
+    JSContext* aCx) {
   LOG(("CacheStorageService::ClearDictionaryDataForTesting [uri=%s]",
        PromiseFlatCString(aURI).get()));
+  OriginAttributes attrs;
+  if (!attrs.Init(aCx, aOriginAttributes)) {
+    return NS_ERROR_INVALID_ARG;
+  }
   RefPtr<DictionaryCache> cache = DictionaryCache::GetInstance();
   if (cache) {
-    cache->ClearDictionaryDataForTesting(aURI);
+    RefPtr<LoadContextInfo> lci = GetLoadContextInfo(false, attrs);
+    cache->ClearDictionaryDataForTesting(aURI, lci);
   }
   return NS_OK;
 }

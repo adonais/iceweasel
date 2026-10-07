@@ -5,6 +5,7 @@
 import {
   MAX_HISTORY_ENTRIES,
   MONITOR_ERROR_CODES,
+  MONITOR_EXPIRY_REASONS,
   trimAndFilterWatchUrls,
 } from "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs";
 
@@ -28,6 +29,7 @@ const CREATED_AT_INDEX = "createdAt";
 const PREF_BRANCH = "browser.smartwindow.monitorStore";
 const HISTORY_STATUSES = new Set(["error", "running", "success"]);
 const HISTORY_ERROR_CODES = new Set(Object.values(MONITOR_ERROR_CODES));
+const EXPIRY_REASONS = new Set(Object.values(MONITOR_EXPIRY_REASONS));
 
 function invalidField(field) {
   return new Error(`Monitor ${field} is invalid.`);
@@ -56,6 +58,17 @@ function timestampField(value, field, nullable = false) {
     throw invalidField(field);
   }
   return value;
+}
+
+function runCountField(value, recoverInvalid = false) {
+  if (Number.isInteger(value) && value >= 0) {
+    return value;
+  }
+  if (!recoverInvalid) {
+    throw invalidField("run count");
+  }
+  lazy.log.warn("Discarding invalid stored monitor run count.");
+  return 0;
 }
 
 function scheduleRecord(schedule) {
@@ -146,6 +159,31 @@ function initialSnapshotRecord(snapshot, recoverInvalid = false) {
   }
 }
 
+function expiryRecord(expiry, recoverInvalid = false) {
+  if (expiry == null) {
+    return null;
+  }
+  try {
+    if (
+      typeof expiry !== "object" ||
+      Array.isArray(expiry) ||
+      !EXPIRY_REASONS.has(expiry.reason)
+    ) {
+      throw invalidField("expiry");
+    }
+    return {
+      expiredAt: timestampField(expiry.expiredAt, "expiry timestamp"),
+      reason: expiry.reason,
+    };
+  } catch (error) {
+    if (!recoverInvalid) {
+      throw error;
+    }
+    lazy.log.warn(`Discarding invalid stored expiry: ${error}`);
+    return null;
+  }
+}
+
 function historyRecord(entry) {
   if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
     throw invalidField("history entry");
@@ -205,7 +243,7 @@ function sanitizeHistoryRecords(history, recoverInvalid) {
   return records;
 }
 
-function sanitizeMonitorRecord(monitor, recoverInvalidHistory = false) {
+function sanitizeMonitorRecord(monitor, recoverInvalid = false) {
   if (!monitor || typeof monitor !== "object" || Array.isArray(monitor)) {
     throw invalidField("record");
   }
@@ -221,6 +259,13 @@ function sanitizeMonitorRecord(monitor, recoverInvalidHistory = false) {
     watchUrls: watchUrlRecords(monitor.watchUrls),
     schedule: scheduleRecord(monitor.schedule),
     enabled: monitor.enabled,
+    // Monitors stored before the counter existed start from their visible
+    // history length.
+    runCount: runCountField(
+      monitor.runCount ??
+        (Array.isArray(monitor.history) ? monitor.history.length : 0),
+      recoverInvalid
+    ),
     createdAt: timestampField(monitor.createdAt, "creation timestamp"),
     updatedAt: timestampField(monitor.updatedAt, "update timestamp"),
     lastRunTime: timestampField(monitor.lastRunTime, "last run timestamp"),
@@ -229,13 +274,21 @@ function sanitizeMonitorRecord(monitor, recoverInvalidHistory = false) {
       "next run timestamp",
       true
     ),
-    history: sanitizeHistoryRecords(
-      monitor.history ?? [],
-      recoverInvalidHistory
+    // records stored before auto-expiry existed count from their creation
+    activeSince: timestampField(
+      monitor.activeSince ?? monitor.createdAt,
+      "active since timestamp"
     ),
+    lastMatchAt: timestampField(
+      monitor.lastMatchAt ?? null,
+      "last match timestamp",
+      true
+    ),
+    expiry: expiryRecord(monitor.expiry ?? null, recoverInvalid),
+    history: sanitizeHistoryRecords(monitor.history ?? [], recoverInvalid),
     initialSnapshot: initialSnapshotRecord(
       monitor.initialSnapshot ?? null,
-      recoverInvalidHistory
+      recoverInvalid
     ),
   };
 }
@@ -257,6 +310,7 @@ function isNewerSchemaError(error) {
 class MonitorStoreImpl {
   #asyncShutdownBlocker;
   #db = null;
+  #pendingWrites = new Set();
   #promiseDb = null;
   #promiseWrite = Promise.resolve();
   #shutdownClient;
@@ -269,7 +323,7 @@ class MonitorStoreImpl {
       this.#shuttingDown = true;
       try {
         await this.#promiseWrite;
-        await this.#closeDatabaseConnection();
+        this.#closeDatabase();
       } finally {
         this.#shutdownBlockerAdded = false;
       }
@@ -307,7 +361,7 @@ class MonitorStoreImpl {
 
   async saveMonitor(monitor) {
     const record = sanitizeMonitorRecord(monitor);
-    return this.#queueWrite(() =>
+    return this.#queueWrite("saveMonitor", () =>
       this.#withWriteStore(store => store.put(record))
     );
   }
@@ -317,7 +371,7 @@ class MonitorStoreImpl {
       throw invalidField("collection");
     }
     const records = monitors.map(sanitizeMonitorRecord);
-    return this.#queueWrite(() =>
+    return this.#queueWrite("saveMonitors", () =>
       this.#withWriteStore(async store => {
         await store.clear();
         for (const record of records) {
@@ -329,13 +383,13 @@ class MonitorStoreImpl {
 
   async deleteMonitor(id) {
     const monitorId = stringField(id, "ID");
-    return this.#queueWrite(() =>
+    return this.#queueWrite("deleteMonitor", () =>
       this.#withWriteStore(store => store.delete(monitorId))
     );
   }
 
   async destroyDatabase() {
-    return this.#queueWrite(async () => {
+    return this.#queueWrite("destroyDatabase", async () => {
       await this.#closeDatabaseConnection();
       await this.#deleteDatabase();
       this.#promiseDb = null;
@@ -374,10 +428,24 @@ class MonitorStoreImpl {
     }
   }
 
-  #queueWrite(task) {
+  #queueWrite(operation, task) {
     this.#prepareForOperation();
-    const promise = this.#promiseWrite.then(task, task);
-    this.#promiseWrite = promise.catch(() => {});
+    const pendingWrite = {
+      operation,
+      queuedAt: Date.now(),
+      startedAt: null,
+    };
+    this.#pendingWrites.add(pendingWrite);
+    const runTask = () => {
+      pendingWrite.startedAt = Date.now();
+      return task();
+    };
+    const promise = this.#promiseWrite.then(runTask, runTask);
+    this.#promiseWrite = promise
+      .finally(() => {
+        this.#pendingWrites.delete(pendingWrite);
+      })
+      .catch(() => {});
     return promise;
   }
 
@@ -389,7 +457,7 @@ class MonitorStoreImpl {
   }
 
   async #openDatabase() {
-    this.#db = await lazy.IndexedDB.open(
+    const database = await lazy.IndexedDB.open(
       DB_NAME,
       CURRENT_SCHEMA_VERSION,
       (db, event) => {
@@ -408,6 +476,16 @@ class MonitorStoreImpl {
       }
     );
 
+    if (this.#shuttingDown && !this.#pendingWrites.size) {
+      try {
+        database.close();
+      } catch (error) {
+        lazy.log.warn(`Error closing database: ${error.message}`);
+      }
+      throw new Error("Monitor store is shutting down.");
+    }
+
+    this.#db = database;
     this.#db.onversionchange = () => {
       this.#closeDatabase();
       this.#promiseDb = null;
@@ -488,6 +566,11 @@ class MonitorStoreImpl {
         fetchState: () => ({
           databaseOpen: !!this.#db,
           shuttingDown: this.#shuttingDown,
+          pendingWrites: Array.from(this.#pendingWrites, pendingWrite => ({
+            operation: pendingWrite.operation,
+            state: pendingWrite.startedAt === null ? "queued" : "active",
+            pendingForMs: Date.now() - pendingWrite.queuedAt,
+          })),
         }),
       }
     );

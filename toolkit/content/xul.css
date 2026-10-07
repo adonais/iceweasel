@@ -107,7 +107,7 @@ tab[selected]:not([ignorefocus]) {
  * tests rely on this.
  *
  * TODO(emilio): Remove this and fix the tests / front-end code:
- *  * browser/base/content/test/general/browser_tabfocus.js
+ *  * browser/base/content/test/browser-general/browser_tabfocus.js
  */
 tab:focus {
   -moz-user-focus: normal;

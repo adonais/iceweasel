@@ -18,14 +18,27 @@ typedef struct FFLCEVCContext {
 
 struct AVFrame;
 
-static int ff_lcevc_alloc(FFLCEVCContext **plcevc) {
+typedef struct FFLCEVCFrame {
+    FFLCEVCContext *lcevc;
+    struct AVFrame *frame;
+} FFLCEVCFrame;
+
+static inline int ff_lcevc_alloc(FFLCEVCContext **plcevc, int loglevel) {
+    (void)plcevc; (void)loglevel;
     return 0;
 }
 
-static int ff_lcevc_process(void *logctx, struct AVFrame *frame) {
+static inline int ff_lcevc_process(void *logctx, struct AVFrame *frame) {
+    (void)logctx; (void)frame;
     return 0;
 }
 
-static void ff_lcevc_unref(void *opaque) {}
+static inline int ff_lcevc_parse_frame(FFLCEVCContext *lcevc,
+                                       const struct AVFrame *frame,
+                                       enum AVPixelFormat *format,
+                                       int *width, int *height) {
+    (void)lcevc; (void)frame; (void)format; (void)width; (void)height;
+    return 0;
+}
 
 #endif /* AVCODEC_LCEVCDEC_H */

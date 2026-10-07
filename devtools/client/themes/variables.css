@@ -82,7 +82,7 @@
    * Photon Colors CSS Variables v3.3.2
    * - Colors are taken from https://github.com/FirefoxUX/photon-colors/blob/master/photon-colors.css
    * - We only add Photon color variables that we are actually using; unused
-   *   variables will fail browser/base/content/test/static/browser_parsable_css.js
+   *   variables will fail browser/base/content/test/browser-static/browser_parsable_css.js
    * - We added a few unofficial colors: a few intermediary values (e.g. Blue 45),
    *   and lighter variants for the dark theme (e.g. Red 20, Red 40).
    */

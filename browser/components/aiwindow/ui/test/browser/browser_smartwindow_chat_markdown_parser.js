@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { parseMarkdown } = ChromeUtils.importESModule(
+const { parseMarkdown, parseMarkdownBlocks } = ChromeUtils.importESModule(
   "chrome://browser/content/aiwindow/modules/ChatMarkdownParser.mjs"
 );
 
@@ -453,4 +453,79 @@ Text after the table`;
     result.includes("Text after the table"),
     "Should contain trailing text"
   );
+});
+
+function assertBlocksMatchWhole(markdown, label) {
+  const whole = parseMarkdown(markdown);
+  const joined = parseMarkdownBlocks(markdown)
+    .map(block => block.html)
+    .join("");
+  Assert.equal(
+    joined,
+    whole,
+    `Block-by-block render should match whole render: ${label}`
+  );
+}
+
+const EQUIVALENCE_CORPUS = [
+  ["two paragraphs", "First paragraph.\n\nSecond paragraph."],
+  ["heading then paragraph", "# Title\n\nBody text."],
+  ["a table", "| A | B |\n|---|---|\n| 1 | 2 |"],
+  [
+    "paragraph, table, paragraph",
+    "Before.\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\nAfter.",
+  ],
+  [
+    "two adjacent tables",
+    "| A | B |\n|---|---|\n| 1 | 2 |\n\n| C | D |\n|---|---|\n| 3 | 4 |",
+  ],
+  ["tight list", "- one\n- two\n- three"],
+  ["loose list", "- one\n\n- two\n\n- three"],
+  ["ordered list", "1. first\n2. second"],
+  ["nested list", "- outer\n  - inner\n  - inner two"],
+  ["blockquote", "> quoted line\n> second line"],
+  ["nested blockquote", "> outer\n> > inner"],
+  ["table inside blockquote", "> | A | B |\n> |---|---|\n> | 1 | 2 |"],
+  ["closed code fence", "```js\nconst x = 1;\n```"],
+  ["unclosed code fence", "```js\nconst x = 1;"],
+  ["indented code", "    indented code line"],
+  ["horizontal rule", "above\n\n---\n\nbelow"],
+  ["setext heading", "My Title\n========\n\nBody."],
+  ["html is escaped", "<script>alert('x')</script>"],
+  ["forward reference link", "See [docs][1].\n\n[1]: https://example.com"],
+  ["backward reference link", "[1]: https://example.com\n\nSee [docs][1]."],
+  ["lone reference definition", "[1]: https://example.com"],
+  ["list then fence", "- item\n\n```\ncode\n```"],
+];
+
+add_task(function test_parse_markdown_blocks_match_whole_render() {
+  for (const [label, markdown] of EQUIVALENCE_CORPUS) {
+    assertBlocksMatchWhole(markdown, label);
+  }
+});
+
+add_task(function test_parse_markdown_blocks_match_across_streaming_prefixes() {
+  const message = [
+    "# Weekly update",
+    "",
+    "Here is what shipped, with a [reference][ref] and a table:",
+    "",
+    "| Feature | Status |",
+    "|---------|--------|",
+    "| Search  | Done   |",
+    "| Import  | WIP    |",
+    "",
+    "```js",
+    "const done = true;",
+    "```",
+    "",
+    "- follow up one",
+    "- follow up two",
+    "",
+    "[ref]: https://example.com",
+  ].join("\n");
+
+  for (let i = 1; i <= message.length; i++) {
+    assertBlocksMatchWhole(message.slice(0, i), `prefix length ${i}`);
+  }
 });

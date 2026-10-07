@@ -115,3 +115,14 @@ LOCAL_INCLUDES += [
 ]
 
 USE_LIBS += ["icu"]
+
+LICENSES += ["jpnic"]
+LICENSES["jpnic"].title = "Japan Network Information Center License"
+LICENSES["jpnic"].text = "LICENSE-NOTICE.txt"
+LICENSES["jpnic"].notice = """
+<p>This license applies to certain files in the directory <code>netwerk/dns/</code>.</p>
+"""
+
+LICENSED_UNDER += [
+    "jpnic",
+]

@@ -61,13 +61,13 @@ interface ShadowRoot : DocumentFragment
 
 // Sanitizer API, https://wicg.github.io/sanitizer-api/
 partial interface ShadowRoot {
-  [UseCounter, Throws, Pref="dom.security.sanitizer.enabled"]
+  [CEReactions, UseCounter, Throws, Pref="dom.security.sanitizer.enabled"]
   undefined setHTML(DOMString aInnerHTML, optional SetHTMLOptions options = {});
 };
 
 partial interface ShadowRoot {
   // https://html.spec.whatwg.org/#dom-shadowroot-sethtmlunsafe
-  [UseCounter, NeedsSubjectPrincipal=NonSystem, Throws]
+  [CEReactions, UseCounter, NeedsSubjectPrincipal=NonSystem, Throws]
   undefined setHTMLUnsafe((TrustedHTML or DOMString) html, optional SetHTMLUnsafeOptions options = {});
   DOMString getHTML(optional GetHTMLOptions options = {});
 };

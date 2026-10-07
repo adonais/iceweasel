@@ -15,7 +15,7 @@ interface MozTabbrowserTab extends XULElement {
   linkedBrowser: MozBrowser;
   linkedPanel: string;
   permanentKey: object;
-  container: any;
+  container: MozTabbrowserTabs;
   group: MozTabbrowserTabGroup | null;
   splitview: MozTabSplitViewWrapper | null;
   owner: MozTabbrowserTab | null;
@@ -62,6 +62,8 @@ interface MozTabbrowserTab extends XULElement {
   _originalRegisteredOpenURI: any;
 }
 
+type MozTabbrowserTabs = import("../content/tabs.mjs").MozTabbrowserTabs;
+
 type MozTabbrowserTabGroup =
   import("../content/tabgroup.mjs").MozTabbrowserTabGroup;
 
@@ -71,7 +73,7 @@ interface MozTabbrowserTabGroupLabel extends XULElement {
   pinned: false;
   splitview: null;
 
-  container: any;
+  container: MozTabbrowserTabs;
   group: MozTabbrowserTabGroup;
 }
 

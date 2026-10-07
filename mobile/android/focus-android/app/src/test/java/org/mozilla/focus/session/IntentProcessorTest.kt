@@ -37,7 +37,7 @@ class IntentProcessorTest {
                 url = "https://localhost/?q={searchTerms}",
                 icon = mock(),
             )
-        context.components.store.dispatch(SearchAction.UpdateCustomSearchEngineAction(searchEngine))
+        context.components.store.dispatch(SearchAction.ApplicationSearchEnginesLoaded(listOf(searchEngine)))
         intentProcessor =
             IntentProcessor(
                 context,

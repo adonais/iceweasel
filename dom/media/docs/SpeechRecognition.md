@@ -110,9 +110,9 @@ fails one of the first two never touches the model hub or inference backend.
 
 ### Permissions Policy: `on-device-speech-recognition`
 
-Registered in `FeaturePolicyUtils.cpp` with a default value of `self`, like
+Registered in `PermissionsPolicyUtils.cpp` with a default value of `self`, like
 `camera`/`microphone`. Checked via
-`FeaturePolicyUtils::IsFeatureAllowed(doc, u"on-device-speech-recognition"_ns)`.
+`PermissionsPolicyUtils::IsFeatureAllowed(doc, u"on-device-speech-recognition"_ns)`.
 `available()` resolves `"unavailable"` when disallowed, matching the spec's
 availability algorithm, which never rejects. `install()` rejects with
 `NotAllowedError`. `start()` does not check this policy directly.
@@ -194,7 +194,7 @@ sequenceDiagram
   end
 
   JS->>SR: SpeechRecognition.install({langs: ["en-US"]})
-  Note over SR: Feature Policy, AI Controls,<br/>transient activation checks
+  Note over SR: Permissions Policy, AI Controls,<br/>transient activation checks
   SR->>BE: ::Install(langs, browsingContext)
   BE->>SRC: SendInstallModels(langs, browsingContextId)
   SRC->>SRP: PSpeechRecognition::InstallModels
@@ -536,7 +536,7 @@ sequenceDiagram
   end
 
   JS->>SR: SpeechRecognition.install({langs: ["en-US"]})
-  Note over SR: Feature Policy, AI Controls,<br/>transient activation checks
+  Note over SR: Permissions Policy, AI Controls,<br/>transient activation checks
   SR->>BE: ::Install(langs, browsingContext)
   BE->>SRC: SendInstallModels(langs, browsingContextId)
   SRC->>SRP: PSpeechRecognition::InstallModels

@@ -503,6 +503,9 @@ FileSystemDatabaseManagerVersion001::FileSystemDatabaseManagerVersion001(
                       quota::Client::FILESYSTEM),
       mFilesOfUnknownUsage(-1) {}
 
+FileSystemDatabaseManagerVersion001::~FileSystemDatabaseManagerVersion001() =
+    default;
+
 /* static */
 nsresult FileSystemDatabaseManagerVersion001::RescanTrackedUsages(
     const FileSystemConnection& aConnection,

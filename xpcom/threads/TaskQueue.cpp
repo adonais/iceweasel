@@ -179,6 +179,9 @@ nsIEventTarget::FeatureFlags TaskQueue::GetFeatures() {
   if (target) {
     supports = target->GetFeatures();
   }
+  if (SupportsTailDispatch()) {
+    supports |= SUPPORTS_TAIL_DISPATCH;
+  }
   // If the target does not SUPPORTS_SHUTDOWN_TASKS/_SHUTDOWN_TASK_DISPATCH, we
   // still support SHUTDOWN_TASKS but we cannot guarantee they're executed on
   // target shutdown. See bug 2011046 where we might want to change this.

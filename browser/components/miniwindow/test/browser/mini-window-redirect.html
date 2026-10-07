@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Mini window redirect page</title>
+</head>
+<body>
+  <h1>DON'T CLICK THE BUTTON</h1>
+  <p>it'll close the mini window - or will it?</p>
+  <button id="redirect">Navigate away</button>
+  <a id="blank-link" target="_blank" href="mini-window-redirect.html?newtab=1">
+    What happens if it were to open in a new tab
+  </a>
+  <script>
+    document.getElementById("redirect").addEventListener("click", () => {
+      location.href = "mini-window-redirect.html?abracadabra=1";
+    });
+  </script>
+</body>
+</html>

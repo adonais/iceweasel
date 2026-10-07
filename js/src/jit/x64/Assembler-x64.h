@@ -178,6 +178,10 @@ static constexpr Register RegExpSearcherRegExpReg = CallTempReg1;
 static constexpr Register RegExpSearcherStringReg = CallTempReg2;
 static constexpr Register RegExpSearcherLastIndexReg = CallTempReg3;
 
+// Register used by the bailout tail and bailout stubs during stack
+// reconstruction.
+static constexpr Register BailoutStubHandlerReg = CallTempReg0;
+
 class ABIArgGenerator : public ABIArgGeneratorShared {
 #if defined(XP_WIN)
   unsigned regIndex_;

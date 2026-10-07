@@ -4,6 +4,8 @@ support-files = [
   "file_empty_test.pdf",
   "head.js",
 ]
+# Suppress the notification in unrelated PDF viewer tests.
+prefs = ["pdfjs.featuresNotificationImpressionCount=99"]
 
 ["browser_pdfjs_aifeature_settings.js"]
 
@@ -80,6 +82,10 @@ support-files = [
   "file_pdfjs_slow.sjs",
 ]
 
+["browser_pdfjs_features_notification.js"]
+
+["browser_pdfjs_features_notification_sync.js"]
+
 ["browser_pdfjs_fill_login.js"]
 support-files = ["file_pdfjs_form.pdf"]
 
@@ -136,6 +142,9 @@ support-files = ["file_pdfjs_js.pdf"]
 ["browser_pdfjs_main.js"]
 
 ["browser_pdfjs_minimum_font_size.js"]
+
+["browser_pdfjs_mlguess_validation.js"]
+support-files = ["file_pdf_download_link.html"]
 
 ["browser_pdfjs_multipart_response.js"]
 support-files = ["pdf_multipart.sjs"]
@@ -223,6 +232,8 @@ support-files = [
 ["browser_pdfjs_unload_dialog.js"]
 
 ["browser_pdfjs_update_preferences.js"]
+
+["browser_pdfjs_view_certificate_window.js"]
 
 ["browser_pdfjs_views.js"]
 

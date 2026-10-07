@@ -1066,6 +1066,15 @@ nsresult nsFormFillController::KeyDown(Event* aEvent) {
       break;
     }
     case KeyboardEvent_Binding::DOM_VK_ESCAPE: {
+      bool consumed = false;
+      if (isPopupOpen()) {
+        mFocusedPopup->MaybeLeaveSecondaryAction(&consumed);
+      }
+      if (consumed) {
+        aEvent->StopPropagation();
+        aEvent->PreventDefault();
+        return NS_OK;
+      }
       nsCOMPtr<nsIAutoCompleteController> controller = mController;
       controller->HandleEscape(&cancel);
       if (nsFocusManager::GetFocusedElementStatic() != mControlledElement) {
@@ -1105,8 +1114,12 @@ nsresult nsFormFillController::KeyDown(Event* aEvent) {
     // Don't let the page see the RETURN event when the popup is open
     // (indicated by cancel=true) so sites don't manually submit forms
     // (e.g. via submit.click()) without the autocompleted value being filled.
+    // ESCAPE is withheld for the same reason: the key closed the popup, so a
+    // page dismissing its own dropdown on it would be acting on a key the user
+    // already spent.
     // Bug 286933 will fix this for other key events.
-    if (k == KeyboardEvent_Binding::DOM_VK_RETURN) {
+    if (k == KeyboardEvent_Binding::DOM_VK_RETURN ||
+        k == KeyboardEvent_Binding::DOM_VK_ESCAPE) {
       aEvent->StopPropagation();
     }
   }

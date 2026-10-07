@@ -309,3 +309,10 @@ prefs = [
 skip-if = [
   "privateBrowsing"
 ]
+
+["test_usageNegativeFile.js"]
+# This test rewrites files under storage/default for testing purposes: private
+# browsing encrypts data under storage/private so skip this test in this case.
+skip-if = [
+  "privateBrowsing"
+]

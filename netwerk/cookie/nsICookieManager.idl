@@ -223,20 +223,29 @@ interface nsICookieManager : nsISupports
    * and any host or domain cookies for "yahoo.com" and its subdomains would be
    * counted.
    *
-   * NOTE: this counts only cookies stored under the default OriginAttributes
-   * bucket (no userContextId, no partitionKey, etc.). Cookies set inside a
-   * container (non-zero userContextId) or under a partitionKey will NOT be
-   * counted. Callers asking "does this site have any cookies?" across all
-   * origin attributes should use hasCookiesForSite instead.
+   * Expired cookies that have not been purged yet are included in the count.
+   * Callers asking "does this site have any cookies?" across several
+   * OriginAttributes buckets at once should use hasCookiesForSite instead.
    *
    * @param aHost
    *        the host string to search for, e.g. "google.com". this should consist
    *        of only the host portion of a URI. see @add for a description of
    *        acceptable host strings.
+   * @param aOriginAttributes
+   *        the originAttributes of the cookies to be counted. Cookies stored in
+   *        a different jar (e.g. another userContextId or partitionKey) are not
+   *        counted.
    *
    * @return the number of cookies found.
    */
-  unsigned long countCookiesFromHost(in AUTF8String aHost);
+  [implicit_jscontext]
+  unsigned long countCookiesFromHost(in AUTF8String aHost,
+                                     in jsval aOriginAttributes);
+
+  [notxpcom]
+  nsresult countCookiesFromHostNative(in AUTF8String aHost,
+                                      in OriginAttributesPtr aOriginAttributes,
+                                      out unsigned long aCount);
 
   /**
    * Greedily check whether any cookie exists for the site (base domain of

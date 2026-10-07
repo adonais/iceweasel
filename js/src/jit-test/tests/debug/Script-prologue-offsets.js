@@ -14,17 +14,17 @@ dbg.onEnterFrame = function(frame) {
   assertEq(prologueData.isBreakpoint, false);
   assertEq(prologueData.isStepStart, false);
 
-  // Prologue ops are also never marked as entry points.
-  let location = frame.script.getOffsetLocation(0);
-  assertEq(location.isEntryPoint, false);
+  // getOffsetMetadata reports the prologue op's own position (the function's
+  // start), unlike the removed getOffsetLocation which skipped to the first
+  // main op.
   if (count == 0) {
     // hello1
-    assertEq(location.lineNumber, 3);
-    assertEq(location.columnNumber, 5);
+    assertEq(prologueData.lineNumber, 2);
+    assertEq(prologueData.columnNumber, 18);
   } else {
     // hello2
-    assertEq(location.lineNumber, 5);
-    assertEq(location.columnNumber, 18);
+    assertEq(prologueData.lineNumber, 5);
+    assertEq(prologueData.columnNumber, 18);
   }
 
   // getPossibleBreakpointOffsets shouldn't return prologue offsets. 

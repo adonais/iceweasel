@@ -75,7 +75,7 @@ export default class VPNCard {
           await RPMSetPref(
             "browser.contentblocking.report.hide_vpn_banner",
             true
-          );
+          ).catch(() => {});
         }
 
         vpnCard.classList.remove("hidden");
@@ -96,6 +96,8 @@ export default class VPNCard {
     vpnBanner.classList.remove("hidden");
     this.doc.sendTelemetryEvent("showVpnBanner");
     // VPN banner only shows on the first visit, flip a pref so it does not show again.
-    RPMSetPref("browser.contentblocking.report.hide_vpn_banner", true);
+    RPMSetPref("browser.contentblocking.report.hide_vpn_banner", true).catch(
+      () => {}
+    );
   }
 }

@@ -19,6 +19,7 @@ const MenuButton = require("resource://devtools/client/shared/components/menu/Me
 const MenuItem = require("resource://devtools/client/shared/components/menu/MenuItem.js");
 const MenuList = require("resource://devtools/client/shared/components/menu/MenuList.js");
 import { prefs } from "../../utils/prefs";
+import { sourceTree } from "../../constants";
 
 // Selectors
 import {
@@ -45,7 +46,9 @@ const Tree = require("resource://devtools/client/shared/components/Tree.js");
 function shouldAutoExpand(item, mainThreadHost) {
   // There is only one case where we want to force auto expand,
   // when we are on the group of the page's domain.
-  return item.type == "group" && item.groupName === mainThreadHost;
+  return (
+    item.type == sourceTree.itemTypes.GROUP && item.groupName === mainThreadHost
+  );
 }
 
 class SourcesTree extends Component {
@@ -117,7 +120,7 @@ class SourcesTree extends Component {
   };
 
   onActivate = item => {
-    if (item.type == "source") {
+    if (item.type == sourceTree.itemTypes.SOURCE) {
       this.selectSourceItem(item);
     }
   };
@@ -199,27 +202,30 @@ class SourcesTree extends Component {
     // This is the precial magic that coalesce "empty" folders,
     // i.e folders which have only one sub-folder as children.
     function skipEmptyDirectories(directory) {
-      if (directory.type != "directory") {
+      if (directory.type != sourceTree.itemTypes.DIRECTORY) {
         return directory;
       }
       if (
         directory.children.length == 1 &&
-        directory.children[0].type == "directory"
+        directory.children[0].type == sourceTree.itemTypes.DIRECTORY
       ) {
         return skipEmptyDirectories(directory.children[0]);
       }
       return directory;
     }
-    if (item.type == "thread") {
+    if (item.type == sourceTree.itemTypes.THREAD) {
       return item.children;
-    } else if (item.type == "group" || item.type == "directory") {
+    } else if (
+      item.type == sourceTree.itemTypes.GROUP ||
+      item.type == sourceTree.itemTypes.DIRECTORY
+    ) {
       return item.children.map(skipEmptyDirectories);
     }
     return [];
   };
 
   getParent = item => {
-    if (item.type == "thread") {
+    if (item.type == sourceTree.itemTypes.THREAD) {
       return null;
     }
     const { rootItems } = this.props;
@@ -227,15 +233,15 @@ class SourcesTree extends Component {
     // (See getChildren comment)
     function skipEmptyDirectories(directory) {
       if (
-        directory.type == "group" ||
-        directory.type == "thread" ||
+        directory.type == sourceTree.itemTypes.GROUP ||
+        directory.type == sourceTree.itemTypes.THREAD ||
         rootItems.includes(directory)
       ) {
         return directory;
       }
       if (
         directory.children.length == 1 &&
-        directory.children[0].type == "directory"
+        directory.children[0].type == sourceTree.itemTypes.DIRECTORY
       ) {
         return skipEmptyDirectories(directory.parent);
       }

@@ -134,10 +134,6 @@ class nsDocShellLoadState final {
 
   void SetTriggeringWindowId(uint64_t aTriggeringWindowId);
 
-  bool TriggeringStorageAccess() const;
-
-  void SetTriggeringStorageAccess(bool aTriggeringStorageAccess);
-
   mozilla::net::ClassificationFlags TriggeringClassificationFlags() const;
   void SetTriggeringClassificationFlags(
       mozilla::net::ClassificationFlags aFlags);
@@ -561,11 +557,8 @@ class nsDocShellLoadState final {
   // SandboxFlags of the document that started the load.
   uint32_t mTriggeringSandboxFlags;
 
-  // The window ID and current "has storage access" value of the entity
-  // triggering the load. This allows the identification of self-initiated
-  // same-origin navigations that should propogate unpartitioned storage access.
+  // The window ID of the entity triggering the load.
   uint64_t mTriggeringWindowId;
-  bool mTriggeringStorageAccess;
 
   // The classification flags of the context responsible for causing
   // the load to start.

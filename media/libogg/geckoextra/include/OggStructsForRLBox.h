@@ -5,6 +5,8 @@
 #ifndef OggStructsForRLBox_h__
 #define OggStructsForRLBox_h__
 
+#include <ogg/ogg.h>
+
 #if defined(__clang__)
 #  pragma clang diagnostic push
 #  pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"

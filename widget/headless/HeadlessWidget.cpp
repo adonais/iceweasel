@@ -73,7 +73,7 @@ HeadlessWidget::HeadlessWidget()
       mVisible(false),
       mDestroyed(false),
       mAlwaysOnTop(false),
-      mCompositorWidget(nullptr),
+      mCompositorWidgetDelegate(nullptr),
       mSizeMode(nsSizeMode_Normal),
       mLastSizeMode(nsSizeMode_Normal),
       mEffectiveSizeMode(nsSizeMode_Normal),
@@ -238,15 +238,8 @@ WindowRenderer* HeadlessWidget::GetWindowRenderer() {
 }
 
 void HeadlessWidget::SetCompositorWidgetDelegate(
-    CompositorWidgetDelegate* delegate) {
-  if (delegate) {
-    mCompositorWidget = delegate->AsHeadlessCompositorWidget();
-    MOZ_ASSERT(mCompositorWidget,
-               "HeadlessWidget::SetCompositorWidgetDelegate called with a "
-               "non-HeadlessCompositorWidget");
-  } else {
-    mCompositorWidget = nullptr;
-  }
+    CompositorWidgetDelegate* aDelegate) {
+  mCompositorWidgetDelegate = aDelegate;
 }
 
 void HeadlessWidget::Resize(const DesktopSize& aSize, bool aRepaint) {
@@ -260,8 +253,8 @@ void HeadlessWidget::ResizeInternal(int32_t aWidth, int32_t aHeight,
   ConstrainSize(&aWidth, &aHeight);
   mBounds.SizeTo(LayoutDeviceIntSize(aWidth, aHeight));
 
-  if (mCompositorWidget) {
-    mCompositorWidget->NotifyClientSizeChanged(mBounds.Size());
+  if (mCompositorWidgetDelegate) {
+    mCompositorWidgetDelegate->NotifyClientSizeChanged(mBounds.Size());
   }
   if (mWidgetListener) {
     mWidgetListener->WindowResized(this, mBounds.Size());

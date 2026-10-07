@@ -111,7 +111,7 @@ Token WastLexer::GetToken() {
         continue;
 
       case '"':
-        return GetStringToken();
+        return GetStringToken(TokenType::Text);
 
       case '+':
       case '-':
@@ -158,6 +158,10 @@ Token WastLexer::GetToken() {
         return GetNumberToken(TokenType::Nat);
 
       case '$':
+        ReadChar();
+        if (PeekChar() == '"') {
+          return GetStringToken(TokenType::Var);
+        }
         return GetIdChars();  // Initial $ is idchar, so this produces id token
 
       case 'a':
@@ -190,7 +194,7 @@ Location WastLexer::GetLocation() {
   auto column = [this](const char* p) {
     return std::max(1, static_cast<int>(p - line_start_ + 1));
   };
-  return Location(filename_, line_, column(token_start_), column(cursor_));
+  return Location(line_, column(token_start_), column(cursor_));
 }
 
 std::string_view WastLexer::GetText(size_t offset) {
@@ -319,7 +323,7 @@ void WastLexer::ReadWhitespace() {
   }
 }
 
-Token WastLexer::GetStringToken() {
+Token WastLexer::GetStringToken(TokenType token_type) {
   const char* saved_token_start = token_start_;
   bool has_error = false;
   bool in_string = true;
@@ -396,7 +400,9 @@ Token WastLexer::GetStringToken() {
             uint32_t scalar_value = 0;
 
             while (IsHexDigit(PeekChar())) {
-              ParseHexdigit(*cursor_++, &digit);
+              Result result = ParseHexdigit(*cursor_++, &digit);
+              WABT_USE(result);
+              assert(Succeeded(result));
 
               scalar_value = (scalar_value << 4) | digit;
               // Maximum value of a unicode code point.
@@ -437,7 +443,7 @@ Token WastLexer::GetStringToken() {
     return Token(GetLocation(), TokenType::Invalid);
   }
 
-  return TextToken(TokenType::Text);
+  return TextToken(token_type);
 }
 
 // static
@@ -497,7 +503,7 @@ WastLexer::ReservedChars WastLexer::ReadReservedChars() {
         ret = ReservedChars::Id;
       }
     } else if (peek == '"') {
-      GetStringToken();
+      GetStringToken(TokenType::Text);
       ret = ReservedChars::Some;
     } else {
       break;
@@ -602,7 +608,7 @@ Token WastLexer::GetNameEqNumToken(std::string_view name,
 }
 
 Token WastLexer::GetIdChars() {
-  if (ReadReservedChars() == ReservedChars::Id) {
+  if (ReadReservedChars() != ReservedChars::Some) {
     return TextToken(TokenType::Var);
   }
 
@@ -634,7 +640,7 @@ Token WastLexer::GetReservedToken() {
 
 void WastLexer::Error(Location loc, const char* format, ...) {
   WABT_SNPRINTF_ALLOCA(buffer, length, format);
-  errors_->emplace_back(ErrorLevel::Error, loc, buffer);
+  errors_->emplace_back(ErrorLevel::Error, loc, filename_, buffer);
 }
 
 }  // namespace wabt

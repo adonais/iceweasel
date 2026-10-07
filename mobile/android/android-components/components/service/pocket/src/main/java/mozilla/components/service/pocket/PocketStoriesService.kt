@@ -36,7 +36,6 @@ class PocketStoriesService(
     internal var contentRecommendationsUseCases =
         ContentRecommendationsUseCases(
             appContext = context,
-            client = pocketStoriesConfig.client,
             config = pocketStoriesConfig.contentRecommendationsParams,
             crashReporter = crashReporter,
         )

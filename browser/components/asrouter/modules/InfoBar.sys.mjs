@@ -217,6 +217,15 @@ class InfoBarNotification {
     messageSlot.setAttribute("slot", "message");
     messageSlot.appendChild(labelNode);
     this.notification.appendChild(messageSlot);
+
+    // A replacement can take ownership while appendNotification() is pending.
+    // Remove this bar if it completed after being superseded.
+    if (InfoBar._activeInfobar?.notification !== this) {
+      notificationContainer.removeNotification(this.notification);
+      this.notification = null;
+      return;
+    }
+
     // If the infobar is universal, only record an impression for the first
     // instance.
     if (
@@ -226,15 +235,11 @@ class InfoBarNotification {
       this.addImpression(browser);
     }
 
-    // Only add if the universal infobar is still active. Prevents race condition
-    // where a notification could add itself after removeUniversalInfobars().
-    if (
-      content.type === TYPES.UNIVERSAL &&
-      InfoBar._activeInfobar?.message?.id === this.message.id
-    ) {
+    if (content.type === TYPES.UNIVERSAL) {
       InfoBar._universalInfobars.push({
         box: notificationContainer,
         notification: this.notification,
+        win: browser.documentGlobal,
       });
     }
 
@@ -419,8 +424,9 @@ class InfoBarNotification {
     // Clean up the pref observer on any removal/dismissal path.
     this._removePrefObserver();
     const wasUniversal = this.message.content.type === TYPES.UNIVERSAL;
-    const isActiveMessage =
-      InfoBar._activeInfobar?.message?.id === this.message.id;
+    // A delayed "removed" callback may run after another notification with
+    // the same message id became active, so compare notification identity.
+    const isActiveMessage = InfoBar._activeInfobar?.notification === this;
     if (eventType === "removed") {
       this.notification = null;
       this._browser = null;
@@ -531,7 +537,7 @@ class InfoBarNotification {
     });
     InfoBar._universalInfobars = [];
 
-    if (InfoBar._activeInfobar?.message.content.type === TYPES.UNIVERSAL) {
+    if (InfoBar._activeInfobar?.notification === this) {
       InfoBar._activeInfobar = null;
     }
   }
@@ -575,7 +581,7 @@ export const InfoBar = {
 
   /**
    * Helper to check the window's state and whether it's a
-   * private browsing window, a popup or a taskbar tab.
+   * private browsing window, a popup, taskbar tab or mini window.
    *
    * @returns {boolean} `true` if the window is valid for showing an infobar.
    */
@@ -593,27 +599,68 @@ export const InfoBar = {
     if (win.document.documentElement.hasAttribute("taskbartab")) {
       return false;
     }
+    if (win.document.documentElement.hasAttribute("mini-window")) {
+      return false;
+    }
     return true;
   },
 
   /**
-   * Displays the universal infobar in all open, fully loaded browser windows.
+   * Displays the universal infobar immediately in loaded browser windows and
+   * after load in windows that are still loading.
    *
    * @param {InfoBarNotification} notification - The notification instance to display.
    */
   async showNotificationAllWindows(notification) {
     for (let win of Services.wm.getEnumerator("navigator:browser")) {
-      if (
-        !win.gBrowser ||
-        win.document?.readyState !== "complete" ||
-        !this.isValidInfobarWindow(win)
-      ) {
+      if (!this.isValidInfobarWindow(win)) {
+        continue;
+      }
+      if (win.document?.readyState !== "complete") {
+        if (this._activeInfobar?.notification === notification) {
+          this._showWhenLoaded(win, this._activeInfobar);
+        }
+        continue;
+      }
+      if (!win.gBrowser) {
         continue;
       }
       this.maybeLoadCustomElement(win);
       this.maybeInsertFTL(win);
       const browser = win.gBrowser.selectedBrowser;
       await notification.showNotification(browser);
+    }
+  },
+
+  /**
+   * Shows the active universal message in a window after it loads, provided
+   * that its notification is still the active one.
+   *
+   * @param {Window} win - A browser window, possibly still loading.
+   * @param {object} active - The _activeInfobar entry to show.
+   */
+  _showWhenLoaded(win, { message, dispatch, notification }) {
+    const onWindowReady = () => {
+      if (!win.gBrowser || win.closed) {
+        return;
+      }
+      // The same message object can be shown again while this window loads,
+      // so the notification identifies the show this listener belongs to.
+      if (InfoBar._activeInfobar?.notification !== notification) {
+        return;
+      }
+      this.showInfoBarMessage(
+        win.gBrowser.selectedBrowser,
+        message,
+        dispatch,
+        true
+      );
+    };
+
+    if (win.document?.readyState === "complete") {
+      onWindowReady();
+    } else {
+      win.addEventListener("load", onWindowReady, { once: true });
     }
   },
 
@@ -671,53 +718,71 @@ export const InfoBar = {
     this.maybeLoadCustomElement(win);
     this.maybeInsertFTL(win);
 
-    let notification = new InfoBarNotification(message, dispatch);
+    // All windows displaying a universal message share one notification so
+    // dismissing from any window removes every bar.
+    let notification =
+      (universalInNewWin && this._activeInfobar?.notification) ||
+      new InfoBarNotification(message, dispatch);
 
     if (!universalInNewWin) {
       this._activeInfobar = { message, dispatch, notification };
     }
 
-    if (isFirstUniversal) {
-      await this.showNotificationAllWindows(notification);
-      if (!this._observingWindowOpened) {
-        this._observingWindowOpened = true;
-        Services.obs.addObserver(this, "domwindowopened");
+    try {
+      if (isFirstUniversal) {
+        await this.showNotificationAllWindows(notification);
+        if (!this._observingWindowOpened) {
+          this._observingWindowOpened = true;
+          Services.obs.addObserver(this, "domwindowopened");
+        } else {
+          // TODO: At least during testing it seems that we can get here more
+          // than once without passing through removeUniversalInfobars(). Is
+          // this expected?
+          console.warn(
+            "InfoBar: Already observing new windows for universal infobar."
+          );
+        }
       } else {
-        // TODO: At least during testing it seems that we can get here more
-        // than once without passing through removeUniversalInfobars(). Is
-        // this expected?
-        console.warn(
-          "InfoBar: Already observing new windows for universal infobar."
-        );
+        await notification.showNotification(browser);
       }
-    } else {
-      await notification.showNotification(browser);
+    } catch (e) {
+      // Release failed shows only while they still own the active slot;
+      // universal tracking may already belong to a successor.
+      if (
+        !universalInNewWin &&
+        this._activeInfobar?.notification === notification
+      ) {
+        if (isUniversal) {
+          notification.removeUniversalInfobars();
+        }
+        this._activeInfobar = null;
+      }
+      throw e;
     }
 
     if (!universalInNewWin) {
-      this._activeInfobar = { message, dispatch, notification };
-      // If the window closes before the user interacts with the active infobar,
-      // clear it
+      // Update active state if this window closes before user interaction.
       win.addEventListener(
         "unload",
         () => {
           // Remove this window’s stale entry
           InfoBar._universalInfobars = InfoBar._universalInfobars.filter(
-            ({ box }) => box.documentGlobal !== win
+            entry => entry.win !== win
           );
 
-          if (isUniversal) {
-            // If there’s still at least one live universal infobar,
-            // make it the active infobar; otherwise clear the active infobar
-            const nextEntry = InfoBar._universalInfobars.find(
-              ({ box }) => !box.documentGlobal?.closed
+          // This listener can outlive its notification, so only the current
+          // owner may update the active state.
+          if (InfoBar._activeInfobar?.notification !== notification) {
+            return;
+          }
+
+          // A universal notification remains active while any bar survives.
+          const survives =
+            isUniversal &&
+            InfoBar._universalInfobars.some(
+              entry => entry.win && !entry.win.closed
             );
-            const nextNotification = nextEntry?.notification;
-            InfoBar._activeInfobar = nextNotification
-              ? { message, dispatch, nextNotification }
-              : null;
-          } else {
-            // Non-universal always clears on unload
+          if (!survives) {
             InfoBar._activeInfobar = null;
           }
         },
@@ -746,33 +811,11 @@ export const InfoBar = {
       return;
     }
 
-    const { message, dispatch } = this._activeInfobar || {};
-    if (!message || message.content.type !== TYPES.UNIVERSAL) {
+    const active = this._activeInfobar;
+    if (active?.message?.content.type !== TYPES.UNIVERSAL) {
       return;
     }
 
-    const onWindowReady = () => {
-      if (!win.gBrowser || win.closed) {
-        return;
-      }
-      if (
-        !InfoBar._activeInfobar ||
-        InfoBar._activeInfobar.message !== message
-      ) {
-        return;
-      }
-      this.showInfoBarMessage(
-        win.gBrowser.selectedBrowser,
-        message,
-        dispatch,
-        true
-      );
-    };
-
-    if (win.document?.readyState === "complete") {
-      onWindowReady();
-    } else {
-      win.addEventListener("load", onWindowReady, { once: true });
-    }
+    this._showWhenLoaded(win, active);
   },
 };

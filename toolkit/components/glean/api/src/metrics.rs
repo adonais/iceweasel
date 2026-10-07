@@ -16,23 +16,25 @@ use crate::private::{EventMetric, ExtraKeys};
 
 #[cfg(feature = "with_gecko")]
 extern "C" {
-    fn fog_malloc_size_of(ptr: *const ::xpcom::reexports::libc::c_void) -> usize;
+    fn fog_malloc_size_of(ptr: *const std::os::raw::c_void) -> usize;
 }
 
 #[cfg(feature = "with_gecko")]
 thread_local! {
-    static METRIC_MEMORY_USAGE: std::cell::RefCell<usize> = std::cell::RefCell::new(0);
     static METRIC_MEM_OPS: std::cell::RefCell<::malloc_size_of::MallocSizeOfOps> = std::cell::RefCell::new(::malloc_size_of::MallocSizeOfOps::new(fog_malloc_size_of, None));
 }
 
 #[cfg(feature = "with_gecko")]
+static METRIC_MEMORY_USAGE: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+#[cfg(feature = "with_gecko")]
 pub(crate) fn count_memory_usage(size: usize) {
-    METRIC_MEMORY_USAGE.with_borrow_mut(|usg| *usg += size);
+    METRIC_MEMORY_USAGE.fetch_add(size, std::sync::atomic::Ordering::Relaxed);
 }
 
 #[cfg(feature = "with_gecko")]
 pub(crate) fn metric_memory_usage() -> usize {
-    METRIC_MEMORY_USAGE.with(|c| *c.borrow())
+    METRIC_MEMORY_USAGE.load(std::sync::atomic::Ordering::Relaxed)
 }
 
 /// Helper to get the number of allowed extra keys for a given event metric.

@@ -250,7 +250,7 @@ addAccessibleTask(
     await reordered;
     // The iframe doc a11y tree might not be built yet.
     const iframeDoc = await TestUtils.waitForCondition(() =>
-      findAccessibleChildByID(topDocAcc, DEFAULT_IFRAME_DOC_BODY_ID)
+      findAccessibleChildByID(topDocAcc, DEFAULT_IFRAME_DOC_ID)
     );
     // Log/verify whether this is an in-process or OOP iframe.
     await comparePIDs(browser, gIsRemoteIframe);

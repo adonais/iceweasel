@@ -58,3 +58,13 @@ if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
         '-Wno-error=parentheses',
         '-Wno-error=unused-variable',
     ]
+
+LICENSES += ["openvr"]
+LICENSES["openvr"].title = "OpenVR License"
+LICENSES["openvr"].notice = """
+<p>This license applies to certain files in the directory <code>gfx/vr/service/openvr</code>.</p>
+"""
+
+LICENSED_UNDER += [
+    "openvr",
+]

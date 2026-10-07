@@ -52,6 +52,39 @@ namespace mozilla::profiler {
 // Utilities
 //---------------------------------------------------------------------------
 
+struct NativeAllocationMarker
+    : public mozilla::BaseMarkerType<NativeAllocationMarker> {
+  static constexpr const char* Name = "Native allocation";
+  static constexpr bool UseSpecialFrontendLocation = true;
+
+  using MS = mozilla::MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"size", MS::InputType::Int64, nullptr, MS::Format::Bytes},
+      {"memoryAddress", MS::InputType::Int64, nullptr, MS::Format::Integer},
+      {"threadId", MS::InputType::Int64, nullptr, MS::Format::Integer},
+  };
+
+  static void TranslateMarkerInputToSchema(void* aContext, int64_t aSize,
+                                           uintptr_t aMemoryAddress,
+                                           ProfilerThreadId aThreadId) {
+    ETW::OutputMarkerSchema(aContext, NativeAllocationMarker{}, aSize,
+                            static_cast<int64_t>(aMemoryAddress),
+                            static_cast<int64_t>(aThreadId.ToNumber()));
+  }
+
+  static void StreamJSONMarkerData(
+      mozilla::baseprofiler::SpliceableJSONWriter& aWriter, int64_t aSize,
+      uintptr_t aMemoryAddress, ProfilerThreadId aThreadId) {
+    // Tech note: If `ToNumber()` returns a uint64_t, the conversion to
+    // int64_t is "implementation-defined" before C++20. This is acceptable
+    // here, because this is a one-way conversion to a unique identifier
+    // that's used to visually separate data by thread on the front-end.
+    StreamJSONMarkerDataImpl(aWriter, aSize,
+                             static_cast<int64_t>(aMemoryAddress),
+                             static_cast<int64_t>(aThreadId.ToNumber()));
+  }
+};
+
 // Returns true or or false depending on whether the marker was actually added
 // or not.
 static bool profiler_add_native_allocation_marker(int64_t aSize,
@@ -71,28 +104,6 @@ static bool profiler_add_native_allocation_marker(int64_t aSize,
   if (profiler_is_locked_on_current_thread()) {
     return false;
   }
-
-  struct NativeAllocationMarker {
-    static constexpr mozilla::Span<const char> MarkerTypeName() {
-      return mozilla::MakeStringSpan("Native allocation");
-    }
-    static void StreamJSONMarkerData(
-        mozilla::baseprofiler::SpliceableJSONWriter& aWriter, int64_t aSize,
-        uintptr_t aMemoryAddress, ProfilerThreadId aThreadId) {
-      aWriter.IntProperty("size", aSize);
-      aWriter.IntProperty("memoryAddress",
-                          static_cast<int64_t>(aMemoryAddress));
-      // Tech note: If `ToNumber()` returns a uint64_t, the conversion to
-      // int64_t is "implementation-defined" before C++20. This is acceptable
-      // here, because this is a one-way conversion to a unique identifier
-      // that's used to visually separate data by thread on the front-end.
-      aWriter.IntProperty("threadId",
-                          static_cast<int64_t>(aThreadId.ToNumber()));
-    }
-    static mozilla::MarkerSchema MarkerTypeDisplay() {
-      return mozilla::MarkerSchema::SpecialFrontendLocation{};
-    }
-  };
 
   profiler_add_marker("Native allocation", geckoprofiler::category::OTHER,
                       {MarkerThreadId::MainThread(), MarkerStack::Capture()},

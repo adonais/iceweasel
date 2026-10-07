@@ -204,6 +204,8 @@ class MockVideoReceiveStream : public webrtc::VideoReceiveStreamInterface {
 
   virtual void SetAssociatedPayloadTypes(
       std::map<int, int> associated_payload_types) override {}
+  
+  void SetDecoders(std::vector<Decoder> decoders) override {}
 
   virtual void SetRawPayloadTypes(std::set<int> raw_payload_types) override {}
 

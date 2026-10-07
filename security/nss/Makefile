@@ -85,6 +85,17 @@ endif
 ifdef USE_STATIC_RTL
 NSPR_CONFIGURE_OPTS += --enable-static-rtl
 endif
+# WIN95, the NSPR Windows target Gecko uses, is the only one NSS supports.
+ifeq (,$(filter-out WIN%,$(OS_TARGET)))
+ifneq (,$(findstring --enable-win32-target=,$(NSPR_CONFIGURE_OPTS)))
+ifeq (,$(findstring --enable-win32-target=WIN95,$(NSPR_CONFIGURE_OPTS)))
+$(error NSS only supports NSPR's WIN95 Windows target)
+endif
+$(info NSS sets --enable-win32-target=WIN95 itself)
+else
+NSPR_CONFIGURE_OPTS += --enable-win32-target=WIN95
+endif
+endif
 ifdef NS_USE_GCC
 NSPR_CONFIGURE_ENV = CC=gcc CXX=g++
 endif
@@ -119,7 +130,8 @@ NSPR_PREFIX = $$(topsrcdir)/../dist/$(OBJDIR_NAME)
 endif
 
 ifndef NSS_GYP_PREFIX
-$(NSPR_CONFIG_STATUS): $(NSPR_CONFIGURE)
+# Depend on this Makefile too: NSPR_CONFIGURE_OPTS lives here.
+$(NSPR_CONFIG_STATUS): $(NSPR_CONFIGURE) $(CORE_DEPTH)/Makefile
 	mkdir -p $(CORE_DEPTH)/../nspr/$(OBJDIR_NAME)
 	cd $(CORE_DEPTH)/../nspr/$(OBJDIR_NAME) ; \
 	$(NSPR_CONFIGURE_ENV) sh ../configure \
@@ -127,7 +139,8 @@ $(NSPR_CONFIG_STATUS): $(NSPR_CONFIGURE)
 	--with-dist-prefix='$(NSPR_PREFIX)' \
 	--with-dist-includedir='$(NSPR_PREFIX)/include'
 else
-$(NSPR_CONFIG_STATUS): $(NSPR_CONFIGURE)
+# Depend on this Makefile too: NSPR_CONFIGURE_OPTS lives here.
+$(NSPR_CONFIG_STATUS): $(NSPR_CONFIGURE) $(CORE_DEPTH)/Makefile
 	mkdir -p $(CORE_DEPTH)/../nspr/$(OBJDIR_NAME)
 	cd $(CORE_DEPTH)/../nspr/$(OBJDIR_NAME) ; \
 	$(NSPR_CONFIGURE_ENV) sh ../configure \

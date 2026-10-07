@@ -42,24 +42,26 @@ async function testSteps() {
 
   info("Verifying origin estimations");
 
+  // The usage is the origin's own usage, not the total usage of its group,
+  // while the limit is the group limit.
   await verifyOriginEstimation(
     getPrincipal("https://foo1.example1.com"),
-    300,
+    100,
     groupLimitBytes
   );
   await verifyOriginEstimation(
     getPrincipal("https://foo2.example1.com"),
-    300,
+    200,
     groupLimitBytes
   );
   await verifyOriginEstimation(
     getPrincipal("https://foo1.example2.com"),
-    700,
+    300,
     groupLimitBytes
   );
   await verifyOriginEstimation(
     getPrincipal("https://foo2.example2.com"),
-    700,
+    400,
     groupLimitBytes
   );
 
@@ -71,8 +73,7 @@ async function testSteps() {
   info("Verifying origin estimation");
 
   // A persisted origin is exempt from group-limit eviction and is bound by the
-  // global limit instead, so it reports its own origin usage (400, not the 700
-  // group total) against that global limit.
+  // global limit instead, so it reports its usage against that global limit.
   await verifyOriginEstimation(
     getPrincipal("https://foo2.example2.com"),
     400,
@@ -89,6 +90,39 @@ async function testSteps() {
     getPrincipal("https://foo2.example2.com"),
     400,
     globalLimitBytes
+  );
+
+  info("Filling the default and temporary repositories of a single origin");
+
+  // The estimate sums the origin's usage across all best-effort repositories,
+  // so data stored with the "temporary" persistence type must be added to the
+  // default repository usage rather than reported on its own.
+  await fillOrigin(getPrincipal("https://foo1.example4.com"), 100);
+  await fillOrigin(getPrincipal("https://foo1.example4.com"), 50, "temporary");
+
+  info("Verifying the estimate sums default and temporary repository usage");
+
+  await verifyOriginEstimation(
+    getPrincipal("https://foo1.example4.com"),
+    150,
+    groupLimitBytes
+  );
+
+  info("Filling the private repository of a private-browsing origin");
+
+  // In private browsing the origin's data lives in the private repository,
+  // which is also a best-effort repository and must be covered by the estimate.
+  await fillOrigin(
+    getPrincipal("https://foo1.example5.com", { privateBrowsingId: 1 }),
+    75
+  );
+
+  info("Verifying the estimate reports private repository usage");
+
+  await verifyOriginEstimation(
+    getPrincipal("https://foo1.example5.com", { privateBrowsingId: 1 }),
+    75,
+    groupLimitBytes
   );
 
   finishTest();

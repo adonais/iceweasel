@@ -10,7 +10,7 @@
 requestLongerTimeout(3);
 
 const DUMMY_PAGE =
-  "https://example.com/browser/browser/base/content/test/general/dummy_page.html";
+  "https://example.com/browser/browser/base/content/test/browser-general/dummy_page.html";
 
 async function isScreenshotInitialized() {
   return SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {

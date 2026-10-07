@@ -33,32 +33,40 @@ pub use self::animation::{
     AnimationRangeStart, AnimationTimeline, ScrollAxis, TimelineName, TransitionBehavior,
     TransitionProperty, ViewTimelineInset, ViewTransitionClass, ViewTransitionName,
 };
-pub use self::background::{BackgroundClip, BackgroundRepeat, BackgroundSize};
+pub use self::background::{
+    BackgroundClip, BackgroundOrigin, BackgroundRepeat, BackgroundSize, ImageLayerAttachment,
+};
 pub use self::basic_shape::FillRule;
 pub use self::border::{
     BorderCornerRadius, BorderImageRepeat, BorderImageSideWidth, BorderImageSlice,
     BorderImageWidth, BorderRadius, BorderSideOffset, BorderSideWidth, BorderSpacing, BorderStyle,
-    LineWidth,
+    BoxDecorationBreak, FloatEdge, LineWidth,
 };
 pub use self::box_::{
-    AlignmentBaseline, Appearance, BaselineShift, BaselineSource, BreakBetween, BreakWithin, Clear,
-    Contain, ContainIntrinsicSize, ContainerName, ContainerType, ContentVisibility, Display,
-    DominantBaseline, Float, LineClamp, MarginTrim, Overflow, OverflowAnchor, OverflowClipMargin,
-    OverscrollBehavior, Perspective, PositionProperty, Resize, ScrollSnapAlign, ScrollSnapAxis,
-    ScrollSnapStop, ScrollSnapStrictness, ScrollSnapType, ScrollbarGutter, ScrollbarInset,
-    TouchAction, WillChange, WillChangeBits, WritingModeProperty, Zoom,
+    AlignmentBaseline, Appearance, BackfaceVisibility, BaselineShift, BaselineSource, BoxAlign,
+    BoxCollapse, BoxDirection, BoxOrient, BoxPack, BreakBetween, BreakWithin, Clear, Contain,
+    ContainIntrinsicSize, ContainerName, ContainerType, ContentVisibility, DirectionProperty,
+    Display, DominantBaseline, Float, ImageOrientation, Isolation, LineClamp, MarginTrim, Orient,
+    Overflow, OverflowAnchor, OverflowClipMargin, OverscrollBehavior, Perspective,
+    PositionProperty, Resize, ScrollBehavior, ScrollSnapAlign, ScrollSnapAxis, ScrollSnapStop,
+    ScrollSnapStrictness, ScrollSnapType, ScrollbarGutter, ScrollbarInset, TextOrientation,
+    TopLayer, TouchAction, Visibility, WillChange, WillChangeBits, WritingModeProperty, Zoom,
 };
 pub use self::calc::{CalcLengthPercentage, CalcNumeric};
 pub use self::color::{
     Color, ColorOrAuto, ColorPropertyValue, ColorScheme, ForcedColorAdjust, PrintColorAdjust,
 };
-pub use self::column::ColumnCount;
+pub use self::column::{ColumnCount, ColumnFill, ColumnSpan};
 pub use self::corner_shape::{CornerShape, CornerShapeRect, SuperellipseArg};
 pub use self::counters::{Content, ContentItem, CounterIncrement, CounterReset, CounterSet};
 pub use self::easing::TimingFunction;
-pub use self::effects::{BoxShadow, Filter, SimpleShadow};
+pub use self::effects::{Blend, BoxShadow, Filter, SimpleShadow};
 pub use self::flex::FlexBasis;
-pub use self::font::{FontFamily, FontLanguageOverride, FontPalette, FontStyle};
+pub use self::font::{
+    FontFamily, FontKerning, FontLanguageOverride, FontOpticalSizing, FontPalette, FontSmoothing,
+    FontStyle, FontVariantCaps, FontVariantEmoji, FontVariantPosition, MathShift, MathStyle,
+    MathVariant,
+};
 pub use self::font::{FontFeatureSettings, FontVariantLigatures, FontVariantNumeric};
 pub use self::font::{
     FontSize, FontSizeAdjust, FontSizeAdjustFactor, FontSizeKeyword, FontSynthesis,
@@ -77,8 +85,7 @@ pub use self::length::{NoCalcLength, ViewportVariant};
 pub use self::length::{
     NonNegativeLength, NonNegativeLengthPercentage, NonNegativeLengthPercentageOrAuto,
 };
-pub use self::list::ListStyleType;
-pub use self::list::Quotes;
+pub use self::list::{ListStylePosition, ListStyleType, Quotes};
 pub use self::motion::{OffsetPath, OffsetPosition, OffsetRotate};
 pub use self::number::{
     GreaterThanOrEqualToOneNumber, Integer, NoCalcNumber, NonNegativeInteger, NonNegativeNumber,
@@ -89,20 +96,29 @@ pub use self::page::{PageName, PageOrientation, PageSize, PageSizeOrientation, P
 pub use self::param::LinkParameters;
 pub use self::percentage::{NoCalcPercentage, NonNegativePercentage, Percentage};
 pub use self::position::{
-    AnchorFunction, AnchorName, AnchorNameIdent, AspectRatio, FlexWrap, GridAutoFlow,
-    GridTemplateAreas, Inset, MasonryAutoFlow, MasonryItemOrder, MasonryPlacement, Position,
-    PositionAnchor, PositionAnchorKeyword, PositionArea, PositionAreaKeyword, PositionComponent,
-    PositionOrAuto, PositionTryFallbacks, PositionTryOrder, PositionVisibility, ScopedName, ZIndex,
+    AnchorFunction, AnchorName, AnchorNameIdent, AspectRatio, BoxSizing, FlexDirection, FlexWrap,
+    GridAutoFlow, GridTemplateAreas, Inset, MasonryAutoFlow, MasonryItemOrder, MasonryPlacement,
+    ObjectFit, Position, PositionAnchor, PositionAnchorKeyword, PositionArea, PositionAreaKeyword,
+    PositionComponent, PositionOrAuto, PositionTryFallbacks, PositionTryOrder, PositionVisibility,
+    ScopedName, ZIndex,
 };
+pub use self::random::{RandomCacheKey, RandomUaIdent};
 pub use self::ratio::Ratio;
 pub use self::rect::NonNegativeLengthOrNumberRect;
 pub use self::resolution::{NoCalcResolution, Resolution};
-pub use self::svg::{DProperty, MozContextProperties};
+pub use self::svg::{
+    ColorInterpolation, DProperty, MaskComposite, MaskMode, MaskType, MozContextProperties,
+    ShapeRendering, StrokeLinecap, StrokeLinejoin, TextAnchor,
+};
 pub use self::svg::{SVGLength, SVGOpacity, SVGPaint};
 pub use self::svg::{SVGPaintOrder, SVGStrokeDashArray, SVGWidth, VectorEffect};
 pub use self::svg_path::SVGPathData;
-pub use self::text::RubyPosition;
-pub use self::text::{HyphenateCharacter, HyphenateLimitChars};
+pub use self::table::{BorderCollapse, EmptyCells, TableLayout};
+pub use self::text::{
+    HyphenateCharacter, HyphenateLimitChars, Hyphens, RubyAlign, RubyPosition, TextCombineUpright,
+    TextDecorationStyle, TextRendering, TextSecurity, TextSizeAdjust, TextWrapMode, TextWrapStyle,
+    UnicodeBidi, WhiteSpaceCollapse,
+};
 pub use self::text::{InitialLetter, LetterSpacing, LineBreak, TextAlign, TextIndent};
 pub use self::text::{OverflowWrap, TextEmphasisPosition, TextEmphasisStyle, WordBreak};
 pub use self::text::{TextAlignKeyword, TextDecorationLine, TextOverflow, WordSpacing};
@@ -118,7 +134,8 @@ pub use self::tree_counting::TreeCountingFunction;
 #[cfg(feature = "gecko")]
 pub use self::ui::CursorImage;
 pub use self::ui::{
-    BoolInteger, Cursor, Inert, MozTheme, PointerEvents, ScrollbarColor, UserFocus, UserSelect,
+    BoolInteger, Cursor, FieldSizing, ImeMode, Inert, MozTheme, PointerEvents, ScrollbarColor,
+    ScrollbarWidth, UserFocus, UserSelect, WindowDragging, WindowShadow,
 };
 pub use super::generics::grid::GridTemplateComponent as GenericGridTemplateComponent;
 
@@ -152,6 +169,7 @@ pub mod page;
 pub mod param;
 pub mod percentage;
 pub mod position;
+pub mod random;
 pub mod ratio;
 pub mod rect;
 pub mod resolution;

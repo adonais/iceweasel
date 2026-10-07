@@ -352,6 +352,12 @@ async function getFrames(thread) {
 
 async function getFrameScopes(frame) {
   const frameFront = lookupThreadFront(frame.thread).getActorByID(frame.id);
+  // ThreadFront drops every frame front as soon as the thread resumes, and that
+  // happens before the resume reaches the redux state, so the frame the caller
+  // validated against the state may already be gone.
+  if (!frameFront) {
+    return null;
+  }
   return frameFront.getEnvironment();
 }
 

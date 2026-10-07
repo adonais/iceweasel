@@ -5,11 +5,13 @@
 #include "VideoUtils.h"
 #include "base/message_loop.h"
 #include "gtest/gtest.h"
+#include "mozilla/AbstractThread.h"
 #include "mozilla/ChaosMode.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/TaskQueue.h"
+#include "mozilla/gtest/MozHelpers.h"
 #include "nsISupportsImpl.h"
 
 using namespace mozilla;
@@ -20,10 +22,11 @@ typedef TestPromise::ResolveOrRejectValue RRValue;
 
 class MOZ_STACK_CLASS AutoTaskQueue {
  public:
-  AutoTaskQueue()
+  explicit AutoTaskQueue(
+      TailDispatchPolicy aPolicy = TailDispatchPolicy::NoTailDispatch)
       : mTaskQueue(
             TaskQueue::Create(GetMediaThreadPool(MediaThreadType::SUPERVISOR),
-                              "TestMozPromise AutoTaskQueue")) {}
+                              "TestMozPromise AutoTaskQueue", aPolicy)) {}
 
   ~AutoTaskQueue() { mTaskQueue->AwaitShutdownAndIdle(); }
 
@@ -86,7 +89,8 @@ struct DtorTracker {
 
 template <typename FunctionType>
 void RunOnTaskQueue(TaskQueue* aQueue, FunctionType aFun) {
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction("RunOnTaskQueue", aFun);
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+      "RunOnTaskQueue", std::forward<FunctionType>(aFun));
   (void)aQueue->Dispatch(r.forget());
 }
 
@@ -756,6 +760,119 @@ TEST(MozPromise, ChainToDirectTaskDispatch)
   }));
 
   // Spin the event loop.
+  NS_ProcessPendingEvents(nullptr);
+}
+
+TEST(MozPromise, RequireTailDispatch)
+{
+  AutoTaskQueue resolver(TailDispatchPolicy::ConsistentOrdering);
+  AutoTaskQueue target(TailDispatchPolicy::ConsistentOrdering);
+  RefPtr<TaskQueue> resolverQueue = resolver.Queue();
+  RefPtr<TaskQueue> targetQueue = target.Queue();
+
+  MozPromiseHolder<TestPromise> holder;
+  RefPtr<TestPromise> promise = holder.Ensure(__func__);
+  holder.RequireTailDispatch(__func__);
+
+  promise->Then(
+      targetQueue, __func__,
+      [targetQueue](int aResolveValue) -> void {
+        EXPECT_EQ(aResolveValue, 42);
+        targetQueue->BeginShutdown();
+      },
+      DO_FAIL);
+
+  RunOnTaskQueue(
+      resolverQueue,
+      [holder = std::move(holder), resolverQueue,
+       targetQueue]() mutable -> void {
+        holder.Resolve(42, __func__);
+        // The Then callback was queued on this thread's tail dispatcher rather
+        // than dispatched to the target directly.
+        EXPECT_TRUE(AbstractThread::GetCurrent()->HasTailTasksFor(targetQueue));
+        resolverQueue->BeginShutdown();
+      });
+}
+
+TEST(MozPromise, RequireTailDispatchWithSynchronousTaskDispatch)
+{
+  // Synchronous dispatch takes precedence, so the plain current thread target
+  // is fine despite not supporting tail dispatch.
+  bool value = false;
+  MozPromiseHolder<TestPromiseExcl> holder;
+  RefPtr<TestPromiseExcl> promise = holder.Ensure(__func__);
+  holder.UseSynchronousTaskDispatch(__func__);
+  holder.RequireTailDispatch(__func__);
+  promise->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [&](int aResolveValue) -> void {
+        EXPECT_EQ(aResolveValue, 42);
+        value = true;
+      },
+      DO_FAIL);
+  EXPECT_EQ(value, false);
+  holder.Resolve(42, __func__);
+  EXPECT_EQ(value, true);
+}
+
+TEST(MozPromise, RequireTailDispatchWithDirectTaskDispatch)
+{
+  // Direct task dispatch takes precedence, so the plain current thread target
+  // is fine despite not supporting tail dispatch.
+  bool value1 = false;
+  bool value2 = false;
+
+  // For direct task dispatch to be working, we must be within a
+  // nested event loop. So the test itself must be dispatched within
+  // a task.
+  GetCurrentSerialEventTarget()->Dispatch(NS_NewRunnableFunction("test", [&]() {
+    GetCurrentSerialEventTarget()->Dispatch(
+        NS_NewRunnableFunction("test", [&]() {
+          EXPECT_EQ(value1, true);
+          value2 = true;
+        }));
+
+    MozPromiseHolder<TestPromise> holder;
+    RefPtr<TestPromise> promise = holder.Ensure(__func__);
+    holder.UseDirectTaskDispatch(__func__);
+    holder.RequireTailDispatch(__func__);
+    promise->Then(
+        GetCurrentSerialEventTarget(), __func__,
+        [&](int aResolveValue) -> void {
+          EXPECT_EQ(aResolveValue, 42);
+          EXPECT_EQ(value2, false);
+          value1 = true;
+        },
+        DO_FAIL);
+    holder.Resolve(42, __func__);
+    EXPECT_EQ(value1, false);
+  }));
+
+  // Spin the event loop.
+  NS_ProcessPendingEvents(nullptr);
+}
+
+TEST(MozPromise, RequireTailDispatchWithoutSupportDeathTest)
+{
+#ifdef ANDROID
+  GTEST_SKIP() << "Death tests cannot re-execute the test binary on Android";
+#endif
+  SAVE_GDB_SLEEP_LOCAL();
+  EXPECT_DEBUG_DEATH_WRAP(
+      {
+        MozPromiseHolder<TestPromise> holder;
+        RefPtr<TestPromise> promise = holder.Ensure(__func__);
+        holder.RequireTailDispatch(__func__);
+        // The plain current thread target does not support tail dispatch.
+        promise->Then(
+            GetCurrentSerialEventTarget(), __func__, [](int) -> void {},
+            DO_FAIL);
+        holder.Resolve(42, __func__);
+      },
+      "requires that Then\\(\\) event targets support tail dispatch");
+  RESTORE_GDB_SLEEP_LOCAL();
+  // Non-debug builds run the statement in-process instead of expecting death.
+  // Run the callback it dispatched.
   NS_ProcessPendingEvents(nullptr);
 }
 

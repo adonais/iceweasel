@@ -85,6 +85,12 @@ class EncoderConfig;
 class MediaExtendedMIMEType;
 struct SupportDecoderParams;
 
+// QP scaling thresholds, shared by every webrtc::VideoEncoder wrapper
+// encoding H264, so libwebrtc's QualityScaler can track them consistently
+// regardless of which one is currently active.
+constexpr int kLowH264QpThreshold = 24;
+constexpr int kHighH264QpThreshold = 37;
+
 // Whether the OpenH264 GMP can decode/encode the given H264 configuration.
 // aParams unused but kept to mirror PDM/PEM Supports calls.
 [[nodiscard]] media::DecodeSupportSet WebrtcGmpDecoderSupports(

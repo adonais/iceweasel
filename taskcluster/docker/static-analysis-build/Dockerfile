@@ -42,8 +42,7 @@ RUN apt-get update && \
       xvfb \
       linux-libc-dev \
       libfontconfig1-dev \
-      libfreetype6-dev \
-      libgconf2-dev \
+      libfreetype-dev \
       libgmp-dev \
       libgtk-3-dev \
       libpango1.0-dev \

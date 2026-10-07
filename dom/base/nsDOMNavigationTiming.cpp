@@ -599,7 +599,9 @@ nsDOMNavigationTiming::nsDOMNavigationTiming(nsDocShell* aDocShell,
       mDOMComplete(aOther->mDOMComplete),
       mTTFI(aOther->mTTFI),
       mDocShellHasBeenActiveSinceNavigationStart(
-          aOther->mDocShellHasBeenActiveSinceNavigationStart) {}
+          aOther->mDocShellHasBeenActiveSinceNavigationStart),
+      mWasActivatedFromNavigationalPrefetch(
+          aOther->mWasActivatedFromNavigationalPrefetch) {}
 
 /* static */
 void IPC::ParamTraits<nsDOMNavigationTiming*>::Write(

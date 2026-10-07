@@ -19,6 +19,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.R
 import org.mozilla.fenix.customannotations.Converted
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.ext.components
@@ -79,6 +80,7 @@ class SearchTest {
                 skipOnboarding = true,
                 isPocketEnabled = false,
                 isRecentTabsFeatureEnabled = false,
+                isRecentlyVisitedFeatureEnabled = true,
                 isWallpaperOnboardingEnabled = false,
                 isLocationPermissionEnabled = SitePermissionsRules.Action.BLOCKED,
                 // workaround for toolbar at top position by default
@@ -312,6 +314,12 @@ class SearchTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/522918
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.SearchTest#verifyClearSearchButtonTest"],
+        bug = 2071309,
+        since = "2026-09",
+    )
+    @Critical
     @Test
     fun verifyClearSearchButtonTest() {
         homeScreen(composeTestRule) {}

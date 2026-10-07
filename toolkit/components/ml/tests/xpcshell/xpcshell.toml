@@ -1,6 +1,8 @@
 [DEFAULT]
 head = ""
-skip-if = ["os == 'android'"]
+run-if = [
+  "os != 'android'",
+]
 prefs = [
   "browser.ml.logLevel=Info",
 ]

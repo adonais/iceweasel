@@ -1,0 +1,5 @@
+LICENSES += ["flagged-twice"]
+LICENSES["flagged-twice"].title = "Flagged Twice"
+LICENSES["flagged-twice"].text = "typo.txt"
+LICENSES["flagged-twice"].spdx = "MIT"
+LICENSES["flagged-twice"].spdx = "Apache2"

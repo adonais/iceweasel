@@ -36,6 +36,7 @@
 #include "mozilla/TextUtils.h"
 #include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/PerformanceMainThread.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/intl/Bidi.h"
 #include "mozilla/intl/Segmenter.h"
@@ -63,7 +64,6 @@
 #include "nsLineLayout.h"
 #include "nsPlaceholderFrame.h"
 #include "nsPresContext.h"
-#include "nsRange.h"
 #include "nsRubyFrame.h"
 #include "nsSplittableFrame.h"
 #include "nsString.h"
@@ -1470,7 +1470,7 @@ BuildTextRunsScanner::FindBoundaryResult BuildTextRunsScanner::FindBoundaries(
     uint32_t start = textFrame->GetContentOffset();
     uint32_t length = textFrame->GetContentLength();
     const void* text;
-    const nsAtom* language = textFrame->StyleFont()->mLanguage;
+    const nsAtom* language = textFrame->StyleFont()->GetLangAtom();
     if (characterDataBuffer.Is2b()) {
       // It is possible that we may end up removing all whitespace in
       // a piece of text because of The White Space Processing Rules,
@@ -2492,7 +2492,7 @@ already_AddRefed<gfxTextRun> BuildTextRunsScanner::BuildTextRunForFrames(
     int32_t contentStart = mappedFlow->mStartFrame->GetContentOffset();
     int32_t contentEnd = mappedFlow->GetContentEnd();
     int32_t contentLength = contentEnd - contentStart;
-    const nsAtom* language = f->StyleFont()->mLanguage;
+    const nsAtom* language = f->StyleFont()->GetLangAtom();
 
     TextRunMappedFlow* newFlow = &userMappedFlows[i];
     newFlow->mStartFrame = mappedFlow->mStartFrame;
@@ -2802,7 +2802,8 @@ bool BuildTextRunsScanner::SetupLineBreakerContext(gfxTextRun* aTextRun) {
   }
 
   gfxSkipChars skipChars;
-  const nsAtom* language = mMappedFlows[0].mStartFrame->StyleFont()->mLanguage;
+  const nsAtom* language =
+      mMappedFlows[0].mStartFrame->StyleFont()->GetLangAtom();
 
   for (uint32_t i = 0; i < mMappedFlows.Length(); ++i) {
     MappedFlow* mappedFlow = &mMappedFlows[i];
@@ -2896,7 +2897,7 @@ void BuildTextRunsScanner::SetupBreakSinksForTextRun(gfxTextRun* aTextRun,
   // We should only use a language for hyphenation if it was specified
   // explicitly.
   nsAtom* hyphenationLanguage =
-      styleFont->mExplicitLanguage ? styleFont->mLanguage.get() : nullptr;
+      styleFont->mExplicitLanguage ? styleFont->GetLangAtom() : nullptr;
   // We keep this pointed at the skip-chars data for the current mappedFlow.
   // This lets us cheaply check whether the flow has compressed initial
   // whitespace...
@@ -3445,7 +3446,7 @@ static bool IsChineseOrJapanese(const nsTextFrame* aFrame) {
     return true;
   }
 
-  nsAtom* language = aFrame->StyleFont()->mLanguage;
+  nsAtom* language = aFrame->StyleFont()->GetLangAtom();
   if (!language) {
     return false;
   }
@@ -5331,7 +5332,7 @@ static bool IsUnderlineRight(const ComputedStyle& aStyle) {
     return true;
   }
   // If neither 'left' nor 'right' was specified, check the language.
-  nsAtom* langAtom = aStyle.StyleFont()->mLanguage;
+  nsAtom* langAtom = aStyle.StyleFont()->GetLangAtom();
   if (!langAtom) {
     return false;
   }
@@ -5645,7 +5646,8 @@ nsRect nsTextFrame::UpdateTextEmphasis(WritingMode aWM,
       normalizeRubyMetrics ? PresContext()->RubyPositioningFactor() : 0.0f;
 
   // Calculate the baseline offset
-  LogicalSide side = styleText->TextEmphasisSide(aWM, StyleFont()->mLanguage);
+  LogicalSide side =
+      styleText->TextEmphasisSide(aWM, StyleFont()->GetLangAtom());
   LogicalSize frameSize = GetLogicalSize(aWM);
   // The overflow rect is inflated in the inline direction by half
   // advance of the emphasis mark on each side, so that even if a mark
@@ -10162,7 +10164,7 @@ void nsTextFrame::MaybeSplitFramesForFirstLetter() {
     // explicit in the content.
     const nsStyleFont* styleFont = StyleFont();
     const nsAtom* lang =
-        styleFont->mExplicitLanguage ? styleFont->mLanguage.get() : nullptr;
+        styleFont->mExplicitLanguage ? styleFont->GetLangAtom() : nullptr;
     FindFirstLetterRange(characterDataBuffer, lang, textRun, offset, iter,
                          &firstLetterLength);
     if (newLineOffset >= 0) {
@@ -10980,9 +10982,8 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
           // We only pass a language code to FindFirstLetterRange if it was
           // explicit in the content.
           const nsStyleFont* styleFont = StyleFont();
-          const nsAtom* lang = styleFont->mExplicitLanguage
-                                   ? styleFont->mLanguage.get()
-                                   : nullptr;
+          const nsAtom* lang =
+              styleFont->mExplicitLanguage ? styleFont->GetLangAtom() : nullptr;
           completedFirstLetter =
               FindFirstLetterRange(characterDataBuffer, lang, mTextRun, offset,
                                    iter, &firstLetterLength);

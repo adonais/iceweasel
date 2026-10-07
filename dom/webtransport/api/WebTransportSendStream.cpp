@@ -30,6 +30,10 @@ WebTransportSendStream::WebTransportSendStream(nsIGlobalObject* aGlobal,
   mozilla::HoldJSObjects(this);
 }
 
+WebTransportSendStream::~WebTransportSendStream() {
+  mozilla::DropJSObjects(this);
+}
+
 JSObject* WebTransportSendStream::WrapObject(
     JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
   return WebTransportSendStream_Binding::Wrap(aCx, this, aGivenProto);

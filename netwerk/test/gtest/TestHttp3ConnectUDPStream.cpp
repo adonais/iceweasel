@@ -74,9 +74,16 @@ class Http3SessionStub final : public Http3SessionBase {
     mReadyForWrite.AppendElement(aStream);
   }
 
-  nsresult CloseWebTransport(uint64_t aSessionId, uint32_t aError,
-                             const nsACString& aMessage) override {
-    return NS_OK;
+  bool CloseWebTransport(uint64_t aSessionId, uint32_t aError,
+                         const nsACString& aMessage,
+                         mozilla::dom::WebTransportStatsData& aStats) override {
+    return false;
+  }
+
+  bool GetWebTransportSessionStats(
+      uint64_t aSessionId,
+      mozilla::dom::WebTransportStatsData& aStats) override {
+    return false;
   }
 
   void SendDatagram(Http3WebTransportSession* aSession,

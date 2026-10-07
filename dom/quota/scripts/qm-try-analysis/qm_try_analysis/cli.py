@@ -6,6 +6,7 @@ import click
 
 from qm_try_analysis.analyze import analyze_qm_failures
 from qm_try_analysis.fetch import fetch_qm_failures
+from qm_try_analysis.htmlreport import html_qm_failures
 from qm_try_analysis.report import report_qm_failures
 
 
@@ -16,6 +17,7 @@ def cli():
 
 cli.add_command(fetch_qm_failures, "fetch")
 cli.add_command(analyze_qm_failures, "analyze")
+cli.add_command(html_qm_failures, "html")
 cli.add_command(report_qm_failures, "report")
 
 if __name__ == "__main__":

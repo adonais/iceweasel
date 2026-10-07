@@ -11,14 +11,11 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/PseudoStyleRequest.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/Element.h"
 
 class nsAtom;
 
 namespace mozilla {
-
-namespace dom {
-class Element;
-}  // namespace dom
 
 struct OwningAnimationTarget {
   OwningAnimationTarget() = default;

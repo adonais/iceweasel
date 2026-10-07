@@ -221,7 +221,7 @@ add_UITour_task(async function test_firefoxAccountsNonAlphaValue() {
 // A helper to check the request was ignored due to invalid params.
 async function checkFxANotLoaded() {
   try {
-    await waitForConditionPromise(() => {
+    await TestUtils.waitForCondition(() => {
       return gBrowser.selectedBrowser.currentURI.spec.startsWith(
         "https://example.com"
       );

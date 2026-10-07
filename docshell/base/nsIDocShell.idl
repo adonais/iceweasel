@@ -99,7 +99,8 @@ interface nsIDocShell : nsIDocShellTreeItem
    * @param aSetNavigating If we should set isNavigating to true while initiating
    *                       the load.
    */
-  [noscript]void loadURI(in nsDocShellLoadStatePtr aLoadState, in boolean aSetNavigating);
+  [noscript, can_run_script]
+  void loadURI(in nsDocShellLoadStatePtr aLoadState, in boolean aSetNavigating);
 
   /**
    * Reset state to a new content model within the current document and the document
@@ -156,7 +157,7 @@ interface nsIDocShell : nsIDocShellTreeItem
   /**
    * This allows chrome to set a custom User agent on a specific docshell
    */
-  attribute AString customUserAgent;
+  attribute ACString customUserAgent;
 
   /**
    * Whether CSS error reporting is enabled.

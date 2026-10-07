@@ -354,7 +354,10 @@ class CycleCollectedJSContext::SavedMicroTaskQueue
     JS::RestoreMicroTaskQueue(cx, std::move(mSavedQueue));
 
     if (suppressedTasks.get()) {
-      EnqueueMicroTask(cx, suppressedTasks.get().MaybeConsumeAsOwnedRunnable());
+      if (!EnqueueMicroTask(
+              cx, suppressedTasks.get().MaybeConsumeAsOwnedRunnable())) {
+        NS_ABORT_OOM(0);
+      }
     }
 
     ccjs->mDebuggerRecursionDepth--;
@@ -673,7 +676,9 @@ void CycleCollectedJSContext::DispatchToMicroTask(
                             Flow::FromPointer(runnable.get()));
 
   LogMicroTaskRunnable::LogDispatch(runnable.get());
-  EnqueueMicroTask(Context(), runnable.forget());
+  if (!EnqueueMicroTask(Context(), runnable.forget())) {
+    NS_ABORT_OOM(0);
+  }
 }
 
 class AsyncMutationHandler final : public mozilla::Runnable {
@@ -1247,8 +1252,10 @@ bool CycleCollectedJSContext::PerformMicroTaskCheckPoint(bool aForce) {
           mSuppressedMicroTaskList = new SuppressedMicroTaskList(this);
         }
 
-        mSuppressedMicroTaskList->mSuppressedMicroTaskRunnables.get().append(
-            std::move(job.get()));
+        if (!mSuppressedMicroTaskList->mSuppressedMicroTaskRunnables.get()
+                 .append(std::move(job.get()))) {
+          NS_ABORT_OOM(0);
+        }
       } else {
         // Consume the runnable & simultaneously drop a ref count.
         RefPtr<MicroTaskRunnable> refToDrop(

@@ -1,7 +1,4 @@
 [DEFAULT]
-skip-if = [
-  "os == 'android'",
-]
 
 ["browser_ensure_frame_is_on_screen.js"]
 run-if = [

@@ -39,14 +39,7 @@ add_task(async function searchHistoryFromHistoryPanel() {
   );
   EventUtils.synthesizeMouseAtCenter(searchHistoryButton, {});
 
-  await new Promise(resolve => {
-    window.gURLBar.controller.addListener({
-      onViewOpen() {
-        window.gURLBar.controller.removeListener(this);
-        resolve();
-      },
-    });
-  });
+  await UrlbarTestUtils.promiseSearchComplete(window);
 
   // Verify URLBar is in search mode with correct restriction
   is(
@@ -79,14 +72,7 @@ add_task(async function searchHistoryFromAppMenuHistoryButton() {
   );
   EventUtils.synthesizeMouseAtCenter(searchHistoryButton, {});
 
-  await new Promise(resolve => {
-    window.gURLBar.controller.addListener({
-      onViewOpen() {
-        window.gURLBar.controller.removeListener(this);
-        resolve();
-      },
-    });
-  });
+  await UrlbarTestUtils.promiseSearchComplete(window);
 
   // Verify URLBar is in search mode with correct restriction
   is(

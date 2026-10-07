@@ -16,12 +16,11 @@
 #include "nsFmtString.h"
 #include "nsIContent.h"
 
-class nsRange;
-
 namespace mozilla {
 namespace dom {
 class CrossShadowBoundaryRange;
-}
+class Range;
+}  // namespace dom
 
 template <typename T, typename U>
 class EditorDOMPointBase;
@@ -60,9 +59,23 @@ using ConstRawRangeBoundary =
     RangeBoundaryBase<const nsINode*, const nsIContent*>;
 
 /**
+ * Whether the range boundary is for the start or end boundary of a range.
+ */
+enum class RangeBoundarySide : bool { Start, End };
+
+inline auto format_as(const RangeBoundarySide aSide) {
+  return aSide == RangeBoundarySide::Start ? "Start" : "End";
+}
+
+inline std::ostream& operator<<(std::ostream& aStream,
+                                const RangeBoundarySide aSide) {
+  return aStream << format_as(aSide);
+}
+
+/**
  * There are two ways of ensuring that `mRef` points to the correct node.
  * In most cases, the `RangeBoundary` is used by an object that is a
- * `MutationObserver` (i.e. `nsRange`) and replaces its `RangeBoundary`
+ * `MutationObserver` (i.e. `dom::Range`) and replaces its `RangeBoundary`
  * objects when its parent chain changes.
  * However, there are Ranges which are not `MutationObserver`s (i.e.
  * `StaticRange`). `mRef` may become invalid when a DOM mutation happens.
@@ -113,7 +126,7 @@ class RangeBoundaryBase {
   template <typename T, typename U>
   friend class EditorDOMPointBase;
 
-  friend nsRange;
+  friend dom::Range;
 
   friend class mozilla::dom::CrossShadowBoundaryRange;
 
@@ -1090,9 +1103,9 @@ class RangeBoundaryBase {
   [[nodiscard]] bool IsSetByRef() const { return static_cast<bool>(mSetBy); }
 
   /**
-   * If nsRange stores mutations for RangeBoundary instances, mSetBy is always
-   * "Ref".  However, it's the default behavior of RangeBoundaryBase so that
-   * even if this returns true, the mutations may not be observed actually.
+   * If dom::Range stores mutations for RangeBoundary instances, mSetBy is
+   * always "Ref".  However, it's the default behavior of RangeBoundaryBase so
+   * that even if this returns true, the mutations may not be observed actually.
    */
   [[nodiscard]] bool MaybeMutationObserved() const { return IsSetByRef(); }
 

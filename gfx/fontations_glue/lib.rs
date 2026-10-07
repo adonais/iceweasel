@@ -116,6 +116,7 @@ pub extern "C" fn skrifa_font_has_table(font: &SkrifaFontRef, tag: u32) -> bool 
 
 // VARIATION SETTINGS
 use style::gecko_bindings::structs::gfxFontVariation;
+use style::values::generics::font::FontTag;
 
 pub struct SkrifaLocation(skrifa::instance::Location);
 
@@ -125,7 +126,7 @@ pub extern "C" fn skrifa_font_resolve_variations_to_location(
     settings: &ThinVec<gfxFontVariation>,
 ) -> *mut SkrifaLocation {
     Box::into_raw(Box::new(SkrifaLocation(font.0.axes().location(
-        settings.iter().map(|s| (Tag::from_u32(s.mTag), s.mValue)),
+        settings.iter().map(|s| (Tag::from_u32(s.tag.0), s.value)),
     ))))
 }
 
@@ -201,12 +202,13 @@ pub extern "C" fn skrifa_font_copy_instance(
         .map_or_else(|| nsCString::new(), |name| name.to_string().into());
     settings.extend(instance.user_coords().enumerate().map(|(i, value)| {
         gfxFontVariation {
-            mTag: font
-                .0
-                .axes()
-                .get(i)
-                .map_or_else(|| 0, |axis| axis.tag().to_u32()),
-            mValue: value,
+            tag: FontTag(
+                font.0
+                    .axes()
+                    .get(i)
+                    .map_or_else(|| 0, |axis| axis.tag().to_u32()),
+            ),
+            value,
         }
     }));
     true

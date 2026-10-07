@@ -124,6 +124,8 @@ include = [
   "CaptionSide",
   "ColorGamut",
   "DominantBaseline",
+  "FontFeatureSettings",
+  "FontVariationSettings",
   "FontSizeAdjust",
   "FontPalette",
   "FontLanguageOverride",
@@ -371,6 +373,68 @@ include = [
   "AllowAnchorPosResolutionInCalcPercentage",
   "ListStyleType",
   "LinkParameters",
+  "BoxDecorationBreak",
+  "ImageLayerAttachment",
+  "FloatEdge",
+  "TopLayer",
+  "ScrollBehavior",
+  "Isolation",
+  "BackfaceVisibility",
+  "Orient",
+  "ColumnFill",
+  "ColumnSpan",
+  "MathShift",
+  "Visibility",
+  "BoxCollapse",
+  "TextOrientation",
+  "ImageOrientation",
+  "TextAnchor",
+  "ShapeRendering",
+  "StrokeLinecap",
+  "StrokeLinejoin",
+  "BorderCollapse",
+  "EmptyCells",
+  "Hyphens",
+  "TextSizeAdjust",
+  "RubyAlign",
+  "TextCombineUpright",
+  "TextRendering",
+  "TextSecurity",
+  "TextWrapMode",
+  "TextWrapStyle",
+  "ListStylePosition",
+  "FlexDirection",
+  "BoxSizing",
+  "ObjectFit",
+  "MaskType",
+  "MaskMode",
+  "MaskComposite",
+  "TableLayout",
+  "UnicodeBidi",
+  "ImeMode",
+  "ScrollbarWidth",
+  "WindowDragging",
+  "WindowShadow",
+  "FieldSizing",
+  "BoxAlign",
+  "BoxDirection",
+  "BoxOrient",
+  "BoxPack",
+  "Blend",
+  "MathStyle",
+  "MathVariant",
+  "FontVariantEmoji",
+  "DirectionProperty",
+  "TextDecorationStyle",
+  "ColorInterpolation",
+  "FontOpticalSizing",
+  "FontKerning",
+  "FontSmoothing",
+  "FontVariantPosition",
+  "FontVariantCaps",
+  "WhiteSpaceCollapse",
+  "BackgroundOrigin",
+  "XLang",
 ]
 item_types = [
   "enums",
@@ -384,6 +448,7 @@ renaming_overrides_prefixing = true
 
 # Prevent some renaming for Gecko types that cbindgen doesn't otherwise understand.
 [export.rename]
+"DirectionProperty" = "StyleDirection"
 "nscolor" = "nscolor"
 "nsAtom" = "nsAtom"
 "nsIURI" = "nsIURI"
@@ -418,11 +483,9 @@ renaming_overrides_prefixing = true
 "FontFaceDescriptorId" = "FontFaceDescriptorId"
 "CounterStyleDescriptorId" = "CounterStyleDescriptorId"
 "nsresult" = "nsresult"
-"gfxFontFeature" = "gfxFontFeature"
 "gfxFontFeatureValueSet" = "gfxFontFeatureValueSet"
 "GeckoFontMetrics" = "GeckoFontMetrics"
 "SeenPtrs" = "SeenPtrs"
-"gfxFontVariation" = "gfxFontVariation"
 "URLExtraData" = "URLExtraData"
 "Keyframe" = "Keyframe"
 "nsChangeHint" = "nsChangeHint"
@@ -432,6 +495,7 @@ renaming_overrides_prefixing = true
 "ServoTraversalFlags" = "ServoTraversalFlags"
 "ServoStyleSetSizes" = "ServoStyleSetSizes"
 "BeforeFlag" = "StyleEasingBeforeFlag"
+"Leaf" = "StyleSpecifiedLeaf"
 "FontPaletteValueSet" = "gfx::FontPaletteValueSet"
 "PaletteValues" = "gfx::FontPaletteValueSet::PaletteValues"
 "ThinVec" = "CopyableTArray"

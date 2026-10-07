@@ -6,6 +6,7 @@
 #define mozilla_FontRange_h_
 
 #include "gfxTypes.h"  // for gfxFloat
+#include "nsTString.h"
 
 namespace mozilla {
 

@@ -115,6 +115,10 @@ function setItem(itemKey, value) {
       store => {
         store.transaction.oncomplete = resolve;
         const req = store.put(value, itemKey);
+        // setItemOnError closes over this scope, so leaving `value` in it keeps
+        // the stored value, and through it the browser loader sandbox it was
+        // created in, alive for as long as the request is pending.
+        value = null;
         req.onerror = function setItemOnError() {
           console.error("Error in asyncStorage.setItem():", req.error.name);
           reject(

@@ -155,6 +155,17 @@ class AppShutdown {
       const nsCOMPtr<nsISupports>& aNotificationSubject);
 };
 
+/**
+ * Refresh the shutdown-hang crash annotations just before a deliberate crash.
+ * Runs on the terminator watchdog thread as well as the main thread, so
+ * collectors must not block: acquire locks only with try-lock semantics and
+ * skip the annotation on contention. Blocking here would keep the watchdog
+ * from reaching its crash.
+ *
+ * Defined in nsAppStartup.cpp.
+ */
+void CollectShutdownHangAnnotations();
+
 }  // namespace mozilla
 
 #endif  // AppShutdown_h

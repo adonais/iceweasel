@@ -234,24 +234,27 @@ CreateMediaContentChannels(
     const CryptoOptions& crypto_options,
     VideoBitrateAllocatorFactory* video_bitrate_allocator_factory,
     VideoMediaSendChannelInterface::EncoderSwitchRequestCallback
-        video_encoder_switch_request_callback = nullptr,
-    absl::AnyInvocable<void()> parameters_changed_callback = nullptr) {
+        video_encoder_switch_request_callback,
+    absl::AnyInvocable<void()> parameters_changed_callback,
+    absl::AnyInvocable<void(uint32_t ssrc)> on_first_packet) {
   if (media_type == MediaType::AUDIO) {
     RTC_DCHECK(voice_factory);
     return {voice_factory->CreateSendChannel(
                 env, call, media_config, audio_options, crypto_options,
                 std::move(parameters_changed_callback)),
             voice_factory->CreateReceiveChannel(env, call, media_config,
-                                                audio_options, crypto_options)};
+                                                audio_options, crypto_options,
+                                                std::move(on_first_packet))};
   }
   RTC_DCHECK(video_factory);
-  return {video_factory->CreateSendChannel(
-              env, call, media_config, video_options, crypto_options,
-              video_bitrate_allocator_factory,
-              std::move(video_encoder_switch_request_callback),
-              std::move(parameters_changed_callback)),
-          video_factory->CreateReceiveChannel(env, call, media_config,
-                                              crypto_options)};
+  return {
+      video_factory->CreateSendChannel(
+          env, call, media_config, video_options, crypto_options,
+          video_bitrate_allocator_factory,
+          std::move(video_encoder_switch_request_callback),
+          std::move(parameters_changed_callback)),
+      video_factory->CreateReceiveChannel(
+          env, call, media_config, crypto_options, std::move(on_first_packet))};
 }
 
 std::vector<absl::AnyInvocable<void() &&>> DetachAndGetStopTasksForSenders(
@@ -411,7 +414,14 @@ RtpTransceiver::RtpTransceiver(
       media_type_, env_, voice_channel_factory(), video_channel_factory(), call,
       media_config, audio_options, video_options, crypto_options,
       video_bitrate_allocator_factory, std::move(encoder_switch_callback),
-      GetParametersChangedCallback());
+      GetParametersChangedCallback(),
+      [thread = thread_, safety = signaling_thread_safety_,
+       this](uint32_t ssrc) {
+        thread->PostTask(SafeTask(safety, [this, ssrc]() {
+          RTC_DCHECK_RUN_ON(thread_);
+          OnFirstPacketReceived_s(ssrc);
+        }));
+      });
 
   auto sender = CreateSender(
       media_type_, env_, context_, legacy_stats_, set_streams_observer_,
@@ -474,13 +484,6 @@ void RtpTransceiver::CreateChannel(
   }
 
   ChannelCallbacks callbacks;
-  callbacks.on_first_packet_received =
-      [thread = thread_, flag = signaling_thread_safety_,
-       this](const RtpPacketReceived& packet) mutable {
-        thread->PostTask(SafeTask(
-            std::move(flag),
-            [this, ssrc = packet.Ssrc()]() { OnFirstPacketReceived(ssrc); }));
-      };
   callbacks.on_first_packet_sent =
       [thread = thread_, flag = signaling_thread_safety_, this]() mutable {
         thread->PostTask(
@@ -511,7 +514,14 @@ void RtpTransceiver::CreateChannel(
         media_type(), env_, voice_channel_factory(), video_channel_factory(),
         call_ptr, media_config, audio_options_, video_options_, crypto_options,
         video_bitrate_allocator_factory, std::move(encoder_switch_callback),
-        std::move(parameters_changed_callback));
+        std::move(parameters_changed_callback),
+        [thread = thread_, safety = signaling_thread_safety_,
+         this](uint32_t ssrc) {
+          thread->PostTask(SafeTask(safety, [this, ssrc]() {
+            RTC_DCHECK_RUN_ON(thread_);
+            OnFirstPacketReceived_s(ssrc);
+          }));
+        });
     media_send_channel = std::move(channels.first);
     media_receive_channel = std::move(channels.second);
     needs_set_media_channels = true;
@@ -846,9 +856,20 @@ std::optional<std::string> RtpTransceiver::mid() const {
   return mid_;
 }
 
-void RtpTransceiver::OnFirstPacketReceived(uint32_t ssrc) {
+void RtpTransceiver::OnFirstPacketReceived_s(uint32_t ssrc) {
+  RTC_DCHECK_RUN_ON(thread_);
   for (const auto& receiver : receivers_) {
-    receiver->internal()->NotifyFirstPacketReceived(ssrc);
+    if (receiver->internal()->ssrc_s() == ssrc) {
+      receiver->internal()->NotifyFirstPacketReceived(ssrc);
+      return;
+    }
+  }
+  for (const auto& receiver : receivers_) {
+    if (!receiver->internal()->ssrc_s().has_value()) {
+      receiver->internal()->SetSsrc_s(ssrc);
+      receiver->internal()->NotifyFirstPacketReceived(ssrc);
+      break;  // Bind first unbound receiver.
+    }
   }
 }
 

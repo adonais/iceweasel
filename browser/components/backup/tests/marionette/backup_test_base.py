@@ -205,7 +205,7 @@ class BackupTestBase(MarionetteTestCase):
         return self.run_async(
             """
             const { BackupService } = ChromeUtils.importESModule(
-                "resource:///modules/backup/BackupService.sys.mjs"
+                "moz-src:///browser/components/backup/BackupService.sys.mjs"
             );
             let bs = BackupService.init();
             await bs.setParentDirPath(arguments[0]);
@@ -222,7 +222,7 @@ class BackupTestBase(MarionetteTestCase):
         return self.run_async(
             """
             const { BackupService } = ChromeUtils.importESModule(
-                "resource:///modules/backup/BackupService.sys.mjs"
+                "moz-src:///browser/components/backup/BackupService.sys.mjs"
             );
             let [archivePath, recoveryPath, replaceCurrentProfile] = arguments;
             let bs = BackupService.get();
@@ -273,7 +273,7 @@ class BackupTestBase(MarionetteTestCase):
         self.run_async(
             """
             const { BackupService } = ChromeUtils.importESModule(
-                "resource:///modules/backup/BackupService.sys.mjs"
+                "moz-src:///browser/components/backup/BackupService.sys.mjs"
             );
             await BackupService.get().postRecoveryComplete;
             """

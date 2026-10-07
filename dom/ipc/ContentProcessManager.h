@@ -37,12 +37,13 @@ class ContentProcessManager final {
   /**
    * Add a new browser parent into the map.
    */
-  bool RegisterRemoteFrame(BrowserParent* aChildBp);
+  [[nodiscard]] bool RegisterRemoteFrame(BrowserParent* aChildBp);
 
   /**
-   * Remove the browser parent by the given tab id.
+   * Remove the given browser parent from the map, if it is registered under its
+   * tab id.
    */
-  void UnregisterRemoteFrame(const TabId& aChildTabId);
+  void UnregisterRemoteFrame(BrowserParent* aChildBp);
 
   /**
    * Get the ContentParentId of the parent of the given tab id.

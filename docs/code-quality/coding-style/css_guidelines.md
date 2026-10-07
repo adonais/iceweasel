@@ -170,6 +170,40 @@ hard to understand.
 Finally, once you have checked all the things above, you can permit
 yourself to use `!important` along with a comment why it is needed.
 
+### An unlayered declaration outranks every cascade layer
+
+A declaration inside a cascade layer loses to every unlayered one, whatever the
+specificity. The generated design-token sheets put their high contrast overrides
+in layers, so a component or an embedder that ships its own unlayered copy of
+some tokens overrides all of those overrides at once.
+
+That is how high contrast support goes silently dead for one surface, with
+nothing in the diff to show for it. The shape to look for is an unlayered copy
+carrying a `@media (forced-colors)` counterpart but no
+`@media (prefers-contrast)` one: on Windows it mostly still works, because
+forced colors is the regime there, while on Linux and macOS, where
+`prefers-contrast` is the only signal reaching content, the surface loses high
+contrast entirely.
+
+[Scoping token overrides](/accessible/HCMMediaQueries.md#scoping-token-overrides-with-media-not-forced-colors)
+covers the companion case: an override that does sit in a layer still needs
+`@media (not (forced-colors))` to leave the token layer's system color in place.
+
+### Overriding across a shadow boundary
+
+A custom property is substituted where it is declared. A variable declared on
+`:host, :root` in terms of another variable captures the root's value, so an
+embedder overriding the inner variable further down the tree does not change
+it. When an override "isn't working", check whether the consuming declaration
+already resolved at the root.
+
+An outer-tree `::part()` rule beats the widget's own shadow rule, whatever the
+specificity inside the shadow root. An embedder's unscoped `widget::part(x)`
+rule therefore overrides that widget's internal metrics for every instance on
+the page, including instances it was never written for, so scope such a rule to
+a class the embedder's own instances opt into. A part inside a nested shadow
+root is out of reach of a page `::part()` selector altogether.
+
 ## Using CSS variables
 
 ### Adding new variables
@@ -325,6 +359,28 @@ this:
 [^footnote-2]: However there is probably a better way than using absolute
     positioning.
 
+### Chrome versus in-content
+
+A stylesheet shared between a chrome window and an `about:` page does not behave
+the same in both, and most of the differences are invisible in the source.
+
+- **`rem` means something different in each.** Chrome's root font size comes from
+  the system UI font (`:root { font: message-box }`), so it is 11 to 15px
+  depending on the platform and never the 16px a generic page gets. A privileged
+  `about:` page is not 16px either: `about:newtab` sets
+  `--font-size-root: 15px`. One shared rem-valued value therefore resolves to
+  three different lengths across chrome, New Tab and the web. `em` is affected
+  the same way in most cases, since the font size it resolves against is
+  system-dependent too. Hardcoded `px` font sizes are a lint error in any case:
+  the `use-design-tokens` rule covers `font-size`.
+- **Chrome-only conditions never match in a page.**
+  `:root[uidensity="compact"]`, the `:root[lwt-*]` theme selectors, anything
+  relying on `xul.css` defaults such as `user-select` or `-moz-user-focus`, and
+  anything keyed on a XUL-only attribute. From the page's point of view a shared
+  sheet's chrome branches are dead code, so check which realm a rule can reach
+  before fixing it, and do not assume a compact-density rule protects the in-page
+  case.
+
 ### Colors
 
 For common areas of the Firefox interface (panels, toolbar buttons,
@@ -342,7 +398,87 @@ possible to use `currentcolor` with other properties like
 `opacity` or `fill-opacity` to have different
 opacities of the platform color.
 
+#### Colors that resolve per realm
+
+Two more axes resolve differently in chrome than in the content area, with no
+preference that looks wrong on either side:
+
+- **The color scheme.** Chrome's comes from `browser.theme.toolbar-theme` and
+  content's from `browser.theme.content-theme`
+  (`PreferenceSheet::ColorSchemeSettingForChrome` and
+  `ThemeDerivedColorSchemeForContent`), each 0 for dark, 1 for light and
+  anything else for system. They can disagree, so one `light-dark()` value
+  resolves to different sides in the two realms. Under Windows high contrast
+  mode the light set is additionally forced
+  (`mMustUseLightSystemColors`): always in chrome, and in content only once
+  colors are being forced there.
+- **Stand-ins for native colors.** With `privacy.resistFingerprinting` or
+  `ui.use_standins_for_native_colors`, a content document's system colors are
+  fixed stand-in values rather than the OS ones, while chrome keeps the real
+  ones. A fix built on system colors can therefore look right on your own
+  machine and still be wrong for a user who resists fingerprinting.
+
+[Colors and high contrast mode](/accessible/ColorsAndHighContrastMode.md)
+describes how Gecko picks between those palettes in `PreferenceSheet::Load`.
+
 ### High contrast mode
+
+Four regimes act on the same stylesheet independently: forced colors,
+`prefers-contrast`, the color scheme, and the fingerprinting-resistance
+stand-ins. Each of them resolves differently in a chrome document than in a
+page, and two of them differ by platform. So a widget shared between the toolbar
+and an `about:` page can sit in a different regime on each side, and naming the
+regime each side is in comes before calling the difference a bug.
+
+[HCM media queries](/accessible/HCMMediaQueries.md) says which query to write
+for which audience, and the [HCM CSS self-check guide](/accessible/HCMCSSChecklist.md)
+is the checklist a patch is reviewed against. What follows is how the regimes
+themselves resolve.
+
+Forced colors and `prefers-contrast` are separate signals with separate sources.
+
+Forced colors has three states rather than two
+(`nsPresContext::UpdateForcedColors`):
+
+- `active` - colors are being forced, and the forced-color adjustment described
+  below rewrites author color declarations. A content document reaches this
+  state through `browser.display.document_color_use`:
+
+  | value | meaning | default on |
+  | ----- | ------------------------------------ | ------------- |
+  | 0     | mirror the OS high contrast setting  | Windows       |
+  | 1     | never force colors                   | Linux, macOS  |
+  | 2     | always force colors                  | -             |
+
+- `requested` - a chrome document on Windows while the OS is in high contrast
+  mode. `@media (forced-colors)` matches, but colors are not forced and no
+  declaration is rewritten. The state exists so that chrome can reuse its
+  forced-colors rules rather than spelling out `(forced-colors) or
+  ((-moz-platform: windows) and (prefers-contrast))`. In chrome, then,
+  `forced-colors` is a request to reduce the palette to system colors, which the
+  stylesheet has to honor itself.
+- `none` - every other case.
+
+A bare `@media (forced-colors)` therefore matches in both the `active` and the
+`requested` state, so the query matching does not mean the adjustment is
+running. Ask for `(forced-colors: active)` where that difference matters;
+`forced-colors: requested` only parses in a chrome stylesheet.
+
+`prefers-contrast` has no such split. It tracks
+`LookAndFeel::IntID::UseAccessibilityTheme` in both realms, which is Windows high
+contrast mode, the macOS "Increase contrast" setting, a GTK high-contrast theme,
+or the desktop portal's `prefers-contrast` setting. It is also graded off the
+measured contrast ratio of the realm's own default colors
+(`Gecko_MediaFeatures_PrefersContrast`): below 4.5 it reports `less`, at or above
+7 it reports `more`, and `custom` in between. `(prefers-contrast)` can therefore
+match while `(prefers-contrast: more)` does not, and a rule written against
+`more` does nothing under a mid-contrast theme.
+
+Taken together, on Windows a shared widget's in-page copy has its colors
+rewritten for it while the toolbar copy is only asked to use system colors, and
+everywhere else neither copy is forced and `prefers-contrast` is the only signal
+reaching either. "Only in the in-page copy" and "only on Windows" are often the
+same finding.
 
 #### Content area
 
@@ -368,6 +504,14 @@ on other platforms is:
   sub-section of the "Language and Appearance" section
 - Under "Override the colors specified by the page with your selections
   above", select the "Always" option
+
+That option is `browser.display.document_color_use` set to 2. Setting the pref
+directly does the same thing, and `ui.useAccessibilityTheme` set to 1 turns
+`prefers-contrast` on in both realms. Both take effect without a restart, so
+together they reach every regime from a machine that is not in high contrast
+mode. Resetting `ui.useAccessibilityTheme` to its default value does not always
+take effect immediately, so re-check the media query rather than assuming it
+flipped back, and restart the browser if it did not.
 
 #### Chrome area
 
@@ -400,6 +544,45 @@ with a system background color and vice-versa.
 
 Note that using system colors is only useful for the chrome area, since
 content area colors are overridden by Gecko anyway.
+
+#### The forced-color adjustment
+
+Once a document is actually forcing colors - the `active` state above, not
+`requested` - the cascade rewrites author color
+declarations (`servo/components/style/properties/cascade.rs`). Three things are
+exempt: rules from the UA and User origins, anything under
+`forced-color-adjust: none`, and CSS-wide keywords. Everything else is filtered,
+and the filter is not the same for every property:
+
+- A bare system color and `currentcolor` are honored everywhere.
+- A *derived* color is not honored uniformly. `color-mix(in srgb, currentcolor
+  25%, transparent)` survives as a `background-color` and is replaced as a
+  `border-color`, so one variable reads as a subtle wash behind a box and a
+  solid `CanvasText` line around it.
+- `transparent` is honored for `background-color` and `color`, but not for
+  `border-color`; that carve-out was removed in [bug
+  1740924](https://bugzilla.mozilla.org/show_bug.cgi?id=1740924).
+- A rejected `background-color` becomes the canvas background with its alpha
+  preserved. Any other rejected color reverts to its UA value.
+
+The filter therefore fails in both directions, and both shapes exist in the tree:
+
+- **A line drawn with `background-color` vanishes.** An `hr` styled as a 1px
+  separator, a `::before` hairline or a divider `div` each become exactly the
+  surface they sit on. Drawing the line as a border survives instead, because a
+  rejected border reverts to `currentcolor`. The swap is not geometrically free,
+  though: a used border width floors to whole device pixels where a height does
+  not, so keep the box's block size and add `box-sizing: border-box`.
+- **A transparent border used as a spacer becomes a frame.** The
+  `border: Npx solid transparent` idiom with `background-clip: padding-box`,
+  which insets a background while keeping the full-height hit area, paints an
+  `Npx` `CanvasText` box around every element that uses it. Give it a system
+  color matching the surface behind it under `@media (forced-colors)`, and check
+  what that surface actually computes to rather than assuming it is `Canvas`.
+
+`forced-color-adjust: none` is not a per-property escape hatch. It inherits, so
+it exempts the element and its whole subtree; reach for it only where the colors
+themselves are the content.
 
 ### Writing media queries
 
@@ -447,6 +630,19 @@ Not this:
   }
 }
 ```
+
+#### Chrome-only media features go by the stylesheet, not the document
+
+Whether chrome-only features are available is a parse-time property of the
+stylesheet's URL (`chrome_rules_enabled()`), not of the document the sheet ends
+up in. So `-moz-native-theme`, `-moz-pref()` and the rest still evaluate inside
+a `chrome://` stylesheet loaded into an `about:` page. Meanwhile
+`matchMedia("(-moz-native-theme)")` called from that page's own script parses at
+content origin, does not know the feature, and always reports false.
+
+Reading the page's `matchMedia` and concluding the sheet took the other branch is
+the trap. To find out which branch a chrome sheet took, check a custom property
+that only that branch sets.
 
 ## Theme support
 
@@ -527,3 +723,30 @@ However, if only 1x and 2x PNG assets are available, you can use this
 ```css
 @media (min-resolution: 1.1dppx)
 ```
+
+#### Some properties are rounded to device pixels, but not others
+
+A used `border-width` is rounded down to whole device pixels. `padding`,
+`margin`, `gap` and `height` are not. Trading a border for padding of the same
+length, or a 1px-tall background box for a 1px border, is therefore not
+geometry-neutral unless the length lands on whole device pixels, and what has to
+be integral is the length in *device* pixels rather than in CSS pixels. A whole
+number of CSS pixels is not exempt: at a device pixel ratio of 1.25 a `1px`
+border is used as 0.8px while `1px` of padding stays 1px, so the box changes
+size and everything after it moves.
+
+The consequences are easy to miss because the default ratio hides them, so set
+`layout.css.devPixelsPerPx` (a string pref; `"-1.0"` restores automatic) and
+check fractional ratios such as 1.25 and 1.5 before calling such a swap neutral.
+Where padding has to reproduce the snapping, `round(down, X, env(hairline))`
+does it, with a `max(env(hairline), ...)` guard against rounding to zero;
+`browser/themes/shared/urlbar.css` uses that form. The CSSWG has
+[resolved on `round(line-width, ...)`](https://github.com/w3c/csswg-drafts/issues/3720#issuecomment-3999235838)
+as the syntax for this, which nothing implements yet. Keeping the original height
+and adding `box-sizing: border-box` is the other way to hold a box exactly.
+
+`env(hairline)` is one device pixel. Like the chrome-only media features it is
+gated on the stylesheet's URL rather than the document's, so it resolves in a
+`chrome://` sheet in either realm and in `about:newtab`'s own CSS, and yields
+nothing in a stylesheet loaded from another origin, where the declaration
+computes to 0.

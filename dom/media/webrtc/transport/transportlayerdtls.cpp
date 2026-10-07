@@ -394,6 +394,7 @@ void TransportLayerDtls::WasInserted() {
   // Connect to the lower layers
   if (!Setup()) {
     mErrorDescription = "Internal error";
+    mHasDtlsFailureError = true;
     TL_SET_STATE(TS_ERROR);
   }
 }
@@ -1010,6 +1011,7 @@ void TransportLayerDtls::Handshake() {
       MOZ_MTLOG(ML_ERROR, LAYER_INFO << "Certificate check never occurred");
       RecordHandshakeCompletionTelemetry("CERT_FAILURE");
       mErrorDescription = "Internal error";
+      mHasDtlsFailureError = true;
       TL_SET_STATE(TS_ERROR);
       return;
     }
@@ -1020,6 +1022,7 @@ void TransportLayerDtls::Handshake() {
       ssl_fd_ = nullptr;
       RecordHandshakeCompletionTelemetry("ALPN_FAILURE");
       // CheckAlpn sets mErrorDescription
+      mHasDtlsFailureError = true;
       TL_SET_STATE(TS_ERROR);
       return;
     }
@@ -1058,6 +1061,7 @@ void TransportLayerDtls::Handshake() {
                                        << err_msg << ")");
         RecordHandshakeCompletionTelemetry(err_msg);
         mErrorDescription = "DTLS handshake failure";
+        mHasDtlsFailureError = true;
         TL_SET_STATE(TS_ERROR);
         break;
     }
@@ -1190,6 +1194,7 @@ void TransportLayerDtls::GetDecryptedPackets() {
         } else {
           MOZ_MTLOG(ML_NOTICE, LAYER_INFO << "NSS Error " << err);
           mErrorDescription = "DTLS receive failed";
+          mHasDtlsFailureError = true;
           TL_SET_STATE(TS_ERROR);
         }
       }
@@ -1250,6 +1255,7 @@ TransportResult TransportLayerDtls::SendPacket(MediaPacket& packet) {
 
   MOZ_MTLOG(ML_NOTICE, LAYER_INFO << "NSS Error " << err);
   mErrorDescription = "DTLS send failed";
+  mHasDtlsFailureError = true;
   TL_SET_STATE(TS_ERROR);
   return TE_ERROR;
 }

@@ -264,11 +264,10 @@ var tests = [
   },
   function test_highlight_effect(done) {
     function waitForHighlightWithEffect(highlightEl, effect, next, error) {
-      return waitForCondition(
+      return TestUtils.waitForCondition(
         () => highlightEl.getAttribute("active") == effect,
-        next,
         error
-      );
+      ).then(next, reason => ok(false, reason));
     }
     function checkDefaultEffect() {
       is(
@@ -326,11 +325,10 @@ var tests = [
     }
     function checkRandomEffect() {
       function waitForActiveHighlight(highlightEl, next, error) {
-        return waitForCondition(
+        return TestUtils.waitForCondition(
           () => highlightEl.hasAttribute("active"),
-          next,
           error
-        );
+        ).then(next, reason => ok(false, reason));
       }
 
       gContentAPI.hideHighlight();
@@ -732,7 +730,7 @@ var tests = [
 
     Services.prefs.setBoolPref(ENABLED_PREF, false);
     await gContentAPI.setNewtabWallpaper("moon");
-    await waitForConditionPromise(
+    await TestUtils.waitForCondition(
       () => Services.prefs.getStringPref(WALLPAPER_PREF, "") == "moon",
       "Wallpaper pref should be set to 'moon'"
     );

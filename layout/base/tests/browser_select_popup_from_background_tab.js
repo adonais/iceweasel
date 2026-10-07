@@ -4,7 +4,7 @@
 "use strict";
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/base/content/test/forms/head.js",
+  "chrome://mochitests/content/browser/browser/base/content/test/browser-forms/head.js",
   this
 );
 

@@ -164,17 +164,14 @@ static bool SendCacheDomainRequestToAllContentProcesses(
  * TableAccessible. This is necessary in certain cases for the
  * RemoteAccessible cache.
  */
-static bool MustBeGenericAccessible(nsIContent* aContent,
-                                    DocAccessible* aDocument) {
-  if (aContent->IsInNativeAnonymousSubtree() || aContent->IsSVGElement() ||
-      aContent == aDocument->DocumentNode()->GetRootElement()) {
+static bool MustBeGenericAccessible(nsIContent* aContent) {
+  if (aContent->IsInNativeAnonymousSubtree() || aContent->IsSVGElement()) {
     // We should not force create accs for anonymous content.
     // This is an issue for inputs, which have an intermediate
     // container with relevant overflow styling between the input
     // and its internal input content.
     // We should also avoid this for SVG elements (ie. `<foreignobject>`s
     // which have default overflow:hidden styling).
-    // We should avoid this for the document root.
     return false;
   }
   nsIFrame* frame = aContent->GetPrimaryFrame();
@@ -481,7 +478,7 @@ nsAccessibilityService::ListenersChanged(nsIArray* aEventChanges) {
     RefPtr<EventTarget> target;
     change->GetTarget(getter_AddRefs(target));
     nsIContent* content(nsIContent::FromEventTargetOrNull(target));
-    if (!content || !content->IsHTMLElement()) {
+    if (!content || !content->IsElement()) {
       continue;
     }
 
@@ -494,11 +491,7 @@ nsAccessibilityService::ListenersChanged(nsIArray* aEventChanges) {
       DocAccessible* document = GetExistingDocAccessible(ownerDoc);
 
       if (document) {
-        LocalAccessible* acc = document->GetAccessible(content);
-        if (!acc && (content == document->GetContent() ||
-                     content == document->DocumentNode()->GetRootElement())) {
-          acc = document;
-        }
+        LocalAccessible* acc = document->GetAccessibleOrDocument(content);
         if (!acc && content->IsElement() &&
             content->AsElement()->IsHTMLElement(nsGkAtoms::area)) {
           // For area accessibles, we have to recreate the entire image map,
@@ -518,7 +511,8 @@ nsAccessibilityService::ListenersChanged(nsIArray* aEventChanges) {
         } else if (acc) {
           if ((acc->IsHTMLLink() && !acc->AsHTMLLink()->IsLinked()) ||
               (content->IsElement() &&
-               content->AsElement()->IsHTMLElement(nsGkAtoms::a) &&
+               (content->AsElement()->IsHTMLElement(nsGkAtoms::a) ||
+                content->AsElement()->IsMathMLElement(nsGkAtoms::a)) &&
                !acc->IsHTMLLink())) {
             // An HTML link without an href attribute should have a generic
             // role, unless it has a click listener. Since we might have gained
@@ -592,37 +586,12 @@ void nsAccessibilityService::NotifyOfPossibleBoundsChange(
   if (!document) {
     return;
   }
-  LocalAccessible* accessible = document->GetAccessible(aContent);
-  bool shouldQueueUpdateForDocument = false;
-  if (aContent == document->GetContent()) {
-    // When queuing an update for the document's content, two situations are
-    // possible: (1) This content is a different element (like <body>),
-    // and its accessible is the Doc Accessible (2) This content is a different
-    // element (like <body>) and has its own accessible, separate from the Doc
-    // Accessible
-
-    if (!accessible) {
-      // When (1) is true, the call to DocAccessible::GetAccessible() will
-      // return null. Still, the document should reflect the bounds of this
-      // content, so we manually map this update to the document.
-      accessible = document;
-    } else if (accessible != document) {
-      // When (2) is true, there are _two_ updates needed: one for the Doc Acc
-      // and one for the acc this content creates. Because
-      // DocAccessible::GetAccessible() returns the appropriate non-Doc acc, we
-      // only need to worry about queuing an additional update for the doc. The
-      // non-doc acc's update will be queued by the call for `accessible` below.
-      shouldQueueUpdateForDocument = true;
-    }
-  }
+  LocalAccessible* accessible = document->GetAccessibleOrDocument(aContent);
   if (!accessible) {
     return;
   }
   if (IPCAccessibilityActive()) {
     document->QueueCacheUpdate(accessible, CacheDomain::Bounds);
-    if (shouldQueueUpdateForDocument) {
-      document->QueueCacheUpdate(document, CacheDomain::Bounds);
-    }
   }
   MOZ_ASSERT(!aContent->IsText() || accessible->IsTextLeaf(),
              "A DOM Text node should only ever have a TextLeafAccessible");
@@ -643,13 +612,7 @@ void nsAccessibilityService::NotifyOfComputedStyleChange(
     return;
   }
 
-  LocalAccessible* accessible = document->GetAccessible(aContent);
-  if (!accessible && aContent == document->GetContent()) {
-    // DocAccessible::GetAccessible() won't return the document if a root
-    // element like body is passed. In that case we need the doc accessible
-    // itself.
-    accessible = document;
-  }
+  LocalAccessible* accessible = document->GetAccessibleOrDocument(aContent);
 
   if (!accessible && aContent && aContent->HasChildren() &&
       !aContent->IsInNativeAnonymousSubtree()) {
@@ -1319,6 +1282,12 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
 
   if (!aNode->IsContent()) return nullptr;
 
+  if (document->IsRootContent(aNode)) {
+    // The root element is represented by the DocAccessible. Don't create an
+    // additional Accessible for it.
+    return nullptr;
+  }
+
   nsIContent* content = aNode->AsContent();
   if (aria::IsValidARIAHidden(content)) {
     if (aIsSubtreeHidden) {
@@ -1337,17 +1306,26 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     if (!frame->StyleVisibility()->IsVisible() || frame->StyleUI()->IsInert()) {
       return nullptr;
     }
-  } else if (nsCoreUtils::CanCreateAccessibleWithoutFrame(content)) {
+  } else if (nsCoreUtils::CanCreateAccessibleWithoutFrame(content,
+                                                          aIsSubtreeHidden)) {
     // display:contents element doesn't have a frame, but retains the
     // semantics. All its children are unaffected.
-    const nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(content->AsElement());
-    RefPtr<LocalAccessible> newAcc = MaybeCreateSpecificARIAAccessible(
-        roleMapEntry, aContext, content, document);
+    const nsRoleMapEntry* roleMapEntry = nullptr;
+    RefPtr<LocalAccessible> newAcc;
     const MarkupMapInfo* markupMap = nullptr;
-    if (!newAcc) {
-      markupMap = GetMarkupMapInfoFor(content);
-      if (markupMap && markupMap->new_func) {
-        newAcc = markupMap->new_func(content->AsElement(), aContext);
+    // The body's role (when it exists) is forwarded to the doc accessible.
+    // Avoid making decisions based on the role when we're dealing with the
+    // body, and ensure roleMapEntry stays null until we bind the body's
+    // acc to the document.
+    if (!document->IsBodyElement(content)) {
+      roleMapEntry = aria::GetRoleMap(content->AsElement());
+      newAcc = MaybeCreateSpecificARIAAccessible(roleMapEntry, aContext,
+                                                 content, document);
+      if (!newAcc) {
+        markupMap = GetMarkupMapInfoFor(content);
+        if (markupMap && markupMap->new_func) {
+          newAcc = markupMap->new_func(content->AsElement(), aContext);
+        }
       }
     }
 
@@ -1385,9 +1363,13 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     }
     return newAcc;
   } else {
-    if (aIsSubtreeHidden) {
-      *aIsSubtreeHidden = true;
-    }
+    // No frame, and this content can't get an Accessible without one.
+    // CanCreateAccessibleWithoutFrame() has already set aIsSubtreeHidden
+    // appropriately: true if nothing in this subtree could ever be exposed
+    // (e.g. display: none or content-visibility: hidden), or left as-is (false)
+    // if a descendant might still be exposed despite this element not being
+    // creatable (e.g. an inert ancestor with a descendant which is not inert,
+    // such as an open modal dialog).
     return nullptr;
   }
 
@@ -1498,6 +1480,21 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     return newAcc;
   }
 
+  if (document->IsBodyElement(content)) {
+    // If the body element exposes any properties that would force acc
+    // creation, create an accessible for it.
+    if (MustBeGenericAccessible(content) ||
+        MustBeAccessible(content, document) ||
+        nsCoreUtils::HasClickListener(content)) {
+      newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
+      // Any role exposed on this acc should be forwarded to the doc
+      // accessible, so don't pass a role map entry here.
+      document->BindToDocument(newAcc, nullptr);
+      return newAcc;
+    }
+    return nullptr;
+  }
+
   const nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(content->AsElement());
 
   if (roleMapEntry && (roleMapEntry->Is(nsGkAtoms::presentation) ||
@@ -1507,7 +1504,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       // or it is referenced by an ARIA relationship, then treat
       // role="presentation" on the element as if the role is not there.
       roleMapEntry = nullptr;
-    } else if (MustBeGenericAccessible(content, document)) {
+    } else if (MustBeGenericAccessible(content)) {
       // Clear roleMapEntry so that we use the generic role specified below.
       // Otherwise, we'd expose roles::NOTHING as specified for presentation in
       // ARIAMap.
@@ -1647,10 +1644,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
 
   // If no accessible, see if we need to create a generic accessible because
   // of some property that makes this object interesting
-  // We don't do this for <body>, <html>, <window>, <dialog> etc. which
-  // correspond to the doc accessible and will be created in any case
-  if (!newAcc && !content->IsHTMLElement(nsGkAtoms::body) &&
-      content->GetParent() &&
+  if (!newAcc && content->GetParent() &&
       (roleMapEntry || MustBeAccessible(content, document) ||
        (content->IsHTMLElement() && nsCoreUtils::HasClickListener(content)))) {
     // This content is focusable or has an interesting dynamic content
@@ -1661,7 +1655,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     // objects. Must be a HyperTextAccessible because children might include
     // TextLeafAccessibles.
     newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
-  } else if (!newAcc && MustBeGenericAccessible(content, document)) {
+  } else if (!newAcc && MustBeGenericAccessible(content)) {
     newAcc = MakeRefPtr<EnumRoleHyperTextAccessible<roles::TEXT_CONTAINER>>(
         content, document);
   }

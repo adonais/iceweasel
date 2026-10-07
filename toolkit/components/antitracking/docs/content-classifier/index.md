@@ -8,7 +8,9 @@ its safebrowsing-format hash tables: same set of features (trackers, social
 trackers, fingerprinters, cryptominers, email trackers, plus
 allow-list/exception features and dedicated `test_block` / `test_annotate`
 features), but driven by full adblock syntax rules evaluated by a Rust
-engine wrapping the [`adblock`](https://crates.io/crates/adblock) crate.
+engine wrapping the in-tree `etp_engine` crate
+(`toolkit/components/content-classifier/etp_engine/`), a fork of
+[brave/adblock-rust](https://github.com/brave/adblock-rust).
 
 This page is a reference for how the service is wired up internally: where
 list bytes live, how they get turned into engines, how a channel
@@ -23,7 +25,7 @@ depends on.
 | `nsIContentClassifierRemoteSettingsClient.idl` | JS-side contract: `init`, `shutdown`, `getListBytes(listName)`. |
 | `ContentClassifierService.{h,cpp}` | The singleton C++ service. Owns the feature table, the per-feature engine map, the four mode-keyed active-engine lists, the mutex, pref/Nimbus observers, async-shutdown blocker, and the build thread. |
 | `ContentClassifierRemoteSettingsClient.sys.mjs` | Wraps the `content-classifier-lists` Remote Settings collection. Owns the on-disk attachment cache, registers a sync listener, and pulls bytes on demand. |
-| `content_classifier_engine/` (Rust crate) | Wraps the `adblock` crate (v0.12.1, `full-regex-handling` + `single-thread` features) behind a small FFI: `engine_from_rules`, `check_network_request_preparsed`, `engine_destroy`, plus init/teardown for an `nsIEffectiveTLDService`-backed domain resolver. |
+| `content_classifier_engine/` (Rust crate) | Wraps the `etp_engine` crate (`full-regex-handling` + `single-thread` features) behind a small FFI: `engine_from_rules`, `check_network_request_preparsed`, `engine_destroy`, plus init/teardown for an `nsIEffectiveTLDService`-backed domain resolver. |
 | `ContentClassifierEngine.{h,cpp}` | Thread-safe refcounted C++ wrapper around the Rust FFI engine. Extracts request metadata from an `nsIChannel`-derived `ContentClassifierRequest` and calls into Rust. |
 | `components.conf`, `moz.build` | Component registration and build setup (cbindgen generates `content_classifier_ffi.h`). |
 

@@ -29,11 +29,11 @@ wasmRunWithDebugger(
         assertEq(error, undefined);
         assertEq(offsets.length, 4);
         offsets.forEach(offset => {
-            var loc = wasmScript.getOffsetLocation(offset);
-            assertEq(loc.isEntryPoint, true);
+            var loc = wasmScript.getOffsetMetadata(offset);
+            assertEq(loc.isBreakpoint, true);
             assertEq(loc.lineNumber > 0, true);
             assertEq(loc.columnNumber > 0, true);
-            assertEq(wasmScript.getLineOffsets(loc.lineNumber).length, 1);
+            assertEq(wasmScript.getPossibleBreakpointOffsets({ line: loc.lineNumber }).length, 1);
         });
     }
 );

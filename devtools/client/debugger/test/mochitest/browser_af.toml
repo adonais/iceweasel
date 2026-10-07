@@ -23,12 +23,6 @@ prefs = [
 ["browser_dbg-audiocontext.js"]
 
 ["browser_dbg-backgroundtask-debugging.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1767707
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1767707
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1937229
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1937229, Bug 2028047
-]
 
 ["browser_dbg-bfcache.js"]
 
@@ -37,9 +31,6 @@ skip-if = [
 ["browser_dbg-blackbox-original.js"]
 
 ["browser_dbg-blackbox.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan",
-]
 
 ["browser_dbg-breaking-from-console.js"]
 
@@ -62,9 +53,6 @@ fail-if = [
 ["browser_dbg-breakpoints-cond-functional.js"]
 
 ["browser_dbg-breakpoints-cond-shortcut.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-breakpoints-cond-source-maps.js"]
 
@@ -74,9 +62,6 @@ fail-if = [
 ]
 
 ["browser_dbg-breakpoints-debugger-statement.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-breakpoints-duplicate-functions.js"]
 
@@ -108,16 +93,8 @@ fail-if = [
 ]
 
 ["browser_dbg-browser-toolbox-unselected-pause.js"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1937315
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1937315, Bug 2028047
-]
 
 ["browser_dbg-browser-toolbox-workers.js"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1767721
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1767721, Bug 2028047
-]
 
 ["browser_dbg-call-stack.js"]
 
@@ -126,18 +103,12 @@ skip-if = [
 ["browser_dbg-console-async.js"]
 
 ["browser_dbg-console-eval.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-console-link.js"]
 
 ["browser_dbg-console-map-bindings.js"]
 
 ["browser_dbg-console.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-content-script-sources.js"]
 
@@ -147,28 +118,16 @@ fail-if = [
 ]
 
 ["browser_dbg-continue-to-here.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-custom-formatters.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-debug-line.js"]
 
 ["browser_dbg-debugger-buttons.js"]
 
 ["browser_dbg-dom-mutation-breakpoints-fission.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-dom-mutation-breakpoints.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-eager-eval-skip-pause.js"]
 
@@ -190,9 +149,6 @@ fail-if = [
 ["browser_dbg-editor-select.js"]
 
 ["browser_dbg-ember-original-variable-mapping-notifications.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-es-module-worker.js"]
 
@@ -203,39 +159,20 @@ fail-if = [
 ["browser_dbg-event-breakpoints-fission.js"]
 
 ["browser_dbg-event-breakpoints-unsupported.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-event-breakpoints.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1959062
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1959062, Bug 2028047
-]
 
 ["browser_dbg-event-handler.js"]
 
 ["browser_dbg-expressions-error.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-expressions-focus.js"]
 
 ["browser_dbg-expressions-thread.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-expressions-watch.js"]
 
 ["browser_dbg-expressions.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-extension-inspectedWindow-debugger-statement.js"]
 

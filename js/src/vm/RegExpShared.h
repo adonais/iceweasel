@@ -71,12 +71,27 @@ class RegExpShared
   friend class js::gc::CellAllocator;
 
  public:
-  enum class Kind : uint32_t { Unparsed, Atom, RegExp };
+  enum class Kind : uint8_t { Unparsed, Atom, RegExp };
   enum class CodeKind { Bytecode, Jitcode, Any };
+  enum class InternalFlag {
+    HasQuickCheck = 1 << 0,
+  };
 
   using ByteCode = js::irregexp::ByteArrayData;
   using JitCodeTable = js::irregexp::ByteArray;
   using JitCodeTables = Vector<JitCodeTable, 0, SystemAllocPolicy>;
+
+  // The quickcheck bitset contains one bit per Latin1 character, which is
+  // set if an input string starting with that character can be rejected.
+  static constexpr uint32_t QuickCheckBitsetChars = 256;
+  static constexpr uint32_t QuickCheckBitsetBitsPerWord = 32;
+  static constexpr uint32_t QuickCheckBitsetWords =
+      QuickCheckBitsetChars / QuickCheckBitsetBitsPerWord;
+  static constexpr std::pair<uint32_t, uint32_t> quickCheckBitsetBit(
+      uint8_t c) {
+    return {c / QuickCheckBitsetBitsPerWord,
+            uint32_t{1} << (c % QuickCheckBitsetBitsPerWord)};
+  }
 
  private:
   friend class RegExpStatics;
@@ -110,12 +125,27 @@ class RegExpShared
 
  private:
   RegExpCompilation compilationArray[2];
+  GCPtr<JSAtom*> patternAtom_;
 
   uint32_t pairCount_;
   JS::RegExpFlags flags;
-
+  uint8_t internalFlags_ = 0;
   RegExpShared::Kind kind_ = Kind::Unparsed;
-  GCPtr<JSAtom*> patternAtom_;
+
+  // While compiling a regexp, irregexp may be able to generate data that
+  // allows us to quickly rule out a string input without entering the
+  // engine. Given a Latin1 input `chars`, We can immediately fail if:
+  // a) (chars[0:3] & quickCheckMask) != quickCheckValue, or
+  // b) quickCheckRejectBitset[chars[0]] == 1
+  // The HasQuickCheck internal flag is set if any data is present.
+  // Note that this flag is only an optimization. If the compiler doesn't
+  // produce any quick-check data, then the initial zero values will never
+  // reject anything: (x & 0) == 0 for all x, and the bitset only rejects
+  // if it finds a non-zero bit.
+  uint32_t quickCheckMask_ = 0;
+  uint32_t quickCheckValue_ = 0;
+  uint32_t quickCheckRejectBitset_[QuickCheckBitsetWords] = {};
+
   uint32_t maxRegisters_ = 0;
   uint32_t ticks_ = 0;
 
@@ -214,6 +244,35 @@ class RegExpShared
     maxRegisters_ = std::max(maxRegisters_, numRegisters);
   }
 
+  bool hasQuickCheck() const {
+    return internalFlags_ & static_cast<uint8_t>(InternalFlag::HasQuickCheck);
+  }
+
+  uint32_t quickCheckMask() const { return quickCheckMask_; }
+  void setQuickCheckMask(uint32_t value) { quickCheckMask_ = value; }
+
+  uint32_t quickCheckValue() const { return quickCheckValue_; }
+  void setQuickCheckValue(uint32_t value) { quickCheckValue_ = value; }
+
+  void setQuickCheckRejectBitsetWord(uint32_t index, uint32_t value) {
+    MOZ_ASSERT(index < QuickCheckBitsetWords);
+    quickCheckRejectBitset_[index] = value;
+  }
+
+  void clearQuickCheck() {
+    quickCheckMask_ = 0;
+    quickCheckValue_ = 0;
+    for (uint32_t& word : quickCheckRejectBitset_) {
+      word = 0;
+    }
+    internalFlags_ &= ~static_cast<uint8_t>(InternalFlag::HasQuickCheck);
+  }
+
+  // Return true iff the quick-check filters indicate that no match can begin at
+  // chars[index].
+  bool quickCheckRejects(const JS::Latin1Char* chars, size_t length,
+                         size_t index) const;
+
   uint32_t numNamedCaptures() const { return numNamedCaptures_; }
   uint32_t numDistinctNamedCaptures() const {
     return numDistinctNamedCaptures_;
@@ -248,6 +307,9 @@ class RegExpShared
 
   JS::RegExpFlags getFlags() const { return flags; }
 
+  uint8_t internalFlags() const { return internalFlags_; }
+  void setInternalFlags(uint8_t value) { internalFlags_ = value; }
+
   bool hasIndices() const { return flags.hasIndices(); }
   bool global() const { return flags.global(); }
   bool ignoreCase() const { return flags.ignoreCase(); }
@@ -279,6 +341,22 @@ class RegExpShared
   }
 
   static size_t offsetOfKind() { return offsetof(RegExpShared, kind_); }
+
+  static size_t offsetOfQuickCheckMask() {
+    return offsetof(RegExpShared, quickCheckMask_);
+  }
+
+  static size_t offsetOfQuickCheckValue() {
+    return offsetof(RegExpShared, quickCheckValue_);
+  }
+
+  static size_t offsetOfQuickCheckRejectBitset() {
+    return offsetof(RegExpShared, quickCheckRejectBitset_);
+  }
+
+  static size_t offsetOfInternalFlags() {
+    return offsetof(RegExpShared, internalFlags_);
+  }
 
   static size_t offsetOfJitCode(bool latin1) {
     return offsetof(RegExpShared, compilationArray) +

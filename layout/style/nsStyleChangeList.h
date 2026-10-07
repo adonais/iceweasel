@@ -12,6 +12,7 @@
 
 #include "nsCOMPtr.h"
 #include "nsChangeHint.h"
+#include "nsIContent.h"
 #include "nsTArray.h"
 
 class nsIFrame;

@@ -221,18 +221,31 @@ addAccessibleTask(
     await untilCacheIs(() => link1Acc.actionCount, 0, "link has no actions");
     is(link1Acc.firstChild.actionCount, 0, "linkable child's actions removed");
 
-    // Add a click handler to the body. Ensure it propagates to descendants.
+    // Add a click handler to the body. The body gets an acc of its own, so
+    // the action belongs to that acc rather than to the document. Ensure it
+    // still propagates to descendants.
+    let e = waitForEvent(EVENT_REORDER, docAcc);
     await invokeContentTask(browser, [], () => {
       content.document.body.onclick = () => {};
     });
-    await untilCacheIs(() => docAcc.actionCount, 1, "Doc has 1 action");
+    await e;
+    await untilCacheIs(
+      () => findAccessibleChildByID(docAcc, "link1")?.actionCount,
+      1,
+      "link has clickAncestor action"
+    );
+    is(docAcc.actionCount, 0, "Doc has no actions");
     await _testActions("link1", ["clickAncestor"]);
 
     await invokeContentTask(browser, [], () => {
       content.document.body.onclick = null;
     });
-    await untilCacheIs(() => docAcc.actionCount, 0, "Doc has no actions");
-    is(link1Acc.actionCount, 0, "link has no actions");
+    await untilCacheIs(
+      () => findAccessibleChildByID(docAcc, "link1")?.actionCount,
+      0,
+      "link has no actions"
+    );
+    is(docAcc.actionCount, 0, "Doc still has no actions");
 
     // Add a click handler to the root element. Ensure it propagates to
     // descendants.
@@ -307,4 +320,34 @@ addAccessibleTask(
     iframe: false, // Bug 1796846
     remoteIframe: false, // Bug 1796846
   }
+);
+
+/**
+ * Verify a click listener exposed on the body element causes a body accessible
+ * to be created. Also verify actions belonging to the body and document are
+ * uniquely exposed on the accs they originate on.
+ */
+addAccessibleTask(
+  `hello`,
+  async function testBodyAndDocActionsAreSeparate(browser, docAcc) {
+    let bodyAcc = findAccessibleChildByID(docAcc, DEFAULT_CONTENT_DOC_BODY_ID);
+    ok(!bodyAcc, "The body doesn't have an acc yet");
+    is(docAcc.actionCount, 0, "Doc has no actions");
+    let e = waitForEvent(EVENT_SHOW, DEFAULT_CONTENT_DOC_BODY_ID);
+    await invokeContentTask(browser, [], () => {
+      content.document.body.onclick = () => {};
+    });
+    await e;
+
+    bodyAcc = findAccessibleChildByID(docAcc, DEFAULT_CONTENT_DOC_BODY_ID);
+    await untilCacheIs(() => bodyAcc.actionCount, 1, "Body has 1 action");
+    is(docAcc.actionCount, 0, "Doc still has no actions");
+
+    await invokeContentTask(browser, [], () => {
+      content.document.documentElement.onclick = () => {};
+    });
+    await untilCacheIs(() => docAcc.actionCount, 1, "Doc has 1 action");
+    is(bodyAcc.actionCount, 1, "Body action count is unchanged");
+  },
+  { topLevel: true, chrome: true }
 );

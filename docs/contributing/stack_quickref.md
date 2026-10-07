@@ -27,6 +27,8 @@ For the overall quick reference guide, see the {ref}`Firefox Contributors Quick 
 
 For background on why Firefox uses stacks and how the Phabricator workflow differs from GitHub, see {ref}`Phabricator vs GitHub`.
 
+For how to shape a series so that each patch reviews well - what to front-load, where to draw the commit boundaries, when to split across bugs - see {ref}`Making a patch series reviewable`.
+
 ## Visualize the stack
 
 ```shell

@@ -392,6 +392,57 @@ if target_platform() == "WINNT":
             self.assertEqual(len(hgserver), 1)
             self.assertEqual(hgserver[0].split("=")[1], "http://example.com/repo")
 
+        @patch("subprocess.call")
+        @patch("subprocess.Popen")
+        @patch.dict("buildconfig.substs._dict", {"PDBSTR": "pdbstr"})
+        def test_pdb_next_to_binary(self, mock_Popen, mock_call):
+            """
+            Test that pdbstr is run against the PDB next to the binary rather
+            than against one in the current directory.
+            """
+            symbolpath = os.path.join(self.test_dir, "symbols")
+            os.makedirs(symbolpath)
+            srcdir = os.path.join(self.test_dir, "srcdir")
+            os.makedirs(os.path.join(srcdir, ".hg"))
+            sourcefile = os.path.join(srcdir, "foo.c")
+            test_files = add_extension([os.path.join("target", "release", "foo")])
+            self.add_test_files(test_files)
+            mock_Popen.return_value.stdout = iter([
+                f"MODULE os x86 {'X' * 33} foo.pdb",
+                f"FILE 0 {sourcefile}",
+                "PUBLIC xyz 123",
+            ])
+            mock_Popen.return_value.wait.return_value = 0
+            mock_Popen.return_value.communicate.side_effect = [
+                ("abcd1234", ""),
+                ("http://example.com/repo", ""),
+            ]
+            pdbstr_calls = []
+
+            def mock_pdbstr(args, cwd="", **kwargs):
+                pdbstr_calls.append((args, cwd))
+                return 0
+
+            mock_call.side_effect = mock_pdbstr
+            d = symbolstore.GetPlatformSpecificDumper(
+                dump_syms="dump_syms",
+                symbol_path=symbolpath,
+                srcdirs=[srcdir],
+                vcsinfo=True,
+                srcsrv=True,
+                copy_debug=True,
+            )
+            d.Process(os.path.join(self.test_dir, test_files[0]))
+            self.assertEqual(len(pdbstr_calls), 1)
+            args, cwd = pdbstr_calls[0]
+            pdb_arg = next(a[3:] for a in args if a.startswith("-p:"))
+            self.assertEqual(
+                os.path.normpath(os.path.join(cwd, pdb_arg)),
+                os.path.normpath(
+                    os.path.join(self.test_dir, "target", "release", "foo.pdb")
+                ),
+            )
+
 
 class TestInstallManifest(HelperMixin, unittest.TestCase):
     def setUp(self):

@@ -84,6 +84,8 @@ support-files = [
 
 ["test_getRuleIndex.html"]
 
+["test_getSubstitutedValue.html"]
+
 ["test_get_all_style_sheets.html"]
 
 ["test_isUsedColorSchemeDark.html"]
@@ -110,6 +112,8 @@ skip-if = [
 ["test_selectormatcheselement.html"]
 
 ["test_selectormatcheselement_host.html"]
+
+["test_selectormatcheselement_part.html"]
 
 ["test_selectormatcheselement_scope.html"]
 

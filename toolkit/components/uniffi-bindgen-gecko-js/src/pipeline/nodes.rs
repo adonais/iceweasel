@@ -2,64 +2,272 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use indexmap::{IndexMap, IndexSet};
-
-use anyhow::{bail, Result};
+use super::*;
+pub use crate::{filters, ConcurrencyMode};
 use askama::Template;
-use uniffi_bindgen::to_askama_error;
-use uniffi_pipeline::Node;
+use uniffi_bindgen::pipeline::general;
 
-use crate::{ConcurrencyMode, Config};
+uniffi_pipeline::use_prev_node!(general::AsyncData);
+uniffi_pipeline::use_prev_node!(general::EnumShape);
+uniffi_pipeline::use_prev_node!(general::FieldsKind);
+uniffi_pipeline::use_prev_node!(general::FfiFunctionKind);
+uniffi_pipeline::use_prev_node!(general::FfiFunctionTypeName);
+uniffi_pipeline::use_prev_node!(general::FfiStructName);
+uniffi_pipeline::use_prev_node!(general::FfiType);
+uniffi_pipeline::use_prev_node!(general::HandleKind);
+uniffi_pipeline::use_prev_node!(general::ObjectImpl);
+uniffi_pipeline::use_prev_node!(general::Radix);
+uniffi_pipeline::use_prev_node!(general::RustFfiFunctionName);
+uniffi_pipeline::use_prev_node!(general::TraitKind);
+uniffi_pipeline::use_prev_node!(general::Type);
 
-/// Initial IR, this stores the metadata and other data
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::Root))]
+#[map_node(root::map_root)]
 pub struct Root {
-    /// In library mode, we get the name of the library file for free.
-    pub cdylib: Option<String>,
-    pub namespaces: IndexMap<String, Namespace>,
-    pub cpp_scaffolding: CppScaffolding,
+    pub lib: LibraryRoot,
+    pub fixtures_lib: LibraryRoot,
     pub module_docs: Vec<ApiModuleDocs>,
 }
 
-#[derive(Debug, Clone, Node, Template)]
-#[template(path = "cpp/UniFFIScaffolding.cpp", escape = "none")]
-pub struct CppScaffolding {
-    pub ffi_definitions: CombinedItems<FfiDefinition>,
-    pub scaffolding_calls: CombinedItems<ScaffoldingCall>,
-    pub pointer_types: CombinedItems<PointerType>,
-    pub callback_return_handler_classes: CombinedItems<CallbackReturnHandlerClass>,
-    pub callback_interfaces: CombinedItems<CppCallbackInterface>,
+/// Root node for a single library
+///
+/// We create one of these for the fixture crates and one for non-fixture crates
+#[derive(Debug, Clone, Node)]
+pub struct LibraryRoot {
+    // Is this for the fixtures library?
+    pub is_fixtures: bool,
+    // Namespaces for Rust crates
+    pub namespaces: Vec<Namespace>,
+    pub scaffolding_calls: Vec<ScaffoldingCall>,
+    pub pointer_types: Vec<PointerType>,
+    pub callback_interfaces: Vec<CppCallbackInterface>,
+    // FFI definitions to define for this library
+    //
+    // Note: for the fixtures library this will exclude FFI definitions that are also in the
+    // regular library to avoid duplicate definitions.
+    pub ffi_definitions: Vec<FfiDefinition>,
+    // Callback return handler classes to define for this library
+    //
+    // Note: for the fixtures library this will exclude FFI definitions that are also in the
+    // regular library to avoid duplicate definitions.
+    pub cpp_callback_return_handlers: Vec<CppCallbackReturnHandlerClass>,
 }
 
-// A Scaffolding call implemented in the C++ code
-#[derive(Debug, Clone, Node)]
-pub struct ScaffoldingCall {
-    pub id: u64,
-    pub ffi_func: FfiFunction,
-    pub handler_class_name: String,
-    pub arguments: Vec<FfiValueArgument>,
-    pub return_ty: Option<FfiValueReturnType>,
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::BuiltinTypes))]
+pub struct BuiltinTypes {
+    pub u8: TypeNode,
+    pub i8: TypeNode,
+    pub u16: TypeNode,
+    pub i16: TypeNode,
+    pub u32: TypeNode,
+    pub i32: TypeNode,
+    pub u64: TypeNode,
+    pub i64: TypeNode,
+    pub f32: TypeNode,
+    pub f64: TypeNode,
+    pub string: TypeNode,
 }
 
-/// FFI argument that's handled by one of the `FfiValue*` classes in the C++ code
-#[derive(Debug, Clone, Node)]
-pub struct FfiValueArgument {
+/// Crate which exposes a uniffi api.
+#[derive(Debug, Clone, Node, MapNode, Template)]
+#[map_node(from(general::Namespace))]
+#[map_node(namespaces::map_namespace)]
+#[template(path = "js/Module.sys.mjs", escape = "none")]
+pub struct Namespace {
     pub name: String,
-    /// C++ class field name
-    pub field_name: String,
-    /// C++ function variable name
-    pub var_name: String,
-    pub ffi_value_class: String,
-    /// Is this argument for a method receiver?
-    pub receiver: bool,
-    pub ty: FfiTypeNode,
+    pub docstring: Option<String>,
+    pub functions: Vec<Function>,
+    pub type_definitions: Vec<TypeDefinition>,
+    pub builtin_types: BuiltinTypes,
+    pub imports: Vec<String>,
 }
 
-/// FFI return value that's handled by one of the `FfiValue*` classes in the C++ code
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::TypeDefinition))]
+pub enum TypeDefinition {
+    Interface(Interface),
+    CallbackInterface(CallbackInterface),
+    Record(Record),
+    Enum(Enum),
+    Custom(CustomType),
+    Simple(TypeNode),
+    Optional(OptionalType),
+    Sequence(SequenceType),
+    Map(MapType),
+    Set(SetType),
+    Box(BoxedType),
+    External(ExternalType),
+}
+
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::Record))]
+#[map_node(records::map_record)]
+pub struct Record {
+    pub name: String,
+    pub fields: Vec<Field>,
+    pub fields_kind: FieldsKind,
+    pub docstring: Option<String>,
+    pub js_docstring: String,
+    pub self_type: TypeNode,
+}
+
 #[derive(Debug, Clone, Node)]
-pub struct FfiValueReturnType {
-    pub ffi_value_class: String,
-    pub ty: FfiTypeNode,
+pub struct Field {
+    pub name: String,
+    pub ty: TypeNode,
+    pub default: Option<DefaultValueNode>,
+    pub docstring: Option<String>,
+    pub js_docstring: String,
+}
+
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::Enum))]
+#[map_node(enums::map_enum)]
+pub struct Enum {
+    pub name: String,
+    pub is_flat: bool,
+    pub shape: EnumShape,
+    pub variants: Vec<Variant>,
+    pub discr_type: TypeNode,
+    pub js_docstring: String,
+    pub docstring: Option<String>,
+    pub self_type: TypeNode,
+}
+
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::Variant))]
+#[map_node(enums::map_variant)]
+pub struct Variant {
+    pub name: String,
+    pub discr: LiteralNode,
+    pub fields: Vec<Field>,
+    pub fields_kind: FieldsKind,
+    pub docstring: Option<String>,
+    pub js_docstring: String,
+}
+
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::Interface))]
+#[map_node(interfaces::map_interface)]
+pub struct Interface {
+    pub name: String,
+    pub pointer_id: u64,
+    pub js_class_name: String,
+    pub interface_base_class: InterfaceBaseClass,
+    pub constructors: Vec<Constructor>,
+    pub methods: Vec<Method>,
+    pub uniffi_trait_methods: UniffiTraitMethods,
+    pub trait_impls: Vec<ObjectTraitImpl>,
+    pub imp: ObjectImpl,
+    pub docstring: Option<String>,
+    pub js_docstring: String,
+    pub self_type: TypeNode,
+    pub vtable: Option<VTable>,
+    pub ffi_func_clone: RustFfiFunctionName,
+    pub ffi_func_free: RustFfiFunctionName,
+}
+
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::CallbackInterface))]
+#[map_node(callback_interfaces::map_callback_interface)]
+pub struct CallbackInterface {
+    pub name: String,
+    pub interface_base_class: InterfaceBaseClass,
+    pub vtable: VTable,
+    pub docstring: Option<String>,
+    pub js_docstring: String,
+    pub self_type: TypeNode,
+}
+
+/// Javascript interface class.
+///
+/// This is an abstract base class that the interface implements.
+/// For trait/callback interfaces this is what the JS code should extend.
+#[derive(Debug, Clone, Node)]
+pub struct InterfaceBaseClass {
+    pub name: String,
+    pub methods: Vec<Method>,
+    pub docstring: Option<String>,
+    pub js_docstring: String,
+}
+
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::CustomType))]
+#[map_node(custom::map_custom_type)]
+pub struct CustomType {
+    pub name: String,
+    pub builtin: TypeNode,
+    pub docstring: Option<String>,
+    pub js_docstring: String,
+    pub self_type: TypeNode,
+    pub type_name: Option<String>,
+    pub lift_expr: Option<String>,
+    pub lower_expr: Option<String>,
+}
+
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::OptionalType))]
+pub struct OptionalType {
+    pub inner: TypeNode,
+    pub self_type: TypeNode,
+}
+
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::SequenceType))]
+pub struct SequenceType {
+    pub inner: TypeNode,
+    pub self_type: TypeNode,
+}
+
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::MapType))]
+pub struct MapType {
+    pub key: TypeNode,
+    pub value: TypeNode,
+    pub self_type: TypeNode,
+}
+
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::SetType))]
+pub struct SetType {
+    pub inner: TypeNode,
+    pub self_type: TypeNode,
+}
+
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::BoxedType))]
+pub struct BoxedType {
+    pub inner: TypeNode,
+    pub self_type: TypeNode,
+}
+
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::ExternalType))]
+#[map_node(types::map_external_type)]
+pub struct ExternalType {
+    pub namespace: String,
+    pub name: String,
+    pub self_type: TypeNode,
+}
+
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::UniffiTraitMethods))]
+pub struct UniffiTraitMethods {
+    pub debug_fmt: Option<Method>,
+    pub display_fmt: Option<Method>,
+    pub eq_eq: Option<Method>,
+    pub eq_ne: Option<Method>,
+    pub hash_hash: Option<Method>,
+    pub ord_cmp: Option<Method>,
+}
+
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::ObjectTraitImpl))]
+pub struct ObjectTraitImpl {
+    pub ty: TypeNode,
+    pub trait_ty: TypeNode,
 }
 
 // A `PointerType` const to define in the C++ code
@@ -78,6 +286,15 @@ pub struct PointerType {
 pub struct PointerTypeTraitInterfaceInfo {
     pub free_fn: String,
     pub clone_fn: String,
+}
+
+// A Scaffolding call implemented in the C++ code
+#[derive(Debug, Clone, Node)]
+pub struct ScaffoldingCall {
+    pub id: u64,
+    pub ffi_func: FfiFunction,
+    pub arguments: Vec<Argument>,
+    pub return_ty: Option<ReturnType>,
 }
 
 // Used to generate the C++ callback interface code
@@ -118,9 +335,8 @@ pub struct CppCallbackInterfaceMethod {
     pub return_handler_class_name: String,
     /// Name of the subclass
     pub async_handler_class_name: String,
-    pub ffi_func: FfiFunctionType,
-    pub arguments: Vec<FfiValueArgument>,
-    pub return_ty: Option<FfiValueReturnType>,
+    pub arguments: Vec<Argument>,
+    pub return_ty: Option<ReturnType>,
     pub out_pointer_ty: FfiTypeNode,
 }
 
@@ -133,112 +349,66 @@ pub struct CppCallbackInterfaceMethod {
 pub enum CallbackMethodKind {
     Sync,
     FireAndForget,
-    Async(CppCallbackInterfaceMethodAsyncData),
+    Async(AsyncData),
 }
 
 #[derive(Debug, Clone, Node)]
-pub struct CppCallbackInterfaceMethodAsyncData {
-    pub complete_callback_type_name: String,
-    pub result_type_name: String,
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct CallbackReturnHandlerClass {
+pub struct CppCallbackReturnHandlerClass {
     pub name: String,
-    pub return_ty: Option<FfiValueReturnType>,
-    pub return_type_name: String,
+    pub return_ty: Option<ReturnType>,
 }
 
-/// Base class for an async callback method handler
-///
-/// This derives from `AsyncCallbackMethodHandlerBase` and adds support for returning data to
-/// Rust.  The final callback method handler derives from this and adds support for argument
-/// handling.
-///
-/// Splitting the classes this way reduces memory usage.  We only need to create one of these base
-/// classes for each return type rather than one per method.
-#[derive(Debug, Clone, Node)]
-pub struct AsyncCallbackMethodHandlerBase {
-    pub class_name: String,
-    pub complete_callback_type_name: String,
-    pub result_type_name: String,
-    pub return_type: Option<FfiValueReturnType>,
-}
-
-#[derive(Debug, Clone, Node, Template)]
-#[template(path = "js/Module.sys.mjs", escape = "none")]
-pub struct Namespace {
-    pub name: String,
-    pub config: Config,
-    pub js_name: String,
-    pub js_filename: String,
-    pub fixture: bool,
-    pub crate_name: String,
-    pub docstring: Option<String>,
-    pub js_docstring: String,
-    pub functions: Vec<Function>,
-    pub type_definitions: Vec<TypeDefinition>,
-    pub ffi_definitions: IndexSet<FfiDefinition>,
-    pub checksums: Vec<Checksum>,
-    pub ffi_rustbuffer_alloc: RustFfiFunctionName,
-    pub ffi_rustbuffer_from_bytes: RustFfiFunctionName,
-    pub ffi_rustbuffer_free: RustFfiFunctionName,
-    pub ffi_rustbuffer_reserve: RustFfiFunctionName,
-    pub ffi_uniffi_contract_version: RustFfiFunctionName,
-    pub string_type_node: TypeNode,
-    pub has_callback_interface: bool,
-    pub imports: Vec<String>,
-}
-
-#[derive(Debug, Clone, Node)]
-pub enum TypeDefinition {
-    Interface(Interface),
-    CallbackInterface(CallbackInterface),
-    Record(Record),
-    Enum(Enum),
-    Custom(CustomType),
-    Simple(TypeNode),
-    Optional(OptionalType),
-    Sequence(SequenceType),
-    Map(MapType),
-    External(ExternalType),
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct NamespaceMetadata {
-    pub crate_name: String,
-    pub name: String,
-}
-
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::Function))]
+#[map_node(callables::map_function)]
 pub struct Function {
-    pub name: String,
     pub callable: Callable,
     pub docstring: Option<String>,
     pub js_docstring: String,
 }
 
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::Constructor))]
+#[map_node(callables::map_constructor)]
 pub struct Constructor {
-    pub name: String,
-    pub self_name: String,
+    pub callable: Callable,
+    pub docstring: Option<String>,
+    pub js_docstring: String,
+}
+
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::Method))]
+#[map_node(callables::map_method)]
+pub struct Method {
     pub callable: Callable,
     pub docstring: Option<String>,
     pub js_docstring: String,
 }
 
 #[derive(Debug, Clone, Node)]
-pub struct Method {
-    pub name: String,
-    pub self_name: String,
+pub struct VTable {
+    pub interface_name: String,
+    pub callback_interface: bool,
+    pub callback_interface_id: u64,
+    pub struct_type: FfiTypeNode,
+    pub init_fn: RustFfiFunctionName,
+    pub methods: Vec<VTableMethod>,
+}
+
+/// Single method in a vtable
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::VTableMethod))]
+pub struct VTableMethod {
     pub callable: Callable,
-    pub docstring: Option<String>,
-    pub js_docstring: String,
+    pub ffi_type: FfiTypeNode,
 }
 
 /// Common data from Function/Method/Constructor
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::Callable))]
+#[map_node(callables::map_callable)]
 pub struct Callable {
+    pub id: u64,
     pub name: String,
     pub async_data: Option<AsyncData>,
     pub is_js_async: bool,
@@ -247,19 +417,18 @@ pub struct Callable {
     pub uniffi_scaffolding_method: String,
     pub kind: CallableKind,
     pub arguments: Vec<Argument>,
-    pub return_type: ReturnType,
-    pub throws_type: ThrowsType,
+    pub return_type: Option<ReturnType>,
+    pub throws_type: Option<ThrowsType>,
     pub checksum: Option<u16>,
     pub ffi_func: RustFfiFunctionName,
-    pub id: u64,
 }
 
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::CallableKind))]
 pub enum CallableKind {
     Function,
     Method {
         self_type: TypeNode,
-        ffi_converter: String,
     },
     Constructor {
         self_type: TypeNode,
@@ -271,56 +440,44 @@ pub enum CallableKind {
     },
 }
 
-#[derive(Debug, Clone, Node)]
-pub struct ReturnType {
-    pub ty: Option<TypeNode>,
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct ThrowsType {
-    pub ty: Option<TypeNode>,
-}
-
-#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
-pub struct AsyncData {
-    pub ffi_rust_future_poll: RustFfiFunctionName,
-    pub ffi_rust_future_cancel: RustFfiFunctionName,
-    pub ffi_rust_future_free: RustFfiFunctionName,
-    pub ffi_rust_future_complete: RustFfiFunctionName,
-    pub ffi_foreign_future_complete: FfiFunctionTypeName,
-    pub ffi_foreign_future_result: FfiStructName,
-}
-
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, MapNode, Node)]
+#[map_node(from(general::Argument))]
+#[map_node(callables::map_argument)]
 pub struct Argument {
     pub name: String,
     pub ty: TypeNode,
     pub by_ref: bool,
     pub optional: bool,
     pub default: Option<DefaultValueNode>,
+    pub ffi_value_class: String,
 }
 
-#[derive(Debug, Clone, Node, Eq, PartialEq, Hash)]
-pub enum DefaultValue {
-    Default(TypeNode),
-    Literal(LiteralNode),
-}
-
-#[derive(Debug, Clone, Node, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, MapNode, Node, Eq, PartialEq, Hash)]
+#[map_node(from(general::DefaultValue))]
+#[map_node(defaults::map_default_value_node)]
 pub struct DefaultValueNode {
-    #[node(wraps)]
     pub default: DefaultValue,
     /// The default value rendered as a string
     pub js_lit: String,
 }
 
-#[derive(Debug, Clone, Node, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, MapNode, Node, Eq, PartialEq, Hash)]
+#[map_node(from(general::DefaultValue))]
+pub enum DefaultValue {
+    Default(TypeNode),
+    Literal(LiteralNode),
+}
+
+#[derive(Debug, Clone, MapNode, Node, Eq, PartialEq, Hash)]
+#[map_node(from(general::Literal))]
+#[map_node(defaults::map_literal_node)]
 pub struct LiteralNode {
     pub js_lit: String,
     pub lit: Literal,
 }
 
-#[derive(Debug, Clone, Node, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, MapNode, Node, Eq, PartialEq, Hash)]
+#[map_node(from(general::Literal))]
 pub enum Literal {
     Boolean(bool),
     String(String),
@@ -337,297 +494,42 @@ pub enum Literal {
     Enum(String, TypeNode),
     EmptySequence,
     EmptyMap,
+    EmptySet,
     None,
-    Some { inner: Box<Literal> },
+    Some { inner: Box<DefaultValueNode> },
 }
 
-// Represent the radix of integer literal values.
-// We preserve the radix into the generated bindings for readability reasons.
-#[derive(Debug, Clone, Node, Eq, PartialEq, Hash)]
-pub enum Radix {
-    Decimal = 10,
-    Octal = 8,
-    Hexadecimal = 16,
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct Record {
-    pub name: String,
-    pub remote: bool, // only used when generating scaffolding from UDL
-    pub fields: Vec<Field>,
-    pub docstring: Option<String>,
-    pub js_docstring: String,
-    pub self_type: TypeNode,
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct Field {
-    pub name: String,
-    pub ty: TypeNode,
-    pub default: Option<DefaultValueNode>,
-    pub docstring: Option<String>,
-    pub js_docstring: String,
-}
-
-#[derive(Debug, Clone, Node)]
-pub enum EnumShape {
-    Enum,
-    Error { flat: bool },
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct Enum {
-    pub name: String,
-    pub is_flat: bool,
-    pub shape: EnumShape,
-    pub remote: bool,
-    pub variants: Vec<Variant>,
-    pub discr_type: TypeNode,
-    pub non_exhaustive: bool,
-    pub js_docstring: String,
-    pub docstring: Option<String>,
-    pub self_type: TypeNode,
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct Variant {
-    pub name: String,
-    pub discr: LiteralNode,
-    pub fields: Vec<Field>,
-    pub docstring: Option<String>,
-    pub js_docstring: String,
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct Interface {
-    pub name: String,
-    pub js_class_name: String,
-    pub object_id: u64,
-    pub interface_base_class: InterfaceBaseClass,
-    pub constructors: Vec<Constructor>,
-    pub methods: Vec<Method>,
-    pub uniffi_traits: Vec<UniffiTrait>,
-    pub trait_impls: Vec<ObjectTraitImpl>,
-    pub remote: bool, // only used when generating scaffolding from UDL
-    pub imp: ObjectImpl,
-    pub docstring: Option<String>,
-    pub js_docstring: String,
-    pub self_type: TypeNode,
-    pub vtable: Option<VTable>,
-    pub ffi_func_clone: RustFfiFunctionName,
-    pub ffi_func_free: RustFfiFunctionName,
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct CallbackInterface {
-    pub name: String,
-    pub interface_base_class: InterfaceBaseClass,
-    pub vtable: VTable,
-    pub docstring: Option<String>,
-    pub js_docstring: String,
-    pub self_type: TypeNode,
-}
-
-/// Javascript interface class.
-///
-/// This is an abstract base class that the interface implements.
-/// For trait/callback interfaces this is what the JS code should extend.
-#[derive(Debug, Clone, Node)]
-pub struct InterfaceBaseClass {
-    pub name: String,
-    pub methods: Vec<Method>,
-    pub docstring: Option<String>,
-    pub js_docstring: String,
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct VTable {
-    /// Name of the interface this VTable is for
-    pub interface_name: String,
-    /// Was this generated for a CallbackInterface?
-    pub callback_interface: bool,
-    pub callback_interface_id: u64,
-    /// Name of the JS variable that stores the UniFFICallbackHandler instance
-    pub js_handler_var: String,
-    pub struct_type: FfiTypeNode,
-    pub init_fn: RustFfiFunctionName,
-    pub methods: Vec<VTableMethod>,
-}
-
-/// Single method in a vtable
-#[derive(Debug, Clone, Node)]
-pub struct VTableMethod {
-    pub callable: Callable,
-    pub ffi_type: FfiTypeNode,
-}
-
-#[derive(Debug, Clone, Node)]
-pub enum UniffiTrait {
-    Debug { fmt: Method },
-    Display { fmt: Method },
-    Eq { eq: Method, ne: Box<Method> },
-    Hash { hash: Method },
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct ObjectTraitImpl {
-    pub ty: TypeNode,
-    pub trait_name: String,
-    pub tr_module_name: Option<String>,
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct CustomType {
-    pub name: String,
-    pub builtin: TypeNode,
-    pub docstring: Option<String>,
-    pub js_docstring: String,
-    pub self_type: TypeNode,
-    pub type_name: Option<String>,
-    pub lift_expr: Option<String>,
-    pub lower_expr: Option<String>,
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct OptionalType {
-    pub inner: TypeNode,
-    pub self_type: TypeNode,
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct SequenceType {
-    pub inner: TypeNode,
-    pub self_type: TypeNode,
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct MapType {
-    pub key: TypeNode,
-    pub value: TypeNode,
-    pub self_type: TypeNode,
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct ExternalType {
-    pub namespace: String,
-    pub name: String,
-    pub self_type: TypeNode,
-}
-
-#[derive(Debug, Clone, Node, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, MapNode, Node, Eq, PartialEq, Hash)]
+#[map_node(from(general::TypeNode))]
 pub struct TypeNode {
+    pub id: u64,
     pub ty: Type,
-    /// Name of the JS class for this type (only set for user-defined types like
-    /// enums/records/interfaces).
-    pub class_name: Option<String>,
-    pub jsdoc_name: String,
     pub canonical_name: String,
-    pub ffi_converter: String,
     pub is_used_as_error: bool,
     pub ffi_type: FfiTypeNode,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Node)]
-pub enum Type {
-    // Primitive types.
-    UInt8,
-    Int8,
-    UInt16,
-    Int16,
-    UInt32,
-    Int32,
-    UInt64,
-    Int64,
-    Float32,
-    Float64,
-    Boolean,
-    String,
-    Bytes,
-    Timestamp,
-    Duration,
-    Interface {
-        // The module path to the object
-        module_name: String,
-        // The name in the "type universe"
-        name: String,
-        // How the object is implemented.
-        imp: ObjectImpl,
-    },
-    // Types defined in the component API, each of which has a string name.
-    Record {
-        module_name: String,
-        name: String,
-    },
-    Enum {
-        module_name: String,
-        name: String,
-    },
-    CallbackInterface {
-        module_name: String,
-        name: String,
-    },
-    // Structurally recursive types.
-    Optional {
-        inner_type: Box<Type>,
-    },
-    Sequence {
-        inner_type: Box<Type>,
-    },
-    Map {
-        key_type: Box<Type>,
-        value_type: Box<Type>,
-    },
-    // Custom type on the scaffolding side
-    Custom {
-        module_name: String,
-        name: String,
-        builtin: Box<Type>,
-    },
+#[derive(Debug, Clone, Node)]
+pub struct ReturnType {
+    pub ffi_value_class: String,
+    pub ty: TypeNode,
 }
 
-impl Type {
-    pub fn name(&self) -> Result<&str> {
-        match &self {
-            Type::Record { name, .. }
-            | Type::Enum { name, .. }
-            | Type::Interface { name, .. }
-            | Type::CallbackInterface { name, .. }
-            | Type::Custom { name, .. } => Ok(name.as_str()),
-            _ => bail!("This type has no name"),
-        }
-    }
+#[derive(Debug, Clone, Node)]
+pub struct ThrowsType {
+    pub ty: TypeNode,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Node)]
-pub enum ObjectImpl {
-    // A single Rust type
-    Struct,
-    // A trait that's can be implemented by Rust types
-    Trait,
-    // A trait + a callback interface -- can be implemented by both Rust and foreign types.
-    CallbackTrait,
-}
-
-#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, MapNode, Node)]
+#[map_node(from(general::FfiDefinition))]
 pub enum FfiDefinition {
-    /// FFI Function exported in the Rust library
     RustFunction(FfiFunction),
-    /// FFI Function definition used in the interface, language, for example a callback interface method.
     FunctionType(FfiFunctionType),
-    /// Struct definition used in the interface, for example a callback interface Vtable.
     Struct(FfiStruct),
 }
 
-#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
-pub struct RustFfiFunctionName(pub String);
-
-#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
-pub struct FfiStructName(pub String);
-
-#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
-pub struct FfiFunctionTypeName(pub String);
-
-#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Node, MapNode)]
+#[map_node(from(general::FfiFunction))]
 pub struct FfiFunction {
     pub name: RustFfiFunctionName,
     pub async_data: Option<AsyncData>,
@@ -637,25 +539,8 @@ pub struct FfiFunction {
     pub kind: FfiFunctionKind,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Node, Hash)]
-pub enum FfiFunctionKind {
-    Scaffolding,
-    ObjectClone,
-    ObjectFree,
-    RustFuturePoll,
-    RustFutureComplete,
-    RustFutureCancel,
-    RustFutureFree,
-    RustBufferFromBytes,
-    RustBufferFree,
-    RustBufferAlloc,
-    RustBufferReserve,
-    RustVtableInit,
-    UniffiContractVersion,
-    Checksum,
-}
-
-#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Node, MapNode)]
+#[map_node(from(general::FfiFunctionType))]
 pub struct FfiFunctionType {
     pub name: FfiFunctionTypeName,
     pub arguments: Vec<FfiArgument>,
@@ -663,78 +548,39 @@ pub struct FfiFunctionType {
     pub has_rust_call_status_arg: bool,
 }
 
-#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
-pub struct FfiReturnType {
-    pub ty: Option<FfiTypeNode>,
-    pub type_name: String,
-}
-
-#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Node, MapNode)]
+#[map_node(from(general::FfiStruct))]
 pub struct FfiStruct {
     pub name: FfiStructName,
     pub fields: Vec<FfiField>,
 }
 
-#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
-pub struct FfiField {
-    pub name: String,
-    pub ty: FfiTypeNode,
-}
-
-#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Node, MapNode)]
+#[map_node(from(general::FfiArgument))]
 pub struct FfiArgument {
     pub name: String,
     pub ty: FfiTypeNode,
 }
 
-#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Node, MapNode)]
+#[map_node(from(general::FfiField))]
+pub struct FfiField {
+    pub name: String,
+    pub ty: FfiTypeNode,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Node, MapNode)]
+#[map_node(from(general::FfiReturnType))]
+pub struct FfiReturnType {
+    pub ty: Option<FfiTypeNode>,
+}
+
+#[derive(Debug, Clone, MapNode, Node, PartialEq, Eq, Hash)]
+#[map_node(from(general::FfiType))]
+#[map_node(ffi_types::map_ffi_type_node)]
 pub struct FfiTypeNode {
     pub ty: FfiType,
     pub type_name: String,
-}
-
-#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
-pub enum FfiType {
-    UInt8,
-    Int8,
-    UInt16,
-    Int16,
-    UInt32,
-    Int32,
-    UInt64,
-    Int64,
-    Float32,
-    Float64,
-    RustBuffer(Option<String>),
-    ForeignBytes,
-    Function(FfiFunctionTypeName),
-    Struct(FfiStructName),
-    Handle(HandleKind),
-    RustCallStatus,
-    Reference(Box<FfiType>),
-    MutReference(Box<FfiType>),
-    VoidPointer,
-}
-
-#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
-pub enum HandleKind {
-    RustFuture,
-    ForeignFuture,
-    ForeignFutureCallbackData,
-    StructInterface {
-        namespace: String,
-        interface_name: String,
-    },
-    TraitInterface {
-        namespace: String,
-        interface_name: String,
-    },
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct Checksum {
-    pub fn_name: RustFfiFunctionName,
-    pub checksum: u16,
 }
 
 #[derive(Debug, Clone, Node, Template)]
@@ -745,196 +591,4 @@ pub struct ApiModuleDocs {
     pub module_name: String,
     pub classes: Vec<String>,
     pub functions: Vec<String>,
-}
-
-/// Combines fixture and non-fixture template items
-#[derive(Debug, Clone, Node)]
-pub struct CombinedItems<T> {
-    pub items: Vec<T>,
-    pub fixture_items: Vec<T>,
-}
-
-impl<T> CombinedItems<T> {
-    /// Create a new CombinedItems value
-    ///
-    /// F is a function that finds items in module and pushes them to a vec.
-    pub fn new<F>(root: &mut Root, mut f: F) -> Self
-    where
-        F: FnMut(&mut Namespace, &mut CombinedItemsIdGenerator, &mut Vec<T>),
-    {
-        Self::try_new(root, |namespace, id_generator, items| {
-            f(namespace, id_generator, items);
-            Ok(())
-        })
-        .unwrap()
-    }
-
-    pub fn try_new<F>(root: &mut Root, mut f: F) -> Result<Self>
-    where
-        F: FnMut(&mut Namespace, &mut CombinedItemsIdGenerator, &mut Vec<T>) -> Result<()>,
-    {
-        // Use 2 separate counters for "real" Rust components vs fixtures.
-        let mut combined_items = Self {
-            items: vec![],
-            fixture_items: vec![],
-        };
-        let mut id_generator = CombinedItemsIdGenerator::default();
-        // Process non-fixture items first for a couple reasons:
-        // * It works better when a pass wants to de-dupe items, like we do for FFI definitions,
-        //   and an item appears in both `items` and `fixture_items`.  This way the de-duped item
-        //   won't be disabled by the if guard and also it will appear on top of the item list,
-        //   which avoids issues with dependent definitions.
-        // * It means the IDs get grouped together, which can make for a more efficient `switch`
-        //   statement.
-
-        root.try_visit_mut(|namespace: &mut Namespace| {
-            if !namespace.fixture {
-                f(namespace, &mut id_generator, &mut combined_items.items)
-            } else {
-                Ok(())
-            }
-        })?;
-        root.try_visit_mut(|namespace: &mut Namespace| {
-            if namespace.fixture {
-                f(
-                    namespace,
-                    &mut id_generator,
-                    &mut combined_items.fixture_items,
-                )
-            } else {
-                Ok(())
-            }
-        })?;
-        Ok(combined_items)
-    }
-
-    pub fn sort_by_key<F, K>(&mut self, f: F)
-    where
-        F: Fn(&T) -> K,
-        K: Ord,
-    {
-        self.items.sort_by_key(&f);
-        self.fixture_items.sort_by_key(&f);
-    }
-
-    /// Iterate over child items
-    /// Each item is the tuple (preprocssor_condition, <T>, preprocssor_condition_end), where
-    /// `preprocssor_condition` is the preprocessor preprocssor_condition that should control if
-    /// the items are included.
-    fn iter(&self) -> impl Iterator<Item = (String, &[T], String)> {
-        vec![
-            ("".to_string(), &*self.items, "".to_string()),
-            (
-                "#ifdef MOZ_UNIFFI_FIXTURES".to_string(),
-                &*self.fixture_items,
-                "#endif /* MOZ_UNIFFI_FIXTURES */".to_string(),
-            ),
-        ]
-        .into_iter()
-    }
-
-    /// Create a new CombinedItems value by mapping the items and fixture_items lists to new lists.
-    pub fn map<F, U>(&self, mut f: F) -> CombinedItems<U>
-    where
-        F: FnMut(&Vec<T>) -> Vec<U>,
-    {
-        CombinedItems {
-            items: f(&self.items),
-            fixture_items: f(&self.fixture_items),
-        }
-    }
-
-    pub fn try_map<F, U>(&self, mut f: F) -> Result<CombinedItems<U>>
-    where
-        F: FnMut(&Vec<T>) -> Result<Vec<U>>,
-    {
-        Ok(CombinedItems {
-            items: f(&self.items)?,
-            fixture_items: f(&self.fixture_items)?,
-        })
-    }
-}
-
-#[derive(Default)]
-pub struct CombinedItemsIdGenerator {
-    counter: u64,
-}
-
-impl CombinedItemsIdGenerator {
-    pub fn new_id(&mut self) -> u64 {
-        self.counter += 1;
-        self.counter
-    }
-}
-
-impl ScaffoldingCall {
-    pub fn is_async(&self) -> bool {
-        self.ffi_func.async_data.is_some()
-    }
-}
-
-impl FfiFunction {
-    pub fn arg_types(&self) -> Vec<&str> {
-        self.arguments
-            .iter()
-            .map(|a| a.ty.type_name.as_str())
-            .chain(self.has_rust_call_status_arg.then_some("RustCallStatus*"))
-            .collect()
-    }
-}
-
-impl FfiFunctionType {
-    pub fn arg_types(&self) -> Vec<&str> {
-        self.arguments
-            .iter()
-            .map(|a| a.ty.type_name.as_str())
-            .chain(self.has_rust_call_status_arg.then_some("RustCallStatus*"))
-            .collect()
-    }
-}
-
-pub mod filters {
-    use super::*;
-    use askama::Result;
-
-    pub fn class_name(ty: &TypeNode, _: &dyn askama::Values) -> Result<String> {
-        match &ty.class_name {
-            Some(class_name) => Ok(class_name.clone()),
-            None => Err(to_askama_error(&format!(
-                "Trying to get class name for {:?}",
-                ty
-            ))),
-        }
-    }
-
-    // Render an expression to check if two instances of this type are equal
-    pub fn field_equals(
-        field: &Field,
-        _: &dyn askama::Values,
-        first_obj: &str,
-        second_obj: &str,
-    ) -> Result<String> {
-        let name = &field.name;
-        Ok(match &field.ty.ty {
-            Type::Record { .. } => format!("{first_obj}.{name}.equals({second_obj}.{name})"),
-            _ => format!("{first_obj}.{name} == {second_obj}.{name}"),
-        })
-    }
-
-    // Remove the trailing comma from a block of text.
-    //
-    // This can make generating argument lists more convenient.
-    pub fn remove_trailing_comma<T: std::fmt::Display>(
-        text: T,
-        _: &dyn askama::Values,
-    ) -> Result<String> {
-        let text = text.to_string();
-        let Some(last_comma) = text.rfind(',') else {
-            return Ok(text.to_string());
-        };
-        if !text[last_comma + 1..].chars().all(char::is_whitespace) {
-            return Ok(text.to_string());
-        }
-        Ok(text[..last_comma].to_string())
-    }
 }

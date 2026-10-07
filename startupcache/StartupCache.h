@@ -119,8 +119,8 @@ struct StartupCacheEntry {
     KeyValuePair(const nsCString* aKeyPtr, StartupCacheEntry* aValuePtr)
         : first(aKeyPtr), second(aValuePtr) {}
   };
-  static_assert(std::is_trivially_move_assignable<KeyValuePair>::value);
-  static_assert(std::is_trivially_move_constructible<KeyValuePair>::value);
+  static_assert(std::is_trivially_move_assignable_v<KeyValuePair>);
+  static_assert(std::is_trivially_move_constructible_v<KeyValuePair>);
 
   struct Comparator {
     using Value = KeyValuePair;

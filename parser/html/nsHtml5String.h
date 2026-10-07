@@ -132,7 +132,22 @@ class nsHtml5String final {
 
   bool LowerCaseEqualsASCII(const char* aLowerCaseLiteral) const;
 
+  template <size_t N>
+  bool LowerCaseEqualsASCII(const char (&aLowerCaseLiteral)[N]) const {
+    constexpr size_t length = N - 1;
+    return Length() == length &&
+           !nsCharTraits<char16_t>::compareLowerCaseToASCII(
+               AsPtr(), aLowerCaseLiteral, length);
+  }
+
   bool EqualsASCII(const char* aLiteral) const;
+
+  template <size_t N>
+  bool EqualsASCII(const char (&aLiteral)[N]) const {
+    constexpr size_t length = N - 1;
+    return Length() == length &&
+           !nsCharTraits<char16_t>::compareASCII(AsPtr(), aLiteral, length);
+  }
 
   bool LowerCaseStartsWithASCII(const char* aLowerCaseLiteral) const;
 

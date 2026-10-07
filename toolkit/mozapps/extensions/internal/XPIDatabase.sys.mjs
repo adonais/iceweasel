@@ -334,14 +334,6 @@ export class AddonInternal {
     );
   }
 
-  get isBuiltinColorwayTheme() {
-    return (
-      this.type === "theme" &&
-      this.location.isBuiltin &&
-      this.id.endsWith("-colorway@mozilla.org")
-    );
-  }
-
   /**
    * Validate a list of origins are contained in the installOrigins array (defined in manifest.json).
    *
@@ -1600,7 +1592,6 @@ function defineAddonWrapperProperty(name, getter) {
   "signedState",
   "signedTypes",
   "isCorrectlySigned",
-  "isBuiltinColorwayTheme",
 ].forEach(function (aProp) {
   defineAddonWrapperProperty(aProp, function () {
     let addon = addonFor(this);

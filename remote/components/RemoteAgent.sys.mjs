@@ -30,6 +30,9 @@ const SHARED_DATA_IS_BROWSER_AUTOMATION_KEY =
 
 const PREF_DYNAMIC_START_ENABLED = "remote.experimental.dynamicstart.enabled";
 
+// Locked by the DisableDeveloperTools enterprise policy.
+const PREF_POLICY_DISABLED = "remote.policy.disabled";
+
 const EXIT_CODE_NOT_AVAILABLE = 69;
 
 const isRemote =
@@ -329,7 +332,7 @@ class RemoteAgentParentProcess {
             reject();
           }
         },
-        { interval: 250, timeout: 5000 }
+        { interval: 250, timeout: 5000, throws: null }
       );
 
       if (!this.#server._socket) {
@@ -468,6 +471,12 @@ class RemoteAgentParentProcess {
       case "command-line-startup":
         Services.obs.removeObserver(this, topic);
 
+        // The flags are still consumed by nsICommandLineHandler::handle().
+        if (Services.prefs.getBoolPref(PREF_POLICY_DISABLED, false)) {
+          lazy.logger.warn("Remote Agent is disabled by enterprise policy");
+          break;
+        }
+
         this.#allowHosts = this.#handleAllowHostsFlag(subject);
         this.#allowOrigins = this.#handleAllowOriginsFlag(subject);
         this.allowSystemAccess = this.#handleAllowSystemAccessFlag(subject);
@@ -584,6 +593,11 @@ class RemoteAgentParentProcess {
       lazy.logger.debug(
         `Start aborted, ${PREF_DYNAMIC_START_ENABLED} is disabled`
       );
+      return -1;
+    }
+
+    if (Services.prefs.getBoolPref(PREF_POLICY_DISABLED, false)) {
+      lazy.logger.warn("Start aborted, Remote Agent is disabled by policy");
       return -1;
     }
 

@@ -104,7 +104,7 @@ addAccessibleTask(
 );
 
 /**
- * Test ariaNotify's feature policy.
+ * Test ariaNotify's permissions policy.
  */
 addAccessibleTask(
   ``,

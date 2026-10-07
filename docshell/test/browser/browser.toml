@@ -66,6 +66,7 @@ support-files = [
   "file_bug1716290-3.sjs",
   "file_bug1716290-4.sjs",
   "file_bug1736248-1.html",
+  "WatchedByDevToolsTestChild.sys.mjs",
 ]
 
 ["browser_alternate_fixup_middle_click_link.js"]
@@ -322,6 +323,8 @@ support-files = [
 ["browser_dataURI_unique_opaque_origin.js"]
 https_first_disabled = true
 
+["browser_displayLoadError_netReset.js"]
+
 ["browser_fall_back_to_https.js"]
 https_first_disabled = true
 skip-if = [
@@ -415,3 +418,7 @@ support-files = ["redirect_to_example.sjs"]
 
 ["browser_viewsource_multipart.js"]
 support-files = ["file_basic_multipart.sjs"]
+
+["browser_watchedByDevTools.js"]
+
+["browser_watchedByDevTools_canset.js"]

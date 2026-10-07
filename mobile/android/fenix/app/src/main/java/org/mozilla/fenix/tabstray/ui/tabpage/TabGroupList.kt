@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import mozilla.components.browser.state.state.createTab
 import org.mozilla.fenix.tabgroups.TabGroupRow
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
@@ -36,6 +37,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
  *
  * @param groups The list of tab groups to display.
  * @param modifier: The Modifier applied to the tab group list.
+ * @param topPadding The padding applied above the first tab group.
  * @param onTabGroupClick Invoked when the user clicks on a tab group.
  * @param onEditTabGroupClick Invoked when the user clicks to edit the tab group.
  * @param onShareTabGroupClick Invoked when the user clicks to share the tab group.
@@ -45,6 +47,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 fun TabGroupList(
     groups: List<TabsTrayItem.TabGroup>,
     modifier: Modifier = Modifier,
+    topPadding: Dp = FirefoxTheme.layout.space.dynamic200,
     onTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onEditTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onShareTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
@@ -60,7 +63,7 @@ fun TabGroupList(
                     .width(FirefoxTheme.layout.size.containerMaxWidth)
                     .padding(
                         start = FirefoxTheme.layout.space.dynamic200,
-                        top = FirefoxTheme.layout.space.dynamic200,
+                        top = topPadding,
                         end = FirefoxTheme.layout.space.dynamic200,
                     ),
             verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static25),

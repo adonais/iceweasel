@@ -26,8 +26,7 @@ struct ScaleFactor {
   float scale;
 
   constexpr ScaleFactor() : scale(1.0) {}
-  constexpr ScaleFactor(const ScaleFactor<Src, Dst>& aCopy)
-      : scale(aCopy.scale) {}
+  constexpr ScaleFactor(const ScaleFactor<Src, Dst>& aCopy) = default;
   explicit constexpr ScaleFactor(float aScale) : scale(aScale) {}
 
   ScaleFactor<Dst, Src> Inverse() { return ScaleFactor<Dst, Src>(1 / scale); }

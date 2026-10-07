@@ -38,7 +38,6 @@ class UiCompositorControllerParent final
                                               const int32_t& aWidth,
                                               bool* aOutResumed);
   mozilla::ipc::IPCResult RecvInvalidateAndRender();
-  mozilla::ipc::IPCResult RecvMaxToolbarHeight(const int32_t& aHeight);
   mozilla::ipc::IPCResult RecvFixedBottomOffset(const int32_t& aOffset);
   mozilla::ipc::IPCResult RecvDefaultClearColor(const uint32_t& aColor);
   mozilla::ipc::IPCResult RecvRequestScreenPixels(
@@ -74,8 +73,6 @@ class UiCompositorControllerParent final
                                         // is expecting to be notified when a
                                         // layer has been updated
 #endif                                  // defined(MOZ_WIDGET_ANDROID)
-
-  int32_t mMaxToolbarHeight;
 };
 
 }  // namespace layers

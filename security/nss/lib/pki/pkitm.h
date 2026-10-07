@@ -77,8 +77,6 @@ typedef struct
     union {
         PRStatus (*cert)(NSSCertificate *c, void *arg);
         PRStatus (*crl)(NSSCRL *crl, void *arg);
-        PRStatus (*pvkey)(NSSPrivateKey *vk, void *arg);
-        PRStatus (*pbkey)(NSSPublicKey *bk, void *arg);
     } func;
     void *arg;
 } nssPKIObjectCallback;

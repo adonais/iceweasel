@@ -29,6 +29,8 @@ class CSSFontFaceRuleDecl final : public nsICSSDeclaration {
 
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) final;
 
+  void* operator new(size_t size) noexcept(true) = delete;
+
  protected:
   // For accessing the constructor.
   friend class CSSFontFaceRule;
@@ -43,9 +45,6 @@ class CSSFontFaceRuleDecl final : public nsICSSDeclaration {
 
   RefPtr<StyleLockedFontFaceRule> mRawRule;
   void SetRawAfterClone(RefPtr<StyleLockedFontFaceRule>);
-
- private:
-  void* operator new(size_t size) noexcept(true) = delete;
 };
 
 class CSSFontFaceRule final : public css::Rule {

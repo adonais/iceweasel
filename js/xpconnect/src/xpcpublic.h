@@ -300,6 +300,8 @@ class XPCStringConvert {
     return true;
   }
 
+  XPCStringConvert() = delete;
+
  private:
   static MOZ_ALWAYS_INLINE bool MaybeGetExternalStringChars(
       JSString* str, const JSExternalStringCallbacks** callbacks,
@@ -421,8 +423,6 @@ class XPCStringConvert {
                         mozilla::MallocSizeOf aMallocSizeOf) const override;
   };
   static const LiteralExternalString sLiteralExternalString;
-
-  XPCStringConvert() = delete;
 };
 
 namespace xpc {
@@ -538,12 +538,11 @@ class ZoneStatsExtras {
  public:
   ZoneStatsExtras() = default;
 
-  nsCString zoneName;
-  nsCString pathPrefix;
-
- private:
   ZoneStatsExtras(const ZoneStatsExtras& other) = delete;
   ZoneStatsExtras& operator=(const ZoneStatsExtras& other) = delete;
+
+  nsCString zoneName;
+  nsCString pathPrefix;
 };
 
 // ReportJSRuntimeExplicitTreeStats will expect this in the |extra| member
@@ -552,13 +551,12 @@ class RealmStatsExtras {
  public:
   RealmStatsExtras() = default;
 
+  RealmStatsExtras(const RealmStatsExtras& other) = delete;
+  RealmStatsExtras& operator=(const RealmStatsExtras& other) = delete;
+
   nsCString jsPathPrefix;
   nsCString domPathPrefix;
   nsCOMPtr<nsIURI> location;
-
- private:
-  RealmStatsExtras(const RealmStatsExtras& other) = delete;
-  RealmStatsExtras& operator=(const RealmStatsExtras& other) = delete;
 };
 
 // This reports all the stats in |rtStats| that belong in the "explicit" tree,
@@ -852,11 +850,11 @@ struct alignas(kAutomationPageSize) ReadOnlyPage final {
   static const volatile ReadOnlyPage sInstance;
 #endif
 
- private:
   constexpr ReadOnlyPage() = default;
   ReadOnlyPage(const ReadOnlyPage&) = delete;
   void operator=(const ReadOnlyPage&) = delete;
 
+ private:
   static void Write(const volatile bool* aPtr, bool aValue);
 };
 

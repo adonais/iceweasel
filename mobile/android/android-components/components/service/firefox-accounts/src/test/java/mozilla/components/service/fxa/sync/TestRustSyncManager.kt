@@ -10,12 +10,16 @@ import mozilla.appservices.syncmanager.SyncResult
 /** Test variant of [RustSyncManager] that allows us to set various behaviours by setting the [expectedResult] */
 class TestRustSyncManager : RustSyncManager {
     var expectedResult: SyncResult? = null
+    var isConnected = true
+        private set
 
     /** The params that was passed to the [RustSyncManager] */
     lateinit var requestedSyncParams: SyncParams
         private set
 
-    override fun disconnect() = Unit
+    override fun disconnect() {
+        isConnected = false
+    }
 
     override fun getAvailableEngines(): List<String> = emptyList()
 

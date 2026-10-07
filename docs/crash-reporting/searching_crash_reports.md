@@ -9,7 +9,7 @@ this page.
 
 The Mozilla [crash-stats](https://crash-stats.mozilla.org/) site
 provides facilities for investigating large numbers of Firefox [crash
-reports](Understandingcrashreports). This guide to
+reports](/contributing/debugging/understanding_crash_reports.md). This guide to
 searching through crash reports may help you locate the crash reports
 that will help you find and fix the Firefox bug you're working on.
 

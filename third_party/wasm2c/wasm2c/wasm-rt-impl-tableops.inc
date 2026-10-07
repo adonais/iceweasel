@@ -18,23 +18,32 @@
 // funcref or externref. For this, the file must be included after defining
 // either WASM_RT_TABLE_OPS_FUNCREF or WASM_RT_TABLE_OPS_EXTERNREF
 
-#if defined(WASM_RT_TABLE_OPS_FUNCREF) && defined(WASM_RT_TABLE_OPS_EXTERNREF)
+#if defined(WASM_RT_TABLE_OPS_FUNCREF) +       \
+        defined(WASM_RT_TABLE_OPS_EXTERNREF) + \
+        defined(WASM_RT_TABLE_OPS_EXNREF) >    \
+    1
 #error \
-    "Expected only one of { WASM_RT_TABLE_OPS_FUNCREF, WASM_RT_TABLE_OPS_EXTERNREF } to be defined"
-#elif !defined(WASM_RT_TABLE_OPS_FUNCREF) && \
-    !defined(WASM_RT_TABLE_OPS_EXTERNREF)
+    "Expected only one of { WASM_RT_TABLE_OPS_FUNCREF, WASM_RT_TABLE_OPS_EXTERNREF, WASM_RT_TABLE_OPS_EXNREF } to be defined"
+#elif defined(WASM_RT_TABLE_OPS_FUNCREF) +     \
+        defined(WASM_RT_TABLE_OPS_EXTERNREF) + \
+        defined(WASM_RT_TABLE_OPS_EXNREF) <    \
+    1
 #error \
-    "Expected one of { WASM_RT_TABLE_OPS_FUNCREF, WASM_RT_TABLE_OPS_EXTERNREF } to be defined"
+    "Expected one of { WASM_RT_TABLE_OPS_FUNCREF, WASM_RT_TABLE_OPS_EXTERNREF, WASM_RT_TABLE_OPS_EXNREF } to be defined"
 #endif
 
-#ifdef WASM_RT_TABLE_OPS_FUNCREF
+#if defined(WASM_RT_TABLE_OPS_FUNCREF)
 #define WASM_RT_TABLE_TYPE wasm_rt_funcref_table_t
 #define WASM_RT_TABLE_ELEMENT_TYPE wasm_rt_funcref_t
 #define WASM_RT_TABLE_APINAME(name) name##_funcref_table
-#else
+#elif defined(WASM_RT_TABLE_OPS_EXTERNREF)
 #define WASM_RT_TABLE_TYPE wasm_rt_externref_table_t
 #define WASM_RT_TABLE_ELEMENT_TYPE wasm_rt_externref_t
 #define WASM_RT_TABLE_APINAME(name) name##_externref_table
+#elif defined(WASM_RT_TABLE_OPS_EXNREF)
+#define WASM_RT_TABLE_TYPE wasm_rt_exnref_table_t
+#define WASM_RT_TABLE_ELEMENT_TYPE wasm_rt_exnref_t
+#define WASM_RT_TABLE_APINAME(name) name##_exnref_table
 #endif
 
 void WASM_RT_TABLE_APINAME(wasm_rt_allocate)(WASM_RT_TABLE_TYPE* table,
@@ -43,6 +52,9 @@ void WASM_RT_TABLE_APINAME(wasm_rt_allocate)(WASM_RT_TABLE_TYPE* table,
   table->size = elements;
   table->max_size = max_elements;
   table->data = calloc(table->size, sizeof(WASM_RT_TABLE_ELEMENT_TYPE));
+  if (table->size != 0 && !table->data) {
+    abort();
+  }
 }
 
 void WASM_RT_TABLE_APINAME(wasm_rt_free)(WASM_RT_TABLE_TYPE* table) {
@@ -58,6 +70,9 @@ uint32_t WASM_RT_TABLE_APINAME(wasm_rt_grow)(WASM_RT_TABLE_TYPE* table,
     return 0;
   }
   if ((new_elems < old_elems) || (new_elems > table->max_size)) {
+    return (uint32_t)-1;
+  }
+  if (new_elems > SIZE_MAX / sizeof(WASM_RT_TABLE_ELEMENT_TYPE)) {
     return (uint32_t)-1;
   }
   void* new_data =

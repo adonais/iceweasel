@@ -12,44 +12,7 @@ const { PermissionTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PermissionTestUtils.sys.mjs"
 );
 
-const SINGLE_TRY_TIMEOUT = 100;
-const NUMBER_OF_TRIES = 30;
-
 let gProxyCallbackMap = new Map();
-
-function waitForConditionPromise(
-  condition,
-  timeoutMsg,
-  tryCount = NUMBER_OF_TRIES
-) {
-  return new Promise((resolve, reject) => {
-    let tries = 0;
-    function checkCondition() {
-      if (tries >= tryCount) {
-        reject(timeoutMsg);
-      }
-      var conditionPassed;
-      try {
-        conditionPassed = condition();
-      } catch (e) {
-        return reject(e);
-      }
-      if (conditionPassed) {
-        return resolve();
-      }
-      tries++;
-      setTimeout(checkCondition, SINGLE_TRY_TIMEOUT);
-      return undefined;
-    }
-    setTimeout(checkCondition, SINGLE_TRY_TIMEOUT);
-  });
-}
-
-function waitForCondition(condition, nextTestFn, errorMsg) {
-  waitForConditionPromise(condition, errorMsg).then(nextTestFn, reason => {
-    ok(false, reason + (reason.stack ? "\n" + reason.stack : ""));
-  });
-}
 
 /**
  * Wrapper to partially transition tests to Task. Use `add_UITour_task` instead for new tests.
@@ -114,50 +77,56 @@ function is_element_visible(element, msg) {
 }
 
 function waitForElementToBeVisible(element, nextTestFn, msg) {
-  waitForCondition(
+  TestUtils.waitForCondition(
     () => is_visible(element),
+    "Timeout waiting for visibility: " + msg
+  ).then(
     () => {
       ok(true, msg);
       nextTestFn();
     },
-    "Timeout waiting for visibility: " + msg
+    reason => ok(false, reason)
   );
 }
 
 function waitForElementToBeHidden(element, nextTestFn, msg) {
-  waitForCondition(
+  TestUtils.waitForCondition(
     () => is_hidden(element),
+    "Timeout waiting for invisibility: " + msg
+  ).then(
     () => {
       ok(true, msg);
       nextTestFn();
     },
-    "Timeout waiting for invisibility: " + msg
+    reason => ok(false, reason)
   );
 }
 
 function elementVisiblePromise(element, msg) {
-  return waitForConditionPromise(
+  return TestUtils.waitForCondition(
     () => is_visible(element),
     "Timeout waiting for visibility: " + msg
   );
 }
 
 function elementHiddenPromise(element, msg) {
-  return waitForConditionPromise(
+  return TestUtils.waitForCondition(
     () => is_hidden(element),
     "Timeout waiting for invisibility: " + msg
   );
 }
 
 function waitForPopupAtAnchor(popup, anchorNode, nextTestFn, msg) {
-  waitForCondition(
+  TestUtils.waitForCondition(
     () => is_visible(popup) && popup.anchorNode == anchorNode,
+    "Timeout waiting for popup at anchor: " + msg
+  ).then(
     () => {
       ok(true, msg);
       is_element_visible(popup, "Popup should be visible");
       nextTestFn();
     },
-    "Timeout waiting for popup at anchor: " + msg
+    reason => ok(false, reason)
   );
 }
 

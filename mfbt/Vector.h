@@ -20,6 +20,7 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/OperatorNewExtensions.h"
+#include "mozilla/PodOperations.h"
 #include "mozilla/ReentrancyGuard.h"
 #include "mozilla/Span.h"
 
@@ -271,16 +272,13 @@ struct VectorImpl<T, N, AP, true> {
   template <typename U>
   static inline void copyConstruct(T* aDst, const U* aSrcStart,
                                    const U* aSrcEnd) {
-    /*
-     * See above memset comment. Also, notice that copyConstruct is
-     * currently templated (T != U), so memcpy won't work without
-     * requiring T == U.
-     *
-     * memcpy(aDst, aSrcStart, sizeof(T) * (aSrcEnd - aSrcStart));
-     */
     MOZ_ASSERT(aSrcStart <= aSrcEnd);
-    for (const U* p = aSrcStart; p < aSrcEnd; ++p, ++aDst) {
-      new_(aDst, *p);
+    if constexpr (std::is_same_v<T, U>) {
+      PodCopy(aDst, aSrcStart, PointerRangeSize(aSrcStart, aSrcEnd));
+    } else {
+      for (const U* p = aSrcStart; p < aSrcEnd; ++p, ++aDst) {
+        new_(aDst, *p);
+      }
     }
   }
 

@@ -15,12 +15,14 @@
 
   :root {
     font-size: 20px;
+    line-height: 24px;
   }
 
   main {
     --on-main: 2em;
     --registered: 3em;
     --registered-inherits: 4em;
+    --ten-percent: 10%;
     container-type: size;
     width: 200px;
     height: 100px;
@@ -31,10 +33,35 @@
     width: 100px;
     height: 50px;
     font-size: 24px;
+    line-height: 28px;
 
     &::after {
       font-size: 28px;
     }
+  }
+
+  li {
+    width: 120px;
+    height: 30px;
+    box-decoration-break: clone;
+  }
+
+  .indefinite-block-size {
+    width: 200px;
+    /* no explicit height, so block-size is indefinite */
+  }
+
+  .indefinite-block-size > div {
+    width: 100px;
+    position: relative;
+  }
+
+  #zero-height-absolute-child, #non-zero-height-absolute-child {
+    position: absolute;
+  }
+
+  #child-of-non-zero-indefinite-block-size > aside {
+    height: 80px;
   }
 
   @property --registered {
@@ -58,22 +85,37 @@
     <li>Third</li>
   </ol>
 </main>
+<div class="indefinite-block-size">
+  <div id="child-of-indefinite-block-size">
+    <div id="zero-height-absolute-child"></div>
+  </div>
+</div>
+<div class="indefinite-block-size">
+  <div id="child-of-non-zero-indefinite-block-size">
+    <div id="non-zero-height-absolute-child"></div>
+    <aside>fries</aside>
+  </div>
+</div>
 
 <script>
 add_task(async function() {
   const { InspectorUtils } = SpecialPowers;
-  const test = ({expression, el, pseudo, expected}) => {
-    const res = Array.from(InspectorUtils.getComputationSteps(expression, el, pseudo));
+  const test = ({expression, el, property = "", pseudo, expected}) => {
+    const res = Array.from(InspectorUtils.getComputationSteps(property, expression, el, pseudo));
     const outer = el.outerHTML;
     const fmt = arr => `(${arr.length})[${arr.map(s => `'${s}'`).join(", ")}]`
     is(
       fmt(res),
       fmt(expected),
-      `Got expected steps for "${expression}" on ${outer.substring(0, outer.indexOf(">") + 1)}${pseudo ? "::" + pseudo: ""}`
+      `Got expected steps for "${expression}" on ${outer.substring(0, outer.indexOf(">") + 1)}${pseudo ? "::" + pseudo: ""}${property ? ` for the "${property}" property`: ""}`
     );
   }
 
   const sectionEl = document.querySelector("section");
+  const firstLiEl = document.querySelector("li");
+  const childOfIndefiniteBlockSize = document.getElementById("child-of-indefinite-block-size");
+  const zeroHeightAbsoluteChild = document.getElementById("zero-height-absolute-child");
+  const nonZeroHeightAbsoluteChild = document.getElementById("non-zero-height-absolute-child");
 
   /// clamp()
   test({
@@ -661,7 +703,8 @@ add_task(async function() {
     el: sectionEl,
     expected: [
       "var(--on-section)",
-      "1em"
+      "1em",
+      "24px",
     ]
   });
 
@@ -670,7 +713,8 @@ add_task(async function() {
     el: sectionEl,
     expected: [
       "var(--on-section, Infinity)",
-      "1em"
+      "1em",
+      "24px",
     ]
   });
 
@@ -679,7 +723,8 @@ add_task(async function() {
     el: sectionEl,
     expected: [
       "var(--on-main)",
-      "2em"
+      "2em",
+      "48px",
     ]
   });
 
@@ -688,7 +733,8 @@ add_task(async function() {
     el: sectionEl,
     expected: [
       "var(--on-main, Infinity)",
-      "2em"
+      "2em",
+      "48px",
     ]
   });
 
@@ -714,7 +760,8 @@ add_task(async function() {
     el: sectionEl,
     expected: [
       "var(--undef, var(--on-section))",
-      "1em"
+      "1em",
+      "24px",
     ]
   });
 
@@ -969,12 +1016,33 @@ add_task(async function() {
     ]
   });
   test({
-    expression: "clamp(10%, 3em, 10cqw)",
+    property: "width",
+    expression: "clamp(5%, 3em, 10cqw)",
     el: sectionEl,
     expected: [
-      "clamp(10%, 3em, 10cqw)",
-      // TODO: 10% should also be computed (See Bug 2041621)
-      "clamp(10%, 72px, 20px)",
+      "clamp(5%, 3em, 10cqw)",
+      "clamp(10px, 72px, 20px)",
+      "20px",
+    ]
+  });
+  test({
+    property: "height",
+    expression: "clamp(5%, 3em, 10cqw)",
+    el: sectionEl,
+    expected: [
+      "clamp(5%, 3em, 10cqw)",
+      "clamp(5px, 72px, 20px)",
+      "20px",
+    ]
+  });
+  test({
+    property: "height",
+    expression: "calc(0% + 10cqh)",
+    el: sectionEl,
+    expected: [
+      "calc(0% + 10cqh)",
+      "calc(0px + 10px)",
+      "10px",
     ]
   });
   test({
@@ -1095,6 +1163,209 @@ add_task(async function() {
     ]
   });
 
+  test({
+    expression: "calc(var(--on-main, 10px) + 3px)",
+    el: sectionEl,
+    expected: [
+      "calc(var(--on-main, 10px) + 3px)",
+      "calc(2em + 3px)",
+      "calc(48px + 3px)",
+      "51px",
+    ]
+  });
+
+  test({
+    expression: "calc(var(--on-section, 0.1em) + var(--on-main, 0.2em) + attr(data-x px, 2px) + env(safe-area-inset-top, 1em))",
+    el: sectionEl,
+    expected: [
+      "calc(var(--on-section, 0.1em) + var(--on-main, 0.2em) + attr(data-x px, 2px) + env(safe-area-inset-top, 1em))",
+      "calc(1em + 2em + 10px + 0.0px)",
+      "calc(24px + 48px + 10px + 0px)",
+      "82px",
+    ]
+  });
+
+  /// Expression with percentages
+
+  test({
+    property: "line-height",
+    expression: "calc(100% + 10px)",
+    el: sectionEl,
+    expected: [
+      "calc(100% + 10px)",
+      "calc(24px + 10px)",
+      "34px",
+    ]
+  });
+  test({
+    property: "font-size",
+    expression: "calc(50% + 4px)",
+    el: sectionEl,
+    expected: [
+      "calc(50% + 4px)",
+      "calc(10px + 4px)",
+      "14px",
+    ]
+  });
+  test({
+    property: "border-radius",
+    expression: "calc(50% + 4px)",
+    el: sectionEl,
+    expected: [
+      // We can't resolve the % for border-radius as it's a shorthand, so each longhand
+      // can have different values
+      "calc(50% + 4px)",
+    ]
+  });
+  test({
+    property: "border-top-left-radius",
+    expression: "calc(50% + 4px)",
+    el: sectionEl,
+    expected: [
+      // We don't resolve border-radius shorthands either, as:
+      // - they can take 2 percentags that are mapping to different axis (e.g. `border-radius: 10% 15%`)
+      // - the percentages are not replaced for the computed value, so we'd need to think
+      //   a bit more about it.
+      "calc(50% + 4px)",
+    ]
+  });
+  test({
+    property: "margin-inline",
+    expression: "calc(25% + 4px)",
+    el: sectionEl,
+    // We're checking a shorthand, but the longhand this represents are all based on the
+    // same axis
+    expected: [
+      "calc(25% + 4px)",
+      "calc(50px + 4px)",
+      "54px",
+    ]
+  });
+  test({
+    property: "margin",
+    expression: "calc(20% + 2px)",
+    el: sectionEl,
+    // We're checking a shorthand, but the longhand this represents are all based on the
+    // same axis
+    expected: [
+      "calc(20% + 2px)",
+      "calc(40px + 2px)",
+      "42px",
+    ]
+  });
+  test({
+    property: "text-decoration-inset",
+    expression: "calc(50%)",
+    el: sectionEl,
+    expected: [
+      "calc(50%)",
+      "50%",
+      "50px",
+    ]
+  });
+  test({
+    property: "text-decoration-inset",
+    expression: "calc(50% + var(--ten-percent))",
+    el: sectionEl,
+    expected: [
+      "calc(50% + var(--ten-percent))",
+      "calc(50% + 10%)",
+      "calc(50px + 10px)",
+      "60px",
+    ]
+  });
+  test({
+    property: "--ten-percent",
+    expression: "calc(66% + 7px)",
+    el: sectionEl,
+    expected: [
+      // When declaring a property, we can't know what the percentage represents, it will
+      // depends on the property the variable is used for.
+      "calc(66% + 7px)",
+    ]
+  });
+  test({
+    property: "text-decoration-inset",
+    expression: "calc(50%)",
+    el: firstLiEl,
+    expected: [
+      "calc(50%)",
+      // We can't resolve the % for text-decoration-inset can't be computed
+      // since the element has a box-decoration-break value of "clone"
+      "50%",
+    ]
+  });
+
+
+  /// Indefinite block-size: percentage heights should not resolve
+  // width percentages still resolve since inline-size is definite
+  test({
+    property: "width",
+    expression: "calc(50%)",
+    el: childOfIndefiniteBlockSize,
+    expected: [
+      "calc(50%)",
+      "50%",
+      "100px",
+    ]
+  });
+  test({
+    property: "height",
+    expression: "calc(50%)",
+    el: childOfIndefiniteBlockSize,
+    expected: [
+      "calc(50%)",
+        // height percentages don't resolve when the containing block's height is auto
+      "50%",
+    ]
+  });
+  test({
+    property: "block-size",
+    expression: "calc(50%)",
+    el: childOfIndefiniteBlockSize,
+    expected: [
+      "calc(50%)",
+      // block-size percentages also don't resolve
+      "50%",
+    ]
+  });
+  test({
+    property: "height",
+    expression: "calc(50%)",
+    el: zeroHeightAbsoluteChild,
+    expected: [
+      "calc(50%)",
+      // absolutely positioned elements: height percentages DO resolve even when the containing
+      // block's height is auto.
+      "50%",
+      // The containing block here has no in-flow content so its rendered
+      // height is 0px, giving 50% = 0px.
+      "0px",
+    ]
+  });
+  test({
+    property: "height",
+    expression: "calc(50%)",
+    el: nonZeroHeightAbsoluteChild,
+    expected: [
+      "calc(50%)",
+      "50%",
+      // The containing block here do have in-flow content (`<aside>`) so it does
+      // have a non-zero height (50% of 80px = 40px).
+      "40px",
+    ]
+  });
+  test({
+    property: "background-position-x",
+    expression: "calc(25% + 2px)",
+    el: sectionEl,
+    expected: [
+      // We don't resolve the % background-position-* yet as that requires to have access
+      // to the size of the background image.
+      "calc(25% + 2px)",
+    ]
+  });
+
   /// relative color computation
 
   test({
@@ -1126,27 +1397,132 @@ add_task(async function() {
     expected: []
   });
 
+  /// simple values
+
   test({
-    expression: "calc(var(--on-main, 10px) + 3px)",
+    // not super helpful, but the function should still handle this
+    expression: "10px",
     el: sectionEl,
-    expected: [
-      "calc(var(--on-main, 10px) + 3px)",
-      "calc(2em + 3px)",
-      "calc(48px + 3px)",
-      "51px",
-    ]
+    expected: ["10px"]
   });
 
   test({
-    expression: "calc(var(--on-section, 0.1em) + var(--on-main, 0.2em) + attr(data-x px, 2px) + env(safe-area-inset-top, 1em))",
+    expression: "1em",
     el: sectionEl,
-    expected: [
-      "calc(var(--on-section, 0.1em) + var(--on-main, 0.2em) + attr(data-x px, 2px) + env(safe-area-inset-top, 1em))",
-      "calc(1em + 2em + 10px + 0.0px)",
-      "calc(24px + 48px + 10px + 0px)",
-      "82px",
-    ]
+    expected: ["1em", "24px"]
   });
+
+  test({
+    expression: "2rem",
+    el: sectionEl,
+    expected: ["2rem", "40px"]
+  });
+
+  test({
+    expression: "10cqw",
+    el: sectionEl,
+    expected: ["10cqw", "20px"]
+  });
+
+  test({
+    expression: "10cqh",
+    el: sectionEl,
+    expected: ["10cqh", "10px"]
+  });
+
+  test({
+    expression: "10cqi",
+    el: sectionEl,
+    expected: ["10cqi", "20px"]
+  });
+
+  test({
+    expression: "10cqb",
+    el: sectionEl,
+    expected: ["10cqb", "10px"]
+  });
+
+  test({
+    expression: "10cqmin",
+    el: sectionEl,
+    expected: ["10cqmin", "10px"]
+  });
+
+  test({
+    expression: "10cqmax",
+    el: sectionEl,
+    expected: ["10cqmax", "20px"]
+  });
+
+  test({
+    expression: "10lh",
+    el: sectionEl,
+    expected: ["10lh", "280px"]
+  });
+
+  test({
+    expression: "10rlh",
+    el: sectionEl,
+    expected: ["10rlh", "240px"]
+  });
+
+  test({
+    property: "width",
+    expression: "10%",
+    el: sectionEl,
+    expected: ["10%","20px"]
+  });
+
+  test({
+    property: "height",
+    expression: "10%",
+    el: sectionEl,
+    expected: ["10%","10px"]
+  });
+
+  test({
+    expression: "10deg",
+    el: sectionEl,
+    // We shoul bail out for "<angle>"
+    expected: []
+  });
+  test({
+    expression: "10grad",
+    el: sectionEl,
+    // We shoul bail out for "<angle>"
+    expected: []
+  });
+  test({
+    expression: "10turn",
+    el: sectionEl,
+    // We shoul bail out for "<angle>"
+    expected: []
+  });
+  test({
+    expression: "1s",
+    el: sectionEl,
+    // We shoul bail out for "<time>"
+    expected: []
+  });
+  test({
+    expression: "1ms",
+    el: sectionEl,
+    // We shoul bail out for "<time>"
+    expected: []
+  });
+  test({
+    expression: "1Hz",
+    el: sectionEl,
+    // We shoul bail out for "<frequency>"
+    expected: []
+  });
+  test({
+    expression: "1orange",
+    el: sectionEl,
+    // We shoul bail out for made up units
+    expected: []
+  });
+
 });
 </script>
 </body>

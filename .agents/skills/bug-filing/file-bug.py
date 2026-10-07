@@ -19,8 +19,12 @@ Beyond the core fields (product, component, bug_type, short_desc, comment), any
 ``enter_bug.cgi`` field works -- e.g. ``blocked`` (blocks), ``dependson`` (depends
 on), ``see_also``. The same key may repeat to pass multiple values.
 
-The URL is printed before opening so it is visible even if no browser is found.
-``webbrowser`` is cross-platform, so this works on Linux, macOS, and Windows.
+A prefilled form carries the whole description percent-encoded in its query
+string, which puts the URL past the length at which a terminal stops linkifying
+it, so pasting one into a chat reply leaves the reader an unclickable wall of
+``%20``. This opens the form and prints only a one-line confirmation, falling
+back to the URL when no browser can be found. ``webbrowser`` is cross-platform,
+so this works on Linux, macOS, and Windows.
 """
 
 import sys
@@ -44,8 +48,11 @@ def main(argv):
     if not argv:
         sys.exit(f"usage: {sys.argv[0]} field=value [field=value ...]")
     url = build_url(argv)
+    if webbrowser.open(url):
+        print(f"Opened a prefilled form ({len(url)} chars).")
+        return
+    print("No browser to open; falling back to the URL:", file=sys.stderr)
     print(url)
-    webbrowser.open(url)
 
 
 if __name__ == "__main__":

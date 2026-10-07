@@ -100,6 +100,43 @@ internal open class ForeignBytes : Structure() {
 
     class ByValue : ForeignBytes(), Structure.ByValue
 }
+
+// Converter for `&[u8]` / `[ByRef] bytes` arguments.
+//
+// Only `lower` is valid — zero-copy byte buffers only flow foreign -> Rust,
+// and only in argument position. `lift`, `read`, `write`, and
+// `allocationSize` have no sound implementation here and all panic at
+// runtime. The `FfiConverter` interface is implemented so that the
+// compiler enforces the full method set (rather than relying on eyeball).
+//
+// The provided `ByteBuffer` MUST be direct — only direct buffers have a
+// stable native address that JNA can expose via `getDirectBufferPointer`.
+// The returned `ForeignBytes.ByValue` is only valid for the duration of
+// the FFI call; the Rust side treats it as a borrow.
+internal object FfiConverterByRefBytes : FfiConverter<java.nio.ByteBuffer, ForeignBytes.ByValue> {
+    override fun lower(value: java.nio.ByteBuffer): ForeignBytes.ByValue {
+        require(value.isDirect) { "UniFFI zero-copy &[u8] requires a direct ByteBuffer. Use ByteBuffer.allocateDirect()." }
+        val remaining = value.remaining()
+        val fb = ForeignBytes.ByValue()
+        fb.len = remaining
+        // Zero-length direct buffers: skip getDirectBufferPointer (platform-variable behavior)
+        // and pass null. The Rust side treats (null, 0) as &[].
+        fb.data = if (remaining == 0) null else com.sun.jna.Native.getDirectBufferPointer(value)
+        return fb
+    }
+
+    override fun lift(value: ForeignBytes.ByValue): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be lifted: zero-copy &[u8] only flows foreign->Rust")
+
+    override fun read(buf: java.nio.ByteBuffer): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be read from a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun write(value: java.nio.ByteBuffer, buf: java.nio.ByteBuffer): Unit =
+        error("ByRef bytes cannot be written to a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun allocationSize(value: java.nio.ByteBuffer): ULong =
+        error("ByRef bytes have no RustBuffer allocation size: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+}
 /**
  * The FfiConverter interface handles converter types to and from the FFI
  *
@@ -659,35 +696,35 @@ internal object IntegrityCheckingUniffiLib {
         uniffiCheckContractApiVersion(this)
     }
     external fun uniffi_remote_settings_checksum_method_remotesettingsclient_collection_name(
-    ): Short
+    ): Int
     external fun uniffi_remote_settings_checksum_method_remotesettingsclient_get_attachment(
-    ): Short
+    ): Int
     external fun uniffi_remote_settings_checksum_method_remotesettingsclient_get_last_modified_timestamp(
-    ): Short
+    ): Int
     external fun uniffi_remote_settings_checksum_method_remotesettingsclient_get_records(
-    ): Short
+    ): Int
     external fun uniffi_remote_settings_checksum_method_remotesettingsclient_get_records_map(
-    ): Short
+    ): Int
     external fun uniffi_remote_settings_checksum_method_remotesettingsclient_reset_storage(
-    ): Short
+    ): Int
     external fun uniffi_remote_settings_checksum_method_remotesettingsclient_shutdown(
-    ): Short
+    ): Int
     external fun uniffi_remote_settings_checksum_method_remotesettingsclient_sync(
-    ): Short
+    ): Int
     external fun uniffi_remote_settings_checksum_method_remotesettingsservice_client_url(
-    ): Short
+    ): Int
     external fun uniffi_remote_settings_checksum_method_remotesettingsservice_make_client(
-    ): Short
+    ): Int
     external fun uniffi_remote_settings_checksum_method_remotesettingsservice_set_telemetry(
-    ): Short
+    ): Int
     external fun uniffi_remote_settings_checksum_method_remotesettingsservice_sync(
-    ): Short
+    ): Int
     external fun uniffi_remote_settings_checksum_method_remotesettingsservice_update_config(
-    ): Short
+    ): Int
     external fun uniffi_remote_settings_checksum_method_remotesettingstelemetry_report_uptake(
-    ): Short
+    ): Int
     external fun uniffi_remote_settings_checksum_constructor_remotesettingsservice_new(
-    ): Short
+    ): Int
     external fun ffi_remote_settings_uniffi_contract_version(
     ): Int
 
@@ -766,7 +803,7 @@ internal object UniffiLib {
     external fun ffi_remote_settings_rust_future_free_u8(`handle`: Long,
     ): Unit
     external fun ffi_remote_settings_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Byte
+    ): Int
     external fun ffi_remote_settings_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
     external fun ffi_remote_settings_rust_future_cancel_i8(`handle`: Long,
@@ -782,7 +819,7 @@ internal object UniffiLib {
     external fun ffi_remote_settings_rust_future_free_u16(`handle`: Long,
     ): Unit
     external fun ffi_remote_settings_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Short
+    ): Int
     external fun ffi_remote_settings_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
     external fun ffi_remote_settings_rust_future_cancel_i16(`handle`: Long,
@@ -1379,6 +1416,11 @@ open class RemoteSettingsClient: Disposable, AutoCloseable, RemoteSettingsClient
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
 
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
     override fun destroy() {
         // Only allow a single call to this method.
         // TODO: maybe we should log a warning if called more than once?
@@ -1478,6 +1520,7 @@ open class RemoteSettingsClient: Disposable, AutoCloseable, RemoteSettingsClient
     uniffiRustCallWithError(RemoteSettingsException) { _status ->
     UniffiLib.uniffi_remote_settings_fn_method_remotesettingsclient_get_attachment(
         it,
+        
         FfiConverterTypeRemoteSettingsRecord.lower(`record`),_status)
 }
     }
@@ -1525,6 +1568,7 @@ open class RemoteSettingsClient: Disposable, AutoCloseable, RemoteSettingsClient
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_remote_settings_fn_method_remotesettingsclient_get_records(
         it,
+        
         FfiConverterBoolean.lower(`syncIfEmpty`),_status)
 }
     }
@@ -1544,6 +1588,7 @@ open class RemoteSettingsClient: Disposable, AutoCloseable, RemoteSettingsClient
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_remote_settings_fn_method_remotesettingsclient_get_records_map(
         it,
+        
         FfiConverterBoolean.lower(`syncIfEmpty`),_status)
 }
     }
@@ -1819,7 +1864,9 @@ open class RemoteSettingsService: Disposable, AutoCloseable, RemoteSettingsServi
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_remote_settings_fn_constructor_remotesettingsservice_new(
     
-        FfiConverterString.lower(`storageDir`),FfiConverterTypeRemoteSettingsConfig.lower(`config`),_status)
+        
+        FfiConverterString.lower(`storageDir`),
+        FfiConverterTypeRemoteSettingsConfig.lower(`config`),_status)
 }
     )
 
@@ -1828,6 +1875,11 @@ open class RemoteSettingsService: Disposable, AutoCloseable, RemoteSettingsServi
 
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
+
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
 
     override fun destroy() {
         // Only allow a single call to this method.
@@ -1918,6 +1970,7 @@ open class RemoteSettingsService: Disposable, AutoCloseable, RemoteSettingsServi
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_remote_settings_fn_method_remotesettingsservice_make_client(
         it,
+        
         FfiConverterString.lower(`collectionName`),_status)
 }
     }
@@ -1936,6 +1989,7 @@ open class RemoteSettingsService: Disposable, AutoCloseable, RemoteSettingsServi
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_remote_settings_fn_method_remotesettingsservice_set_telemetry(
         it,
+        
         FfiConverterTypeRemoteSettingsTelemetry.lower(`telemetry`),_status)
 }
     }
@@ -1978,6 +2032,7 @@ open class RemoteSettingsService: Disposable, AutoCloseable, RemoteSettingsServi
     uniffiRustCallWithError(RemoteSettingsException) { _status ->
     UniffiLib.uniffi_remote_settings_fn_method_remotesettingsservice_update_config(
         it,
+        
         FfiConverterTypeRemoteSettingsConfig.lower(`config`),_status)
 }
     }
@@ -2205,6 +2260,11 @@ open class RemoteSettingsTelemetryImpl: Disposable, AutoCloseable, RemoteSetting
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
 
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
     override fun destroy() {
         // Only allow a single call to this method.
         // TODO: maybe we should log a warning if called more than once?
@@ -2279,6 +2339,7 @@ open class RemoteSettingsTelemetryImpl: Disposable, AutoCloseable, RemoteSetting
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_remote_settings_fn_method_remotesettingstelemetry_report_uptake(
         it,
+        
         FfiConverterTypeUptakeEventExtras.lower(`extras`),_status)
 }
     }
@@ -2918,7 +2979,7 @@ public object FfiConverterTypeRemoteSettingsServer : FfiConverterRustBuffer<Remo
         }
     }
 
-    override fun allocationSize(value: RemoteSettingsServer) = when(value) {
+    override fun allocationSize(value: RemoteSettingsServer): ULong = when(value) {
         is RemoteSettingsServer.Prod -> {
             // Add the size for the Int that specifies the variant plus the size needed for all fields
             (
@@ -3428,11 +3489,6 @@ public object FfiConverterMapStringTypeRemoteSettingsRecord: FfiConverterRustBuf
 
 
 
-/**
- * Typealias from the type name used in the UDL file to the custom type.  This
- * is needed because the UDL type name is used in function/method signatures.
- * It's also what we have an external type that references a custom type.
- */
 public typealias RsJsonObject = JSONObject
 
 

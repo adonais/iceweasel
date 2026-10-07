@@ -18,6 +18,21 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs",
 });
 
+const { formAutofillStorage } = ChromeUtils.importESModule(
+  "resource://autofill/FormAutofillStorage.sys.mjs"
+);
+
+// The autocomplete form has no address section, so the preview test uses the
+// form whose fields carry an autocomplete attribute Form Autofill can fill.
+const ADDRESS_FORM_URL =
+  "https://example.com/browser/browser/components/aiwindow/ui/test/browser/test_smartformfill.html";
+
+const TEST_ADDRESS = {
+  "given-name": "John",
+  email: "john.smith@example.com",
+  country: "US",
+};
+
 ChromeUtils.defineLazyGetter(
   lazy,
   "l10n",
@@ -52,6 +67,54 @@ function getSourcesValue(row) {
   const sources = row.renderRoot.querySelector(".smart-form-fill-sources");
   const label = sources.querySelector(".sources-label").textContent;
   return sources.textContent.replace(label, "").trim();
+}
+
+/**
+ * Moves the pointer over an autocomplete row and waits for the autofill
+ * preview to settle. A row only reacts to a move once the popup's throttling
+ * window has passed, so reset it before each attempt.
+ *
+ * @param {Window} win AI Window owning the popup.
+ * @param {XULPopupElement} popup Autocomplete popup.
+ * @param {Element} item Row to hover.
+ */
+async function hoverRow(win, popup, item) {
+  const previewSettled = TestUtils.topicObserved(
+    "formautofill-preview-complete"
+  );
+
+  await TestUtils.waitForCondition(() => {
+    popup.mLastMoveTime = 0;
+    EventUtils.synthesizeMouseAtCenter(item, { type: "mousemove" }, win);
+    return item.hasAttribute("selected");
+  }, "Waiting for the hovered row to be pointer-selected");
+
+  await previewSettled;
+}
+
+/**
+ * Asserts whether the address fields carry an autofill preview.
+ *
+ * @param {MozBrowser} browser Browser showing the form.
+ * @param {boolean} previewed Whether the fields should be previewed.
+ */
+function assertPreviewedFields(browser, previewed) {
+  return SpecialPowers.spawn(browser, [previewed], shouldPreview => {
+    for (const selector of ["#first-name", "#email"]) {
+      const field = content.document.querySelector(selector);
+
+      Assert.equal(
+        field.autofillState,
+        shouldPreview ? "preview" : "",
+        `${selector} preview state`
+      );
+      Assert.equal(
+        !!field.previewValue,
+        shouldPreview,
+        `${selector} preview value`
+      );
+    }
+  });
 }
 
 describe("Smart Form Fill autocomplete row item menu", () => {
@@ -190,6 +253,10 @@ describe("Smart Form Fill autocomplete row item menu", () => {
       await lazy.l10n.formatValue("ai-smart-form-fill-autocomplete-open-tabs"),
       "The row should initially report that no source tabs exist"
     );
+    Assert.ok(
+      !result.row.renderRoot.querySelector("moz-button.secondary-action"),
+      "The edit-sources action should be hidden without source tabs"
+    );
     await closeAutocomplete(result.browser);
 
     const tabUpdated = waitForTabChange("TabAttrModified");
@@ -210,6 +277,10 @@ describe("Smart Form Fill autocomplete row item menu", () => {
       ),
       "The row should report that source tabs are available"
     );
+    Assert.ok(
+      result.row.renderRoot.querySelector("moz-button.secondary-action"),
+      "The edit-sources action should be shown when source tabs are available"
+    );
     await closeAutocomplete(result.browser);
 
     const tabClosed = waitForTabChange("TabClose");
@@ -224,5 +295,51 @@ describe("Smart Form Fill autocomplete row item menu", () => {
       await lazy.l10n.formatValue("ai-smart-form-fill-autocomplete-open-tabs"),
       "The row should update after the last source tab closes"
     );
+    Assert.ok(
+      !result.row.renderRoot.querySelector("moz-button.secondary-action"),
+      "The edit-sources action should be hidden after the last source tab closes"
+    );
+  });
+
+  describe("with a saved address", () => {
+    beforeEach(async () => {
+      await SpecialPowers.pushPrefEnv({
+        set: [["extensions.formautofill.addresses.supported", "on"]],
+      });
+      await formAutofillStorage.initialize();
+      await formAutofillStorage.addresses.add(TEST_ADDRESS);
+
+      const tabUpdated = waitForTabChange("TabAttrModified");
+      await promiseNavigateAndLoad(
+        win.gBrowser.selectedBrowser,
+        ADDRESS_FORM_URL
+      );
+      await tabUpdated;
+    });
+
+    afterEach(async () => {
+      await formAutofillStorage.addresses.removeAll();
+      await SpecialPowers.popPrefEnv();
+    });
+
+    it("drops the address preview left by the previously hovered row", async () => {
+      const { browser, popup, item } = await openAutocomplete(
+        win,
+        "#first-name",
+        mockEngineManager
+      );
+
+      const addressItem = popup.querySelector('[originaltype="autofill"]');
+      Assert.ok(addressItem, "The address row should be shown");
+
+      await hoverRow(win, popup, addressItem);
+      await assertPreviewedFields(browser, true);
+
+      await hoverRow(win, popup, item);
+      await assertPreviewedFields(browser, false);
+
+      await hoverRow(win, popup, addressItem);
+      await assertPreviewedFields(browser, true);
+    });
   });
 });

@@ -3,10 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "PrintTargetPDF.h"
-#ifdef MOZ_ENABLE_SKIA_PDF
-#  include "PrintTargetSkPDF.h"
-#endif
 
+#include "PrintTargetSkPDF.h"
 #include "cairo-pdf.h"
 #include "cairo.h"
 #include "mozilla/AppShutdown.h"
@@ -56,11 +54,9 @@ already_AddRefed<PrintTarget> PrintTargetPDF::CreateOrNull(
     return nullptr;
   }
 
-#ifdef MOZ_ENABLE_SKIA_PDF
   if (StaticPrefs::print_experimental_skpdf()) {
     return PrintTargetSkPDF::CreateOrNull(aStream, aSizeInPoints);
   }
-#endif
 
   cairo_surface_t* surface = cairo_pdf_surface_create_for_stream(
       write_func, (void*)aStream, aSizeInPoints.width, aSizeInPoints.height);

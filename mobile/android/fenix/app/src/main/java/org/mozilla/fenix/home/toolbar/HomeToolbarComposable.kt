@@ -15,6 +15,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -49,7 +50,6 @@ import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEnded
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
 import org.mozilla.fenix.components.appstate.VoiceSearchAction.VoiceInputRequested
 import org.mozilla.fenix.components.metrics.MetricsUtils
-import org.mozilla.fenix.components.toolbar.ToolbarPosition.BOTTOM
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.wallpapers.WallpaperTheme
@@ -147,8 +147,14 @@ internal class HomeToolbarComposable(
 
     @Composable
     private fun ToolbarContent(wallpaperTextColor: Color?) {
-        val shouldShowTabStrip: Boolean = remember { settings.isTabStripEnabled }
-        val isAddressBarVisible = remember { addressBarVisibility }
+        val shouldUseBottomToolbar = remember { settings.shouldUseBottomToolbar }
+        val shouldShowTabStrip = remember {
+            if (shouldUseBottomToolbar) {
+                settings.shouldShowTabStripAtBottom
+            } else {
+                settings.shouldShowTabStripAtTop
+            }
+        }
 
         Column(
             modifier =
@@ -157,51 +163,56 @@ internal class HomeToolbarComposable(
                     testTag = context.resources.getResourceName(R.id.composable_toolbar)
                 }
         ) {
+            if (shouldUseBottomToolbar) {
+                searchSuggestionsContent(Modifier.weight(1f))
+            }
+
             if (shouldShowTabStrip) {
                 tabStripContent()
             }
 
-            if (settings.shouldUseBottomToolbar) {
-                searchSuggestionsContent(Modifier.weight(1f))
-            }
+            AddressBar(wallpaperTextColor = wallpaperTextColor)
 
-            Box {
-                if (settings.enableHomepageSearchBar) {
-                    BrowserSimpleToolbar(toolbarStore, appStore)
-                }
-
-                this@Column.AnimatedVisibility(
-                    visible = isAddressBarVisible.value || appStore.state.searchState.isSearchActive,
-                    enter =
-                        fadeIn(
-                            animationSpec =
-                                tween(
-                                    durationMillis = 250,
-                                    easing = Easing { fraction -> fraction * fraction },
-                                )
-                        ),
-                    exit =
-                        fadeOut(
-                            animationSpec =
-                                tween(
-                                    durationMillis = 250,
-                                    easing = Easing { fraction -> 1f - (1f - fraction) * (1f - fraction) },
-                                )
-                        ),
-                ) {
-                    BrowserToolbar(
-                        store = toolbarStore,
-                        browserActionsColor = wallpaperTextColor,
-                    )
-                }
-            }
-
-            if (settings.toolbarPosition == BOTTOM) {
+            if (shouldUseBottomToolbar) {
                 navigationBarContent?.invoke()
+            } else {
+                searchSuggestionsContent(Modifier.weight(1f))
+            }
+        }
+    }
+
+    @Composable
+    private fun ColumnScope.AddressBar(wallpaperTextColor: Color?) {
+        val isAddressBarVisible = remember { addressBarVisibility }
+
+        Box {
+            if (settings.enableHomepageSearchBar) {
+                BrowserSimpleToolbar(toolbarStore, appStore)
             }
 
-            if (!settings.shouldUseBottomToolbar) {
-                searchSuggestionsContent(Modifier.weight(1f))
+            this@AddressBar.AnimatedVisibility(
+                visible = isAddressBarVisible.value || appStore.state.searchState.isSearchActive,
+                enter =
+                    fadeIn(
+                        animationSpec =
+                            tween(
+                                durationMillis = 250,
+                                easing = Easing { fraction -> fraction * fraction },
+                            )
+                    ),
+                exit =
+                    fadeOut(
+                        animationSpec =
+                            tween(
+                                durationMillis = 250,
+                                easing = Easing { fraction -> 1f - (1f - fraction) * (1f - fraction) },
+                            )
+                    ),
+            ) {
+                BrowserToolbar(
+                    store = toolbarStore,
+                    browserActionsColor = wallpaperTextColor,
+                )
             }
         }
     }

@@ -25,6 +25,8 @@ subsuite = "taskgraph"
 
 ["test_transforms_build_schedules.py"]
 
+["test_transforms_duplicate.py"]
+
 ["test_transforms_job.py"]
 
 ["test_transforms_job_common.py"]
@@ -46,6 +48,8 @@ subsuite = "taskgraph"
 ["test_util_partials.py"]
 
 ["test_util_runnable_jobs.py"]
+
+["test_util_sparse_profiles.py"]
 
 ["test_util_templates.py"]
 

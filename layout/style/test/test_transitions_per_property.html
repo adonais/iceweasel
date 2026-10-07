@@ -362,6 +362,17 @@ if (IsCSSPropertyPrefEnabled("layout.css.backdrop-filter.enabled")) {
   supported_properties["backdrop-filter"] = [ test_filter_transition ];
 }
 
+if (IsCSSPropertyPrefEnabled("layout.css.corner-shape.enabled")) {
+  supported_properties["corner-bottom-left-shape"] = [ test_corner_shape_transition ];
+  supported_properties["corner-bottom-right-shape"] = [ test_corner_shape_transition ];
+  supported_properties["corner-top-left-shape"] = [ test_corner_shape_transition ];
+  supported_properties["corner-top-right-shape"] = [ test_corner_shape_transition ];
+  supported_properties["corner-start-start-shape"] = [ test_corner_shape_transition ];
+  supported_properties["corner-start-end-shape"] = [ test_corner_shape_transition ];
+  supported_properties["corner-end-start-shape"] = [ test_corner_shape_transition ];
+  supported_properties["corner-end-end-shape"] = [ test_corner_shape_transition ];
+}
+
 supported_properties["font-variation-settings"] = [ test_font_variations_transition ];
 
 if (IsCSSPropertyPrefEnabled("layout.css.line-clamp.enabled")) {
@@ -2114,6 +2125,17 @@ function test_shadow_transition(prop) {
      "timing function which produces values greater than 1.0");
 
   div.style.setProperty("transition-timing-function", origTimingFunc, "");
+}
+
+function test_corner_shape_transition(prop) {
+  div.style.transitionProperty = 'none';
+  div.style[prop] = 'superellipse(-1)';
+  is(cs[prop], 'superellipse(-1)',
+     `superellipse property ${prop}: computed value before transition`);
+  div.style.transitionProperty = prop;
+  div.style[prop] = 'superellipse(infinity)';
+  is(cs[prop], 'superellipse(-0.128097)',
+     `superellipse property ${prop}: interpolation of superellipses`);
 }
 
 function test_dasharray_transition(prop) {

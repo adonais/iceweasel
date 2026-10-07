@@ -259,6 +259,14 @@
     }
   }
 
+  // A textarea is inline-block, so without this the buttons flow up beside it.
+  .spaces-config-input {
+    display: block;
+    inline-size: 100%;
+    margin-block-end: var(--space-small);
+    font-family: monospace;
+  }
+
   .layout-variants {
     display: flex;
     flex-direction: column;

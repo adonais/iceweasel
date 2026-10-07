@@ -105,9 +105,7 @@ static bool ToNrIceCandidate(const nr_ice_candidate& candc,
 
   if (!ToNrIceAddr(cand->addr, &out->cand_addr)) return false;
 
-  if (cand->mdns_addr) {
-    out->mdns_addr = cand->mdns_addr;
-  }
+  out->domain_name = cand->addr.fqdn;
 
   if (cand->isock) {
     nr_transport_addr addr;
@@ -207,6 +205,7 @@ nsresult NrIceMediaStream::ConnectToPeer(
     MOZ_MTLOG(ML_DEBUG,
               "Rolling back to old stream ufrag=" << ufrag << " " << name_);
     std::swap(stream_, old_stream_);
+    std::swap(dtls_id_, old_dtls_id_);
     CloseStream(&old_stream_);
     if (wasGathering && AllGenerationsDoneGathering()) {
       // Special case; we do not need to send another empty candidate, but we
@@ -263,6 +262,7 @@ nsresult NrIceMediaStream::SetIceCredentials(const std::string& ufrag,
                                                      << ":" << pwd);
   CloseStream(&old_stream_);
   old_stream_ = stream_;
+  old_dtls_id_ = dtls_id_;
 
   std::string name(name_ + " - " + ufrag + ":" + pwd);
 
@@ -276,6 +276,11 @@ nsresult NrIceMediaStream::SetIceCredentials(const std::string& ufrag,
     return NS_ERROR_FAILURE;
   }
 
+  // The new stream inherits the DTLS association; see AdvanceDtlsId.
+  if (!dtls_id_) {
+    dtls_id_ = next_dtls_id_++;
+  }
+
   state_ = ICE_CONNECTING;
 
   MOZ_MTLOG(ML_WARNING,
@@ -285,9 +290,9 @@ nsresult NrIceMediaStream::SetIceCredentials(const std::string& ufrag,
 }
 
 // Parse trickle ICE candidate
-nsresult NrIceMediaStream::ParseTrickleCandidate(const std::string& candidate,
-                                                 const std::string& ufrag,
-                                                 const std::string& mdns_addr) {
+nsresult NrIceMediaStream::ParseTrickleCandidate(
+    const std::string& candidate, const std::string& ufrag,
+    const std::string& resolved_address) {
   nr_ice_media_stream* stream = GetStreamForRemoteUfrag(ufrag);
   if (!stream) {
     return NS_ERROR_FAILURE;
@@ -299,7 +304,7 @@ nsresult NrIceMediaStream::ParseTrickleCandidate(const std::string& candidate,
 
   int r = nr_ice_peer_ctx_parse_trickle_candidate(
       ctx_->peer(), stream, const_cast<char*>(candidate.c_str()),
-      mdns_addr.c_str());
+      resolved_address.empty() ? nullptr : resolved_address.c_str());
 
   if (r) {
     if (r == R_ALREADY) {
@@ -682,9 +687,38 @@ bool NrIceMediaStream::HasStream(nr_ice_media_stream* stream) const {
   return (stream == stream_) || (stream == old_stream_);
 }
 
+uint32_t NrIceMediaStream::GetDtlsId() const { return dtls_id_; }
+
+uint32_t NrIceMediaStream::DtlsIdForStream(nr_ice_media_stream* aStream) const {
+  return aStream == old_stream_ ? old_dtls_id_ : dtls_id_;
+}
+
+void NrIceMediaStream::PacketReceived(nr_ice_media_stream* stream,
+                                      int component_id,
+                                      const unsigned char* data, int len) {
+  MediaPacket packet;
+  packet.Copy(data, len);
+  packet.Categorize();
+  SignalPacketReceived(this, component_id, DtlsIdForStream(stream), packet);
+}
+
+void NrIceMediaStream::AdvanceDtlsId() {
+  MOZ_ASSERT(old_stream_, "Only meaningful right after an ICE restart");
+  dtls_id_ = next_dtls_id_++;
+}
+
 nsresult NrIceMediaStream::SendPacket(int component_id,
-                                      const unsigned char* data, size_t len) {
-  nr_ice_media_stream* stream = old_stream_ ? old_stream_ : stream_;
+                                      const unsigned char* data, size_t len,
+                                      uint32_t aDtlsId) {
+  // Route to the underlying stream carrying this DTLS association. When both
+  // carry it (an ICE restart that continues the association), prefer the old
+  // stream, which is the one known to work.
+  nr_ice_media_stream* stream = nullptr;
+  if (old_stream_ && aDtlsId == old_dtls_id_) {
+    stream = old_stream_;
+  } else if (aDtlsId == dtls_id_) {
+    stream = stream_;
+  }
   if (!stream) {
     return NS_ERROR_FAILURE;
   }
@@ -704,7 +738,10 @@ nsresult NrIceMediaStream::SendPacket(int component_id,
 }
 
 void NrIceMediaStream::Ready(nr_ice_media_stream* stream) {
-  if (stream == stream_) {
+  if (stream == stream_ && old_dtls_id_ == dtls_id_) {
+    // The DTLS association has moved over to the new stream, so the old one is
+    // done. An old stream carrying a different association stays until
+    // MediaTransportHandler retires it with CloseOldStream().
     NS_DispatchToCurrentThread(NewRunnableMethod<nr_ice_media_stream*>(
         "NrIceMediaStream::DeferredCloseOldStream", this,
         &NrIceMediaStream::DeferredCloseOldStream, old_stream_));
@@ -771,6 +808,14 @@ void NrIceMediaStream::CloseStream(nr_ice_media_stream** stream) {
 
 void NrIceMediaStream::DeferredCloseOldStream(const nr_ice_media_stream* old) {
   if (old == old_stream_) {
+    CloseStream(&old_stream_);
+  }
+}
+
+void NrIceMediaStream::CloseOldStream() {
+  // After a further ICE restart the old stream carries the current association
+  // again (see SetIceCredentials); Ready() closes it in that case.
+  if (old_dtls_id_ != dtls_id_) {
     CloseStream(&old_stream_);
   }
 }

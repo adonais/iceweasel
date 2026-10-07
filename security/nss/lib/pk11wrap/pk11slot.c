@@ -137,6 +137,7 @@ PK11_FreeSlotListElement(PK11SlotList *list, PK11SlotListElement *le)
     }
 
     PR_Lock(list->lock);
+    PORT_ReleaseAssert(le->refCount > 0);
     if (le->refCount-- == 1) {
         freeit = PR_TRUE;
     }
@@ -466,7 +467,8 @@ PK11_NewSlotInfo(SECMODModule *mod)
 PK11SlotInfo *
 PK11_ReferenceSlot(PK11SlotInfo *slot)
 {
-    PR_ATOMIC_INCREMENT(&slot->refCount);
+    PRInt32 refCount = PR_ATOMIC_INCREMENT(&slot->refCount);
+    PORT_ReleaseAssert(refCount > 1);
     return slot;
 }
 
@@ -523,7 +525,9 @@ PK11_DestroySlot(PK11SlotInfo *slot)
 void
 PK11_FreeSlot(PK11SlotInfo *slot)
 {
-    if (PR_ATOMIC_DECREMENT(&slot->refCount) == 0) {
+    PRInt32 refCount = PR_ATOMIC_DECREMENT(&slot->refCount);
+    PORT_ReleaseAssert(refCount >= 0);
+    if (refCount == 0) {
         PK11_DestroySlot(slot);
     }
 }

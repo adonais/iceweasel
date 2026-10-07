@@ -25,6 +25,7 @@ TEST_STUB_INSTALLER_DEPS := \
 	desktop_launcher_helpers.nsh \
 	$(NULL)
 
+ifdef MOZ_USE_MAKEFILE_INSTALLER_BUILD
 test_stub_installer:
 ifdef ENABLE_TESTS
 	$(MAKE) $(BIN_UTIL_DIR)/test_stub_installer.exe
@@ -36,3 +37,4 @@ $(BIN_UTIL_DIR)/test_stub_installer.exe: $(TEST_STUB_INSTALLER_DEPS)
 	$(MAKE) -C .. install_deps
 	cd $(CONFIG_DIR) && $(MAKENSISU) -nocd -- $(CONFIG_DIR)/test_stub.nsi
 	cp $(CONFIG_DIR)/test_stub_installer.exe $(BIN_UTIL_DIR)/test_stub_installer.exe
+endif

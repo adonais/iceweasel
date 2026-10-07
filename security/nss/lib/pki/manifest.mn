@@ -19,10 +19,8 @@ PRIVATE_EXPORTS = \
 MODULE = nss
 
 CSRCS =		        \
-	asymmkey.c      \
 	certificate.c   \
 	cryptocontext.c \
-	symmkey.c       \
 	trustdomain.c   \
 	tdcache.c       \
 	certdecode.c    \

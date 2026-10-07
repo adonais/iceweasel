@@ -10,11 +10,13 @@
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsContentUtils.h"
 #include "nsDirectoryServiceUtils.h"
+#include "nsEscape.h"
 #include "nsIFile.h"
 #include "nsIFileChannel.h"
 #include "nsIFileURL.h"
 #include "nsIMIMEService.h"
 #include "nsNetUtil.h"
+#include "nsTArray.h"
 #include "nsURLHelper.h"
 #include "prio.h"
 
@@ -92,22 +94,80 @@ RefPtr<RemoteStreamPromise> MozNewTabWallpaperProtocolHandler::NewStream(
       aChildURI, resolvedSpec, "image/jpeg"_ns);
 }
 
+/**
+ * @return false if a component could name something outside the folder it is
+ *   appended to, in which case the URI must not resolve.
+ */
+static bool IsSafeComponent(const nsACString& aComponent) {
+  // A backslash separates directories on Windows, a null ends a C string.
+  return !aComponent.IsEmpty() && !aComponent.EqualsLiteral(".") &&
+         !aComponent.EqualsLiteral("..") &&
+         aComponent.FindChar('/') == kNotFound &&
+         aComponent.FindChar('\\') == kNotFound &&
+         aComponent.FindChar('\0') == kNotFound;
+}
+
+/**
+ * Splits a moz-newtab-wallpaper path into decoded components, none for a host
+ * on its own. Each component is checked by itself, so depth needs no limit.
+ *
+ * @return false if a component could name a file outside the host's folder,
+ *   in which case the URI must not resolve.
+ */
+static bool SplitWallpaperPath(const nsACString& aPathname,
+                               nsTArray<nsCString>& aSegments) {
+  if (aPathname.IsEmpty() || aPathname.EqualsLiteral("/")) {
+    return true;
+  }
+
+  if (aPathname.First() != '/') {
+    return false;
+  }
+
+  // Named, so the substring outlives the loop.
+  nsAutoCString path(Substring(aPathname, 1));
+
+  for (const nsACString& encoded : path.Split('/')) {
+    nsAutoCString segment(encoded);
+    NS_UnescapeURL(segment);
+
+    if (!IsSafeComponent(segment)) {
+      return false;
+    }
+
+    aSegments.AppendElement(segment);
+  }
+
+  return true;
+}
+
 bool MozNewTabWallpaperProtocolHandler::ResolveSpecialCases(
     const nsACString& aHost, const nsACString& aPath,
     const nsACString& aPathname, nsACString& aResult) {
-  if (aHost.IsEmpty()) {
+  // The host names the folder, so it is checked the same way a component of
+  // the path is. URI parsing lets ".." and "." through as a host.
+  if (!IsSafeComponent(aHost)) {
+    return false;
+  }
+
+  nsTArray<nsCString> segments;
+  if (!SplitWallpaperPath(aPathname, segments)) {
     return false;
   }
 
   if (IsNeckoChild()) {
     // Child process: return placeholder file:// URI for
     // SubstitutingProtocolHandler. SubstituteChannel will replace with a remote
-    // channel that proxies the load to the parent process.
+    // channel that proxies the load to the parent process. The path stays
+    // escaped here, and a host-only "/" is left off so the string is unchanged.
     aResult.Assign("file://");
     aResult.Append(aHost);
+    if (!segments.IsEmpty()) {
+      aResult.Append(aPathname);
+    }
     return true;
   } else {
-    // Parent process: resolve to profile/wallpaper/{host} directory.
+    // Parent process: resolve to profile/wallpaper/{host}/{path}.
     nsCOMPtr<nsIFile> file;
     nsresult rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
                                          getter_AddRefs(file));
@@ -123,6 +183,14 @@ bool MozNewTabWallpaperProtocolHandler::ResolveSpecialCases(
     rv = file->AppendNative(nsCString(aHost));
     if (NS_FAILED(rv)) {
       return false;
+    }
+
+    // AppendNative refuses ".." and separators too, so this is a second guard.
+    for (const nsCString& segment : segments) {
+      rv = file->AppendNative(segment);
+      if (NS_FAILED(rv)) {
+        return false;
+      }
     }
 
     nsCOMPtr<nsIURI> uri;

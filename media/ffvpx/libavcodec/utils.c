@@ -33,7 +33,7 @@
 #include "libavutil/pixdesc.h"
 #include "libavutil/imgutils.h"
 #include "libavutil/pixfmt.h"
-/* #include "libavutil/timecode_internal.h" */
+#include "libavutil/timecode_internal.h"
 #include "avcodec.h"
 #include "codec.h"
 #include "codec_desc.h"
@@ -315,6 +315,21 @@ void avcodec_align_dimensions2(AVCodecContext *s, int *width, int *height,
             h_align = 8;
         }
         break;
+    case AV_PIX_FMT_BAYER_BGGR8:
+    case AV_PIX_FMT_BAYER_RGGB8:
+    case AV_PIX_FMT_BAYER_GBRG8:
+    case AV_PIX_FMT_BAYER_GRBG8:
+    case AV_PIX_FMT_BAYER_BGGR16LE:
+    case AV_PIX_FMT_BAYER_BGGR16BE:
+    case AV_PIX_FMT_BAYER_RGGB16LE:
+    case AV_PIX_FMT_BAYER_RGGB16BE:
+    case AV_PIX_FMT_BAYER_GBRG16LE:
+    case AV_PIX_FMT_BAYER_GBRG16BE:
+    case AV_PIX_FMT_BAYER_GRBG16LE:
+    case AV_PIX_FMT_BAYER_GRBG16BE:
+        w_align = FFMAX(w_align, 2);
+        h_align = FFMAX(h_align, 2);
+        break;
     default:
         break;
     }
@@ -406,20 +421,12 @@ int avpriv_codec_get_cap_skip_frame_fill_param(const AVCodec *codec){
 const char *avcodec_get_name(enum AVCodecID id)
 {
     const AVCodecDescriptor *cd;
-    const AVCodec *codec;
 
     if (id == AV_CODEC_ID_NONE)
         return "none";
     cd = avcodec_descriptor_get(id);
     if (cd)
         return cd->name;
-    av_log(NULL, AV_LOG_WARNING, "Codec 0x%x is not in the full list.\n", id);
-    codec = avcodec_find_decoder(id);
-    if (codec)
-        return codec->name;
-    codec = avcodec_find_encoder(id);
-    if (codec)
-        return codec->name;
     return "unknown_codec";
 }
 
@@ -979,12 +986,89 @@ AVCPBProperties *av_cpb_properties_alloc(size_t *size)
     return props;
 }
 
+static void put_timecode_fields(PutBitContext *pb, AVRational rate, uint32_t tc)
+{
+    unsigned hours, minutes, seconds, frames, drop;
+
+    ff_timecode_set_smpte(&drop, &hours, &minutes, &seconds, &frames, rate, tc, 0, 0);
+
+    put_bits(pb, 5, 0);      // counting_type
+    put_bits(pb, 1, 1);      // full_timestamp_flag
+    put_bits(pb, 1, 0);      // discontinuity_flag
+    put_bits(pb, 1, drop);   // cnt_dropped_flag
+    put_bits(pb, 9, frames);
+    put_bits(pb, 6, seconds);
+    put_bits(pb, 6, minutes);
+    put_bits(pb, 5, hours);
+}
+
 int ff_alloc_timecode_sei(const AVFrame *frame, AVRational rate, size_t prefix_len,
                      void **data, size_t *sei_size)
 {
-    // Stubbed: requires ff_timecode_set_smpte from libavutil internals,
-    // which cannot be called cross-library. Not used by any ffvpx codec.
+    AVFrameSideData *sd = NULL;
+    uint8_t *sei_data;
+    PutBitContext pb;
+    uint32_t *tc;
+    int m;
+
+    if (frame)
+        sd = av_frame_get_side_data(frame, AV_FRAME_DATA_S12M_TIMECODE);
+
+    if (!sd) {
+        *data = NULL;
+        return 0;
+    }
+    tc =  (uint32_t*)sd->data;
+    m  = tc[0] & 3;
+
+    *sei_size = sizeof(uint32_t) * 4;
+    *data = av_mallocz(*sei_size + prefix_len);
+    if (!*data)
+        return AVERROR(ENOMEM);
+    sei_data = (uint8_t*)*data + prefix_len;
+
+    init_put_bits(&pb, sei_data, *sei_size);
+    put_bits(&pb, 2, m); // num_clock_ts
+
+    for (int j = 1; j <= m; j++) {
+        put_bits(&pb, 1, 1); // clock_timestamp_flag
+        put_bits(&pb, 1, 1); // units_field_based_flag
+        put_timecode_fields(&pb, rate, tc[j]);
+        put_bits(&pb, 5, 0); // time_offset_length
+    }
+    flush_put_bits(&pb);
+
+    return 0;
+}
+
+int ff_alloc_timecode_metadata_av1(const AVFrame *frame, AVRational rate,
+                                   void **data, size_t *size)
+{
+    AVFrameSideData *sd = NULL;
+    PutBitContext pb;
+    uint32_t *tc;
+
+    if (frame)
+        sd = av_frame_get_side_data(frame, AV_FRAME_DATA_S12M_TIMECODE);
+
     *data = NULL;
+    if (!sd)
+        return 0;
+    tc = (uint32_t*)sd->data;
+    if (!(tc[0] & 3)) // num_clock_ts
+        return 0;
+
+    *size = 5;
+    *data = av_mallocz(*size);
+    if (!*data)
+        return AVERROR(ENOMEM);
+
+    init_put_bits(&pb, *data, *size);
+    put_timecode_fields(&pb, rate, tc[1]);
+    put_bits(&pb, 5, 1); // time_offset_length
+    put_bits(&pb, 1, 0); // time_offset_value
+    flush_put_bits(&pb);
+
     return 0;
 }
 

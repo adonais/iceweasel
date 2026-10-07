@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Test movementX/Y during pointer lock</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<script src="/tests/SimpleTest/EventUtils.js"></script>
+<script src="/tests/SimpleTest/paint_listener.js"></script>
+<script src="/tests/gfx/layers/apz/test/mochitest/apz_test_utils.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css">
+<style>
+#target {
+  width: 200px;
+  height: 200px;
+  background-color: green;
+}
+</style>
+</head>
+<body style="width: 100vw; height: 100vh; margin: 0;">
+<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=2071024">Mozilla Bug 2071024</a><br>
+<div id="target"></div>
+<script>
+
+function unexpectedEvent(aEvent) {
+  ok(false, `Unexpected ${aEvent.type} event`);
+}
+
+function waitForEventOnce(aTarget, aEvent, aFun) {
+  return new Promise(aResolve => {
+    aTarget.addEventListener(aEvent, (e) => {
+      info(`Received ${e.type}`);
+      if (aFun) {
+        aFun(e);
+      }
+      aResolve();
+    }, { once: true });
+  });
+}
+
+async function requestPointerLock(aElement) {
+  let doc = aElement.ownerDocument;
+  doc.addEventListener("pointerlockerror", unexpectedEvent);
+
+  SpecialPowers.wrap(doc).notifyUserGestureActivation();
+  aElement.requestPointerLock();
+  await waitForEventOnce(doc, "pointerlockchange");
+
+  is(doc.pointerLockElement, aElement, "target pointer locked");
+  doc.removeEventListener("pointerlockerror", unexpectedEvent);
+}
+
+let gSynthesizeMovement = false;
+
+add_setup(async function init() {
+  async function getWindowProtocol() {
+    return await SpecialPowers.spawnChrome([], () => {
+      try {
+        return Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo)
+          .windowProtocol;
+      } catch {
+        return "";
+      }
+    });
+  }
+
+  // Each platform have different behavior when pointer is locked, some platform
+  // provide the raw delta movement values, while other need to use the last pointer
+  // position to compute the delta movement, so we synthesize mousemove events based
+  // on the platform behavior.
+  let isWayland = (await getWindowProtocol() === "wayland");
+  gSynthesizeMovement = isWayland ||navigator.platform.includes("Mac");
+
+  await SpecialPowers.pushPrefEnv({"set": [
+    ["dom.event.pointer.rawupdate.enabled", true],
+    ["dom.event.pointer.rawupdate.movement.enabled", true],
+    ["dom.events.coalesce.mousemove", true],
+  ]});
+  await SimpleTest.promiseFocus();
+  await waitUntilApzStable();
+});
+
+add_task(async function test_pointerlock_movementXY() {
+  const event = { asyncEnabled: true, isSynthesized: false };
+
+  let lockedPosition = {};
+  let promise = waitForEventOnce(document, "mousemove", (e) => {
+    lockedPosition.clientX = e.clientX;
+    lockedPosition.clientY = e.clientY;
+  });
+  let target = document.getElementById("target");
+  synthesizeMouse(target, 0, 0, { ...event, type: "mousemove" });
+  await promise;
+  info(`lockedPosition: ${JSON.stringify(lockedPosition)}`);
+
+  info("Request pointer lock");
+  await requestPointerLock(target);
+
+  info(`Use the synthesized mousemoves to compute center point`);
+  let centerPoint = { x: 0, y: 0 };
+  await SimpleTest.promiseWaitForCondition(async () => {
+    let movementX = 0;
+    let movementY = 0;
+    promise = waitForEventOnce(document, "mousemove", (e) => {
+      movementX = e.movementX;
+      centerPoint.x -= e.movementX;
+      movementY = e.movementY;
+      centerPoint.y -= e.movementY;
+      info(`centerPoint: ${JSON.stringify(centerPoint)}, movementX: ${movementX}, movementY: ${movementY}`);
+    });
+    synthesizeMouse(target, centerPoint.x, centerPoint.y, { ...event, type: "mousemove" });
+    await promise;
+    return gSynthesizeMovement ? centerPoint !== 0 && centerPoint !== 0
+                               : movementX === 0 && movementY === 0;
+  }, "Compute center point");
+
+  while (centerPoint.x === 0 && centerPoint.y === 0) {
+    promise = waitForEventOnce(document, "mousemove", (e) => {
+      info(`movementX: ${e.movementX}, movementY: ${e.movementY}`);
+      if (e.movementX === 0 && e.movementY === 0) {
+        return;
+      }
+      centerPoint = { x: (0 - e.movementX), y: (0 - e.movementY) };
+      info(`centerPoint: ${JSON.stringify(centerPoint)}`);
+    });
+    synthesizeMouse(target, 0, 0, { ...event, type: "mousemove" });
+    await promise;
+  }
+
+  info(`Stop refresh driver to cause the event being coalesced`);
+  const utils = SpecialPowers.getDOMWindowUtils(window);
+  utils.advanceTimeAndRefresh(0);
+  await new Promise(resolve => SimpleTest.executeSoon(resolve));
+
+  // Test data.
+  const moves = [
+    { movementX: 10, movementY: -5 },
+    { movementX: -3, movementY: 7 },
+    { movementX: 6, movementY: 0 },
+  ];
+
+  for (let index = 0; index < moves.length; index++) {
+    const move = moves[index];
+    promise = waitForEventOnce(document, "pointerrawupdate", (e) => {
+      is(e.clientX, lockedPosition.clientX, "check clientX");
+      is(e.clientY, lockedPosition.clientY, "check clientY");
+      is(e.movementX, move.movementX, "check movementX");
+      is(e.movementY, move.movementY, "check movementY");
+
+      info("Check coalesced events");
+      let coalescedEvents = e.getCoalescedEvents();
+      is(coalescedEvents.length, 1, "check number of coalesced events");
+      is(coalescedEvents[0].clientX, lockedPosition.clientX, "check clientX in coalesced event");
+      is(coalescedEvents[0].clientY, lockedPosition.clientY, "check clientY in coalesced event");
+      is(coalescedEvents[0].movementX, move.movementX, "check movementX");
+      is(coalescedEvents[0].movementY, move.movementY, "check movementY");
+    });
+
+    if (gSynthesizeMovement) {
+      event.movementX = move.movementX;
+      event.movementY = move.movementY;
+      info(`Synthesize mousemove to ${JSON.stringify(centerPoint)} with movement ${JSON.stringify(move)}`);
+    } else {
+      centerPoint.x += move.movementX;
+      centerPoint.y += move.movementY;
+      info(`Synthesize mousemove to ${JSON.stringify(centerPoint)}`);
+    }
+
+    synthesizeMouse(target, centerPoint.x, centerPoint.y, { ...event, type: "mousemove" });
+    await promise;
+  }
+
+  info(`Restore refresh driver to get coalesced pointermove`);
+  promise = waitForEventOnce(document, "pointermove", (e) => {
+    is(e.clientX, lockedPosition.clientX, "check clientX");
+    is(e.clientY, lockedPosition.clientY, "check clientY");
+
+    info("Check coalesced pointermove events");
+    let totalMovementX = 0;
+    let totalMovementY = 0;
+    let coalescedEvents = e.getCoalescedEvents();
+    is(coalescedEvents.length, moves.length, "check number of coalesced events");
+    for (let index = 0; index < coalescedEvents.length; index++) {
+      const move = moves[index];
+      const event = coalescedEvents[index];
+      is(event.movementX, move.movementX, `check movementX for coalesced event ${index}`);
+      is(event.movementY, move.movementY, `check movementY for coalesced event ${index}`);
+      totalMovementX += move.movementX;
+      totalMovementY += move.movementY;
+    }
+
+    is(e.movementX, totalMovementX, "check movementX");
+    is(e.movementY, totalMovementY, "check movementY");
+  });
+  utils.restoreNormalRefresh();
+  await promise;
+
+  document.exitPointerLock();
+});
+</script>
+</body>
+</html>

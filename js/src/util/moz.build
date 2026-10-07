@@ -41,3 +41,7 @@ SOURCES["DoubleToString.cpp"].flags += ["-Wno-implicit-fallthrough"]
 
 if CONFIG["FUZZING_JS_FUZZILLI"]:
     include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+LICENSED_UNDER += [
+    "unicode",
+]

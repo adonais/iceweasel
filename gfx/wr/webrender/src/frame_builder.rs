@@ -570,7 +570,7 @@ impl FrameBuilder {
             frame_state.surface_builder.push_surface(
                 snapshot_surface,
                 false,
-                PictureRect::max_rect(),
+                DeviceRect::max_rect(),
                 None,
                 frame_state.surfaces,
                 frame_state.rg_builder,
@@ -829,11 +829,11 @@ impl FrameBuilder {
         composite_state.end_frame();
 
         {
-            let vis_stats = scene.clip_store.vis_stats();
-            profile.set(profiler::VIS_CLIP_PROJECTIONS, vis_stats.projections);
-            profile.set(profiler::VIS_CLIP_PROJECTION_FAILS, vis_stats.projection_fails);
-            profile.set(profiler::VIS_CLIP_REJECTS, vis_stats.rejects);
-            profile.set(profiler::VIS_CLIP_INDETERMINATE, vis_stats.indeterminate);
+            let raster_clip_stats = scene.clip_store.raster_clip_stats();
+            profile.set(profiler::VIS_CLIP_PROJECTIONS, raster_clip_stats.projections);
+            profile.set(profiler::VIS_CLIP_PROJECTION_FAILS, raster_clip_stats.projection_fails);
+            profile.set(profiler::VIS_CLIP_REJECTS, raster_clip_stats.rejects);
+            profile.set(profiler::VIS_CLIP_INDETERMINATE, raster_clip_stats.indeterminate);
         }
 
         scene.clip_store.end_frame(&mut scratch.clip_store);

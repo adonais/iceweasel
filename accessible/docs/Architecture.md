@@ -1,6 +1,6 @@
 # Architecture
 
-This document provides a high-level overview of how the accessibility code is structured. See [the Document Accessibility Lifecycle page](DocumentAccessibilityLifecycle.md#docaccessible-creation) for a lower level description of the code.
+This document provides a high-level overview of how the accessibility code is structured. See [the Document Accessibility Lifecycle page](DocumentAccessibilityLifecycle.md#1-docaccessible-creation) for a lower level description of the code.
 
 ## Process Model
 

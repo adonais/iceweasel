@@ -74,7 +74,7 @@ index 9962d2845d..485df8f5e1 100644
  # The python interpreter to use by default. On Windows, this will look
  # for python3.exe and python3.bat.
 diff --git a/BUILD.gn b/BUILD.gn
-index afa6710ed1..4eb65649cd 100644
+index 2a3c6792c5..ba92f630eb 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -21,8 +21,8 @@
@@ -127,7 +127,7 @@ index afa6710ed1..4eb65649cd 100644
              "Generated during 'gn gen' by //BUILD.gn.",
              "",
 diff --git a/api/BUILD.gn b/api/BUILD.gn
-index 7ecbbaa254..39f36272dd 100644
+index f3d98760e0..085565c04f 100644
 --- a/api/BUILD.gn
 +++ b/api/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -277,7 +277,7 @@ index 7394a2e1da..a5bc0c82dc 100644
  
  rtc_library("scalability_mode") {
 diff --git a/audio/BUILD.gn b/audio/BUILD.gn
-index 293104c72d..94cd15b208 100644
+index 3cb28313a6..ff4d566f01 100644
 --- a/audio/BUILD.gn
 +++ b/audio/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -428,7 +428,7 @@ index 4ad82d0c29..0cb9cfb49f 100644
  
  group("logging") {
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index a8f2e045b3..a3072febba 100644
+index 5989485f61..446f06c0c1 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -6,7 +6,7 @@
@@ -441,7 +441,7 @@ index a8f2e045b3..a3072febba 100644
  import("../webrtc.gni")
  
 diff --git a/modules/audio_device/BUILD.gn b/modules/audio_device/BUILD.gn
-index ebeffb6802..827d965dcb 100644
+index 353b8adef2..1141183cb8 100644
 --- a/modules/audio_device/BUILD.gn
 +++ b/modules/audio_device/BUILD.gn
 @@ -9,8 +9,8 @@
@@ -575,7 +575,7 @@ index 43317503c1..dc0d234db3 100644
  import("../../webrtc.gni")
  
 diff --git a/modules/video_coding/BUILD.gn b/modules/video_coding/BUILD.gn
-index f65ca9d8c2..78ba20bcf4 100644
+index 088ee2380d..8176559140 100644
 --- a/modules/video_coding/BUILD.gn
 +++ b/modules/video_coding/BUILD.gn
 @@ -6,7 +6,7 @@
@@ -588,7 +588,7 @@ index f65ca9d8c2..78ba20bcf4 100644
  import("../../webrtc.gni")
  
 diff --git a/pc/BUILD.gn b/pc/BUILD.gn
-index 8883e91252..926e86c846 100644
+index eb91c0fcb4..d8c1b69471 100644
 --- a/pc/BUILD.gn
 +++ b/pc/BUILD.gn
 @@ -29,8 +29,8 @@

@@ -25,7 +25,18 @@ const { isInitialDocument, isUncommittedInitialDocument } =
 
 const LOAD_FLAG_ERROR_PAGE = 0x10000;
 
+// Force the initialization of NSS, without which PR_ErrorToName() cannot
+// resolve NSS error codes and ChromeUtils.getXPCOMErrorName() asserts.
+Cc["@mozilla.org/psm;1"].getService(Ci.nsISupports);
+
+const SEC_ERROR_EXPIRED_CERTIFICATE = Cc["@mozilla.org/nss_errors_service;1"]
+  .getService(Ci.nsINSSErrorsService)
+  .getXPCOMFromNSSError(Ci.nsINSSErrorsService.NSS_SEC_ERROR_BASE + 11);
+
 const CURRENT_URI = Services.io.newURI("http://foo.bar/");
+const ERROR_PAGE_URI = Services.io.newURI(
+  "about:neterror?e=customErrorMessage"
+);
 const INITIAL_URI = Services.io.newURI("about:blank");
 const TARGET_URI = Services.io.newURI("http://foo.cheese/");
 const TARGET_URI_ERROR_PAGE = Services.io.newURI("doesnotexist://");
@@ -37,6 +48,16 @@ const TARGET_URI_FROM_NAVIGATION_COMMITTED = Services.io.newURI(
 function wait(time) {
   // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
   return new Promise(resolve => setTimeout(resolve, time));
+}
+
+async function getRejectionReason(promise) {
+  try {
+    await promise;
+  } catch (e) {
+    return e;
+  }
+
+  return null;
 }
 
 class MockRequest {
@@ -172,7 +193,7 @@ class MockTopContext {
   updateURI(uri, isError = false) {
     this.currentURI = uri;
     if (isError) {
-      this.currentWindowGlobal.documentURI = "about:neterror?e=errorMessage";
+      this.currentWindowGlobal.documentURI = ERROR_PAGE_URI;
     } else {
       this.currentWindowGlobal.documentURI = uri;
     }
@@ -808,25 +829,48 @@ add_task(async function test_ProgressListener_ignoreCacheError() {
 });
 
 add_task(async function test_ProgressListener_navigationRejectedOnErrorPage() {
-  const browsingContext = new MockTopContext();
-  const webProgress = browsingContext.webProgress;
+  const testCases = [
+    {
+      description: "error page",
+      flag: Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE,
+      expectedErrorName: "customErrorMessage",
+    },
+    {
+      // For a same-document navigation the document URI is not replaced by an
+      // error page URI, and no error name can be extracted from it.
+      description: "same-document error page",
+      flag:
+        Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT |
+        Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE,
+      expectedErrorName: "Address rejected",
+    },
+  ];
 
-  const progressListener = new ProgressListener(webProgress, {
-    waitForExplicitStart: false,
-  });
-  const navigated = progressListener.start();
+  for (const { description, flag, expectedErrorName } of testCases) {
+    info(`Checking location change for ${description}`);
 
-  await webProgress.sendStartState();
-  await webProgress.sendLocationChange({
-    flag:
-      Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT |
-      Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE,
-  });
+    const browsingContext = new MockTopContext();
+    const webProgress = browsingContext.webProgress;
 
-  ok(
-    await hasPromiseRejected(navigated),
-    "Listener has rejected in location change for error page"
-  );
+    const progressListener = new ProgressListener(webProgress, {
+      waitForExplicitStart: false,
+    });
+    const navigated = progressListener.start();
+
+    await webProgress.sendStartState();
+    await webProgress.sendLocationChange({ flag });
+
+    ok(
+      await hasPromiseRejected(navigated),
+      "Listener has rejected in location change for error page"
+    );
+
+    const error = await getRejectionReason(navigated);
+    ok(error.isNavigationError, "Rejected with a NavigationError");
+    equal(error.message, expectedErrorName, "Expected error name is set");
+    ok(!error.isBindingAborted, "Error is not reported as aborted");
+    ok(!error.isCertError, "Error is not reported as a certificate error");
+  }
 });
 
 add_task(
@@ -849,6 +893,44 @@ add_task(
       await hasPromiseRejected(navigated),
       "Listener has rejected in stop state for erroneous navigation"
     );
+
+    const error = await getRejectionReason(navigated);
+    ok(error.isNavigationError, "Rejected with a NavigationError");
+    equal(
+      error.message,
+      "NS_ERROR_MALWARE_URI",
+      "Error name from the stop state was kept"
+    );
+    ok(!error.isBindingAborted, "Error is not reported as aborted");
+    ok(!error.isCertError, "Error is not reported as a certificate error");
+  }
+);
+
+add_task(
+  async function test_ProgressListener_navigationRejectedOnStopStateCertErrorPage() {
+    const browsingContext = new MockTopContext();
+    const webProgress = browsingContext.webProgress;
+
+    const progressListener = new ProgressListener(webProgress, {
+      waitForExplicitStart: false,
+    });
+    const navigated = progressListener.start();
+
+    await webProgress.sendStartState();
+    await webProgress.sendStopState({
+      flag: SEC_ERROR_EXPIRED_CERTIFICATE,
+      loadType: LOAD_FLAG_ERROR_PAGE,
+    });
+
+    ok(
+      await hasPromiseRejected(navigated),
+      "Listener has rejected in stop state for erroneous navigation"
+    );
+
+    const error = await getRejectionReason(navigated);
+    ok(error.isNavigationError, "Rejected with a NavigationError");
+    ok(error.isCertError, "Error is reported as a certificate error");
+    ok(!error.isBindingAborted, "Error is not reported as aborted");
   }
 );
 
@@ -869,6 +951,14 @@ add_task(
       ok(
         await hasPromiseRejected(navigated),
         "Listener has rejected in stop state for erroneous navigation"
+      );
+
+      const error = await getRejectionReason(navigated);
+      ok(error.isNavigationError, "Rejected with a NavigationError");
+      equal(
+        error.isBindingAborted,
+        flag === Cr.NS_BINDING_ABORTED,
+        "Expected isBindingAborted value"
       );
     }
   }

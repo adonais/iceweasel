@@ -5,6 +5,8 @@
 #ifndef js_loader_ScriptKind_h
 #define js_loader_ScriptKind_h
 
+#include <cstdint>
+
 namespace JS::loader {
 
 // A kind of script, used by LoadedScript and its subclasses, and

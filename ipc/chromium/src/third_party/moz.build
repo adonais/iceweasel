@@ -59,3 +59,8 @@ AllowCompilerWarnings()
 Library('libevent')
 
 FINAL_LIBRARY = 'xul'
+
+LICENSED_UNDER += ["libevent"]
+LICENSED_UNDER["libevent"].paths = [
+    "libevent",
+]

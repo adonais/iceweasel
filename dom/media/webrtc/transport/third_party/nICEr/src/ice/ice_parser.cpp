@@ -162,7 +162,7 @@ parse_uint(const char **str, unsigned int min, unsigned int max,
 }
 
 int
-nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,const char *orig,nr_ice_media_stream *stream,nr_ice_candidate **candp)
+nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,const char *orig,nr_ice_media_stream *stream,const char* resolved_address,nr_ice_candidate **candp)
 {
     int r,_status;
     nr_ice_candidate *cand=0;
@@ -178,7 +178,7 @@ nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,const char *orig,nr_ice_med
     cand->state=NR_ICE_CAND_PEER_CANDIDATE_UNPAIRED;
     cand->stream=stream;
 
-    if ((r=nr_ice_parse_candidate_attribute(orig, cand)))
+    if ((r=nr_ice_parse_candidate_attribute(orig, resolved_address, cand)))
         ABORT(r);
 
     nr_ice_candidate_compute_codeword(cand);
@@ -196,7 +196,7 @@ nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,const char *orig,nr_ice_med
 }
 
 int
-nr_ice_parse_candidate_attribute(const char* orig, struct nr_ice_candidate_parsedbits *bits)
+nr_ice_parse_candidate_attribute(const char* orig, const char* resolved_address, struct nr_ice_candidate_parsedbits *bits)
 {
     int r,_status;
     const char* str = orig;
@@ -206,6 +206,8 @@ nr_ice_parse_candidate_attribute(const char* orig, struct nr_ice_candidate_parse
     unsigned int component_id;
     char *rel_addr=0;
     unsigned char transport;
+    const char* ip = nullptr;
+    const char* domain_name = nullptr;
 
     /* Skip a= if present */
     if (!strncmp(str, "a=", 2))
@@ -284,8 +286,16 @@ nr_ice_parse_candidate_attribute(const char* orig, struct nr_ice_candidate_parse
 
     skip_whitespace(&str);
 
-    if ((r=nr_str_port_to_transport_addr(connection_address,port,transport,&bits->addr)))
-      ABORT(r);
+    ip = resolved_address ? resolved_address : connection_address;
+    domain_name = resolved_address ? connection_address : nullptr;
+
+    if ((r=nr_str_port_to_transport_addr(ip,domain_name,port,transport,&bits->addr))) {
+      // Ok, maybe this is a candidate with a domain name that just hasn't been
+      // resolved.
+      if ((r=nr_str_port_to_transport_addr(nullptr, connection_address, port,transport,&bits->addr))) {
+        ABORT(r);
+      }
+    }
 
     /* Transfer the raw connection_address text to bits so callers can
      * surface the original (non-normalized) form. */
@@ -370,8 +380,12 @@ nr_ice_parse_candidate_attribute(const char* orig, struct nr_ice_candidate_parse
 
         skip_whitespace(&str);
 
-        if ((r=nr_str_port_to_transport_addr(rel_addr,port,transport,&bits->base)))
-          ABORT(r);
+        if (r=nr_str_port_to_transport_addr(rel_addr, nullptr, port,transport,&bits->base)) {
+          // Ok, rel_addr must not be an IP address.
+          if (r=nr_str_port_to_transport_addr(nullptr, rel_addr,port,transport,&bits->base)) {
+            ABORT(r);
+          }
+        }
 
         /* Transfer the raw rel-addr text to bits so callers can surface
          * the original (non-normalized) form. */

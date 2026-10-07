@@ -32,8 +32,8 @@ support-files = [
 # amounts to third-party iframes. We have separate tests for our behaviors
 # in that case (usually as "browser" tests) and do not want to complicate
 # these normal functionality tests.
-skip-if = [
-  "xorigin",
+run-if = [
+  "!xorigin",
 ]
 
 ["test_cache.html"]

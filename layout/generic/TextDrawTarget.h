@@ -174,12 +174,12 @@ class TextDrawTarget : public DrawTarget {
     auto* colorPat = static_cast<const ColorPattern*>(&aPattern);
     auto color = wr::ToColorF(colorPat->mColor);
     MOZ_ASSERT(aBuffer.mNumGlyphs);
-    auto glyphs = Range<const wr::GlyphInstance>(
+    auto glyphs = mozilla::Range<const wr::GlyphInstance>(
         reinterpret_cast<const wr::GlyphInstance*>(aBuffer.mGlyphs),
         aBuffer.mNumGlyphs);
     // MSVC won't let us use offsetof on the following directly so we give it a
     // name with typedef
-    typedef std::remove_reference<decltype(aBuffer.mGlyphs[0])>::type GlyphType;
+    typedef std::remove_reference_t<decltype(aBuffer.mGlyphs[0])> GlyphType;
     // Compare gfx::Glyph and wr::GlyphInstance to make sure that they are
     // structurally equivalent to ensure that our cast above was ok
     static_assert(
@@ -196,10 +196,10 @@ class TextDrawTarget : public DrawTarget {
                 offsetof(decltype(glyphs[0].point), x) &&
             offsetof(decltype(aBuffer.mGlyphs[0].mPosition), y) ==
                 offsetof(decltype(glyphs[0].point), y) &&
-            std::is_standard_layout<
-                std::remove_reference<decltype(aBuffer.mGlyphs[0])>>::value &&
-            std::is_standard_layout<
-                std::remove_reference<decltype(glyphs[0])>>::value &&
+            std::is_standard_layout_v<
+                std::remove_reference<decltype(aBuffer.mGlyphs[0])>> &&
+            std::is_standard_layout_v<
+                std::remove_reference<decltype(glyphs[0])>> &&
             sizeof(aBuffer.mGlyphs[0]) == sizeof(glyphs[0]) &&
             sizeof(aBuffer.mGlyphs[0].mPosition) == sizeof(glyphs[0].point),
         "glyph buf types don't match");
@@ -334,7 +334,8 @@ class TextDrawTarget : public DrawTarget {
     }
     wr::ImageDescriptor desc(aSize, aStride, *format,
                              wr::ToOpacityType(aFormat));
-    Range<uint8_t> bytes(const_cast<uint8_t*>(aData), aStride * aSize.height);
+    mozilla::Range<uint8_t> bytes(const_cast<uint8_t*>(aData),
+                                  aStride * aSize.height);
     if (mResources->AddImage(key, desc, bytes)) {
       return Some(key);
     }
@@ -493,7 +494,7 @@ class TextDrawTarget : public DrawTarget {
     }
     wr::LayoutRect bounds = wr::ToLayoutRect(rect);
     mBuilder.PushBorder(bounds, ClipRect(), true, widths,
-                        Range<const wr::BorderSide>(sides, 4), radius);
+                        mozilla::Range<const wr::BorderSide>(sides, 4), radius);
   }
 
   void StrokeLine(const Point& aStart, const Point& aEnd,

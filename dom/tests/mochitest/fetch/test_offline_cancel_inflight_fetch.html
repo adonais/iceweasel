@@ -1,0 +1,89 @@
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>FetchService cancels in-flight worker fetches when connectivity is lost</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<script>
+
+const basePath = location.pathname.replace(/\/[^\/]*$/, "/");
+
+// FetchService, which worker fetches are proxied through, only lives in the
+// parent process, so the offline flag has to be flipped there.
+function setOffline(offline) {
+  return SpecialPowers.spawnChrome([offline], value => {
+    Services.io.offline = value;
+  });
+}
+
+async function loadFrame(origin) {
+  const frame = document.createElement("iframe");
+  const loaded = new Promise(resolve => { frame.onload = resolve; });
+  frame.src = origin + basePath + "frame_offline_cancel.html";
+  document.body.appendChild(frame);
+  await loaded;
+  return frame;
+}
+
+function talk(frame, message) {
+  const reply = new Promise(resolve => {
+    window.addEventListener("message", e => resolve(e.data), { once: true });
+  });
+  frame.contentWindow.postMessage(message, "*");
+  return reply;
+}
+
+// Starts a fetch from a dedicated worker at `origin`, waits until its response
+// headers have arrived, drops connectivity, and reports how the body ended.
+async function fetchAcrossOffline(origin, stallMs) {
+  const frame = await loadFrame(origin);
+  const url = origin + basePath + "stall.sjs?ms=" + stallMs;
+
+  const started = await talk(frame, { start: true, url });
+  is(started.status, 200, `${origin}: the fetch is in flight`);
+
+  await setOffline(true);
+  let result;
+  try {
+    result = await talk(frame, { finish: true });
+  } finally {
+    await setOffline(false);
+  }
+
+  frame.remove();
+  return result;
+}
+
+add_task(async function cancels_inflight_fetch() {
+  // Held open well past the point where the test drops connectivity; the body
+  // is never waited for.
+  const result = await fetchAcrossOffline(location.origin, 10000);
+  ok(result.error,
+     `the in-flight fetch was cancelled, got ${JSON.stringify(result)}`);
+});
+
+add_task(async function spares_inflight_localhost_fetch() {
+  // The mochitest server runs on the host, and MochiRemote does not reverse the
+  // http port onto the device, so nothing answers on the device's loopback
+  // address. Drop this guard once it does.
+  if (SpecialPowers.Services.appinfo.OS == "Android") {
+    info("no loopback mochitest server on Android, skipping");
+    return;
+  }
+
+  // A loopback client keeps working offline (bug 1843001), and the socket
+  // transport service likewise spares local sockets when going offline.
+  const result = await fetchAcrossOffline("http://127.0.0.1:8888", 1000);
+  is(result.body, "start-done",
+     `the in-flight fetch to a local server completed, got ${JSON.stringify(result)}`);
+});
+
+</script>
+</body>
+</html>

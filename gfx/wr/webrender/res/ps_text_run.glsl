@@ -228,7 +228,7 @@ void main() {
     #endif
 #endif
 
-    write_clip(vi.world_pos, clip_area, task);
+    write_clip(vi.raster_pos, clip_area, task);
 
     switch (color_mode) {
         case COLOR_MODE_ALPHA:

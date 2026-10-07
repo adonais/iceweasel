@@ -1,0 +1,10 @@
+[DEFAULT]
+prefs = ["dom.xslt.enabled=true"]
+
+["test_bug582176.xhtml"]
+support-files = [
+  "582176_dummy.html",
+  "582176_xml.xml",
+  "582176_xslt.xsl",
+  "bug582176_window.xhtml",
+]

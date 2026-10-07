@@ -330,6 +330,9 @@ class LintRoller:
 
             lpaths = list(lpaths) or __get_current_paths(os.getcwd())
             if self.lintargs.get("use_filters", True):
+                # Only the paths to lint are needed here. Workers filter their
+                # own chunk again and compute the excludes at that point, so
+                # skip the expensive glob expansion over the whole tree.
                 lpaths, _ = filterpaths(
                     self.root,
                     lpaths,
@@ -337,6 +340,7 @@ class LintRoller:
                     exclude=linter.get("exclude", []),
                     extensions=linter.get("extensions", []),
                     exclude_extensions=linter.get("exclude_extensions", []),
+                    expand_excludes=False,
                 )
                 if not lpaths:
                     continue

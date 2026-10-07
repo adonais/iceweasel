@@ -1,0 +1,35 @@
+<!DOCTYPE HTML>
+<html class="reftest-wait">
+<head>
+<meta charset="utf-8">
+</head>
+<body>
+<!--
+  Camera rotation, fake-device forcing, and the deterministic test pattern
+  are all set per-row via reftest.list pref() annotations; this page only
+  needs to start capture and wait for the rotated frame to render.
+-->
+<video id="v" autoplay muted style="position:absolute; left:0; top:0;"></video>
+<script>
+(async () => {
+  try {
+    const stream =
+      await navigator.mediaDevices.getUserMedia({video: {width: 640, height: 480}});
+    const video = document.getElementById("v");
+    video.srcObject = stream;
+    await new Promise(resolve =>
+      video.addEventListener("resize", resolve, {once: true}));
+    // Match the element box to the rotated frame exactly, so the harness
+    // compares raw pixels with no scaling.
+    video.style.width = video.videoWidth + "px";
+    video.style.height = video.videoHeight + "px";
+    await new Promise(resolve => video.requestVideoFrameCallback(resolve));
+  } catch (e) {
+    const div = document.body.appendChild(document.createElement("div"));
+    div.textContent = `Error: ${e}`;
+  }
+  document.documentElement.removeAttribute("class");
+})();
+</script>
+</body>
+</html>

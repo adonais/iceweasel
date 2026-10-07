@@ -7,6 +7,8 @@
 
 #include "jit/x86/MacroAssembler-x86.h"
 
+#include "mozilla/Casting.h"
+
 #include "jit/x86-shared/MacroAssembler-x86-shared-inl.h"
 
 namespace js {
@@ -1444,42 +1446,27 @@ void MacroAssembler::maxPtr(Register lhs, ImmWord rhs, Register dest) {
 
 void MacroAssemblerX86::convertUInt32ToDouble(Register src,
                                               FloatRegister dest) {
-  ScratchDoubleScope fpscratch(asMasm());
+  // Move |src| from GPR to xmm register. This zeroes the upper bits of |dest|.
+  vmovd(src, dest);
 
-  // Load 0x1p52 with all high words zeroed in preparation for a bit-or.
+  // Bitwise-or 0x1p52 into |dest| to compute `0x1p52 + double(src)`.
   //
   // Setting any bits in the significand component will yield an integral
   // number, because 0x1p52 doesn't have any bits available to represent
-  // fractional digits.
-  loadConstantDoubleZeroHighWord(0x1p52, fpscratch);
+  // fractional digits. The upper lane of |dest| stays zeroed.
+  const int64_t exponent[2] = {mozilla::BitwiseCast<int64_t>(0x1p52), 0};
+  SimdConstant c = SimdConstant::CreateX2(exponent);
+  vporSimd128(c, dest, dest);
 
-  // Move |src| from GPR to xmm register.
-  vmovd(src, dest);
-
-  // |dest| now contains `0x1p52 + double(src)`.
-  vpor(fpscratch, dest, dest);
-
-  // Subtract `0x1p52` to obtain `double(src)`.
-  vsubsd(fpscratch, dest, dest);
+  // Subtract `0x1p52` to obtain `double(src)`. The upper lane of |dest| stays
+  // cleared (`+0.0 - +0.0`).
+  vsubpdSimd128(c, dest, dest);
 }
 
 void MacroAssemblerX86::convertUInt32ToFloat32(Register src,
                                                FloatRegister dest) {
   convertUInt32ToDouble(src, dest);
   convertDoubleToFloat32(dest, dest);
-}
-
-void MacroAssemblerX86::convertUInt32ToDouble(Register src,
-                                              const ScratchDoubleScope& dest) {
-  // src is [0, 2^32-1]
-  subl(Imm32(0x80000000), src);
-
-  // Now src is [-2^31, 2^31-1] - int range, but not the same value.
-  convertInt32ToDouble(src, dest);
-
-  // dest is now a double with the int range.
-  // correct the double value by adding 0x80000000.
-  asMasm().addConstantDouble(2147483648.0, dest);
 }
 
 void MacroAssemblerX86::unboxValue(const ValueOperand& src, AnyRegister dest,

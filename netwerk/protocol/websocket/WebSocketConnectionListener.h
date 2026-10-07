@@ -5,6 +5,10 @@
 #ifndef mozilla_net_WebSocketConnectionListener_h
 #define mozilla_net_WebSocketConnectionListener_h
 
+#include <cstdint>
+
+#include "nsISupports.h"
+
 namespace mozilla {
 namespace net {
 

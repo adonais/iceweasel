@@ -18,7 +18,7 @@ add_UITour_task(async function test_menu_show() {
 
   // The panel gets created dynamically.
   panel = null;
-  await waitForConditionPromise(() => {
+  await TestUtils.waitForCondition(() => {
     panel = BrowserPageActions.activatedActionPanelNode;
     return panel && panel.state == "open";
   }, "Menu should be visible after showMenu()");

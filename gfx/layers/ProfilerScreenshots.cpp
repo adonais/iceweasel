@@ -13,10 +13,14 @@ using namespace mozilla;
 using namespace mozilla::gfx;
 using namespace mozilla::layers;
 
-struct ScreenshotMarker {
-  static constexpr mozilla::Span<const char> MarkerTypeName() {
-    return mozilla::MakeStringSpan("CompositorScreenshot");
-  }
+struct ScreenshotMarker : public mozilla::BaseMarkerType<ScreenshotMarker> {
+  static constexpr const char* Name = "CompositorScreenshot";
+  static constexpr bool UseSpecialFrontendLocation = true;
+
+  // Both "CompositorScreenshot" and "CompositorScreenshotWindowDestroyed"
+  // markers use this type, so keep the per-marker name to tell them apart.
+  static constexpr bool ETWStoreName = true;
+
   static void StreamJSONMarkerData(
       mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
       const mozilla::ProfilerString8View& aScreenshotDataURL,
@@ -31,9 +35,6 @@ struct ScreenshotMarker {
       aWriter.DoubleProperty("windowWidth", aWindowSize.width);
       aWriter.DoubleProperty("windowHeight", aWindowSize.height);
     }
-  }
-  static mozilla::MarkerSchema MarkerTypeDisplay() {
-    return mozilla::MarkerSchema::SpecialFrontendLocation{};
   }
 };
 

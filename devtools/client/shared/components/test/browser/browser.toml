@@ -6,3 +6,5 @@ support-files = [
 ]
 
 ["browser_notification_box_basic.js"]
+
+["browser_split_box_keyboard.js"]

@@ -75,13 +75,21 @@ class ColumnBreakpoints extends Component {
         isFirstNonSpaceColumn,
         positionData
       ) => {
+        const isActive =
+          !!positionData.breakpoint && !positionData.breakpoint.disabled;
         const breakpointNode = breakpointButton.cloneNode(true);
         breakpointNode.className = classnames("column-breakpoint", {
           "has-condition": positionData.breakpoint?.options.condition,
           "has-log": positionData.breakpoint?.options.logValue,
-          active: positionData.breakpoint && !positionData.breakpoint.disabled,
+          active: isActive,
           disabled: positionData.breakpoint?.disabled,
         });
+        // Note that line is 1-based while column is 0-based.
+        breakpointNode.setAttribute(
+          "aria-label",
+          L10N.getFormatStr("columnBreakpoint.label", line, column + 1)
+        );
+        breakpointNode.setAttribute("aria-pressed", isActive);
         breakpointNode.addEventListener("click", event =>
           this.onClick(event, positionData)
         );

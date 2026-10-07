@@ -12,12 +12,12 @@
 #include "nsTArray.h"
 
 class nsINode;
-class nsRange;
 
 namespace mozilla {
 
 namespace dom {
 class Document;
+class Range;
 class Selection;
 }  // namespace dom
 
@@ -46,13 +46,13 @@ class SelectionChangeEventDispatcher final {
     nsCOMPtr<nsINode> mStartContainer;
     nsCOMPtr<nsINode> mEndContainer;
 
-    // XXX These are int32_ts on nsRange, but uint32_ts in the return value
-    // of GetStart_, so I use uint32_ts here. See bug 1194256.
+    // XXX These are int32_ts on dom::Range, but uint32_ts in the return
+    // value of GetStart_, so I use uint32_ts here. See bug 1194256.
     uint32_t mStartOffset;
     uint32_t mEndOffset;
 
-    explicit RawRangeData(const nsRange* aRange);
-    bool Equals(const nsRange* aRange);
+    explicit RawRangeData(const dom::Range* aRange);
+    bool Equals(const dom::Range* aRange);
   };
 
   void SelectionRangeObservedMutation() {

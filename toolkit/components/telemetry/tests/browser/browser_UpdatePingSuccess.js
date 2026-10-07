@@ -12,6 +12,7 @@ const { TelemetryArchiveTesting } = ChromeUtils.importESModule(
 );
 
 add_task(async function test_updatePing() {
+  Services.fog.testResetFOG(); // bug 2071391: ensure FOG's initialized.
   const TEST_VERSION = "37.85";
   const TEST_BUILDID = "20150711123724";
   const XML_UPDATE = `<?xml version="1.0"?>

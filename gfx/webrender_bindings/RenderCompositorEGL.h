@@ -47,7 +47,7 @@ class RenderCompositorEGL : public RenderCompositor {
   void SetBufferDamageRegion(const wr::DeviceIntRect* aRects,
                              size_t aNumRects) override;
 
-  RefPtr<layers::Fence> GetAndResetReleaseFence() override;
+  RefPtr<layers::Fence> GetAndResetReadFence() override;
 
   void MaybeWaitingForPendingReadFence(RenderTextureHost* aTexture) override;
 

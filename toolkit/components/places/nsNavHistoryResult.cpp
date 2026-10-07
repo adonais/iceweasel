@@ -13,6 +13,7 @@
 #include "mozIStorageRow.h"
 #include "mozIStorageResultSet.h"
 #include "nsQueryObject.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "mozilla/dom/PlacesObservers.h"
 #include "mozilla/dom/PlacesVisit.h"
 #include "mozilla/dom/PlacesVisitRemoved.h"
@@ -3508,6 +3509,11 @@ nsresult nsNavHistoryFolderResultNode::OnItemMoved(
     // getting moved within the same folder, we don't want to do a remove and
     // an add because that will lose your tree state.
 
+    MOZ_ASSERT(node, "Can't find folder that is moving!");
+    if (!node) {
+      return NS_ERROR_FAILURE;
+    }
+
     // adjust bookmark indices
     int32_t maxIndex = std::max(node->mBookmarkIndex, aNewIndex);
     // When moving multiple bookmarks, we are notified one bookmark at a time.
@@ -3516,10 +3522,6 @@ nsresult nsNavHistoryFolderResultNode::OnItemMoved(
     ReindexRange(node->mBookmarkIndex + 1, maxIndex, -1);
     ReindexRange(aNewIndex, maxIndex, 1);
 
-    MOZ_ASSERT(node, "Can't find folder that is moving!");
-    if (!node) {
-      return NS_ERROR_FAILURE;
-    }
     MOZ_ASSERT(index < mChildren.Count(), "Invalid index!");
     node->mBookmarkIndex = aNewIndex;
 

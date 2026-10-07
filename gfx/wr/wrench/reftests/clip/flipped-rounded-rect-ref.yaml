@@ -1,0 +1,23 @@
+---
+root:
+  items:
+    - type: stacking-context
+      bounds: [0, 0, 600, 300]
+      items:
+        - type: clip
+          id: 1
+          complex:
+            - rect: [0, 0, 600, 300]
+              radius: [150, 150]
+        - type: clip-chain
+          id: 2
+          clips: [1]
+        # A second rect that is only there to prevent the clip from being
+        # moved to the compositor.
+        - type: rect
+          bounds: [0, 0, 300, 150]
+          color: white
+        - type: rect
+          bounds: [0, 0, 600, 300]
+          color: green
+          clip-chain: 2

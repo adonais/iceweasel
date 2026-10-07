@@ -4,7 +4,7 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
 const { BookmarksBackupResource } = ChromeUtils.importESModule(
-  "resource:///modules/backup/BookmarksBackupResource.sys.mjs"
+  "moz-src:///browser/components/backup/resources/BookmarksBackupResource.sys.mjs"
 );
 const { BookmarkJSONUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/BookmarkJSONUtils.sys.mjs"

@@ -9,13 +9,11 @@
 #include <unistd.h>
 #include "mozilla/gfx/PrintPromise.h"
 
-#ifdef MOZ_ENABLE_SKIA_PDF
-#  include "mozilla/gfx/PrintTargetSkPDF.h"
-#endif
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/gfx/PrintTargetCG.h"
+#include "mozilla/gfx/PrintTargetSkPDF.h"
 #include "mozilla/glean/PrintingMetrics.h"
 
 #include "AppleUtils.h"
@@ -39,9 +37,7 @@ using mozilla::gfx::IntSize;
 using mozilla::gfx::PrintEndDocumentPromise;
 using mozilla::gfx::PrintTarget;
 using mozilla::gfx::PrintTargetCG;
-#ifdef MOZ_ENABLE_SKIA_PDF
 using mozilla::gfx::PrintTargetSkPDF;
-#endif
 
 //----------------------------------------------------------------------
 // nsDeviceContentSpecX
@@ -97,7 +93,6 @@ NS_IMETHODIMP nsDeviceContextSpecX::Init(nsIPrintSettings* aPS,
   ::PMRetain(mPMPrintSettings);
   [printInfo release];
 
-#ifdef MOZ_ENABLE_SKIA_PDF
   if (StaticPrefs::print_experimental_skpdf()) {
     if (mOutputStream) {
       mPrintViaSkPDF = true;
@@ -137,7 +132,6 @@ NS_IMETHODIMP nsDeviceContextSpecX::Init(nsIPrintSettings* aPS,
       }
     }
   }
-#endif
 
   int16_t outputFormat = aPS->GetOutputFormat();
 
@@ -188,7 +182,6 @@ RefPtr<PrintEndDocumentPromise> nsDeviceContextSpecX::EndDocument() {
 nsresult nsDeviceContextSpecX::DoEndDocument() {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-#ifdef MOZ_ENABLE_SKIA_PDF
   if (mPrintViaSkPDF && !mOutputStream) {
     OSStatus status = noErr;
 
@@ -236,7 +229,7 @@ nsresult nsDeviceContextSpecX::DoEndDocument() {
           AutoCFTypeRef<CFStringRef> sourcePathRef(
               CFURLCopyFileSystemPath(pdfURL, kCFURLPOSIXPathStyle));
           NSString* sourcePath = (NSString*)CFStringRef(sourcePathRef);
-#  ifdef DEBUG
+#ifdef DEBUG
           AutoCFTypeRef<CFStringRef> destPathRef(
               CFURLCopyFileSystemPath(destURL, kCFURLPOSIXPathStyle));
           NSString* destPath = (NSString*)CFStringRef(destPathRef);
@@ -245,7 +238,7 @@ nsresult nsDeviceContextSpecX::DoEndDocument() {
                      "nsDeviceContextSpecX::Init only allows '.pdf' for now");
           // We could use /usr/sbin/cupsfilter to convert the PDF to PS, but
           // currently we don't.
-#  endif
+#endif
           NSFileManager* fileManager = [NSFileManager defaultManager];
           if ([fileManager fileExistsAtPath:sourcePath]) {
             NSURL* src = static_cast<NSURL*>(CFURLRef(pdfURL));
@@ -272,7 +265,6 @@ nsresult nsDeviceContextSpecX::DoEndDocument() {
 
     return (status == noErr) ? NS_OK : NS_ERROR_FAILURE;
   }
-#endif
 
   return NS_OK;
 
@@ -301,7 +293,6 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecX::MakePrintTarget() {
   const double height = bottom - top;
   IntSize size = IntSize::Ceil(width, height);
 
-#ifdef MOZ_ENABLE_SKIA_PDF
   if (mPrintViaSkPDF) {
     if (mOutputStream) {
       return PrintTargetSkPDF::CreateOrNull(mOutputStream, size);
@@ -317,7 +308,6 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecX::MakePrintTarget() {
     auto stream = MakeUnique<SkFILEWStream>(tempPath.get());
     return PrintTargetSkPDF::CreateOrNull(std::move(stream), size);
   }
-#endif
 
   return PrintTargetCG::CreateOrNull(mOutputStream, mPrintSession, mPageFormat,
                                      mPMPrintSettings, size);

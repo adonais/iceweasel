@@ -7,7 +7,7 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 const { BackupService } = ChromeUtils.importESModule(
-  "resource:///modules/backup/BackupService.sys.mjs"
+  "moz-src:///browser/components/backup/BackupService.sys.mjs"
 );
 const { ProfileAge } = ChromeUtils.importESModule(
   "resource://gre/modules/ProfileAge.sys.mjs"

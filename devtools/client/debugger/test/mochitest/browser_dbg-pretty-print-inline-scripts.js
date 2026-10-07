@@ -49,12 +49,7 @@ add_task(async function () {
     }
   });
 
-  await assertBreakableLines(
-    dbg,
-    PRETTY_PRINTED_FILENAME,
-    htmlLines.length,
-    expectedBreakableLines
-  );
+  await assertBreakableLines(dbg, htmlLines.length, expectedBreakableLines);
 
   info("Check that console messages are pointing to pretty-printed file");
   const { toolbox } = dbg;

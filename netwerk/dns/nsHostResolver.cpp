@@ -63,10 +63,6 @@
 using namespace mozilla;
 using namespace mozilla::net;
 
-// None of our implementations expose a TTL for negative responses, so we use a
-// constant always.
-static const unsigned int NEGATIVE_RECORD_LIFETIME = 60;
-
 //----------------------------------------------------------------------------
 
 // Use a persistent thread pool in order to avoid spinning up new threads all
@@ -118,7 +114,10 @@ nsHostResolver::~nsHostResolver() = default;
 void nsHostResolver::FireCallbacks(const CallbackArray& aCallbacks,
                                    nsHostRecord* aRec, nsresult aStatus) {
   for (const auto& cb : aCallbacks) {
-    cb->OnResolveHostComplete(this, aRec, aStatus);
+    // A completed lookup always delivers a freshly resolved answer, never a
+    // stale (grace-period) cache serve.
+    cb->OnResolveHostComplete(this, aRec, aStatus,
+                              /* aFromStaleCache = */ false);
   }
 }
 
@@ -489,6 +488,11 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
   // if result is set inside the lock, then we need to issue the
   // callback before returning.
   RefPtr<nsHostRecord> result;
+  // Whether |result| was served from a stale (grace-period) cache entry. Only
+  // FromCache sets it; every other way of producing |result| (literal, unspec,
+  // fresh lookup) is not stale. Captured under the lock and passed to the
+  // callback so it describes this specific answer.
+  bool fromStaleCache = false;
   nsresult status = NS_OK, rv = NS_OK;
   {
     MutexAutoLock dbLock(mDBLock);
@@ -579,7 +583,7 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
 
       if (!(flags & nsIDNSService::RESOLVE_BYPASS_CACHE) &&
           rec->HasUsableResult(now, flags)) {
-        result = FromCache(rec, host, type, status);
+        result = FromCache(rec, host, type, status, fromStaleCache);
       } else if (addrRec && addrRec->addr) {
         // if the host name is an IP address literal and has been
         // parsed, go ahead and use it.
@@ -612,9 +616,9 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
         // A/AAAA request can check for an alternative entry like AF_UNSPEC.
         // Otherwise we need to start a new query.
       } else if (!rec->mResolving) {
-        result =
-            FromUnspecEntry(rec, host, aTrrServer, originSuffix, type, flags,
-                            af, aOriginAttributes.IsPrivateBrowsing(), status);
+        result = FromUnspecEntry(
+            rec, host, aTrrServer, originSuffix, type, flags, af,
+            aOriginAttributes.IsPrivateBrowsing(), status, fromStaleCache);
         // If this is a by-type request or if no valid record was found
         // in the cache or this is an AF_UNSPEC request, then start a
         // new lookup.
@@ -634,6 +638,21 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
             glean::dns::lookup_method.AccumulateSingleSample(
                 METHOD_NETWORK_FIRST);
           }
+          // Record why the cache could not serve this lookup (A/AAAA or by-type
+          // such as HTTPS), keyed by family:
+          //   absent  - no entry existed (never cached, or previously evicted);
+          //   expired - an entry existed and its TTL had lapsed (a longer TTL
+          //             would have turned this into a hit);
+          //   refresh - an entry existed and was still valid, but we bypassed
+          //             it (RESOLVE_BYPASS_CACHE / *REFRESH* flags, incl. Happy
+          //             Eyeballs' negative-cache refresh).
+          nsLiteralCString missReason =
+              rec->mValidStart.IsNull() ? "absent"_ns
+              : (rec->CheckExpiration(now) == nsHostRecord::EXP_EXPIRED)
+                  ? "expired"_ns
+                  : "refresh"_ns;
+          glean::dns::cache_miss_reason.Get(RecordFamilyLabel(rec), missReason)
+              .Add(1);
           if (NS_FAILED(rv) && callback->isInList()) {
             callback->remove();
           } else {
@@ -681,7 +700,7 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
   }  // lock
 
   if (result) {
-    callback->OnResolveHostComplete(this, result, status);
+    callback->OnResolveHostComplete(this, result, status, fromStaleCache);
   }
 
   return rv;
@@ -689,14 +708,17 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
 
 already_AddRefed<nsHostRecord> nsHostResolver::FromCache(
     nsHostRecord* aRec, const nsACString& aHost, uint16_t aType,
-    nsresult& aStatus) {
+    nsresult& aStatus, bool& aFromStaleCache) {
   LOG(("  Using cached record for host [%s].\n",
        nsPromiseFlatCString(aHost).get()));
 
   // put reference to host record on stack...
   RefPtr<nsHostRecord> result = aRec;
 
-  aRec->mFromStaleCache =
+  // Whether *this* answer is stale is a property of the delivered result, so
+  // report it back to the caller rather than storing it on the shared record
+  // (which any concurrent resolver could overwrite before the callback runs).
+  aFromStaleCache =
       aRec->CheckExpiration(TimeStamp::NowLoRes()) == nsHostRecord::EXP_GRACE;
 
   // For cached entries that are in the grace period or negative, use the cache
@@ -761,7 +783,8 @@ bool nsHostResolver::OtherFamilyHasUsablePositiveResult(
 already_AddRefed<nsHostRecord> nsHostResolver::FromUnspecEntry(
     nsHostRecord* aRec, const nsACString& aHost, const nsACString& aTrrServer,
     const nsACString& aOriginSuffix, uint16_t aType,
-    nsIDNSService::DNSFlags aFlags, uint16_t af, bool aPb, nsresult& aStatus) {
+    nsIDNSService::DNSFlags aFlags, uint16_t af, bool aPb, nsresult& aStatus,
+    bool& aFromStaleCache) {
   RefPtr<nsHostRecord> result = nullptr;
   // If this is an IPV4 or IPV6 specific request, check if there is
   // an AF_UNSPEC entry we can use. Otherwise, hit the resolver...
@@ -831,6 +854,10 @@ already_AddRefed<nsHostRecord> nsHostResolver::FromUnspecEntry(
       // Now check if we have a new record.
       if (aRec->HasUsableResult(now, aFlags)) {
         result = aRec;
+        // aRec inherited the AF_UNSPEC entry's expiration above, so this is a
+        // stale serve when that entry is in its grace period (same rule as
+        // FromCache). ConditionallyRefreshRecord kicks the background refresh.
+        aFromStaleCache = aRec->CheckExpiration(now) == nsHostRecord::EXP_GRACE;
         if (aRec->negative) {
           aStatus = NS_ERROR_UNKNOWN_HOST;
         }
@@ -891,7 +918,8 @@ void nsHostResolver::DetachCallback(
   // complete callback with the given status code; this would only be done if
   // the record was in the process of being resolved.
   if (rec) {
-    callback->OnResolveHostComplete(this, rec, status);
+    callback->OnResolveHostComplete(this, rec, status,
+                                    /* aFromStaleCache = */ false);
   }
 }
 
@@ -1302,9 +1330,16 @@ void nsHostResolver::PrepareRecordExpirationAddrRecord(
   MOZ_ASSERT(((bool)rec->addr_info) != rec->negative);
   mQueue.mLock.AssertCurrentThreadOwns();
   if (!rec->addr_info) {
-    rec->SetExpiration(TimeStamp::NowLoRes(), NEGATIVE_RECORD_LIFETIME, 0);
-    LOG(("Caching host [%s] negative record for %u seconds.\n", rec->host.get(),
-         NEGATIVE_RECORD_LIFETIME));
+    // None of our implementations expose a TTL for negative responses, so we
+    // use a configurable constant lifetime. A grace period lets the expired
+    // negative entry be served optimistically while a background refresh runs.
+    unsigned int negativeLifetime =
+        StaticPrefs::network_dnsNegativeCacheExpiration();
+    unsigned int negativeGrace =
+        StaticPrefs::network_dnsNegativeCacheExpirationGracePeriod();
+    rec->SetExpiration(TimeStamp::NowLoRes(), negativeLifetime, negativeGrace);
+    LOG(("Caching host [%s] negative record for %u seconds (grace %u).\n",
+         rec->host.get(), negativeLifetime, negativeGrace));
     return;
   }
 
@@ -1472,8 +1507,6 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookupLocked(
   MOZ_ASSERT(rec);
   MOZ_ASSERT(rec->pb == pb);
   MOZ_ASSERT(rec->IsAddrRecord());
-
-  rec->mFromStaleCache = false;
 
   RefPtr<AddrHostRecord> addrRec = do_QueryObject(rec);
   MOZ_ASSERT(addrRec);
@@ -1669,8 +1702,6 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookupByTypeLocked(
   MOZ_ASSERT(rec->pb == pb);
   MOZ_ASSERT(!rec->IsAddrRecord());
 
-  rec->mFromStaleCache = false;
-
   if (rec->LoadNative()) {
     // If this was resolved using the native resolver
     // we also need to update the global count.
@@ -1697,9 +1728,15 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookupByTypeLocked(
     }
     LOG(("nsHostResolver::CompleteLookupByType record %p [%s] status %x\n",
          typeRec.get(), typeRec->host.get(), (unsigned int)status));
+    // A grace period lets the expired negative entry be served optimistically.
+    // Unlike address records, by-type records don't refresh a negative in the
+    // background (TypeHostRecord::RefreshForNegativeResponse() is false), so
+    // this only extends the serve-stale window; revalidation happens on the
+    // consumer side (e.g. Happy Eyeballs' cache-bypassing refresh query).
     typeRec->SetExpiration(
         TimeStamp::NowLoRes(),
-        StaticPrefs::network_dns_negative_ttl_for_type_record(), 0);
+        StaticPrefs::network_dns_negative_ttl_for_type_record(),
+        StaticPrefs::network_dnsNegativeCacheExpirationGracePeriod());
     MOZ_ASSERT(aResult.is<TypeRecordEmpty>());
     status = NS_ERROR_UNKNOWN_HOST;
     typeRec->negative = true;

@@ -9,6 +9,12 @@ package mozilla.components.concept.integrity
 
 /** Interface used to fetch an integrity token */
 fun interface IntegrityClient {
+    /**
+     * Warms up the [IntegrityClient]. Implementations that require custom warm-up work should override this. The
+     * default is a no-op that reports success.
+     */
+    suspend fun warmUp(): Boolean = true
+
     /** Requests an [IntegrityToken] */
     suspend fun request(): Result<IntegrityToken>
 

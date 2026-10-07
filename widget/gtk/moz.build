@@ -85,6 +85,7 @@ UNIFIED_SOURCES += [
     "nsBidiKeyboard.cpp",
     "nsClipboard.cpp",
     "nsColorPicker.cpp",
+    "nsDeviceContextSpecG.cpp",
     "nsDragService.cpp",
     "nsDragServiceGtk.cpp",
     "nsDragSessionSource.cpp",
@@ -93,6 +94,9 @@ UNIFIED_SOURCES += [
     "nsGtkKeyUtils.cpp",
     "nsImageToPixbuf.cpp",
     "nsLookAndFeel.cpp",
+    "nsPrintDialogGTK.cpp",
+    "nsPrintSettingsGTK.cpp",
+    "nsPrintSettingsServiceGTK.cpp",
     "nsSound.cpp",
     "nsToolkit.cpp",
     "nsUserIdleServiceGTK.cpp",
@@ -146,14 +150,6 @@ if CONFIG["MOZ_X11"]:
     ]
     SOURCES += [
         "nsWindowX11.cpp",  # conflicts with X11 headers
-    ]
-
-if CONFIG["NS_PRINTING"]:
-    UNIFIED_SOURCES += [
-        "nsDeviceContextSpecG.cpp",
-        "nsPrintDialogGTK.cpp",
-        "nsPrintSettingsGTK.cpp",
-        "nsPrintSettingsServiceGTK.cpp",
     ]
 
 XPCOM_MANIFESTS += [

@@ -508,3 +508,54 @@ add_task(function test_WebExtensionContentScript_frames_mv3_specific() {
     expectMatches: true,
   });
 });
+
+async function test_activeTab_guarded(manifestVersion) {
+  let contentPage = await ExtensionTestUtils.loadContentPage(
+    "http://example.com/data/file_toplevel.html"
+  );
+
+  await contentPage.spawn([manifestVersion], manifestVersion => {
+    const { ExtensionGuardSet, WebExtensionContentScript, WebExtensionPolicy } =
+      Cu.getGlobalForObject(Services);
+    let policy = new WebExtensionPolicy({
+      id: "foo@bar.baz",
+      mozExtensionHostname: "88fb51cd-159f-4859-83db-7065485bc9b2",
+      baseURL: "file:///foo",
+
+      manifestVersion,
+      allowedOrigins: [],
+      localizeCallback() {},
+    });
+    let script = new WebExtensionContentScript(policy, {
+      matches: [],
+      hasActiveTabPermission: true,
+    });
+    let wgc = this.content.windowGlobalChild;
+
+    Assert.ok(
+      script.matchesWindowGlobal(wgc),
+      "activeTab matches the top-level document without guards"
+    );
+
+    policy.guardSets = [
+      new ExtensionGuardSet({
+        deny: ["http://example.com/*"],
+        source: "enterprise-global",
+      }),
+    ];
+    Assert.ok(
+      !script.matchesWindowGlobal(wgc),
+      "activeTab does not match a guarded host"
+    );
+  });
+
+  await contentPage.close();
+}
+
+add_task(function test_WebExtensionContentScript_activeTab_guarded_mv2() {
+  return test_activeTab_guarded(2);
+});
+
+add_task(function test_WebExtensionContentScript_activeTab_guarded_mv3() {
+  return test_activeTab_guarded(3);
+});

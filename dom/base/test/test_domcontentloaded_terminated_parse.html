@@ -1,0 +1,22 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Test DOMContentLoaded after a terminated parse</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css">
+</head>
+<body>
+<iframe id="f"></iframe>
+<script>
+SimpleTest.waitForExplicitFinish();
+
+window.addEventListener("message", event => {
+  is(event.data, "DOMContentLoaded",
+     "DOMContentLoaded fires after the parse was terminated");
+  SimpleTest.finish();
+});
+
+document.getElementById("f").src = "file_domcontentloaded_terminated_parse.html";
+</script>
+</body>
+</html>

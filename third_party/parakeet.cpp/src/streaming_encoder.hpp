@@ -34,8 +34,18 @@ class StreamingEncoder {
 public:
     explicit StreamingEncoder(const ModelLoader& ml);
 
+    // Zero the caches, keeping the step counter: the caller goes on feeding
+    // mid-stream chunks, and step_ is what selects their pre-encode overlap
+    // accounting (drop_extra_pre_encoded). For an utterance boundary, where the
+    // model must forget the utterance that just ended but the chunk schedule is
+    // unchanged.
+    void reset_caches();
+
     // Reset all caches to zeros and the step counter to 0 (a fresh stream).
-    void reset();
+    void reset() {
+        reset_caches();
+        step_ = 0;
+    }
 
     // Process one mel chunk window. `mel_chunk_frames` is row-major
     // [n_mels, n_mel_frames] (feat-major inner = time), i.e. mel[m*n + t] — the

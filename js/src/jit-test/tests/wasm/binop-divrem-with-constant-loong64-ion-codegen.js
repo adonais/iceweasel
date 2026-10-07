@@ -36,10 +36,8 @@ const i32_div_s = [
   {
     divisor: -1,
     expected: `lu12i\\.w     \\$t6, -524288
-               bne           \\$a0, \\$t6, 24 -> ${HEX}+
-               ${NopIns}
-               bge           \\$zero, \\$zero, 12 -> ${HEX}+
-               ${NopIns}
+               bne           \\$a0, \\$t6, 16 -> ${HEX}+
+               bge           \\$zero, \\$zero, 8 -> ${HEX}+
                ${NopIns}
                ${WasmTrapIns}
                sub\\.w       \\$a0, \\$zero, \\$a0`,
@@ -236,10 +234,8 @@ const i64_div_s = [
   {
     divisor: -1,
     expected: `lu52i\\.d     \\$t6, \\$zero, -2048
-               bne           \\$a0, \\$t6, 24 -> ${HEX}+
-               ${NopIns}
-               bge           \\$zero, \\$zero, 12 -> ${HEX}+
-               ${NopIns}
+               bne           \\$a0, \\$t6, 16 -> ${HEX}+
+               bge           \\$zero, \\$zero, 8 -> ${HEX}+
                ${NopIns}
                ${WasmTrapIns}
                sub\\.d       \\$a0, \\$zero, \\$a0`,

@@ -260,21 +260,21 @@ void FrameMetrics::UpdatePendingScrollInfo(const ScrollPositionUpdate& aInfo) {
 }
 
 std::ostream& operator<<(std::ostream& aStream,
-                         const OverscrollBehavior& aBehavior) {
+                         const StyleOverscrollBehavior& aBehavior) {
   switch (aBehavior) {
-    case OverscrollBehavior::Auto: {
+    case StyleOverscrollBehavior::Auto: {
       aStream << "auto";
       break;
     }
-    case OverscrollBehavior::Contain: {
+    case StyleOverscrollBehavior::Contain: {
       aStream << "contain";
       break;
     }
-    case OverscrollBehavior::Chain: {
+    case StyleOverscrollBehavior::Chain: {
       aStream << "chain";
       break;
     }
-    case OverscrollBehavior::None: {
+    case StyleOverscrollBehavior::None: {
       aStream << "none";
       break;
     }
@@ -283,30 +283,14 @@ std::ostream& operator<<(std::ostream& aStream,
 }
 
 OverscrollBehaviorInfo::OverscrollBehaviorInfo()
-    : mBehaviorX(OverscrollBehavior::Auto),
-      mBehaviorY(OverscrollBehavior::Auto) {}
-
-static OverscrollBehavior ToOverscrollBehavior(
-    StyleOverscrollBehavior aBehavior) {
-  switch (aBehavior) {
-    case StyleOverscrollBehavior::Auto:
-      return OverscrollBehavior::Auto;
-    case StyleOverscrollBehavior::Contain:
-      return OverscrollBehavior::Contain;
-    case StyleOverscrollBehavior::Chain:
-      return OverscrollBehavior::Chain;
-    case StyleOverscrollBehavior::None:
-      return OverscrollBehavior::None;
-  }
-  MOZ_ASSERT_UNREACHABLE("Invalid overscroll behavior");
-  return OverscrollBehavior::Auto;
-}
+    : mBehaviorX(StyleOverscrollBehavior::Auto),
+      mBehaviorY(StyleOverscrollBehavior::Auto) {}
 
 OverscrollBehaviorInfo OverscrollBehaviorInfo::FromStyleConstants(
     StyleOverscrollBehavior aBehaviorX, StyleOverscrollBehavior aBehaviorY) {
   OverscrollBehaviorInfo result;
-  result.mBehaviorX = ToOverscrollBehavior(aBehaviorX);
-  result.mBehaviorY = ToOverscrollBehavior(aBehaviorY);
+  result.mBehaviorX = aBehaviorX;
+  result.mBehaviorY = aBehaviorY;
   return result;
 }
 

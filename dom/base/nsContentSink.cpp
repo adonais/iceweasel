@@ -12,7 +12,6 @@
 #include <stdint.h>
 
 #include "HTMLLinkElement.h"
-#include "Link.h"
 #include "MediaList.h"
 #include "mozAutoDocUpdate.h"
 #include "mozilla/Components.h"
@@ -30,6 +29,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLDNSPrefetch.h"
+#include "mozilla/dom/Link.h"
 #include "mozilla/dom/LinkStyle.h"
 #include "mozilla/dom/ModuleLoader.h"
 #include "mozilla/dom/MutationObservers.h"

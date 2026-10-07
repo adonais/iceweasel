@@ -100,3 +100,8 @@ LOCAL_INCLUDES += [
 ]
 
 FINAL_LIBRARY = "xul-gtest"
+
+LICENSED_UNDER += ["libjingle"]
+LICENSED_UNDER["libjingle"].paths = [
+    "gtest_utils.h",
+]

@@ -35,6 +35,7 @@ DIRS += [
     "contentanalysis",
     "contextualidentity",
     "controlcenter",
+    "miniwindow",
     "customizableui",
     "customkeys",
     "downloads",
@@ -125,6 +126,7 @@ MOZ_SRC_FILES += [
     "DefaultBrowserCheck.sys.mjs",
     "DesktopActorRegistry.sys.mjs",
     "ProfileDataUpgrader.sys.mjs",
+    "ReinstallCheck.sys.mjs",
     "StartupTelemetry.sys.mjs",
 ]
 

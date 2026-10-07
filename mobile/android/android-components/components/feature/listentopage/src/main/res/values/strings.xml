@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<resources>
+  <!-- Content description of the playback notification control that moves the
+  reading backwards. %1$d is how many seconds it moves by. -->
+  <plurals name="mozac_feature_listentopage_notification_skip_back">
+    <item quantity="one">Back %1$d second</item>
+    <item quantity="other">Back %1$d seconds</item>
+  </plurals>
+  <!-- Content description of the playback notification control that moves the
+  reading forwards. %1$d is how many seconds it moves by. -->
+  <plurals name="mozac_feature_listentopage_notification_skip_forward">
+    <item quantity="one">Forward %1$d second</item>
+    <item quantity="other">Forward %1$d seconds</item>
+  </plurals>
+</resources>

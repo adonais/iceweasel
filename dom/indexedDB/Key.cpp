@@ -910,6 +910,8 @@ static Result<Ok, nsresult> ProcessArrayBufferOrView(
   MOZ_CRASH("ArrayBufferOrView must be ArrayBuffer or ArrayBufferView!");
 }
 
+// Implementation of the branch "If input is a buffer source type" from
+// https://w3c.github.io/IndexedDB/#convert-a-value-to-a-key
 Result<Ok, nsresult> Key::EncodeBinary(
     const JS::ArrayBufferOrView& aArrayBufferOrView, uint8_t aTypeOffset) {
   // We can't exactly mimic the steps for "getting a copy of the bytes held by
@@ -918,13 +920,7 @@ Result<Ok, nsresult> Key::EncodeBinary(
   // Also, EncodeAsString needs to encode the data anyway (making a copy), so
   // doing a plain extra copy first would be inefficient.
 
-  // https://webidl.spec.whatwg.org/#dfn-get-buffer-source-copy
-  // 7. If IsDetachedBuffer(jsArrayBuffer) is true, then return the empty
-  // byte sequence.
-  //
-  // Note: As the web platform tests assume, and as has been discussed at
-  // https://github.com/w3c/IndexedDB/issues/417 - we are better off by
-  // throwing a DataCloneError. The spec language is about to be revised.
+  // 1. If `input` is detached then return "invalid value".
   if (aArrayBufferOrView.isDetached()) {
     return Err(NS_ERROR_DOM_INDEXEDDB_DATA_ERR);
   }
@@ -932,6 +928,10 @@ Result<Ok, nsresult> Key::EncodeBinary(
   JSObject* obj = aArrayBufferOrView.asObjectUnbarriered();
   if (JS::IsSharedArrayBufferObject(obj) ||
       (JS_IsArrayBufferViewObject(obj) && JS::IsArrayBufferViewShared(obj))) {
+    return Err(NS_ERROR_DOM_INDEXEDDB_DATA_ERR);
+  }
+
+  if (aArrayBufferOrView.isResizable()) {
     return Err(NS_ERROR_DOM_INDEXEDDB_DATA_ERR);
   }
 
@@ -1017,11 +1017,16 @@ Key::SetFromJSVal(JSContext* aCx, JS::Handle<JS::Value> aVal,
 
   const bool shouldInactivate = aTransaction && aTransaction->IsActive();
   if (shouldInactivate) {
-    aTransaction->TransitionToInactive();
+    aTransaction->TransitionToInactiveWithDeferral();
   }
   auto guard = MakeScopeExit([&]() {
-    if (shouldInactivate && !aTransaction->IsAborted()) {
-      aTransaction->TransitionToActive();
+    if (shouldInactivate) {
+      if (!aTransaction->IsAborted()) {
+        aTransaction->TransitionToActive();
+      } else {
+        aTransaction->DeactivateDeferral();
+        aTransaction->DrainDeferredResponses();
+      }
     }
   });
 

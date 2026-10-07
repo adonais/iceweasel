@@ -20,6 +20,110 @@ const isMSIX =
 
 const MESSAGES = () => [
   {
+    id: "WELCOME_BACK_SPOTLIGHT",
+    skip_in_tests: "it's not tested in automation",
+    template: "spotlight",
+    content: {
+      id: "WELCOME_BACK_SPOTLIGHT",
+      template: "multistage",
+      backdrop: "transparent",
+      transitions: false,
+      screens: [
+        {
+          id: "CAROUSEL",
+          content: {
+            title: "New features built to help you do more",
+            tiles: {
+              type: "single-select",
+              selected: "vertical-tabs",
+              data: [
+                {
+                  id: "split-view",
+                  inert: true,
+                  targeting: "firefoxVersion >= 150",
+                  type: "carousel-card",
+                  icon: {
+                    background:
+                      "url('chrome://activity-stream/content/data/content/assets/mr-kit-smart-window.svg') center / cover no-repeat light-dark(rgb(240, 240, 244), rgb(43, 42, 51))",
+                    darkModeBackground:
+                      "url('chrome://activity-stream/content/data/content/assets/fox-doodle-backup-restore.svg') center / cover no-repeat light-dark(rgb(240, 240, 244), rgb(43, 42, 51))",
+                  },
+                  label: { raw: "Split View" },
+                  body: {
+                    raw: "Two tabs side by side, right where you need them. Finally.",
+                  },
+                  tilebutton: {
+                    label: {
+                      raw: "Try it now",
+                    },
+                    style: "secondary",
+                    action: {
+                      type: "OPEN_URL",
+                      data: {
+                        args: "https://support.mozilla.org/kb/split-view-firefox",
+                        where: "tabshifted",
+                      },
+                    },
+                  },
+                },
+                {
+                  id: "vertical-tabs",
+                  inert: true,
+                  type: "carousel-card",
+                  targeting: "firefoxVersion <= 140",
+                  icon: {
+                    background:
+                      "url('chrome://activity-stream/content/data/content/assets/nuo-taborientation.svg') center / cover no-repeat light-dark(rgb(240, 240, 244), rgb(43, 42, 51))",
+                  },
+                  label: { raw: "Vertical Tabs" },
+                  body: {
+                    raw: "Stack your tabs down the side for calmer browsing.",
+                  },
+                },
+                {
+                  id: "tab-groups",
+                  inert: true,
+                  type: "carousel-card",
+                  icon: {
+                    background:
+                      "url('chrome://activity-stream/content/data/content/assets/euo-tab-orientation.svg') center / cover no-repeat light-dark(rgb(240, 240, 244), rgb(43, 42, 51))",
+                  },
+                  label: { raw: "Tab Groups" },
+                  body: { raw: "Keep related tabs together in named groups." },
+                  tilebutton: {
+                    label: {
+                      raw: "Try it now",
+                    },
+                    style: "secondary",
+                    action: {
+                      type: "OPEN_URL",
+                      data: {
+                        args: "https://support.mozilla.org/kb/split-view-firefox",
+                        where: "tabshifted",
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+            primary_button: {
+              label: { raw: "Start browsing" },
+              action: {
+                dismiss: true,
+              },
+            },
+            secondary_button: {
+              label: { raw: "Learn more" },
+              action: {
+                dismiss: true,
+              },
+            },
+          },
+        },
+      ],
+    },
+  },
+  {
     weight: 100,
     id: "FEATURE_CALLOUT_REFERRAL_TEST",
     template: "feature_callout",
@@ -742,67 +846,6 @@ const MESSAGES = () => [
       },
     },
     trigger: { id: "momentsUpdate" },
-  },
-  {
-    id: "PERSONALIZED_CFR_MESSAGE",
-    template: "cfr_doorhanger",
-    groups: ["cfr"],
-    content: {
-      layout: "icon_and_message",
-      category: "cfrFeatures",
-      bucket_id: "PERSONALIZED_CFR_MESSAGE",
-      notification_text: "Personalized CFR Recommendation",
-      heading_text: { string_id: "cfr-doorhanger-bookmark-fxa-header" },
-      info_icon: {
-        label: {
-          attributes: {
-            tooltiptext: { string_id: "cfr-doorhanger-fxa-close-btn-tooltip" },
-          },
-        },
-        sumo_path: "https://example.com",
-      },
-      text: { string_id: "cfr-doorhanger-bookmark-fxa-body-2" },
-      icon: "chrome://branding/content/icon64.png",
-      icon_class: "cfr-doorhanger-large-icon",
-      persistent_doorhanger: true,
-      buttons: {
-        primary: {
-          label: { string_id: "cfr-doorhanger-milestone-ok-button" },
-          action: {
-            type: "OPEN_URL",
-            data: {
-              args: "https://send.firefox.com/login/?utm_source=activity-stream&entrypoint=activity-stream-cfr-pdf",
-              where: "tabshifted",
-            },
-          },
-        },
-        secondary: [
-          {
-            label: { string_id: "cfr-doorhanger-extension-cancel-button" },
-            action: { type: "CANCEL" },
-          },
-          {
-            label: {
-              string_id: "cfr-doorhanger-extension-never-show-recommendation",
-            },
-          },
-          {
-            label: {
-              string_id: "cfr-doorhanger-extension-manage-settings-button",
-            },
-            action: {
-              type: "OPEN_PREFERENCES_PAGE",
-              data: { category: "general-cfrfeatures" },
-            },
-          },
-        ],
-      },
-    },
-    targeting: "scores.PERSONALIZED_CFR_MESSAGE.score > scoreThreshold",
-    trigger: {
-      id: "openURL",
-      patterns: ["*://*/*.pdf"],
-    },
   },
   {
     id: "TEST_BMB_BUTTON",
@@ -2854,6 +2897,65 @@ const MESSAGES = () => [
     trigger: {
       id: "newtabMessageCheck",
     },
+  },
+  // The base template for the new tab card stack component (bug 2069986).
+  {
+    id: "TEST_HNT_CARD_STACK",
+    template: "newtab_message",
+    groups: [],
+    content: {
+      messageType: "ASRouterMultistageMessage",
+      id: "TEST_HNT_CARD_STACK",
+      transitions: false,
+      backdrop: "transparent",
+      screens: [
+        {
+          id: "CARD_STACK_SCREEN_1",
+          force_hide_steps_indicator: true,
+          content: {
+            position: "card-stack",
+            background:
+              "url('chrome://activity-stream/content/data/content/assets/br-set-default-fox-heart.svg') center / contain no-repeat",
+            title: { raw: "This is a card-stack headline" },
+            subtitle: {
+              raw: "This is a card-stack subtitle, lower in the visual hierarchy.",
+            },
+            primary_button: {
+              label: { raw: "Primary action" },
+              action: { navigate: true },
+            },
+            secondary_button: {
+              label: { raw: "Dismiss" },
+              action: { navigate: true },
+            },
+          },
+        },
+        {
+          id: "CARD_STACK_SCREEN_2",
+          force_hide_steps_indicator: true,
+          content: {
+            position: "card-stack",
+            background:
+              "url('chrome://activity-stream/content/data/content/assets/br-import-fox-house.svg') center / contain no-repeat",
+            title: {
+              raw: "This is a card-stack headline, on the second screen",
+            },
+            subtitle: {
+              raw: "This is a card-stack subtitle, lower in the visual hierarchy, on the second screen.",
+            },
+            primary_button: {
+              label: { raw: "Primary action" },
+              action: { dismiss: true },
+            },
+            secondary_button: {
+              label: { raw: "Dismiss" },
+              action: { dismiss: true },
+            },
+          },
+        },
+      ],
+    },
+    trigger: { id: "newtabMessageCheck" },
   },
   {
     id: "UNIVERSAL_INFOBAR_WITH_EMBEDDED_LINKS",

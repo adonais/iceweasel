@@ -2470,11 +2470,11 @@ bool TextLeafRange::SetSelection(int32_t aSelectionNum, bool aSetFocus) const {
   } else {
     rangeCount = domSel->RangeCount();
   }
-  RefPtr<nsRange> domRange = nullptr;
+  RefPtr<dom::Range> domRange = nullptr;
   const bool newRange =
       aSelectionNum == static_cast<int32_t>(rangeCount) || aSelectionNum < 0;
   if (newRange) {
-    domRange = nsRange::Create(startContent);
+    domRange = dom::Range::Create(startContent);
   } else {
     domRange = domSel->GetRangeAt(AssertedCast<uint32_t>(aSelectionNum));
   }
@@ -2575,8 +2575,8 @@ void TextLeafRange::ScrollIntoView(uint32_t aScrollType) const {
   }
 
   ErrorResult er;
-  RefPtr<nsRange> domRange = nsRange::Create(startContent, startContentOffset,
-                                             endContent, endContentOffset, er);
+  RefPtr<dom::Range> domRange = dom::Range::Create(
+      startContent, startContentOffset, endContent, endContentOffset, er);
   if (er.Failed()) {
     return;
   }

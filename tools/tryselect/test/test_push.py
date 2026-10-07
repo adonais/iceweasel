@@ -166,7 +166,9 @@ def test_large_push_warning_message(capsys):
 def test_write_task_config(tmp_path, capsys):
     """Test that --write-task-config writes try_task_config.json and doesn't push."""
     mock_vcs = MagicMock()
+    mock_vcs.name = "git"
     mock_vcs.path = str(tmp_path)
+    mock_vcs.base_ref_as_commit.return_value = "def456fakebaserev"
     try_task_config = push.generate_try_task_config("fuzzy", ["task-foo"])
 
     with ExitStack() as stack:
@@ -195,6 +197,82 @@ def test_write_task_config(tmp_path, capsys):
 
     written = tmp_path / "try_task_config.json"
     assert json.loads(written.read_text()) == try_task_config
+
+
+def push_and_read_try_config(remote, resolved_url, vcs_name="git"):
+    """Run a push and return the try_task_config.json it would have committed."""
+    push.vcs.name = vcs_name
+    push.vcs.get_remote_url.return_value = resolved_url
+
+    with ExitStack() as stack:
+        stack.enter_context(patch("tryselect.push.MACH_TRY_REMOTE", remote))
+        stack.enter_context(patch("tryselect.push.check_working_directory"))
+        stack.enter_context(patch("tryselect.push.write_task_config_history"))
+        push._is_hg_try.cache_clear()
+
+        push.push_to_try(
+            "fuzzy",
+            "try: test",
+            MagicMock(),
+            try_task_config={
+                "version": 2,
+                "parameters": {"try_task_config": {"tasks": ["task1"]}},
+            },
+            push_to_vcs=True,
+        )
+
+    call_kwargs = push.vcs.push_to_try.call_args.kwargs
+    return json.loads(call_kwargs["changed_files"]["try_task_config.json"])
+
+
+def test_push_to_try_records_base_rev():
+    """push_to_try records the base revision for a Git try remote."""
+    config = push_and_read_try_config(
+        "try", "https://github.com/mozilla/enterprise-firefox-try"
+    )
+    assert config["parameters"]["base_rev"] == "def456fakebaserev"
+
+
+# Recording base_rev here is harmless: only a Git decision task reads it.
+xfail_negation = pytest.mark.xfail(
+    reason="_is_git_try treats any non-Mercurial-try remote as a Git try one",
+    strict=True,
+)
+
+
+@pytest.mark.parametrize(
+    "remote,resolved_url,vcs_name",
+    (
+        # Mercurial try: the decision task gets the changed files from
+        # hg.mozilla.org rather than from a diff, so there is nothing to record.
+        pytest.param(push.HG_TRY_URL, None, "git", id="hg_try"),
+        pytest.param(push.HG_TRY_URL + "-comm-central", None, "git", id="hg_try_comm"),
+        # A Mercurial checkout resolves `try` to a path just like Git does, so the
+        # name of the remote alone can't tell the two apart.
+        pytest.param("try", "ssh://hg.mozilla.org/try", "hg", id="hg_checkout"),
+        # git-cinnabar pushes to Mercurial try from a Git checkout, through a
+        # remote that is configured in git and does end with `try`.
+        pytest.param(
+            "try",
+            "hg::https://hg.mozilla.org/try",
+            "git",
+            id="cinnabar",
+            marks=xfail_negation,
+        ),
+        # A Git remote that isn't a try repository.
+        pytest.param(
+            "upstream",
+            "https://github.com/mozilla-firefox/firefox",
+            "git",
+            id="not_try",
+            marks=xfail_negation,
+        ),
+    ),
+)
+def test_push_to_try_skips_base_rev(remote, resolved_url, vcs_name):
+    """push_to_try only records a base revision for a Git try remote."""
+    config = push_and_read_try_config(remote, resolved_url, vcs_name)
+    assert "base_rev" not in config["parameters"]
 
 
 def test_get_sys_argv():

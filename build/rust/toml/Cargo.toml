@@ -1,6 +1,6 @@
 [package]
 name = "toml"
-version = "0.5.999"
+version = "0.9.999"
 edition = "2018"
 license = "MIT/Apache-2.0"
 
@@ -8,10 +8,12 @@ license = "MIT/Apache-2.0"
 path = "lib.rs"
 
 [dependencies.toml]
-version = "0.9.8"
+version = "1.1.1"
 default-features = false
 
 [features]
 default = ["toml/default"]
 indexmap = ["toml/indexmap"]
+parse = ["toml/parse"]
 preserve-order = ["toml/preserve-order"]
+serde = ["toml/serde"]

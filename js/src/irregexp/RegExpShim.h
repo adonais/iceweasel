@@ -1165,14 +1165,10 @@ using DisallowGarbageCollection = JS::AutoAssertNoGC;
 
 // V8 uses this inside DisallowGarbageCollection regions to turn
 // allocation back on before throwing a stack overflow exception or
-// handling interrupts. AutoSuppressGC is sufficient for the former
-// case, but not for the latter: handling interrupts can execute
-// arbitrary script code, and V8 jumps through some scary hoops to
-// "manually relocate unhandlified references" afterwards. To keep
-// things sane, we don't try to handle interrupts while regex code is
-// still on the stack. Instead, we return EXCEPTION and handle
-// interrupts in the caller. (See RegExpShared::execute.)
-
+// handling interrupts. We instead arrange to throw exceptions and do
+// any necessary work in the caller. See Isolate::StackOverflow and
+// Isolate::HandleInterrupts. AllowGarbageCollection is therefore a
+// no-op for us.
 class AllowGarbageCollection {
  public:
   AllowGarbageCollection() = default;
@@ -1342,47 +1338,44 @@ class RegExpData : public HeapObject {
 
   Tagged<String> escaped_source() const { return String(inner()->getSource()); }
 
-  // TODO: Support QuickCheck (bug 2060702)
-
-  // The first-character bitset covers the latin-1 range, one bit per character.
-  static constexpr int kQuickCheckBitsetChars = 256;
-  static constexpr int kQuickCheckBitsetBitsPerWord = 32;
+  static constexpr int kQuickCheckBitsetChars =
+      js::RegExpShared::QuickCheckBitsetChars;
+  static constexpr int kQuickCheckBitsetBitsPerWord =
+      js::RegExpShared::QuickCheckBitsetBitsPerWord;
   static constexpr int kQuickCheckBitsetWords =
-      kQuickCheckBitsetChars / kQuickCheckBitsetBitsPerWord;
+      js::RegExpShared::QuickCheckBitsetWords;
 
-  // Where |c| lives in the bitset: which word to load, and which bit to test
-  // in it.  For 'a' (97) that is word 3, bit 1.
-  static constexpr std::pair<int, uint32_t> QuickCheckBitsetBit(uint8_t c) {
-    return {c / kQuickCheckBitsetBitsPerWord,
-            uint32_t{1} << (c % kQuickCheckBitsetBitsPerWord)};
-  }
-
-  inline uint32_t quick_check_mask() const { return 0; }
-  inline void set_quick_check_mask(uint32_t value) {}
-
-  inline uint32_t quick_check_value() const { return 0; }
-  inline void set_quick_check_value(uint32_t value) {}
-
-  inline void set_quick_check_reject_bitset_word(int index, uint32_t value) {}
-
-  enum InternalFlag : uint32_t {
-    // Set if either quick-check filter was built.  Most regexps get neither,
-    // so this lets the exec path skip straight past both with one test
-    // instead of loading the subject and running the bitset check to find out.
-    kHasQuickCheck = 1 << 0,
+  enum InternalFlags : uint8_t {
+    kHasQuickCheck =
+        static_cast<uint8_t>(js::RegExpShared::InternalFlag::HasQuickCheck),
   };
 
-  inline uint32_t internal_flags() const { return 0; }
-  inline void set_internal_flags(uint32_t value) {}
-
-  inline void clear_quick_check() {}
-
-  // True iff the quick-check filters prove that no match can begin at
-  // |subject[index]|.  |subject| must be one-byte and flat.  Mirrored by
-  // RegExpExecInternal in builtins-regexp-gen.cc; keep the two in sync.
-  bool QuickCheckRejects(base::Vector<const uint8_t> subject, int index) const {
-    return false;
+  static constexpr std::pair<int, uint32_t> QuickCheckBitsetBit(uint8_t c) {
+    return js::RegExpShared::quickCheckBitsetBit(c);
   }
+
+  inline uint32_t quick_check_mask() const { return inner()->quickCheckMask(); }
+  inline void set_quick_check_mask(uint32_t value) {
+    inner()->setQuickCheckMask(value);
+  }
+
+  inline uint32_t quick_check_value() const {
+    return inner()->quickCheckValue();
+  }
+  inline void set_quick_check_value(uint32_t value) {
+    inner()->setQuickCheckValue(value);
+  }
+
+  inline void set_quick_check_reject_bitset_word(int index, uint32_t value) {
+    inner()->setQuickCheckRejectBitsetWord(index, value);
+  }
+
+  inline uint8_t internal_flags() const { return inner()->internalFlags(); }
+  inline void set_internal_flags(uint32_t value) {
+    inner()->setInternalFlags(value);
+  }
+
+  inline void clear_quick_check() { inner()->clearQuickCheck(); }
 
  private:
   js::RegExpShared* inner() const {
@@ -1475,9 +1468,9 @@ class Isolate {
   js::LifoAlloc* allocator() { return &cx_->tempLifoAlloc(); }
 
   // This is called from inside no-GC code. Instead of suppressing GC
-  // to allocate the error, we return false from Execute and call
-  // ReportOverRecursed in the caller.
-  void StackOverflow() {}
+  // to allocate the error, we set a flag on the context, return false
+  // from Execute and call ReportOverRecursed in the caller.
+  void StackOverflow() { cx_->noteDelayedOverRecursed(); }
 
 #ifndef V8_INTL_SUPPORT
   unibrow::Mapping<unibrow::Ecma262UnCanonicalize>* jsregexp_uncanonicalize() {
@@ -1605,6 +1598,11 @@ class StackLimitCheck {
 
   // Use this to check for interrupt request in C++ code.
   bool InterruptRequested() {
+#ifdef DEBUG
+    if (cx_->isolate->shouldSimulateInterrupt_) {
+      return true;
+    }
+#endif
     return cx_->hasPendingInterrupt(js::InterruptReason::CallbackUrgent);
   }
 
@@ -1621,6 +1619,7 @@ class StackLimitCheck {
 class ExternalReference {
  public:
   static const void* TopOfRegexpStack(Isolate* isolate);
+  static const void* RegexpStackPointer(Isolate* isolate);
   static size_t SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
                                     regexp::Stack* regexpStack);
 };

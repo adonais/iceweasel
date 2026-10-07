@@ -1,0 +1,282 @@
+<!doctype html>
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
+<html>
+  <head>
+    <title>Test Panel Item First Letter Selection</title>
+    <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+    <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
+    <script type="text/javascript" src="head.js"></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="chrome://mochikit/content/tests/SimpleTest/test.css"
+    />
+  </head>
+  <body>
+    <p id="display"></p>
+
+    <div id="content">
+      <panel-list>
+        <panel-item accesskey="Z">Banking</panel-item>
+        <panel-item>Personal</panel-item>
+        <panel-item>Work</panel-item>
+        <panel-item>Writing</panel-item>
+        <panel-item submenu="more">
+          More
+          <panel-list slot="submenu" id="more">
+            <panel-item>Pinned</panel-item>
+            <panel-item>Muted</panel-item>
+          </panel-list>
+        </panel-item>
+      </panel-list>
+      <button id="anchor">Open the panel</button>
+      <button id="outside">Outside the panel</button>
+      <input id="field" />
+    </div>
+
+    <script class="testbody" type="application/javascript">
+      const { BrowserTestUtils } = ChromeUtils.importESModule(
+        "resource://testing-common/BrowserTestUtils.sys.mjs"
+      );
+
+      let panelList = document.querySelector("panel-list");
+      let [banking, personal, work, writing, moreHost] = panelList.children;
+      let submenu, pinned;
+      let clicks = [];
+      // A click on a submenu item bubbles through its host item, so the host
+      // records nothing.
+      for (let item of [banking, personal, work, writing]) {
+        item.addEventListener("click", () => clicks.push(item));
+      }
+
+      add_setup(async function () {
+        await customElements.whenDefined("panel-item");
+        document
+          .getElementById("anchor")
+          .addEventListener("click", e => panelList.toggle(e));
+        submenu = moreHost.submenuPanel;
+        [pinned] = submenu.children;
+        for (let item of submenu.children) {
+          item.addEventListener("click", () => clicks.push(item));
+        }
+      });
+
+      async function showPanel() {
+        let shown = BrowserTestUtils.waitForEvent(panelList, "shown");
+        panelList.show();
+        await shown;
+        // show() without a triggering event leaves focus where it was.
+        personal.focus();
+      }
+
+      async function hidePanel(list = panelList) {
+        if (!list.open) {
+          return;
+        }
+        let hidden = BrowserTestUtils.waitForEvent(list, "hidden");
+        list.hide(undefined, { force: true });
+        await hidden;
+      }
+
+      // Waits for a list to finish hiding only when the key closed it, so a
+      // key that should have activated an item but didn't fails an assertion
+      // instead of timing out.
+      async function pressKey(key, options = {}) {
+        let hidden = new Map(
+          [panelList, submenu]
+            .filter(list => list.open)
+            .map(list => [list, BrowserTestUtils.waitForEvent(list, "hidden")])
+        );
+        synthesizeKey(key, options);
+        for (let [list, promise] of hidden) {
+          if (!list.open) {
+            await promise;
+          }
+        }
+      }
+
+      function captureNextKeydown() {
+        return new Promise(resolve => {
+          document.addEventListener("keydown", resolve, {
+            capture: true,
+            once: true,
+          });
+        });
+      }
+
+      add_task(async function testSingleMatchIsActivated() {
+        await showPanel();
+
+        await pressKey("p");
+        is(clicks.length, 1, "One item was activated");
+        is(clicks[0], personal, "The item whose label starts with P");
+        ok(!panelList.open, "Activating the item closed the panel");
+        await hidePanel();
+      });
+
+      add_task(async function testSeveralMatchesMoveFocus() {
+        clicks = [];
+        await showPanel();
+
+        let focusedLabel = () =>
+          document.activeElement?.label?.textContent ??
+          document.activeElement?.localName;
+
+        info(`before any W: ${focusedLabel()}`);
+        synthesizeKey("w", {});
+        is(focusedLabel(), "Work", "Focus moved to the first W match");
+
+        synthesizeKey("w", {});
+        is(focusedLabel(), "Writing", "Focus moved to the next W match");
+
+        synthesizeKey("w", {});
+        is(focusedLabel(), "Work", "Focus wrapped around to the first");
+
+        is(clicks.length, 0, "An ambiguous letter activates nothing");
+
+        await pressKey("KEY_Enter");
+        is(clicks.length, 1, "Enter activated one item");
+        is(clicks[0], work, "Enter activated the item the letter cycled to");
+        ok(!panelList.open, "Enter closed the panel");
+        await hidePanel();
+      });
+
+      add_task(async function testAccesskeyItemIgnoresItsLabel() {
+        clicks = [];
+        await showPanel();
+
+        synthesizeKey("b", {});
+        is(
+          clicks.length,
+          0,
+          "An item with an accesskey doesn't match its label"
+        );
+        is(document.activeElement, personal, "Focus didn't move");
+
+        await pressKey("z");
+        is(clicks[0], banking, "Its accesskey still works");
+        ok(!panelList.open, "The accesskey closed the panel");
+        await hidePanel();
+      });
+
+      add_task(async function testNoMatchLeavesTheKeyAlone() {
+        clicks = [];
+        await showPanel();
+
+        let keypress = captureNextKeydown();
+        synthesizeKey("q", {});
+        let event = await keypress;
+
+        ok(!event.defaultPrevented, "A letter nothing matches isn't consumed");
+        is(clicks.length, 0, "Nothing was activated");
+        await hidePanel();
+      });
+
+      add_task(async function testFocusInAFieldOutsideThePanelIsLeftAlone() {
+        clicks = [];
+        await showPanel();
+        document.getElementById("field").focus();
+
+        let keypress = captureNextKeydown();
+        synthesizeKey("p", {});
+        let event = await keypress;
+
+        ok(!event.defaultPrevented, "The keystroke belongs to the field");
+        is(clicks.length, 0, "No item was selected");
+        await hidePanel();
+      });
+
+      add_task(async function testFocusOnAButtonOutsideThePanelStillSelects() {
+        clicks = [];
+        await showPanel();
+        document.getElementById("outside").focus();
+
+        await pressKey("p");
+        is(clicks.length, 1, "One item was selected");
+        is(clicks[0], personal, "The single match was activated");
+        ok(!panelList.open, "Activating the item closed the panel");
+        await hidePanel();
+
+        clicks = [];
+        await showPanel();
+        document.getElementById("outside").focus();
+        synthesizeKey("w", {});
+        is(
+          document.activeElement,
+          work,
+          "The first of several matches is focused"
+        );
+        is(clicks.length, 0, "Nothing was activated");
+        await hidePanel();
+      });
+
+      add_task(async function testAnOpenSubmenuTakesTheLetter() {
+        clicks = [];
+        let shown = BrowserTestUtils.waitForEvent(panelList, "shown");
+        synthesizeMouseAtCenter(document.getElementById("anchor"), {});
+        await shown;
+        ok(
+          !panelList.contains(document.activeElement),
+          "Opening by mouse leaves focus outside the list"
+        );
+
+        shown = BrowserTestUtils.waitForEvent(submenu, "shown");
+        synthesizeMouseAtCenter(moreHost, { type: "mousemove" });
+        await shown;
+
+        await pressKey("p");
+        is(clicks.length, 1, "Exactly one item was activated");
+        is(clicks[0], pinned, "The open submenu's match, not the outer list's");
+        ok(!submenu.open, "Activating the item closed the submenu");
+        ok(!panelList.open, "The click closed the outer list too");
+        await hidePanel(submenu);
+        await hidePanel();
+      });
+
+      // Verifies that arrow navigation continues from a letter match.
+      add_task(async function testArrowNavigationContinuesAfterLetterMatch() {
+        await showPanel();
+
+        synthesizeKey("w", {});
+        is(document.activeElement, work, "The letter moved focus to Work");
+
+        synthesizeKey("KEY_ArrowDown", {});
+        is(
+          document.activeElement,
+          writing,
+          "Arrow navigation continued from the letter match"
+        );
+        await hidePanel();
+      });
+
+      // Verifies that matching starts after the current item before wrapping.
+      add_task(async function testMatchStartsAfterCurrentItem() {
+        panelList.insertBefore(work, personal);
+        await showPanel();
+
+        synthesizeKey("w", {});
+        is(
+          document.activeElement,
+          writing,
+          "Matching starts after the current item before wrapping"
+        );
+
+        panelList.insertBefore(work, writing);
+        await hidePanel();
+      });
+
+      // Verifies that shifted letters are matched case-insensitively.
+      add_task(async function testShiftedLetterMatchesCaseInsensitively() {
+        clicks = [];
+        await showPanel();
+
+        await pressKey("P", { shiftKey: true });
+        is(clicks.length, 1, "A shifted letter activates its unique match");
+        is(clicks[0], personal, "First-letter matching is case-insensitive");
+        ok(!panelList.open, "Activating the item closed the panel");
+        await hidePanel();
+      });
+    </script>
+  </body>
+</html>

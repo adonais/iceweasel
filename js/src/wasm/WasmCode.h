@@ -19,14 +19,11 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/BinarySearch.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/UniquePtr.h"
 
 #include <stddef.h>
@@ -55,6 +52,7 @@
 #include "wasm/WasmLog.h"
 #include "wasm/WasmMetadata.h"
 #include "wasm/WasmModuleTypes.h"
+#include "wasm/WasmProcess.h"
 #include "wasm/WasmSerialize.h"
 #include "wasm/WasmShareable.h"
 #include "wasm/WasmTypeDecls.h"
@@ -172,7 +170,6 @@ using UniqueCodeBlock = UniquePtr<CodeBlock>;
 using UniqueConstCodeBlock = UniquePtr<const CodeBlock>;
 using UniqueConstCodeBlockVector =
     Vector<UniqueConstCodeBlock, 0, SystemAllocPolicy>;
-using RawCodeBlockVector = Vector<const CodeBlock*, 0, SystemAllocPolicy>;
 
 enum class CodeBlockKind {
   SharedStubs,
@@ -668,180 +665,6 @@ class CodeBlock {
                      size_t* data) const;
 
   WASM_DECLARE_FRIEND_SERIALIZE_ARGS(CodeBlock, const wasm::LinkData& data);
-};
-
-// Because of profiling, the thread running wasm might need to know to which
-// CodeBlock the current PC belongs, during a call to lookup(). A lookup
-// is a read-only operation, and we don't want to take a lock then
-// (otherwise, we could have a deadlock situation if an async lookup
-// happened on a given thread that was holding mutatorsMutex_ while getting
-// sampled). Since the writer could be modifying the data that is getting
-// looked up, the writer functions use spin-locks to know if there are any
-// observers (i.e. calls to lookup()) of the atomic data.
-
-class ThreadSafeCodeBlockMap {
-  // Since writes (insertions or removals) can happen on any background
-  // thread at the same time, we need a lock here.
-
-  Mutex mutatorsMutex_ MOZ_UNANNOTATED;
-
-  RawCodeBlockVector segments1_;
-  RawCodeBlockVector segments2_;
-
-  // Except during swapAndWait(), there are no lookup() observers of the
-  // vector pointed to by mutableCodeBlocks_
-
-  RawCodeBlockVector* mutableCodeBlocks_;
-  mozilla::Atomic<const RawCodeBlockVector*> readonlyCodeBlocks_;
-  mozilla::Atomic<size_t> numActiveLookups_;
-
-  struct CodeBlockPC {
-    const void* pc;
-    explicit CodeBlockPC(const void* pc) : pc(pc) {}
-    int operator()(const CodeBlock* cb) const {
-      if (cb->containsCodePC(pc)) {
-        return 0;
-      }
-      if (pc < cb->base()) {
-        return -1;
-      }
-      return 1;
-    }
-  };
-
-  void swapAndWait() {
-    // Both vectors are consistent for lookup at this point although their
-    // contents are different: there is no way for the looked up PC to be
-    // in the code segment that is getting registered, because the code
-    // segment is not even fully created yet.
-
-    // If a lookup happens before this instruction, then the
-    // soon-to-become-former read-only pointer is used during the lookup,
-    // which is valid.
-
-    mutableCodeBlocks_ = const_cast<RawCodeBlockVector*>(
-        readonlyCodeBlocks_.exchange(mutableCodeBlocks_));
-
-    // If a lookup happens after this instruction, then the updated vector
-    // is used, which is valid:
-    // - in case of insertion, it means the new vector contains more data,
-    // but it's fine since the code segment is getting registered and thus
-    // isn't even fully created yet, so the code can't be running.
-    // - in case of removal, it means the new vector contains one less
-    // entry, but it's fine since unregistering means the code segment
-    // isn't used by any live instance anymore, thus PC can't be in the
-    // to-be-removed code segment's range.
-
-    // A lookup could have happened on any of the two vectors. Wait for
-    // observers to be done using any vector before mutating.
-
-    while (numActiveLookups_ > 0) {
-    }
-  }
-
- public:
-  ThreadSafeCodeBlockMap()
-      : mutatorsMutex_(mutexid::WasmCodeBlockMap),
-        mutableCodeBlocks_(&segments1_),
-        readonlyCodeBlocks_(&segments2_),
-        numActiveLookups_(0) {}
-
-  ~ThreadSafeCodeBlockMap() {
-    MOZ_RELEASE_ASSERT(numActiveLookups_ == 0);
-    segments1_.clearAndFree();
-    segments2_.clearAndFree();
-  }
-
-  size_t numActiveLookups() const { return numActiveLookups_; }
-
-  bool insert(const CodeBlock* cs) {
-    LockGuard<Mutex> lock(mutatorsMutex_);
-
-    size_t index;
-    MOZ_ALWAYS_FALSE(BinarySearchIf(*mutableCodeBlocks_, 0,
-                                    mutableCodeBlocks_->length(),
-                                    CodeBlockPC(cs->base()), &index));
-
-    if (!mutableCodeBlocks_->insert(mutableCodeBlocks_->begin() + index, cs)) {
-      return false;
-    }
-
-    swapAndWait();
-
-#ifdef DEBUG
-    size_t otherIndex;
-    MOZ_ALWAYS_FALSE(BinarySearchIf(*mutableCodeBlocks_, 0,
-                                    mutableCodeBlocks_->length(),
-                                    CodeBlockPC(cs->base()), &otherIndex));
-    MOZ_ASSERT(index == otherIndex);
-#endif
-
-    // Although we could simply revert the insertion in the read-only
-    // vector, it is simpler to just crash and given that each CodeBlock
-    // consumes multiple pages, it is unlikely this insert() would OOM in
-    // practice
-    AutoEnterOOMUnsafeRegion oom;
-    if (!mutableCodeBlocks_->insert(mutableCodeBlocks_->begin() + index, cs)) {
-      oom.crash("when inserting a CodeBlock in the process-wide map");
-    }
-
-    return true;
-  }
-
-  size_t remove(const CodeBlock* cs) {
-    LockGuard<Mutex> lock(mutatorsMutex_);
-
-    size_t index;
-    MOZ_ALWAYS_TRUE(BinarySearchIf(*mutableCodeBlocks_, 0,
-                                   mutableCodeBlocks_->length(),
-                                   CodeBlockPC(cs->base()), &index));
-
-    mutableCodeBlocks_->erase(mutableCodeBlocks_->begin() + index);
-    size_t newCodeBlockCount = mutableCodeBlocks_->length();
-
-    swapAndWait();
-
-#ifdef DEBUG
-    size_t otherIndex;
-    MOZ_ALWAYS_TRUE(BinarySearchIf(*mutableCodeBlocks_, 0,
-                                   mutableCodeBlocks_->length(),
-                                   CodeBlockPC(cs->base()), &otherIndex));
-    MOZ_ASSERT(index == otherIndex);
-#endif
-
-    mutableCodeBlocks_->erase(mutableCodeBlocks_->begin() + index);
-    return newCodeBlockCount;
-  }
-
-  const CodeBlock* lookup(const void* pc,
-                          const CodeRange** codeRange = nullptr) {
-    auto decObserver = mozilla::MakeScopeExit([&] {
-      MOZ_ASSERT(numActiveLookups_ > 0);
-      numActiveLookups_--;
-    });
-    numActiveLookups_++;
-
-    const RawCodeBlockVector* readonly = readonlyCodeBlocks_;
-
-    size_t index;
-    if (!BinarySearchIf(*readonly, 0, readonly->length(), CodeBlockPC(pc),
-                        &index)) {
-      if (codeRange) {
-        *codeRange = nullptr;
-      }
-      return nullptr;
-    }
-
-    // It is fine returning a raw CodeBlock*, because we assume we are
-    // looking up a live PC in code which is on the stack, keeping the
-    // CodeBlock alive.
-
-    const CodeBlock* result = (*readonly)[index];
-    if (codeRange) {
-      *codeRange = result->lookupRange(pc);
-    }
-    return result;
-  }
 };
 
 // Jump tables that implement function tiering and fast js-to-wasm calls.

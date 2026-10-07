@@ -8,11 +8,15 @@
 const { MockEngineManager } = ChromeUtils.importESModule(
   "resource://testing-common/AIWindowTestUtils.sys.mjs"
 );
+const { UrlTokenizer } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/UrlTokenizer.sys.mjs"
+);
 
 const FORM_URL =
   "https://example.com/browser/browser/components/aiwindow/ui/test/browser/test_smartformfill_autocomplete.html";
 const SOURCE_URL = "https://example.org/";
 const SMART_FORM_FILL_PREF = "browser.smartwindow.smartformfill.enabled";
+const MIN_FORM_FIELDS_PREF = "browser.smartwindow.smartformfill.minFormFields";
 
 const SMART_FORM_FILL_MODEL_PURPOSE = "smart-form-fill";
 const FIELD_CLASSIFICATION_SCHEMA = "SmartFormFillFieldClassification";
@@ -71,6 +75,8 @@ async function setupSmartFormFillAutocompleteTest() {
   await SpecialPowers.pushPrefEnv({
     set: [
       [SMART_FORM_FILL_PREF, true],
+      // The test forms are smaller than the minimum the feature ships with.
+      [MIN_FORM_FIELDS_PREF, 1],
       ["signon.rememberSignons", true],
       ["signon.showAutoCompleteFooter", true],
       // Autofilling a saved login writes to the field asynchronously, which
@@ -183,9 +189,12 @@ function respondToMetadataRequest(
       return;
 
     case RELEVANT_TABS_SCHEMA: {
-      const source = selectedSourceUrl
-        ? requestData.tabs.find(tab => tab.url === selectedSourceUrl)
+      const selectedSourceToken = selectedSourceUrl
+        ? new UrlTokenizer().encodeToken(selectedSourceUrl, false)
         : null;
+      const source = requestData.tabs.find(
+        tab => tab.url === selectedSourceToken
+      );
       respond(
         JSON.stringify({
           selectedTabs: source

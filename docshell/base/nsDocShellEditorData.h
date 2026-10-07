@@ -32,7 +32,6 @@ class nsDocShellEditorData {
   SetHTMLEditor(mozilla::HTMLEditor* aHTMLEditor);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void TearDownEditor();
   nsresult DetachFromWindow();
-  nsresult ReattachToWindow(nsDocShell* aDocShell);
   bool WaitingForLoad() const { return mMakeEditable; }
 
  protected:
@@ -47,19 +46,8 @@ class nsDocShellEditorData {
   // If this frame is editable, store HTML editor here. It's owned here.
   RefPtr<mozilla::HTMLEditor> mHTMLEditor;
 
-  // Backup for the corresponding HTMLDocument's  editing state while
-  // the editor is detached.
-  mozilla::dom::Document::EditingState mDetachedEditingState;
-
   // Indicates whether to make an editor after a url load.
   bool mMakeEditable;
-
-  // Denotes if the editor is detached from its window. The editor is detached
-  // while it's stored in the session history bfcache.
-  bool mIsDetached;
-
-  // Backup for mMakeEditable while the editor is detached.
-  bool mDetachedMakeEditable;
 };
 
 #endif  // nsDocShellEditorData_h_

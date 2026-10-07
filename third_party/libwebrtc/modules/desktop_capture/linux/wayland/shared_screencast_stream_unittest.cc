@@ -29,7 +29,6 @@
 using ::testing::_;
 using ::testing::AtLeast;
 using ::testing::Ge;
-using ::testing::Invoke;
 
 namespace webrtc {
 
@@ -115,7 +114,9 @@ TEST_F(MAYBE_PipeWireStreamTest, TestPipeWire) {
   Event waitStreamParamChangedEvent2;
 
   EXPECT_CALL(*this, OnStreamReady(_))
-      .WillOnce(Invoke(this, &MAYBE_PipeWireStreamTest::StartScreenCastStream));
+      .WillOnce([this](uint32_t stream_node_id) {
+        StartScreenCastStream(stream_node_id);
+      });
   EXPECT_CALL(*this, OnStreamConfigured).WillOnce([&waitConnectEvent] {
     waitConnectEvent.Set();
   });
@@ -215,7 +216,6 @@ TEST_F(MAYBE_PipeWireStreamTest, TestPipeWire) {
   // Update stream parameters.
   EXPECT_CALL(*this, OnFormatChanged(SPA_VIDEO_FORMAT_BGRA, 800, 640, 0,
                                      DRM_FORMAT_MOD_LINEAR))
-      .Times(1)
       .WillOnce([&waitStreamParamChangedEvent1] {
         waitStreamParamChangedEvent1.Set();
       });
@@ -239,7 +239,6 @@ TEST_F(MAYBE_PipeWireStreamTest, TestPipeWire) {
 
   EXPECT_CALL(*this, OnFormatChanged(SPA_VIDEO_FORMAT_BGRA, 800, 640, 22,
                                      DRM_FORMAT_MOD_LINEAR))
-      .Times(1)
       .WillOnce([&waitStreamParamChangedEvent2] {
         waitStreamParamChangedEvent2.Set();
       });
@@ -272,7 +271,9 @@ TEST_F(MAYBE_PipeWireStreamTest, TestModifierFallback) {
   Event waitStartStreamingEvent;
 
   EXPECT_CALL(*this, OnStreamReady(_))
-      .WillOnce(Invoke(this, &MAYBE_PipeWireStreamTest::StartScreenCastStream));
+      .WillOnce([this](uint32_t stream_node_id) {
+        StartScreenCastStream(stream_node_id);
+      });
   EXPECT_CALL(*this, OnStreamConfigured).WillOnce([&waitConnectEvent] {
     waitConnectEvent.Set();
   });
@@ -411,12 +412,16 @@ TEST_F(MAYBE_PipeWireStreamTest, TestModifierFallback) {
   shared_screencast_stream_->StopScreenCastStream();
 }
 
-TEST_F(MAYBE_PipeWireStreamTest, TestOnlyOneInstanceAllowed) {
+// The ability to create multiple Pipewire capture streams in the same
+// process is needed by projects such as Chrome Remote Desktop.
+TEST_F(MAYBE_PipeWireStreamTest, TestMultipleInstancesAllowed) {
   // We need to wait for the provider to be ready so we can start the first
   // stream.
   Event waitConnectEvent;
   EXPECT_CALL(*this, OnStreamReady(_))
-      .WillOnce(Invoke(this, &MAYBE_PipeWireStreamTest::StartScreenCastStream));
+      .WillOnce([this](uint32_t stream_node_id) {
+        StartScreenCastStream(stream_node_id);
+      });
   EXPECT_CALL(*this, OnStreamConfigured).WillOnce([&waitConnectEvent] {
     waitConnectEvent.Set();
   });
@@ -430,19 +435,12 @@ TEST_F(MAYBE_PipeWireStreamTest, TestOnlyOneInstanceAllowed) {
   auto shared_screencast_stream2 = SharedScreenCastStream::CreateWithEglDmaBuf(
       std::move(shared_screencast_egl_dmabuf2));
 
-  // Try to start the second stream. It should fail because the first one is
-  // active. We use a dummy stream node ID.
-  EXPECT_FALSE(shared_screencast_stream2->StartScreenCastStream(2));
-
-  // Stop the first stream.
-  shared_screencast_stream_->StopScreenCastStream();
-
-  // Now starting the second stream should succeed (at least it should get past
-  // PipeWireThreadLoop::Create() and try to connect).
+  // Try to start the second stream. Multiple instances should be allowed.
   EXPECT_TRUE(shared_screencast_stream2->StartScreenCastStream(2));
 
   // Clean up.
   shared_screencast_stream2->StopScreenCastStream();
+  shared_screencast_stream_->StopScreenCastStream();
 }
 
 }  // namespace webrtc

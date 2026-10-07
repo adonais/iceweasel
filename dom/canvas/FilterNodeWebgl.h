@@ -298,6 +298,10 @@ class FilterNodeUnpremultiplyWebgl : public FilterNodeWebgl {
  public:
   FilterNodeUnpremultiplyWebgl() : FilterNodeWebgl(FilterType::UNPREMULTIPLY) {}
 
+  void Draw(DrawTargetWebgl* aDT, const Rect& aSourceRect,
+            const Point& aDestPoint, const DrawOptions& aOptions,
+            FilterNodeWebgl* aParent) override;
+
   already_AddRefed<SourceSurface> DrawChild(FilterNodeWebgl* aParent,
                                             DrawTargetWebgl* aDT,
                                             const Rect& aSourceRect,

@@ -28,7 +28,6 @@
 #include "nsFrameSelection.h"  // for nsFrameSelection
 #include "nsIContent.h"        // for nsIContent
 #include "nsINode.h"           // for nsINode
-#include "nsRange.h"           // for nsRange
 
 namespace mozilla {
 
@@ -55,8 +54,8 @@ AutoClonedRangeArray::AutoClonedRangeArray(const AutoClonedRangeArray& aOther)
     : mAnchorFocusRange(aOther.mAnchorFocusRange),
       mDirection(aOther.mDirection) {
   mRanges.SetCapacity(aOther.mRanges.Length());
-  for (const OwningNonNull<nsRange>& range : aOther.mRanges) {
-    RefPtr<nsRange> clonedRange = range->CloneRange();
+  for (const OwningNonNull<dom::Range>& range : aOther.mRanges) {
+    RefPtr<dom::Range> clonedRange = range->CloneRange();
     mRanges.AppendElement(std::move(clonedRange));
   }
   mAnchorFocusRange = aOther.mAnchorFocusRange;
@@ -66,7 +65,7 @@ template <typename PointType>
 AutoClonedRangeArray::AutoClonedRangeArray(
     const EditorDOMRangeBase<PointType>& aRange) {
   MOZ_ASSERT(aRange.IsPositionedAndValid());
-  RefPtr<nsRange> range = aRange.CreateRange(IgnoreErrors());
+  RefPtr<dom::Range> range = aRange.CreateRange(IgnoreErrors());
   if (NS_WARN_IF(!range) || NS_WARN_IF(!range->IsPositioned())) {
     return;
   }
@@ -78,7 +77,7 @@ template <typename PT, typename CT>
 AutoClonedRangeArray::AutoClonedRangeArray(
     const EditorDOMPointBase<PT, CT>& aPoint) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
-  RefPtr<nsRange> range = aPoint.CreateCollapsedRange(IgnoreErrors());
+  RefPtr<dom::Range> range = aPoint.CreateCollapsedRange(IgnoreErrors());
   if (NS_WARN_IF(!range) || NS_WARN_IF(!range->IsPositioned())) {
     return;
   }
@@ -86,7 +85,7 @@ AutoClonedRangeArray::AutoClonedRangeArray(
   mAnchorFocusRange = std::move(range);
 }
 
-AutoClonedRangeArray::AutoClonedRangeArray(const nsRange& aRange) {
+AutoClonedRangeArray::AutoClonedRangeArray(const dom::Range& aRange) {
   MOZ_ASSERT(aRange.IsPositioned());
   mRanges.AppendElement(aRange.CloneRange());
   mAnchorFocusRange = mRanges[0];
@@ -137,7 +136,7 @@ bool AutoClonedRangeArray::IsEditableRange(const dom::AbstractRange& aRange,
 void AutoClonedRangeArray::EnsureOnlyEditableRanges(
     const Element& aEditingHost) {
   for (const size_t index : Reversed(IntegerRange(mRanges.Length()))) {
-    const OwningNonNull<nsRange>& range = mRanges[index];
+    const OwningNonNull<dom::Range>& range = mRanges[index];
     if (!AutoClonedRangeArray::IsEditableRange(range, aEditingHost)) {
       mRanges.RemoveElementAt(index);
       continue;
@@ -171,7 +170,7 @@ bool AutoClonedRangeArray::AdjustRangesNotInReplacedNorVoidElements(
     const dom::Element& aEditingHost) {
   bool adjusted = false;
   for (const size_t index : Reversed(IntegerRange(mRanges.Length()))) {
-    const OwningNonNull<nsRange>& range = mRanges[index];
+    const OwningNonNull<dom::Range>& range = mRanges[index];
     // If the range is in a replaced element or a void element, we should adjust
     // the range boundaries outside of the element.
     if (Element* const replacedOrVoidElementAtStart =
@@ -258,7 +257,7 @@ void AutoClonedRangeArray::EnsureRangesInTextNode(const Text& aTextNode) {
     // Point after the text node so that use end of the text.
     return aTextNode.TextDataLength();
   };
-  for (const OwningNonNull<nsRange>& range : mRanges) {
+  for (const OwningNonNull<dom::Range>& range : mRanges) {
     if (MOZ_LIKELY(range->GetStartContainer() == &aTextNode &&
                    range->GetEndContainer() == &aTextNode)) {
       continue;
@@ -314,7 +313,7 @@ AutoClonedRangeArray::ShrinkRangesIfStartFromOrEndAfterAtomicContent(
   }
 
   bool changed = false;
-  for (const OwningNonNull<nsRange>& range : mRanges) {
+  for (const OwningNonNull<dom::Range>& range : mRanges) {
     MOZ_ASSERT(!range->IsInAnySelection(),
                "Changing range in selection may cause running script");
     Result<bool, nsresult> result =
@@ -745,7 +744,7 @@ void AutoClonedRangeArray::ExtendRangesToWrapLines(
   // https://searchfox.org/mozilla-central/rev/1739f1301d658c9bff544a0a095ab11fca2e549d/editor/libeditor/HTMLEditSubActionHandler.cpp#6712
 
   bool removeSomeRanges = false;
-  for (const OwningNonNull<nsRange>& range : mRanges) {
+  for (const OwningNonNull<dom::Range>& range : mRanges) {
     // Remove non-positioned ranges.
     if (MOZ_UNLIKELY(!range->IsPositioned())) {
       removeSomeRanges = true;
@@ -799,7 +798,7 @@ void AutoClonedRangeArray::ExtendRangesToWrapLines(
 // static
 nsresult
 AutoClonedRangeArray::ExtendRangeToWrapStartAndEndLinesContainingBoundaries(
-    nsRange& aRange, EditSubAction aEditSubAction,
+    dom::Range& aRange, EditSubAction aEditSubAction,
     BlockInlineCheck aBlockInlineCheck, const Element& aEditingHost) {
   MOZ_DIAGNOSTIC_ASSERT(
       !EditorRawDOMPoint(aRange.StartRef()).IsInNativeAnonymousSubtree());
@@ -878,7 +877,7 @@ Result<EditorDOMPoint, nsresult> AutoClonedRangeArray::
   // nodes in case where part of a pre-formatted elements needs to be moved.
   EditorDOMPoint pointToPutCaret;
   IgnoredErrorResult ignoredError;
-  for (const OwningNonNull<nsRange>& range : mRanges) {
+  for (const OwningNonNull<dom::Range>& range : mRanges) {
     EditorDOMPoint atEnd(range->EndRef());
     if (NS_WARN_IF(!atEnd.IsSet()) || !atEnd.IsInTextNode() ||
         atEnd.GetContainer() == aAncestorLimiter) {
@@ -904,7 +903,7 @@ Result<EditorDOMPoint, nsresult> AutoClonedRangeArray::
                         .ToRawRangeBoundary(),
                     ignoredError);
       NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                           "nsRange::SetEnd() failed, but ignored");
+                           "Range::SetEnd() failed, but ignored");
       ignoredError.SuppressException();
     }
   }
@@ -947,7 +946,7 @@ Result<EditorDOMPoint, nsresult> AutoClonedRangeArray::
   // Then unregister the ranges
   for (const size_t index : IntegerRange(rangeItemArray.Length())) {
     aHTMLEditor.RangeUpdaterRef().DropRangeItem(rangeItemArray[index]);
-    RefPtr<nsRange> range = rangeItemArray[index]->GetRange();
+    RefPtr<dom::Range> range = rangeItemArray[index]->GetRange();
     if (range && range->IsPositioned()) {
       if (anchorFocusRangeIndex.isSome() && index == *anchorFocusRangeIndex) {
         mAnchorFocusRange = range;
@@ -977,7 +976,7 @@ nsresult AutoClonedRangeArray::CollectEditTargetNodes(
   // https://searchfox.org/mozilla-central/rev/4bce7d85ba4796dd03c5dcc7cfe8eee0e4c07b3b/editor/libeditor/HTMLEditSubActionHandler.cpp#7060
 
   // Gather up a list of all the nodes
-  for (const OwningNonNull<nsRange>& range : mRanges) {
+  for (const OwningNonNull<dom::Range>& range : mRanges) {
     DOMSubtreeIterator iter;
     nsresult rv = iter.Init(*range);
     if (NS_FAILED(rv)) {
@@ -1158,7 +1157,7 @@ nsresult AutoClonedRangeArray::CollectEditTargetNodes(
 }
 
 Element* AutoClonedRangeArray::GetClosestAncestorAnyListElementOfRange() const {
-  for (const OwningNonNull<nsRange>& range : mRanges) {
+  for (const OwningNonNull<dom::Range>& range : mRanges) {
     nsINode* commonAncestorNode = range->GetClosestCommonInclusiveAncestor();
     if (MOZ_UNLIKELY(!commonAncestorNode)) {
       continue;
@@ -1207,7 +1206,7 @@ void AutoClonedRangeArray::ExtendRangeToContainSurroundingInvisibleWhiteSpaces(
     }
     return aNextThing.PointAtReachedContent<EditorRawDOMPoint>();
   };
-  for (const OwningNonNull<nsRange>& range : mRanges) {
+  for (const OwningNonNull<dom::Range>& range : mRanges) {
     if (MOZ_UNLIKELY(range->Collapsed())) {
       // Don't extend the collapsed range to do nothing for the range.
       continue;
@@ -1271,7 +1270,7 @@ void AutoClonedRangeArray::ExtendRangeToContainSurroundingInvisibleWhiteSpaces(
         IgnoredErrorResult ignoredError;
         range->SetStart(betterNewStart.ToRawRangeBoundary(), ignoredError);
         NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                             "nsRange::SetStart() failed, but ignored");
+                             "Range::SetStart() failed, but ignored");
       }
     }
     const WSScanResult nextThing =
@@ -1338,7 +1337,7 @@ void AutoClonedRangeArray::ExtendRangeToContainSurroundingInvisibleWhiteSpaces(
     IgnoredErrorResult ignoredError;
     range->SetEnd(betterNewEnd.ToRawRangeBoundary(), ignoredError);
     NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                         "nsRange::SetEnd() failed, but ignored");
+                         "Range::SetEnd() failed, but ignored");
   }
 }
 
@@ -1375,7 +1374,7 @@ AutoClonedSelectionRangeArray::AutoClonedSelectionRangeArray(
     const LimitersAndCaretData& aLimitersAndCaretData)
     : mLimitersAndCaretData(aLimitersAndCaretData) {
   MOZ_ASSERT(aRange.IsPositionedAndValid());
-  RefPtr<nsRange> range = aRange.CreateRange(IgnoreErrors());
+  RefPtr<dom::Range> range = aRange.CreateRange(IgnoreErrors());
   if (NS_WARN_IF(!range) || NS_WARN_IF(!range->IsPositioned()) ||
       NS_WARN_IF(!RangeIsInLimiters(*range))) {
     return;
@@ -1393,7 +1392,7 @@ AutoClonedSelectionRangeArray::AutoClonedSelectionRangeArray(
   if (NS_WARN_IF(!NodeIsInLimiters(aPoint.GetContainer()))) {
     return;
   }
-  RefPtr<nsRange> range = aPoint.CreateCollapsedRange(IgnoreErrors());
+  RefPtr<dom::Range> range = aPoint.CreateCollapsedRange(IgnoreErrors());
   if (NS_WARN_IF(!range) || NS_WARN_IF(!range->IsPositioned())) {
     return;
   }
@@ -1404,7 +1403,7 @@ AutoClonedSelectionRangeArray::AutoClonedSelectionRangeArray(
 }
 
 AutoClonedSelectionRangeArray::AutoClonedSelectionRangeArray(
-    const nsRange& aRange, const LimitersAndCaretData& aLimitersAndCaretData)
+    const dom::Range& aRange, const LimitersAndCaretData& aLimitersAndCaretData)
     : mLimitersAndCaretData(aLimitersAndCaretData) {
   MOZ_ASSERT(aRange.IsPositioned());
   if (NS_WARN_IF(!RangeIsInLimiters(aRange))) {
@@ -1478,16 +1477,18 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
     return Err(NS_ERROR_FAILURE);
   }
 
-  Result<RefPtr<nsRange>, nsresult> result(NS_ERROR_UNEXPECTED);
-  const OwningNonNull<nsRange> anchorFocusRange = *mAnchorFocusRange;
+  Result<RefPtr<dom::Range>, nsresult> result(NS_ERROR_UNEXPECTED);
+  const OwningNonNull<dom::Range> anchorFocusRange = *mAnchorFocusRange;
   const LimitersAndCaretData limitersAndCaretData = mLimitersAndCaretData;
   const nsDirection rangeDirection =
       mDirection == eDirNext ? eDirNext : eDirPrevious;
   nsIEditor::EDirection directionAndAmountResult = aDirectionAndAmount;
   switch (aDirectionAndAmount) {
     case nsIEditor::eNextWord:
-      result = nsFrameSelection::CreateRangeExtendedToNextWordBoundary<nsRange>(
-          *presShell, limitersAndCaretData, anchorFocusRange, rangeDirection);
+      result =
+          nsFrameSelection::CreateRangeExtendedToNextWordBoundary<dom::Range>(
+              *presShell, limitersAndCaretData, anchorFocusRange,
+              rangeDirection);
       if (NS_WARN_IF(aEditorBase.Destroyed())) {
         return Err(NS_ERROR_EDITOR_DESTROYED);
       }
@@ -1499,10 +1500,9 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
       directionAndAmountResult = nsIEditor::eNone;
       break;
     case nsIEditor::ePreviousWord:
-      result =
-          nsFrameSelection::CreateRangeExtendedToPreviousWordBoundary<nsRange>(
-              *presShell, limitersAndCaretData, anchorFocusRange,
-              rangeDirection);
+      result = nsFrameSelection::CreateRangeExtendedToPreviousWordBoundary<
+          dom::Range>(*presShell, limitersAndCaretData, anchorFocusRange,
+                      rangeDirection);
       if (NS_WARN_IF(aEditorBase.Destroyed())) {
         return Err(NS_ERROR_EDITOR_DESTROYED);
       }
@@ -1517,8 +1517,8 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
     case nsIEditor::eNext:
       result =
           nsFrameSelection::CreateRangeExtendedToNextGraphemeClusterBoundary<
-              nsRange>(*presShell, limitersAndCaretData, anchorFocusRange,
-                       rangeDirection);
+              dom::Range>(*presShell, limitersAndCaretData, anchorFocusRange,
+                          rangeDirection);
       if (NS_WARN_IF(aEditorBase.Destroyed())) {
         return Err(NS_ERROR_EDITOR_DESTROYED);
       }
@@ -1571,8 +1571,8 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
       // I'm not sure whether this inconsistency between "Delete" and
       // "Backspace" is intentional or not.
       result = nsFrameSelection::CreateRangeExtendedToPreviousCharacterBoundary<
-          nsRange>(*presShell, limitersAndCaretData, anchorFocusRange,
-                   rangeDirection);
+          dom::Range>(*presShell, limitersAndCaretData, anchorFocusRange,
+                      rangeDirection);
       if (NS_WARN_IF(aEditorBase.Destroyed())) {
         return Err(NS_ERROR_EDITOR_DESTROYED);
       }
@@ -1583,10 +1583,9 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
       break;
     }
     case nsIEditor::eToBeginningOfLine:
-      result =
-          nsFrameSelection::CreateRangeExtendedToPreviousHardLineBreak<nsRange>(
-              *presShell, limitersAndCaretData, anchorFocusRange,
-              rangeDirection);
+      result = nsFrameSelection::CreateRangeExtendedToPreviousHardLineBreak<
+          dom::Range>(*presShell, limitersAndCaretData, anchorFocusRange,
+                      rangeDirection);
       if (NS_WARN_IF(aEditorBase.Destroyed())) {
         return Err(NS_ERROR_EDITOR_DESTROYED);
       }
@@ -1598,7 +1597,7 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
       break;
     case nsIEditor::eToEndOfLine:
       result =
-          nsFrameSelection::CreateRangeExtendedToNextHardLineBreak<nsRange>(
+          nsFrameSelection::CreateRangeExtendedToNextHardLineBreak<dom::Range>(
               *presShell, limitersAndCaretData, anchorFocusRange,
               rangeDirection);
       if (NS_WARN_IF(aEditorBase.Destroyed())) {
@@ -1616,7 +1615,7 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
   if (result.isErr()) {
     return Err(result.inspectErr());
   }
-  RefPtr<nsRange> extendedRange(result.unwrap().forget());
+  RefPtr<dom::Range> extendedRange(result.unwrap().forget());
   if (!extendedRange || NS_WARN_IF(!extendedRange->IsPositioned())) {
     NS_WARNING("Failed to extend the range, but ignored");
     return directionAndAmountResult;
@@ -1635,7 +1634,7 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
 
   // Swap focus/anchor range with the extended range.
   DebugOnly<bool> found = false;
-  for (OwningNonNull<nsRange>& range : mRanges) {
+  for (OwningNonNull<dom::Range>& range : mRanges) {
     if (range == mAnchorFocusRange) {
       range = *extendedRange;
       found = true;

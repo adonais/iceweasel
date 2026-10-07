@@ -15,6 +15,7 @@ contains the code for converting executed mozbuild files into these data
 structures.
 """
 
+import os
 from collections import defaultdict
 
 import mozpack.path as mozpath
@@ -550,13 +551,13 @@ class HostSimpleProgram(HostMixin, BaseProgram):
         return []
 
 
-def cargo_output_directory(context, target_var, libname=""):
+def cargo_output_directory(context, target_var, profile_suffix=""):
     # cargo creates several directories and places its build artifacts
     # in those directories.  The directory structure depends not only
     # on the target, but also what sort of build we are doing.
     return mozpath.join(
         context.config.substs[target_var],
-        get_rust_build_kind(context.config.substs, megazord="megazord" in libname),
+        get_rust_build_kind(context.config.substs, profile_suffix=profile_suffix),
     )
 
 
@@ -726,6 +727,9 @@ class BaseRustLibrary:
         "features",
         "output_category",
         "is_gkrust",
+        "cargo_profile_suffix",
+        "cargo_crate_type",
+        "no_lto",
     )
 
     def init(
@@ -737,8 +741,14 @@ class BaseRustLibrary:
         dependencies,
         features,
         is_gkrust,
+        cargo_profile_suffix,
+        cargo_crate_type,
+        no_lto,
     ):
         self.is_gkrust = is_gkrust
+        self.cargo_profile_suffix = cargo_profile_suffix
+        self.cargo_crate_type = cargo_crate_type
+        self.no_lto = no_lto
         self.cargo_file = cargo_file
         self.crate_type = crate_type
         # We need to adjust our naming here because cargo replaces '-' in
@@ -770,7 +780,7 @@ class BaseRustLibrary:
             "!/"
             + mozpath.join(
                 cargo_output_directory(
-                    self._context, self.TARGET_SUBST_VAR, self.import_name
+                    self._context, self.TARGET_SUBST_VAR, self.cargo_profile_suffix
                 ),
                 self.import_name,
             ),
@@ -795,6 +805,9 @@ class RustLibrary(BaseRustLibrary, StaticLibrary):
         dependencies,
         features,
         is_gkrust=False,
+        cargo_profile_suffix="",
+        cargo_crate_type="",
+        no_lto=False,
         link_into=None,
     ):
         StaticLibrary.__init__(
@@ -815,6 +828,9 @@ class RustLibrary(BaseRustLibrary, StaticLibrary):
             dependencies,
             features,
             is_gkrust,
+            cargo_profile_suffix,
+            cargo_crate_type,
+            no_lto,
         )
 
 
@@ -981,6 +997,9 @@ class HostRustLibrary(BaseRustLibrary, HostLibrary):
         dependencies,
         features,
         is_gkrust,
+        cargo_profile_suffix="",
+        cargo_crate_type="",
+        no_lto=False,
     ):
         HostLibrary.__init__(self, context, basename)
         BaseRustLibrary.init(
@@ -992,6 +1011,9 @@ class HostRustLibrary(BaseRustLibrary, HostLibrary):
             dependencies,
             features,
             is_gkrust,
+            cargo_profile_suffix,
+            cargo_crate_type,
+            no_lto,
         )
 
 
@@ -1375,6 +1397,91 @@ class Exports(FinalTargetFiles):
     @property
     def install_target(self):
         return "dist/include"
+
+
+class LicenseError(Exception):
+    """A LICENSES declaration is inconsistent."""
+
+
+class DeclaredLicenseNotice(ContextDerived):
+    """One ``LICENSES[id]`` declaration: a third-party license notice
+    reproduced in about:license.
+
+    ``id`` doubles as the anchor on the generated page. ``text_path``
+    is the absolute path of the file holding the verbatim notice, named either
+    by the declaration's ``text`` field or, for a vendored library, by the
+    ``origin.license-file`` of its ``moz.yaml``. ``paths`` are
+    the topsrcdir-relative paths this notice is attributed to, taken verbatim
+    from the declaration's own ``paths`` field, which is topsrcdir-relative for
+    that reason; a ``LICENSED_UNDER`` naming this id contributes its own
+    directory-relative paths through ``DeclaredLicensedPaths`` instead.
+
+    The slot names are the keys of the aggregated record, so ``asdict`` needs
+    no field list of its own.
+    """
+
+    __slots__ = (
+        "id",
+        "title",
+        "text_path",
+        "notice",
+        "spdx",
+        "url",
+        "paths",
+        "subcomponent",
+    )
+
+    def __init__(
+        self,
+        context,
+        id,
+        title,
+        text_path,
+        notice=None,
+        spdx=None,
+        url=None,
+        paths=(),
+        subcomponent=False,
+    ):
+        ContextDerived.__init__(self, context)
+        if not title:
+            raise LicenseError(f'LICENSES["{id}"] requires a title.')
+        if not text_path:
+            raise LicenseError(
+                f'LICENSES["{id}"] requires a text file: set `text`, or declare '
+                "`origin.license-file` in the moz.yaml covering this directory."
+            )
+        if not os.path.exists(text_path):
+            raise LicenseError(
+                f'LICENSES["{id}"] names a text file that does not exist: {text_path}'
+            )
+        self.id = id
+        self.title = title
+        self.text_path = text_path
+        self.notice = notice
+        self.spdx = spdx
+        self.url = url
+        self.paths = list(paths)
+        self.subcomponent = subcomponent
+
+    def asdict(self):
+        return {name: getattr(self, name) for name in self.__slots__}
+
+
+class DeclaredLicensedPaths(ContextDerived):
+    """One ``LICENSED_UNDER[id]`` declaration: code in the declaring directory
+    covered by ``id``.
+
+    ``paths`` are topsrcdir-relative. An empty list means the whole declaring
+    directory is covered.
+    """
+
+    __slots__ = ("id", "paths")
+
+    def __init__(self, context, id, paths=()):
+        ContextDerived.__init__(self, context)
+        self.id = id
+        self.paths = list(paths)
 
 
 class GeneratedFile(ContextDerived):

@@ -6,7 +6,6 @@ import { createSelector } from "devtools/client/shared/vendor/reselect";
 
 import { getPrettySourceURL, isNotPrettyPrintable } from "../utils/source";
 
-import { findPosition } from "../utils/breakpoint/breakpointPositions";
 import { isFulfilled } from "../utils/async-value";
 
 import { prefs } from "../utils/prefs";
@@ -225,6 +224,48 @@ export function getFirstSourceActorForGeneratedSource(
 }
 
 /**
+ * Return the list of source actors we should get data from (for breakable lines/columns,...)
+ * for a given location. Except for HTML pages, this is a single source actor.
+ *
+ * @param {object} state
+ * @param {object} location
+ * @return {Array<object>}
+ *         List of source actors
+ */
+export function getRelevantSourceActorsForLocation(state, location) {
+  if (!location) {
+    return [];
+  }
+  // For original source, query the bundle's source. Otherwise use the location's source as-is.
+  const generatedSource = location.source.isOriginal
+    ? location.source.generatedSource
+    : location.source;
+
+  let sourceActors;
+  if (generatedSource.isHTML) {
+    // The location may either be on the original pretty printed HTML,
+    // or be non-original and be on a HTML page.
+    //
+    // For HTML file may have many inline <script>'s and need to consider all their source actors.
+    sourceActors = getSourceActorsForSource(state, generatedSource.id);
+  } else {
+    // Otherwise for all other case, use the explicit source actor set on the location object (perfect),
+    // or, fallback to the first actor matching the selected source (best effort).
+    //
+    // We may have many matching source actors if the source, or its bundle is
+    // evaluated many times within the same thread (many script tags/evals like with hotreload addons),
+    // or evaluated many times in distinct threads (many iframes/workers).
+    // Picking the first is brittle as the user may expect to see a precise one.
+    sourceActors = [
+      location.sourceActor ||
+        getFirstSourceActorForGeneratedSource(state, generatedSource.id),
+    ];
+  }
+
+  return sourceActors;
+}
+
+/**
  * Get the source actor of the source
  *
  * @param {object} state
@@ -296,56 +337,36 @@ export function getPrettyPrintMessage(state, location) {
   return L10N.getStr("sourceTabs.prettyPrint");
 }
 
-export function getBreakpointPositionsForSource(state, sourceId) {
-  return state.sources.mutableBreakpointPositions.get(sourceId);
-}
-
-// This is only used by one test
-export function hasBreakpointPositions(state, sourceId) {
-  return !!getBreakpointPositionsForSource(state, sourceId);
-}
-
-export function getBreakpointPositionsForLine(state, sourceId, line) {
-  const positions = getBreakpointPositionsForSource(state, sourceId);
-  return positions?.[line];
-}
-
-export function getBreakpointPositionsForLocation(state, location) {
-  const sourceId = location.source.id;
-  const positions = getBreakpointPositionsForSource(state, sourceId);
-  return findPosition(positions, location);
-}
-
-export function getBreakableLines(state, sourceId) {
-  if (!sourceId) {
-    return null;
+export function getBreakableLines(state, selectedLocation) {
+  if (selectedLocation.source.isOriginal) {
+    return state.sources.mutableOriginalBreakableLines.get(
+      selectedLocation.source.id
+    );
   }
-  const source = getSource(state, sourceId);
-  if (!source) {
-    return null;
-  }
-
-  if (source.isOriginal) {
-    return state.sources.mutableOriginalBreakableLines.get(sourceId);
-  }
-
-  const sourceActors = getSourceActorsForSource(state, sourceId);
+  const sourceActors = getRelevantSourceActorsForLocation(
+    state,
+    selectedLocation
+  );
   if (!sourceActors.length) {
     return null;
   }
 
   // We pull generated file breakable lines directly from the source actors
   // so that breakable lines can be added as new source actors on HTML loads.
-  return getBreakableLinesForSourceActors(state, sourceActors, source.isHTML);
+  return getBreakableLinesForSourceActors(
+    state,
+    sourceActors,
+    selectedLocation.source.isHTML
+  );
 }
 
 export const getSelectedBreakableLines = createSelector(
   state => {
-    const sourceId = getSelectedSourceId(state);
-    if (!sourceId) {
+    const selectedLocation = getSelectedLocation(state);
+    if (!selectedLocation) {
       return null;
     }
-    const breakableLines = getBreakableLines(state, sourceId);
+    const breakableLines = getBreakableLines(state, selectedLocation);
     // Ignore the breakable lines if they are still being fetched from the server
     if (!breakableLines || breakableLines instanceof Promise) {
       return null;

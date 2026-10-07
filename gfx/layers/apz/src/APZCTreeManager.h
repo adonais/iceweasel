@@ -10,6 +10,7 @@
 #include "FocusState.h"          // for FocusState
 #include "HitTestingTreeNode.h"  // for HitTestingTreeNodeAutoLock
 #include "IAPZHitTester.h"       // for IAPZHitTester::HitTestResult
+#include "Units.h"
 #include "VsyncSource.h"
 #include "gfxPoint.h"                // for gfxPoint
 #include "mozilla/Assertions.h"      // for MOZ_ASSERT_HELPER2
@@ -137,7 +138,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   static mozilla::LazyLogModule sLog;
 
   static already_AddRefed<APZCTreeManager> Create(
-      LayersId aRootLayersId, UniquePtr<IAPZHitTester> aHitTester = nullptr);
+      LayersId aRootLayersId, CSSToLayoutDeviceScale aWidgetScale = {},
+      UniquePtr<IAPZHitTester> aHitTester = nullptr);
   void SetSampler(APZSampler* aSampler);
   void SetUpdater(APZUpdater* aUpdater);
 
@@ -289,6 +291,11 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
    * Returns the current dpi value in use.
    */
   float GetDPI() const;
+
+  /**
+   * Returns the Widget scale value in use.
+   */
+  CSSToLayoutDeviceScale GetWidgetScale() const;
 
   /**
    * Find the hit testing node for the scrollbar thumb that matches these
@@ -532,7 +539,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   already_AddRefed<wr::WebRenderAPI> GetWebRenderAPI() const;
 
  protected:
-  APZCTreeManager(LayersId aRootLayersId, UniquePtr<IAPZHitTester> aHitTester);
+  APZCTreeManager(LayersId aRootLayersId, CSSToLayoutDeviceScale aScale,
+                  UniquePtr<IAPZHitTester> aHitTester);
 
   void Init();
 
@@ -1163,6 +1171,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   // This must only be touched on the controller thread.
   float mDPI;
+
+  CSSToLayoutDeviceScale mWidgetScale;
 
   friend class IAPZHitTester;
   UniquePtr<IAPZHitTester> mHitTester;

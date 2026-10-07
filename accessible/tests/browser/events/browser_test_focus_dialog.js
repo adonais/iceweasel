@@ -32,7 +32,7 @@ async function runTests(browser) {
   await BrowserTestUtils.closeWindow(newWin);
   testStates((await onFocus).accessible, STATE_FOCUSED);
 
-  onFocus = waitForEvent(EVENT_FOCUS, "body2");
+  onFocus = waitForEvent(EVENT_FOCUS, "html");
   await SpecialPowers.spawn(browser, [], () => {
     content.document
       .getElementById("editabledoc")
@@ -40,7 +40,7 @@ async function runTests(browser) {
   });
   testStates((await onFocus).accessible, STATE_FOCUSED);
 
-  onFocus = waitForEvent(EVENT_FOCUS, "body2");
+  onFocus = waitForEvent(EVENT_FOCUS, "html");
   newWin = await BrowserTestUtils.openNewBrowserWindow();
   await BrowserTestUtils.closeWindow(newWin);
   testStates((await onFocus).accessible, STATE_FOCUSED);
@@ -64,7 +64,8 @@ addAccessibleTask(
   <button id="button">button</button>
   <iframe id="editabledoc"
           src="${snippetToURL("", {
-            contentDocBodyAttrs: { id: "body2", contentEditable: "true" },
+            contentDocAttrs: { id: "html" },
+            contentDocBodyAttrs: { contentEditable: "true" },
           })}">
   </iframe>
   <div id="alertdialog" style="display: none" tabindex="-1" role="alertdialog" aria-labelledby="title2" aria-describedby="desc2">

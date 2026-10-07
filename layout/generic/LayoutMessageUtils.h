@@ -7,6 +7,7 @@
 
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtils.h"
+#include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/AspectRatio.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsIFrame.h"

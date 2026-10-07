@@ -320,6 +320,8 @@ void TimerEventAllocator::Free(void* aPtr) {
 
 struct TimerMarker : public BaseMarkerType<TimerMarker> {
   static constexpr const char* Name = "Timer";
+  // Call sites pass the timer's own name, so ETW must keep that name.
+  static constexpr bool ETWStoreName = true;
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
       {"delay", MS::InputType::TimeDuration, "Delay", MS::Format::Milliseconds},
@@ -394,6 +396,9 @@ struct TimerMarker : public BaseMarkerType<TimerMarker> {
 
 struct AddRemoveTimerMarker : public BaseMarkerType<AddRemoveTimerMarker> {
   static constexpr const char* Name = "AddRemoveTimer";
+  // Call sites pass "PostTimerEvent", "AddTimer" or "RemoveTimer", so ETW must
+  // keep that name.
+  static constexpr bool ETWStoreName = true;
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
       {"name", MS::InputType::CString, "Name", MS::Format::String},

@@ -164,6 +164,9 @@ void ScriptElement::ContentWillBeRemoved(nsIContent* aChild,
 
 bool ScriptElement::MaybeProcessScript(nsCOMPtr<nsIParser> aParser) {
   nsIContent* cont = GetAsContent();
+  MOZ_ASSERT(cont->IsScriptElement(),
+             "nsINode::IsScriptElement should return true if the node inherits "
+             "ScriptElement");
 
   NS_ASSERTION(cont->DebugGetSlots()->mMutationObservers.contains(this),
                "You forgot to add self as observer");

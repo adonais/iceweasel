@@ -9,6 +9,8 @@
 #include "nsIObserver.h"
 #include "nsITerminatorTest.h"
 
+#include "mozilla/ShutdownPhase.h"
+
 namespace mozilla {
 
 class nsTerminator final : public nsIObserver, public nsITerminatorTest {

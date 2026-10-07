@@ -504,6 +504,19 @@ impl YamlFrameReader {
 
         self.parse_transform_properties(&yaml);
 
+        // Pipelines to remove before this frame's display lists are set. Sent
+        // as its own transaction, with no display list and so no scene rebuild,
+        // which is what a pipeline removal looks like coming from Gecko.
+        if let Some(removed) = yaml["remove-pipelines"].as_vec() {
+            let mut txn = Transaction::new();
+            for pipeline in removed {
+                txn.remove_pipeline(
+                    pipeline.as_pipeline_id().expect("remove-pipelines takes pipeline ids"),
+                );
+            }
+            wrench.api.send_transaction(wrench.document_id, txn);
+        }
+
         if let Some(pipelines) = yaml["pipelines"].as_vec() {
             for pipeline in pipelines {
                 let pipeline_id = pipeline["id"].as_pipeline_id().unwrap();
@@ -1754,6 +1767,7 @@ impl YamlFrameReader {
                 ("scrollbar-container", PrimitiveFlags::IS_SCROLLBAR_CONTAINER),
                 ("prefer-compositor-surface", PrimitiveFlags::PREFER_COMPOSITOR_SURFACE),
                 ("checkerboard-background", PrimitiveFlags::CHECKERBOARD_BACKGROUND),
+                ("rasterized-for-rect", PrimitiveFlags::RASTERIZED_FOR_RECT),
             ] {
                 if let Some(value) = item[key].as_bool() {
                     flags.set(flag, value);

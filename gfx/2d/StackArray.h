@@ -9,6 +9,8 @@
 #ifndef MOZILLA_GFX_STACKARRAY_H_
 #define MOZILLA_GFX_STACKARRAY_H_
 
+#include <cstddef>
+
 template <class T, size_t size>
 class StackArray final {
  public:

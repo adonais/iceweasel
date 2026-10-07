@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<meta charset="utf-8">
+<title>An image is not resampled because of the scroll offset's sub-pixel phase</title>
+
+<!--
+  The display list is normalized by the accumulated external scroll offset in
+  whole app units, and WebRender re-applies that offset at frame time rounded
+  to whole device pixels. An offset whose device part is fractional therefore
+  shifts the sub-pixel phase the image's rect is snapped at, away from the one
+  the authored coordinates round at, so the size picked to rasterize at comes
+  out a pixel away from the size the rect is snapped to and the image is
+  resampled to fit (bug 2070683).
+
+  Parameters are the image's top and the scroll offset to reach, both in CSS
+  pixels, which at devPixelsPerPx 1 are also device pixels:
+
+    ?300.5,0.5  scrolled to a fractional offset
+    ?299.5,0    not scrolled at all
+
+  The snapped scroll offset moves the page by a whole device pixel, so both
+  land the image on the same device row and have to render identically. The
+  offsets are not derived, they were measured from the rendering - see the
+  comment on the manifest entry.
+
+  scrollIntoView deliberately, not scrollTo: scrollTo has its target adjusted
+  for pixel alignment, which would leave nothing fractional to detect.
+
+  The image's height is fractional on purpose: with a whole extent every
+  rounding agrees at every phase and there is nothing to detect.
+-->
+
+<style>
+
+html {
+  /* Same in both, so the scrollbar cannot move content between them. */
+  scrollbar-width: none;
+}
+
+body {
+  margin: 0;
+  /* Tall in both, so both have the same scrollable overflow. */
+  height: 3000px;
+}
+
+img {
+  position: absolute;
+  left: 20px;
+  width: 400px;
+  height: 200.6px;
+}
+
+#scrollTarget {
+  position: absolute;
+  left: 0;
+  width: 0;
+  height: 900px;
+}
+
+</style>
+
+<img src="stripes-fractional.svg">
+<div id="scrollTarget"></div>
+
+<script>
+
+const [imgTop, scrollTo] =
+  location.search.substring(1).split(",").map(parseFloat);
+
+document.querySelector("img").style.top = imgTop + "px";
+
+function performScroll() {
+  if (scrollTo) {
+    const target = document.getElementById("scrollTarget");
+    target.style.top = scrollTo + "px";
+    target.scrollIntoView();
+  }
+
+  // A scroll offset that did not land where we asked exercises nothing - fail
+  // loudly rather than pass for the wrong reason.
+  if (Math.abs(window.scrollY - (scrollTo || 0)) > 0.001) {
+    document.body.style.background = "red";
+  }
+
+  document.documentElement.removeAttribute("class");
+}
+
+document.addEventListener("MozReftestInvalidate", performScroll);
+
+</script>
+</html>

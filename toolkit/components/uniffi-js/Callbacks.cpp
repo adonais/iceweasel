@@ -153,4 +153,6 @@ void AsyncCallbackMethodHandlerBase::PromiseHandler::RejectedCallback(
   mHandler->HandleReturn(callResult, aRv);
 }
 
+AsyncCallbackMethodHandlerBase::PromiseHandler::~PromiseHandler() = default;
+
 }  // namespace mozilla::uniffi

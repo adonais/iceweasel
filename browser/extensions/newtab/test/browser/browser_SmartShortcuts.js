@@ -12,6 +12,13 @@ const { NimbusTestUtils } = ChromeUtils.importESModule(
 const PREF_SYSTEM_SHORTCUTS_PERSONALIZATION =
   "browser.newtabpage.activity-stream.discoverystream.shortcuts.personalization.enabled";
 
+add_setup(async function () {
+  // onBrowserReady() assigns activityStream asynchronously.
+  await AboutNewTab.activityStreamPromise;
+  // Enrolling needs ExperimentManager.onStartup() to have run.
+  await ExperimentAPI.init();
+});
+
 add_task(async function test_nimbus_experiment_enabled() {
   await pushPrefs([PREF_SYSTEM_SHORTCUTS_PERSONALIZATION, false]);
   let doExperimentCleanup = async () => {};
@@ -26,7 +33,6 @@ add_task(async function test_nimbus_experiment_enabled() {
     ok(!smartshortcutsfeed?.loaded, "Should initially not be loaded.");
 
     // Setup the experiment.
-    await ExperimentAPI.ready();
     doExperimentCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
       featureId: "newtabTrainhop",
       value: {
@@ -72,7 +78,6 @@ add_task(async function test_nimbus_false_overrides_local_pref() {
     await smartshortcutsfeed.onAction({ type: "INIT" });
     ok(smartshortcutsfeed?.loaded, "Local pref should load the feed first");
 
-    await ExperimentAPI.ready();
     doExperimentCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
       featureId: "newtabTrainhop",
       value: {

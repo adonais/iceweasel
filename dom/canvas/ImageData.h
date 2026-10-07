@@ -38,6 +38,8 @@ class ImageData final : public nsISupports, public nsWrapperCache {
     HoldData();
   }
 
+  ImageData() = delete;
+
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SKIPPABLE_SCRIPT_HOLDER_CLASS(ImageData)
 
@@ -73,7 +75,6 @@ class ImageData final : public nsISupports, public nsWrapperCache {
   void HoldData();
   void DropData();
 
-  ImageData() = delete;
   ~ImageData() { DropData(); }
 
   nsCOMPtr<nsISupports> mOwner;

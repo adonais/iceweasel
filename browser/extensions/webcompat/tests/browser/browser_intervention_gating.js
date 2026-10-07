@@ -541,8 +541,8 @@ add_task(async function test_batched_webrequest_listeners() {
       },
     ],
     {
-      blocks: ["*://example.com/*/general/download_page.html"],
-      matches: ["*://example.com/*/general/*"],
+      blocks: ["*://example.com/*/browser-general/download_page.html"],
+      matches: ["*://example.com/*/browser-general/*"],
     }
   );
 
@@ -554,8 +554,8 @@ add_task(async function test_batched_webrequest_listeners() {
       },
     ],
     {
-      blocks: ["*://example.com/*/static/download_page.html"],
-      matches: ["*://example.com/*/static/*"],
+      blocks: ["*://example.com/*/browser-static/download_page.html"],
+      matches: ["*://example.com/*/browser-static/*"],
     }
   );
 
@@ -585,8 +585,8 @@ add_task(async function test_batched_webrequest_listeners() {
     ],
     {
       blocks: [
-        "*://example.net/*/about/download_page.html",
-        "*://www.example.com/*/about/download_page.html",
+        "*://example.net/*/browser-about/download_page.html",
+        "*://www.example.com/*/browser-about/download_page.html",
       ],
       matches: ["*://example.net/*", "*://www.example.com/*"],
     }
@@ -613,7 +613,7 @@ add_task(async function test_batched_webrequest_listeners() {
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     opening:
-      "https://example.com/browser/browser/base/content/test/general/dummy_page.html",
+      "https://example.com/browser/browser/base/content/test/browser-general/dummy_page.html",
     waitForLoad: true,
   });
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
@@ -626,7 +626,7 @@ add_task(async function test_batched_webrequest_listeners() {
     let blocked = false;
     try {
       await content.wrappedJSObject.fetch(
-        "https://example.com/browser/browser/base/content/test/general/download_page.html"
+        "https://example.com/browser/browser/base/content/test/browser-general/download_page.html"
       );
     } catch (_) {
       blocked = true;
@@ -638,7 +638,7 @@ add_task(async function test_batched_webrequest_listeners() {
   tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     opening:
-      "https://example.com/browser/browser/base/content/test/static/dummy_page.html",
+      "https://example.com/browser/browser/base/content/test/browser-static/dummy_page.html",
     waitForLoad: true,
   });
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
@@ -651,7 +651,7 @@ add_task(async function test_batched_webrequest_listeners() {
     let blocked = false;
     try {
       await content.wrappedJSObject.fetch(
-        "https://example.com/browser/browser/base/content/test/static/download_page.html"
+        "https://example.com/browser/browser/base/content/test/browser-static/download_page.html"
       );
     } catch (_) {
       blocked = true;
@@ -663,7 +663,7 @@ add_task(async function test_batched_webrequest_listeners() {
   tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     opening:
-      "https://example.net/browser/browser/base/content/test/about/dummy_page.html",
+      "https://example.net/browser/browser/base/content/test/browser-about/dummy_page.html",
     waitForLoad: true,
   });
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
@@ -676,7 +676,7 @@ add_task(async function test_batched_webrequest_listeners() {
     let blocked = true;
     try {
       await content.wrappedJSObject.fetch(
-        "https://example.net/browser/browser/base/content/test/about/download_page.html"
+        "https://example.net/browser/browser/base/content/test/browser-about/download_page.html"
       );
       blocked = false;
     } catch (_) {}
@@ -687,7 +687,7 @@ add_task(async function test_batched_webrequest_listeners() {
   tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     opening:
-      "https://www.example.com/browser/browser/base/content/test/about/dummy_page.html",
+      "https://www.example.com/browser/browser/base/content/test/browser-about/dummy_page.html",
     waitForLoad: true,
   });
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
@@ -700,7 +700,7 @@ add_task(async function test_batched_webrequest_listeners() {
     let blocked = false;
     try {
       await content.wrappedJSObject.fetch(
-        "https://www.example.com/browser/browser/base/content/test/about/download_page.html"
+        "https://www.example.com/browser/browser/base/content/test/browser-about/download_page.html"
       );
     } catch (_) {
       blocked = true;
@@ -727,10 +727,10 @@ add_task(async function test_exclusions() {
       },
     ],
     {
-      blocks: ["*://example.com/*/general/download*"],
-      exclude_blocks: ["*://example.com/*/general/download_page_2.txt"],
-      matches: ["*://example.com/*/general/*"],
-      exclude_matches: ["*://example.com/*/general/clipboard*"],
+      blocks: ["*://example.com/*/browser-general/download*"],
+      exclude_blocks: ["*://example.com/*/browser-general/download_page_2.txt"],
+      matches: ["*://example.com/*/browser-general/*"],
+      exclude_matches: ["*://example.com/*/browser-general/clipboard*"],
     }
   );
 
@@ -750,7 +750,7 @@ add_task(async function test_exclusions() {
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     opening:
-      "https://example.com/browser/browser/base/content/test/general/dummy_page.html",
+      "https://example.com/browser/browser/base/content/test/browser-general/dummy_page.html",
     waitForLoad: true,
   });
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
@@ -761,7 +761,7 @@ add_task(async function test_exclusions() {
     let blocked = false;
     try {
       await content.wrappedJSObject.fetch(
-        "https://example.com/browser/browser/base/content/test/general/download_page_1.txt"
+        "https://example.com/browser/browser/base/content/test/browser-general/download_page_1.txt"
       );
     } catch (_) {
       blocked = true;
@@ -771,7 +771,7 @@ add_task(async function test_exclusions() {
     blocked = false;
     try {
       await content.wrappedJSObject.fetch(
-        "https://example.com/browser/browser/base/content/test/general/download_page_2.txt"
+        "https://example.com/browser/browser/base/content/test/browser-general/download_page_2.txt"
       );
     } catch (_) {
       blocked = true;
@@ -783,7 +783,7 @@ add_task(async function test_exclusions() {
   tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     opening:
-      "https://example.com/browser/browser/base/content/test/general/clipboard_pastefile.html",
+      "https://example.com/browser/browser/base/content/test/browser-general/clipboard_pastefile.html",
     waitForLoad: true,
   });
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {

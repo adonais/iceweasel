@@ -104,9 +104,10 @@ var tests = [
     };
     startCallbackTimer();
     executeSoon(() => alert("test"));
-    await waitForConditionPromise(
-      () => panelShown,
+    await TestUtils.waitForCondition(
+      () => !!panelShown,
       "Timed out waiting for panel promise to be assigned",
+      100,
       100
     );
     await panelShown;

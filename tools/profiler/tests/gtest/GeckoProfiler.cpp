@@ -2380,6 +2380,22 @@ struct GtestBaseMarkerTypeUniqueString
   }
 };
 
+// BaseMarkerType-based marker graphing two of its payload fields, one with an
+// explicit color and one without.
+struct GtestBaseMarkerTypeGraphs
+    : public mozilla::BaseMarkerType<GtestBaseMarkerTypeGraphs> {
+  static constexpr const char* Name = "markers-gtest-base-graphs";
+  using MS = mozilla::MarkerSchema;
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"colored", MS::InputType::Double, "Colored", MS::Format::Decimal},
+      {"plain", MS::InputType::Double, "Plain", MS::Format::Decimal}};
+  static constexpr MS::GraphField GraphFields[] = {
+      {"colored", MS::GraphType::Bar, mozilla::Some(MS::GraphColor::Ink)},
+      {"plain", MS::GraphType::FilledLine}};
+};
+
 TEST(GeckoProfiler, Markers)
 {
   uint32_t features = ProfilerFeature::StackWalk;
@@ -2586,6 +2602,10 @@ TEST(GeckoProfiler, Markers)
       "Gtest base marker type unique string", geckoprofiler::category::OTHER,
       {}, GtestBaseMarkerTypeUniqueString{}, "gtest unique field value",
       "gtest plain field value"));
+
+  EXPECT_TRUE(profiler_add_marker_impl("Gtest base marker type graphs",
+                                       geckoprofiler::category::OTHER, {},
+                                       GtestBaseMarkerTypeGraphs{}, 1.5, 2.5));
 
   // Test PROFILER_MARKER_SIMPLE_PAYLOAD with various data types.
   int testInt = 42;
@@ -2996,6 +3016,7 @@ TEST(GeckoProfiler, Markers)
     S_CustomMarker,
     S_SpecialMarker,
     S_BaseMarkerTypeUniqueString,
+    S_BaseMarkerTypeGraphs,
     S_SimplePayload_int,
     S_SimplePayload_double,
     S_SimplePayload_bool,
@@ -3308,6 +3329,13 @@ TEST(GeckoProfiler, Markers)
                   // plainField should be stored as a regular string.
                   EXPECT_EQ_JSON(payload["plainField"], String,
                                  "gtest plain field value");
+
+                } else if (nameString == "Gtest base marker type graphs") {
+                  EXPECT_EQ(state, S_BaseMarkerTypeGraphs);
+                  state = State(S_BaseMarkerTypeGraphs + 1);
+                  EXPECT_EQ(typeString, "markers-gtest-base-graphs");
+                  EXPECT_EQ_JSON(payload["colored"], Double, 1.5);
+                  EXPECT_EQ_JSON(payload["plain"], Double, 2.5);
 
                 } else if (nameString == "SimplePayload with int") {
                   EXPECT_EQ(state, S_SimplePayload_int);
@@ -3895,6 +3923,41 @@ TEST(GeckoProfiler, Markers)
             EXPECT_EQ_JSON(data[1u]["key"], String, "plainField");
             EXPECT_EQ_JSON(data[1u]["label"], String, "Plain Field");
             EXPECT_EQ_JSON(data[1u]["format"], String, "string");
+
+            EXPECT_TRUE(schema["graphs"].isNull())
+                << "A marker type without GraphFields should not emit a graphs "
+                   "array";
+
+          } else if (nameString == "markers-gtest-base-graphs") {
+            EXPECT_EQ(display.size(), 2u);
+            EXPECT_EQ(display[0u].asString(), "marker-chart");
+            EXPECT_EQ(display[1u].asString(), "marker-table");
+
+            ASSERT_EQ(data.size(), 2u);
+
+            ASSERT_TRUE(data[0u].isObject());
+            EXPECT_EQ_JSON(data[0u]["key"], String, "colored");
+            EXPECT_EQ_JSON(data[0u]["label"], String, "Colored");
+            EXPECT_EQ_JSON(data[0u]["format"], String, "decimal");
+
+            ASSERT_TRUE(data[1u].isObject());
+            EXPECT_EQ_JSON(data[1u]["key"], String, "plain");
+            EXPECT_EQ_JSON(data[1u]["label"], String, "Plain");
+            EXPECT_EQ_JSON(data[1u]["format"], String, "decimal");
+
+            GET_JSON(graphs, schema["graphs"], Array);
+            ASSERT_EQ(graphs.size(), 2u);
+
+            ASSERT_TRUE(graphs[0u].isObject());
+            EXPECT_EQ_JSON(graphs[0u]["key"], String, "colored");
+            EXPECT_EQ_JSON(graphs[0u]["type"], String, "bar");
+            EXPECT_EQ_JSON(graphs[0u]["color"], String, "ink");
+
+            ASSERT_TRUE(graphs[1u].isObject());
+            EXPECT_EQ_JSON(graphs[1u]["key"], String, "plain");
+            EXPECT_EQ_JSON(graphs[1u]["type"], String, "line-filled");
+            EXPECT_TRUE(graphs[1u]["color"].isNull())
+                << "A GraphField left without a color should not emit one";
 
           } else if (nameString == "markers-gtest-special") {
             EXPECT_EQ(display.size(), 0u);

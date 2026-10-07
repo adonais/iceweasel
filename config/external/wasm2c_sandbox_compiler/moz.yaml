@@ -6,11 +6,11 @@ bugzilla:
 
 origin:
   name: wasm2c_sandbox_compiler
-  description: wasm2c fork used for rlbox sandboxing
+  description: wasm2c Wasm compiler used for rlbox sandboxing
   url: https://github.com/WebAssembly/wabt
 
-  release: 94c25a93c5ee81939bd1acfee06808f6745883ce (2024-11-11T23:21:55Z).
-  revision: 94c25a93c5ee81939bd1acfee06808f6745883ce
+  release: e197d0b7bd3fe426f5963ae540f4426a1d49e89f (2026-09-16T05:01:55Z).
+  revision: e197d0b7bd3fe426f5963ae540f4426a1d49e89f
 
   license: Apache-2.0
   license-file: LICENSE
@@ -24,6 +24,7 @@ vendoring:
     - cmake
     - docs
     - fuzz-in
+    - fuzzers
     - include/wabt/interp
     - man
     - scripts
@@ -41,9 +42,18 @@ vendoring:
     - README.md
     - SECURITY.md
     - ubsan.blacklist
+    - src/test-*
     - src/tools/s*
     - src/tools/wasm-*
     - src/tools/wast*
     - src/tools/wat*
     - src/tools/wasm2w*
+    - src/wabt.post.js
+    - third_party/wasm2c/requirements-dev.txt
     - wasm2c/wasm-rt-exceptions*
+    - wasm2c/README.md
+
+  patches:
+    - revert-cpp20-changes.patch
+    - openbsd-no-strtod-l.patch
+    - allow-guard-pages-with-clang-cl.patch

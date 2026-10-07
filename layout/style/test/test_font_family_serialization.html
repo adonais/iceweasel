@@ -6,12 +6,13 @@
 <div id="log"></div>
 <div id="display"></div>
 <script>
-// This cannot be a web-platform test because this doesn't match what
-// the spec says at the moment. Specifically, the spec wants to have
-// all font family serialized to string, while in practice, all browsers
-// serialize simple them to identifiers in some cases.
-// We want to check our current behavior. This can be changed once
-// browsers have an agreement on the exact behavior to spec.
+// Serialization of font-family names,
+// see https://github.com/w3c/csswg-drafts/issues/5846:
+//   - Quote if it matches an existing keyword (already required per spec).
+//   - Quote if it cannot be serialized as a keyword without escapes, e.g.:
+//     - contains non-alphanumeric ASCII;
+//     - contains a word that begins with a number.
+//   - Otherwise serialize as space-separated idents.
 
 // format: [input, expected serialization]
 const tests = [
@@ -20,7 +21,7 @@ const tests = [
   ['    simple    ', 'simple'],
   ['multi idents font', 'multi idents font'],
   ['    multi   idents   font    ', 'multi idents font'],
-  ['"wrapped name"', '"wrapped name"'],
+  ['"wrapped name"', 'wrapped name'],
   ['"   wrapped  name   "', '"   wrapped  name   "'],
 
   // Special whitespaces
@@ -33,7 +34,7 @@ const tests = [
   ['trailing ws\\   ', '"trailing ws "'],
   ['trailing ws   \\ ', '"trailing ws  "'],
   ['trailing ws\\ \\ ', '"trailing ws  "'],
-  ['escaped\\ ws', '"escaped ws"'],
+  ['escaped\\ ws', 'escaped ws'],
   ['escaped\\    ws', '"escaped  ws"'],
   ['escaped\\ \\ ws', '"escaped  ws"'],
   ['escaped   \\ ws', '"escaped  ws"'],

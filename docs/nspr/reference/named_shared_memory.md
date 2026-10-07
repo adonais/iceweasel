@@ -5,8 +5,8 @@ NSPR shared memory API provides a cross-platform named shared-memory
 interface that is modeled on similar constructs in the Unix and Windows
 operating systems.
 
-- [Shared Memory Protocol](#Shared_Memory_Protocol)
-- [Named Shared Memory Functions](#Named_Shared_Memory_Functions)
+- [Shared Memory Protocol](#shared-memory-protocol)
+- [Named Shared Memory Functions](#named-shared-memory-functions)
 
 (shared-memory-protocol)=
 

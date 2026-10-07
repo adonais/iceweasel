@@ -116,7 +116,16 @@ static MOZ_ALWAYS_INLINE void PodCopy(T* aDst, const T* aSrc, size_t aNElem) {
   }
 #endif
 
+  // GCC false-positive: value range propagation cannot prove mLength is bounded
+  // when Vector::convertToHeapStorage inlines through here (Bug 661957).
+#if defined(__GNUC__) && !defined(__clang__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
   memcpy(aDst, aSrc, aNElem * sizeof(T));
+#if defined(__GNUC__) && !defined(__clang__)
+#  pragma GCC diagnostic pop
+#endif
 }
 
 template <typename T>

@@ -15,12 +15,12 @@
 
 class nsIDOMWindow;
 class nsIDocShell;
-class nsRange;
 
 namespace mozilla {
 namespace dom {
 class Document;
 class Element;
+class Range;
 class Selection;
 }  // namespace dom
 }  // namespace mozilla
@@ -62,13 +62,16 @@ class nsWebBrowserFind : public nsIWebBrowserFind,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult OnFind(nsPIDOMWindowOuter* aFoundWindow);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY already_AddRefed<mozilla::dom::Selection>
-  UpdateSelection(nsPIDOMWindowOuter* aWindow, nsRange* aRange);
+  UpdateSelection(nsPIDOMWindowOuter* aWindow, mozilla::dom::Range* aRange);
 
-  nsresult GetSearchLimits(nsRange* aSearchRange, nsRange* aStartPt,
-                           nsRange* aEndPt, mozilla::dom::Document* aDoc,
+  nsresult GetSearchLimits(mozilla::dom::Range* aSearchRange,
+                           mozilla::dom::Range* aStartPt,
+                           mozilla::dom::Range* aEndPt,
+                           mozilla::dom::Document* aDoc,
                            mozilla::dom::Selection* aSel, bool aWrap);
-  nsresult SetRangeAroundDocument(nsRange* aSearchRange, nsRange* aStartPt,
-                                  nsRange* aEndPt,
+  nsresult SetRangeAroundDocument(mozilla::dom::Range* aSearchRange,
+                                  mozilla::dom::Range* aStartPt,
+                                  mozilla::dom::Range* aEndPt,
                                   mozilla::dom::Document* aDoc);
 
  protected:

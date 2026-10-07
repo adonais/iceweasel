@@ -845,7 +845,7 @@ struct MOZ_RAII AutoHandleWasmTruncateToIntErrors {
     masm.bind(&inputIsNaN);
     FaultingCodeRange fcr2 =
         masm.wasmTrap(wasm::Trap::InvalidConversionToInteger, trapSiteDesc);
-    if (stackMapForTraps) {
+    if (stackMapRegistry) {
       masm.propagateOOM(stackMapRegistry->addMap(stackMapForTraps, fcr2));
     }
   }
@@ -1199,10 +1199,11 @@ static inline bool IsByteReg(Imm32 r) {
 #endif
 
 template <typename T>
-static void CompareExchange(MacroAssembler& masm,
-                            const wasm::MemoryAccessDesc* access,
-                            Scalar::Type type, const T& mem, Register oldval,
-                            Register newval, Register output) {
+static FaultingCodeRange CompareExchange(MacroAssembler& masm,
+                                         const wasm::MemoryAccessDesc* access,
+                                         Scalar::Type type, const T& mem,
+                                         Register oldval, Register newval,
+                                         Register output) {
   MOZ_ASSERT(output == eax);
 
   if (oldval != output) {
@@ -1229,12 +1230,13 @@ static void CompareExchange(MacroAssembler& masm,
   }
 
   auto after = masm.currentOffset();
+  FaultingCodeRange fcr(before, after);
   if (access) {
-    masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic,
-                         FaultingCodeRange(before, after));
+    masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic, fcr);
   }
 
   ExtendTo32(masm, type, output);
+  return fcr;
 }
 
 void MacroAssembler::compareExchange(Scalar::Type type, Synchronization,
@@ -1249,23 +1251,25 @@ void MacroAssembler::compareExchange(Scalar::Type type, Synchronization,
   CompareExchange(*this, nullptr, type, mem, oldval, newval, output);
 }
 
-void MacroAssembler::wasmCompareExchange(const wasm::MemoryAccessDesc& access,
-                                         const Address& mem, Register oldval,
-                                         Register newval, Register output) {
-  CompareExchange(*this, &access, access.type(), mem, oldval, newval, output);
+FaultingCodeRange MacroAssembler::wasmCompareExchange(
+    const wasm::MemoryAccessDesc& access, const Address& mem, Register oldval,
+    Register newval, Register output) {
+  return CompareExchange(*this, &access, access.type(), mem, oldval, newval,
+                         output);
 }
 
-void MacroAssembler::wasmCompareExchange(const wasm::MemoryAccessDesc& access,
-                                         const BaseIndex& mem, Register oldval,
-                                         Register newval, Register output) {
-  CompareExchange(*this, &access, access.type(), mem, oldval, newval, output);
+FaultingCodeRange MacroAssembler::wasmCompareExchange(
+    const wasm::MemoryAccessDesc& access, const BaseIndex& mem, Register oldval,
+    Register newval, Register output) {
+  return CompareExchange(*this, &access, access.type(), mem, oldval, newval,
+                         output);
 }
 
 template <typename T>
-static void AtomicExchange(MacroAssembler& masm,
-                           const wasm::MemoryAccessDesc* access,
-                           Scalar::Type type, const T& mem, Register value,
-                           Register output)
+static FaultingCodeRange AtomicExchange(MacroAssembler& masm,
+                                        const wasm::MemoryAccessDesc* access,
+                                        Scalar::Type type, const T& mem,
+                                        Register value, Register output)
 // NOTE: the generated code must match the assembly code in gen_exchange in
 // GenerateAtomicOperations.py
 {
@@ -1291,12 +1295,13 @@ static void AtomicExchange(MacroAssembler& masm,
   }
 
   auto after = masm.currentOffset();
+  FaultingCodeRange fcr(before, after);
   if (access) {
-    masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic,
-                         FaultingCodeRange(before, after));
+    masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic, fcr);
   }
 
   ExtendTo32(masm, type, output);
+  return fcr;
 }
 
 void MacroAssembler::atomicExchange(Scalar::Type type, Synchronization,
@@ -1311,16 +1316,16 @@ void MacroAssembler::atomicExchange(Scalar::Type type, Synchronization,
   AtomicExchange(*this, nullptr, type, mem, value, output);
 }
 
-void MacroAssembler::wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
-                                        const Address& mem, Register value,
-                                        Register output) {
-  AtomicExchange(*this, &access, access.type(), mem, value, output);
+FaultingCodeRange MacroAssembler::wasmAtomicExchange(
+    const wasm::MemoryAccessDesc& access, const Address& mem, Register value,
+    Register output) {
+  return AtomicExchange(*this, &access, access.type(), mem, value, output);
 }
 
-void MacroAssembler::wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
-                                        const BaseIndex& mem, Register value,
-                                        Register output) {
-  AtomicExchange(*this, &access, access.type(), mem, value, output);
+FaultingCodeRange MacroAssembler::wasmAtomicExchange(
+    const wasm::MemoryAccessDesc& access, const BaseIndex& mem, Register value,
+    Register output) {
+  return AtomicExchange(*this, &access, access.type(), mem, value, output);
 }
 
 static void SetupValue(MacroAssembler& masm, AtomicOp op, Imm32 src,
@@ -1371,10 +1376,11 @@ static auto WasmTrapMachineInsn(Scalar::Type arrayType, AtomicOp op) {
 }
 
 template <typename T, typename V>
-static void AtomicFetchOp(MacroAssembler& masm,
-                          const wasm::MemoryAccessDesc* access,
-                          Scalar::Type arrayType, AtomicOp op, V value,
-                          const T& mem, Register temp, Register output) {
+static FaultingCodeRange AtomicFetchOp(MacroAssembler& masm,
+                                       const wasm::MemoryAccessDesc* access,
+                                       Scalar::Type arrayType, AtomicOp op,
+                                       V value, const T& mem, Register temp,
+                                       Register output) {
   // Note value can be an Imm or a Register.
 
   // NOTE: the generated code must match the assembly code in gen_fetchop in
@@ -1524,11 +1530,12 @@ static void AtomicFetchOp(MacroAssembler& masm,
       MOZ_CRASH();
   }
 
+  FaultingCodeRange fcr(before, after);
   // Add trap instruction directly before the load.
   if (access) {
-    masm.appendAndVerify(*access, WasmTrapMachineInsn(arrayType, op),
-                         FaultingCodeRange(before, after));
+    masm.appendAndVerify(*access, WasmTrapMachineInsn(arrayType, op), fcr);
   }
+  return fcr;
 }
 
 void MacroAssembler::atomicFetchOp(Scalar::Type arrayType, Synchronization,
@@ -1558,32 +1565,32 @@ void MacroAssembler::atomicFetchOp(Scalar::Type arrayType, Synchronization,
   AtomicFetchOp(*this, nullptr, arrayType, op, value, mem, temp, output);
 }
 
-void MacroAssembler::wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access,
-                                       AtomicOp op, Register value,
-                                       const Address& mem, Register temp,
-                                       Register output) {
-  AtomicFetchOp(*this, &access, access.type(), op, value, mem, temp, output);
+FaultingCodeRange MacroAssembler::wasmAtomicFetchOp(
+    const wasm::MemoryAccessDesc& access, AtomicOp op, Register value,
+    const Address& mem, Register temp, Register output) {
+  return AtomicFetchOp(*this, &access, access.type(), op, value, mem, temp,
+                       output);
 }
 
-void MacroAssembler::wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access,
-                                       AtomicOp op, Imm32 value,
-                                       const Address& mem, Register temp,
-                                       Register output) {
-  AtomicFetchOp(*this, &access, access.type(), op, value, mem, temp, output);
+FaultingCodeRange MacroAssembler::wasmAtomicFetchOp(
+    const wasm::MemoryAccessDesc& access, AtomicOp op, Imm32 value,
+    const Address& mem, Register temp, Register output) {
+  return AtomicFetchOp(*this, &access, access.type(), op, value, mem, temp,
+                       output);
 }
 
-void MacroAssembler::wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access,
-                                       AtomicOp op, Register value,
-                                       const BaseIndex& mem, Register temp,
-                                       Register output) {
-  AtomicFetchOp(*this, &access, access.type(), op, value, mem, temp, output);
+FaultingCodeRange MacroAssembler::wasmAtomicFetchOp(
+    const wasm::MemoryAccessDesc& access, AtomicOp op, Register value,
+    const BaseIndex& mem, Register temp, Register output) {
+  return AtomicFetchOp(*this, &access, access.type(), op, value, mem, temp,
+                       output);
 }
 
-void MacroAssembler::wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access,
-                                       AtomicOp op, Imm32 value,
-                                       const BaseIndex& mem, Register temp,
-                                       Register output) {
-  AtomicFetchOp(*this, &access, access.type(), op, value, mem, temp, output);
+FaultingCodeRange MacroAssembler::wasmAtomicFetchOp(
+    const wasm::MemoryAccessDesc& access, AtomicOp op, Imm32 value,
+    const BaseIndex& mem, Register temp, Register output) {
+  return AtomicFetchOp(*this, &access, access.type(), op, value, mem, temp,
+                       output);
 }
 
 template <typename T, typename V>

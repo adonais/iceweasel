@@ -11,7 +11,7 @@ table as needed.
 
 Cached monitors are slower to use than their uncached counterparts.
 
-See [Monitors](Monitors) for information about uncached monitors.
+See [Monitors](monitors.md) for information about uncached monitors.
 
 (cached-monitors-functions)=
 

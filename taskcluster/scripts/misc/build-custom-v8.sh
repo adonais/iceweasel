@@ -27,6 +27,11 @@ export PATH=$PATH:$GECKO_PATH/depot_tools
 # Bug 1901936 changes to config upstream for depot tools path
 export XDG_CONFIG_HOME=$GECKO_PATH
 
+# Bug 2070172 - upstream `fetch` and `ninja` now run through depot_tools'
+# hermetic python-bin wrapper, which refuses to run on a checkout that has
+# never been bootstrapped.
+ensure_bootstrap
+
 # Get v8 source code and dependencies
 fetch --force v8
 cd v8

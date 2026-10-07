@@ -96,7 +96,7 @@ void js::ReleaseAllJITCode(JS::GCContext* gcx) {
   js::CancelOffThreadCompile(gcx->runtime());
 
   for (ZonesIter zone(gcx->gcRuntime(), SkipAtoms); !zone.done(); zone.next()) {
-    zone->forceDiscardJitCode(gcx);
+    zone->discardJitCodeForAllRealms(gcx);
     if (jit::JitZone* jitZone = zone->jitZone()) {
       jitZone->discardStubs();
     }

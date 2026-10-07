@@ -1329,11 +1329,6 @@ SSL_InheritMPServerSIDCacheInstance(cacheDesc *cache, const char *envString)
     unsigned int decoLen;
     inheritance inherit;
     cacheDesc my;
-#ifdef WINNT
-    sidCacheLock *newLocks;
-    int locks_initialized = 0;
-    int locks_to_initialize = 0;
-#endif
     SECStatus status = ssl_InitSessionCache();
 
     if (status != SECSuccess) {
@@ -1434,48 +1429,6 @@ SSL_InheritMPServerSIDCacheInstance(cacheDesc *cache, const char *envString)
     cache->cacheMemMap = my.cacheMemMap;
     cache->cacheMem = my.cacheMem;
     cache->sharedCache = (cacheDesc *)cache->cacheMem;
-
-#ifdef WINNT
-    /*  On Windows NT we need to "fix" the sidCacheLocks here to support fibers
-    **  When NT fibers are used in a multi-process server, a second level of
-    **  locking is needed to prevent a deadlock, in case a fiber acquires the
-    **  cross-process mutex, yields, and another fiber is later scheduled on
-    **  the same native thread and tries to acquire the cross-process mutex.
-    **  We do this by using a PRLock in the sslMutex. However, it is stored in
-    **  shared memory as part of sidCacheLocks, and we don't want to overwrite
-    **  the PRLock of the parent process. So we need to make new, private
-    **  copies of sidCacheLocks before modifying the sslMutex with our own
-    **  PRLock
-    */
-
-    /* note from jpierre : this should be free'd in child processes when
-    ** a function is added to delete the SSL session cache in the future.
-    */
-    locks_to_initialize = cache->numSIDCacheLocks + 3;
-    newLocks = PORT_NewArray(sidCacheLock, locks_to_initialize);
-    if (!newLocks)
-        goto loser;
-    /* copy the old locks */
-    memcpy(newLocks, cache->sidCacheLocks,
-           locks_to_initialize * sizeof(sidCacheLock));
-    cache->sidCacheLocks = newLocks;
-    /* fix the locks */
-    for (; locks_initialized < locks_to_initialize; ++locks_initialized) {
-        /* now, make a local PRLock in this sslMutex for this child process */
-        SECStatus err;
-        err = sslMutex_2LevelInit(&newLocks[locks_initialized].mutex);
-        if (err != SECSuccess) {
-            cache->numSIDCacheLocksInitialized = locks_initialized;
-            goto loser;
-        }
-    }
-    cache->numSIDCacheLocksInitialized = locks_initialized;
-
-    /* also fix the key and cert cache which use the last 2 lock entries */
-    cache->keyCacheLock = cache->sidCacheLocks + cache->numSIDCacheLocks;
-    cache->certCacheLock = cache->keyCacheLock + 1;
-    cache->srvNameCacheLock = cache->certCacheLock + 1;
-#endif
 
     PORT_Free(myEnvString);
     PORT_Free(decoString);

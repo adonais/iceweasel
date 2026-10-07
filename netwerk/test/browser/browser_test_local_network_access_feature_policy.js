@@ -13,17 +13,17 @@ add_setup(async function () {
 requestLongerTimeout(4);
 
 /**
- * Test: Same-origin iframe inherits Feature Policy from parent
+ * Test: Same-origin iframe inherits Permissions Policy from parent
  *
  * Scenario: Parent page (example.com) creates a same-origin iframe (example.com)
- * Expected: Iframe automatically inherits the parent's Feature Policy allowlist
+ * Expected: Iframe automatically inherits the parent's Permissions Policy allowlist
  *           and can make LNA requests after permission is granted to the parent.
  *
  * This validates that same-origin iframes don't need explicit delegation via
  * the allow attribute - they inherit permissions from their parent document.
  */
 add_task(async function test_feature_policy_same_origin_iframe() {
-  info("Test: Same-origin iframe inherits Feature Policy from parent");
+  info("Test: Same-origin iframe inherits Permissions Policy from parent");
   await restorePermissions();
   await SpecialPowers.pushPrefEnv({
     set: [["network.lna.address_space.public.override", "127.0.0.1:4443"]],
@@ -58,10 +58,10 @@ add_task(async function test_feature_policy_same_origin_iframe() {
  *
  * Scenario: Parent page (example.com) creates a cross-origin iframe (example.org)
  *           WITHOUT an allow attribute
- * Expected: The iframe's LNA request is blocked by Feature Policy BEFORE showing
+ * Expected: The iframe's LNA request is blocked by Permissions Policy BEFORE showing
  *           a permission prompt to the user.
  *
- * This validates Feature Policy's default-deny behavior for cross-origin iframes.
+ * This validates Permissions Policy's default-deny behavior for cross-origin iframes.
  * Cross-origin contexts must explicitly opt-in via the allow attribute to access
  * powerful features like LNA.
  */
@@ -79,7 +79,7 @@ add_task(async function test_feature_policy_cross_origin_blocked() {
     "fetch",
     rand,
     Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
-    "Cross-origin iframe without allow should be blocked by Feature Policy"
+    "Cross-origin iframe without allow should be blocked by Permissions Policy"
   );
 
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, testURL);
@@ -92,7 +92,7 @@ add_task(async function test_feature_policy_cross_origin_blocked() {
   );
   ok(
     !popup,
-    "No permission prompt should appear when Feature Policy blocks request"
+    "No permission prompt should appear when Permissions Policy blocks request"
   );
 
   gBrowser.removeTab(tab);
@@ -329,7 +329,7 @@ add_task(async function test_feature_policy_same_origin_inherits_permission() {
  * Expected: The iframe can immediately make LNA requests using the parent's
  *           cached permission without showing a new permission prompt.
  *
- * This validates that Feature Policy delegation works correctly with cached
+ * This validates that Permissions Policy delegation works correctly with cached
  * permissions - a cross-origin iframe with proper allow attribute can leverage
  * the parent's existing permission grant without re-prompting the user.
  */
@@ -410,10 +410,10 @@ add_task(
  * Scenario: Parent page (example.com) makes an LNA request and gets permission.
  *           AFTER permission is granted, a cross-origin iframe (example.org) WITHOUT
  *           an allow attribute is dynamically created.
- * Expected: The iframe's LNA request is blocked by Feature Policy, even though the
+ * Expected: The iframe's LNA request is blocked by Permissions Policy, even though the
  *           parent has a cached permission grant.
  *
- * This validates that Feature Policy enforcement is independent of the parent's
+ * This validates that Permissions Policy enforcement is independent of the parent's
  * permission state - cross-origin iframes must have explicit delegation via the
  * allow attribute to access LNA, regardless of whether the parent has permission.
  * This prevents cross-origin contexts from silently inheriting powerful permissions.
@@ -455,7 +455,7 @@ add_task(
     await new Promise(resolve => setTimeout(resolve, 300));
 
     info(
-      "Step 2: Create cross-origin iframe WITHOUT allow - should be blocked by Feature Policy"
+      "Step 2: Create cross-origin iframe WITHOUT allow - should be blocked by Permissions Policy"
     );
     const promise2 = observeAndCheck(
       "fetch",
@@ -478,7 +478,7 @@ add_task(
       "loopback-network",
       tab.linkedBrowser
     );
-    ok(!popup, "No prompt should appear - Feature Policy blocks it");
+    ok(!popup, "No prompt should appear - Permissions Policy blocks it");
 
     gBrowser.removeTab(tab);
     await SpecialPowers.popPrefEnv();
@@ -486,15 +486,15 @@ add_task(
 );
 
 /**
- * Test: Nested iframes - Feature Policy checks the full delegation chain
+ * Test: Nested iframes - Permissions Policy checks the full delegation chain
  *
  * Scenario: Parent page (example.com) creates a same-origin iframe (example.com)
  *           with allow="loopback-network". That same-origin iframe contains a
  *           nested cross-origin iframe (example.org) WITHOUT an allow attribute.
- * Expected: The nested cross-origin iframe's LNA request is blocked by Feature
- *           Policy.
+ * Expected: The nested cross-origin iframe's LNA request is blocked by
+ *           Permissions Policy.
  *
- * This validates that Feature Policy checks the entire delegation chain, not just
+ * This validates that Permissions Policy checks the entire delegation chain, not just
  * the immediate parent-child relationship. Even though:
  * - The parent (example.com) delegates to the middle iframe (example.com)
  * - The middle iframe is same-origin with parent (inherits permission)
@@ -506,7 +506,7 @@ add_task(
  */
 add_task(async function test_feature_policy_nested_iframes() {
   info(
-    "Test: Nested iframes respect Feature Policy (cross-origin inside same-origin)"
+    "Test: Nested iframes respect Permissions Policy (cross-origin inside same-origin)"
   );
   await restorePermissions();
   await SpecialPowers.pushPrefEnv({

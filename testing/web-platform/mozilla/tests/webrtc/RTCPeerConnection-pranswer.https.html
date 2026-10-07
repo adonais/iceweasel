@@ -1,0 +1,153 @@
+<!doctype html>
+<meta charset=utf-8>
+<meta name="timeout" content="long">
+<title>Provisional answers: media, direction upgrades, and provisional transports</title>
+<script src=/resources/testharness.js></script>
+<script src=/resources/testharnessreport.js></script>
+<script src="/webrtc/RTCPeerConnection-helper.js"></script>
+<script>
+'use strict';
+
+// RFC 9429 section 4.1.10: a pranswer is an answer that does not free
+// anything. Media may start on it, a later answer may change directions, and
+// whatever transports the pranswer left unused have to stay up until the
+// final answer says otherwise.
+
+async function findInbound(pc, kind, predicate) {
+  for (const stats of (await pc.getStats()).values()) {
+    if (stats.type === 'inbound-rtp' && stats.kind === kind &&
+        predicate(stats)) {
+      return stats;
+    }
+  }
+  return null;
+}
+
+async function waitForInbound(t, pc, kind, predicate, description) {
+  const deadline = performance.now() + 20000;
+  let found;
+  while (!(found = await findInbound(pc, kind, predicate))) {
+    assert_false(performance.now() > deadline,
+      `Timed out waiting for ${description} after 20 seconds`);
+    await new Promise(r => t.step_timeout(r, 100));
+  }
+  return found;
+}
+
+async function assertReachesState(t, transport, state, ms, description) {
+  await Promise.race([
+    waitForState(transport, state),
+    new Promise(r => t.step_timeout(r, ms)),
+  ]);
+  assert_equals(transport.state, state, description);
+}
+
+function createPair(t, config = {}) {
+  const pc1 = new RTCPeerConnection(config);
+  const pc2 = new RTCPeerConnection(config);
+  t.add_cleanup(() => {
+    pc1.close();
+    pc2.close();
+  });
+  return [pc1, pc2];
+}
+
+async function getTrack(t, kind) {
+  const [track] = (await getNoiseStream({[kind]: true})).getTracks();
+  t.add_cleanup(() => track.stop());
+  return track;
+}
+
+promise_test(async t => {
+  const [caller, callee] = createPair(t);
+  caller.addTrack(await getTrack(t, 'audio'));
+  exchangeIceCandidates(caller, callee);
+
+  // Descriptions are applied on the receiving side before the sending side
+  // starts gathering, so no trickled candidate arrives ahead of the
+  // description it belongs to.
+  const offer = await caller.createOffer();
+  await callee.setRemoteDescription(offer);
+  await caller.setLocalDescription(offer);
+
+  // The callee has no track yet, so this is a recvonly answer. It goes out
+  // as provisional: the caller may start sending, nothing is settled.
+  const [calleeTransceiver] = callee.getTransceivers();
+  const [callerTransceiver] = caller.getTransceivers();
+  const provisional = await callee.createAnswer();
+  assert_true(provisional.sdp.includes('a=recvonly'),
+    'provisional answer is recvonly');
+  await caller.setRemoteDescription({type: 'pranswer', sdp: provisional.sdp});
+  assert_equals(caller.signalingState, 'have-remote-pranswer');
+  await callee.setLocalDescription({type: 'pranswer', sdp: provisional.sdp});
+  assert_equals(callee.signalingState, 'have-local-pranswer');
+  assert_equals(calleeTransceiver.currentDirection, 'recvonly');
+  assert_equals(callerTransceiver.currentDirection, 'sendonly');
+
+  await waitForInbound(t, callee, 'audio', s => s.bytesReceived > 0,
+    'audio from the caller on the provisional answer');
+
+  // The callee picks up: it now has something to send, and answers for real.
+  calleeTransceiver.direction = 'sendrecv';
+  await calleeTransceiver.sender.replaceTrack(await getTrack(t, 'audio'));
+  const final = await callee.createAnswer();
+  assert_true(final.sdp.includes('a=sendrecv'), 'final answer is sendrecv');
+  await caller.setRemoteDescription(final);
+  assert_equals(caller.signalingState, 'stable');
+  await callee.setLocalDescription(final);
+  assert_equals(callee.signalingState, 'stable');
+  assert_equals(calleeTransceiver.currentDirection, 'sendrecv');
+  assert_equals(callerTransceiver.currentDirection, 'sendrecv');
+
+  await waitForInbound(t, caller, 'audio', s => s.bytesReceived > 0,
+    'audio from the callee on the final answer');
+  const {bytesReceived} = await findInbound(callee, 'audio', () => true);
+  await waitForInbound(t, callee, 'audio', s => s.bytesReceived > bytesReceived,
+    'audio from the caller continues on the final answer');
+}, 'Media flows on a recvonly pranswer, and both ways after a sendrecv answer');
+
+promise_test(async t => {
+  // max-compat offers a transport per m-section; the answer bundles them.
+  const [caller, callee] = createPair(t, {bundlePolicy: 'max-compat'});
+  caller.addTransceiver('audio');
+  caller.addTransceiver('video');
+  exchangeIceCandidates(caller, callee);
+
+  const offer = await caller.createOffer();
+  await callee.setRemoteDescription(offer);
+  await caller.setLocalDescription(offer);
+  const [audioTransport, videoTransport] =
+    caller.getSenders().map(sender => sender.transport);
+  assert_not_equals(audioTransport, videoTransport,
+    'the offer has a transport per m-section');
+
+  const answer = await callee.createAnswer();
+  await caller.setRemoteDescription({type: 'pranswer', sdp: answer.sdp});
+  await callee.setLocalDescription({type: 'pranswer', sdp: answer.sdp});
+
+  // The transceivers now share the bundle transport...
+  for (const {sender, receiver} of caller.getTransceivers()) {
+    assert_equals(sender.transport, audioTransport);
+    assert_equals(receiver.transport, audioTransport);
+  }
+  await assertReachesState(t, audioTransport.iceTransport, 'connected', 15000,
+    'bundle ICE transport connects on the pranswer');
+  await assertReachesState(t, audioTransport, 'connected', 15000,
+    'bundle DTLS transport connects on the pranswer');
+  // ...but the transport the pranswer left behind is not torn down.
+  await new Promise(r => t.step_timeout(r, 500));
+  assert_not_equals(videoTransport.state, 'closed',
+    'unused DTLS transport survives the pranswer');
+  assert_not_equals(videoTransport.iceTransport.state, 'closed',
+    'unused ICE transport survives the pranswer');
+
+  // The final answer is what frees it.
+  await caller.setRemoteDescription(answer);
+  await callee.setLocalDescription(answer);
+  await assertReachesState(t, videoTransport.iceTransport, 'closed', 15000,
+    'unused ICE transport closes on the final answer');
+  await assertReachesState(t, videoTransport, 'closed', 15000,
+    'unused DTLS transport closes on the final answer');
+}, 'Transports a pranswer leaves unused stay up until the final answer');
+
+</script>

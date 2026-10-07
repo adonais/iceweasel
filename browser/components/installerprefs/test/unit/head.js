@@ -7,7 +7,7 @@ const { AppConstants } = ChromeUtils.importESModule(
 );
 
 const { InstallerPrefs } = ChromeUtils.importESModule(
-  "resource:///modules/InstallerPrefs.sys.mjs"
+  "moz-src:///browser/components/installerprefs/InstallerPrefs.sys.mjs"
 );
 
 let gRegistryKeyPath = "";

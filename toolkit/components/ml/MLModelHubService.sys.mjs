@@ -268,7 +268,7 @@ export class MLModelHubService {
           file,
           progressCallback: progressWrapper,
           abortSignal: abortController.signal,
-          featureId: "ml-model-hub-service",
+          featureId: taskName,
           sessionId,
         });
 

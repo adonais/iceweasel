@@ -264,6 +264,11 @@ public:
       // Events implementing nsIRunnablePriority can get run in a different
       // order than they were dispatched.
       SUPPORTS_PRIORITIZATION = 1 << 2,
+      // Indicates that the event target is an AbstractThread supporting tail
+      // dispatch. Runnables dispatched to it from a task running on another
+      // AbstractThread supporting tail dispatch are queued on that thread's
+      // tail dispatcher and dispatched together once the task completes.
+      SUPPORTS_TAIL_DISPATCH = 1 << 3,
   };
 
   /**

@@ -23,6 +23,17 @@ if (Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT) {
   throw new Error("LoginManager.sys.mjs should only run in the parent process");
 }
 
+async function recordStorageOperation(operation, storage, fn) {
+  const startedAt = ChromeUtils.now();
+  const result = await fn();
+  Glean.pwmgr.storageOperationTime.record({
+    backend: storage.backendName,
+    operation,
+    duration_ms: Math.round(ChromeUtils.now() - startedAt),
+  });
+  return result;
+}
+
 export function LoginManager() {
   this.init();
 }
@@ -323,7 +334,9 @@ LoginManager.prototype = {
     );
     if (!privateContextWithoutExplicitConsent) {
       // don't record non-interactive use in private browsing
-      await storage.recordPasswordUseAsync(login);
+      await recordStorageOperation("record_password_use", storage, () =>
+        storage.recordPasswordUseAsync(login)
+      );
     }
 
     Glean.pwmgr["savedLoginUsed" + loginType].record({ filled });
@@ -337,7 +350,9 @@ LoginManager.prototype = {
   async getAllLogins() {
     const storage = await this._getStorage();
     lazy.log.debug("Getting a list of all logins asynchronously.");
-    return storage.getAllLogins();
+    return recordStorageOperation("list", storage, () =>
+      storage.getAllLogins()
+    );
   },
 
   /**
@@ -345,11 +360,9 @@ LoginManager.prototype = {
    */
   getAllLoginsWithCallback(aCallback) {
     lazy.log.debug("Searching a list of all logins asynchronously.");
-    this._getStorage()
-      .then(storage => storage.getAllLogins())
-      .then(logins => {
-        aCallback.onSearchComplete(logins);
-      });
+    this.getAllLogins().then(logins => {
+      aCallback.onSearchComplete(logins);
+    });
   },
 
   /**
@@ -423,15 +436,15 @@ LoginManager.prototype = {
       );
     }
 
-    return storage.searchLoginsAsync(matchData);
+    return recordStorageOperation("search", storage, () =>
+      storage.searchLoginsAsync(matchData)
+    );
   },
 
   async countLoginsAsync(origin, formActionOrigin, httpRealm) {
     const storage = await this._getStorage();
-    const loginsCount = await storage.countLoginsAsync(
-      origin,
-      formActionOrigin,
-      httpRealm
+    const loginsCount = await recordStorageOperation("count", storage, () =>
+      storage.countLoginsAsync(origin, formActionOrigin, httpRealm)
     );
 
     lazy.log.debug(

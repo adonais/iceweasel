@@ -10,12 +10,6 @@ ChromeUtils.defineESModuleGetters(this, {
 const ADDON_ID_1 = "newtab-multi-1@tests.mozilla.org";
 const ADDON_ID_2 = "newtab-multi-2@tests.mozilla.org";
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-});
-
 add_task(async function test_multiple_extensions_in_dropdown() {
   let extension1 = ExtensionTestUtils.loadExtension({
     useAddonManager: "permanent",

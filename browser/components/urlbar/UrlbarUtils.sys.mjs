@@ -55,6 +55,12 @@ const lazy = XPCOMUtils.declareLazy({
  */
 const gEngineIconDataUrls = new Map();
 
+/*
+ * Factor applied to the previous `moz_inputhistory.use_count` each time a
+ * (url, input) tuple is picked.
+ */
+export const INPUT_HISTORY_USE_DECAY = 0.9;
+
 /**
  * Parses a URL and returns the origin parts needed for moz_origins lookups.
  * Returns null if the URL is unparseable.
@@ -295,7 +301,13 @@ export var UrlbarUtils = {
    * protocol, which keeps the decode out of the parent process (bug 2012436).
    *
    * @param {string} iconUrl The URL of the icon.
-   * @param {number} size The desired size of the icon.
+   * @param {number} [size]
+   *   This param is relevant only if `iconUrl` is remote; it's unused
+   *   otherwise. It specifies the desired maximum width and height of the
+   *   decoded image. Pass a falsey value to decode the image at its intrinsic
+   *   size no matter how big it is. Note that SVGs without a `width` and
+   *   `height` on their `<svg>` have no intrinsic size, and a falsey value will
+   *   cause those image loads to fail. See `getMozRemoteImageURL`.
    * @param {UrlbarParentController} [controller]
    *   The controller the query runs on. It supplies the window the icon renders
    *   in, and whether that window is in a content process, which decodes what
@@ -313,23 +325,21 @@ export var UrlbarUtils = {
       !controller?.rendersInContentProcess &&
       !lazy.FaviconUtils.TRUSTED_FAVICON_SCHEMES.includes(scheme)
     ) {
-      if (Services.env.exists("XPCSHELL_TEST_PROFILE_DIR")) {
-        // XPCShell tests don't have a real window, just use fallback values.
-        return lazy.FaviconUtils.getMozRemoteImageURL(iconUrl, {
-          size,
-          stretch: false,
-          colorScheme: "light",
-        });
-      }
-      return lazy.FaviconUtils.getMozRemoteImageURL(iconUrl, {
-        size: Math.floor(size * controller.browserWindow.devicePixelRatio),
+      // XPCShell tests don't have a real window, just use fallback values.
+      let opts = {
         stretch: false,
-        colorScheme: controller.browserWindow.matchMedia(
+        colorScheme: controller?.browserWindow?.matchMedia?.(
           "(prefers-color-scheme: dark)"
         ).matches
           ? "dark"
           : "light",
-      });
+      };
+      if (size) {
+        opts.size = Math.floor(
+          size * (controller?.browserWindow?.devicePixelRatio ?? 1)
+        );
+      }
+      return lazy.FaviconUtils.getMozRemoteImageURL(iconUrl, opts);
     }
     return iconUrl;
   },
@@ -535,13 +545,18 @@ export var UrlbarUtils = {
         return db.executeCached(
           `
           INSERT OR REPLACE INTO moz_inputhistory
-          SELECT h.id, IFNULL(i.input, :input), IFNULL(i.use_count, 0) * .9 + 1
+          SELECT h.id, IFNULL(i.input, :input),
+                 IFNULL(i.use_count, 0) * :useDecay + 1
           FROM moz_places h
           LEFT JOIN moz_inputhistory i ON i.place_id = h.id AND i.input = :input
           WHERE url_hash = hash(:url) AND url = :url
           RETURNING place_id
           `,
-          { url, input: input.toLowerCase() }
+          {
+            url,
+            input: input.toLowerCase(),
+            useDecay: INPUT_HISTORY_USE_DECAY,
+          }
         );
       }
     );
@@ -936,8 +951,8 @@ export var UrlbarUtils = {
    *
    * @param {string} url
    *   The URL whose block is being cleared.
-   * @returns {?{blockedAt: number, level: "origin" | "url"}}
-   *   The matching timestamp and level if a fresh block existed,
+   * @returns {?{blockedAt: number}}
+   *   The matching timestamp if a fresh block existed,
    *   null otherwise.
    */
   getBackspaceBlock(url) {
@@ -959,9 +974,7 @@ export var UrlbarUtils = {
     if (ageHours > this._BACKSPACE_BLOCK_MAX_AGE_HOURS) {
       return null;
     }
-    /** @type {"origin" | "url"} */
-    let level = UrlbarShared.isOriginUrl(url) ? "origin" : "url";
-    return { blockedAt: entry.blockedAt, level };
+    return { blockedAt: entry.blockedAt };
   },
 
   /**
@@ -1011,7 +1024,7 @@ export var UrlbarUtils = {
    *
    * @param {string} url
    *   The URL being re-integrated.
-   * @returns {Promise<{wasBlocked: boolean, level: "origin" | "url", backspaceBlock: ?{blockedAt: number, level: "origin" | "url"}}>}
+   * @returns {Promise<{wasBlocked: boolean, level: "origin" | "url", backspaceBlock: ?{blockedAt: number}}>}
    *   `wasBlocked` is whether a database block was actually cleared, `level`
    *   the scope it was cleared at, and `backspaceBlock` the consumed backspace
    *   block, if the URL had one.
@@ -1586,9 +1599,6 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       },
       requestId: {
         type: "string",
-      },
-      sendAttributionRequest: {
-        type: "boolean",
       },
       shouldShowUrl: {
         type: "boolean",
@@ -2278,6 +2288,8 @@ export class UrlbarProvider {
    *
    * @param {UrlbarResult} _result
    *   The result whose view will be updated.
+   * @param {UrlbarParentController} _controller
+   *   The controller.
    * @returns {object}
    *   A view update object as described above.  The names of properties are the
    *   the names of elements declared in the view template.  The values of
@@ -2306,7 +2318,7 @@ export class UrlbarProvider {
    *   {string} [textContent]
    *     A string that will be set as `element.textContent`.
    */
-  getViewUpdate(_result) {
+  getViewUpdate(_result, _controller) {
     return null;
   }
 

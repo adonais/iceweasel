@@ -686,8 +686,9 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
       // Note: this is async; the lambda can happen later
       // aCallback will now be owned by GetDictionaryFor
       guard.release();
+      RefPtr<LoadContextInfo> lci = GetLoadContextInfo(aChan);
       mDictionaryCache->GetDictionaryFor(
-          aURI, aType, aChan, aSuspend,
+          aURI, aType, lci, aChan, aSuspend,
           [self = RefPtr(this), aRequest, aCallback](
               bool aNeedsResume, DictionaryCacheEntry* aDict) {
             if (!aDict) {

@@ -140,7 +140,7 @@ patterns = ["glob:'**/*'"]
 ## Editor Integrations
 
 :::{note}
-See details on [how to set up your editor here](/contributing/editor.html#editor-ide-integration)
+See details on [how to set up your editor here](/contributing/editor.md)
 :::
 
 Editor integrations are highly recommended for linters, as they let you see

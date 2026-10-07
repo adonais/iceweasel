@@ -37,8 +37,8 @@ import mozilla.components.compose.base.button.IconButton
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
-import org.mozilla.fenix.tabstray.controller.NoOpTabInteractionHandler
-import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
+import org.mozilla.fenix.tabstray.controller.ItemInteractionHandler
+import org.mozilla.fenix.tabstray.controller.NoOpItemInteractionHandler
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
@@ -55,7 +55,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * @param group [TabsTrayItem.TabGroup] item rendered by the card.
  * @param actions [ExpandedTabGroupActions] invoked in response to user interactions.
  * @param displayTabsInGrid Whether the group's tabs are displayed in a grid (vs a list).
- * @param tabInteractionHandler Handler for tab interactions.
+ * @param itemInteractionHandler Handler for tab interactions.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,7 +63,7 @@ fun ExpandedTabGroup(
     group: TabsTrayItem.TabGroup,
     actions: ExpandedTabGroupActions,
     displayTabsInGrid: Boolean,
-    tabInteractionHandler: TabInteractionHandler,
+    itemInteractionHandler: ItemInteractionHandler,
 ) {
     Column(
         modifier =
@@ -89,7 +89,7 @@ fun ExpandedTabGroup(
             liveReorderEnabled = true,
             selectedItemIndex = group.initialScrollIndex,
             selectionMode = TabsTrayState.Mode.Normal,
-            tabInteractionHandler = tabInteractionHandler,
+            itemInteractionHandler = itemInteractionHandler,
             modifier = Modifier,
             onTabClose = actions.onTabClose,
             onItemClick = actions.onItemClick,
@@ -215,7 +215,7 @@ private fun ExpandedTabGroupPreview(
                         onShareTabGroupClick = {},
                     ),
                 displayTabsInGrid = previewState.displayTabsInGrid,
-                tabInteractionHandler = NoOpTabInteractionHandler,
+                itemInteractionHandler = NoOpItemInteractionHandler,
             )
         }
     }

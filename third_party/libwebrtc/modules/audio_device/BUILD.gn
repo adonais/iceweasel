@@ -526,6 +526,7 @@ if (rtc_include_tests && !build_with_chromium) {
       "../../rtc_base/synchronization:mutex",
       "../../test:create_test_environment",
       "../../test:test_support",
+      "//third_party/abseil-cpp/absl/functional:bind_front",
     ]
     if (is_mac) {
       sources += [ "mac/audio_ring_buffer_mac_unittest.cc" ]

@@ -2375,6 +2375,10 @@
   <string name="sync_send_to_all">Enviar a todos los dispositivos</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Reconectar a Sync</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">Enviar</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">Seleccionado</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">Sin conexión</string>
   <!-- An option to connect additional devices -->
@@ -2411,6 +2415,8 @@
   <string name="sync_send_tab_error_connection_title">Revisa tu conexión a Internet</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">Intenta reenviar tu pestaña.</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">Reintentar</string>
   <!--
     Notifications
 

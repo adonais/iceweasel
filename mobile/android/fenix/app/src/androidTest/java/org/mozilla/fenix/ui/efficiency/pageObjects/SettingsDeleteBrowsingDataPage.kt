@@ -102,6 +102,9 @@ class SettingsDeleteBrowsingDataPage(composeRule: AndroidComposeTestRule<HomeAct
     fun verifyCookiesCheckBox(checked: Boolean) =
         verifyCheckBox(SettingsDeleteBrowsingDataSelectors.COOKIES_CHECKBOX, checked)
 
+    fun verifyDownloadsCheckBox(checked: Boolean) =
+        verifyCheckBox(SettingsDeleteBrowsingDataSelectors.DOWNLOADS_CHECKBOX, checked)
+
     /** Legacy verifyBrowsingHistoryDetails(Boolean): asserts the check box state. */
     fun verifyBrowsingHistoryCheckBox(checked: Boolean) =
         verifyCheckBox(SettingsDeleteBrowsingDataSelectors.BROWSING_HISTORY_CHECKBOX, checked)
@@ -147,6 +150,17 @@ class SettingsDeleteBrowsingDataPage(composeRule: AndroidComposeTestRule<HomeAct
         toggleCheckBox(SettingsDeleteBrowsingDataSelectors.SITE_PERMISSIONS_CHECKBOX, checked = false)
         toggleCheckBox(SettingsDeleteBrowsingDataSelectors.DOWNLOADS_CHECKBOX, checked = false)
         toggleCheckBox(SettingsDeleteBrowsingDataSelectors.BROWSING_HISTORY_CHECKBOX, checked = false)
+        return this
+    }
+
+    /** Uncheck everything except "Downloads", asserting each toggle took. */
+    fun selectOnlyDownloadsCheckBox(): SettingsDeleteBrowsingDataPage {
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.OPEN_TABS_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.BROWSING_HISTORY_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.COOKIES_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.CACHED_FILES_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.SITE_PERMISSIONS_CHECKBOX, checked = false)
+        verifyCheckBox(SettingsDeleteBrowsingDataSelectors.DOWNLOADS_CHECKBOX, checked = true)
         return this
     }
 

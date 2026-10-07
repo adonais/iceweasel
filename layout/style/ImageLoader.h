@@ -8,6 +8,7 @@
 #ifndef mozilla_css_ImageLoader_h_
 #define mozilla_css_ImageLoader_h_
 
+#include "imgIRequest.h"
 #include "mozilla/CORSMode.h"
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
@@ -16,7 +17,6 @@
 
 class nsIFrame;
 class imgIContainer;
-class imgIRequest;
 class imgRequestProxy;
 class nsPresContext;
 class nsIURI;

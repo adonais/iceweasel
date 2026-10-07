@@ -10,11 +10,9 @@ package org.mozilla.fenix.pdf
  * @property onClearClick Invoked when the user erases the signature they typed.
  * @property onAddClick Invoked when the user adds the signature they typed to the PDF.
  * @property onCloseClick Invoked when the user dismisses the dialog without adding a signature.
- * @property onPdfGone Invoked when the selected tab stops showing the PDF being signed.
  */
 internal data class SignatureActions(
     val onClearClick: () -> Unit,
     val onAddClick: () -> Unit,
     val onCloseClick: () -> Unit,
-    val onPdfGone: () -> Unit,
 )

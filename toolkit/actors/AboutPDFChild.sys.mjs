@@ -13,6 +13,7 @@ export class AboutPDFChild extends RemotePageChild {
       "RPMPickPDFFile",
       "RPMSetDefaultPDFHandler",
     ]);
+    this.sendAsyncMessage("AboutPDF:ObserveNotificationPref");
   }
 
   RPMCanSetDefaultPDFHandler() {

@@ -56,7 +56,7 @@ support-files = [
   "file_webrtc.html",
   "../../../components/tabbrowser/test/browser/tabs/dummy_page.html",
   "../../../components/tabbrowser/test/browser/tabs/file_mediaPlayback.html",
-  "../../../base/content/test/general/audio.ogg",
+  "../../../base/content/test/browser-general/audio.ogg",
 ]
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1781868

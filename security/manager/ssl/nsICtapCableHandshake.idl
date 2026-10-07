@@ -1,0 +1,85 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#include "nsISupports.idl"
+#include "nsICtapCableChannel.idl"
+
+/**
+ * Noise initiator handshake interface, used for WebAuthn over Hybrid/caBLE
+ * transports.
+ */
+[scriptable, uuid(969ef799-b1aa-4d8e-8342-6a418031c777)]
+interface nsICtapCableInitiatorHandshake : nsISupports
+{
+    /**
+     * Initial message to send to the responder to complete the handshake.
+     */
+    readonly attribute Array<octet> initialMessage;
+
+    /**
+     * `true` if the handshake state has been "consumed", and so any
+     * `processHandshakeResponse` call will fail.
+     */
+    readonly attribute boolean consumed;
+
+    /**
+     * Complete a caBLE handshake as the initiating party.
+     *
+     * This mutates internal state, even on errors, so can only be called once.
+     * After the first call, this will always return errors, and the `consumed`
+     * attribute will be set to `true`.
+     *
+     * @param aResponseMessage [in] message from the responder
+     *
+     * @returns Noise channel for further communication with the responder,
+     *          after the handshake has completed, and handshake hash
+     */
+    nsICtapCableInitiator processHandshakeResponse(
+        in Array<octet> aResponseMessage
+    );
+};
+
+/**
+ * Noise handshake service singleton.
+ */
+[scriptable, uuid(27cd5d83-2778-40dd-9298-10676f830186)]
+interface nsICtapCableHandshakeService : nsISupports
+{
+    /**
+     * Start a caBLE QR-initiated handshake (Noise `KNpsk0_P256_AESGCM_SHA256`) as the initiator.
+     *
+     * @param aPsk            [in]  32-byte pre-shared key, negotiated
+     *                              out-of-band
+     * @param aLocalIdentity  [in]  local ECDH keypair, encoded in DER
+     * @param aHandshakeState [out] nsICtapCableInitiatorHandshake for
+     *                              processing the responder's response
+     *
+     * <https://fidoalliance.org/specs/fido-v2.3-ps-20260226/fido-client-to-authenticator-protocol-v2.3-ps-20260226.html#hybrid-qr-initiated>
+     */
+    nsICtapCableInitiatorHandshake newQrInitiatedInitiatorHandshake(
+        in Array<octet> aPsk,
+        in Array<octet> aLocalIdentity
+    );
+
+    /**
+     * Complete a caBLE QR-initiated handshake (Noise `KNpsk0_P256_AESGCM_SHA256`) as the responder
+     * (authenticator).
+     *
+     * @param aPsk             [in]  32-byte pre-shared key, negotiated
+     *                               out-of-band
+     * @param aPeerPubKey      [in]  remote peer's public key, as an
+     *                               uncompressed, X9.62 P-256 point
+     * @param aInitialMessage  [in]  initial message from the initiator
+     *
+     * @returns Noise channel for further communication the initiator, and the
+     *          response message to sent to the initiator
+     *
+     * <https://fidoalliance.org/specs/fido-v2.3-ps-20260226/fido-client-to-authenticator-protocol-v2.3-ps-20260226.html#hybrid-qr-initiated>
+     */
+    nsICtapCableResponder newQrInitiatedResponder(
+        in Array<octet> aPsk,
+        in Array<octet> aPeerPubKey,
+        in Array<octet> aInitialMessage
+    );
+};

@@ -119,6 +119,7 @@ struct GLContextSymbols final {
   void(GLAPIENTRY* fPointParameterf)(GLenum, GLfloat);
   void(GLAPIENTRY* fPolygonMode)(GLenum, GLenum);
   void(GLAPIENTRY* fPolygonOffset)(GLfloat, GLfloat);
+  void(GLAPIENTRY* fPolygonOffsetClamp)(GLfloat, GLfloat, GLfloat);
   void(GLAPIENTRY* fReadBuffer)(GLenum);
   void(GLAPIENTRY* fReadPixels)(GLint, GLint, GLsizei, GLsizei, GLenum, GLenum,
                                 GLvoid*);

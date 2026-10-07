@@ -18,6 +18,7 @@
         android:id="@+id/imageView"
         android:layout_width="72dp"
         android:layout_height="72dp"
+        android:importantForAccessibility="no"
         app:srcCompat="@drawable/ic_fx_accounts_avatar"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"

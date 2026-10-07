@@ -159,6 +159,8 @@ class MozPromiseBase : public MozPromiseRefcountable {
 
 template <typename T>
 class MozPromiseHolder;
+template <typename PromiseType, typename ImplType>
+class MozPromiseHolderBase;
 template <typename T>
 class MozPromiseRequestHolder;
 template <typename ResolveValueT, typename RejectValueT, bool IsExclusive>
@@ -593,6 +595,15 @@ class MozPromise : public MozPromiseBase {
             "mResponseTarget must implement nsIDirectTaskDispatcher for direct "
             "task dispatching");
       }
+
+      // Synchronous and direct task dispatch take precedence, as they apply to
+      // same-thread targets only and do not touch the target's event queue.
+      MOZ_ASSERT(!aPromise->mRequireTailDispatch ||
+                     (mResponseTarget->GetFeatures() &
+                      nsIEventTarget::SUPPORTS_TAIL_DISPATCH) !=
+                         nsIEventTarget::SUPPORTS_BASE,
+                 "This promise requires that Then() event targets support "
+                 "tail dispatch");
 
       // Promise consumers are allowed to disconnect the Request object and
       // then shut down the thread or task queue that the promise result would
@@ -1342,6 +1353,9 @@ class MozPromise : public MozPromiseBase {
   ResolveOrRejectValue mValue;
   bool mUseSynchronousTaskDispatch = false;
   bool mUseDirectTaskDispatch = false;
+#ifdef DEBUG
+  bool mRequireTailDispatch = false;
+#endif
   uint32_t mPriority = nsIRunnablePriority::PRIORITY_NORMAL;
 #ifdef PROMISE_DEBUG
   uint32_t mMagic1 = sMagic;
@@ -1480,6 +1494,25 @@ class MozPromise<ResolveValueT, RejectValueT, IsExclusive>::Private
                "Promise already set for direct dispatch");
     mPriority = aPriority;
   }
+
+ private:
+  template <typename, typename>
+  friend class MozPromiseHolderBase;
+
+  // See MozPromiseHolderBase::RequireTailDispatch().
+  void RequireTailDispatch(const char* aSite) {
+#ifdef DEBUG
+    PROMISE_ASSERT(mMagic1 == sMagic && mMagic2 == sMagic &&
+                   mMagic3 == sMagic && mMagic4 == &mMutex);
+    MutexAutoLock lock(mMutex);
+    PROMISE_LOG("%s RequireTailDispatch MozPromise (%p created at %s)", aSite,
+                this, mCreationSite.get());
+    MOZ_ASSERT(IsPending(),
+               "A Promise must not have been already resolved or rejected to "
+               "set dispatch state");
+    mRequireTailDispatch = true;
+#endif
+  }
 };
 
 // A generic promise type that does the trick for simple use cases.
@@ -1605,6 +1638,17 @@ class MozPromiseHolderBase {
   void SetTaskPriority(uint32_t aPriority, const char* aSite) {
     MOZ_ASSERT(mPromise);
     mPromise->SetTaskPriority(aPriority, aSite);
+  }
+
+  // Require the event target of each Then() on the promise to support tail
+  // dispatch, see nsIEventTarget::SUPPORTS_TAIL_DISPATCH, so that a producer
+  // settling the promise from a tail dispatching AbstractThread only queues the
+  // resolve/reject callbacks on its tail dispatcher. Asserted in debug builds
+  // when the callbacks are dispatched. UseSynchronousTaskDispatch() and
+  // UseDirectTaskDispatch() take precedence for same-thread targets.
+  void RequireTailDispatch(const char* aSite) {
+    MOZ_ASSERT(mPromise);
+    mPromise->RequireTailDispatch(aSite);
   }
 
  private:

@@ -5,6 +5,7 @@
 #include "MediaTransportHandler.h"
 
 #include "MediaTransportHandlerIPC.h"
+#include "nsITimer.h"
 #include "transport/dtlsidentity.h"
 #include "transport/nricemediastream.h"
 #include "transport/nriceresolver.h"
@@ -54,6 +55,12 @@ static const char* mthLogTag = "MediaTransportHandler";
 #  undef LOGTAG
 #endif
 #define LOGTAG mthLogTag
+
+// How long the previous DTLS association of a fingerprint-changing ICE restart
+// is kept for stragglers after the new one opens, unless a packet on the new
+// one ends it sooner. Anything later than this is not worth playing out, and a
+// missing keyframe self-heals via PLI/FIR.
+static constexpr uint32_t kOldFlowGraceMs = 2000;
 
 class MediaTransportHandlerSTS : public MediaTransportHandler,
                                  public sigslot::has_slots<> {
@@ -108,7 +115,7 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
 
   void AddIceCandidate(const std::string& aTransportId,
                        const std::string& aCandidate, const std::string& aUfrag,
-                       const std::string& aObfuscatedAddress) override;
+                       const std::string& aResolvedAddress) override;
 
   void UpdateNetworkState(bool aOnline) override;
 
@@ -129,9 +136,66 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
       const RefPtr<DtlsIdentity>& aDtlsIdentity, bool aDtlsClient,
       const DtlsDigestList& aDigests, bool aPrivacyRequested);
 
+  // Everything we track per transport id: the flows, the previous
+  // association's flows during a fingerprint-changing ICE restart, and what we
+  // last reported about them. Lives in mTransports and is used in place, hence
+  // not copyable.
   struct Transport {
+    Transport() = default;
+    Transport(const Transport&) = delete;
+    Transport& operator=(const Transport&) = delete;
+
+    RefPtr<TransportFlow> GetCurrent(bool aIsRtcp) const {
+      return (aIsRtcp && mRtcpFlow) ? mRtcpFlow : mFlow;
+    }
+    RefPtr<TransportFlow> GetOld(bool aIsRtcp) const {
+      return (aIsRtcp && mOldRtcpFlow) ? mOldRtcpFlow : mOldFlow;
+    }
+    // The flow to send on: the current association once its DTLS is up,
+    // otherwise the previous one while it is still operational.
+    RefPtr<TransportFlow> GetSendFlow(bool aIsRtcp) const;
+    TransportLayer::State CurrentDtlsState(bool aIsRtcp) const;
+
+    // Used for DTLS restart. The current flows become the old flows, to be
+    // closed once the new ones are in use.
+    void DeprecateCurrentFlows();
+    // Closes the old flows and cancels any pending closure.
+    void CloseOldFlows();
+
+    struct DtlsState {
+      DtlsState() = default;
+      DtlsState(DtlsState&&) = default;
+      DtlsState& operator=(DtlsState&&) = default;
+      // nsTArray doesn't have copy/assignment, `= default` isn't possible.
+      DtlsState(const DtlsState& aOther);
+      DtlsState& operator=(const DtlsState& aOther);
+      bool operator==(const DtlsState& aOther) const = default;
+
+      TransportLayer::State mState = TransportLayer::TS_NONE;
+      nsTArray<nsTArray<uint8_t>> mRemoteCerts;
+    };
+    // Derives and updates the state from the current and old associations.
+    // Returns the new state if it changed, otherwise returns Nothing().
+    Maybe<DtlsState> UpdateDtlsState(bool aIsRtcp);
+    // The negotiated ALPN, if it changed since it was last reported.
+    Maybe<std::string> UpdateAlpn();
+
     RefPtr<TransportFlow> mFlow;
     RefPtr<TransportFlow> mRtcpFlow;
+    // These are set during DTLS restart to avoid interrupting media flow.
+    RefPtr<TransportFlow> mOldFlow;
+    RefPtr<TransportFlow> mOldRtcpFlow;
+    // Used by MediaTransportHandlerSTS to schedule closure of old flows.
+    // This class is not very suitable for scheduling these timers itself,
+    // because it is not refcounted.
+    nsCOMPtr<nsITimer> mCloseTimer;
+    // The digests of the current flow. ActivateTransport uses this to detect
+    // when a DTLS restart has been requested, and new flows must be created.
+    DtlsDigestList mDigests;
+    // The remote ICE ufrag of the current flow. ActivateTransport uses this to
+    // double-check that content doesn't restart DTLS without restarting ICE.
+    std::string mUfrag;
+
     // Counts of the (decrypted) payload that traverses this transport, used to
     // populate RTCTransportStats. These exclude STUN connectivity checks and
     // DTLS/SRTP protection overhead, both of which are added below this point.
@@ -149,6 +213,13 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
     // GetIceStats reports this rather than deriving from
     // NrIceMediaStream::state(), which has no "new" state.
     dom::RTCIceTransportState mIceState = dom::RTCIceTransportState::New;
+
+   private:
+    DtlsState ComputeDtlsState(bool aIsRtcp) const;
+
+    DtlsState mReportedDtlsState;
+    DtlsState mReportedRtcpState;
+    std::string mReportedAlpn;
   };
 
   using MediaTransportHandler::OnAlpnNegotiated;
@@ -174,6 +245,18 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
                         uint16_t aErrorCode, const std::string& aErrorText);
   void OnStateChange(TransportLayer* aLayer, TransportLayer::State);
   void OnRtcpStateChange(TransportLayer* aLayer, TransportLayer::State);
+  // Derives the DTLS state (and certs, ALPN, error) to report for a transport
+  // from its current (and, during a DTLS restart, old) DTLS association and
+  // reports it if it changed. Called on any DTLS state change and whenever a
+  // flow is closed.
+  void UpdateReportedState(const std::string& aTransportId, bool aIsRtcp);
+  // Closes the old DTLS association of a fingerprint-changing ICE restart
+  // once the new one is in use: after a grace period from the new association
+  // opening, or as soon as a packet arrives on it. The pending closure is
+  // Transport::mCloseTimer, which ActivateTransport cancels on a further ICE
+  // restart.
+  void ScheduleOldFlowClose(const std::string& aTransportId, uint32_t aDelayMs);
+  void CloseOldFlows(const std::string& aTransportId);
   void PacketReceived(TransportLayer* aLayer, MediaPacket& aPacket);
   void EncryptedPacketSending(TransportLayer* aLayer, MediaPacket& aPacket);
   RefPtr<TransportFlow> GetTransportFlow(const std::string& aTransportId,
@@ -187,7 +270,7 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
   RefPtr<NrIceCtx> mIceCtx;
   RefPtr<NrIceResolver> mDNSResolver;
   std::map<std::string, Transport> mTransports;
-  bool mObfuscateHostAddresses = false;
+  bool mHideLocalPrflx = false;
   bool mTurnDisabled = false;
   uint32_t mMinDtlsVersion = 0;
   uint32_t mMaxDtlsVersion = 0;
@@ -682,7 +765,31 @@ void MediaTransportHandlerSTS::ActivateTransport(
           return;
         }
 
-        Transport transport = mTransports[aTransportId];
+        Transport& transport = mTransports[aTransportId];
+
+        if (transport.mFlow) {
+          // Pre-existing transport
+          if (transport.mUfrag != aUfrag) {
+            // An ICE restart. nICEr keeps at most two ICE streams, so the one
+            // a lingering old flow was bound to has just been closed.
+            transport.CloseOldFlows();
+            if (transport.mDigests != aDigests) {
+              // Stand up a new, parallel DTLS association over the new ICE
+              // credentials and let the old flow linger to catch stragglers.
+              stream->AdvanceDtlsId();
+              transport.DeprecateCurrentFlows();
+            }
+          } else if (transport.mDigests != aDigests) {
+            // Content process checks this, but we check here too in case the
+            // content process has gone off the rails.
+            CSFLogError(LOGTAG,
+                        "%s: Ignoring remote DTLS fingerprint change without "
+                        "an ICE restart on transport %s",
+                        mIceCtx->name().c_str(), aTransportId.c_str());
+          }
+        }
+        transport.mUfrag = aUfrag;
+
         if (!transport.mFlow) {
           transport.mFlow =
               CreateTransportFlow(aTransportId, false, dtlsIdentity,
@@ -690,6 +797,7 @@ void MediaTransportHandlerSTS::ActivateTransport(
           if (!transport.mFlow) {
             return;
           }
+          transport.mDigests = aDigests;
           TransportLayer* dtls =
               transport.mFlow->GetLayer(TransportLayerDtls::ID());
           dtls->SignalStateChange.connect(
@@ -719,7 +827,8 @@ void MediaTransportHandlerSTS::ActivateTransport(
           stream->DisableComponent(2);
         }
 
-        mTransports[aTransportId] = std::move(transport);
+        UpdateReportedState(aTransportId, /* aIsRtcp = */ false);
+        UpdateReportedState(aTransportId, /* aIsRtcp = */ true);
       },
       [](const std::string& aError) {});
 }
@@ -753,7 +862,7 @@ void MediaTransportHandlerSTS::StartIceGathering(
           return;  // Probably due to XPCOM shutdown
         }
 
-        mObfuscateHostAddresses = aObfuscateHostAddresses;
+        mHideLocalPrflx = aObfuscateHostAddresses;
 
         // Belt and suspenders - in e10s mode, the call below to SetStunAddrs
         // needs to have the proper flags set on ice ctx.  For non-e10s,
@@ -821,7 +930,7 @@ void TokenizeCandidate(const std::string& aCandidate,
 
 void MediaTransportHandlerSTS::AddIceCandidate(
     const std::string& aTransportId, const std::string& aCandidate,
-    const std::string& aUfrag, const std::string& aObfuscatedAddress) {
+    const std::string& aUfrag, const std::string& aResolvedAddress) {
   MOZ_RELEASE_ASSERT(mInitPromise);
 
   mInitPromise->Then(
@@ -831,9 +940,6 @@ void MediaTransportHandlerSTS::AddIceCandidate(
           return;  // Probably due to XPCOM shutdown
         }
 
-        std::vector<std::string> tokens;
-        TokenizeCandidate(aCandidate, tokens);
-
         RefPtr<NrIceMediaStream> stream(mIceCtx->GetStream(aTransportId));
         if (!stream) {
           CSFLogError(LOGTAG,
@@ -842,17 +948,17 @@ void MediaTransportHandlerSTS::AddIceCandidate(
           return;
         }
 
-        nsresult rv = stream->ParseTrickleCandidate(aCandidate, aUfrag,
-                                                    aObfuscatedAddress);
-        if (NS_SUCCEEDED(rv)) {
-          // If the address is not obfuscated, we want to track it as
-          // explicitly signaled so that we know it is fine to reveal
-          // the address later on.
-          if (mObfuscateHostAddresses && tokens.size() > 4 &&
-              aObfuscatedAddress.empty()) {
-            mSignaledAddresses.insert(tokens[4]);
-          }
-        } else {
+        // Re-parsing this is kinda silly. We probably want to have
+        // ParseTrickleCandidate actually give us a parsed representation.
+        std::vector<std::string> tokens;
+        TokenizeCandidate(aCandidate, tokens);
+        if (tokens.size() > 4) {
+          mSignaledAddresses.insert(tokens[4]);
+        }
+
+        nsresult rv =
+            stream->ParseTrickleCandidate(aCandidate, aUfrag, aResolvedAddress);
+        if (!NS_SUCCEEDED(rv)) {
           CSFLogError(LOGTAG,
                       "Couldn't process ICE candidate with transport id %s: "
                       "%s",
@@ -1357,11 +1463,14 @@ static void ToRTCIceCandidateStats(
     const std::vector<NrIceCandidate>& candidates,
     dom::RTCStatsType candidateType, const nsString& transportId,
     DOMHighResTimeStamp now, dom::RTCStatsCollection* stats,
-    bool obfuscateHostAddresses,
-    const std::set<std::string>& signaledAddresses) {
+    bool hideLocalPrflx, const std::set<std::string>& signaledAddresses) {
   MOZ_ASSERT(stats);
   for (const auto& candidate : candidates) {
     dom::RTCIceCandidateStats cand;
+    auto hideAddress = [&cand]() {
+      cand.mAddress.Construct();
+      cand.mAddress.Value().SetIsVoid(true);
+    };
     cand.mType.Construct(candidateType);
     NS_ConvertASCIItoUTF16 codeword(candidate.codeword.c_str());
     cand.mTransportId = transportId;
@@ -1371,18 +1480,35 @@ static void ToRTCIceCandidateStats(
     cand.mPriority.Construct(candidate.priority);
     // https://tools.ietf.org/html/draft-ietf-rtcweb-mdns-ice-candidates-03#section-3.3.1
     // This obfuscates the address with the mDNS address if one exists
-    if (!candidate.mdns_addr.empty()) {
+    if (!candidate.domain_name.empty()) {
+      // Stats must contain either the host that appeared in the candidate, or
+      // nothing at all. It is never valid to put a resolved IP address in this
+      // field. If `domain_name` is set, that is what was in the original
+      // candidate, and it is also safe to expose regardless of any of the
+      // stuff checked below.
       cand.mAddress.Construct(
-          NS_ConvertASCIItoUTF16(candidate.mdns_addr.c_str()));
-    } else if (obfuscateHostAddresses &&
-               candidate.type == NrIceCandidate::ICE_PEER_REFLEXIVE &&
+          NS_ConvertASCIItoUTF16(candidate.domain_name.c_str()));
+    } else if (candidateType == dom::RTCStatsType::Remote_candidate &&
                signaledAddresses.find(candidate.cand_addr.host) ==
                    signaledAddresses.end()) {
-      cand.mAddress.Construct(NS_ConvertASCIItoUTF16("(redacted)"));
+      // The address of remote candidates is hidden if it has never been passed
+      // to us from content. In practice this only happens with prflx.
+      hideAddress();
+    } else if (candidateType == dom::RTCStatsType::Local_candidate &&
+               hideLocalPrflx &&
+               candidate.type == NrIceCandidate::ICE_PEER_REFLEXIVE) {
+      // A local prflx candidate is our address as some peer saw it, and that
+      // peer may be another RTCPeerConnection in the same document. Our host
+      // candidates always carry a name when we are hiding addresses, and srflx
+      // is fine because the STUN/TURN server the origin supplied has already
+      // seen our packets.
+      hideAddress();
     } else {
+      // If `domain_name` is not set, this will be an IP address.
       cand.mAddress.Construct(
           NS_ConvertASCIItoUTF16(candidate.cand_addr.host.c_str()));
     }
+
     cand.mPort.Construct(candidate.cand_addr.port);
     cand.mProtocol.Construct(
         NS_ConvertASCIItoUTF16(candidate.cand_addr.transport.c_str()));
@@ -1480,8 +1606,8 @@ void MediaTransportHandlerSTS::GetIceStats(
   std::vector<NrIceCandidate> candidates;
   if (NS_SUCCEEDED(aStream.GetLocalCandidates(&candidates))) {
     ToRTCIceCandidateStats(candidates, dom::RTCStatsType::Local_candidate,
-                           transportId, aNow, aStats, mObfuscateHostAddresses,
-                           mSignaledAddresses);
+                           transportId, aNow, aStats, mHideLocalPrflx,
+                           std::set<std::string>());
     // add the local candidates unparsed string to a sequence
     for (const auto& candidate : candidates) {
       if (!aStats->mRawLocalCandidates.AppendElement(
@@ -1496,8 +1622,10 @@ void MediaTransportHandlerSTS::GetIceStats(
   candidates.clear();
 
   if (NS_SUCCEEDED(aStream.GetRemoteCandidates(&candidates))) {
+    // Remote addresses are hidden unless content gave them to us, regardless
+    // of whether we are hiding our own.
     ToRTCIceCandidateStats(candidates, dom::RTCStatsType::Remote_candidate,
-                           transportId, aNow, aStats, mObfuscateHostAddresses,
+                           transportId, aNow, aStats, /*hideLocalPrflx=*/false,
                            mSignaledAddresses);
     // add the remote candidates unparsed string to a sequence
     for (const auto& candidate : candidates) {
@@ -1512,19 +1640,126 @@ void MediaTransportHandlerSTS::GetIceStats(
   }
 }
 
+static TransportLayerDtls* GetDtlsLayer(const RefPtr<TransportFlow>& aFlow) {
+  return aFlow ? static_cast<TransportLayerDtls*>(
+                     aFlow->GetLayer(TransportLayerDtls::ID()))
+               : nullptr;
+}
+
+static TransportLayer::State GetDtlsState(const RefPtr<TransportFlow>& aFlow) {
+  TransportLayerDtls* dtls = GetDtlsLayer(aFlow);
+  return dtls ? dtls->state() : TransportLayer::TS_NONE;
+}
+
+RefPtr<TransportFlow> MediaTransportHandlerSTS::Transport::GetSendFlow(
+    bool aIsRtcp) const {
+  RefPtr<TransportFlow> current = GetCurrent(aIsRtcp);
+  RefPtr<TransportFlow> old = GetOld(aIsRtcp);
+  if (GetDtlsState(current) == TransportLayer::TS_OPEN) {
+    return current;
+  }
+  if (GetDtlsState(old) == TransportLayer::TS_OPEN) {
+    return old;
+  }
+  return current ? current : old;
+}
+
+TransportLayer::State MediaTransportHandlerSTS::Transport::CurrentDtlsState(
+    bool aIsRtcp) const {
+  return GetDtlsState(GetCurrent(aIsRtcp));
+}
+
+void MediaTransportHandlerSTS::Transport::DeprecateCurrentFlows() {
+  mOldFlow = std::move(mFlow);
+  mOldRtcpFlow = std::move(mRtcpFlow);
+}
+
+void MediaTransportHandlerSTS::Transport::CloseOldFlows() {
+  if (mCloseTimer) {
+    mCloseTimer->Cancel();
+    mCloseTimer = nullptr;
+  }
+  mOldFlow = nullptr;
+  mOldRtcpFlow = nullptr;
+}
+
+MediaTransportHandlerSTS::Transport::DtlsState
+MediaTransportHandlerSTS::Transport::ComputeDtlsState(bool aIsRtcp) const {
+  DtlsState result;
+  result.mState = CurrentDtlsState(aIsRtcp);
+  const bool currentOpen = result.mState == TransportLayer::TS_OPEN;
+  const bool currentDead = result.mState == TransportLayer::TS_ERROR ||
+                           result.mState == TransportLayer::TS_CLOSED;
+  const bool oldOpen = GetDtlsState(GetOld(aIsRtcp)) == TransportLayer::TS_OPEN;
+
+  // Report the current association's state. The one exception: while the
+  // old association is still carrying media, a new one that is not yet up
+  // is reported as connected, much like ICE is during an ICE restart.
+  if (!currentOpen && !currentDead && oldOpen) {
+    result.mState = TransportLayer::TS_OPEN;
+  }
+
+  if (result.mState == TransportLayer::TS_OPEN && !aIsRtcp) {
+    // Don't surface a new fingerprint before the new association is up.
+    TransportLayerDtls* connected =
+        GetDtlsLayer(currentOpen ? GetCurrent(aIsRtcp) : GetOld(aIsRtcp));
+    if (NS_WARN_IF(!connected)) {
+      MOZ_ASSERT(false);
+    } else {
+      result.mRemoteCerts = connected->GetPeerCertChainDer();
+    }
+  }
+  return result;
+}
+
+Maybe<MediaTransportHandlerSTS::Transport::DtlsState>
+MediaTransportHandlerSTS::Transport::UpdateDtlsState(bool aIsRtcp) {
+  DtlsState newState = ComputeDtlsState(aIsRtcp);
+  DtlsState& currentState = aIsRtcp ? mReportedRtcpState : mReportedDtlsState;
+  if (newState == currentState) {
+    return Nothing();
+  }
+  currentState = newState;
+  return Some(std::move(newState));
+}
+
+MediaTransportHandlerSTS::Transport::DtlsState::DtlsState(
+    const DtlsState& aOther)
+    : mState(aOther.mState) {
+  // Not only does nsTArray not have copy/assignment, Clone() doesn't work on
+  // nested nsTArray either, because Clone() tries to copy elements. :(
+  for (const auto& cert : aOther.mRemoteCerts) {
+    mRemoteCerts.AppendElement(cert.Clone());
+  }
+}
+
+MediaTransportHandlerSTS::Transport::DtlsState&
+MediaTransportHandlerSTS::Transport::DtlsState::operator=(
+    const DtlsState& aOther) {
+  DtlsState copy(aOther);
+  return *this = std::move(copy);
+}
+
+Maybe<std::string> MediaTransportHandlerSTS::Transport::UpdateAlpn() {
+  TransportLayerDtls* connected = GetDtlsLayer(GetSendFlow(false));
+  if (!connected || connected->state() != TransportLayer::TS_OPEN) {
+    return Nothing();
+  }
+  std::string alpn = connected->GetNegotiatedAlpn();
+  if (alpn.empty() || alpn == mReportedAlpn) {
+    return Nothing();
+  }
+  mReportedAlpn = alpn;
+  return Some(std::move(alpn));
+}
+
 RefPtr<TransportFlow> MediaTransportHandlerSTS::GetTransportFlow(
     const std::string& aTransportId, bool aIsRtcp) const {
   auto it = mTransports.find(aTransportId);
   if (it == mTransports.end()) {
     return nullptr;
   }
-
-  if (aIsRtcp) {
-    return it->second.mRtcpFlow ? it->second.mRtcpFlow : it->second.mFlow;
-    ;
-  }
-
-  return it->second.mFlow;
+  return it->second.GetSendFlow(aIsRtcp);
 }
 
 RefPtr<TransportFlow> MediaTransportHandlerSTS::CreateTransportFlow(
@@ -1679,7 +1914,7 @@ void MediaTransportHandlerSTS::OnCandidateFound(
   NrIceCandidate defaultRtcpCandidate;
   nsresult rv = aStream->GetDefaultCandidate(1, &defaultRtpCandidate);
   if (NS_SUCCEEDED(rv)) {
-    if (!defaultRtpCandidate.mdns_addr.empty()) {
+    if (!defaultRtpCandidate.domain_name.empty()) {
       info.mDefaultHostRtp = "0.0.0.0";
       info.mDefaultPortRtp = 9;
     } else {
@@ -1696,12 +1931,13 @@ void MediaTransportHandlerSTS::OnCandidateFound(
 
   // Optional; component won't exist if doing rtcp-mux
   if (NS_SUCCEEDED(aStream->GetDefaultCandidate(2, &defaultRtcpCandidate))) {
-    if (!defaultRtcpCandidate.mdns_addr.empty()) {
-      info.mDefaultHostRtcp = defaultRtcpCandidate.mdns_addr;
+    if (!defaultRtcpCandidate.domain_name.empty()) {
+      info.mDefaultHostRtcp = "0.0.0.0";
+      info.mDefaultPortRtcp = 9;
     } else {
       info.mDefaultHostRtcp = defaultRtcpCandidate.cand_addr.host;
+      info.mDefaultPortRtcp = defaultRtcpCandidate.cand_addr.port;
     }
-    info.mDefaultPortRtcp = defaultRtcpCandidate.cand_addr.port;
   }
 
   info.mMDNSAddress = aMDNSAddr;
@@ -1725,63 +1961,157 @@ void MediaTransportHandlerSTS::OnCandidateError(NrIceMediaStream* aStream,
   OnCandidateError(std::move(info));
 }
 
-dom::RTCErrorParams GetErrorInfo(const TransportLayerDtls& aDtlsLayer) {
+// Returns Nothing unless the error originated in DTLS itself; an error in the
+// layer below us (ie; ICE) is not a DTLS error, and webrtc-pc does not want us
+// to fire an error event on RTCDtlsTransport for it.
+Maybe<dom::RTCErrorParams> GetErrorInfo(const TransportLayerDtls& aDtlsLayer) {
   dom::RTCErrorInit error;
   if (aDtlsLayer.HasFingerprintError()) {
     // We might have sent an alert for this, but webrtc-pc says sendAlert is
     // only set when the error detail is "dtls-failure".
     error.mErrorDetail = dom::RTCErrorDetailType::Fingerprint_failure;
-  } else {
+  } else if (aDtlsLayer.HasDtlsFailureError()) {
     error.mErrorDetail = dom::RTCErrorDetailType::Dtls_failure;
     // Spec says these cannot be set in the "fingerprint-failure" case
     aDtlsLayer.GetSentAlert().apply(
         [&](auto value) { error.mSentAlert.Construct(value); });
     aDtlsLayer.GetReceivedAlert().apply(
         [&](auto value) { error.mReceivedAlert.Construct(value); });
+  } else {
+    return Nothing();
   }
 
-  return dom::RTCErrorParams{error, aDtlsLayer.GetErrorDescription()};
+  return Some(dom::RTCErrorParams{error, aDtlsLayer.GetErrorDescription()});
 }
 
 void MediaTransportHandlerSTS::OnStateChange(TransportLayer* aLayer,
-                                             TransportLayer::State aState) {
-  nsTArray<nsTArray<uint8_t>> remoteCerts;
-
+                                             TransportLayer::State) {
   MOZ_ASSERT(aLayer->id() == TransportLayerDtls::ID());
-  Maybe<dom::RTCErrorParams> error;
-  TransportLayerDtls* dtlsLayer = static_cast<TransportLayerDtls*>(aLayer);
-  if (aState == TransportLayer::TS_OPEN) {
-    OnAlpnNegotiated(dtlsLayer->GetNegotiatedAlpn());
-    remoteCerts = dtlsLayer->GetPeerCertChainDer();
-  } else if (aState == TransportLayer::TS_ERROR) {
-    error = Some(GetErrorInfo(*dtlsLayer));
-  }
-
-  // DTLS state indicates the readiness of the transport as a whole, because
-  // SRTP uses the keys from the DTLS handshake.
-  MediaTransportHandler::OnStateChange(
-      aLayer->flow_id(), aState, std::move(remoteCerts), std::move(error));
+  UpdateReportedState(aLayer->flow_id(), /* aIsRtcp = */ false);
 }
 
 void MediaTransportHandlerSTS::OnRtcpStateChange(TransportLayer* aLayer,
-                                                 TransportLayer::State aState) {
+                                                 TransportLayer::State) {
   MOZ_ASSERT(aLayer->id() == TransportLayerDtls::ID());
-  Maybe<dom::RTCErrorParams> error;
-  TransportLayerDtls* dtlsLayer = static_cast<TransportLayerDtls*>(aLayer);
-  if (aState == TransportLayer::TS_ERROR) {
-    error = Some(GetErrorInfo(*dtlsLayer));
+  UpdateReportedState(aLayer->flow_id(), /* aIsRtcp = */ true);
+}
+
+void MediaTransportHandlerSTS::UpdateReportedState(
+    const std::string& aTransportId, bool aIsRtcp) {
+  auto it = mTransports.find(aTransportId);
+  if (it == mTransports.end()) {
+    return;
+  }
+  Transport& transport = it->second;
+
+  if (!aIsRtcp && transport.mOldFlow) {
+    switch (transport.CurrentDtlsState(aIsRtcp)) {
+      case TransportLayer::TS_OPEN:
+        ScheduleOldFlowClose(aTransportId, kOldFlowGraceMs);
+        break;
+      case TransportLayer::TS_ERROR:
+      case TransportLayer::TS_CLOSED:
+        // RFC 8842 section 5.5 notes "be prepared to receive data on both the
+        // new and old DTLS associations as long as both are alive". Only the
+        // old association is alive now, so we stop using it instead of sending
+        // to it indefinitely. Content sees the failure and can restart again.
+        ScheduleOldFlowClose(aTransportId, 0);
+        // Do not fire the error/closure event just yet, otherwise packet
+        // listeners might see packets *after* that event. We update the state
+        // when the old flow is actually closed.
+        return;
+      case TransportLayer::TS_NONE:
+      case TransportLayer::TS_INIT:
+      case TransportLayer::TS_CONNECTING:
+        break;
+    }
   }
 
-  MediaTransportHandler::OnRtcpStateChange(aLayer->flow_id(), aState,
-                                           std::move(error));
+  if (!aIsRtcp) {
+    if (Maybe<std::string> alpn = transport.UpdateAlpn()) {
+      OnAlpnNegotiated(*alpn);
+    }
+  }
+
+  Maybe<Transport::DtlsState> newState = transport.UpdateDtlsState(aIsRtcp);
+  if (!newState) {
+    return;
+  }
+
+  Maybe<dom::RTCErrorParams> error;
+  if (newState->mState == TransportLayer::TS_ERROR) {
+    // Only the current association's failure is ever reported.
+    auto dtlsLayer = GetDtlsLayer(transport.GetCurrent(aIsRtcp));
+    if (NS_WARN_IF(!dtlsLayer)) {
+      MOZ_ASSERT(false);
+    } else {
+      error = GetErrorInfo(*dtlsLayer);
+    }
+  }
+
+  if (aIsRtcp) {
+    MediaTransportHandler::OnRtcpStateChange(aTransportId, newState->mState,
+                                             std::move(error));
+  } else {
+    MediaTransportHandler::OnStateChange(aTransportId, newState->mState,
+                                         std::move(newState->mRemoteCerts),
+                                         std::move(error));
+  }
+}
+
+void MediaTransportHandlerSTS::ScheduleOldFlowClose(
+    const std::string& aTransportId, uint32_t aDelayMs) {
+  auto it = mTransports.find(aTransportId);
+  if (it == mTransports.end() || !it->second.mOldFlow) {
+    return;
+  }
+  Transport& transport = it->second;
+  if (transport.mCloseTimer) {
+    // Close is already scheduled...
+    if (aDelayMs) {
+      // ...but we don't bother adjusting the duration, unless...
+      return;
+    }
+    // ...we've been asked to close immediately. Hurry things along.
+    transport.mCloseTimer->Cancel();
+  }
+  NS_NewTimerWithCallback(
+      getter_AddRefs(transport.mCloseTimer),
+      [this, self = RefPtr<MediaTransportHandlerSTS>(this),
+       aTransportId](nsITimer*) { CloseOldFlows(aTransportId); },
+      aDelayMs, nsITimer::TYPE_ONE_SHOT,
+      "MediaTransportHandlerSTS::CloseOldFlows"_ns, mStsThread);
+}
+
+void MediaTransportHandlerSTS::CloseOldFlows(const std::string& aTransportId) {
+  auto it = mTransports.find(aTransportId);
+  if (it == mTransports.end() || !it->second.mOldFlow) {
+    return;
+  }
+  CSFLogInfo(LOGTAG, "Closing old DTLS association on transport %s",
+             aTransportId.c_str());
+  it->second.CloseOldFlows();
+  if (mIceCtx) {
+    if (RefPtr<NrIceMediaStream> stream = mIceCtx->GetStream(aTransportId)) {
+      stream->CloseOldStream();
+    }
+  }
+  UpdateReportedState(aTransportId, /* aIsRtcp = */ false);
+  UpdateReportedState(aTransportId, /* aIsRtcp = */ true);
 }
 
 void MediaTransportHandlerSTS::PacketReceived(TransportLayer* aLayer,
                                               MediaPacket& aPacket) {
   MEDIA_TRANSPORT_HANDLER_PACKET_RECEIVED(aPacket);
   if (auto it = mTransports.find(aLayer->flow_id()); it != mTransports.end()) {
-    it->second.mBytesReceived += aPacket.len();
-    it->second.mPacketsReceived += 1;
+    Transport& transport = it->second;
+    transport.mBytesReceived += aPacket.len();
+    transport.mPacketsReceived += 1;
+    if (transport.mOldFlow && transport.mFlow &&
+        transport.mFlow->GetLayer(aLayer->id()) == aLayer) {
+      // The peer is sending on the new association.
+      ScheduleOldFlowClose(std::string(aLayer->flow_id()), 0);
+    }
   }
   OnPacketReceived(std::string(aLayer->flow_id()), std::move(aPacket));
 }

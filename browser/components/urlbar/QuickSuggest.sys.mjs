@@ -96,7 +96,6 @@ const REGION_LOCALE_DEFAULTS_EU_157_BOOLEAN = {
  * an object with the following properties:
  *
  * @type {{[key: string]: SuggestPrefsRecord}}
- * {object} defaultValues
  */
 const SUGGEST_PREFS = Object.freeze({
   // Prefs related to Suggest overall

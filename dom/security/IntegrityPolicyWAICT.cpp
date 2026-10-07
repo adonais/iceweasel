@@ -451,7 +451,6 @@ void IntegrityPolicyWAICT::ReportViolation(
 
   nsAutoCString documentURL;
   ReportingUtils::StripURL(mDocumentURI, documentURL);
-  NS_ConvertUTF8toUTF16 documentURLUTF16(documentURL);
 
   nsAutoCString blockedURL;
   ReportingUtils::StripURL(aURI, blockedURL);
@@ -475,9 +474,8 @@ void IntegrityPolicyWAICT::ReportViolation(
                                          destination, !mEnforce,
                                          Nullable(aReason));
 
-    ReportingUtils::Report(global, nsGkAtoms::integrity_violation,
-                           NS_ConvertUTF8toUTF16(endpoint), documentURLUTF16,
-                           body);
+    ReportingUtils::Report(global, nsGkAtoms::integrity_violation, endpoint,
+                           documentURL, body);
   }
 }
 

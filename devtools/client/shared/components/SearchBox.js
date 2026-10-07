@@ -85,9 +85,7 @@ class SearchBox extends PureComponent {
       return;
     }
 
-    this.shortcuts = new KeyShortcuts({
-      window,
-    });
+    this.shortcuts = new KeyShortcuts(window);
     this.shortcuts.on(this.props.keyShortcut, event => {
       if (this.props.onFocusKeyboardShortcut?.(event)) {
         return;

@@ -190,6 +190,18 @@ const gLoggingPresets = {
       description: "about-logging-preset-navigation-description",
     },
   },
+  vpn: {
+    modules:
+      "IPP_ProxyManager:5,IPP_GuardianClient:5,IPP_GuardianTypes:5,IPP_Serverlist:5,IPP_NetworkUtils:5,IPP_AlwaysOn:5,IPP_EnterpriseAuthProvider:5,IPP_FxaActivateAuthProvider:5,IPP_SiteRuleManager:5,IPP_SiteRuleProviders:5,GeckoView.IPProtection:5",
+    l10nIds: {
+      label: "about-logging-preset-vpn-label",
+      description: "about-logging-preset-vpn-description",
+    },
+    // The IP Protection log modules all run on the parent process main thread;
+    // firefox-platform records GeckoMain so the log markers are captured.
+    profilerPreset: "firefox-platform",
+    javascriptTracing: true,
+  },
   ...gOsSpecificLoggingPresets,
   custom: {
     modules: "",
@@ -260,6 +272,7 @@ function populatePresets() {
     }
     setPresetAndDescription(dropdown.value);
     Services.prefs.setCharPref("logging.config.preset", dropdown.value);
+    updateJavascriptTracing();
   };
 
   $("#log-modules").value = gLoggingPresets[dropdown.value].modules;
@@ -268,6 +281,13 @@ function populatePresets() {
   $("#log-modules").oninput = () => {
     dropdown.value = "custom";
   };
+}
+
+function updateJavascriptTracing() {
+  const preset = gLoggingPresets[gLoggingSettings.loggingPreset];
+  $("#with-javascript-tracing-checkbox").checked =
+    !!preset?.javascriptTracing ||
+    Services.prefs.getBoolPref("logging.config.javascriptTracing", false);
 }
 
 function updateLoggingOutputType(profilerOutputType) {
@@ -519,6 +539,15 @@ function init() {
   gDashboard.enableLogging = true;
 
   populatePresets();
+
+  // This must happen before parseURL, otherwise it would clobber the logging
+  // preset the URL parameters have selected: setting the module list from the
+  // URL switches the dropdown to "custom", which writes "custom" to this pref.
+  try {
+    let loggingPreset = Services.prefs.getCharPref("logging.config.preset");
+    gLoggingSettings.loggingPreset = loggingPreset;
+  } catch {}
+
   parseURL();
 
   $("#log-file-configuration").addEventListener("submit", e => {
@@ -570,15 +599,7 @@ function init() {
     false
   );
 
-  $("#with-javascript-tracing-checkbox").checked = Services.prefs.getBoolPref(
-    "logging.config.javascriptTracing",
-    false
-  );
-
-  try {
-    let loggingPreset = Services.prefs.getCharPref("logging.config.preset");
-    gLoggingSettings.loggingPreset = loggingPreset;
-  } catch {}
+  updateJavascriptTracing();
 
   try {
     let running = Services.prefs.getBoolPref("logging.config.running");
@@ -902,7 +923,7 @@ function startLogging() {
         features.push("audiocallbacktracing");
       }
     }
-    if (Services.prefs.getBoolPref("logging.config.javascriptTracing", false)) {
+    if ($("#with-javascript-tracing-checkbox").checked) {
       dump(" add tracing\n");
       features.push("tracing");
     }

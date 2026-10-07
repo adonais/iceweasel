@@ -39,7 +39,7 @@ use tracy_rs::register_thread_with_profiler;
 use webrender::render_backend_pool::{PoolMemberSetup, RenderBackendPool};
 use webrender::sw_compositor::SwCompositor;
 use webrender::{
-    api::units::*, api::*, create_webrender_instance, render_api::*, set_profiler_hooks, AsyncPropertySampler,
+    api::units::*, api::*, create_webrender_instance, render_api::*, set_profiler_hooks, AsyncPropertySampler, GpuBackendConfig,
     AsyncScreenshotHandle, ClipRadius, Compositor, CompositorCapabilities, CompositorConfig, CompositorInputConfig,
     CompositorKind, CompositorSurfaceTransform, CompositorSurfaceUsage, Device, DeviceOptions, FrameBuilderConfig,
     LayerCompositor,
@@ -1425,7 +1425,7 @@ fn wr_device_new(gl_context: *mut c_void, pc: Option<&mut WrProgramCache>) -> De
     let cached_programs = pc.map(|cached_programs| Rc::clone(cached_programs.rc_get()));
 
     Device::new(
-        gl,
+        GpuBackendConfig::Gl(gl),
         DeviceOptions {
             crash_annotator: Some(Box::new(MozCrashAnnotator)),
             resource_override_path,
@@ -2351,7 +2351,7 @@ pub extern "C" fn wr_window_new(
 
     let window_size = DeviceIntSize::new(window_width, window_height);
     let notifier = Box::new(CppNotifier { window_id });
-    let (renderer, sender) = match create_webrender_instance(gl, notifier, opts, shaders.map(|sh| &sh.shaders)) {
+    let (renderer, sender) = match create_webrender_instance(GpuBackendConfig::Gl(gl), notifier, opts, shaders.map(|sh| &sh.shaders)) {
         Ok((renderer, sender)) => (renderer, sender),
         Err(e) => {
             warn!(" Failed to create a Renderer: {:?}", e);
@@ -3747,6 +3747,7 @@ pub extern "C" fn wr_dp_push_image(
     color: ColorF,
     prefer_compositor_surface: bool,
     supports_external_compositing: bool,
+    rasterized_for_rect: bool,
 ) {
     debug_assert!(unsafe { is_in_main_thread() || is_in_compositor_thread() });
 
@@ -3760,6 +3761,9 @@ pub extern "C" fn wr_dp_push_image(
 
     if force_antialiasing {
         flags |= PrimitiveFlags::ANTIALISED;
+    }
+    if rasterized_for_rect {
+        flags |= PrimitiveFlags::RASTERIZED_FOR_RECT;
     }
 
     let prim_info = CommonItemProperties {
@@ -4272,8 +4276,8 @@ pub extern "C" fn wr_dp_push_border_gradient(
     height: i32,
     fill: bool,
     slice: DeviceIntSideOffsets,
-    start_point: LayoutPoint,
-    end_point: LayoutPoint,
+    start_point: LayoutVector2D,
+    end_point: LayoutVector2D,
     stops: *const GradientStop,
     stops_count: usize,
     extend_mode: ExtendMode,
@@ -4323,7 +4327,7 @@ pub extern "C" fn wr_dp_push_border_radial_gradient(
     parent: &WrSpaceAndClipChain,
     widths: LayoutSideOffsets,
     fill: bool,
-    center: LayoutPoint,
+    center: LayoutVector2D,
     radius: LayoutSize,
     stops: *const GradientStop,
     stops_count: usize,
@@ -4381,7 +4385,7 @@ pub extern "C" fn wr_dp_push_border_conic_gradient(
     parent: &WrSpaceAndClipChain,
     widths: LayoutSideOffsets,
     fill: bool,
-    center: LayoutPoint,
+    center: LayoutVector2D,
     angle: f32,
     stops: *const GradientStop,
     stops_count: usize,
@@ -4437,8 +4441,8 @@ pub extern "C" fn wr_dp_push_linear_gradient(
     clip: LayoutRect,
     is_backface_visible: bool,
     parent: &WrSpaceAndClipChain,
-    start_point: LayoutPoint,
-    end_point: LayoutPoint,
+    start: LayoutVector2D,
+    end: LayoutVector2D,
     stops: *const GradientStop,
     stops_count: usize,
     extend_mode: ExtendMode,
@@ -4454,7 +4458,7 @@ pub extern "C" fn wr_dp_push_linear_gradient(
         state
             .frame_builder
             .dl_builder
-            .create_gradient(start_point, end_point, stops_vector, extend_mode);
+            .create_gradient(start, end, stops_vector, extend_mode);
 
     let space_and_clip = parent.to_webrender(state.pipeline_id);
 
@@ -4478,7 +4482,7 @@ pub extern "C" fn wr_dp_push_radial_gradient(
     clip: LayoutRect,
     is_backface_visible: bool,
     parent: &WrSpaceAndClipChain,
-    center: LayoutPoint,
+    center: LayoutVector2D,
     radius: LayoutSize,
     stops: *const GradientStop,
     stops_count: usize,
@@ -4523,7 +4527,7 @@ pub extern "C" fn wr_dp_push_conic_gradient(
     clip: LayoutRect,
     is_backface_visible: bool,
     parent: &WrSpaceAndClipChain,
-    center: LayoutPoint,
+    center: LayoutVector2D,
     angle: f32,
     stops: *const GradientStop,
     stops_count: usize,

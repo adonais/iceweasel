@@ -177,12 +177,12 @@ class ZoneList {
   Zone* removeFront();
   void clear();
 
+  ZoneList(const ZoneList& other) = delete;
+  ZoneList& operator=(const ZoneList& other) = delete;
+
  private:
   explicit ZoneList(Zone* singleZone);
   void check() const;
-
-  ZoneList(const ZoneList& other) = delete;
-  ZoneList& operator=(const ZoneList& other) = delete;
 };
 
 struct WeakCacheToSweep {
@@ -909,10 +909,12 @@ class GCRuntime {
   bool prepareZonesForCollection(bool* isFullOut);
   void endPreparePhase();
   void beginMarkPhase(AutoGCSession& session);
-  bool shouldPreserveJITCode(JS::Realm* realm,
-                             const mozilla::TimeStamp& currentTime,
-                             bool canAllocateMoreCode,
-                             bool isActiveCompartment);
+  bool shouldRealmPreserveJitCode(JS::Realm* realm,
+                                  const mozilla::TimeStamp& currentTime);
+  void setRealmPreserveJitCodeFlags(JS::Zone* zone,
+                                    const mozilla::TimeStamp& currentTime,
+                                    bool canAllocateMoreCode);
+  void clearRealmPreserveJitCodeFlags(JS::Zone* zone);
   void maybeDiscardJitCodeForGC();
   void startBackgroundFreeAfterMinorGC();
   void relazifyFunctionsForShrinkingGC();

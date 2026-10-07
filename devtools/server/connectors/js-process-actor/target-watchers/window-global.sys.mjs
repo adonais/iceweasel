@@ -118,16 +118,6 @@ function createTargetsForWatcher(watcherDataObject, isProcessActorStartup) {
         })
       ) {
         createWindowGlobalTargetActor(watcherDataObject, windowGlobalChild);
-      } else if (
-        !browsingContext.parent &&
-        sessionContext.browserId &&
-        browsingContext.browserId == sessionContext.browserId &&
-        browsingContext.window.document.isInitialDocument
-      ) {
-        // In order to succesfully get the devtools-html-content event in SourcesManager,
-        // we have to ensure flagging the initial about:blank document...
-        // While we don't create a target for it, we need to set this flag for this event to be emitted.
-        browsingContext.watchedByDevTools = true;
       }
     }
   }

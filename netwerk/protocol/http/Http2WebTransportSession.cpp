@@ -83,6 +83,18 @@ nsresult Http2WebTransportSessionImpl::ExportKeyingMaterial(
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+void Http2WebTransportSessionImpl::GetStats() {
+  // HTTP/2 WebTransport has no equivalent to QUIC's per-connection
+  // congestion-control stats. Resolve with an all-zero WebTransportStatsData
+  // so getStats()'s Promise settles instead of staying pending forever.
+  if (RefPtr<WebTransportSessionEventListener> listener = GetListener()) {
+    mozilla::dom::WebTransportStatsData stats;
+    nsCOMPtr<nsIWebTransportSessionStats> statsWrapper =
+        new WebTransportSessionStatsWrapper(stats);
+    listener->OnStatsAvailable(statsWrapper);
+  }
+}
+
 nsresult Http2WebTransportSessionImpl::RegisterSendGroup(uint64_t aGroupId) {
   // HTTP/2 WebTransport doesn't support send group scheduling.
   return NS_OK;

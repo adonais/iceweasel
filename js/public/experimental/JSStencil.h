@@ -89,7 +89,6 @@ struct JS_PUBLIC_API InstantiationStorage {
     other.gcOutput_ = nullptr;
   }
 
- private:
   InstantiationStorage(const InstantiationStorage& other) = delete;
   void operator=(const InstantiationStorage& aOther) = delete;
 

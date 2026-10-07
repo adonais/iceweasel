@@ -853,7 +853,7 @@ SECMODModule *
 SECMOD_ReferenceModule(SECMODModule *module)
 {
     PR_Lock(module->refLock);
-    PORT_Assert(module->refCount > 0);
+    PORT_ReleaseAssert(module->refCount > 0);
 
     module->refCount++;
     PR_Unlock(module->refLock);
@@ -869,10 +869,10 @@ SECMOD_DestroyModule(SECMODModule *module)
     int i;
 
     PR_Lock(module->refLock);
+    PORT_ReleaseAssert(module->refCount > 0);
     if (module->refCount-- == 1) {
         willfree = PR_TRUE;
     }
-    PORT_Assert(willfree || (module->refCount > 0));
     PR_Unlock(module->refLock);
 
     if (!willfree) {

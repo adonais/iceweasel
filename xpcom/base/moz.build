@@ -329,3 +329,8 @@ with Files("PHCManager.*"):
 
 with Files("*KeyedUUIDMapper*"):
     BUG_COMPONENT = ("WebExtensions", "General")
+
+LICENSED_UNDER += ["apple"]
+LICENSED_UNDER["apple"].paths = [
+    "DarwinObjectPtr.h",
+]

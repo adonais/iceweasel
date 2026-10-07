@@ -11,10 +11,14 @@ import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.ext.nav
+import org.mozilla.fenix.home.intent.StartSearchIntentProcessor.Companion.PRIVATE_BROWSING_PINNED_SHORTCUT
 import org.mozilla.fenix.utils.Settings
 
 /**
  * Responds to [HomeActivity.OPEN_TO_HOME] flag when the browser should open the homepage in response to an intent.
+ *
+ * Also responds to [PRIVATE_BROWSING_PINNED_SHORTCUT] when homepage as a new tab is enabled, so that shortcuts pinned
+ * before that setting existed open the private homepage rather than focusing the address bar.
  *
  * @param fenixBrowserUseCases [FenixBrowserUseCases] used to add a new homepage tab.
  * @param browsingModeManager [BrowsingModeManager] used to get and set the browsing mode.
@@ -24,8 +28,13 @@ class OpenHomeIntentProcessor(
     private val browsingModeManager: BrowsingModeManager,
 ) : HomeIntentProcessor {
     override fun process(intent: Intent, navController: NavController, out: Intent, settings: Settings): Boolean {
-        return if (intent.extras?.getBoolean(HomeActivity.OPEN_TO_HOME) == true) {
+        return if (
+            intent.extras?.getBoolean(HomeActivity.OPEN_TO_HOME) == true ||
+                (intent.extras?.getString(HomeActivity.OPEN_TO_SEARCH) == PRIVATE_BROWSING_PINNED_SHORTCUT &&
+                    settings.enableHomepageAsNewTab)
+        ) {
             out.putExtra(HomeActivity.OPEN_TO_HOME, false)
+            out.removeExtra(HomeActivity.OPEN_TO_SEARCH)
 
             browsingModeManager.updateMode(intent)
             fenixBrowserUseCases.addNewHomepageTab(private = browsingModeManager.mode.isPrivate)

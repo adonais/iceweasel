@@ -19,7 +19,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.BuildConfig
-import org.mozilla.fenix.R
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 
@@ -27,6 +26,8 @@ import org.robolectric.Shadows.shadowOf
 class PrivacyReportNotificationHelperTest {
 
     private lateinit var notificationsDelegate: NotificationsDelegate
+
+    private val content = PrivacyReportNotificationContent(title = "A title", text = "Some text")
 
     @Before
     fun setUp() {
@@ -57,7 +58,7 @@ class PrivacyReportNotificationHelperTest {
 
     @Test
     fun `WHEN showPrivacyReportNotification is called THEN a notification is shown with click and dismiss intents`() {
-        showPrivacyReportNotification(testContext, notificationsDelegate, trackersBlockedCount = 5)
+        showPrivacyReportNotification(testContext, notificationsDelegate, content)
 
         val notificationManager = testContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notifications = shadowOf(notificationManager).allNotifications
@@ -68,24 +69,19 @@ class PrivacyReportNotificationHelperTest {
     }
 
     @Test
-    fun `WHEN showPrivacyReportNotification is called with no trackersBlockedCount THEN the no-trackers headline is shown with no body text`() {
-        showPrivacyReportNotification(testContext, notificationsDelegate)
+    fun `WHEN showPrivacyReportNotification is called THEN the notification shows the content title and text`() {
+        showPrivacyReportNotification(testContext, notificationsDelegate, content)
 
         val notificationManager = testContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notification = shadowOf(notificationManager).allNotifications.first()
 
-        val expectedTitle =
-            testContext.getString(
-                R.string.notification_privacy_report_headline_no_trackers,
-                testContext.getString(R.string.app_name),
-            )
-        assertEquals(expectedTitle, shadowOf(notification).contentTitle)
-        assertEquals("", shadowOf(notification).contentText)
+        assertEquals(content.title, shadowOf(notification).contentTitle)
+        assertEquals(content.text, shadowOf(notification).contentText)
     }
 
     @Test
     fun `WHEN showPrivacyReportNotification is called THEN the click intent opens the deep link directly and the dismiss intent targets the receiver`() {
-        showPrivacyReportNotification(testContext, notificationsDelegate, trackersBlockedCount = 5)
+        showPrivacyReportNotification(testContext, notificationsDelegate, content)
 
         val notificationManager = testContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notification = shadowOf(notificationManager).allNotifications.first()

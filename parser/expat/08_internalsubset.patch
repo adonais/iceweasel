@@ -1,7 +1,7 @@
 diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
 --- a/expat/lib/xmlparse.c
 +++ b/expat/lib/xmlparse.c
-@@ -6264,7 +6264,13 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
+@@ -6338,7 +6338,13 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
            entityTrackingOnOpen(parser, entity, __LINE__);
            beforeHandler(parser);
            const int status = parser->m_externalEntityRefHandler(

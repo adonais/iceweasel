@@ -65,6 +65,9 @@ class MOZ_STACK_CLASS JS_PUBLIC_API AutoStableStringChars final {
   explicit AutoStableStringChars(JSContext* cx)
       : s_(cx), state_(Uninitialized) {}
 
+  AutoStableStringChars(const AutoStableStringChars& other) = delete;
+  void operator=(const AutoStableStringChars& other) = delete;
+
   [[nodiscard]] bool init(JSContext* cx, JSString* s);
 
   /* Like init(), but Latin1 chars are inflated to TwoByte. */
@@ -109,9 +112,6 @@ class MOZ_STACK_CLASS JS_PUBLIC_API AutoStableStringChars final {
   }
 
  private:
-  AutoStableStringChars(const AutoStableStringChars& other) = delete;
-  void operator=(const AutoStableStringChars& other) = delete;
-
   template <typename T>
   T* allocOwnChars(JSContext* cx, size_t count);
   bool copyLatin1Chars(JSContext* cx, JSLinearString* linearString);

@@ -80,6 +80,22 @@ class SettingsSavedPasswordsPage(composeRule: AndroidComposeTestRule<HomeActivit
                     NavigationStep.ClickIfPresent(SettingsSelectors.GO_BACK_BUTTON),
                 ),
         )
+
+        // "Saved passwords" is a one-tap option on the Passwords settings screen. There is no reverse edge:
+        // saved passwords can also be opened from the main-menu "Passwords" shortcut (whose back parent is the
+        // browser, not this screen), so a single "Navigate up" is not a reliable route back to Passwords.
+        builder.register(
+            from = "SettingsPasswordsPage",
+            to = pageName,
+            steps =
+                listOf(
+                    NavigationStep.Click(SettingsPasswordsSelectors.SAVED_PASSWORDS_OPTION),
+                    NavigationStep.ClickIfPresent(
+                        SettingsSavedPasswordsSelectors.LOGINS_SECURITY_DIALOG_LATER_BUTTON,
+                        timeout = 5_000,
+                    ),
+                ),
+        )
     }
 
     override val selectorCatalog = SettingsSavedPasswordsSelectors

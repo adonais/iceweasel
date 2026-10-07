@@ -588,19 +588,19 @@ static int nr_ice_get_default_address(nr_ice_ctx *ctx, int ip_version, nr_transp
 
     switch(ip_version) {
       case NR_IPV4:
-        if ((r=nr_str_port_to_transport_addr("0.0.0.0", 0, IPPROTO_UDP, &addr)))
+        if ((r=nr_str_port_to_transport_addr("0.0.0.0", nullptr, 0, IPPROTO_UDP, &addr)))
           ABORT(r);
         if (!remote_addr || nr_transport_addr_is_loopback(remote_addr)) {
-          if ((r=nr_str_port_to_transport_addr("8.8.8.8", 53, IPPROTO_UDP, &known_remote_addr)))
+          if ((r=nr_str_port_to_transport_addr("8.8.8.8", nullptr, 53, IPPROTO_UDP, &known_remote_addr)))
             ABORT(r);
           remote_addr=&known_remote_addr;
         }
         break;
       case NR_IPV6:
-        if ((r=nr_str_port_to_transport_addr("::0", 0, IPPROTO_UDP, &addr)))
+        if ((r=nr_str_port_to_transport_addr("::0", nullptr, 0, IPPROTO_UDP, &addr)))
           ABORT(r);
         if (!remote_addr || nr_transport_addr_is_loopback(remote_addr)) {
-          if ((r=nr_str_port_to_transport_addr("2001:4860:4860::8888", 53, IPPROTO_UDP, &known_remote_addr)))
+          if ((r=nr_str_port_to_transport_addr("2001:4860:4860::8888", nullptr, 53, IPPROTO_UDP, &known_remote_addr)))
             ABORT(r);
           remote_addr=&known_remote_addr;
         }
@@ -827,7 +827,7 @@ int nr_ice_set_target_for_default_local_address_lookup(nr_ice_ctx *ctx, const ch
     if (!(ctx->target_for_default_local_address_lookup=R_NEW(nr_transport_addr)))
       ABORT(R_NO_MEMORY);
 
-    if ((r=nr_str_port_to_transport_addr(target_ip, target_port, IPPROTO_UDP, ctx->target_for_default_local_address_lookup))) {
+    if ((r=nr_str_port_to_transport_addr(target_ip, nullptr, target_port, IPPROTO_UDP, ctx->target_for_default_local_address_lookup))) {
       ABORT(r);
     }
 

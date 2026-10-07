@@ -10,7 +10,7 @@ const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
 const { PreferencesBackupResource } = ChromeUtils.importESModule(
-  "resource:///modules/backup/PreferencesBackupResource.sys.mjs"
+  "moz-src:///browser/components/backup/resources/PreferencesBackupResource.sys.mjs"
 );
 
 NimbusTestUtils.init(this);

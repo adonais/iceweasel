@@ -240,7 +240,7 @@ class RenderCompositor {
   }
 #endif
 
-  virtual RefPtr<layers::Fence> GetAndResetReleaseFence() { return nullptr; }
+  virtual RefPtr<layers::Fence> GetAndResetReadFence() { return nullptr; }
 
   virtual bool IsPaused() { return false; }
 

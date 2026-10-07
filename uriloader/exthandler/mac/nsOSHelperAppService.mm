@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "mozilla/net/NeckoCommon.h"
+#include "nsCRTGlue.h"
 #include "nsOSHelperAppService.h"
 #include "nsObjCExceptions.h"
 #include "nsISupports.h"

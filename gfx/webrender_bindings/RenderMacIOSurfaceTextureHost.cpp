@@ -15,7 +15,7 @@
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/gfx/Logging.h"
-#include "mozilla/layers/GpuFence.h"
+#include "mozilla/layers/CompositeProcessFencesHolderMap.h"
 
 namespace mozilla {
 namespace wr {
@@ -42,14 +42,34 @@ static bool CreateTextureForPlane(uint8_t aPlaneID, gl::GLContext* aGL,
 }
 
 RenderMacIOSurfaceTextureHost::RenderMacIOSurfaceTextureHost(
-    MacIOSurface* aSurface, layers::GpuFence* aGpuFence)
-    : mSurface(aSurface), mGpuFence(aGpuFence), mTextureHandles{0, 0, 0} {
+    MacIOSurface* aSurface,
+    const Maybe<layers::CompositeProcessFencesHolderId>& aFencesHolderId)
+    : mSurface(aSurface),
+      mFencesHolderId(aFencesHolderId),
+      mTextureHandles{0, 0, 0} {
   MOZ_COUNT_CTOR_INHERITED(RenderMacIOSurfaceTextureHost, RenderTextureHost);
 }
 
 RenderMacIOSurfaceTextureHost::~RenderMacIOSurfaceTextureHost() {
   MOZ_COUNT_DTOR_INHERITED(RenderMacIOSurfaceTextureHost, RenderTextureHost);
   DeleteTextureHandle();
+}
+
+RefPtr<layers::GpuFence> RenderMacIOSurfaceTextureHost::GetGpuFence() {
+  if (mFencesHolderId.isNothing()) {
+    return nullptr;
+  }
+  auto* fencesHolderMap = layers::CompositeProcessFencesHolderMap::Get();
+  if (!fencesHolderMap) {
+    return nullptr;
+  }
+  RefPtr<layers::Fence> fence =
+      fencesHolderMap->GetWriteFence(mFencesHolderId.ref());
+  if (!fence) {
+    return nullptr;
+  }
+  MOZ_ASSERT(fence->AsGpuFence());
+  return fence->AsGpuFence();
 }
 
 GLuint RenderMacIOSurfaceTextureHost::GetGLHandle(uint8_t aChannelIndex) const {
@@ -108,11 +128,12 @@ wr::WrExternalImage RenderMacIOSurfaceTextureHost::Lock(uint8_t aChannelIndex,
     }
   }
 
-  if (mGpuFence) {
+  RefPtr<layers::GpuFence> writeFence = GetGpuFence();
+  if (writeFence) {
     // This timeout matches the acquisition timeout for the keyed mutex
     // in the D3D11 texture host.
     AUTO_PROFILER_MARKER("Lock MacIOSurfaceTexture", GRAPHICS);
-    mGpuFence->ServerWait(mGL, TimeDuration::FromMilliseconds(10000));
+    writeFence->ServerWait(mGL, TimeDuration::FromMilliseconds(10000));
   } else {
     PROFILER_MARKER_UNTYPED("No GpuFence", GRAPHICS);
   }

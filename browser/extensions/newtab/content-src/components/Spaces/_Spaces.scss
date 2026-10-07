@@ -1,11 +1,13 @@
 // Spaces (Bug 2061742). The content band becomes navigable panels: the active
 // space is in flow, the rest are translated out of the track.
-// Slack between spaces, so the track can clip a little wider than its content
-// without an offscreen space showing through. Must stay larger than the
-// track's overflow-clip-margin.
-$space-gap: 16px;
-
 .nova-enabled .content-full-width.spaces {
+  // Slack between spaces, so the track can clip a little wider than its
+  // content without an offscreen space showing through. Must stay larger than
+  // the track's overflow-clip-margin plus the outward bleed of whatever panel
+  // sits at the neighbouring space's edge. A custom property because that sum
+  // differs per variant and only the thematic one is close to the limit.
+  --space-gap: var(--space-large);
+
   // The frame's ::before bleeds --space-medium outward, so both margins lose
   // that much before they clear anything. The start only has to clear the
   // shortcuts; the end is against the bottom of the page and wants a gap.
@@ -57,7 +59,7 @@ $space-gap: 16px;
     // Load-bearing for telemetry: clipping is what keeps offscreen spaces from
     // reporting impressions. clip rather than hidden so the box can be widened
     // for a focus ring on a card at the panel edge. Must stay smaller than
-    // $space-gap, or the next space shows through.
+    // --space-gap, or the next space shows through.
     overflow: clip;
     overflow-clip-margin: calc(
       var(--focus-outline-width) + var(--focus-outline-offset)
@@ -70,10 +72,10 @@ $space-gap: 16px;
     // Offset in whole spaces, set inline per space. Flipped for RTL here
     // rather than in JS, so nothing has to read the computed direction during
     // render -- the startup cache renders without a window.
-    translate: calc(var(--space-offset) * (100% + #{$space-gap}));
+    translate: calc(var(--space-offset) * (100% + var(--space-gap)));
 
     &:dir(rtl) {
-      translate: calc(var(--space-offset) * -1 * (100% + #{$space-gap}));
+      translate: calc(var(--space-offset) * -1 * (100% + var(--space-gap)));
     }
 
     // Out of flow, so the band's height follows the active space.
@@ -139,6 +141,120 @@ $space-gap: 16px;
     fill: currentColor;
     inline-size: var(--icon-size-medium);
     block-size: var(--icon-size-medium);
+  }
+
+  // Thematic spaces (Bug 2071982). Each space holds the side-by-side pair, so the
+  // two-column grid that _Grid.scss puts on the band goes on the panel instead.
+  // The column boxes and their panels come from the _Grid.scss rules, which list
+  // .spaces-thematic for exactly this. The tablist is the buttons-bottom one.
+  // A Profiles avatar is a context-fill background circle plus a context-stroke
+  // glyph, so both properties have to be declared: the circle is dropped and the
+  // glyph takes the label's colour, tracking the active and inactive tab in both
+  // themes. Ordinary toolbar glyphs paint themselves with context-fill and keep
+  // the fill: currentColor above, so the treatment follows the icon rather than
+  // the layout.
+  .spaces-tab-icon[data-icon-family='avatar'] {
+    -moz-context-properties: fill, stroke;
+    fill: transparent;
+    stroke: currentColor;
+  }
+
+  &.spaces-thematic {
+    // The column panels bleed --space-medium and the track clips --space-medium
+    // wider, so the next space starts showing at anything up to 24px.
+    --space-gap: var(--space-xxlarge);
+
+    // Two panels inside one would double the frame. The columns carry them here.
+    .spaces-frame::before {
+      content: none;
+    }
+
+    // Those column panels bleed --space-medium outward on a ::before and sit
+    // inside the track, where the frame's panel sat around it, so without this
+    // their border and background are cut off on every side. It subsumes the
+    // focus-ring allowance below, since a ring belongs to a card inside the
+    // panel and so falls within the bleed. Paired with --space-gap above.
+    .spaces-track {
+      overflow-clip-margin: var(--space-medium);
+    }
+
+    .space {
+      display: grid;
+      column-gap: calc(3 * var(--space-medium));
+      row-gap: calc(3 * var(--space-medium));
+      justify-content: center;
+    }
+
+    // No room for widgets plus two cards, so the feed takes the whole panel.
+    .widgets-section-container {
+      display: none;
+    }
+
+    /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+    @include at-band-fits-pair(2) {
+      .spaces-frame {
+        inline-size: --col-span(13);
+      }
+
+      .widgets-section-container {
+        display: grid;
+      }
+
+      // A space with no widgets gives the whole frame to its feed, so it shows
+      // the same card count the flat band would rather than holding the paired
+      // width. The largest whole card count the frame fits, because the feed's
+      // auto-fill grid collapses to one card without a definite width -- which
+      // is why this cannot be folded into the stretch below.
+      .layout-content-column.has-feed {
+        inline-size: --col-span(12);
+      }
+
+      // Only a space that has widgets is a pair; the rest keep one column.
+      .space:has(.widgets-section-container) {
+        grid-template-columns: --col-span(8) --col-span(4);
+
+        // Here the grid tracks govern the widths instead.
+        /* stylelint-disable-next-line max-line-length */
+        :is(.widgets-section-container, .layout-content-column.has-feed, .layout-highlights-column) {
+          inline-size: auto;
+          justify-self: stretch;
+        }
+
+        .widgets-section-container {
+          // Only as tall as the widgets, so the panel does not stretch to the feed.
+          align-self: start;
+          grid-column: 2;
+          grid-row: 1;
+        }
+
+        .layout-content-column.has-feed {
+          grid-column: 1;
+          grid-row: 1;
+        }
+
+        // Its own row under the pair, in the content column's track, so Recent
+        // activity reads as a section of its own rather than part of the feed.
+        .layout-highlights-column {
+          grid-column: 1;
+          grid-row: 2;
+        }
+      }
+    }
+
+    @include at-band-fits-pair(3) {
+      .spaces-frame {
+        inline-size: --col-span(17);
+      }
+
+      .layout-content-column.has-feed {
+        inline-size: --col-span(16);
+      }
+
+      .space:has(.widgets-section-container) {
+        grid-template-columns: --col-span(12) --col-span(4);
+      }
+    }
+    /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
   }
 
   // Fixed, not sticky: sticky clamps to the container, stranding the control at

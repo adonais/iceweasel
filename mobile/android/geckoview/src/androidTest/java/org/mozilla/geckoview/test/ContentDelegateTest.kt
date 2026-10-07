@@ -688,7 +688,7 @@ class ContentDelegateTest : BaseSessionTest() {
                 "dom.max_script_run_time" to 1,
                 "dom.max_chrome_script_run_time" to 1,
                 "dom.max_ext_content_script_run_time" to 1,
-                "dom.ipc.cpow.timeout" to 100,
+                "dom.ipc.reply.timeout" to 100,
                 "browser.hangNotification.waitPeriod" to timeout,
             )
         )

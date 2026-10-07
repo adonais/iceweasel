@@ -416,8 +416,6 @@ void TempFile::remove() {
   name = nullptr;
 }
 
-TestJSPrincipals::TestJSPrincipals(int rc) { refcount = rc; }
-
 bool TestJSPrincipals::write(JSContext* cx, JSStructuredCloneWriter* writer) {
   MOZ_CRASH("TestJSPrincipals::write not implemented");
 }

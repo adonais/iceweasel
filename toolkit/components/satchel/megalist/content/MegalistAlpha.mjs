@@ -689,6 +689,7 @@ export class MegalistAlpha extends MozLitElement {
       <moz-input-search
         data-l10n-id="contextual-manager-filter-input"
         data-l10n-attrs="placeholder, aria-label"
+        .value=${this.searchText}
         @MozInputSearch:search=${e => this.#onSearchQuery(e)}
       ></moz-input-search>
     `;

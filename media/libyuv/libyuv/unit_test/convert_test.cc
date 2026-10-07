@@ -10,9 +10,9 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
-#include "libyuv/basic_types.h"
 #include "libyuv/compare.h"
 #include "libyuv/convert.h"
 #include "libyuv/convert_argb.h"
@@ -588,6 +588,7 @@ TESTPLANARTOBP(I212, uint16_t, 2, 2, 1, P212, uint16_t, 2, 2, 1, 12)
               TILE_HEIGHT)
 #endif
 
+TESTBPTOBP(NV12, uint8_t, 1, 2, 2, NV21, uint8_t, 1, 2, 2, 8, 1, 1)
 TESTBPTOBP(NV21, uint8_t, 1, 2, 2, NV12, uint8_t, 1, 2, 2, 8, 1, 1)
 TESTBPTOBP(NV12, uint8_t, 1, 2, 2, NV12Mirror, uint8_t, 1, 2, 2, 8, 1, 1)
 TESTBPTOBP(NV12, uint8_t, 1, 2, 2, NV24, uint8_t, 1, 1, 1, 8, 1, 1)
@@ -834,12 +835,52 @@ TESTATOPLANARA(ARGB, 4, 1, I420Alpha, 2, 2)
 
 TESTATOBP(ARGB, 1, 4, NV12, 2, 2)
 TESTATOBP(ARGB, 1, 4, NV21, 2, 2)
+TESTATOBP(ARGB, 1, 4, NV16, 2, 1)
+TESTATOBP(ARGB, 1, 4, NV24, 1, 1)
 TESTATOBP(ABGR, 1, 4, NV12, 2, 2)
 TESTATOBP(ABGR, 1, 4, NV21, 2, 2)
 TESTATOBP(YUY2, 2, 4, NV12, 2, 2)
 TESTATOBP(UYVY, 2, 4, NV12, 2, 2)
 TESTATOBP(AYUV, 1, 4, NV12, 2, 2)
 TESTATOBP(AYUV, 1, 4, NV21, 2, 2)
+
+// Matrix API with I601 constants matches the non-matrix wrapper.
+#define TESTATOBPMATRIX(FMT_A, BPP_A, FMT_B, SUBSAMP_X, SUBSAMP_Y)           \
+  TEST_F(LibYUVConvertTest, Test##FMT_A##To##FMT_B##Matrix) {                \
+    const int kWidth = 16;                                                   \
+    const int kHeight = 16;                                                  \
+    const int kStrideUV = SUBSAMPLE(kWidth, SUBSAMP_X);                      \
+    const int kHeightUV = SUBSAMPLE(kHeight, SUBSAMP_Y);                     \
+    align_buffer_page_end(src_argb, kWidth * kHeight * BPP_A);               \
+    align_buffer_page_end(dst_y, kWidth * kHeight);                          \
+    align_buffer_page_end(dst_uv, kStrideUV * 2 * kHeightUV);                \
+    align_buffer_page_end(ref_y, kWidth * kHeight);                          \
+    align_buffer_page_end(ref_uv, kStrideUV * 2 * kHeightUV);                \
+                                                                             \
+    MemRandomize(src_argb, kWidth * kHeight * BPP_A);                        \
+                                                                             \
+    FMT_A##To##FMT_B##Matrix(src_argb, kWidth * BPP_A, dst_y, kWidth, dst_uv, \
+                             kStrideUV * 2, &kArgbI601Constants, kWidth,     \
+                             kHeight);                                       \
+    FMT_A##To##FMT_B(src_argb, kWidth * BPP_A, ref_y, kWidth, ref_uv,         \
+                     kStrideUV * 2, kWidth, kHeight);                        \
+    for (int i = 0; i < kWidth * kHeight; ++i) {                             \
+      ASSERT_EQ(dst_y[i], ref_y[i]);                                         \
+    }                                                                        \
+    for (int i = 0; i < kStrideUV * 2 * kHeightUV; ++i) {                    \
+      ASSERT_EQ(dst_uv[i], ref_uv[i]);                                       \
+    }                                                                        \
+                                                                             \
+    free_aligned_buffer_page_end(src_argb);                                  \
+    free_aligned_buffer_page_end(dst_y);                                     \
+    free_aligned_buffer_page_end(dst_uv);                                    \
+    free_aligned_buffer_page_end(ref_y);                                     \
+    free_aligned_buffer_page_end(ref_uv);                                    \
+  }
+
+TESTATOBPMATRIX(ARGB, 4, NV12, 2, 2)
+TESTATOBPMATRIX(ARGB, 4, NV16, 2, 1)
+TESTATOBPMATRIX(ARGB, 4, NV24, 1, 1)
 
 #if !defined(LEAN_TESTS)
 
@@ -1737,9 +1778,9 @@ TEST_F(LibYUVConvertTest, TestMJPGToARGB) {
   free_aligned_buffer_page_end(dst_argb);
 }
 
-static int ShowJPegInfo(const uint8_t* sample, size_t sample_size) {
+static bool ShowJPegInfo(const uint8_t* sample, size_t sample_size) {
   MJpegDecoder mjpeg_decoder;
-  LIBYUV_BOOL ret = mjpeg_decoder.LoadFrame(sample, sample_size);
+  bool ret = mjpeg_decoder.LoadFrame(sample, sample_size);
 
   int width = mjpeg_decoder.GetWidth();
   int height = mjpeg_decoder.GetHeight();
@@ -1794,12 +1835,12 @@ static int ShowJPegInfo(const uint8_t* sample, size_t sample_size) {
 }
 
 TEST_F(LibYUVConvertTest, TestMJPGInfo) {
-  ASSERT_EQ(1, ShowJPegInfo(kTest0Jpg, kTest0JpgLen));
-  ASSERT_EQ(1, ShowJPegInfo(kTest1Jpg, kTest1JpgLen));
-  ASSERT_EQ(1, ShowJPegInfo(kTest2Jpg, kTest2JpgLen));
-  ASSERT_EQ(1, ShowJPegInfo(kTest3Jpg, kTest3JpgLen));
-  ASSERT_EQ(1, ShowJPegInfo(kTest4Jpg,
-                            kTest4JpgLen));  // Valid but unsupported.
+  ASSERT_TRUE(ShowJPegInfo(kTest0Jpg, kTest0JpgLen));
+  ASSERT_TRUE(ShowJPegInfo(kTest1Jpg, kTest1JpgLen));
+  ASSERT_TRUE(ShowJPegInfo(kTest2Jpg, kTest2JpgLen));
+  ASSERT_TRUE(ShowJPegInfo(kTest3Jpg, kTest3JpgLen));
+  ASSERT_TRUE(ShowJPegInfo(kTest4Jpg,
+                           kTest4JpgLen));  // Valid but unsupported.
 }
 #endif  // HAVE_JPEG
 
@@ -1881,6 +1922,100 @@ TEST_F(LibYUVConvertTest, NV12Crop) {
   free_aligned_buffer_page_end(dst_u_2);
   free_aligned_buffer_page_end(dst_v_2);
   free_aligned_buffer_page_end(src_y);
+}
+
+TEST_F(LibYUVConvertTest, ConvertToI420_NV16) {
+  const int kWidth = 64;
+  const int kHeight = 48;
+  const int sample_size = kWidth * kHeight * 2;
+  align_buffer_page_end(src, sample_size);
+  align_buffer_page_end(dst_y, kWidth * kHeight);
+  align_buffer_page_end(dst_u, (kWidth / 2) * (kHeight / 2));
+  align_buffer_page_end(dst_v, (kWidth / 2) * (kHeight / 2));
+  MemRandomize(src, sample_size);
+  memset(dst_y, 0, kWidth * kHeight);
+  memset(dst_u, 0, (kWidth / 2) * (kHeight / 2));
+  memset(dst_v, 0, (kWidth / 2) * (kHeight / 2));
+
+  int r = ConvertToI420(src, sample_size, dst_y, kWidth, dst_u, kWidth / 2,
+                        dst_v, kWidth / 2, 0, 0, kWidth, kHeight, kWidth,
+                        kHeight, kRotate0, FOURCC_NV16);
+  EXPECT_EQ(0, r);
+
+  free_aligned_buffer_page_end(src);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_u);
+  free_aligned_buffer_page_end(dst_v);
+}
+
+TEST_F(LibYUVConvertTest, ConvertToI420_NV24) {
+  const int kWidth = 64;
+  const int kHeight = 48;
+  const int sample_size = kWidth * kHeight * 3;
+  align_buffer_page_end(src, sample_size);
+  align_buffer_page_end(dst_y, kWidth * kHeight);
+  align_buffer_page_end(dst_u, (kWidth / 2) * (kHeight / 2));
+  align_buffer_page_end(dst_v, (kWidth / 2) * (kHeight / 2));
+  MemRandomize(src, sample_size);
+  memset(dst_y, 0, kWidth * kHeight);
+  memset(dst_u, 0, (kWidth / 2) * (kHeight / 2));
+  memset(dst_v, 0, (kWidth / 2) * (kHeight / 2));
+
+  int r = ConvertToI420(src, sample_size, dst_y, kWidth, dst_u, kWidth / 2,
+                        dst_v, kWidth / 2, 0, 0, kWidth, kHeight, kWidth,
+                        kHeight, kRotate0, FOURCC_NV24);
+  EXPECT_EQ(0, r);
+
+  free_aligned_buffer_page_end(src);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_u);
+  free_aligned_buffer_page_end(dst_v);
+}
+
+TEST_F(LibYUVConvertTest, ConvertFromI420_NV16) {
+  const int kWidth = 64;
+  const int kHeight = 48;
+  const int dst_size = kWidth * kHeight * 2;
+  align_buffer_page_end(src_y, kWidth * kHeight);
+  align_buffer_page_end(src_u, (kWidth / 2) * (kHeight / 2));
+  align_buffer_page_end(src_v, (kWidth / 2) * (kHeight / 2));
+  align_buffer_page_end(dst, dst_size);
+  MemRandomize(src_y, kWidth * kHeight);
+  MemRandomize(src_u, (kWidth / 2) * (kHeight / 2));
+  MemRandomize(src_v, (kWidth / 2) * (kHeight / 2));
+  memset(dst, 0, dst_size);
+
+  int r = ConvertFromI420(src_y, kWidth, src_u, kWidth / 2, src_v, kWidth / 2,
+                          dst, kWidth, kWidth, kHeight, FOURCC_NV16);
+  EXPECT_EQ(0, r);
+
+  free_aligned_buffer_page_end(src_y);
+  free_aligned_buffer_page_end(src_u);
+  free_aligned_buffer_page_end(src_v);
+  free_aligned_buffer_page_end(dst);
+}
+
+TEST_F(LibYUVConvertTest, ConvertFromI420_NV24) {
+  const int kWidth = 64;
+  const int kHeight = 48;
+  const int dst_size = kWidth * kHeight * 3;
+  align_buffer_page_end(src_y, kWidth * kHeight);
+  align_buffer_page_end(src_u, (kWidth / 2) * (kHeight / 2));
+  align_buffer_page_end(src_v, (kWidth / 2) * (kHeight / 2));
+  align_buffer_page_end(dst, dst_size);
+  MemRandomize(src_y, kWidth * kHeight);
+  MemRandomize(src_u, (kWidth / 2) * (kHeight / 2));
+  MemRandomize(src_v, (kWidth / 2) * (kHeight / 2));
+  memset(dst, 0, dst_size);
+
+  int r = ConvertFromI420(src_y, kWidth, src_u, kWidth / 2, src_v, kWidth / 2,
+                          dst, kWidth, kWidth, kHeight, FOURCC_NV24);
+  EXPECT_EQ(0, r);
+
+  free_aligned_buffer_page_end(src_y);
+  free_aligned_buffer_page_end(src_u);
+  free_aligned_buffer_page_end(src_v);
+  free_aligned_buffer_page_end(dst);
 }
 
 TEST_F(LibYUVConvertTest, I420CropOddY) {
@@ -2417,37 +2552,6 @@ TEST_F(LibYUVConvertTest, TestRGB24ToNV12) {
   free_aligned_buffer_page_end(ref_y);
   free_aligned_buffer_page_end(ref_u);
   free_aligned_buffer_page_end(ref_v);
-  free_aligned_buffer_page_end(ref_uv);
-}
-
-TEST_F(LibYUVConvertTest, TestARGBToNV12Matrix) {
-  const int kWidth = 16;
-  const int kHeight = 16;
-  align_buffer_page_end(src_argb, kWidth * kHeight * 4);
-  align_buffer_page_end(dst_y, kWidth * kHeight);
-  align_buffer_page_end(dst_uv, kWidth * kHeight / 2);
-
-  MemRandomize(src_argb, kWidth * kHeight * 4);
-
-  // BT.601
-  ARGBToNV12Matrix(src_argb, kWidth * 4, dst_y, kWidth, dst_uv, kWidth,
-                   &kArgbI601Constants, kWidth, kHeight);
-  // Verify against non-matrix version
-  align_buffer_page_end(ref_y, kWidth * kHeight);
-  align_buffer_page_end(ref_uv, kWidth * kHeight / 2);
-  ARGBToNV12(src_argb, kWidth * 4, ref_y, kWidth, ref_uv, kWidth, kWidth,
-             kHeight);
-  for (int i = 0; i < kWidth * kHeight; ++i) {
-    ASSERT_EQ(dst_y[i], ref_y[i]);
-  }
-  for (int i = 0; i < kWidth * kHeight / 2; ++i) {
-    ASSERT_EQ(dst_uv[i], ref_uv[i]);
-  }
-
-  free_aligned_buffer_page_end(src_argb);
-  free_aligned_buffer_page_end(dst_y);
-  free_aligned_buffer_page_end(dst_uv);
-  free_aligned_buffer_page_end(ref_y);
   free_aligned_buffer_page_end(ref_uv);
 }
 

@@ -218,9 +218,6 @@ fail-if = [
 ["browser_webconsole_logs_exceptions_order.js"]
 
 ["browser_webconsole_longstring.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_webconsole_longstring_getter.js"]
 skip-if = [
@@ -236,9 +233,6 @@ skip-if = [
 ["browser_webconsole_nodes_highlight.js"]
 
 ["browser_webconsole_nodes_select.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_webconsole_non_javascript_mime_warning.js"]
 
@@ -272,14 +266,8 @@ skip-if = [
 ]
 
 ["browser_webconsole_previewers_https.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_webconsole_promise_rejected_object.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_webconsole_record_tuple.js"]
 
@@ -311,9 +299,6 @@ fail-if = [
 ["browser_webconsole_script_errordoc_urls.js"]
 
 ["browser_webconsole_scroll.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 skip-if = [
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1923756
 ]
@@ -388,14 +373,8 @@ skip-if = [
 ["browser_webconsole_telemetry_js_errors.js"]
 
 ["browser_webconsole_telemetry_jump_to_definition.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_webconsole_telemetry_object_expanded.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_webconsole_telemetry_persist_toggle_changed.js"]
 
@@ -411,9 +390,6 @@ fail-if = [
 tags = "trackingprotection"
 
 ["browser_webconsole_uncaught_exception.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_webconsole_view_source.js"]
 

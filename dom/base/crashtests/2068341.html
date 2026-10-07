@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<meta charset="utf-8">
+<title>Container-timing record must not outlive a moved, then unregistered, then detached root</title>
+<body style="margin:0">
+<div id="host"></div>
+<div style="width:300px;height:300px;background:-moz-element(#root)"></div>
+<div style="opacity:0;position:absolute;left:0;top:0">
+  <div id="root" containertiming="ct" style="width:300px;height:300px;font-size:60px"><span id="inner">SRCTEXT</span></div>
+</div>
+<script>
+function raf() {
+  return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+}
+async function go() {
+  try {
+    await run();
+  } finally {
+    document.documentElement.classList.remove("reftest-wait");
+  }
+}
+async function run() {
+  await raf();
+  await raf();
+
+  let root = document.getElementById("root");
+  const inner = document.getElementById("inner");
+  const sr = document.getElementById("host").attachShadow({mode: "open"});
+
+  // Move into a shadow tree (not a full disconnect), unregister the container
+  // root while detached from the uncomposed doc, then detach it. Historically
+  // none of these paths dropped the container-timing record, leaving a dangling
+  // raw pointer in the map.
+  sr.moveBefore(root, null);
+  root.removeAttribute("containertiming");
+  inner.remove();
+  root.remove();
+  root = null;
+
+  SpecialPowers.forceGC();
+  SpecialPowers.forceCC();
+  SpecialPowers.forceGC();
+  SpecialPowers.forceCC();
+
+  await raf();
+
+  // First contentful paint finalizes container-timing entries; if the freed
+  // root were still keyed in the map this dereferences it (UAF).
+  const d = document.createElement("div");
+  d.textContent = "TRIGGER PAINT";
+  document.body.appendChild(d);
+
+  await raf();
+}
+go();
+</script>
+</body>
+</html>

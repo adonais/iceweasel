@@ -17,9 +17,18 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1375833
      * 1. Static frame history should not be dropped.
      * 2. In a reload, docshell would parse the reloaded root document and
      *    genearate new child docshells, and then use the child offset
+     *
+     * This relies on the subframe being restored from history on reload,
+     * which bug 2037346 turns off by default, so pin the pref that keeps it on.
      */
 
-    let testWin = window.open("file_bug1375833.html");
+    let testWin;
+    SpecialPowers.pushPrefEnv(
+      {set: [["docshell.shistory.restoreSubframesOnReload", true]]},
+      () => {
+        testWin = window.open("file_bug1375833.html");
+      }
+    );
     let count = 0;
     let webNav, shistory;
     let frameDocShellId;

@@ -12,7 +12,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   ASRouterScreenUtils:
     "resource:///modules/asrouter/ASRouterScreenUtils.sys.mjs",
-  BackupService: "resource:///modules/backup/BackupService.sys.mjs",
+  BackupService: "moz-src:///browser/components/backup/BackupService.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   BuiltInThemes: "resource:///modules/BuiltInThemes.sys.mjs",
   EnrollmentType: "resource://nimbus/ExperimentAPI.sys.mjs",

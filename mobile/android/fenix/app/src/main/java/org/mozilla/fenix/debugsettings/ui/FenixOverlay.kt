@@ -33,9 +33,12 @@ import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.listentopage.ListenState
 import mozilla.components.feature.listentopage.ListenStore
 import mozilla.components.feature.listentopage.listenReducer
+import mozilla.components.feature.tabgroups.storage.data.TabGroup
+import mozilla.components.feature.tabgroups.storage.data.TabGroupData
+import mozilla.components.feature.tabgroups.storage.repository.TabGroupRepository
 import mozilla.telemetry.glean.Glean
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.ClientUUID
+import org.mozilla.fenix.components.ClientUuid
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.debugsettings.addresses.AddressesDebugRegionRepository
 import org.mozilla.fenix.debugsettings.addresses.AddressesTools
@@ -50,7 +53,7 @@ import org.mozilla.fenix.debugsettings.gleandebugtools.DefaultGleanDebugToolsSto
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsMiddleware
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsState
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsStore
-import org.mozilla.fenix.debugsettings.integrity.FakeClientUUID
+import org.mozilla.fenix.debugsettings.integrity.FakeClientUuid
 import org.mozilla.fenix.debugsettings.listentopage.ListenToPageTools
 import org.mozilla.fenix.debugsettings.logins.FakeLoginsStorage
 import org.mozilla.fenix.debugsettings.logins.LoginsTools
@@ -62,9 +65,6 @@ import org.mozilla.fenix.debugsettings.store.DebugDrawerTelemetryMiddleware
 import org.mozilla.fenix.debugsettings.store.DrawerStatus
 import org.mozilla.fenix.debugsettings.tabs.TabGroupTools
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.tabgroups.storage.data.TabGroup
-import org.mozilla.fenix.tabgroups.storage.data.TabGroupData
-import org.mozilla.fenix.tabgroups.storage.repository.TabGroupRepository
 import org.mozilla.fenix.theme.DefaultThemeProvider
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -172,7 +172,7 @@ private fun FenixOverlay(
     loginsStorage: LoginsStorage,
     addressesDebugRegionRepository: AddressesDebugRegionRepository,
     creditCardsAddressesStorage: CreditCardsAddressesStorage,
-    clientUUID: ClientUUID,
+    clientUUID: ClientUuid,
     integrityClient: IntegrityClient,
     tabGroupRepository: TabGroupRepository,
     inactiveTabsEnabled: Boolean,
@@ -250,7 +250,7 @@ private fun FenixOverlayPreview() {
             override val tabGroupDataFlow: Flow<TabGroupData>
                 get() = flowOf()
 
-            override suspend fun createTabGroupWithTabs(tabGroup: TabGroup, tabIds: List<String>) {}
+            override suspend fun createTabGroupWithTabs(tabGroup: TabGroup) {}
 
             override suspend fun closeTabGroup(tabGroupId: String) {}
 
@@ -305,7 +305,7 @@ private fun FenixOverlayPreview() {
         loginsStorage = FakeLoginsStorage(),
         addressesDebugRegionRepository = FakeAddressesDebugRegionRepository(),
         creditCardsAddressesStorage = FakeCreditCardsAddressesStorage(),
-        clientUUID = FakeClientUUID(),
+        clientUUID = FakeClientUuid(),
         integrityClient = IntegrityClient.testSuccess,
         tabGroupRepository = mockTabGroupRepository,
         lazyIPProtectionStore = lazy { IPProtectionStore() },

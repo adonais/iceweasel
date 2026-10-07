@@ -81,7 +81,6 @@ struct nr_ice_candidate_ : public nr_ice_candidate_parsedbits {
   /* This is mainly to avoid forgetting tcp/tls relay protocol, since the base
    * of relay candidates is the TURN server's allocation address, which will be UDP */
   UCHAR local_protocol;    /* IPPROTO_TCP, IPPROTO_UDP. */
-  char *mdns_addr;                    /* MDNS address, if any */
   nr_ice_stun_server *stun_server;
   nr_transport_addr stun_server_addr; /* Resolved STUN server address */
   void *delay_timer;
@@ -129,13 +128,13 @@ int nr_ice_candidate_process_stun(nr_ice_candidate *cand, UCHAR *msg, int len, n
 int nr_ice_candidate_destroy(nr_ice_candidate **candp);
 void nr_ice_candidate_stop_gathering(nr_ice_candidate *cand);
 int nr_ice_format_candidate_attribute(nr_ice_candidate *cand, char *attr, int maxlen, int obfuscate_raddr);
-int nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,const char *attr,nr_ice_media_stream *stream,nr_ice_candidate **candp);
+int nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,const char *attr,nr_ice_media_stream *stream,const char* resolved_address,nr_ice_candidate **candp);
 /* Parses a candidate attribute string into the parse-only fields.
  * |bits| must be zero-initialized by the caller. On success, the caller
  * owns |bits->foundation| and is responsible for freeing it. On failure,
  * |bits| is left in an indeterminate state; the caller should still free
  * |bits->foundation| since some fields may have been populated. */
-int nr_ice_parse_candidate_attribute(const char *attr, struct nr_ice_candidate_parsedbits *bits);
+int nr_ice_parse_candidate_attribute(const char *attr, const char *resolved_address, struct nr_ice_candidate_parsedbits *bits);
 int nr_ice_peer_peer_rflx_candidate_create(nr_ice_ctx *ctx, const char *label, nr_ice_component *comp,nr_transport_addr *addr, nr_ice_candidate **candp);
 int nr_ice_candidate_compute_priority(nr_ice_candidate *cand);
 

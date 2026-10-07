@@ -18,7 +18,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/c8606497de1f461a6
  1 file changed, 28 insertions(+), 2 deletions(-)
 
 diff --git a/modules/desktop_capture/linux/wayland/egl_dmabuf.cc b/modules/desktop_capture/linux/wayland/egl_dmabuf.cc
-index 2a80bd4ed3..5d7e22e569 100644
+index 4e5fde4a6b..14f54dab70 100644
 --- a/modules/desktop_capture/linux/wayland/egl_dmabuf.cc
 +++ b/modules/desktop_capture/linux/wayland/egl_dmabuf.cc
 @@ -19,6 +19,7 @@
@@ -56,7 +56,7 @@ index 2a80bd4ed3..5d7e22e569 100644
  RTC_NO_SANITIZE("cfi-icall")
  static std::vector<std::string> GetClientExtensions(EGLDisplay display,
                                                      EGLint name) {
-@@ -817,8 +838,13 @@ RTC_NO_SANITIZE("cfi-icall")
+@@ -823,8 +844,13 @@ RTC_NO_SANITIZE("cfi-icall")
  bool EglDmaBuf::CreatePlatformDevice() {
    EGLDisplay display = EGL_NO_DISPLAY;
  

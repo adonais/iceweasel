@@ -8,20 +8,22 @@
 #include <memory>
 
 #include "MediaCodecsSupport.h"
+#include "PlatformDecoderModule.h"
+#include "PlatformEncoderModule.h"
 
 namespace mozilla {
 class EncoderConfig;
 class MediaExtendedMIMEType;
 struct SupportDecoderParams;
 
-// Query the webrtc decoder factory whether the SupportDecoderParams are
-// supported in SW and/or HW.
-[[nodiscard]] media::DecodeSupportSet SupportsVideoDecodeForWebrtc(
-    const MediaExtendedMIMEType& aMime, const SupportDecoderParams& aParams);
-// Query the webrtc encoder factory whether the EncoderConfig is supported in SW
-// and/or HW.
-[[nodiscard]] media::EncodeSupportSet SupportsVideoEncodeForWebrtc(
-    const EncoderConfig& aConfig);
+// Query the webrtc decoder/encoder factory whether the codec is supported in
+// SW and/or HW. These wait for the remote process which would handle the codec
+// to report accurate support before resolving. Used by MediaCapabilities.
+[[nodiscard]] RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
+SupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType& aMime,
+                             const SupportDecoderParams& aParams);
+[[nodiscard]] RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
+SupportsVideoEncodeForWebrtc(const EncoderConfig& aConfig);
 
 // Interface for querying WebRTC codec support and hardware acceleration.
 //

@@ -149,16 +149,12 @@ static const uvec8 kNV21InterleavedTable = {1, 1, 5, 5, 9,  9,  13, 13,
   "ld4r       {v28.16b, v29.16b, v30.16b, v31.16b}, [%[kUVCoeff]] \n" \
   "ld4r       {v24.8h, v25.8h, v26.8h, v27.8h}, [%[kRGBCoeffBias]] \n"
 
-#if defined(LIBYUV_UNBIASED_DATA)
 #define YUVTORGB_SETUP_AR30                                           \
   YUVTORGB_SETUP                                                      \
   "movi       v2.8h, #24                                          \n" \
   "add        v25.8h, v25.8h, v2.8h                               \n" \
   "sub        v26.8h, v26.8h, v2.8h                               \n" \
   "add        v27.8h, v27.8h, v2.8h                               \n"
-#else
-#define YUVTORGB_SETUP_AR30 YUVTORGB_SETUP
-#endif
 
 // v16.8h: B
 // v17.8h: G
@@ -5273,14 +5269,15 @@ void Convert8To8Row_NEON(const uint8_t* src_y,
 
 // Use scale to convert lsb formats to msb, depending how many bits there are:
 // 1024 = 10 bits
+// 4096 = 12 bits
+// 65536 = 16 bits
 void Convert8To16Row_NEON(const uint8_t* src_y,
                           uint16_t* dst_y,
-                          int scale,
+                          int bits,
                           int width) {
-  // (src * 0x0101 * scale) >> 16.
-  // Since scale is a power of two, compute the shift to use to avoid needing
-  // to widen to int32.
-  const int shift = 15 - __builtin_clz(scale);
+  // (src * 0x0101) >> (16 - bits).
+  // Use negative shift for right shift with ushl.
+  const int shift = bits - 16;
   asm volatile(
       "dup         v2.8h, %w[shift]                 \n"
       "1:          \n"

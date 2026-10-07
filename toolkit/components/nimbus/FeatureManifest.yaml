@@ -275,6 +275,32 @@ urlbar:
     autoFillAdaptiveHistoryUseCountThreshold:
       type: string
       description: This value assumes float expression like "0.47". Threshold for use count of input history that we handle as adaptive history autofill. If the use count is this value or more, it will be a candidate.
+    autoFillAdaptiveHistoryUrlMinPicks:
+      type: int
+      setPref:
+        pref: browser.urlbar.autoFill.adaptiveHistory.urlMinPicks
+        branch: user
+      description: >-
+        Roughly how many times the user has to pick a specific page from the
+        address bar for a given typed string before Firefox starts autofilling
+        that page. Only applies to individual pages, not to domains: a domain
+        like example.com is still autofilled on the first pick, while a page
+        like example.com/dashboard needs this many. This is a rough count
+        rather than an exact one, because how often the user picks the page
+        matters as well as how many times: picking a page a handful of times
+        this week counts for more than the same number of picks spread over a
+        year. Raise it to autofill pages for fewer users, lower it to autofill
+        pages for more users.
+    autoFillAdaptiveHistoryUrlPicksAgeDays:
+      type: int
+      setPref:
+        pref: browser.urlbar.autoFill.adaptiveHistory.urlPicksAgeDays
+        branch: user
+      description: >-
+        How spread out over time the picks counted by
+        autoFillAdaptiveHistoryUrlMinPicks are allowed to be. Raise it to
+        qualify users who pick a page at a slower pace, lower it to require
+        picks to be more recent and more closely spaced.
     autoFillBackspaceBlockDurationMs:
       type: int
       setPref:
@@ -390,7 +416,20 @@ urlbar:
       fallbackPref: browser.urlbar.newtab.featureGate
       description: >-
         Feature gate that controls whether about:newtab and about:home show the
-        address bar in place of the handoff search bar.
+        search bar in place of the handoff search bar.
+    newtabVariantA:
+      type: boolean
+      fallbackPref: browser.urlbar.newtab.variantA
+      description: >-
+        Layout variant A for the about:newtab and about:home search bar; depends
+        on newtabFeatureGate.
+    newtabVariantB:
+      type: boolean
+      fallbackPref: browser.urlbar.newtab.variantB
+      description: >-
+        Layout variant B for the about:newtab and about:home search bar, with
+        the search engine button above the input; depends on newtabFeatureGate
+        and takes precedence over newtabVariantA.
     exposureResults:
       type: string
       setPref:
@@ -1074,6 +1113,31 @@ windowsLaunchOnLogin:
         branch: default
         pref: browser.startup.windowsLaunchOnLogin.enabled
       description: Should users see the Windows launch on login checkbox.
+
+pushNotificationHelper:
+  description: >-
+    Controls the Windows helper process that delivers web notifications while
+    Firefox is closed
+  owner: desktop-integrations@mozilla.com
+  applications:
+    - firefox-desktop
+  hasExposure: false
+  variables:
+    available:
+      type: boolean
+      setPref:
+        branch: user
+        pref: app.backgroundNotifications.helper.available
+      description: >-
+        Whether closed-browser web notifications are available to this client.
+        Clearing it on unenrollment is the feature's kill switch, which is why
+        it is set on the user branch: Nimbus cannot reset a default branch pref
+        in the running session, and the helper outlives a Firefox session, so
+        on that branch a killed experiment would keep delivering notifications
+        until the next restart. The helper also needs
+        app.backgroundNotifications.helper.enabled, which a message turns on
+        and the user can turn back off. Nimbus never writes that one, so
+        turning the feature off does not unenroll the client.
 
 firefoxBridge:
   description: "Controls for Firefox Bridge extension and extension registration"
@@ -2065,12 +2129,6 @@ pocketNewtab:
       setPref:
         branch: user
         pref: "browser.newtabpage.activity-stream.discoverystream.endpoints"
-    spocsClearEndpoint:
-      description: URL for deleting any server data when a user opts out of sponsored content
-      type: string
-      setPref:
-        branch: user
-        pref: "browser.newtabpage.activity-stream.discoverystream.endpointSpocsClear"
     ctaButtonSponsors:
       description: A CSV list of sponsors that should use a button CTA.
       type: string
@@ -2221,6 +2279,23 @@ creditcards-autofill-enabled:
       setPref:
         branch: default
         pref: extensions.formautofill.creditCards.supported
+
+creditcards-cvv-capture:
+  description: Capturing and storing credit card security codes (CVV/CSC)
+  owner: mtigley@mozilla.com
+  hasExposure: false
+  variables:
+    cvvSupported:
+      description: >-
+        When "on", the CVV feature is rolled out to this user: the security code
+        field takes part in autofill and the setting that turns capture on or
+        off is offered. Users can still decline capture through
+        extensions.formautofill.creditCards.cvv.enabled, which is their own
+        choice and is deliberately not controlled here.
+      type: string
+      setPref:
+        branch: default
+        pref: extensions.formautofill.creditCards.cvv.supported
 
 autofill-ml:
   description: Machine-learning based form field detection for autofill
@@ -3286,6 +3361,12 @@ networking:
       setPref:
         branch: default
         pref: "network.dnsCacheExpirationGracePeriod"
+    dnsNegativeCacheExpiration:
+      description: Lifetime (in seconds) of a negative (failed/empty) DNS cache entry.
+      type: int
+      setPref:
+        branch: default
+        pref: "network.dnsNegativeCacheExpiration"
     http3UseNSPRForIO:
       description: true by default using legacy UDP IO via NSPR. When set to false, uses new UDP IO via Fast UDP for Firefox project.
       type: boolean
@@ -3846,6 +3927,18 @@ compressionDictionaries:
       setPref:
        branch: default
        pref: network.http.dictionaries.enable
+
+streamingUpload:
+  description: Fetch Streaming upload support
+  owner: vgosu@mozilla.com
+  hasExposure: false
+  variables:
+    enableFetchStreamingUpload:
+      description: Enables fetch streaming upload
+      type: boolean
+      setPref:
+        branch: default
+        pref: "dom.fetch.streaming_upload"
 
 pingsender:
   description: "In-product usage of the pingsender telemetry reporter."
@@ -5632,15 +5725,17 @@ contentClassifier:
       setPref:
         branch: default
         pref: "privacy.trackingprotection.content.annotation.engines.pbmode"
-    mirrorEnabled:
+    mirrorMode:
       description: >-
-        Whether the tracking-protection prefs are mirrored onto the content
-        classifier engine prefs. While enabled the mirror derives (and
-        owns) the content classifier prefs from the ETP settings.
-      type: boolean
+        How the tracking-protection prefs drive the content classifier engine
+        prefs. 0 (off) does not mirror and releases any prefs it mirrored;
+        1 (on) mirrors the ETP settings onto the content classifier prefs
+        and owns them; 2 (handover) stops mirroring but leaves the mirrored
+        values in place as ordinary user prefs.
+      type: int
       setPref:
         branch: default
-        pref: "privacy.trackingprotection.content.mirror.enabled"
+        pref: "privacy.trackingprotection.content.mirror.mode"
     skipURLClassifier:
       description: >-
         Whether to skip the URLClassifier while the ContentClassifier engine is
@@ -6116,6 +6211,70 @@ smartWindowAgentWatch:
         Announces the agent monitor feature as new with a dot on its toolbar
         button, until the user opens the panel or the rollout ends. Independent
         of the dot that marks a task whose condition was met.
+
+autoTabGrouping:
+  description: >-
+    Tuning and rollout controls for Smart Window Auto Tab Grouping (the
+    "Organize Tabs" panel that clusters open tabs into suggested groups).
+  owner: vbaungally@mozilla.com
+  hasExposure: false
+  variables:
+    enabled:
+      type: boolean
+      setPref:
+        branch: default
+        pref: browser.smartwindow.autoTabGrouping.enabled
+      description: >-
+        Enables Auto Tab Grouping (on by default). Set to false to turn it off
+        without disabling Smart Window itself; unenrolling reverts to the
+        default (on).
+    minCandidateTabs:
+      type: int
+      setPref:
+        branch: default
+        pref: browser.smartwindow.autoTabGrouping.minCandidateTabs
+      description: >-
+        Minimum candidate tabs a window must have before grouping is attempted.
+        Lower = grouping runs on smaller windows (more coverage).
+    minTabsPerGroup:
+      type: int
+      setPref:
+        branch: default
+        pref: browser.smartwindow.autoTabGrouping.minTabsPerGroup
+      description: >-
+        Minimum tabs a suggested group must contain to be offered.
+    maxGroups:
+      type: int
+      setPref:
+        branch: default
+        pref: browser.smartwindow.autoTabGrouping.maxGroups
+      description: >-
+        Maximum number of groups suggested per run (largest-first).
+    minCohesion:
+      type: string
+      setPref:
+        branch: default
+        pref: browser.smartwindow.autoTabGrouping.minCohesion
+      description: >-
+        Minimum average pairwise cosine similarity (0..1) for a cluster to be
+        offered, as a decimal STRING (e.g. "0.15"); parsed with parseFloat at
+        the read site. Must be a quoted numeric string - a non-numeric value
+        parses to NaN and suppresses all groups.
+    timeoutMs:
+      type: int
+      setPref:
+        branch: default
+        pref: browser.smartwindow.autoTabGrouping.timeoutMs
+      description: >-
+        Milliseconds the panel waits for grouping to finish before showing
+        whatever is ready.
+    preloadModels:
+      type: boolean
+      setPref:
+        branch: default
+        pref: browser.smartwindow.autoTabGrouping.preloadModels
+      description: >-
+        Whether to preload the clustering/labeling ML models ahead of use.
 
 contentSharing:
   description: Controls the content sharing feature, which allows users to share browser content.

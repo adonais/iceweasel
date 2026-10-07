@@ -125,6 +125,56 @@ class SettingsAutofillPage(composeRule: AndroidComposeTestRule<HomeActivityInten
         return this
     }
 
+    /**
+     * Assert the Credit cards section on the Autofill screen, mirroring the legacy
+     * SettingsSubMenuAutofillRobot.verifyCreditCardsAutofillSection: the section title, the save-and-autofill option
+     * with its summary and the sync button, then either "Manage cards" or "Add card" depending on whether a card is
+     * saved, and finally the save-and-autofill toggle's state.
+     */
+    fun verifyCreditCardsAutofillSection(
+        cardsAutofillEnabled: Boolean,
+        userHasSavedCreditCard: Boolean,
+    ): SettingsAutofillPage {
+        mozVerify(SettingsAutofillSelectors.SETTINGS_AUTOFILL_TITLE)
+        mozVerify(SettingsAutofillSelectors.CREDIT_CARDS_SECTION_TITLE)
+        mozVerify(SettingsAutofillSelectors.SAVE_AND_AUTOFILL_CREDIT_CARDS_SUMMARY)
+        mozVerify(SettingsAutofillSelectors.SYNC_CREDIT_CARDS_ACROSS_DEVICES_BUTTON)
+        if (userHasSavedCreditCard) {
+            mozVerify(SettingsAutofillSelectors.MANAGE_SAVED_CREDIT_CARDS_BUTTON)
+        } else {
+            mozVerify(SettingsAutofillSelectors.ADD_CREDIT_CARD_BUTTON)
+        }
+        if (cardsAutofillEnabled) {
+            mozVerifyOptionSwitchIsChecked(SettingsAutofillSelectors.SAVE_AND_AUTOFILL_CREDIT_CARDS_OPTION)
+        } else {
+            mozVerifyOptionSwitchIsNotChecked(SettingsAutofillSelectors.SAVE_AND_AUTOFILL_CREDIT_CARDS_OPTION)
+        }
+        return this
+    }
+
+    /**
+     * Open "Manage cards" and decline the optional prompt offering to secure saved cards behind a device lock, leaving
+     * the screen on the Saved cards list.
+     */
+    fun openManageSavedCreditCards(): SettingsAutofillPage {
+        mozClick(SettingsAutofillSelectors.MANAGE_SAVED_CREDIT_CARDS_BUTTON)
+        mozClickIfPresent(SettingsAutofillSelectors.SECURED_CREDIT_CARDS_LATER_BUTTON)
+        return this
+    }
+
+    /**
+     * Assert the Saved cards list, mirroring the legacy verifySavedCreditCardsSection: the back button, the "Saved
+     * cards" toolbar title, the "Add card" button, and the saved card's masked last digits and expiry.
+     */
+    fun verifySavedCreditCardsSection(lastDigits: String, expiryMonthAndYear: String): SettingsAutofillPage {
+        mozVerify(SettingsSelectors.GO_BACK_BUTTON)
+        mozVerify(SettingsAutofillSelectors.SAVED_CREDIT_CARDS_TOOLBAR_TITLE)
+        mozVerify(SettingsAutofillSelectors.ADD_CREDIT_CARD_BUTTON)
+        mozVerify(SettingsAutofillSelectors.SAVED_CREDIT_CARD_DETAIL(lastDigits))
+        mozVerify(SettingsAutofillSelectors.SAVED_CREDIT_CARD_DETAIL(expiryMonthAndYear))
+        return this
+    }
+
     // --- Screen-specific Compose helpers (ported from SettingsSubMenuAutofillRobot) ---
 
     private fun AndroidComposeTestRule<HomeActivityIntentTestRule, *>.onAllNodesWithTagCount(tag: String): Int =

@@ -7,10 +7,10 @@
 
 #include "nsCOMPtr.h"
 #include "nsDOMNavigationTiming.h"
+#include "nsITimedChannel.h"
 #include "nsString.h"
 #include "nsWrapperCache.h"
 
-class nsIServerTiming;
 class nsISupports;
 
 namespace mozilla::dom {

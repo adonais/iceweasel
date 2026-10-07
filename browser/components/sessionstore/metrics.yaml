@@ -234,8 +234,21 @@ session_restore:
   corrupt_file:
     type: labeled_counter
     description: >
-      Session restore: Whether the file read on startup contained parse-able
-      JSON
+      Session restore: Counts session files that existed at startup,
+      labelled by whether the file failed to load because it was
+      unreadable, corrupt or an incompatible version. Recorded once
+      per candidate file in the load order, so one startup can
+      contribute several samples.
+
+      "true" means the file existed but failed to load because of a read
+      error, invalid JSON, an incompatible format version or an error
+      Session Restore does not specifically handle. "false" means the
+      file existed and was not recognised as corrupt.
+
+      Before Firefox 157 a successful load incremented "false" twice.
+      Before Firefox 158 errors that Session Restore does not
+      specifically handle, and files with an incompatible format
+      version, incremented "false" rather than "true".
 
       This metric was generated to correspond to the Legacy Telemetry boolean
       histogram FX_SESSION_RESTORE_CORRUPT_FILE.
@@ -244,8 +257,12 @@ session_restore:
       - "true"
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2071442
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072737
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2071442
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072737
     notification_emails:
       - session-restore-telemetry-alerts@mozilla.com
     expires: never
@@ -471,6 +488,55 @@ session_restore:
           "opened" if a new tab was created, "reused" if the
           selected or rightmost tab was already a new tab page,
           "preempted" if a command-line URL took precedence.
+        type: string
+    data_sensitivity:
+      - interaction
+
+  window_features_mismatch_ignored:
+    type: event
+    # We should have identified all of the problem areas after a few months
+    expires: 2027-04-01
+    description: >
+      Recorded when SessionStore is asked to restore a saved window's state
+      into an existing window whose immutable window features doesn't match
+      that of the saved window state. A window's chrome is fixed at creation
+      time and can't be changed afterwards, so the mismatched parts of the
+      saved state are silently not applied - only tabs and other non-chrome
+      state still get restored into the existing window.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2070404
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2070404
+    notification_emails:
+      - session-restore-telemetry-alerts@mozilla.com
+    expires: never
+    extra_keys:
+      entry_point:
+        description: >
+          Which code path triggered the restore attempt:
+          - "set_window_state": SessionRestore.setWindowState()
+          - "set_browser_state": SessionRestore.setBrowserState()
+          - "automatic_startup": automatic session restore on startup
+          - "automatic_with_taskbar_tab": automatic session restore after
+            the user opened the first normal window after having only taskbar
+            tabs open
+          - "deferred_initial_state": deferred restore when opening the first
+            normal window after having closed all normal windows
+          - "unknown": caller didn't specify
+        type: string
+      existing_features:
+        description: >
+          Existing window's features in a comma-separated list. One or more of:
+          - popup
+          - private
+          - taskbartab
+          - chromeless-window
+          - web-extension-popup-window
+        type: string
+      requested_features:
+        description: >
+          Saved state's window features in a comma-separated list. See
+          `existing_features` for definitions.
         type: string
     data_sensitivity:
       - interaction

@@ -114,6 +114,10 @@ class Queue : public LockingPolicy {
  public:
   Queue() : mFront(&mStorage1), mBack(&mStorage2) {}
 
+  // Queue is not copyable.
+  Queue(const Queue&) = delete;
+  Queue& operator=(const Queue&) = delete;
+
   bool IsEmpty() {
     AutoLock lock(*this);
     return StoragePolicy::IsEmpty(*mFront) && StoragePolicy::IsEmpty(*mBack);
@@ -156,11 +160,6 @@ class Queue : public LockingPolicy {
 
   // XXX Do we need this?
   void Unlock() { LockingPolicy::Unlock(); }
-
- private:
-  // Queue is not copyable.
-  Queue(const Queue&);
-  Queue& operator=(const Queue&);
 };
 
 }  // namespace mozilla::dom::workerinternals

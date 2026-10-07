@@ -252,9 +252,9 @@ mozilla::ipc::IPCResult MediaTransportParent::RecvSendPacket(
 
 mozilla::ipc::IPCResult MediaTransportParent::RecvAddIceCandidate(
     const string& transportId, const string& candidate, const string& ufrag,
-    const string& obfuscatedAddr) {
+    const string& resolvedAddress) {
   mImpl->mHandler->AddIceCandidate(transportId, candidate, ufrag,
-                                   obfuscatedAddr);
+                                   resolvedAddress);
   return ipc::IPCResult::Ok();
 }
 

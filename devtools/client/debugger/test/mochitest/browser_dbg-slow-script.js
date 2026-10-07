@@ -46,8 +46,13 @@ add_task(async function openDebuggerFromDialog() {
     "process-hang"
   );
 
-  // /!\ Hack this attribute in order to force showing the "debug script" button
-  //     on all channels. Otherwise it is only displayed in dev edition.
+  // /!\ Hack this `watchedByDevTools` attribute in order to force showing the
+  //     "debug script" button on all channels.
+  // Otherwise it is only displayed in dev edition.
+  // Also, this attribute can only be toggled when DevTools are declared as
+  // being active.
+  ChromeUtils.notifyDevToolsOpened();
+  registerCleanupFunction(() => ChromeUtils.notifyDevToolsClosed());
   tab.linkedBrowser.browsingContext.watchedByDevTools = true;
 
   info("Execute an infinite loop");

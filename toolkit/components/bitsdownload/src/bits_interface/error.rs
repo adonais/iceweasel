@@ -129,6 +129,7 @@ impl From<&PipeError> for ErrorType {
             PipeError::Timeout => ErrorType::PipeTimeout,
             PipeError::WriteCount(_, _) => ErrorType::PipeBadWriteCount,
             PipeError::Api(_) => ErrorType::PipeApiError,
+            PipeError::ConnectBcm(_) => ErrorType::FailedToConnectToBcm,
         }
     }
 }
@@ -255,6 +256,12 @@ impl BitsTaskError {
                 error_type,
                 error_action,
                 error_stage: ErrorStage::AgentCommunication,
+                error_code: comedy_error.into(),
+            },
+            PipeError::ConnectBcm(comedy_error) => BitsTaskError {
+                error_type,
+                error_action,
+                error_stage: ErrorStage::BitsClient,
                 error_code: comedy_error.into(),
             },
             _ => BitsTaskError {

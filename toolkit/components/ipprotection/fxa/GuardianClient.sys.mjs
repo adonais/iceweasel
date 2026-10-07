@@ -32,7 +32,7 @@ ChromeUtils.defineLazyGetter(
 );
 ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
   console.createInstance({
-    prefix: "GuardianClient",
+    prefix: "IPP_GuardianClient",
     maxLogLevel: Services.prefs.getBoolPref("browser.ipProtection.log", false)
       ? "Debug"
       : "Warn",
@@ -360,7 +360,7 @@ export class GuardianClient {
       return { ok: false, error: AUTH_ERRORS.NETWORK_ERROR };
     }
     if (!response.ok) {
-      return { ok: false, error: `status_${response.status}` };
+      return { ok: false, error: GuardianClient.toError(response.status) };
     }
     try {
       const entitlement = await Entitlement.fromResponse(response);

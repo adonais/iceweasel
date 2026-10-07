@@ -14,8 +14,28 @@ const ABOUT_WELCOME_OVERRIDE_CONTENT_PREF = "browser.aboutwelcome.screens";
 
 const { MockFilePicker } = SpecialPowers;
 const { BackupService } = ChromeUtils.importESModule(
-  "resource:///modules/backup/BackupService.sys.mjs"
+  "moz-src:///browser/components/backup/BackupService.sys.mjs"
 );
+
+const BASE_SCREEN_CONTENT = {
+  title: "Step 1",
+  primary_button: {
+    label: "Next",
+    action: {
+      navigate: true,
+    },
+  },
+  secondary_button: {
+    label: "link",
+  },
+};
+
+const makeTestContent = (id, contentAdditions) => {
+  return {
+    id,
+    content: Object.assign({}, BASE_SCREEN_CONTENT, contentAdditions),
+  };
+};
 
 function popPrefs() {
   return SpecialPowers.popPrefEnv();

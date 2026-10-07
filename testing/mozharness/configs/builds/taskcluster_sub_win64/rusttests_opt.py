@@ -6,7 +6,6 @@ config = {
     "default_actions": [
         "build",
     ],
-    "stage_platform": "win64-rusttests",
     "env": {
         "XPCOM_DEBUG_BREAK": "stack-and-abort",
     },

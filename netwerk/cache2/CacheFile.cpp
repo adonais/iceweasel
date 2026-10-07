@@ -17,6 +17,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/TelemetryHistogramEnums.h"
 #include "mozilla/glean/NetwerkCache2Metrics.h"
+#include "nsCRTGlue.h"
 #include "nsComponentManagerUtils.h"
 #include "nsICacheEntry.h"
 #include "nsProxyRelease.h"
@@ -1624,7 +1625,8 @@ nsresult CacheFile::GetChunkLocked(uint32_t aIndex, ECallerType aCaller,
         if (startChunk != aIndex) {
           // Make sure the file contains zeroes at the end of the file
           rv = CacheFileIOManager::TruncateSeekSetEOF(
-              mHandle, startChunk * kChunkSize, aIndex * kChunkSize, nullptr);
+              mHandle, int64_t(startChunk) * kChunkSize,
+              int64_t(aIndex) * kChunkSize, nullptr);
           NS_ENSURE_SUCCESS(rv, rv);
         }
 
@@ -1952,7 +1954,7 @@ int64_t CacheFile::BytesFromChunk(uint32_t aIndex, bool aAlternativeData) {
   // theoretic bytes in advance
   int64_t advance = int64_t(i - aIndex) * kChunkSize;
   // real bytes till the end of the file
-  int64_t tail = dataSize - (aIndex * kChunkSize);
+  int64_t tail = dataSize - (int64_t(aIndex) * kChunkSize);
 
   return std::min(advance, tail);
 }

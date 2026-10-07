@@ -6,4 +6,6 @@ browser.jar:
     content/browser/aboutPrivateBrowsing.css              (content/aboutPrivateBrowsing.css)
     content/browser/aboutPrivateBrowsing.html             (content/aboutPrivateBrowsing.html)
     content/browser/aboutPrivateBrowsing.js               (content/aboutPrivateBrowsing.js)
+    content/browser/private-browsing-mask-intro.mjs       (content/private-browsing-mask-intro.mjs)
+    content/browser/private-browsing-mask-intro.css       (content/private-browsing-mask-intro.css)
     content/browser/assets/                               (content/assets/*)

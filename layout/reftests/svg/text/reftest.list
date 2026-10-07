@@ -26,7 +26,7 @@ fuzzy-if(winWidget,47-138,260-319) fuzzy-if(Android,0-9,0-116) == simple-bidi.sv
 
 == simple-fill-color-dynamic.svg simple-fill-color-dynamic-ref.svg
 fuzzy-if(winWidget,47-129,221-254) fuzzy-if(cocoaWidget,0-65,0-196) fuzzy-if(Android,0-8,0-194) == simple-fill-color.svg simple-fill-color-ref.html
-== simple-fill-gradient.svg simple-fill-gradient-ref.svg
+fuzzy(0-1,0-60) == simple-fill-gradient.svg simple-fill-gradient-ref.svg
 == simple-fill-none.svg simple.svg
 == simple-pointer-events.svg simple.svg
 
@@ -124,7 +124,7 @@ fuzzy(0-1,0-15) == textpath.svg textpath-ref.svg
 == textpath-after-anchor-end.svg textpath-after-anchor-end-ref.svg
 == textpath-reset-position.svg textpath-reset-position-ref.svg
 == textpath-inherit-position.svg textpath-inherit-position-ref.svg
-fails-if(useDrawSnapshot) == textpath-transform-zoom.html textpath-transform-zoom-ref.html # drawSnapshot doesn't deal with zoom properly.
+== textpath-transform-zoom.html textpath-transform-zoom-ref.html
 
 == textLength.svg textLength-ref.svg
 fuzzy(0-1,0-200) == textLength-2.svg textLength-2-ref.svg

@@ -18,6 +18,7 @@ and more.
 ```{eval-rst}
 .. autoclass:: MozHttpd
    :members:
+   :no-index:
 ```
 
 [wptserve]: https://pypi.python.org/pypi/wptserve

@@ -43,6 +43,7 @@ class Location final : public nsISupports,
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Location)
 
   // WebIDL API:
+  MOZ_CAN_RUN_SCRIPT
   void Assign(const nsACString& aUrl, nsIPrincipal& aSubjectPrincipal,
               ErrorResult& aError);
 
@@ -66,42 +67,49 @@ class Location final : public nsISupports,
   void GetProtocol(nsACString& aProtocol, nsIPrincipal& aSubjectPrincipal,
                    ErrorResult& aError);
 
+  MOZ_CAN_RUN_SCRIPT
   void SetProtocol(const nsACString& aProtocol, nsIPrincipal& aSubjectPrincipal,
                    ErrorResult& aError);
 
   void GetHost(nsACString& aHost, nsIPrincipal& aSubjectPrincipal,
                ErrorResult& aError);
 
+  MOZ_CAN_RUN_SCRIPT
   void SetHost(const nsACString& aHost, nsIPrincipal& aSubjectPrincipal,
                ErrorResult& aError);
 
   void GetHostname(nsACString& aHostname, nsIPrincipal& aSubjectPrincipal,
                    ErrorResult& aError);
 
+  MOZ_CAN_RUN_SCRIPT
   void SetHostname(const nsACString& aHostname, nsIPrincipal& aSubjectPrincipal,
                    ErrorResult& aError);
 
   void GetPort(nsACString& aPort, nsIPrincipal& aSubjectPrincipal,
                ErrorResult& aError);
 
+  MOZ_CAN_RUN_SCRIPT
   void SetPort(const nsACString& aPort, nsIPrincipal& aSubjectPrincipal,
                ErrorResult& aError);
 
   void GetPathname(nsACString& aPathname, nsIPrincipal& aSubjectPrincipal,
                    ErrorResult& aError);
 
+  MOZ_CAN_RUN_SCRIPT
   void SetPathname(const nsACString& aPathname, nsIPrincipal& aSubjectPrincipal,
                    ErrorResult& aError);
 
   void GetSearch(nsACString& aSeach, nsIPrincipal& aSubjectPrincipal,
                  ErrorResult& aError);
 
+  MOZ_CAN_RUN_SCRIPT
   void SetSearch(const nsACString& aSeach, nsIPrincipal& aSubjectPrincipal,
                  ErrorResult& aError);
 
   void GetHash(nsACString& aHash, nsIPrincipal& aSubjectPrincipal,
                ErrorResult& aError);
 
+  MOZ_CAN_RUN_SCRIPT
   void SetHash(const nsACString& aHash, nsIPrincipal& aSubjectPrincipal,
                ErrorResult& aError);
 

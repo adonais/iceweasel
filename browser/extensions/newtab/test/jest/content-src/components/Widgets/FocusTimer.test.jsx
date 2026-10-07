@@ -1,10 +1,52 @@
-import { act, fireEvent, render } from "@testing-library/react";
-import { INITIAL_STATE } from "common/Reducers.sys.mjs";
-import { WrapWithProvider } from "test/jest/test-utils";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+import { combineReducers, createStore } from "redux";
+import { Provider } from "react-redux";
+import { render, fireEvent, act } from "@testing-library/react";
+import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
+import { actionTypes as at } from "common/Actions.mjs";
 import {
   FocusTimer,
+  isNumericValue,
+  isAtMaxLength,
   isValidSpinbuttonInput,
 } from "content-src/components/Widgets/FocusTimer/FocusTimer";
+
+const PREF_WIDGETS_SYSTEM_NOTIFICATIONS_ENABLED =
+  "widgets.focusTimer.showSystemNotifications";
+
+const mockState = {
+  ...INITIAL_STATE,
+  Prefs: {
+    ...INITIAL_STATE.Prefs,
+    values: {
+      ...INITIAL_STATE.Prefs.values,
+      [PREF_WIDGETS_SYSTEM_NOTIFICATIONS_ENABLED]: true,
+    },
+  },
+  TimerWidget: {
+    timerType: "focus",
+    focus: {
+      duration: 1500,
+      initialDuration: 1500,
+      startTime: null,
+      isRunning: null,
+    },
+    break: {
+      duration: 300,
+      initialDuration: 300,
+      startTime: null,
+      isRunning: null,
+    },
+  },
+};
+
+function WrapWithProvider({ children, state = INITIAL_STATE }) {
+  let store = createStore(combineReducers(reducers), state);
+  return <Provider store={store}>{children}</Provider>;
+}
 
 const defaultProps = {
   dispatch: jest.fn(),
@@ -57,11 +99,815 @@ function renderTimer({ state, props } = {}) {
 }
 
 describe("<FocusTimer>", () => {
-  it("should render", () => {
-    const { container } = renderTimer();
+  let container;
+  let dispatch;
+  let handleUserInteraction;
+
+  function renderTimer(state = mockState, props = {}) {
+    return render(
+      <WrapWithProvider state={state}>
+        <FocusTimer
+          dispatch={dispatch}
+          handleUserInteraction={handleUserInteraction}
+          widgetsMayBeMaximized={false}
+          {...props}
+        />
+      </WrapWithProvider>
+    );
+  }
+
+  beforeEach(() => {
+    dispatch = jest.fn();
+    // jest fake timers stand in for sinon's useFakeTimers()
+    jest.useFakeTimers();
+    handleUserInteraction = jest.fn();
+
+    ({ container } = renderTimer(mockState));
+  });
+
+  afterEach(() => {
+    // restore real timers after each test to avoid leaking fake timers
+    jest.useRealTimers();
+  });
+
+  it("should render timer widget", () => {
+    expect(container).toBeInTheDocument();
     expect(container.querySelector(".focus-timer")).toBeInTheDocument();
   });
 
+  it("should show default minutes for Focus timer (25 minutes)", () => {
+    const minutes = container.querySelector(".timer-set-minutes").textContent;
+    const seconds = container.querySelector(".timer-set-seconds").textContent;
+    expect(minutes).toBe("25");
+    expect(seconds).toBe("00");
+  });
+
+  it("should show default minutes for Break timer (5 minutes)", () => {
+    const breakState = {
+      ...mockState,
+      TimerWidget: {
+        ...mockState.TimerWidget,
+        timerType: "break", // setting timer type to break
+      },
+    };
+
+    ({ container } = renderTimer(breakState));
+
+    const minutes = container.querySelector(".timer-set-minutes").textContent;
+    const seconds = container.querySelector(".timer-set-seconds").textContent;
+
+    expect(minutes).toBe("05");
+    expect(seconds).toBe("00");
+  });
+
+  it("should start timer and show progress bar when pressing play", () => {
+    fireEvent.click(
+      container.querySelector(
+        "moz-button[data-l10n-id='newtab-widget-timer-label-play']"
+      )
+    );
+    expect(
+      container.querySelector(".progress-circle-wrapper")
+    ).toBeInTheDocument();
+
+    const [[playAction], [oldTelemetryEvent], [newTelemetryEvent]] =
+      dispatch.mock.calls;
+    expect(playAction.type).toBe(at.WIDGETS_TIMER_PLAY);
+
+    expect(oldTelemetryEvent.type).toBe(at.WIDGETS_TIMER_USER_EVENT);
+    expect(oldTelemetryEvent.data.userAction).toBe("timer_play");
+
+    expect(newTelemetryEvent.type).toBe(at.WIDGETS_USER_EVENT);
+    expect(newTelemetryEvent.data.widget_name).toBe("focus_timer");
+    expect(newTelemetryEvent.data.widget_source).toBe("widget");
+    expect(newTelemetryEvent.data.user_action).toBe("timer_play");
+    expect(newTelemetryEvent.data.widget_size).toBe("medium");
+  });
+
+  it("should pause the timer when pressing pause", () => {
+    const now = Math.floor(Date.now() / 1000);
+    const runningState = {
+      ...mockState,
+      TimerWidget: {
+        ...mockState.TimerWidget,
+        focus: {
+          ...mockState.TimerWidget.focus,
+          isRunning: true,
+          startTime: now,
+        },
+      },
+    };
+
+    ({ container } = renderTimer(runningState));
+
+    const pauseBtn = container.querySelector(
+      "moz-button[data-l10n-id='newtab-widget-timer-label-pause']"
+    );
+    expect(pauseBtn).toBeInTheDocument();
+    fireEvent.click(pauseBtn);
+
+    const [[pauseAction], [oldTelemetryEvent], [newTelemetryEvent]] =
+      dispatch.mock.calls;
+    expect(pauseAction.type).toBe(at.WIDGETS_TIMER_PAUSE);
+
+    expect(oldTelemetryEvent.type).toBe(at.WIDGETS_TIMER_USER_EVENT);
+    expect(oldTelemetryEvent.data.userAction).toBe("timer_pause");
+
+    expect(newTelemetryEvent.type).toBe(at.WIDGETS_USER_EVENT);
+    expect(newTelemetryEvent.data.widget_name).toBe("focus_timer");
+    expect(newTelemetryEvent.data.widget_source).toBe("widget");
+    expect(newTelemetryEvent.data.user_action).toBe("timer_pause");
+    expect(newTelemetryEvent.data.widget_size).toBe("medium");
+  });
+
+  it("should reset timer should be hidden when timer is not running", () => {
+    const resetBtn = container.querySelector(
+      "moz-button[data-l10n-id='newtab-widget-timer-reset']"
+    );
+    expect(resetBtn).not.toBeInTheDocument();
+  });
+
+  it("should reset timer when pressing reset", () => {
+    const now = Math.floor(Date.now() / 1000);
+    const runningState = {
+      ...mockState,
+      TimerWidget: {
+        ...mockState.TimerWidget,
+        focus: {
+          ...mockState.TimerWidget.focus,
+          isRunning: true,
+          startTime: now,
+        },
+      },
+    };
+
+    ({ container } = renderTimer(runningState));
+
+    const resetBtn = container.querySelector(
+      "moz-button[data-l10n-id='newtab-widget-timer-reset']"
+    );
+
+    expect(resetBtn).toBeInTheDocument();
+    fireEvent.click(resetBtn);
+
+    const [[resetAction], [oldTelemetryEvent], [newTelemetryEvent]] =
+      dispatch.mock.calls;
+    expect(resetAction.type).toBe(at.WIDGETS_TIMER_RESET);
+
+    expect(oldTelemetryEvent.type).toBe(at.WIDGETS_TIMER_USER_EVENT);
+    expect(oldTelemetryEvent.data.userAction).toBe("timer_reset");
+
+    expect(newTelemetryEvent.type).toBe(at.WIDGETS_USER_EVENT);
+    expect(newTelemetryEvent.data.widget_name).toBe("focus_timer");
+    expect(newTelemetryEvent.data.widget_source).toBe("widget");
+    expect(newTelemetryEvent.data.user_action).toBe("timer_reset");
+    expect(newTelemetryEvent.data.widget_size).toBe("medium");
+
+    const initialUserDuration = 12 * 60;
+
+    const resetState = {
+      ...mockState,
+      TimerWidget: {
+        ...mockState.TimerWidget,
+        focus: {
+          duration: initialUserDuration,
+          initialDuration: initialUserDuration,
+          startTime: null,
+          isRunning: false,
+        },
+      },
+    };
+
+    ({ container } = renderTimer(resetState));
+
+    expect(
+      container.querySelectorAll(".progress-circle-wrapper.visible")
+    ).toHaveLength(0);
+    const minutes = container.querySelector(".timer-set-minutes").textContent;
+    const seconds = container.querySelector(".timer-set-seconds").textContent;
+    expect(minutes).toBe("12");
+    expect(seconds).toBe("00");
+  });
+
+  it("should dispatch pause and set type and when clicking the break timer", () => {
+    const breakBtn = container.querySelector(
+      "moz-button[data-l10n-id='newtab-widget-timer-mode-break']"
+    );
+    expect(breakBtn).toBeInTheDocument();
+    fireEvent.click(breakBtn);
+
+    const types = dispatch.mock.calls
+      .map(([action]) => action.type)
+      .filter(Boolean);
+
+    expect(types).toContain(at.WIDGETS_TIMER_PAUSE);
+    expect(types).toContain(at.WIDGETS_TIMER_USER_EVENT);
+    expect(types).toContain(at.WIDGETS_USER_EVENT);
+    expect(types).toContain(at.WIDGETS_TIMER_SET_TYPE);
+
+    const findTypeToggled = dispatch.mock.calls
+      .map(([action]) => action)
+      .find(action => action.type === at.WIDGETS_TIMER_SET_TYPE);
+
+    expect(findTypeToggled.data.timerType).toBe("break");
+
+    const unifiedPauseEvent = dispatch.mock.calls
+      .map(([action]) => action)
+      .find(
+        action =>
+          action.type === at.WIDGETS_USER_EVENT &&
+          action.data.user_action === "timer_pause"
+      );
+
+    expect(unifiedPauseEvent).toBeDefined();
+    expect(unifiedPauseEvent.data.widget_name).toBe("focus_timer");
+    expect(unifiedPauseEvent.data.widget_source).toBe("widget");
+
+    const unifiedToggleEvent = dispatch.mock.calls
+      .map(([action]) => action)
+      .find(
+        action =>
+          action.type === at.WIDGETS_USER_EVENT &&
+          action.data.user_action === "timer_toggle_break"
+      );
+
+    expect(unifiedToggleEvent).toBeDefined();
+    expect(unifiedToggleEvent.data.widget_name).toBe("focus_timer");
+    expect(unifiedToggleEvent.data.widget_source).toBe("widget");
+  });
+
+  it("should dispatch set type when clicking the focus timer", () => {
+    const focusBtn = container.querySelector(
+      "moz-button[data-l10n-id='newtab-widget-timer-mode-focus']"
+    );
+    expect(focusBtn).toBeInTheDocument();
+    fireEvent.click(focusBtn);
+
+    const types = dispatch.mock.calls
+      .map(([action]) => action.type)
+      .filter(Boolean);
+
+    expect(types).toContain(at.WIDGETS_TIMER_PAUSE);
+    expect(types).toContain(at.WIDGETS_TIMER_USER_EVENT);
+    expect(types).toContain(at.WIDGETS_USER_EVENT);
+    expect(types).toContain(at.WIDGETS_TIMER_SET_TYPE);
+
+    const findTypeToggled = dispatch.mock.calls
+      .map(([action]) => action)
+      .find(action => action.type === at.WIDGETS_TIMER_SET_TYPE);
+
+    expect(findTypeToggled.data.timerType).toBe("focus");
+
+    const unifiedToggleEvent = dispatch.mock.calls
+      .map(([action]) => action)
+      .find(
+        action =>
+          action.type === at.WIDGETS_USER_EVENT &&
+          action.data.user_action === "timer_toggle_focus"
+      );
+
+    expect(unifiedToggleEvent).toBeDefined();
+    expect(unifiedToggleEvent.data.widget_name).toBe("focus_timer");
+    expect(unifiedToggleEvent.data.widget_source).toBe("widget");
+  });
+
+  it("should toggle from focus to break timer automatically on end", () => {
+    const now = Math.floor(Date.now() / 1000);
+
+    const endState = {
+      ...mockState,
+      TimerWidget: {
+        ...mockState.TimerWidget,
+        focus: {
+          ...mockState.TimerWidget.break,
+          isRunning: true,
+          startTime: now - 300,
+        },
+      },
+    };
+
+    ({ container } = renderTimer(endState));
+
+    // Let interval fire and start the timer_end logic
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    // Allowing time for the chained timeouts for animation
+    act(() => {
+      jest.advanceTimersByTime(3000);
+    });
+
+    const types = dispatch.mock.calls
+      .map(([action]) => action.type)
+      .filter(Boolean);
+
+    expect(types).toContain(at.WIDGETS_TIMER_END);
+    expect(types).toContain(at.WIDGETS_TIMER_USER_EVENT);
+    expect(types).toContain(at.WIDGETS_USER_EVENT);
+    expect(types).toContain(at.WIDGETS_TIMER_SET_TYPE);
+
+    const findTypeToggled = dispatch.mock.calls
+      .map(([action]) => action)
+      .find(action => action.type === at.WIDGETS_TIMER_SET_TYPE);
+
+    expect(findTypeToggled.data.timerType).toBe("break");
+
+    const unifiedEndEvent = dispatch.mock.calls
+      .map(([action]) => action)
+      .find(
+        action =>
+          action.type === at.WIDGETS_USER_EVENT &&
+          action.data.user_action === "timer_end"
+      );
+
+    expect(unifiedEndEvent).toBeDefined();
+    expect(unifiedEndEvent.data.widget_name).toBe("focus_timer");
+    expect(unifiedEndEvent.data.widget_source).toBe("widget");
+  });
+
+  it("should toggle from break to focus timer automatically on end", () => {
+    const now = Math.floor(Date.now() / 1000);
+
+    const endState = {
+      ...mockState,
+      TimerWidget: {
+        ...mockState.TimerWidget,
+        timerType: "break",
+        break: {
+          ...mockState.TimerWidget.break,
+          isRunning: true,
+          startTime: now - 300,
+        },
+      },
+    };
+
+    ({ container } = renderTimer(endState));
+
+    // Let interval fire and start the timer_end logic
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    // Allowing time for the chained timeouts for animation
+    act(() => {
+      jest.advanceTimersByTime(3000);
+    });
+
+    const types = dispatch.mock.calls.map(([action]) => action.type);
+
+    expect(types).toContain(at.WIDGETS_TIMER_END);
+    expect(types).toContain(at.WIDGETS_TIMER_USER_EVENT);
+    expect(types).toContain(at.WIDGETS_USER_EVENT);
+    expect(types).toContain(at.WIDGETS_TIMER_SET_TYPE);
+
+    const findTypeToggled = dispatch.mock.calls
+      .map(([action]) => action)
+      .find(action => action.type === at.WIDGETS_TIMER_SET_TYPE);
+
+    expect(findTypeToggled.data.timerType).toBe("focus");
+
+    const unifiedEndEvent = dispatch.mock.calls
+      .map(([action]) => action)
+      .find(
+        action =>
+          action.type === at.WIDGETS_USER_EVENT &&
+          action.data.user_action === "timer_end"
+      );
+
+    expect(unifiedEndEvent).toBeDefined();
+    expect(unifiedEndEvent.data.widget_name).toBe("focus_timer");
+    expect(unifiedEndEvent.data.widget_source).toBe("widget");
+  });
+
+  it("should pause when time input is focused", () => {
+    const activeState = {
+      ...mockState,
+      TimerWidget: {
+        ...mockState.TimerWidget,
+        timerType: "focus",
+        focus: {
+          ...mockState.TimerWidget.focus,
+          isRunning: true,
+        },
+      },
+    };
+
+    const { container: activeContainer } = renderTimer(activeState);
+
+    const minutesSpan = activeContainer.querySelector(".timer-set-minutes");
+    expect(minutesSpan).toBeInTheDocument();
+
+    fireEvent.focus(minutesSpan);
+
+    const [[pauseAction], [oldTelemetryEvent], [newTelemetryEvent]] =
+      dispatch.mock.calls;
+    expect(pauseAction.type).toBe(at.WIDGETS_TIMER_PAUSE);
+
+    expect(oldTelemetryEvent.type).toBe(at.WIDGETS_TIMER_USER_EVENT);
+    expect(oldTelemetryEvent.data.userAction).toBe("timer_pause");
+
+    expect(newTelemetryEvent.type).toBe(at.WIDGETS_USER_EVENT);
+    expect(newTelemetryEvent.data.widget_name).toBe("focus_timer");
+    expect(newTelemetryEvent.data.widget_source).toBe("widget");
+    expect(newTelemetryEvent.data.user_action).toBe("timer_pause");
+  });
+
+  it("should reset to user's initial duration after timer ends", () => {
+    const now = Math.floor(Date.now() / 1000);
+
+    // mock up a user's initial duration (12 minutes)
+    const initialUserDuration = 12 * 60;
+
+    const endState = {
+      ...mockState,
+      TimerWidget: {
+        ...mockState.TimerWidget,
+        timerType: "focus",
+        focus: {
+          duration: initialUserDuration,
+          initialDuration: initialUserDuration,
+          startTime: now - initialUserDuration,
+          isRunning: true,
+        },
+      },
+    };
+
+    ({ container } = renderTimer(endState));
+
+    // Let interval fire and start the timer_end logic
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    // Allowing time for the chained timeouts for animation
+    act(() => {
+      jest.advanceTimersByTime(3000);
+    });
+
+    const endCall = dispatch.mock.calls
+      .map(([action]) => action)
+      .find(action => action.type === at.WIDGETS_TIMER_END);
+
+    expect(endCall).toBeDefined();
+    expect(endCall.data.duration).toBe(initialUserDuration);
+    expect(endCall.data.initialDuration).toBe(initialUserDuration);
+  });
+
+  it("should wait one second at zero before completing timer", () => {
+    const now = Math.floor(Date.now() / 1000);
+
+    const endState = {
+      ...mockState,
+      TimerWidget: {
+        ...mockState.TimerWidget,
+        timerType: "focus",
+        focus: {
+          duration: 300,
+          initialDuration: 300,
+          startTime: now - 300,
+          isRunning: true,
+        },
+      },
+    };
+
+    ({ container } = renderTimer(endState));
+
+    // First interval tick - should reach zero but not complete
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    // Verify timer has not ended yet (no WIDGETS_TIMER_END dispatched)
+    const callsAfterFirstTick = dispatch.mock.calls
+      .map(([action]) => action)
+      .filter(action => action && action.type === at.WIDGETS_TIMER_END);
+
+    expect(callsAfterFirstTick).toHaveLength(0);
+
+    // Second interval tick - should now complete
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    // Allowing time for the chained timeouts for animation
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
+
+    const endCall = dispatch.mock.calls
+      .map(([action]) => action)
+      .find(action => action && action.type === at.WIDGETS_TIMER_END);
+
+    expect(endCall).toBeDefined();
+  });
+
+  describe("context menu", () => {
+    it("should render default context menu", () => {
+      expect(
+        container.querySelector(".focus-timer-context-menu-button")
+      ).toBeInTheDocument();
+      expect(
+        container.querySelector("#focus-timer-context-menu")
+      ).toBeInTheDocument();
+
+      // "Turn notifications off" option
+      expect(
+        container.querySelector(
+          "panel-item[data-l10n-id='newtab-widget-timer-menu-notifications']"
+        )
+      ).toBeInTheDocument();
+
+      expect(
+        container.querySelector(
+          "panel-item[data-l10n-id='newtab-widget-menu-hide']"
+        )
+      ).toBeInTheDocument();
+
+      expect(
+        container.querySelector(
+          "panel-item[data-l10n-id='newtab-widget-timer-menu-learn-more']"
+        )
+      ).toBeInTheDocument();
+
+      // Make sure "Turn notifications on" is not there
+      expect(
+        container.querySelector(
+          "panel-item[data-l10n-id='newtab-widget-timer-menu-notifications-on']"
+        )
+      ).not.toBeInTheDocument();
+    });
+
+    it("should render context menu with 'turn notifications on' if notifications are disabled", () => {
+      const noNotificationsState = {
+        ...mockState,
+        Prefs: {
+          ...INITIAL_STATE.Prefs,
+          values: {
+            ...INITIAL_STATE.Prefs.values,
+            [PREF_WIDGETS_SYSTEM_NOTIFICATIONS_ENABLED]: false,
+          },
+        },
+      };
+
+      ({ container } = renderTimer(noNotificationsState));
+
+      // "Turn notifications on" option
+      expect(
+        container.querySelector(
+          "panel-item[data-l10n-id='newtab-widget-timer-menu-notifications-on']"
+        )
+      ).toBeInTheDocument();
+
+      // Make sure "Turn notifications off" is not there
+      expect(
+        container.querySelector(
+          "panel-item[data-l10n-id='newtab-widget-timer-menu-notifications']"
+        )
+      ).not.toBeInTheDocument();
+    });
+
+    it("should turn off notifications when the 'Turn off notifications' option is clicked", () => {
+      const menuItem = container.querySelector(
+        "panel-item[data-l10n-id='newtab-widget-timer-menu-notifications']"
+      );
+      fireEvent.click(menuItem);
+
+      expect(dispatch).toHaveBeenCalledTimes(1);
+      const [[action]] = dispatch.mock.calls;
+      expect(action.type).toBe(at.SET_PREF);
+    });
+
+    it("should hide Focus Timer when 'Hide widget' option is clicked", () => {
+      const menuItem = container.querySelector(
+        "panel-item[data-l10n-id='newtab-widget-menu-hide']"
+      );
+      fireEvent.click(menuItem);
+
+      expect(dispatch).toHaveBeenCalledTimes(2);
+
+      const [[setPrefAction], [telemetryEvent]] = dispatch.mock.calls;
+      expect(setPrefAction.type).toBe(at.SET_PREF);
+      expect(setPrefAction.data.name).toBe("widgets.focusTimer.enabled");
+      expect(setPrefAction.data.value).toBe(false);
+
+      expect(telemetryEvent.type).toBe(at.WIDGETS_ENABLED);
+      expect(telemetryEvent.data.widget_name).toBe("focus_timer");
+      expect(telemetryEvent.data.widget_source).toBe("context_menu");
+      expect(telemetryEvent.data.enabled).toBe(false);
+      expect(telemetryEvent.data.widget_size).toBe("medium");
+
+      expect(handleUserInteraction).not.toHaveBeenCalled();
+    });
+
+    it("should dispatch OPEN_LINK when the Learn More option is clicked", () => {
+      const menuItem = container.querySelector(
+        "panel-item[data-l10n-id='newtab-widget-timer-menu-learn-more']"
+      );
+      fireEvent.click(menuItem);
+
+      expect(dispatch).toHaveBeenCalledTimes(1);
+      const [[action]] = dispatch.mock.calls;
+      expect(action.type).toBe(at.OPEN_LINK);
+    });
+  });
+
+  // Tests for the focus timer input. It should only allow numbers
+  describe("isNumericValue", () => {
+    it("should return true for single digit numbers", () => {
+      expect(isNumericValue("0")).toBe(true);
+      expect(isNumericValue("1")).toBe(true);
+      expect(isNumericValue("5")).toBe(true);
+      expect(isNumericValue("9")).toBe(true);
+    });
+
+    it("should return true for multi-digit numbers", () => {
+      expect(isNumericValue("10")).toBe(true);
+      expect(isNumericValue("25")).toBe(true);
+      expect(isNumericValue("99")).toBe(true);
+    });
+
+    it("should return false for non-numeric characters", () => {
+      expect(isNumericValue("a")).toBe(false);
+      expect(isNumericValue("Z")).toBe(false);
+      expect(isNumericValue("!")).toBe(false);
+      expect(isNumericValue("@")).toBe(false);
+      expect(isNumericValue(" ")).toBe(false);
+    });
+
+    it("should return false for special characters", () => {
+      expect(isNumericValue("-")).toBe(false);
+      expect(isNumericValue("+")).toBe(false);
+      expect(isNumericValue(".")).toBe(false);
+      expect(isNumericValue(",")).toBe(false);
+    });
+
+    it("should return false for mixed alphanumeric strings", () => {
+      expect(isNumericValue("1a")).toBe(false);
+      expect(isNumericValue("a1")).toBe(false);
+      expect(isNumericValue("5x")).toBe(false);
+    });
+
+    it("should return false for empty string", () => {
+      expect(isNumericValue(" ")).toBe(false);
+    });
+  });
+
+  // Tests for the 2-character limit (enforces max 99 minutes, 59 seconds)
+  describe("isAtMaxLength", () => {
+    it("should return false for empty string", () => {
+      expect(isAtMaxLength("")).toBe(false);
+    });
+
+    it("should return false for single character", () => {
+      expect(isAtMaxLength("5")).toBe(false);
+      expect(isAtMaxLength("9")).toBe(false);
+    });
+
+    it("should return true for 2 characters", () => {
+      expect(isAtMaxLength("25")).toBe(true);
+      expect(isAtMaxLength("99")).toBe(true);
+      expect(isAtMaxLength("00")).toBe(true);
+    });
+
+    it("should return true for more than 2 characters", () => {
+      expect(isAtMaxLength("123")).toBe(true);
+      expect(isAtMaxLength("999")).toBe(true);
+    });
+  });
+
+  describe("size submenu (nova)", () => {
+    const novaState = {
+      ...mockState,
+      Prefs: {
+        ...mockState.Prefs,
+        values: {
+          ...mockState.Prefs.values,
+          "nova.enabled": true,
+          "widgets.focusTimer.size": "medium",
+        },
+      },
+    };
+
+    it("does not render size submenu when nova is disabled", () => {
+      expect(
+        container.querySelector("panel-list[id='focus-timer-size-submenu']")
+      ).not.toBeInTheDocument();
+    });
+
+    it("renders size submenu with small/medium/large items when nova is enabled", () => {
+      const { container: novaContainer } = renderTimer(novaState, {
+        widgetsMayBeMaximized: true,
+      });
+      const submenu = novaContainer.querySelector(
+        "panel-list[id='focus-timer-size-submenu']"
+      );
+      expect(submenu).toBeInTheDocument();
+
+      const items = submenu.querySelectorAll("panel-item");
+      expect(items).toHaveLength(3);
+
+      const smallItem = submenu.querySelector("panel-item[data-size='small']");
+      const mediumItem = submenu.querySelector(
+        "panel-item[data-size='medium']"
+      );
+      const largeItem = submenu.querySelector("panel-item[data-size='large']");
+      expect(smallItem).toBeInTheDocument();
+      expect(mediumItem).toBeInTheDocument();
+      expect(largeItem).toBeInTheDocument();
+    });
+
+    it("marks the current size as checked and the other as undefined", () => {
+      const { container: novaContainer } = renderTimer(novaState, {
+        widgetsMayBeMaximized: true,
+      });
+      const submenu = novaContainer.querySelector(
+        "panel-list[id='focus-timer-size-submenu']"
+      );
+
+      const mediumItem = submenu.querySelector(
+        "panel-item[data-size='medium']"
+      );
+      const largeItem = submenu.querySelector("panel-item[data-size='large']");
+
+      expect(mediumItem.hasAttribute("checked")).toBe(true);
+      expect(largeItem.hasAttribute("checked")).toBe(false);
+    });
+
+    it("dispatches SET_PREF and WIDGETS_USER_EVENT when clicking a size item", () => {
+      const { container: novaContainer } = renderTimer(novaState, {
+        widgetsMayBeMaximized: true,
+      });
+      const submenuNode = novaContainer.querySelector(
+        "panel-list[id='focus-timer-size-submenu']"
+      );
+      const mockItem = document.createElement("div");
+      mockItem.dataset.size = "large";
+      const event = new MouseEvent("click", { bubbles: true });
+      Object.defineProperty(event, "composedPath", {
+        value: () => [mockItem],
+      });
+      submenuNode.dispatchEvent(event);
+
+      expect(dispatch).toHaveBeenCalledTimes(2);
+
+      const [[setPrefAction], [telemetryAction]] = dispatch.mock.calls;
+      expect(setPrefAction.type).toBe(at.SET_PREF);
+      expect(setPrefAction.data.name).toBe("widgets.focusTimer.size");
+      expect(setPrefAction.data.value).toBe("large");
+
+      expect(telemetryAction.type).toBe(at.WIDGETS_USER_EVENT);
+      expect(telemetryAction.data.widget_name).toBe("focus_timer");
+      expect(telemetryAction.data.user_action).toBe("change_size");
+      expect(telemetryAction.data.action_value).toBe("large");
+    });
+
+    it("dispatches the small size when the small item is clicked", () => {
+      const { container: novaContainer } = renderTimer(novaState, {
+        widgetsMayBeMaximized: true,
+      });
+      const submenuNode = novaContainer.querySelector(
+        "panel-list[id='focus-timer-size-submenu']"
+      );
+      const mockItem = document.createElement("div");
+      mockItem.dataset.size = "small";
+      const event = new MouseEvent("click", { bubbles: true });
+      Object.defineProperty(event, "composedPath", {
+        value: () => [mockItem],
+      });
+      submenuNode.dispatchEvent(event);
+
+      const [[setPrefAction], [telemetryAction]] = dispatch.mock.calls;
+      expect(setPrefAction.data.name).toBe("widgets.focusTimer.size");
+      expect(setPrefAction.data.value).toBe("small");
+
+      expect(telemetryAction.data.user_action).toBe("change_size");
+      expect(telemetryAction.data.action_value).toBe("small");
+    });
+  });
+
+  it("should clamp minutes to 99 and seconds to 59 when setting duration", () => {
+    // Find the editable fields
+    const minutes = container.querySelector(".timer-set-minutes");
+    const seconds = container.querySelector(".timer-set-seconds");
+
+    // Simulate user typing values beyond limits
+    minutes.innerText = "100";
+    seconds.innerText = "85";
+
+    // Trigger blur, which calls setTimerDuration()
+    fireEvent.blur(seconds);
+
+    // Clamp check
+    const clampedMinutes = Math.min(parseInt(minutes.innerText, 10), 99);
+    const clampedSeconds = Math.min(parseInt(seconds.innerText, 10), 59);
+
+    expect(clampedMinutes).toBe(99);
+    expect(clampedSeconds).toBe(59);
+  });
+});
+
+describe("<FocusTimer> Nova behaviour", () => {
   describe("change-size context menu item", () => {
     it("hides submenu when nova is disabled", () => {
       const { container } = renderTimer({
@@ -166,26 +1012,26 @@ describe("<FocusTimer>", () => {
       ).toBeInTheDocument();
     });
 
-    it("omits the Focus/Break radiogroup when idle in small", () => {
+    it("omits the Focus/Break mode control when idle in small", () => {
       const { container } = renderTimer({ state: smallState() });
       // Idle: the editable spinbutton is still present...
       expect(
         container.querySelector(".focus-timer-spinbutton")
       ).toBeInTheDocument();
-      // ...but the manual Focus/Break radiogroup is not.
-      expect(container.querySelector("[role='radiogroup']")).toBeNull();
+      // ...but the manual Focus/Break mode control is not.
+      expect(container.querySelector("moz-segmented-control")).toBeNull();
     });
 
-    it("keeps the radiogroup when idle in medium", () => {
+    it("keeps the mode control when idle in medium", () => {
       const { container } = renderTimer({
         state: novaState({ "widgets.focusTimer.size": "medium" }),
       });
       expect(
-        container.querySelector("[role='radiogroup']")
+        container.querySelector("moz-segmented-control")
       ).toBeInTheDocument();
     });
 
-    it("running small shows the time display (mode label in DOM) and no reset/radiogroup", () => {
+    it("running small shows the time display (mode label in DOM) and no reset/mode control", () => {
       const { container } = renderTimer({
         state: smallState(
           {},
@@ -208,10 +1054,10 @@ describe("<FocusTimer>", () => {
         )
       ).toBeInTheDocument();
       expect(container.querySelector(".focus-timer-reset-button")).toBeNull();
-      expect(container.querySelector("[role='radiogroup']")).toBeNull();
+      expect(container.querySelector("moz-segmented-control")).toBeNull();
     });
 
-    it("paused small (progressed, not running) shows running layout with no reset/radiogroup", () => {
+    it("paused small (progressed, not running) shows running layout with no reset/mode control", () => {
       const { container } = renderTimer({
         state: smallState(
           {},
@@ -233,7 +1079,7 @@ describe("<FocusTimer>", () => {
         )
       ).toBeInTheDocument();
       expect(container.querySelector(".focus-timer-reset-button")).toBeNull();
-      expect(container.querySelector("[role='radiogroup']")).toBeNull();
+      expect(container.querySelector("moz-segmented-control")).toBeNull();
     });
   });
 
@@ -513,47 +1359,104 @@ describe("<FocusTimer>", () => {
     });
   });
 
-  describe("Nova mode radiogroup", () => {
-    it("wraps the Focus/Break controls in a radiogroup", () => {
+  describe("Nova mode segmented control", () => {
+    function getModeGroup(container) {
+      return container.querySelector("moz-segmented-control");
+    }
+
+    function getModeItems(container) {
+      return Array.from(
+        getModeGroup(container).querySelectorAll("moz-segmented-control-item")
+      );
+    }
+
+    it("renders a segmented control with both modes", () => {
       const { container } = renderTimer({ state: novaState() });
-      const group = container.querySelector("[role='radiogroup']");
-      expect(group).toBeInTheDocument();
-      expect(group.getAttribute("data-l10n-id")).toBe(
+      const modeGroup = getModeGroup(container);
+
+      expect(modeGroup).toBeInTheDocument();
+      expect(modeGroup.getAttribute("data-l10n-id")).toBe(
         "newtab-widget-timer-mode-group"
       );
-      const radios = group.querySelectorAll("[role='radio']");
-      expect(radios).toHaveLength(2);
+
+      const items = getModeItems(container);
+      expect(items.map(item => item.getAttribute("value"))).toEqual([
+        "focus",
+        "break",
+      ]);
+      expect(items.map(item => item.getAttribute("data-l10n-id"))).toEqual([
+        "newtab-widget-timer-mode-focus",
+        "newtab-widget-timer-mode-break",
+      ]);
     });
 
-    it("aria-checked and tabindex track the active timerType", () => {
+    it("hands the active timerType to the control as its value", () => {
       const { container } = renderTimer({
         state: novaState({}, { timerType: "break" }),
       });
-      const radios = container.querySelectorAll(
-        "[role='radiogroup'] [role='radio']"
-      );
-      const focusRadio = Array.from(radios).find(
-        r => r.getAttribute("data-l10n-id") === "newtab-widget-timer-mode-focus"
-      );
-      const breakRadio = Array.from(radios).find(
-        r => r.getAttribute("data-l10n-id") === "newtab-widget-timer-mode-break"
-      );
-      expect(focusRadio.getAttribute("aria-checked")).toBe("false");
-      expect(focusRadio.getAttribute("tabindex")).toBe("-1");
-      expect(breakRadio.getAttribute("aria-checked")).toBe("true");
-      expect(breakRadio.getAttribute("tabindex")).toBe("0");
+      expect(getModeGroup(container).getAttribute("value")).toBe("break");
     });
 
-    it("ArrowRight on the radiogroup toggles timer type", () => {
+    it("toggles timer type when the control reports a new selection", () => {
       const { container, dispatch } = renderTimer({ state: novaState() });
-      const group = container.querySelector("[role='radiogroup']");
-      fireEvent.keyDown(group, { key: "ArrowRight" });
+      const modeGroup = getModeGroup(container);
+
+      // The real component updates its own value before the change event
+      // escapes the shadow root; jsdom never upgrades it, so stand that in.
+      modeGroup.value = "break";
+      fireEvent.change(modeGroup);
 
       const setType = dispatch.mock.calls.find(
         ([action]) => action.type === "WIDGETS_TIMER_SET_TYPE"
       );
       expect(setType).toBeDefined();
       expect(setType[0].data.timerType).toBe("break");
+    });
+
+    it("still toggles after the control unmounts and remounts", () => {
+      const dispatch = jest.fn();
+      const renderWithState = state => (
+        <WrapWithProvider state={state}>
+          <FocusTimer {...defaultProps} dispatch={dispatch} />
+        </WrapWithProvider>
+      );
+      // Only isRunning differs between the two states, and isRunning is not one
+      // of toggleType's dependencies, so an effect keyed on those deps would not
+      // re-attach its listener to the remounted control.
+      const runningState = novaState({}, { focus: { isRunning: true } });
+
+      const { container, rerender } = render(renderWithState(novaState()));
+      expect(getModeGroup(container)).toBeInTheDocument();
+
+      rerender(renderWithState(runningState));
+      expect(getModeGroup(container)).toBeNull();
+
+      rerender(renderWithState(novaState()));
+      const remountedGroup = getModeGroup(container);
+      expect(remountedGroup).toBeInTheDocument();
+
+      remountedGroup.value = "break";
+      fireEvent.change(remountedGroup);
+
+      const setType = dispatch.mock.calls.find(
+        ([action]) => action.type === "WIDGETS_TIMER_SET_TYPE"
+      );
+      expect(setType).toBeDefined();
+      expect(setType[0].data.timerType).toBe("break");
+    });
+
+    it("ignores a change that reports the already-active mode", () => {
+      const { container, dispatch } = renderTimer({ state: novaState() });
+      const modeGroup = getModeGroup(container);
+
+      modeGroup.value = "focus";
+      fireEvent.change(modeGroup);
+
+      expect(
+        dispatch.mock.calls.find(
+          ([action]) => action.type === "WIDGETS_TIMER_SET_TYPE"
+        )
+      ).toBeUndefined();
     });
   });
 
@@ -614,15 +1517,15 @@ describe("<FocusTimer>", () => {
       ).toBeInTheDocument();
     });
 
-    it("swaps the radiogroup for the reset button while running (Large)", () => {
+    it("swaps the mode control for the reset button while running (Large)", () => {
       const { container } = renderTimer({ state: runningState() });
-      expect(container.querySelector("[role='radiogroup']")).toBeNull();
+      expect(container.querySelector("moz-segmented-control")).toBeNull();
       expect(
         container.querySelector(".focus-timer-reset-button")
       ).toBeInTheDocument();
     });
 
-    it("hides both radiogroup and reset button while running (Medium)", () => {
+    it("hides both mode control and reset button while running (Medium)", () => {
       const { container } = renderTimer({
         state: novaState(
           { "widgets.focusTimer.size": "medium" },
@@ -635,7 +1538,7 @@ describe("<FocusTimer>", () => {
           }
         ),
       });
-      expect(container.querySelector("[role='radiogroup']")).toBeNull();
+      expect(container.querySelector("moz-segmented-control")).toBeNull();
       expect(container.querySelector(".focus-timer-reset-button")).toBeNull();
     });
   });

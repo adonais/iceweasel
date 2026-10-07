@@ -45,6 +45,10 @@
     margin-inline-start: 8px;
     align-self: flex-start;
   }
+
+  .icon-container {
+    background-color: transparent;
+  }
 }
 
 @media (prefers-contrast) {
@@ -71,15 +75,26 @@
     --info-bar-background-color: transparent;
     --info-bar-box-shadow: none;
     --message-bar-icon-container-padding: 0px;
-    --message-bar-icon-container-margin-block-start: calc(var(--space-small) + var(--border-width));
+    --message-bar-icon-container-align-items: center;
+    --message-bar-icon-container-padding-block-start: 0;
+    --message-bar-icon-container-height: var(--message-bar-icon-size);
+    --message-bar-icon-container-border-radius-start-start: var(--border-radius-circle);
+    --message-bar-icon-container-border-radius-start-end: var(--border-radius-circle);
+    --message-bar-icon-container-border-radius-end-start: var(--border-radius-circle);
+    --message-bar-icon-container-border-radius-end-end: var(--border-radius-circle);
+    --message-bar-container-padding-inline: 12px;
+    --message-bar-content-padding-inline: 0;
+    --message-bar-content-padding-block: 0;
+    --message-bar-close-margin-inline-end: 0;
 
     border-width: 0;
     border-radius: 0;
     border-block-start: var(--border-width) solid var(--info-bar-border-color);
 
     .icon-container {
-      background-color: transparent;
       align-self: flex-start;
+      /* Lines up with the first line, not the whole block. text-container already pads itself down, so we have to match that. */
+      margin-block-start: calc(1.5 * 1lh - var(--message-bar-icon-size) - 1px);
     }
   }
 
@@ -97,11 +112,11 @@
 }
 
 :host([message-bar-type="infobar"]:first-of-type) {
-  margin-block-start: var(--info-bar-margin-block-start);
+  margin-block-start: var(--info-bar-margin);
 }
 
 :host([message-bar-type="infobar"]) {
-  margin: 0 var(--info-bar-margin-inline) var(--info-bar-margin-block-end);
+  margin: 0 var(--info-bar-margin) var(--info-bar-margin);
 }
 
 ::slotted(.notification-button-container) {

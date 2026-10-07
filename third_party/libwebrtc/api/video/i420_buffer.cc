@@ -78,6 +78,11 @@ scoped_refptr<I420Buffer> I420Buffer::Create(int width, int height) {
 }
 
 // static
+scoped_refptr<I420Buffer> I420Buffer::CreateOrNull(int width, int height) {
+  return I420Buffer::CreateOrNull(width, height, width, (width + 1) / 2, (width + 1) / 2);
+}
+
+// static
 scoped_refptr<I420Buffer> I420Buffer::Create(int width,
                                              int height,
                                              int stride_y,

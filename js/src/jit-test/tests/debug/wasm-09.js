@@ -23,10 +23,10 @@ var wasmScript1 = getWasmScriptWithoutAllowUnobservedWasm('(module (func (nop)))
 var wasmLines1 = wasmScript1.source.text.split('\n');
 assertEq(wasmScript1.startLine, 1);
 assertEq(wasmScript1.lineCount, 0);
-assertEq(wasmLines1.every((l, n) => wasmScript1.getLineOffsets(n + 1).length == 0), true);
+assertEq(wasmLines1.every((l, n) => wasmScript1.getPossibleBreakpointOffsets({ line: n + 1 }).length == 0), true);
 
 // Checking that we must not resolve any location for any offset in a wasm
 // instance which debug mode was not enabled.
 var wasmScript2 = getWasmScriptWithoutAllowUnobservedWasm('(module (func (nop)))');
 for (var i = wasmTextToBinary('(module (func (nop)))').length - 1; i >= 0; i--)
-    assertThrowsInstanceOf(() => wasmScript2.getOffsetLocation(i), Error);
+    assertThrowsInstanceOf(() => wasmScript2.getOffsetMetadata(i), Error);

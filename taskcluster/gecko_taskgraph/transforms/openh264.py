@@ -14,7 +14,7 @@ CACHE_TYPE = "openh264.v1"
 RESOURCES = [
     "taskcluster/scripts/openh264/build.sh",
     "taskcluster/scripts/misc/vs-setup.sh",
-    "testing/mozharness/external_tools/packagesymbols.py",
+    "python/mozbuild/mozbuild/action/packagesymbols.py",
 ]
 
 transforms = TransformSequence()

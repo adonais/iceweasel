@@ -61,6 +61,8 @@ pub enum ReadError {
     #[cfg(target_os = "windows")]
     #[error("ReadProcessMemory failed")]
     ReadProcessMemoryError,
+    #[error("The requested read is too large")]
+    TooLarge,
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]

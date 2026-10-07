@@ -6,20 +6,20 @@ such as system access, normal file I/O, and socket (network) I/O.
 For sample code that illustrates basic I/O operations, see {doc}`introduction_to_nspr`.
 For information about the types most
 commonly used with the functions described in this chapter, see [I/O
-Types](I%2fO_Types).
+Types](i_o_types.md).
 
 - [Functions that Operate on
-  Pathnames](#Functions_that_Operate_on_Pathnames)
+  Pathnames](#functions-that-operate-on-pathnames)
 - [Functions that Act on File
-  Descriptors](#Functions_that_Act_on_File_Descriptors)
-- [Directory I/O Functions](#Directory_I/O_Functions)
-- [Socket Manipulation Functions](#Socket_Manipulation_Functions)
+  Descriptors](#functions-that-act-on-file-descriptors)
+- [Directory I/O Functions](#directory-io-functions)
+- [Socket Manipulation Functions](#socket-manipulation-functions)
 - [Converting Between Host and Network
-  Addresses](#Converting_Between_Host_and_Network_Addresses)
-- [Memory-Mapped I/O Functions](#Memory-Mapped_I/O_Functions)
-- [Anonymous Pipe Function](#Anonymous_Pipe_Function)
-- [Polling Functions](#Polling_Functions)
-- [Manipulating Layers](#Manipulating_Layers)
+  Addresses](#converting-between-host-and-network-addresses)
+- [Memory-Mapped I/O Functions](#memory-mapped-io-functions)
+- [Anonymous Pipe Function](#anonymous-pipe-function)
+- [Polling Functions](#polling-functions)
+- [Manipulating Layers](#manipulating-layers)
 
 (functions-that-operate-on-pathnames)=
 

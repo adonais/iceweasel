@@ -504,7 +504,7 @@ menupopup[emptyplacesresult] > .hide-if-empty-places-result {
  * Target it specifically in this rule to make it the same width
  * as if it was a standard panelview opened from the app menu. */
 #report-broken-site-popup-mainView[mainview] {
-  width: 22.5em;
+  width: 25em;
 }
 
 :where(#customizationui-widget-multiview) panelview:not([extension]) {
@@ -705,16 +705,17 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
     #appMenu-mainView > .panel-subview-body {
       > #appMenu-update-banner,
       > #appMenu-menu-message,
-      > #appMenu-fxa-sign-in-promo,
       > #appMenu-addon-banners > .addon-banner-item {
         margin-inline: var(--panel-separator-padding-inline);
         margin-block: 0 var(--panel-separator-padding-block);
       }
     }
 
-    /* menu-message sets its own :host margin in menu-message.css */
+    /* menu-message sets its own :host margin in menu-message.css. The
+       toolbaritem provides the insets, so stretch the card to fill it. */
     #appMenu-menu-message menu-message {
       margin: 0;
+      width: 100%;
     }
   }
 }
@@ -843,14 +844,14 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 /* When the user has never signed in and no menu message or update banner is
    taking up the top of the app menu, show the richer sign-in promo in place of
    the compact "Sync and Save Data" sign-in row. A user who signed out keeps the
-   compact row, which tells them so. */
+   compact row, which tells them so, and so does one who dismissed the promo. */
 #appMenu-fxa-sign-in-promo {
   display: none;
 }
 
 /* FIXME(bug 2061145): Remove :has() usage, use showing-* selectors instead */
 /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
-:root[fxastatus="not_configured"]:not([fxadisabled="true"], [fxasignedout])
+:root[fxastatus="not_configured"]:not([fxadisabled="true"], [fxasignedout], [fxa-sign-in-promo-dismissed])
   #appMenu-mainView:not([showing-fxa-menu-message], [showing-default-cta-menu-message]):not(:has(#appMenu-update-banner:not([hidden]))) {
   & #appMenu-fxa-status2 {
     display: none;
@@ -891,7 +892,6 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 
   & .fxa-menu-sign-in-promo-heading {
     font-weight: var(--font-weight-heading);
-    font-size: var(--font-size-heading-medium);
     margin: 0;
   }
 
@@ -907,6 +907,38 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   :root[uidensity="compact"] & {
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     padding: 6px;
+  }
+}
+
+#appMenu-fxa-sign-in-promo {
+  gap: var(--card-gap-article);
+
+  :root[uidensity="compact"] & {
+    margin: var(--space-xsmall) var(--space-medium) var(--space-medium);
+  }
+}
+
+/* The outer padding enlarges the click target without growing the visible
+   button, and the equal negative margin cancels the growth of the box so the
+   icon stays put. The two must match, or the icon drifts. */
+#appMenu-fxa-sign-in-promo-dismiss-button {
+  --button-outer-padding-inline: 8px;
+  --button-outer-padding-block: 8px;
+
+  /* Align dismiss button to top corner to mimic card appearance in normal density */
+  align-self: start;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  margin: calc(var(--button-outer-padding-block) * -1);
+
+  /* Compact leaves only 6px of inline padding for the slop to sit in, so an
+     8px one would reach past the promo's inline edge. The block axis has room
+     either way, since centring the button leaves more than 8px above it. */
+  :root[uidensity="compact"] & {
+    --button-outer-padding-inline: 6px;
+
+    align-self: center;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    margin-inline: calc(var(--button-outer-padding-inline) * -1);
   }
 }
 
@@ -1060,66 +1092,6 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
     -moz-context-properties: fill;
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     fill: var(--panel-banner-item-info-icon-bgcolor);
-  }
-}
-
-.PanelUI-fxa-menu-setup-sync {
-  padding: var(--space-large);
-}
-
-.sync-setup-icon,
-.sync-status-indicator {
-  width: var(--icon-size-medium);
-  height: var(--icon-size-medium);
-  box-shadow: none;
-  -moz-context-properties: fill;
-  fill: currentColor;
-}
-
-.sync-setup-icon {
-  list-style-image: url("chrome://browser/skin/sync-off.svg");
-}
-
-.sync-status-indicator {
-  background: url("chrome://browser/skin/notification-fill-12.svg") no-repeat center;
-  margin-inline-end: var(--space-xsmall);
-  fill: var(--icon-color-warning);
-  background-size: 18px;
-}
-
-.sync-setup-title {
-  font-weight: normal;
-  margin-block: auto;
-}
-
-.sync-setup-description {
-  padding: var(--space-large) 0;
-}
-
-#PanelUI-fxa-menu-setup-sync-button,
-.sync-status-container {
-  margin-inline-start: var(--space-small);
-}
-
-#PanelUI-fxa-menu-setup-sync-button {
-  padding: var(--space-small) var(--space-medium);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  background-color: var(--button-background-color);
-  color: var(--button-text-color);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  font-size: 0.9em;
-  font-weight: var(--font-weight-semibold);
-  max-width: fit-content;
-  border-radius: var(--button-border-radius);
-
-  &:hover {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    background-color: var(--button-background-color-hover);
-  }
-
-  &:hover:active {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    background-color: var(--button-background-color-active);
   }
 }
 
@@ -1336,10 +1308,6 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   color: var(--text-color-deemphasized);
   font-weight: var(--font-weight-heading);
   text-wrap: wrap;
-}
-
-#cta-menu-header-description {
-  color: var(--text-color-deemphasized);
 }
 
 #PanelUI-fxa-menu-send-button {
@@ -1615,8 +1583,7 @@ panelview .toolbarbutton-1,
 }
 
 .subview-subheader {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  font-size: 0.9em;
+  font-size: var(--font-size-small);
   font-weight: inherit;
   color: var(--text-color-deemphasized);
   padding-block: var(--space-xsmall);
@@ -1930,6 +1897,7 @@ panelview .toolbarbutton-1 {
 ) {
   color: var(--button-text-color-menu);
   background-color: var(--button-background-color-menu);
+  fill: currentColor;
 
   &:focus-visible {
     outline: var(--focus-outline);
@@ -2025,8 +1993,7 @@ toolbarbutton[itemtype="showinactivebutton"] {
 }
 
 .remote-tabs-undo-button {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  font-size: 0.9em;
+  font-size: var(--font-size-small);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -2097,7 +2064,6 @@ toolbarbutton[itemtype="showinactivebutton"] {
 
 #PanelUI-panic-timeframe {
   padding: var(--space-large);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border-bottom: var(--border-width) solid var(--panel-separator-color);
 }
 
@@ -2172,8 +2138,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 
 #PanelUI-panic-actionlist-main-label {
   color: var(--text-color-deemphasized);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  font-size: 0.9em;
+  font-size: var(--font-size-small);
 }
 
 .PanelUI-panic-actionlist {

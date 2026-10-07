@@ -84,7 +84,6 @@ Current templates include:
 action-only
 moments-page
 feature-callout
-contextual-feature-recommendation
 about-welcome
 infobars
 spotlight

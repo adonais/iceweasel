@@ -47,10 +47,7 @@ This is for tests like
   (`unittest <https://docs.python.org/3/library/unittest.html>`__)
 ```
 
-At time of writing there are two “editions” of integration tests.
-Prefer writing new tests in telemetry-tests-client
-(the unittest-based one in `t/c/t/t/marionette/tests/client`)
-while we evaluate CI support for telemetry-integration-tests.
+Write new integration tests here using Python's unittest framework.
 
 More info: {doc}`./integration_tests/index`
 

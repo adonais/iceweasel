@@ -18,3 +18,9 @@ USE_LIBS += [
 ]
 
 Library("bspatch")
+
+LICENSED_UNDER += ["bspatch"]
+LICENSED_UNDER["bspatch"].paths = [
+    "bspatch.cpp",
+    "bspatch.h",
+]

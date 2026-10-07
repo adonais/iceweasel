@@ -4,7 +4,6 @@
 
 package mozilla.components.concept.engine.request
 
-import mozilla.components.browser.errorpages.ErrorType
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.request.RequestInterceptor.InterceptionResponse
 import org.junit.Assert.assertEquals

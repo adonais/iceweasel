@@ -16,6 +16,8 @@ RenderSourceNLRS::RenderSourceNLRS(UniquePtr<gl::MozFramebuffer>&& aFramebuffer)
     : RenderSource(aFramebuffer->mSize),
       mFramebuffer(std::move(aFramebuffer)) {}
 
+RenderSourceNLRS::~RenderSourceNLRS() = default;
+
 DownscaleTargetNLRS::DownscaleTargetNLRS(
     gl::GLContext* aGL, UniquePtr<gl::MozFramebuffer>&& aFramebuffer)
     : profiler_screenshots::DownscaleTarget(aFramebuffer->mSize),

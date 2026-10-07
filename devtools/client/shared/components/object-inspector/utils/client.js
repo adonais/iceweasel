@@ -71,7 +71,13 @@ async function getPrototype(objectFront) {
     console.error("objectFront.getPrototype is not a function");
     return Promise.resolve({});
   }
-  return objectFront.getPrototype();
+  try {
+    const response = await objectFront.getPrototype();
+    return response;
+  } catch (e) {
+    console.error("Error in getPrototype", e);
+    return {};
+  }
 }
 
 async function getGlobal(objectFront) {
@@ -79,7 +85,13 @@ async function getGlobal(objectFront) {
     console.error("objectFront.getGlobal is not a function");
     return Promise.resolve({});
   }
-  return objectFront.getGlobal();
+  try {
+    const response = await objectFront.getGlobal();
+    return response;
+  } catch (e) {
+    console.error("Error in getGlobal", e);
+    return {};
+  }
 }
 
 async function getFullText(longStringFront, item) {
@@ -102,11 +114,23 @@ async function getFullText(longStringFront, item) {
 }
 
 async function getPromiseState(objectFront) {
-  return objectFront.getPromiseState();
+  try {
+    const response = await objectFront.getPromiseState();
+    return response;
+  } catch (e) {
+    console.error("Error in getPromiseState", e);
+    return {};
+  }
 }
 
 async function getProxySlots(objectFront) {
-  return objectFront.getProxySlots();
+  try {
+    const response = await objectFront.getProxySlots();
+    return response;
+  } catch (e) {
+    console.error("Error in getProxySlots", e);
+    return {};
+  }
 }
 
 function iteratorSlice(iterator, start, end) {

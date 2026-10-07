@@ -1,0 +1,296 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# Adding a new metric? We have docs for that!
+# https://firefox-source-docs.mozilla.org/toolkit/components/glean/user/new_definitions_file.html
+
+---
+$schema: moz://mozilla.org/schemas/glean/metrics/2-0-0
+$tags:
+  - 'Core :: Web Speech'
+
+media.speech_recognition:
+  session_started:
+    type: event
+    description: >
+      Recorded when a speech recognition session reaches the spec's
+      [[started]] state, that is once the backend has been created and
+      start() has not thrown. It does not record any recognized text or audio.
+
+      Paired with `session_ended`; a `session_started` without a matching
+      `session_ended` indicates a session lost to a crash or a disorderly
+      shutdown.
+    extra_keys:
+      lang:
+        description: >
+          The effective BCP 47 language tag used for the session. This is the
+          `lang` attribute when set and otherwise comes from the document's
+          language defaults. Empty when no language is available, in which
+          case the backend picks a default.
+        type: string
+      lang_source:
+        description: >
+          Where the effective language came from, `attribute` (the `lang`
+          attribute was set), `document` (the document's language defaults),
+          `user` (neither was set, so the user's language was used) or `none`
+          (no language could be determined at all).
+        type: string
+      model_id:
+        description: >
+          The model the session negotiated to, as named by models.yaml.
+          Unlike `lang`, this is what actually ran, so it can be grouped on.
+        type: string
+      model_locale:
+        description: >
+          The model's own locale for `lang`, negotiated against the locales
+          the model declares: `en`, `en-US` and `en-us` all negotiate to the
+          same one, and an extension subtag is dropped here rather than
+          passed through. Empty when no language was requested, in which case
+          the engine picks its own default. The engine can still fall back to
+          auto-detection if it in turn rejects this locale.
+        type: string
+      session_id:
+        description: >
+          Identifies this session, and is recorded again on the matching
+          `session_ended`. Lets a start be paired with its outcome, which is
+          what makes the two reconcile across a day boundary and lets an
+          outcome be cross-tabulated against `lang`. Freshly generated per
+          session and stored nowhere.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - padenot@mozilla.com
+      - media-alerts@mozilla.com
+    expires: never
+
+  session_ended:
+    type: event
+    description: >
+      Recorded when a speech recognition session that had reached
+      [[started]] tears down, whatever the reason. Does not record any
+      recognized text or audio.
+    extra_keys:
+      outcome:
+        description: >
+          How the session ended: `stopped`, `aborted`, `error` or `discarded`
+          when the owning window went away before the session finished.
+        type: string
+      error_code:
+        description: >
+          The SpeechRecognitionErrorCode of the error event, snake_cased.
+          Empty when `outcome` is not `error`.
+        type: string
+      duration:
+        description: >
+          Wall-clock milliseconds from reaching [[started]] to teardown.
+        type: quantity
+      session_id:
+        description: >
+          The `session_id` of the `session_started` this ends.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - padenot@mozilla.com
+      - media-alerts@mozilla.com
+    expires: never
+
+  error:
+    type: labeled_counter
+    description: >
+      The number of `error` events fired at a SpeechRecognition object,
+      keyed by error code. Only a subset of the codes defined by the spec is
+      currently reachable, so a count on any of the others is itself
+      noteworthy.
+
+      This does not reconcile with the `error` outcomes of `session_ended`,
+      by construction: an error can be fired before the session reaches
+      [[started]], and such a session records neither `session_started` nor
+      `session_ended`. This metric therefore normally exceeds those outcomes,
+      and `init_failure` accounts for the difference.
+
+      The codes the spec makes us fire are also coarser than the causes
+      behind them - four distinct causes all surface as
+      `service-not-allowed` - so `init_failure` is what tells those apart.
+    labels:
+      - no_speech
+      - aborted
+      - audio_capture
+      - network
+      - not_allowed
+      - service_not_allowed
+      - bad_grammar
+      - language_not_supported
+      - phrases_not_supported
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - padenot@mozilla.com
+      - media-alerts@mozilla.com
+    expires: never
+
+  init_failure:
+    type: labeled_counter
+    description: >
+      Why a recognition session failed to start, recorded wherever the cause
+      is still known: the content process for the first three labels, the
+      inference process for the rest. The spec-mandated DOM error code is
+      coarser than this, so this is what tells apart the causes that share
+      one: `concurrent_session`, `language_not_supported`,
+      `model_install_unavailable` and `backend_creation_failed` all reach
+      content as `service-not-allowed`, and every inference-process failure
+      below reaches it as `network`.
+
+      `language_not_supported` is recorded before the session reaches
+      [[started]], so it has no `session_started` and no `session_ended`; it
+      is exactly the count that makes `error` and `session_ended` disagree.
+
+      The labels name the step that failed rather than a category, so that a
+      spike says where init broke and not merely that it did.
+    labels:
+      - language_not_supported
+      - model_install_unavailable
+      - backend_creation_failed
+      - concurrent_session
+      - no_utility_process
+      - model_not_installed
+      - model_fetch_failed
+      - model_fd_failed
+      - thread_creation_failed
+      - engine_library_load_failed
+      - model_load_failed
+      - stream_begin_failed
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - padenot@mozilla.com
+      - media-alerts@mozilla.com
+    expires: never
+
+  session_init_time:
+    type: timing_distribution
+    time_unit: millisecond
+    description: >
+      The duration between start() and the time the model is ready for
+      recognition.
+
+      Only recorded when init succeeds, so read it against the `init_failure`
+      totals rather than alone: a regression that turns slow inits into
+      outright failures makes this metric look better.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - padenot@mozilla.com
+      - media-alerts@mozilla.com
+    expires: never
+
+  result_latency:
+    type: timing_distribution
+    time_unit: millisecond
+    description: >
+      The mean end-to-end latency of results in a recognition session, from the
+      capture time of the audio each result covers to the moment the `result`
+      event is dispatched in the content process. One sample per session that
+      produced results.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - padenot@mozilla.com
+      - media-alerts@mozilla.com
+    expires: never
+
+  model_load_time:
+    type: timing_distribution
+    time_unit: millisecond
+    description: >
+      How long the engine took to load the model, which reads the whole GGUF
+      into memory. Recorded in the inference process.
+
+      Only recorded when the load succeeds, so read it against
+      `init_failure.model_load_failed` rather than alone.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - padenot@mozilla.com
+      - media-alerts@mozilla.com
+    expires: never
+
+  inference_realtime_factor:
+    type: custom_distribution
+    range_min: 1
+    range_max: 10000
+    bucket_count: 51
+    histogram_type: exponential
+    description: >
+      The mean of how much faster than real time the audio chunks in a session
+      were processed, as a multiple of real time times 100: 400 means 4x
+      faster than real time. Under 100 means the recognizer fell behind. One
+      sample is recorded per session in the inference process.
+
+      The range reaches 100x because hardware that handles this model
+      comfortably sits well above 20x, which would otherwise pile every such
+      session into the top bucket and saturate the high percentiles. These
+      bounds also put a bucket boundary exactly at 100, so "fell behind real
+      time" is a clean cut rather than a threshold buried mid-bucket.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - padenot@mozilla.com
+      - media-alerts@mozilla.com
+    expires: never
+
+  availability:
+    type: labeled_counter
+    description: >
+      The number of times SpeechRecognition.available() resolved, keyed by
+      the AvailabilityStatus it resolved with. Shows how often pages find
+      the model missing rather than ready.
+    labels:
+      - unavailable
+      - downloadable
+      - downloading
+      - available
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062329
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - padenot@mozilla.com
+      - media-alerts@mozilla.com
+    expires: never

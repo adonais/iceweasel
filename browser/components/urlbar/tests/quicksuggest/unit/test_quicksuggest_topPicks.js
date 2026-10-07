@@ -27,7 +27,7 @@ const MERINO_SUGGESTIONS = [
     provider: "top_picks",
     url: SUGGESTION_URL,
     title: "title",
-    icon: "icon",
+    icon: "https://example.com/top-picks-icon",
     is_sponsored: false,
     score: 1,
   },
@@ -174,7 +174,9 @@ function makeExpectedResult({
       telemetryType,
       title: "title",
       url: SUGGESTION_URL,
-      icon: "icon",
+      icon: UrlbarTestUtils.makeMozRemoteImageUrl(
+        "https://example.com/top-picks-icon"
+      ),
       isSponsored: false,
       shouldShowUrl: true,
       source: "merino",

@@ -913,6 +913,8 @@ sdp_result_e sdp_parse_attr_fmtp (sdp_t *sdp_p, sdp_attr_t *attr_p,
 
             fmtp_p->fmtp_format = SDP_FMTP_CODEC_INFO;
             fmtp_p->profile = (short) strtoul_result;
+            fmtp_p->av1_has_profile = TRUE;
+            fmtp_p->av1_profile = (uint8_t) strtoul_result;
             codec_info_found = TRUE;
 
         } else if (cpr_strncasecmp(tmp,sdp_fmtp_codec_param[15].name,

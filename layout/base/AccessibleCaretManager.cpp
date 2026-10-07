@@ -1007,14 +1007,14 @@ void AccessibleCaretManager::ExtendPhoneNumberSelection(
   RefPtr<Selection> selection = GetSelection();
 
   while (selection) {
-    const nsRange* anchorFocusRange = selection->GetAnchorFocusRange();
+    const dom::Range* anchorFocusRange = selection->GetAnchorFocusRange();
     if (!anchorFocusRange) {
       return;
     }
 
     // Backup the anchor focus range since both anchor node and focus node might
     // be changed after calling Selection::Modify().
-    RefPtr<nsRange> oldAnchorFocusRange = anchorFocusRange->CloneRange();
+    RefPtr<dom::Range> oldAnchorFocusRange = anchorFocusRange->CloneRange();
 
     // Save current focus node, focus offset and the selected text so that
     // we can compare them with the modified ones later.
@@ -1094,7 +1094,7 @@ static nsIFrame* GetChildFrameContainingOffset(
 
 FrameAndOffset
 AccessibleCaretManager::GetFirstVisibleLeafFrameOrUnselectableChildFrame(
-    nsRange& aRange, nsIContent** aOutContent /* = nullptr */,
+    dom::Range& aRange, nsIContent** aOutContent /* = nullptr */,
     int32_t* aOutOffsetInContent /* = nullptr */) const {
   if (!mPresShell) {
     return {};
@@ -1158,7 +1158,7 @@ AccessibleCaretManager::GetFirstVisibleLeafFrameOrUnselectableChildFrame(
 
 FrameAndOffset
 AccessibleCaretManager::GetLastVisibleLeafFrameOrUnselectableChildFrame(
-    nsRange& aRange, nsIContent** aOutContent /* = nullptr */,
+    dom::Range& aRange, nsIContent** aOutContent /* = nullptr */,
     int32_t* aOutOffsetInContent /* = nullptr */) const {
   if (!mPresShell) {
     return {};
@@ -1567,7 +1567,7 @@ void AccessibleCaretManager::DispatchCaretStateChangedEvent(
   CaretStateChangedEventInit init;
   init.mBubbles = true;
 
-  const nsRange* range = sel->GetAnchorFocusRange();
+  const dom::Range* range = sel->GetAnchorFocusRange();
   nsINode* commonAncestorNode = nullptr;
   if (range) {
     commonAncestorNode = range->GetClosestCommonInclusiveAncestor();

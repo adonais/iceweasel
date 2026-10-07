@@ -76,7 +76,12 @@ class MOZ_CAPABILITY("mutex") TraceLogMutex
   }
 };
 
+#ifdef XP_WIN
+// The Windows futex mutex supports constant initialization.
+constinit static TraceLogMutex gTraceLog;
+#else
 MOZ_RUNINIT static TraceLogMutex gTraceLog;
+#endif
 
 class MOZ_RAII AutoTraceLogLock {
  public:

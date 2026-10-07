@@ -3,8 +3,8 @@ lightweight threads. Each thread is an execution entity that is
 scheduled independently from other threads in the same process. This
 chapter describes the basic NSPR threading API.
 
-- [Threading Types and Constants](#Threading_Types_and_Constants)
-- [Threading Functions](#Threading_Functions)
+- [Threading Types and Constants](#threading-types-and-constants)
+- [Threading Functions](#threading-functions)
 
 A thread has a limited number of resources that it truly owns. These
 resources include a stack and the CPU registers (including PC). To an
@@ -21,10 +21,10 @@ itself.
 
 For an overview of the NSPR threading model and sample code that
 illustrates its use, see [Introduction to
-NSPR](Introduction_to_NSPR).
+NSPR](introduction_to_nspr.md).
 
 For API reference information related to thread synchronization, see
-[Locks](Locks) and [Condition Variables](Condition_Variables).
+[Locks](locks.md) and [Condition Variables](condition_variables.md).
 
 (threading-types-and-constants)=
 
@@ -47,12 +47,12 @@ the caller's responsibility to ensure that the thread is valid. The
 effects of these functions on invalid threads are undefined.
 
 - [Creating, Joining, and Identifying
-  Threads](#Creating,_Joining,_and_Identifying_Threads)
-- [Controlling Thread Priorities](#Controlling_Thread_Priorities)
-- [Interrupting and Yielding](#Interrupting_and_Yielding)
+  Threads](#creating-joining-and-identifying-threads)
+- [Controlling Thread Priorities](#controlling-thread-priorities)
+- [Interrupting and Yielding](#interrupting-and-yielding)
 - [Setting Global Thread
-  Concurrency](#Setting_Global_Thread_Concurrency)
-- [Getting a Thread's Scope](#Getting_a_Thread's_Scope)
+  Concurrency](#setting-global-thread-concurrency)
+- [Getting a Thread's Scope](#getting-a-threads-scope)
 
 (creating-2c-joining-2c-and-identifying-threads)=
 
@@ -73,7 +73,7 @@ effects of these functions on invalid threads are undefined.
 ## Controlling Thread Priorities
 
 For an overview of the way NSPR controls thread priorities, see [Setting
-Thread Priorities](Introduction_to_NSPR#Setting_Thread_Priorities.).
+Thread Priorities](introduction_to_nspr.md#setting-thread-priorities).
 
 You set a thread's NSPR priority when you create it with
 {ref}`PR_CreateThread`. After a thread has been created, you can get and

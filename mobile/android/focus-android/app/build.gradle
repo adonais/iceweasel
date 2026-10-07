@@ -300,6 +300,7 @@ dependencies {
     implementation libs.androidx.core.splashscreen
     implementation libs.androidx.emoji2
     implementation libs.androidx.fragment
+    implementation libs.androidx.fragment.compose
     implementation libs.androidx.lifecycle.process
     implementation libs.androidx.lifecycle.viewmodel
     implementation libs.androidx.palette

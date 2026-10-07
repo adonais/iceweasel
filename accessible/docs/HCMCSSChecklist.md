@@ -295,7 +295,9 @@ Testing chrome patches in Firefox using FF HCM will not produce the same results
 
 The design system's `--button-*-ghost-*` tokens already have `forced-colors` overrides that add a visible border in the default state (ghost buttons are borderless by default) and override hover and active states. If a component uses ghost styling in non-HCM, do not override the ghost tokens to non-ghost values in the `forced-colors` block — that creates a state mismatch between modes. Let the ghost tokens cascade naturally through the design system. If you've chosen custom color values for your ghost component, override those styles with ghost tokens in HCM.
 
-```scss
+```{code-block} scss
+:force:
+
 /* WRONG — non-HCM uses ghost state, forced-colors switches to default state */
 :host {
   --my-wrong-ghost-btn-bg: var(--button-background-color-ghost);

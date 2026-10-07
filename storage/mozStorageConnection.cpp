@@ -1322,10 +1322,11 @@ nsresult Connection::initialize(nsIFileURL* aFileURL) {
         hasKey = true;
       }
     }
-    // hasKey now decides whether we open through obfsvfs (see the VFS
-    // selection below); keep mDatabaseEncrypted and the page size in step.
-    SetDatabaseEncrypted(hasKey);
   }
+  // hasKey decides whether we open through obfsvfs (see the VFS selection
+  // below), whether the key came from the caller's URL or from the encryption
+  // policy; keep mDatabaseEncrypted and the page size in step.
+  SetDatabaseEncrypted(hasKey);
 
   // Conservative fail-closed: a database the encryption policy says must be
   // encrypted opens through obfsvfs with its key, or not at all -- it must
@@ -1415,6 +1416,22 @@ nsresult Connection::initializeInternal() {
   if (srv != SQLITE_OK) {
     return convertResultCode(srv);
   }
+
+  // obfsvfs only encrypts the main database, rollback journal and WAL. SQLite
+  // otherwise spills statement subjournals, sorter runs and temp tables to
+  // plaintext files on builds without an in-memory SQLITE_TEMP_STORE default,
+  // so keep all temporary storage in memory for encrypted databases. The
+  // condition mirrors the SQLITE_TEMP_STORE block in
+  // third_party/sqlite3/src/moz.build.
+#if !defined(ANDROID) && !defined(HAVE_64BIT_BUILD)
+  if (mDatabaseEncrypted) {
+    srv = executeSql(mDBConn,
+                     MOZ_STORAGE_UNIQUIFY_QUERY_STR "PRAGMA temp_store = 2;");
+    if (srv != SQLITE_OK) {
+      return convertResultCode(srv);
+    }
+  }
+#endif
 
   // Register our built-in SQL functions.
   srv = registerFunctions(mDBConn);

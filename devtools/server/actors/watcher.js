@@ -17,10 +17,11 @@ const { ParentProcessWatcherRegistry } = ChromeUtils.importESModule(
   // which also has to be a true singleton.
   { global: "shared" }
 );
-const { getAllBrowsingContextsForContext } = ChromeUtils.importESModule(
-  "resource://devtools/server/actors/watcher/browsing-context-helpers.sys.mjs",
-  { global: "contextual" }
-);
+const { getAllBrowsingContextsForContext, isBrowsingContextPartOfContext } =
+  ChromeUtils.importESModule(
+    "resource://devtools/server/actors/watcher/browsing-context-helpers.sys.mjs",
+    { global: "contextual" }
+  );
 const {
   SESSION_TYPES,
 } = require("resource://devtools/server/actors/watcher/session-context.js");
@@ -218,6 +219,8 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
     ParentProcessWatcherRegistry.unregisterWatcher(this.actorID);
 
+    this.#unsetWatchedByDevTools();
+
     // In case the watcher actor is leaked, prevent leaking the browser window
     this._webProgress = null;
 
@@ -249,6 +252,97 @@ exports.WatcherActor = class WatcherActor extends Actor {
     };
   }
 
+  // Is this actor currently flagging all debugged BrowsingContext as "watchedByDevTools"?
+  #watchingForBrowsingContexts = false;
+
+  /**
+   * Set the BrowsingContext's `watchedByDevTools` flag on all contexts being debugged
+   * by this DevTools instance.
+   *
+   * The boolean enables gecko behaviors, such as:
+   *  - reporting the contents of HTML loaded in the docshells (via `devtools-html-content`)`,
+   *  - or capturing stacks for the network monitor.
+   */
+  #setWatchedByDevTools() {
+    if (this.#watchingForBrowsingContexts) {
+      return;
+    }
+    this.#watchingForBrowsingContexts = true;
+
+    for (const browsingContext of getAllBrowsingContextsForContext(
+      this.sessionContext,
+      { onlyTopLevelBrowsingContext: true }
+    )) {
+      browsingContext.watchedByDevTools = true;
+    }
+
+    if (this.sessionContext.type == SESSION_TYPES.ALL) {
+      // For now, the watcher doesn't spawn target actors for top level firefox
+      // windows and so `getAllBrowsingContexts` wouldn't return their
+      // BrowsingContext. But we still want to flag them as watched by devtools.
+      // bug 1785266 should revisit this and allow to clean this up, as well as
+      // the filtering done within getAllBrowsingContexts/isBrowsingContextPartOfContext.
+      for (const window of Services.ww.getWindowEnumerator()) {
+        window.browsingContext.watchedByDevTools = true;
+      }
+    }
+
+    if (
+      this.sessionContext.type == SESSION_TYPES.ALL ||
+      this.sessionContext.type == SESSION_TYPES.WEBEXTENSION
+    ) {
+      Services.obs.addObserver(this, "browsing-context-attached");
+    }
+  }
+
+  #unsetWatchedByDevTools() {
+    if (!this.#watchingForBrowsingContexts) {
+      return;
+    }
+    this.#watchingForBrowsingContexts = false;
+    for (const browsingContext of getAllBrowsingContextsForContext(
+      this.sessionContext,
+      { onlyTopLevelBrowsingContext: true }
+    )) {
+      browsingContext.watchedByDevTools = false;
+    }
+
+    if (this.sessionContext.type == SESSION_TYPES.ALL) {
+      // For now, the watcher doesn't spawn target actors for top level firefox
+      // windows and so `getAllBrowsingContexts` wouldn't return their
+      // BrowsingContext. But we still want to flag them as watched by devtools.
+      // bug 1785266 should revisit this and allow to clean this up, as well as
+      // the filtering done within getAllBrowsingContexts/isBrowsingContextPartOfContext.
+      for (const window of Services.ww.getWindowEnumerator()) {
+        window.browsingContext.watchedByDevTools = false;
+      }
+    }
+
+    if (
+      this.sessionContext.type == SESSION_TYPES.ALL ||
+      this.sessionContext.type == SESSION_TYPES.WEBEXTENSION
+    ) {
+      Services.obs.removeObserver(this, "browsing-context-attached");
+    }
+  }
+
+  observe(subject, topic) {
+    if (topic != "browsing-context-attached") {
+      return;
+    }
+    // Automatically flag any meaningful new top level BrowsingContext being created
+    // when we are using the browser toolbox, or web extension toolbox.
+    const isTopLevelBrowsingContext = !subject.parent;
+    if (
+      isTopLevelBrowsingContext &&
+      (this.sessionContext.type == SESSION_TYPES.ALL ||
+        (this.sessionContext.type == SESSION_TYPES.WEBEXTENSION &&
+          isBrowsingContextPartOfContext(subject, this.sessionContext)))
+    ) {
+      subject.watchedByDevTools = true;
+    }
+  }
+
   /**
    * Start watching for a new target type.
    *
@@ -264,6 +358,8 @@ exports.WatcherActor = class WatcherActor extends Actor {
    */
   async watchTargets(targetType) {
     ParentProcessWatcherRegistry.watchTargets(this, targetType);
+
+    this.#setWatchedByDevTools();
 
     // When debugging a tab, ensure processing the top level target first
     // (for now, other session context types are instantiating the top level target

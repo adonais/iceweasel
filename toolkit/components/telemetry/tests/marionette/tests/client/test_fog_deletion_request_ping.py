@@ -16,6 +16,11 @@ class TestDeletionRequestPing(FOGTestCase):
 
         self.navigate_in_new_tab("about:glean")
 
+        # Ensure Glean's been initialized at least once for this profile,
+        # or else we might init for the first time with data_upload: false,
+        # meaning Glean won't bother with a "deletion-request" ping.
+        self.restart_browser()
+
         ping1 = self.wait_for_ping(
             self.disable_telemetry,
             FOG_DELETION_REQUEST_PING,

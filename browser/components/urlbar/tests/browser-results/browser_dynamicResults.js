@@ -53,7 +53,7 @@ const IS_UPGRADING_SCHEMELESS = SpecialPowers.getBoolPref(
 const DEFAULT_URL_SCHEME = IS_UPGRADING_SCHEMELESS ? "https://" : "http://";
 const DUMMY_PAGE =
   DEFAULT_URL_SCHEME +
-  "example.com/browser/browser/base/content/test/general/dummy_page.html";
+  "example.com/browser/browser/base/content/test/browser-general/dummy_page.html";
 
 // Tests that the view is created correctly from the view template.
 add_task(async function viewCreated() {

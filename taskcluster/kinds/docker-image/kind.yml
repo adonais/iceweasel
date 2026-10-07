@@ -396,10 +396,10 @@ tasks:
         parent: fetch
     static-analysis-build:
         symbol: I(static-analysis-build)
-        parent: debian12-base
+        parent: debian13-base
     gdb-test:
         symbol: I(gdb)
-        parent: debian12-amd64-build
+        parent: debian13-amd64-build
     index-task:
         symbol: I(idx)
     funsize-update-generator:

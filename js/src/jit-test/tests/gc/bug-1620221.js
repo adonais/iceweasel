@@ -3,7 +3,7 @@ function testStepping(script, expected) {
     let f = g.eval(script);
     let log = [];
     function maybePause(frame) {
-        let line = frame.script.getOffsetLocation(frame.offset).lineNumber;
+        let line = frame.script.getOffsetMetadata(frame.offset).lineNumber;
         log.push(line);
     }
     let dbg = new Debugger(g);

@@ -13,7 +13,6 @@ import {
   TARGETING_PREFERENCES,
 } from "modules/ASRouterPreferences.sys.mjs";
 import { ASRouterTriggerListeners } from "modules/ASRouterTriggerListeners.sys.mjs";
-import { CFRPageActions } from "modules/CFRPageActions.sys.mjs";
 import { GlobalOverrider } from "tests/unit/utils";
 import { PanelTestProvider } from "modules/PanelTestProvider.sys.mjs";
 import ProviderResponseSchema from "content-src/schemas/provider-response.schema.json";
@@ -804,8 +803,6 @@ describe("ASRouter", () => {
   describe("#routeCFRMessage", () => {
     let browser;
     beforeEach(() => {
-      sandbox.stub(CFRPageActions, "forceRecommendation");
-      sandbox.stub(CFRPageActions, "addRecommendation");
       browser = {};
     });
     it("should route moments messages to the right hub", () => {
@@ -813,78 +810,11 @@ describe("ASRouter", () => {
 
       assert.calledOnce(FakeMomentsPageHub.executeAction);
       assert.notCalled(FakeToolbarBadgeHub.registerBadgeNotificationListener);
-      assert.notCalled(CFRPageActions.addRecommendation);
-      assert.notCalled(CFRPageActions.forceRecommendation);
     });
     it("should route toolbar_badge message to the right hub", () => {
       Router.routeCFRMessage({ template: "toolbar_badge" }, browser);
 
       assert.calledOnce(FakeToolbarBadgeHub.registerBadgeNotificationListener);
-      assert.notCalled(CFRPageActions.addRecommendation);
-      assert.notCalled(CFRPageActions.forceRecommendation);
-      assert.notCalled(FakeMomentsPageHub.executeAction);
-    });
-    it("should route milestone_message to the right hub", () => {
-      Router.routeCFRMessage(
-        { template: "milestone_message" },
-        browser,
-        "",
-        false
-      );
-
-      assert.calledOnce(CFRPageActions.addRecommendation);
-      assert.notCalled(CFRPageActions.forceRecommendation);
-      assert.notCalled(FakeToolbarBadgeHub.registerBadgeNotificationListener);
-      assert.notCalled(FakeMomentsPageHub.executeAction);
-    });
-    it("should route cfr_doorhanger message to the right hub force = false", () => {
-      Router.routeCFRMessage(
-        { template: "cfr_doorhanger" },
-        browser,
-        { param: {} },
-        false
-      );
-
-      assert.calledOnce(CFRPageActions.addRecommendation);
-      assert.notCalled(FakeToolbarBadgeHub.registerBadgeNotificationListener);
-      assert.notCalled(CFRPageActions.forceRecommendation);
-      assert.notCalled(FakeMomentsPageHub.executeAction);
-    });
-    it("should route cfr_doorhanger message to the right hub force = true", () => {
-      Router.routeCFRMessage({ template: "cfr_doorhanger" }, browser, {}, true);
-
-      assert.calledOnce(CFRPageActions.forceRecommendation);
-      assert.notCalled(CFRPageActions.addRecommendation);
-      assert.notCalled(FakeToolbarBadgeHub.registerBadgeNotificationListener);
-      assert.notCalled(FakeMomentsPageHub.executeAction);
-    });
-    it("should route cfr_urlbar_chiclet message to the right hub force = false", () => {
-      Router.routeCFRMessage(
-        { template: "cfr_urlbar_chiclet" },
-        browser,
-        { param: {} },
-        false
-      );
-
-      assert.calledOnce(CFRPageActions.addRecommendation);
-      const { args } = CFRPageActions.addRecommendation.firstCall;
-      // Host should be null
-      assert.isNull(args[1]);
-      assert.notCalled(FakeToolbarBadgeHub.registerBadgeNotificationListener);
-      assert.notCalled(CFRPageActions.forceRecommendation);
-      assert.notCalled(FakeMomentsPageHub.executeAction);
-    });
-    it("should route cfr_urlbar_chiclet message to the right hub force = true", () => {
-      Router.routeCFRMessage(
-        { template: "cfr_urlbar_chiclet" },
-        browser,
-        {},
-        true
-      );
-
-      assert.calledOnce(CFRPageActions.forceRecommendation);
-      assert.notCalled(CFRPageActions.addRecommendation);
-      assert.notCalled(FakeToolbarBadgeHub.registerBadgeNotificationListener);
       assert.notCalled(FakeMomentsPageHub.executeAction);
     });
     it("should route default to sending to content", () => {
@@ -895,8 +825,6 @@ describe("ASRouter", () => {
         true
       );
 
-      assert.notCalled(CFRPageActions.forceRecommendation);
-      assert.notCalled(CFRPageActions.addRecommendation);
       assert.notCalled(FakeToolbarBadgeHub.registerBadgeNotificationListener);
       assert.notCalled(FakeMomentsPageHub.executeAction);
     });
@@ -942,6 +870,20 @@ describe("ASRouter", () => {
             type: "SET_DEFAULT_BROWSER_OPEN_WITH",
           }),
           "SET_DEFAULT_BROWSER_OPEN_WITH is an allowed action-only action"
+        );
+      });
+      it("allowlists ENABLE_CLOSED_BROWSER_NOTIFICATIONS but not its opposite", () => {
+        assert.isTrue(
+          Router._isAllowedActionOnlyMessageAction({
+            type: "ENABLE_CLOSED_BROWSER_NOTIFICATIONS",
+          }),
+          "the enabling action can fire from an action_only message"
+        );
+        assert.isFalse(
+          Router._isAllowedActionOnlyMessageAction({
+            type: "DISABLE_CLOSED_BROWSER_NOTIFICATIONS",
+          }),
+          "the disabling action only ever fires from UI the user clicked"
         );
       });
       it("does nothing for a non-allowlisted action", () => {
@@ -1373,7 +1315,6 @@ describe("ASRouter", () => {
           type: "local",
           enabled: true,
           messages: [
-            "cfr_doorhanger",
             "toolbar_badge",
             "update_action",
             "infobar",
@@ -2124,21 +2065,6 @@ describe("ASRouter", () => {
       let msg = Router.routeCFRMessage(data.content, browser, data, false);
       assert.deepEqual(msg.message, message);
     });
-    it("should call CFRPageActions.forceRecommendation if the template is cfr_action and force is true", async () => {
-      sandbox.stub(CFRPageActions, "forceRecommendation");
-      const testMessage = { id: "foo", template: "cfr_doorhanger" };
-      await Router.setState({ messages: [testMessage] });
-      Router.routeCFRMessage(testMessage, {}, null, true);
-
-      assert.calledOnce(CFRPageActions.forceRecommendation);
-    });
-    it("should call CFRPageActions.addRecommendation if the template is cfr_action and force is false", async () => {
-      sandbox.stub(CFRPageActions, "addRecommendation");
-      const testMessage = { id: "foo", template: "cfr_doorhanger" };
-      await Router.setState({ messages: [testMessage] });
-      Router.routeCFRMessage(testMessage, {}, {}, false);
-      assert.calledOnce(CFRPageActions.addRecommendation);
-    });
   });
 
   describe("#updateTargetingParameters", () => {
@@ -2349,10 +2275,10 @@ describe("ASRouter", () => {
     // four tests with `forEach`) doesn't work, because it will always
     // pass, so don't use it as a pattern to write other tests. Bug 1967593
     it("should record the Exposure event for each valid feature", async () => {
-      ["cfr_doorhanger", "update_action", "infobar", "spotlight"].forEach(
+      ["feature_callout", "update_action", "infobar", "spotlight"].forEach(
         async template => {
           let featureMap = {
-            cfr_doorhanger: "cfr",
+            feature_callout: "cfr",
             spotlight: "spotlight",
             infobar: "infobar",
             update_action: "moments-page",
@@ -2925,19 +2851,20 @@ describe("ASRouter", () => {
     });
   });
   describe("#observe", () => {
-    it("should reload l10n for CFRPageActions when the `USE_REMOTE_L10N_PREF` pref is changed", () => {
-      sandbox.spy(CFRPageActions, "reloadL10n");
-
+    let reloadL10nStub;
+    beforeEach(() => {
+      reloadL10nStub = sandbox.stub();
+      globals.set("RemoteL10n", { reloadL10n: reloadL10nStub });
+    });
+    it("should reload l10n when the `USE_REMOTE_L10N_PREF` pref is changed", () => {
       Router.observe("", "", USE_REMOTE_L10N_PREF);
 
-      assert.calledOnce(CFRPageActions.reloadL10n);
+      assert.calledOnce(reloadL10nStub);
     });
     it("should not react to other pref changes", () => {
-      sandbox.spy(CFRPageActions, "reloadL10n");
-
       Router.observe("", "", "foo");
 
-      assert.notCalled(CFRPageActions.reloadL10n);
+      assert.notCalled(reloadL10nStub);
     });
   });
   describe("#loadAllMessageGroups", () => {

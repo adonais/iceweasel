@@ -128,15 +128,26 @@
   max-inline-size: var(--content-max-width);
 }
 
+// The widgets section should have some bottom margin if Recommended stories or Recent Activity are not present.
+.nova-enabled
+.content-full-width:not(:has(.layout-content-column.has-feed, .layout-highlights-column))
+.widgets-section-container {
+  margin-block-end: var(--space-xxlarge);
+}
+
 // Side-by-side layouts (Bug 2061741). The lead class means the experiment is
 // assigned, which is enough to frame a lone section; .side-by-side-active means the
 // page has both a feed and a content-area widget to place. Base.jsx decides both. A
 // variant and its -five counterpart share a lead class and differ only in card
 // count; see .side-by-side-five below.
+// .spaces-thematic is listed because a thematic space holds the same pair, so its
+// columns need the same boxes and panels; only the grid they sit in differs, and
+// that lives in _Spaces.scss.
 .nova-enabled
 .content-full-width:is(
   .side-by-side-content-lead,
-  .side-by-side-widgets-lead
+  .side-by-side-widgets-lead,
+  .spaces-thematic
 ) {
   // Clears the shortcuts above and the bottom of the page below. The panel
   // bleeds --space-medium outward, so each margin loses that much; the end one

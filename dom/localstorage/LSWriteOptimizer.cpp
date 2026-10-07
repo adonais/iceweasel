@@ -5,11 +5,26 @@
 #include "LSWriteOptimizer.h"
 
 #include <new>
+#include <utility>
 
 #include "nsBaseHashtable.h"
 #include "nsTArray.h"
 
 namespace mozilla::dom {
+
+LSWriteOptimizerBase::LSWriteOptimizerBase()
+    : mLastSerialNumber(0), mTotalDelta(0) {}
+
+LSWriteOptimizerBase::LSWriteOptimizerBase(
+    LSWriteOptimizerBase&& aWriteOptimizer)
+    : mTruncateInfo(std::move(aWriteOptimizer.mTruncateInfo)) {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(&aWriteOptimizer != this);
+
+  mWriteInfos.SwapElements(aWriteOptimizer.mWriteInfos);
+  mTotalDelta = aWriteOptimizer.mTotalDelta;
+  aWriteOptimizer.mTotalDelta = 0;
+}
 
 class LSWriteOptimizerBase::WriteInfoComparator {
  public:
@@ -49,6 +64,13 @@ void LSWriteOptimizerBase::Truncate(int64_t aDelta) {
   }
 
   mTotalDelta += aDelta;
+}
+
+void LSWriteOptimizerBase::Reset() {
+  AssertIsOnOwningThread();
+
+  mTruncateInfo = nullptr;
+  mWriteInfos.Clear();
 }
 
 void LSWriteOptimizerBase::GetSortedWriteInfos(

@@ -101,14 +101,11 @@ add_setup(async function () {
 });
 
 /**
- * Helper to reset the allowlist before each test.
+ * Helper to reset the allowlist before each test. The allowlist is module
+ * state shared by every actor instance, so no tab is needed to reach it.
  */
-async function setAllowList(allowList = []) {
-  // Open a temporary tab to get an actor and reset the allowlist
-  await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
-    const parent = await getParentActor(browser);
-    parent.setAllowListForTest(allowList);
-  });
+function setAllowList(allowList = []) {
+  AttributionParent.prototype.setAllowListForTest(allowList);
 }
 
 /**
@@ -116,7 +113,7 @@ async function setAllowList(allowList = []) {
  */
 async function resetTestState() {
   await resetDatabase();
-  await setAllowList();
+  setAllowList();
   if (conversionStub) {
     conversionStub.resetHistory();
   }

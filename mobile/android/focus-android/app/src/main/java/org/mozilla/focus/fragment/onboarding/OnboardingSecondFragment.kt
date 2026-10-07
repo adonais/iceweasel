@@ -14,9 +14,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
+import androidx.fragment.compose.content
 import mozilla.components.support.utils.Browsers
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.focus.GleanMetrics.Onboarding
@@ -53,15 +52,7 @@ class OnboardingSecondFragment : Fragment() {
                     selectedTabId = requireComponents.store.state.selectedTabId,
                 )
             )
-        return ComposeView(requireContext()).apply {
-            isTransitionGroup = true
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        (view as ComposeView).setContent {
+        return content {
             FocusTheme {
                 OnBoardingSecondScreenCompose(
                     setAsDefaultBrowser = {
@@ -75,6 +66,7 @@ class OnboardingSecondFragment : Fragment() {
                 )
             }
         }
+            .apply { isTransitionGroup = true }
     }
 
     override fun onResume() {

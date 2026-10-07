@@ -188,10 +188,17 @@ class WebCryptoTask : public CancelableRunnable {
 class GenerateAsymmetricKeyTask : public WebCryptoTask {
  public:
   GenerateAsymmetricKeyTask(nsIGlobalObject* aGlobal, JSContext* aCx,
+                            const nsString& aAlgName,
                             const ObjectOrString& aAlgorithm, bool aExtractable,
                             const Sequence<nsString>& aKeyUsages);
 
  protected:
+  // For WebRTC, which has no normalized algorithm name to pass; see
+  // dom/media/webrtc/RTCCertificate.cpp.
+  GenerateAsymmetricKeyTask(nsIGlobalObject* aGlobal, JSContext* aCx,
+                            const ObjectOrString& aAlgorithm, bool aExtractable,
+                            const Sequence<nsString>& aKeyUsages);
+
   UniquePLArenaPool mArena;
   UniquePtr<CryptoKeyPair> mKeyPair;
   nsString mAlgName;
@@ -206,6 +213,10 @@ class GenerateAsymmetricKeyTask : public WebCryptoTask {
   virtual void Cleanup() override;
 
  private:
+  void Init(nsIGlobalObject* aGlobal, JSContext* aCx, const nsString& aAlgName,
+            const ObjectOrString& aAlgorithm, bool aExtractable,
+            const Sequence<nsString>& aKeyUsages);
+
   UniqueSECKEYPublicKey mPublicKey;
   UniqueSECKEYPrivateKey mPrivateKey;
 };

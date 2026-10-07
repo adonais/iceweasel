@@ -200,3 +200,21 @@ SPHINX_TREES["nss"] = "nss/doc/src"
 
 with Files("nss/doc/src/**"):
     SCHEDULES.exclusive = ["nss"]
+
+LICENSED_UNDER += ["cryptogams"]
+LICENSED_UNDER["cryptogams"].paths = [
+    "nss/lib/freebl/scripts",
+    "nss/lib/freebl/sha512-p8.s",
+]
+
+LICENSED_UNDER += ["mit"]
+LICENSED_UNDER["mit"].paths = [
+    "nss/lib/freebl/ecl/curve25519_32.c",
+    "nss/lib/freebl/ecl/ecp_secp384r1.c",
+    "nss/lib/freebl/ecl/ecp_secp521r1.c",
+]
+
+LICENSED_UNDER += ["ucal"]
+LICENSED_UNDER["ucal"].paths = [
+    "nss/lib/dbm",
+]

@@ -251,4 +251,10 @@ object MetricsUtils {
                 }
             }
         }
+
+    /** Enum marking the access point of the Tab Groups feature, for telemetry. */
+    enum class TabGroupAccessPoint {
+        TABS_TRAY,
+        BROWSER_MENU,
+    }
 }

@@ -1,5 +1,6 @@
 # When modifying this list, please also update build/pgo/index.html (If relevant to profile-guided optimzation).
 % http://localhost/tests/perf-reftest-singletons/abspos-reflow-1.html
+% http://localhost/tests/perf-reftest-singletons/anchor-pos-scoped.html
 % http://localhost/tests/perf-reftest-singletons/attr-selector-1.html
 % http://localhost/tests/perf-reftest-singletons/bidi-resolution-1.html
 % http://localhost/tests/perf-reftest-singletons/bloom-basic-2.html

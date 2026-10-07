@@ -10,6 +10,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <inttypes.h>
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -285,7 +286,9 @@ int mar_extract_and_verify_signatures(MarFile* mar,
   if (numVerified == 0) {
     fprintf(stderr, "ERROR: Not all signatures were verified.\n");
   } else {
-    fprintf(stderr, "ERROR: Only %d of %d signatures were verified.\n",
+    fprintf(stderr,
+            "ERROR: Only %" PRIu32 " of %" PRIu32
+            " signatures were verified.\n",
             numVerified, signatureCount);
   }
   return CryptoX_Error;

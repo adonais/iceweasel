@@ -607,9 +607,10 @@ add_task(
   }
 );
 
-add_task(async function test_dragstart_below_splitview_does_not_grab() {
-  // Test that dragging in the margin below a split view (the gap between the
-  // wrapper and the nav bar) does not grab the split view.
+add_task(async function test_dragstart_below_splitview_grabs_splitview() {
+  // A split view tab reaches the edge of the tab strip like a plain tab, so
+  // dragging in the gap between the wrapper and the nav bar grabs the split
+  // view.
   const tab2 = await addTab("data:text/plain,tab2");
   const tab3 = await addTab("data:text/plain,tab3");
   const splitView = gBrowser.addTabSplitView([tab2, tab3]);
@@ -619,35 +620,45 @@ add_task(async function test_dragstart_below_splitview_does_not_grab() {
   const arrowScrollbox = gBrowser.tabContainer.arrowScrollbox;
   const scrollboxRect = arrowScrollbox.getBoundingClientRect();
   const splitViewRect = splitView.getBoundingClientRect();
+  const tab2Rect = tab2.getBoundingClientRect();
   Assert.greater(
-    scrollboxRect.bottom,
+    tab2Rect.bottom,
     splitViewRect.bottom,
-    "The scrollbox extends below the split view wrapper"
+    "The tab reaches below the split view wrapper"
   );
 
-  // Compute drag source centered on the wrapper, but in its bottom margin.
-  const srcX =
-    splitViewRect.left + splitViewRect.width / 2 - scrollboxRect.left;
-  const srcY =
-    (splitViewRect.bottom + scrollboxRect.bottom) / 2 - scrollboxRect.top;
+  // Compute drag source centered on tab2, between the wrapper's bottom edge
+  // and the tab's own.
+  const srcX = tab2Rect.left + tab2Rect.width / 2 - scrollboxRect.left;
+  const srcY = (splitViewRect.bottom + tab2Rect.bottom) / 2 - scrollboxRect.top;
 
-  info("Drag horizontally through the bottom margin of split view wrapper.");
-  // FIXME Bug 2044440 - synthesizePlainDragAndDrop() should supress a11y checks for expectCancelDragStart
-  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
+  let dragStart = BrowserTestUtils.waitForEvent(
+    gBrowser.tabContainer,
+    "dragstart"
+  );
+  info("Drag horizontally through the tab strip below the split view wrapper.");
   await EventUtils.synthesizePlainDragAndDrop({
     srcElement: arrowScrollbox,
     srcX,
     srcY,
     stepX: 9,
     stepY: 0,
-    expectCancelDragStart: true,
   });
-  AccessibilityUtils.resetEnv();
+  let { target } = await dragStart;
+  Assert.equal(
+    target.closest(".tabbrowser-tab"),
+    tab2,
+    "Dragging below the split view wrapper grabs the tab above"
+  );
+  Assert.ok(
+    !gBrowser.tabContainer.hasAttribute("movingtab"),
+    "tab strip state is no longer in drag-drop mode"
+  );
 
   Assert.deepEqual(
     gBrowser.tabs,
     tabOrder,
-    "Tab order is unchanged after dragging below the split view wrapper"
+    "Tab order is unchanged after dropping without a target"
   );
 
   splitView.close();

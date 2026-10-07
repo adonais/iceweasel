@@ -1,7 +1,7 @@
 # PRNetAddr
 
 Type used with [Socket Manipulation
-Functions](Socket_Manipulation_Functions) to specify a network
+Functions](i_o_functions.md#socket-manipulation-functions) to specify a network
 address.
 
 ## Syntax

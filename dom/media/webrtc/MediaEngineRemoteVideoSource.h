@@ -198,6 +198,12 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
   // Set under mMutex on the Cameras IPC thread. Accessed under one of the two.
   gfx::IntSize mScaledImageSize = gfx::IntSize(0, 0);
 
+  // The size last reported to settings. Distinct from mScaledImageSize, which
+  // tracks the delivered image and can differ from the negotiated size when
+  // the parent has straightened a quarter turn for us.
+  // Cameras IPC thread only.
+  Maybe<gfx::IntSize> mLastReportedSize;
+
   struct AtomicBool {
     Atomic<bool> mValue;
   };

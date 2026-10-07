@@ -61,60 +61,36 @@ fun ensurePrivacyReportNotificationChannelExists(context: Context): String {
 }
 
 /**
- * Build and display the weekly privacy report notification. When [trackersBlockedCount] is `null`, meaning too few
- * trackers were blocked to meet the reporting threshold, the notification introduces the feature instead of reporting a
- * count.
+ * Build and display the weekly privacy report notification.
  *
  * @param context Used to look up the [NotificationManager] system service and required string resources.
  * @param notificationsDelegate Used to request notification permission and post the notification.
- * @param trackersBlockedCount The number of trackers that were blocked over the past week, or `null` if that was below
- *   the reporting threshold.
+ * @param content The content of the notification.
  */
 fun showPrivacyReportNotification(
     context: Context,
     notificationsDelegate: NotificationsDelegate,
-    trackersBlockedCount: Int? = null,
+    content: PrivacyReportNotificationContent,
 ) {
     notificationsDelegate.notify(
         PRIVACY_REPORT_NOTIFICATION_TAG,
         SharedIdsHelper.getIdForTag(context, PRIVACY_REPORT_NOTIFICATION_TAG),
-        buildPrivacyReportNotification(context, trackersBlockedCount),
+        buildPrivacyReportNotification(context, content),
     )
 }
 
-private fun buildPrivacyReportNotification(context: Context, trackersBlockedCount: Int?): Notification {
-    val title: String
-    val text: String
-    if (trackersBlockedCount != null) {
-        title =
-            context.resources.getQuantityString(
-                R.plurals.trackers_blocked_panel_num_trackers_blocked_this_week_2,
-                trackersBlockedCount,
-                trackersBlockedCount,
-            )
-        text =
-            context.getString(
-                R.string.notification_privacy_report_body_has_trackers,
-                context.getString(R.string.app_name),
-            )
-    } else {
-        title =
-            context.getString(
-                R.string.notification_privacy_report_headline_no_trackers,
-                context.getString(R.string.app_name),
-            )
-        text = ""
-    }
-
-    return createBaseNotification(
+private fun buildPrivacyReportNotification(
+    context: Context,
+    content: PrivacyReportNotificationContent,
+): Notification =
+    createBaseNotification(
         context = context,
         channelId = ensurePrivacyReportNotificationChannelExists(context),
-        title = title,
-        text = text,
+        title = content.title,
+        text = content.text,
         onClick = createClickPendingIntent(context),
         onDismiss = createDismissPendingIntent(context),
     )
-}
 
 /**
  * The click action launches the deep link activity directly, via [PendingIntent.getActivity], rather than routing

@@ -356,16 +356,6 @@
 
           <hbox id="page-action-buttons" context="pageActionContextMenu" align="center" urlbar-slot="page-actions">
             <toolbartabstop/>
-            <hbox id="contextual-feature-recommendation" role="button" hidden="true">
-              <hbox id="cfr-label-container">
-                <label id="cfr-label"/>
-              </hbox>
-              <hbox id="cfr-button"
-                    role="presentation"
-                    class="urlbar-page-action">
-                <image class="urlbar-icon"/>
-              </hbox>
-            </hbox>
             <hbox id="userContext-icons" hidden="true"
                   role="button">
               <label id="userContext-label"/>
@@ -503,6 +493,18 @@
 
     <toolbarbutton id="taskbar-tabs-audio" class="toolbarbutton-1 chromeclass-toolbar-additional"
                     removable="false" overflows="false"/>
+
+    <toolbarbutton id="mini-window-audio-button" class="toolbarbutton-1 chromeclass-toolbar-additional"
+                    data-l10n-id="mini-window-audio-mute"
+                    removable="false" overflows="false"/>
+
+    <toolbarbutton id="mini-window-restore-button" class="toolbarbutton-1 chromeclass-toolbar-additional"
+                    data-l10n-id="mini-window-restore-button"
+                    hidden="" removable="false" overflows="false"/>
+
+    <toolbarbutton id="mini-window-close-button" class="toolbarbutton-1 chromeclass-toolbar-additional"
+                    data-l10n-id="mini-window-close-button"
+                    hidden="" removable="false" overflows="false"/>
 
     <toolbaritem id="smartwindow-ask-button"
                  class="chromeclass-toolbar-additional"

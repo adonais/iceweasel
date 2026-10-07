@@ -1290,8 +1290,7 @@ void WlCompositorUnavailableHandler() {
         nsCOMPtr<nsIAppStartup> appStartup =
             do_GetService("@mozilla.org/toolkit/app-startup;1");
         if (appStartup) {
-          bool userAllowedQuit = true;
-          appStartup->Quit(nsIAppStartup::eForceQuit, 0, &userAllowedQuit);
+          appStartup->Quit(nsIAppStartup::eForceQuit, 0);
         }
       }));
 }

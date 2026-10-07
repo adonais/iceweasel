@@ -15,8 +15,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldColors
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,7 +51,6 @@ import mozilla.components.ui.icons.R
  * @param maxLines The maximum number of input lines visible to the user at once.
  * @param minLines The minimum number of input lines visible to the user at once.
  * @param trailingIcon The optional composable for adding a trailing icon at the end of the text field container.
- * @param colors [TextFieldColors] to use for styling text field colors.
  * @param visualTransformation The visual transformation filter for changing the visual representation of the input. By
  *   default no visual transformation is applied.
  * @param keyboardOptions Software keyboard options that contains configuration such as [KeyboardType] and [ImeAction].
@@ -76,7 +73,6 @@ fun TextField(
     minLines: Int = 1,
     trailingIcon: @Composable (TrailingIconScope.() -> Unit)? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
-    colors: TextFieldColors = TextFieldDefaults.colors(),
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions(),

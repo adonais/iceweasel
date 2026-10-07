@@ -438,13 +438,20 @@ In addition you must add a description of your marker in a special static data m
   static constexpr const char* Description = "This is my marker!";
 ```
 
-If you expect users to be passing unique names for individual instances of the marker,
-you may want to add the following to ensure those names get stored when using ETW:
+The name passed to an individual marker call is always recorded by the profiler
+itself, but it is only written to ETW if the marker type asks for it with
+`ETWStoreName`:
 
 ```cpp
 // …
-  static constexpr bool StoreName = true;
+  static constexpr bool ETWStoreName = true;
 ```
+
+`ETWStoreName` is false by default, so opt out by leaving it unset when the name
+is always the same for every marker of the type, since the ETW event is already
+identified by the marker type's `Name`, or when the cost of storing the names, a
+copy of the string in every ETW event recorded for this marker type, would not
+bring more value to an ETW trace.
 
 ### Marker Type Data
 
@@ -463,6 +470,12 @@ most important fields are:
 - Type: An enum value describing the C++ type specified to PROFILER_MARKER/profiler_add_marker.
 - Label: Prefix to display to label the field.
 - Format: How to format the data element value, see [MarkerSchema::Format for details](https://searchfox.org/mozilla-central/define?q=T_mozilla%3A%3AMarkerSchema%3A%3AFormat).
+
+Be careful with the formats that carry PII. `Url`, `FilePath` and
+`SanitizedString` are sanitized by the front-end, and `String` is not sanitized
+at all. `UniqueString` sits in between: the front-end scrubs URLs out of the
+whole string table, so a unique string may hold a URL, but any other PII it
+contains (file paths, host names, preference values) is kept.
 
 ```cpp
 // …
@@ -629,6 +642,46 @@ following in the Firefox Profiler's Marker Chart:
 
 For implementation details on this processing, see [src/profiler-logic/marker-schema.js](https://github.com/firefox-devtools/profiler/blob/main/src/profile-logic/marker-schema.ts)
 in the profiler's front-end.
+
+### Marker Type Track Graphs
+
+A numeric payload field can additionally be plotted as a timeline track, by
+listing it in an optional `GraphFields` array. Each entry names the payload
+field to plot, the shape to plot it with, and optionally a color; when the
+color is left as `Nothing`, the front-end uses its default track color.
+
+```cpp
+// …
+  static constexpr MS::GraphField GraphFields[] = {
+      {"speed", MS::GraphType::Bar, Some(MS::GraphColor::Ink)}};
+```
+
+### Special Front-End Marker Types
+
+A handful of marker types are displayed by dedicated code in
+profiler.firefox.com rather than by the generic schema-driven UI: for instance
+`CompositorScreenshot` (drawn as a filmstrip in the timeline), `Network` (the
+network track and its request phases), `IPC` (drawn as arrows between the
+sending and receiving threads), and the `Native allocation` and `JS allocation`
+markers backing the allocation tracks. Those declare
+`UseSpecialFrontendLocation` instead of `Locations`:
+
+```cpp
+// …
+  static constexpr bool UseSpecialFrontendLocation = true;
+```
+
+Such a type must not set any of the display properties described above:
+`Locations`, `ChartLabel`, `TooltipLabel`, `TableLabel`, `AllLabels`,
+`ColorField`, `IsStackBased`, `Description` and `GraphFields` are all ignored,
+since the front-end renders the marker with its own dedicated code. A static
+assertion enforces this. `PayloadFields` may still be declared, as it drives
+payload serialization and the ETW payload rather than the display; only the
+key/format list it contributes to the schema is ignored.
+
+This is not something new marker types should need: it only works for the types
+profiler.firefox.com already knows about, so prefer `Locations` unless you are
+also adding the matching front-end support.
 
 Any other `struct` member function is ignored. There could be utility functions used by the above
 compulsory functions, to make the code clearer.

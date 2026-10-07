@@ -27,6 +27,8 @@
 
 #include "jit/loong64/Simulator-loong64.h"
 
+#include "mozilla/Casting.h"
+
 #include <cinttypes>
 #include <cmath>
 #include <float.h>
@@ -1430,9 +1432,9 @@ bool Simulator::init() {
 // the simulator.  The external reference will be a function compiled for the
 // host architecture.  We need to call that function instead of trying to
 // execute it with the simulator.  We do that by redirecting the external
-// reference to a swi (software-interrupt) instruction that is handled by
-// the simulator.  We write the original destination of the jump just at a known
-// offset from the swi instruction so the simulator knows what to call.
+// reference to a break instruction that is handled by the simulator.  We write
+// the original destination of the jump just at a known offset from the break
+// instruction so the simulator knows what to call.
 class Redirection {
   friend class SimulatorProcess;
 
@@ -1757,6 +1759,33 @@ void Simulator::setFCSRBit(uint32_t cc, bool value) {
 
 bool Simulator::testFCSRBit(uint32_t cc) { return FCSR_ & (1 << cc); }
 
+void Simulator::setFCSRBitsByException(FCSRException ex) {
+  switch (ex) {
+    case FCSRException::Inexact:
+      setFCSRBit(kFCSRInexactFlagBit, true);
+      setFCSRBit(kFCSRInexactCauseBit, true);
+      break;
+    case FCSRException::Underflow:
+      setFCSRBit(kFCSRUnderflowFlagBit, true);
+      setFCSRBit(kFCSRUnderflowCauseBit, true);
+      break;
+    case FCSRException::Overflow:
+      setFCSRBit(kFCSROverflowFlagBit, true);
+      setFCSRBit(kFCSROverflowCauseBit, true);
+      break;
+    case FCSRException::DivideByZero:
+      setFCSRBit(kFCSRDivideByZeroFlagBit, true);
+      setFCSRBit(kFCSRDivideByZeroCauseBit, true);
+      break;
+    case FCSRException::InvalidOp:
+      setFCSRBit(kFCSRInvalidOpFlagBit, true);
+      setFCSRBit(kFCSRInvalidOpCauseBit, true);
+      break;
+  }
+}
+
+void Simulator::clearFCSRCauseBits() { FCSR_ &= ~kFCSRCauseMask; }
+
 unsigned int Simulator::getFCSRRoundingMode() {
   return FCSR_ & kFPURoundingModeMask;
 }
@@ -1773,19 +1802,16 @@ bool Simulator::setFCSRRoundError(double original, double rounded) {
   setFCSRBit(kFCSRInvalidOpCauseBit, false);
 
   if (!std::isfinite(original) || !std::isfinite(rounded)) {
-    setFCSRBit(kFCSRInvalidOpFlagBit, true);
-    setFCSRBit(kFCSRInvalidOpCauseBit, true);
+    setFCSRBitsByException(FCSRException::InvalidOp);
     ret = true;
   }
 
   if (original != rounded) {
-    setFCSRBit(kFCSRInexactFlagBit, true);
-    setFCSRBit(kFCSRInexactCauseBit, true);
+    setFCSRBitsByException(FCSRException::Inexact);
   }
 
   if (rounded < DBL_MIN && rounded > -DBL_MIN && rounded != 0) {
-    setFCSRBit(kFCSRUnderflowFlagBit, true);
-    setFCSRBit(kFCSRUnderflowCauseBit, true);
+    setFCSRBitsByException(FCSRException::Underflow);
     ret = true;
   }
 
@@ -1794,11 +1820,9 @@ bool Simulator::setFCSRRoundError(double original, double rounded) {
   // always representable as double, so simply cast it.
   if (rounded >= std::ldexp(1.0, std::numeric_limits<T>::digits) ||
       rounded < static_cast<double>(std::numeric_limits<T>::min())) {
-    setFCSRBit(kFCSROverflowFlagBit, true);
-    setFCSRBit(kFCSROverflowCauseBit, true);
+    setFCSRBitsByException(FCSRException::Overflow);
     // The reference is not really clear but it seems this is required:
-    setFCSRBit(kFCSRInvalidOpFlagBit, true);
-    setFCSRBit(kFCSRInvalidOpCauseBit, true);
+    setFCSRBitsByException(FCSRException::InvalidOp);
     ret = true;
   }
 
@@ -2586,6 +2610,49 @@ T ReverseBits(T value) {
   return result;
 }
 
+template <typename T>
+inline constexpr T FPUDefaultQNaN() {
+  static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>);
+
+  // <https://loongson.github.io/LoongArch-Documentation/LoongArch-Vol1-EN.html#_non_numerical_result_of_instructions>
+  if constexpr (std::is_same_v<T, float>) {
+    // > The default single-precision QNaN value is 0x7FC00000, [...]
+    return mozilla::BitwiseCast<float>(UINT32_C(0x7fc00000));
+  } else {
+    // > [...] and the default double-precision QNaN value is
+    // > 0x7FF8000000000000.
+    return mozilla::BitwiseCast<double>(UINT64_C(0x7ff8000000000000));
+  }
+}
+
+static constexpr bool FPUIsSNaN(float v) {
+  constexpr uint32_t kFP32QuietNaNMask = UINT32_C(0x00400000);
+  return std::isnan(v) &&
+         (mozilla::BitwiseCast<uint32_t>(v) & kFP32QuietNaNMask) == 0;
+}
+
+static constexpr bool FPUIsSNaN(double v) {
+  constexpr uint64_t kFP64QuietNaNMask = UINT64_C(0x0008000000000000);
+  return std::isnan(v) &&
+         (mozilla::BitwiseCast<uint64_t>(v) & kFP64QuietNaNMask) == 0;
+}
+
+// Make a quiet NaN from any NaN by setting the quiet bit.
+static constexpr float FPUQuietizeNaN(float v) {
+  MOZ_ASSERT(std::isnan(v));
+  constexpr uint32_t kFP32QuietNaNMask = UINT32_C(0x00400000);
+  return mozilla::BitwiseCast<float>(mozilla::BitwiseCast<uint32_t>(v) |
+                                     kFP32QuietNaNMask);
+}
+
+// Make a quiet NaN from any NaN by setting the quiet bit.
+static constexpr double FPUQuietizeNaN(double v) {
+  MOZ_ASSERT(std::isnan(v));
+  constexpr uint64_t kFP64QuietNaNMask = UINT64_C(0x0008000000000000);
+  return mozilla::BitwiseCast<double>(mozilla::BitwiseCast<uint64_t>(v) |
+                                      kFP64QuietNaNMask);
+}
+
 // Min/Max template functions for Double and Single arguments.
 
 template <typename T>
@@ -2601,75 +2668,169 @@ float FPAbs<float>(float a) {
   return fabsf(a);
 }
 
-enum class MaxMinKind : int { kMin = 0, kMax = 1 };
-
+// Propagate NaNs per ISA manual, 2-operand variant.
+//
+// > Case 1: When the instruction generates an Invalid Operation floating-point
+// > exception due to a source operand containing SNaN, but the InvalidOperation
+// > floating-point exception enable is invalid, a QNaN result will be generated
+// > at this time. [...]
+// >
+// > The rule for determining the priority of the source operand is: if there
+// > are two source operands fj and fk, then the priority of fj is higher than
+// > fk; [...]
+// >
+// > Case 2: When there is no SNaN in the source operand but QNaN exists, the
+// > QNaN with the highest priority is selected as the result of this
+// > instruction. [...]
+// <https://loongson.github.io/LoongArch-Documentation/LoongArch-Vol1-EN.html#_non_numerical_result_of_instructions>
 template <typename T>
-static bool FPUProcessNaNsAndZeros(T a, T b, MaxMinKind kind, T* result) {
-  if (std::isnan(a) && std::isnan(b)) {
-    *result = a;
-  } else if (std::isnan(a)) {
-    *result = b;
-  } else if (std::isnan(b)) {
-    *result = a;
-  } else if (b == a) {
-    // Handle -0.0 == 0.0 case.
-    // std::signbit() returns int 0 or 1 so subtracting MaxMinKind::kMax
-    // negates the result.
-    *result = std::signbit(b) - static_cast<int>(kind) ? b : a;
-  } else {
-    return false;
+std::optional<T> Simulator::FPUPropagateNaN(T fj, T fk) {
+  static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>);
+
+  if (FPUIsSNaN(fj)) {
+    setFCSRBitsByException(FCSRException::InvalidOp);
+    return FPUQuietizeNaN(fj);
   }
-  return true;
+  if (FPUIsSNaN(fk)) {
+    setFCSRBitsByException(FCSRException::InvalidOp);
+    return FPUQuietizeNaN(fk);
+  }
+  if (std::isnan(fj)) {
+    return fj;
+  }
+  if (std::isnan(fk)) {
+    return fk;
+  }
+  return std::nullopt;
 }
 
+// Propagate NaNs per ISA manual, 3-operand variant.
+//
+// > [...] if there are three source operands fa, fj and fk, then the priority
+// > of fa is higher than fj, fj have higher priority than fk. [...]
+// <https://loongson.github.io/LoongArch-Documentation/LoongArch-Vol1-EN.html#_non_numerical_result_of_instructions>
 template <typename T>
-static T FPUMin(T a, T b) {
-  T result;
-  if (FPUProcessNaNsAndZeros(a, b, MaxMinKind::kMin, &result)) {
-    return result;
-  } else {
-    return b < a ? b : a;
-  }
-}
+std::optional<T> Simulator::FPUPropagateNaN(T fa, T fj, T fk) {
+  static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>);
 
-template <typename T>
-static T FPUMax(T a, T b) {
-  T result;
-  if (FPUProcessNaNsAndZeros(a, b, MaxMinKind::kMax, &result)) {
-    return result;
-  } else {
-    return b > a ? b : a;
+  if (auto nan = FPUPropagateNaN(fa, fj)) {
+    return nan;
   }
-}
-
-template <typename T>
-static T FPUMinA(T a, T b) {
-  T result;
-  if (!FPUProcessNaNsAndZeros(a, b, MaxMinKind::kMin, &result)) {
-    if (FPAbs(a) < FPAbs(b)) {
-      result = a;
-    } else if (FPAbs(b) < FPAbs(a)) {
-      result = b;
-    } else {
-      result = a < b ? a : b;
+  if (std::isnan(fk)) {
+    if (FPUIsSNaN(fk)) {
+      setFCSRBitsByException(FCSRException::InvalidOp);
+      return FPUQuietizeNaN(fk);
     }
+    return fk;
   }
-  return result;
+  return std::nullopt;
+}
+
+template <typename T, typename Func>
+T Simulator::FPUProcessNaNBinop(T fj, T fk, Func fn) {
+  static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>);
+
+  if (auto nan = FPUPropagateNaN(fj, fk)) {
+    return *nan;
+  }
+  T out = fn(fj, fk);
+  if (std::isnan(out)) {
+    setFCSRBitsByException(FCSRException::InvalidOp);
+    out = FPUDefaultQNaN<T>();
+  }
+  // TODO(loong64): Model Inexact, Overflow and Underflow bits.
+  return out;
 }
 
 template <typename T>
-static T FPUMaxA(T a, T b) {
-  T result;
-  if (!FPUProcessNaNsAndZeros(a, b, MaxMinKind::kMin, &result)) {
-    if (FPAbs(a) > FPAbs(b)) {
-      result = a;
-    } else if (FPAbs(b) > FPAbs(a)) {
-      result = b;
-    } else {
-      result = a > b ? a : b;
-    }
+T Simulator::FPUMin(T fj, T fk) {
+  static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>);
+
+  if (FPUIsSNaN(fj)) {
+    setFCSRBitsByException(FCSRException::InvalidOp);
+    return FPUQuietizeNaN(fj);
   }
-  return result;
+  if (FPUIsSNaN(fk)) {
+    setFCSRBitsByException(FCSRException::InvalidOp);
+    return FPUQuietizeNaN(fk);
+  }
+  return std::fmin(fj, fk);
+}
+
+template <typename T>
+T Simulator::FPUMax(T fj, T fk) {
+  static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>);
+
+  if (FPUIsSNaN(fj)) {
+    setFCSRBitsByException(FCSRException::InvalidOp);
+    return FPUQuietizeNaN(fj);
+  }
+  if (FPUIsSNaN(fk)) {
+    setFCSRBitsByException(FCSRException::InvalidOp);
+    return FPUQuietizeNaN(fk);
+  }
+  return std::fmax(fj, fk);
+}
+
+template <typename T>
+T Simulator::FPUMinA(T fj, T fk) {
+  static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>);
+
+  if (FPUIsSNaN(fj)) {
+    setFCSRBitsByException(FCSRException::InvalidOp);
+    return FPUQuietizeNaN(fj);
+  }
+  if (FPUIsSNaN(fk)) {
+    setFCSRBitsByException(FCSRException::InvalidOp);
+    return FPUQuietizeNaN(fk);
+  }
+  if (FPAbs(fj) < FPAbs(fk)) {
+    return fj;
+  }
+  if (FPAbs(fk) < FPAbs(fj)) {
+    return fk;
+  }
+  return std::fmin(fj, fk);
+}
+
+template <typename T>
+T Simulator::FPUMaxA(T fj, T fk) {
+  static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>);
+
+  if (FPUIsSNaN(fj)) {
+    setFCSRBitsByException(FCSRException::InvalidOp);
+    return FPUQuietizeNaN(fj);
+  }
+  if (FPUIsSNaN(fk)) {
+    setFCSRBitsByException(FCSRException::InvalidOp);
+    return FPUQuietizeNaN(fk);
+  }
+  if (FPAbs(fj) > FPAbs(fk)) {
+    return fj;
+  }
+  if (FPAbs(fk) > FPAbs(fj)) {
+    return fk;
+  }
+  return std::fmax(fj, fk);
+}
+
+template <typename T>
+T Simulator::FPUFmaHelper(T fj, T fk, T fa, bool negateMultiplicand,
+                          bool negateAddend) {
+  static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>);
+
+  const T multiplicand = negateMultiplicand ? -fj : fj;
+  const T addend = negateAddend ? -fa : fa;
+  if (auto nan = FPUPropagateNaN(addend, multiplicand, fk)) {
+    return *nan;
+  }
+  T out = std::fma(multiplicand, fk, addend);
+  if (std::isnan(out)) {
+    setFCSRBitsByException(FCSRException::InvalidOp);
+    out = FPUDefaultQNaN<T>();
+  }
+  // TODO(loong64): Model Inexact, Overflow and Underflow bit behavior.
+  return out;
 }
 
 enum class KeepSign : bool { no = false, yes };
@@ -3074,57 +3235,69 @@ void Simulator::decodeTypeOp11(SimInstruction* instr) {
 void Simulator::decodeTypeOp12(SimInstruction* instr) {
   switch (instr->bits(31, 20) << 20) {
     case op_fmadd_s: {
-      setFpuRegisterFloat(
-          fd_reg(instr),
-          std::fma(fj_float(instr), fk_float(instr), fa_float(instr)));
+      clearFCSRCauseBits();
+      setFpuRegisterFloat(fd_reg(instr),
+                          FPUFmaHelper(fj_float(instr), fk_float(instr),
+                                       fa_float(instr), false, false));
       break;
     }
     case op_fmadd_d: {
-      setFpuRegisterDouble(
-          fd_reg(instr),
-          std::fma(fj_double(instr), fk_double(instr), fa_double(instr)));
+      clearFCSRCauseBits();
+      setFpuRegisterDouble(fd_reg(instr),
+                           FPUFmaHelper(fj_double(instr), fk_double(instr),
+                                        fa_double(instr), false, false));
       break;
     }
     case op_fmsub_s: {
-      setFpuRegisterFloat(
-          fd_reg(instr),
-          std::fma(-fj_float(instr), fk_float(instr), fa_float(instr)));
+      clearFCSRCauseBits();
+      setFpuRegisterFloat(fd_reg(instr),
+                          FPUFmaHelper(fj_float(instr), fk_float(instr),
+                                       fa_float(instr), true, false));
       break;
     }
     case op_fmsub_d: {
-      setFpuRegisterDouble(
-          fd_reg(instr),
-          std::fma(-fj_double(instr), fk_double(instr), fa_double(instr)));
+      clearFCSRCauseBits();
+      setFpuRegisterDouble(fd_reg(instr),
+                           FPUFmaHelper(fj_double(instr), fk_double(instr),
+                                        fa_double(instr), true, false));
       break;
     }
     case op_fnmadd_s: {
-      setFpuRegisterFloat(
-          fd_reg(instr),
-          std::fma(-fj_float(instr), fk_float(instr), -fa_float(instr)));
+      clearFCSRCauseBits();
+      setFpuRegisterFloat(fd_reg(instr),
+                          FPUFmaHelper(fj_float(instr), fk_float(instr),
+                                       fa_float(instr), true, true));
       break;
     }
     case op_fnmadd_d: {
-      setFpuRegisterDouble(
-          fd_reg(instr),
-          std::fma(-fj_double(instr), fk_double(instr), -fa_double(instr)));
+      clearFCSRCauseBits();
+      setFpuRegisterDouble(fd_reg(instr),
+                           FPUFmaHelper(fj_double(instr), fk_double(instr),
+                                        fa_double(instr), true, true));
       break;
     }
     case op_fnmsub_s: {
-      setFpuRegisterFloat(
-          fd_reg(instr),
-          std::fma(fj_float(instr), fk_float(instr), -fa_float(instr)));
+      clearFCSRCauseBits();
+      setFpuRegisterFloat(fd_reg(instr),
+                          FPUFmaHelper(fj_float(instr), fk_float(instr),
+                                       fa_float(instr), false, true));
       break;
     }
     case op_fnmsub_d: {
-      setFpuRegisterDouble(
-          fd_reg(instr),
-          std::fma(fj_double(instr), fk_double(instr), -fa_double(instr)));
+      clearFCSRCauseBits();
+      setFpuRegisterDouble(fd_reg(instr),
+                           FPUFmaHelper(fj_double(instr), fk_double(instr),
+                                        fa_double(instr), false, true));
       break;
     }
     case op_fcmp_cond_s: {
       MOZ_ASSERT(instr->bits(4, 3) == 0);
+      clearFCSRCauseBits();
       float fj = fj_float(instr);
       float fk = fk_float(instr);
+      if (FPUIsSNaN(fj) || FPUIsSNaN(fk)) {
+        setFCSRBitsByException(FCSRException::InvalidOp);
+      }
       switch (cond(instr)) {
         case AssemblerLOONG64::CAF: {
           setCFRegister(cd_reg(instr), false);
@@ -3214,8 +3387,12 @@ void Simulator::decodeTypeOp12(SimInstruction* instr) {
     }
     case op_fcmp_cond_d: {
       MOZ_ASSERT(instr->bits(4, 3) == 0);
+      clearFCSRCauseBits();
       double fj = fj_double(instr);
       double fk = fk_double(instr);
+      if (FPUIsSNaN(fj) || FPUIsSNaN(fk)) {
+        setFCSRBitsByException(FCSRException::InvalidOp);
+      }
       switch (cond(instr)) {
         case AssemblerLOONG64::CAF: {
           setCFRegister(cd_reg(instr), false);
@@ -3646,76 +3823,124 @@ void Simulator::decodeTypeOp17(SimInstruction* instr) {
       softwareInterrupt(instr);
       break;
     case op_fadd_s: {
-      setFpuRegisterFloat(fd_reg(instr), fj_float(instr) + fk_float(instr));
+      clearFCSRCauseBits();
+      setFpuRegisterFloat(
+          fd_reg(instr),
+          FPUProcessNaNBinop<float>(fj_float(instr), fk_float(instr),
+                                    [](float a, float b) { return a + b; }));
       break;
     }
     case op_fadd_d: {
-      setFpuRegisterDouble(fd_reg(instr), fj_double(instr) + fk_double(instr));
+      clearFCSRCauseBits();
+      setFpuRegisterDouble(
+          fd_reg(instr),
+          FPUProcessNaNBinop<double>(fj_double(instr), fk_double(instr),
+                                     [](double a, double b) { return a + b; }));
       break;
     }
     case op_fsub_s: {
-      setFpuRegisterFloat(fd_reg(instr), fj_float(instr) - fk_float(instr));
+      clearFCSRCauseBits();
+      setFpuRegisterFloat(
+          fd_reg(instr),
+          FPUProcessNaNBinop<float>(fj_float(instr), fk_float(instr),
+                                    [](float a, float b) { return a - b; }));
       break;
     }
     case op_fsub_d: {
-      setFpuRegisterDouble(fd_reg(instr), fj_double(instr) - fk_double(instr));
+      clearFCSRCauseBits();
+      setFpuRegisterDouble(
+          fd_reg(instr),
+          FPUProcessNaNBinop<double>(fj_double(instr), fk_double(instr),
+                                     [](double a, double b) { return a - b; }));
       break;
     }
     case op_fmul_s: {
-      setFpuRegisterFloat(fd_reg(instr), fj_float(instr) * fk_float(instr));
+      clearFCSRCauseBits();
+      setFpuRegisterFloat(
+          fd_reg(instr),
+          FPUProcessNaNBinop<float>(fj_float(instr), fk_float(instr),
+                                    [](float a, float b) { return a * b; }));
       break;
     }
     case op_fmul_d: {
-      setFpuRegisterDouble(fd_reg(instr), fj_double(instr) * fk_double(instr));
+      clearFCSRCauseBits();
+      setFpuRegisterDouble(
+          fd_reg(instr),
+          FPUProcessNaNBinop<double>(fj_double(instr), fk_double(instr),
+                                     [](double a, double b) { return a * b; }));
       break;
     }
     case op_fdiv_s: {
-      setFpuRegisterFloat(fd_reg(instr), fj_float(instr) / fk_float(instr));
+      clearFCSRCauseBits();
+      float fj = fj_float(instr);
+      float fk = fk_float(instr);
+      if (std::isfinite(fj) && fj != 0 && fk == 0) {
+        setFCSRBitsByException(FCSRException::DivideByZero);
+      }
+      setFpuRegisterFloat(fd_reg(instr),
+                          FPUProcessNaNBinop<float>(
+                              fj, fk, [](float a, float b) { return a / b; }));
       break;
     }
 
     case op_fdiv_d: {
-      setFpuRegisterDouble(fd_reg(instr), fj_double(instr) / fk_double(instr));
+      clearFCSRCauseBits();
+      double fj = fj_double(instr);
+      double fk = fk_double(instr);
+      if (std::isfinite(fj) && fj != 0 && fk == 0) {
+        setFCSRBitsByException(FCSRException::DivideByZero);
+      }
+      setFpuRegisterDouble(
+          fd_reg(instr), FPUProcessNaNBinop<double>(
+                             fj, fk, [](double a, double b) { return a / b; }));
       break;
     }
     case op_fmax_s: {
+      clearFCSRCauseBits();
       setFpuRegisterFloat(fd_reg(instr),
-                          FPUMax(fk_float(instr), fj_float(instr)));
+                          FPUMax(fj_float(instr), fk_float(instr)));
       break;
     }
     case op_fmax_d: {
+      clearFCSRCauseBits();
       setFpuRegisterDouble(fd_reg(instr),
-                           FPUMax(fk_double(instr), fj_double(instr)));
+                           FPUMax(fj_double(instr), fk_double(instr)));
       break;
     }
     case op_fmin_s: {
+      clearFCSRCauseBits();
       setFpuRegisterFloat(fd_reg(instr),
-                          FPUMin(fk_float(instr), fj_float(instr)));
+                          FPUMin(fj_float(instr), fk_float(instr)));
       break;
     }
     case op_fmin_d: {
+      clearFCSRCauseBits();
       setFpuRegisterDouble(fd_reg(instr),
-                           FPUMin(fk_double(instr), fj_double(instr)));
+                           FPUMin(fj_double(instr), fk_double(instr)));
       break;
     }
     case op_fmaxa_s: {
+      clearFCSRCauseBits();
       setFpuRegisterFloat(fd_reg(instr),
-                          FPUMaxA(fk_float(instr), fj_float(instr)));
+                          FPUMaxA(fj_float(instr), fk_float(instr)));
       break;
     }
     case op_fmaxa_d: {
+      clearFCSRCauseBits();
       setFpuRegisterDouble(fd_reg(instr),
-                           FPUMaxA(fk_double(instr), fj_double(instr)));
+                           FPUMaxA(fj_double(instr), fk_double(instr)));
       break;
     }
     case op_fmina_s: {
+      clearFCSRCauseBits();
       setFpuRegisterFloat(fd_reg(instr),
-                          FPUMinA(fk_float(instr), fj_float(instr)));
+                          FPUMinA(fj_float(instr), fk_float(instr)));
       break;
     }
     case op_fmina_d: {
+      clearFCSRCauseBits();
       setFpuRegisterDouble(fd_reg(instr),
-                           FPUMinA(fk_double(instr), fj_double(instr)));
+                           FPUMinA(fj_double(instr), fk_double(instr)));
       break;
     }
     case op_ldx_b:
@@ -4131,20 +4356,35 @@ void Simulator::decodeTypeOp22(SimInstruction* instr) {
       break;
     }
     case op_fsqrt_s: {
-      if (fj_float(instr) >= 0) {
-        setFpuRegisterFloat(fd_reg(instr), std::sqrt(fj_float(instr)));
+      clearFCSRCauseBits();
+      float fj = fj_float(instr);
+      if (FPUIsSNaN(fj)) {
+        setFpuRegisterFloat(fd_reg(instr), FPUQuietizeNaN(fj));
+        setFCSRBitsByException(FCSRException::InvalidOp);
+      } else if (std::isnan(fj)) {
+        setFpuRegisterFloat(fd_reg(instr), fj);
+      } else if (fj < 0) {
+        setFpuRegisterFloat(fd_reg(instr), FPUDefaultQNaN<float>());
+        setFCSRBitsByException(FCSRException::InvalidOp);
       } else {
-        setFpuRegisterFloat(fd_reg(instr), std::sqrt(-1));  // qnan
-        setFCSRBit(kFCSRInvalidOpFlagBit, true);
+        setFpuRegisterFloat(fd_reg(instr), std::sqrt(fj));
+        // TODO(loong64): Model Inexact bit behavior.
       }
       break;
     }
     case op_fsqrt_d: {
-      if (fj_double(instr) >= 0) {
-        setFpuRegisterDouble(fd_reg(instr), std::sqrt(fj_double(instr)));
+      clearFCSRCauseBits();
+      double fj = fj_double(instr);
+      if (FPUIsSNaN(fj)) {
+        setFpuRegisterDouble(fd_reg(instr), FPUQuietizeNaN(fj));
+        setFCSRBitsByException(FCSRException::InvalidOp);
+      } else if (std::isnan(fj)) {
+        setFpuRegisterDouble(fd_reg(instr), fj);
+      } else if (fj < 0) {
+        setFpuRegisterDouble(fd_reg(instr), FPUDefaultQNaN<double>());
+        setFCSRBitsByException(FCSRException::InvalidOp);
       } else {
-        setFpuRegisterDouble(fd_reg(instr), std::sqrt(-1));  // qnan
-        setFCSRBit(kFCSRInvalidOpFlagBit, true);
+        setFpuRegisterDouble(fd_reg(instr), std::sqrt(fj));
       }
       break;
     }
@@ -4192,10 +4432,18 @@ void Simulator::decodeTypeOp22(SimInstruction* instr) {
       break;
     }
     case op_fcvt_s_d: {
-      setFpuRegisterFloat(fd_reg(instr), static_cast<float>(fj_double(instr)));
+      clearFCSRCauseBits();
+      double fj = fj_double(instr);
+      float result = static_cast<float>(fj);
+      if (result != fj) {
+        setFCSRBitsByException(FCSRException::Inexact);
+      }
+      // TODO(loong64): Model Overflow and Underflow bit behavior.
+      setFpuRegisterFloat(fd_reg(instr), result);
       break;
     }
     case op_fcvt_d_s: {
+      clearFCSRCauseBits();
       setFpuRegisterDouble(fd_reg(instr), static_cast<double>(fj_float(instr)));
       break;
     }
@@ -4444,7 +4692,18 @@ void Simulator::decodeTypeOp22(SimInstruction* instr) {
       break;
     }
     case op_frint_s: {
+      clearFCSRCauseBits();
       float fj = fj_float(instr);
+      if (std::isnan(fj)) {
+        // A NaN source propagates per manual.
+        setFpuRegisterFloat(fd_reg(instr),
+                            FPUIsSNaN(fj) ? FPUQuietizeNaN(fj) : fj);
+        if (FPUIsSNaN(fj)) {
+          // And an SNaN source raises Invalid Operation as well.
+          setFCSRBitsByException(FCSRException::InvalidOp);
+        }
+        break;
+      }
       float result, temp_result;
       double temp;
       float upper = std::ceil(fj);
@@ -4477,12 +4736,23 @@ void Simulator::decodeTypeOp22(SimInstruction* instr) {
       }
       setFpuRegisterFloat(fd_reg(instr), result);
       if (result != fj) {
-        setFCSRBit(kFCSRInexactFlagBit, true);
+        setFCSRBitsByException(FCSRException::Inexact);
       }
       break;
     }
     case op_frint_d: {
+      clearFCSRCauseBits();
       double fj = fj_double(instr);
+      if (std::isnan(fj)) {
+        // A NaN source propagates per manual.
+        setFpuRegisterDouble(fd_reg(instr),
+                             FPUIsSNaN(fj) ? FPUQuietizeNaN(fj) : fj);
+        if (FPUIsSNaN(fj)) {
+          // And an SNaN source raises Invalid Operation as well.
+          setFCSRBitsByException(FCSRException::InvalidOp);
+        }
+        break;
+      }
       double result, temp, temp_result;
       double upper = std::ceil(fj);
       double lower = std::floor(fj);
@@ -4514,7 +4784,7 @@ void Simulator::decodeTypeOp22(SimInstruction* instr) {
       }
       setFpuRegisterDouble(fd_reg(instr), result);
       if (result != fj) {
-        setFCSRBit(kFCSRInexactFlagBit, true);
+        setFCSRBitsByException(FCSRException::Inexact);
       }
       break;
     }
@@ -4670,12 +4940,10 @@ void Simulator::callInternal(uint8_t* entry) {
   setRegister(pc, reinterpret_cast<int64_t>(entry));
   // Put down marker for end of simulation. The simulator will stop simulation
   // when the PC reaches this value. By saving the "end simulation" value into
-  // the LR the simulation stops when returning to this call point.
+  // the ra register the simulation stops when returning to this call point.
   setRegister(ra, end_sim_pc);
 
   // Remember the values of callee-saved registers.
-  // The code below assumes that r9 is not used as sb (static base) in
-  // simulator code and therefore is regarded as a callee-saved register.
   int64_t s0_val = getRegister(s0);
   int64_t s1_val = getRegister(s1);
   int64_t s2_val = getRegister(s2);
@@ -4685,9 +4953,9 @@ void Simulator::callInternal(uint8_t* entry) {
   int64_t s6_val = getRegister(s6);
   int64_t s7_val = getRegister(s7);
   int64_t s8_val = getRegister(s8);
-  int64_t gp_val = getRegister(gp);
-  int64_t sp_val = getRegister(sp);
   int64_t tp_val = getRegister(tp);
+  int64_t sp_val = getRegister(sp);
+  int64_t rx_val = getRegister(rx);
   int64_t fp_val = getRegister(fp);
 
   // Set up the callee-saved registers with a known value. To be able to check
@@ -4702,8 +4970,8 @@ void Simulator::callInternal(uint8_t* entry) {
   setRegister(s6, callee_saved_value);
   setRegister(s7, callee_saved_value);
   setRegister(s8, callee_saved_value);
-  setRegister(gp, callee_saved_value);
   setRegister(tp, callee_saved_value);
+  setRegister(rx, callee_saved_value);
   setRegister(fp, callee_saved_value);
 
   // Start the simulation.
@@ -4723,8 +4991,8 @@ void Simulator::callInternal(uint8_t* entry) {
   MOZ_ASSERT(callee_saved_value == getRegister(s6));
   MOZ_ASSERT(callee_saved_value == getRegister(s7));
   MOZ_ASSERT(callee_saved_value == getRegister(s8));
-  MOZ_ASSERT(callee_saved_value == getRegister(gp));
   MOZ_ASSERT(callee_saved_value == getRegister(tp));
+  MOZ_ASSERT(callee_saved_value == getRegister(rx));
   MOZ_ASSERT(callee_saved_value == getRegister(fp));
 
   // Restore callee-saved registers with the original value.
@@ -4737,9 +5005,9 @@ void Simulator::callInternal(uint8_t* entry) {
   setRegister(s6, s6_val);
   setRegister(s7, s7_val);
   setRegister(s8, s8_val);
-  setRegister(gp, gp_val);
-  setRegister(sp, sp_val);
   setRegister(tp, tp_val);
+  setRegister(sp, sp_val);
+  setRegister(rx, rx_val);
   setRegister(fp, fp_val);
 }
 

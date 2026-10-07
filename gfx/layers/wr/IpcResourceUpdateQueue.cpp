@@ -438,7 +438,7 @@ void IpcResourceUpdateQueue::AddFontInstance(
     wr::FontInstanceKey aKey, wr::FontKey aFontKey, float aGlyphSize,
     const wr::FontInstanceOptions* aOptions,
     const wr::FontInstancePlatformOptions* aPlatformOptions,
-    Range<const gfx::FontVariation> aVariations) {
+    Range<const wr::FontVariation> aVariations) {
   auto bytes = mWriter.WriteAsBytes(aVariations);
   mUpdates.AppendElement(layers::OpAddFontInstance(
       aOptions ? Some(*aOptions) : Nothing(),

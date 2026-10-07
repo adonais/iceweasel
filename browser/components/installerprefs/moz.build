@@ -7,7 +7,7 @@ with Files("**"):
 
 XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.toml"]
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "InstallerPrefs.sys.mjs",
 ]
 

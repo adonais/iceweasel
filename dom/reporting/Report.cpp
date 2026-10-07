@@ -19,10 +19,11 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(Report)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-Report::Report(nsIGlobalObject* aGlobal, const nsAString& aType,
-               const nsAString& aURL, ReportBody* aBody)
+Report::Report(nsIGlobalObject* aGlobal, nsAtom* aType, const nsACString& aURL,
+               ReportBody* aBody)
     : mGlobal(aGlobal), mType(aType), mURL(aURL), mBody(aBody) {
   MOZ_ASSERT(aGlobal);
+  MOZ_ASSERT(aType);
 }
 
 Report::~Report() = default;
@@ -37,11 +38,11 @@ JSObject* Report::WrapObject(JSContext* aCx,
   return Report_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-const nsString& Report::Type() const { return mType; }
+nsAtom* Report::Type() const { return mType; }
 
-void Report::GetType(nsAString& aType) const { aType = mType; }
+void Report::GetType(nsACString& aType) const { mType->ToUTF8String(aType); }
 
-void Report::GetUrl(nsAString& aURL) const { aURL = mURL; }
+void Report::GetUrl(nsACString& aURL) const { aURL = mURL; }
 
 ReportBody* Report::GetBody() const { return mBody; }
 

@@ -33,9 +33,13 @@ object SettingsAutofillSelectors : SelectorContainer {
             description = "Autofill toolbar title",
         )
 
+    // Content anchor for the page's NAVIGATION_READY/INTERACTIVE readiness. Kept on UiAutomator (like the
+    // other content selectors here) rather than Espresso: an Espresso probe gates on the app reaching idle
+    // before each poll, which right after the Settings->Autofill fragment transition can exhaust the 10s
+    // readiness budget and time out; the a11y-tree query has no such coupling.
     val AUTOFILL_ADDRESSES_TOGGLE =
         Selector(
-            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = getStringResource(R.string.preferences_addresses_save_and_autofill_addresses_2),
             description = "Save and fill addresses option",
             groups = setOf(Group.AUTOFILL_SETTINGS),
@@ -169,6 +173,53 @@ object SettingsAutofillSelectors : SelectorContainer {
         )
 
     // --- Credit cards ---
+
+    // Credit-cards section of the Autofill screen (present before any card is saved).
+    val CREDIT_CARDS_SECTION_TITLE =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+            value = getStringResource(R.string.preferences_credit_cards_2),
+            description = "The 'Credit cards' section title",
+        )
+
+    // Espresso-backed so its cousin Switch can be state-checked via mozVerifyOptionSwitchIsChecked.
+    val SAVE_AND_AUTOFILL_CREDIT_CARDS_OPTION =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.preferences_credit_cards_save_and_autofill_cards_2),
+            description = "The 'Save and autofill cards' option",
+        )
+
+    val SAVE_AND_AUTOFILL_CREDIT_CARDS_SUMMARY =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+            value = getStringResource(R.string.preferences_credit_cards_save_and_autofill_cards_summary_2),
+            description = "The 'Save and autofill cards' summary",
+        )
+
+    val SYNC_CREDIT_CARDS_ACROSS_DEVICES_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+            value = getStringResource(R.string.preferences_credit_cards_sync_cards_across_devices),
+            description = "The 'Sync cards across devices' button",
+        )
+
+    val SAVED_CREDIT_CARDS_TOOLBAR_TITLE =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+            value = getStringResource(R.string.credit_cards_saved_cards),
+            description = "The 'Saved cards' toolbar title",
+        )
+
+    // A detail (masked last digits, expiry) on a saved-card row, matched by substring like the legacy
+    // itemContainingText.
+    @Suppress("FunctionName")
+    fun SAVED_CREDIT_CARD_DETAIL(text: String = "") =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+            value = text,
+            description = "Saved card detail containing '$text'",
+        )
 
     val ADD_CREDIT_CARD_BUTTON =
         Selector(

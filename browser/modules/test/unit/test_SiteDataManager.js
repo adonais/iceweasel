@@ -228,7 +228,7 @@ add_task(async function testRemove() {
   let usage = await SiteDataTestUtils.getQuotaUsage(EXAMPLE_ORIGIN);
   Assert.equal(usage, 0, "Has cleared quota usage for example.com");
 
-  let cookies = Services.cookies.countCookiesFromHost("example.com");
+  let cookies = Services.cookies.countCookiesFromHost("example.com", {});
   Assert.equal(cookies, 0, "Has cleared cookies for example.com");
 
   let perm = PermissionTestUtils.testPermission(uri, "persistent-storage");
@@ -297,7 +297,7 @@ add_task(async function testRemoveSiteData() {
   usage = await SiteDataTestUtils.getQuotaUsage(EXAMPLE_ORIGIN_2);
   Assert.equal(usage, 0, "Has cleared quota usage for example.org");
 
-  let cookies = Services.cookies.countCookiesFromHost("example.org");
+  let cookies = Services.cookies.countCookiesFromHost("example.org", {});
   Assert.equal(cookies, 0, "Has cleared cookies for example.org");
 
   // removeSiteData only clears storage and cookies, not cache.
@@ -384,7 +384,7 @@ add_task(async function testRemove() {
   usage = await SiteDataTestUtils.getQuotaUsage(EXAMPLE_ORIGIN_2);
   Assert.equal(usage, 0, "Has cleared quota usage for example.org");
 
-  let cookies = Services.cookies.countCookiesFromHost("example.org");
+  let cookies = Services.cookies.countCookiesFromHost("example.org", {});
   Assert.equal(cookies, 0, "Has cleared cookies for example.org");
 
   Assert.equal(

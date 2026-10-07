@@ -31,8 +31,12 @@ class TaskQueue;
 
 class WebrtcMediaDataDecoder : public WebrtcVideoDecoder {
  public:
-  static media::DecodeSupportSet Supports(webrtc::VideoCodecType aCodecType,
-                                          SupportDecoderParams aParams);
+  // Query whether the codec is supported for decoding in SW and/or HW. Waits
+  // for the remote process which would handle the codec to report accurate
+  // support before resolving. Used by MediaCapabilities. Must be called off
+  // the main thread.
+  static RefPtr<PlatformDecoderModule::SupportsDecoderPromise> Supports(
+      webrtc::VideoCodecType aCodecType, SupportDecoderParams aParams);
 
   static bool IsCodecEnabled(webrtc::VideoCodecType aCodecType);
 

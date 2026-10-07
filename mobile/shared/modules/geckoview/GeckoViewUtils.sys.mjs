@@ -358,6 +358,45 @@ export var GeckoViewUtils = {
     return aScope;
   },
 
+  /**
+   * Like initLogging, but forwards to a ConsoleInstance named
+   * "GeckoView.<aTag>", whose prefix doubles as the MOZ_LOG module name, so
+   * about:logging can capture the messages along with their stack traces.
+   * Interpolated values are handed to the console as-is rather than formatted
+   * into the message, so they stay inspectable.
+   *
+   * @param aTag Name of the console instance to forward logs to.
+   * @param aScope Scope to add the logging functions to.
+   */
+  initLoggingConsole(aTag, aScope) {
+    aScope = aScope || {};
+    const tag = "GeckoView." + aTag.replace(/^GeckoView\.?/, "");
+
+    // Deliberately not tied to "geckoview.logging": that pref holds "Fatal"
+    // when logging is off, which is not a ConsoleLogLevel. Debug messages are
+    // gated on the MOZ_LOG module instead.
+    const instance = console.createInstance({
+      prefix: tag,
+      maxLogLevel: "Warn",
+    });
+
+    for (const level of ["debug", "warn"]) {
+      const log = (strings, ...exprs) => {
+        // Separate console arguments keep logged objects inspectable. A tagged
+        // template has one more string than values, hence the trailing slice;
+        // the odd indices are the values, kept even when empty.
+        const args = strings.flatMap((str, i) => [str.trim(), exprs[i]]);
+        instance[level](
+          ...args.slice(0, -1).filter((arg, i) => i % 2 || arg !== "")
+        );
+      };
+      aScope[level] = new Proxy(log, {
+        set: (obj, prop, value) => obj([prop + " = ", ""], value) || true,
+      });
+    }
+    return aScope;
+  },
+
   get rootLogger() {
     if (!this._rootLogger) {
       this._rootLogger = Log.repository.getLogger("GeckoView");

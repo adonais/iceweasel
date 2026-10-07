@@ -305,3 +305,66 @@ add_task(async function test_smartwindow_footer_button_clicks() {
     await SpecialPowers.popPrefEnv();
   }
 });
+
+add_task(async function test_smartwindow_promo_fullpage_layout() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.smartwindow.resumeCards.enabled", true]],
+  });
+
+  let win;
+  try {
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+    const aiWindow = browser.contentDocument.querySelector("ai-window");
+    Assert.ok(aiWindow, "ai-window element should exist");
+
+    aiWindow.promoMessage = {
+      heading: "Test",
+      message: "Test body",
+      primaryActionText: "Go",
+      secondaryActionText: "Not now",
+    };
+    await aiWindow.updateComplete;
+
+    const promo = aiWindow.shadowRoot.querySelector("smartwindow-promo");
+    const footer = aiWindow.shadowRoot.querySelector("smartwindow-footer");
+    const resumeSection = aiWindow.shadowRoot.querySelector(
+      "smartwindow-resume-section"
+    );
+    Assert.ok(promo, "Promo should render");
+    Assert.ok(footer, "Footer should still render alongside the promo");
+    Assert.ok(resumeSection, "Resume section should be present");
+
+    const children = [...aiWindow.shadowRoot.children];
+    Assert.less(
+      children.indexOf(promo),
+      children.indexOf(resumeSection),
+      "Promo should appear before the resume section"
+    );
+
+    aiWindow.showFooter = false;
+    await aiWindow.updateComplete;
+
+    Assert.ok(
+      !aiWindow.shadowRoot.querySelector("smartwindow-footer"),
+      "Footer should be removed when showFooter is false"
+    );
+    Assert.ok(
+      aiWindow.shadowRoot.querySelector("smartwindow-promo"),
+      "Promo should remain when showFooter is false"
+    );
+
+    aiWindow.mode = "sidebar";
+    await aiWindow.updateComplete;
+
+    Assert.ok(
+      !aiWindow.shadowRoot.querySelector("smartwindow-promo"),
+      "Promo should not render in sidebar mode"
+    );
+  } finally {
+    if (win) {
+      await BrowserTestUtils.closeWindow(win);
+    }
+    await SpecialPowers.popPrefEnv();
+  }
+});

@@ -683,13 +683,6 @@ def check_compiler(
         else:
             flags.append("-std=gnu++20")
 
-        # gcc 10 defines C++20's __cplusplus as 201709L instead of 202002L.
-        # Redefine as C++20's final vesion for gcc 10 so modern C++20 code's
-        # __cplusplus version checks work as expected.
-        if info.type == "gcc" and info.version < Version("11.0.0"):
-            flags.append("-U__cplusplus")
-            flags.append("-D__cplusplus=202002L")
-
     # Check compiler target
     # --------------------------------------------------------------------
     has_target = False
@@ -799,6 +792,7 @@ def rust_search_path(rust_path, original_path):
     rust_search_path,
     target,
     original_path,
+    ios_sdk,
 )
 @imports("os")
 @imports(_from="mach.util", _import="get_virtualenv_base_dir")
@@ -809,6 +803,7 @@ def altered_path(
     rust_search_path,
     target,
     original_path,
+    ios_sdk,
 ):
     # Trim trailing empty entries so a stray `;;` in the input doesn't
     # surface as a blank PATH entry.
@@ -827,6 +822,9 @@ def altered_path(
         path = strip_trailing_empty_entries(original_path)
     # cargo needs the rust search path to find cargo-$subcommand.
     path.extend(strip_trailing_empty_entries(rust_search_path))
+    # Put build/macosx/xcrun first in PATH.
+    if ios_sdk:
+        path.insert(0, os.path.join(build_env.topsrcdir, "build", "macosx"))
 
     # Bug 2040992: Strip mach virtualenv entries so any prepended venvs
     # (from intermediate ./mach activations along the build chain) don't
@@ -1375,7 +1373,7 @@ sccache_environment = sccache_config(
 
 
 def minimum_gcc_version():
-    return Version("10.1.0")
+    return Version("11.1.0")
 
 
 @template
@@ -2833,6 +2831,43 @@ set_config("MOZ_UBSAN", any_ubsan)
 # Windows, or for Windows.
 include("windows.configure", when=is_windows)
 
+# llvm-dlltool (Windows only)
+# ==============================================================
+
+
+@depends(build_project, target, "--enable-compile-environment")
+def check_for_llvm_dlltool(build_project, target, compile_environment):
+    if build_project != "browser":
+        return
+
+    if target.os != "WINNT":
+        return
+
+    return compile_environment
+
+
+llvm_dlltool = check_prog(
+    "LLVM_DLLTOOL",
+    ("llvm-dlltool",),
+    what="llvm-dlltool",
+    when=check_for_llvm_dlltool,
+    paths=clang_search_path,
+)
+
+
+@depends(target, when=llvm_dlltool)
+def llvm_dlltool_flags(target):
+    arch = {
+        "x86": "i386",
+        "x86_64": "i386:x86-64",
+        "aarch64": "arm64",
+    }[target.cpu]
+
+    return ["-m", arch]
+
+
+set_config("LLVM_DLLTOOL_FLAGS", llvm_dlltool_flags)
+
 # Security Hardening
 # ==============================================================
 
@@ -3277,6 +3312,22 @@ def as_outoption(as_info):
 
 
 set_config("ASOUTOPTION", as_outoption)
+
+
+@depends(as_info, debug_flags)
+def debug_asflags(as_info, debug_flags):
+    if as_info.type == "masm":
+        # Unintuitively, -Zi for ml/ml64 is equivalent to -Z7 for cl.exe.
+        # -Zi for cl.exe has a different purpose, so this is only used here.
+        return ["-Zi"]
+    if as_info.type == "armasm":
+        # armasm64 accepts a paucity of options compared to ml/ml64.
+        return []
+    return debug_flags
+
+
+set_config("MOZ_DEBUG_ASFLAGS", debug_asflags)
+
 
 # clang plugin handling
 # ==============================================================

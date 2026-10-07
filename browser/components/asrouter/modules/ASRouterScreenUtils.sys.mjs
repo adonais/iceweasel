@@ -63,8 +63,9 @@ export const ASRouterScreenUtils = {
    *
    * Given an array of screens, each screen will have it's `targeting` property
    * evaluated, and removed if it's targeting evaluates to false. Screens that
-   * are kept additionally have their multiselect tiles filtered, so that
-   * checkboxes opting in to targeting are resolved before the screen renders.
+   * are kept additionally have their single-select and multiselect tiles
+   * filtered, so that items opting in to targeting are resolved before the
+   * screen renders.
    *
    * @param {object[]} screens - An array of screens that will be looped
    * through to be evaluated for removal
@@ -81,9 +82,9 @@ export const ASRouterScreenUtils = {
         }
       }
 
-      // Resolve any opt-in multiselect checkbox targeting
-      //so the correct checkboxes are present on first paint.
-      await this.filterMultiSelectTargeting(screen);
+      // Resolve any opt-in single-select item or multiselect checkbox
+      // targeting so the correct items are present on first paint.
+      await this.filterTileTargeting(screen);
       return false;
     });
 
@@ -91,16 +92,17 @@ export const ASRouterScreenUtils = {
   },
 
   /**
-   *
-   * A multiselect tile's checkbox may include a `targeting` JEXL expression to
+   * A tile's `data` entries may include a `targeting` JEXL expression to
    * conditionally render itself. We do this in the parent process before
    * the screen is handed to content so it's evaluated before first paint.
-   * This is opt-in, a checkbox without `targeting` is always kept. A multiselect tile
-   * whose checkboxes are all filtered out is removed entirely
+   * This is opt-in: a tile item without `targeting` is always kept. A
+   * single-select or multiselect tile whose items are all filtered out is
+   * removed entirely.
    *
-   * @param {object} screen - The screen whose multiselect tiles to filter.
+   * @param {object} screen - The screen whose tiles to filter.
    */
-  async filterMultiSelectTargeting(screen) {
+  async filterTileTargeting(screen) {
+    const TARGETABLE_TILE_TYPES = ["multiselect", "single-select"];
     const tiles = screen?.content?.tiles;
     if (!tiles) {
       return;
@@ -108,26 +110,40 @@ export const ASRouterScreenUtils = {
     const tilesArray = Array.isArray(tiles) ? tiles : [tiles];
 
     for (const tile of tilesArray) {
-      if (tile?.type !== "multiselect" || !Array.isArray(tile.data)) {
+      if (
+        !TARGETABLE_TILE_TYPES.includes(tile.type) ||
+        !Array.isArray(tile.data)
+      ) {
         continue;
       }
-      const evaluatedCheckboxes = [];
-      for (const checkbox of tile.data) {
+      const evaluatedItems = [];
+      for (const item of tile.data) {
         if (
-          checkbox?.targeting === undefined ||
-          (await this.evaluateScreenTargeting(checkbox.targeting))
+          item?.targeting === undefined ||
+          (await this.evaluateScreenTargeting(item.targeting))
         ) {
-          evaluatedCheckboxes.push(checkbox);
+          evaluatedItems.push(item);
         }
       }
-      tile.data = evaluatedCheckboxes;
+      tile.data = evaluatedItems;
+
+      // If a single-select tile has a `selected` property that is no longer
+      // present in the filtered data, remove it so that the default selection
+      // is used instead.
+      if (
+        tile.type === "single-select" &&
+        tile.selected &&
+        !evaluatedItems.some(item => item.id === tile.selected)
+      ) {
+        delete tile.selected;
+      }
     }
 
-    const isEmptyMultiSelect = tile =>
-      tile?.type === "multiselect" && !tile.data.length;
+    const isEmptyTile = tile =>
+      TARGETABLE_TILE_TYPES.includes(tile?.type) && !tile.data.length;
     if (Array.isArray(tiles)) {
-      screen.content.tiles = tiles.filter(tile => !isEmptyMultiSelect(tile));
-    } else if (isEmptyMultiSelect(tiles)) {
+      screen.content.tiles = tiles.filter(tile => !isEmptyTile(tile));
+    } else if (isEmptyTile(tiles)) {
       delete screen.content.tiles;
     }
   },

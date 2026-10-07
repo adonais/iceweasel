@@ -307,6 +307,30 @@ already_AddRefed<PTextureParent> ImageBridgeParent::AllocPTextureParent(
     const SurfaceDescriptor& aSharedData, ReadLockDescriptor& aReadLock,
     const LayersBackend& aLayersBackend, const TextureFlags& aFlags,
     const uint64_t& aSerial, const wr::MaybeExternalImageId& aExternalImageId) {
+  if (aFlags & TextureFlags::REMOTE_TEXTURE) {
+    MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
+    return nullptr;
+  }
+
+  switch (aSharedData.type()) {
+    case SurfaceDescriptor::TSurfaceDescriptorBuffer:
+      break;
+    case SurfaceDescriptor::TSurfaceDescriptorGPUVideo:
+      break;
+    case SurfaceDescriptor::TSurfaceDescriptorRemoteTexture:
+      break;
+#ifdef MOZ_WIDGET_ANDROID
+    case SurfaceDescriptor::TSurfaceTextureDescriptor:
+      break;
+#elif defined(XP_MACOSX)
+    case SurfaceDescriptor::TSurfaceDescriptorMacIOSurface:
+      break;
+#endif
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
+      return nullptr;
+  }
+
   if (aExternalImageId.isSome() &&
       !OwnsExternalImageId(aExternalImageId.ref())) {
     NS_ERROR("We do not own this external image id.");

@@ -106,4 +106,69 @@ TEST_P(QuickDERTest, InvalidLengths) {
 INSTANTIATE_TEST_SUITE_P(QuickderTestsInvalidLengths, QuickDERTest,
                          testing::ValuesIn(kInvalidDER));
 
+const SEC_ASN1Template kOctetStringTemplate[] = {
+    {SEC_ASN1_OCTET_STRING, 0, NULL, sizeof(SECItem)}, {0}};
+
+TEST_F(QuickDERTest, DefaultLimitRejectsOversizedInput) {
+  PORTCheapArenaPool pool;
+  PORT_InitCheapArena(&pool, DER_DEFAULT_CHUNKSIZE);
+  SECItem dest = {siBuffer, nullptr, 0};
+  // Construct a SECItem whose len exceeds the default limit without allocating
+  // a real buffer of that size — the check fires before any data access.
+  uint8_t dummy = 0x04;
+  SECItem oversized = {siBuffer, &dummy,
+                       static_cast<unsigned int>(SEC_ASN1D_MAX_INPUT_SIZE) + 1};
+  ASSERT_EQ(SECFailure,
+            SEC_QuickDERDecodeItem(&pool.arena, &dest, kOctetStringTemplate,
+                                   &oversized));
+  ASSERT_EQ(SEC_ERROR_BAD_DER, PR_GetError());
+  PORT_DestroyCheapArena(&pool);
+}
+
+TEST_F(QuickDERTest, ExactLimitAccepted) {
+  // A well-formed 11-byte OCTET STRING is accepted under the default limit.
+  // clang-format off
+  static uint8_t kInput[] = {0x04, 0x09,
+                              0x01, 0x02, 0x03, 0x04, 0x05,
+                              0x06, 0x07, 0x08, 0x09};
+  // clang-format on
+  PORTCheapArenaPool pool;
+  PORT_InitCheapArena(&pool, DER_DEFAULT_CHUNKSIZE);
+  SECItem dest = {siBuffer, nullptr, 0};
+  SECItem src = {siBuffer, kInput, sizeof(kInput)};
+  ASSERT_EQ(SECSuccess, SEC_QuickDERDecodeItem(&pool.arena, &dest,
+                                               kOctetStringTemplate, &src));
+  PORT_DestroyCheapArena(&pool);
+}
+
+TEST_F(QuickDERTest, CustomLimitsCanBypassDefaultSizeLimit) {
+  // SEC_QuickDERDecodeItemWithLimits with max_input_size=0 skips the size
+  // check.  Use a valid zero-length OCTET STRING but declare the SECItem
+  // length as larger than SEC_ASN1D_MAX_INPUT_SIZE.
+  static uint8_t kZeroOctetString[] = {0x04, 0x00};
+  PORTCheapArenaPool pool;
+  PORT_InitCheapArena(&pool, DER_DEFAULT_CHUNKSIZE);
+  SECItem dest = {siBuffer, nullptr, 0};
+  SECItem oversized = {siBuffer, kZeroOctetString,
+                       static_cast<unsigned int>(SEC_ASN1D_MAX_INPUT_SIZE) + 1};
+  SECStatus rv = SEC_QuickDERDecodeItemWithLimits(
+      &pool.arena, &dest, kOctetStringTemplate, &oversized, 0, 0);
+  ASSERT_EQ(rv, SECFailure);
+  ASSERT_NE(PR_GetError(), SEC_ERROR_BAD_DER);
+  PORT_DestroyCheapArena(&pool);
+}
+
+TEST_F(QuickDERTest, CustomLimitsEnforcesInputSize) {
+  static uint8_t kZeroOctetString[] = {0x04, 0x00};
+  PORTCheapArenaPool pool;
+  PORT_InitCheapArena(&pool, DER_DEFAULT_CHUNKSIZE);
+  SECItem dest = {siBuffer, nullptr, 0};
+  SECItem src = {siBuffer, kZeroOctetString, sizeof(kZeroOctetString)};
+  SECStatus rv = SEC_QuickDERDecodeItemWithLimits(
+      &pool.arena, &dest, kOctetStringTemplate, &src, 1, 0);
+  ASSERT_EQ(rv, SECFailure);
+  ASSERT_EQ(PR_GetError(), SEC_ERROR_BAD_DER);
+  PORT_DestroyCheapArena(&pool);
+}
+
 }  // namespace nss_test

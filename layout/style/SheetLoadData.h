@@ -206,6 +206,19 @@ class SheetLoadData final
   //   * This load uses a complete cache and no necko activity happens
   bool mShouldEmulateNotificationsForCachedLoad : 1;
 
+  // Whether SheetComplete was called.
+  bool mSheetCompleteCalled : 1 = false;
+
+  // Whether we intentionally are not calling SheetComplete because nobody is
+  // listening for the load.
+  bool mIntentionallyDropped : 1 = false;
+
+  const bool mRecordErrors : 1;
+
+  // Whether our final URI is same-origin with the document that's loading us.
+  // Only relevant for non-inline sheets.
+  bool mFinalURISameOrigin : 1 = false;
+
   // Whether this is a preload, and which kind of preload it is.
   //
   // TODO(emilio): This can become a bitfield once we build with a GCC version
@@ -235,18 +248,9 @@ class SheetLoadData final
   // The quirks mode of the loader at the time the load was triggered.
   const nsCompatibility mCompatMode;
 
-  // Whether SheetComplete was called.
-  bool mSheetCompleteCalled = false;
-
-  // Whether we intentionally are not calling SheetComplete because nobody is
-  // listening for the load.
-  bool mIntentionallyDropped = false;
-
   // The start timestamp for the load, or the timestamp where this load is
   // coalesced into an existing load.
   TimeStamp mLoadStart;
-
-  const bool mRecordErrors;
 
   RefPtr<SubResourceNetworkMetadataHolder> mNetworkMetadata;
 

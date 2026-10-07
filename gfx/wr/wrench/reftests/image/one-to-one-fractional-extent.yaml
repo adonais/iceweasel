@@ -1,0 +1,17 @@
+# A texture within a device pixel of its snapped rect, that the producer says
+# was rasterized for the rect, is drawn 1:1 from the snapped origin rather
+# than stretched: the producer rounded the unsnapped
+# rect to size the texture, and the rect's fractional extent snapped the other
+# way. The bounds keep the snapped geometry (bug 2070683).
+root:
+  items:
+    # 30x30 texture; the rect snaps to [10, 41], one column short.
+    # The shortfall column repeats the texture's last column.
+    - image: checkerboard(0, 2, 15)
+      bounds: [10.4, 10, 30.4, 30]
+      rasterized-for-rect: true
+    # 30x30 texture; the rect snaps to [11, 40], one column over.
+    # The surplus column is clipped.
+    - image: checkerboard(0, 2, 15)
+      bounds: [10.6, 50, 29.6, 30]
+      rasterized-for-rect: true

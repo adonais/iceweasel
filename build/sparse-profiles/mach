@@ -13,6 +13,7 @@ path:mach
 # Various dependencies. There is room to trim fat, especially in
 # third_party/python.
 path:python/
+path:testing/gtest/
 path:testing/mozbase/
 path:third_party/python/
 # certifi is needed for Sentry

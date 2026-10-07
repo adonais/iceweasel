@@ -5,7 +5,6 @@
 import os
 
 config = {
-    "stage_platform": "linux32-fuzzing-asan",
     #### 32 bit build specific #####
     "env": {
         "MOZBUILD_STATE_PATH": os.path.join(os.getcwd(), ".mozbuild"),

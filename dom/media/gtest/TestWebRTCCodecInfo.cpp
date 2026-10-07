@@ -10,9 +10,11 @@
 #include "VideoUtils.h"
 #include "gtest/gtest.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gtest/ScopedPrefSetter.h"
 #include "mozilla/media/webrtc/CodecInfo.h"
+#include "nsThreadUtils.h"
 
 using namespace mozilla;
 using mozilla::WebrtcCodecInfo;
@@ -81,7 +83,19 @@ class WebRTCCodecInfoTest : public testing::Test {
 
   static media::EncodeSupportSet QueryEncode(
       const MediaExtendedMIMEType& aMime) {
-    return SupportsVideoEncodeForWebrtc(MakeWebrtcEncoderConfig(aMime));
+    media::EncodeSupportSet result;
+    bool done = false;
+    SupportsVideoEncodeForWebrtc(MakeWebrtcEncoderConfig(aMime))
+        ->Then(
+            GetMainThreadSerialEventTarget(), __func__,
+            [&](media::EncodeSupportSet aSupport) {
+              result = aSupport;
+              done = true;
+            },
+            [&](nsresult) { done = true; });
+    SpinEventLoopUntil("TestWebRTCCodecInfo::QueryEncode"_ns,
+                       [&] { return done; });
+    return result;
   }
   static media::DecodeSupportSet QueryDecode(
       const MediaExtendedMIMEType& aMime) {
@@ -91,7 +105,19 @@ class WebRTCCodecInfoTest : public testing::Test {
       return {};
     }
     SupportDecoderParams params(*info);
-    return SupportsVideoDecodeForWebrtc(aMime, params);
+    media::DecodeSupportSet result;
+    bool done = false;
+    SupportsVideoDecodeForWebrtc(aMime, params)
+        ->Then(
+            GetMainThreadSerialEventTarget(), __func__,
+            [&](media::DecodeSupportSet aSupport) {
+              result = aSupport;
+              done = true;
+            },
+            [&](nsresult) { done = true; });
+    SpinEventLoopUntil("TestWebRTCCodecInfo::QueryDecode"_ns,
+                       [&] { return done; });
+    return result;
   }
 
   // Returns false if the MIME string is unparseable or unsupported.
@@ -288,6 +314,52 @@ TEST_F(WebRTCCodecInfoTest, AV1BlockedByWebRTCPref) {
     }
   }
   // Audio shouldn't be affected
+  TestAudioDecodeEncodeSWHW(codecInfo.get());
+}
+
+// Test that H264 with invalid fmtp params is unsupported, while H264 with no
+// or valid params remains supported.
+TEST_F(WebRTCCodecInfoTest, H264InvalidFmtpParamsUnsupported) {
+  const auto codecInfo = WebrtcCodecInfo::Create();
+  for (const char* type :
+       {"video/h264;profile-level-id=zze01f",
+        "video/h264;profile-level-id=42e0",
+        "video/h264;profile-level-id=f4001f", "video/h264;packetization-mode=3",
+        "video/h264;packetization-mode=banana"}) {
+    SCOPED_TRACE(type);
+    EXPECT_FALSE(SupportsSWDecode(*codecInfo, type));
+    EXPECT_FALSE(SupportsSWEncode(*codecInfo, type));
+  }
+
+  EXPECT_TRUE(SupportsSWDecode(*codecInfo, "video/h264"));
+  EXPECT_TRUE(SupportsSWEncode(*codecInfo, "video/h264"));
+  EXPECT_TRUE(SupportsSWDecode(
+      *codecInfo, "video/h264;profile-level-id=42e01f;packetization-mode=1"));
+  EXPECT_TRUE(SupportsSWEncode(
+      *codecInfo, "video/h264;profile-level-id=42e01f;packetization-mode=1"));
+}
+
+// Test that AV1 with invalid fmtp params is unsupported, while other codecs
+// (and AV1 with no or valid params) remain unaffected.
+TEST_F(WebRTCCodecInfoTest, AV1InvalidFmtpParamsUnsupported) {
+  const auto codecInfo = WebrtcCodecInfo::Create();
+  EXPECT_FALSE(SupportsSWDecode(*codecInfo, "video/av1;profile=9"));
+  EXPECT_FALSE(SupportsSWEncode(*codecInfo, "video/av1;profile=9"));
+  EXPECT_FALSE(SupportsSWDecode(*codecInfo, "video/av1;level-idx=99"));
+  EXPECT_FALSE(SupportsSWEncode(*codecInfo, "video/av1;level-idx=99"));
+  EXPECT_FALSE(SupportsSWDecode(*codecInfo, "video/av1;tier=2"));
+  EXPECT_FALSE(SupportsSWEncode(*codecInfo, "video/av1;tier=2"));
+
+  EXPECT_TRUE(SupportsSWDecode(*codecInfo, "video/av1"));
+  EXPECT_TRUE(SupportsSWEncode(*codecInfo, "video/av1"));
+  EXPECT_TRUE(
+      SupportsSWDecode(*codecInfo, "video/av1;profile=0;level-idx=9;tier=0"));
+  EXPECT_TRUE(
+      SupportsSWEncode(*codecInfo, "video/av1;profile=0;level-idx=9;tier=0"));
+
+  // Other codecs shouldn't be affected.
+  EXPECT_TRUE(SupportsSWDecode(*codecInfo, "video/h264"));
+  EXPECT_TRUE(SupportsSWEncode(*codecInfo, "video/h264"));
   TestAudioDecodeEncodeSWHW(codecInfo.get());
 }
 

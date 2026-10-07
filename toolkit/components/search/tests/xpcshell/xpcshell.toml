@@ -3,8 +3,8 @@ dupe-manifest = ""
 firefox-appdir = "browser"
 head = "head_search.js"
 prefs = ["browser.search.removeEngineInfobar.enabled=true"]
-skip-if = [
-  "os == 'android'",
+run-if = [
+  "os != 'android'", # these tests cover desktop search, not Android
 ]
 support-files = [
   "icons/bigIcon.ico",

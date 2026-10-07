@@ -2,6 +2,9 @@
 
 ["test_bug_2027541.html"]
 
+["test_dynamicImportRelazify.html"]
+support-files = ["module_simpleExport.mjs"]
+
 ["test_dynamicImport_dependency_load_failure.html"]
 support-files = [
   "import_404_evaluated.mjs",

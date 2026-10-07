@@ -6,6 +6,7 @@ package org.mozilla.fenix.ui.efficiency.selectors
 
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.settings.logins.ui.LoginsTestingTags.EDIT_LOGIN_PASSWORD_TEXT_FIELD
 import org.mozilla.fenix.settings.logins.ui.LoginsTestingTags.LOGIN_DETAILS_PASSWORD_TEXT_FIELD
 import org.mozilla.fenix.settings.logins.ui.LoginsTestingTags.SAVED_LOGINS_LIST
 import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
@@ -89,6 +90,47 @@ object SettingsSavedPasswordsSelectors : SelectorContainer {
             value = getStringResource(R.string.saved_login_reveal_password),
             description = "Reveal password button",
             groups = setOf(Group.LOGIN_DETAILS),
+        )
+
+    val LOGIN_DETAILS_MENU_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+            value = getStringResource(R.string.login_detail_menu_button_content_description),
+            description = "Login details three dot menu button",
+            groups = setOf(Group.LOGIN_DETAILS),
+        )
+
+    val EDIT_LOGIN_MENU_OPTION =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+            value = getStringResource(R.string.login_detail_menu_edit_button),
+            description = "Edit login menu option",
+            groups = setOf(Group.LOGIN_DETAILS),
+        )
+
+    val EDIT_LOGIN_PASSWORD_FIELD =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TAG,
+            value = EDIT_LOGIN_PASSWORD_TEXT_FIELD,
+            description = "Edit login password text field",
+            groups = setOf(Group.LOGIN_DETAILS),
+        )
+
+    val SAVE_EDITED_LOGIN_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+            value = getStringResource(R.string.edit_login_button_content_description),
+            description = "Save edited login toolbar button",
+            groups = setOf(Group.LOGIN_DETAILS),
+        )
+
+    @Suppress("FunctionName")
+    fun EDIT_LOGIN_PASSWORD(password: String = "") =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TAG_AND_TEXT,
+            value = EDIT_LOGIN_PASSWORD_TEXT_FIELD,
+            secondaryValue = password,
+            description = "Edit login password field with value '$password'",
         )
 
     @Suppress("FunctionName")

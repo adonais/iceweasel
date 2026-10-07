@@ -82,6 +82,14 @@ interface nsILockstore : nsISupports
   /// `kekRef` throws `NS_ERROR_INVALID_ARG`.
   boolean isKekUnlocked(in AUTF8String kekRef);
 
+  /// The returned Promise resolves with `true` iff a KEK record exists on
+  /// disk for `kekRef`, regardless of whether it is currently unlocked.
+  /// This inspects the persisted record, so it detects e.g. a Password KEK
+  /// that has never been unlocked this session. An empty `kekRef` rejects
+  /// with `NS_ERROR_INVALID_ARG`.
+  [implicit_jscontext]
+  Promise kekExists(in AUTF8String kekRef);
+
   /// Lock every KEK that holds cached authentication: zeroises every
   /// cached Password KEK in memory, clears every PKCS#11 unlock entry,
   /// and calls `PK11_Logout` on each previously-unlocked slot. Intended
@@ -151,6 +159,21 @@ interface nsILockstore : nsISupports
   Promise isDekExtractable(in AUTF8String dekName);
 
   /**
+   * Resolves with `true` iff a DEK record exists for `dekName`. A
+   * missing DEK resolves with `false` rather than rejecting, and no
+   * wrapping KEK needs to be unlocked — so this distinguishes "no key
+   * has ever been created here" from "a key exists but every KEK
+   * wrapping it is locked", which `getDek` / `getDekAutomatic` both
+   * report as NS_ERROR_NOT_AVAILABLE. Callers that must not overwrite
+   * existing ciphertext should gate on this before creating a DEK.
+   *
+   * Touches SQLite (loads the DEK metadata row), hence async. An empty
+   * `dekName` rejects with NS_ERROR_INVALID_ARG.
+   */
+  [implicit_jscontext]
+  Promise dekExists(in AUTF8String dekName);
+
+  /**
    * Delete the DEK for `dekName`. Rejects with
    * NS_ERROR_NOT_AVAILABLE if no DEK exists. The keystore does not
    * track any associated datastore; callers are responsible for
@@ -211,6 +234,25 @@ interface nsILockstore : nsISupports
                     in AUTF8String oldKekRef,
                     in AUTF8String newKekRef);
 
+  /**
+   * Re-wrap every collection currently wrapped under `fromKekRef` to
+   * `toKekRef`. The whole migration runs under a single keystore connection
+   * so no other DEK operation interleaves. On the first per-collection
+   * failure, the collections already switched in this call are rolled back
+   * to `fromKekRef` (best effort) and the Promise rejects with the original
+   * error, leaving `toKekRef` intact for the caller to clean up.
+   *
+   * Neither KEK record is deleted. Once the migration succeeds nothing wraps
+   * under `fromKekRef`, so the caller is expected to `deleteKek` it; leaving
+   * it behind keeps a record that can no longer be used for anything.
+   *
+   * Both KEKs must already exist and be unlocked. The Promise rejects with
+   * NS_ERROR_INVALID_ARG if either kekRef is empty.
+   */
+  [implicit_jscontext]
+  Promise migrateDeks(in AUTF8String fromKekRef,
+                     in AUTF8String toKekRef);
+
   /* --- Crypto (async, byte-oriented) ----------------------------------- */
 
   /**
@@ -255,6 +297,21 @@ interface nsILockstore : nsISupports
    */
   [implicit_jscontext]
   Promise getDek(in AUTF8String dekName, in AUTF8String kekRef);
+
+  /**
+   * Return the raw DEK bytes for `dekName` by automatically selecting
+   * a KEK. Iterates all KEKs that wrap the DEK for `dekName` and
+   * picks the first one that is currently unlocked. The DEK must have
+   * been created with `extractable = true`.
+   *
+   * The Promise resolves with an `Array<octet>` (same format as `getDek`)
+   * and rejects with:
+   *   - NS_ERROR_NOT_AVAILABLE if no KEK wrapping this DEK is currently
+   *     unlocked, or if no DEK exists for `dekName`.
+   *   - NS_ERROR_INVALID_ARG if `dekName` is empty.
+   */
+  [implicit_jscontext]
+  Promise getDekAutomatic(in AUTF8String dekName);
 
   /* --- KEK creation --------------------------------------------------- */
 
@@ -322,6 +379,25 @@ interface nsILockstore : nsISupports
                     in ACString identifier,
                     in ACString secret,
                     in uint64_t cacheTimeoutMs);
+
+  /**
+   * Re-wrap the Password KEK at `kekRef` under `newSecret`, authorising
+   * the change with `oldSecret`. The KEK material is preserved, so every
+   * DEK (and ciphertext at rest) wrapped under `kekRef` stays valid.
+   * Only meaningful for `"password"` KEKs.
+   *
+   * The returned Promise rejects with:
+   *   - NS_ERROR_INVALID_ARG if `kekRef` is empty, not a Password KEK,
+   *     names no existing record, or `newSecret` is empty.
+   *   - NS_ERROR_ABORT if `oldSecret` does not match the current
+   *     password.
+   *   - NS_ERROR_FAILURE on any other failure (SQLite write error,
+   *     crypto-layer error).
+   */
+  [implicit_jscontext]
+  Promise changeKekPassword(in AUTF8String kekRef,
+                            in ACString oldSecret,
+                            in ACString newSecret);
 
   /**
    * Destroy the KEK referenced by `kekRef`. The persisted row is

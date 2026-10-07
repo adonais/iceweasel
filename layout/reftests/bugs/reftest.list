@@ -417,7 +417,7 @@ skip-if(Android) == chrome://reftest/content/bugs/315920-21.svg chrome://reftest
 == chrome://reftest/content/bugs/321402-5.xhtml chrome://reftest/content/bugs/321402-5-ref.xhtml
 == chrome://reftest/content/bugs/321402-6.xhtml chrome://reftest/content/bugs/321402-6-ref.xhtml
 == 321738-1.html 321738-1-ref.html
-== 322461-1.xml 322461-1-ref.html
+pref(dom.xslt.enabled,true) == 322461-1.xml 322461-1-ref.html
 == 323656-1.html 323656-1-ref.html
 == 323656-2.html 323656-2-ref.html
 == 323656-3.html 323656-3-ref.html
@@ -845,7 +845,7 @@ fuzzy(0-2,0-5) == 402629-3.html 402629-3-ref.html
 == 403129-3.html 403129-3-ref.html
 == 403129-4.html 403129-4-ref.html
 random == 403134-1.html 403134-1-ref.html # bug 405377
-fuzzy-if(!useDrawSnapshot,130-131,177-177) skip-if(winWidget&&!isDebugBuild) == 403181-1.xml 403181-1-ref.xml
+skip-if(winWidget&&!isDebugBuild) == 403181-1.xml 403181-1-ref.xml
 == 403249-1a.html 403249-1-ref.html
 == 403249-1b.html 403249-1-ref.html
 == 403249-2a.html 403249-2-ref.html
@@ -1126,13 +1126,13 @@ random == 445004-1.html 445004-1-ref.html # bug 472268
 == 445142-1c.html 445142-1-ref.html
 == 445142-2a.html 445142-2-ref.html
 == 445142-2b.html 445142-2-ref.html
-fails-if(!useDrawSnapshot) == 446100-1a.html about:blank
-fails-if(!useDrawSnapshot) == 446100-1b.html about:blank
-fails-if(!useDrawSnapshot) == 446100-1c.html about:blank
-fails-if(!useDrawSnapshot) == 446100-1d.html about:blank
-fails-if(!useDrawSnapshot) == 446100-1e.html about:blank
+fails == 446100-1a.html about:blank
+fails == 446100-1b.html about:blank
+fails == 446100-1c.html about:blank
+fails == 446100-1d.html about:blank
+fails == 446100-1e.html about:blank
 == 446100-1f.html about:blank
-fails-if(!useDrawSnapshot) == 446100-1g.html about:blank
+fails == 446100-1g.html about:blank
 == 446100-1h.html about:blank
 == 447749-1.html 447749-1-ref.html
 fuzzy(0-127,0-2) == 448193.html 448193-ref.html
@@ -1568,10 +1568,10 @@ fuzzy(0-64,0-45) == 614272-1.svg 614272-1-ref.svg
 != 618071.html 618071-notref.html
 == 619117-1.html 619117-1-ref.html
 == 619511-1.html 619511-1-ref.html
-fails-if(useDrawSnapshot) fuzzy-if(geckoview&&!emulator&&gfxSVGFEColorMatrix,0-4,0-39) == 621253-1-externalFilter.html 621253-1-ref.html
-fails-if(useDrawSnapshot) fuzzy-if(geckoview&&!emulator&&gfxSVGFEColorMatrix,0-4,0-39) == 621253-1-internalFilter.html 621253-1-ref.html
-fails-if(useDrawSnapshot) fuzzy-if(geckoview&&!emulator&&gfxSVGFEColorMatrix,0-4,0-210) == 621253-2-externalFilter.html 621253-2-ref.html
-fails-if(useDrawSnapshot) fuzzy-if(geckoview&&!emulator&&gfxSVGFEColorMatrix,0-4,0-210) == 621253-2-internalFilter.html 621253-2-ref.html
+fuzzy-if(geckoview&&!emulator&&gfxSVGFEColorMatrix,0-4,0-39) == 621253-1-externalFilter.html 621253-1-ref.html
+fuzzy-if(geckoview&&!emulator&&gfxSVGFEColorMatrix,0-4,0-39) == 621253-1-internalFilter.html 621253-1-ref.html
+fuzzy-if(geckoview&&!emulator&&gfxSVGFEColorMatrix,0-4,0-210) == 621253-2-externalFilter.html 621253-2-ref.html
+fuzzy-if(geckoview&&!emulator&&gfxSVGFEColorMatrix,0-4,0-210) == 621253-2-internalFilter.html 621253-2-ref.html
 random-if(winWidget) == 621918-1.svg 621918-1-ref.svg # 1-pixel diacritic positioning discrepancy in rotated text (may depend on platform fonts)
 random-if(winWidget) fuzzy-if(geckoview&&!emulator,0-255,0-344) == 621918-2.svg 621918-2-ref.svg # same 1px issue as above + bug 1918395
 fuzzy-if(winWidget,0-5,0-1) == 622585-1.html 622585-1-ref.html # bug 789402
@@ -1925,7 +1925,7 @@ fuzzy(0-8,0-1900) fails == 1291528.html 1291528-ref.html
 fuzzy(0-255,0-1000) skip-if(!cocoaWidget) == 1294102-1.html 1294102-1-ref.html
 fuzzy(0-15,0-50) fuzzy-if(gtkWidget||winWidget,0-14,0-215) random-if(useDrawSnapshot) == 1295466-1.xhtml 1295466-1-ref.xhtml # bug 1540635
 fuzzy-if(Android,0-27,0-874) fuzzy-if(!Android,0-14,0-43) fuzzy-if(gtkWidget&&fission&&!isDebugBuild,0-14,0-1794) == 1313772.xhtml 1313772-ref.xhtml # Bug 1128229, Bug 1389319, Bug 1714895
-fuzzy(0-3,0-320000) fails-if(useDrawSnapshot) == 1315113-1.html 1315113-1-ref.html
+fuzzy(0-3,0-320000) == 1315113-1.html 1315113-1-ref.html
 fuzzy(0-3,0-20000) == 1315113-2.html 1315113-2-ref.html
 == 1315632-1.html 1315632-1-ref.html
 fuzzy(0-3,0-40000) fuzzy-if(winWidget,0-13,0-40000) == 1316719-1a.html 1316719-1-ref.html
@@ -2143,10 +2143,10 @@ skip-if(!cocoaWidget) != 1836024-1.html 1836024-1-notref.html
 # The 1840511-* tests are reliably fuzzy on certain configurations, per bug
 # 1840511.  (It passes on macOS and Android. It also passes with software WR,
 # or when using drawSnapshot.)
-fuzzy-if(!cocoaWidget&&!Android&&!swgl&&!useDrawSnapshot,1-1,142-142) == 1840511-1.html 1840511-1-ref.html
+fuzzy-if(!cocoaWidget&&!Android&&!swgl&&!useDrawSnapshot,0-1,0-142) == 1840511-1.html 1840511-1-ref.html
 fuzzy-if(!cocoaWidget&&!Android&&!swgl&&!useDrawSnapshot,1-1,284-309) fuzzy-if(useDrawSnapshot,0-1,0-4) == 1840511-2.html 1840511-1-ref.html
 # This test should render blank, but is reliably fuzzy, per bug 1840747.
-fuzzy-if(!useDrawSnapshot,18-19,294-322) == 1840747-1.html about:blank
+fuzzy-if(!useDrawSnapshot,0-19,0-322) == 1840747-1.html about:blank
 # This test has some fine/expected AA-related fuzziness along the edge of a
 # covered-up red shape. But there's a single bright-red pixel that shines
 # through, which is unexpected and is responsible for the 255-255 difference

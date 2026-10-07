@@ -21,8 +21,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.SensorBuilder
 import org.robolectric.shadows.SensorEventBuilder
-import org.robolectric.shadows.ShadowSensor
 import org.robolectric.shadows.ShadowSensorManager
 
 @RunWith(AndroidJUnit4::class)
@@ -44,8 +44,8 @@ class LifecycleAwareSensorManagerAccelerometerTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         shadowSensorManager = Shadows.shadowOf(sensorManager)
-        shadowSensorManager.addSensor(ShadowSensor.newInstance(Sensor.TYPE_LINEAR_ACCELERATION))
-        shadowSensorManager.addSensor(ShadowSensor.newInstance(Sensor.TYPE_ACCELEROMETER))
+        shadowSensorManager.addSensor(SensorBuilder.newBuilder().setType(Sensor.TYPE_LINEAR_ACCELERATION).build())
+        shadowSensorManager.addSensor(SensorBuilder.newBuilder().setType(Sensor.TYPE_ACCELEROMETER).build())
 
         logMessages.clear()
         accelerometer =
@@ -268,22 +268,14 @@ class LifecycleAwareSensorManagerAccelerometerTest {
     private fun emitAccelerometerSensorEvent(values: FloatArray) {
         val sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         shadowSensorManager.sendSensorEventToListeners(
-            SensorEventBuilder.newBuilder()
-                .setSensor(requireNotNull(sensor))
-                .setValues(values)
-                .setTimestamp(1234)
-                .build()
+            SensorEventBuilder.newBuilder(requireNotNull(sensor), values).setTimestamp(1234).build()
         )
     }
 
     private fun emitLinearAccelerationSensorEvent(values: FloatArray) {
         val sensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
         shadowSensorManager.sendSensorEventToListeners(
-            SensorEventBuilder.newBuilder()
-                .setSensor(requireNotNull(sensor))
-                .setValues(values)
-                .setTimestamp(1234)
-                .build()
+            SensorEventBuilder.newBuilder(requireNotNull(sensor), values).setTimestamp(1234).build()
         )
     }
 }

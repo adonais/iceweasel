@@ -11,8 +11,7 @@
 use api::{ExtendMode, GradientStop};
 use api::units::*;
 use crate::pattern::gradient::{radial_gradient_pattern};
-use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState};
-use crate::scene_building::IsVisible;
+use crate::pattern::{Pattern, PatternBuilder, PatternBuilderState};
 use crate::intern::{Internable, InternDebug, Handle as InternHandle};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{InternablePrimitive};
@@ -43,7 +42,7 @@ pub struct RadialGradientTemplate {
     pub common: PrimTemplateCommonData,
     pub extend_mode: ExtendMode,
     pub params: RadialGradientParams,
-    pub center: LayoutPoint,
+    pub center: LayoutVector2D,
     /// Per-axis fraction of `common.prim_size` covered by one tile of the
     /// gradient pattern. Multiply by `common.prim_size` at use to recover the
     /// absolute stretch_size.
@@ -57,18 +56,11 @@ pub struct RadialGradientTemplate {
 impl PatternBuilder for RadialGradientTemplate {
     fn build(
         &self,
-        _sub_rect: Option<DeviceRect>,
-        offset: LayoutVector2D,
-        ctx: &PatternBuilderContext,
+        pattern_rect: &LayoutRect,
         state: &mut PatternBuilderState,
     ) -> Pattern {
-        // RadialGradientTemplate stores the center point relative to the primitive
-        // origin, but the shader works with start/end points in "proper" layout
-        // coordinates (relative to the primitive's spatial node).
-        let center = self.center.cast_unit() + ctx.prim_origin.to_vector() + offset;
-
         radial_gradient_pattern(
-            center,
+            pattern_rect.min + self.center,
             self.params.start_radius,
             self.params.end_radius,
             self.params.ratio_xy,
@@ -146,12 +138,6 @@ impl InternablePrimitive for RadialGradient {
         PrimitiveKind::RadialGradient {
             data_handle,
         }
-    }
-}
-
-impl IsVisible for RadialGradient {
-    fn is_visible(&self) -> bool {
-        true
     }
 }
 

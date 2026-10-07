@@ -68,7 +68,7 @@ class WordmarkTest {
     private fun ComposableUnderTest(themeId: Int) {
         val theme = LocalContext.current.withIsolatedTheme(themeId)
         CompositionLocalProvider(LocalContext provides theme) {
-            WordmarkLogo()
+            Logo()
         }
     }
 

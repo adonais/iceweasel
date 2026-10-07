@@ -16,7 +16,7 @@ import { createLocation } from "../../utils/location";
 import {
   getBreakpointsList,
   getXHRBreakpoints,
-  getSelectedSource,
+  getSelectedLocation,
   getBreakpointAtLocation,
   getBreakpointsForSource,
   getBreakpointsAtLine,
@@ -209,9 +209,9 @@ export function updateBreakpointsForNewPrettyPrintedSource(source) {
 export function toggleBreakpointAtLine(line) {
   return async ({ dispatch, getState }) => {
     const state = getState();
-    const selectedSource = getSelectedSource(state);
+    const selectedLocation = getSelectedLocation(state);
 
-    if (!selectedSource) {
+    if (!selectedLocation) {
       return null;
     }
 
@@ -226,7 +226,8 @@ export function toggleBreakpointAtLine(line) {
     return dispatch(
       addBreakpoint(
         createLocation({
-          source: selectedSource,
+          source: selectedLocation.source,
+          sourceActor: selectedLocation.sourceActor,
           line,
         })
       )
@@ -237,13 +238,14 @@ export function toggleBreakpointAtLine(line) {
 export function addBreakpointAtLine(line, shouldLog = false, disabled = false) {
   return async ({ dispatch, getState }) => {
     const state = getState();
-    const source = getSelectedSource(state);
+    const selectedLocation = getSelectedLocation(state);
 
-    if (!source) {
+    if (!selectedLocation) {
       return null;
     }
     const breakpointLocation = createLocation({
-      source,
+      source: selectedLocation.source,
+      sourceActor: selectedLocation.sourceActor,
       column: undefined,
       line,
     });

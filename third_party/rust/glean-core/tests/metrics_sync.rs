@@ -241,6 +241,19 @@ fn keep_internal_metrics_in_sync_with_definitions() {
         }
     }
 
+    msg.push_str("\nDefined in DEFINITION_ONLY, but found in code:\n");
+    let mut keys = definitions.keys().collect::<Vec<_>>();
+    keys.sort();
+    for key in keys.into_iter() {
+        if !DEFINITION_ONLY.contains(&&key[..]) {
+            continue;
+        }
+        if metrics_in_code.contains_key(key) {
+            msg.push_str(&format!("- {key}\n"));
+            mismatch_found = true;
+        }
+    }
+
     assert!(!mismatch_found, "{msg}");
 
     // Double-checking lifetime & send_in_pings for code is the same as definition.

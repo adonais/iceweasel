@@ -103,6 +103,43 @@ internal open class ForeignBytes : Structure() {
 
     class ByValue : ForeignBytes(), Structure.ByValue
 }
+
+// Converter for `&[u8]` / `[ByRef] bytes` arguments.
+//
+// Only `lower` is valid — zero-copy byte buffers only flow foreign -> Rust,
+// and only in argument position. `lift`, `read`, `write`, and
+// `allocationSize` have no sound implementation here and all panic at
+// runtime. The `FfiConverter` interface is implemented so that the
+// compiler enforces the full method set (rather than relying on eyeball).
+//
+// The provided `ByteBuffer` MUST be direct — only direct buffers have a
+// stable native address that JNA can expose via `getDirectBufferPointer`.
+// The returned `ForeignBytes.ByValue` is only valid for the duration of
+// the FFI call; the Rust side treats it as a borrow.
+internal object FfiConverterByRefBytes : FfiConverter<java.nio.ByteBuffer, ForeignBytes.ByValue> {
+    override fun lower(value: java.nio.ByteBuffer): ForeignBytes.ByValue {
+        require(value.isDirect) { "UniFFI zero-copy &[u8] requires a direct ByteBuffer. Use ByteBuffer.allocateDirect()." }
+        val remaining = value.remaining()
+        val fb = ForeignBytes.ByValue()
+        fb.len = remaining
+        // Zero-length direct buffers: skip getDirectBufferPointer (platform-variable behavior)
+        // and pass null. The Rust side treats (null, 0) as &[].
+        fb.data = if (remaining == 0) null else com.sun.jna.Native.getDirectBufferPointer(value)
+        return fb
+    }
+
+    override fun lift(value: ForeignBytes.ByValue): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be lifted: zero-copy &[u8] only flows foreign->Rust")
+
+    override fun read(buf: java.nio.ByteBuffer): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be read from a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun write(value: java.nio.ByteBuffer, buf: java.nio.ByteBuffer): Unit =
+        error("ByRef bytes cannot be written to a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun allocationSize(value: java.nio.ByteBuffer): ULong =
+        error("ByRef bytes have no RustBuffer allocation size: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+}
 /**
  * The FfiConverter interface handles converter types to and from the FFI
  *
@@ -772,119 +809,119 @@ internal object IntegrityCheckingUniffiLib {
         uniffiCheckContractApiVersion(this)
     }
     external fun uniffi_nimbus_checksum_func_get_active_enrollments(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_func_get_calculated_attributes(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_func_validate_event_queries(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_geckoprefhandler_get_prefs_with_state(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_geckoprefhandler_set_gecko_prefs_original_values(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_geckoprefhandler_set_gecko_prefs_state(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_metricshandler_record_database_load(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_metricshandler_record_database_migration(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_metricshandler_record_enrollment_statuses(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_metricshandler_record_feature_activation(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_metricshandler_record_feature_exposure(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_metricshandler_record_malformed_feature_config(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_metricshandler_submit_targeting_context(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_advance_event_time(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_apply_pending_experiments(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_clear_events(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_create_string_helper(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_create_targeting_helper(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_dump_state_to_log(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_enroll_in_firefox_lab(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_fetch_experiments(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_get_active_experiments(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_get_available_experiments(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_get_available_firefox_labs(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_get_experiment_branch(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_get_experiment_branches(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_get_experiment_participation(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_get_feature_config_variables(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_get_previous_gecko_pref_states(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_get_rollout_participation(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_initialize(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_is_fetch_enabled(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_opt_in_with_branch(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_opt_out(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_record_event(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_record_feature_exposure(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_record_malformed_feature_config(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_record_past_event(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_register_previous_gecko_pref_states(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_reset_enrollments(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_reset_telemetry_identifiers(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_set_experiment_participation(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_set_experiments_locally(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_set_fetch_enabled(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_set_rollout_participation(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_unenroll_for_gecko_pref(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_unenroll_from_all_firefox_labs(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusclient_unenroll_from_firefox_lab(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusstringhelper_get_uuid(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbusstringhelper_string_format(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbustargetinghelper_eval_jexl(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_nimbustargetinghelper_eval_jexl_debug(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_recordedcontext_get_event_queries(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_recordedcontext_record(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_recordedcontext_set_event_query_values(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_method_recordedcontext_to_json(
-    ): Short
+    ): Int
     external fun uniffi_nimbus_checksum_constructor_nimbusclient_new(
-    ): Short
+    ): Int
     external fun ffi_nimbus_uniffi_contract_version(
     ): Int
 
@@ -908,255 +945,255 @@ internal object UniffiLib {
         
     }
     external fun uniffi_nimbus_fn_clone_geckoprefhandler(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_nimbus_fn_free_geckoprefhandler(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_init_callback_vtable_geckoprefhandler(`vtable`: UniffiVTableCallbackInterfaceGeckoPrefHandler,
-): Unit
-external fun uniffi_nimbus_fn_method_geckoprefhandler_get_prefs_with_state(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_geckoprefhandler_set_gecko_prefs_original_values(`ptr`: Long,`originalGeckoPrefs`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_geckoprefhandler_set_gecko_prefs_state(`ptr`: Long,`newPrefsState`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_clone_metricshandler(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_nimbus_fn_free_metricshandler(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_init_callback_vtable_metricshandler(`vtable`: UniffiVTableCallbackInterfaceMetricsHandler,
-): Unit
-external fun uniffi_nimbus_fn_method_metricshandler_record_database_load(`ptr`: Long,`event`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_metricshandler_record_database_migration(`ptr`: Long,`event`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_metricshandler_record_enrollment_statuses(`ptr`: Long,`enrollmentStatusExtras`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_metricshandler_record_feature_activation(`ptr`: Long,`event`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_metricshandler_record_feature_exposure(`ptr`: Long,`event`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_metricshandler_record_malformed_feature_config(`ptr`: Long,`event`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_metricshandler_submit_targeting_context(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_clone_nimbusclient(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_nimbus_fn_free_nimbusclient(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_constructor_nimbusclient_new(`appCtx`: RustBuffer.ByValue,`recordedContext`: RustBuffer.ByValue,`coenrollingFeatureIds`: RustBuffer.ByValue,`dbpath`: RustBuffer.ByValue,`metricsHandler`: Long,`geckoPrefHandler`: RustBuffer.ByValue,`remoteSettingsInfo`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_nimbus_fn_method_nimbusclient_advance_event_time(`ptr`: Long,`bySeconds`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_nimbusclient_apply_pending_experiments(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_nimbusclient_clear_events(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_nimbusclient_create_string_helper(`ptr`: Long,`additionalContext`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_nimbus_fn_method_nimbusclient_create_targeting_helper(`ptr`: Long,`additionalContext`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_nimbus_fn_method_nimbusclient_dump_state_to_log(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_nimbusclient_enroll_in_firefox_lab(`ptr`: Long,`slug`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_nimbusclient_fetch_experiments(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_nimbusclient_get_active_experiments(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_nimbusclient_get_available_experiments(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_nimbusclient_get_available_firefox_labs(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_nimbusclient_get_experiment_branch(`ptr`: Long,`id`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_nimbusclient_get_experiment_branches(`ptr`: Long,`experimentSlug`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_nimbusclient_get_experiment_participation(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Byte
-external fun uniffi_nimbus_fn_method_nimbusclient_get_feature_config_variables(`ptr`: Long,`featureId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_nimbusclient_get_previous_gecko_pref_states(`ptr`: Long,`experimentSlug`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_nimbusclient_get_rollout_participation(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Byte
-external fun uniffi_nimbus_fn_method_nimbusclient_initialize(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_nimbusclient_is_fetch_enabled(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Byte
-external fun uniffi_nimbus_fn_method_nimbusclient_opt_in_with_branch(`ptr`: Long,`experimentSlug`: RustBuffer.ByValue,`branch`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_nimbusclient_opt_out(`ptr`: Long,`experimentSlug`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_nimbusclient_record_event(`ptr`: Long,`eventId`: RustBuffer.ByValue,`count`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_nimbusclient_record_feature_exposure(`ptr`: Long,`featureId`: RustBuffer.ByValue,`slug`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_nimbusclient_record_malformed_feature_config(`ptr`: Long,`featureId`: RustBuffer.ByValue,`partId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_nimbusclient_record_past_event(`ptr`: Long,`eventId`: RustBuffer.ByValue,`secondsAgo`: Long,`count`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_nimbusclient_register_previous_gecko_pref_states(`ptr`: Long,`geckoPrefStates`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_nimbusclient_reset_enrollments(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_nimbusclient_reset_telemetry_identifiers(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_nimbusclient_set_experiment_participation(`ptr`: Long,`optIn`: Byte,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_nimbusclient_set_experiments_locally(`ptr`: Long,`experimentsJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_nimbusclient_set_fetch_enabled(`ptr`: Long,`flag`: Byte,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_nimbusclient_set_rollout_participation(`ptr`: Long,`optIn`: Byte,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_nimbusclient_unenroll_for_gecko_pref(`ptr`: Long,`prefState`: RustBuffer.ByValue,`prefUnenrollReason`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_nimbusclient_unenroll_from_all_firefox_labs(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_nimbusclient_unenroll_from_firefox_lab(`ptr`: Long,`slug`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_clone_nimbusstringhelper(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_nimbus_fn_free_nimbusstringhelper(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_nimbusstringhelper_get_uuid(`ptr`: Long,`template`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_nimbusstringhelper_string_format(`ptr`: Long,`template`: RustBuffer.ByValue,`uuid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_clone_nimbustargetinghelper(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_nimbus_fn_free_nimbustargetinghelper(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_nimbustargetinghelper_eval_jexl(`ptr`: Long,`expression`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Byte
-external fun uniffi_nimbus_fn_method_nimbustargetinghelper_eval_jexl_debug(`ptr`: Long,`expression`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_clone_recordedcontext(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_nimbus_fn_free_recordedcontext(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_init_callback_vtable_recordedcontext(`vtable`: UniffiVTableCallbackInterfaceRecordedContext,
-): Unit
-external fun uniffi_nimbus_fn_method_recordedcontext_get_event_queries(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_method_recordedcontext_record(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_recordedcontext_set_event_query_values(`ptr`: Long,`eventQueryValues`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_nimbus_fn_method_recordedcontext_to_json(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_func_get_active_enrollments(`dbPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_func_get_calculated_attributes(`installationDate`: RustBuffer.ByValue,`dbPath`: RustBuffer.ByValue,`locale`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_nimbus_fn_func_validate_event_queries(`recordedContext`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun ffi_nimbus_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun ffi_nimbus_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun ffi_nimbus_rustbuffer_free(`buf`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun ffi_nimbus_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun ffi_nimbus_rust_future_poll_u8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_cancel_u8(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_free_u8(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Byte
-external fun ffi_nimbus_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_cancel_i8(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_free_i8(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_complete_i8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Byte
-external fun ffi_nimbus_rust_future_poll_u16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_cancel_u16(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_free_u16(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Short
-external fun ffi_nimbus_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_cancel_i16(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_free_i16(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_complete_i16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Short
-external fun ffi_nimbus_rust_future_poll_u32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_cancel_u32(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_free_u32(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_complete_u32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Int
-external fun ffi_nimbus_rust_future_poll_i32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_cancel_i32(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_free_i32(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_complete_i32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Int
-external fun ffi_nimbus_rust_future_poll_u64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_cancel_u64(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_free_u64(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_complete_u64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun ffi_nimbus_rust_future_poll_i64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_cancel_i64(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_free_i64(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_complete_i64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun ffi_nimbus_rust_future_poll_f32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_cancel_f32(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_free_f32(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_complete_f32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Float
-external fun ffi_nimbus_rust_future_poll_f64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_cancel_f64(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_free_f64(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_complete_f64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Double
-external fun ffi_nimbus_rust_future_poll_rust_buffer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_cancel_rust_buffer(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_free_rust_buffer(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_complete_rust_buffer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun ffi_nimbus_rust_future_poll_void(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_cancel_void(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_free_void(`handle`: Long,
-): Unit
-external fun ffi_nimbus_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
+    ): Long
+    external fun uniffi_nimbus_fn_free_geckoprefhandler(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_init_callback_vtable_geckoprefhandler(`vtable`: UniffiVTableCallbackInterfaceGeckoPrefHandler,
+    ): Unit
+    external fun uniffi_nimbus_fn_method_geckoprefhandler_get_prefs_with_state(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_geckoprefhandler_set_gecko_prefs_original_values(`ptr`: Long,`originalGeckoPrefs`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_geckoprefhandler_set_gecko_prefs_state(`ptr`: Long,`newPrefsState`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_clone_metricshandler(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_nimbus_fn_free_metricshandler(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_init_callback_vtable_metricshandler(`vtable`: UniffiVTableCallbackInterfaceMetricsHandler,
+    ): Unit
+    external fun uniffi_nimbus_fn_method_metricshandler_record_database_load(`ptr`: Long,`event`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_metricshandler_record_database_migration(`ptr`: Long,`event`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_metricshandler_record_enrollment_statuses(`ptr`: Long,`enrollmentStatusExtras`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_metricshandler_record_feature_activation(`ptr`: Long,`event`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_metricshandler_record_feature_exposure(`ptr`: Long,`event`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_metricshandler_record_malformed_feature_config(`ptr`: Long,`event`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_metricshandler_submit_targeting_context(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_clone_nimbusclient(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_nimbus_fn_free_nimbusclient(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_constructor_nimbusclient_new(`appCtx`: RustBuffer.ByValue,`recordedContext`: RustBuffer.ByValue,`coenrollingFeatureIds`: RustBuffer.ByValue,`dbpath`: RustBuffer.ByValue,`metricsHandler`: Long,`geckoPrefHandler`: RustBuffer.ByValue,`remoteSettingsInfo`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_nimbus_fn_method_nimbusclient_advance_event_time(`ptr`: Long,`bySeconds`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_nimbusclient_apply_pending_experiments(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_nimbusclient_clear_events(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_nimbusclient_create_string_helper(`ptr`: Long,`additionalContext`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_nimbus_fn_method_nimbusclient_create_targeting_helper(`ptr`: Long,`additionalContext`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_nimbus_fn_method_nimbusclient_dump_state_to_log(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_nimbusclient_enroll_in_firefox_lab(`ptr`: Long,`slug`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_nimbusclient_fetch_experiments(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_nimbusclient_get_active_experiments(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_nimbusclient_get_available_experiments(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_nimbusclient_get_available_firefox_labs(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_nimbusclient_get_experiment_branch(`ptr`: Long,`id`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_nimbusclient_get_experiment_branches(`ptr`: Long,`experimentSlug`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_nimbusclient_get_experiment_participation(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    external fun uniffi_nimbus_fn_method_nimbusclient_get_feature_config_variables(`ptr`: Long,`featureId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_nimbusclient_get_previous_gecko_pref_states(`ptr`: Long,`experimentSlug`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_nimbusclient_get_rollout_participation(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    external fun uniffi_nimbus_fn_method_nimbusclient_initialize(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_nimbusclient_is_fetch_enabled(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    external fun uniffi_nimbus_fn_method_nimbusclient_opt_in_with_branch(`ptr`: Long,`experimentSlug`: RustBuffer.ByValue,`branch`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_nimbusclient_opt_out(`ptr`: Long,`experimentSlug`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_nimbusclient_record_event(`ptr`: Long,`eventId`: RustBuffer.ByValue,`count`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_nimbusclient_record_feature_exposure(`ptr`: Long,`featureId`: RustBuffer.ByValue,`slug`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_nimbusclient_record_malformed_feature_config(`ptr`: Long,`featureId`: RustBuffer.ByValue,`partId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_nimbusclient_record_past_event(`ptr`: Long,`eventId`: RustBuffer.ByValue,`secondsAgo`: Long,`count`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_nimbusclient_register_previous_gecko_pref_states(`ptr`: Long,`geckoPrefStates`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_nimbusclient_reset_enrollments(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_nimbusclient_reset_telemetry_identifiers(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_nimbusclient_set_experiment_participation(`ptr`: Long,`optIn`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_nimbusclient_set_experiments_locally(`ptr`: Long,`experimentsJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_nimbusclient_set_fetch_enabled(`ptr`: Long,`flag`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_nimbusclient_set_rollout_participation(`ptr`: Long,`optIn`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_nimbusclient_unenroll_for_gecko_pref(`ptr`: Long,`prefState`: RustBuffer.ByValue,`prefUnenrollReason`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_nimbusclient_unenroll_from_all_firefox_labs(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_nimbusclient_unenroll_from_firefox_lab(`ptr`: Long,`slug`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_clone_nimbusstringhelper(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_nimbus_fn_free_nimbusstringhelper(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_nimbusstringhelper_get_uuid(`ptr`: Long,`template`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_nimbusstringhelper_string_format(`ptr`: Long,`template`: RustBuffer.ByValue,`uuid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_clone_nimbustargetinghelper(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_nimbus_fn_free_nimbustargetinghelper(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_nimbustargetinghelper_eval_jexl(`ptr`: Long,`expression`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    external fun uniffi_nimbus_fn_method_nimbustargetinghelper_eval_jexl_debug(`ptr`: Long,`expression`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_clone_recordedcontext(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_nimbus_fn_free_recordedcontext(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_init_callback_vtable_recordedcontext(`vtable`: UniffiVTableCallbackInterfaceRecordedContext,
+    ): Unit
+    external fun uniffi_nimbus_fn_method_recordedcontext_get_event_queries(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_method_recordedcontext_record(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_recordedcontext_set_event_query_values(`ptr`: Long,`eventQueryValues`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_nimbus_fn_method_recordedcontext_to_json(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_func_get_active_enrollments(`dbPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_func_get_calculated_attributes(`installationDate`: RustBuffer.ByValue,`dbPath`: RustBuffer.ByValue,`locale`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_nimbus_fn_func_validate_event_queries(`recordedContext`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun ffi_nimbus_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun ffi_nimbus_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun ffi_nimbus_rustbuffer_free(`buf`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun ffi_nimbus_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun ffi_nimbus_rust_future_poll_u8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_cancel_u8(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_free_u8(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Int
+    external fun ffi_nimbus_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_cancel_i8(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_free_i8(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_complete_i8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    external fun ffi_nimbus_rust_future_poll_u16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_cancel_u16(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_free_u16(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Int
+    external fun ffi_nimbus_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_cancel_i16(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_free_i16(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_complete_i16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Short
+    external fun ffi_nimbus_rust_future_poll_u32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_cancel_u32(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_free_u32(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_complete_u32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Int
+    external fun ffi_nimbus_rust_future_poll_i32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_cancel_i32(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_free_i32(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_complete_i32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Int
+    external fun ffi_nimbus_rust_future_poll_u64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_cancel_u64(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_free_u64(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_complete_u64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun ffi_nimbus_rust_future_poll_i64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_cancel_i64(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_free_i64(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_complete_i64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun ffi_nimbus_rust_future_poll_f32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_cancel_f32(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_free_f32(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_complete_f32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Float
+    external fun ffi_nimbus_rust_future_poll_f64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_cancel_f64(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_free_f64(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_complete_f64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Double
+    external fun ffi_nimbus_rust_future_poll_rust_buffer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_cancel_rust_buffer(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_free_rust_buffer(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_complete_rust_buffer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun ffi_nimbus_rust_future_poll_void(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_cancel_void(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_free_void(`handle`: Long,
+    ): Unit
+    external fun ffi_nimbus_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
 
-    
+        
 }
 
 private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
@@ -1360,6 +1397,10 @@ private class JavaLangRefCleanable(
  */
 public object FfiConverterUShort: FfiConverter<UShort, Short> {
     override fun lift(value: Short): UShort {
+        return value.toUShort()
+    }
+
+    fun lift(value: Int): UShort {
         return value.toUShort()
     }
 
@@ -1665,6 +1706,11 @@ open class GeckoPrefHandlerImpl: Disposable, AutoCloseable, GeckoPrefHandler
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
 
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
     override fun destroy() {
         // Only allow a single call to this method.
         // TODO: maybe we should log a warning if called more than once?
@@ -1749,6 +1795,7 @@ open class GeckoPrefHandlerImpl: Disposable, AutoCloseable, GeckoPrefHandler
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_nimbus_fn_method_geckoprefhandler_set_gecko_prefs_original_values(
         it,
+        
         FfiConverterSequenceTypeOriginalGeckoPref.lower(`originalGeckoPrefs`),_status)
 }
     }
@@ -1761,6 +1808,7 @@ open class GeckoPrefHandlerImpl: Disposable, AutoCloseable, GeckoPrefHandler
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_nimbus_fn_method_geckoprefhandler_set_gecko_prefs_state(
         it,
+        
         FfiConverterSequenceTypeGeckoPrefState.lower(`newPrefsState`),_status)
 }
     }
@@ -2036,6 +2084,11 @@ open class MetricsHandlerImpl: Disposable, AutoCloseable, MetricsHandler
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
 
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
     override fun destroy() {
         // Only allow a single call to this method.
         // TODO: maybe we should log a warning if called more than once?
@@ -2107,6 +2160,7 @@ open class MetricsHandlerImpl: Disposable, AutoCloseable, MetricsHandler
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_nimbus_fn_method_metricshandler_record_database_load(
         it,
+        
         FfiConverterTypeDatabaseLoadExtraDef.lower(`event`),_status)
 }
     }
@@ -2119,6 +2173,7 @@ open class MetricsHandlerImpl: Disposable, AutoCloseable, MetricsHandler
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_nimbus_fn_method_metricshandler_record_database_migration(
         it,
+        
         FfiConverterTypeDatabaseMigrationExtraDef.lower(`event`),_status)
 }
     }
@@ -2131,6 +2186,7 @@ open class MetricsHandlerImpl: Disposable, AutoCloseable, MetricsHandler
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_nimbus_fn_method_metricshandler_record_enrollment_statuses(
         it,
+        
         FfiConverterSequenceTypeEnrollmentStatusExtraDef.lower(`enrollmentStatusExtras`),_status)
 }
     }
@@ -2147,6 +2203,7 @@ open class MetricsHandlerImpl: Disposable, AutoCloseable, MetricsHandler
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_nimbus_fn_method_metricshandler_record_feature_activation(
         it,
+        
         FfiConverterTypeFeatureExposureExtraDef.lower(`event`),_status)
 }
     }
@@ -2159,6 +2216,7 @@ open class MetricsHandlerImpl: Disposable, AutoCloseable, MetricsHandler
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_nimbus_fn_method_metricshandler_record_feature_exposure(
         it,
+        
         FfiConverterTypeFeatureExposureExtraDef.lower(`event`),_status)
 }
     }
@@ -2171,6 +2229,7 @@ open class MetricsHandlerImpl: Disposable, AutoCloseable, MetricsHandler
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_nimbus_fn_method_metricshandler_record_malformed_feature_config(
         it,
+        
         FfiConverterTypeMalformedFeatureConfigExtraDef.lower(`event`),_status)
 }
     }
@@ -2688,7 +2747,14 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_constructor_nimbusclient_new(
     
-        FfiConverterTypeAppContext.lower(`appCtx`),FfiConverterOptionalTypeRecordedContext.lower(`recordedContext`),FfiConverterSequenceString.lower(`coenrollingFeatureIds`),FfiConverterString.lower(`dbpath`),FfiConverterTypeMetricsHandler.lower(`metricsHandler`),FfiConverterOptionalTypeGeckoPrefHandler.lower(`geckoPrefHandler`),FfiConverterOptionalTypeNimbusServerSettings.lower(`remoteSettingsInfo`),_status)
+        
+        FfiConverterTypeAppContext.lower(`appCtx`),
+        FfiConverterOptionalTypeRecordedContext.lower(`recordedContext`),
+        FfiConverterSequenceString.lower(`coenrollingFeatureIds`),
+        FfiConverterString.lower(`dbpath`),
+        FfiConverterTypeMetricsHandler.lower(`metricsHandler`),
+        FfiConverterOptionalTypeGeckoPrefHandler.lower(`geckoPrefHandler`),
+        FfiConverterOptionalTypeNimbusServerSettings.lower(`remoteSettingsInfo`),_status)
 }
     )
 
@@ -2697,6 +2763,11 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
 
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
+
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
 
     override fun destroy() {
         // Only allow a single call to this method.
@@ -2775,6 +2846,7 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_advance_event_time(
         it,
+        
         FfiConverterLong.lower(`bySeconds`),_status)
 }
     }
@@ -2824,6 +2896,7 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_create_string_helper(
         it,
+        
         FfiConverterOptionalTypeJsonObject.lower(`additionalContext`),_status)
 }
     }
@@ -2843,6 +2916,7 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_create_targeting_helper(
         it,
+        
         FfiConverterOptionalTypeJsonObject.lower(`additionalContext`),_status)
 }
     }
@@ -2870,6 +2944,7 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_enroll_in_firefox_lab(
         it,
+        
         FfiConverterString.lower(`slug`),_status)
 }
     }
@@ -2954,6 +3029,7 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_get_experiment_branch(
         it,
+        
         FfiConverterString.lower(`id`),_status)
 }
     }
@@ -2971,6 +3047,7 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_get_experiment_branches(
         it,
+        
         FfiConverterString.lower(`experimentSlug`),_status)
 }
     }
@@ -3005,6 +3082,7 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_get_feature_config_variables(
         it,
+        
         FfiConverterString.lower(`featureId`),_status)
 }
     }
@@ -3019,6 +3097,7 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_get_previous_gecko_pref_states(
         it,
+        
         FfiConverterString.lower(`experimentSlug`),_status)
 }
     }
@@ -3094,7 +3173,9 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_opt_in_with_branch(
         it,
-        FfiConverterString.lower(`experimentSlug`),FfiConverterString.lower(`branch`),_status)
+        
+        FfiConverterString.lower(`experimentSlug`),
+        FfiConverterString.lower(`branch`),_status)
 }
     }
     )
@@ -3111,6 +3192,7 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_opt_out(
         it,
+        
         FfiConverterString.lower(`experimentSlug`),_status)
 }
     }
@@ -3130,7 +3212,9 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_record_event(
         it,
-        FfiConverterString.lower(`eventId`),FfiConverterLong.lower(`count`),_status)
+        
+        FfiConverterString.lower(`eventId`),
+        FfiConverterLong.lower(`count`),_status)
 }
     }
     
@@ -3153,7 +3237,9 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_record_feature_exposure(
         it,
-        FfiConverterString.lower(`featureId`),FfiConverterOptionalString.lower(`slug`),_status)
+        
+        FfiConverterString.lower(`featureId`),
+        FfiConverterOptionalString.lower(`slug`),_status)
 }
     }
     
@@ -3173,7 +3259,9 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_record_malformed_feature_config(
         it,
-        FfiConverterString.lower(`featureId`),FfiConverterString.lower(`partId`),_status)
+        
+        FfiConverterString.lower(`featureId`),
+        FfiConverterString.lower(`partId`),_status)
 }
     }
     
@@ -3191,7 +3279,10 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_record_past_event(
         it,
-        FfiConverterString.lower(`eventId`),FfiConverterLong.lower(`secondsAgo`),FfiConverterLong.lower(`count`),_status)
+        
+        FfiConverterString.lower(`eventId`),
+        FfiConverterLong.lower(`secondsAgo`),
+        FfiConverterLong.lower(`count`),_status)
 }
     }
     
@@ -3204,6 +3295,7 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_register_previous_gecko_pref_states(
         it,
+        
         FfiConverterSequenceTypeGeckoPrefState.lower(`geckoPrefStates`),_status)
 }
     }
@@ -3265,6 +3357,7 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_set_experiment_participation(
         it,
+        
         FfiConverterBoolean.lower(`optIn`),_status)
 }
     }
@@ -3285,6 +3378,7 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_set_experiments_locally(
         it,
+        
         FfiConverterString.lower(`experimentsJson`),_status)
 }
     }
@@ -3304,6 +3398,7 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_set_fetch_enabled(
         it,
+        
         FfiConverterBoolean.lower(`flag`),_status)
 }
     }
@@ -3317,6 +3412,7 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_set_rollout_participation(
         it,
+        
         FfiConverterBoolean.lower(`optIn`),_status)
 }
     }
@@ -3331,7 +3427,9 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_unenroll_for_gecko_pref(
         it,
-        FfiConverterTypeGeckoPrefState.lower(`prefState`),FfiConverterTypePrefUnenrollReason.lower(`prefUnenrollReason`),_status)
+        
+        FfiConverterTypeGeckoPrefState.lower(`prefState`),
+        FfiConverterTypePrefUnenrollReason.lower(`prefUnenrollReason`),_status)
 }
     }
     )
@@ -3359,6 +3457,7 @@ open class NimbusClient: Disposable, AutoCloseable, NimbusClientInterface
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusclient_unenroll_from_firefox_lab(
         it,
+        
         FfiConverterString.lower(`slug`),_status)
 }
     }
@@ -3548,6 +3647,11 @@ open class NimbusStringHelper: Disposable, AutoCloseable, NimbusStringHelperInte
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
 
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
     override fun destroy() {
         // Only allow a single call to this method.
         // TODO: maybe we should log a warning if called more than once?
@@ -3623,6 +3727,7 @@ open class NimbusStringHelper: Disposable, AutoCloseable, NimbusStringHelperInte
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusstringhelper_get_uuid(
         it,
+        
         FfiConverterString.lower(`template`),_status)
 }
     }
@@ -3640,7 +3745,9 @@ open class NimbusStringHelper: Disposable, AutoCloseable, NimbusStringHelperInte
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbusstringhelper_string_format(
         it,
-        FfiConverterString.lower(`template`),FfiConverterOptionalString.lower(`uuid`),_status)
+        
+        FfiConverterString.lower(`template`),
+        FfiConverterOptionalString.lower(`uuid`),_status)
 }
     }
     )
@@ -3829,6 +3936,11 @@ open class NimbusTargetingHelper: Disposable, AutoCloseable, NimbusTargetingHelp
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
 
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
     override fun destroy() {
         // Only allow a single call to this method.
         // TODO: maybe we should log a warning if called more than once?
@@ -3905,6 +4017,7 @@ open class NimbusTargetingHelper: Disposable, AutoCloseable, NimbusTargetingHelp
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbustargetinghelper_eval_jexl(
         it,
+        
         FfiConverterString.lower(`expression`),_status)
 }
     }
@@ -3923,6 +4036,7 @@ open class NimbusTargetingHelper: Disposable, AutoCloseable, NimbusTargetingHelp
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_method_nimbustargetinghelper_eval_jexl_debug(
         it,
+        
         FfiConverterString.lower(`expression`),_status)
 }
     }
@@ -4108,6 +4222,11 @@ open class RecordedContextImpl: Disposable, AutoCloseable, RecordedContext
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
 
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
     override fun destroy() {
         // Only allow a single call to this method.
         // TODO: maybe we should log a warning if called more than once?
@@ -4204,6 +4323,7 @@ open class RecordedContextImpl: Disposable, AutoCloseable, RecordedContext
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_nimbus_fn_method_recordedcontext_set_event_query_values(
         it,
+        
         FfiConverterMapStringDouble.lower(`eventQueryValues`),_status)
 }
     }
@@ -6649,11 +6769,6 @@ public object FfiConverterMapStringMapStringTypeGeckoPrefState: FfiConverterRust
 
 
 
-/**
- * Typealias from the type name used in the UDL file to the custom type.  This
- * is needed because the UDL type name is used in function/method signatures.
- * It's also what we have an external type that references a custom type.
- */
 public typealias JsonObject = JSONObject
 
 
@@ -6689,11 +6804,6 @@ public object FfiConverterTypeJsonObject: FfiConverter<JsonObject, RustBuffer.By
 
 
 
-/**
- * Typealias from the type name used in the UDL file to the builtin type.  This
- * is needed because the UDL type name is used in function/method signatures.
- * It's also what we have an external type that references a custom type.
- */
 public typealias PrefValue = kotlin.String
 public typealias FfiConverterTypePrefValue = FfiConverterString
 
@@ -6709,6 +6819,7 @@ public typealias FfiConverterTypePrefValue = FfiConverterString
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_func_get_active_enrollments(
     
+        
         FfiConverterString.lower(`dbPath`),_status)
 }
     )
@@ -6723,7 +6834,10 @@ public typealias FfiConverterTypePrefValue = FfiConverterString
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_func_get_calculated_attributes(
     
-        FfiConverterOptionalLong.lower(`installationDate`),FfiConverterString.lower(`dbPath`),FfiConverterString.lower(`locale`),_status)
+        
+        FfiConverterOptionalLong.lower(`installationDate`),
+        FfiConverterString.lower(`dbPath`),
+        FfiConverterString.lower(`locale`),_status)
 }
     )
     }
@@ -6739,6 +6853,7 @@ public typealias FfiConverterTypePrefValue = FfiConverterString
     uniffiRustCallWithError(NimbusException) { _status ->
     UniffiLib.uniffi_nimbus_fn_func_validate_event_queries(
     
+        
         FfiConverterTypeRecordedContext.lower(`recordedContext`),_status)
 }
     

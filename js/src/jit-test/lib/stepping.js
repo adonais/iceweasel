@@ -9,7 +9,7 @@ function testStepping(script, expected) {
     let log = [];
     function maybePause(frame) {
         let previousLine = log[log.length - 1]; // note: may be undefined
-        let line = frame.script.getOffsetLocation(frame.offset).lineNumber;
+        let line = frame.script.getOffsetMetadata(frame.offset).lineNumber;
         if (line !== previousLine)
             log.push(line);
     }

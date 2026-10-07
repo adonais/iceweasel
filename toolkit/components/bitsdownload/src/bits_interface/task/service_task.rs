@@ -55,7 +55,7 @@ pub struct ServiceTask<D, S> {
 impl<D, S> ServiceTask<D, S>
 where
     D: Sync + Send,
-    S: Sync + Send,
+    S: Send,
 {
     pub fn new(
         client_init_data: ClientInitData,

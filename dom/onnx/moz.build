@@ -8,6 +8,8 @@ with Files("*"):
 EXPORTS.mozilla.dom += [
     "InferenceSession.h",
     "onnxruntime_c_api.h",
+    "onnxruntime_ep_c_api.h",
+    "onnxruntime_error_code.h",
     "Tensor.h",
 ]
 

@@ -57,9 +57,12 @@ void WriteOpcode(Stream* stream, Opcode opcode) {
 }
 
 void WriteType(Stream* stream, Type type, const char* desc) {
+  if (type.IsNonTypedRef() && !type.IsNullableNonTypedRef()) {
+    WriteS32Leb128(stream, Type::Ref, "type prefix");
+  }
   WriteS32Leb128(stream, type, desc ? desc : type.GetName().c_str());
   if (type.IsReferenceWithIndex()) {
-    WriteS32Leb128(stream, type.GetReferenceIndex(),
+    WriteU32Leb128(stream, type.GetReferenceIndex(),
                    desc ? desc : type.GetName().c_str());
   }
 }
@@ -75,8 +78,8 @@ uint32_t ComputeLimitsFlags(const Limits* limits) {
   return flags;
 }
 
-void WriteLimitsData(Stream* stream, const Limits* limits) {
-  if (limits->is_64) {
+void WriteLimitsData(Stream* stream, const Limits* limits, bool is_64) {
+  if (is_64) {
     WriteU64Leb128(stream, limits->initial, "limits: initial");
     if (limits->has_max) {
       WriteU64Leb128(stream, limits->max, "limits: max");
@@ -236,7 +239,7 @@ class SymbolTable {
   std::set<std::string_view> seen_names_;
 
   Result EnsureUnique(const std::string_view& name) {
-    if (seen_names_.count(name)) {
+    if (seen_names_.contains(name)) {
       fprintf(stderr,
               "error: duplicate symbol when writing relocatable "
               "binary: %s\n",
@@ -327,7 +330,7 @@ class SymbolTable {
     for (size_t i = 0; i < module->funcs.size(); ++i) {
       const Func* func = module->funcs[i];
       bool imported = i < module->num_func_imports;
-      bool exported = exported_funcs.count(i);
+      bool exported = exported_funcs.contains(i);
       CHECK_RESULT(AddSymbol(&functions_, func->name, imported, exported,
                              Symbol::Function{Index(i)}));
     }
@@ -335,7 +338,7 @@ class SymbolTable {
     for (size_t i = 0; i < module->tables.size(); ++i) {
       const Table* table = module->tables[i];
       bool imported = i < module->num_table_imports;
-      bool exported = exported_tables.count(i);
+      bool exported = exported_tables.contains(i);
       CHECK_RESULT(AddSymbol(&tables_, table->name, imported, exported,
                              Symbol::Table{Index(i)}));
     }
@@ -343,7 +346,7 @@ class SymbolTable {
     for (size_t i = 0; i < module->globals.size(); ++i) {
       const Global* global = module->globals[i];
       bool imported = i < module->num_global_imports;
-      bool exported = exported_globals.count(i);
+      bool exported = exported_globals.contains(i);
       CHECK_RESULT(AddSymbol(&globals_, global->name, imported, exported,
                              Symbol::Global{Index(i)}));
     }
@@ -432,6 +435,7 @@ class BinaryWriter {
   void WriteTagType(const Tag* tag);
   void WriteRelocSection(const RelocSection* reloc_section);
   void WriteLinkingSection();
+  void WriteImport(const Import* import);
   template <typename T>
   void WriteNames(const std::vector<T*>& elems, NameSectionSubsection type);
   void WriteCodeMetadataSections();
@@ -740,8 +744,17 @@ void BinaryWriter::WriteExpr(const Func* func, const Expr* expr) {
     case ExprType::AtomicNotify:
       WriteLoadStoreExpr<AtomicNotifyExpr>(func, expr, "memory offset");
       break;
+    case ExprType::Unary:
+      WriteOpcode(stream_, cast<UnaryExpr>(expr)->opcode);
+      break;
     case ExprType::Binary:
       WriteOpcode(stream_, cast<BinaryExpr>(expr)->opcode);
+      break;
+    case ExprType::Ternary:
+      WriteOpcode(stream_, cast<TernaryExpr>(expr)->opcode);
+      break;
+    case ExprType::Quaternary:
+      WriteOpcode(stream_, cast<QuaternaryExpr>(expr)->opcode);
       break;
     case ExprType::Block:
       WriteOpcode(stream_, Opcode::Block);
@@ -757,6 +770,17 @@ void BinaryWriter::WriteExpr(const Func* func, const Expr* expr) {
     case ExprType::BrIf:
       WriteOpcode(stream_, Opcode::BrIf);
       WriteU32Leb128(stream_, GetLabelVarDepth(&cast<BrIfExpr>(expr)->var),
+                     "break depth");
+      break;
+    case ExprType::BrOnNonNull:
+      WriteOpcode(stream_, Opcode::BrOnNonNull);
+      WriteU32Leb128(stream_,
+                     GetLabelVarDepth(&cast<BrOnNonNullExpr>(expr)->var),
+                     "break depth");
+      break;
+    case ExprType::BrOnNull:
+      WriteOpcode(stream_, Opcode::BrOnNull);
+      WriteU32Leb128(stream_, GetLabelVarDepth(&cast<BrOnNullExpr>(expr)->var),
                      "break depth");
       break;
     case ExprType::BrTable: {
@@ -795,10 +819,6 @@ void BinaryWriter::WriteExpr(const Func* func, const Expr* expr) {
       WriteTableNumberWithReloc(table_index, "table index");
       break;
     }
-    case ExprType::CallRef: {
-      WriteOpcode(stream_, Opcode::CallRef);
-      break;
-    }
     case ExprType::ReturnCallIndirect: {
       Index sig_index =
           module_->GetFuncTypeIndex(cast<ReturnCallIndirectExpr>(expr)->decl);
@@ -808,6 +828,23 @@ void BinaryWriter::WriteExpr(const Func* func, const Expr* expr) {
       WriteU32Leb128WithReloc(sig_index, "signature index",
                               RelocType::TypeIndexLEB);
       WriteTableNumberWithReloc(table_index, "table index");
+      break;
+    }
+    case ExprType::CallRef: {
+      WriteOpcode(stream_, Opcode::CallRef);
+      assert(cast<CallRefExpr>(expr)->sig_type.opt_type() == Type::RefNull);
+      Index sig_index = cast<CallRefExpr>(expr)->sig_type.index();
+      WriteU32Leb128WithReloc(sig_index, "signature index",
+                              RelocType::TypeIndexLEB);
+      break;
+    }
+    case ExprType::ReturnCallRef: {
+      WriteOpcode(stream_, Opcode::ReturnCallRef);
+      assert(cast<ReturnCallRefExpr>(expr)->sig_type.opt_type() ==
+             Type::RefNull);
+      Index sig_index = cast<ReturnCallRefExpr>(expr)->sig_type.index();
+      WriteU32Leb128WithReloc(sig_index, "signature index",
+                              RelocType::TypeIndexLEB);
       break;
     }
     case ExprType::Compare:
@@ -1003,6 +1040,10 @@ void BinaryWriter::WriteExpr(const Func* func, const Expr* expr) {
       WriteTableNumberWithReloc(index, "table.fill table index");
       break;
     }
+    case ExprType::RefAsNonNull: {
+      WriteOpcode(stream_, Opcode::RefAsNonNull);
+      break;
+    }
     case ExprType::RefFunc: {
       WriteOpcode(stream_, Opcode::RefFunc);
       Index index = module_->GetFuncIndex(cast<RefFuncExpr>(expr)->var);
@@ -1011,7 +1052,17 @@ void BinaryWriter::WriteExpr(const Func* func, const Expr* expr) {
     }
     case ExprType::RefNull: {
       WriteOpcode(stream_, Opcode::RefNull);
-      WriteType(stream_, cast<RefNullExpr>(expr)->type, "ref.null type");
+      const RefNullExpr* ref_null_expr = cast<RefNullExpr>(expr);
+      Type::Enum type = ref_null_expr->type.opt_type();
+
+      if (type != Type::RefNull) {
+        WriteType(stream_, type, "ref.null type");
+        break;
+      }
+
+      Index index = module_->GetFuncTypeIndex(ref_null_expr->type);
+      WriteU32Leb128WithReloc(index, "heap type index",
+                              RelocType::FuncIndexLEB);
       break;
     }
     case ExprType::RefIsNull:
@@ -1030,7 +1081,7 @@ void BinaryWriter::WriteExpr(const Func* func, const Expr* expr) {
       break;
     case ExprType::Select: {
       auto* select_expr = cast<SelectExpr>(expr);
-      if (select_expr->result_type.empty()) {
+      if (select_expr->IsUntyped()) {
         WriteOpcode(stream_, Opcode::Select);
       } else {
         WriteOpcode(stream_, Opcode::SelectT);
@@ -1049,6 +1100,9 @@ void BinaryWriter::WriteExpr(const Func* func, const Expr* expr) {
       WriteOpcode(stream_, Opcode::Throw);
       WriteU32Leb128(stream_, GetTagVarDepth(&cast<ThrowExpr>(expr)->var),
                      "throw tag");
+      break;
+    case ExprType::ThrowRef:
+      WriteOpcode(stream_, Opcode::ThrowRef);
       break;
     case ExprType::Try: {
       auto* try_expr = cast<TryExpr>(expr);
@@ -1079,12 +1133,26 @@ void BinaryWriter::WriteExpr(const Func* func, const Expr* expr) {
       }
       break;
     }
-    case ExprType::Unary:
-      WriteOpcode(stream_, cast<UnaryExpr>(expr)->opcode);
+    case ExprType::TryTable: {
+      auto* try_table_expr = cast<TryTableExpr>(expr);
+      WriteOpcode(stream_, Opcode::TryTable);
+      WriteBlockDecl(try_table_expr->block.decl);
+      WriteU32Leb128(stream_, try_table_expr->catches.size(), "num catches");
+      for (const TableCatch& catch_ : try_table_expr->catches) {
+        uint8_t catch_type =
+            (catch_.IsCatchAll() ? 2 : 0) | (catch_.IsRef() ? 1 : 0);
+        stream_->WriteU8(catch_type, "catch handler");
+        if (!catch_.IsCatchAll()) {
+          Index tag = GetTagVarDepth(&catch_.tag);
+          WriteU32Leb128(stream_, tag, "catch tag");
+        }
+        Index depth = GetLabelVarDepth(&catch_.target);
+        WriteU32Leb128(stream_, depth, "catch depth");
+      }
+      WriteExprList(func, try_table_expr->block.exprs);
+      WriteOpcode(stream_, Opcode::End);
       break;
-    case ExprType::Ternary:
-      WriteOpcode(stream_, cast<TernaryExpr>(expr)->opcode);
-      break;
+    }
     case ExprType::SimdLaneOp: {
       const Opcode opcode = cast<SimdLaneOpExpr>(expr)->opcode;
       WriteOpcode(stream_, opcode);
@@ -1163,9 +1231,19 @@ void BinaryWriter::WriteFunc(const Func* func) {
 }
 
 void BinaryWriter::WriteTable(const Table* table) {
+  if (!table->init_expr.empty()) {
+    // BinaryReader::ReadTableSection provides information about these values.
+    WriteType(stream_, Type::Void, "initialized table prefix");
+    stream_->WriteU8(0x0, "initialized table prefix");
+  }
   WriteType(stream_, table->elem_type);
   WriteLimitsFlags(stream_, ComputeLimitsFlags(&table->elem_limits));
-  WriteLimitsData(stream_, &table->elem_limits);
+  WriteLimitsData(stream_, &table->elem_limits,
+                  options_.features.memory64_enabled());
+
+  if (!table->init_expr.empty()) {
+    WriteInitExpr(table->init_expr);
+  }
 }
 
 void BinaryWriter::WriteMemory(const Memory* memory) {
@@ -1173,7 +1251,8 @@ void BinaryWriter::WriteMemory(const Memory* memory) {
   const bool custom_page_size = memory->page_size != WABT_DEFAULT_PAGE_SIZE;
   flags |= custom_page_size ? WABT_BINARY_LIMITS_HAS_CUSTOM_PAGE_SIZE_FLAG : 0;
   WriteLimitsFlags(stream_, flags);
-  WriteLimitsData(stream_, &memory->page_limits);
+  WriteLimitsData(stream_, &memory->page_limits,
+                  options_.features.memory64_enabled());
   if (custom_page_size) {
     WriteU32Leb128(stream_, log2_u32(memory->page_size), "memory page size");
   }
@@ -1328,6 +1407,33 @@ void BinaryWriter::WriteNames(const std::vector<T*>& elems,
   EndSubsection();
 }
 
+void BinaryWriter::WriteImport(const Import* import) {
+  switch (import->kind()) {
+    case ExternalKind::Func:
+      WriteU32Leb128(
+          stream_,
+          module_->GetFuncTypeIndex(cast<FuncImport>(import)->func.decl),
+          "import signature index");
+      break;
+
+    case ExternalKind::Table:
+      WriteTable(&cast<TableImport>(import)->table);
+      break;
+
+    case ExternalKind::Memory:
+      WriteMemory(&cast<MemoryImport>(import)->memory);
+      break;
+
+    case ExternalKind::Global:
+      WriteGlobalHeader(&cast<GlobalImport>(import)->global);
+      break;
+
+    case ExternalKind::Tag:
+      WriteTagType(&cast<TagImport>(import)->tag);
+      break;
+  }
+}
+
 Result BinaryWriter::WriteModule() {
   stream_->WriteU32(WABT_BINARY_MAGIC, "WASM_BINARY_MAGIC");
   stream_->WriteU32(WABT_BINARY_VERSION, "WASM_BINARY_VERSION");
@@ -1393,37 +1499,48 @@ Result BinaryWriter::WriteModule() {
     BeginKnownSection(BinarySection::Import);
     WriteU32Leb128(stream_, module_->imports.size(), "num imports");
 
-    for (size_t i = 0; i < module_->imports.size(); ++i) {
+    size_t i = 0;
+    while (i < module_->imports.size()) {
       const Import* import = module_->imports[i];
       WriteHeader("import header", i);
       WriteStr(stream_, import->module_name, "import module name",
                PrintChars::Yes);
-      WriteStr(stream_, import->field_name, "import field name",
-               PrintChars::Yes);
-      stream_->WriteU8Enum(import->kind(), "import kind");
-      switch (import->kind()) {
-        case ExternalKind::Func:
-          WriteU32Leb128(
-              stream_,
-              module_->GetFuncTypeIndex(cast<FuncImport>(import)->func.decl),
-              "import signature index");
-          break;
-
-        case ExternalKind::Table:
-          WriteTable(&cast<TableImport>(import)->table);
-          break;
-
-        case ExternalKind::Memory:
-          WriteMemory(&cast<MemoryImport>(import)->memory);
-          break;
-
-        case ExternalKind::Global:
-          WriteGlobalHeader(&cast<GlobalImport>(import)->global);
-          break;
-
-        case ExternalKind::Tag:
-          WriteTagType(&cast<TagImport>(import)->tag);
-          break;
+      bool compact = false;
+      if (options_.features.compact_imports_enabled()) {
+        // Write compact imports when they are available.
+        // Currently we only support grouping by module name (0x7F mode)
+        // and not the module name + kind grouping (0x7E mode).
+        size_t group_size = 1;
+        size_t j = i + 1;
+        while (j < module_->imports.size() &&
+               import->module_name == module_->imports[j]->module_name) {
+          group_size++;
+          j++;
+        }
+        // Use compact imports iff we have a continuous sequence of more than
+        // one import with the same module name.
+        if (group_size > 1) {
+          compact = true;
+          WriteStr(stream_, "", "empty field name", PrintChars::Yes);
+          stream_->WriteU8(0x7F, "compact import marker");
+          WriteU32Leb128(stream_, group_size, "import group size");
+          while (group_size--) {
+            WriteHeader("compact import header", i);
+            const Import* import = module_->imports[i];
+            WriteStr(stream_, import->field_name, "import field name",
+                     PrintChars::Yes);
+            stream_->WriteU8Enum(import->kind(), "import kind");
+            WriteImport(import);
+            i++;
+          }
+        }
+      }
+      if (!compact) {
+        WriteStr(stream_, import->field_name, "import field name",
+                 PrintChars::Yes);
+        stream_->WriteU8Enum(import->kind(), "import kind");
+        WriteImport(import);
+        i++;
       }
     }
     EndSection();
@@ -1552,7 +1669,8 @@ Result BinaryWriter::WriteModule() {
       ElemSegment* segment = module_->elem_segments[i];
       WriteHeader("elem segment header", i);
       // 1. flags
-      uint8_t flags = segment->GetFlags(module_);
+      uint8_t flags = segment->GetFlags(
+          module_, options_.features.function_references_enabled());
       stream_->WriteU8(flags, "segment flags");
       // 2. optional target table
       if (flags & SegExplicitIndex && segment->kind != SegmentKind::Declared) {
@@ -1694,10 +1812,10 @@ Result BinaryWriter::WriteModule() {
     // we don't want to double-write.
     if ((custom.name == WABT_BINARY_SECTION_NAME &&
          options_.write_debug_names) ||
-        (custom.name.rfind(WABT_BINARY_SECTION_RELOC) == 0 &&
+        (custom.name.starts_with(WABT_BINARY_SECTION_RELOC) &&
          options_.relocatable) ||
         (custom.name == WABT_BINARY_SECTION_LINKING && options_.relocatable) ||
-        (custom.name.find(WABT_BINARY_SECTION_CODE_METADATA) == 0 &&
+        (custom.name.starts_with(WABT_BINARY_SECTION_CODE_METADATA) &&
          options_.features.code_metadata_enabled())) {
       continue;
     }
@@ -1805,8 +1923,7 @@ void BinaryWriter::WriteCodeMetadataSections() {
       for (auto& a : f.entries) {
         WriteU32Leb128(stream_, a.offset, "code offset");
         WriteU32Leb128(stream_, a.data.size(), "data length");
-        stream_->WriteData(a.data.data(), a.data.size(), "data",
-                           PrintChars::Yes);
+        stream_->WriteData(a.data, "data", PrintChars::Yes);
       }
     }
     EndSection();
@@ -1815,7 +1932,7 @@ void BinaryWriter::WriteCodeMetadataSections() {
   auto buf = tmp_stream.ReleaseOutputBuffer();
   stream_->MoveData(code_start_ + buf->data.size(), code_start_,
                     stream_->offset() - code_start_);
-  stream_->WriteDataAt(code_start_, buf->data.data(), buf->data.size());
+  stream_->WriteDataAt(code_start_, buf->data);
   stream_->AddOffset(buf->data.size());
   code_start_ += buf->data.size();
   section_count_ += 1;

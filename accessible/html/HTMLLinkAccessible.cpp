@@ -29,7 +29,12 @@ HTMLLinkAccessible::HTMLLinkAccessible(nsIContent* aContent,
 ////////////////////////////////////////////////////////////////////////////////
 // nsIAccessible
 
-role HTMLLinkAccessible::NativeRole() const { return roles::LINK; }
+role HTMLLinkAccessible::NativeRole() const {
+  if (mContent->IsMathMLElement(nsGkAtoms::a)) {
+    return roles::MATHML_LINK;
+  }
+  return roles::LINK;
+}
 
 uint64_t HTMLLinkAccessible::NativeState() const {
   return HyperTextAccessible::NativeState() & ~states::READONLY;

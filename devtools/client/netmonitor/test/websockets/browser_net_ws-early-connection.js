@@ -35,7 +35,7 @@ add_task(async function () {
 
   // Get index of the WS connection request.
   const index = Array.from(requests).findIndex(element => {
-    return element.textContent === "file_ws_backend";
+    return element.textContent === "file_ws_early_backend";
   });
 
   Assert.notStrictEqual(index, -1, "There must be one WS connection request");
@@ -45,18 +45,30 @@ add_task(async function () {
 
   info("Waiting for WS frames...");
 
-  // Wait for two frames to be displayed in the panel
+  // Wait for all frames to be displayed in the panel.
   await waitForDOM(
     document,
     "#messages-view .message-list-table .message-list-item",
-    2
+    3
   );
 
-  // Check the payload of the first frame.
-  const firstFramePayload = document.querySelector(
-    "#messages-view .message-list-table .message-list-item .message-list-payload"
+  const frames = document.querySelectorAll(
+    "#messages-view .message-list-table .message-list-item"
   );
-  is(firstFramePayload.textContent.trim(), "readyState:loading");
+
+  const hasFrame = (payload, type) =>
+    Array.from(frames).some(
+      frame =>
+        frame.querySelector(".message-list-payload").textContent.trim() ===
+          payload && frame.classList.contains(type)
+    );
+
+  ok(hasFrame("early server frame", "received"), "The early frame is received");
+  ok(hasFrame("readyState:loading", "sent"), "The client frame is sent");
+  ok(
+    hasFrame("readyState:loading", "received"),
+    "The echoed frame is received"
+  );
 
   await teardown(monitor);
 });

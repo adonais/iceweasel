@@ -3,6 +3,5 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 config = {
-    "stage_platform": "android-arm",
     "mozconfig_platform": "android-arm",
 }

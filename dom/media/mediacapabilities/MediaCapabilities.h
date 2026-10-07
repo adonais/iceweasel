@@ -106,6 +106,10 @@ class MediaCapabilities final : public nsISupports, public nsWrapperCache {
       Maybe<MediaContainerType> aVideoContainer,
       Maybe<MediaContainerType> aAudioContainer);
 
+  void CreateWebRTCEncodingInfo(
+      const MediaEncodingConfiguration& aConfiguration, Promise* aPromise,
+      const Maybe<MediaExtendedMIMEType>& aVideoMime);
+
   RefPtr<MediaKeySystemAccessManager::MediaKeySystemAccessPromise>
   CheckEncryptedDecodingSupport(
       const MediaDecodingConfiguration& aConfiguration);

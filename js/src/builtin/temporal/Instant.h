@@ -25,7 +25,7 @@ class InstantObject : public NativeObject {
   static const JSClass class_;
   static const JSClass& protoClass_;
 
-  JS_DEFINE_TYPED_SLOT(0, SECONDS_SLOT, Double, Int32);
+  JS_DEFINE_TYPED_SLOT(0, SECONDS_SLOT, Double);
   JS_DEFINE_TYPED_SLOT(1, NANOSECONDS_SLOT, Int32);
   static constexpr uint32_t SLOT_COUNT = 2;
 
@@ -33,7 +33,7 @@ class InstantObject : public NativeObject {
    * Extract the epoch nanoseconds fields from this ZonedDateTime object.
    */
   EpochNanoseconds epochNanoseconds() const {
-    double seconds = getFixedSlotTyped(SECONDS_SLOT).toNumber();
+    double seconds = getFixedSlotTyped(SECONDS_SLOT).toDouble();
     MOZ_ASSERT(-8'640'000'000'000 <= seconds && seconds <= 8'640'000'000'000);
 
     int32_t nanoseconds = getFixedSlotTyped(NANOSECONDS_SLOT).toInt32();

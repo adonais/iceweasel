@@ -125,7 +125,7 @@ class RenderCompositorANGLE final : public RenderCompositor {
   bool RequestFullRender() override;
   uint32_t GetMaxPartialPresentRects() override;
 
-  RefPtr<layers::Fence> GetAndResetReleaseFence() override;
+  RefPtr<layers::Fence> GetAndResetReadFence() override;
 
   bool MaybeReadback(const gfx::IntSize& aReadbackSize,
                      const wr::ImageFormat& aReadbackFormat,

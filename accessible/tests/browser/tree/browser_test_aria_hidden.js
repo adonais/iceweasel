@@ -44,7 +44,9 @@ addAccessibleTask(
   <p id="content">I am some content in a document</p>
   `,
   async function testTabDocument(browser, docAcc) {
-    const originalTree = { DOCUMENT: [{ PARAGRAPH: [{ TEXT_LEAF: [] }] }] };
+    const originalTree = {
+      DOCUMENT: [{ TEXT_CONTAINER: [{ PARAGRAPH: [{ TEXT_LEAF: [] }] }] }],
+    };
     testAccessibleTree(docAcc, originalTree);
   },
   {
@@ -57,8 +59,9 @@ addAccessibleTask(
 );
 
 /**
- * Verify adding aria-hidden to root doc elements has no effect.
- * Non-root doc elements, like embedded iframes, should continue
+ * Verify adding aria-hidden to the body element of a top-level doc
+ * does not hide the document's content.
+ * Non-top-level doc elements, like embedded iframes, should continue
  * to respect aria-hidden when applied. This test ONLY tests
  * tab documents, it should not run in iframes. There is a separate
  * test for iframes in browser_test_aria_hidden_iframe.js.
@@ -72,13 +75,22 @@ addAccessibleTask(
 
     testAccessibleTree(docAcc, originalTree);
     info("Adding aria-hidden=true to content doc");
-    const unexpectedEvents = { unexpected: [[EVENT_REORDER, docAcc]] };
-    await contentSpawnMutation(browser, unexpectedEvents, function () {
-      const b = content.document.body;
-      b.setAttribute("aria-hidden", "true");
-    });
+    // Adding `aria-hidden` to the body will force the body to
+    // get its own accessible. We'll get a reorder for this, and
+    // we should get an additional node in the tree, but the original
+    // content shouldn't disappear.
+    await contentSpawnMutation(
+      browser,
+      { expected: [[EVENT_REORDER, docAcc]] },
+      function () {
+        const b = content.document.body;
+        b.setAttribute("aria-hidden", "true");
+      }
+    );
 
-    testAccessibleTree(docAcc, originalTree);
+    testAccessibleTree(docAcc, {
+      DOCUMENT: [{ TEXT_CONTAINER: [{ PARAGRAPH: [{ TEXT_LEAF: [] }] }] }],
+    });
   },
   { chrome: true, topLevel: true, iframe: false, remoteIframe: false }
 );

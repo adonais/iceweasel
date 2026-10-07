@@ -377,6 +377,9 @@ export function MessageManagerDestroyedPromise(messageManager) {
  *     Desired timeout if wanted.  If 0 or less than the runtime evaluation
  *     time of ``func``, ``func`` is guaranteed to run at least once.
  *     Defaults to using no timeout.
+ * @param {Error=} options.throws
+ *     When the ``timeout`` is hit, this error class will be
+ *     thrown. If it is null, no error is thrown.
  * @param {number=} options.interval
  *     Duration between each poll of ``func`` in milliseconds.
  *     Defaults to 10 milliseconds.
@@ -397,6 +400,7 @@ export function PollPromise(func, options = {}) {
     errorMessage = "PollPromise timed out",
     interval = 10,
     timeout = null,
+    throws = lazy.error.TimeoutError,
   } = options;
   const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
   let didTimeOut = false;
@@ -454,7 +458,13 @@ export function PollPromise(func, options = {}) {
   }).then(
     res => {
       if (didTimeOut) {
-        lazy.logger.warn(`${errorMessage} after ${timeout} ms`);
+        const message = `${errorMessage} after ${timeout} ms`;
+        if (throws !== null) {
+          let err = new throws(message);
+          throw err;
+        } else {
+          lazy.logger.warn(message);
+        }
       }
       timer.cancel();
       return res;

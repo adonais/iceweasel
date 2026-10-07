@@ -146,10 +146,10 @@ NS_IMETHODIMP DeleteTextTransaction::DoTransaction() {
   }
 
   const OwningNonNull<EditorBase> editorBase = *mEditorBase;
-  editorBase->DoDeleteText(*textNode, mOffset, mLengthToDelete, error);
-  if (MOZ_UNLIKELY(error.Failed())) {
+  nsresult rv = editorBase->DoDeleteText(*textNode, mOffset, mLengthToDelete);
+  if (NS_FAILED(rv)) [[unlikely]] {
     NS_WARNING("EditorBase::DoDeleteText() failed");
-    return error.StealNSResult();
+    return rv;
   }
 
   editorBase->RangeUpdaterRef().SelAdjDeleteText(*textNode, mOffset,
@@ -195,10 +195,9 @@ NS_IMETHODIMP DeleteTextTransaction::UndoTransaction() {
     return NS_ERROR_NOT_AVAILABLE;
   }
   const OwningNonNull<EditorBase> editorBase = *mEditorBase;
-  IgnoredErrorResult error;
-  editorBase->DoInsertText(*textNode, mOffset, mDeletedText, error);
-  NS_WARNING_ASSERTION(!error.Failed(), "EditorBase::DoInsertText() failed");
-  return error.StealNSResult();
+  nsresult rv = editorBase->DoInsertText(*textNode, mOffset, mDeletedText);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "EditorBase::DoInsertText() failed");
+  return rv;
 }
 
 NS_IMETHODIMP DeleteTextTransaction::RedoTransaction() {

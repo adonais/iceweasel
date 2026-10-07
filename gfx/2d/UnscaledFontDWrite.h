@@ -11,8 +11,7 @@
 
 #include "2D.h"
 
-namespace mozilla {
-namespace gfx {
+namespace mozilla::gfx {
 
 class ScaledFontDWrite;
 
@@ -32,13 +31,13 @@ class UnscaledFontDWrite final : public UnscaledFont {
 
   already_AddRefed<ScaledFont> CreateScaledFont(
       Float aGlyphSize, const uint8_t* aInstanceData,
-      uint32_t aInstanceDataLength, const FontVariation* aVariations,
+      uint32_t aInstanceDataLength, const wr::FontVariation* aVariations,
       uint32_t aNumVariations) override;
 
   already_AddRefed<ScaledFont> CreateScaledFontFromWRFont(
       Float aGlyphSize, const wr::FontInstanceOptions* aOptions,
       const wr::FontInstancePlatformOptions* aPlatformOptions,
-      const FontVariation* aVariations, uint32_t aNumVariations) override;
+      const wr::FontVariation* aVariations, uint32_t aNumVariations) override;
 
   bool GetFontDescriptor(FontDescriptorOutput aCb, void* aBaton) override;
 
@@ -54,7 +53,6 @@ class UnscaledFontDWrite final : public UnscaledFont {
   std::vector<WCHAR> mFontFileName;
 };
 
-}  // namespace gfx
-}  // namespace mozilla
+}  // namespace mozilla::gfx
 
 #endif /* MOZILLA_GFX_UNSCALEDFONTDWRITE_H_ */

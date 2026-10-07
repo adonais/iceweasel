@@ -273,6 +273,12 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
 
   void SetKeepalive(const bool aKeepalive) { mKeepalive = aKeepalive; }
 
+  bool HasStreamBody() const { return mHasStreamBody; }
+
+  void SetHasStreamBody(bool aHasStreamBody) {
+    mHasStreamBody = aHasStreamBody;
+  }
+
   bool MozErrors() const { return mMozErrors; }
 
   void SetMozErrors() { mMozErrors = true; }
@@ -450,9 +456,11 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
   static RequestDestination MapContentPolicyTypeToRequestDestination(
       ExtContentPolicyType aContentPolicyType);
 
- private:
+  // True for content policy types that are only ever legitimately used for
+  // nsDocShell-initiated navigations, never for a fetch() call.
   static bool IsNavigationContentPolicy(nsContentPolicyType aContentPolicyType);
 
+ private:
   static bool IsWorkerContentPolicy(nsContentPolicyType aContentPolicyType);
 
   // It should only be called while there is a service-worker-internal-redirect.
@@ -511,6 +519,7 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
   nsString mIntegrity;
   bool mKeepalive = false;
   bool mMozErrors = false;
+  bool mHasStreamBody = false;
   nsCString mFragment;
   bool mSkipServiceWorker = false;
   bool mSkipWasmCaching = false;

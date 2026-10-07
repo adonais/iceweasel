@@ -4,7 +4,13 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 157.0 (In Development)
+# 158.0 (In Development)
+* **feature-accounts-push**
+    * 🆕 Added a `SendTabUseCases.SendToDeviceUseCase` overload that takes a list of devices, sending every tab to every device. [Bug 2056922](https://bugzilla.mozilla.org/show_bug.cgi?id=2056922)
+* **service-pocket**
+    * ⚠️ **Breaking change**: Removed `useMerinoClient` from `ContentRecommendationsRequestConfig`. The content recommendations are always fetched with the Merino client. [Bug 2069992](https://bugzilla.mozilla.org/show_bug.cgi?id=2069992)
+
+# 157.0
 
 # 156.0
 * **browser-domains**
@@ -23,6 +29,8 @@ permalink: /changelog/
     * 🆕 `Modifier.debouncedClickable` now accepts a `Role` for accessibility services. [Bug 2064181](https://bugzilla.mozilla.org/show_bug.cgi?id=2064181)
 
 # 155.0
+* **feature-search**
+    * ⚠️ **Breaking change**: Removed the `readJson` parameter from `SerpTelemetryRepository`, along with the `search/search_telemetry_v2.json` asset it read. The `search-telemetry-v2` records now come exclusively from Remote Settings, which serves the dump packaged with application-services. [Bug 2063025](https://bugzilla.mozilla.org/show_bug.cgi?id=2063025)
 
 # 154.0
 * **browser-icons**

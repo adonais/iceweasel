@@ -304,3 +304,13 @@ SEC_PKCS12IntegrityHashAllowed;
 ;+    local:
 ;+       *;
 ;+};
+;+NSS_3.130 {    # NSS 3.130 release
+;+    global:
+NSS_CMSDecoder_SetMaxInputSize;
+SEC_PKCS7DecoderSetMaxInputSize;
+SEC_PKCS12DecoderSetMaxInputSize;
+SEC_PKCS7DecoderSetMaxElementLen;
+SEC_PKCS12DecoderSetMaxElementLen;
+;+    local:
+;+       *;
+;+};

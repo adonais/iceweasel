@@ -9,8 +9,8 @@ use {
     crash_helper_common::{crash_annotations::CrashAnnotation, ExtraCrashData},
     libc::{pid_t, SI_TKILL, SI_USER},
     minidump_writer::{
-        crash_context::CrashContext,
         minidump_writer::{DirectAuxvDumpInfo as InternalDumpInfo, MinidumpWriterConfig},
+        CrashContextExt,
     },
     mozannotation_server::{AnnotationData, CAnnotation},
     std::{
@@ -176,7 +176,7 @@ pub extern "C" fn minidump_writer_set_crash_context(
     assert!(float_state.is_none());
 
     context.siginfo = siginfo.cloned();
-    context.writer_config.set_crash_context(CrashContext {
+    context.writer_config.set_crash_context(CrashContextExt {
         inner: crash_context::CrashContext {
             context: ucontext.clone(),
             #[cfg(not(target_arch = "arm"))]

@@ -1,10 +1,14 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    // Set the baseUrl to the root of the project.
-    "baseUrl": "../../..",
     "paths": {
-      "resource://devtools/*": ["devtools/*"]
+      "resource://devtools/*": ["../../../devtools/*"],
+      // These two are used to provide absolute references to these modules
+      // in their definitions in `@types/gecko.d.ts`.
+      "shared-background.sys.mjs": ["./shared/background.sys.mjs"],
+      "shared-symbolication.sys.mjs": [
+        "../../shared/performance-new/symbolication.sys.mjs"
+      ]
     },
     // Make the type checking as strict as possible.
     "strict": true,

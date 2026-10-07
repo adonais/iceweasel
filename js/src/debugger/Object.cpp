@@ -172,7 +172,6 @@ struct MOZ_STACK_CLASS DebuggerObject::CallData {
   bool promiseTimeToResolutionGetter();
   bool promiseAllocationSiteGetter();
   bool promiseResolutionSiteGetter();
-  bool promiseIDGetter();
   bool promiseDependentPromisesGetter();
 
   // JSNative methods
@@ -685,16 +684,6 @@ bool DebuggerObject::CallData::promiseResolutionSiteGetter() {
     return false;
   }
   args.rval().setObject(*resolutionSite);
-  return true;
-}
-
-bool DebuggerObject::CallData::promiseIDGetter() {
-  Rooted<PromiseObject*> promise(cx, EnsurePromise(cx, referent));
-  if (!promise) {
-    return false;
-  }
-
-  args.rval().setNumber(double(promise->getID()));
   return true;
 }
 
@@ -1546,7 +1535,6 @@ const JSPropertySpec DebuggerObject::promiseProperties_[] = {
     JS_DEBUG_PSG("promiseTimeToResolution", promiseTimeToResolutionGetter),
     JS_DEBUG_PSG("promiseAllocationSite", promiseAllocationSiteGetter),
     JS_DEBUG_PSG("promiseResolutionSite", promiseResolutionSiteGetter),
-    JS_DEBUG_PSG("promiseID", promiseIDGetter),
     JS_DEBUG_PSG("promiseDependentPromises", promiseDependentPromisesGetter),
     JS_PS_END,
 };

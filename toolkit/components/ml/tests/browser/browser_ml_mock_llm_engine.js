@@ -27,6 +27,18 @@ add_task(async function test_mock_llm_engine_run() {
   Assert.equal(engine.runRequests.size, 0, "No run requests remain.");
 });
 
+add_task(async function test_mock_llm_engine_wait_for_run_request() {
+  const engine = new MLTestUtils.MockLLMEngine();
+  const requestAvailable = engine.waitForRunRequest();
+
+  const resultPromise = engine.run({ args: [] });
+  await requestAvailable;
+
+  const [requestId] = engine.getNextRequest();
+  engine.respond(requestId, "Done.");
+  await resultPromise;
+});
+
 add_task(async function test_mock_llm_engine_run_with_generator() {
   const engine = new MLTestUtils.MockLLMEngine();
 

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<style>
+.scroller {
+  overflow: scroll;
+  border: 1px solid;
+  width: 500px;
+  height: 500px;
+}
+
+.tab {
+  position: relative;
+  width: 100%;
+  height: 40px;
+  anchor-scope: --tab-favicon;
+}
+
+.tab-stack {
+  position: relative;
+  height: 100%;
+  display: grid;
+}
+
+.tab-background {
+  width: 100%;
+  height: 100%;
+  grid-area: 1 / 1;
+}
+
+.tab-context-line {
+  position: absolute;
+  position-anchor: --tab-favicon;
+  inset-inline: anchor(start) anchor(end);
+  width: 12px;
+  height: 4px;
+  background: blue;
+}
+
+.tab-content {
+  position: relative;
+  height: 100%;
+  grid-area: 1 / 1;
+  display: flex;
+  align-items: center;
+  padding-inline: 15px;
+}
+
+.tab-icon-stack {
+  anchor-name: --tab-favicon;
+  width: 25px;
+  height: 25px;
+  background: purple;
+}
+
+.urlbar {
+  contain: layout;
+  width: 800px;
+  height: 40px;
+}
+
+.urlbar-input-container {
+  anchor-name: --urlbar;
+}
+
+.urlbarView {
+  margin: 0;
+  border: none;
+  padding: 0;
+  position: fixed;
+  width: 100%;
+  position-area: bottom center;
+  position-anchor: --urlbar;
+}
+
+</style>
+<script src="util.js"></script>
+<template id=tab_template>
+  <div class=tab>
+    <div class=tab-stack>
+      <div class=tab-background>
+        <div class=tab-context-line></div>
+      </div>
+      <div class=tab-content>
+        <div class=tab-icon-stack></div>
+      </div>
+    </div>
+  </div>
+</template>
+<div class=urlbar>
+  <input id=input type=text class=urlbar-input-container popovertarget=view>
+  <div id=view class=urlbarView popover>
+    <div>A</div>
+    <div>B</div>
+    <div>C</div>
+    <div>D</div>
+  </div>
+</div>
+<div id=container class=scroller></div>
+<script>
+window.onload = async function() {
+  for (let i = 0; i < 3000; i++) {
+    const t = tab_template.content.cloneNode(true);
+    container.appendChild(t);
+  }
+  flush_layout();
+  perf_start();
+  view.showPopover();
+  input.value = "abc";
+  requestAnimationFrame(() => {
+    perf_finish();
+  });
+}
+</script>

@@ -5,7 +5,7 @@
 use api::{ImageBufferKind, ColorF, units::*};
 
 use crate::pattern::{
-    Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState, PatternKind,
+    Pattern, PatternBuilder, PatternBuilderState, PatternKind,
     PatternShaderInput, PatternTextureInput, TEXTURED_SHADER_MODE_TEXTURE_ALPHA,
     TEXTURED_SHADER_MAP_TO_PRIMITIVE,
 };
@@ -23,9 +23,7 @@ pub struct ImagePattern {
 impl PatternBuilder for ImagePattern {
     fn build(
         &self,
-        _sub_rect: Option<DeviceRect>,
-        _offset: LayoutVector2D,
-        _ctx: &PatternBuilderContext,
+        _pattern_rect: &LayoutRect,
         _state: &mut PatternBuilderState,
     ) -> Pattern {
         let blend_mode = if self.premultiplied || self.src_is_opaque {
@@ -60,9 +58,7 @@ pub struct ShadowPattern {
 impl PatternBuilder for ShadowPattern {
     fn build(
         &self,
-        _sub_rect: Option<DeviceRect>,
-        _offset: LayoutVector2D,
-        _ctx: &PatternBuilderContext,
+        _pattern_rect: &LayoutRect,
         _state: &mut PatternBuilderState,
     ) -> Pattern {
         Pattern {

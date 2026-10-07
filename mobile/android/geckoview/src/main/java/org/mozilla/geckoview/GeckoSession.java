@@ -369,9 +369,6 @@ public class GeckoSession {
     @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
     public native Surface getMagnifiableSurface();
 
-    @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-    public native void setMaxToolbarHeight(int height);
-
     @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
     public native void setFixedBottomOffset(int offset);
 
@@ -1444,6 +1441,22 @@ public class GeckoSession {
       mNativeQueue = nativeQueue;
     }
 
+    @WrapForJNI
+    /* package */ static class ContentMetrics {
+      int width;
+      int height;
+      float devicePixelRatio;
+
+      /* package */ ContentMetrics() {}
+
+      @WrapForJNI
+      /* package */ void set(final int width, final int height, final float devicePixelRatio) {
+        this.width = width;
+        this.height = height;
+        this.devicePixelRatio = devicePixelRatio;
+      }
+    }
+
     @Override // IInterface
     public Binder asBinder() {
       if (mBinder == null) {
@@ -1526,6 +1539,20 @@ public class GeckoSession {
 
     @WrapForJNI(dispatchTo = "proxy")
     private native void printToPdf(GeckoResult<InputStream> geckoResult, long browserContextId);
+
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "proxy")
+    public native void requestFullScreenshot(
+        GeckoResult<Bitmap> result,
+        final Bitmap target,
+        final int x,
+        final int y,
+        final int width,
+        final int height,
+        final float renderingScale);
+
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "proxy")
+    public native void requestContentMetrics(
+        GeckoResult<ContentMetrics> result, ContentMetrics metrics);
 
     @WrapForJNI(calledFrom = "gecko")
     private synchronized void onReady(final @Nullable NativeQueue queue) {

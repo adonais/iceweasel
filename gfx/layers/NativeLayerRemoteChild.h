@@ -14,7 +14,7 @@ class NativeLayerRemoteChild : public PNativeLayerRemoteChild {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NativeLayerRemoteChild);
 
  protected:
-  ~NativeLayerRemoteChild() {}
+  ~NativeLayerRemoteChild() = default;
 };
 
 }  // namespace layers

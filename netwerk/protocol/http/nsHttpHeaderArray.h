@@ -5,6 +5,7 @@
 #ifndef nsHttpHeaderArray_h_
 #define nsHttpHeaderArray_h_
 
+#include "nsCharSeparatedTokenizer.h"
 #include "nsHttp.h"
 #include "nsString.h"
 #include "nsTArray.h"

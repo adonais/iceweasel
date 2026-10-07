@@ -25,7 +25,7 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   ChatStore:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs",
-  GenAI: "resource:///modules/GenAI.sys.mjs",
+  GenAI: "moz-src:///browser/components/genai/GenAI.sys.mjs",
   MemoryStore:
     "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs",
   getCachedModelsData:

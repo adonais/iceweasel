@@ -224,6 +224,7 @@ SET TIMEOUT: html/canvas/resources/draw-element-image-utils.js
 SET TIMEOUT: html/canvas/element/manual/draw-element-image/intersection-observer-visibility.tentative.html
 SET TIMEOUT: html/canvas/element/manual/draw-element-image/onpaint.tentative.html
 SET TIMEOUT: html/canvas/element/manual/draw-element-image/onpaint-css-animation.tentative.html
+SET TIMEOUT: html/canvas/element/manual/draw-element-image/onpaint-iframe-nested-invalidation.tentative.html
 SET TIMEOUT: html/canvas/element/manual/draw-element-image/onpaint-post-tree-order.tentative.html
 SET TIMEOUT: html/canvas/element/manual/draw-element-image/requestPaint.tentative.html
 SET TIMEOUT: html/cross-origin-opener-policy/resources/fully-loaded.js
@@ -446,6 +447,7 @@ SET TIMEOUT: html/webappapis/dynamic-markup-insertion/opening-the-input-stream/c
 SET TIMEOUT: html/webappapis/timers/*
 SET TIMEOUT: portals/history/resources/portal-harness.js
 SET TIMEOUT: requestidlecallback/deadline-after-expired-timer.html
+SET TIMEOUT: resource-timing/tentative/initiator-url/dedicated-worker-script.html
 SET TIMEOUT: resource-timing/tentative/initiator-url/module-script-from-document.html
 SET TIMEOUT: resource-timing/tentative/initiator-url/set-timeout.html
 SET TIMEOUT: resource-timing/tentative/initiator-url/set-timeout.any.js

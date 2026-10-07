@@ -842,9 +842,6 @@ with Files("tests/touch-events/**"):
 with Files("tests/tools/**"):
     BUG_COMPONENT = ("Testing", "web-platform-tests")
 
-with Files("tests/top-level-storage-access-api/**"):
-    BUG_COMPONENT = ("Core", "Privacy: Anti-Tracking")
-
 with Files("tests/trusted-types/**"):
     BUG_COMPONENT = ("Core", "DOM: Security")
 

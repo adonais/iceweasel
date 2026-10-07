@@ -21,6 +21,7 @@ static const char* const kTestFileExtensions[] = {
     ".air",     // Adobe Air (ignored for app rep)
     ".apk",     // Android package
     ".app",     // Executable application
+    ".appcontent-ms",
     ".applescript",
     ".application",  // MS ClickOnce
     ".appref-ms",    // MS ClickOnce

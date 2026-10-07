@@ -38,9 +38,8 @@ nsresult NSSCipherStrategy::Init(const CipherMode aMode,
     return NS_ERROR_FAILURE;
   }
 
-  SECItem keyItem;
-  keyItem.data = const_cast<uint8_t*>(aKey.Elements());
-  keyItem.len = aKey.Length();
+  SECItem keyItem = {siBuffer, const_cast<uint8_t*>(aKey.Elements()),
+                     static_cast<unsigned int>(aKey.Length())};
   const auto symKey = UniquePK11SymKey{
       PK11_ImportSymKey(slot.get(), CKM_CHACHA20_POLY1305, PK11_OriginUnwrap,
                         CKA_ENCRYPT, &keyItem, nullptr)};

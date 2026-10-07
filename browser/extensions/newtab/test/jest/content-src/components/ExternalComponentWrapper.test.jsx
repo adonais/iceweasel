@@ -187,6 +187,100 @@ describe("<ExternalComponentWrapper>", () => {
     unmount();
   });
 
+  it("waits for stylesheets to load before creating the custom element", async () => {
+    const mockConfig = createMockConfig({
+      stylesURLs: ["chrome://browser/skin/urlbar.css"],
+    });
+    const stateWithConfig = createStateWithConfig(mockConfig);
+    const importModuleStub = jest.fn(() => Promise.resolve());
+    const mockElement = createMockElement();
+    let fireLoad;
+    let styleLink;
+
+    const createElementStub = stubCreateElement({
+      link: () => {
+        styleLink = {
+          rel: "",
+          href: "",
+          remove: jest.fn(),
+          addEventListener: (type, handler) => {
+            if (type === "load") {
+              fireLoad = handler;
+            }
+          },
+        };
+        return styleLink;
+      },
+      "test-component": () => mockElement,
+    });
+
+    jest.spyOn(document.head, "appendChild").mockImplementation(() => {});
+
+    const { unmount } = render(
+      <WrapWithProvider state={stateWithConfig}>
+        <TestWrapper {...DEFAULT_PROPS} importModule={importModuleStub} />
+      </WrapWithProvider>
+    );
+
+    // The module resolves, but while the stylesheet is still loading the
+    // element must not be created (bug 2071583).
+    await waitFor(() => expect(importModuleStub).toHaveBeenCalled());
+    await flushPromises();
+    expect(styleLink.rel).toBe("stylesheet");
+    expect(styleLink.href).toBe("chrome://browser/skin/urlbar.css");
+    expect(createElementStub).not.toHaveBeenCalledWith("test-component");
+
+    // Once the stylesheet's load event fires, the element is created.
+    fireLoad();
+    await waitFor(() =>
+      expect(createElementStub).toHaveBeenCalledWith("test-component")
+    );
+    unmount();
+  });
+
+  it("should clean up stylesheet links on unmount", async () => {
+    const mockConfig = createMockConfig({
+      stylesURLs: ["chrome://browser/skin/urlbar.css"],
+    });
+    const stateWithConfig = createStateWithConfig(mockConfig);
+    const importModuleStub = jest.fn(() => Promise.resolve());
+    const styleLinks = [];
+
+    stubCreateElement({
+      "test-component": () => createMockElement(),
+      link: () => {
+        const linkEl = {
+          rel: "",
+          href: "",
+          remove: jest.fn(),
+          addEventListener: (type, handler) => {
+            if (type === "load") {
+              queueMicrotask(handler);
+            }
+          },
+        };
+        styleLinks.push(linkEl);
+        return linkEl;
+      },
+    });
+
+    jest.spyOn(document.head, "appendChild").mockImplementation(() => {});
+
+    const { unmount } = render(
+      <WrapWithProvider state={stateWithConfig}>
+        <TestWrapper {...DEFAULT_PROPS} importModule={importModuleStub} />
+      </WrapWithProvider>
+    );
+
+    await waitFor(() => {
+      expect(styleLinks).toHaveLength(1);
+    });
+
+    unmount();
+
+    expect(styleLinks[0].remove).toHaveBeenCalled();
+  });
+
   it("should set attributes on custom element", async () => {
     const mockConfig = createMockConfig({
       attributes: {

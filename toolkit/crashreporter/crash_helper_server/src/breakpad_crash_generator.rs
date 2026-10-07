@@ -13,13 +13,17 @@ use super::crash_generation::get_auxv_info;
 
 use anyhow::{bail, Result};
 use cfg_if::cfg_if;
-use crash_helper_common::{BreakpadChar, BreakpadData, BreakpadString, ExtraCrashData, Pid};
+use crash_helper_common::{
+    BreakpadChar, BreakpadData, BreakpadString, ExtraCrashData, GeckoChildId, Pid,
+    RawProcessHandle, RawThreadHandle,
+};
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use minidump_writer::minidump_writer::DirectAuxvDumpInfo;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use std::os::fd::{FromRawFd, OwnedFd};
 use std::{
     ffi::{c_void, OsString},
+    path::PathBuf,
     ptr::NonNull,
     sync::Mutex,
 };
@@ -92,6 +96,19 @@ extern "C" {
     ) -> *mut c_void;
     fn CrashGenerationServer_shutdown(server: *mut c_void);
     fn CrashGenerationServer_set_path(server: *mut c_void, path: *const BreakpadChar);
+    fn WriteMinidumpForProcess(
+        aId: GeckoChildId,
+        aPid: RawProcessHandle,
+        aBlamedThread: RawThreadHandle,
+        #[cfg(any(target_os = "android", target_os = "linux"))] auxv_cb: extern "C" fn(
+            crash_helper_common::Pid,
+            *mut DirectAuxvDumpInfo,
+        )
+            -> bool,
+        aDumpPath: *const BreakpadChar,
+        aResultPath: *mut BreakpadChar,
+        aResultLen: usize,
+    ) -> bool;
 }
 
 pub(crate) struct BreakpadCrashGenerator {
@@ -182,6 +199,48 @@ impl BreakpadCrashGenerator {
             let path = path.into_raw();
             CrashGenerationServer_set_path(self.ptr.as_ptr(), path);
         };
+    }
+
+    pub(crate) fn generate_minidump(
+        id: GeckoChildId,
+        process: RawProcessHandle,
+        thread: RawThreadHandle,
+        dump_path: PathBuf,
+    ) -> Option<PathBuf> {
+        // VVVVVVVV-WWWW-XXXX-YYYY-ZZZZZZZZ.dmp
+        const MINIDUMP_FILENAME_LEN: usize = 40;
+
+        let dump_path = dump_path.into_os_string();
+        // Full path, plus separator, plus minidump filename, plus terminator.
+        let output_path_len =
+            <OsString as BreakpadString>::len(&dump_path) + 1 + MINIDUMP_FILENAME_LEN + 1;
+        let mut output_path = Vec::<BreakpadChar>::with_capacity(output_path_len);
+        let raw_path = <OsString as BreakpadString>::into_raw(dump_path);
+        output_path.fill(0);
+
+        let res = unsafe {
+            WriteMinidumpForProcess(
+                id,
+                process,
+                thread,
+                #[cfg(any(target_os = "android", target_os = "linux"))]
+                get_auxv_info,
+                raw_path,
+                output_path.as_mut_ptr(),
+                output_path_len,
+            )
+        };
+
+        // SAFETY: We allocated this string in this block.
+        let _raw_path = unsafe { <OsString as BreakpadString>::from_raw(raw_path) };
+
+        if res {
+            Some(PathBuf::from(unsafe {
+                <OsString as BreakpadString>::from_ptr(output_path.as_ptr())
+            }))
+        } else {
+            None
+        }
     }
 }
 

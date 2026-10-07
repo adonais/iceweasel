@@ -655,6 +655,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   nsPIDOMWindowOuter* GetInProcessScriptableParent() override;
   mozilla::dom::Element* GetFrameElement(nsIPrincipal& aSubjectPrincipal,
                                          mozilla::ErrorResult& aError);
+  MOZ_CAN_RUN_SCRIPT
   mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> Open(
       const nsAString& aUrl, const nsAString& aName, const nsAString& aOptions,
       mozilla::ErrorResult& aError);
@@ -885,6 +886,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   bool DidFireDocElemInserted() const { return mDidFireDocElemInserted; }
   void SetDidFireDocElemInserted() { mDidFireDocElemInserted = true; }
 
+  MOZ_CAN_RUN_SCRIPT
   mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> OpenDialog(
       JSContext* aCx, const nsAString& aUrl, const nsAString& aName,
       const nsAString& aOptions,

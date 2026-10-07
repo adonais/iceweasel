@@ -147,10 +147,7 @@ class TestNsinstall(unittest.TestCase):
         destfile = os.path.join(testdir, filename)
         self.assertTrue(os.path.isfile(destfile))
 
-    # Executing nsinstall.py with python 2 is not supported.
-    @unittest.skipIf(
-        not RUN_NON_ASCII_TESTS or sys.version_info[0] == 2, "Skipping non ascii tests"
-    )
+    @unittest.skipIf(not RUN_NON_ASCII_TESTS, "Skipping non ascii tests")
     def test_nsinstall_non_ascii_subprocess(self):
         "Test that nsinstall as a subprocess handles non-ASCII files"
         filename = "\u2325\u3452\u2415\u5081"

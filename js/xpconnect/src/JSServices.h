@@ -7,6 +7,9 @@
 
 #include "jstypes.h"
 
+struct JSContext;
+class JSObject;
+
 namespace xpc {
 
 JSObject* NewJSServices(JSContext* cx);

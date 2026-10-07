@@ -15,7 +15,7 @@ namespace mozilla::dom {
 class OwningTrustedHTMLOrString;
 class TrustedHTMLOrString;
 
-class FeaturePolicy;
+class PermissionsPolicy;
 
 class HTMLIFrameElement final : public nsGenericHTMLFrameElement {
  public:
@@ -152,7 +152,7 @@ class HTMLIFrameElement final : public nsGenericHTMLFrameElement {
   bool FullscreenFlag() const { return mFullscreenFlag; }
   void SetFullscreenFlag(bool aValue) { mFullscreenFlag = aValue; }
 
-  mozilla::dom::FeaturePolicy* FeaturePolicy() const;
+  mozilla::dom::PermissionsPolicy* PermissionsPolicy() const;
 
   void SetLoading(const nsAString& aLoading, ErrorResult& aError) {
     SetHTMLAttr(nsGkAtoms::loading, aLoading, aError);
@@ -187,14 +187,14 @@ class HTMLIFrameElement final : public nsGenericHTMLFrameElement {
 
   static const DOMTokenListSupportedToken sSupportedSandboxTokens[];
 
-  void RefreshFeaturePolicy(bool aParseAllowAttribute);
+  void RefreshPermissionsPolicy(bool aParseAllowAttribute);
   void RefreshEmbedderReferrerPolicy(ReferrerPolicy aPolicy);
 
   // If this iframe has a 'srcdoc' attribute, the document's origin will be
   // returned. Otherwise, if this iframe has a 'src' attribute, the origin will
   // be the parsing of its value as URL. If the URL is invalid, or 'src'
   // attribute doesn't exist, the origin will be the document's origin.
-  already_AddRefed<nsIPrincipal> GetFeaturePolicyDefaultOrigin() const;
+  already_AddRefed<nsIPrincipal> GetPermissionsPolicyDefaultOrigin() const;
 
   /**
    * This function is called by AfterSetAttr and OnAttrSetButNotChanged.
@@ -208,12 +208,12 @@ class HTMLIFrameElement final : public nsGenericHTMLFrameElement {
   void AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName, bool aNotify);
 
   /**
-   * Feature policy inheritance is broken in cross process model, so we may
-   * have to store feature policy in browsingContext when neccesary.
+   * Permissions policy inheritance is broken in cross process model, so we may
+   * have to store permissions policy in browsingContext when neccesary.
    */
-  void MaybeStoreCrossOriginFeaturePolicy();
+  void MaybeStoreCrossOriginPermissionsPolicy();
 
-  RefPtr<dom::FeaturePolicy> mFeaturePolicy;
+  RefPtr<dom::PermissionsPolicy> mPermissionsPolicy;
   RefPtr<nsDOMTokenList> mSandbox;
 
   /**

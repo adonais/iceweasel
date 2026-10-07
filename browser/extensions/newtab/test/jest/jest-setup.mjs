@@ -3,6 +3,89 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import "@testing-library/jest-dom"; // eslint-disable-line import/no-unassigned-import
+import { EventEmitter } from "test/jest/test-utils";
+
+// Firefox module-loader shims. System modules (lib/*.sys.mjs) resolve their
+// dependencies through ChromeUtils/XPCOMUtils while their module body is being
+// evaluated, which is before any beforeEach can run, so these have to live here
+// rather than in a stubGlobals() call. As in the karma harness,
+// importESModule() hands back the global object and the lazy-getter helpers
+// reparent a module's `lazy` object onto it, so `lazy.Foo` reads
+// `globalThis.Foo` at access time and a test overrides it via stubGlobals().
+const reparentedOntoGlobal = new WeakSet();
+function updateGlobalOrObject(object) {
+  if (reparentedOntoGlobal.has(object)) {
+    return globalThis;
+  }
+  if (Object.getPrototypeOf(object).constructor.name !== "Object") {
+    return object;
+  }
+  reparentedOntoGlobal.add(object);
+  Object.setPrototypeOf(object, globalThis);
+  return globalThis;
+}
+
+globalThis.ChromeUtils = {
+  importESModule: () => globalThis,
+  defineESModuleGetters: updateGlobalOrObject,
+  // Must stay lazy: modules pass getters that read globals (Services, Cc/Ci)
+  // which only exist once a test has installed them. Evaluating eagerly here
+  // throws at import time. Caches after the first read, as the real one does.
+  defineLazyGetter: (object, name, getter) => {
+    Object.defineProperty(object, name, {
+      configurable: true,
+      get() {
+        const value = getter();
+        Object.defineProperty(object, name, {
+          configurable: true,
+          writable: true,
+          value,
+        });
+        return value;
+      },
+    });
+  },
+  generateQI: () => ({}),
+};
+
+globalThis.XPCOMUtils = {
+  defineLazyGlobalGetters: updateGlobalOrObject,
+  defineLazyServiceGetter: updateGlobalOrObject,
+  defineLazyServiceGetters: updateGlobalOrObject,
+  defineLazyPreferenceGetter: (object, name, pref, defaultValue = "") => {
+    updateGlobalOrObject(object)[name] = defaultValue;
+  },
+  generateQI: () => ({}),
+};
+
+// Any interface a module asks for resolves to an empty object.
+globalThis.Ci = new Proxy({}, { get: () => ({}) });
+
+globalThis.AppConstants = {
+  MOZILLA_OFFICIAL: true,
+  MOZ_APP_VERSION: "69.0a1",
+  NIGHTLY_BUILD: false,
+  platform: "win",
+};
+
+globalThis.Preferences = class Preferences {
+  constructor({ branch = "" } = {}) {
+    this._branchStr = branch;
+  }
+};
+
+globalThis.EventEmitter = EventEmitter;
+
+if (!globalThis.console.createInstance) {
+  globalThis.console.createInstance = () => ({
+    debug: () => {},
+    error: () => {},
+    info: () => {},
+    log: () => {},
+    trace: () => {},
+    warn: () => {},
+  });
+}
 
 globalThis.requestIdleCallback = cb => {
   cb();

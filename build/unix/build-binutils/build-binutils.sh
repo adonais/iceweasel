@@ -82,7 +82,7 @@ for target in $TARGETS; do
   mkdir binutils-$target
   cd binutils-$target
 
-  ../binutils-source/configure --prefix /tools/binutils/ --disable-gold --disable-ld --disable-binutils --disable-gprof --disable-nls --target=$target $EXTRA_CONFIGURE_FLAGS || exit 1
+  ../binutils-source/configure --prefix /tools/binutils/ --disable-gold --disable-ld --disable-binutils --disable-gprof --disable-nls --without-zstd --target=$target $EXTRA_CONFIGURE_FLAGS || exit 1
   make $make_flags || exit 1
   make install $make_flags DESTDIR=$root_dir || exit 1
 
@@ -95,7 +95,7 @@ cd binutils-objdir
 
 # --enable-targets builds extra target support in ld.
 # Enabling aarch64 support brings in arm support, so we don't need to specify that too.
-../binutils-source/configure --prefix /tools/binutils/ --enable-gold --enable-plugins --disable-nls --enable-targets="$TARGETS" $EXTRA_CONFIGURE_FLAGS || exit 1
+../binutils-source/configure --prefix /tools/binutils/ --enable-gold --enable-plugins --disable-nls --without-zstd --enable-targets="$TARGETS" $EXTRA_CONFIGURE_FLAGS || exit 1
 make $make_flags || exit 1
 make install $make_flags DESTDIR=$root_dir || exit 1
 

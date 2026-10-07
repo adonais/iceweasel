@@ -8,7 +8,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   Sqlite: "resource://gre/modules/Sqlite.sys.mjs",
-  BackupError: "resource:///modules/backup/BackupError.mjs",
+  BackupError: "moz-src:///browser/components/backup/BackupError.mjs",
   ERRORS: "chrome://browser/content/backup/backup-constants.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });

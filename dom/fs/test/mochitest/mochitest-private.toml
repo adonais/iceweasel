@@ -4,8 +4,8 @@
 
 [DEFAULT]
 dupe-manifest = true
-skip-if = [
-  "xorigin",
+run-if = [
+  "!xorigin",
 ]
 prefs = [
   "browser.privatebrowsing.autostart=true",

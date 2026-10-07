@@ -19,7 +19,14 @@ A task's `kind` attribute gives the name of the kind that generated it, e.g.,
 ## run_on_repo_type
 
 The types of repositories where this task should be in the target task set. Typically
-"hg" (the default), "git" or both.
+"hg", "git" or both (the default).
+
+This attribute is temporary and will be used during the transition from hg.mozilla.org
+to Github.
+
+## clone_with
+
+The VCS a task uses to clone the checkout, either "hg" or "git".
 
 This attribute is temporary and will be used during the transition from hg.mozilla.org
 to Github.
@@ -416,6 +423,12 @@ signed. Set this to `true` to disable APK signing.
 
 We enable build-signing for `shippable`, `nightly`, and `enable-build-signing` tasks.
 
+## target-store
+
+The Android app store a `push-android` task submits to: `google`, `samsung` or
+`huawei`. Together with `build-type` it identifies a push task, since several
+stores can be fed from the same signed build.
+
 ## run-visual-metrics
 
 If set to true, will run the visual metrics task on the provided
@@ -578,5 +591,11 @@ name of the built flatpak app (e.g. `org.mozilla.firefox`)
 The human-readable product name for the MSI installer (e.g. `Firefox Nightly`,
 `Firefox Beta`, `Firefox`). Used by downstream signing tasks to construct
 the Authenticode comment embedded in the installer signature.
+
+## duplicate-of
+
+The label of the task this one was copied from by the `duplicate` transforms.
+A downstream kind that names this task's kind in `duplicate.chain-from` makes
+its own copies depend on this task rather than on the one it was copied from.
 
 [primary one]: https://taskcluster-taskgraph.readthedocs.io/en/latest/reference/transforms/from_deps.html#primary-kind

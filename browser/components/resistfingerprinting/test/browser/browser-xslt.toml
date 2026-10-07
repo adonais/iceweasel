@@ -1,0 +1,6 @@
+[DEFAULT]
+prefs = ["dom.xslt.enabled=true"]
+
+["browser_exslt_time_precision.js"]
+
+["browser_exslt_timezone_load.js"]

@@ -76,6 +76,7 @@ struct IPCInternalRequest {
   RequestPriority requestPriority;
   nsString integrity;
   bool keepalive;
+  bool hasStreamBody;
   nsCString fragment;
   PrincipalInfo? principalInfo;
   PrincipalInfo? interceptionTriggeringPrincipalInfo;

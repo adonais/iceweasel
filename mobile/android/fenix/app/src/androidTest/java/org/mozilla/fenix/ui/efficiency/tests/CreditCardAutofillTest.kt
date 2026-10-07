@@ -5,6 +5,7 @@
 package org.mozilla.fenix.ui.efficiency.tests
 
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.TestAssetHelper.creditCardFormAsset
 import org.mozilla.fenix.ui.efficiency.data.CreditCardTestData
@@ -37,6 +38,20 @@ class CreditCardAutofillTest : BaseTest() {
             .clickSelectCreditCardButton()
             .clickCreditCardSuggestion(card.lastDigits)
             .verifyAutofilledCreditCard(card.number)
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1512788
+    @Critical
+    @Test
+    fun verifyCreditCardsSectionTest() {
+        val card = CreditCardTestData.FIRST
+
+        on.settingsAutofill
+            .navigateToPage()
+            .verifyCreditCardsAutofillSection(cardsAutofillEnabled = true, userHasSavedCreditCard = false)
+            .fillAndSaveCreditCard(card)
+            .openManageSavedCreditCards()
+            .verifySavedCreditCardsSection(card.lastDigits, card.expiryMonthAndYear)
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1512798

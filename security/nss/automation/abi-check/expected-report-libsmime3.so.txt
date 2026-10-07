@@ -1,0 +1,9 @@
+
+5 Added functions:
+
+  [A] 'function SECStatus NSS_CMSDecoder_SetMaxInputSize(NSSCMSDecoderContext*, unsigned long int)'    {NSS_CMSDecoder_SetMaxInputSize@@NSS_3.130}
+  [A] 'function SECStatus SEC_PKCS12DecoderSetMaxElementLen(SEC_PKCS12DecoderContext*, unsigned long int)'    {SEC_PKCS12DecoderSetMaxElementLen@@NSS_3.130}
+  [A] 'function SECStatus SEC_PKCS12DecoderSetMaxInputSize(SEC_PKCS12DecoderContext*, unsigned long int)'    {SEC_PKCS12DecoderSetMaxInputSize@@NSS_3.130}
+  [A] 'function SECStatus SEC_PKCS7DecoderSetMaxElementLen(SEC_PKCS7DecoderContext*, unsigned long int)'    {SEC_PKCS7DecoderSetMaxElementLen@@NSS_3.130}
+  [A] 'function SECStatus SEC_PKCS7DecoderSetMaxInputSize(SEC_PKCS7DecoderContext*, unsigned long int)'    {SEC_PKCS7DecoderSetMaxInputSize@@NSS_3.130}
+

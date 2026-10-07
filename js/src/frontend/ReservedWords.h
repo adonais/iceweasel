@@ -63,6 +63,7 @@
   MACRO(as, as, TokenKind::As)                                  \
   MACRO(async, async, TokenKind::Async)                         \
   MACRO(await, await, TokenKind::Await)                         \
+  MACRO(defer, defer, TokenKind::Defer)                         \
   MACRO(from, from, TokenKind::From)                            \
   MACRO(get, get, TokenKind::Get)                               \
   MACRO(let, let, TokenKind::Let)                               \

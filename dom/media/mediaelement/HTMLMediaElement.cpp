@@ -74,7 +74,6 @@
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ElementInlines.h"
-#include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/HTMLAudioElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLMediaElementBinding.h"
@@ -85,8 +84,10 @@
 #include "mozilla/dom/MediaEncryptedEvent.h"
 #include "mozilla/dom/MediaErrorBinding.h"
 #include "mozilla/dom/MediaSource.h"
+#include "mozilla/dom/PermissionsPolicyUtils.h"
 #include "mozilla/dom/PlayPromise.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/TextTrack.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/VideoPlaybackQuality.h"
@@ -129,7 +130,6 @@
 #include "nsNodeInfoManager.h"
 #include "nsPresContext.h"
 #include "nsQueryObject.h"
-#include "nsRange.h"
 #include "nsSize.h"
 #include "nsThreadUtils.h"
 #include "nsURIHashKey.h"
@@ -456,8 +456,18 @@ class HTMLMediaElement::MediaControlKeyListener final
 
     MOZ_ASSERT(mControlAgent);
     auto* owner = Owner();
-    PositionState state(owner->Duration(),
-                        owner->Paused() ? 0.0 : owner->PlaybackRate(),
+    // `Duration()` is NaN while the element has neither a decoder nor a
+    // stream, and infinite for a stream. Neither is a length that a platform's
+    // media controls can lay a timeline out from, so report no position state
+    // at all instead.
+    const double duration = owner->Duration();
+    if (!std::isfinite(duration)) {
+      MEDIACONTROL_LOG("Clear media position state (duration={})", duration);
+      mControlAgent->UpdateGuessedPositionState(mOwnerBrowsingContextId,
+                                                mElementId, Nothing());
+      return;
+    }
+    PositionState state(duration, owner->Paused() ? 0.0 : owner->PlaybackRate(),
                         owner->CurrentTime(), TimeStamp::Now());
     MEDIACONTROL_LOG(
         "Notify media position state (duration={}, playbackRate={}, "
@@ -1034,7 +1044,7 @@ class HTMLMediaElement::MediaStreamRenderer {
     ResolveAudioDevicePromiseIfExists(__func__);
 
     RefPtr promise = mSetAudioDevicePromise.Ensure(__func__);
-    GenericPromise::AllSettled(GetCurrentSerialEventTarget(), promises)
+    GenericPromise::AllSettled(AbstractThread::MainThread(), promises)
         ->Then(GetMainThreadSerialEventTarget(), __func__,
                [self = RefPtr{this},
                 this](const GenericPromise::AllSettledPromiseType::
@@ -6509,6 +6519,7 @@ void HTMLMediaElement::UpdatePlayedRangesBeforeSeek(double aRangeEndTime) {
 }
 
 void HTMLMediaElement::SeekCompleted() {
+  RefPtr<HTMLMediaElement> kungFuDeathGrip(this);
   mPlayingBeforeSeek = false;
   SetPlayedOrSeeked(true);
   if (mTextTrackManager) {
@@ -8667,8 +8678,8 @@ already_AddRefed<Promise> HTMLMediaElement::SetSinkId(const nsAString& aSinkId,
     return nullptr;
   }
 
-  if (!FeaturePolicyUtils::IsFeatureAllowed(win->GetExtantDoc(),
-                                            u"speaker-selection"_ns)) {
+  if (!PermissionsPolicyUtils::IsFeatureAllowed(win->GetExtantDoc(),
+                                                u"speaker-selection"_ns)) {
     promise->MaybeRejectWithNotAllowedError(
         "Document's Permissions Policy does not allow setSinkId()");
   }

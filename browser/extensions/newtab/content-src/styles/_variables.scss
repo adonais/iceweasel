@@ -60,7 +60,7 @@ $in-content-page-color-dark: var(--text-color);
 
 $in-content-page-background: var(--background-color-canvas);
 $newtab-background-secondary: var(--card-background-color);
-$newtab-background-card: var(--card-background-color);
+$newtab-background-card: color-mix(in srgb, var(--card-background-color) 80%, transparent);
 
 // Photon transitions from http://design.firefox.com/photon/motion/duration-and-easing.html
 $photon-easing: cubic-bezier(0.07, 0.95, 0, 1);
@@ -84,6 +84,9 @@ $searchbar-width-small: ($grid-unit * 2 + $base-gutter * 1) - 24px; // 200px
 $searchbar-width-medium: ($grid-unit * 4 + $base-gutter * 3) - 120px; // 360px
 $searchbar-width-large: ($grid-unit * 6 + $base-gutter * 5) - 136px; // 600px
 $searchbar-width-largest: ($grid-unit * 6 + $base-gutter * 5) - 16px; // 720px
+// How far the card behind the search bar's variant B reaches past the search
+// bar on each side; matches --urlbar-card-padding-inline in urlbar.css.
+$search-card-overhang: 48px;
 
 $wrapper-default-width: $grid-unit * 2 + $base-gutter * 1 + $vars-section-horizontal-padding * 2; // 2 top sites
 $wrapper-max-width-medium: $grid-unit * 4 + $base-gutter * 3 + $vars-section-horizontal-padding * 2; // 4 top sites

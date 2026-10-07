@@ -10,11 +10,11 @@ task-defaults:
     run:
         script: build-custom-car.sh
 
-macosx-arm64-custom-car:
+macosx64-aarch64-custom-car:
     description: "Custom chromium-as-release build for mac (apple silicon)"
     worker-type: b-osx-arm64
     treeherder:
-        symbol: TM(custom-car-arm)
+        symbol: TMA64(custom-car)
         tier: 2
     worker:
         max-run-time: 15000
@@ -47,7 +47,7 @@ android-custom-car:
     description: "Custom chromium-as-release build for Android"
     worker-type: b-linux-docker-xlarge-amd
     treeherder:
-        symbol: TL(custom-car-android)
+        symbol: TA(custom-car)
     worker:
         docker-image: {in-tree: custom-car-android}
         max-run-time: 30000
@@ -122,7 +122,10 @@ win64-custom-car:
             is_official_build=true,
             symbol_level=2,
             target_cpu=\"x64\",
-            use_v8_context_snapshot=false
+            use_v8_context_snapshot=false,
+            # MSVC 14.51's intrinsics headers hide clang's, so the
+            # V8 metagen libclang parse fails.
+            v8_use_metagen_instance_types=false
         ]
         toolchain-artifact: public/build/car_win64.tar.zst
     fetches:

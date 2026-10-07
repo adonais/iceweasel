@@ -31,7 +31,9 @@ class PathBuilderSkia : public PathBuilder {
            float aEndAngle, bool aAntiClockwise = false) override;
   already_AddRefed<Path> Finish() override;
 
-  bool Reset(FillRule aFillRule) override;
+  void Reset(FillRule aFillRule) override;
+
+  void Transform(const Matrix& aTransform) override;
 
   void AppendPath(const SkPath& aPath);
 
@@ -41,13 +43,14 @@ class PathBuilderSkia : public PathBuilder {
 
   static already_AddRefed<PathBuilder> Create(FillRule aFillRule);
 
+  void SetFillRule(FillRule aFillRule) override;
+
  private:
   friend class PathSkia;
 
-  void SetFillRule(FillRule aFillRule);
+  void SetSkiaFillType();
 
   SkPathBuilder mPathBuilder;
-  FillRule mFillRule;
 };
 
 class PathSkia : public Path {
@@ -56,17 +59,13 @@ class PathSkia : public Path {
 
   PathSkia(const SkPath& aPath, FillRule aFillRule,
            Point aCurrentPoint = Point(), Point aBeginPoint = Point())
-      : mPath(aPath),
-        mFillRule(aFillRule),
-        mCurrentPoint(aCurrentPoint),
-        mBeginPoint(aBeginPoint) {}
+      : Path(aFillRule, aCurrentPoint, aBeginPoint), mPath(aPath) {}
 
   BackendType GetBackendType() const override { return BackendType::SKIA; }
 
   already_AddRefed<PathBuilder> CopyToBuilder(
-      FillRule aFillRule) const override;
-  already_AddRefed<PathBuilder> TransformedCopyToBuilder(
-      const Matrix& aTransform, FillRule aFillRule) const override;
+      FillRule aFillRule,
+      already_AddRefed<PathBuilder> aBuilder) const override;
 
   bool ContainsPoint(const Point& aPoint,
                      const Matrix& aTransform) const override;
@@ -86,8 +85,6 @@ class PathSkia : public Path {
 
   void StreamToSink(PathSink* aSink) const override;
 
-  FillRule GetFillRule() const override { return mFillRule; }
-
   const SkPath& GetPath() const { return mPath; }
 
   Maybe<Rect> AsRect() const override;
@@ -102,9 +99,6 @@ class PathSkia : public Path {
   friend class DrawTargetSkia;
 
   SkPath mPath;
-  FillRule mFillRule;
-  Point mCurrentPoint;
-  Point mBeginPoint;
 };
 
 }  // namespace gfx

@@ -204,6 +204,31 @@ add_task(async function use_1st_item() {
   assertValueAfterKeys(input, "KEY_Enter", "value1");
 });
 
+add_task(async function escape_closing_the_popup_is_withheld_from_the_page() {
+  // Listen only after openPopupOn, which sends its own Escape to make sure no
+  // popup is already open.
+  await openPopupOn("#form1 > input");
+
+  let escapes = 0;
+  const countEscape = event => {
+    if (event.key == "Escape") {
+      escapes++;
+    }
+  };
+  document.addEventListener("keydown", countEscape);
+
+  synthesizeKey("KEY_Escape");
+  await SimpleTest.promiseWaitForCondition(
+    async () => !(await getPopupState()).open,
+    "Wait for Escape to close the popup");
+  is(escapes, 0, "The page should not see the Escape that closed the popup");
+
+  synthesizeKey("KEY_Escape");
+  is(escapes, 1, "Escape should reach the page once the popup is closed");
+
+  document.removeEventListener("keydown", countEscape);
+});
+
 add_task(async function use_2nd_item() {
   const { input } = await openPopupOn("#form1 > input");
   assertValueAfterKeys(

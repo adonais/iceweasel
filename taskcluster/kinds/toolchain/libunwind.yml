@@ -14,7 +14,7 @@ task-defaults:
 android-aarch64-libunwind-22:
     description: "android aarch64 libunwind for Clang 22 toolchain build"
     treeherder:
-        symbol: TA(aarch64-unwind-22)
+        symbol: TA(unwind-22-aarch64)
     run:
         arguments:
             - build/build-clang/clang-22.json
@@ -33,7 +33,7 @@ android-aarch64-libunwind-22:
 android-arm-libunwind-22:
     description: "android arm libunwind for Clang 22 toolchain build"
     treeherder:
-        symbol: TA(arm-unwind-22)
+        symbol: TA(unwind-22-arm)
     run:
         arguments:
             - build/build-clang/clang-22.json
@@ -52,7 +52,7 @@ android-arm-libunwind-22:
 android-x64-libunwind-22:
     description: "android x64 libunwind for Clang 22 toolchain build"
     treeherder:
-        symbol: TA(x64-unwind-22)
+        symbol: TA(unwind-22-x64)
     run:
         arguments:
             - build/build-clang/clang-22.json
@@ -71,7 +71,7 @@ android-x64-libunwind-22:
 android-aarch64-libunwind-23:
     description: "android aarch64 libunwind for Clang 23 toolchain build"
     treeherder:
-        symbol: TA(aarch64-unwind-23)
+        symbol: TA(unwind-23-aarch64)
     run:
         arguments:
             - build/build-clang/clang-23.json
@@ -90,7 +90,7 @@ android-aarch64-libunwind-23:
 android-arm-libunwind-23:
     description: "android arm libunwind for Clang 23 toolchain build"
     treeherder:
-        symbol: TA(arm-unwind-23)
+        symbol: TA(unwind-23-arm)
     run:
         arguments:
             - build/build-clang/clang-23.json
@@ -109,7 +109,7 @@ android-arm-libunwind-23:
 android-x64-libunwind-23:
     description: "android x64 libunwind for Clang 23 toolchain build"
     treeherder:
-        symbol: TA(x64-unwind-23)
+        symbol: TA(unwind-23-x64)
     run:
         arguments:
             - build/build-clang/clang-23.json
@@ -130,7 +130,7 @@ android-aarch64-libunwind-trunk:
     attributes:
         cached_task: false
     treeherder:
-        symbol: TA(aarch64-unwind-trunk)
+        symbol: TA(unwind-trunk-aarch64)
     run:
         arguments:
             - build/build-clang/clang-trunk.json
@@ -151,7 +151,7 @@ android-arm-libunwind-trunk:
     attributes:
         cached_task: false
     treeherder:
-        symbol: TA(arm-unwind-trunk)
+        symbol: TA(unwind-trunk-arm)
     run:
         arguments:
             - build/build-clang/clang-trunk.json
@@ -172,7 +172,7 @@ android-x64-libunwind-trunk:
     attributes:
         cached_task: false
     treeherder:
-        symbol: TA(x64-unwind-trunk)
+        symbol: TA(unwind-trunk-x64)
     run:
         arguments:
             - build/build-clang/clang-trunk.json

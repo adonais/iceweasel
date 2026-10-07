@@ -21,11 +21,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <set>
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <vector>
-#include <set>
 
 #include "wabt/binding-hash.h"
 #include "wabt/common.h"
@@ -36,24 +36,43 @@ namespace wabt {
 
 struct Module;
 
-enum class VarType {
+// VarType (16 bit) and the opt_type_ (16 bit)
+// fields of Var forms a 32 bit field.
+enum class VarType : uint16_t {
   Index,
   Name,
 };
 
 struct Var {
+  // Var can represent variables or types.
+
+  // Represent a variable:
+  //   has_opt_type() is false
+  //   Only used by wast-parser
+
+  // Represent a type:
+  //   has_opt_type() is true, is_index() is true
+  //   type can be get by to_type()
+  //   Binary reader only constructs this variant
+
+  // Represent both a variable and a type:
+  //   has_opt_type() is true, is_name() is true
+  //   A reference, which index is unknown
+  //   Only used by wast-parser
+
   explicit Var();
   explicit Var(Index index, const Location& loc);
   explicit Var(std::string_view name, const Location& loc);
+  explicit Var(Type type, const Location& loc);
   Var(Var&&);
   Var(const Var&);
   Var& operator=(const Var&);
   Var& operator=(Var&&);
   ~Var();
 
-  VarType type() const { return type_; }
   bool is_index() const { return type_ == VarType::Index; }
   bool is_name() const { return type_ == VarType::Name; }
+  bool has_opt_type() const { return opt_type_ < 0; }
 
   Index index() const {
     assert(is_index());
@@ -63,10 +82,16 @@ struct Var {
     assert(is_name());
     return name_;
   }
+  Type::Enum opt_type() const {
+    assert(has_opt_type());
+    return static_cast<Type::Enum>(opt_type_);
+  }
 
   void set_index(Index);
   void set_name(std::string&&);
   void set_name(std::string_view);
+  void set_opt_type(Type::Enum);
+  Type to_type() const;
 
   Location loc;
 
@@ -74,6 +99,8 @@ struct Var {
   void Destroy();
 
   VarType type_;
+  // Can be set to Type::Enum types, Type::Any represent no optional type.
+  int16_t opt_type_;
   union {
     Index index_;
     std::string name_;
@@ -155,6 +182,7 @@ struct Const {
   }
   void set_funcref() { From<uintptr_t>(Type::FuncRef, 0); }
   void set_externref(uintptr_t x) { From(Type::ExternRef, x); }
+  void set_extern(uintptr_t x) { From(Type(Type::ExternRef, Type::ReferenceNonNull), x); }
   void set_null(Type type) { From<uintptr_t>(type, kRefNullBits); }
 
   bool is_expected_nan(int lane = 0) const {
@@ -254,13 +282,6 @@ typedef std::unique_ptr<Expectation> ExpectationPtr;
 struct FuncSignature {
   TypeVector param_types;
   TypeVector result_types;
-
-  // Some types can have names, for example (ref $foo) has type $foo.
-  // So to use this type we need to translate its name into
-  // a proper index from the module type section.
-  // This is the mapping from parameter/result index to its name.
-  std::unordered_map<uint32_t, std::string> param_type_names;
-  std::unordered_map<uint32_t, std::string> result_type_names;
 
   Index GetNumParams() const { return param_types.size(); }
   Index GetNumResults() const { return result_types.size(); }
@@ -370,9 +391,12 @@ enum class ExprType {
   AtomicFence,
   AtomicWait,
   Binary,
+  Quaternary,
   Block,
   Br,
   BrIf,
+  BrOnNonNull,
+  BrOnNull,
   BrTable,
   Call,
   CallIndirect,
@@ -397,6 +421,7 @@ enum class ExprType {
   MemoryInit,
   MemorySize,
   Nop,
+  RefAsNonNull,
   RefIsNull,
   RefFunc,
   RefNull,
@@ -404,6 +429,7 @@ enum class ExprType {
   Return,
   ReturnCall,
   ReturnCallIndirect,
+  ReturnCallRef,
   Select,
   SimdLaneOp,
   SimdLoadLane,
@@ -422,7 +448,9 @@ enum class ExprType {
   TableFill,
   Ternary,
   Throw,
+  ThrowRef,
   Try,
+  TryTable,
   Unary,
   Unreachable,
 
@@ -459,6 +487,21 @@ struct Catch {
   }
 };
 using CatchVector = std::vector<Catch>;
+
+struct TableCatch {
+  explicit TableCatch(const Location& loc = Location()) : loc(loc) {}
+  Location loc;
+  Var tag;
+  Var target;
+  CatchKind kind;
+  bool IsCatchAll() const {
+    return kind == CatchKind::CatchAll || kind == CatchKind::CatchAllRef;
+  }
+  bool IsRef() const {
+    return kind == CatchKind::CatchRef || kind == CatchKind::CatchAllRef;
+  }
+};
+using TryTableVector = std::vector<TableCatch>;
 
 enum class TryKind { Plain, Catch, Delegate };
 
@@ -516,6 +559,7 @@ using DropExpr = ExprMixin<ExprType::Drop>;
 using NopExpr = ExprMixin<ExprType::Nop>;
 using ReturnExpr = ExprMixin<ExprType::Return>;
 using UnreachableExpr = ExprMixin<ExprType::Unreachable>;
+using ThrowRefExpr = ExprMixin<ExprType::ThrowRef>;
 
 using MemoryGrowExpr = MemoryExpr<ExprType::MemoryGrow>;
 using MemorySizeExpr = MemoryExpr<ExprType::MemorySize>;
@@ -526,10 +570,10 @@ using MemoryCopyExpr = MemoryBinaryExpr<ExprType::MemoryCopy>;
 template <ExprType TypeEnum>
 class RefTypeExpr : public ExprMixin<TypeEnum> {
  public:
-  RefTypeExpr(Type type, const Location& loc = Location())
+  RefTypeExpr(Var type, const Location& loc = Location())
       : ExprMixin<TypeEnum>(loc), type(type) {}
 
-  Type type;
+  Var type;
 };
 
 using RefNullExpr = RefTypeExpr<ExprType::RefNull>;
@@ -545,10 +589,12 @@ class OpcodeExpr : public ExprMixin<TypeEnum> {
 };
 
 using BinaryExpr = OpcodeExpr<ExprType::Binary>;
+using QuaternaryExpr = OpcodeExpr<ExprType::Quaternary>;
 using CompareExpr = OpcodeExpr<ExprType::Compare>;
 using ConvertExpr = OpcodeExpr<ExprType::Convert>;
 using UnaryExpr = OpcodeExpr<ExprType::Unary>;
 using TernaryExpr = OpcodeExpr<ExprType::Ternary>;
+using RefAsNonNullExpr = OpcodeExpr<ExprType::RefAsNonNull>;
 
 class SimdLaneOpExpr : public ExprMixin<ExprType::SimdLaneOp> {
  public:
@@ -628,6 +674,8 @@ class MemoryVarExpr : public MemoryExpr<TypeEnum> {
 
 using BrExpr = VarExpr<ExprType::Br>;
 using BrIfExpr = VarExpr<ExprType::BrIf>;
+using BrOnNonNullExpr = VarExpr<ExprType::BrOnNonNull>;
+using BrOnNullExpr = VarExpr<ExprType::BrOnNull>;
 using CallExpr = VarExpr<ExprType::Call>;
 using RefFuncExpr = VarExpr<ExprType::RefFunc>;
 using GlobalGetExpr = VarExpr<ExprType::GlobalGet>;
@@ -651,9 +699,15 @@ using MemoryInitExpr = MemoryVarExpr<ExprType::MemoryInit>;
 
 class SelectExpr : public ExprMixin<ExprType::Select> {
  public:
-  SelectExpr(TypeVector type, const Location& loc = Location())
-      : ExprMixin<ExprType::Select>(loc), result_type(type) {}
-  TypeVector result_type;
+  SelectExpr(const Location& loc = Location())
+      : ExprMixin<ExprType::Select>(loc) {}
+  // Untyped select is represented by {Type::Void}. An empty result_type
+  // represents an explicit typed select with zero result types and is invalid.
+  TypeVector result_type{Type::Void};
+
+  bool IsUntyped() const {
+    return result_type.size() == 1 && result_type[0] == Type::Void;
+  }
 };
 
 class TableInitExpr : public ExprMixin<ExprType::TableInit> {
@@ -716,9 +770,15 @@ class CallRefExpr : public ExprMixin<ExprType::CallRef> {
   explicit CallRefExpr(const Location& loc = Location())
       : ExprMixin<ExprType::CallRef>(loc) {}
 
-  // This field is setup only during Validate phase,
-  // so keep that in mind when you use it.
-  Var function_type_index;
+  Var sig_type;
+};
+
+class ReturnCallRefExpr : public ExprMixin<ExprType::ReturnCallRef> {
+ public:
+  explicit ReturnCallRefExpr(const Location& loc = Location())
+      : ExprMixin<ExprType::ReturnCallRef>(loc) {}
+
+  Var sig_type;
 };
 
 template <ExprType TypeEnum>
@@ -741,6 +801,15 @@ class IfExpr : public ExprMixin<ExprType::If> {
   Block true_;
   ExprList false_;
   Location false_end_loc;
+};
+
+class TryTableExpr : public ExprMixin<ExprType::TryTable> {
+ public:
+  explicit TryTableExpr(const Location& loc = Location())
+      : ExprMixin<ExprType::TryTable>(loc) {}
+
+  Block block;
+  TryTableVector catches;
 };
 
 class TryExpr : public ExprMixin<ExprType::Try> {
@@ -926,13 +995,14 @@ struct Table {
   std::string name;
   Limits elem_limits;
   Type elem_type;
+  ExprList init_expr;
 };
 
 using ExprListVector = std::vector<ExprList>;
 
 struct ElemSegment {
   explicit ElemSegment(std::string_view name) : name(name) {}
-  uint8_t GetFlags(const Module*) const;
+  uint8_t GetFlags(const Module*, bool function_references_enabled) const;
 
   SegmentKind kind = SegmentKind::Active;
   std::string name;
@@ -1241,6 +1311,7 @@ struct Module {
 
   Location loc;
   std::string name;
+  std::string_view filename;
   ModuleFieldList fields;
 
   Index num_tag_imports = 0;
@@ -1306,6 +1377,8 @@ class ScriptModule {
 
   ScriptModuleType type() const { return type_; }
   virtual const Location& location() const = 0;
+
+  bool is_definition;
 
  protected:
   explicit ScriptModule(ScriptModuleType type) : type_(type) {}
@@ -1398,6 +1471,7 @@ enum class CommandType {
   Module,
   ScriptModule,
   Action,
+  Instance,
   Register,
   AssertMalformed,
   AssertInvalid,
@@ -1435,6 +1509,7 @@ class CommandMixin : public Command {
 class ModuleCommand : public CommandMixin<CommandType::Module> {
  public:
   Module module;
+  bool is_definition;
 };
 
 class ScriptModuleCommand : public CommandMixin<CommandType::ScriptModule> {
@@ -1453,6 +1528,19 @@ class ActionCommandBase : public CommandMixin<TypeEnum> {
 };
 
 using ActionCommand = ActionCommandBase<CommandType::Action>;
+
+class InstanceCommand : public CommandMixin<CommandType::Instance> {
+ public:
+  InstanceCommand(const Location& loc,
+                  std::string instance_name,
+                  std::string definition_name)
+      : loc(loc), instance_name(instance_name),
+        definition_name(definition_name) {}
+
+  Location loc;
+  std::string instance_name;
+  std::string definition_name;
+};
 
 class RegisterCommand : public CommandMixin<CommandType::Register> {
  public:
@@ -1514,6 +1602,7 @@ struct Script {
 
   CommandPtrVector commands;
   BindingHash module_bindings;
+  std::string_view filename;
 };
 
 void MakeTypeBindingReverseMapping(

@@ -32,6 +32,7 @@ class nsDOMStringMap;
 class nsIURI;
 
 namespace mozilla {
+struct ScrollState;
 struct StyleLockedDeclarationBlock;
 enum class ContentRelevancyReason;
 using ContentRelevancy = EnumSet<ContentRelevancyReason, uint8_t>;
@@ -224,6 +225,13 @@ class FragmentOrElement : public nsIContent {
      * element.
      */
     UniquePtr<RadioGroupContainer> mRadioGroupContainer;
+
+    /**
+     * Scroll state of this element's scroll container frame, saved while the
+     * frame is being reconstructed.
+     * @see ScrollContainerFrame::RestoreState
+     */
+    UniquePtr<mozilla::ScrollState> mSavedScrollState;
 
     /**
      * Last remembered size (in CSS pixels) for the element.

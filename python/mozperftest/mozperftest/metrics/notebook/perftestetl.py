@@ -5,7 +5,6 @@
 import json
 import os
 import pathlib
-from collections import OrderedDict
 
 from .constant import Constant
 from .transformer import SimplePerfherderTransformer, Transformer, get_transformer
@@ -109,7 +108,7 @@ class PerftestETL:
             else:
                 for _, file_list in files.items():
                     file_list.sort()
-                files = OrderedDict(sorted(files.items(), key=lambda entry: entry[0]))
+                files = dict(sorted(files.items(), key=lambda entry: entry[0]))
 
         if not files:
             raise Exception(

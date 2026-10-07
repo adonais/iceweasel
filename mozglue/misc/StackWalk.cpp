@@ -132,31 +132,30 @@ class FrameSkipper {
 // locks exclusively, and exclusive acquisition of these locks only happens for
 // a brief time during Microsoft API calls (e.g. LdrLoadDll, LdrUnloadDll).
 //
-// We use one of two alternative strategies to gracefully fail to capture a
-// stack instead of running into a deadlock:
+// We use two strategies together to reduce the risk of deadlock, gracefully
+// failing to capture a stack when either identifies a risk:
 //    (1) collect pointers to the ntdll internal locks at stack walk
 //        initialization, then try to acquire them non-blockingly before
 //        initiating any stack walk;
-// or (2) mark all code paths that can potentially end up doing an exclusive
+//    (2) mark all code paths that can potentially end up doing an exclusive
 //        acquisition of the locks as stack walk suppression paths, then check
 //        if any thread is currently on a stack walk suppression path before
-//        initiating any stack walk;
+//        initiating any stack walk.
 //
-// Strategy (2) can only avoid all deadlocks under the easily wronged
+// Strategy (2) alone can only avoid all deadlocks under the easily wronged
 // assumption that we have correctly identified all existing paths that should
-// be stack suppression paths. With strategy (2) we cannot collect stacks e.g.
-// during the whole duration of a DLL load happening on any thread so the
-// profiling results are worse.
+// be stack suppression paths. Hence why we combine it with strategy (1) as
+// defense in depth.
 //
-// Strategy (1) guarantees no deadlock. It also gives better profiling results
-// because it is more fine-grained. Therefore we always prefer strategy (1),
-// and we only use strategy (2) as a fallback.
+// Relying on strategy (2) means we cannot collect stacks e.g. during the whole
+// duration of a DLL load happening on any thread, which can affect profiling
+// results significantly but protects us against advanced deadlock scenarios
+// that strategy (1) fails to catch in isolation (bug 2069874).
 
 // Strategy (1): Ntdll Internal Locks
 //
-// The external stack walk initialization code will feed us pointers to the
-// ntdll internal locks. Once we have them, we no longer need to rely on
-// strategy (2).
+// The external stack walk initialization code feeds us pointers to the ntdll
+// internal locks so they can complement the suppression check.
 static Atomic<bool> sStackWalkLocksInitialized;
 static Array<SRWLOCK*, 2> sStackWalkLocks;
 
@@ -170,15 +169,17 @@ void InitializeStackWalkLocks(const Array<void*, 2>& aStackWalkLocks) {
 // Strategy (2): Stack Walk Suppressions
 //
 // We're using an atomic counter rather than a critical section because we
-// don't require mutual exclusion with the stack walker. If the stack walker
-// determines that it's safe to start unwinding the suspended thread (i.e.
-// there are no suppressions when the unwind begins), then it's safe to
-// continue unwinding that thread even if other threads request suppressions
-// in the meantime, because we can't deadlock with those other threads.
+// don't require mutual exclusion with the stack walker. The target is already
+// suspended when the global counter is checked, so it cannot begin a new
+// suppression. Another thread can race with the check, but that thread can
+// continue running and release any lock it acquires.
 //
-// XXX: This global variable is a larger-than-necessary hammer. A more scoped
-// solution would be to maintain a counter per thread, but then it would be
-// more difficult for WalkStackMain64 to read the suspended thread's counter.
+// NOTE: Moving to a per-thread counter here instead of a global one would
+// reintroduce deadlock scenarios like the one in bug 2069874. In that scenario
+// it is a helper thread started from the DLL-loading thread that holds
+// problematic locks. It is the stack walk suppression from the DLL-loading
+// thread that correctly prevents us from walking the stack of the helper
+// thread, and this would not happen with per-thread counters.
 static Atomic<size_t> sStackWalkSuppressions;
 
 void SuppressStackWalking() { ++sStackWalkSuppressions; }
@@ -199,7 +200,11 @@ AutoSuppressStackWalking::~AutoSuppressStackWalking() {
 }
 
 bool IsStackWalkingSafe() {
-  // Use strategy (1), if initialized.
+  // Check suppression before touching the ntdll locks.
+  if (sStackWalkSuppressions != 0) {
+    return false;
+  }
+
   if (sStackWalkLocksInitialized) {
     bool isSafe = false;
     if (::TryAcquireSRWLockShared(sStackWalkLocks[0])) {
@@ -212,8 +217,7 @@ bool IsStackWalkingSafe() {
     return isSafe;
   }
 
-  // Otherwise, fall back to strategy (2).
-  return sStackWalkSuppressions == 0;
+  return true;
 }
 
 static uint8_t* sJitCodeRegionStart;
@@ -563,17 +567,12 @@ static void DoMozStackWalkThread(MozWalkStackCallback aCallback,
 #  endif
 
 #  if defined(_M_AMD64) || defined(_M_ARM64)
-  // If at least one thread (we don't know which) may be holding a lock that
-  // can deadlock RtlLookupFunctionEntry, we can't proceed because that thread
-  // may be the one that we're trying to walk the stack of.
+  // If any thread is on a suppression path, the suspended target may be
+  // holding a lock such that RtlLookupFunctionEntry or RtlVirtualUnwind
+  // would deadlock.
   //
-  // But if there is no such thread by this point, then our target thread can't
-  // be holding a lock, so it's safe to proceed. By virtue of being suspended,
-  // the target thread can't acquire any new locks during our stack walking, so
-  // we only need to do this check once. Other threads may temporarily acquire
-  // the locks while we're walking the stack, but that's mostly fine -- calling
-  // RtlLookupFunctionEntry will make us wait for them to release the locks,
-  // but at least we won't deadlock.
+  // A zero suppression count and successful non-blocking lock probes reduce
+  // that risk. This check is best-effort, not a guarantee of deadlock freedom.
   if (!IsStackWalkingSafe()) {
     return;
   }

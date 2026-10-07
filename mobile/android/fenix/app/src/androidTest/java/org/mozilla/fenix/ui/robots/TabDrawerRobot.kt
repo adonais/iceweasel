@@ -46,6 +46,7 @@ import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.TabsTrayTestTag.NORMAL_TABS_LIST
 
 fun tabDrawer(
     composeTestRule: ComposeTestRule,
@@ -192,7 +193,7 @@ class TabDrawerRobot(private val composeTestRule: ComposeTestRule) {
 
     @OptIn(ExperimentalTestApi::class)
     fun verifyNormalTabsList() {
-        composeTestRule.waitUntilDoesNotExist(hasTestTag("tabstray.tabList.normal.empty"), waitingTime)
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag(NORMAL_TABS_LIST), waitingTime)
         Log.i(TAG, "verifyNormalTabsList: Trying to verify that the normal tabs list exists")
         composeTestRule.normalTabsListGridView().assertExists()
         Log.i(TAG, "verifyNormalTabsList: Verified that the normal tabs list exists")

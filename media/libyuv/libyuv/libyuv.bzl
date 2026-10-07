@@ -10,6 +10,7 @@ def libyuv_srcs(prefix = ""):
         ],
         exclude = [
             prefix + "source/*neon*.cc",
+            prefix + "source/*rvv*.cc",
             prefix + "source/*sve*.cc",
             prefix + "source/*sme*.cc",
         ],
@@ -21,12 +22,18 @@ def libyuv_hdrs(prefix = ""):
         prefix + "include/libyuv/convert.h",
         prefix + "include/libyuv/convert_from_argb.h",
         prefix + "include/libyuv/cpu_id.h",
-        prefix + "include/libyuv/row.h",
+        prefix + "include/libyuv/row.h",  # Bug 553148013: Should be private.
     ]
 
 def libyuv_neon_srcs(prefix = ""):
     return native.glob([
         prefix + "source/*neon*.cc",
+        prefix + "include/libyuv/*.h",
+    ])
+
+def libyuv_rvv_srcs(prefix = ""):
+    return native.glob([
+        prefix + "source/*rvv*.cc",
         prefix + "include/libyuv/*.h",
     ])
 

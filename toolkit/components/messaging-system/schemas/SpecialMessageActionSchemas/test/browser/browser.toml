@@ -15,7 +15,10 @@ support-files = [
 
 ["browser_sma_bookmark_current_tab_confirmation_hint.js"]
 
-["browser_sma_cfrmessageprovider.js"]
+["browser_sma_closed_browser_notifications.js"]
+run-if = [
+  "os == 'win'",
+]
 
 ["browser_sma_configure_homepage.js"]
 
@@ -89,6 +92,8 @@ run-if = [
   "os == 'win'",
   "os == 'linux'",
 ]
+
+["browser_sma_reset_profile.js"]
 
 ["browser_sma_restore_session.js"]
 

@@ -34,20 +34,20 @@ Created a new subscription: [context data]
 
 **Q. Why are credentials stored in Google Drive?**
 
-   * Firebase services require a credential file, typically named `google-services.json`, which are retrieved from the Firebase console for all the applications in that project. Our requirements are somewhat unique, so we generate our own XML file from `google-services.json` and use that.
-    According to [Firebase engineers](https://groups.google.com/forum/#!msg/firebase-talk/bamCgTDajkw/uVEJXjtiBwAJ), it should be safe to commit our `google-services.json` but we avoid doing that as there are other forks of Fenix that must not use these credentials.
-    For example, the Google I/O app commits [their release version](https://github.com/google/iosched/blob/b428d2be4bb96bd423e47cb709c906ce5d02150f/mobile/google-services.json) of the file to Github as well.
+* Firebase services require a credential file, typically named `google-services.json`, which are retrieved from the Firebase console for all the applications in that project. Our requirements are somewhat unique, so we generate our own XML file from `google-services.json` and use that.
+  According to [Firebase engineers](https://groups.google.com/forum/#!msg/firebase-talk/bamCgTDajkw/uVEJXjtiBwAJ), it should be safe to commit our `google-services.json` but we avoid doing that as there are other forks of Fenix that must not use these credentials.
+  For example, the Google I/O app commits [their release version](https://github.com/google/iosched/blob/b428d2be4bb96bd423e47cb709c906ce5d02150f/mobile/google-services.json) of the file to Github as well.
 
 **Q. What are the special requirements which mean we can't directly use `google-services.json`?**
 
-   * Following the 'Getting Started' Firebase instructions to initialize the service in Fenix would not work as we explicitly chose not to use the `com.google.gms.google-services` Gradle plugin as the Android service would be initialized with a [`ContentProvider`](https://firebase.blog/posts/2016/12/how-does-firebase-initialize-on-android) eagerly which reduces our control on how the application can start up in a performant way since the Browser startup sequence is quite unique.
+* Following the 'Getting Started' Firebase instructions to initialize the service in Fenix would not work as we explicitly chose not to use the `com.google.gms.google-services` Gradle plugin as the Android service would be initialized with a [`ContentProvider`](https://firebase.blog/posts/2016/12/how-does-firebase-initialize-on-android) eagerly which reduces our control on how the application can start up in a performant way since the Browser startup sequence is quite unique.
 
 **Q. Where do we get the `google-services.json` file from?**
 
-   * Ask your friendly Release Management teammate if they can access the Cloud Messaging console at `console.firebase.google.com`.
+* Ask your friendly Release Management teammate if they can access the Cloud Messaging console at `console.firebase.google.com`.
 
 **Q. How do I generate the XML file from `google-services.json`?**
 
-   * The easiest way is to use [this clever web app](https://dandar3.github.io/android/google-services-json-to-xml.html) that does this for you.
-   * The more official and tedious way, would be to do this manually by following [the instructions on the google services plugin](https://developers.google.com/android/guides/google-services-plugin#adding_the_json_file) site.
-   * Note that the `google-services.json` file may have the credentials for multiple applications, so ensure you are copying the instructions for the correct project.
+* The easiest way is to use [this clever web app](https://dandar3.github.io/android/google-services-json-to-xml.html) that does this for you.
+* The more official and tedious way, would be to do this manually by following [the instructions on the google services plugin](https://developers.google.com/android/guides/google-services-plugin#adding_the_json_file) site.
+* Note that the `google-services.json` file may have the credentials for multiple applications, so ensure you are copying the instructions for the correct project.

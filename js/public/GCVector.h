@@ -79,7 +79,9 @@ class GCVector {
   operator mozilla::Span<T>() { return vector; }
   operator mozilla::Span<const T>() const { return vector; }
 
-  bool initCapacity(size_t cap) { return vector.initCapacity(cap); }
+  [[nodiscard]] bool initCapacity(size_t cap) {
+    return vector.initCapacity(cap);
+  }
   [[nodiscard]] bool reserve(size_t req) { return vector.reserve(req); }
   void shrinkBy(size_t amount) { return vector.shrinkBy(amount); }
   void shrinkTo(size_t newLen) { return vector.shrinkTo(newLen); }
@@ -91,7 +93,7 @@ class GCVector {
   bool shrinkStorageToFit() { return vector.shrinkStorageToFit(); }
 
   template <typename U>
-  bool append(U&& item) {
+  [[nodiscard]] bool append(U&& item) {
     return vector.append(std::forward<U>(item));
   }
 

@@ -472,7 +472,9 @@ add_task(async function online() {
           QuickSuggestTestUtils.wikipediaResult({
             source: "merino",
             provider: "wikipedia",
-            icon: "https://example.com/wikipedia-icon",
+            icon: UrlbarTestUtils.makeMozRemoteImageUrl(
+              "https://example.com/wikipedia-icon"
+            ),
             telemetryType: "wikipedia",
             suggestedIndex: -1,
           }),

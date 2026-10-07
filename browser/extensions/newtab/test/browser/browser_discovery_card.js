@@ -87,17 +87,17 @@ test_newtab({
     const card = content.document.querySelector(".ds-card");
     // The trigger is revealed on hover; add .active so it and the menu lay out.
     card.classList.add("active");
-    card.querySelector("moz-button").click();
 
-    await ContentTaskUtils.waitForCondition(
-      () => card.querySelector("panel-list")?.hasAttribute("open"),
-      "Wait for the story card menu to open"
+    // panel-list's events are untrusted, so the listener has to opt into them.
+    const shown = ContentTaskUtils.waitForEvent(
+      card.querySelector("panel-list"),
+      "shown",
+      false,
+      null,
+      true
     );
-    // Wait until the opened menu has positioned itself (non-zero item box).
-    await ContentTaskUtils.waitForCondition(() => {
-      const it = card.querySelector("panel-list panel-item");
-      return it && it.getBoundingClientRect().width > 0;
-    }, "Wait for a menu item to lay out");
+    card.querySelector("moz-button").click();
+    await shown;
 
     const item = card.querySelector("panel-list panel-item");
     Assert.notStrictEqual(

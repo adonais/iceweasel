@@ -5,10 +5,10 @@
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
-  IPPExceptionsManager:
-    "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
   IPPPrincipalRules:
-    "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs",
+  IPPSiteRuleManager:
+    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs",
   ProxyService: {
     service: "@mozilla.org/network/protocol-proxy-service;1",
     iid: Ci.nsIProtocolProxyService,
@@ -58,7 +58,7 @@ const TRACKING_FLAGS =
  * Depending on IPPMode - it will proxy the request unless a rule is attached to the Destination.
  *
  * The include/exclude classification of a request's principal is delegated to
- * IPPExceptionsManager (see IPPExceptionsManager.sys.mjs); shouldProxy only
+ * IPPSiteRuleManager (see IPPSiteRuleManager.sys.mjs); shouldProxy only
  * handles channel-object concerns (system-channel early-out, DoH/TRR bypass)
  * and the channel -> principal selection.
  *
@@ -272,7 +272,7 @@ export class IPPChannelFilter {
     }
 
     const principal = this.#principalForChannel(channel);
-    const rule = lazy.IPPExceptionsManager.getPrincipalRule(principal);
+    const rule = lazy.IPPSiteRuleManager.getRule(principal);
     if (rule === lazy.IPPPrincipalRules.INCLUDED) {
       return true;
     }

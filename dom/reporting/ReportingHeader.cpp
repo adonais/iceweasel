@@ -195,7 +195,8 @@ void ReportingHeader::ReportingFromChannel(nsIHttpChannel* aChannel) {
           aChannel->GetResponseHeader("Reporting-Endpoints"_ns, header))) {
     client = MakeUnique<Client>();
     size_t parsedItems = ParseReportingEndpointsHeader(
-        header, uri, [&](const nsAString& aKey, nsCOMPtr<nsIURI> aEndpointUrl) {
+        header, uri,
+        [&](const nsACString& aKey, nsCOMPtr<nsIURI> aEndpointUrl) {
           Group* group = client->mGroups.AppendElement();
           group->mCreationTime = TimeStamp::Now();
           group->mTTL = std::numeric_limits<int32_t>::max();
@@ -254,7 +255,8 @@ EndpointsList ReportingHeader::ProcessReportingEndpointsListFromResponse(
   if (NS_SUCCEEDED(
           aChannel->GetResponseHeader("Reporting-Endpoints"_ns, header))) {
     (void)ParseReportingEndpointsHeader(
-        header, uri, [&](const nsAString& aKey, nsCOMPtr<nsIURI> aEndpointURL) {
+        header, uri,
+        [&](const nsACString& aKey, nsCOMPtr<nsIURI> aEndpointURL) {
           result.mData.EmplaceBack(
               Endpoint::Create(aEndpointURL.forget(), aKey));
         });
@@ -265,7 +267,7 @@ EndpointsList ReportingHeader::ProcessReportingEndpointsListFromResponse(
 /* static */
 size_t ReportingHeader::ParseReportingEndpointsHeader(
     const nsACString& aHeaderValue, nsIURI* aURI,
-    std::function<void(const nsAString&, nsCOMPtr<nsIURI>)>&&
+    std::function<void(const nsACString&, nsCOMPtr<nsIURI>)>&&
         aOnParsedItemCallback) {
   nsAutoCString uriSpec;
   aURI->GetSpec(uriSpec);
@@ -328,7 +330,7 @@ size_t ReportingHeader::ParseReportingEndpointsHeader(
     }
 
     ++itemsParsed;
-    aOnParsedItemCallback(NS_ConvertUTF8toUTF16(key), std::move(endpointURL));
+    aOnParsedItemCallback(key, std::move(endpointURL));
   }
 
   return itemsParsed;
@@ -386,7 +388,7 @@ ReportingHeader::ParseReportToHeader(nsIHttpChannel* aChannel, nsIURI* aURI,
   UniquePtr<Client> client = MakeUnique<Client>();
 
   for (const dom::ReportingItem& item : data.mItems.Value()) {
-    nsAutoString groupName;
+    nsAutoCString groupName;
 
     if (item.mGroup.isUndefined()) {
       groupName.AssignLiteral("default");
@@ -397,7 +399,7 @@ ReportingHeader::ParseReportToHeader(nsIHttpChannel* aChannel, nsIURI* aURI,
       JS::Rooted<JSString*> groupStr(cx, item.mGroup.toString());
       MOZ_ASSERT(groupStr);
 
-      nsAutoJSString string;
+      nsAutoJSCString string;
       if (NS_WARN_IF(!string.init(cx, groupStr))) {
         continue;
       }
@@ -505,9 +507,9 @@ void ReportingHeader::LogToConsoleInvalidJSON(nsIHttpChannel* aChannel,
 /* static */
 void ReportingHeader::LogToConsoleDuplicateGroup(nsIHttpChannel* aChannel,
                                                  nsIURI* aURI,
-                                                 const nsAString& aName) {
+                                                 const nsACString& aName) {
   nsTArray<nsString> params;
-  params.AppendElement(aName);
+  params.AppendElement(NS_ConvertUTF8toUTF16(aName));
 
   LogToConsoleInternal(aChannel, aURI, "ReportingHeaderDuplicateGroup", params);
 }
@@ -523,9 +525,9 @@ void ReportingHeader::LogToConsoleInvalidNameItem(nsIHttpChannel* aChannel,
 /* static */
 void ReportingHeader::LogToConsoleIncompleteItem(nsIHttpChannel* aChannel,
                                                  nsIURI* aURI,
-                                                 const nsAString& aName) {
+                                                 const nsACString& aName) {
   nsTArray<nsString> params;
-  params.AppendElement(aName);
+  params.AppendElement(NS_ConvertUTF8toUTF16(aName));
 
   LogToConsoleInternal(aChannel, aURI, "ReportingHeaderInvalidItem", params);
 }
@@ -533,9 +535,9 @@ void ReportingHeader::LogToConsoleIncompleteItem(nsIHttpChannel* aChannel,
 /* static */
 void ReportingHeader::LogToConsoleIncompleteEndpoint(nsIHttpChannel* aChannel,
                                                      nsIURI* aURI,
-                                                     const nsAString& aName) {
+                                                     const nsACString& aName) {
   nsTArray<nsString> params;
-  params.AppendElement(aName);
+  params.AppendElement(NS_ConvertUTF8toUTF16(aName));
 
   LogToConsoleInternal(aChannel, aURI, "ReportingHeaderInvalidEndpoint",
                        params);
@@ -544,11 +546,11 @@ void ReportingHeader::LogToConsoleIncompleteEndpoint(nsIHttpChannel* aChannel,
 /* static */
 void ReportingHeader::LogToConsoleInvalidURLEndpoint(nsIHttpChannel* aChannel,
                                                      nsIURI* aURI,
-                                                     const nsAString& aName,
+                                                     const nsACString& aName,
                                                      const nsAString& aURL) {
   nsTArray<nsString> params;
   params.AppendElement(aURL);
-  params.AppendElement(aName);
+  params.AppendElement(NS_ConvertUTF8toUTF16(aName));
 
   LogToConsoleInternal(aChannel, aURI, "ReportingHeaderInvalidURLEndpoint",
                        params);
@@ -599,7 +601,7 @@ void ReportingHeader::LogToConsoleInternal(nsIHttpChannel* aChannel,
 
 /* static */
 void ReportingHeader::GetEndpointForReport(
-    const nsAString& aGroupName,
+    const nsACString& aGroupName,
     const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
     nsACString& aEndpointURI) {
   auto principalOrErr = PrincipalInfoToPrincipal(aPrincipalInfo);
@@ -612,7 +614,7 @@ void ReportingHeader::GetEndpointForReport(
 }
 
 /* static */
-void ReportingHeader::GetEndpointForReport(const nsAString& aGroupName,
+void ReportingHeader::GetEndpointForReport(const nsACString& aGroupName,
                                            nsIPrincipal* aPrincipal,
                                            nsACString& aEndpointURI) {
   return GetEndpointForReportIncludeSubdomains(
@@ -620,7 +622,7 @@ void ReportingHeader::GetEndpointForReport(const nsAString& aGroupName,
 }
 /* static */
 void ReportingHeader::GetEndpointForReportIncludeSubdomains(
-    const nsAString& aGroupName, nsIPrincipal* aPrincipal,
+    const nsACString& aGroupName, nsIPrincipal* aPrincipal,
     bool aIncludeSubdomains, nsACString& aEndpointURI) {
   MOZ_ASSERT(aEndpointURI.IsEmpty());
 
@@ -714,7 +716,7 @@ void ReportingHeader::GetEndpointForReportInternal(
 }
 
 /* static */
-void ReportingHeader::RemoveEndpoint(const nsAString& aGroupName,
+void ReportingHeader::RemoveEndpoint(const nsACString& aGroupName,
                                      const nsACString& aEndpointURL,
                                      nsIPrincipal* aPrincipal) {
   if (!gReporting) {
@@ -868,7 +870,7 @@ void ReportingHeader::RemoveOriginsForTTL() {
 }
 
 ReportingHeader::Endpoint* EndpointsList::GetEndpointWithName(
-    const nsAString& aEndpointName) {
+    const nsACString& aEndpointName) {
   for (auto& endpoint : mData) {
     if (endpoint.mEndpointName == aEndpointName) {
       return &endpoint;
@@ -877,7 +879,7 @@ ReportingHeader::Endpoint* EndpointsList::GetEndpointWithName(
   return nullptr;
 }
 
-void EndpointsList::RemoveEndpoint(const nsAString& aEndpointName) {
+void EndpointsList::RemoveEndpoint(const nsACString& aEndpointName) {
   const auto it = std::ranges::find_if(
       mData, [&aEndpointName](const ReportingHeader::Endpoint& aEndpoint) {
         return aEndpoint.mEndpointName == aEndpointName;

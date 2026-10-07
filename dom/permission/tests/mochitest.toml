@@ -4,8 +4,8 @@ support-files = [
   "file_storage_access_notification_helper.html",
 ]
 prefs = [
-  "dom.security.featurePolicy.header.enabled=true",
-  "dom.security.featurePolicy.webidl.enabled=true",
+  "dom.security.permissionsPolicy.header.enabled=true",
+  "dom.security.permissionsPolicy.webidl.enabled=true",
   "permissions.media.query.enabled=true",
   "privacy.resistFingerprinting=false",
   "network.lna.blocking=true",

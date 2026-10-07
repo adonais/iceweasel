@@ -60,6 +60,12 @@ export class ComponentPerfTimer extends React.Component {
    * @returns void
    */
   _afterFramePaint(callback) {
+    if (document.hidden) {
+      // A hidden document's frame requests are throttled, and the refresh
+      // driver keeps ticking at the full vsync rate while one is outstanding.
+      // The timing measured here is meaningless in a preloaded newtab anyway.
+      return;
+    }
     requestAnimationFrame(() => setTimeout(callback, 0));
   }
 

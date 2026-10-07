@@ -30,6 +30,9 @@ import mozilla.components.support.base.log.logger.Logger
  * paused again. That way media which only starts after the user began driving - a delayed autoplay, a newly opened tab,
  * or a tap on a play button - is stopped as well.
  *
+ * Calls into `android.car` also catch [LinkageError], because the library is resolved against the system image and can
+ * therefore fail to link even though it compiled.
+ *
  * @param applicationContext the application's [Context].
  * @param store reference to the browser store where the media session state of every tab is located.
  * @param mainDispatcher dispatcher used for main thread operations.
@@ -45,6 +48,9 @@ class CarUxRestrictionsFeature(
 
     private var car: Car? = null
     private var manager: CarUxRestrictionsManager? = null
+    private val restrictionsListener by lazy {
+        CarUxRestrictionsManager.OnUxRestrictionsChangedListener { onUxRestrictionsChanged(it) }
+    }
 
     /**
      * Starts observing the car's UX restrictions.
@@ -74,6 +80,8 @@ class CarUxRestrictionsFeature(
             }
         } catch (e: Exception) {
             logger.warn("Could not connect to the car service", e)
+        } catch (e: LinkageError) {
+            logger.warn("Could not connect to the car service", e)
         }
     }
 
@@ -83,9 +91,11 @@ class CarUxRestrictionsFeature(
         stopPausingMedia()
 
         try {
-            manager?.unregisterListener()
+            manager?.unregisterRestrictionsListener(restrictionsListener)
             car?.disconnect()
         } catch (e: Exception) {
+            logger.warn("Could not disconnect from the car service", e)
+        } catch (e: LinkageError) {
             logger.warn("Could not disconnect from the car service", e)
         }
 
@@ -94,7 +104,8 @@ class CarUxRestrictionsFeature(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun onCarLifecycleChanged(car: Car, ready: Boolean) {
+    @VisibleForTesting
+    internal fun onCarLifecycleChanged(car: Car, ready: Boolean) {
         // Car.createCar calls this synchronously when the car service is already up, i.e. before it returned the Car to
         // assign to the property below, so the instance handed to us here is the only one we can rely on.
         this.car = car
@@ -110,10 +121,12 @@ class CarUxRestrictionsFeature(
             val manager = car.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE) as? CarUxRestrictionsManager ?: return
             this.manager = manager
 
-            manager.registerListener { restrictions -> onUxRestrictionsChanged(restrictions) }
+            manager.registerRestrictionsListener(applicationContext, restrictionsListener)
             // The app can be started while already driving, so seed the state instead of waiting for the first change.
-            onUxRestrictionsChanged(manager.currentCarUxRestrictions)
+            onUxRestrictionsChanged(manager.currentRestrictions(applicationContext))
         } catch (e: Exception) {
+            logger.warn("Could not observe the car's UX restrictions", e)
+        } catch (e: LinkageError) {
             logger.warn("Could not observe the car's UX restrictions", e)
         }
     }

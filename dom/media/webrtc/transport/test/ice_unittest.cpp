@@ -65,6 +65,8 @@ MOZ_RUNINIT const std::string kBogusIceCandidate(
 
 MOZ_RUNINIT const std::string kUnreachableHostIceCandidate(
     (char*)"candidate:0 1 UDP 2113601790 192.168.178.20 50769 typ host");
+MOZ_RUNINIT const std::string kUnreachableMDNSIceCandidate(
+    (char*)"candidate:0 1 UDP 2113601790 host.local 50769 typ host");
 
 namespace {
 
@@ -291,7 +293,14 @@ class SchedulableTrickleCandidate {
     if (timer_handle_) NR_async_timer_cancel(timer_handle_);
   }
 
+  // Trickle this candidate in |ms|. A candidate that has been rewritten to the
+  // empty string is dropped instead.
   void Schedule(unsigned int ms) {
+    MOZ_ASSERT(!in_attributes_);
+    if (candidate_.empty()) {
+      std::cerr << "Dropping candidate for stream " << stream_ << std::endl;
+      return;
+    }
     std::cerr << "Scheduling " << Candidate() << " in " << ms << "ms"
               << std::endl;
     test_utils_->SyncDispatchToSTS(
@@ -302,6 +311,18 @@ class SchedulableTrickleCandidate {
     MOZ_ASSERT(!timer_handle_);
     NR_ASYNC_TIMER_SET(ms, Trickle_cb, this, &timer_handle_);
   }
+
+  // Put this candidate in the attribute list at Connect() instead of trickling
+  // it, as if the remote had it in its SDP. Must be called before Connect(); to
+  // get at the candidates that early, pass the remote to
+  // IceTestPeer::ControlTrickle(). A candidate that has been rewritten to the
+  // empty string is dropped instead.
+  void PutInAttributes() {
+    MOZ_ASSERT(!timer_handle_);
+    in_attributes_ = true;
+  }
+
+  bool InAttributes() const { return in_attributes_ && !candidate_.empty(); }
 
   static void Trickle_cb(NR_SOCKET s, int how, void* cb_arg) {
     static_cast<SchedulableTrickleCandidate*>(cb_arg)->Trickle();
@@ -331,6 +352,7 @@ class SchedulableTrickleCandidate {
   std::string candidate_;
   std::string ufrag_;
   void* timer_handle_;
+  bool in_attributes_ = false;
   MtransportTestUtils* test_utils_;
 
   DISALLOW_COPY_ASSIGN(SchedulableTrickleCandidate);
@@ -654,7 +676,7 @@ class IceTestPeer : public sigslot::has_slots<> {
       if (a.find("typ host") != std::string::npos) {
         nr_transport_addr addr;
         std::vector<std::string> tokens = split(a, ' ');
-        int r = nr_str_port_to_transport_addr(tokens.at(4).c_str(), 0,
+        int r = nr_str_port_to_transport_addr(tokens.at(4).c_str(), nullptr, 0,
                                               IPPROTO_UDP, &addr);
         MOZ_ASSERT(!r);
         if (!r && (addr.ip_version == NR_IPV4)) {
@@ -733,6 +755,16 @@ class IceTestPeer : public sigslot::has_slots<> {
   size_t received() { return received_; }
   size_t sent() { return sent_; }
 
+  // The number of streams nICEr believes are actively checking, which paces
+  // every stream's check timer.
+  int active_streams_s() { return ice_ctx_->peer()->active_streams; }
+  int active_streams() {
+    int result;
+    test_utils_->SyncDispatchToSTS(
+        WrapRunnableRet(&result, this, &IceTestPeer::active_streams_s));
+    return result;
+  }
+
   void RestartIce() {
     test_utils_->SyncDispatchToSTS(
         WrapRunnable(this, &IceTestPeer::RestartIce_s));
@@ -800,6 +832,13 @@ class IceTestPeer : public sigslot::has_slots<> {
             ++it;
           }
         }
+        for (const auto* candidate : controlled_trickle_candidates_[i]) {
+          if (candidate->InAttributes()) {
+            std::cerr << name_ << " Adding staged remote candidate: "
+                      << candidate->Candidate() << std::endl;
+            attributes.push_back(candidate->Candidate());
+          }
+        }
         auto credentials = mIceCredentials[aStream->GetId()];
         res = aStream->ConnectToPeer(credentials.first, credentials.second,
                                      attributes);
@@ -837,11 +876,19 @@ class IceTestPeer : public sigslot::has_slots<> {
 
   // Allows test case to completely control when/if candidates are trickled
   // (test could also do things like insert extra trickle candidates, or
-  // change existing ones, or insert duplicates, really anything is fair game)
-  std::vector<SchedulableTrickleCandidate*>& ControlTrickle(size_t stream) {
+  // change existing ones, or insert duplicates, really anything is fair game).
+  // Appends to the list on every call, so call it once per stream.
+  // |remote| defaults to the peer given to Connect(); pass it explicitly to
+  // use this before Connect(), or for candidates from some other peer.
+  std::vector<SchedulableTrickleCandidate*>& ControlTrickle(
+      size_t stream, IceTestPeer* remote = nullptr) {
     std::cerr << "Doing controlled trickle for stream " << stream << std::endl;
 
-    std::vector<std::string> attributes = remote_->GetAttributes(stream);
+    if (!remote) {
+      remote = remote_;
+    }
+    MOZ_RELEASE_ASSERT(remote);
+    std::vector<std::string> attributes = remote->GetAttributes(stream);
 
     for (const auto& attribute : attributes) {
       if (attribute.find("candidate:") != std::string::npos) {
@@ -1294,9 +1341,10 @@ class IceTestPeer : public sigslot::has_slots<> {
     }
   }
 
-  void PacketReceived(NrIceMediaStream* stream, int component,
-                      const unsigned char* data, int len) {
-    std::cerr << name_ << ": received " << len << " bytes" << std::endl;
+  void PacketReceived(NrIceMediaStream* stream, int component, uint32_t dtls_id,
+                      MediaPacket& packet) {
+    std::cerr << name_ << ": received " << packet.len() << " bytes"
+              << std::endl;
     ++received_;
   }
 
@@ -1308,7 +1356,8 @@ class IceTestPeer : public sigslot::has_slots<> {
       return;
     }
 
-    ASSERT_TRUE(NS_SUCCEEDED(media_stream->SendPacket(component, data, len)));
+    ASSERT_TRUE(NS_SUCCEEDED(media_stream->SendPacket(
+        component, data, len, media_stream->GetDtlsId())));
 
     ++sent_;
     std::cerr << name_ << ": sent " << len << " bytes" << std::endl;
@@ -1324,7 +1373,7 @@ class IceTestPeer : public sigslot::has_slots<> {
     const std::string d("FAIL");
     ASSERT_TRUE(NS_FAILED(media_stream->SendPacket(
         component, reinterpret_cast<const unsigned char*>(d.c_str()),
-        d.length())));
+        d.length(), media_stream->GetDtlsId())));
 
     std::cerr << name_ << ": send failed as expected" << std::endl;
   }
@@ -1334,17 +1383,17 @@ class IceTestPeer : public sigslot::has_slots<> {
   }
 
   void ParseCandidate_s(size_t i, const std::string& candidate,
-                        const std::string& mdns_addr) {
+                        const std::string& resolved_address) {
     auto media_stream = GetStream_s(i);
     ASSERT_TRUE(media_stream.get())
     << "No such stream " << i;
-    media_stream->ParseTrickleCandidate(candidate, "", mdns_addr);
+    media_stream->ParseTrickleCandidate(candidate, "", resolved_address);
   }
 
   void ParseCandidate(size_t i, const std::string& candidate,
-                      const std::string& mdns_addr) {
+                      const std::string& resolved_address) {
     test_utils_->SyncDispatchToSTS(WrapRunnable(
-        this, &IceTestPeer::ParseCandidate_s, i, candidate, mdns_addr));
+        this, &IceTestPeer::ParseCandidate_s, i, candidate, resolved_address));
   }
 
   void DisableComponent_s(size_t index, int component_id) {
@@ -1997,8 +2046,8 @@ class WebRtcIcePrioritizerTest : public StunTest {
     local_addr.interface.type = type;
     local_addr.interface.estimated_speed = estimated_speed;
 
-    int r = nr_str_port_to_transport_addr(str_addr.c_str(), 0, IPPROTO_UDP,
-                                          &(local_addr.addr));
+    int r = nr_str_port_to_transport_addr(str_addr.c_str(), nullptr, 0,
+                                          IPPROTO_UDP, &(local_addr.addr));
     ASSERT_EQ(0, r);
     strncpy(local_addr.addr.ifname, ifname.c_str(), MAXIFNAME - 1);
     local_addr.addr.ifname[MAXIFNAME - 1] = '\0';
@@ -2936,7 +2985,7 @@ TEST_F(WebRtcIceConnectTest,
   wifi_addr.interface.type = NR_INTERFACE_TYPE_WIFI;
   wifi_addr.interface.estimated_speed = 1000;
 
-  int r = nr_str_port_to_transport_addr(FAKE_WIFI_ADDR, 0, IPPROTO_UDP,
+  int r = nr_str_port_to_transport_addr(FAKE_WIFI_ADDR, nullptr, 0, IPPROTO_UDP,
                                         &(wifi_addr.addr));
   ASSERT_EQ(0, r);
   strncpy(wifi_addr.addr.ifname, FAKE_WIFI_IF_NAME, MAXIFNAME);
@@ -3644,6 +3693,27 @@ void AddNonPairableCandidates(
 void DropTrickleCandidates(
     std::vector<SchedulableTrickleCandidate*>& candidates) {}
 
+// Rewrites every candidate with |filter|; an empty result drops it.
+void FilterTrickleCandidates(
+    std::vector<SchedulableTrickleCandidate*>& candidates,
+    CandidateFilter filter) {
+  for (auto* candidate : candidates) {
+    candidate->Candidate() = filter(candidate->Candidate());
+  }
+}
+
+void PutInAttributes(std::vector<SchedulableTrickleCandidate*>& candidates) {
+  for (auto* candidate : candidates) {
+    candidate->PutInAttributes();
+  }
+}
+
+void TrickleNow(std::vector<SchedulableTrickleCandidate*>& candidates) {
+  for (auto* candidate : candidates) {
+    candidate->Schedule(0);
+  }
+}
+
 TEST_F(WebRtcIceConnectTest, TestConnectTrickleAddStreamDuringICE) {
   NrIceCtx::GlobalConfig config;
   config.mTcpEnabled = false;
@@ -3788,6 +3858,138 @@ TEST_F(WebRtcIceConnectTest, RemoveStreamDuringConnect) {
   RealisticTrickleDelay(p2_->ControlTrickle(0));
   RealisticTrickleDelay(p1_->ControlTrickle(1));
   RealisticTrickleDelay(p2_->ControlTrickle(1));
+  RemoveStream(0);
+  WaitForConnected(1000);
+}
+
+// One side drops a stream while the other is still checking it, and only
+// catches up later. This is what a renegotiation that removes a transport
+// looks like from the ICE stack's point of view: the answerer applies the
+// answer before the offerer does.
+TEST_F(WebRtcIceConnectTest, RemoveStreamDuringConnectAsymmetric) {
+  NrIceCtx::GlobalConfig config;
+  config.mTcpEnabled = false;
+  NrIceCtx::InitializeGlobals(config);
+  AddStream(1);
+  AddStream(1);
+  ASSERT_TRUE(Gather());
+  ConnectTrickle();
+  RealisticTrickleDelay(p1_->ControlTrickle(0));
+  RealisticTrickleDelay(p2_->ControlTrickle(0));
+  RealisticTrickleDelay(p1_->ControlTrickle(1));
+  RealisticTrickleDelay(p2_->ControlTrickle(1));
+  p1_->RemoveStream(0);
+  ASSERT_TRUE_WAIT(p1_->is_ready(1) && p2_->is_ready(1), kDefaultTimeout);
+  p2_->RemoveStream(0);
+  WaitForConnected(1000);
+}
+
+// nICEr paces each stream's check timer by the number of streams that are
+// checking. A stream that is destroyed mid-ICE must stop being counted, or
+// every surviving stream checks more slowly for the rest of the session.
+TEST_F(WebRtcIceConnectTest, RemoveCheckingStreamUpdatesActiveStreamCount) {
+  NrIceCtx::GlobalConfig config;
+  config.mTcpEnabled = false;
+  NrIceCtx::InitializeGlobals(config);
+  AddStream(1);
+  AddStream(1);
+  ASSERT_TRUE(Gather());
+  ConnectTrickle();
+  RealisticTrickleDelay(p1_->ControlTrickle(0));
+  RealisticTrickleDelay(p2_->ControlTrickle(0));
+  ASSERT_TRUE_WAIT(p1_->is_ready(0) && p2_->is_ready(0), kDefaultTimeout);
+
+  // Stream 1 only ever learns of an unreachable remote candidate, so it keeps
+  // checking without getting anywhere.
+  p1_->ParseCandidate(1, kUnreachableHostIceCandidate, "");
+  p2_->ParseCandidate(1, kUnreachableHostIceCandidate, "");
+  ASSERT_EQ(1, p1_->active_streams());
+  ASSERT_EQ(1, p2_->active_streams());
+
+  RemoveStream(1);
+  ASSERT_EQ(0, p1_->active_streams());
+  ASSERT_EQ(0, p2_->active_streams());
+}
+
+// When trickle is not used, only the first stream starts checking; the rest
+// stay frozen until one of its pairs succeeds (RFC 5245 section 7.1.3.2.3). If
+// that first stream is destroyed before then, the next stream has to be
+// started in its place, or nothing ever connects.
+TEST_F(WebRtcIceConnectTest, RemoveFirstStreamStartsFrozenStream) {
+  NrIceCtx::GlobalConfig config;
+  config.mTcpEnabled = false;
+  NrIceCtx::InitializeGlobals(config);
+  AddStream(1);
+  AddStream(1);
+  ASSERT_TRUE(Gather());
+  // Everything goes in the "SDP", but stream 0's candidates point nowhere, so
+  // it can never connect.
+  for (auto [peer, remote] : {std::make_pair(p1_.get(), p2_.get()),
+                              std::make_pair(p2_.get(), p1_.get())}) {
+    auto& stream0 = peer->ControlTrickle(0, remote);
+    FilterTrickleCandidates(stream0, SabotageHostCandidateAndDropReflexive);
+    PutInAttributes(stream0);
+    PutInAttributes(peer->ControlTrickle(1, remote));
+  }
+  ConnectTrickle();
+  ASSERT_FALSE(p1_->is_ready(1));
+  ASSERT_FALSE(p2_->is_ready(1));
+
+  RemoveStream(0);
+  ASSERT_TRUE_WAIT(p1_->is_ready(1) && p2_->is_ready(1), kDefaultTimeout);
+  WaitForConnected(1000);
+}
+
+// Like the above, but stream 0 is left in place to fail. That has to start
+// stream 1 as well, or an offer whose first m-section has bad candidates
+// hangs every other m-section with it.
+TEST_F(WebRtcIceConnectTest, FirstStreamFailsStartsFrozenStream) {
+  NrIceCtx::GlobalConfig config;
+  config.mTcpEnabled = false;
+  // Make stream 0 give up quickly.
+  config.mStunClientMaxTransmits = 3;
+  config.mTrickleIceGracePeriod = 1000;
+  NrIceCtx::InitializeGlobals(config);
+  AddStream(1);
+  AddStream(1);
+  ASSERT_TRUE(Gather());
+  for (auto [peer, remote] : {std::make_pair(p1_.get(), p2_.get()),
+                              std::make_pair(p2_.get(), p1_.get())}) {
+    auto& stream0 = peer->ControlTrickle(0, remote);
+    FilterTrickleCandidates(stream0, SabotageHostCandidateAndDropReflexive);
+    PutInAttributes(stream0);
+    PutInAttributes(peer->ControlTrickle(1, remote));
+  }
+  ConnectTrickle();
+  ASSERT_FALSE(p1_->is_ready(1));
+  ASSERT_FALSE(p2_->is_ready(1));
+
+  ASSERT_TRUE_WAIT(p1_->is_ready(1) && p2_->is_ready(1), kDefaultTimeout);
+  ASSERT_TRUE(p1_->ice_failed());
+  ASSERT_TRUE(p2_->ice_failed());
+}
+
+// The same setup, but trickled. A trickled candidate starts checks on its
+// stream as soon as it arrives, so stream 1 does not wait behind stream 0
+// here, and removing the stuck stream 0 must not disturb it.
+TEST_F(WebRtcIceConnectTest, RemoveFirstStreamStartsFrozenStreamTrickle) {
+  NrIceCtx::GlobalConfig config;
+  config.mTcpEnabled = false;
+  NrIceCtx::InitializeGlobals(config);
+  AddStream(1);
+  AddStream(1);
+  ASSERT_TRUE(Gather());
+  ConnectTrickle();
+  for (auto* peer : {p1_.get(), p2_.get()}) {
+    auto& stream0 = peer->ControlTrickle(0);
+    FilterTrickleCandidates(stream0, SabotageHostCandidateAndDropReflexive);
+    TrickleNow(stream0);
+    TrickleNow(peer->ControlTrickle(1));
+  }
+  ASSERT_TRUE_WAIT(p1_->is_ready(1) && p2_->is_ready(1), kDefaultTimeout);
+  ASSERT_FALSE(p1_->is_ready(0));
+  ASSERT_FALSE(p2_->is_ready(0));
+
   RemoveStream(0);
   WaitForConnected(1000);
 }
@@ -4258,10 +4460,10 @@ TEST_F(WebRtcIceConnectTest, DISABLED_TestHostCandPairingFilter) {
     std::cerr << "Verifying pair:" << std::endl;
     p1_->DumpCandidatePair(p);
     nr_transport_addr addr;
-    nr_str_port_to_transport_addr(p.local.local_addr.host.c_str(), 0,
+    nr_str_port_to_transport_addr(p.local.local_addr.host.c_str(), nullptr, 0,
                                   IPPROTO_UDP, &addr);
     ASSERT_TRUE(nr_transport_addr_get_private_addr_range(&addr) == host_net);
-    nr_str_port_to_transport_addr(p.remote.cand_addr.host.c_str(), 0,
+    nr_str_port_to_transport_addr(p.remote.cand_addr.host.c_str(), nullptr, 0,
                                   IPPROTO_UDP, &addr);
     ASSERT_TRUE(nr_transport_addr_get_private_addr_range(&addr) == host_net);
   }
@@ -4298,10 +4500,10 @@ TEST_F(WebRtcIceConnectTest, DISABLED_TestSrflxCandPairingFilter) {
     std::cerr << "Verifying P1 pair:" << std::endl;
     p1_->DumpCandidatePair(p);
     nr_transport_addr addr;
-    nr_str_port_to_transport_addr(p.local.local_addr.host.c_str(), 0,
+    nr_str_port_to_transport_addr(p.local.local_addr.host.c_str(), nullptr, 0,
                                   IPPROTO_UDP, &addr);
     ASSERT_TRUE(nr_transport_addr_get_private_addr_range(&addr) != 0);
-    nr_str_port_to_transport_addr(p.remote.cand_addr.host.c_str(), 0,
+    nr_str_port_to_transport_addr(p.remote.cand_addr.host.c_str(), nullptr, 0,
                                   IPPROTO_UDP, &addr);
     ASSERT_TRUE(nr_transport_addr_get_private_addr_range(&addr) == 0);
   }
@@ -4310,10 +4512,10 @@ TEST_F(WebRtcIceConnectTest, DISABLED_TestSrflxCandPairingFilter) {
     std::cerr << "Verifying P2 pair:" << std::endl;
     p2_->DumpCandidatePair(p);
     nr_transport_addr addr;
-    nr_str_port_to_transport_addr(p.local.local_addr.host.c_str(), 0,
+    nr_str_port_to_transport_addr(p.local.local_addr.host.c_str(), nullptr, 0,
                                   IPPROTO_UDP, &addr);
     ASSERT_TRUE(nr_transport_addr_get_private_addr_range(&addr) != 0);
-    nr_str_port_to_transport_addr(p.remote.cand_addr.host.c_str(), 0,
+    nr_str_port_to_transport_addr(p.remote.cand_addr.host.c_str(), nullptr, 0,
                                   IPPROTO_UDP, &addr);
     ASSERT_TRUE(nr_transport_addr_get_private_addr_range(&addr) == 0);
   }
@@ -4421,7 +4623,7 @@ TEST_F(WebRtcIceConnectTest, TestNonMDNSCandidate) {
   nsresult res = p1_->GetCandidatePairs(0, &pairs);
   ASSERT_EQ(NS_OK, res);
   ASSERT_EQ(1U, pairs.size());
-  ASSERT_EQ(pairs[0].remote.mdns_addr, "");
+  ASSERT_EQ(pairs[0].remote.domain_name, "");
 }
 
 TEST_F(WebRtcIceConnectTest, TestMDNSCandidate) {
@@ -4431,13 +4633,13 @@ TEST_F(WebRtcIceConnectTest, TestMDNSCandidate) {
   AddStream(1);
   Gather();
   ConnectTrickle();
-  p1_->ParseCandidate(0, kUnreachableHostIceCandidate, "host.local");
+  p1_->ParseCandidate(0, kUnreachableMDNSIceCandidate, "192.168.178.20");
 
   std::vector<NrIceCandidatePair> pairs;
   nsresult res = p1_->GetCandidatePairs(0, &pairs);
   ASSERT_EQ(NS_OK, res);
   ASSERT_EQ(1U, pairs.size());
-  ASSERT_EQ(pairs[0].remote.mdns_addr, "host.local");
+  ASSERT_EQ(pairs[0].remote.domain_name, "host.local");
 }
 
 TEST_F(WebRtcIcePrioritizerTest, TestPrioritizer) {

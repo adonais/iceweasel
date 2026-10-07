@@ -15,6 +15,7 @@
 
 #include <unordered_set>
 
+#include "ETWTools.h"
 #include "GeckoProfiler.h"
 #include "WinPointerEvents.h"
 #include "mozilla/Logging.h"
@@ -45,38 +46,58 @@ static UINT gLastEventMsg = 0;
 
 namespace geckoprofiler::markers {
 
-struct WindowProcMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("WindowProc");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   const ProfilerString8View& aMsgLoopName,
-                                   UINT aMsg, WPARAM aWParam, LPARAM aLParam) {
-    aWriter.StringProperty("messageLoop", aMsgLoopName);
-    aWriter.IntProperty("uMsg", aMsg);
-    const char* name;
+struct WindowProcMarker : public BaseMarkerType<WindowProcMarker> {
+  static constexpr const char* Name = "WindowProc";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"loop", MS::InputType::CString, "Message Loop Name", MS::Format::String,
+       MS::PayloadFlags::Hidden},
+      {"uMsg", MS::InputType::Uint32, nullptr, MS::Format::Integer},
+      {"msg", MS::InputType::CString, nullptr, MS::Format::String,
+       MS::PayloadFlags::Hidden},
+      {"wParam", MS::InputType::Int64, nullptr, MS::Format::Integer},
+      {"lParam", MS::InputType::Int64, nullptr, MS::Format::Integer},
+  };
+  static constexpr const char* ChartLabel =
+      "{marker.data.loop} | {marker.data.msg} ({marker.data.uMsg})";
+  static constexpr const char* TableLabel =
+      "{marker.data.loop} - {marker.data.msg} ({marker.data.uMsg})";
+  static constexpr const char* TooltipLabel =
+      "{marker.data.loop} - {marker.name} - {marker.data.msg}";
+
+  static ProfilerString8View MessageToString(UINT aMsg) {
     if (aMsg < WM_USER) {
       const auto eventMsgInfo = mozilla::widget::gAllEvents.find(aMsg);
       if (eventMsgInfo != mozilla::widget::gAllEvents.end()) {
-        name = eventMsgInfo->second.mStr;
+        return ProfilerString8View::WrapNullTerminatedString(
+            eventMsgInfo->second.mStr);
       } else {
-        name = "ui message";
+        return "ui message";
       }
     } else if (aMsg >= WM_USER && aMsg < WM_APP) {
-      name = "WM_USER message";
+      return "WM_USER message";
     } else if (aMsg >= WM_APP && aMsg < 0xC000) {
-      name = "WM_APP message";
+      return "WM_APP message";
     } else if (aMsg >= 0xC000 && aMsg < 0x10000) {
       if (aMsg == sAppShellGeckoMsgId) {
-        name = "nsAppShell:EventID";
+        return "nsAppShell:EventID";
       } else {
-        name = "registered Windows message";
+        return "registered Windows message";
       }
     } else {
-      name = "system message";
+      return "system message";
     }
-    aWriter.StringProperty("name", MakeStringSpan(name));
+  }
 
+  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
+                                   const ProfilerString8View& aMsgLoopName,
+                                   UINT aMsg, WPARAM aWParam, LPARAM aLParam) {
+    StreamJSONMarkerDataImpl(aWriter, aMsgLoopName, aMsg,
+                             MessageToString(aMsg));
     if (aWParam) {
       aWriter.IntProperty("wParam", aWParam);
     }
@@ -84,25 +105,11 @@ struct WindowProcMarker {
       aWriter.IntProperty("lParam", aLParam);
     }
   }
-
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyFormat("messageLoop", MS::Format::String,
-                        MS::PayloadFlags::Hidden);
-    schema.AddKeyFormat("uMsg", MS::Format::Integer);
-    // Add name as a hidden field to make it searchable
-    schema.AddKeyFormat("name", MS::Format::String, MS::PayloadFlags::Hidden);
-    schema.SetChartLabel(
-        "{marker.data.messageLoop} | {marker.data.name} ({marker.data.uMsg})");
-    schema.SetTableLabel(
-        "{marker.data.messageLoop} - {marker.data.name} "
-        "({marker.data.uMsg})");
-    schema.SetTooltipLabel(
-        "{marker.data.messageLoop} - {marker.name} - {marker.data.name}");
-    schema.AddKeyFormat("wParam", MS::Format::Integer);
-    schema.AddKeyFormat("lParam", MS::Format::Integer);
-    return schema;
+  static void TranslateMarkerInputToSchema(
+      void* aContext, const ProfilerString8View& aMsgLoopName, UINT aMsg,
+      WPARAM aWParam, LPARAM aLParam) {
+    ETW::OutputMarkerSchema(aContext, WindowProcMarker{}, aMsgLoopName, aMsg,
+                            MessageToString(aMsg), aWParam, aLParam);
   }
 };
 

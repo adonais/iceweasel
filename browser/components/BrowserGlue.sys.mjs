@@ -15,7 +15,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/asrouter/ASRouterDefaultConfig.sys.mjs",
   ASRouterNewTabHook: "resource:///modules/asrouter/ASRouterNewTabHook.sys.mjs",
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
-  BackupService: "resource:///modules/backup/BackupService.sys.mjs",
+  BackupService: "moz-src:///browser/components/backup/BackupService.sys.mjs",
   BrowserSearchTelemetry:
     "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
@@ -77,8 +77,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TRRRacer: "resource:///modules/TRRPerformance.sys.mjs",
   WebChannel: "resource://gre/modules/WebChannel.sys.mjs",
   WebProtocolHandlerRegistrar:
-    "resource:///modules/WebProtocolHandlerRegistrar.sys.mjs",
-  WindowsRegistry: "resource://gre/modules/WindowsRegistry.sys.mjs",
+    "moz-src:///browser/components/protocolhandler/WebProtocolHandlerRegistrar.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 
@@ -509,73 +508,6 @@ BrowserGlue.prototype = {
     }
   },
 
-  /**
-   * Show a notification bar offering a reset.
-   *
-   * @param reason
-   *        String of either "unused" or "uninstall", specifying the reason
-   *        why a profile reset is offered.
-   */
-  _resetProfileNotification(reason) {
-    let win = lazy.BrowserWindowTracker.getTopWindow({
-      allowFromInactiveWorkspace: true,
-    });
-    if (!win) {
-      return;
-    }
-
-    const { ResetProfile } = ChromeUtils.importESModule(
-      "resource://gre/modules/ResetProfile.sys.mjs"
-    );
-    if (!ResetProfile.resetSupported()) {
-      return;
-    }
-
-    let productName = lazy.gBrandBundle.GetStringFromName("brandShortName");
-    let resetBundle = Services.strings.createBundle(
-      "chrome://global/locale/resetProfile.properties"
-    );
-
-    let message;
-    if (reason == "unused") {
-      message = resetBundle.formatStringFromName("resetUnusedProfile.message", [
-        productName,
-      ]);
-    } else if (reason == "uninstall") {
-      message = resetBundle.formatStringFromName("resetUninstalled.message", [
-        productName,
-      ]);
-    } else {
-      throw new Error(
-        `Unknown reason (${reason}) given to _resetProfileNotification.`
-      );
-    }
-    let buttons = [
-      {
-        label: resetBundle.formatStringFromName(
-          "refreshProfile.resetButton.label",
-          [productName]
-        ),
-        accessKey: resetBundle.GetStringFromName(
-          "refreshProfile.resetButton.accesskey"
-        ),
-        callback() {
-          ResetProfile.openConfirmationDialog(win);
-        },
-      },
-    ];
-
-    win.gNotificationBox.appendNotification(
-      "reset-profile-notification",
-      {
-        label: message,
-        image: "chrome://global/skin/icons/question-64.png",
-        priority: win.gNotificationBox.PRIORITY_INFO_LOW,
-      },
-      buttons
-    );
-  },
-
   _notifyUnsignedAddonsDisabled() {
     let win = lazy.BrowserWindowTracker.getTopWindow({
       allowFromInactiveWorkspace: true,
@@ -802,8 +734,6 @@ BrowserGlue.prototype = {
       }
     });
 
-    this._maybeOfferProfileReset();
-
     this._checkForOldBuildUpdates();
 
     // Check if Sync is configured
@@ -820,56 +750,6 @@ BrowserGlue.prototype = {
     );
 
     this._firstWindowTelemetry(aWindow);
-  },
-
-  _maybeOfferProfileReset() {
-    // Offer to reset a user's profile if it hasn't been used for 60 days.
-    const OFFER_PROFILE_RESET_INTERVAL_MS = 60 * 24 * 60 * 60 * 1000;
-    let lastUse = Services.appinfo.replacedLockTime;
-    let disableResetPrompt = Services.prefs.getBoolPref(
-      "browser.disableResetPrompt",
-      false
-    );
-
-    // Also check prefs.js last modified timestamp as a backstop.
-    // This helps for cases where the lock file checks don't work,
-    // e.g. NFS or because the previous time Firefox ran, it ran
-    // for a very long time. See bug 1054947 and related bugs.
-    lastUse = Math.max(
-      lastUse,
-      Services.prefs.userPrefsFileLastModifiedAtStartup
-    );
-
-    if (
-      !disableResetPrompt &&
-      lastUse &&
-      Date.now() - lastUse >= OFFER_PROFILE_RESET_INTERVAL_MS
-    ) {
-      this._resetProfileNotification("unused");
-    } else if (AppConstants.platform == "win" && !disableResetPrompt) {
-      // Check if we were just re-installed and offer Firefox Reset
-      let updateChannel;
-      try {
-        updateChannel = ChromeUtils.importESModule(
-          "resource://gre/modules/UpdateUtils.sys.mjs"
-        ).UpdateUtils.UpdateChannel;
-      } catch (ex) {}
-      if (updateChannel) {
-        let uninstalledValue = lazy.WindowsRegistry.readRegKey(
-          Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
-          "Software\\Mozilla\\Firefox",
-          `Uninstalled-${updateChannel}`
-        );
-        let removalSuccessful = lazy.WindowsRegistry.removeRegKey(
-          Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
-          "Software\\Mozilla\\Firefox",
-          `Uninstalled-${updateChannel}`
-        );
-        if (removalSuccessful && uninstalledValue == "True") {
-          this._resetProfileNotification("uninstall");
-        }
-      }
-    }
   },
 
   /**
@@ -1398,11 +1278,7 @@ BrowserGlue.prototype = {
         false
       )
     ) {
-      lazy
-        .RemoteSettings(lazy.LoginBreaches.REMOTE_SETTINGS_COLLECTION)
-        .on("sync", async event => {
-          await lazy.LoginBreaches.update(event.data.current);
-        });
+      lazy.LoginBreaches.subscribeToBreachUpdates();
     }
   },
 

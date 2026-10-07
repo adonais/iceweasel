@@ -68,6 +68,7 @@ class MozharnessRunSchema(Schema, kw_only=True):
     # How to clone the upstream repo for the checkout, either "hg" or "git"
     # (default: "git")
     clone_with: Optional[Literal["hg", "git"]] = "git"
+    sparse_profile: Optional[str] = None
     # If false, don't set MOZ_SIMPLE_PACKAGE_NAME
     # Only disableable on windows
     use_simple_package: bool

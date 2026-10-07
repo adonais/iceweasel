@@ -173,6 +173,12 @@ FOG::InitializeFOG(const nsACString& aDataPathOverride,
   return rv;
 }
 
+NS_IMETHODIMP
+FOG::GetInitialized(bool* aInitialized) {
+  *aInitialized = gInitializeCalled;
+  return NS_OK;
+}
+
 /**
  * Enable desired metrics, so that tests work even if some metrics were
  * disabled.

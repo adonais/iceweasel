@@ -11,13 +11,13 @@
 #include "GLTypes.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/layers/GpuFence.h"
 #include "mozilla/layers/ScreenshotGrabber.h"
 #include "mozilla/webrender/RenderCompositor.h"
 
 namespace mozilla {
 
 namespace layers {
-class GpuFence;
 class NativeLayerRootSnapshotter;
 class NativeLayerRoot;
 class NativeLayer;

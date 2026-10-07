@@ -2,8 +2,8 @@ This chapter describes the NSPR types and functions used to manipulate
 network addresses.
 
 - [Network Address Types and
-  Constants](#Network_Address_Types_and_Constants)
-- [Network Address Functions](#Network_Address_Functions)
+  Constants](#network-address-types-and-constants)
+- [Network Address Functions](#network-address-functions)
 
 The API described in this chapter recognizes the emergence of Internet
 Protocol Version 6 (IPv6). To facilitate the transition to IPv6, it is

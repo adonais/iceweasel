@@ -155,6 +155,7 @@ class Http3Stream : public nsAHttpSegmentReader,
 #ifdef DEBUG
   uint32_t mRequestBodyLenExpected{0};
   uint32_t mRequestBodyLenSent{0};
+  bool mRequestBodyLenKnown{false};
 #endif
 };
 

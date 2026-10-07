@@ -1884,12 +1884,9 @@ void StructuredCloneHolder::CustomFreeTransferHandler(
 
   if (aTag == SCTAG_DOM_MAP_MESSAGEPORT) {
     MOZ_ASSERT(!aContent);
-#ifdef FUZZING
     if (aExtraData >= mPortIdentifiers.Length()) {
       return;
     }
-#endif
-    MOZ_ASSERT(aExtraData < mPortIdentifiers.Length());
     MessagePort::ForceClose(mPortIdentifiers[aExtraData]);
     return;
   }
@@ -1913,24 +1910,18 @@ void StructuredCloneHolder::CustomFreeTransferHandler(
 
   if (aTag == SCTAG_DOM_READABLESTREAM || aTag == SCTAG_DOM_WRITABLESTREAM) {
     MOZ_ASSERT(!aContent);
-#ifdef FUZZING
     if (aExtraData >= mPortIdentifiers.Length()) {
       return;
     }
-#endif
-    MOZ_ASSERT(aExtraData < mPortIdentifiers.Length());
     MessagePort::ForceClose(mPortIdentifiers[aExtraData]);
     return;
   }
 
   if (aTag == SCTAG_DOM_TRANSFORMSTREAM) {
     MOZ_ASSERT(!aContent);
-#ifdef FUZZING
     if (aExtraData + 1 >= mPortIdentifiers.Length()) {
       return;
     }
-#endif
-    MOZ_ASSERT(aExtraData + 1 < mPortIdentifiers.Length());
     MessagePort::ForceClose(mPortIdentifiers[aExtraData]);
     MessagePort::ForceClose(mPortIdentifiers[aExtraData + 1]);
     return;

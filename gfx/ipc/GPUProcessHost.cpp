@@ -56,7 +56,8 @@ GPUProcessHost::~GPUProcessHost() { MOZ_COUNT_DTOR(GPUProcessHost); }
 bool GPUProcessHost::Launch(geckoargs::ChildProcessArgs aExtraOpts) {
   MOZ_ASSERT(mLaunchPhase == LaunchPhase::Unlaunched);
   MOZ_ASSERT(!mGPUChild);
-  MOZ_ASSERT(!gfxPlatform::IsHeadless());
+  MOZ_ASSERT(!gfxPlatform::IsHeadless() ||
+             StaticPrefs::layers_gpu_process_allow_headless_AtStartup());
 
   mPrefSerializer = MakeUnique<ipc::SharedPreferenceSerializer>();
   if (!mPrefSerializer->SerializeToSharedMemory(GeckoProcessType_GPU,

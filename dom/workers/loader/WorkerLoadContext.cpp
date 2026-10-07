@@ -31,7 +31,18 @@ ThreadSafeRequestHandle::ThreadSafeRequestHandle(
     : mRequest(aRequest), mOwningEventTarget(aSyncTarget) {}
 
 WorkerLoadContext* ThreadSafeRequestHandle::GetContext() {
+  AssertRequestNotHandedOff();
   return mRequest->GetWorkerLoadContext();
+}
+
+bool ThreadSafeRequestHandle::ExecutionScheduled() const {
+  AssertIsOnMainThread();
+  return mExecutionScheduled;
+}
+
+void ThreadSafeRequestHandle::SetExecutionScheduled() {
+  AssertIsOnMainThread();
+  mExecutionScheduled = true;
 }
 
 void ThreadSafeRequestHandle::SetRunnable(
@@ -124,11 +135,20 @@ ThreadSafeRequestHandle::GetCacheCreator() {
 }
 
 ThreadSafeRequestHandle::~ThreadSafeRequestHandle() {
+  // Nothing can be racing with us any more, but ReleaseRequest() may have
+  // cleared mRequest on the worker thread, so take mMutex once to make sure we
+  // observe that write rather than a stale pointer to an already freed request.
+  bool hasRequest;
+  {
+    MutexAutoLock lock(mMutex);
+    hasRequest = !!mRequest;
+  }
+
   // Normally we only touch mStrongRef on the owning thread.  This is safe,
   // however, because when we do use mStrongRef on the owning thread we are
   // always holding a strong ref to the ThreadsafeHandle via the owning
   // runnable.  So we cannot run the ThreadsafeHandle destructor simultaneously.
-  if (!mRequest || mOwningEventTarget->IsOnCurrentThread()) {
+  if (!hasRequest || mOwningEventTarget->IsOnCurrentThread()) {
     return;
   }
 

@@ -96,8 +96,9 @@ class MultiTcpSocketTest : public MtransportTest {
 
     r = 1;
     for (int tries = 10; tries && r; --tries) {
-      r = nr_str_port_to_transport_addr(
-          (char*)"127.0.0.1", EnsureEphemeral(port_s++), IPPROTO_TCP, &local);
+      r = nr_str_port_to_transport_addr((char*)"127.0.0.1", nullptr,
+                                        EnsureEphemeral(port_s++), IPPROTO_TCP,
+                                        &local);
       ASSERT_EQ(0, r);
 
       r = nr_socket_multi_tcp_create(ice_ctx_->ctx(), nullptr, &local, tcp_type,
@@ -438,7 +439,7 @@ TEST_F(MultiTcpSocketTest, TestActivePassiveWithStunServerMockup) {
   uint16_t stun_port;
   stun_addr = TestStunTcpServer::GetInstance(AF_INET)->addr();
   stun_port = TestStunTcpServer::GetInstance(AF_INET)->port();
-  int r = nr_str_port_to_transport_addr(stun_addr.c_str(), stun_port,
+  int r = nr_str_port_to_transport_addr(stun_addr.c_str(), nullptr, stun_port,
                                         IPPROTO_TCP, &stun_srv_addr);
   ASSERT_EQ(0, r);
 

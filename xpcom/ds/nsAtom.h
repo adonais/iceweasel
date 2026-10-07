@@ -273,8 +273,9 @@ already_AddRefed<nsAtom> NS_Atomize(const nsAString& aUTF16String);
 already_AddRefed<nsAtom> NS_Atomize(const nsAString& aUTF16String,
                                     uint32_t aKnownHash);
 
-// An optimized version of the method above for the main thread.
+// Optimized versions of the methods above for the main thread.
 already_AddRefed<nsAtom> NS_AtomizeMainThread(const nsAString& aUTF16String);
+already_AddRefed<nsAtom> NS_AtomizeMainThread(const nsACString& aUTF8String);
 
 // Return a count of the total number of atoms currently alive in the system.
 //

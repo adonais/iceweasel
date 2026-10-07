@@ -205,7 +205,10 @@ class SummaryGraphPath extends Component {
       // Undefined animation.state.type means that the animation had been removed already.
       // Even if the animation was removed, we still need the empty svg since the
       // component might be re-used.
-      return dom.svg();
+      return dom.svg({
+        width: "0",
+        height: "0",
+      });
     }
 
     const { playbackRate, playBackRateMultiplier } = animation.state;

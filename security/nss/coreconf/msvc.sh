@@ -45,7 +45,7 @@ regquery() {
 }
 
 VSCOMPONENT=Microsoft.VisualStudio.Component.VC.Tools.x86.x64
-vsinstall=$(vswhere -latest -requires "$VSCOMPONENT" -property installationPath)
+vsinstall=$(vswhere -latest -property installationPath)
 
 # Attempt to setup paths if vswhere returns something and VSPATH isn't set.
 # Otherwise, assume that the env is setup.
@@ -54,6 +54,7 @@ if [[ -n "$vsinstall" && -z "$VSPATH" ]]; then
     case "$target_arch" in
         ia32) m=x86 ;;
         x64) m="$target_arch" ;;
+        aarch64|arm64) m=arm64 ;;
         *)
             echo "No support for target '$target_arch' with MSVC." 1>&2
             exit 1
@@ -71,12 +72,27 @@ if [[ -n "$vsinstall" && -z "$VSPATH" ]]; then
 
     VCVER=$(cat "${VCINSTALLDIR}/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt")
     REDISTVER=$(cat "${VCINSTALLDIR}/Auxiliary/Build/Microsoft.VCRedistVersion.default.txt")
-    export WIN32_REDIST_DIR="${VCINSTALLDIR}/Redist/MSVC/${REDISTVER}/${m}/Microsoft.VC141.CRT"
+
+    # Use installationVersion (always populated) to get the VS major version.
+    # catalog_productLineVersion is unreliable: it returns a bare major number
+    # for VS 2026.
+    vs_major=$(vswhere -latest -property installationVersion | cut -d. -f1)
+    if [ "$vs_major" = "18" ]; then
+        # VS 2026: catalog_productLineVersion returns the major version number
+        # rather than a year string; supply the year explicitly.
+        vc_crt=144; gyp_ver=2026
+    else
+        VS_YEAR=$(vswhere -latest -requires "$VSCOMPONENT" -property catalog_productLineVersion)
+        vc_crt=141; gyp_ver="${VS_YEAR:-2022}"
+    fi
+    export WIN32_REDIST_DIR="${VCINSTALLDIR}/Redist/MSVC/${REDISTVER}/${m}/Microsoft.VC${vc_crt}.CRT"
     export WIN_UCRT_REDIST_DIR="${UniversalCRTSdkDir}/Redist/ucrt/DLLs/${m}"
 
     if [ "$m" == "x86" ]; then
         PATH="${PATH}:${VCINSTALLDIR}/Tools/MSVC/${VCVER}/bin/Hostx64/x64"
         PATH="${PATH}:${VCINSTALLDIR}/Tools/MSVC/${VCVER}/bin/Hostx64/x86"
+    elif [ "$m" == "arm64" ]; then
+        PATH="${PATH}:${VCINSTALLDIR}/Tools/MSVC/${VCVER}/bin/Hostx64/arm64"
     fi
     PATH="${PATH}:${VCINSTALLDIR}/Tools/MSVC/${VCVER}/bin/Host${m}/${m}"
     PATH="${PATH}:${UniversalCRTSdkDir}/bin/${UCRTVersion}/${m}"
@@ -98,9 +114,24 @@ if [[ -n "$vsinstall" && -z "$VSPATH" ]]; then
     LIB="${LIB}:${UniversalCRTSdkDir}/lib/${UCRTVersion}/um/${m}"
     export LIB
 
-    export GYP_MSVS_OVERRIDE_PATH="${VSPATH}"
-    export GYP_MSVS_VERSION=$(vswhere -latest -requires "$VSCOMPONENT" -property catalog_productLineVersion)
+    export GYP_MSVS_OVERRIDE_PATH="${vsinstall}"
+    export GYP_MSVS_VERSION="${gyp_ver}"
 else
     echo Assuming env setup is already done.
     echo VSPATH=$VSPATH
+    # When setup was done externally (e.g. by vcvarsall.bat), gyp still needs
+    # GYP_MSVS_VERSION.  VSCMD_VER is always set by vcvarsall.bat so use it
+    # as the condition.
+    if [ -n "$VSCMD_VER" ] && [ -z "$GYP_MSVS_VERSION" ]; then
+        # vswhere was unavailable; derive version from VSCMD_VER (set by vcvarsall.bat).
+        # Only VS 2026 needs special handling (returns major "18" not year string).
+        if [ "${VSCMD_VER%%.*}" = "18" ]; then
+            gyp_ver=2026
+        else
+            gyp_ver=$(vswhere -latest -property catalog_productLineVersion 2>/dev/null || true)
+            gyp_ver="${gyp_ver:-$VSCMD_VER}"
+        fi
+        export GYP_MSVS_VERSION="${gyp_ver}"
+        [ -n "$VSINSTALLDIR" ] && export GYP_MSVS_OVERRIDE_PATH="${VSINSTALLDIR}"
+    fi
 fi

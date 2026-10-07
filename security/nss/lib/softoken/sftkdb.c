@@ -2826,6 +2826,7 @@ sftk_freeDB(SFTKDBHandle *handle)
     if (!handle)
         return;
     ref = PR_ATOMIC_DECREMENT(&handle->ref);
+    PORT_ReleaseAssert(ref >= 0);
     if (ref == 0) {
         sftkdb_CloseDB(handle);
     }

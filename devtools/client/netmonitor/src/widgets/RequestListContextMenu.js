@@ -542,6 +542,7 @@ class RequestListContextMenu {
     showMenu(menu, {
       screenX: event.screenX,
       screenY: event.screenY,
+      accesskeyConflictsBug: 2073896,
     });
   }
 

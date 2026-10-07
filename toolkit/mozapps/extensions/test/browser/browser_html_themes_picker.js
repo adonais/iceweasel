@@ -72,6 +72,34 @@ async function getThemePreviewSrc(card) {
   return (await getThemePreviewImage(card))?.src;
 }
 
+// Asserts that the given card reuses the default theme Nova preview image,
+// recolored through link-parameters for the given (non default) theme.
+async function assertNovaThemePreview(card, themeId, themesListManager) {
+  const img = await getThemePreviewImage(card);
+  Assert.equal(
+    img.src,
+    DEFAULT_THEME_PREVIEW_NOVA_URL,
+    `"${themeId}" card reuses the default theme Nova preview image`
+  );
+  const expectedLinkParameters =
+    themeId === DEFAULT_THEME_ID
+      ? ""
+      : themesListManager.getThemePreviewLinkParameters(themeId);
+  if (themeId !== DEFAULT_THEME_ID) {
+    Assert.ok(
+      expectedLinkParameters.includes("param(--tabbar-background, light-dark("),
+      `"${themeId}" has link-parameters for the Nova preview image`
+    );
+  }
+  Assert.equal(
+    img.style.linkParameters,
+    expectedLinkParameters,
+    `"${themeId}" preview image has the expected link-parameters`
+  );
+
+  return img;
+}
+
 async function waitForThemesPickerReady(picker) {
   await TestUtils.waitForCondition(
     () => picker.themeCards.length,
@@ -221,6 +249,9 @@ add_task(async function test_picker_renders_all_known_themes() {
   picker.expandToggle.click();
   await picker.updateComplete;
 
+  const themesListManager = await getThemesList({
+    installSource: "about:addons",
+  });
   for (const themeId of ALL_THEME_IDS) {
     const idPrefix = themeIdPrefix(themeId);
     const card = getThemeCard(picker, idPrefix);
@@ -231,15 +262,7 @@ add_task(async function test_picker_renders_all_known_themes() {
       `"${idPrefix}" card has the expected name l10n-id`
     );
 
-    const expectedPreviewSrc =
-      themeId === DEFAULT_THEME_ID
-        ? DEFAULT_THEME_PREVIEW_NOVA_URL
-        : `resource://extra-themes-previews/${themeId}-preview.svg`;
-    Assert.equal(
-      await getThemePreviewSrc(card),
-      expectedPreviewSrc,
-      `"${idPrefix}" card shows the expected bundled preview image`
-    );
+    await assertNovaThemePreview(card, themeId, themesListManager);
   }
   Assert.equal(
     picker.themeCards.length,
@@ -319,6 +342,10 @@ add_task(async function test_default_and_extra_themes_preview_color_scheme() {
   });
 
   const win = await loadInitialView("theme");
+  const themesListManager = await getThemesList({
+    installSource: "about:addons",
+  });
+
   const picker = getThemesPicker(win.document);
   await waitForThemesPickerReady(picker);
 
@@ -365,13 +392,10 @@ add_task(async function test_default_and_extra_themes_preview_color_scheme() {
       ],
     });
 
-    const defaultThemeImg = await getThemePreviewImage(
-      getAddonCard(win, DEFAULT_THEME_ID)
-    );
-    Assert.equal(
-      defaultThemeImg.src,
-      DEFAULT_THEME_PREVIEW_NOVA_URL,
-      "default-theme keeps using the Nova preview image"
+    const defaultThemeImg = await assertNovaThemePreview(
+      getAddonCard(win, DEFAULT_THEME_ID),
+      DEFAULT_THEME_ID,
+      themesListManager
     );
     Assert.equal(
       defaultThemeImg.style.colorScheme,
@@ -379,13 +403,10 @@ add_task(async function test_default_and_extra_themes_preview_color_scheme() {
       `default-theme preview has the expected forced color scheme (pref: ${prefValue})`
     );
 
-    const novaSunImg = await getThemePreviewImage(
-      getThemeCard(picker, NOVA_SUN_ID_PREFIX)
-    );
-    Assert.equal(
-      novaSunImg.src,
-      "resource://extra-themes-previews/nova-sun@mozilla.org-preview.svg",
-      "nova-sun keeps using its own bundled preview image"
+    const novaSunImg = await assertNovaThemePreview(
+      getThemeCard(picker, NOVA_SUN_ID_PREFIX),
+      NOVA_SUN_ID,
+      themesListManager
     );
     Assert.equal(
       novaSunImg.style.colorScheme,
@@ -519,10 +540,10 @@ add_task(async function test_picker_default_theme_button_state() {
     NOVA_SUN_ID
   );
 
-  Assert.equal(
-    await getThemePreviewSrc(activeNovaThemeAddonCard),
-    `resource://extra-themes-previews/${NOVA_SUN_ID}-preview.svg`,
-    `addon-card should shows the expected bundled preview image`
+  await assertNovaThemePreview(
+    activeNovaThemeAddonCard,
+    NOVA_SUN_ID,
+    await getThemesList({ installSource: "about:addons" })
   );
 
   await sunAddon.uninstall();
@@ -845,43 +866,13 @@ add_task(async function test_picker_reflects_external_addon_install() {
 // letterboxed by a varying amount and appears to jiggle while scrolling, see
 // bug 2059917. Guard against a new preview reintroducing that.
 add_task(async function test_theme_preview_svgs_ignore_aspect_ratio() {
-  const themesListManager = await getThemesList({
-    installSource: "about:addons",
-  });
-
-  const AMO_HOSTED_THEME_IDS = ALL_THEME_IDS.filter(
-    id => id !== DEFAULT_THEME_ID
-  );
-
-  const BUILTIN_THEMES_PREVIEW_URLS = [
+  const previewUrls = [
     DEFAULT_THEME_PREVIEW_URL,
     DEFAULT_THEME_PREVIEW_NOVA_URL,
     "resource://builtin-themes/dark/preview.svg",
     "resource://builtin-themes/light/preview.svg",
     "resource://builtin-themes/alpenglow/preview.svg",
   ];
-
-  const previewUrls = [...BUILTIN_THEMES_PREVIEW_URLS];
-
-  // Sanity check AMO curated theme preview urls.
-  for (const amoCuratedThemeId of AMO_HOSTED_THEME_IDS) {
-    const amoCuratedThemePreviewUrl =
-      themesListManager.getThemePreviewURL(amoCuratedThemeId);
-    Assert.ok(
-      amoCuratedThemePreviewUrl?.startsWith("resource://"),
-      `Expect bundled theme preview for AMO hosted "${amoCuratedThemeId}" to be a resource:// url ("${amoCuratedThemePreviewUrl}")`
-    );
-    previewUrls.push(amoCuratedThemePreviewUrl);
-  }
-
-  const EXPECTED_THEME_PREVIEWS_URLS_COUNT =
-    BUILTIN_THEMES_PREVIEW_URLS.length + AMO_HOSTED_THEME_IDS.length;
-
-  Assert.equal(
-    previewUrls.length,
-    EXPECTED_THEME_PREVIEWS_URLS_COUNT,
-    "Got theme preview URLs for all built-in themes and curated AMO-hosted themes"
-  );
 
   for (const url of previewUrls) {
     const response = await fetch(url);

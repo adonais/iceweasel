@@ -26,6 +26,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/HTMLUnknownElement.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/StaticRange.h"
 #include "mozilla/dom/Text.h"
@@ -42,7 +43,6 @@
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsQueryObject.h"
-#include "nsRange.h"
 #include "nsTextFrame.h"
 
 // Work around conflicting define in rpcndr.h
@@ -195,7 +195,7 @@ ContentEventHandler::SimpleRangeBase<NodeType, RangeBoundaryType>::SetEndAfter(
 
 template <typename NodeType, typename RangeBoundaryType>
 void ContentEventHandler::SimpleRangeBase<
-    NodeType, RangeBoundaryType>::SetStartAndEnd(const nsRange* aRange) {
+    NodeType, RangeBoundaryType>::SetStartAndEnd(const dom::Range* aRange) {
   DebugOnly<nsresult> rv =
       SetStartAndEnd(aRange->StartRef().AsRaw(), aRange->EndRef().AsRaw());
   MOZ_ASSERT(!aRange->IsPositioned() || NS_SUCCEEDED(rv));
@@ -341,7 +341,7 @@ nsresult ContentEventHandler::InitBasic(bool aRequireFlush) {
   return NS_OK;
 }
 
-Result<nsRange*, nsresult> ContentEventHandler::InitRootContent(
+Result<dom::Range*, nsresult> ContentEventHandler::InitRootContent(
     const Selection& aNormalSelection) {
   // Root content should be computed with normal selection because normal
   // selection is typically has at least one range but the other selections
@@ -351,13 +351,13 @@ Result<nsRange*, nsresult> ContentEventHandler::InitRootContent(
 
   EditContext* editContext = mDocument->GetActiveEditContext();
 
-  auto getRangeInRootElement = [&]() MOZ_NEVER_INLINE_DEBUG -> nsRange* {
+  auto getRangeInRootElement = [&]() MOZ_NEVER_INLINE_DEBUG -> dom::Range* {
     nsFrameSelection* const fs = aNormalSelection.GetFrameSelection();
     if (NS_WARN_IF(!fs)) {
       return nullptr;
     }
     for (const uint32_t i : IntegerRange(aNormalSelection.RangeCount())) {
-      nsRange* const range = aNormalSelection.GetRangeAt(i);
+      dom::Range* const range = aNormalSelection.GetRangeAt(i);
       MOZ_ASSERT(range);
       if (fs->RangeInLimiters(*range)) {
         return range;
@@ -382,7 +382,8 @@ Result<nsRange*, nsresult> ContentEventHandler::InitRootContent(
     return getRangeInRootElement();
   }
 
-  const auto SetRootElementWithNoRanges = [&]() -> Result<nsRange*, nsresult> {
+  const auto SetRootElementWithNoRanges =
+      [&]() -> Result<dom::Range*, nsresult> {
     // If there is no selection range, we should compute the selection root
     // from ancestor limiter or root content of the document.
     mRootElement = aNormalSelection.GetAncestorLimiter();
@@ -409,7 +410,7 @@ Result<nsRange*, nsresult> ContentEventHandler::InitRootContent(
 
   // See bug 2046677. The range may be outside the ancestor limiter if it was
   // removed from the DOM. Therefore, we should ignore "invalid" ranges.
-  nsRange* const rangeInRootElement = getRangeInRootElement();
+  dom::Range* const rangeInRootElement = getRangeInRootElement();
   if (!rangeInRootElement) {
     return SetRootElementWithNoRanges();
   }
@@ -478,7 +479,7 @@ nsresult ContentEventHandler::InitCommon(EventMessage aEventMessage,
     MOZ_ASSERT(normalSelection);
   }
 
-  Result<RefPtr<nsRange>, nsresult> firstRangeOrError =
+  Result<RefPtr<dom::Range>, nsresult> firstRangeOrError =
       InitRootContent(*normalSelection);
   if (NS_WARN_IF(firstRangeOrError.isErr())) {
     return firstRangeOrError.unwrapErr();
@@ -775,7 +776,7 @@ nsresult ContentEventHandler::GenerateFlatTextContent(const Element* aElement,
   return GenerateFlatTextContent(rawRange, aString);
 }
 
-nsresult ContentEventHandler::GenerateFlatTextContent(const nsRange* aRange,
+nsresult ContentEventHandler::GenerateFlatTextContent(const dom::Range* aRange,
                                                       nsString& aString) {
   MOZ_ASSERT(aString.IsEmpty());
 
@@ -1081,7 +1082,7 @@ nsresult ContentEventHandler::ExpandToClusterBoundary(
   return NS_OK;
 }
 
-already_AddRefed<nsRange> ContentEventHandler::GetRangeFromFlatTextOffset(
+already_AddRefed<dom::Range> ContentEventHandler::GetRangeFromFlatTextOffset(
     WidgetContentCommandEvent* aEvent, uint32_t aOffset, uint32_t aLength) {
   nsresult rv = InitCommon(aEvent->mMessage);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1097,8 +1098,9 @@ already_AddRefed<nsRange> ContentEventHandler::GetRangeFromFlatTextOffset(
   DOMRangeAndAdjustedOffsetInFlattenedText domRangeAndAdjustOffset =
       result.unwrap();
 
-  return nsRange::Create(domRangeAndAdjustOffset.mRange.Start(),
-                         domRangeAndAdjustOffset.mRange.End(), IgnoreErrors());
+  return dom::Range::Create(domRangeAndAdjustOffset.mRange.Start(),
+                            domRangeAndAdjustOffset.mRange.End(),
+                            IgnoreErrors());
 }
 
 template <typename RangeType, typename TextNodeType>
@@ -3512,7 +3514,7 @@ nsresult ContentEventHandler::OnSelectionEvent(WidgetSelectionEvent* aEvent) {
         domRangeAndAdjustedOffsetOrError =
             ConvertFlatTextOffsetToUnsafeDOMRange(
                 aEvent->mOffset, aEvent->mLength,
-                aEvent->mExpandToClusterBoundary);
+                aEvent->ShouldExpandToClusterBoundary());
     if (MOZ_UNLIKELY(domRangeAndAdjustedOffsetOrError.isErr())) {
       NS_WARNING(
           "ContentEventHandler::ConvertFlatTextOffsetToDOMRangeBase() failed");
@@ -3533,7 +3535,7 @@ nsresult ContentEventHandler::OnSelectionEvent(WidgetSelectionEvent* aEvent) {
     }
   }
 
-  if (aEvent->mReversed) {
+  if (aEvent->IsReversed()) {
     nsCOMPtr<nsINode> startNodeStrong(startNode);
     nsCOMPtr<nsINode> endNodeStrong(endNode);
     ErrorResult error;

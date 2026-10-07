@@ -1,6 +1,6 @@
 [DEFAULT]
-skip-if = [
-  "os == 'android'", # bug 1730213
+run-if = [
+  "os != 'android'", # browser/ is not built for Android (bug 1730213)
 ]
 support-files = ["file_empty.html"]
 

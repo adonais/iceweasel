@@ -15,7 +15,7 @@ Talos tests are run in a similar manner to xpcshell and mochitests. They are sta
 the command {code}`mach talos-test`. A {searchfox}`python script <testing/talos>`
 then launches Firefox, which runs the tests via JavaScript special powers. The test timing
 information is recorded in a text log file, e.g. {code}`browser_output.txt`, and then processed
-into the {searchfox}`JSON format supported by Perfherder <testing/mozharness/external_tools/performance-artifact-schema.json>`.
+into the {searchfox}`JSON format supported by Perfherder <testing/performance/common/performance-artifact-schema.json>`.
 
 Talos bugs can be filed in [Testing::Talos](https://bugzilla.mozilla.org/enter_bug.cgi?product=Testing&component=Talos).
 
@@ -315,7 +315,8 @@ Tests which are imported benchmarks are:
 - [dromaeo](#dromaeo)
 - [JetStream](#jetstream)
 - [kraken](#kraken)
-- [motionmark](#motionmark)
+- motionmark ([animometer](#motionmark_animometer),
+  [htmlsuite](#motionmark_htmlsuite), [webgl](#motionmark_webgl))
 - [stylebench](#stylebench)
 
 ### Row major vs. column major

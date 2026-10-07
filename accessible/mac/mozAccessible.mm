@@ -760,6 +760,11 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
   return @NO;
 }
 
+- (NSNumber*)moxGrabbed {
+  NSString* grabbed = utils::GetAccAttr(self, nsGkAtoms::aria_grabbed);
+  return @([grabbed isEqualToString:@"true"]);
+}
+
 - (NSNumber*)moxExpanded {
   return @([self stateWithMask:states::EXPANDED] != 0);
 }
@@ -1047,7 +1052,9 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 
 - (void)moxPerformScrollToVisible {
   MOZ_ASSERT(mGeckoAccessible);
-  mGeckoAccessible->ScrollTo(nsIAccessibleScrollType::SCROLL_TYPE_ANYWHERE);
+  if (RefPtr<Accessible> acc = mGeckoAccessible) {
+    acc->ScrollTo(nsIAccessibleScrollType::SCROLL_TYPE_ANYWHERE);
+  }
 }
 
 - (void)moxPerformShowMenu {

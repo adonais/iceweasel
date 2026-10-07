@@ -15,7 +15,10 @@ add_UITour_task(async function () {
     "Button should be hidden."
   );
   await gContentAPI.forceShowReaderIcon();
-  await waitForConditionPromise(() => gBrowser.selectedBrowser.isArticle);
+  await TestUtils.waitForCondition(
+    () => gBrowser.selectedBrowser.isArticle,
+    "Page should be an article"
+  );
   ok(gBrowser.selectedBrowser.isArticle, "Should suddenly be an article.");
   ok(
     !document.getElementById("reader-mode-button").hidden,

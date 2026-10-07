@@ -52,6 +52,22 @@ class ClientWebGLExtensionBase : public nsWrapperCache {
 
 ////
 
+class ClientWebGLExtensionPolygonOffsetClamp : public ClientWebGLExtensionBase {
+ public:
+  virtual JSObject* WrapObject(JSContext* cx,
+                               JS::Handle<JSObject*> givenProto) override;
+  explicit ClientWebGLExtensionPolygonOffsetClamp(ClientWebGLContext&);
+
+  void PolygonOffsetClampEXT(GLfloat factor, GLfloat units,
+                             GLfloat clamp) const {
+    if (!mContext) [[unlikely]] {
+      AutoJsWarning("polygonOffsetClampEXT: Extension is `invalidated`.");
+      return;
+    }
+    mContext->PolygonOffsetClampEXT(factor, units, clamp);
+  }
+};
+
 class ClientWebGLExtensionCompressedTextureASTC
     : public ClientWebGLExtensionBase {
  public:

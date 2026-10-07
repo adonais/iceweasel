@@ -90,11 +90,10 @@ NS_IMETHODIMP InsertTextTransaction::DoTransaction() {
   }
 
   const OwningNonNull<EditorBase> editorBase = *mEditorBase;
-  ErrorResult error;
-  editorBase->DoInsertText(*textNode, mOffset, mStringToInsert, error);
-  if (error.Failed()) {
+  nsresult rv = editorBase->DoInsertText(*textNode, mOffset, mStringToInsert);
+  if (NS_FAILED(rv)) [[unlikely]] {
     NS_WARNING("EditorBase::DoInsertText() failed");
-    return error.StealNSResult();
+    return rv;
   }
 
   editorBase->RangeUpdaterRef().SelAdjInsertText(*textNode, mOffset,
@@ -117,10 +116,10 @@ NS_IMETHODIMP InsertTextTransaction::UndoTransaction() {
   }
 
   const OwningNonNull<EditorBase> editorBase = *mEditorBase;
-  ErrorResult error;
-  editorBase->DoDeleteText(*textNode, mOffset, mStringToInsert.Length(), error);
-  NS_WARNING_ASSERTION(!error.Failed(), "EditorBase::DoDeleteText() failed");
-  return error.StealNSResult();
+  nsresult rv =
+      editorBase->DoDeleteText(*textNode, mOffset, mStringToInsert.Length());
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "EditorBase::DoDeleteText() failed");
+  return rv;
 }
 
 NS_IMETHODIMP InsertTextTransaction::RedoTransaction() {

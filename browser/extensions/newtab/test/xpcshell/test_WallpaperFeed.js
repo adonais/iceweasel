@@ -6,6 +6,8 @@
 ChromeUtils.defineESModuleGetters(this, {
   actionCreators: "resource://newtab/common/Actions.mjs",
   actionTypes: "resource://newtab/common/Actions.mjs",
+  DefaultPrefs: "resource://newtab/lib/ActivityStreamPrefs.sys.mjs",
+  PREFS_CONFIG: "resource://newtab/lib/ActivityStream.sys.mjs",
   Utils: "resource://services-settings/Utils.sys.mjs",
   buildSavedWallpaperFilename:
     "resource://newtab/lib/Wallpapers/WallpaperFileNames.mjs",
@@ -72,8 +74,8 @@ function getWallpaperFeedForTest() {
   return feed;
 }
 
-// The pref is channel-derived, so a bare xpcshell profile has it unset and
-// every library test would silently exercise the single-image path instead.
+// The tests below set the pref themselves, so a change to the shipped default
+// cannot quietly reroute them. That default is asserted just below.
 add_setup(async function () {
   Services.prefs.setBoolPref(
     PREF_WALLPAPERS_CUSTOM_WALLPAPER_LIBRARY_ENABLED,
@@ -84,6 +86,33 @@ add_setup(async function () {
       PREF_WALLPAPERS_CUSTOM_WALLPAPER_LIBRARY_ENABLED
     );
   });
+});
+
+add_task(async function test_firefox_js_ships_the_library_on() {
+  info("firefox.js is what turns the library on, so nothing has to opt in");
+
+  // The default branch, so the user value the setup writes does not stand in
+  // for the shipped one.
+  Assert.ok(
+    Services.prefs
+      .getDefaultBranch("")
+      .getBoolPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_LIBRARY_ENABLED),
+    "The library is on by default for every profile"
+  );
+});
+
+add_task(async function test_the_add_on_default_does_not_override_firefox_js() {
+  info("The add-on ships this pref off, so applying its defaults must not win");
+
+  const key = "newtabWallpapers.customWallpaper.library.enabled";
+  new DefaultPrefs(new Map([[key, PREFS_CONFIG.get(key)]])).init();
+
+  Assert.ok(
+    Services.prefs
+      .getDefaultBranch("")
+      .getBoolPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_LIBRARY_ENABLED),
+    "The shipped default is left alone"
+  );
 });
 
 add_task(async function test_construction() {
@@ -1824,7 +1853,7 @@ add_task(async function test_a_number_is_given_with_the_library_off() {
   let feed = getWallpaperFeedForTest();
   await clearWallpaperDirForTest();
 
-  info("The pref ships off and gets turned on later, so number it anyway");
+  info("The library can be off, so number the image anyway");
 
   feed.store.getState = () => ({ Prefs: { values: {} } });
 
@@ -2022,41 +2051,6 @@ add_task(async function test_startup_sends_nothing_when_no_custom_is_chosen() {
   Services.prefs.clearUserPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID);
   Services.prefs.clearUserPref(PREF_SELECTED_WALLPAPER);
   await clearWallpaperDirForTest();
-});
-
-add_task(async function test_trainhop_config_can_enable_the_library() {
-  let feed = getWallpaperFeedForTest();
-
-  info("A trainhop rollout should turn the library on without the pref");
-
-  Services.prefs.setBoolPref(
-    PREF_WALLPAPERS_CUSTOM_WALLPAPER_LIBRARY_ENABLED,
-    false
-  );
-
-  feed.store.getState = () => ({
-    Prefs: {
-      values: {
-        "newtabWallpapers.customWallpaper.library.enabled": false,
-      },
-    },
-  });
-  Assert.strictEqual(feed.libraryEnabled, false, "Off when nothing enables it");
-
-  feed.store.getState = () => ({
-    Prefs: {
-      values: {
-        "newtabWallpapers.customWallpaper.library.enabled": false,
-        trainhopConfig: { customWallpaperLibrary: { enabled: true } },
-      },
-    },
-  });
-  Assert.ok(feed.libraryEnabled, "A trainhop rollout turns it on");
-
-  Services.prefs.setBoolPref(
-    PREF_WALLPAPERS_CUSTOM_WALLPAPER_LIBRARY_ENABLED,
-    true
-  );
 });
 
 add_task(async function test_storing_a_thumbnail_waits_for_the_file_lock() {

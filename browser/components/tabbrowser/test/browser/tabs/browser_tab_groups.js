@@ -1479,3 +1479,29 @@ add_task(async function test_tabGroupGarbageCollection() {
     "tab-group element should be garbage collected after removal from DOM"
   );
 });
+
+// Deleting a group closes the tabs in it. If the group holds every tab in the
+// window, the window itself should stay open, because the user asked to delete
+// a group and not to close the window.
+add_task(async function test_tabGroupRemoveKeepsTheWindowOpen() {
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+
+  try {
+    let group = win.gBrowser.addTabGroup([...win.gBrowser.tabs]);
+    Assert.equal(
+      group.tabs.length,
+      win.gBrowser.tabs.length,
+      "the group holds every tab in the window"
+    );
+
+    await win.gBrowser.removeTabGroup(group);
+
+    Assert.ok(!win.closed, "the window is still open");
+    await TestUtils.waitForCondition(
+      () => win.gBrowser.tabs.some(tab => !tab.group),
+      "the window is left with a tab that is not in a group"
+    );
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+  }
+});

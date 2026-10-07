@@ -12,6 +12,12 @@
 
 #include "jstypes.h"
 
+#include "js/RootingAPI.h"
+
+struct JSClass;
+struct JSContext;
+class JSObject;
+
 /**
  * Unlike JS_NewObject, JS_NewObjectWithGivenProtoAndUseAllocSite does not
  * compute a default proto. If proto is nullptr, the JS object will have `null`

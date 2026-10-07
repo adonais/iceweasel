@@ -47,6 +47,9 @@ struct ScreamFeedback {
 
   // The calculated RTT sample of this feedback.
   TimeDelta rtt_sample = TimeDelta::Zero();
+
+  // Receive timestamp of the latest packet received in this feedback.
+  Timestamp last_packet_receive_time = Timestamp::MinusInfinity();
 };
 
 // Free function helper to convert original feedback into the flat struct.

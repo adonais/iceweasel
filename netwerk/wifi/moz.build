@@ -62,3 +62,8 @@ TEST_DIRS += ["gtest"]
 FINAL_LIBRARY = "xul"
 
 include("/ipc/chromium/chromium-config.mozbuild")
+
+LICENSED_UNDER += ["gears-istumbler"]
+LICENSED_UNDER["gears-istumbler"].paths = [
+    "mac/Wifi.h",
+]

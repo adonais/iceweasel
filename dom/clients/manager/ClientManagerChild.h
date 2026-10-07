@@ -34,6 +34,7 @@ class ClientManagerChild final : public PClientManagerChild {
 
   bool DeallocPClientNavigateOpChild(PClientNavigateOpChild* aActor) override;
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvPClientNavigateOpConstructor(
       PClientNavigateOpChild* aActor,
       const ClientNavigateOpConstructorArgs& aArgs) override;

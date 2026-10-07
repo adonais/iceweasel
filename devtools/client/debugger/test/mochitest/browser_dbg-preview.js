@@ -165,6 +165,16 @@ add_task(async function () {
   );
   ok(true, `"hello" was expanded`);
 
+  info("Check that the object tree in the popup is keyboard operable");
+  const treeEl = popupEl.querySelector(".tree");
+  const clickedRowId = treeEl.getAttribute("aria-activedescendant");
+  ok(clickedRowId, "The clicked row became the tree's active descendant");
+  pressKey(dbg, "Down");
+  await waitFor(
+    () => treeEl.getAttribute("aria-activedescendant") != clickedRowId
+  );
+  ok(true, "The down arrow key moved the active descendant");
+
   info("Check that the preview popup can be closed with Escape");
   // sanity check
   ok(!!findElement(dbg, "popup"), "The popup is open");

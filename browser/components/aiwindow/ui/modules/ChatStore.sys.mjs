@@ -1175,7 +1175,11 @@ class ChatStore {
     const byConv = {};
     parseMessageRows(rows).forEach(message => {
       if (convs[message.convId]) {
-        if (lazy.CONFIRMATION_UI_TYPES.includes(message.toolUIData?.uiType)) {
+        // open_tabs cards are self-contained and remain actionable after restart.
+        if (
+          lazy.CONFIRMATION_UI_TYPES.includes(message.toolUIData?.uiType) &&
+          message.toolUIData?.properties?.actionType !== "open_tabs"
+        ) {
           message.isRestored = true;
         }
         (byConv[message.convId] ??= []).push(message);

@@ -3,7 +3,7 @@
 "use strict";
 
 const POPUP_PAGE =
-  "https://example.com/browser/browser/base/content/test/popups/popup_blocker2.html";
+  "https://example.com/browser/browser/base/content/test/browser-popups/popup_blocker2.html";
 
 function clearPrefs() {
   Services.prefs.clearUserPref("dom.disable_open_during_load");

@@ -74,7 +74,7 @@ def set_artifact_expiration(config, jobs):
                 elif plat in {
                     "toolchain-wasm32-wasi-compiler-rt-trunk",
                     "toolchain-linux64-x64-compiler-rt-trunk",
-                    "toolchain-linux64-x86-compiler-rt-trunk",
+                    "toolchain-linux32-compiler-rt-trunk",
                     "android-geckoview-docs",
                 }:
                     art_dict = None

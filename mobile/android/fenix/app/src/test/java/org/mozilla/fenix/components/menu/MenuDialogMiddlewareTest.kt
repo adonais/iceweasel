@@ -16,8 +16,12 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import kotlin.test.assertNotNull
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.state.state.createCustomTab
@@ -58,6 +62,7 @@ import org.mozilla.fenix.components.menu.store.BrowserMenuState
 import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.MenuStore
+import org.mozilla.fenix.components.menu.store.NavigationEvent
 import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint
 import org.mozilla.fenix.home.topsites.AddShortcutSource
 import org.mozilla.fenix.settings.summarize.FakeSummarizationFeatureConfiguration
@@ -74,7 +79,7 @@ class MenuDialogMiddlewareTest {
     private lateinit var addBookmarkUseCase: AddBookmarksUseCase
 
     private val addonManager: AddonManager = mockk(relaxed = true)
-    private val onDeleteAndQuit: () -> Unit = { error("onDeleteAndQuit should not be invoked") }
+    private val navigationEvents = mutableListOf<NavigationEvent>()
 
     private lateinit var alertDialogBuilder: MaterialAlertDialogBuilder
     private lateinit var pinnedSiteStorage: PinnedSiteStorage
@@ -261,7 +266,6 @@ class MenuDialogMiddlewareTest {
         runTest(testDispatcher) {
             val url = "https://www.mozilla.org"
             val title = "Mozilla"
-            var dismissWasCalled = false
 
             val browserMenuState =
                 BrowserMenuState(
@@ -277,7 +281,6 @@ class MenuDialogMiddlewareTest {
                 createStore(
                     appStore = appStore,
                     menuState = MenuState(browserMenuState = browserMenuState),
-                    onDismiss = { dismissWasCalled = true },
                 )
             testScheduler.advanceUntilIdle()
 
@@ -291,7 +294,7 @@ class MenuDialogMiddlewareTest {
                 action: BookmarkAction.BookmarkAdded ->
                 assertNotNull(action.guidToEdit)
             }
-            assertTrue(dismissWasCalled)
+            assertTrue(navigationEvents.contains(NavigationEvent.Dismiss))
         }
 
     @Test
@@ -299,7 +302,6 @@ class MenuDialogMiddlewareTest {
         runTest(testDispatcher) {
             val url = "https://www.mozilla.org"
             val title = "Mozilla"
-            var dismissWasCalled = false
 
             val guid =
                 bookmarksStorage.addItem(
@@ -323,7 +325,6 @@ class MenuDialogMiddlewareTest {
                 createStore(
                     appStore = appStore,
                     menuState = MenuState(browserMenuState = browserMenuState),
-                    onDismiss = { dismissWasCalled = true },
                 )
             testScheduler.advanceUntilIdle()
 
@@ -335,7 +336,7 @@ class MenuDialogMiddlewareTest {
 
             coVerify(exactly = 0) { addBookmarkUseCase.invoke(url = url, title = title) }
             captureMiddleware.assertNotDispatched(BookmarkAction.BookmarkAdded::class)
-            assertFalse(dismissWasCalled)
+            assertFalse(navigationEvents.contains(NavigationEvent.Dismiss))
         }
 
     @Test
@@ -409,7 +410,6 @@ class MenuDialogMiddlewareTest {
         runTest(testDispatcher) {
             val url = "https://www.mozilla.org"
             val title = "Mozilla"
-            var dismissedWasCalled = false
 
             val browserMenuState =
                 BrowserMenuState(
@@ -424,7 +424,6 @@ class MenuDialogMiddlewareTest {
                 createStore(
                     appStore = appStore,
                     menuState = MenuState(browserMenuState = browserMenuState),
-                    onDismiss = { dismissedWasCalled = true },
                 )
             testScheduler.advanceUntilIdle()
 
@@ -440,7 +439,7 @@ class MenuDialogMiddlewareTest {
                     )
                 )
             }
-            assertTrue(dismissedWasCalled)
+            assertTrue(navigationEvents.contains(NavigationEvent.Dismiss))
         }
 
     @Test
@@ -448,7 +447,6 @@ class MenuDialogMiddlewareTest {
         runTest(testDispatcher) {
             val url = "https://www.mozilla.org"
             val title = "Mozilla"
-            var dismissedWasCalled = false
 
             coEvery { pinnedSiteStorage.getPinnedSites() } returns
                 listOf(
@@ -478,7 +476,6 @@ class MenuDialogMiddlewareTest {
                 createStore(
                     appStore = appStore,
                     menuState = MenuState(browserMenuState = browserMenuState),
-                    onDismiss = { dismissedWasCalled = true },
                 )
             testScheduler.advanceUntilIdle()
 
@@ -496,7 +493,7 @@ class MenuDialogMiddlewareTest {
                     )
                 )
             }
-            assertFalse(dismissedWasCalled)
+            assertFalse(navigationEvents.contains(NavigationEvent.Dismiss))
         }
 
     @Test
@@ -504,7 +501,6 @@ class MenuDialogMiddlewareTest {
         runTest(testDispatcher) {
             val url = "https://www.mozilla.org"
             val title = "Mozilla"
-            var dismissedWasCalled = false
 
             val topSite =
                 TopSite.Pinned(
@@ -526,7 +522,6 @@ class MenuDialogMiddlewareTest {
                 createStore(
                     appStore = appStore,
                     menuState = MenuState(browserMenuState = browserMenuState),
-                    onDismiss = { dismissedWasCalled = true },
                 )
             testScheduler.advanceUntilIdle()
 
@@ -536,7 +531,7 @@ class MenuDialogMiddlewareTest {
             testScheduler.advanceUntilIdle()
 
             coVerify(exactly = 0) { removePinnedSiteUseCase.invoke(topSite = topSite) }
-            assertFalse(dismissedWasCalled)
+            assertFalse(navigationEvents.contains(NavigationEvent.Dismiss))
         }
 
     @Test
@@ -551,7 +546,6 @@ class MenuDialogMiddlewareTest {
                     url = url,
                     createdAt = 0,
                 )
-            var dismissedWasCalled = false
 
             coEvery { pinnedSiteStorage.getPinnedSites() } returns listOf(topSite)
 
@@ -568,7 +562,6 @@ class MenuDialogMiddlewareTest {
                 createStore(
                     appStore = appStore,
                     menuState = MenuState(browserMenuState = browserMenuState),
-                    onDismiss = { dismissedWasCalled = true },
                 )
             testScheduler.advanceUntilIdle()
 
@@ -578,7 +571,7 @@ class MenuDialogMiddlewareTest {
             testScheduler.advanceUntilIdle()
 
             coVerify { removePinnedSiteUseCase.invoke(topSite = topSite) }
-            assertTrue(dismissedWasCalled)
+            assertTrue(navigationEvents.contains(NavigationEvent.Dismiss))
         }
 
     @Test
@@ -586,7 +579,6 @@ class MenuDialogMiddlewareTest {
         runTest(testDispatcher) {
             val url = "https://www.mozilla.org"
             val title = "Mozilla"
-            var dismissedWasCalled = false
 
             val pinnedSitesList = mutableListOf<TopSite>()
 
@@ -621,7 +613,6 @@ class MenuDialogMiddlewareTest {
                 createStore(
                     appStore = appStore,
                     menuState = MenuState(browserMenuState = browserMenuState),
-                    onDismiss = { dismissedWasCalled = true },
                 )
             testScheduler.advanceUntilIdle()
 
@@ -639,7 +630,7 @@ class MenuDialogMiddlewareTest {
                     )
                 )
             }
-            assertTrue(dismissedWasCalled)
+            assertTrue(navigationEvents.contains(NavigationEvent.Dismiss))
         }
 
     @Test
@@ -647,7 +638,6 @@ class MenuDialogMiddlewareTest {
         runTest(testDispatcher) {
             val url = "https://www.mozilla.org"
             val title = "Mozilla"
-            var dismissWasCalled = false
 
             val browserMenuState =
                 BrowserMenuState(
@@ -657,11 +647,7 @@ class MenuDialogMiddlewareTest {
                             title = title,
                         )
                 )
-            val store =
-                createStore(
-                    menuState = MenuState(browserMenuState = browserMenuState),
-                    onDismiss = { dismissWasCalled = true },
-                )
+            val store = createStore(menuState = MenuState(browserMenuState = browserMenuState))
             testScheduler.advanceUntilIdle()
 
             val getRedirect: AppLinksUseCases.GetAppLinkRedirect = mockk()
@@ -681,7 +667,7 @@ class MenuDialogMiddlewareTest {
             testScheduler.advanceUntilIdle()
 
             verify { openAppLinkRedirect.invoke(appIntent = intent) }
-            assertTrue(dismissWasCalled)
+            assertTrue(navigationEvents.contains(NavigationEvent.Dismiss))
         }
 
     @Test
@@ -689,7 +675,6 @@ class MenuDialogMiddlewareTest {
         runTest(testDispatcher) {
             val url = "https://www.mozilla.org"
             val title = "Mozilla"
-            var dismissWasCalled = false
 
             val browserMenuState =
                 BrowserMenuState(
@@ -699,11 +684,7 @@ class MenuDialogMiddlewareTest {
                             title = title,
                         )
                 )
-            val store =
-                createStore(
-                    menuState = MenuState(browserMenuState = browserMenuState),
-                    onDismiss = { dismissWasCalled = true },
-                )
+            val store = createStore(menuState = MenuState(browserMenuState = browserMenuState))
             testScheduler.advanceUntilIdle()
 
             val getRedirect: AppLinksUseCases.GetAppLinkRedirect = mockk()
@@ -720,7 +701,7 @@ class MenuDialogMiddlewareTest {
             testScheduler.advanceUntilIdle()
 
             verify(exactly = 0) { openAppLinkRedirect.invoke(appIntent = intent) }
-            assertFalse(dismissWasCalled)
+            assertFalse(navigationEvents.contains(NavigationEvent.Dismiss))
         }
 
     @Test
@@ -748,14 +729,11 @@ class MenuDialogMiddlewareTest {
     @Test
     fun `WHEN customize reader view action is dispatched THEN reader view action is dispatched`() =
         runTest(testDispatcher) {
-            var dismissWasCalled = false
-
             val appStore = spyk(AppStore())
             val store =
                 createStore(
                     appStore = appStore,
                     menuState = MenuState(),
-                    onDismiss = { dismissWasCalled = true },
                 )
             testScheduler.advanceUntilIdle()
 
@@ -763,7 +741,7 @@ class MenuDialogMiddlewareTest {
             testScheduler.advanceUntilIdle()
 
             verify { appStore.dispatch(ReaderViewAction.ReaderViewControlsShown) }
-            assertTrue(dismissWasCalled)
+            assertTrue(navigationEvents.contains(NavigationEvent.Dismiss))
         }
 
     @Test
@@ -771,7 +749,6 @@ class MenuDialogMiddlewareTest {
         runTest(testDispatcher) {
             val url = "https://www.mozilla.org"
             val title = "Mozilla"
-            var dismissedWasCalled = false
 
             val browserMenuState =
                 BrowserMenuState(
@@ -786,7 +763,6 @@ class MenuDialogMiddlewareTest {
                 createStore(
                     appStore = appStore,
                     menuState = MenuState(browserMenuState = browserMenuState),
-                    onDismiss = { dismissedWasCalled = true },
                 )
             testScheduler.advanceUntilIdle()
 
@@ -794,7 +770,7 @@ class MenuDialogMiddlewareTest {
             testScheduler.advanceUntilIdle()
 
             verify { appStore.dispatch(AppAction.OpenInFirefoxStarted) }
-            assertTrue(dismissedWasCalled)
+            assertTrue(navigationEvents.contains(NavigationEvent.Dismiss))
         }
 
     @Test
@@ -802,7 +778,6 @@ class MenuDialogMiddlewareTest {
         runTest(testDispatcher) {
             val url = "https://www.mozilla.org"
             val title = "Mozilla"
-            var dismissWasCalled = false
 
             val browserMenuState =
                 BrowserMenuState(
@@ -818,7 +793,6 @@ class MenuDialogMiddlewareTest {
                     createStore(
                         appStore = appStore,
                         menuState = MenuState(browserMenuState = browserMenuState),
-                        onDismiss = { dismissWasCalled = true },
                     )
                 )
             testScheduler.advanceUntilIdle()
@@ -827,14 +801,13 @@ class MenuDialogMiddlewareTest {
             testScheduler.advanceUntilIdle()
 
             verify { appStore.dispatch(FindInPageAction.FindInPageStarted) }
-            assertTrue(dismissWasCalled)
+            assertTrue(navigationEvents.contains(NavigationEvent.Dismiss))
         }
 
     @Test
     fun `WHEN move to non-private tab action is dispatched THEN the private tab is migrated and menu is dismissed`() =
         runTest(testDispatcher) {
             val tabId = "test-tab-id"
-            var dismissWasCalled = false
 
             val browserMenuState =
                 BrowserMenuState(
@@ -845,37 +818,27 @@ class MenuDialogMiddlewareTest {
                             private = true,
                         )
                 )
-            val store =
-                createStore(
-                    menuState = MenuState(browserMenuState = browserMenuState),
-                    onDismiss = { dismissWasCalled = true },
-                )
+            val store = createStore(menuState = MenuState(browserMenuState = browserMenuState))
             testScheduler.advanceUntilIdle()
 
             store.dispatch(MenuAction.MoveToNonPrivateTab)
             testScheduler.advanceUntilIdle()
 
             coVerify { migratePrivateTabUseCase(tabId) }
-            assertTrue(dismissWasCalled)
+            assertTrue(navigationEvents.contains(NavigationEvent.Dismiss))
         }
 
     @Test
     fun `GIVEN no selected tab WHEN move to non-private tab action is dispatched THEN the use case is not invoked`() =
         runTest(testDispatcher) {
-            var dismissWasCalled = false
-
-            val store =
-                createStore(
-                    menuState = MenuState(browserMenuState = null),
-                    onDismiss = { dismissWasCalled = true },
-                )
+            val store = createStore(menuState = MenuState(browserMenuState = null))
             testScheduler.advanceUntilIdle()
 
             store.dispatch(MenuAction.MoveToNonPrivateTab)
             testScheduler.advanceUntilIdle()
 
             coVerify(exactly = 0) { migratePrivateTabUseCase(any()) }
-            assertFalse(dismissWasCalled)
+            assertFalse(navigationEvents.contains(NavigationEvent.Dismiss))
         }
 
     @Test
@@ -883,24 +846,11 @@ class MenuDialogMiddlewareTest {
         runTest(testDispatcher) {
             val url = "https://www.mozilla.org"
             val mockIntent: PendingIntent = mockk()
-            var dismissWasCalled = false
-            var sentIntent: PendingIntent? = null
-            var sentUrl: String? = null
 
-            val store =
-                spyk(
-                    createStore(
-                        onDismiss = { dismissWasCalled = true },
-                        onSendPendingIntentWithUrl = { _, _ ->
-                            sentIntent = mockIntent
-                            sentUrl = url
-                        },
-                    )
-                )
+            val store = spyk(createStore())
             testScheduler.advanceUntilIdle()
 
-            assertNull(sentIntent)
-            assertNull(sentUrl)
+            assertTrue(navigationEvents.isEmpty())
 
             store.dispatch(
                 MenuAction.CustomMenuItemAction(
@@ -910,9 +860,13 @@ class MenuDialogMiddlewareTest {
             )
             testScheduler.advanceUntilIdle()
 
-            assertEquals(sentIntent, mockIntent)
-            assertEquals(sentUrl, url)
-            assertTrue(dismissWasCalled)
+            assertEquals(
+                listOf(
+                    NavigationEvent.SendPendingIntentWithUrl(intent = mockIntent, url = url),
+                    NavigationEvent.Dismiss,
+                ),
+                navigationEvents,
+            )
         }
 
     @Test
@@ -927,12 +881,7 @@ class MenuDialogMiddlewareTest {
                     desktopMode = false,
                 )
             val browserMenuState = BrowserMenuState(selectedTab = selectedTab)
-            var dismissWasCalled = false
-            val store =
-                createStore(
-                    menuState = MenuState(browserMenuState = browserMenuState),
-                    onDismiss = { dismissWasCalled = true },
-                )
+            val store = createStore(menuState = MenuState(browserMenuState = browserMenuState))
             testScheduler.advanceUntilIdle()
 
             store.dispatch(MenuAction.RequestDesktopSite)
@@ -944,7 +893,7 @@ class MenuDialogMiddlewareTest {
                     tabId = eq(selectedTab.id),
                 )
             }
-            assertTrue(dismissWasCalled)
+            assertTrue(navigationEvents.contains(NavigationEvent.Dismiss))
         }
 
     @Test
@@ -960,15 +909,13 @@ class MenuDialogMiddlewareTest {
                     desktopMode = isDesktopMode,
                 )
             val browserMenuState = BrowserMenuState(selectedTab = selectedTab)
-            var dismissWasCalled = false
             val store =
                 createStore(
                     menuState =
                         MenuState(
                             browserMenuState = browserMenuState,
                             isDesktopMode = isDesktopMode,
-                        ),
-                    onDismiss = { dismissWasCalled = true },
+                        )
                 )
             testScheduler.advanceUntilIdle()
 
@@ -981,7 +928,7 @@ class MenuDialogMiddlewareTest {
                     tabId = eq(selectedTab.id),
                 )
             }
-            assertTrue(dismissWasCalled)
+            assertTrue(navigationEvents.contains(NavigationEvent.Dismiss))
         }
 
     @Test
@@ -1185,7 +1132,8 @@ class MenuDialogMiddlewareTest {
             )
         }
 
-    private fun createStore(
+    @OptIn(ExperimentalCoroutinesApi::class) // UnconfinedTestDispatcher
+    private fun TestScope.createStore(
         appStore: AppStore = AppStore(),
         summarizationEligibilityChecker: SummarizationEligibilityChecker = TestSummarizationEligibilityChecker(),
         menuState: MenuState =
@@ -1199,36 +1147,36 @@ class MenuDialogMiddlewareTest {
                             )
                     )
             ),
-        onDismiss: suspend () -> Unit = {},
-        onSendPendingIntentWithUrl: (intent: PendingIntent, url: String?) -> Unit = { _: PendingIntent, _: String? -> },
     ) =
         MenuStore(
-            initialState = menuState,
-            middleware =
-                listOf(
-                    MenuDialogMiddleware(
-                        appStore = appStore,
-                        addonManager = addonManager,
-                        settings = settings,
-                        summarizeMenuSettings = summarizeFeatureSettings,
-                        summarizationEligibilityChecker = summarizationEligibilityChecker,
-                        bookmarksStorage = bookmarksStorage,
-                        pinnedSiteStorage = pinnedSiteStorage,
-                        appLinksUseCases = appLinksUseCases,
-                        addBookmarkUseCase = addBookmarkUseCase,
-                        addPinnedSiteUseCase = addPinnedSiteUseCase,
-                        removePinnedSitesUseCase = removePinnedSiteUseCase,
-                        requestDesktopSiteUseCase = requestDesktopSiteUseCase,
-                        migratePrivateTabUseCase = migratePrivateTabUseCase,
-                        materialAlertDialogBuilder = alertDialogBuilder,
-                        topSitesMaxLimit = TOP_SITES_MAX_COUNT,
-                        onDeleteAndQuit = onDeleteAndQuit,
-                        onDismiss = onDismiss,
-                        onSendPendingIntentWithUrl = onSendPendingIntentWithUrl,
-                        mainDispatcher = testDispatcher,
-                    )
-                ),
-        )
+                initialState = menuState,
+                middleware =
+                    listOf(
+                        MenuDialogMiddleware(
+                            appStore = appStore,
+                            addonManager = addonManager,
+                            settings = settings,
+                            summarizeMenuSettings = summarizeFeatureSettings,
+                            summarizationEligibilityChecker = summarizationEligibilityChecker,
+                            bookmarksStorage = bookmarksStorage,
+                            pinnedSiteStorage = pinnedSiteStorage,
+                            appLinksUseCases = appLinksUseCases,
+                            addBookmarkUseCase = addBookmarkUseCase,
+                            addPinnedSiteUseCase = addPinnedSiteUseCase,
+                            removePinnedSitesUseCase = removePinnedSiteUseCase,
+                            requestDesktopSiteUseCase = requestDesktopSiteUseCase,
+                            migratePrivateTabUseCase = migratePrivateTabUseCase,
+                            materialAlertDialogBuilder = alertDialogBuilder,
+                            topSitesMaxLimit = TOP_SITES_MAX_COUNT,
+                            mainDispatcher = testDispatcher,
+                        )
+                    ),
+            )
+            .also { store ->
+                backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                    store.navigationEvents.collect { navigationEvents.add(it) }
+                }
+            }
 
     private class TestSummarizationEligibilityChecker(
         private val isEligible: Boolean = false,

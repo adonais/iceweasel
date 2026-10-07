@@ -112,7 +112,7 @@ export default class PasswordRulesTooltip extends MozLitElement {
           </li>
           <li class=${this.hasEmail && "warning"}>
             <span
-              data-l10n-id="password-rules-email-description"
+              data-l10n-id="password-rules-email-description2"
               class="rule-description"
               aria-labelledby="password-rules-header"
             ></span>

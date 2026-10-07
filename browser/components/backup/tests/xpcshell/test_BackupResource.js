@@ -4,15 +4,15 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
 const { bytesToFuzzyKilobytes } = ChromeUtils.importESModule(
-  "resource:///modules/backup/BackupResource.sys.mjs"
+  "moz-src:///browser/components/backup/resources/BackupResource.sys.mjs"
 );
 
 const { BookmarksBackupResource } = ChromeUtils.importESModule(
-  "resource:///modules/backup/BookmarksBackupResource.sys.mjs"
+  "moz-src:///browser/components/backup/resources/BookmarksBackupResource.sys.mjs"
 );
 
 const { PlacesBackupResource } = ChromeUtils.importESModule(
-  "resource:///modules/backup/PlacesBackupResource.sys.mjs"
+  "moz-src:///browser/components/backup/resources/PlacesBackupResource.sys.mjs"
 );
 
 const EXPECTED_KILOBYTES_FOR_XULSTORE = 1;

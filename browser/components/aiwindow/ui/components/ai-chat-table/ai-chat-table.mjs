@@ -9,11 +9,9 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
  * A custom element for rendering markdown tables in chat messages.
  *
  * @property {Array<number>} lineRange - [startLine, endLine] from the source markdown
- * @property {string} messageId - The ID of the parent message
  */
 export class AIChatTable extends MozLitElement {
   static properties = {
-    messageId: { type: String, attribute: "message-id" },
     lineRange: { type: Array, attribute: "data-line-range" },
     isOverflowing: { type: Boolean, state: true },
   };
@@ -72,13 +70,24 @@ export class AIChatTable extends MozLitElement {
     this.isOverflowing = container.scrollWidth - container.clientWidth > 1;
   }
 
+  /**
+   * The parent message's id. The containing <ai-chat-message> reflects it to
+   * data-message-id on its host, so read it from there instead of having the
+   * message push it onto every table.
+   *
+   * @returns {string|null}
+   */
+  get #messageId() {
+    return this.getRootNode()?.host?.dataset.messageId ?? null;
+  }
+
   #handleCopyTable() {
     this.dispatchEvent(
       new CustomEvent("copy-table", {
         bubbles: true,
         composed: true,
         detail: {
-          messageId: this.messageId,
+          messageId: this.#messageId,
           lineRange: this.lineRange,
         },
       })
@@ -92,7 +101,7 @@ export class AIChatTable extends MozLitElement {
         href="chrome://browser/content/aiwindow/components/ai-chat-table.css"
       />
       <div class="table-wrapper">
-        ${this.messageId && this.lineRange
+        ${this.#messageId && this.lineRange
           ? html`<moz-button
               data-l10n-id="aiwindow-copy-table"
               data-l10n-attrs="tooltiptext,aria-label"

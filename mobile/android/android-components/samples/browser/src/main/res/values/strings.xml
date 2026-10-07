@@ -7,6 +7,7 @@
     <string name="menu_action_add_tab">Add New Tab</string>
     <string name="mozac_reader_view_description">Enable Reader View</string>
     <string name="mozac_reader_view_description_selected">Disable Reader View</string>
+    <string name="mozac_reader_view_appearance_description">Customize Reader View</string>
 
     <!-- Text shown after successfully enabled an add-on. %1$s is the add-on name. -->
     <string name="mozac_feature_addons_successfully_enabled" >Successfully enabled %1$s</string>

@@ -1,8 +1,8 @@
 /* Copyright (c) 2015 Xiph.Org Foundation
    Written by Viswanath Puttagunta */
 /**
-   @file arm_mdct.h
-   @brief ARM Neon Intrinsic optimizations for mdct using NE10 library
+   @file mdct_arm.h
+   @brief ARM-specific MDCT backend hooks for CELT
  */
 
 /*
@@ -35,25 +35,43 @@
 
 #include "mdct.h"
 
-#if defined(HAVE_ARM_NE10)
-/** Compute a forward MDCT and scale by 4/N, trashes the input array */
-void clt_mdct_forward_neon(const mdct_lookup *l, kiss_fft_scalar *in,
-                           kiss_fft_scalar * OPUS_RESTRICT out,
-                           const opus_val16 *window, int overlap,
-                           int shift, int stride, int arch);
+/* The AArch64 NEON inverse MDCT ported from FFmpeg's libavutil/tx
+   (celt_tx_neon.S / celt_mdct_tx.c), float only. */
+#if !defined(FIXED_POINT) && defined(__aarch64__) && \
+    (defined(OPUS_ARM_MAY_HAVE_NEON_INTR) || defined(OPUS_ARM_PRESUME_NEON_INTR))
+#define OPUS_ARM_TX_MDCT (1)
+#endif
 
-void clt_mdct_backward_neon(const mdct_lookup *l, kiss_fft_scalar *in,
-                            kiss_fft_scalar * OPUS_RESTRICT out,
-                            const opus_val16 *window, int overlap,
-                            int shift, int stride, int arch);
+#if defined(OPUS_ARM_TX_MDCT)
 
-#if !defined(OPUS_HAVE_RTCD)
-#define OVERRIDE_OPUS_MDCT (1)
-#define clt_mdct_forward(_l, _in, _out, _window, _int, _shift, _stride, _arch) \
-      clt_mdct_forward_neon(_l, _in, _out, _window, _int, _shift, _stride, _arch)
-#define clt_mdct_backward(_l, _in, _out, _window, _int, _shift, _stride, _arch) \
-      clt_mdct_backward_neon(_l, _in, _out, _window, _int, _shift, _stride, _arch)
-#endif /* OPUS_HAVE_RTCD */
-#endif /* HAVE_ARM_NE10 */
+/* NEON inverse MDCT for the 48 kHz and 96 kHz mode sizes, falling back to
+   clt_mdct_backward_c() for other (custom mode) sizes. The forward MDCT is
+   not ported yet. */
+struct OpusTXContext;
+const struct OpusTXContext *celt_tx_mdct_kernel(int len);
+
+void clt_mdct_backward_tx(const mdct_lookup *l, kiss_fft_scalar *in,
+      kiss_fft_scalar * OPUS_RESTRICT out,
+      const celt_coef * OPUS_RESTRICT window,
+      int overlap, int shift, int stride, int arch);
+
+# if defined(OPUS_HAVE_RTCD) && defined(OPUS_ARM_MAY_HAVE_NEON_INTR) \
+     && !defined(OPUS_ARM_PRESUME_NEON_INTR)
+extern void (*const CLT_MDCT_BACKWARD_IMPL[OPUS_ARCHMASK+1])(
+      const mdct_lookup *l, kiss_fft_scalar *in,
+      kiss_fft_scalar * OPUS_RESTRICT out,
+      const celt_coef * OPUS_RESTRICT window,
+      int overlap, int shift, int stride, int arch);
+
+#  define OVERRIDE_CLT_MDCT_BACKWARD (1)
+#  define clt_mdct_backward(_l, _in, _out, _window, _overlap, _shift, _stride, _arch) \
+      ((*CLT_MDCT_BACKWARD_IMPL[(_arch)&OPUS_ARCHMASK])(_l, _in, _out, _window, _overlap, _shift, _stride, _arch))
+# elif defined(OPUS_ARM_PRESUME_NEON_INTR)
+#  define OVERRIDE_CLT_MDCT_BACKWARD (1)
+#  define clt_mdct_backward(_l, _in, _out, _window, _overlap, _shift, _stride, _arch) \
+      clt_mdct_backward_tx(_l, _in, _out, _window, _overlap, _shift, _stride, _arch)
+# endif
+
+#endif /* OPUS_ARM_TX_MDCT */
 
 #endif

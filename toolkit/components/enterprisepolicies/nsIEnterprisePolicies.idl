@@ -104,4 +104,10 @@ interface nsIEnterprisePolicies : nsISupports
    * @returns A boolean - true if the extension should be exempt.
    */
   boolean isExemptExecutableExtension(in ACString url, in ACString extension);
+
+  /**
+   * Returns the userContextId of the container that a navigation to the given
+   * URI should use based on SitePolicies, or 0 if no container policy applies.
+   */
+  unsigned long getContainerForURI(in nsIURI uri);
 };

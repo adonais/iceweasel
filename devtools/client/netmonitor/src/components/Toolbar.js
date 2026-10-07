@@ -201,9 +201,7 @@ class Toolbar extends Component {
       this.updateBrowserCacheDisabled
     );
 
-    this.shortcuts = new KeyShortcuts({
-      window,
-    });
+    this.shortcuts = new KeyShortcuts(window);
 
     this.shortcuts.on(SEARCH_KEY_SHORTCUT, event => {
       event.preventDefault();

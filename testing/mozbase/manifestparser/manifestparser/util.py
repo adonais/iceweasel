@@ -81,3 +81,9 @@ def evaluate_list_from_string(list_string):
         if x.strip()
     ]
     return ast.literal_eval("[" + ",".join(parts) + "]")
+
+
+def split_manifest_list(list_string):
+    """Split a manifest list value into entries, which may contain spaces (so
+    splitting on whitespace does not work)."""
+    return [x.strip() for x in list_string.strip().splitlines() if x.strip()]

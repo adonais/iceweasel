@@ -1,0 +1,28 @@
+# Firefox-local: drop the streaming encoder's cache at an <EOU>, as NeMo's
+# reset_state() does. Upstream restarts the RNN-T decoder at the boundary but
+# keeps the encoder cache, which still carries the utterance's right context:
+# over the silence that follows an utterance the joint goes on scoring its last
+# word, and the decoder, back at SOS, emits that word again on every chunk. A
+# caller who says one word and stops gets one result per chunk for as long as
+# they stay quiet. Applies on top of parakeet-end-utterance.patch. Upstreamable
+# to https://github.com/mudler/parakeet.cpp
+diff --git a/src/streaming.cpp b/src/streaming.cpp
+--- a/src/streaming.cpp
++++ b/src/streaming.cpp
+@@ -197,6 +197,16 @@
+         state_.last_token = -1;     // SOS sentinel (nothing emitted yet)
+         state_.have_token = false;
+         tokens_since_boundary_ = 0;
++        // Drop the encoder cache too, as NeMo's reset_state() does. The comment
++        // above used to reset the decoder only, on the grounds that the cache
++        // made no difference to the decoded tokens; that holds while speech
++        // keeps coming, but not when an utterance is followed by silence. The
++        // cache still carries the utterance's right context, so the joint keeps
++        // scoring its last word over the silence frames and the decoder, back
++        // at SOS, emits that word again on every chunk - one result per chunk,
++        // for as long as the caller stays quiet. The caches only: the caller's
++        // chunk schedule is unchanged, so the step counter keeps running.
++        enc_.reset_caches();
+     }
+     return emitted;
+ }

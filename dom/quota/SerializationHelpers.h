@@ -7,6 +7,7 @@
 
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtils.h"
+#include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/dom/quota/Client.h"
 #include "mozilla/dom/quota/CommonMetadata.h"

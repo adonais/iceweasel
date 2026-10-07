@@ -12,7 +12,7 @@ EXPORTS += [
 ]
 
 EXPORTS.mozilla += [
-    "!GeckoProcessTypes.h",
+    "!GeckoProcessTypes.inc",
     "FileLocation.h",
     "IOInterposer.h",
     "LateWriteChecks.h",
@@ -67,7 +67,7 @@ if CONFIG["OS_ARCH"] != "WINNT":
     ]
 
 GeneratedFile(
-    "GeckoProcessTypes.h",
+    "GeckoProcessTypes.inc",
     script="gen_process_types.py",
     entry_point="main",
 )

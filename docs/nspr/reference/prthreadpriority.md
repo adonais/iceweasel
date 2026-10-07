@@ -61,4 +61,4 @@ must not be used in place of proper synchronization.
 ## See Also
 
 [Setting Thread
-Priorities](Introduction_to_NSPR#Setting_Thread_Priorities).
+Priorities](introduction_to_nspr.md#setting-thread-priorities).

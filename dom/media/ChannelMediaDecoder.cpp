@@ -312,6 +312,7 @@ void ChannelMediaDecoder::NotifyDownloadEnded(nsresult aStatus) {
   if (NS_SUCCEEDED(aStatus)) {
     // Download ends successfully. This is a stream with a finite length.
     GetStateMachine()->DispatchIsLiveStream(false);
+    NotifyReaderDataArrived();
   }
 
   MediaDecoderOwner* owner = GetOwner();

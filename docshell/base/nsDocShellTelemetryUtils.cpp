@@ -53,6 +53,7 @@ static const LoadErrorTelemetryResult sResult[] = {
     {NS_ERROR_BLOCKED_BY_POLICY, "BLOCKED_BY_POLICY"_ns},
     {NS_ERROR_NET_HTTP2_SENT_GOAWAY, "HTTP2_SENT_GOAWAY"_ns},
     {NS_ERROR_NET_HTTP3_PROTOCOL_ERROR, "HTTP3_PROTOCOL"_ns},
+    {NS_ERROR_NET_UNCLEAN_SHUTDOWN, "UNCLEAN_SHUTDOWN"_ns},
     {NS_BINDING_FAILED, "BINDING_FAILED"_ns},
 };
 }  // anonymous namespace

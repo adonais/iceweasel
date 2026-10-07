@@ -4,28 +4,28 @@
 
 #include "mozilla/dom/CrossShadowBoundaryRange.h"
 
+#include "mozilla/dom/Range.h"
 #include "nsContentUtils.h"
 #include "nsIContentInlines.h"
 #include "nsINode.h"
-#include "nsRange.h"
 
 namespace mozilla::dom {
 template already_AddRefed<CrossShadowBoundaryRange>
 CrossShadowBoundaryRange::Create(const RangeBoundary& aStartBoundary,
                                  const RangeBoundary& aEndBoundary,
-                                 nsRange* aOwner);
+                                 Range* aOwner);
 template already_AddRefed<CrossShadowBoundaryRange>
 CrossShadowBoundaryRange::Create(const RangeBoundary& aStartBoundary,
                                  const RawRangeBoundary& aEndBoundary,
-                                 nsRange* aOwner);
+                                 Range* aOwner);
 template already_AddRefed<CrossShadowBoundaryRange>
 CrossShadowBoundaryRange::Create(const RawRangeBoundary& aStartBoundary,
                                  const RangeBoundary& aEndBoundary,
-                                 nsRange* aOwner);
+                                 Range* aOwner);
 template already_AddRefed<CrossShadowBoundaryRange>
 CrossShadowBoundaryRange::Create(const RawRangeBoundary& aStartBoundary,
                                  const RawRangeBoundary& aEndBoundary,
-                                 nsRange* aOwner);
+                                 Range* aOwner);
 
 template nsresult CrossShadowBoundaryRange::SetStartAndEnd(
     const RangeBoundary& aStartBoundary, const RangeBoundary& aEndBoundary);
@@ -72,7 +72,7 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_END
 template <typename SPT, typename SRT, typename EPT, typename ERT>
 already_AddRefed<CrossShadowBoundaryRange> CrossShadowBoundaryRange::Create(
     const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
-    const RangeBoundaryBase<EPT, ERT>& aEndBoundary, nsRange* aOwner) {
+    const RangeBoundaryBase<EPT, ERT>& aEndBoundary, Range* aOwner) {
   RefPtr<CrossShadowBoundaryRange> range;
   if (!sCachedRanges || sCachedRanges->IsEmpty()) {
     range = new CrossShadowBoundaryRange(aStartBoundary.GetContainer(), aOwner);
@@ -225,7 +225,7 @@ void CrossShadowBoundaryRange::CharacterDataChanged(
             *aBoundary.Offset(
                 RangeBoundary::OffsetFilter::kValidOrInvalidOffsets)) {
       RawRangeBoundary newStart =
-          nsRange::ComputeNewBoundaryWhenBoundaryInsideChangedText(
+          Range::ComputeNewBoundaryWhenBoundaryInsideChangedText(
               aInfo, aBoundary.AsRaw());
       return Some(newStart.AsRangeBoundaryInFlatTreeOrNonFlattenedNode(aFor));
     }

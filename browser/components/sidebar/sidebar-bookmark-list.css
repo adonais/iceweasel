@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+@import url("chrome://global/skin/design-system/text-and-typography.css");
+
 .fxview-tab-list {
   /* The base fxview grid template assumes a multi-column tab list; the sidebar
      is a single shrink-to-fit column. Use minmax(0, 1fr) on both explicit and
@@ -70,10 +72,10 @@ virtual-list {
 
 details summary,
 .bookmark-folder-label {
+  display: flex;
+  align-items: center;
   line-height: var(--size-item-medium);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   user-select: none;
   /* Reserve a leading gutter for the expand/collapse chevron so the folder icon
      stays aligned whether or not the folder has children. The gutter is the
@@ -111,6 +113,7 @@ details summary,
     background-image: url("chrome://global/skin/icons/folder.svg");
     background-size: contain;
     background-repeat: no-repeat;
+    flex-shrink: 0;
   }
 
   @media not -moz-pref("browser.nova.enabled") {
@@ -118,9 +121,14 @@ details summary,
   }
 }
 
+.bookmark-folder-title {
+  /* By default, a flex item's width is set by the content inside it. Set min-width to 0
+     to allow it to shrink and truncate with an ellipsis. Otherwise, it will clip. */
+  min-width: 0;
+  text-align: match-parent;
+}
+
 details > summary {
-  display: flex;
-  align-items: center;
   /* Replace the native <details> triangle with a custom chevron drawn in the
      reserved leading gutter, so folder icons stay vertically aligned. */
   list-style: none;

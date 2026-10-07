@@ -213,3 +213,50 @@ add_task(async function closeAllDuplicateTabs_warn_on_single() {
 
   await SpecialPowers.popPrefEnv();
 });
+
+/**
+ * Tests that a tab still restoring, which sits on about:blank until its page
+ * commits, is not mistaken for a duplicate of another about:blank tab.
+ */
+add_task(async function closeAllDuplicateTabs_ignores_restoring_tabs() {
+  let blankTab = gBrowser.selectedTab;
+  is(
+    blankTab.linkedBrowser.currentURI.spec,
+    "about:blank",
+    "The initial tab is on about:blank"
+  );
+  let tab1 = await addTab("http://mochi.test:8888/one");
+  let tab2 = await addTab("http://mochi.test:8888/two");
+  let group = gBrowser.addTabGroup([tab1, tab2]);
+  let groupId = group.id;
+  await TabGroupTestUtils.saveAndCloseTabGroup(group);
+
+  let restored = SessionStore.openSavedTabGroup(groupId, window);
+  let selected = gBrowser.selectedTab;
+  is(selected.group, restored, "The restored group's tab is selected");
+  is(
+    selected.linkedBrowser.currentURI.spec,
+    "about:blank",
+    "The selected restored tab has not committed its page yet"
+  );
+  ok(SessionStore.isTabRestoring(selected), "The selected tab is restoring");
+  Assert.deepEqual(
+    gBrowser.getAllDuplicateTabsToClose(),
+    [],
+    "No duplicates while the restored tab is still on about:blank"
+  );
+  Assert.deepEqual(
+    gBrowser.getDuplicateTabsToClose(blankTab),
+    [],
+    "The blank tab has no duplicates while the restored tab is loading"
+  );
+
+  await BrowserTestUtils.waitForEvent(selected, "SSTabRestored");
+  Assert.deepEqual(
+    gBrowser.getAllDuplicateTabsToClose(),
+    [],
+    "Still no duplicates once the restored tab has loaded"
+  );
+
+  await removeTabGroup(restored);
+});

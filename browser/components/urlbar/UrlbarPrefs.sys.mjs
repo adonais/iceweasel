@@ -90,6 +90,17 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // 30 days since user input it as the default.
   ["autoFill.adaptiveHistory.useCountThreshold", [0.47, "float"]],
 
+  // Approximate number of times the user must have picked a URL with a path for
+  // a given input before it becomes an adaptive history autofill candidate.
+  // Converted into a `moz_inputhistory.use_count` threshold by
+  // `inputHistoryPicksToUseCount` in UrlbarProviderAutofill.sys.mjs, so the
+  // exact pick count depends on how the picks were spread over time.
+  ["autoFill.adaptiveHistory.urlMinPicks", 3],
+
+  // Days of idle decay assumed since the last pick when converting
+  // `urlMinPicks` into a use_count threshold.
+  ["autoFill.adaptiveHistory.urlPicksAgeDays", 14],
+
   // Feature gate pref for clipboard suggestions in the urlbar.
   ["clipboard.featureGate", false],
 
@@ -290,6 +301,14 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // Feature gate pref for the <moz-urlbar> on about:newtab and about:home. When
   // enabled, it supersedes New Tab's handoff search bar.
   ["newtab.featureGate", false],
+
+  // Layout variant A of the New Tab search bar. Only takes effect while
+  // `newtab.featureGate` is enabled.
+  ["newtab.variantA", false],
+
+  // Layout variant B of the New Tab search bar, with the search engine button
+  // above the input. Only takes effect while `newtab.featureGate` is enabled.
+  ["newtab.variantB", false],
 
   // Whether addresses and search results typed into the address bar
   // should be opened in new tabs by default.
@@ -1400,6 +1419,8 @@ class Preferences {
     switch (pref) {
       case "browser.nova.enabled":
         this._map.delete("newtabFeatureGate");
+        this._map.delete("newtabVariantA");
+        this._map.delete("newtabVariantB");
         return;
       case "autoFill.adaptiveHistory.useCountThreshold":
         this._map.delete("autoFillAdaptiveHistoryUseCountThreshold");
@@ -1503,6 +1524,10 @@ class Preferences {
       case "newtabFeatureGate": {
         // The New Tab search bar is only themed for Nova.
         return this.get("browser.nova.enabled") && this._readPref(pref);
+      }
+      case "newtabVariantA":
+      case "newtabVariantB": {
+        return this.get("newtabFeatureGate") && this._readPref(pref);
       }
       case "defaultBehavior": {
         let val = 0;

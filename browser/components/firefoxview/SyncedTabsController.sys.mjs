@@ -195,11 +195,13 @@ export class SyncedTabsController {
   /** @type {{[A in Action]: ActionMapping}} */
   actionMappings = {
     "sign-in": {
+      asset: "chrome://browser/content/firefoxview/synced-tabs-empty.svg",
       header: "firefoxview-syncedtabs-signin-header-2",
       description: "firefoxview-syncedtabs-signin-description-2",
       buttonLabel: "firefoxview-syncedtabs-signin-primarybutton-2",
     },
     "add-device": {
+      asset: "chrome://browser/content/firefoxview/synced-tabs-empty.svg",
       header: "firefoxview-syncedtabs-adddevice-header-2",
       description: "firefoxview-syncedtabs-adddevice-description-2",
       buttonLabel: "firefoxview-syncedtabs-adddevice-primarybutton",
@@ -209,11 +211,13 @@ export class SyncedTabsController {
       },
     },
     "sync-tabs-disabled": {
+      asset: "chrome://browser/content/firefoxview/synced-tabs-empty.svg",
       header: "firefoxview-syncedtabs-synctabs-header",
       description: "firefoxview-syncedtabs-synctabs-description",
       buttonLabel: "firefoxview-tabpickup-synctabs-primarybutton",
     },
     loading: {
+      asset: "chrome://browser/content/firefoxview/synced-tabs-empty.svg",
       header: "firefoxview-syncedtabs-loading-header",
       description: "firefoxview-syncedtabs-loading-description",
     },
@@ -254,34 +258,23 @@ export class SyncedTabsController {
     const nova = Services.prefs.getBoolPref("browser.nova.enabled", false);
     let header, description, descriptionLink, buttonLabel, mainImageUrl;
     let descriptionArray;
+    let mappings;
     if (error) {
-      let link;
-      ({ header, description, link, buttonLabel } =
-        SyncedTabsErrorHandler.getFluentStringsForErrorType(errorState));
+      mappings =
+        SyncedTabsErrorHandler.getFluentStringsForErrorType(errorState);
       action = `${errorState}`;
-      mainImageUrl = nova
-        ? "chrome://browser/skin/sidebar/kit-tabs-devices-error.svg"
-        : "chrome://browser/content/firefoxview/synced-tabs-error.svg";
-      descriptionArray = [description];
-      if (errorState == "password-locked" && !nova) {
-        descriptionLink = {};
-        // This is ugly, but we need to special case this link so we can
-        // coexist with the old view. TODO remove with nova cleanup
-        descriptionArray.push("firefoxview-syncedtab-password-locked-link");
-        descriptionLink.name = "syncedtab-password-locked-link";
-        descriptionLink.url = link.href;
-      }
     } else {
-      const mappings = nova ? this.novaActionMappings : this.actionMappings;
-      header = mappings[action].header;
-      description = mappings[action].description;
-      buttonLabel = mappings[action].buttonLabel;
-      descriptionLink = mappings[action].descriptionLink;
-      mainImageUrl = nova
-        ? mappings[action].asset
-        : "chrome://browser/content/firefoxview/synced-tabs-empty.svg";
-      descriptionArray = [description];
+      mappings = nova
+        ? this.novaActionMappings[action]
+        : this.actionMappings[action];
     }
+    header = mappings.header;
+    description = mappings.description;
+    buttonLabel = mappings.buttonLabel;
+    descriptionLink = mappings.descriptionLink;
+    mainImageUrl = mappings.asset;
+    descriptionArray = [description];
+
     return {
       action,
       buttonLabel,
@@ -330,7 +323,9 @@ export class SyncedTabsController {
     switch (this.currentSetupStateIndex) {
       case 0 /* error-state */:
         if (this.errorState) {
-          return this.#getMessageCardForState({ error: true });
+          return this.#getMessageCardForState({
+            error: true,
+          });
         }
         return this.#getMessageCardForState({ action: "loading" });
       case 1 /* not-signed-in */:

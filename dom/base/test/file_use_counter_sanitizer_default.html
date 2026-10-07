@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Use counter test for the default Sanitizer configuration</title>
+<style>
+  /* Sentinel use counter to signal that telemetry for this document has been captured */
+  div {
+    marker-mid: initial;
+  }
+</style>
+<div id="host"></div>
+<div id="host2"></div>
+<div id="host3"></div>
+<script>
+  const element = document.getElementById("host");
+  const element2 = document.getElementById("host2");
+  const element3 = document.getElementById("host3");
+
+  // Every variation of "no authored configuration": the option omitted, the
+  // "default" preset string, a default-constructed Sanitizer, and the static
+  // parser. None of these may count any configuration key.
+  element.setHTML("<p>omitted</p>");
+  element2.setHTML("<p>preset</p>", { sanitizer: "default" });
+  element3.setHTML("<p>constructed</p>", { sanitizer: new Sanitizer() });
+  Document.parseHTML("<p>parser</p>");
+</script>

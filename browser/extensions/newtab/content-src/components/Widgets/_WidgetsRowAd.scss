@@ -1,0 +1,118 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+// @experiment(remove) { bug 2069496 }
+// Reads as the story grid's medium card. The overrides undo sections-grid
+// assumptions the mixin makes that a fixed cell cannot inherit.
+.nova-enabled .widgets-row-ad-cell {
+  @include wallpaper-contrast-fix;
+
+  .widgets-row-ad {
+    @include nova-section-card-medium;
+  }
+
+  .ds-card.widgets-row-ad.sections-card-ui {
+    // Surface, hover and forced-colors come from the shared
+    // `:is(.ds-card-grid, .widgets-row-ad-cell)` block in _DSCard.scss.
+    block-size: 100%;
+
+    // The image takes a fixed height here rather than a share of a
+    // sections-grid track.
+    .img-wrapper {
+      flex: 0 0 auto;
+      block-size: var(--card-cover-image-height-default);
+    }
+
+    // Base sizes this by a 50%-of-width top padding to cover the image; here it
+    // has to be the card or the controls land below it.
+    .card-stp-button-hover-background {
+      padding-block-start: 0;
+      block-size: 100%;
+    }
+
+    // nova-card-stp-controls adds a block-end inset without clearing the base
+    // block-start one, which otherwise wins.
+    .card-stp-button-position-wrapper {
+      inset-block-start: auto;
+    }
+
+    // Matches the sections cards, which keep the button ghost on card hover.
+    .context-menu-button {
+      background-color: var(--button-background-color-ghost);
+      color: var(--button-text-color-ghost);
+    }
+  }
+}
+
+// @experiment(remove) { bug 2069496 }
+// The ad follows the last widget in the top row, so it lands on the slot after
+// them and holds the last one once they fill the row. A widget is then what
+// overflows. A definite row and column places it before the auto-placed
+// widgets, which flow around it. A card spans 4 grid columns, so slot k starts
+// at column 4(k - 1) + 1, and `data-widgets-before` says how many sit ahead.
+// The wrapper class and child combinator are load-bearing:
+// `.nova-enabled .widget-wrapper.large-widget` outranks a shorter selector and
+// takes the row back, dropping the ad to the end.
+.nova-enabled .widgets-container {
+  > .widget-wrapper.widgets-row-ad-cell {
+    grid-row: 1 / span 4;
+  }
+
+  // One card column stacks everything, so there is no slot to reserve. An
+  // auto row places it in markup order, which is right after the first widget.
+  @include at-content-cols-range(0, 8) {
+    > .widget-wrapper.widgets-row-ad-cell {
+      grid-row: auto / span 4;
+      grid-column: 1 / span 4;
+    }
+  }
+
+  @include at-content-cols-range(8, 12) {
+    > .widget-wrapper.widgets-row-ad-cell {
+      grid-column: 5 / span 4;
+    }
+  }
+
+  @include at-content-cols-range(12, 16) {
+    > .widget-wrapper.widgets-row-ad-cell {
+      grid-column: 9 / span 4;
+    }
+
+    > .widget-wrapper.widgets-row-ad-cell[data-widgets-before='1'] {
+      grid-column: 5 / span 4;
+    }
+  }
+
+  @include at-content-cols-range(16, 20) {
+    > .widget-wrapper.widgets-row-ad-cell {
+      grid-column: 13 / span 4;
+    }
+
+    > .widget-wrapper.widgets-row-ad-cell[data-widgets-before='1'] {
+      grid-column: 5 / span 4;
+    }
+
+    > .widget-wrapper.widgets-row-ad-cell[data-widgets-before='2'] {
+      grid-column: 9 / span 4;
+    }
+  }
+
+  @include at-content-cols(20) {
+    > .widget-wrapper.widgets-row-ad-cell {
+      grid-column: 17 / span 4;
+    }
+
+    > .widget-wrapper.widgets-row-ad-cell[data-widgets-before='1'] {
+      grid-column: 5 / span 4;
+    }
+
+    > .widget-wrapper.widgets-row-ad-cell[data-widgets-before='2'] {
+      grid-column: 9 / span 4;
+    }
+
+    > .widget-wrapper.widgets-row-ad-cell[data-widgets-before='3'] {
+      grid-column: 13 / span 4;
+    }
+  }
+}

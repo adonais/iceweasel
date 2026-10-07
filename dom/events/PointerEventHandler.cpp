@@ -1114,6 +1114,9 @@ void PointerEventHandler::InitCoalescedEventFromPointerEvent(
   // pointerId, tiltX, tiltY, twist, tangentialPressure and convertToPointer.
   aCoalescedEvent.AssignPointerHelperData(aSourceEvent);
 
+  // WidgetMouseEvent
+  aCoalescedEvent.mMovement = aSourceEvent.mMovement;
+
   // WidgetPointerEvent
   aCoalescedEvent.mWidth = aSourceEvent.mWidth;
   aCoalescedEvent.mHeight = aSourceEvent.mHeight;

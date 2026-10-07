@@ -151,27 +151,6 @@ export class StocksFeed {
     return this.merino;
   }
 
-  // Read lastFetchStatus because fetch() returns [] for both errors and no
-  // matches, so the values alone cannot tell the two apart.
-  async _searchFetch(client, query) {
-    const result = await client.fetch({
-      query,
-      providers: MERINO_PROVIDER,
-      timeoutMs: MERINO_TIMEOUT_MS,
-      otherParams: { source: "newtab" },
-    });
-    const status = client.lastFetchStatus;
-    if (
-      status === "timeout" ||
-      status === "network_error" ||
-      status === "http_error"
-    ) {
-      return null;
-    }
-    const values = result?.[0]?.custom_details?.polygon?.values;
-    return Array.isArray(values) && values.length ? values : [];
-  }
-
   // Look up a search query and reply only to the tab that asked. Each search gets
   // its own Merino client so overlapping searches don't cancel each other (one
   // client serves one request at a time).
@@ -179,12 +158,12 @@ export class StocksFeed {
     if (!target) {
       return; // no port to reply to
     }
-    const reply = (status, values = []) =>
+    const reply = (status, matches = []) =>
       this.store.dispatch(
         ac.OnlyToOneContent(
           {
             type: at.WIDGETS_STOCKS_SEARCH_RESPONSE,
-            data: { query, requestId, status, values },
+            data: { query, requestId, status, matches },
           },
           target
         )
@@ -201,26 +180,26 @@ export class StocksFeed {
       }
       const client = this.MerinoClient(MERINO_SEARCH_CLIENT_KEY);
       try {
-        const bare = await this._searchFetch(client, normalized);
-        if (bare === null) {
+        const result = await client.fetch({
+          query: normalized,
+          providers: MERINO_PROVIDER,
+          timeoutMs: MERINO_TIMEOUT_MS,
+          otherParams: { source: "newtab", request_type: "ticker_search" },
+        });
+        // Read lastFetchStatus because fetch() returns [] for both errors and
+        // no matches, so the result alone cannot tell the two apart.
+        const status = client.lastFetchStatus;
+        const matches = result?.[0]?.custom_details?.polygon?.matches;
+        if (
+          status === "timeout" ||
+          status === "network_error" ||
+          status === "http_error"
+        ) {
           reply("error");
-        } else if (bare.length) {
-          reply("success", bare);
+        } else if (Array.isArray(matches) && matches.length) {
+          reply("success", matches);
         } else {
-          // A company name (e.g. amazon) or a symbol Merino rejects bare (e.g.
-          // SPY) resolves through the "<query> stock" phrase Merino maps to a
-          // ticker. Lower-cased because Merino matches those phrases in lower case.
-          const named = await this._searchFetch(
-            client,
-            `${normalized.toLowerCase()} stock`
-          );
-          if (named === null) {
-            reply("error");
-          } else if (named.length) {
-            reply("success", named);
-          } else {
-            reply("empty");
-          }
+          reply("empty");
         }
       } finally {
         // End the client's session so this per-search client is released
@@ -233,16 +212,14 @@ export class StocksFeed {
     }
   }
 
-  // `query` defaults to "" (the default ETF set). A non-empty query (e.g.
-  // "$AAPL") performs an individual lookup through the same path; unused for now.
-  async fetch(query = "", retryCount = 0) {
+  async fetch(retryCount = 0) {
     const generation = this.fetchGeneration;
     try {
       if (!this.ensureMerinoClient()) {
         return; // the widget was turned off during client creation
       }
       this.restartFetchTimer();
-      const tickers = await this._fetchHelper(query);
+      const tickers = await this._fetchHelper();
       if (generation !== this.fetchGeneration) {
         return; // the widget was turned off during the fetch
       }
@@ -276,7 +253,7 @@ export class StocksFeed {
           if (generation !== this.fetchGeneration) {
             return undefined;
           }
-          return this.fetch(query, retryCount + 1);
+          return this.fetch(retryCount + 1);
         }, RETRY_DELAY_MS);
       }
     } catch (e) {
@@ -285,9 +262,10 @@ export class StocksFeed {
   }
 
   /**
-   * Thin wrapper around the Merino call so tests can simulate responses.
-   * Returns the ticker values, or an empty array when the request fails or
-   * comes back empty; fetch() handles the retry and the error state.
+   * Thin wrapper around the Merino call so tests can simulate responses. An
+   * empty query returns the default ETF set. Returns the ticker values, or an
+   * empty array when the request fails or comes back empty; fetch() handles
+   * the retry and the error state.
    */
   async _fetchHelper(query = "") {
     try {
@@ -308,22 +286,11 @@ export class StocksFeed {
     }
   }
 
-  // Look up one saved watchlist symbol. The "$" form resolves symbols that
-  // Merino's eager-match blocklist rejects as a bare query (e.g. SPY); the bare
-  // form resolves dotted symbols (e.g. BRK.B) that the "$" grammar rejects.
-  // Returns the row whose ticker matches, or null when nothing resolves.
-  async _fetchWatchlistSymbol(symbol, generation = this.watchlistGeneration) {
-    for (const query of [`$${symbol}`, symbol]) {
-      if (generation !== this.watchlistGeneration) {
-        return null; // stopped between the two lookups
-      }
-      const values = await this._fetchHelper(query);
-      const match = values.find(v => normalize(v.ticker) === symbol);
-      if (match) {
-        return match;
-      }
-    }
-    return null;
+  // Look up one saved watchlist symbol. Returns the row whose ticker matches,
+  // or null when nothing resolves.
+  async _fetchWatchlistSymbol(symbol) {
+    const values = await this._fetchHelper(symbol);
+    return values.find(v => normalize(v.ticker) === symbol) ?? null;
   }
 
   getSavedWatchlistSymbols() {
@@ -441,7 +408,7 @@ export class StocksFeed {
       ) {
         break; // stopped, or a newer request supersedes this pass
       }
-      results.set(symbol, await this._fetchWatchlistSymbol(symbol, generation));
+      results.set(symbol, await this._fetchWatchlistSymbol(symbol));
     }
     return results;
   }

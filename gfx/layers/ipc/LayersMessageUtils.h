@@ -142,11 +142,11 @@ struct ParamTraits<mozilla::layers::RepaintRequest::ScrollOffsetUpdateType>
           mozilla::layers::RepaintRequest::sHighestScrollOffsetUpdateType> {};
 
 template <>
-struct ParamTraits<mozilla::layers::OverscrollBehavior>
+struct ParamTraits<mozilla::StyleOverscrollBehavior>
     : public ContiguousEnumSerializerInclusive<
-          mozilla::layers::OverscrollBehavior,
-          mozilla::layers::OverscrollBehavior::Auto,
-          mozilla::layers::kHighestOverscrollBehavior> {};
+          mozilla::StyleOverscrollBehavior,
+          mozilla::StyleOverscrollBehavior::Auto,
+          mozilla::StyleOverscrollBehavior::None> {};
 
 template <>
 struct ParamTraits<mozilla::StyleOverflow>

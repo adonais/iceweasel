@@ -5,12 +5,13 @@
   <title>SpeechRecognition: parakeet end-to-end</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
   <script src="head.js"></script>
+  <script src="/tests/SimpleTest/GleanTest.js"></script>
   <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
 </head>
 <body>
 <div id="content"></div>
 <div id="results">
-  <label>Reference (first 60s of speech):</label>
+  <label>Reference:</label>
   <div class="reference" id="ref-text">loading...</div>
   <label>Recognized:</label>
   <div class="recognized" id="rec-text">waiting...</div>
@@ -68,7 +69,7 @@ add_setup(async function setup() {
 
 add_task(async function parakeet_e2e_stereo_downmix() {
   // Fetch reference transcript.
-  const refResp = await fetch(`http://localhost:${SERVER_PORT}/transcript.txt`);
+  const refResp = await fetch("transcript.txt");
   const refText = refResp.ok ? await refResp.text() : "(reference unavailable)";
   document.getElementById("ref-text").textContent = refText.slice(0, 800) + "...";
   diag("reference transcript fetched (ok=" + refResp.ok + ")");
@@ -173,6 +174,14 @@ add_task(async function parakeet_e2e_stereo_downmix() {
 
   isnot(transcript.trim(), "", "Got a non-empty transcript from the downmixed stereo track");
   ok(transcript.length > 50, "Transcript has substantial content (>50 chars): " + transcript.length + " chars");
+
+  // media.speech_recognition.result_latency is one sample per session that
+  // produced results, recorded as the session tears down, so it can only be
+  // checked where a real model delivers real results. "end" has fired by now,
+  // so the sample is in.
+  const latency = await GleanTest.mediaSpeechRecognition.resultLatency.testGetValue();
+  ok(latency && latency.count > 0,
+     "result_latency recorded a sample for this session: " + JSON.stringify(latency));
 });
 </script>
 </pre>

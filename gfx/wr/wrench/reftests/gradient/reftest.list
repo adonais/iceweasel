@@ -30,6 +30,8 @@ scale(*) fuzzy(1,40000) == linear-aligned-clip.yaml linear-aligned-clip-ref.yaml
 
 scale(*) fuzzy(1,172000) == linear-decompose-mask-seam.yaml linear-decompose-mask-seam-ref.yaml
 
+scale(*) fuzzy(1,10000) == linear-large-offset-seam.yaml linear-large-offset-seam-ref.yaml
+
 platform(linux,mac) fuzzy(1,80000) == radial-circle.yaml radial-circle-ref.png
 platform(linux,mac) fuzzy(1,80000) == radial-ellipse.yaml radial-ellipse-ref.png
 

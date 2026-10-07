@@ -1,0 +1,10 @@
+[DEFAULT]
+prefs = ["dom.xslt.enabled=true"]
+
+["test_bug428847.html"]
+skip-if = [
+  "http2",
+  "http3",
+]
+
+["test_bug604660.html"]

@@ -12,7 +12,7 @@ task-defaults:
 linux64-mingw32-nsis:
     description: "NSIS build for MinGW32 Cross Compile"
     treeherder:
-        symbol: TMW(mingw32-nsis)
+        symbol: TWM(nsis)
     run:
         script: build-mingw32-nsis.sh
         toolchain-artifact: public/build/nsis.tar.zst
@@ -28,7 +28,7 @@ linux64-mingw32-nsis:
 linux64-mingw-fxc2-x86:
     description: "fxc2.exe x86 build for MinGW Cross Compile"
     treeherder:
-        symbol: TMW(mingw-fxc2-x86)
+        symbol: TWM(fxc2-x86)
     worker:
         max-run-time: 1800
     run:

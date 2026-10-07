@@ -1,0 +1,182 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: continuous = false is a single turn</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="head.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div id="content"></div>
+<div id="results">
+  <label>Recognized:</label>
+  <div class="recognized" id="rec-text">waiting...</div>
+</div>
+<pre id="test">
+<script>
+"use strict";
+
+// https://webaudio.github.io/web-speech-api/#dom-speechrecognition-continuous
+// "When the continuous attribute is set to false, the user agent must return no
+// more than one final result [...] for example a single turn pattern of
+// interaction." The default is false.
+//
+// pangrams.opus is two sentences separated by silence long enough for the model
+// to emit <EOU> (see test_parakeet_eou_flush.html for the clip's layout). A
+// non-continuous session must therefore deliver the first sentence and end by
+// itself, without the page calling stop(), and must never deliver the second.
+//
+// Uses en-US on purpose: realtime_eou_120m is the EOU-aware model, and without
+// an <EOU> there is no utterance boundary to end the turn on.
+
+const SERVER_PORT = 8766;
+const LANG = "en-US";
+
+const U1_WORDS = "the quick brown fox jumps over the lazy dog".split(" ");
+const U2_FIRST_WORD = "pack";
+
+SimpleTest.requestCompleteLog();
+// The test itself waits on events, but head.js bounds AudioContext.resume()
+// and the wait for audio to flow into the track with setTimeout.
+SimpleTest.requestFlakyTimeout(
+  "createResumedAudioContext() and waitForAudioFlowing() are bounded by setTimeout");
+
+const T0 = performance.now();
+const ms = () => "+" + Math.round(performance.now() - T0) + "ms";
+function diag(msg) { info("[diag " + ms() + "] " + msg); }
+
+// Recognized text compared as a lowercased word list, so the assertions don't
+// depend on the model's punctuation or spacing.
+function words(text) {
+  return text.toLowerCase().replace(/[^\p{L}\p{N}\s']/gu, " ").split(/\s+/).filter(Boolean);
+}
+
+add_setup(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.webspeech.recognition.enable", true],
+      ["browser.ml.modelHubRootUrl", `http://localhost:${SERVER_PORT}/`],
+      ["media.webspeech.recognition.model-download.prompt.testing", true],
+      ["media.navigator.permission.disabled", true],
+    ],
+  });
+});
+
+add_task(async function single_turn_ends_at_first_utterance() {
+  const installed = await ensureModelInstalled([LANG]);
+  diag(`model installed: ${installed}`);
+  ok(installed, "Model installed successfully");
+  if (!installed) {
+    return;
+  }
+
+  const ctx = await createResumedAudioContext();
+  diag(`AudioContext after resume(): state=${ctx.state} rate=${ctx.sampleRate}`);
+
+  // Silent looping source: keeps the graph producing once the clip ends, so the
+  // recognizer sees trailing silence rather than a stalled track.
+  const kickBuf = ctx.createBuffer(1, 2048, ctx.sampleRate);
+  const kick = ctx.createBufferSource();
+  kick.buffer = kickBuf;
+  kick.loop = true;
+  kick.connect(ctx.destination);
+  kick.start(0);
+
+  const audio = await loadTestAudio("pangrams.opus", a => {
+    a.id = "audioElement";
+    a.controls = true;
+  });
+  diag(`audio loaded: duration=${audio.duration.toFixed(2)}s`);
+
+  const src = ctx.createMediaElementSource(audio);
+  const dst = ctx.createMediaStreamDestination();
+  src.connect(dst);
+  src.connect(ctx.destination);
+
+  const track = dst.stream.getAudioTracks()[0];
+  ok(track, "Got audio track");
+
+  audio.currentTime = 0;
+  await audio.play().then(() => diag("audio.play() resolved"),
+                          e => diag("audio.play() rejected: " + e));
+
+  const maxLevel = await waitForAudioFlowing(ctx, dst.stream);
+  diag(`audio is flowing into the track (peak FFT level ${maxLevel})`);
+
+  const sr = new SpeechRecognition();
+  is(sr.continuous, false, "continuous defaults to false");
+  // continuous "does not affect interim results", so we still get them.
+  sr.interimResults = true;
+  sr.lang = LANG;
+
+  const finals = [];
+  const interims = [];
+  const transcript = () => finals.join(" ").replace(/\s+/g, " ").trim();
+
+  sr.onresult = e => {
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const text = e.results[i][0].transcript;
+      if (e.results[i].isFinal) {
+        finals.push(text);
+        diag(`final result #${finals.length}: "${text}"`);
+      } else {
+        interims.push({
+          text,
+          index: i,
+          finalsBefore: finals.length,
+          length: e.results.length,
+        });
+        diag(`interim result at index ${i}: "${text}"`);
+      }
+    }
+    document.getElementById("rec-text").textContent = transcript();
+  };
+  sr.onspeechend = () => diag("event: speechend");
+  sr.onaudioend = () => diag("event: audioend");
+  sr.onnomatch = () => diag("event: nomatch");
+
+  const ended = new Promise((resolve, reject) => {
+    sr.onend = () => { diag("event: end"); resolve(); };
+    sr.onerror = e => {
+      diag(`event: ERROR error="${e.error}" message="${e.message}"`);
+      reject(new Error(e.error));
+    };
+  });
+
+  diag("calling sr.start(track)");
+  sr.start(track);
+
+  // No stop() call: the point of the test is that a non-continuous session ends
+  // on its own once its single turn is over.
+  await ended;
+
+  const transcribed = transcript();
+  diag(`ended after ${finals.length} final(s): "${transcribed}"`);
+
+  await ctx.close();
+  audio.pause();
+
+  is(finals.length, 1,
+     `A non-continuous session returns no more than one final result. ` +
+     `Got ${finals.length}: "${transcribed}"`);
+  ok(interims.length,
+     "Interim results are still delivered: continuous does not affect them. " +
+     `Got ${interims.length}.`);
+  const misplaced = interims.filter(
+    r => r.index !== r.finalsBefore || r.length !== r.finalsBefore + 1);
+  is(misplaced.length, 0,
+     "An interim occupies the single slot after the final results. " +
+     "Misplaced: " +
+     misplaced.map(r => `"${r.text}" at ${r.index}/${r.length}`).join(", "));
+  is(words(transcribed).join(" "), U1_WORDS.join(" "),
+     `The one final result is the whole first utterance. Got: "${transcribed}"`);
+  ok(!words(transcribed).includes(U2_FIRST_WORD),
+     `The session ended before the second utterance, so "${U2_FIRST_WORD}" ` +
+     `never reached the page. Got: "${transcribed}"`);
+});
+
+</script>
+</pre>
+</body>
+</html>

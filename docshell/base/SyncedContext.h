@@ -191,7 +191,7 @@ class FieldStorage {
   // field synchronization.
   template <size_t I, typename U>
   void SetWithoutSyncing(U&& aValue) {
-    GetNonSyncingReference<I>() = std::move(aValue);
+    GetNonSyncingReference<I>() = std::forward<U>(aValue);
   }
 
   // Get a reference to a field that can modify without telling other

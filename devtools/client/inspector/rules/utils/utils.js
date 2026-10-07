@@ -148,6 +148,7 @@ function getNodeInfo(node, elementStyle) {
       expression: node
         .closest("[data-function-expression")
         .getAttribute("data-function-expression"),
+      property: getPropertyNameAndValue(node).name,
       pseudoElement: rule.pseudoElement,
       rule,
     };

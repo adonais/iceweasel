@@ -57,3 +57,61 @@ add_task(async function () {
     }
   );
 });
+
+function reloadShouldFail(sh) {
+  // See bug 2074373.
+  Assert.throws(
+    () => sh.reload(Ci.nsIWebNavigation.LOAD_FLAGS_NONE),
+    e => e.result == Cr.NS_ERROR_FAILURE,
+    "Reloading with no current session history entry should fail, not crash"
+  );
+}
+
+// Test nsSHistory::Reload() when mIndex = -1
+add_task(async function empty_history_via_max_entries_purge() {
+  var URL =
+    "http://mochi.test:8888/browser/docshell/test/navigation/bug343515_pg1.html";
+  var URL2 =
+    "http://mochi.test:8888/browser/docshell/test/navigation/bug343515_pg3_1.html";
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: URL },
+    async function (browser) {
+      var loadPromise = BrowserTestUtils.browserLoaded(browser, false, URL2);
+      // See the pref-timing comment on the test above.
+      await SpecialPowers.pushPrefEnv({
+        set: [["browser.sessionhistory.max_entries", 0]],
+      });
+      BrowserTestUtils.startLoadingURIString(browser, URL2);
+      await loadPromise;
+
+      let sh = browser.browsingContext.sessionHistory;
+      is(sh.count, 0);
+      is(sh.index, -1);
+
+      reloadShouldFail(sh);
+    }
+  );
+});
+
+// Test nsSHistory::Reload() when mIndex = -1
+add_task(async function empty_history_via_pending_first_load() {
+  var HANG_URL =
+    "http://mochi.test:8888/browser/docshell/test/navigation/file_never_responds.sjs";
+
+  let tab = BrowserTestUtils.addTab(gBrowser, HANG_URL);
+  let browser = tab.linkedBrowser;
+
+  await TestUtils.waitForCondition(
+    () => browser.webProgress?.isLoadingDocument,
+    "Waiting for the never-answered load to start"
+  );
+
+  let sh = browser.browsingContext.sessionHistory;
+  is(sh.count, 0);
+  is(sh.index, -1);
+
+  reloadShouldFail(sh);
+
+  BrowserTestUtils.removeTab(tab);
+});

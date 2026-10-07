@@ -26,18 +26,22 @@ TypeVector SharedValidator::ToTypeVector(Index count, const Type* types) {
   return TypeVector(&types[0], &types[count]);
 }
 
-SharedValidator::SharedValidator(Errors* errors, const ValidateOptions& options)
-    : options_(options), errors_(errors), typechecker_(options.features) {
+SharedValidator::SharedValidator(Errors* errors,
+                                 std::string_view filename,
+                                 const ValidateOptions& options)
+    : options_(options),
+      errors_(errors),
+      filename_(filename),
+      typechecker_(options.features, func_types_) {
   typechecker_.set_error_callback(
       [this](const char* msg) { OnTypecheckerError(msg); });
 }
 
-Result WABT_PRINTF_FORMAT(3, 4) SharedValidator::PrintError(const Location& loc,
-                                                            const char* format,
-                                                            ...) {
+void WABT_PRINTF_FORMAT(3, 4) SharedValidator::PrintError(const Location& loc,
+                                                          const char* format,
+                                                          ...) {
   WABT_SNPRINTF_ALLOCA(buffer, length, format);
-  errors_->emplace_back(ErrorLevel::Error, loc, buffer);
-  return Result::Error;
+  errors_->emplace_back(ErrorLevel::Error, loc, filename_, buffer);
 }
 
 void SharedValidator::OnTypecheckerError(const char* msg) {
@@ -52,9 +56,18 @@ Result SharedValidator::OnFuncType(const Location& loc,
                                    Index type_index) {
   Result result = Result::Ok;
   if (!options_.features.multi_value_enabled() && result_count > 1) {
-    result |= PrintError(loc,
-                         "multiple result values are not supported without "
-                         "multi-value enabled.");
+    PrintError(loc,
+               "multiple result values are not supported without "
+               "multi-value enabled.");
+    result |= Result::Error;
+  }
+  if (options_.features.reference_types_enabled()) {
+    for (Index i = 0; i < param_count; i++) {
+      result |= CheckReferenceType(loc, param_types[i], "params");
+    }
+    for (Index i = 0; i < result_count; i++) {
+      result |= CheckReferenceType(loc, result_types[i], "results");
+    }
   }
   func_types_.emplace(
       num_types_++,
@@ -90,21 +103,23 @@ Result SharedValidator::CheckLimits(const Location& loc,
                                     const char* desc) {
   Result result = Result::Ok;
   if (limits.initial > absolute_max) {
-    result |=
-        PrintError(loc, "initial %s (%" PRIu64 ") must be <= (%" PRIu64 ")",
-                   desc, limits.initial, absolute_max);
+    PrintError(loc, "initial %s (%" PRIu64 ") must be <= (%" PRIu64 ")", desc,
+               limits.initial, absolute_max);
+    result |= Result::Error;
   }
 
   if (limits.has_max) {
     if (limits.max > absolute_max) {
-      result |= PrintError(loc, "max %s (%" PRIu64 ") must be <= (%" PRIu64 ")",
-                           desc, limits.max, absolute_max);
+      PrintError(loc, "max %s (%" PRIu64 ") must be <= (%" PRIu64 ")", desc,
+                 limits.max, absolute_max);
+      result |= Result::Error;
     }
 
     if (limits.max < limits.initial) {
-      result |= PrintError(
-          loc, "max %s (%" PRIu64 ") must be >= initial %s (%" PRIu64 ")", desc,
-          limits.max, desc, limits.initial);
+      PrintError(loc,
+                 "max %s (%" PRIu64 ") must be >= initial %s (%" PRIu64 ")",
+                 desc, limits.max, desc, limits.initial);
+      result |= Result::Error;
     }
   }
   return result;
@@ -112,23 +127,40 @@ Result SharedValidator::CheckLimits(const Location& loc,
 
 Result SharedValidator::OnTable(const Location& loc,
                                 Type elem_type,
-                                const Limits& limits) {
+                                const Limits& limits,
+                                TableImportStatus import_status,
+                                TableInitExprStatus init_provided) {
   Result result = Result::Ok;
+  // Must be checked by parser or binary reader.
+  assert(elem_type.IsRef());
   if (tables_.size() > 0 && !options_.features.reference_types_enabled()) {
-    result |= PrintError(loc, "only one table allowed");
+    PrintError(loc, "only one table allowed");
+    result |= Result::Error;
   }
-  result |= CheckLimits(loc, limits, UINT32_MAX, "elems");
+  uint64_t absolute_max = limits.is_64 ? UINT64_MAX : UINT32_MAX;
+  result |= CheckLimits(loc, limits, absolute_max, "elems");
 
   if (limits.is_shared) {
-    result |= PrintError(loc, "tables may not be shared");
+    PrintError(loc, "tables may not be shared");
+    result |= Result::Error;
   }
-  if (elem_type != Type::FuncRef &&
-      !options_.features.reference_types_enabled()) {
-    result |= PrintError(loc, "tables must have funcref type");
+  if (options_.features.reference_types_enabled()) {
+    if (!elem_type.IsRef()) {
+      PrintError(loc, "ables may only contain reference types");
+      result |= Result::Error;
+    } else if (import_status == TableImportStatus::TableIsNotImported &&
+               init_provided ==
+                   TableInitExprStatus::TableWithoutInitExpression &&
+               !elem_type.IsNullableRef()) {
+      PrintError(loc, "missing table initializer");
+      result |= Result::Error;
+    }
+  } else if (elem_type != Type::FuncRef) {
+    PrintError(loc, "tables must have funcref type");
+    result |= Result::Error;
   }
-  if (!elem_type.IsRef()) {
-    result |= PrintError(loc, "tables must have reference types");
-  }
+
+  result |= CheckReferenceType(loc, elem_type, "tables");
 
   tables_.push_back(TableType{elem_type, limits});
   return result;
@@ -139,14 +171,17 @@ Result SharedValidator::OnMemory(const Location& loc,
                                  uint32_t page_size) {
   Result result = Result::Ok;
   if (memories_.size() > 0 && !options_.features.multi_memory_enabled()) {
-    result |= PrintError(loc, "only one memory block allowed");
+    PrintError(loc, "only one memory block allowed");
+    result |= Result::Error;
   }
 
   if (page_size != WABT_DEFAULT_PAGE_SIZE) {
     if (!options_.features.custom_page_sizes_enabled()) {
-      result |= PrintError(loc, "only default page size (64 KiB) is allowed");
+      PrintError(loc, "only default page size (64 KiB) is allowed");
+      result |= Result::Error;
     } else if (page_size != 1) {
-      result |= PrintError(loc, "only page sizes of 1 B or 64 KiB are allowed");
+      PrintError(loc, "only page sizes of 1 B or 64 KiB are allowed");
+      result |= Result::Error;
     }
   }
 
@@ -156,9 +191,11 @@ Result SharedValidator::OnMemory(const Location& loc,
 
   if (limits.is_shared) {
     if (!options_.features.threads_enabled()) {
-      result |= PrintError(loc, "memories may not be shared");
+      PrintError(loc, "memories may not be shared");
+      result |= Result::Error;
     } else if (!limits.has_max) {
-      result |= PrintError(loc, "shared memories must have max sizes");
+      PrintError(loc, "shared memories must have max sizes");
+      result |= Result::Error;
     }
   }
 
@@ -169,9 +206,10 @@ Result SharedValidator::OnMemory(const Location& loc,
 Result SharedValidator::OnGlobalImport(const Location& loc,
                                        Type type,
                                        bool mutable_) {
-  Result result = Result::Ok;
+  Result result = CheckReferenceType(loc, type, "globals");
   if (mutable_ && !options_.features.mutable_globals_enabled()) {
-    result |= PrintError(loc, "mutable globals cannot be imported");
+    PrintError(loc, "mutable globals cannot be imported");
+    result |= Result::Error;
   }
   globals_.push_back(GlobalType{type, mutable_});
   ++num_imported_globals_;
@@ -181,19 +219,39 @@ Result SharedValidator::OnGlobalImport(const Location& loc,
 Result SharedValidator::OnGlobal(const Location& loc,
                                  Type type,
                                  bool mutable_) {
+  Result result = CheckReferenceType(loc, type, "globals");
   globals_.push_back(GlobalType{type, mutable_});
-  return Result::Ok;
+  return result;
 }
 
 Result SharedValidator::CheckType(const Location& loc,
                                   Type actual,
                                   Type expected,
                                   const char* desc) {
-  if (Failed(TypeChecker::CheckType(actual, expected))) {
+  if (Failed(typechecker_.CheckType(actual, expected))) {
     PrintError(loc, "type mismatch at %s. got %s, expected %s", desc,
                actual.GetName().c_str(), expected.GetName().c_str());
     return Result::Error;
   }
+  return Result::Ok;
+}
+
+Result SharedValidator::CheckReferenceType(const Location& loc,
+                                           Type type,
+                                           const char* desc) {
+  if (type.IsReferenceWithIndex()) {
+    Index index = type.GetReferenceIndex();
+    auto iter = func_types_.find(index);
+
+    if (iter == func_types_.end()) {
+      PrintError(loc,
+                 "reference %" PRIindex " is out of range (max: %" PRIindex
+                 ") in %s",
+                 index, num_types_, desc);
+      return Result::Error;
+    }
+  }
+
   return Result::Ok;
 }
 
@@ -202,7 +260,8 @@ Result SharedValidator::OnTag(const Location& loc, Var sig_var) {
   FuncType type;
   result |= CheckFuncTypeIndex(sig_var, &type);
   if (!type.results.empty()) {
-    result |= PrintError(loc, "Tag signature must have 0 results.");
+    PrintError(loc, "Tag signature must have 0 results.");
+    result |= Result::Error;
   }
   tags_.push_back(TagType{type.params});
   return result;
@@ -214,9 +273,10 @@ Result SharedValidator::OnExport(const Location& loc,
                                  std::string_view name) {
   Result result = Result::Ok;
   auto name_str = std::string(name);
-  if (export_names_.find(name_str) != export_names_.end()) {
-    result |= PrintError(loc, "duplicate export \"" PRIstringview "\"",
-                         WABT_PRINTF_STRING_VIEW_ARG(name));
+  if (export_names_.contains(name_str)) {
+    PrintError(loc, "duplicate export \"" PRIstringview "\"",
+               WABT_PRINTF_STRING_VIEW_ARG(name));
+    result |= Result::Error;
   }
   export_names_.insert(name_str);
 
@@ -248,15 +308,18 @@ Result SharedValidator::OnExport(const Location& loc,
 Result SharedValidator::OnStart(const Location& loc, Var func_var) {
   Result result = Result::Ok;
   if (starts_++ > 0) {
-    result |= PrintError(loc, "only one start function allowed");
+    PrintError(loc, "only one start function allowed");
+    result |= Result::Error;
   }
   FuncType func_type;
   result |= CheckFuncIndex(func_var, &func_type);
   if (func_type.params.size() != 0) {
-    result |= PrintError(loc, "start function must be nullary");
+    PrintError(loc, "start function must be nullary");
+    result |= Result::Error;
   }
   if (func_type.results.size() != 0) {
-    result |= PrintError(loc, "start function must not return anything");
+    PrintError(loc, "start function must not return anything");
+    result |= Result::Error;
   }
   return result;
 }
@@ -282,8 +345,19 @@ Result SharedValidator::OnElemSegmentElemType(const Location& loc,
   if (elem.is_active) {
     // Check that the type of the elem segment matches the table in which
     // it is active.
-    result |= CheckType(loc, elem.table_type, elem_type, "elem segment");
+    result |= CheckType(loc, elem_type, elem.table_type, "elem segment");
   }
+
+  if (elem_type.IsReferenceWithIndex()) {
+    Index index = elem_type.GetReferenceIndex();
+    auto iter = func_types_.find(index);
+
+    if (iter == func_types_.end()) {
+      PrintError(loc, "reference %" PRIindex " is out of range", index);
+      result |= Result::Error;
+    }
+  }
+
   elem.element = elem_type;
   return result;
 }
@@ -303,11 +377,11 @@ Result SharedValidator::OnDataSegment(const Location& loc,
 }
 
 Result SharedValidator::CheckDeclaredFunc(Var func_var) {
-  if (declared_funcs_.count(func_var.index()) == 0) {
-    return PrintError(func_var.loc,
-                      "function %" PRIindex
-                      " is not declared in any elem sections",
-                      func_var.index());
+  if (!declared_funcs_.contains(func_var.index())) {
+    PrintError(func_var.loc,
+               "function %" PRIindex " is not declared in any elem sections",
+               func_var.index());
+    return Result::Error;
   }
   return Result::Ok;
 }
@@ -325,9 +399,10 @@ Result SharedValidator::EndModule() {
 
 Result SharedValidator::CheckIndex(Var var, Index max_index, const char* desc) {
   if (var.index() >= max_index) {
-    return PrintError(
-        var.loc, "%s variable out of range: %" PRIindex " (max %" PRIindex ")",
-        desc, var.index(), max_index);
+    PrintError(var.loc,
+               "%s variable out of range: %" PRIindex " (max %" PRIindex ")",
+               desc, var.index(), max_index);
+    return Result::Error;
   }
   return Result::Ok;
 }
@@ -350,8 +425,9 @@ Result SharedValidator::CheckLocalIndex(Var local_var, Type* out_type) {
       [](Index index, const LocalDecl& decl) { return index < decl.end; });
   if (iter == locals_.end()) {
     // TODO: better error
-    return PrintError(local_var.loc, "local variable out of range (max %u)",
-                      GetLocalCount());
+    PrintError(local_var.loc, "local variable out of range (max %u)",
+               GetLocalCount());
+    return Result::Error;
   }
   *out_type = iter->type;
   return Result::Ok;
@@ -366,8 +442,8 @@ Result SharedValidator::CheckFuncTypeIndex(Var sig_var, FuncType* out) {
 
   auto iter = func_types_.find(sig_var.index());
   if (iter == func_types_.end()) {
-    return PrintError(sig_var.loc, "type %d is not a function",
-                      sig_var.index());
+    PrintError(sig_var.loc, "type %d is not a function", sig_var.index());
+    return Result::Error;
   }
 
   if (out) {
@@ -418,8 +494,8 @@ Result SharedValidator::CheckBlockSignature(const Location& loc,
     result |= CheckFuncTypeIndex(Var(sig_index, loc), &func_type);
 
     if (!func_type.params.empty() && !options_.features.multi_value_enabled()) {
-      result |= PrintError(loc, "%s params not currently supported.",
-                           opcode.GetName());
+      PrintError(loc, "%s params not currently supported.", opcode.GetName());
+      result |= Result::Error;
     }
     // Multiple results without --enable-multi-value is checked above in
     // OnType.
@@ -427,6 +503,16 @@ Result SharedValidator::CheckBlockSignature(const Location& loc,
     *out_param_types = func_type.params;
     *out_result_types = func_type.results;
   } else {
+    if (sig_type.IsReferenceWithIndex()) {
+      Index index = sig_type.GetReferenceIndex();
+      auto iter = func_types_.find(index);
+
+      if (iter == func_types_.end()) {
+        PrintError(loc, "reference %" PRIindex " is out of range", index);
+        result |= Result::Error;
+      }
+    }
+
     out_param_types->clear();
     *out_result_types = sig_type.GetInlineVector();
   }
@@ -437,6 +523,33 @@ Result SharedValidator::CheckBlockSignature(const Location& loc,
 Index SharedValidator::GetFunctionTypeIndex(Index func_index) const {
   assert(func_index < funcs_.size());
   return funcs_[func_index].type_index;
+}
+
+Result SharedValidator::SaveLocalRefs() {
+  if (!local_ref_is_set_.empty()) {
+    Label* label;
+    CHECK_RESULT(typechecker_.GetLabel(0, &label));
+    label->local_ref_is_set_ = local_ref_is_set_;
+  }
+  return Result::Ok;
+}
+
+Result SharedValidator::RestoreLocalRefs(Result result) {
+  if (!local_ref_is_set_.empty()) {
+    if (Succeeded(result)) {
+      Label* label;
+      CHECK_RESULT(typechecker_.GetLabel(0, &label));
+      assert(local_ref_is_set_.size() == label->local_ref_is_set_.size());
+      local_ref_is_set_ = label->local_ref_is_set_;
+    } else {
+      IgnoreLocalRefs();
+    }
+  }
+  return Result::Ok;
+}
+
+void SharedValidator::IgnoreLocalRefs() {
+  std::fill(local_ref_is_set_.begin(), local_ref_is_set_.end(), true);
 }
 
 Result SharedValidator::BeginInitExpr(const Location& loc, Type type) {
@@ -454,6 +567,8 @@ Result SharedValidator::BeginFunctionBody(const Location& loc,
                                           Index func_index) {
   expr_loc_ = loc;
   locals_.clear();
+  local_ref_is_set_.clear();
+  local_refs_map_.clear();
   if (func_index < funcs_.size()) {
     for (Type type : funcs_[func_index].params) {
       // TODO: Coalesce parameters of the same type?
@@ -479,7 +594,20 @@ Result SharedValidator::OnLocalDecl(const Location& loc,
     PrintError(loc, "local count must be < 0x10000000");
     return Result::Error;
   }
-  locals_.push_back(LocalDecl{type, GetLocalCount() + count});
+
+  CHECK_RESULT(CheckReferenceType(loc, type, "locals"));
+
+  Index local_count = GetLocalCount();
+
+  if (type.IsNonNullableRef()) {
+    for (Index i = 0; i < count; i++) {
+      local_refs_map_[local_count + i] =
+          LocalReferenceMap{type, static_cast<Index>(local_ref_is_set_.size())};
+      local_ref_is_set_.push_back(false);
+    }
+  }
+
+  locals_.push_back(LocalDecl{type, local_count + count});
   return Result::Ok;
 }
 
@@ -570,9 +698,10 @@ Result SharedValidator::OnAtomicFence(const Location& loc,
                                       uint32_t consistency_model) {
   Result result = CheckInstr(Opcode::AtomicFence, loc);
   if (consistency_model != 0) {
-    result |= PrintError(
-        loc, "unexpected atomic.fence consistency model (expected 0): %u",
-        consistency_model);
+    PrintError(loc,
+               "unexpected atomic.fence consistency model (expected 0): %u",
+               consistency_model);
+    result |= Result::Error;
   }
   result |= typechecker_.OnAtomicFence(consistency_model);
   return result;
@@ -668,24 +797,50 @@ Result SharedValidator::OnBinary(const Location& loc, Opcode opcode) {
   return result;
 }
 
+Result SharedValidator::OnTernary(const Location& loc, Opcode opcode) {
+  Result result = CheckInstr(opcode, loc);
+  result |= typechecker_.OnTernary(opcode);
+  return result;
+}
+
+Result SharedValidator::OnQuaternary(const Location& loc, Opcode opcode) {
+  Result result = CheckInstr(opcode, loc);
+  result |= typechecker_.OnQuaternary(opcode);
+  return result;
+}
+
 Result SharedValidator::OnBlock(const Location& loc, Type sig_type) {
   Result result = CheckInstr(Opcode::Block, loc);
   TypeVector param_types, result_types;
   result |= CheckBlockSignature(loc, Opcode::Block, sig_type, &param_types,
                                 &result_types);
   result |= typechecker_.OnBlock(param_types, result_types);
+  result |= SaveLocalRefs();
   return result;
 }
 
 Result SharedValidator::OnBr(const Location& loc, Var depth) {
   Result result = CheckInstr(Opcode::Br, loc);
   result |= typechecker_.OnBr(depth.index());
+  IgnoreLocalRefs();
   return result;
 }
 
 Result SharedValidator::OnBrIf(const Location& loc, Var depth) {
   Result result = CheckInstr(Opcode::BrIf, loc);
   result |= typechecker_.OnBrIf(depth.index());
+  return result;
+}
+
+Result SharedValidator::OnBrOnNonNull(const Location& loc, Var depth) {
+  Result result = CheckInstr(Opcode::BrOnNonNull, loc);
+  result |= typechecker_.OnBrOnNonNull(depth.index());
+  return result;
+}
+
+Result SharedValidator::OnBrOnNull(const Location& loc, Var depth) {
+  Result result = CheckInstr(Opcode::BrOnNull, loc);
+  result |= typechecker_.OnBrOnNull(depth.index());
   return result;
 }
 
@@ -705,6 +860,7 @@ Result SharedValidator::OnBrTableTarget(const Location& loc, Var depth) {
 Result SharedValidator::EndBrTable(const Location& loc) {
   Result result = CheckInstr(Opcode::BrTable, loc);
   result |= typechecker_.EndBrTable();
+  IgnoreLocalRefs();
   return result;
 }
 
@@ -724,30 +880,24 @@ Result SharedValidator::OnCallIndirect(const Location& loc,
   TableType table_type;
   result |= CheckFuncTypeIndex(sig_var, &func_type);
   result |= CheckTableIndex(table_var, &table_type);
-  if (table_type.element != Type::FuncRef) {
-    result |= PrintError(
+  if (table_type.element == Type::Any ||
+      Failed(typechecker_.CheckType(table_type.element, Type::FuncRef))) {
+    PrintError(
         loc,
         "type mismatch: call_indirect must reference table of funcref type");
+    result |= Result::Error;
   }
   result |= typechecker_.OnCallIndirect(func_type.params, func_type.results,
                                         table_type.limits);
   return result;
 }
 
-Result SharedValidator::OnCallRef(const Location& loc,
-                                  Index* function_type_index) {
+Result SharedValidator::OnCallRef(const Location& loc, Var function_type_var) {
   Result result = CheckInstr(Opcode::CallRef, loc);
-  Index func_index;
-  result |= typechecker_.OnIndexedFuncRef(&func_index);
-  if (Failed(result)) {
-    return result;
-  }
   FuncType func_type;
-  result |= CheckFuncTypeIndex(Var(func_index, loc), &func_type);
-  result |= typechecker_.OnCall(func_type.params, func_type.results);
-  if (Succeeded(result)) {
-    *function_type_index = func_index;
-  }
+  result |= CheckFuncTypeIndex(function_type_var, &func_type);
+  result |= typechecker_.OnCallRef(function_type_var.to_type(),
+                                   func_type.params, func_type.results);
   return result;
 }
 
@@ -763,6 +913,7 @@ Result SharedValidator::OnCatch(const Location& loc,
     result |= CheckTagIndex(tag_var, &tag_type);
     result |= typechecker_.OnCatch(tag_type.params);
   }
+  result |= RestoreLocalRefs(result);
   return result;
 }
 
@@ -817,11 +968,13 @@ Result SharedValidator::OnElse(const Location& loc) {
   // not the else itself.
   Result result = Result::Ok;
   result |= typechecker_.OnElse();
+  result |= RestoreLocalRefs(result);
   return result;
 }
 
 Result SharedValidator::OnEnd(const Location& loc) {
   Result result = CheckInstr(Opcode::End, loc);
+  result |= RestoreLocalRefs(result);
   result |= typechecker_.OnEnd();
   return result;
 }
@@ -833,13 +986,15 @@ Result SharedValidator::OnGlobalGet(const Location& loc, Var global_var) {
   result |= typechecker_.OnGlobalGet(global_type.type);
   if (Succeeded(result) && in_init_expr_) {
     if (global_var.index() >= num_imported_globals_) {
-      result |= PrintError(
+      PrintError(
           global_var.loc,
           "initializer expression can only reference an imported global");
+      result |= Result::Error;
     }
     if (global_type.mutable_) {
-      result |= PrintError(
-          loc, "initializer expression cannot reference a mutable global");
+      PrintError(loc,
+                 "initializer expression cannot reference a mutable global");
+      result |= Result::Error;
     }
   }
 
@@ -851,9 +1006,10 @@ Result SharedValidator::OnGlobalSet(const Location& loc, Var global_var) {
   GlobalType global_type;
   result |= CheckGlobalIndex(global_var, &global_type);
   if (!global_type.mutable_) {
-    result |= PrintError(
-        loc, "can't global.set on immutable global at index %" PRIindex ".",
-        global_var.index());
+    PrintError(loc,
+               "can't global.set on immutable global at index %" PRIindex ".",
+               global_var.index());
+    result |= Result::Error;
   }
   result |= typechecker_.OnGlobalSet(global_type.type);
   return result;
@@ -865,6 +1021,7 @@ Result SharedValidator::OnIf(const Location& loc, Type sig_type) {
   result |= CheckBlockSignature(loc, Opcode::If, sig_type, &param_types,
                                 &result_types);
   result |= typechecker_.OnIf(param_types, result_types);
+  result |= SaveLocalRefs();
   return result;
 }
 
@@ -916,6 +1073,14 @@ Result SharedValidator::OnLocalGet(const Location& loc, Var local_var) {
   Type type = Type::Any;
   result |= CheckLocalIndex(local_var, &type);
   result |= typechecker_.OnLocalGet(type);
+  if (Succeeded(result) && type.IsNonNullableRef()) {
+    auto it = local_refs_map_.find(local_var.index());
+    if (it != local_refs_map_.end() &&
+        !local_ref_is_set_[it->second.local_ref_is_set]) {
+      PrintError(local_var.loc, "uninitialized local reference");
+      return Result::Error;
+    }
+  }
   return result;
 }
 
@@ -925,6 +1090,12 @@ Result SharedValidator::OnLocalSet(const Location& loc, Var local_var) {
   Type type = Type::Any;
   result |= CheckLocalIndex(local_var, &type);
   result |= typechecker_.OnLocalSet(type);
+  if (Succeeded(result) && type.IsNonNullableRef()) {
+    auto it = local_refs_map_.find(local_var.index());
+    if (it != local_refs_map_.end()) {
+      local_ref_is_set_[it->second.local_ref_is_set] = true;
+    }
+  }
   return result;
 }
 
@@ -934,6 +1105,12 @@ Result SharedValidator::OnLocalTee(const Location& loc, Var local_var) {
   Type type = Type::Any;
   result |= CheckLocalIndex(local_var, &type);
   result |= typechecker_.OnLocalTee(type);
+  if (Succeeded(result) && type.IsNonNullableRef()) {
+    auto it = local_refs_map_.find(local_var.index());
+    if (it != local_refs_map_.end()) {
+      local_ref_is_set_[it->second.local_ref_is_set] = true;
+    }
+  }
   return result;
 }
 
@@ -943,6 +1120,7 @@ Result SharedValidator::OnLoop(const Location& loc, Type sig_type) {
   result |= CheckBlockSignature(loc, Opcode::Loop, sig_type, &param_types,
                                 &result_types);
   result |= typechecker_.OnLoop(param_types, result_types);
+  result |= SaveLocalRefs();
   return result;
 }
 
@@ -998,6 +1176,12 @@ Result SharedValidator::OnNop(const Location& loc) {
   return result;
 }
 
+Result SharedValidator::OnRefAsNonNull(const Location& loc) {
+  Result result = CheckInstr(Opcode::Nop, loc);
+  result |= typechecker_.OnRefAsNonNullExpr();
+  return result;
+}
+
 Result SharedValidator::OnRefFunc(const Location& loc, Var func_var) {
   Result result = CheckInstr(Opcode::RefFunc, loc);
   result |= CheckFuncIndex(func_var);
@@ -1010,7 +1194,7 @@ Result SharedValidator::OnRefFunc(const Location& loc, Var func_var) {
       check_declared_funcs_.push_back(func_var);
     }
     Index func_type = GetFunctionTypeIndex(func_var.index());
-    result |= typechecker_.OnRefFuncExpr(func_type, in_init_expr_);
+    result |= typechecker_.OnRefFuncExpr(func_type);
   }
   return result;
 }
@@ -1021,8 +1205,26 @@ Result SharedValidator::OnRefIsNull(const Location& loc) {
   return result;
 }
 
-Result SharedValidator::OnRefNull(const Location& loc, Type type) {
+Result SharedValidator::OnRefNull(const Location& loc, Var func_type_var) {
   Result result = CheckInstr(Opcode::RefNull, loc);
+
+  Type type = func_type_var.to_type();
+
+  switch (type) {
+    case Type::RefNull:
+      result |= CheckIndex(func_type_var, num_types_, "function type");
+      break;
+    case Type::FuncRef:
+    case Type::ExnRef:
+    case Type::ExternRef:
+      break;
+    default:
+      PrintError(
+          loc, "Only ref, externref, exnref, funcref are allowed for ref.null");
+      result |= Result::Error;
+      break;
+  }
+
   result |= typechecker_.OnRefNullExpr(type);
   return result;
 }
@@ -1038,6 +1240,7 @@ Result SharedValidator::OnReturnCall(const Location& loc, Var func_var) {
   FuncType func_type;
   result |= CheckFuncIndex(func_var, &func_type);
   result |= typechecker_.OnReturnCall(func_type.params, func_type.results);
+  IgnoreLocalRefs();
   return result;
 }
 
@@ -1049,19 +1252,33 @@ Result SharedValidator::OnReturnCallIndirect(const Location& loc,
   TableType table_type;
   result |= CheckFuncTypeIndex(sig_var, &func_type);
   result |= CheckTableIndex(table_var, &table_type);
-  if (table_type.element != Type::FuncRef) {
-    result |= PrintError(loc,
-                         "type mismatch: return_call_indirect must reference "
-                         "table of funcref type");
+  if (table_type.element == Type::Any ||
+      Failed(typechecker_.CheckType(table_type.element, Type::FuncRef))) {
+    PrintError(loc,
+               "type mismatch: return_call_indirect must reference "
+               "table of funcref type");
+    result |= Result::Error;
   }
-  result |=
-      typechecker_.OnReturnCallIndirect(func_type.params, func_type.results);
+  result |= typechecker_.OnReturnCallIndirect(
+      func_type.params, func_type.results, table_type.limits);
+  IgnoreLocalRefs();
+  return result;
+}
+
+Result SharedValidator::OnReturnCallRef(const Location& loc,
+                                        Var function_type_var) {
+  Result result = CheckInstr(Opcode::ReturnCallRef, loc);
+  FuncType func_type;
+  result |= CheckFuncTypeIndex(function_type_var, &func_type);
+  result |= typechecker_.OnReturnCallRef(function_type_var.to_type(),
+                                         func_type.params, func_type.results);
   return result;
 }
 
 Result SharedValidator::OnReturn(const Location& loc) {
   Result result = CheckInstr(Opcode::Return, loc);
   result |= typechecker_.OnReturn();
+  IgnoreLocalRefs();
   return result;
 }
 
@@ -1069,13 +1286,32 @@ Result SharedValidator::OnSelect(const Location& loc,
                                  Index result_count,
                                  Type* result_types) {
   Result result = CheckInstr(Opcode::Select, loc);
+
+  for (Index i = 0; i < result_count; i++) {
+    if (result_types[i].IsReferenceWithIndex()) {
+      Index index = result_types[i].GetReferenceIndex();
+      auto iter = func_types_.find(index);
+
+      if (iter == func_types_.end()) {
+        PrintError(loc, "reference %" PRIindex " is out of range", index);
+        result |= Result::Error;
+      }
+    }
+  }
+
   if (result_count > 1) {
-    result |=
-        PrintError(loc, "invalid arity in select instruction: %" PRIindex ".",
-                   result_count);
+    PrintError(loc, "invalid arity in select instruction: %" PRIindex ".",
+               result_count);
+    result |= Result::Error;
   } else {
     result |= typechecker_.OnSelect(ToTypeVector(result_count, result_types));
   }
+  return result;
+}
+
+Result SharedValidator::OnSelectCondition(const Location& loc) {
+  Result result = CheckInstr(Opcode::Select, loc);
+  result |= typechecker_.OnSelectCondition();
   return result;
 }
 
@@ -1205,17 +1441,17 @@ Result SharedValidator::OnTableSize(const Location& loc, Var table_var) {
   return result;
 }
 
-Result SharedValidator::OnTernary(const Location& loc, Opcode opcode) {
-  Result result = CheckInstr(opcode, loc);
-  result |= typechecker_.OnTernary(opcode);
-  return result;
-}
-
 Result SharedValidator::OnThrow(const Location& loc, Var tag_var) {
   Result result = CheckInstr(Opcode::Throw, loc);
   TagType tag_type;
   result |= CheckTagIndex(tag_var, &tag_type);
   result |= typechecker_.OnThrow(tag_type.params);
+  return result;
+}
+
+Result SharedValidator::OnThrowRef(const Location& loc) {
+  Result result = CheckInstr(Opcode::ThrowRef, loc);
+  result |= typechecker_.OnThrowRef();
   return result;
 }
 
@@ -1225,6 +1461,42 @@ Result SharedValidator::OnTry(const Location& loc, Type sig_type) {
   result |= CheckBlockSignature(loc, Opcode::Try, sig_type, &param_types,
                                 &result_types);
   result |= typechecker_.OnTry(param_types, result_types);
+  result |= SaveLocalRefs();
+  return result;
+}
+
+Result SharedValidator::BeginTryTable(const Location& loc, Type sig_type) {
+  Result result = CheckInstr(Opcode::TryTable, loc);
+  TypeVector param_types, result_types;
+  result |= CheckBlockSignature(loc, Opcode::TryTable, sig_type, &param_types,
+                                &result_types);
+  result |= typechecker_.BeginTryTable(param_types);
+  return result;
+}
+
+Result SharedValidator::OnTryTableCatch(const Location& loc,
+                                        const TableCatch& catch_) {
+  Result result = Result::Ok;
+  TagType tag_type;
+  expr_loc_ = loc;
+  if (!catch_.IsCatchAll()) {
+    result |= CheckTagIndex(catch_.tag, &tag_type);
+  }
+  if (catch_.IsRef()) {
+    tag_type.params.push_back(Type::ExnRef);
+  }
+  result |=
+      typechecker_.OnTryTableCatch(tag_type.params, catch_.target.index());
+  return result;
+}
+
+Result SharedValidator::EndTryTable(const Location& loc, Type sig_type) {
+  Result result = CheckInstr(Opcode::TryTable, loc);
+  TypeVector param_types, result_types;
+  result |= CheckBlockSignature(loc, Opcode::TryTable, sig_type, &param_types,
+                                &result_types);
+  result |= typechecker_.EndTryTable(param_types, result_types);
+  result |= SaveLocalRefs();
   return result;
 }
 
@@ -1237,6 +1509,7 @@ Result SharedValidator::OnUnary(const Location& loc, Opcode opcode) {
 Result SharedValidator::OnUnreachable(const Location& loc) {
   Result result = CheckInstr(Opcode::Unreachable, loc);
   result |= typechecker_.OnUnreachable();
+  IgnoreLocalRefs();
   return result;
 }
 

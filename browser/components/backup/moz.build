@@ -14,12 +14,12 @@ MARIONETTE_MANIFESTS += ["tests/marionette/manifest.toml"]
 BROWSER_CHROME_MANIFESTS += ["tests/browser/browser.toml"]
 MOCHITEST_CHROME_MANIFESTS += ["tests/chrome/chrome.toml"]
 
-FINAL_TARGET_FILES.actors += [
+MOZ_SRC_FILES += [
     "actors/BackupUIChild.sys.mjs",
     "actors/BackupUIParent.sys.mjs",
 ]
 
-EXTRA_JS_MODULES.backup += [
+MOZ_SRC_FILES += [
     "Archive.worker.mjs",
     "ArchiveEncryption.sys.mjs",
     "ArchiveEncryptionState.sys.mjs",

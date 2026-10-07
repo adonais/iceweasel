@@ -8,8 +8,11 @@
 
 #  include <deque>
 
+#  include "mozilla/Assertions.h"
+#  include "mozilla/RefPtr.h"
 #  include "nestegg/nestegg.h"
 #  include "nsAutoRef.h"
+#  include "nsISupportsImpl.h"
 
 namespace mozilla {
 
@@ -27,6 +30,9 @@ class NesteggPacketHolder {
         mDuration(-1),
         mTrack(0),
         mIsKeyframe(false) {}
+
+  NesteggPacketHolder(const NesteggPacketHolder& aOther) = delete;
+  NesteggPacketHolder& operator=(NesteggPacketHolder const& aOther) = delete;
 
   bool Init(nestegg_packet* aPacket, int64_t aOffset, unsigned aTrack,
             bool aIsKeyframe) {
@@ -105,10 +111,6 @@ class NesteggPacketHolder {
 
   // Does this packet contain a keyframe?
   bool mIsKeyframe;
-
-  // Copy constructor and assignment operator not implemented. Don't use them!
-  NesteggPacketHolder(const NesteggPacketHolder& aOther);
-  NesteggPacketHolder& operator=(NesteggPacketHolder const& aOther);
 };
 
 // Queue for holding nestegg packets.

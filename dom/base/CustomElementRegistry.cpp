@@ -710,6 +710,33 @@ using ScopedRegistryMap =
 
 static StaticAutoPtr<ScopedRegistryMap> gScopedRegistryMap;
 
+// The per-node flag mirrors gScopedRegistryMap membership; only
+// SetScopedRegistry and RemoveScopedRegistry may flip it.
+static bool HasScopedRegistryFlag(const nsINode& aNode) {
+  if (const Element* element = Element::FromNode(aNode)) {
+    return element->GetCustomElementRegistryState() ==
+           CustomElementRegistryState::Scoped;
+  }
+  if (const ShadowRoot* shadowRoot = ShadowRoot::FromNode(aNode)) {
+    return shadowRoot->GetCustomElementRegistryState() ==
+           CustomElementRegistryState::Scoped;
+  }
+  return aNode.IsDocument() &&
+         aNode.AsDocument()->HasScopedCustomElementRegistry();
+}
+
+static void SetScopedRegistryFlag(nsINode& aNode, bool aScoped) {
+  const auto state = aScoped ? CustomElementRegistryState::Scoped
+                             : CustomElementRegistryState::Global;
+  if (Element* element = Element::FromNode(aNode)) {
+    element->SetCustomElementRegistryState(state);
+  } else if (ShadowRoot* shadowRoot = ShadowRoot::FromNode(aNode)) {
+    shadowRoot->SetCustomElementRegistryState(state);
+  } else {
+    aNode.AsDocument()->SetHasScopedCustomElementRegistry(aScoped);
+  }
+}
+
 /* static */
 already_AddRefed<CustomElementRegistry>
 CustomElementRegistry::GetScopedRegistry(const nsINode& aNode) {
@@ -727,18 +754,29 @@ CustomElementRegistry::GetScopedRegistry(const nsINode& aNode) {
 void CustomElementRegistry::SetScopedRegistry(
     nsINode& aNode, CustomElementRegistry& aRegistry) {
   MOZ_ASSERT(aRegistry.IsScoped());
+  MOZ_ASSERT(!HasScopedRegistryFlag(aNode),
+             "We shouldn't override an already assigned scoped registry");
+  MOZ_ASSERT(!IsInScopedRegistryMap(aNode),
+             "Registry map entry without the scoped flag");
   if (!gScopedRegistryMap) {
     gScopedRegistryMap = new ScopedRegistryMap();
     ClearOnShutdown(&gScopedRegistryMap);
   }
   gScopedRegistryMap->InsertOrUpdate(&aNode, &aRegistry);
+  SetScopedRegistryFlag(aNode, true);
 }
 
 /* static */
 void CustomElementRegistry::RemoveScopedRegistry(nsINode& aNode) {
+  if (!HasScopedRegistryFlag(aNode)) {
+    return;
+  }
+  MOZ_ASSERT(!gScopedRegistryMap || gScopedRegistryMap->Contains(&aNode),
+             "Scoped flag without a registry map entry");
   if (gScopedRegistryMap) {
     gScopedRegistryMap->Remove(&aNode);
   }
+  SetScopedRegistryFlag(aNode, false);
 }
 
 /* static */
@@ -1377,8 +1415,7 @@ void CustomElementRegistry::Initialize(nsINode& aRoot, ErrorResult& aRv) {
   if (aRoot.IsDocument()) {
     Document* doc = aRoot.AsDocument();
     if (!doc->GetCustomElementRegistry()) {
-      doc->SetHasScopedCustomElementRegistry(true);
-      CustomElementRegistry::SetScopedRegistry(*doc, *this);
+      SetScopedRegistry(*doc, *this);
     }
   } else if (ShadowRoot* shadowRoot = ShadowRoot::FromNode(aRoot)) {
     if (!shadowRoot->GetCustomElementRegistry()) {

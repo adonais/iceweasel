@@ -93,6 +93,8 @@ class AppWindow final : public nsIBaseWindow,
     MOZ_CAN_RUN_SCRIPT_BOUNDARY
     void SizeModeChanged(nsSizeMode sizeMode) override;
     MOZ_CAN_RUN_SCRIPT_BOUNDARY
+    void FullscreenChangeFailed(bool aInFullscreen) override;
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY
     void MacFullscreenMenubarOverlapChanged(
         mozilla::DesktopCoord aOverlapAmount) override;
     MOZ_CAN_RUN_SCRIPT_BOUNDARY
@@ -146,6 +148,7 @@ class AppWindow final : public nsIBaseWindow,
   void WindowResized(nsIWidget*, const mozilla::LayoutDeviceIntSize&);
   MOZ_CAN_RUN_SCRIPT bool RequestWindowClose(nsIWidget* aWidget);
   MOZ_CAN_RUN_SCRIPT void SizeModeChanged(nsSizeMode aSizeMode);
+  MOZ_CAN_RUN_SCRIPT void FullscreenChangeFailed(bool aInFullscreen);
   MOZ_CAN_RUN_SCRIPT void FullscreenWillChange(bool aInFullscreen);
   MOZ_CAN_RUN_SCRIPT void FullscreenChanged(bool aInFullscreen);
   MOZ_CAN_RUN_SCRIPT void MacFullscreenMenubarOverlapChanged(
@@ -228,8 +231,10 @@ class AppWindow final : public nsIBaseWindow,
   NS_IMETHOD SizeShellTo(nsIDocShellTreeItem* aShellItem, int32_t aCX,
                          int32_t aCY);
   NS_IMETHOD ExitModalLoop(nsresult aStatus);
+  MOZ_CAN_RUN_SCRIPT
   NS_IMETHOD CreateNewChromeWindow(int32_t aChromeFlags,
                                    nsIAppWindow** _retval);
+  MOZ_CAN_RUN_SCRIPT
   NS_IMETHOD CreateNewContentWindow(int32_t aChromeFlags,
                                     nsIOpenWindowInfo* aOpenWindowInfo,
                                     nsIAppWindow** _retval);

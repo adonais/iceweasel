@@ -26,7 +26,7 @@ add_task(async function () {
     );
     is(
       fontPreviewData.ctx.font,
-      `40px ${Services.appinfo.OS === "WINNT" ? "Arial" : `"Liberation Sans"`}, serif`,
+      `40px ${Services.appinfo.OS === "WINNT" ? "Arial" : "Liberation Sans"}, serif`,
       "Expected font style was used in the canvas"
     );
 
@@ -149,7 +149,7 @@ add_task(async function () {
     // Check font wrapped in double quotes
     is(
       getFontPreviewData(`"Zilla Bold"`, content.document).ctx.font,
-      `40px "Zilla Bold", serif`,
+      `40px Zilla Bold, serif`,
       "Expected font style was used in the canvas"
     );
 
@@ -173,7 +173,7 @@ add_task(async function () {
         `Menlo Bold, "Fira Code", 'Mono Lisa', monospace`,
         content.document
       ).ctx.font,
-      `40px "Menlo Bold", "Fira Code", "Mono Lisa", monospace, serif`,
+      "40px Menlo Bold, Fira Code, Mono Lisa, monospace, serif",
       "Expected font style was used in the canvas"
     );
 

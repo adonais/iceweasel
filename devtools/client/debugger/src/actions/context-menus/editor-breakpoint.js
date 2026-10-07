@@ -78,7 +78,7 @@ export function showEditorEditBreakpointContextMenu(event, breakpoint) {
     );
     items.push(logPointItem(breakpoint, selectedLocation, dispatch));
 
-    showMenu(event, items);
+    showMenu(event, items, { accesskeyConflictsBug: 2073896 });
   };
 }
 
@@ -90,7 +90,7 @@ export function showEditorCreateBreakpointContextMenu(
   return async ({ dispatch }) => {
     const items = createBreakpointItems(location, lineText, dispatch);
 
-    showMenu(event, items);
+    showMenu(event, items, { accesskeyConflictsBug: 2073896 });
   };
 }
 

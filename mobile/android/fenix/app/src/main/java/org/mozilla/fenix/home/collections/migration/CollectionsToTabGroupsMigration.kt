@@ -18,13 +18,13 @@ import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.concept.engine.Engine
 import mozilla.components.feature.tab.collections.Tab
 import mozilla.components.feature.tab.collections.TabCollection
+import mozilla.components.feature.tabgroups.storage.data.TabGroup
+import mozilla.components.feature.tabgroups.storage.repository.TabGroupRepository
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.DateTimeProvider
 import mozilla.components.support.utils.DefaultDateTimeProvider
 import org.mozilla.fenix.components.TabCollectionStorage
-import org.mozilla.fenix.tabgroups.storage.data.TabGroup
-import org.mozilla.fenix.tabgroups.storage.repository.TabGroupRepository
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 
 private const val BREADCRUMB_CATEGORY = "CollectionsToTabGroupsMigration"
@@ -169,8 +169,8 @@ class CollectionsToTabGroupsMigration(
                             theme = TabGroupTheme.default.name,
                             closed = true,
                             lastModified = dateTimeProvider.currentTimeMillis(),
-                        ),
-                    tabIds = recoverableTabs.map { it.state.id },
+                            tabIds = recoverableTabs.map { it.state.id },
+                        )
                 )
                 MigrationResult.TAB_GROUP_CREATED
             }

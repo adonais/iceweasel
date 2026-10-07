@@ -25,16 +25,16 @@ import org.mozilla.fenix.helpers.isChecked
 /** Implementation of Robot Pattern for the settings Tabs sub menu. */
 class SettingsSubMenuTabsRobot {
 
-    fun verifyTabViewOptions() {
-        Log.i(TAG, "verifyTabViewOptions: Trying to verify that the \"Tab view\" title is visible")
-        tabViewHeading().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
-        Log.i(TAG, "verifyTabViewOptions: Verified that the \"Tab view\" title is visible")
-        Log.i(TAG, "verifyTabViewOptions: Trying to verify that the \"List\" option is visible")
+    fun verifyTabLayoutOptions() {
+        Log.i(TAG, "verifyTabLayoutOptions: Trying to verify that the \"Tab layout\" title is visible")
+        tabLayoutHeading().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+        Log.i(TAG, "verifyTabLayoutOptions: Verified that the \"Tab layout\" title is visible")
+        Log.i(TAG, "verifyTabLayoutOptions: Trying to verify that the \"List\" option is visible")
         listToggle().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
-        Log.i(TAG, "verifyTabViewOptions: Verified that the \"List\" option is visible")
-        Log.i(TAG, "verifyTabViewOptions: Trying to verify that the \"Grid\" option is visible")
+        Log.i(TAG, "verifyTabLayoutOptions: Verified that the \"List\" option is visible")
+        Log.i(TAG, "verifyTabLayoutOptions: Trying to verify that the \"Grid\" option is visible")
         gridToggle().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
-        Log.i(TAG, "verifyTabViewOptions: Verified that the \"Grid\" option is visible")
+        Log.i(TAG, "verifyTabLayoutOptions: Verified that the \"Grid\" option is visible")
     }
 
     fun verifyCloseTabsOptions() {
@@ -55,25 +55,16 @@ class SettingsSubMenuTabsRobot {
         Log.i(TAG, "verifyCloseTabsOptions: Verified that the \"After one month\" option is visible")
     }
 
-    fun verifyMoveOldTabsToInactiveOptions() {
-        Log.i(
-            TAG,
-            "verifyMoveOldTabsToInactiveOptions: Trying to verify that the \"Move old tabs to inactive\" title is visible",
-        )
-        moveOldTabsToInactiveHeading().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
-        Log.i(
-            TAG,
-            "verifyMoveOldTabsToInactiveOptions: Verified that the \"Move old tabs to inactive\" title is visible",
-        )
-        Log.i(
-            TAG,
-            "verifyMoveOldTabsToInactiveOptions: Trying to verify that the \"Move old tabs to inactive\" toggle is visible",
-        )
-        moveOldTabsToInactiveToggle().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
-        Log.i(
-            TAG,
-            "verifyMoveOldTabsToInactiveOptions: Verified that the \"Move old tabs to inactive\" toggle is visible",
-        )
+    fun verifyTabOrganizationOptions() {
+        Log.i(TAG, "verifyTabOrganizationOptions: Trying to verify that the \"Tab organization\" title is visible")
+        tabOrganizationHeading().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+        Log.i(TAG, "verifyTabOrganizationOptions: Verified that the \"Tab organization\" title is visible")
+        Log.i(TAG, "verifyTabOrganizationOptions: Trying to verify that the \"Inactive tabs\" toggle is visible")
+        inactiveTabsToggle().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+        Log.i(TAG, "verifyTabOrganizationOptions: Verified that the \"Inactive tabs\" toggle is visible")
+        Log.i(TAG, "verifyTabOrganizationOptions: Trying to verify that the \"Tab groups\" toggle is visible")
+        tabGroupsToggle().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+        Log.i(TAG, "verifyTabOrganizationOptions: Verified that the \"Tab groups\" toggle is visible")
     }
 
     fun verifySelectedCloseTabsOption(closedTabsOption: String) {
@@ -114,7 +105,7 @@ class SettingsSubMenuTabsRobot {
     }
 }
 
-private fun tabViewHeading() = onView(withText("Tab view"))
+private fun tabLayoutHeading() = onView(withText(R.string.preferences_tab_layout))
 
 private fun listToggle() = onView(withText("List"))
 
@@ -130,8 +121,10 @@ private fun afterOneWeekOption() = onView(withText("After one week"))
 
 private fun afterOneMonthOption() = onView(withText("After one month"))
 
-private fun moveOldTabsToInactiveHeading() = onView(withText("Move old tabs to inactive"))
+private fun tabOrganizationHeading() = onView(withText(R.string.preferences_tab_organization))
 
-private fun moveOldTabsToInactiveToggle() = onView(withText(R.string.preferences_inactive_tabs_title))
+private fun inactiveTabsToggle() = onView(withText(R.string.preferences_inactive_tabs_toggle_title))
+
+private fun tabGroupsToggle() = onView(withText(R.string.preferences_tab_groups_title))
 
 private fun goBackButton() = onView(allOf(ViewMatchers.withContentDescription("Navigate up")))

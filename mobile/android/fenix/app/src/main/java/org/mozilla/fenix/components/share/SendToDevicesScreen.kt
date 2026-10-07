@@ -38,7 +38,7 @@ import mozilla.components.ui.icons.R as IconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.MenuGroup
 import org.mozilla.fenix.components.menu.compose.MenuItem
-import org.mozilla.fenix.share.ShareViewModel
+import org.mozilla.fenix.components.share.store.ShareUiState
 import org.mozilla.fenix.share.listadapters.SyncShareOption
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -46,14 +46,14 @@ private val SendToDevicesContentBottomPadding = 64.dp
 
 @Composable
 internal fun SendToDevicesContent(
-    uiState: ShareViewModel.ShareUiState,
+    uiState: ShareUiState,
     onDismiss: () -> Unit,
-    onSendToDevice: (SyncShareOption.SingleDevice) -> Unit,
-    onSendToAll: () -> Unit,
+    onSend: (Set<SyncShareOption.SingleDevice>) -> Unit,
+    onDeviceSelectionToggle: (SyncShareOption.SingleDevice) -> Unit,
     onSignInClicked: () -> Unit,
     onSignOutClicked: () -> Unit,
 ) {
-    val singleDevices = uiState.devices.filterIsInstance<SyncShareOption.SingleDevice>()
+    val singleDevices = uiState.singleDevices
     FirefoxTheme {
         Column(
             modifier =
@@ -101,16 +101,13 @@ internal fun SendToDevicesContent(
                     SendToDevicesUiMode.Reconnect,
                     SendToDevicesUiMode.SignIn -> ReconnectToSyncScreen(onSignInClicked, onSignOutClicked)
                     SendToDevicesUiMode.NoDevices -> NoDevicesAvailableScreen()
-                    SendToDevicesUiMode.DeviceList -> {
-                        DeviceList(
+                    SendToDevicesUiMode.DeviceList ->
+                        DeviceListScreen(
                             devices = singleDevices,
-                            onDeviceClick = onSendToDevice,
+                            selectedDevices = uiState.selectedDevices,
+                            onSend = onSend,
+                            onDeviceSelectionToggle = onDeviceSelectionToggle,
                         )
-                        if (singleDevices.size > 1) {
-                            Spacer(modifier = Modifier.size(8.dp))
-                            SendToAllItem(onSendToAll = onSendToAll)
-                        }
-                    }
                 }
             }
         }
@@ -118,12 +115,54 @@ internal fun SendToDevicesContent(
 }
 
 @Composable
+private fun DeviceListScreen(
+    devices: List<SyncShareOption.SingleDevice>,
+    selectedDevices: Set<SyncShareOption.SingleDevice>,
+    onSend: (Set<SyncShareOption.SingleDevice>) -> Unit,
+    onDeviceSelectionToggle: (SyncShareOption.SingleDevice) -> Unit,
+) {
+    val isSingleDevice = devices.size == 1
+    DeviceList(
+        devices = devices,
+        selectedDevices = if (isSingleDevice) emptySet() else selectedDevices,
+        onDeviceClicked =
+            if (isSingleDevice) {
+                { device -> onSend(setOf(device)) }
+            } else {
+                onDeviceSelectionToggle
+            },
+    )
+    if (!isSingleDevice) {
+        SendToDevicesButton(
+            selectedDevices = selectedDevices,
+            onSend = onSend,
+        )
+    }
+}
+
+@Composable
+private fun SendToDevicesButton(
+    selectedDevices: Set<SyncShareOption.SingleDevice>,
+    onSend: (Set<SyncShareOption.SingleDevice>) -> Unit,
+) {
+    FilledButton(
+        text = stringResource(id = R.string.sync_send_to_selected_devices),
+        modifier = Modifier.fillMaxWidth().padding(top = FirefoxTheme.layout.space.static200),
+        enabled = selectedDevices.isNotEmpty(),
+        containerColor = MaterialTheme.colorScheme.primary,
+        onClick = { onSend(selectedDevices) },
+    )
+}
+
+@Composable
 private fun DeviceList(
     devices: List<SyncShareOption.SingleDevice>,
-    onDeviceClick: (SyncShareOption.SingleDevice) -> Unit,
+    selectedDevices: Set<SyncShareOption.SingleDevice>,
+    onDeviceClicked: (SyncShareOption.SingleDevice) -> Unit,
 ) {
     MenuGroup {
         for (option in devices) {
+            val isChecked = option in selectedDevices
             MenuItem(
                 label = option.device.displayName,
                 beforeIconPainter =
@@ -135,20 +174,21 @@ private fun DeviceList(
                                 IconsR.drawable.mozac_ic_device_desktop_24
                             }
                     ),
-                onClick = { onDeviceClick(option) },
+                afterIconPainter =
+                    if (isChecked) {
+                        painterResource(id = IconsR.drawable.mozac_ic_checkmark_24)
+                    } else {
+                        null
+                    },
+                stateDescription =
+                    if (isChecked) {
+                        stringResource(id = R.string.send_to_devices_device_selected_content_description)
+                    } else {
+                        ""
+                    },
+                onClick = { onDeviceClicked(option) },
             )
         }
-    }
-}
-
-@Composable
-private fun SendToAllItem(onSendToAll: () -> Unit) {
-    MenuGroup {
-        MenuItem(
-            label = stringResource(id = R.string.sync_send_to_all),
-            beforeIconPainter = painterResource(id = IconsR.drawable.mozac_ic_select_all_24),
-            onClick = onSendToAll,
-        )
     }
 }
 
@@ -297,7 +337,7 @@ private fun SendToDevicesContentWithDevicesPreview() {
         Surface {
             SendToDevicesContent(
                 uiState =
-                    ShareViewModel.ShareUiState(
+                    ShareUiState(
                         devices =
                             listOf(
                                 previewDevice("My Phone", DeviceType.MOBILE),
@@ -305,8 +345,25 @@ private fun SendToDevicesContentWithDevicesPreview() {
                             )
                     ),
                 onDismiss = {},
-                onSendToDevice = {},
-                onSendToAll = {},
+                onSend = {},
+                onDeviceSelectionToggle = {},
+                onSignInClicked = {},
+                onSignOutClicked = {},
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun SendToDevicesContentWithOneDevicePreview() {
+    FirefoxTheme {
+        Surface {
+            SendToDevicesContent(
+                uiState = ShareUiState(devices = listOf(previewDevice("My Phone", DeviceType.MOBILE))),
+                onDismiss = {},
+                onSend = {},
+                onDeviceSelectionToggle = {},
                 onSignInClicked = {},
                 onSignOutClicked = {},
             )
@@ -320,10 +377,10 @@ private fun SendToDevicesContentNoDevicesPreview() {
     FirefoxTheme {
         Surface {
             SendToDevicesContent(
-                uiState = ShareViewModel.ShareUiState(devices = emptyList()),
+                uiState = ShareUiState(devices = emptyList()),
                 onDismiss = {},
-                onSendToDevice = {},
-                onSendToAll = {},
+                onSend = {},
+                onDeviceSelectionToggle = {},
                 onSignInClicked = {},
                 onSignOutClicked = {},
             )
@@ -337,10 +394,10 @@ private fun SendToDevicesContentReconnectToSyncPreview() {
     FirefoxTheme {
         Surface {
             SendToDevicesContent(
-                uiState = ShareViewModel.ShareUiState(devices = listOf(SyncShareOption.Reconnect)),
+                uiState = ShareUiState(devices = listOf(SyncShareOption.Reconnect)),
                 onDismiss = {},
-                onSendToDevice = {},
-                onSendToAll = {},
+                onSend = {},
+                onDeviceSelectionToggle = {},
                 onSignInClicked = {},
                 onSignOutClicked = {},
             )
@@ -354,10 +411,10 @@ private fun SendToDevicesContentNoInternetPreview() {
     FirefoxTheme {
         Surface {
             SendToDevicesContent(
-                uiState = ShareViewModel.ShareUiState(devices = listOf(SyncShareOption.Offline)),
+                uiState = ShareUiState(devices = listOf(SyncShareOption.Offline)),
                 onDismiss = {},
-                onSendToDevice = {},
-                onSendToAll = {},
+                onSend = {},
+                onDeviceSelectionToggle = {},
                 onSignInClicked = {},
                 onSignOutClicked = {},
             )
@@ -371,10 +428,10 @@ private fun SendToDevicesLoadingPreview() {
     FirefoxTheme {
         Surface {
             SendToDevicesContent(
-                uiState = ShareViewModel.ShareUiState(isLoading = true),
+                uiState = ShareUiState(isLoading = true),
                 onDismiss = {},
-                onSendToDevice = {},
-                onSendToAll = {},
+                onSend = {},
+                onDeviceSelectionToggle = {},
                 onSignInClicked = {},
                 onSignOutClicked = {},
             )

@@ -22,8 +22,6 @@
 #include "nsTHashMap.h"
 #include "nsWrapperCache.h"
 
-class nsIPrincipal;
-
 class nsDOMMutationObserver;
 using mozilla::dom::MutationObservingInfo;
 
@@ -254,7 +252,7 @@ class nsMutationReceiverBase : public nsStubAnimationObserver {
   nsCOMPtr<nsINode> mKungFuDeathGrip;
 
  private:
-  nsTArray<RefPtr<nsAtom>> mAttributeFilter;
+  AutoTArray<RefPtr<nsAtom>, 2> mAttributeFilter;
   bool mSubtree : 1;
   bool mChildList : 1;
   bool mCharacterData : 1;
@@ -421,7 +419,7 @@ class nsDOMMutationObserver final : public nsISupports, public nsWrapperCache {
 
   void Observe(nsINode& aTarget,
                const mozilla::dom::MutationObserverInit& aOptions,
-               nsIPrincipal& aSubjectPrincipal, mozilla::ErrorResult& aRv);
+               mozilla::ErrorResult& aRv);
 
   void Disconnect();
 
@@ -722,7 +720,10 @@ class nsAutoAnimationMutationBatch {
   // List of nodes referred to by mEntryTable so we can sort them
   // For a specific pseudo element, we use its parent element as the
   // batch target, so they will be put in the same EntryArray.
-  nsTArray<nsINode*> mBatchTargets;
+  // Note: the batch object is used in lots of Animation APIs, and the script
+  // may be in the scope of the batch via ready/finished promises, so we use the
+  // strong refs here.
+  nsTArray<nsCOMPtr<nsINode>> mBatchTargets;
 };
 
 inline nsDOMMutationObserver* nsMutationReceiverBase::Observer() {

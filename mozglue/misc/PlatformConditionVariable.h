@@ -25,6 +25,9 @@ class ConditionVariableImpl {
   MFBT_API ConditionVariableImpl();
   MFBT_API ~ConditionVariableImpl();
 
+  ConditionVariableImpl(const ConditionVariableImpl&) = delete;
+  ConditionVariableImpl& operator=(const ConditionVariableImpl&) = delete;
+
   // Wake one thread that is waiting on this condition.
   MFBT_API void notify_one();
 
@@ -43,9 +46,6 @@ class ConditionVariableImpl {
                              const mozilla::TimeDuration& rel_time);
 
  private:
-  ConditionVariableImpl(const ConditionVariableImpl&) = delete;
-  ConditionVariableImpl& operator=(const ConditionVariableImpl&) = delete;
-
 #if defined(XP_WIN)
   Futex mFutex;
 #elif !defined(__wasi__)

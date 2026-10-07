@@ -224,6 +224,8 @@ class JsepSessionImpl : public JsepSession, public JsepSessionCopyableStuff {
   JsepSession::Result ValidateRemoteDescription(const Sdp& description);
   JsepSession::Result ValidateOffer(const Sdp& offer);
   JsepSession::Result ValidateAnswer(const Sdp& offer, const Sdp& answer);
+  JsepSession::Result ValidateAnswerAgainstPranswer(const Sdp& pranswer,
+                                                    const Sdp& answer);
   JsepSession::Result CheckRtcpMux(const Sdp& description);
   nsresult UpdateTransceiversFromRemoteDescription(const Sdp& remote);
   Maybe<JsepTransceiver> GetTransceiverForLevel(size_t level) const;

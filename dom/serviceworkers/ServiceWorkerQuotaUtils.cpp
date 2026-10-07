@@ -26,7 +26,8 @@ namespace mozilla::dom {
 /*
  * QuotaUsageChecker implements the quota usage checking algorithm.
  *
- * 1. Getting the given origin/group usage through QuotaManagerService.
+ * 1. Getting the given origin usage (GetUsageForPrincipal()) and group usage
+ *    and limit (EstimateGroupUsage()) through QuotaManagerService.
  *    QuotaUsageCheck::Start() implements this step.
  * 2. Checking if the group usage headroom is satisfied.
  *    It could be following three situations.
@@ -45,7 +46,7 @@ class QuotaUsageChecker final : public nsIQuotaCallback,
                                 public nsIClearDataCallback {
  public:
   NS_DECL_ISUPPORTS
-  // For QuotaManagerService::Estimate()
+  // For QuotaManagerService::EstimateGroupUsage()
   NS_DECL_NSIQUOTACALLBACK
 
   // For QuotaManagerService::GetUsageForPrincipal()
@@ -122,8 +123,8 @@ void QuotaUsageChecker::Start() {
 
   // Asynchronious getting group usage and limit
   nsCOMPtr<nsIQuotaRequest> request;
-  if (NS_WARN_IF(
-          NS_FAILED(qms->Estimate(mPrincipal, getter_AddRefs(request))))) {
+  if (NS_WARN_IF(NS_FAILED(
+          qms->EstimateGroupUsage(mPrincipal, getter_AddRefs(request))))) {
     return;
   }
   request->SetCallback(this);
@@ -249,7 +250,7 @@ NS_IMETHODIMP QuotaUsageChecker::OnUsageResult(
 
   // Call CheckQuotaHeadroom() when both
   // QuotaManagerService::GetUsageForPrincipal() and
-  // QuotaManagerService::Estimate() are done.
+  // QuotaManagerService::EstimateGroupUsage() are done.
   if (mGettingOriginUsageDone && mGettingGroupUsageDone) {
     CheckQuotaHeadroom();
   }
@@ -295,7 +296,7 @@ NS_IMETHODIMP QuotaUsageChecker::OnComplete(nsIQuotaRequest* aRequest) {
 
   // Call CheckQuotaHeadroom() when both
   // QuotaManagerService::GetUsageForPrincipal() and
-  // QuotaManagerService::Estimate() are done.
+  // QuotaManagerService::EstimateGroupUsage() are done.
   if (mGettingOriginUsageDone && mGettingGroupUsageDone) {
     CheckQuotaHeadroom();
   }

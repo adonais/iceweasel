@@ -18,21 +18,7 @@ class CodeGeneratorWasm32 : public CodeGeneratorShared {
   }
 
   MoveOperand toMoveOperand(LAllocation) const { MOZ_CRASH(); }
-  template <typename T1, typename T2>
-  void bailoutCmp32(Assembler::Condition, T1, T2, LSnapshot*) {
-    MOZ_CRASH();
-  }
-  template <typename T1, typename T2>
-  void bailoutTest32(Assembler::Condition, T1, T2, LSnapshot*) {
-    MOZ_CRASH();
-  }
-  template <typename T1, typename T2>
-  void bailoutCmpPtr(Assembler::Condition, T1, T2, LSnapshot*) {
-    MOZ_CRASH();
-  }
   void bailoutIfFalseBool(Register, LSnapshot*) { MOZ_CRASH(); }
-  void bailoutFrom(Label*, LSnapshot*) { MOZ_CRASH(); }
-  void bailout(LSnapshot*) { MOZ_CRASH(); }
   void bailoutIf(Assembler::Condition, LSnapshot*) { MOZ_CRASH(); }
   bool generateOutOfLineCode() { MOZ_CRASH(); }
   void emitTableSwitchDispatch(MTableSwitch*, Register, Register) {

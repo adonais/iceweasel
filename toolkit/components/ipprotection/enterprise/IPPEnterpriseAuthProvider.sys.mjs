@@ -21,7 +21,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
   console.createInstance({
-    prefix: "IPPEnterpriseAuthProvider",
+    prefix: "IPP_EnterpriseAuthProvider",
     maxLogLevel: Services.prefs.getBoolPref("browser.ipProtection.log", false)
       ? "Debug"
       : "Warn",

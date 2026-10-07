@@ -36,7 +36,7 @@ This diagram shows the various types of shadow objects that make up the Debugger
 
 The {doc}`Debugger <debugger/index>` instance itself is not really a shadow of anything in the debuggee; rather, it maintains the set of global objects which are to be considered debuggees. A `Debugger` observes only execution taking place in the scope of these global objects. You can set functions to be called when new stack frames are pushed; when new code is loaded; and so on.
 
-Omitted from this picture are {doc}`Debugger.Source <debugger.source/index.>` instances, which represent JavaScript compilation units. A `Debugger.Source` can furnish a full copy of its source code, and explain how the code entered the system, whether via a call to `eval`, a `<script>` element, or otherwise. A `Debugger.Script` points to the `Debugger.Source` from which it is derived.
+Omitted from this picture are {doc}`Debugger.Source <debugger.source/index>` instances, which represent JavaScript compilation units. A `Debugger.Source` can furnish a full copy of its source code, and explain how the code entered the system, whether via a call to `eval`, a `<script>` element, or otherwise. A `Debugger.Script` points to the `Debugger.Source` from which it is derived.
 
 Also omitted is the `Debugger`’s {doc}`Debugger.Memory <debugger.memory/index>` instance, which holds methods and accessors for observing the debuggee’s memory use.
 
@@ -55,8 +55,8 @@ Here are some things you can try out yourself that show off some of `Debugger`�
 
 While the `Debugger` core API deals only with concepts common to any JavaScript implementation, it also includes some Gecko-specific features:
 
-- [Global tracking][global] supports debugging all the code running in a Gecko instance at once—the ‘chrome debugging’ model.
-- [Object wrapper][wrapper] functions help manipulate object references that cross privilege boundaries.
+- {doc}`Global tracking <debugger/index>` supports debugging all the code running in a Gecko instance at once—the ‘chrome debugging’ model.
+- {doc}`Object wrapper <debugger.object/index>` functions help manipulate object references that cross privilege boundaries.
 
 ### Source Metadata
 

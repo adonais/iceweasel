@@ -1,0 +1,123 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Test that content cannot put internal flavors on a DataTransfer</title>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css">
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+</head>
+<body>
+<script>
+
+// Flavors of the form */x-moz-* are reserved for internal use and must not be
+// settable by content, whatever case they are spelled in. The text/x-moz-url
+// family is deliberately exempt, as those are variations of a plain url, with
+// the exception of text/x-moz-url-priv, which records the source URL of a
+// clipboard copy and must not be forgeable by content.
+const kBlockedTypes = [
+  "text/x-moz-url-priv",
+  "text/x-moz-place",
+  "text/x-moz-place-container",
+  "text/x-moz-place-separator",
+  "text/x-moz-text-internal",
+  "text/x-moz-requestmime",
+  "application/x-moz-file",
+  "application/x-moz-nativeimage",
+  "application/x-moz-nativehtml",
+  "application/x-moz-file-promise",
+  "application/x-moz-file-promise-url",
+  "application/x-moz-file-promise-dest-filename",
+  "application/x-moz-file-promise-dir",
+  "application/x-moz-custom-clipdata",
+  "application/x-moz-web-custom-format-map",
+];
+
+const kAllowedTypes = [
+  "text/x-moz-url",
+  "text/x-moz-url-data",
+  "text/x-moz-url-desc",
+  "text/plain",
+  "text/html",
+];
+
+// The three ways content can name a flavor on a DataTransfer. A file item is
+// not keyed by its type in DataTransfer.types, so it only checks for a throw.
+const kEntryPoints = [
+  {
+    name: "setData",
+    add: (dt, type) => dt.setData(type, "data"),
+    keyedByType: true,
+  },
+  {
+    name: "items.add",
+    add: (dt, type) => dt.items.add("data", type),
+    keyedByType: true,
+  },
+  {
+    name: "items.add(File)",
+    add: (dt, type) => dt.items.add(new File([], "name", { type })),
+    keyedByType: false,
+  },
+];
+
+function spellings(type) {
+  return [type, type.toUpperCase(), type.replace("x-moz-", "X-Moz-")];
+}
+
+function add(entry, dt, type) {
+  let threw = false;
+  try {
+    entry.add(dt, type);
+  } catch (ex) {
+    threw = true;
+  }
+  return threw;
+}
+
+function checkBlocked(entry, type) {
+  const dt = new DataTransfer();
+  ok(add(entry, dt, type), `${entry.name}("${type}") throws`);
+  if (entry.keyedByType) {
+    ok(!Array.from(dt.types).includes(type.toLowerCase()),
+       `${entry.name}("${type}") leaves ${type.toLowerCase()} out of types`);
+  } else {
+    is(dt.items.length, 0, `${entry.name}("${type}") adds no item`);
+  }
+}
+
+function checkAllowed(entry, type) {
+  const dt = new DataTransfer();
+  ok(!add(entry, dt, type), `${entry.name}("${type}") does not throw`);
+  if (entry.keyedByType) {
+    ok(Array.from(dt.types).includes(type.toLowerCase()),
+       `${entry.name}("${type}") adds ${type.toLowerCase()} to types`);
+  } else {
+    is(dt.items.length, 1, `${entry.name}("${type}") adds an item`);
+  }
+}
+
+for (const entry of kEntryPoints) {
+  for (const type of kBlockedTypes) {
+    spellings(type).forEach(spelling => checkBlocked(entry, spelling));
+  }
+  for (const type of kAllowedTypes) {
+    spellings(type).forEach(spelling => checkAllowed(entry, spelling));
+  }
+}
+
+// Rejecting a type must leave data that was already set alone.
+for (const entry of kEntryPoints.filter(e => e.keyedByType)) {
+  for (const spelling of spellings("text/x-moz-place")) {
+    const dt = new DataTransfer();
+    dt.setData("text/plain", "kept");
+    dt.setData("text/uri-list", "https://example.com/");
+    ok(add(entry, dt, spelling), `${entry.name}("${spelling}") throws`);
+    is(dt.getData("text/plain"), "kept",
+       `${entry.name}("${spelling}") keeps earlier text/plain`);
+    is(dt.getData("text/uri-list"), "https://example.com/",
+       `${entry.name}("${spelling}") keeps earlier text/uri-list`);
+  }
+}
+
+</script>
+</body>
+</html>

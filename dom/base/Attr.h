@@ -67,12 +67,6 @@ class Attr final : public nsINode {
 
   Element* GetElement() const;
 
-  /**
-   * Called when our ownerElement is moved into a new document.
-   * Updates the nodeinfo of this node.
-   */
-  nsresult SetOwnerDocument(Document* aDocument);
-
   // nsINode interface
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
   nsIURI* GetBaseURI(bool aTryUseXHRDocBaseURI = false) const override;

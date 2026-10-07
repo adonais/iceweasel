@@ -140,7 +140,8 @@ class VideoSegment : public MediaSegmentBase<VideoSegment, VideoChunk> {
                               const IntSize& aIntrinsicSize,
                               const PrincipalHandle& aPrincipalHandle,
                               bool aForceBlack, TimeStamp aTimeStamp,
-                              TimeStamp aWebrtcCaptureTime);
+                              TimeStamp aWebrtcCaptureTime,
+                              VideoRotation aRotation);
   void ExtendLastFrameBy(TrackTime aDuration) {
     if (aDuration <= 0) {
       return;

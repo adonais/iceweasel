@@ -400,7 +400,11 @@ class Script {
       this.#compileScriptSource(s)
     );
 
-    /** @type {WeakSet<Document>} A set of documents injected into. */
+    /**
+     * A set of documents injected into.
+     *
+     * @type {WeakSet<Document>}
+     */
     this.injectedInto = new WeakSet();
   }
 

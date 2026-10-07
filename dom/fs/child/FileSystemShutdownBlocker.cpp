@@ -8,6 +8,7 @@
 #include "mozilla/Components.h"
 #include "mozilla/dom/quota/QuotaCommon.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
+#include "nsCRTGlue.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIAsyncShutdown.h"
 #include "nsISupportsImpl.h"

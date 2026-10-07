@@ -48,6 +48,7 @@ dependencies {
     implementation project(':components:support-ktx')
     implementation project(':components:support-locale')
     implementation project(':components:support-utils')
+    implementation project(':components:ui-icons')
 
     implementation ComponentsDependencies.mozilla_appservices_nimbus
     implementation libs.androidx.constraintlayout

@@ -207,6 +207,10 @@ def _is_hg_try(remote):
     return HG_TRY_URL in remote
 
 
+def _is_git_try(remote):
+    return not _is_hg_try(remote)
+
+
 def push_to_git_backing(prefix: str) -> str:
     """Push the current head to the git-backing repo and return the git SHA."""
     print("Pushing to git-backing...")
@@ -325,6 +329,14 @@ def push_to_try(
         try_task_config["parameters"]["head_git_rev"] = backing_sha
         try_task_config["parameters"]["head_git_ref"] = (
             f"refs/heads/{prefix}/{backing_sha}"
+        )
+
+    if _is_git_try(remote) and (try_task_config or {}).get("version") == 2:
+        # Github reports a null `before` revision for a push that creates the branch,
+        # so the decision task can't tell what the push changed. Record the real base
+        # for it.
+        try_task_config.setdefault("parameters", {})["base_rev"] = (
+            vcs.base_ref_as_commit()
         )
 
     if try_task_config:

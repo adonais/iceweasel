@@ -25,8 +25,6 @@ EXTRA_JS_MODULES.asrouter += [
     "modules/ASRouterTelemetry.sys.mjs",
     "modules/ASRouterTriggerListeners.sys.mjs",
     "modules/BookmarksBarButton.sys.mjs",
-    "modules/CFRMessageProvider.sys.mjs",
-    "modules/CFRPageActions.sys.mjs",
     "modules/FeatureCallout.sys.mjs",
     "modules/FeatureCalloutBroker.sys.mjs",
     "modules/FeatureCalloutMessages.sys.mjs",
@@ -60,8 +58,6 @@ XPCSHELL_TESTS_MANIFESTS += [
 
 TESTING_JS_MODULES += [
     "content-src/schemas/FxMSCommon.schema.json",
-    "content-src/templates/CFR/templates/CFRUrlbarChiclet.schema.json",
-    "content-src/templates/CFR/templates/ExtensionDoorhanger.schema.json",
     "content-src/templates/InfoBar/InfoBar.schema.json",
     "content-src/templates/OnboardingMessage/ActionOnlyMessage.schema.json",
     "content-src/templates/OnboardingMessage/BookmarksBarButton.schema.json",

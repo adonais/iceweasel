@@ -6,6 +6,7 @@
 #define TESTING_GTEST_MOZILLA_WAITFOR_H_
 
 #include "MediaEventSource.h"
+#include "mozilla/AbstractThread.h"
 #include "mozilla/media/MediaUtils.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
@@ -91,7 +92,7 @@ inline Result<R, E> WaitFor(const RefPtr<MozPromise<R, E, Exc>>& aPromise) {
   using RRef = typename std::conditional_t<Exc, R&&, const R&>;
   using ERef = typename std::conditional_t<Exc, E&&, const E&>;
   aPromise->Then(
-      GetCurrentSerialEventTarget(), __func__,
+      AbstractThread::GetCurrent(), __func__,
       [&](RRef aResult) { success.emplace(std::forward<RRef>(aResult)); },
       [&](ERef aError) { error.emplace(std::forward<ERef>(aError)); });
   SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
@@ -114,7 +115,7 @@ inline R WaitForResolve(const RefPtr<MozPromise<R, E, Exc>>& aPromise) {
   using RRef = typename std::conditional_t<Exc, R&&, const R&>;
   using ERef = typename std::conditional_t<Exc, E&&, const E&>;
   aPromise->Then(
-      GetCurrentSerialEventTarget(), __func__,
+      AbstractThread::GetCurrent(), __func__,
       [&](RRef aResult) { success.emplace(std::forward<RRef>(aResult)); },
       [&](ERef aError) { MOZ_CRASH("rejection was not expected"); });
   SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
@@ -134,7 +135,7 @@ inline E WaitForReject(const RefPtr<MozPromise<R, E, Exc>>& aPromise) {
   using RRef = typename std::conditional_t<Exc, R&&, const R&>;
   using ERef = typename std::conditional_t<Exc, E&&, const E&>;
   aPromise->Then(
-      GetCurrentSerialEventTarget(), __func__,
+      AbstractThread::GetCurrent(), __func__,
       [&](RRef aResult) { MOZ_CRASH("resolution was not expected"); },
       [&](ERef aError) { error.emplace(std::forward<ERef>(aError)); });
   SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(

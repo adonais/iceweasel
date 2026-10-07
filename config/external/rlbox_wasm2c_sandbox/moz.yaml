@@ -7,10 +7,10 @@ bugzilla:
 origin:
   name: rlbox_wasm2c_sandbox
   description: rlbox integration for the wasm2c sandboxed code
-  url: https://github.com/PLSysSec/rlbox_wasm2c_sandbox/tree/upstream-wasm2c
+  url: https://github.com/PLSysSec/rlbox_wasm2c_sandbox/
 
-  release: 5f2573e2203169b1a3e728a6d612fb78429e1cb8 (2025-03-19T02:22:06Z).
-  revision: 5f2573e2203169b1a3e728a6d612fb78429e1cb8
+  release: c4f18c48cea47421617f72ba5edc95c68aa85671 (2026-07-04T05:41:50Z).
+  revision: c4f18c48cea47421617f72ba5edc95c68aa85671
 
   license: MIT
   license-file: LICENSE
@@ -32,5 +32,4 @@ vendoring:
     - build-wasiclang.sh
 
   patches:
-    - crash-reporting-messages.patch
-    - clock-id-macros.patch
+    - old-wasm2c-support.patch

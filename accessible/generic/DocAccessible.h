@@ -79,7 +79,6 @@ class DocAccessible : public HyperTextAccessible,
   virtual nsRect RelativeBounds(nsIFrame** aRelativeFrame) const override;
 
   // ActionAccessible
-  virtual bool HasPrimaryAction() const override;
   virtual void ActionNameAt(uint8_t aIndex, nsAString& aName) override;
 
   // HyperTextAccessible
@@ -241,6 +240,25 @@ class DocAccessible : public HyperTextAccessible,
   void HandleNotification(
       Class* aInstance,
       typename TNotification<Class, Args...>::Callback aMethod, Args*... aArgs);
+
+  /**
+   * This function asserts that mContent is the document node's root element
+   * or null (not yet mapped).
+   * Return true if the given aNode is this document's mContent, and false
+   * otherwise.
+   */
+  bool IsRootContent(nsINode* aNode) const;
+
+  /**
+   * Return true if the given aNode is this document's body element.
+   */
+  bool IsBodyElement(const nsINode* aNode) const;
+
+  /**
+   * Returns the doc accessible when aNode is the root element, otherwise
+   * behaves identically to GetAccessible below.
+   */
+  LocalAccessible* GetAccessibleOrDocument(nsINode* aNode) const;
 
   /**
    * Return the cached accessible by the given DOM node if it's in subtree of
@@ -495,9 +513,18 @@ class DocAccessible : public HyperTextAccessible,
   virtual void DoInitialUpdate();
 
   /**
-   * Updates root element and picks up ARIA role on it if any.
+   * Assign mContent to the root element, and call UpdateDocRoleMapEntry.
    */
-  void UpdateRootElIfNeeded();
+  void UpdateRootElement();
+
+  /**
+   * Adjust the role exposed on this document and fire a role change event.
+   * When a role is exposed on the body, we use that role as the document's
+   * role. Otherwise, we check for a role on the root element and use that.
+   * In both cases, this function verifies the retrieved role is valid for the
+   * document before using it.
+   */
+  void UpdateDocRoleMapEntry();
 
   /**
    * Process document load notification, fire document load and state busy
@@ -884,8 +911,6 @@ class DocAccessible : public HyperTextAccessible,
   friend class ::nsAccessibilityService;
 
  private:
-  void SetRoleMapEntryForDoc(dom::Element* aElement);
-
   /**
    * This must be called whenever an Accessible is moved in a content process.
    * It keeps track of Accessibles moved during this tick.

@@ -50,13 +50,41 @@ struct TraceOption {
   Variant<int64_t, bool, double, ProfilerString8View> mValue = AsVariant(false);
 };
 
-struct TraceMarker {
+struct TraceMarker : public mozilla::BaseMarkerType<TraceMarker> {
   static constexpr int MAX_NUM_ARGS = 6;
   using OptionsType = std::tuple<TraceOption, TraceOption, TraceOption,
                                  TraceOption, TraceOption, TraceOption>;
-  static constexpr mozilla::Span<const char> MarkerTypeName() {
-    return MakeStringSpan("TraceEvent");
-  }
+
+  static constexpr const char* Name = "TraceEvent";
+  // Call sites pass the trace event's own name, so ETW must keep that name.
+  static constexpr bool ETWStoreName = true;
+
+  using MS = MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"name1", MS::InputType::CString, "Key 1", MS::Format::String},
+      {"val1", MS::InputType::CString, "Value 1", MS::Format::String},
+      {"name2", MS::InputType::CString, "Key 2", MS::Format::String},
+      {"val2", MS::InputType::CString, "Value 2", MS::Format::String},
+      {"name3", MS::InputType::CString, "Key 3", MS::Format::String},
+      {"val3", MS::InputType::CString, "Value 3", MS::Format::String},
+      {"name4", MS::InputType::CString, "Key 4", MS::Format::String},
+      {"val4", MS::InputType::CString, "Value 4", MS::Format::String},
+      {"name5", MS::InputType::CString, "Key 5", MS::Format::String},
+      {"val5", MS::InputType::CString, "Value 5", MS::Format::String},
+      {"name6", MS::InputType::CString, "Key 6", MS::Format::String},
+      {"val6", MS::InputType::CString, "Value 6", MS::Format::String},
+  };
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+  static constexpr const char* ChartLabel = "{marker.name}";
+  static constexpr const char* TableLabel =
+      "{marker.name}  {marker.data.name1} {marker.data.val1}  "
+      "{marker.data.name2} {marker.data.val2}"
+      "{marker.data.name3} {marker.data.val3}"
+      "{marker.data.name4} {marker.data.val4}"
+      "{marker.data.name5} {marker.data.val5}"
+      "{marker.data.name6} {marker.data.val6}";
+
   static void StreamJSONMarkerData(
       mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
       const OptionsType& aArgs) {
@@ -94,30 +122,16 @@ struct TraceMarker {
       writeValue("val6", arg.mValue);
     }
   }
-  static mozilla::MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.SetChartLabel("{marker.name}");
-    schema.SetTableLabel(
-        "{marker.name}  {marker.data.name1} {marker.data.val1}  "
-        "{marker.data.name2} {marker.data.val2}"
-        "{marker.data.name3} {marker.data.val3}"
-        "{marker.data.name4} {marker.data.val4}"
-        "{marker.data.name5} {marker.data.val5}"
-        "{marker.data.name6} {marker.data.val6}");
-    schema.AddKeyLabelFormat("name1", "Key 1", MS::Format::String);
-    schema.AddKeyLabelFormat("val1", "Value 1", MS::Format::String);
-    schema.AddKeyLabelFormat("name2", "Key 2", MS::Format::String);
-    schema.AddKeyLabelFormat("val2", "Value 2", MS::Format::String);
-    schema.AddKeyLabelFormat("name3", "Key 3", MS::Format::String);
-    schema.AddKeyLabelFormat("val3", "Value 3", MS::Format::String);
-    schema.AddKeyLabelFormat("name4", "Key 4", MS::Format::String);
-    schema.AddKeyLabelFormat("val4", "Value 4", MS::Format::String);
-    schema.AddKeyLabelFormat("name5", "Key 5", MS::Format::String);
-    schema.AddKeyLabelFormat("val5", "Value 5", MS::Format::String);
-    schema.AddKeyLabelFormat("name6", "Key 6", MS::Format::String);
-    schema.AddKeyLabelFormat("val6", "Value 6", MS::Format::String);
-    return schema;
+
+  static void TranslateMarkerInputToSchema(void* aContext,
+                                           const OptionsType& aArgs) {
+    // Bug 2072225. Cannot pass Stringify(arg.mValue()) <- Use after free
+    const ProfilerString8View empty;
+    ETW::OutputMarkerSchema(
+        aContext, TraceMarker{}, std::get<0>(aArgs).mName, empty,
+        std::get<1>(aArgs).mName, empty, std::get<2>(aArgs).mName, empty,
+        std::get<3>(aArgs).mName, empty, std::get<4>(aArgs).mName, empty,
+        std::get<5>(aArgs).mName, empty);
   }
 };
 }  // namespace

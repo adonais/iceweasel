@@ -52,12 +52,12 @@
 #include "modules/video_coding/codecs/vp8/vp8_scalability.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_error_codes.h"
+#include "modules/video_coding/utility/frame_sampler.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "modules/video_coding/utility/simulcast_utility.h"
 #include "modules/video_coding/utility/vp8_constants.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/field_trial_parser.h"
-#include "rtc_base/experiments/psnr_experiment.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/trace_event.h"
@@ -342,8 +342,7 @@ LibvpxVp8Encoder::LibvpxVp8Encoder(const Environment& env,
       max_frame_drop_interval_(ParseFrameDropInterval(env_.field_trials())),
       android_specific_threading_settings_(env_.field_trials().IsEnabled(
           "WebRTC-LibvpxVp8Encoder-AndroidSpecificThreadingSettings")),
-      psnr_experiment_(env.field_trials()),
-      psnr_frame_sampler_(psnr_experiment_.SamplingInterval()) {
+      psnr_frame_sampler_(FrameSampler::kDefaultPsnrFrameSamplingInterval) {
   raw_images_.reserve(kMaxSimulcastStreams);
   encoded_images_.reserve(kMaxSimulcastStreams);
   send_stream_.reserve(kMaxSimulcastStreams);
@@ -1099,8 +1098,7 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
   }
 
 #if defined(WEBRTC_ENCODER_PSNR_STATS) && defined(VPX_EFLAG_CALCULATE_PSNR)
-  if (psnr_experiment_.IsEnabled() &&
-      psnr_frame_sampler_.ShouldBeSampled(frame)) {
+  if (psnr_frame_sampler_.ShouldBeSampled(frame)) {
     for (size_t i = 0; i < encoders_.size(); ++i) {
       flags[i] |= VPX_EFLAG_CALCULATE_PSNR;
     }
@@ -1544,6 +1542,13 @@ std::vector<scoped_refptr<VideoFrameBuffer>> LibvpxVp8Encoder::PrepareBuffers(
 
     auto scaled_buffer =
         buffer_to_scale->Scale(raw_images_[i].d_w, raw_images_[i].d_h);
+    if (!scaled_buffer) {
+      RTC_LOG(LS_ERROR) << "Failed to scale "
+                        << VideoFrameBufferTypeToString(
+                               buffer_to_scale->type())
+                        << " image. Can't encode frame.";
+      return {};
+    }
     if (scaled_buffer->type() == VideoFrameBuffer::Type::kNative) {
       auto mapped_scaled_buffer =
           scaled_buffer->GetMappedFrameBuffer(mapped_type);

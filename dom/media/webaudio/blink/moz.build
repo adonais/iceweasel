@@ -32,3 +32,7 @@ FINAL_LIBRARY = "xul"
 LOCAL_INCLUDES += [
     "/dom/media/webaudio",
 ]
+
+LICENSED_UNDER += [
+    "apple",
+]

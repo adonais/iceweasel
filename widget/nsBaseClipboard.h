@@ -86,6 +86,18 @@ class nsBaseClipboard : public nsIClipboard {
       mozilla::dom::WindowContext* aRequestingWindowContext,
       nsIClipboardGetDataSnapshotCallback* aCallback);
 
+  using SetDataCompletion = mozilla::MoveOnlyFunction<void(nsresult)>;
+
+  // Same as SetData, but reports the final result through aCompletion so
+  // callers can wait for a content analysis verdict without the main thread
+  // spinning its event loop. Used by ClipboardContentAnalysisParent for
+  // copies from content processes.
+  void SetDataWithCompletion(nsITransferable* aTransferable,
+                             nsIClipboardOwner* aOwner,
+                             ClipboardType aWhichClipboard,
+                             mozilla::dom::WindowContext* aWindowContext,
+                             SetDataCompletion&& aCompletion);
+
   using GetNativeDataCallback = mozilla::MoveOnlyFunction<void(
       mozilla::Result<nsCOMPtr<nsISupports>, nsresult>)>;
   using HasMatchingFlavorsCallback = mozilla::MoveOnlyFunction<void(
@@ -162,6 +174,66 @@ class nsBaseClipboard : public nsIClipboard {
   static bool IsValidFlavor(const nsACString& aFlavor);
 
  private:
+  // A copy waiting on a content analysis verdict before it may touch the
+  // clipboard.  A newer write replaces the entry, which makes the older
+  // check's completion a no-op, so the write issued last always wins
+  // no matter which verdict arrives first.
+  class PendingCopy final {
+   public:
+    NS_INLINE_DECL_REFCOUNTING(PendingCopy)
+
+    PendingCopy(nsITransferable* aTransferable, nsIClipboardOwner* aOwner,
+                mozilla::dom::WindowContext* aWindowContext,
+                SetDataCompletion&& aCompletion)
+        : mTransferable(aTransferable),
+          mOwner(aOwner),
+          mWindowContext(aWindowContext),
+          mCompletion(std::move(aCompletion)) {}
+
+    // Moves the completion out before running it, so it can only fire once
+    // however many times the copy is completed or cancelled.
+    void Complete(nsresult aResult) {
+      if (mCompletion) {
+        SetDataCompletion completion = std::move(mCompletion);
+        completion(aResult);
+      }
+    }
+
+    const nsCOMPtr<nsITransferable> mTransferable;
+    const nsCOMPtr<nsIClipboardOwner> mOwner;
+    const RefPtr<mozilla::dom::WindowContext> mWindowContext;
+
+   private:
+    ~PendingCopy() = default;
+    SetDataCompletion mCompletion;
+  };
+
+  // aCheckContentAnalysis is false for the internal commit that runs once a
+  // content analysis check has already allowed the copy, and for writing the
+  // blocked-copy placeholder.
+  nsresult SetDataImpl(nsITransferable* aTransferable,
+                       nsIClipboardOwner* aOwner, ClipboardType aWhichClipboard,
+                       mozilla::dom::WindowContext* aWindowContext,
+                       bool aCheckContentAnalysis,
+                       SetDataCompletion&& aCompletion = nullptr);
+
+  // Whether this write has to wait for a content analysis copy verdict.
+  bool NeedsCopyContentAnalysis(nsITransferable* aTransferable,
+                                ClipboardType aWhichClipboard,
+                                mozilla::dom::WindowContext* aWindowContext);
+
+  // Called on the main thread when a deferred copy's verdict arrives.
+  void OnCopyContentAnalysisResult(ClipboardType aWhichClipboard,
+                                   PendingCopy* aPendingCopy, bool aAllowed);
+
+  // Replaces the clipboard contents with a localized notice that the copy was
+  // not permitted.
+  void WriteCopyBlockedPlaceholder(ClipboardType aWhichClipboard);
+
+  // Drops any deferred copy for this clipboard type, completing it with
+  // aReason.  No-op if there isn't one.
+  void CancelPendingCopy(ClipboardType aClipboardType, nsresult aReason);
+
   void RejectPendingAsyncSetDataRequestIfAny(ClipboardType aClipboardType);
 
   class AsyncSetClipboardData final : public nsIAsyncSetClipboardData {
@@ -306,8 +378,15 @@ class nsBaseClipboard : public nsIClipboard {
   mozilla::Array<mozilla::UniquePtr<ClipboardCache>,
                  nsIClipboard::kClipboardTypeCount>
       mCaches;
+
+  // Copies awaiting a content analysis verdict. Only the
+  // global clipboard is ever analyzed.
+  RefPtr<PendingCopy> mPendingCopy;
   const mozilla::dom::ClipboardCapabilities mClipboardCaps;
   bool mIgnoreEmptyNotification = false;
+
+  // True when SetNativeClipboardData or EmptyNativeClipboardData is running.
+  bool mMutatingNativeClipboard = false;
 };
 
 #endif  // nsBaseClipboard_h_

@@ -143,25 +143,19 @@ class MappersKtTest {
     }
 
     @Test
-    fun `WHEN a language tag is mapped THEN return the matching curated recommendation locale`() {
+    fun `GIVEN locales with supported language and region WHEN a locale is mapped THEN return the matching curated recommendation locale`() {
         val locales =
             mapOf(
-                Locale.forLanguageTag("fr") to CuratedRecommendationLocale.FR,
                 Locale.forLanguageTag("fr-FR") to CuratedRecommendationLocale.FR_FR,
-                Locale.forLanguageTag("es") to CuratedRecommendationLocale.ES,
                 Locale.forLanguageTag("es-ES") to CuratedRecommendationLocale.ES_ES,
-                Locale.forLanguageTag("it") to CuratedRecommendationLocale.IT,
                 Locale.forLanguageTag("it-IT") to CuratedRecommendationLocale.IT_IT,
-                Locale.forLanguageTag("en") to CuratedRecommendationLocale.EN,
                 Locale.forLanguageTag("en-CA") to CuratedRecommendationLocale.EN_CA,
                 Locale.forLanguageTag("en-GB") to CuratedRecommendationLocale.EN_GB,
                 Locale.forLanguageTag("en-IE") to CuratedRecommendationLocale.EN_IE,
                 Locale.forLanguageTag("en-US") to CuratedRecommendationLocale.EN_US,
-                Locale.forLanguageTag("de") to CuratedRecommendationLocale.DE,
                 Locale.forLanguageTag("de-DE") to CuratedRecommendationLocale.DE_DE,
                 Locale.forLanguageTag("de-AT") to CuratedRecommendationLocale.DE_AT,
                 Locale.forLanguageTag("de-CH") to CuratedRecommendationLocale.DE_CH,
-                Locale.forLanguageTag("pl") to CuratedRecommendationLocale.PL,
                 Locale.forLanguageTag("pl-PL") to CuratedRecommendationLocale.PL_PL,
             )
 
@@ -169,8 +163,6 @@ class MappersKtTest {
             assertEquals(curatedRecommendationLocale, locale.toCuratedRecommendationLocale())
         }
 
-        assertEquals(CuratedRecommendationLocale.EN, Locale.forLanguageTag("en-AU").toCuratedRecommendationLocale())
-        assertEquals(CuratedRecommendationLocale.DE, Locale.forLanguageTag("de-LI").toCuratedRecommendationLocale())
         assertEquals(
             CuratedRecommendationLocale.EN_US,
             Locale.forLanguageTag("en-US-u-va-posix").toCuratedRecommendationLocale(),
@@ -178,7 +170,21 @@ class MappersKtTest {
     }
 
     @Test
-    fun `GIVEN an unsupported language WHEN a language tag is mapped THEN null is returned`() {
+    fun `GIVEN locales without a region WHEN it is mapped THEN null is returned`() {
+        listOf("fr", "es", "it", "en", "de", "pl").forEach {
+            assertNull(it, Locale.forLanguageTag(it).toCuratedRecommendationLocale())
+        }
+    }
+
+    @Test
+    fun `GIVEN an unsupported region WHEN a locale is mapped THEN null is returned`() {
+        assertNull(Locale.forLanguageTag("es-AR").toCuratedRecommendationLocale())
+        assertNull(Locale.forLanguageTag("en-AU").toCuratedRecommendationLocale())
+        assertNull(Locale.forLanguageTag("de-LI").toCuratedRecommendationLocale())
+    }
+
+    @Test
+    fun `GIVEN an unsupported language WHEN a locale is mapped THEN null is returned`() {
         assertNull(Locale.JAPAN.toCuratedRecommendationLocale())
         assertNull(Locale.forLanguageTag("").toCuratedRecommendationLocale())
         assertNull(Locale.forLanguageTag("zh-Hans-CN").toCuratedRecommendationLocale())

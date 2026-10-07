@@ -7,14 +7,6 @@ them (turns raw memory addresses into function or symbol names), and provides ut
 like opening up a locally stored profile in the Firefox Profiler interface. This
 is done by serving the profiles locally, and opening a custom url in profiler.firefox.com.
 
-## {mod}`mozgeckoprofiler` --- File origins in mozgeckoprofiler
-
-The symbolication files were originally imported from the following repos,
-with permission from their respective authors. However, since then the code has
-been updated for usage within mozbase.
-
-<https://github.com/vdjeric/Snappy-Symbolication-Server/>
-<https://github.com/mstange/analyze-tryserver-profiles/>
-
-The dump_syms_mac binary was copied from the objdir of a Firefox build on Mac. It's a
-byproduct of the regular Firefox build process and gets generated in objdir/dist/host/bin/.
+Symbolication is performed by loading the profile into a local
+[samply](https://github.com/mstange/samply) symbol server and rewriting the profile
+with the profiler-edit Node tool, both of which are fetched as toolchain artifacts.

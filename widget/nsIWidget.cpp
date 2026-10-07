@@ -1478,8 +1478,9 @@ already_AddRefed<WebRenderLayerManager> nsIWidget::CreateCompositorSession(
     // software WebRender instead.
     bool supportsAcceleration = WidgetTypeSupportsAcceleration();
     bool enableSWWR = true;
-    if (supportsAcceleration ||
-        StaticPrefs::gfx_webrender_unaccelerated_widget_force()) {
+    if (!IsHeadlessWidget() &&
+        (supportsAcceleration ||
+         StaticPrefs::gfx_webrender_unaccelerated_widget_force())) {
       enableSWWR = gfx::gfxVars::UseSoftwareWebRender();
     }
     bool enableAPZ = UseAPZ();

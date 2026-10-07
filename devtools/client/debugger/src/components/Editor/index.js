@@ -296,6 +296,7 @@ class Editor extends PureComponent {
   componentDidUpdate(prevProps, prevState) {
     const {
       selectedSource,
+      selectedLocation,
       blackboxedRanges,
       isSourceOnIgnoreList,
       breakableLines,
@@ -309,6 +310,8 @@ class Editor extends PureComponent {
     const shouldUpdateBreakableLines =
       prevProps.breakableLines.size !== this.props.breakableLines.size ||
       prevProps.selectedSource?.id !== selectedSource.id ||
+      prevProps.selectedLocation?.sourceActor?.id !==
+        selectedLocation?.sourceActor?.id ||
       // Make sure we update after the editor has loaded
       (!prevState.editor && !!editor);
 
@@ -445,7 +448,7 @@ class Editor extends PureComponent {
       conditionalPanelLocation,
       closeConditionalPanel,
       openConditionalPanel,
-      selectedSource,
+      selectedLocation,
     } = this.props;
 
     const currentPosition = this.getCurrentPosition();
@@ -454,7 +457,7 @@ class Editor extends PureComponent {
       return closeConditionalPanel();
     }
 
-    if (!selectedSource || typeof currentPosition?.line !== "number") {
+    if (!selectedLocation || typeof currentPosition?.line !== "number") {
       return null;
     }
 
@@ -462,7 +465,8 @@ class Editor extends PureComponent {
       createLocation({
         line: currentPosition.line,
         column: currentPosition.column,
-        source: selectedSource,
+        source: selectedLocation.source,
+        sourceActor: selectedLocation.sourceActor,
       }),
       logPanel
     );
@@ -486,7 +490,7 @@ class Editor extends PureComponent {
     event.preventDefault();
 
     const {
-      selectedSource,
+      selectedLocation,
       selectedSourceTextContent,
       conditionalPanelLocation,
       closeConditionalPanel,
@@ -494,7 +498,7 @@ class Editor extends PureComponent {
 
     const { editor } = this.state;
 
-    if (!selectedSource || !editor) {
+    if (!selectedLocation || !editor) {
       return;
     }
 
@@ -504,7 +508,6 @@ class Editor extends PureComponent {
     }
 
     const target = event.target;
-    const { id: sourceId } = selectedSource;
 
     if (typeof line != "number") {
       return;
@@ -515,13 +518,14 @@ class Editor extends PureComponent {
       target.classList.contains("cm-gutterElement")
     ) {
       const location = createLocation({
+        source: selectedLocation.source,
+        sourceActor: selectedLocation.sourceActor,
         line,
         column: undefined,
-        source: selectedSource,
       });
 
       const lineText = getLineText(
-        sourceId,
+        selectedLocation.source.id,
         selectedSourceTextContent,
         line
       ).trim();
@@ -542,8 +546,9 @@ class Editor extends PureComponent {
     }
 
     const location = createLocation({
-      source: selectedSource,
-      line: fromEditorLine(selectedSource, line),
+      source: selectedLocation.source,
+      sourceActor: selectedLocation.sourceActor,
+      line: fromEditorLine(selectedLocation.source, line),
       column: editor.isWasm ? 0 : ch,
     });
 
@@ -557,7 +562,7 @@ class Editor extends PureComponent {
    */
   onCursorChange = () => {
     const { editor } = this.state;
-    if (!editor || !this.props.selectedSource) {
+    if (!editor || !this.props.selectedLocation) {
       return;
     }
     const { selectedLocation } = this.props;
@@ -579,8 +584,9 @@ class Editor extends PureComponent {
 
     this.props.selectLocation(
       createLocation({
-        source: this.props.selectedSource,
-        line: toSourceLine(this.props.selectedSource, line),
+        source: selectedLocation.source,
+        sourceActor: selectedLocation.sourceActor,
+        line: toSourceLine(selectedLocation.source, line),
         column: ch,
       }),
       {
@@ -599,7 +605,7 @@ class Editor extends PureComponent {
 
   onGutterClick = (cm, line, gutter, ev) => {
     const {
-      selectedSource,
+      selectedLocation,
       conditionalPanelLocation,
       closeConditionalPanel,
       addBreakpointAtLine,
@@ -610,7 +616,7 @@ class Editor extends PureComponent {
     } = this.props;
 
     // ignore right clicks in the gutter
-    if (isSecondary(ev) || ev.button === 2 || !selectedSource) {
+    if (isSecondary(ev) || ev.button === 2 || !selectedLocation) {
       return;
     }
 
@@ -623,7 +629,7 @@ class Editor extends PureComponent {
       return;
     }
 
-    const sourceLine = toSourceLine(selectedSource, line);
+    const sourceLine = toSourceLine(selectedLocation.source, line);
     if (typeof sourceLine !== "number") {
       return;
     }
@@ -636,9 +642,10 @@ class Editor extends PureComponent {
     if (isCmd(ev)) {
       continueToHere(
         createLocation({
+          source: selectedLocation.source,
+          sourceActor: selectedLocation.sourceActor,
           line: sourceLine,
           column: undefined,
-          source: selectedSource,
         })
       );
       return;
@@ -649,7 +656,7 @@ class Editor extends PureComponent {
       ev.altKey,
       ev.shiftKey ||
         isLineBlackboxed(
-          blackboxedRanges[selectedSource.url],
+          blackboxedRanges[selectedLocation.source.url],
           sourceLine,
           isSourceOnIgnoreList
         )
@@ -657,15 +664,16 @@ class Editor extends PureComponent {
   };
 
   onClick(e, line, ch) {
-    const { selectedSource, jumpToMappedLocation } = this.props;
+    const { selectedLocation, jumpToMappedLocation } = this.props;
 
-    if (!selectedSource) {
+    if (!selectedLocation) {
       return;
     }
 
     const sourceLocation = createLocation({
-      source: selectedSource,
-      line: fromEditorLine(selectedSource, line),
+      source: selectedLocation.source,
+      sourceActor: selectedLocation.sourceActor,
+      line: fromEditorLine(selectedLocation.source, line),
       column: this.state.editor.isWasm ? 0 : ch,
     });
 
@@ -852,7 +860,7 @@ class Editor extends PureComponent {
 
   renderFileSearch() {
     const {
-      selectedSource,
+      selectedLocation,
       selectedSourceTextContent,
       isPaused,
       searchInFileEnabled,
@@ -865,7 +873,7 @@ class Editor extends PureComponent {
       setSearchOptions,
     } = this.props;
 
-    if (!selectedSource) {
+    if (!selectedLocation) {
       return null;
     }
 
@@ -891,7 +899,7 @@ class Editor extends PureComponent {
       textContent,
       modifiers,
       searchInFileEnabled,
-      selectedSource,
+      selectedLocation,
       shouldScroll: !isPaused,
     });
   }

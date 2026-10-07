@@ -291,6 +291,8 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     private fun pressKey(ic: InputConnection, keyCode: Int) {
+        val extracted = ic.getExtractedText(ExtractedTextRequest(), 0)!!
+
         val promise =
             mainSession.evaluatePromiseJS(
                 when (id) {
@@ -301,7 +303,14 @@ class TextInputDelegateTest : BaseSessionTest() {
                 }
             )
         pressKeyNoWait(ic, keyCode)
+
         promise.value
+
+        pumpUntil {
+            val newExtracted = ic.getExtractedText(ExtractedTextRequest(), 0)!!
+            newExtracted.selectionStart != extracted.selectionStart ||
+                newExtracted.selectionEnd != extracted.selectionEnd
+        }
     }
 
     private fun syncShadowText(ic: InputConnection) {

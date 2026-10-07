@@ -843,7 +843,7 @@ ExternalTextureSourceHost::CreateFromMacIOSurfaceTextureHost(
   // WebGPU presentation. In our case the IOSurface has been written to from
   // the CPU or obtained from a CVPixelBuffer, and no additional synchronization
   // is required.
-  MOZ_ASSERT(!aTextureHost->mGpuFence);
+  MOZ_ASSERT(aTextureHost->mDescriptor.fencesHolderId().isNothing());
 
   const gfx::SurfaceFormat format = ioSurface->GetFormat();
   const gfx::YUVRangedColorSpace colorSpace = gfx::ToYUVRangedColorSpace(

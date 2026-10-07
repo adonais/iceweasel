@@ -5,7 +5,7 @@
 import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 
 /**
- * @typedef L10nCachedMessage
+ * @typedef {object} L10nCachedMessage
  *   A cached L10n message object is similar to `L10nMessage` (defined in
  *   Localization.webidl) but its attributes are stored differently for
  *   convenience.

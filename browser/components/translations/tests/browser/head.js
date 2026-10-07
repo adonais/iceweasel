@@ -2785,6 +2785,16 @@ class FullPageTranslationsTestUtils {
   }
 
   /**
+   * Asserts that the FullPageTranslationsPanel target-language label has the expected l10nId.
+   *
+   * @param {string} l10nId - The expected data-l10n-id of the target-language label.
+   */
+  static #assertPanelToLabelL10nId(l10nId) {
+    const { toLabel } = FullPageTranslationsPanel.elements;
+    SharedTranslationsTestUtils._assertL10nId(toLabel, l10nId);
+  }
+
+  /**
    * Asserts that the FullPageTranslationsPanel error has the expected l10nId.
    *
    * @param {string} l10nId - The expected data-l10n-id of the error.
@@ -2826,6 +2836,9 @@ class FullPageTranslationsTestUtils {
     });
     FullPageTranslationsTestUtils.#assertPanelHeaderL10nId(
       "translations-panel-header"
+    );
+    FullPageTranslationsTestUtils.#assertPanelToLabelL10nId(
+      "translations-panel-to-label"
     );
   }
 
@@ -2946,6 +2959,9 @@ class FullPageTranslationsTestUtils {
     });
     FullPageTranslationsTestUtils.#assertPanelHeaderL10nId(
       "translations-panel-revisit-header"
+    );
+    FullPageTranslationsTestUtils.#assertPanelToLabelL10nId(
+      "translations-panel-revisit-to-label"
     );
   }
 

@@ -139,7 +139,7 @@ class ProcessHandlerMixin:
                 "startupinfo": startupinfo,
                 "creationflags": creationflags,
             }
-            if sys.version_info.minor >= 6 and universal_newlines:
+            if universal_newlines:
                 kwargs["universal_newlines"] = universal_newlines
                 kwargs["encoding"] = encoding
             try:

@@ -66,7 +66,7 @@ bool ModuleLoader::init(JSContext* cx, HandleString loadPath) {
 
 // static
 bool ModuleLoader::LoadImportedModule(JSContext* cx,
-                                      JS::Handle<JSScript*> referrer,
+                                      JS::Handle<JS::Value> referrer,
                                       JS::Handle<JSObject*> moduleRequest,
                                       JS::HandleValue hostDefined,
                                       JS::HandleValue payload,
@@ -162,7 +162,8 @@ bool ModuleLoader::loadRootModule(JSContext* cx, HandleString path) {
 
 bool ModuleLoader::registerTestModule(JSContext* cx, HandleObject moduleRequest,
                                       Handle<ModuleObject*> module) {
-  Rooted<JSLinearString*> path(cx, resolve(cx, moduleRequest, nullptr));
+  Rooted<JSLinearString*> path(
+      cx, resolve(cx, moduleRequest, JS::UndefinedHandleValue));
   if (!path) {
     return false;
   }
@@ -239,8 +240,7 @@ static const JSClass DynamicImportClosureClass = {
     "DynamicImportClosure",
     JSCLASS_HAS_RESERVED_SLOTS(DynamicImportClosureSlotCount)};
 
-static JSObject* CreateDynamicImportClosure(JSContext* cx,
-                                            Handle<JSScript*> referrer,
+static JSObject* CreateDynamicImportClosure(JSContext* cx, HandleValue referrer,
                                             HandleObject moduleRequest,
                                             HandleValue payload,
                                             HandleObject module) {
@@ -250,9 +250,7 @@ static JSObject* CreateDynamicImportClosure(JSContext* cx,
     return nullptr;
   }
 
-  JS_SetReservedSlot(
-      closure, ClosureReferrerSlot,
-      referrer ? PrivateGCThingValue(referrer) : UndefinedValue());
+  JS_SetReservedSlot(closure, ClosureReferrerSlot, referrer);
   JS_SetReservedSlot(closure, ClosureModuleRequestSlot,
                      ObjectValue(*moduleRequest));
   JS_SetReservedSlot(closure, ClosurePayloadSlot, payload);
@@ -265,12 +263,7 @@ bool ModuleLoader::DynamicImportLoadResolved(JSContext* cx,
                                              HandleValue hostDefined) {
   RootedObject closure(cx, &hostDefined.toObject());
 
-  Value referrerValue = JS::GetReservedSlot(closure, ClosureReferrerSlot);
-  RootedScript referrer(cx);
-  if (!referrerValue.isUndefined()) {
-    referrer = static_cast<JSScript*>(referrerValue.toGCThing());
-  }
-
+  RootedValue referrer(cx, JS::GetReservedSlot(closure, ClosureReferrerSlot));
   RootedObject moduleRequest(
       cx, &JS::GetReservedSlot(closure, ClosureModuleRequestSlot).toObject());
   RootedValue payload(cx, JS::GetReservedSlot(closure, ClosurePayloadSlot));
@@ -334,7 +327,7 @@ static bool IsDynamicImport(HandleValue payload) {
 }
 
 JSObject* ModuleLoader::getOrLoadModule(
-    JSContext* cx, JS::Handle<JSScript*> referrer,
+    JSContext* cx, JS::HandleValue referrer,
     JS::Handle<JSObject*> moduleRequestArg) {
   Rooted<ModuleRequestObject*> moduleRequest(
       cx, &moduleRequestArg->as<ModuleRequestObject>());
@@ -353,8 +346,7 @@ JSObject* ModuleLoader::getOrLoadModule(
   return loadAndParse(cx, path, moduleRequest);
 }
 
-bool ModuleLoader::loadImportedModule(JSContext* cx,
-                                      JS::Handle<JSScript*> referrer,
+bool ModuleLoader::loadImportedModule(JSContext* cx, JS::HandleValue referrer,
                                       JS::Handle<JSObject*> moduleRequest,
                                       JS::HandleValue payload) {
   RootedObject module(cx, getOrLoadModule(cx, referrer, moduleRequest));
@@ -438,11 +430,8 @@ bool ModuleLoader::importMetaResolve(JSContext* cx,
 
 JSLinearString* ModuleLoader::resolve(JSContext* cx,
                                       HandleObject moduleRequestArg,
-                                      HandleScript referrer) {
-  RootedValue referencingInfo(cx);
-  if (referrer) {
-    referencingInfo = GetScriptPrivate(referrer);
-  }
+                                      HandleValue referrer) {
+  RootedValue referencingInfo(cx, JS::GetReferrerPrivate(referrer));
 
   ModuleRequestObject* moduleRequest =
       &moduleRequestArg->as<ModuleRequestObject>();

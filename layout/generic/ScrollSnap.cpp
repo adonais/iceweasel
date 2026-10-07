@@ -993,8 +993,11 @@ static nsRect InflateByScrollMargin(const nsRect& aTargetRect,
 nsRect ScrollSnapUtils::GetSnapAreaFor(const nsIFrame* aFrame,
                                        const nsIFrame* aScrolledFrame,
                                        const nsRect& aScrolledRect) {
-  nsRect targetRect = nsLayoutUtils::TransformFrameRectToAncestor(
-      aFrame, aFrame->GetRectRelativeToSelf(), aScrolledFrame);
+  // If the box is fragmented, the snap area is the bounding box of all its
+  // fragments.
+  nsRect targetRect = nsLayoutUtils::GetAllInFlowRectsUnion(
+      nsLayoutUtils::FirstContinuationOrIBSplitSibling(aFrame), aScrolledFrame,
+      {nsLayoutUtils::GetAllInFlowRectsFlag::AccountForTransforms});
 
   // The snap area contains scroll-margin values.
   // https://drafts.csswg.org/css-scroll-snap-1/#scroll-snap-area

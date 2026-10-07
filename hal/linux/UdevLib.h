@@ -29,8 +29,8 @@ class udev_lib {
     const char* lib_names[] = {"libudev.so.0", "libudev.so.1"};
     // Check whether a library is already loaded so we don't load two
     // conflicting libs.
-    for (unsigned i = 0; i < std::size(lib_names); i++) {
-      lib = dlopen(lib_names[i], RTLD_NOLOAD | RTLD_LAZY | RTLD_GLOBAL);
+    for (const char* lib_name : lib_names) {
+      lib = dlopen(lib_name, RTLD_NOLOAD | RTLD_LAZY | RTLD_GLOBAL);
       if (lib) {
         break;
       }
@@ -38,8 +38,8 @@ class udev_lib {
     // If nothing loads the first time through, it means no version of libudev
     // was already loaded.
     if (!lib) {
-      for (unsigned i = 0; i < std::size(lib_names); i++) {
-        lib = dlopen(lib_names[i], RTLD_LAZY | RTLD_GLOBAL);
+      for (const char* lib_name : lib_names) {
+        lib = dlopen(lib_name, RTLD_LAZY | RTLD_GLOBAL);
         if (lib) {
           break;
         }

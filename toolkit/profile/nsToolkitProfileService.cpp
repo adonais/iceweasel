@@ -12,6 +12,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/WidgetUtils.h"
+#include "nsCRTGlue.h"
 #include "nsNetUtil.h"
 #include "nsProfileLock.h"
 #include "nsStringFwd.h"
@@ -692,6 +693,7 @@ nsToolkitProfileService::nsToolkitProfileService()
       mMaybeLockProfile(false),
       mUpdateChannel(MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL)),
       mProfileDBExists(false),
+      mProfileDBReadFailed(false),
       mProfileDBFileSize(0),
       mProfileDBModifiedTime(0) {
 #ifdef MOZ_DEV_EDITION
@@ -1026,14 +1028,21 @@ nsresult nsToolkitProfileService::Init() {
 
   rv = UpdateFileStats(mProfileDBFile, &mProfileDBExists,
                        &mProfileDBModifiedTime, &mProfileDBFileSize);
-  if (NS_SUCCEEDED(rv) && mProfileDBExists) {
+  if (NS_FAILED(rv)) {
+    mIniStatus = "ini-failed"_ns;
+    mProfileDBReadFailed = true;
+    return NS_OK;
+  }
+
+  if (mProfileDBExists) {
     bool iniContainedErrors = false;
     rv = mProfileDB.Init(mProfileDBFile, &iniContainedErrors);
     // Init does not fail on parsing errors, only on OOM/really unexpected
     // conditions.
     if (NS_FAILED(rv)) {
       mIniStatus = "ini-failed"_ns;
-      return rv;
+      mProfileDBReadFailed = true;
+      return NS_OK;
     }
 
     if (iniContainedErrors) {
@@ -1714,6 +1723,10 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
     return NS_ERROR_FAILURE;
   }
   if (ar) {
+    if (mProfileDBReadFailed) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+
     const char* delim = strchr(arg, ' ');
     nsCOMPtr<nsIToolkitProfile> profile;
     if (delim) {
@@ -1744,9 +1757,14 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
   // uses that named profile or without a name it opens the profile manager.
   ar = CheckArg(*aArgc, aArgv, "p", &arg);
   if (ar == ARG_BAD) {
-    return NS_ERROR_SHOW_PROFILE_MANAGER;
+    return mProfileDBReadFailed ? NS_ERROR_NOT_AVAILABLE
+                                : NS_ERROR_SHOW_PROFILE_MANAGER;
   }
   if (ar) {
+    if (mProfileDBReadFailed) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+
     mCurrent = GetProfileByName(nsDependentCString(arg));
     if (mCurrent) {
       mStartupReason = "argument-p"_ns;
@@ -1763,7 +1781,8 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
 
   ar = CheckArg(*aArgc, aArgv, "profilemanager");
   if (ar == ARG_FOUND) {
-    return NS_ERROR_SHOW_PROFILE_MANAGER;
+    return mProfileDBReadFailed ? NS_ERROR_NOT_AVAILABLE
+                                : NS_ERROR_SHOW_PROFILE_MANAGER;
   }
 
 #ifdef MOZ_BACKGROUNDTASKS
@@ -1804,6 +1823,10 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
       }
       *aDidCreate = true;
     } else {
+      if (mProfileDBReadFailed) {
+        return NS_ERROR_NOT_AVAILABLE;
+      }
+
       // Background task mode does not enable legacy telemetry, so this is for
       // completeness and testing only.
       mStartupReason = "backgroundtask-not-ephemeral"_ns;
@@ -1875,6 +1898,10 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
     return NS_OK;
   }
 #endif
+
+  if (mProfileDBReadFailed) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
   if (mIsFirstRun && mUseDedicatedProfile &&
       !mInstallSection.Equals(mLegacyInstallSection)) {
@@ -2682,6 +2709,10 @@ nsToolkitProfileService::AsyncFlushCurrentProfile(JSContext* aCx,
 
 NS_IMETHODIMP
 nsToolkitProfileService::AsyncFlush(JSContext* aCx, dom::Promise** aPromise) {
+  if (mProfileDBReadFailed) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
 #ifndef MOZ_HAS_REMOTE
   return NS_ERROR_FAILURE;
 #else
@@ -2890,6 +2921,10 @@ nsToolkitProfileService::RemoveProfileFilesByPath(nsIFile* aRootDir,
 
 NS_IMETHODIMP
 nsToolkitProfileService::Flush() {
+  if (mProfileDBReadFailed) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   nsCString profilesIniData;
   nsCString installsIniData;
 

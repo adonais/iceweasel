@@ -29,8 +29,6 @@ EXPORTS.mozilla.gfx += [
     "DrawTargetSkia.h",
     "FilterNodeSoftware.h",
     "Filters.h",
-    "FontFeature.h",
-    "FontVariation.h",
     "Helpers.h",
     "HelpersCairo.h",
     "InlineTranslator.h",

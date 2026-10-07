@@ -4,6 +4,12 @@ The firefox source tree vendors many third party dependencies. This document
 describes both the expectations when adding vendored dependencies, and the
 practical side of how to use our vendoring infrastructure.
 
+```{toctree}
+:maxdepth: 1
+
+licensing
+```
+
 ## Expectations Around Vendoring
 
 When you vendor in new code, ownership expectations are similar to those when

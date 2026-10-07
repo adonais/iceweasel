@@ -24,7 +24,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = XPCOMUtils.declareLazy({
   enabled: {
     pref: "browser.pageextractor.youtube.enabled",
-    default: false,
+    default: true,
   },
 });
 

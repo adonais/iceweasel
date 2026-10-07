@@ -6,8 +6,8 @@
 
 [DEFAULT]
 subsuite = "webgpu"
-skip-if = [
-  "verify", # `test-verify` jobs don't guarantee a GPU, so skip them.
+run-if = [
+  "!verify", # `test-verify` jobs don't guarantee a GPU.
 ]
 prefs = [
   "dom.webgpu.enabled=true",

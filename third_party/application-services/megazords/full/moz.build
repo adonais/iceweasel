@@ -12,14 +12,24 @@ UNIFIED_SOURCES += [
 
 megazord_rust_features = ["mozbuild-rustlib"]
 
+# Match the panic=unwind profiles application-services builds with. Build only
+# the staticlib, since its standalone build also produces a cdylib.
+#
 # This is the name of the .a file created.
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android" or CONFIG["MOZ_LIBMEGAZORD_ARTIFACTS"]:
-    RustLibrary("megazord", features=megazord_rust_features)
+    RustLibrary(
+        "megazord",
+        features=megazord_rust_features,
+        cargo_profile_suffix="megazord",
+        cargo_crate_type="staticlib",
+    )
 else:
     RustLibrary(
         "megazord",
         features=megazord_rust_features,
         output_category="uniffi-target",
+        cargo_profile_suffix="megazord",
+        cargo_crate_type="staticlib",
     )
 
 # Qualified to nss so it applies to every -p test's transitive nss dep;

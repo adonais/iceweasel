@@ -159,9 +159,9 @@ const threadColumns = [
       l10nId: "pref-thread-stream-trans",
     },
     {
-      name: "ImgDecoder",
-      id: "img-decoder",
-      l10nId: "perftools-thread-img-decoder",
+      name: "JxlDecode",
+      id: "jxl-img-decode",
+      l10nId: "perftools-thread-jxl-img-decode",
     },
     {
       name: "DNS Resolver",

@@ -29,6 +29,6 @@ class WebExecutorOhttpTest : BaseSessionTest() {
 
         GeckoWebExecutor(RuntimeCreator.getRuntime())
             .fetch(WebRequest.Builder("https://example.com").build(), GeckoWebExecutor.FETCH_FLAGS_OHTTP)
-            .poll(5 * 100)
+            .poll(sessionRule.env.defaultTimeoutMillis)
     }
 }

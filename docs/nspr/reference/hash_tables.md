@@ -10,8 +10,8 @@ safe.
 A hash table lookup may change the internal organization of the hash
 table (to speed up future lookups).
 
-- [Hash Table Types and Constants](#Hash_Table_Types_and_Constants)
-- [Hash Table Functions](#Hash_Table_Functions)
+- [Hash Table Types and Constants](#hash-table-types-and-constants)
+- [Hash Table Functions](#hash-table-functions)
 
 (hash-table-types-and-constants)=
 

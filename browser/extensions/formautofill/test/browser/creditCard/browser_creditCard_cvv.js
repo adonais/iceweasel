@@ -32,6 +32,12 @@ add_setup(async function () {
     FormAutofillUtils.setOSAuthEnabled(oldOSAuth);
   });
 
+  // The feature is gated on rollout as well as on the user's own choice. Roll
+  // it out for the whole file so each task can toggle the enabled pref alone.
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.formautofill.creditCards.cvv.supported", "on"]],
+  });
+
   await removeAllRecords();
   await setStorage(TEST_CARD_WITH_CSC);
 });

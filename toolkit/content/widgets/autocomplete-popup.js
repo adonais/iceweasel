@@ -696,6 +696,14 @@
       return true;
     }
 
+    maybeLeaveSecondaryAction() {
+      if (!this._secondaryActionFocused) {
+        return false;
+      }
+      this._setSecondaryActionFocused(false);
+      return true;
+    }
+
     disconnectedCallback() {
       if (this.listEvents) {
         this.richlistbox.removeEventListener("mousedown", this.listEvents);

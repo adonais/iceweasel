@@ -2437,6 +2437,8 @@
   <string name="sync_send_tab_error_connection_title">Periksa koneksi Internet Anda</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">Kemudian coba kirim ulang tab Anda.</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">Coba lagi</string>
   <!--
     Notifications
 
@@ -2619,6 +2621,12 @@
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[Tidak ada akun? <u>Buat satu</u> untuk menyinkronkan Firefox antar perangkat.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s akan berhenti menyinkronkan dengan akun Anda, tetapi tidak akan menghapus data penjelajahan Anda di peranti ini.</string>
+  <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_title">Keluar dari akun Anda?</string>
+  <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_message">Data tersinkron tetap tersimpan di akun Anda.</string>
+  <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_confirm_button">Keluar</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">Putuskan</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->

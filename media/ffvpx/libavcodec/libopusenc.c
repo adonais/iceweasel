@@ -287,6 +287,7 @@ static av_cold int libopus_encode_init(AVCodecContext *avctx)
         /* Frame sizes less than 10 ms can only use MDCT mode, so switching to
          * RESTRICTED_LOWDELAY avoids an unnecessary extra 2.5ms lookahead. */
         opus->opts.application = OPUS_APPLICATION_RESTRICTED_LOWDELAY;
+        av_fallthrough;
     case 480:
     case 960:
     case 1920:
@@ -565,7 +566,7 @@ static const AVOption libopus_options[] = {
         { "on",             "Use variable bit rate", 0, AV_OPT_TYPE_CONST, { .i64 = 1 }, 0, 0, FLAGS, .unit = "vbr" },
         { "constrained",    "Use constrained VBR",   0, AV_OPT_TYPE_CONST, { .i64 = 2 }, 0, 0, FLAGS, .unit = "vbr" },
     { "mapping_family", "Channel Mapping Family",              OFFSET(mapping_family), AV_OPT_TYPE_INT,   { .i64 = -1 },   -1,  255,  FLAGS, .unit = "mapping_family" },
-    { "dtx", "Enable DTX", OFFSET(dtx), AV_OPT_TYPE_BOOL, { .i64 = 0 }, 0, 1, FLAGS },
+    { "dtx", "Enable DTX (Discontinuous transmission)", OFFSET(dtx), AV_OPT_TYPE_BOOL, { .i64 = 0 }, 0, 1, FLAGS },
 #ifdef OPUS_SET_PHASE_INVERSION_DISABLED_REQUEST
     { "apply_phase_inv", "Apply intensity stereo phase inversion", OFFSET(apply_phase_inv), AV_OPT_TYPE_BOOL, { .i64 = 1 }, 0, 1, FLAGS },
 #endif

@@ -13,9 +13,10 @@ const { ERRORS, IPPProxyManager, IPPProxyStates } = ChromeUtils.importESModule(
 const { AUTH_ERRORS } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPPAuthProvider.sys.mjs"
 );
-const { IPPExceptionsManager, IPPPrincipalRules } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs"
-);
+const { IPPPermissionRules, IPPPrincipalRules, IPPSiteRuleManager } =
+  ChromeUtils.importESModule(
+    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs"
+  );
 const { ProxyPass, ProxyUsage, Entitlement } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/GuardianTypes.sys.mjs"
 );

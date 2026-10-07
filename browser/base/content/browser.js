@@ -24,7 +24,6 @@ ChromeUtils.defineESModuleGetters(this, {
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
   BrowserUsageTelemetry: "resource:///modules/BrowserUsageTelemetry.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
-  CFRPageActions: "resource:///modules/asrouter/CFRPageActions.sys.mjs",
   Color: "resource://gre/modules/Color.sys.mjs",
   ContentAnalysis:
     "moz-src:///browser/components/contentanalysis/content/ContentAnalysis.sys.mjs",
@@ -125,7 +124,6 @@ ChromeUtils.defineESModuleGetters(this, {
   Weave: "resource://services-sync/main.sys.mjs",
   WebNavigationFrames: "resource://gre/modules/WebNavigationFrames.sys.mjs",
   webrtcUI: "resource:///modules/webrtcUI.sys.mjs",
-  WebsiteFilter: "resource:///modules/policies/WebsiteFilter.sys.mjs",
   ZoomUI: "resource:///modules/ZoomUI.sys.mjs",
 });
 
@@ -517,33 +515,34 @@ ChromeUtils.defineLazyGetter(this, "MacUserActivityUpdater", () => {
   );
 });
 
+// Returns an object even when unavailable so it can be a category consumer.
 ChromeUtils.defineLazyGetter(this, "Win7Features", () => {
-  if (AppConstants.platform != "win") {
-    return null;
-  }
-
+  let aeroPeek = null;
   const WINTASKBAR_CONTRACTID = "@mozilla.org/windows-taskbar;1";
   if (
+    AppConstants.platform == "win" &&
     WINTASKBAR_CONTRACTID in Cc &&
     Cc[WINTASKBAR_CONTRACTID].getService(Ci.nsIWinTaskbar).available
   ) {
-    let { AeroPeek } = ChromeUtils.importESModule(
+    aeroPeek = ChromeUtils.importESModule(
       "resource:///modules/WindowsPreviewPerTab.sys.mjs"
-    );
-    return {
-      onOpenWindow() {
-        AeroPeek.onOpenWindow(window);
-        this.handledOpening = true;
-      },
-      onCloseWindow() {
-        if (this.handledOpening) {
-          AeroPeek.onCloseWindow(window);
-        }
-      },
-      handledOpening: false,
-    };
+    ).AeroPeek;
   }
-  return null;
+  return {
+    available: !!aeroPeek,
+    handledOpening: false,
+    onOpenWindow() {
+      if (aeroPeek) {
+        aeroPeek.onOpenWindow(window);
+        this.handledOpening = true;
+      }
+    },
+    onCloseWindow() {
+      if (this.handledOpening) {
+        aeroPeek.onCloseWindow(window);
+      }
+    },
+  };
 });
 
 ChromeUtils.defineLazyGetter(this, "gRestoreLastSessionObserver", () => {
@@ -659,6 +658,15 @@ customElements.setElementCreationCallback(
   }
 );
 
+// The "Tasks" panel (Smart Window) renders its content with this custom
+// element, which pulls in agent-monitor-item for the create form.
+customElements.setElementCreationCallback("agent-monitor-panel", () => {
+  ChromeUtils.importESModule(
+    "chrome://browser/content/aiwindow/components/agent-monitor-panel.mjs",
+    { global: "current" }
+  );
+});
+
 // The "Group my tabs" panel and flyout (Smart Window) render their content with
 // these light-DOM custom elements; both live in one module.
 for (const smartwindowGroupTabsTag of [
@@ -693,13 +701,28 @@ Object.defineProperty(this, "gReduceMotion", {
   get() {
     return typeof gReduceMotionOverride == "boolean"
       ? gReduceMotionOverride
-      : gReduceMotionSetting;
+      : gReduceMotionManager.setting;
   },
 });
-// Reduce motion during startup. The setting will be reset later.
-let gReduceMotionSetting = true;
 // This is for tests to set.
 var gReduceMotionOverride;
+
+// TODO bug 2056447: read the media query directly instead of caching.
+var gReduceMotionManager = {
+  // Reduce motion during startup. The setting will be reset later.
+  setting: true,
+
+  init() {
+    let reduceMotionQuery = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    );
+    let readSetting = () => {
+      this.setting = reduceMotionQuery.matches;
+    };
+    reduceMotionQuery.addListener(readSetting);
+    readSetting();
+  },
+};
 
 // Smart getter for the findbar.  If you don't wish to force the creation of
 // the findbar, check gFindBarInitialized first.
@@ -817,11 +840,17 @@ function updateFxaToolbarMenu(enable, isInitialUpdate = false) {
   const taskbarTab = mainWindowEl.hasAttribute("taskbartab");
 
   // To minimize the toolbar button flickering or appearing/disappearing during startup,
-  // we use this pref to anticipate the likely FxA status.
-  const statusGuess = !!Services.prefs.getStringPref(
-    "identity.fxaccounts.account.device.name",
-    ""
-  );
+  // we use this pref to anticipate the likely FxA status. Only guess a signed-in
+  // state when accounts are enabled: a device name can be persisted without ever
+  // signing in (e.g. it is written on first read or when creating a backup), so
+  // without gating on syncEnabled a profile with accounts disabled would
+  // incorrectly report "signed_in".
+  const statusGuess =
+    syncEnabled &&
+    !!Services.prefs.getStringPref(
+      "identity.fxaccounts.account.device.name",
+      ""
+    );
   mainWindowEl.setAttribute(
     "fxastatus",
     statusGuess ? "signed_in" : "not_configured"
@@ -1543,7 +1572,6 @@ function CreateContainerTabMenu(event) {
     return;
   }
   createUserContextMenu(event, {
-    useAccessKeys: false,
     showDefaultTab: true,
     containerSource: "new_tab_button",
   });
@@ -3311,22 +3339,37 @@ var gUIDensity = {
     if (!(threshold > 0)) {
       return false;
     }
+    const { width, height } = this._densityReferenceSize();
     if (
-      window.innerHeight &&
-      this.AUTO_COMPACT_REFERENCE_TABSTRIP_HEIGHT / window.innerHeight >
-        threshold
+      height &&
+      this.AUTO_COMPACT_REFERENCE_TABSTRIP_HEIGHT / height > threshold
     ) {
       return true;
     }
     if (
-      window.innerWidth &&
+      width &&
       this._isSidebarLauncherCollapsed() &&
-      this.AUTO_COMPACT_REFERENCE_SIDEBAR_LAUNCHER_WIDTH / window.innerWidth >
-        threshold
+      this.AUTO_COMPACT_REFERENCE_SIDEBAR_LAUNCHER_WIDTH / width > threshold
     ) {
       return true;
     }
     return false;
+  },
+
+  // This function returns our window size, for the purpose of judging whether we
+  // should auto-compact. If we're maximized (as indicated by "sizemode"), we don't
+  // trust window.inner{Width,Height} as authoritative, because we might be a
+  // newly-spawned window, waiting on the OS to tell us our correct size. Hence: for
+  // maximized windows, we use the screen size (if it's larger), since it doesn't
+  // change as often and is likely to be close to the maximized window-size.
+  _densityReferenceSize() {
+    if (document.documentElement.getAttribute("sizemode") == "maximized") {
+      return {
+        width: Math.max(window.screen.availWidth, window.innerWidth),
+        height: Math.max(window.screen.availHeight, window.innerHeight),
+      };
+    }
+    return { width: window.innerWidth, height: window.innerHeight };
   },
 
   // Whether the sidebar.revamp launcher is currently visible (sidebar is
@@ -3926,10 +3969,12 @@ function WindowIsClosing(event) {
     Glean.messagingSystem.lastWindowCloseTriggerBypassed.add(1);
   } else if (
     isLastWindow &&
-    // Web app (Taskbar Tabs) windows aren't a normal browsing window this
-    // trigger targets, even though they keep the toolbar visible and don't
-    // change windowtype, so they otherwise look like one to the checks here.
+    // Web app (Taskbar Tabs) and mini windows aren't a normal browsing window
+    // this trigger targets, even though they keep the toolbar visible and
+    // don't change windowtype, so they otherwise look like one to the checks
+    // here.
     !TaskbarTabsUtils.isTaskbarTabWindow(window) &&
+    !document.documentElement.hasAttribute("mini-window") &&
     !shouldWarnForTabs &&
     ASRouter.initialized &&
     // Pre-check for messages so we don't hold up every last-window close when

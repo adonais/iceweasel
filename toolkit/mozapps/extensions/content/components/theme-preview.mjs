@@ -9,6 +9,7 @@ import {
 } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import {
+  DEFAULT_THEME_PREVIEW_NOVA_URL,
   getScreenshotForAddon,
   getThemesModeColorScheme,
 } from "../aboutaddons-utils.mjs";
@@ -56,35 +57,28 @@ export class ThemePreview extends MozLitElement {
       return nothing;
     }
 
-    // Pick theme preview svg bundled into the omni jar
-    // if the theme is one of the official extra themes.
-    let screenshotUrl = this.#themesListManager?.getThemePreviewURL(
-      this.addon.id
-    );
-    let screenshotColorScheme;
-
-    // Use the AMO preview for default-theme and other themes
-    // that aren't in the official extra themes set.
-    if (!screenshotUrl) {
-      let { url, colorScheme } = getScreenshotForAddon(this.addon);
-      screenshotUrl = url;
-      screenshotColorScheme = colorScheme;
-    } else {
-      // The AMO curated Nova extra themes bundled theme preview SVGs
-      // should be forced in light/dark color scheme based on the
-      // current OS light/dark mode or the light/dark mode forced
-      // through the ui.systemUsesDarkTheme pref.
-      screenshotColorScheme = getThemesModeColorScheme();
-    }
-
-    if (!screenshotUrl) {
+    // The official extra themes reuse the default theme Nova preview svg
+    // bundled into the omni jar, recolored through link-parameters.
+    const linkParameters =
+      this.#themesListManager?.getThemePreviewLinkParameters(this.addon.id);
+    const screenshot = linkParameters
+      ? {
+          url: DEFAULT_THEME_PREVIEW_NOVA_URL,
+          linkParameters,
+          colorScheme: getThemesModeColorScheme(),
+        }
+      : getScreenshotForAddon(this.addon);
+    if (!screenshot.url) {
       return nothing;
     }
     return html`<img
       class="card-heading-image"
       role="presentation"
-      src=${screenshotUrl}
-      style=${styleMap({ colorScheme: screenshotColorScheme })}
+      src=${screenshot.url}
+      style=${styleMap({
+        colorScheme: screenshot.colorScheme,
+        linkParameters: screenshot.linkParameters,
+      })}
     />`;
   }
 

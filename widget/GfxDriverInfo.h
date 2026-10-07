@@ -5,6 +5,7 @@
 #ifndef _mozilla_widget_GfxDriverInfo_h_
 #define _mozilla_widget_GfxDriverInfo_h_
 
+#include "nsCharSeparatedTokenizer.h"
 #include "nsString.h"
 #include "nsTArray.h"
 

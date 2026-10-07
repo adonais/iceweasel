@@ -598,16 +598,11 @@ add_task(async function checkTelemetryClickEvents() {
 
 // This tests that telemetry is sent when saveEvents is called.
 add_task(async function test_save_telemetry() {
-  // Clear all scalar telemetry.
-  Services.telemetry.clearScalars();
+  Services.fog.testResetFOG();
 
   await TrackingDBService.saveEvents(JSON.stringify(LOG));
 
-  const scalars = Services.telemetry.getSnapshotForScalars(
-    "main",
-    false
-  ).parent;
-  is(scalars["contentblocking.trackers_blocked_count"], 6);
+  is(Glean.contentblocking.trackersBlockedCount.testGetValue(), 6);
 
   // Use the TrackingDBService API to delete the data.
   await TrackingDBService.clearAll();

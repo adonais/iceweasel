@@ -298,7 +298,8 @@ class TempFile {
 // Just a wrapper around JSPrincipals that allows static construction.
 class TestJSPrincipals : public JSPrincipals {
  public:
-  explicit TestJSPrincipals(int rc = 0);
+  explicit constexpr TestJSPrincipals(int rc = 0)
+      : JSPrincipals(JSPrincipals::RefCount(rc)) {}
 
   bool write(JSContext* cx, JSStructuredCloneWriter* writer) override;
 

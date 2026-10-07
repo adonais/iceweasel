@@ -78,7 +78,7 @@ class CrashContentIntegrationTest {
                     customTabSessionId = sessionId,
                     dispatcher = testDispatcher,
                     getTopToolbarHeightValue = { _ -> 100 },
-                    getBottomToolbarHeightValue = { _ -> 100 },
+                    getBottomToolbarHeightValue = { _, _ -> 100 },
                 )
             val controllerCaptor = slot<CrashReporterController>()
             integration.viewProvider = { crashReporterView }
@@ -116,7 +116,7 @@ class CrashContentIntegrationTest {
                     customTabSessionId = sessionId,
                     dispatcher = testDispatcher,
                     getTopToolbarHeightValue = { _ -> 100 },
-                    getBottomToolbarHeightValue = { _ -> 100 },
+                    getBottomToolbarHeightValue = { _, _ -> 100 },
                 )
 
             integration.viewProvider = { crashReporterView }
@@ -147,7 +147,7 @@ class CrashContentIntegrationTest {
                         customTabSessionId = sessionId,
                         dispatcher = testDispatcher,
                         getTopToolbarHeightValue = { _ -> 100 },
-                        getBottomToolbarHeightValue = { _ -> 100 },
+                        getBottomToolbarHeightValue = { _, _ -> 100 },
                     )
                 )
 
@@ -187,7 +187,7 @@ class CrashContentIntegrationTest {
                         customTabSessionId = sessionId,
                         dispatcher = testDispatcher, // First dispatcher
                         getTopToolbarHeightValue = { _ -> 100 },
-                        getBottomToolbarHeightValue = { _ -> 100 },
+                        getBottomToolbarHeightValue = { _, _ -> 100 },
                     )
                 )
 
@@ -234,7 +234,7 @@ class CrashContentIntegrationTest {
                     customTabSessionId = sessionId,
                     dispatcher = testDispatcher,
                     getTopToolbarHeightValue = { _ -> 100 },
-                    getBottomToolbarHeightValue = { _ -> 100 },
+                    getBottomToolbarHeightValue = { _, _ -> 100 },
                 )
             val controllerCaptor = slot<CrashReporterController>()
             integration.viewProvider = { crashReporterView }

@@ -43,3 +43,5 @@ skip-if = [
 ]
 
 ["test_startup_session_async.js"]
+
+["test_tab_group_state.js"]

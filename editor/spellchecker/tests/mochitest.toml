@@ -1,8 +1,8 @@
 [DEFAULT]
 prefs = ["gfx.font_loader.delay=0"]
 
-skip-if = [
-  "os == 'android'",
+run-if = [
+  "os != 'android'",
 ]
 support-files = [
   "en-GB/en_GB.dic",

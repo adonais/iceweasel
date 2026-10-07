@@ -37,6 +37,12 @@ support-files = [
   "file_use_counter_svg_fill_pattern_data.svg",
   "file_use_counter_speculationrules.html",
   "file_webaudio_startstop.html",
+  "file_use_counter_sanitizer_config.html",
+  "file_use_counter_sanitizer_default.html",
+  "file_use_counter_sanitizer_empty.html",
+  "file_use_counter_sanitizer_invalid.html",
+  "file_use_counter_sanitizer_methods.html",
+  "file_use_counter_sanitizer_noop.html",
   "!/image/test/mochitest/shaver.png",
 ]
 prefs = [
@@ -148,6 +154,20 @@ skip-if = [
   "!nightly_build", # Page load events are only consistently sent in nightly.
 ]
 
+["browser_prefetch_delivery_type.js"]
+# All channels: the test enables the prefs it needs.
+support-files = [
+  "file_pageload_prefetch_plain.html",
+  "file_pageload_prefetch_source.html",
+  "file_pageload_prefetch_target.sjs",
+]
+
+["browser_speculation_rules_hover_delays.js"]
+support-files = [
+  "file_pageload_prefetch_target.sjs",
+  "file_speculation_rules_hover_source.html",
+]
+
 ["browser_pagehide_on_tab_close.js"]
 skip-if = [
   "true", # this tests non-e10s behavior.
@@ -230,6 +250,11 @@ support-files = [
   "file_js_cache_imported1.mjs",
   "file_js_cache_imported2.mjs",
   "file_js_cache_imported3.mjs",
+]
+
+["browser_script_loader_js_cache_module_csp.js"]
+support-files = [
+  "file_js_cache_module_csp.sjs",
 ]
 
 ["browser_script_loader_js_cache_module_preload.js"]

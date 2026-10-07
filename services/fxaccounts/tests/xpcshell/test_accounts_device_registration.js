@@ -105,7 +105,8 @@ function MockFxAccountsClient(device) {
   };
 
   this.registerDevice = (st, name) => Promise.resolve({ id: device.id, name });
-  this.updateDevice = (st, id, name) => Promise.resolve({ id, name });
+  this.updateDevice = (st, id, name, type) =>
+    Promise.resolve({ id, name, type });
   this.signOut = () => Promise.resolve({});
   this.getDeviceList = st =>
     Promise.resolve([
@@ -282,16 +283,17 @@ add_task(async function test_updateDeviceRegistration_with_existing_device() {
   Assert.equal(spy.registerDevice.count, 0);
   Assert.equal(spy.getDeviceList.count, 0);
   Assert.equal(spy.updateDevice.count, 1);
-  Assert.equal(spy.updateDevice.args[0].length, 4);
+  Assert.equal(spy.updateDevice.args[0].length, 5);
   Assert.equal(spy.updateDevice.args[0][0], credentials.sessionToken);
   Assert.equal(spy.updateDevice.args[0][1], deviceId);
   Assert.equal(spy.updateDevice.args[0][2], deviceName);
+  Assert.equal(spy.updateDevice.args[0][3], "desktop");
   Assert.equal(
-    spy.updateDevice.args[0][3].pushCallback,
+    spy.updateDevice.args[0][4].pushCallback,
     "http://mochi.test:8888"
   );
-  Assert.equal(spy.updateDevice.args[0][3].pushPublicKey, BOGUS_PUBLICKEY);
-  Assert.equal(spy.updateDevice.args[0][3].pushAuthKey, BOGUS_AUTHKEY);
+  Assert.equal(spy.updateDevice.args[0][4].pushPublicKey, BOGUS_PUBLICKEY);
+  Assert.equal(spy.updateDevice.args[0][4].pushAuthKey, BOGUS_AUTHKEY);
 
   const state = fxa._internal.currentAccountState;
   const data = await state.getUserAccountData();
@@ -353,16 +355,17 @@ add_task(
     Assert.equal(spy.getDeviceList.count, 0);
     Assert.equal(spy.registerDevice.count, 0);
     Assert.equal(spy.updateDevice.count, 1);
-    Assert.equal(spy.updateDevice.args[0].length, 4);
+    Assert.equal(spy.updateDevice.args[0].length, 5);
     Assert.equal(spy.updateDevice.args[0][0], credentials.sessionToken);
     Assert.equal(spy.updateDevice.args[0][1], currentDeviceId);
     Assert.equal(spy.updateDevice.args[0][2], deviceName);
+    Assert.equal(spy.updateDevice.args[0][3], "desktop");
     Assert.equal(
-      spy.updateDevice.args[0][3].pushCallback,
+      spy.updateDevice.args[0][4].pushCallback,
       "http://mochi.test:8888"
     );
-    Assert.equal(spy.updateDevice.args[0][3].pushPublicKey, BOGUS_PUBLICKEY);
-    Assert.equal(spy.updateDevice.args[0][3].pushAuthKey, BOGUS_AUTHKEY);
+    Assert.equal(spy.updateDevice.args[0][4].pushPublicKey, BOGUS_PUBLICKEY);
+    Assert.equal(spy.updateDevice.args[0][4].pushAuthKey, BOGUS_AUTHKEY);
 
     const state = fxa._internal.currentAccountState;
     const data = await state.getUserAccountData();
@@ -440,26 +443,38 @@ add_task(
 
     Assert.equal(spy.registerDevice.count, 0);
     Assert.equal(spy.updateDevice.count, 1);
-    Assert.equal(spy.updateDevice.args[0].length, 4);
+    Assert.equal(spy.updateDevice.args[0].length, 5);
     Assert.equal(spy.updateDevice.args[0][0], credentials.sessionToken);
     Assert.equal(spy.updateDevice.args[0][1], currentDeviceId);
     Assert.equal(spy.updateDevice.args[0][2], deviceName);
+    Assert.equal(spy.updateDevice.args[0][3], "desktop");
     Assert.equal(
-      spy.updateDevice.args[0][3].pushCallback,
+      spy.updateDevice.args[0][4].pushCallback,
       "http://mochi.test:8888"
     );
-    Assert.equal(spy.updateDevice.args[0][3].pushPublicKey, BOGUS_PUBLICKEY);
-    Assert.equal(spy.updateDevice.args[0][3].pushAuthKey, BOGUS_AUTHKEY);
+    Assert.equal(spy.updateDevice.args[0][4].pushPublicKey, BOGUS_PUBLICKEY);
+    Assert.equal(spy.updateDevice.args[0][4].pushAuthKey, BOGUS_AUTHKEY);
     Assert.equal(spy.getDeviceList.count, 1);
     Assert.equal(spy.getDeviceList.args[0].length, 1);
     Assert.equal(spy.getDeviceList.args[0][0], credentials.sessionToken);
     Assert.greaterOrEqual(spy.getDeviceList.time, spy.updateDevice.time);
 
     const state = fxa._internal.currentAccountState;
-    const data = await state.getUserAccountData();
+    let data = await state.getUserAccountData();
 
     Assert.equal(data.device.id, conflictingDeviceId);
     Assert.equal(data.device.registrationVersion, null);
+
+    // Conflict recovery can adopt an untyped OAuth placeholder, so retry registration.
+    await fxa._internal.device.updateDeviceRegistrationIfNecessary();
+
+    Assert.equal(spy.updateDevice.count, 2);
+    Assert.equal(spy.updateDevice.args[1][1], conflictingDeviceId);
+    Assert.equal(spy.updateDevice.args[1][3], "desktop");
+
+    data = await state.getUserAccountData();
+    Assert.equal(data.device.id, conflictingDeviceId);
+    Assert.equal(data.device.registrationVersion, DEVICE_REGISTRATION_VERSION);
     await fxa.signOut(true);
   }
 );
@@ -956,8 +971,8 @@ add_task(async function test_push_resubscribe() {
 
   let mockDevice = {
     id: "deviceAAAAAA",
-    name: "iPhone",
-    type: "phone",
+    name: "mock device name",
+    type: "desktop",
     pushCallback: "http://mochi.test:8888",
     pushEndpointExpired: false,
     sessionToken: credentials.sessionToken,
@@ -1096,6 +1111,19 @@ add_task(async function test_push_resubscribe() {
     spy._registerOrUpdateDevice.count,
     4,
     "resetting to good data should not resubscribe"
+  );
+
+  // A record the server created for us rather than one we registered has no
+  // type, and the server reports those as mobile devices.
+  mockDevice.type = "mobile";
+  Assert.ok(
+    await device.refreshDeviceList({ ignoreCached: true }),
+    "Should refresh list"
+  );
+  Assert.equal(
+    spy._registerOrUpdateDevice.count,
+    5,
+    "the wrong device type should re-register"
   );
 });
 

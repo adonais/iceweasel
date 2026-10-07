@@ -79,6 +79,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesSchedulers.sys.mjs",
   MONITOR_CONDITION_MET_TOPIC:
     "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs",
+  MONITOR_RUN_FAILED_TOPIC:
+    "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs",
   MonitorAttention:
     "moz-src:///browser/components/aiwindow/ui/modules/MonitorAttention.sys.mjs",
   MonitorUIUtils:
@@ -87,7 +89,14 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/SmartWindowTelemetry.sys.mjs",
   TelemetryScheduler:
     "moz-src:///browser/components/aiwindow/models/TelemetryManager.sys.mjs",
+  URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
 });
+
+ChromeUtils.defineLazyGetter(
+  lazy,
+  "l10n",
+  () => new Localization(["preview/aiWindow.ftl"], true)
+);
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -276,6 +285,8 @@ export const AIWindow = {
       this._updateMonitorWidgetRegistration();
     } else if (topic === lazy.MONITOR_CONDITION_MET_TOPIC) {
       this.showMonitorAttention(data);
+    } else if (topic === lazy.MONITOR_RUN_FAILED_TOPIC) {
+      this.showMonitorErrorAttention(data);
     }
   },
 
@@ -451,15 +462,16 @@ export const AIWindow = {
 
   /**
    * Whether the monitor toolbar button is enabled. It is the toolbar surface of
-   * the Smart Window agent, so it needs the agent feature as well as its own
-   * gate, both default-off, and the same region gate the rest of the feature
-   * uses. Somewhere the button cannot create a monitor it should not appear,
-   * not even in the customize palette.
+   * the Smart Window agent, so it needs Smart Window to be enabled, the
+   * agent feature and its own toolbar gate, and the same region gate the rest of
+   * the feature uses. Where the button cannot create a monitor
+   * it should not appear
    *
    * @returns {boolean}
    */
   get monitorButtonEnabled() {
     return (
+      this.isAIWindowEnabled() &&
       lazy.agentEnabled &&
       lazy.agentToolbarEnabled &&
       lazy.MonitorUIUtils.isMonitorRegionSupported()
@@ -503,6 +515,7 @@ export const AIWindow = {
       },
     });
     Services.obs.addObserver(this, lazy.MONITOR_CONDITION_MET_TOPIC);
+    Services.obs.addObserver(this, lazy.MONITOR_RUN_FAILED_TOPIC);
     this._monitorWidgetCreated = true;
   },
 
@@ -512,6 +525,7 @@ export const AIWindow = {
     }
 
     Services.obs.removeObserver(this, lazy.MONITOR_CONDITION_MET_TOPIC);
+    Services.obs.removeObserver(this, lazy.MONITOR_RUN_FAILED_TOPIC);
     lazy.CustomizableUI.destroyWidget(MONITOR_WIDGET_ID);
     this._monitorWidgetCreated = false;
   },
@@ -534,7 +548,8 @@ export const AIWindow = {
 
   /**
    * Monitors that matched their condition and that the user has not been shown
-   * the panel for since, newest match first.
+   * the panel for since, newest match first. A monitor that only failed to
+   * check is not here: it lights the dot but the panel leaves it where it is.
    *
    * @returns {string[]} Monitor ids.
    */
@@ -560,7 +575,7 @@ export const AIWindow = {
    * @returns {boolean} Whether the monitor button should carry the dot.
    */
   get hasMonitorAttention() {
-    return lazy.MonitorAttention.hasMatches || this.hasMonitorAnnouncement;
+    return lazy.MonitorAttention.hasAttention || this.hasMonitorAnnouncement;
   },
 
   /**
@@ -585,11 +600,22 @@ export const AIWindow = {
   },
 
   /**
+   * A monitor that could not check is worth the same dot as one that matched:
+   * either way there is something in the panel the user has not seen.
+   *
+   * @param {string} monitorId - The monitor whose run failed.
+   */
+  showMonitorErrorAttention(monitorId) {
+    lazy.MonitorAttention.recordError(monitorId);
+    this._forEachWindow(win => this._updateMonitorButtonForWindow(win));
+  },
+
+  /**
    * Retires every reason the dot is showing. Opening the panel answers the
    * announcement as much as it answers a match, so both go at once.
    */
   clearMonitorAttention() {
-    lazy.MonitorAttention.clearMatches();
+    lazy.MonitorAttention.clearAttention();
     // Only dismiss an announcement that is actually running so we do not mask
     // a rollout that starts later.
     if (lazy.monitorAnnouncement) {
@@ -676,12 +702,14 @@ export const AIWindow = {
    *
    * @param {object} options Used in BrowserWindowTracker.openWindow
    * @param {object} options.openerWindow Window making the BrowserWindowTracker.openWindow call
-   * @param {object} options.args Array of arguments to pass to new window
+   * @param {nsIMutableArray} [options.args] Array of arguments to pass to new window
    * @param {boolean} [options.aiWindow] Should new window be AI Window (true), Classic Window (false), or inherited from opener (undefined, default)
    * @param {boolean} [options.private] Should new window be Private Window
    * @param {string} [options.restoreSessionURL] URL of the selected tab being restored
    *
-   * @returns {object} Modified arguments appended to the options object
+   * @returns {nsIMutableArray}
+   *   Updated arguments array with additional `extraOptions` added for
+   *   the AI Window.
    */
   handleAIWindowOptions({
     openerWindow,
@@ -997,6 +1025,70 @@ export const AIWindow = {
     } catch {
       // Sidebar may not be available
     }
+  },
+
+  /**
+   * Opens a new background tab whose chat asks for an AI Tab page built from
+   * the given tabs, as if the user had typed the request there. The current
+   * tab and its sidebar are left alone; the new tab decides for itself how to
+   * show its chat once selected.
+   *
+   * @param {Window} win
+   * @param {string[]} urls - Non-http(s) URLs are dropped since the model
+   *   cannot read them.
+   */
+  createAITab(win, urls) {
+    const pageUrls = urls.filter(url =>
+      ["http:", "https:"].includes(URL.parse(url)?.protocol)
+    );
+    if (!pageUrls.length) {
+      return;
+    }
+
+    const text = [
+      lazy.l10n.formatValueSync("ai-tab-create-page-prompt", {
+        tabCount: pageUrls.length,
+      }),
+      ...pageUrls,
+    ].join("\n");
+
+    lazy.URILoadingHelper.openTrustedLinkIn(win, AIWINDOW_URL, "tab", {
+      inBackground: true,
+      resolveOnContentBrowserCreated: browser => {
+        const submit = () =>
+          browser.contentDocument.querySelector("ai-window").submitChatMessage({
+            text,
+            submitType: "menu",
+            contextPageUrl: null,
+          });
+
+        // AIWINDOW_URL is the Smart Window's new tab page, so this may be the
+        // preloaded new tab browser, whose ai-window connected before it had a
+        // tab and will not connect again.
+        if (browser.contentDocument?.querySelector("ai-window")?.conversation) {
+          submit();
+          return;
+        }
+
+        // Otherwise the chat page is still loading; submit once its element
+        // connects, or give up if the tab is closed first.
+        const tab = win.gBrowser.getTabForBrowser(browser);
+        const controller = new AbortController();
+        const { signal } = controller;
+        tab.addEventListener("TabClose", () => controller.abort(), { signal });
+        win.addEventListener(
+          "ai-window:connected",
+          event => {
+            if (event.detail.tab !== tab) {
+              return;
+            }
+            controller.abort();
+            submit();
+          },
+          { signal }
+        );
+      },
+    });
   },
 
   /**
@@ -1411,10 +1503,6 @@ export const AIWindow = {
       l10nId: "smartwindow-organize-tabs-button",
       defaultArea: lazy.CustomizableUI.AREA_TABSTRIP,
       defaultAreaVerticalTabs: lazy.CustomizableUI.AREA_NAVBAR,
-      // Profiles that already have a saved tab strip only get a new default
-      // widget put in its default spot if it is marked as newly introduced;
-      // without this it lands at the end of the toolbar instead.
-      _introducedByPref: PREF_AUTO_TAB_GROUPING,
       removable: true,
       showInPrivateBrowsing: false,
       onCreated: node => {

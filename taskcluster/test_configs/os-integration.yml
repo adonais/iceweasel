@@ -102,7 +102,6 @@
 - kind: browsertime
   test_platform: &perf-platforms
       - android-em-14-x86_64-shippable-qr/opt
-      - linux1804-64-shippable-qr/opt
       - linux2404-64-shippable/opt
       - macosx1470-64-shippable/opt
       - windows11-64-24h2-shippable/opt

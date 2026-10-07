@@ -90,9 +90,11 @@ bool CurlWrapper::Init() {
       "/usr/lib/libcurl.4.dylib",
       "/usr/lib/libcurl.3.dylib",
 #else  // Linux, *BSD, ...
-      "libcurl.so", "libcurl.so.4",
+      "libcurl.so",
+      "libcurl.so.4",
       // Debian gives libcurl a different name when it is built against GnuTLS
-      "libcurl-gnutls.so", "libcurl-gnutls.so.4",
+      "libcurl-gnutls.so",
+      "libcurl-gnutls.so.4",
       // Older versions in case we find nothing better
       "libcurl.so.3",
       "libcurl-gnutls.so.3",  // See above for Debian
@@ -172,9 +174,9 @@ bool FallbackIsValidDestination(const string& aUrl) {
   std::transform(url.begin(), url.end(), url.begin(),
                  [](unsigned char c) { return std::tolower(c); });
   // Strip off the scheme in the beginning
-  if (url.find("http://") == 0) {
+  if (url.starts_with("http://")) {
     url = url.substr(7);
-  } else if (url.find("https://") == 0) {
+  } else if (url.starts_with("https://")) {
     url = url.substr(8);
   }
 

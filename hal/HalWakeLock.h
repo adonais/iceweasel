@@ -5,6 +5,11 @@
 #ifndef HAL_WAKELOCK_H_
 #define HAL_WAKELOCK_H_
 
+#include "mozilla/HalTypes.h"
+#include "nsAString.h"
+
+#include <cstdint>
+
 namespace mozilla {
 namespace hal {
 

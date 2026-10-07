@@ -10,7 +10,7 @@ plugins to our ESLint configuration.
 ## General Notes
 
 - Enabling of new rules and adding plugins should happen in agreement with the
-  [JavaScript Usage, Tools and Style module owner and peers](/mots/index.html#javascript-usage-tools-and-style).
+  [JavaScript Usage, Tools and Style module owner and peers](/mots/index.md#javascript-usage-tools-and-style).
 
 - Enabling of rules for sub-components should also be discussed with the owner
   and peers.

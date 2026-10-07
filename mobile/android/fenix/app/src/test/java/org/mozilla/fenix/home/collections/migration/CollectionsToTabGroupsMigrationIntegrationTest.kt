@@ -4,7 +4,7 @@
 
 package org.mozilla.fenix.home.collections.migration
 
-import androidx.room.Room
+import androidx.room.RoomDatabase
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -12,6 +12,9 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.feature.tabgroups.storage.database.getTestTabGroupDatabase
+import mozilla.components.feature.tabgroups.storage.repository.DefaultTabGroupRepository
+import mozilla.components.feature.tabgroups.storage.repository.createTestTabGroupRepository
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.test.fakes.engine.FakeEngine
 import mozilla.components.support.test.robolectric.testContext
@@ -25,8 +28,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.components.TabCollectionStorage
 import org.mozilla.fenix.helpers.perf.TestStrictModeManager
-import org.mozilla.fenix.tabgroups.storage.database.TabGroupDatabase
-import org.mozilla.fenix.tabgroups.storage.repository.DefaultTabGroupRepository
 import org.mozilla.fenix.utils.Settings
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -35,7 +36,7 @@ class CollectionsToTabGroupsMigrationIntegrationTest {
 
     private val dateTimeProvider = FakeDateTimeProvider()
 
-    private lateinit var tabGroupDatabase: TabGroupDatabase
+    private lateinit var tabGroupDatabase: RoomDatabase
     private lateinit var tabGroupRepository: DefaultTabGroupRepository
     private lateinit var tabCollectionStorage: TabCollectionStorage
     private lateinit var browserStore: BrowserStore
@@ -43,14 +44,9 @@ class CollectionsToTabGroupsMigrationIntegrationTest {
 
     @Before
     fun setup() = runTest {
-        tabGroupDatabase =
-            Room.inMemoryDatabaseBuilder(
-                    context = testContext,
-                    klass = TabGroupDatabase::class.java,
-                )
-                .build()
+        tabGroupDatabase = getTestTabGroupDatabase(context = testContext)
         tabGroupRepository =
-            DefaultTabGroupRepository(
+            createTestTabGroupRepository(
                 database = tabGroupDatabase,
                 dateTimeProvider = dateTimeProvider,
             )

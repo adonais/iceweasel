@@ -341,6 +341,8 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
   TypedArray_base() = default;
   TypedArray_base(TypedArray_base&& aOther) = default;
 
+  TypedArray_base(const TypedArray_base&) = delete;
+
  public:
   inline bool Init(JSObject* obj) {
     MOZ_ASSERT(!inited());
@@ -715,8 +717,6 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
 
     return result;
   }
-
-  TypedArray_base(const TypedArray_base&) = delete;
 };
 
 template <class ArrayT>
@@ -727,6 +727,8 @@ struct TypedArray : public TypedArray_base<ArrayT> {
   TypedArray() = default;
 
   TypedArray(TypedArray&& aOther) = default;
+
+  TypedArray(const TypedArray&) = delete;
 
   static inline JSObject* Create(JSContext* cx, nsWrapperCache* creator,
                                  size_t length, ErrorResult& error) {
@@ -799,8 +801,6 @@ struct TypedArray : public TypedArray_base<ArrayT> {
     MOZ_ASSERT(!isShared);
     memcpy(span.Elements(), data.Elements(), data.LengthBytes());
   }
-
-  TypedArray(const TypedArray&) = delete;
 };
 
 template <JS::Scalar::Type GetViewType(JSObject*)>

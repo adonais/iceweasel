@@ -281,14 +281,15 @@ Maybe<wr::FontInstanceKey> WebRenderBridgeChild::GetFontKeyForScaledFont(
 
           Maybe<wr::FontInstanceOptions> options;
           Maybe<wr::FontInstancePlatformOptions> platformOptions;
-          std::vector<FontVariation> variations;
+          std::vector<wr::FontVariation> variations;
           aScaledFont->GetWRFontInstanceOptions(&options, &platformOptions,
                                                 &variations);
 
           aResources.AddFontInstance(
               instanceKey, fontKey.value(), aScaledFont->GetSize(),
               options.ptrOr(nullptr), platformOptions.ptrOr(nullptr),
-              Range<const FontVariation>(variations.data(), variations.size()));
+              Range<const wr::FontVariation>(variations.data(),
+                                             variations.size()));
 
           entry.Insert(instanceKey);
         }

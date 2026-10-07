@@ -88,3 +88,37 @@ md.renderer.rules.link_close = (tokens, index, options, _env, renderer) => {
 export function parseMarkdown(markdown) {
   return md.render(markdown);
 }
+
+/**
+ * Parse markdown into an ordered list of top-level blocks, each
+ * rendered to its own HTML string. Joining every block's html is identical
+ * to parseMarkdown(markdown); splitting this way lets a streamed reply re-render
+ * only the blocks that changed.
+ *
+ * @param {string} markdown - The markdown string to parse
+ * @returns {Array<{html: string}>} One entry per top-level block, in order
+ */
+export function parseMarkdownBlocks(markdown) {
+  const env = {};
+  const tokens = md.parse(markdown, env);
+  const blocks = [];
+
+  let start = 0;
+  while (start < tokens.length) {
+    let end = start + 1;
+    if (tokens[start].nesting === 1) {
+      // Walk to the matching close: the nesting counts sum back to zero there.
+      let depth = 1;
+      while (end < tokens.length && depth > 0) {
+        depth += tokens[end].nesting;
+        end++;
+      }
+    }
+    blocks.push({
+      html: md.renderer.render(tokens.slice(start, end), md.options, env),
+    });
+    start = end;
+  }
+
+  return blocks;
+}

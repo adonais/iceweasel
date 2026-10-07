@@ -8,6 +8,7 @@
 
 #include "mozilla/ContentIterator.h"
 #include "mozilla/dom/AbstractRange.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/mozalloc.h"
 #include "nsAtom.h"
@@ -20,7 +21,6 @@
 #include "nsINode.h"
 #include "nsISupports.h"
 #include "nsISupportsUtils.h"
-#include "nsRange.h"
 
 namespace mozilla {
 
@@ -45,7 +45,7 @@ nsresult FilteredContentIterator::Init(nsINode* aRoot) {
   mDirection = eForward;
   mCurrentIterator = &mPreIterator;
 
-  mRange = nsRange::Create(aRoot);
+  mRange = dom::Range::Create(aRoot);
   mRange->SelectNode(*aRoot, IgnoreErrors());
 
   nsresult rv = mPreIterator.Init(mRange);
@@ -62,7 +62,7 @@ nsresult FilteredContentIterator::Init(const AbstractRange* aAbstractRange) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  mRange = nsRange::Create(aAbstractRange, IgnoreErrors());
+  mRange = dom::Range::Create(aAbstractRange, IgnoreErrors());
   if (NS_WARN_IF(!mRange)) {
     return NS_ERROR_FAILURE;
   }
@@ -79,8 +79,8 @@ nsresult FilteredContentIterator::Init(nsINode* aStartContainer,
 
 nsresult FilteredContentIterator::Init(const RawRangeBoundary& aStartBoundary,
                                        const RawRangeBoundary& aEndBoundary) {
-  RefPtr<nsRange> range =
-      nsRange::Create(aStartBoundary, aEndBoundary, IgnoreErrors());
+  RefPtr<dom::Range> range =
+      dom::Range::Create(aStartBoundary, aEndBoundary, IgnoreErrors());
   if (NS_WARN_IF(!range) || NS_WARN_IF(!range->IsPositioned())) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -216,7 +216,8 @@ static bool ContentIsInTraversalRange(nsIContent* aContent, bool aIsPreMode,
   return *startRes <= 0 && *endRes >= 0;
 }
 
-static bool ContentIsInTraversalRange(nsRange* aRange, nsIContent* aNextContent,
+static bool ContentIsInTraversalRange(dom::Range* aRange,
+                                      nsIContent* aNextContent,
                                       bool aIsPreMode) {
   // XXXbz we have a caller below (in AdvanceNode) who passes null for
   // aNextContent!

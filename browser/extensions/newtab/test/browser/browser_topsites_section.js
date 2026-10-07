@@ -46,25 +46,16 @@ add_setup(async function () {
 test_newtab({
   before: setTestTopSites,
   // it should be able to click the topsites add button to reveal the add top site modal and overlay.
-  test: async function topsites_edit() {
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".top-sites .context-menu-button"),
-      "Should find a visible topsite context menu button [topsites_edit]"
+  test: async function topsites_edit(testTopSite) {
+    const tile = await content.waitForTopSite(testTopSite);
+
+    tile.querySelector(".context-menu-button").click();
+
+    const editBtn = await content.waitForPanelItem(
+      tile,
+      "newtab-menu-edit-topsites"
     );
-
-    // Open the section context menu.
-    content.document.querySelector(".top-sites .context-menu-button").click();
-
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".top-sites panel-list panel-item"),
-      "Should find a visible topsite context menu [topsites_edit]"
-    );
-
-    // The "Edit" option is the 2nd item in the context menu.
-    const topsitesAddBtn = content.document
-      .querySelectorAll(".top-sites panel-list panel-item")
-      .item(1);
-    topsitesAddBtn.click();
+    editBtn.click();
 
     await ContentTaskUtils.waitForCondition(
       () => content.document.querySelector(".topsite-form"),
@@ -81,31 +72,20 @@ test_newtab({
 
 // Test pin/unpin context menu options.
 test_newtab({
-  before: setDefaultTopSites,
+  before: async args => {
+    clearPinnedTopSites();
+    return setDefaultTopSites(args);
+  },
   // it should pin the website when we click the first option of the topsite context menu.
-  test: async function topsites_pin_unpin() {
-    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Topsite tippytop icon not found"
+  test: async function topsites_pin_unpin(defaultTopSites) {
+    let topsiteEl = await content.waitForTopSite(defaultTopSites[0]);
+    topsiteEl.querySelector(".context-menu-button").click();
+
+    const pinTopsiteBtn = await content.waitForPanelItem(
+      topsiteEl,
+      "newtab-menu-pin"
     );
-    // There are only topsites on the page, the selector with find the first topsite menu button.
-    let topsiteEl = content.document.querySelector(siteSelector);
-    let topsiteContextBtn = topsiteEl.querySelector(".context-menu-button");
-    topsiteContextBtn.click();
-
-    await ContentTaskUtils.waitForCondition(
-      () => topsiteEl.querySelector("panel-list"),
-      "No context menu found"
-    );
-
-    let contextMenu = topsiteEl.querySelector("panel-list");
-    ok(contextMenu, "Should find a topsite context menu");
-
-    // Pin/Unpin is the first item in the context menu.
-    const pinUnpinTopsiteBtn = contextMenu.querySelector("panel-item");
-    // Pin the topsite.
-    pinUnpinTopsiteBtn.click();
+    pinTopsiteBtn.click();
 
     // Need to wait for pin action.
     await ContentTaskUtils.waitForCondition(
@@ -117,15 +97,14 @@ test_newtab({
     is(pinnedIcon, 1, "should find 1 pinned topsite");
 
     // Unpin the topsite.
-    topsiteContextBtn = topsiteEl.querySelector(".context-menu-button");
-    ok(topsiteContextBtn, "Should find a context menu button");
-    topsiteContextBtn.click();
+    topsiteEl = await content.waitForTopSite(defaultTopSites[0]);
+    topsiteEl.querySelector(".context-menu-button").click();
 
-    await ContentTaskUtils.waitForCondition(
-      () => topsiteEl.querySelector("panel-item"),
-      "Should find context menu item button for unpin"
+    const unpinTopsiteBtn = await content.waitForPanelItem(
+      topsiteEl,
+      "newtab-menu-unpin"
     );
-    topsiteEl.querySelector("panel-item").click();
+    unpinTopsiteBtn.click();
 
     // Need to wait for unpin action.
     await ContentTaskUtils.waitForCondition(
@@ -146,28 +125,23 @@ test_newtab({
     await setDefaultTopSites(args);
   },
   test: async function topsites_menu_no_stuck_hover_after_mouse() {
-    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Wait for a topsite tile"
-    );
-    const tile = content.document.querySelector(siteSelector);
+    const tile = await content.waitForAnyTopSite();
     const menuButton = tile.querySelector(".context-menu-button");
     const panelList = tile.querySelector("panel-list");
 
+    // panel-list's events are untrusted, so the listener has to opt into them.
+    const panelEvent = (target, name) =>
+      ContentTaskUtils.waitForEvent(target, name, false, null, true);
+
+    let shown = panelEvent(panelList, "shown");
     await EventUtils.synthesizeMouseAtCenter(menuButton, {}, content.window);
-    await ContentTaskUtils.waitForCondition(
-      () => panelList.hasAttribute("open"),
-      "Menu opens on mouse click"
-    );
+    await shown;
 
     // Close with another mouse click on the button. The menu opens on mousedown
     // precisely so this closes it rather than reopening it.
+    let hidden = panelEvent(panelList, "hidden");
     await EventUtils.synthesizeMouseAtCenter(menuButton, {}, content.window);
-    await ContentTaskUtils.waitForCondition(
-      () => !panelList.hasAttribute("open"),
-      "Menu closes on second click"
-    );
+    await hidden;
 
     // Move the pointer off the tile without clicking.
     const logo = content.document.querySelector(".logo-and-wordmark");
@@ -201,38 +175,34 @@ test_newtab({
 // which a synthetic .click() does not reproduce.
 test_newtab({
   before: async args => {
+    clearPinnedTopSites();
     gBrowser.selectedBrowser.focus();
     await setDefaultTopSites(args);
   },
   test: async function topsites_menu_no_stuck_hover_after_pin_via_menu() {
-    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Wait for a topsite tile"
-    );
-    const tile = content.document.querySelector(siteSelector);
+    const tile = await content.waitForAnyTopSite();
     const menuButton = () => tile.querySelector(".context-menu-button");
     const panelList = () => tile.querySelector("panel-list");
 
+    // panel-list's events are untrusted, so the listener has to opt into them.
+    const panelEvent = (target, name) =>
+      ContentTaskUtils.waitForEvent(target, name, false, null, true);
+
+    let shown = panelEvent(panelList(), "shown");
     await EventUtils.synthesizeMouseAtCenter(menuButton(), {}, content.window);
-    await ContentTaskUtils.waitForCondition(
-      () => panelList().hasAttribute("open"),
-      "Menu opens on mouse click"
-    );
+    await shown;
 
     // Pin/Unpin is the first item in the menu.
+    let hidden = panelEvent(panelList(), "hidden");
     await EventUtils.synthesizeMouseAtCenter(
       panelList().querySelector("panel-item"),
       {},
       content.window
     );
+    await hidden;
     await ContentTaskUtils.waitForCondition(
       () => tile.querySelector(".icon-pin-small"),
       "The topsite is pinned"
-    );
-    await ContentTaskUtils.waitForCondition(
-      () => !panelList().hasAttribute("open"),
-      "Choosing a menu item closes the menu"
     );
 
     // Move the pointer off the tile.
@@ -257,11 +227,9 @@ test_newtab({
     );
 
     // Unpin again so later tests start from the default state.
+    shown = panelEvent(panelList(), "shown");
     await EventUtils.synthesizeMouseAtCenter(menuButton(), {}, content.window);
-    await ContentTaskUtils.waitForCondition(
-      () => panelList().hasAttribute("open"),
-      "Menu reopens for unpin"
-    );
+    await shown;
     await EventUtils.synthesizeMouseAtCenter(
       panelList().querySelector("panel-item"),
       {},
@@ -284,12 +252,7 @@ test_newtab({
     await setDefaultTopSites(args);
   },
   test: async function topsites_menu_visible_on_keyboard_focus() {
-    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Wait for a topsite tile"
-    );
-    const tile = content.document.querySelector(siteSelector);
+    const tile = await content.waitForAnyTopSite();
     const link = tile.querySelector("a.top-site-button");
     const menuButton = tile.querySelector(".context-menu-button");
 
@@ -333,14 +296,13 @@ test_newtab({
     await setDefaultTopSites(args);
   },
   test: async function topsites_menu_opens_from_keyboard() {
-    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Wait for a topsite tile"
-    );
-    const tile = content.document.querySelector(siteSelector);
+    const tile = await content.waitForAnyTopSite();
     const menuButton = tile.querySelector(".context-menu-button");
     const panelList = tile.querySelector("panel-list");
+
+    // panel-list's events are untrusted, so the listener has to opt into them.
+    const panelEvent = (target, name) =>
+      ContentTaskUtils.waitForEvent(target, name, false, null, true);
 
     menuButton.focus();
     await ContentTaskUtils.waitForCondition(
@@ -348,11 +310,9 @@ test_newtab({
       "The menu button is focused"
     );
 
+    let shown = panelEvent(panelList, "shown");
     EventUtils.synthesizeKey("KEY_Enter", {}, content.window);
-    await ContentTaskUtils.waitForCondition(
-      () => panelList.hasAttribute("open"),
-      "Wait for the menu to open"
-    );
+    await shown;
     ok(panelList.hasAttribute("open"), "Enter opens the menu");
     is(
       menuButton.getAttribute("aria-expanded"),
@@ -366,11 +326,9 @@ test_newtab({
       "Opening with the keyboard moves focus into the menu"
     );
 
+    let hidden = panelEvent(panelList, "hidden");
     EventUtils.synthesizeKey("KEY_Escape", {}, content.window);
-    await ContentTaskUtils.waitForCondition(
-      () => !panelList.hasAttribute("open"),
-      "Wait for the menu to close"
-    );
+    await hidden;
     ok(!panelList.hasAttribute("open"), "Escape closes the menu");
     await ContentTaskUtils.waitForCondition(
       () => content.document.activeElement === menuButton,
@@ -388,32 +346,21 @@ test_newtab({
 test_newtab({
   before: setTestTopSites,
   // it should be able to click the topsites edit button to reveal the edit topsites modal and overlay.
-  test: async function topsites_add() {
+  test: async function topsites_add(testTopSite) {
     let nativeInputValueSetter = Object.getOwnPropertyDescriptor(
       content.window.HTMLInputElement.prototype,
       "value"
     ).set;
     let event = new content.Event("input", { bubbles: true });
 
-    // Wait for context menu button to load
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".top-sites .context-menu-button"),
-      "Should find a visible topsite context menu button [topsites_add]"
+    const tile = await content.waitForTopSite(testTopSite);
+
+    tile.querySelector(".context-menu-button").click();
+
+    const topsitesAddBtn = await content.waitForPanelItem(
+      tile,
+      "newtab-menu-edit-topsites"
     );
-
-    content.document.querySelector(".top-sites .context-menu-button").click();
-
-    // Wait for context menu to load
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".top-sites panel-list panel-item"),
-      "Should find a visible topsite context menu [topsites_add]"
-    );
-
-    // Find topsites edit button (the "Edit" option is the 2nd item in the
-    // context menu).
-    const topsitesAddBtn = content.document
-      .querySelectorAll(".top-sites panel-list panel-item")
-      .item(1);
 
     topsitesAddBtn.click();
 
@@ -454,27 +401,17 @@ test_newtab({
     addBtn.click();
 
     // Wait for Topsite to be populated
-    await ContentTaskUtils.waitForCondition(
-      () =>
-        content.document.querySelector("[href='https://bugzilla.mozilla.org']"),
-      "No Topsite found"
+    const addedTile = await content.waitForTopSite(
+      "https://bugzilla.mozilla.org"
     );
 
     // Remove topsite after test is complete
-    let topsiteContextBtn = content.document.querySelector(
-      ".top-sites-list li:nth-child(1) .context-menu-button"
-    );
-    topsiteContextBtn.click();
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".top-sites-list panel-list"),
-      "No context menu found"
-    );
+    addedTile.querySelector(".context-menu-button").click();
 
-    // "Dismiss" is the 6th (non-separator) item in the context menu (AddTopSite
-    // was added upstream in Bug 2035622).
-    const dismissBtn = content.document
-      .querySelectorAll(".top-sites panel-list panel-item")
-      .item(5);
+    const dismissBtn = await content.waitForPanelItem(
+      addedTile,
+      "newtab-menu-dismiss"
+    );
     dismissBtn.click();
 
     // Wait for Topsite to be removed

@@ -9,8 +9,8 @@ import { MAX_STOCKS_WATCHLIST } from "common/StocksWatchlist.mjs";
 const AAPL = {
   ticker: "AAPL",
   name: "Apple Inc",
-  last_price: "$1 USD",
-  todays_change_perc: "+0.1",
+  exchange: "NASDAQ",
+  is_etf: false,
 };
 
 function renderSearch(props = {}) {
@@ -56,6 +56,17 @@ describe("StockSearch", () => {
     expect(container.querySelector(".stock-ticker")).toBeNull();
   });
 
+  it("shows the search hint only while idle", () => {
+    const idle = renderSearch({ searchStatus: "idle" }).container;
+    expect(
+      idle.querySelector(".stocks-search-hint").getAttribute("data-l10n-id")
+    ).toBe("newtab-stocks-search-hint");
+    for (const searchStatus of ["loading", "success", "empty", "error"]) {
+      const { container } = renderSearch({ searchStatus });
+      expect(container.querySelector(".stocks-search-hint")).toBeNull();
+    }
+  });
+
   it("keeps the same status region mounted when a message appears", () => {
     const { container, rerender } = renderSearch();
     const before = container.querySelector(".stocks-search-message");
@@ -86,6 +97,22 @@ describe("StockSearch", () => {
     expect(
       container.querySelector("moz-input-search").getAttribute("aria-controls")
     ).toBe(list.id);
+  });
+
+  it("makes the results list focusable only once it has rows to scroll", () => {
+    const idle = renderSearch().container;
+    expect(
+      idle.querySelector("ul.stocks-search-results").getAttribute("tabindex")
+    ).toBe("-1");
+    const { container } = renderSearch({
+      searchStatus: "success",
+      searchResults: [AAPL],
+    });
+    expect(
+      container
+        .querySelector("ul.stocks-search-results")
+        .getAttribute("tabindex")
+    ).toBe("0");
   });
 
   it("loading: announces a status and marks the list busy", () => {
@@ -132,11 +159,20 @@ describe("StockSearch", () => {
   it("success: renders a result row per ticker as an add row", () => {
     const { container } = renderSearch({
       searchStatus: "success",
-      searchResults: [AAPL],
+      searchResults: [
+        AAPL,
+        { ticker: "AAPU", name: "Direxion AAPL Bull 2X", exchange: "NASDAQ" },
+      ],
     });
-    const row = container.querySelector(".stock-ticker--result");
-    expect(row).toBeTruthy();
-    const btn = row.querySelector("moz-button.stock-ticker-action");
+    const rows = container.querySelectorAll(".stock-ticker--result");
+    expect(rows).toHaveLength(2);
+    expect(rows[0].querySelector(".stock-ticker-exchange").textContent).toBe(
+      "NASDAQ"
+    );
+    expect(rows[1].querySelector(".stock-ticker-symbol").textContent).toBe(
+      "AAPU"
+    );
+    const btn = rows[0].querySelector("moz-button.stock-ticker-action");
     expect(btn.getAttribute("iconSrc")).toContain("plus.svg");
     expect(messageId(container)).toBeUndefined();
   });

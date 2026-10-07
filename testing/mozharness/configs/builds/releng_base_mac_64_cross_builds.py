@@ -29,7 +29,6 @@ config = {
             "default": "try-build-has-no-secrets",
         },
     ],
-    "enable_check_test": False,
     "vcs_share_base": "/builds/hg-shared",
     "upload_env": {
         "UPLOAD_PATH": "/builds/worker/artifacts",
@@ -38,7 +37,6 @@ config = {
     #########################################################################
     ###### 64 bit specific ######
     "platform": "macosx64",
-    "stage_platform": "macosx64",
     "env": {
         "MOZBUILD_STATE_PATH": os.path.join(os.getcwd(), ".mozbuild"),
         "HG_SHARE_BASE_DIR": "/builds/hg-shared",

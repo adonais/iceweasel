@@ -29,3 +29,59 @@ This linter provides a `--fix` option that adds the right MPL-2 header at the ri
 
 - {searchfox}`Configuration (YAML) <tools/lint/license.yml>`
 - {searchfox}`Source (Rust) <tools/lint/mozcheck/src/license.rs>`
+
+## License declarations
+
+The `license-declarations` linter is a separate check on the `LICENSES` and
+`LICENSED_UNDER` declarations in `moz.build` files, the ones the SBOM and
+`about:license` are generated from. It verifies that:
+
+- every `LICENSED_UNDER` id has a matching `LICENSES` declaration somewhere in
+  the tree,
+- every `spdx` flag is a valid SPDX license expression,
+- no `spdx` flag repeats the `origin.license`, and no `text` flag the
+  `origin.license-file`, of the `moz.yaml` covering it,
+- nothing still sets the `APP_LICENSE_BLOCK`, `APP_LICENSE_LIST_BLOCK` or
+  `APP_LICENSE_BODY_BLOCK` defines, which `about:license` no longer reads,
+- every license id is a string literal, in a `moz.build` that parses.
+
+The missing-declaration check can only live here. A given configuration
+traverses only part of the tree -- a JS shell build sees the `LICENSED_UNDER`
+in `js/` but never the `LICENSES` in `toolkit/content/licenses` -- so the build
+backend drops an unmatched id rather than rejecting it. The linter reads every
+`moz.build`, where an id declared nowhere at all really is a typo.
+
+A license id declared twice is not checked here: `mozbuild/licenses.py`
+rejects that at build time, both within one `moz.build` and across two of them,
+at the point where the two declarations can still be told apart.
+
+It reads them as a syntax tree rather than by executing them, which is what
+lets it cover the whole tree at once, and is why a computed license id is
+reported instead of skipped: an id the linter cannot read is an id it cannot
+check.
+
+### Run Locally
+
+```{eval-rst}
+.. parsed-literal::
+
+    $ mach lint --linter license <moz.build paths>
+
+```
+
+Both checks live in the same configuration file, so `--linter license` runs
+them both; which one reports depends on the kind of file passed.
+
+### Configuration
+
+This linter is enabled on the whole code base. It gathers the declared set from
+the entire tree on every run, so it always runs as a single job.
+
+### Autofix
+
+This linter does not provide an autofix.
+
+### Sources
+
+- {searchfox}`Configuration (YAML) <tools/lint/license.yml>`
+- {searchfox}`Source (Python) <tools/lint/license/__init__.py>`

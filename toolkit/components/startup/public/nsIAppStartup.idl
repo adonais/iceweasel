@@ -12,7 +12,7 @@ interface nsIAppStartup : nsISupports
     /**
      * Create the hidden window.
      */
-    [noscript]
+    [can_run_script, noscript]
     void createHiddenWindow();
 
     /**
@@ -149,11 +149,11 @@ interface nsIAppStartup : nsISupports
      *        values 0-255 should generally be used. If not specified an exit
      *        code of 0 will be used.
      *
-     * @return false if the shutdown was cancelled due to the presence
-     *         of a hidden window or if the user disallowed a window
-     *         to be closed.
+     * The shutdown is cancelled if there is a hidden window or the user
+     * disallowed a window to be closed. Check shuttingDown afterwards to
+     * see whether the shutdown started.
      */
-    boolean quit(in uint32_t aMode, [optional] in int32_t aExitCode);
+    void quit(in uint32_t aMode, [optional] in int32_t aExitCode);
 
     /**
     * These values must match the xpcom/base/ShutdownPhase.h values.
@@ -202,6 +202,12 @@ interface nsIAppStartup : nsISupports
      * @return true if we are in or beyond the given phase.
      */
     boolean isInOrBeyondShutdownPhase(in nsIAppStartup_IDLShutdownPhase aPhase);
+
+    /**
+     * Refresh the shutdown-hang crash annotations just before a deliberate
+     * crash. See mozilla::CollectShutdownHangAnnotations.
+     */
+    void collectShutdownHangAnnotations();
 
     /**
      * True if the application is in the process of shutting down.

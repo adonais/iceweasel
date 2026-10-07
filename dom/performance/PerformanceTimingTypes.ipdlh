@@ -49,6 +49,7 @@ struct IPCPerformanceTimingData {
   BodyInfoAccess bodyInfoAccessAllowed;
   bool timingAllowed;
   bool initialized;
+  bool servedFromCache;
 };
 
 }

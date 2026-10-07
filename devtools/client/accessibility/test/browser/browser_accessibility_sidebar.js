@@ -51,7 +51,7 @@ const tests = [
     desc: "Mark document as disabled for accessibility.",
     setup: async ({ browser }) =>
       SpecialPowers.spawn(browser, [], () =>
-        content.document.body.setAttribute("aria-disabled", true)
+        content.document.documentElement.setAttribute("aria-disabled", true)
       ),
     expected: {
       sidebar: {

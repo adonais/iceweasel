@@ -60,6 +60,7 @@ algorithms:
         - modules/xz-embedded/moz.yaml
         - modules/zlib/moz.yaml
         - nsprpub/moz.yaml
+        - other-licenses/snappy/moz.yaml
         - security/nss/moz.yaml
         - third_party/gemmology/moz.yaml
         - third_party/js/PKI.js/moz.yaml
@@ -178,6 +179,7 @@ misc:
         - third_party/parakeet.cpp/moz.yaml
         - third_party/perfetto/moz.yaml
         - third_party/python/vsdownload/moz.yaml
+        - toolkit/components/content-classifier/etp_engine/moz.yaml
         - toolkit/components/ml/vendor/openai/moz.yaml
         - toolkit/components/nimbus/schemas/moz.yaml
         - tools/lint/eslint/eslint-plugin-sdl-vendored/moz.yaml

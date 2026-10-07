@@ -51,6 +51,8 @@ extensions = [
     "bzlink",
     "etp_matrix",
     "staging_paths",
+    "dark_mode",
+    "mermaid_wrapped_option",
 ]
 
 myst_enable_extensions = [
@@ -61,10 +63,12 @@ myst_enable_extensions = [
     "fieldlist",
 ]
 
-# sphinxcontrib-mermaid defaults to forcing every diagram into a 100% x 500px
-# box. Tall diagrams get scaled down to fit and their labels become unreadable,
-# while stretching to the full width blows short ones up. Sizing to the content
-# keeps each diagram at its natural size, still shrinking on narrow screens.
+# A diagram renders at the size mermaid laid it out at, which needs both
+# halves: useMaxWidth below gives the SVG an intrinsic size, without which a
+# content-sized box collapses to the CSS default object size of 300px, and
+# custom_theme.css overrides the extension's own stylesheet, which stretches
+# the SVG to the width of its container. A diagram wider than the column
+# scrolls there.
 mermaid_width = "fit-content"
 mermaid_height = "auto"
 
@@ -76,7 +80,18 @@ mermaid_init_config = {
     "themeVariables": {
         "fontSize": "18px",
     },
+    # useMaxWidth is configured per diagram type; these are the types the tree
+    # uses.
+    "flowchart": {"useMaxWidth": False},
+    "sequence": {"useMaxWidth": False},
+    "class": {"useMaxWidth": False},
+    "state": {"useMaxWidth": False},
+    "gantt": {"useMaxWidth": False},
+    "er": {"useMaxWidth": False},
 }
+
+# ZenUML sequence diagrams. The plugin is fetched only on a page that has one.
+mermaid_include_zenuml = True
 
 # The paths are loaded from config.yml so they can be shared with a CI
 # optimization strategy that ensures the doc task runs when these files change.
@@ -233,5 +248,6 @@ make_sphinx_js_skip_missing_objects()
 
 def setup(app):
     app.add_css_file("custom_theme.css")
+    app.add_js_file("scrollable_regions.js")
     app.connect("html-page-context", install_sphinx_design)
     app.connect("html-page-context", add_github_source_link)

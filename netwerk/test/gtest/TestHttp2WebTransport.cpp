@@ -250,7 +250,8 @@ MockWebTransportSessionEventListener::OnSessionReady(uint64_t ready) {
 
 NS_IMETHODIMP
 MockWebTransportSessionEventListener::OnSessionClosed(
-    bool aCleanly, uint32_t aStatus, const nsACString& aReason) {
+    bool aCleanly, uint32_t aStatus, const nsACString& aReason,
+    nsIWebTransportSessionStats* aStats) {
   return NS_OK;
 }
 
@@ -288,6 +289,11 @@ NS_IMETHODIMP MockWebTransportSessionEventListener::OnStopSending(
 NS_IMETHODIMP MockWebTransportSessionEventListener::OnResetReceived(
     uint64_t aStreamId, nsresult aError) {
   mReset = Some(std::pair<uint64_t, nsresult>(aStreamId, aError));
+  return NS_OK;
+}
+
+NS_IMETHODIMP MockWebTransportSessionEventListener::OnStatsAvailable(
+    nsIWebTransportSessionStats* aStats) {
   return NS_OK;
 }
 

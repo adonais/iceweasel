@@ -62,15 +62,16 @@ enum class ModuleType : uint32_t {
  *
  * This embedding-defined hook is used to implement module loading. It is called
  * to get or create a module object corresponding to |moduleRequest| occurring
- * in the context of the script or module |referrer| with private value
- * |referencingPrivate|.
+ * in the context of |referrer|.
+ *
+ * |referrer| is an opaque JS::Value identifying the referrer of the import. The
+ * embedding must pass it back to FinishLoadingImportedModule unchanged.
  *
  * The module specifier string for the request can be obtained by calling
  * JS::GetModuleRequestSpecifier.
  *
- * The private value for a script or module is set with JS::SetScriptPrivate or
- * JS::SetModulePrivate. It's assumed that the embedding can handle receiving
- * either here.
+ * The private value of the referrer, set with JS::SetScriptPrivate or
+ * JS::SetModulePrivate, can be obtained by calling JS::GetReferrerPrivate.
  *
  * If this call succeeds then the embedding must call
  * FinishLoadingImportedModule or one of the FinishLoadingImportedModuleFailed
@@ -78,13 +79,12 @@ enum class ModuleType : uint32_t {
  * returns false.
  *
  * This hook must obey the restrictions defined in the spec:
- *  - Each time the hook is called with the same (referrer, referencingPrivate)
- *    pair, then it must call FinishLoadingImportedModule with the same result
- *    each time.
+ *  - Each time the hook is called with the same referrer, then it must call
+ *    FinishLoadingImportedModule with the same result each time.
  *  - The operation must treat the |payload| argument as an opaque
  *    value to be passed through to FinishLoadingImportedModule.
  */
-using ModuleLoadHook = bool (*)(JSContext* cx, Handle<JSScript*> referrer,
+using ModuleLoadHook = bool (*)(JSContext* cx, Handle<Value> referrer,
                                 Handle<JSObject*> moduleRequest,
                                 Handle<Value> hostDefined,
                                 Handle<Value> payload, uint32_t lineNumber,
@@ -152,13 +152,22 @@ extern JS_PUBLIC_API void SetModuleMetadataHook(JSRuntime* rt,
                                                 ModuleMetadataHook func);
 
 /**
+ * Get the private value of |referrer| in HostLoadImportedModule hook: the value
+ * set with JS::SetModulePrivate for a module referrer or with
+ * JS::SetScriptPrivate for a classic script referrer, and undefined otherwise.
+ */
+extern JS_PUBLIC_API Value GetReferrerPrivate(Handle<Value> referrer);
+
+/**
  * A function callback called by the host layer to indicate the call of
  * HostLoadImportedModule has finished.
+ *
+ * |referrer| must be the value passed to the HostLoadImportedModule hook.
  *
  * See https://tc39.es/ecma262/#sec-FinishLoadingImportedModule
  */
 extern JS_PUBLIC_API bool FinishLoadingImportedModule(
-    JSContext* cx, Handle<JSScript*> referrer, Handle<JSObject*> moduleRequest,
+    JSContext* cx, Handle<Value> referrer, Handle<JSObject*> moduleRequest,
     Handle<Value> payload, Handle<JSObject*> result, bool usePromise);
 
 /**

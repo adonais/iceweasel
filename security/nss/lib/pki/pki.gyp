@@ -10,14 +10,12 @@
       'target_name': 'nsspki',
       'type': 'static_library',
       'sources': [
-        'asymmkey.c',
         'certdecode.c',
         'certificate.c',
         'cryptocontext.c',
         'pki3hack.c',
         'pkibase.c',
         'pkistore.c',
-        'symmkey.c',
         'tdcache.c',
         'trustdomain.c'
       ],

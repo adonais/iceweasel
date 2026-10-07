@@ -9,7 +9,10 @@
 #include "mozilla/Base64.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Components.h"
+#include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/StaticPrefs_security.h"
+#include "mozilla/dom/BrowsingContextGroup.h"
+#include "mozilla/dom/RemoteType.h"
 #include "mozilla/dom/WebAuthenticationBinding.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
@@ -138,6 +141,25 @@ bool IsWebAuthnAllowedInContext(WindowGlobalParent* aContext) {
 
   if (principal->GetIsNullPrincipal()) {
     return false;
+  }
+
+  if (extensions::WebExtensionPolicy* policy =
+          BasePrincipal::Cast(principal)->AddonPolicy()) {
+    if (!policy->Active()) {
+      return false;
+    }
+    if (ContentParent* contentParent = aContext->GetContentParent()) {
+      RefPtr<BrowsingContextGroup> group = BrowsingContextGroup::GetExisting(
+          policy->GetBrowsingContextGroupId());
+      if (!group || group->GetHostProcess(RemoteType(
+                        RemoteType::Kind::Extension)) != contentParent) {
+        return false;
+      }
+    } else if (ExtensionPolicyService::GetSingleton().UseRemoteExtensions()) {
+      // A null ContentParent means that the document is in the parent process,
+      // which only hosts extension documents when extensions are not remote.
+      return false;
+    }
   }
 
   if (principal->GetIsIpAddress()) {

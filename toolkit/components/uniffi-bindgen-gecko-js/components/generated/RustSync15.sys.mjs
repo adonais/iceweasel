@@ -34,6 +34,7 @@ export var UnitTestObjs = {
 };
 
 
+
 /**
  * Enumeration for the different types of device.
  * 
@@ -151,7 +152,5 @@ export class FfiConverterTypeDeviceType extends FfiConverterArrayBuffer {
       }
     }
 }
-
-
 
 

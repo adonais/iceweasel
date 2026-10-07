@@ -20,7 +20,7 @@ struct nsTransformedCharStyle final {
   explicit nsTransformedCharStyle(mozilla::ComputedStyle* aStyle,
                                   nsPresContext* aPresContext)
       : mFont(aStyle->StyleFont()->mFont),
-        mLanguage(aStyle->StyleFont()->mLanguage),
+        mLanguage(aStyle->StyleFont()->GetLangAtom()),
         mPresContext(aPresContext),
         mTextTransform(aStyle->StyleText()->mTextTransform),
         mMathVariant(aStyle->StyleFont()->mMathVariant),

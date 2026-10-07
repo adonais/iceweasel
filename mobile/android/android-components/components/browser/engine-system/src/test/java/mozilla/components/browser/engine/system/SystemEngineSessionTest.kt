@@ -19,10 +19,10 @@ import java.lang.reflect.Modifier
 import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.engine.system.matcher.UrlMatcher
-import mozilla.components.browser.errorpages.ErrorType
 import mozilla.components.concept.engine.DefaultSettings
 import mozilla.components.concept.engine.Engine.BrowsingData
 import mozilla.components.concept.engine.EngineSession
+import mozilla.components.concept.engine.request.ErrorType
 import mozilla.components.concept.engine.request.RequestInterceptor
 import mozilla.components.support.test.any
 import mozilla.components.support.test.eq

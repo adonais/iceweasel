@@ -52,6 +52,8 @@ NSS build tool options:
     --nspr-only      exit after building NSPR
     --with-nspr      use the NSPR build at the given locations
                      --with-nspr=<include>:<lib> sets include and lib paths
+                     on Windows this must be a WIN95-target NSPR, which is
+                     what --enable-win32-target=WIN95 builds
     --system-nspr    attempt to use system nspr
                      shorthand for --with-nspr=/usr/include/nspr:
     --system-sqlite  use system sqlite

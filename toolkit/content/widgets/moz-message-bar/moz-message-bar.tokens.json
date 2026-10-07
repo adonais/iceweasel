@@ -29,7 +29,11 @@
     "color": {
       "value": {
         "default": "oklch(from {message-bar.icon.color} l c h / 20%)",
-        "prefersContrast": "{border.color.@base}"
+        "prefersContrast": "{border.color.@base}",
+        "nova": {
+          "comment": "There is no equivalent value for this token in Figma",
+          "value": "oklch(from {message-bar.icon.color} l c h / 12%)"
+        }
       }
     },
     "radius": {
@@ -37,6 +41,28 @@
     },
     "width": {
       "value": "{border.width}"
+    }
+  },
+  "close": {
+    "margin": {
+      "inline-end": {
+        "value": {
+          "default": "0px",
+          "nova": {
+            "comment": "There is no equivalent value for this token in Figma, and we need the unit for calculations",
+            "value": "8px"
+          }
+        }
+      },
+      "block-start": {
+        "value": {
+          "default": "0px",
+          "nova": {
+            "comment": "There is no equivalent value for this token in Figma, and we need the unit for calculations",
+            "value": "{space.small}"
+          }
+        }
+      }
     }
   },
   "container": {
@@ -48,11 +74,21 @@
     },
     "padding": {
       "block": {
-        "value": "{space.small}"
+        "value": {
+          "default": "{space.small}",
+          "nova": {
+            "comment": "There is no equivalent value for this token in Figma",
+            "value": "0"
+          }
+        }
       },
       "inline": {
         "value": {
-          "default": "{space.medium} {space.small}"
+          "default": "{space.medium} {space.small}",
+          "nova": {
+            "comment": "There is no equivalent value for this token in Figma",
+            "value": "0"
+          }
         }
       }
     }
@@ -60,6 +96,26 @@
   "content": {
     "gap": {
       "value": "{space.small} {space.medium}"
+    },
+    "padding": {
+      "block": {
+        "value": {
+          "default": "0",
+          "nova": {
+            "comment": "There is no equivalent value for this token in Figma",
+            "value": "{space.small}"
+          }
+        }
+      },
+      "inline": {
+        "value": {
+          "default": "0",
+          "nova": {
+            "comment": "Using rem-based space tokens ends up causing subpixel rendering issues that cause the icon to look uncentered",
+            "value": "8px"
+          }
+        }
+      }
     }
   },
   "icon": {
@@ -83,6 +139,15 @@
       "value": "{icon.color.information}"
     },
     "container": {
+      "align-items": {
+        "value": {
+          "default": "center",
+          "nova": {
+            "comment": "There is no equivalent value for this token in Figma",
+            "value": "flex-start"
+          }
+        }
+      },
       "border": {
         "@base": {
           "value": {
@@ -97,7 +162,49 @@
           "value": "transparent"
         },
         "radius": {
-          "value": "{border.radius.circle}"
+          "value": {
+            "default": "{border.radius.circle}",
+            "nova": {
+              "comment": "There is no equivalent value for this token in Figma",
+              "value": "calc({message-bar.border.radius} - 1px)"
+            }
+          }
+        },
+        "radius-start-start": {
+          "value": {
+            "default": "{message-bar.icon.container.border.radius}",
+            "nova": {
+              "comment": "There is no equivalent value for this token in Figma",
+              "value": "{message-bar.icon.container.border.radius}"
+            }
+          }
+        },
+        "radius-start-end": {
+          "value": {
+            "default": "{message-bar.icon.container.border.radius}",
+            "nova": {
+              "comment": "There is no equivalent value for this token in Figma",
+              "value": "0"
+            }
+          }
+        },
+        "radius-end-start": {
+          "value": {
+            "default": "{message-bar.icon.container.border.radius}",
+            "nova": {
+              "comment": "There is no equivalent value for this token in Figma",
+              "value": "{message-bar.icon.container.border.radius}"
+            }
+          }
+        },
+        "radius-end-end": {
+          "value": {
+            "default": "{message-bar.icon.container.border.radius}",
+            "nova": {
+              "comment": "There is no equivalent value for this token in Figma",
+              "value": "0"
+            }
+          }
         }
       },
       "height": {
@@ -105,7 +212,7 @@
           "default": "min-content",
           "nova": {
             "comment": "There is no equivalent value for this token in Figma",
-            "value": "{message-bar.icon.size}"
+            "value": "auto"
           }
         }
       },
@@ -150,6 +257,15 @@
               "comment": "There is no equivalent value for this token in Figma",
               "value": "1px"
             }
+          }
+        }
+      },
+      "padding-block-start": {
+        "value": {
+          "default": "{message-bar.icon.container.padding.@base}",
+          "nova": {
+            "comment": "There is no equivalent value for this token in Figma",
+            "value": "calc({space.small} + {space.small})"
           }
         }
       }

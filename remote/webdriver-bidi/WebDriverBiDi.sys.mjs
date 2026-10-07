@@ -154,11 +154,10 @@ export class WebDriverBiDi {
       }
     }
 
-    this.#session = new lazy.WebDriverSession(
-      capabilities,
-      flags,
-      sessionlessConnection
-    );
+    this.#session = new lazy.WebDriverSession(capabilities, flags, {
+      connection: sessionlessConnection,
+      useDedicatedContainer: this.#agent.isDynamicStartRunning,
+    });
 
     // Run new session steps for WebDriver BiDi.
     this.#newSessionAlgorithm(this.#session, flags);

@@ -4,8 +4,8 @@ intervals of fewer than approximately 6 hours. This chapter describes
 purposes:
 
 - [Interval Time Type and
-  Constants](#Interval_Time_Type_and_Constants)
-- [Interval Functions](#Interval_Functions)
+  Constants](#interval-time-type-and-constants)
+- [Interval Functions](#interval-functions)
 
 (interval-time-type-and-constants)=
 
@@ -37,11 +37,11 @@ the interval timer at the time it was sampled.
 Interval timing functions are divided into three groups:
 
 - [Getting the Current Interval and Ticks Per
-  Second](#Getting_the_Current_Interval_and_Ticks_Per_Second)
+  Second](#getting-the-current-interval-and-ticks-per-second)
 - [Converting Standard Clock Units to Platform-Dependent
-  Intervals](#Converting_Standard_Clock_Units_to_Platform-Dependent_Intervals)
+  Intervals](#converting-standard-clock-units-to-platform-dependent-intervals)
 - [Converting Platform-Dependent Intervals to Standard Clock
-  Units](#Converting_Platform-Dependent_Intervals_to_Standard_Clock_Units)
+  Units](#converting-platform-dependent-intervals-to-standard-clock-units)
 
 (getting-the-current-interval-and-ticks-per-second)=
 

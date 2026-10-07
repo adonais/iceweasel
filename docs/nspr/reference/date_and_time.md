@@ -20,13 +20,13 @@ functions to convert time values between the two.
 
 Note that absolute and clock times are not normally used in timing
 operations. For functions that deal with the measurement of elapsed time
-and with timeouts, see [Interval Timing](Interval_Timing).
+and with timeouts, see [Interval Timing](interval_timing.md).
 
 - [Macros for Time Unit
-  Conversion](#Macros_for_Time_Unit_Conversion)
-- [Types and Constants](#Types_and_Constants)
+  Conversion](#macros-for-time-unit-conversion)
+- [Types and Constants](#types-and-constants)
 - [Time Parameter Callback
-  Functions](#Time_Parameter_Callback_Functions)
+  Functions](#time-parameter-callback-functions)
 - [Functions](#Functions)
 
 (macros-for-time-unit-conversion)=

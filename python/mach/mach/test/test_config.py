@@ -1,7 +1,6 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
-import sys
 import unittest
 from contextlib import redirect_stdout
 from io import StringIO
@@ -148,8 +147,7 @@ class TestConfigSettings(unittest.TestCase):
         a = s.a
 
         # Assigning an undeclared setting raises.
-        exc_type = AttributeError if sys.version_info < (3, 0) else KeyError
-        with self.assertRaises(exc_type):
+        with self.assertRaises(KeyError):
             a.undefined = True
 
         with self.assertRaises(KeyError):

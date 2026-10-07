@@ -5,7 +5,7 @@
 use api::ColorF;
 use api::units::*;
 
-use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState, PatternKind, PatternShaderInput, PatternTextureInput};
+use crate::pattern::{Pattern, PatternBuilder, PatternBuilderState, PatternKind, PatternShaderInput, PatternTextureInput};
 use crate::render_task_graph::RenderTaskId;
 use crate::renderer::BlendMode;
 
@@ -26,9 +26,7 @@ pub struct BackdropPattern {
 impl PatternBuilder for BackdropPattern {
     fn build(
         &self,
-        _sub_rect: Option<DeviceRect>,
-        _offset: LayoutVector2D,
-        _ctx: &PatternBuilderContext,
+        _pattern_rect: &LayoutRect,
         state: &mut PatternBuilderState,
     ) -> Pattern {
         // See fetch in ps_quad_backdrop.glsl.

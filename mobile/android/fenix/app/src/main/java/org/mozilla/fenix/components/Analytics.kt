@@ -42,6 +42,7 @@ import org.mozilla.fenix.crashes.CrashFactCollector
 import org.mozilla.fenix.crashes.NimbusExperimentDataProvider
 import org.mozilla.fenix.crashes.ReleaseRuntimeTagProvider
 import org.mozilla.fenix.crashes.crashReportOption
+import org.mozilla.fenix.ext.getCustomGleanServerUrlIfAvailable
 import org.mozilla.fenix.perf.lazyMonitored
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.geckoview.BuildConfig.MOZ_APP_BUILDID
@@ -118,6 +119,14 @@ class Analytics(
                 crashReportingIntentFlags,
             )
 
+        val gleanServerEndpoint =
+            if (Config.channel.isNightlyOrDebug) {
+                // for testing, if custom glean server url is set in the secret menu, use it to initialize Glean
+                getCustomGleanServerUrlIfAvailable(context)
+            } else {
+                null
+            }
+
         CrashReporter(
             context = context,
             services = services,
@@ -129,6 +138,7 @@ class Analytics(
                         appVersion = MOZ_APP_VERSION,
                         appBuildId = MOZ_APP_BUILDID,
                         isUploadEnabled = settings.isTelemetryEnabled,
+                        serverEndpoint = gleanServerEndpoint,
                     )
                 ),
             shouldPrompt = CrashReporter.Prompt.ALWAYS,

@@ -8,7 +8,10 @@
 // where the mappings are put in the `sections` property.
 
 add_task(async function () {
-  const dbg = await initDebugger("doc-sourcemaps.html", "xbundle.js");
+  const dbg = await initDebugger(
+    "doc-sourcemaps-with-sections.html",
+    "xbundle.js"
+  );
   await selectSource(dbg, "xbundle.js");
   await waitForSelectedSource(dbg, "xbundle.js");
 

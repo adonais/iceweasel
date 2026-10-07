@@ -2377,23 +2377,24 @@ nsDOMWindowUtils::SendSelectionSetEvent(uint32_t aOffset, uint32_t aLength,
   *aResult = false;
 
   // get the widget to send the event to
-  nsCOMPtr<nsIWidget> widget = GetWidget();
-  if (!widget) {
+  const nsCOMPtr<nsIWidget> widget = GetWidget();
+  if (!widget) [[unlikely]] {
     return NS_ERROR_FAILURE;
   }
 
-  WidgetSelectionEvent selectionEvent(true, eSetSelection, widget);
-  InitEvent(selectionEvent);
+  const RefPtr<TextEventDispatcher> dispatcher =
+      widget->GetTextEventDispatcher();
+  if (NS_WARN_IF(!dispatcher)) [[unlikely]] {
+    return NS_ERROR_FAILURE;
+  }
 
-  selectionEvent.mOffset = aOffset;
-  selectionEvent.mLength = aLength;
-  selectionEvent.mReversed = (aAdditionalFlags & SELECTION_SET_FLAG_REVERSE);
-  selectionEvent.mExpandToClusterBoundary =
-      (aAdditionalFlags & SELECTION_EXPAND_TO_CLUSTER_BOUNDARY);
-
-  widget->DispatchEvent(&selectionEvent);
-
-  *aResult = selectionEvent.mSucceeded;
+  *aResult = dispatcher->DispatchSetSelectionEvent(
+      aOffset, aLength,
+      aAdditionalFlags & SELECTION_EXPAND_TO_CLUSTER_BOUNDARY
+          ? ExpandToClusterBoundary::Yes
+          : ExpandToClusterBoundary::No,
+      aAdditionalFlags & SELECTION_SET_FLAG_REVERSE ? RangeDirection::Reversed
+                                                    : RangeDirection::Normal);
   return NS_OK;
 }
 
@@ -2405,8 +2406,15 @@ nsDOMWindowUtils::SendContentCommandEvent(const nsAString& aType,
                                           const nsAString& aReplaceSrcString,
                                           uint32_t aAdditionalFlags) {
   // get the widget to send the event to
-  nsCOMPtr<nsIWidget> widget = GetWidget();
-  if (!widget) return NS_ERROR_FAILURE;
+  const nsCOMPtr<nsIWidget> widget = GetWidget();
+  if (!widget) [[unlikely]] {
+    return NS_ERROR_FAILURE;
+  }
+  const RefPtr<TextEventDispatcher> dispatcher =
+      widget->GetTextEventDispatcher();
+  if (!dispatcher) [[unlikely]] {
+    return NS_ERROR_FAILURE;
+  }
 
   EventMessage msg;
   if (aType.EqualsLiteral("cut")) {
@@ -2439,12 +2447,14 @@ nsDOMWindowUtils::SendContentCommandEvent(const nsAString& aType,
     event.mSelection.mReplaceSrcString = aReplaceSrcString;
     event.mSelection.mOffset = aOffset;
     event.mSelection.mPreventSetSelection =
-        !!(aAdditionalFlags & CONTENT_COMMAND_FLAG_PREVENT_SET_SELECTION);
+        aAdditionalFlags & CONTENT_COMMAND_FLAG_PREVENT_SET_SELECTION
+            ? PreventSetSelection::Yes
+            : PreventSetSelection::No;
   } else if (msg == eContentCommandPasteTransferable) {
     event.mTransferable = aTransferable;
   }
 
-  widget->DispatchEvent(&event);
+  dispatcher->DispatchContentCommandEvent(event);
   return NS_OK;
 }
 

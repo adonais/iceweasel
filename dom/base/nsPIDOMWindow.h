@@ -259,44 +259,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
    */
   void SetHasSMILTimeEventListeners() { mMayHaveSMILTimeEventListener = true; }
 
-  /**
-   * Call this to check whether some node (this window, its document,
-   * or content in that document) has a beforeinput event listener.
-   * Returing false may be wrong if some nodes have come from another document
-   * with `Document.adoptNode`.
-   */
-  bool HasBeforeInputEventListenersForTelemetry() const {
-    return mMayHaveBeforeInputEventListenerForTelemetry;
-  }
-
-  /**
-   * Call this to indicate that some node (this window, its document,
-   * or content in that document) has a beforeinput event listener.
-   */
-  void SetHasBeforeInputEventListenersForTelemetry() {
-    mMayHaveBeforeInputEventListenerForTelemetry = true;
-  }
-
-  /**
-   * Call this to check whether some node (The document, or content in the
-   * document) has been observed by web apps with a mutation observer.
-   * (i.e., `MutationObserver.observe()` called by chrome script and addon's
-   * script does not make this returns true).
-   * Returing false may be wrong if some nodes have come from another document
-   * with `Document.adoptNode`.
-   */
-  bool MutationObserverHasObservedNodeForTelemetry() const {
-    return mMutationObserverHasObservedNodeForTelemetry;
-  }
-
-  /**
-   * Call this to indicate that some node (The document, or content in the
-   * document) is observed by web apps with a mutation observer.
-   */
-  void SetMutationObserverHasObservedNodeForTelemetry() {
-    mMutationObserverHasObservedNodeForTelemetry = true;
-  }
-
   // Sets the event for window.event. Does NOT take ownership, so
   // the caller is responsible for clearing the event before the
   // event gets deallocated. Pass nullptr to set window.event to
@@ -688,10 +650,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   bool mMayHavePointerRawUpdateEventListener = false;
   bool mMayHaveTransitionEventListener = false;
   bool mMayHaveSMILTimeEventListener = false;
-  // Only used for telemetry probes.  This may be wrong if some nodes have
-  // come from another document with `Document.adoptNode`.
-  bool mMayHaveBeforeInputEventListenerForTelemetry = false;
-  bool mMutationObserverHasObservedNodeForTelemetry = false;
 
   // Our inner window's outer window.
   nsCOMPtr<nsPIDOMWindowOuter> mOuterWindow;
@@ -1051,6 +1009,7 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
    *
    * Outer windows only.
    */
+  MOZ_CAN_RUN_SCRIPT
   virtual nsresult OpenNoNavigate(const nsACString& aUrl,
                                   const nsAString& aName,
                                   const nsAString& aOptions,
@@ -1089,10 +1048,12 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   // aLoadState will be passed on through to the windowwatcher.
   // aForceNoOpener will act just like a "noopener" feature in aOptions except
   //                will not affect any other window features.
+  MOZ_CAN_RUN_SCRIPT
   virtual nsresult Open(const nsACString& aUrl, const nsAString& aName,
                         const nsAString& aOptions,
                         nsDocShellLoadState* aLoadState, bool aForceNoOpener,
                         mozilla::dom::BrowsingContext** _retval) = 0;
+  MOZ_CAN_RUN_SCRIPT
   virtual nsresult OpenDialog(const nsACString& aUrl, const nsAString& aName,
                               const nsAString& aOptions, nsIArray* aArguments,
                               mozilla::dom::BrowsingContext** _retval) = 0;

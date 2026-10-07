@@ -6,6 +6,7 @@ package org.mozilla.fenix.tabgroups
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -38,12 +39,13 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import mozilla.components.browser.state.state.createTab
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.TabThumbnailImageData
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
+import org.mozilla.fenix.tabstray.data.createTab
+import org.mozilla.fenix.tabstray.ui.tabitems.MediaPlaybackIndicator
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemSelectionState
 import org.mozilla.fenix.tabstray.ui.tabitems.tablistItemThumbnailBorder
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -110,7 +112,10 @@ fun TabGroupRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static200),
     ) {
-        TabGroupListThumbnail(thumbnails = tabGroup.thumbnails)
+        TabGroupListThumbnail(
+            thumbnails = tabGroup.thumbnails,
+            isMediaActive = tabGroup.isMediaActive,
+        )
 
         TabGroupTextContent(tabGroup = tabGroup, modifier = Modifier.weight(1f))
 
@@ -164,6 +169,7 @@ private fun TabGroupTextContent(
 @Composable
 private fun TabGroupListThumbnail(
     thumbnails: List<TabThumbnailImageData>,
+    isMediaActive: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -172,30 +178,50 @@ private fun TabGroupListThumbnail(
         shape = MaterialTheme.shapes.extraSmall,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
-        ThumbnailsGridView(
-            thumbnails = thumbnails,
-            modifier =
-                Modifier.clip(MaterialTheme.shapes.extraSmall)
-                    .padding(tablistItemThumbnailBorder.width) // inset to prevent spillover
-                    .fillMaxSize(),
-        )
+        Box {
+            ThumbnailsGridView(
+                thumbnails = thumbnails,
+                modifier =
+                    Modifier.clip(MaterialTheme.shapes.extraSmall)
+                        .padding(tablistItemThumbnailBorder.width) // inset to prevent spillover
+                        .fillMaxSize(),
+            )
+
+            MediaPlaybackIndicator(isMediaActive = isMediaActive)
+        }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun TabGroupRowPreview() {
-    val tab = TabsTrayItem.Tab(createTab("test1"))
-    val tab2 = TabsTrayItem.Tab(createTab("test2"))
-    val tab3 = TabsTrayItem.Tab(createTab("test3"))
-    val tab4 = TabsTrayItem.Tab(createTab("test4"))
+    val tab = createTab(url = "test1")
+    val tab2 = createTab(url = "test2")
+    val tab3 = createTab(url = "test3")
+    val tab4 = createTab(url = "test4")
 
     TabGroupRow(
         tabGroup =
             TabsTrayItem.TabGroup(
                 title = "Tab Group",
                 theme = TabGroupTheme.default,
-                tabs = mutableListOf(tab, tab2, tab3, tab4),
+                tabs = listOf(tab, tab2, tab3, tab4),
+                closed = false,
+            ),
+        onClick = {},
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TabGroupRowMediaPreview() {
+    val tab = createTab(url = "test1", isMediaActive = true)
+    TabGroupRow(
+        tabGroup =
+            TabsTrayItem.TabGroup(
+                title = "Tab Group",
+                theme = TabGroupTheme.default,
+                tabs = listOf(tab),
                 closed = false,
             ),
         onClick = {},

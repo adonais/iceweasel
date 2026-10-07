@@ -46,6 +46,7 @@ dependencies {
     testImplementation project(':components:support-test-libstate')
 
     testImplementation ComponentsDependencies.mozilla_appservices_full_megazord_libsForTests
+    testImplementation ComponentsDependencies.mozilla_appservices_init_rust_components
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
     testImplementation libs.kotlin.test

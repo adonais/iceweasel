@@ -1,0 +1,9 @@
+---
+root:
+  items:
+    - type: rect
+      bounds: [0, 0, 80, 64]
+      color: blue
+    - type: rect
+      bounds: [3, 3, 70, 1]
+      color: red

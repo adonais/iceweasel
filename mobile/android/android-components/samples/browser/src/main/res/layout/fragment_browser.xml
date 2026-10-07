@@ -62,8 +62,7 @@
             android:background="#FFFFFFFF"
             android:elevation="10dp"
             android:paddingBottom="55dp"
-            android:visibility="gone"
-            tools:ignore="MozMultipleConstraintLayoutsAndCustomViews" />
+            android:visibility="gone" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/readerViewAppearanceButton"
@@ -73,6 +72,7 @@
             android:layout_marginLeft="16dp"
             android:layout_marginRight="16dp"
             android:layout_marginBottom="72dp"
+            android:contentDescription="@string/mozac_reader_view_appearance_description"
             android:src="@drawable/mozac_ic_reader_view_24"
             android:visibility="gone" />
 

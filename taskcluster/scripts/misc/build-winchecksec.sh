@@ -8,20 +8,32 @@ cd $MOZ_FETCHES_DIR/winchecksec
 SUFFIX=
 
 case "$1" in
+x86_64-unknown-linux-gnu)
+    export PATH="$MOZ_FETCHES_DIR/clang/bin:$PATH"
+
+    CMAKE_FLAGS="
+      -DCMAKE_C_COMPILER=clang
+      -DCMAKE_CXX_COMPILER=clang++
+      -DCMAKE_SYSROOT=$MOZ_FETCHES_DIR/sysroot
+      -DCMAKE_EXE_LINKER_FLAGS_INIT=-fuse-ld=lld
+      -DCMAKE_SHARED_LINKER_FLAGS_INIT=-fuse-ld=lld
+    "
+    ;;
 x86_64-pc-windows-msvc)
     SUFFIX=.exe
     export PATH="$MOZ_FETCHES_DIR/clang/bin:$PATH"
 
     . $GECKO_PATH/taskcluster/scripts/misc/vs-setup.sh
 
-    # Patch pe-parse because clang-cl doesn't support /analyze.
+    # Patch pe-parse because clang-cl doesn't support /analyze, and clang 23
+    # warns about its unused to_string template under /W4 /WX.
     patch -p1 <<'EOF'
 --- a/pe-parse/cmake/compilation_flags.cmake
 +++ b/pe-parse/cmake/compilation_flags.cmake
 @@ -1,5 +1,5 @@
  if (MSVC)
 -  list(APPEND DEFAULT_CXX_FLAGS /W4 /analyze)
-+  list(APPEND DEFAULT_CXX_FLAGS /W4)
++  list(APPEND DEFAULT_CXX_FLAGS /W4 -Wno-unused-template)
 
    if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
      list(APPEND DEFAULT_CXX_FLAGS /Zi)

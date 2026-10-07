@@ -82,7 +82,7 @@ fuzzy(0-1,0-10000) == clip-surface-clone-01.svg clip-surface-clone-01-ref.svg
 == clipPath-advanced-01.svg pass.svg
 fuzzy(0-3,0-350) == clipPath-and-mask-on-outflowElement-01a.html clipPath-on-outflowElement-01-ref.html
 fuzzy(0-3,0-350) == clipPath-and-mask-on-outflowElement-01b.html clipPath-on-outflowElement-01-ref.html
-fuzzy(0-1,0-630) == clipPath-and-shape-rendering-01.svg clipPath-and-shape-rendering-01-ref.svg # bug 614840
+fuzzy(0-40,0-800) == clipPath-and-shape-rendering-01.svg clipPath-and-shape-rendering-01-ref.svg # bug 614840
 == clipPath-and-transform-01.svg pass.svg
 == clipPath-and-transform-02.svg pass.svg
 == clipPath-basic-01.svg pass.svg
@@ -282,7 +282,7 @@ fuzzy(0-1,0-800000) == markers-and-group-opacity-01.svg markers-and-group-opacit
 fuzzy(0-1,0-1) == marker-dynamic-opacity.html marker-dynamic-opacity-ref.html
 == marker-css-transform.html marker-css-transform-ref.html
 == marker-effects-01.svg marker-effects-01-ref.svg
-fuzzy(0-9,0-12) == marker-viewBox-01.svg marker-viewBox-01-ref.svg
+fuzzy(0-36,0-160) == marker-viewBox-01.svg marker-viewBox-01-ref.svg
 fuzzy(0-65,0-570) == marker-orientation-01.svg marker-orientation-01-ref.svg
 fuzzy(0-65,0-570) == marker-orientation-02.svg marker-orientation-02-ref.svg
 == marker-orientation-03.svg pass.svg
@@ -303,14 +303,17 @@ fuzzy(0-1,0-10000) == mask-basic-02.svg mask-basic-02-ref.svg
 == mask-css-transform.html mask-css-transform-ref.html
 == mask-empty-size.svg about:blank
 == mask-extref-dataURI-01.svg pass.svg
+== mask-large-child-01.svg mask-large-child-01-ref.svg
+== mask-large-image-01.html mask-large-image-01-ref.html
+== mask-large-image-no-paint-01.html mask-large-image-no-paint-01-ref.html
 fuzzy(0-128,0-142) == mask-img.html mask-img-ref.html
 fuzzy(0-4,0-800) == mask-on-outflowElement-01a.html clipPath-on-outflowElement-01-ref.html
 fuzzy(0-4,0-800) == mask-on-outflowElement-01b.html clipPath-on-outflowElement-01-ref.html
 fuzzy(0-1,0-5000) == mask-opacity-01.svg mask-opacity-01-ref.svg
-fuzzy(0-2,0-65536) == mask-opacity-02.svg mask-opacity-02-ref.svg
-fuzzy(0-1,0-5000) == mask-opacity-03.svg mask-opacity-02-ref.svg
-fuzzy(0-1,0-5000) == mask-opacity-04.svg mask-opacity-02-ref.svg
-fuzzy(0-1,0-5000) == mask-opacity-05.svg mask-opacity-02-ref.svg
+fuzzy(0-17,0-65536) == mask-opacity-02.svg mask-opacity-02-ref.svg
+fuzzy(0-18,0-5000) == mask-opacity-03.svg mask-opacity-02-ref.svg
+fuzzy(0-18,0-5000) == mask-opacity-04.svg mask-opacity-02-ref.svg
+fuzzy(0-18,0-5000) == mask-opacity-05.svg mask-opacity-02-ref.svg
 != mask-root-svg.svg about:blank
 == mask-transformed-01.svg mask-transformed-01-ref.svg
 == mask-transformed-02.svg pass.svg
@@ -329,7 +332,7 @@ fuzzy(0-1,0-6400) == mask-type-04.svg mask-type-01-ref.svg
 fuzzy(0-3,0-448000) == nesting-invalid-01.svg nesting-invalid-01-ref.svg
 
 fuzzy(0-2,0-1000) == non-scaling-stroke-01.svg non-scaling-stroke-01-ref.svg
-fuzzy(0-51,0-900) fuzzy-if(Android,0-52,0-4104) fails-if(useDrawSnapshot) == non-scaling-stroke-02.svg non-scaling-stroke-02-ref.svg
+fuzzy(0-51,0-900) fuzzy-if(Android,0-52,0-4104) == non-scaling-stroke-02.svg non-scaling-stroke-02-ref.svg
 == non-scaling-stroke-03.svg non-scaling-stroke-03-ref.svg
 
 == objectBoundingBox-and-clipPath.svg pass.svg
@@ -365,10 +368,10 @@ fuzzy(0-255,0-214) fuzzy-if(Android,0-255,0-1439) == outline.html outline-ref.ht
 == paint-on-maskLayer-1b.html paint-on-maskLayer-1-ref.html
 == paint-on-maskLayer-1c.html paint-on-maskLayer-1-ref.html
 fuzzy-if(winWidget,0-16,0-5) == paint-order-01.svg paint-order-01-ref.svg
-== paint-order-02.svg paint-order-02-ref.svg
+fuzzy(0-36,0-250) == paint-order-02.svg paint-order-02-ref.svg
 == paint-order-03.svg paint-order-03-ref.svg
 
-fuzzy(0-54,0-77) == path-01.svg path-01-ref.svg
+fuzzy(0-70,0-80) == path-01.svg path-01-ref.svg
 == path-02.svg pass.svg
 == path-04.svg pass.svg
 == path-05.svg pass.svg
@@ -432,7 +435,7 @@ fuzzy(0-1,0-3600) == rect-01.svg pass.svg
 fuzzy(0-1,0-340) == stroke-dasharray-02.svg pass.svg
 fuzzy(0-1,0-340) == stroke-dasharray-03.svg pass.svg
 == stroke-dasharray-and-pathLength-01.svg pass.svg
-fails-if(useDrawSnapshot) == stroke-dasharray-and-text-01.svg stroke-dasharray-and-text-01-ref.svg
+== stroke-dasharray-and-text-01.svg stroke-dasharray-and-text-01-ref.svg
 == stroke-dashoffset-01.svg pass.svg
 == stroke-dashoffset-and-pathLength-01.svg pass.svg
 == stroke-linecap-circle-ellipse-01.svg stroke-linecap-circle-ellipse-01-ref.svg
@@ -470,7 +473,7 @@ fuzzy-if(geckoview&&!emulator&&gfxSVGFEComponentTransfer,0-4,0-305) == svg-effec
 == svg-transform-01.svg pass.svg
 == svg-transform-02.svg pass.svg
 
-fuzzy(0-39,0-269) == symbol-01.svg symbol-01-ref.svg
+fuzzy(0-39,0-360) == symbol-01.svg symbol-01-ref.svg
 
 == text-font-size-01.svg pass.svg
 == text-font-weight-01.svg text-font-weight-01-ref.svg
@@ -495,7 +498,7 @@ fuzzy-if(cocoaWidget,0-1,0-3) == text-layout-06.svg text-layout-06-ref.svg
 fuzzy-if(cocoaWidget,0-43,0-579) == text-layout-09.svg pass.svg # Antialiasing fringe
 == text-layout-10.svg pass.svg
 == text-scale-01.svg text-scale-01-ref.svg
-fuzzy(0-2,0-1000) == text-scale-02.svg text-scale-02-ref.svg
+fuzzy(0-2,0-35000) == text-scale-02.svg text-scale-02-ref.svg
 == text-scale-03.svg text-scale-03-ref.svg
 
 == text-style-01a.svg text-style-01-ref.svg

@@ -174,3 +174,17 @@ if CONFIG['OS_TARGET'] == 'Android':
     ASFLAGS += [
         '-D__ANDROID__'
     ]
+
+LICENSES += ["vp8"]
+LICENSES["vp8"].title = "Google VP8 License"
+# Unlike the other vendored libraries, this cannot point at the library's own
+# LICENSE: the notice is that file plus the VP8 patent grant, which upstream
+# ships separately in libvpx/PATENTS.
+LICENSES["vp8"].text = "LICENSE-NOTICE.txt"
+LICENSES["vp8"].notice = """
+<p>This license applies to certain files in the directory <code>media/libvpx</code>.</p>
+"""
+
+LICENSED_UNDER += [
+    "vp8",
+]

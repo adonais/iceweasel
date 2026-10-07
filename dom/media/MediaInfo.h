@@ -8,6 +8,7 @@
 #include "ImageTypes.h"
 #include "MediaData.h"
 #include "TimeUnits.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
@@ -78,7 +79,9 @@ struct AacCodecSpecificData {
 
   // The total number of frames of the media, that is, excluding the encoder
   // delay and the padding of the last packet, that must be discarded.
-  uint64_t mMediaFrameCount{0};
+  // Unset when the exact count is unknown (e.g. Matroska has no frame table
+  // and counting would require reading the whole file).
+  Maybe<uint64_t> mMediaFrameCount;
 
   // The bytes of the ES_Descriptor field parsed out of esds box. We store
   // this as a blob as some decoders want this.

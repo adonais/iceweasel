@@ -33,6 +33,15 @@ function run_test() {
 }
 """
 
+SIMPLE_ENVCHECK_TEST = """
+function run_test() {
+  Assert.equal(
+    Services.env.get("FAKE_ENV_VAR_TO_TEST"),
+    "a value with spaces"
+  );
+}
+"""
+
 SIMPLE_UNCAUGHT_REJECTION_TEST = """
 function run_test() {
   Promise.reject(new Error("Test rejection."));
@@ -487,7 +496,7 @@ class XPCShellTestsTests(unittest.TestCase):
         self.log = six.StringIO()
         self.tempdir = tempfile.mkdtemp()
         logger = structured.commandline.setup_logging(
-            "selftest%s" % id(self), {}, {"tbpl": self.log}
+            f"selftest{id(self)}", {}, {"tbpl": self.log}
         )
         self.x = XPCShellTests(logger)
 
@@ -505,14 +514,15 @@ class XPCShellTestsTests(unittest.TestCase):
             f.write(contents)
         return fullpath
 
-    def writeManifest(self, tests, prefs=[]):
+    def writeManifest(self, tests, prefs=[], environment=[]):
         """
         Write an xpcshell.toml in the temp directory and set
         self.manifest to its pathname. |tests| is a list containing
         either strings (for test names), or tuples with a test name
         as the first element and manifest conditions as the following
         elements. |prefs| is an optional list of prefs in the form of
-        "prefname=prefvalue" strings.
+        "prefname=prefvalue" strings. |environment| is an optional list of
+        environment variables in the form of "NAME=value" strings.
         """
         testlines = []
         for t in tests:
@@ -522,7 +532,7 @@ class XPCShellTestsTests(unittest.TestCase):
         prefslines = []
         for p in prefs:
             # Append prefs lines as indented inside "prefs=" manifest option.
-            prefslines.append('  "%s",' % p)
+            prefslines.append(f'  "{p}",')
 
         val = """
 [DEFAULT]
@@ -532,6 +542,10 @@ prefs = [
 """
         val += "\n".join(prefslines)
         val += "]\n"
+        if environment:
+            val += "environment = [\n"
+            val += "\n".join(f'  "{e}",' for e in environment)
+            val += "\n]\n"
         val += "\n".join(testlines)
         self.manifest = self.writeFile("xpcshell.toml", val)
 
@@ -564,12 +578,11 @@ prefs = [
         self.assertEqual(
             expected,
             self.x.runTests(kwargs),
-            msg="""Tests should have %s, log:
+            msg="""Tests should have {}, log:
 ========
-%s
+{}
 ========
-"""
-            % ("passed" if expected else "failed", self.log.getvalue()),
+""".format("passed" if expected else "failed", self.log.getvalue()),
         )
 
     def _assertLog(self, s, expected):
@@ -577,11 +590,10 @@ prefs = [
         self.assertEqual(
             expected,
             s in l,
-            msg="""Value %s %s in log:
+            msg="""Value {} {} in log:
 ========
-%s
-========"""
-            % (s, "expected" if expected else "not expected", l),
+{}
+========""".format(s, "expected" if expected else "not expected", l),
         )
 
     def assertInLog(self, s):
@@ -641,6 +653,22 @@ prefs = [
         self.assertInLog("Per-test extra prefs will be set:")
         self.assertInLog("fake.pref.to.test=true")
 
+    def testEnvironmentInManifest(self):
+        """
+        Check environment variables with spaces in their value are passed
+        through from xpcshell manifests.
+        """
+        self.writeFile("test_env.js", SIMPLE_ENVCHECK_TEST)
+        self.writeManifest(
+            tests=["test_env.js"],
+            environment=["FAKE_ENV_VAR_TO_TEST=a value with spaces"],
+        )
+
+        self.assertTestResult(True)
+        self.assertInLog(TEST_PASS_STRING)
+        self.assertNotInLog(TEST_FAIL_STRING)
+        self.assertEqual(1, self.x.passCount)
+
     def testPrefsInManifestNonVerbose(self):
         """
         Check prefs configuration are not logged in non verbose mode.
@@ -681,13 +709,11 @@ prefs = [
         unknown_pat = r"#\d\d\: \?\?\?\[.* \+0x[a-f0-9]+\]"
         self.assertFalse(
             any(re.search(unknown_pat, line) for line in log_lines),
-            "An stack frame without symbols was found in\n%s"
-            % pprint.pformat(log_lines),
+            f"An stack frame without symbols was found in\n{pprint.pformat(log_lines)}",
         )
         self.assertTrue(
             any(re.search(line_pat, line) for line in log_lines),
-            "No line resembling a stack frame was found in\n%s"
-            % pprint.pformat(log_lines),
+            f"No line resembling a stack frame was found in\n{pprint.pformat(log_lines)}",
         )
 
     def testChildPass(self):
@@ -1237,7 +1263,7 @@ add_test({
         """
         manifest = []
         for i in range(0, 10):
-            filename = "test_pass_%d.js" % i
+            filename = f"test_pass_{i}.js"
             self.writeFile(filename, SIMPLE_PASSING_TEST)
             manifest.append(filename)
 

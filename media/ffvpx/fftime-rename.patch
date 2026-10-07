@@ -1,0 +1,48 @@
+diff --git a/media/ffvpx/libavutil/time.c b/media/ffvpx/libavutil/time.c
+--- a/media/ffvpx/libavutil/time.c
++++ b/media/ffvpx/libavutil/time.c
+@@ -33,7 +33,7 @@
+ #include <windows.h>
+ #endif
+
+-#include "time.h"
++#include "fftime.h"
+ #include "error.h"
+
+ int64_t av_gettime(void)
+diff --git a/media/ffvpx/libavutil/eval.c b/media/ffvpx/libavutil/eval.c
+--- a/media/ffvpx/libavutil/eval.c
++++ b/media/ffvpx/libavutil/eval.c
+@@ -37,7 +37,7 @@
+ #include "mathematics.h"
+ #include "mem.h"
+ #include "sfc64.h"
+-#include "time.h"
++#include "fftime.h"
+ #include "avstring.h"
+ #include "reverse.h"
+
+diff --git a/media/ffvpx/libavutil/parseutils.c b/media/ffvpx/libavutil/parseutils.c
+--- a/media/ffvpx/libavutil/parseutils.c
++++ b/media/ffvpx/libavutil/parseutils.c
+@@ -31,7 +31,7 @@
+ #include "random_seed.h"
+ #include "time_internal.h"
+ #include "parseutils.h"
+-#include "time.h"
++#include "fftime.h"
+
+ #ifdef TEST
+
+diff --git a/media/ffvpx/libavcodec/dxva2.c b/media/ffvpx/libavcodec/dxva2.c
+--- a/media/ffvpx/libavcodec/dxva2.c
++++ b/media/ffvpx/libavcodec/dxva2.c
+@@ -27,7 +27,7 @@
+ #include "libavutil/common.h"
+ #include "libavutil/log.h"
+ #include "libavutil/mem.h"
+-#include "libavutil/time.h"
++#include "libavutil/fftime.h"
+
+ #include "avcodec.h"
+ #include "decode.h"

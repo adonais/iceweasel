@@ -246,7 +246,7 @@ static void IncrementScaleRestyleCountIfNeeded(nsIFrame* aFrame,
     transform = nsStyleTransformMatrix::ReadTransforms(
         display->mTranslate, display->mRotate, display->mScale, nullptr,
         display->mTransform, refBox, AppUnitsPerCSSPixel(),
-        aFrame->Style()->EffectiveZoom());
+        aFrame->Style()->EffectiveZoom(), nsStyleTransformMatrix::Zoomed::Yes);
   }
 
   if (parentHasChildrenOnlyTransform) {

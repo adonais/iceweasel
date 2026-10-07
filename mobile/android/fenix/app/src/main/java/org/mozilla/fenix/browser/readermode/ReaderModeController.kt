@@ -27,7 +27,6 @@ class DefaultReaderModeController(
     private val readerViewFeature: ViewBoundFeatureWrapper<ReaderViewFeature>,
     private val readerViewControlsBar: View,
     private val isPrivate: Boolean = false,
-    private val isListenToPageEnabled: Boolean = false,
     private val onReaderModeChanged: () -> Unit = {},
 ) : ReaderModeController {
 
@@ -61,7 +60,7 @@ class DefaultReaderModeController(
     }
 
     override fun showControls() {
-        readerViewFeature.withFeature { it.showControls(isListenToPageEnabled) }
+        readerViewFeature.withFeature { it.showControls() }
         if (isPrivate) {
             // We need to update styles for private mode programmatically for now:
             // https://github.com/mozilla-mobile/android-components/issues/3400

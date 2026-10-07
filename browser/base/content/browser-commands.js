@@ -375,14 +375,17 @@ var BrowserCommands = {
     }
 
     // Keyboard shortcuts that would close a tab that is pinned select the first
-    // unpinned tab instead.
+    // visible unpinned tab instead.
     if (
       event &&
       (event.ctrlKey || event.metaKey || event.altKey) &&
       gBrowser.selectedTab.pinned
     ) {
-      if (gBrowser.visibleTabs.length > gBrowser.pinnedTabCount) {
-        gBrowser.tabContainer.selectedIndex = gBrowser.pinnedTabCount;
+      let firstVisibleUnpinnedTab = gBrowser.visibleTabs.find(
+        tab => !tab.pinned
+      );
+      if (firstVisibleUnpinnedTab) {
+        gBrowser.selectedTab = firstVisibleUnpinnedTab;
       }
       return;
     }

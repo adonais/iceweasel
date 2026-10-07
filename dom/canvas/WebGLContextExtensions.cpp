@@ -29,6 +29,7 @@ const char* GetExtensionName(const WebGLExtensionID ext) {
     WEBGL_EXTENSION_IDENTIFIER(EXT_disjoint_timer_query)
     WEBGL_EXTENSION_IDENTIFIER(EXT_float_blend)
     WEBGL_EXTENSION_IDENTIFIER(EXT_frag_depth)
+    WEBGL_EXTENSION_IDENTIFIER(EXT_polygon_offset_clamp)
     WEBGL_EXTENSION_IDENTIFIER(EXT_shader_texture_lod)
     WEBGL_EXTENSION_IDENTIFIER(EXT_sRGB)
     WEBGL_EXTENSION_IDENTIFIER(EXT_texture_compression_bptc)
@@ -145,6 +146,8 @@ RefPtr<ClientWebGLExtensionBase> ClientWebGLContext::GetExtension(
           return MakeRefPtr<ClientWebGLExtensionFloatBlend>(*this);
         case WebGLExtensionID::EXT_frag_depth:
           return MakeRefPtr<ClientWebGLExtensionFragDepth>(*this);
+        case WebGLExtensionID::EXT_polygon_offset_clamp:
+          return MakeRefPtr<ClientWebGLExtensionPolygonOffsetClamp>(*this);
         case WebGLExtensionID::EXT_shader_texture_lod:
           return MakeRefPtr<ClientWebGLExtensionShaderTextureLod>(*this);
         case WebGLExtensionID::EXT_sRGB:
@@ -273,6 +276,9 @@ bool WebGLContext::IsExtensionSupported(WebGLExtensionID ext) const {
 
     case WebGLExtensionID::EXT_frag_depth:
       return WebGLExtensionFragDepth::IsSupported(this);
+
+    case WebGLExtensionID::EXT_polygon_offset_clamp:
+      return WebGLExtensionPolygonOffsetClamp::IsSupported(this);
 
     case WebGLExtensionID::EXT_shader_texture_lod:
       return WebGLExtensionShaderTextureLod::IsSupported(this);
@@ -431,6 +437,9 @@ void WebGLContext::RequestExtension(const WebGLExtensionID ext,
       break;
     case WebGLExtensionID::EXT_frag_depth:
       slot = std::make_unique<WebGLExtensionFragDepth>(this);
+      break;
+    case WebGLExtensionID::EXT_polygon_offset_clamp:
+      slot = std::make_unique<WebGLExtensionPolygonOffsetClamp>(this);
       break;
     case WebGLExtensionID::EXT_shader_texture_lod:
       slot = std::make_unique<WebGLExtensionShaderTextureLod>(this);

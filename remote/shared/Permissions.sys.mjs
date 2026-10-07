@@ -106,8 +106,6 @@ permissions.set = function (descriptor, state, origin, userContextId) {
  *
  * @throws {InvalidArgumentError}
  *     Raised if an argument is of an invalid type or value.
- * @throws {UnsupportedOperationError}
- *     If a permission with <var>descriptor</var> is not supported.
  */
 permissions.validateDescriptor = function (descriptor) {
   lazy.assert.object(
@@ -119,13 +117,6 @@ permissions.validateDescriptor = function (descriptor) {
     permissionName,
     lazy.pprint`Expected descriptor "name" to be a string, got ${permissionName}`
   );
-
-  // Bug 1609427: PermissionDescriptor for "camera" and "microphone" are not yet implemented.
-  if (["camera", "microphone"].includes(permissionName)) {
-    throw new lazy.error.UnsupportedOperationError(
-      `"descriptor.name" "${permissionName}" is currently unsupported`
-    );
-  }
 };
 
 /**

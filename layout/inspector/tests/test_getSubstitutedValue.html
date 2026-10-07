@@ -1,0 +1,247 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Test InspectorUtils.getSubstitutedValue</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<code>InspectorUtils.getSubstitutedValue</code>
+
+<style>
+  :root {
+    font-size: 20px;
+  }
+
+  main {
+    --on-main: 2em;
+    --registered: 3em;
+    --registered-inherits: 4em;
+    --empty: ;
+  }
+
+  section {
+    --my-var: 1em;
+
+    &::after {
+      --my-var: 96px;
+    }
+  }
+
+  @property --registered {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 123px;
+  }
+
+  @property --registered-inherits {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 123px;
+  }
+</style>
+
+<main>
+  <section data-x="10" data-y="tomato">Section.80</section>
+</main>
+
+<script>
+add_task(async function() {
+  const { InspectorUtils } = SpecialPowers;
+  const test = ({expression, el = "", pseudo, expected}) => {
+    const outer = el.outerHTML;
+    is(
+      InspectorUtils.getSubstitutedValue(expression, el, pseudo),
+      expected,
+      `Got expected substituted value for "${expression}" on ${outer.substring(0, outer.indexOf(">") + 1)}${pseudo ? "::" + pseudo: ""}`
+    );
+  }
+
+  const sectionEl = document.querySelector("section");
+  const firstLiEl = document.querySelector("li");
+  const childOfIndefiniteBlockSize = document.getElementById("child-of-indefinite-block-size");
+  const absoluteChild = document.getElementById("absolute-child");
+
+  /// var()
+  test({
+    el: sectionEl,
+    expression: "var(--my-var)",
+    expected: "1em"
+  });
+
+  test({
+    el: sectionEl,
+    expression: "var(--my-var, Infinity)",
+    expected: "1em"
+  });
+
+  test({
+    el: sectionEl,
+    pseudo: "::after",
+    expression: "var(--my-var)",
+    expected: "96px"
+  });
+
+  test({
+    el: sectionEl,
+    pseudo: "::made-up-pseudo",
+    expression: "var(--my-var)",
+    // pseudo can't be parsed, so we can't run the substitution
+    expected: null
+  });
+
+ test({
+    el: sectionEl,
+    expression: "var(--on-main)",
+    expected: "2em"
+  });
+
+  test({
+    el: sectionEl,
+    expression: "var(--on-main, Infinity)",
+    expected:  "2em"
+  });
+
+  test({
+    el: sectionEl,
+    expression: "var(--undef)",
+    // Undefined variable can't be substituted
+    expected: null
+  });
+
+  test({
+    el: sectionEl,
+    expression: "var(--undef, Infinity)",
+    expected: "Infinity"
+  });
+
+  test({
+    el: sectionEl,
+    expression: "var(--undef, var(--my-var))",
+    expected: "1em"
+  });
+
+  test({
+    el: sectionEl,
+    expression: "var(--registered)",
+    // --registered does not inherit and is not set on section, we should get the initial value
+    expected:  "123px"
+  });
+
+  test({
+    el: sectionEl,
+    expression: "var(--registered-inherits)",
+    // --registered-inherits is not set on section, but it is on main, and it does inherit
+    // so we should get the value set on main: 4em -> 4 * 20px -> 80px
+    expected: "80px"
+  });
+
+  test({
+    el: sectionEl,
+    expression: "var(--empty)",
+    expected: ""
+  });
+
+  /// attr()
+  test({
+    el: sectionEl,
+    expression: "attr(data-x)",
+    expected: `"10"`
+  });
+
+  test({
+    el: sectionEl,
+    expression: "attr(data-x px)",
+    expected: "10px"
+  });
+
+  test({
+    el: sectionEl,
+    expression: "attr(data-x type(<number>))",
+    expected: "10"
+  });
+
+  test({
+    el: sectionEl,
+    expression: "attr(data-x type(<color>))",
+    // attribute value ("10") doesn't match what's expected from type(<color>)
+    expected: null
+  });
+
+  test({
+    el: sectionEl,
+    expression: "attr(data-y type(<color>))",
+    expected: "tomato"
+  });
+
+  test({
+    el: sectionEl,
+    expression: "attr(data-x px, Infinity)",
+    expected: "10px"
+  });
+
+  test({
+    el: sectionEl,
+    expression: "attr(data-undef)",
+    // Undefined attribute can't be substituted
+    expected: `""`
+  });
+
+  test({
+    el: sectionEl,
+    expression: `attr(data-undef, "hello")`,
+    expected: `"hello"`
+  });
+
+  test({
+    el: sectionEl,
+    expression: "attr(data-undef px)",
+    // Undefined attribute can't be substituted
+    expected: null
+  });
+
+  test({
+    el: sectionEl,
+    expression: "attr(data-undef px, Infinity)",
+    expected: "Infinity"
+  });
+
+  test({
+    el: sectionEl,
+    expression: "attr(data-undef px, attr(data-x px, Infinity))",
+    expected: "10px"
+  });
+
+  /// env()
+
+  test({
+    el: sectionEl,
+    expression: "env(safe-area-inset-top)",
+    expected: "0.0px"
+  });
+
+  test({
+    el: sectionEl,
+    expression: "env(safe-area-inset-top, 10px)",
+    expected: "0.0px"
+  });
+
+  test({
+    expression: "env(undef)",
+    el: sectionEl,
+    // Undefined attribute can't be substituted
+    expected: null
+  });
+
+  /// multi substitution functions
+
+  test({
+    el: sectionEl,
+    expression: "calc(var(--my-var) + attr(data-x px) - env(safe-area-inset-top, 10px))",
+    expected: "calc(1em + 10px - 0.0px)"
+  });
+
+});
+</script>
+</body>
+</html>

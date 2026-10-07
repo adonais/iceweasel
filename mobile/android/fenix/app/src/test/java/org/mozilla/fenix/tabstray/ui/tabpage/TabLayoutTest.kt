@@ -34,7 +34,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
-import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
+import org.mozilla.fenix.tabstray.controller.ItemInteractionHandler
 import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.ui.tabitems.TabGridColumnCountKey
@@ -399,7 +399,7 @@ class TabLayoutTest {
             selectedItemIndex = 0,
             selectionMode = TabsTrayState.Mode.Normal,
             focusEnabled = true,
-            tabInteractionHandler = fakeTabInteractionHandler(),
+            itemInteractionHandler = fakeItemInteractionHandler(),
             modifier = modifier,
             trackersBlockedCount = 0,
             onTabClose = { _ -> },
@@ -416,8 +416,8 @@ class TabLayoutTest {
         )
     }
 
-    private fun fakeTabInteractionHandler() =
-        object : TabInteractionHandler {
+    private fun fakeItemInteractionHandler() =
+        object : ItemInteractionHandler {
             override fun onMove(sourceKey: String, targetKey: String?, placeAfter: Boolean) {
                 // no op
             }
@@ -454,7 +454,7 @@ class TabLayoutTest {
                         selectedItemIndex = 0,
                         selectionMode = TabsTrayState.Mode.Normal,
                         focusEnabled = true,
-                        tabInteractionHandler = fakeTabInteractionHandler(),
+                        itemInteractionHandler = fakeItemInteractionHandler(),
                         onTabClose = { _ -> },
                         onItemClick = { _ -> },
                         onItemLongClick = { _ -> },

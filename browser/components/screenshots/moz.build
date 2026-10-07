@@ -5,6 +5,7 @@
 MOZ_SRC_FILES += [
     "ScreenshotsHelperChild.sys.mjs",
     "ScreenshotsOverlayChild.sys.mjs",
+    "ScreenshotsSelectionModes.sys.mjs",
     "ScreenshotsUtils.sys.mjs",
 ]
 

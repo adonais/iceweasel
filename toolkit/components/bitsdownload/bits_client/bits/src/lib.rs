@@ -32,6 +32,10 @@ use std::mem;
 use std::os::windows::ffi::OsStringExt;
 use std::ptr;
 use std::result;
+use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::mpsc;
+use std::thread;
+use std::time::Duration;
 
 use comedy::com::{create_instance_local_server, CoTaskMem, ComRef, INIT_MTA};
 use comedy::error::{HResult, ResultExt};
@@ -40,7 +44,9 @@ use filetime_win::FileTime;
 use guid_win::Guid;
 use winapi::shared::minwindef::DWORD;
 use winapi::shared::ntdef::{HRESULT, LANGIDFROMLCID, ULONG};
-use winapi::shared::winerror::S_FALSE;
+use winapi::shared::winerror::{
+    FACILITY_BACKGROUNDCOPY, HRESULT_FACILITY, HRESULT_FROM_WIN32, S_FALSE,
+};
 use winapi::um::bits::{
     IBackgroundCopyError, IBackgroundCopyFile, IBackgroundCopyJob, IBackgroundCopyManager,
     IEnumBackgroundCopyFiles, IEnumBackgroundCopyJobs, BG_JOB_PRIORITY, BG_JOB_PRIORITY_FOREGROUND,
@@ -63,6 +69,12 @@ pub use status::{
 use wide::ToWideNull;
 
 pub use winapi::shared::winerror::E_FAIL;
+
+// HRESULTs of this crate, with the customer bit set so no Windows API can return them.
+/// The bounded connect ran out of time while the BITS service activation was still pending.
+pub const E_BCM_CONNECT_TIMEOUT: HRESULT = 0xA004_0201_u32 as HRESULT;
+/// A connect was refused because earlier activations are still stuck.
+pub const E_BCM_CONNECT_STUCK: HRESULT = 0xA004_0202_u32 as HRESULT;
 
 #[repr(u32)]
 #[derive(Copy, Clone, Debug)]
@@ -87,7 +99,31 @@ pub enum BitsProxyUsage {
 
 type Result<T> = result::Result<T, HResult>;
 
+#[derive(Clone)]
 pub struct BackgroundCopyManager(ComRef<IBackgroundCopyManager>);
+
+fn ensure_mta() -> Result<()> {
+    INIT_MTA.with(|com| match com {
+        Err(e) => Err(e.clone()),
+        Ok(_) => Ok(()),
+    })
+}
+
+/// Whether `hr` is an answer from the BITS service itself rather than a COM or RPC failure.
+pub fn is_bits_error(hr: HRESULT) -> bool {
+    HRESULT_FACILITY(hr) == FACILITY_BACKGROUNDCOPY
+}
+
+// Activations that outlived their caller's timeout and are still pending. Two cover the monitor
+// thread's reconnect plus a concurrent command; more can only mean a service stuck for good.
+static STUCK_ACTIVATIONS: AtomicU32 = AtomicU32::new(0);
+const MAX_STUCK_ACTIVATIONS: u32 = 2;
+
+unsafe fn manager_from_address(address: usize) -> BackgroundCopyManager {
+    BackgroundCopyManager(ComRef::from_raw(ptr::NonNull::new_unchecked(
+        address as *mut IBackgroundCopyManager,
+    )))
+}
 
 impl BackgroundCopyManager {
     /// Get access to the local BITS service.
@@ -103,17 +139,15 @@ impl BackgroundCopyManager {
     /// If there are mismatched `CoUninitialize` calls on this thread which lead to COM shutting
     /// down before this thread ends, unsafe behavior may result.
     pub fn connect() -> Result<BackgroundCopyManager> {
-        INIT_MTA.with(|com| {
-            if let Err(e) = com {
-                return Err(e.clone());
-            }
-            Ok(())
-        })?;
+        ensure_mta()?;
 
         // Assuming no mismatched CoUninitialize calls, methods do not have to check for
         // successfully initialized COM once the object is constructed: `BackgroundCopyManager`
-        // is not `Send` or `Sync` so it must be used on the thread it was constructed on,
-        // which has now successfully inited MTA for the lifetime of thread local `INIT_MTA`.
+        // is not `Send` or `Sync` so it must be used on the thread that obtained it, which has
+        // now successfully inited MTA for the lifetime of thread local `INIT_MTA`. The interface
+        // pointer belongs to the multithreaded apartment, not to the thread that created it, so
+        // `connect_with_timeout` may hand over a pointer created on a helper thread as long as
+        // the receiving thread meets the same condition.
         // This also holds for any functions using pointers only derived from these methods, like
         // the `BitsJob` methods.
 
@@ -121,6 +155,74 @@ impl BackgroundCopyManager {
             winapi::um::bits::BackgroundCopyManager,
             IBackgroundCopyManager,
         >()?))
+    }
+
+    /// Like `connect()`, but gives up after `timeout`.
+    ///
+    /// `CoCreateInstance` has no timeout of its own: if the Service Control Manager never
+    /// finishes starting the BITS service, the activation blocks forever. The activation is
+    /// therefore performed on a helper thread that joins the same multithreaded apartment, so
+    /// the resulting interface pointer is usable on the calling thread. On timeout
+    /// `E_BCM_CONNECT_TIMEOUT` is returned and the helper thread releases the interface should
+    /// the activation complete later. The rendezvous channel guarantees that a successful send
+    /// means the caller took ownership, so the interface is never left in a buffer.
+    ///
+    /// Once `MAX_STUCK_ACTIVATIONS` timed-out activations are still pending, further calls fail
+    /// at once with `E_BCM_CONNECT_STUCK` instead of parking yet another thread.
+    pub fn connect_with_timeout(timeout: Duration) -> Result<BackgroundCopyManager> {
+        ensure_mta()?;
+
+        if STUCK_ACTIVATIONS.load(Ordering::Acquire) >= MAX_STUCK_ACTIVATIONS {
+            return Err(HResult::new(E_BCM_CONNECT_STUCK).function("connect_with_timeout"));
+        }
+
+        let (sender, receiver) = mpsc::sync_channel(0);
+        let spawned = thread::Builder::new()
+            .name("BitsConnect".into())
+            .spawn(move || {
+                // `ComRef` is not `Send`, so the pointer travels as an address.
+                let result = ensure_mta()
+                    .and_then(|_| {
+                        create_instance_local_server::<
+                            winapi::um::bits::BackgroundCopyManager,
+                            IBackgroundCopyManager,
+                        >()
+                    })
+                    .map(|bcm| bcm.into_raw().as_ptr() as usize);
+                // A failed send means the caller timed out and counted this activation. The
+                // service answered after all, so later activations are expected to be prompt
+                // and the slot is given back.
+                if let Err(mpsc::SendError(result)) = sender.send(result) {
+                    if let Ok(address) = result {
+                        drop(unsafe { manager_from_address(address) });
+                    }
+                    STUCK_ACTIVATIONS.fetch_sub(1, Ordering::AcqRel);
+                }
+            });
+        if let Err(e) = spawned {
+            let code = e
+                .raw_os_error()
+                .map(|code| HRESULT_FROM_WIN32(code as u32))
+                .unwrap_or(E_FAIL);
+            return Err(HResult::new(code).function("thread::Builder::spawn"));
+        }
+
+        match receiver.recv_timeout(timeout) {
+            Ok(Ok(address)) => Ok(unsafe { manager_from_address(address) }),
+            Ok(Err(e)) => Err(e),
+            Err(mpsc::RecvTimeoutError::Timeout) => {
+                STUCK_ACTIVATIONS.fetch_add(1, Ordering::AcqRel);
+                Err(HResult::new(E_BCM_CONNECT_TIMEOUT).function("CoCreateInstance"))
+            }
+            Err(mpsc::RecvTimeoutError::Disconnected) => {
+                Err(HResult::new(E_FAIL).function("connect_with_timeout"))
+            }
+        }
+    }
+
+    /// Whether both refer to the same interface instance.
+    pub fn ptr_eq(&self, other: &BackgroundCopyManager) -> bool {
+        self.0.as_raw() == other.0.as_raw()
     }
 
     /// Create a new download job with the given name.

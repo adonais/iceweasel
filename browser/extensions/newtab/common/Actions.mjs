@@ -337,9 +337,8 @@ function _RouteMessage(action, options) {
  * AlsoToMain - Creates a message that will be dispatched locally and also sent to the Main process.
  *
  * @param  {object} action Any redux action (required)
- * @param  {object} options
- * @param  {bool}   skipLocal Used by OnlyToMain to skip the main reducer
- * @param  {string} fromTarget The id of the content port from which the action originated. (optional)
+ * @param  {string} [fromTarget] The id of the content port from which the action originated.
+ * @param  {boolean} [skipLocal] Used by OnlyToMain to skip the main reducer
  * @return {object} An action with added .meta properties
  */
 function AlsoToMain(action, fromTarget, skipLocal) {
@@ -355,8 +354,7 @@ function AlsoToMain(action, fromTarget, skipLocal) {
  * OnlyToMain - Creates a message that will be sent to the Main process and skip the local reducer.
  *
  * @param  {object} action Any redux action (required)
- * @param  {object} options
- * @param  {string} fromTarget The id of the content port from which the action originated. (optional)
+ * @param  {string} [fromTarget] The id of the content port from which the action originated.
  * @return {object} An action with added .meta properties
  */
 function OnlyToMain(action, fromTarget) {
@@ -384,7 +382,7 @@ function BroadcastToContent(action, options) {
  *
  * @param  {object} action Any redux action (required)
  * @param  {string} target The id of a content port
- * @param  {bool} skipMain Used by OnlyToOneContent to skip the main process
+ * @param  {boolean} skipMain Used by OnlyToOneContent to skip the main process
  * @return {object} An action with added .meta properties
  */
 function AlsoToOneContent(action, target, skipMain) {
@@ -458,7 +456,7 @@ function DiscoveryStreamUserEvent(data) {
  * ImpressionStats - A telemetry ping indicating an impression stats.
  *
  * @param  {object} data Fields to include in the ping
- * @param  {int} importContext (For testing) Override the import context for testing.
+ * @param  {number} importContext (For testing) Override the import context for testing.
  * #return {object} An action. For UI code, a AlsoToMain action.
  */
 function ImpressionStats(data, importContext = globalImportContext) {
@@ -473,7 +471,7 @@ function ImpressionStats(data, importContext = globalImportContext) {
  * DiscoveryStreamImpressionStats - A telemetry ping indicating an impression stats in Discovery Stream.
  *
  * @param  {object} data Fields to include in the ping
- * @param  {int} importContext (For testing) Override the import context for testing.
+ * @param  {number} importContext (For testing) Override the import context for testing.
  * #return {object} An action. For UI code, a AlsoToMain action.
  */
 function DiscoveryStreamImpressionStats(
@@ -491,7 +489,7 @@ function DiscoveryStreamImpressionStats(
  * DiscoveryStreamLoadedContent - A telemetry ping indicating a content gets loaded in Discovery Stream.
  *
  * @param  {object} data Fields to include in the ping
- * @param  {int} importContext (For testing) Override the import context for testing.
+ * @param  {number} importContext (For testing) Override the import context for testing.
  * #return {object} An action. For UI code, a AlsoToMain action.
  */
 function DiscoveryStreamLoadedContent(

@@ -76,7 +76,7 @@ async function restoreWindow(win) {
 
   info("Calling window.restore");
   win.restore();
-  // From browser/base/content/test/general/browser_minimize.js:
+  // From browser/base/content/test/browser-general/browser_minimize.js:
   // On Ubuntu `window.restore` doesn't seem to work, use a timer to make the
   // test fail faster and more cleanly than with a test timeout.
   info(

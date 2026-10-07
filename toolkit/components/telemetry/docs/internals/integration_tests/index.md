@@ -1,124 +1,102 @@
-# Integration Tests
+# telemetry-tests-client integration tests
 
-The aim of the telemetry-tests-client suite is to verify Firefox collects telemetry probes, aggregates that data, and submits telemetry
-pings containing the data to a HTTP server. The integration tests try to make no assumptions about the internal workings of Firefox and
-use automation to mimic user behavior.
+The `telemetry-tests-client` suite verifies that Firefox collects telemetry,
+aggregates it, and submits pings to an HTTP server. The suite uses
+[Marionette Python tests](/remote/marionette/PythonTests.md) to mimic user
+behavior while making as few assumptions as possible about Firefox's internal
+implementation. wptserve provides the HTTP ping server.
 
-The integration test suite for Firefox Client Telemetry runs on CI [tier 1](https://wiki.mozilla.org/Sheriffing/Job_Visibility_Policy)
-with treeherder symbol `tt(c)`
-and is checked in to version control at mozilla-central under
-{searchfox}`toolkit/components/telemetry/tests/marionette/tests/client <toolkit/components/telemetry/tests/marionette/tests/client/>`.
+The integration test suite for Firefox Client Telemetry runs on CI with
+Treeherder symbol `tt(c)` at each platform's default
+[tier](https://wiki.mozilla.org/Sheriffing/Job_Visibility_Policy); see the
+{searchfox}`task definition <taskcluster/kinds/test/misc.yml>`.
+The client tests are listed in the
+{searchfox}`client test manifest <toolkit/components/telemetry/tests/marionette/tests/client/manifest.toml>`
+and stored in the
+{searchfox}`client test directory <toolkit/components/telemetry/tests/marionette/tests/client/>`.
 
-## Test Main Tab Scalars
+The client manifest is the authoritative list of client tests. The suite
+covers areas such as:
 
-- PATH: `telemetry/tests/marionette/tests/client/test_main_tab_scalars.py`
-- This test opens and closes a number of browser tabs,
-  restarts the browser in a new session
-  and then verifies the correctness of scalar data in the resulting `main` ping.
-
-## Test Search Counts
-
-- PATH: `toolkit/telemetry/tests/marionette/tests/client/test_search_counts_across_subsessions.py`
-- This test performs a search in a new tab,
-  restarts Firefox in a new session and verifies the correctness of client, session and subsession IDs,
-  as well as scalar and keyed histogram data in the `shutdown` ping,
-  installs an addon, verifies the `environment-change` ping, and performs three additional search actions
-  before restarting and verifying the new `main` ping.
-
-## Test Deletion Request Ping
-
-- PATH: `toolkit/telemetry/tests/marionette/tests/client/test_deletion_request_ping.py`
-- This test installs an addon and verifies a ping is received. The test takes note of the client ID.
-  It then disables telemetry and checks for a `deletion-request` ping.
-  After it receives the correct ping it makes sure that no other pings are sent.
-  Telemetry is then re-enabled and the `main` ping is checked to see if the client ID has changed.
-  The test asserts that the user has opted back in to telemetry.
-
-## Test Event Ping
-
-- PATH: `toolkit/telemetry/tests/marionette/tests/client/test_event_ping.py`
-- This test checks for a basic `event` ping. It opens firefox, performs a search and checks the `event`
-  ping for the correct number of searches performed (1) and the correct search engine.
-
-## Test Fog Custom Ping
-
-- PATH: `toolkit/telemetry/tests/marionette/tests/client/test_fog_custom_ping.py`
-- This test creates a custom ping using the Glean API and asserts this ping is sent correctly.
-
-## Test Fog Deletion Request Ping
-
-- PATH: `toolkit/telemetry/tests/marionette/tests/client/test_fog_deletion_request_ping.py`
-- This test opens the browser, performs a search and disables telemetry after the search.
-  It asserts that the telemetry is disabled and no pings exist.
-  The browser is restarted and telemetry is then re-enabled.
-  Then we set a [debug tag](https://mozilla.github.io/glean/book/user/debugging/debug-ping-view.html)
-  which is attached to the ping.
-  Telemetry is then disabled again to trigger a `deletion-request` ping.
-  We verify that 1) The debug tag is present; and 2) that the client ID
-  in the second `deletion-request` ping is different from the first client ID.
-
-## Test Fog User Activity
-
-- PATH: `toolkit/telemetry/tests/marionette/tests/client/test_fog_user_activity.py`
-- This test checks that a `baseline` ping is sent when the user starts or stops using Firefox.
-
-## Test Background Update Ping
-
-- PATH: `toolkit/telemetry/tests/marionette/tests/client/test_fog_user_activity.py`
-- In this test we launch Firefox to prepare a profile and to disable the background update setting.
-  We exit Firefox,
-  leaving the (unlocked) profile to be used as the default profile for the background update task (and not having multiple instances running).
-  The task will not try to update, but it will send a ping.
-  Then we restart Firefox to unwind the background update setting and allow shutdown to proceed cleanly.
+- Legacy Telemetry ping contents and behavior across browser sessions and
+  subsessions.
+- Firefox on Glean pings, and opt-out and `deletion-request` behavior for both
+  Legacy Telemetry and FOG.
+- Ping submission and payload correctness.
 
 ## Running the tests locally
 
-You can run the tests on your local machine using
-[mach](https://firefox-source-docs.mozilla.org/mach/index.html):
+Run the commands in this section from the source root using
+[mach](/mach/index.md).
 
-`./mach telemetry-tests-client`
+```shell
+./mach telemetry-tests-client
+```
+
+The default command also runs the harness self-tests. To run only the client
+tests while preserving manifest filtering, use:
+
+```shell
+./mach telemetry-tests-client --tag client
+```
+
+The client manifest sets `tags = "client"` in its `[DEFAULT]` section, while
+the harness self-tests are tagged `unit`; use `--tag unit` to run them.
+
+You can also pass a test manifest, test file, or directory to the command.
+Passing a test file or a directory bypasses the manifest. This means that
+`skip-if` conditions are ignored and tests that are not expected to pass on
+your platform might run. The `--tag` option also has no effect in this mode.
+
+See [Marionette testing](/remote/marionette/Testing.md) for runner options such
+as `--gecko-log`, `--headless`, and `--binary`.
+
+## Adding a test
+
+Name new test files `test_*.py` and subclass
+{searchfox}`TelemetryTestCase <toolkit/components/telemetry/tests/marionette/harness/telemetry_harness/testcase.py>`
+or, for tests that need a Glean ping server,
+{searchfox}`FOGTestCase <toolkit/components/telemetry/tests/marionette/harness/telemetry_harness/fog_testcase.py>`.
+Add the test to the
+{searchfox}`client test manifest <toolkit/components/telemetry/tests/marionette/tests/client/manifest.toml>`
+so that the default command and CI run it. See
+[Marionette Python tests](/remote/marionette/PythonTests.md) for test structure
+and assertions.
+
+A new directory of tests additionally needs its own `manifest.toml`. Set its
+`tags` value in the `[DEFAULT]` section and include it from the suite's
+{searchfox}`top-level manifest <toolkit/components/telemetry/tests/marionette/tests/manifest.toml>`.
+It also needs an entry in `default_tests` in
+{searchfox}`testing/mozharness/scripts/telemetry/telemetry_client.py`, which CI
+reads instead of the top-level manifest.
 
 ## Running the tests on try
 
 You can run the tests across all platforms on the try server using
-[mach](https://firefox-source-docs.mozilla.org/mach/index.html):
+[mach](/mach/index.md):
 
-`./mach try fuzzy -q "'telemetry-tests-client"`
+```shell
+./mach try fuzzy -q "'telemetry-tests-client"
+```
 
 ## Disabling an individual failing test
 
-The telemetry-tests-client suite is implemented in Python and uses Marionette for browser automation and wptserve for the HTTP ping server.
-The integration tests are based on Python's unittest testing library and can be disabled by calling
-[self.skipTest("reason")](https://docs.python.org/3/library/unittest.html#skipping-tests-and-expected-failures) in a test method.
+To disable a test only in affected configurations, add a `skip-if` condition
+with a bug number to its entry in the
+{searchfox}`client test manifest <toolkit/components/telemetry/tests/marionette/tests/client/manifest.toml>`.
+See
+[manifest conditional expressions](/mozbase/manifestparser.md#manifest-conditional-expressions)
+for the syntax.
 
-The example below demonstrates how to disable test_main_ping2:
-
-```python
-import unittest
-
-from telemetry_harness.testcase import TelemetryTestCase
-
-
-class TestMainPingExample(TelemetryTestCase):
-    """Example tests for the telemetry main ping."""
-
-    def test_main_ping1(self):
-        """Example test that we want to run."""
-
-        self.search_in_new_tab("mozilla firefox")
-
-    def test_main_ping2(self):
-        """Example test that we want to skip."""
-
-        self.skipTest("demonstrating skipping")
-
-        self.search_in_new_tab("firefox telemetry")
-```
+To skip an individual test method in code, call
+[self.skipTest("reason")](https://docs.python.org/3/library/unittest.html#skipping-tests-and-expected-failures).
 
 ## Who to contact for help
 
-- The test harness and cases are owned by Chris Hutten-Czapski (chutten on matrix) from the Firefox Telemetry team
-  ([#telemetry](https://chat.mozilla.org/#/room/#telemetry:mozilla.org) on matrix)
+Ask in the
+[#telemetry](https://chat.mozilla.org/#/room/#telemetry:mozilla.org) Matrix
+room. See the [Telemetry module](/mots/index.md#telemetry) for the current
+owners and peers.
 
 ## Bugzilla
 

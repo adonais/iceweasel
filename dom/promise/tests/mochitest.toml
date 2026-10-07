@@ -38,11 +38,6 @@ skip-if = [
   "tsan",
 ]
 
-["test_promise_safe_resolve.html"]
-skip-if = [
-  "!nightly_build",
-]
-
 ["test_promise_uncatchable_exception.html"]
 skip-if = [
   "asan",

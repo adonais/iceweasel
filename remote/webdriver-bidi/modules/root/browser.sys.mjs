@@ -263,7 +263,9 @@ class BrowserModule extends RootBiDiModule {
       }
     }
 
-    const userContextId = lazy.UserContextManager.createContext("webdriver");
+    const userContextId = lazy.UserContextManager.createContext({
+      prefix: "webdriver",
+    });
     const internalId = lazy.UserContextManager.getInternalIdById(userContextId);
 
     if (acceptInsecureCerts !== null) {

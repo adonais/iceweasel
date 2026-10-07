@@ -15,6 +15,11 @@ class TestSummaryFormatter(BaseFormatter):
       - `test_status` actions where the status differs from the expected
         status (i.e. the subtest result was unexpected)
       - `crash` actions
+      - `log` actions of level ERROR or CRITICAL (failures not tied to a
+        test, e.g. LeakSanitizer reports or harness errors)
+      - `mozleak_total` actions that exceed their threshold or lack a total
+        line (the leakcheck failures the TBPL formatter prints as
+        TEST-UNEXPECTED-FAIL)
 
     All other actions are dropped.
 
@@ -32,6 +37,8 @@ class TestSummaryFormatter(BaseFormatter):
         "test_end",
         "test_status",
         "crash",
+        "log",
+        "mozleak_total",
     })
     _ALWAYS_STRIP = frozenset({
         "crashing_thread_stack",
@@ -54,6 +61,10 @@ class TestSummaryFormatter(BaseFormatter):
             "expected" not in data or data["expected"] == data.get("status")
         ):
             return
+        if action == "log" and data.get("level") not in ("ERROR", "CRITICAL"):
+            return
+        if action == "mozleak_total" and not self._mozleak_total_failed(data):
+            return
 
         strip = self._ALWAYS_STRIP_CRASH if action == "crash" else self._ALWAYS_STRIP
 
@@ -64,3 +75,13 @@ class TestSummaryFormatter(BaseFormatter):
         }
 
         return json.dumps(data) + "\n"
+
+    @staticmethod
+    def _mozleak_total_failed(data):
+        """Mirror TbplFormatter.mozleak_total: a missing total is a failure
+        unless the process crashed on purpose or the caller ignores it, a
+        present one is a failure past its threshold."""
+        leaked = data.get("bytes")
+        if leaked is None:
+            return not (data.get("induced_crash") or data.get("ignore_missing"))
+        return leaked != 0 and leaked > data.get("threshold", 0)

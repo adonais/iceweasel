@@ -72,10 +72,11 @@ var listener = {
     }
   },
 
-  webSocketClosed(aWebSocketSerialID, aWasClean,
-                            aCode, aReason) {
+  webSocketClosed(aWebSocketSerialID, aHttpChannelId, aWasClean,
+                  aCode, aReason) {
     info("WebSocketClosed");
 
+    ok(aHttpChannelId > 0, "Channel ID received");
     ok(aWasClean, "The socket is closed in a clean state");
     is(aCode, 1000, "Exit code 1000");
     ok(!aReason.length, "No reason");
@@ -84,8 +85,9 @@ var listener = {
     checkListener();
   },
 
-  frameReceived(aWebSocketSerialID, aFrame) {
+  frameReceived(aWebSocketSerialID, aHttpChannelId, aFrame) {
     ok(!!aFrame, "We have received a frame");
+    ok(aHttpChannelId > 0, "Channel ID received");
 
     if (tests.length) {
       ok(aFrame.timeStamp, "Checking timeStamp: " + aFrame.timeStamp);
@@ -102,8 +104,9 @@ var listener = {
     frameReceivedCounter++;
   },
 
-  frameSent(aWebSocketSerialID, aFrame) {
+  frameSent(aWebSocketSerialID, aHttpChannelId, aFrame) {
     ok(!!aFrame, "We have sent a frame");
+    ok(aHttpChannelId > 0, "Channel ID received");
 
     if (tests.length) {
       ok(aFrame.timeStamp, "Checking timeStamp: " + aFrame.timeStamp);

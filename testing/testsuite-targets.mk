@@ -90,42 +90,7 @@ include $(topsrcdir)/toolkit/mozapps/installer/package-name.mk
 
 PKG_STAGE = $(DIST)/test-stage
 
-stage-all: \
-  stage-config \
-  stage-mach \
-  stage-extensions \
-  stage-mochitest \
-  stage-jstests \
-  test-packages-manifest \
-  $(NULL)
-
-ifdef COMPILE_ENVIRONMENT
-stage-all: stage-cppunittests
-endif
-
-TEST_PKGS_TARZST := \
-  common \
-  condprof \
-  cppunittest \
-  mochitest \
-  reftest \
-  talos \
-  raptor \
-  awsy \
-  xpcshell \
-  web-platform \
-  updater-dep \
-  jsreftest \
-  jittest \
-  perftests \
-  fuzztest \
-  trainhop \
-  $(NULL)
-
-ifdef LINK_GTEST_DURING_COMPILE
-stage-all: stage-gtest
-TEST_PKGS_TARZST += gtest
-endif
+stage-all: $(TEST_PKG_STAGE_TARGETS)
 
 PKG_ARG = --$(1) '$(PKG_BASENAME).$(1).tests.$(2)'
 
@@ -159,10 +124,6 @@ package-tests: package-tests-$(1)
 endef
 
 $(foreach name,$(TEST_PKGS_TARZST),$(eval $(call package_archive,$(name),tar.zst)))
-
-ifeq ($(MOZ_BUILD_APP),mobile/android)
-stage-all: stage-android
-endif
 
 # Prepare _tests before any of the other staging/packaging steps.
 # make-stage-dir is a prerequisite to all the stage-* targets in testsuite-targets.mk.

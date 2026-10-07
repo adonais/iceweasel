@@ -26,6 +26,8 @@ class AnimatedPropertyIDSet {
     new (this) AnimatedPropertyIDSet(std::move(aRhs));
     return *this;
   }
+  AnimatedPropertyIDSet(const AnimatedPropertyIDSet&) = delete;
+  AnimatedPropertyIDSet& operator=(const AnimatedPropertyIDSet&) = delete;
 
   void AddProperty(const CSSPropertyId& aProperty) {
     if (aProperty.IsCustom()) {
@@ -191,9 +193,6 @@ class AnimatedPropertyIDSet {
   Iterator end() const { return Iterator::EndIterator(*this); }
 
  private:
-  AnimatedPropertyIDSet(const AnimatedPropertyIDSet&) = delete;
-  AnimatedPropertyIDSet& operator=(const AnimatedPropertyIDSet&) = delete;
-
   nsCSSPropertyIDSet mIDs;
   CustomNameSet mCustomNames;
 };

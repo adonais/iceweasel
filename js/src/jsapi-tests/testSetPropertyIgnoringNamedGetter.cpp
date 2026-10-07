@@ -11,7 +11,7 @@ using namespace JS;
 
 class CustomProxyHandler : public Wrapper {
  public:
-  CustomProxyHandler() : Wrapper(0) {}
+  constexpr CustomProxyHandler() : Wrapper(0) {}
 
   bool getOwnPropertyDescriptor(
       JSContext* cx, HandleObject proxy, HandleId id,
@@ -39,7 +39,7 @@ class CustomProxyHandler : public Wrapper {
   }
 };
 
-MOZ_RUNINIT const CustomProxyHandler customProxyHandler;
+static constexpr CustomProxyHandler customProxyHandler;
 
 BEGIN_TEST(testSetPropertyIgnoringNamedGetter_direct) {
   RootedValue protov(cx);

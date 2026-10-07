@@ -308,6 +308,30 @@ def notification_server_flag(enabled):
 
 set_config("MOZ_NOTIFICATION_SERVER", notification_server_flag)
 
+
+# Enable or disable the push notification helper, which allows web push
+# notifications to be delivered when Firefox is closed.
+# ==============================================================================
+@depends(target, build_project)
+def push_notification_helper_default(target, build_project):
+    return target.os == "WINNT" and build_project == "browser"
+
+
+option(
+    "--disable-push-notification-helper",
+    when=push_notification_helper_default,
+    help="Disable building the push notification helper",
+)
+
+
+@depends("--enable-push-notification-helper", when=push_notification_helper_default)
+def push_notification_helper_flag(enabled):
+    if enabled:
+        return True
+
+
+set_config("MOZ_PUSH_NOTIFICATION_HELPER", push_notification_helper_flag)
+
 # Supported patch formats for the updater
 # =======================================
 

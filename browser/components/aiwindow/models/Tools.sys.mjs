@@ -10,6 +10,7 @@
 
 /**
  * @import { ChatConversation } from "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
+ * @import { TraceId } from "moz-src:///toolkit/components/pageextractor/PageExtractorEvents.sys.mjs"
  */
 
 import { getSkillPrompt } from "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs";
@@ -1218,13 +1219,14 @@ export class GetPageContent {
       if (conversation.serpUrlsForAnonymousFetch.has(url)) {
         return PageExtractorParent.getHeadlessExtractor({
           urlString: url,
-          callback: pageExtractor =>
+          callback: (pageExtractor, traceId) =>
             GetPageContent.#runExtraction(
               pageExtractor,
               conversation,
               label,
               url,
-              signal
+              signal,
+              traceId
             ),
           anonymousFetch: true,
         });
@@ -1239,13 +1241,14 @@ export class GetPageContent {
 
     return PageExtractorParent.getHeadlessExtractor({
       urlString: url,
-      callback: pageExtractor =>
+      callback: (pageExtractor, traceId) =>
         GetPageContent.#runExtraction(
           pageExtractor,
           conversation,
           label,
           url,
-          signal
+          signal,
+          traceId
         ),
     });
   }
@@ -1260,6 +1263,8 @@ export class GetPageContent {
    * @param {string} sourceUrl
    * @param {AbortSignal} [signal] - Rejects the extraction early if it aborts,
    *   which lets the headless browser hosting the read be torn down promptly.
+   * @param {TraceId} [traceId] - Correlates this extraction with the enclosing
+   *   headless-extractor profiler marker.
    * @returns {Promise<{ok: boolean, content: string}>}
    *  A promise resolving to a formatted string containing the page content
    *  with mode and label information, or (with ok false) a failure message
@@ -1270,15 +1275,19 @@ export class GetPageContent {
     conversation,
     label,
     sourceUrl,
-    signal
+    signal,
+    traceId
   ) {
     const extraction = await raceAbort(
-      pageExtractor.getText({
-        sufficientLength: GetPageContent.MAX_CHARACTERS,
-        cleanWhitespace: true,
-        removeBoilerplate: true,
-        sourceUrl,
-      }),
+      pageExtractor.getText(
+        {
+          sufficientLength: GetPageContent.MAX_CHARACTERS,
+          cleanWhitespace: true,
+          removeBoilerplate: true,
+          sourceUrl,
+        },
+        traceId
+      ),
       signal
     );
 

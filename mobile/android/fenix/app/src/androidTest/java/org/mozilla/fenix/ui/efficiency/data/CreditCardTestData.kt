@@ -18,6 +18,9 @@ data class CreditCardDetails(
     val nameOnCard: String,
     val expiryMonth: String,
     val expiryYear: String,
+    // How the expiry renders on the saved-cards list ("MM/yyyy"), distinct from the month/year the editor
+    // dropdowns take. Used to assert a saved card shows the right expiry.
+    val expiryMonthAndYear: String,
 )
 
 object CreditCardTestData {
@@ -31,5 +34,6 @@ object CreditCardTestData {
             nameOnCard = "Mastercard",
             expiryMonth = "February",
             expiryYear = (LocalDate.now().year + 1).toString(),
+            expiryMonthAndYear = "02/${LocalDate.now().year + 1}",
         )
 }

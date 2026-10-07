@@ -23,9 +23,8 @@
 #define DUMP_OCTETS_PER_LINE 16
 #define DUMP_OCTETS_PER_GROUP 2
 
-#define ERROR0(msg) fprintf(stderr, "%s:%d: " msg, __FILE__, __LINE__)
-#define ERROR(fmt, ...) \
-  fprintf(stderr, "%s:%d: " fmt, __FILE__, __LINE__, __VA_ARGS__)
+#define UNIMPLMENTED(msg) fprintf(stderr, "%s:%d: " msg, __FILE__, __LINE__)
+#define ERROR(fmt, ...) fprintf(stderr, "wabt: " fmt, __VA_ARGS__)
 
 namespace wabt {
 
@@ -37,25 +36,21 @@ void Stream::AddOffset(ssize_t delta) {
 }
 
 void Stream::WriteDataAt(size_t at,
-                         const void* src,
-                         size_t size,
+                         ByteSpan data,
                          const char* desc,
                          PrintChars print_chars) {
   if (Failed(result_)) {
     return;
   }
   if (log_stream_) {
-    log_stream_->WriteMemoryDump(src, size, at, print_chars, nullptr, desc);
+    log_stream_->WriteMemoryDump(data, at, print_chars, nullptr, desc);
   }
-  result_ = WriteDataImpl(at, src, size);
+  result_ = WriteDataImpl(at, data);
 }
 
-void Stream::WriteData(const void* src,
-                       size_t size,
-                       const char* desc,
-                       PrintChars print_chars) {
-  WriteDataAt(offset_, src, size, desc, print_chars);
-  offset_ += size;
+void Stream::WriteData(ByteSpan src, const char* desc, PrintChars print_chars) {
+  WriteDataAt(offset_, src, desc, print_chars);
+  offset_ += src.size();
 }
 
 void Stream::MoveData(size_t dst_offset, size_t src_offset, size_t size) {
@@ -89,22 +84,20 @@ void Stream::Writef(const char* format, ...) {
   WriteData(buffer, length);
 }
 
-void Stream::WriteMemoryDump(const void* start,
-                             size_t size,
+void Stream::WriteMemoryDump(ByteSpan data,
                              size_t offset,
                              PrintChars print_chars,
                              const char* prefix,
                              const char* desc) {
-  const uint8_t* p = static_cast<const uint8_t*>(start);
-  const uint8_t* end = p + size;
+  const uint8_t* p = data.data();
+  const uint8_t* end = p + data.size();
   while (p < end) {
     const uint8_t* line = p;
     const uint8_t* line_end = p + DUMP_OCTETS_PER_LINE;
     if (prefix) {
       Writef("%s", prefix);
     }
-    Writef("%07" PRIzx ": ", reinterpret_cast<intptr_t>(p) -
-                                 reinterpret_cast<intptr_t>(start) + offset);
+    Writef("%07" PRIzx ": ", static_cast<size_t>(p - data.data()) + offset);
     while (p < line_end) {
       for (int i = 0; i < DUMP_OCTETS_PER_GROUP; ++i, ++p) {
         if (p < end) {
@@ -136,7 +129,8 @@ Result OutputBuffer::WriteToFile(std::string_view filename) const {
   std::string filename_str(filename);
   FILE* file = fopen(filename_str.c_str(), "wb");
   if (!file) {
-    ERROR("unable to open %s for writing\n", filename_str.c_str());
+    ERROR("unable to open %s for writing: %s\n", filename_str.c_str(),
+          strerror(errno));
     return Result::Error;
   }
 
@@ -187,18 +181,16 @@ void MemoryStream::Clear() {
     buf_.reset(new OutputBuffer());
 }
 
-Result MemoryStream::WriteDataImpl(size_t dst_offset,
-                                   const void* src,
-                                   size_t size) {
-  if (size == 0) {
+Result MemoryStream::WriteDataImpl(size_t dst_offset, ByteSpan data) {
+  if (data.empty()) {
     return Result::Ok;
   }
-  size_t end = dst_offset + size;
+  size_t end = dst_offset + data.size();
   if (end > buf_->data.size()) {
     buf_->data.resize(end);
   }
   uint8_t* dst = &buf_->data[dst_offset];
-  memcpy(dst, src, size);
+  memcpy(dst, data.data(), data.size());
   return Result::Ok;
 }
 
@@ -238,7 +230,8 @@ FileStream::FileStream(std::string_view filename, Stream* log_stream)
   if (file_) {
     should_close_ = true;
   } else {
-    ERROR("fopen name=\"%s\" failed, errno=%d\n", filename_str.c_str(), errno);
+    ERROR("unable to open %s for writing: %s\n", filename_str.c_str(),
+          strerror(errno));
   }
 }
 
@@ -272,25 +265,25 @@ void FileStream::Flush() {
   }
 }
 
-Result FileStream::WriteDataImpl(size_t at, const void* data, size_t size) {
+Result FileStream::WriteDataImpl(size_t at, ByteSpan data) {
   if (!file_) {
     return Result::Error;
   }
-  if (size == 0) {
+  if (data.empty()) {
     return Result::Ok;
   }
   if (at != offset_) {
     if (fseek(file_, at, SEEK_SET) != 0) {
-      ERROR("fseek offset=%" PRIzd " failed, errno=%d\n", size, errno);
+      ERROR("fseek offset=%" PRIzd " failed, errno=%d\n", data.size(), errno);
       return Result::Error;
     }
     offset_ = at;
   }
-  if (fwrite(data, size, 1, file_) != 1) {
-    ERROR("fwrite size=%" PRIzd " failed, errno=%d\n", size, errno);
+  if (fwrite(data.data(), data.size(), 1, file_) != 1) {
+    ERROR("fwrite size=%" PRIzd " failed, errno=%d\n", data.size(), errno);
     return Result::Error;
   }
-  offset_ += size;
+  offset_ += data.size();
   return Result::Ok;
 }
 
@@ -304,7 +297,7 @@ Result FileStream::MoveDataImpl(size_t dst_offset,
     return Result::Ok;
   }
   // TODO(binji): implement if needed.
-  ERROR0("FileStream::MoveDataImpl not implemented!\n");
+  UNIMPLMENTED("FileStream::MoveDataImpl not implemented!\n");
   return Result::Error;
 }
 
@@ -313,7 +306,7 @@ Result FileStream::TruncateImpl(size_t size) {
     return Result::Error;
   }
   // TODO(binji): implement if needed.
-  ERROR0("FileStream::TruncateImpl not implemented!\n");
+  UNIMPLMENTED("FileStream::TruncateImpl not implemented!\n");
   return Result::Error;
 }
 

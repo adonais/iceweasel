@@ -198,7 +198,7 @@ void WebGLContext::TexImage(uint32_t level, GLenum respecFormat, uvec3 offset,
 void WebGLContext::CompressedTexImage(bool sub, GLenum imageTarget,
                                       uint32_t level, GLenum format,
                                       uvec3 offset, uvec3 size,
-                                      const Range<const uint8_t>& src,
+                                      const mozilla::Range<const uint8_t>& src,
                                       const uint32_t pboImageSize,
                                       const Maybe<uint64_t>& pboOffset) const {
   const WebGLContext::FuncScope funcScope(

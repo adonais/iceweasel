@@ -52,6 +52,8 @@ namespace mozilla {
 // Forward declaration for `StyleLengthPercentage::AsCalc`, which
 // references the type below in the generated code.
 struct StyleCalcLengthPercentage;
+// Same but for `AsPercentage`.
+struct StylePercentage;
 
 // Forward declaration for `StyleVariableReferenceValue`, which references the
 // the type below in the generated code.
@@ -64,13 +66,9 @@ using StyleUnparsedValue = CopyableTArray<StyleUnparsedSegment>;
 struct StyleNumericValue;
 
 namespace gfx {
-struct FontVariation;
-struct FontFeature;
 class FontPaletteValueSet;
 }  // namespace gfx
 }  // namespace mozilla
-using gfxFontVariation = mozilla::gfx::FontVariation;
-using gfxFontFeature = mozilla::gfx::FontFeature;
 struct gfxFontVariationAxis;
 
 enum nsCSSUnit : uint32_t;
@@ -128,6 +126,7 @@ struct PseudoStyleRequest;
 
 template <typename L>
 union StyleGenericCalcNode;
+union StyleSpecifiedLeaf;
 
 namespace css {
 class Loader;

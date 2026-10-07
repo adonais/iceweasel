@@ -8,6 +8,7 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimelineCollection.h"
+#include "mozilla/dom/Element.h"
 #include "nsStyleAutoArray.h"
 #include "nsStyleStruct.h"
 
@@ -18,7 +19,6 @@ class ComputedStyle;
 struct PseudoStyleRequest;
 
 namespace dom {
-class Element;
 class AnimationTimeline;
 class ScrollTimeline;
 class ViewTimeline;

@@ -48,7 +48,7 @@ export async function initialize(
    
 FfiConverterString.checkType(profilePath);
 const result = await UniFFIScaffolding.callAsyncWrapper(
-    80, // uniffi_init_rust_components_fn_func_initialize
+    21, // uniffi_init_rust_components_fn_func_initialize
     FfiConverterString.lower(profilePath),
 )
 return handleRustResult(
@@ -57,6 +57,7 @@ return handleRustResult(
     null,
 )
 }
+
 
 
 

@@ -43,20 +43,38 @@ add_task(async function test_keyword_disabled() {
       "despite keyword.enabled being false"
   );
 
+  let [regular, noKeyword] = await win.document.l10n.formatMessages([
+    {
+      id: "urlbar-searchmode-button3",
+      args: { engine: SearchService.defaultEngine.name },
+    },
+    { id: "urlbar-searchmode-no-keyword2" },
+  ]);
+  let titleOf = message =>
+    message.attributes.find(a => a.name == "title").value;
+
+  let searchbarButton = win.document.querySelector(
+    "#searchbar-new .searchmode-switcher"
+  );
+  await TestUtils.waitForCondition(
+    () => searchbarButton.title == titleOf(regular),
+    "Searchbar has the regular title"
+  );
   Assert.equal(
-    win.document
-      .querySelector("#searchbar-new .searchmode-switcher")
-      .getAttribute("data-l10n-id"),
-    "urlbar-searchmode-button3",
-    "Searchbar has regular l10n id"
+    searchbarButton.ariaLabel,
+    titleOf(regular),
+    "Searchbar's accessible name is its title"
   );
 
+  let urlbarButton = win.document.querySelector("#urlbar .searchmode-switcher");
+  await TestUtils.waitForCondition(
+    () => urlbarButton.title == titleOf(noKeyword),
+    "Urlbar has the title for keyword disabled"
+  );
   Assert.equal(
-    win.document
-      .querySelector("#urlbar .searchmode-switcher")
-      .getAttribute("data-l10n-id"),
-    "urlbar-searchmode-no-keyword2",
-    "Urlbar has l10n id for keyword disabled"
+    urlbarButton.ariaLabel,
+    titleOf(noKeyword),
+    "Urlbar's accessible name is its title"
   );
 
   await BrowserTestUtils.closeWindow(win);
@@ -83,8 +101,7 @@ add_task(async function test_scotchbonnet_disabled() {
   });
   Assert.ok(true, "Entered search mode");
 
-  document.querySelector("#searchbar-new .searchmode-switcher-close").click();
-  await SearchbarTestUtils.assertSearchMode(window, null);
+  await SearchbarTestUtils.exitSearchMode(window, { waitForSearch: false });
   Assert.ok(true, "Exited search mode");
 
   await SpecialPowers.popPrefEnv();

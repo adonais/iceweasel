@@ -499,8 +499,8 @@ nsresult TestStunServer::SetResponseAddr(const std::string& addr,
                                          uint16_t port) {
   nr_transport_addr addr2;
 
-  int r =
-      nr_str_port_to_transport_addr(addr.c_str(), port, IPPROTO_UDP, &addr2);
+  int r = nr_str_port_to_transport_addr(addr.c_str(), nullptr, port,
+                                        IPPROTO_UDP, &addr2);
   if (r) return NS_ERROR_FAILURE;
 
   return SetResponseAddr(&addr2);

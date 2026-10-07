@@ -57,7 +57,7 @@ The mailing list for Marionette discussion is
 If you prefer real-time chat, ask your questions
 on [#webdriver:mozilla.org](https://chat.mozilla.org/#/room/#webdriver:mozilla.org).
 
-[geckodriver]: /testing/geckodriver/
+[geckodriver]: /testing/geckodriver/index.md
 [marionette python client]: /python/marionette_driver.md
 [protocol]: Protocol.md
 [webdriver]: https://w3c.github.io/webdriver/

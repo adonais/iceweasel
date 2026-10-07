@@ -161,6 +161,18 @@ struct AddDebugAnnotationImpl<T, std::enable_if_t<std::is_integral_v<T>>> {
   }
 };
 
+// Specialize floating-point types.
+template <typename T>
+struct AddDebugAnnotationImpl<T,
+                              std::enable_if_t<std::is_floating_point_v<T>>> {
+  static void call(perfetto::EventContext& ctx, const char* const aKey,
+                   const T& aValue) {
+    auto* arg = ctx.event()->add_debug_annotations();
+    arg->set_name(aKey);
+    arg->set_double_value(static_cast<double>(aValue));
+  }
+};
+
 // Specialize time durations.
 template <>
 struct AddDebugAnnotationImpl<

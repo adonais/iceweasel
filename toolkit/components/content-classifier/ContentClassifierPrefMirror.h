@@ -9,17 +9,24 @@
 
 namespace mozilla {
 
-// Transitional shim that derives the ContentClassifier engine prefs
-// (privacy.trackingprotection.content.*) from the classic Enhanced Tracking
-// Protection prefs (privacy.trackingprotection.*). This lets the existing
+// Transitional shim that mirrors the classic Enhanced Tracking Protection
+// prefs (privacy.trackingprotection.*) onto the ContentClassifier engine
+// prefs (privacy.trackingprotection.content.*). This lets the existing
 // about:preferences ETP UI drive the content classifier without being
 // rewired.
 //
-// Gated by privacy.trackingprotection.content.mirror.enabled (off by
-// default). While enabled the mirror owns the content engine/enabled prefs
-// and recomputes them on every relevant ETP pref change; while disabled it
-// leaves the content prefs untouched (the last derived values, if any,
-// remain in place).
+// Driven by privacy.trackingprotection.content.mirror.mode, which has three
+// states:
+//
+//   0 (off, the default) - the mirror is down and clears the content prefs if
+//     it mirrored them before.
+//   1 (on) - the mirror owns the content engine/enabled prefs and recomputes
+//     them on every relevant ETP pref change.
+//   2 (handover) - the mirror stops mirroring but leaves the mirrored values
+//     in place, handing them to whoever owns the content prefs next.
+//
+// Off is the state reached by doing nothing, so a lapsed rollout releases the
+// prefs rather than stranding them.
 //
 // The whole class is meant to be deleted once the migration to the content
 // classifier is complete.
@@ -43,6 +50,10 @@ class ContentClassifierPrefMirror final {
 
   static void Shutdown();
 
+  // Clear the content prefs the mirror wrote, so they fall back to
+  // their default-branch values.
+  static void ReleaseMirroredPrefs();
+
   // Registered on every watched ETP source pref while the mirror is up.
   static void OnPrefChange(const char* aPref, void* aData);
 
@@ -52,8 +63,8 @@ class ContentClassifierPrefMirror final {
   // ContentClassifierService - are touched at most once per turn.
   void ScheduleSync();
 
-  // Recompute the content engine prefs from the current ETP pref state and
-  // write them. No-op while the mirror is disabled.
+  // Recompute the content engine prefs from the current ETP pref state, write
+  // them, and take ownership of them. No-op while the mirror is disabled.
   void Sync();
 
   static StaticAutoPtr<ContentClassifierPrefMirror> sInstance;

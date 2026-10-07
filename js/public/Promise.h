@@ -479,7 +479,6 @@ extern JS_PUBLIC_API bool RejectPromise(JSContext* cx,
                                         JS::HandleObject promiseObj,
                                         JS::HandleValue rejectionValue);
 
-#ifdef NIGHTLY_BUILD
 /**
  * Resolves the given Promise with `resolutionValue`, but guarantees that the
  * user-code-running portion of resolution does not execute on the caller's
@@ -506,7 +505,6 @@ extern JS_PUBLIC_API bool RejectPromise(JSContext* cx,
 extern JS_PUBLIC_API bool SafeResolve(JSContext* cx,
                                       JS::HandleObject promiseObj,
                                       JS::HandleValue resolutionValue);
-#endif  // NIGHTLY_BUILD
 
 /**
  * Create a Promise with the given fulfill/reject handlers, that will be

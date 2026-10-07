@@ -9,8 +9,28 @@
  * stylesheets without having to worry about Storybook being able to find and
  * detect changes to the files.
  *
- * This loader allows Lit-based custom element code like this to work with
- * Storybook:
+ * It handles two different styles of loading stylesheets found in this
+ * codebase:
+ *
+ * 1. CSS module scripts, i.e. code like this:
+ *
+ *    import styles from "chrome://global/content/elements/moz-toggle.css" with { type: "css" };
+ *    ...
+ *    static styles = styles;
+ *
+ * Gets rewritten to this, so that the CSS module script's `with { type: "css"
+ * }` import attribute (which webpack doesn't understand) is replaced with a
+ * resourceQuery that our custom webpack rule in main.js uses to run the file
+ * through css-loader's `exportType: "css-style-sheet"`, which produces the
+ * same kind of CSSStyleSheet default export that a real CSS module script
+ * would:
+ *
+ *    import styles from "toolkit/content/widgets/moz-toggle/moz-toggle.css?css-module";
+ *    ...
+ *    static styles = styles;
+ *
+ * 2. The older interim FOUC workaround, i.e. Lit-based custom element code
+ *    like this:
  *
  *    render() {
  *      return html`
@@ -131,6 +151,48 @@ function resolveCssUri(cssUri, resourcePath) {
 }
 
 /**
+ * Matches a CSS module script import statement, e.g.:
+ *   import styles from "chrome://global/content/elements/moz-toggle.css" with { type: "css" };
+ */
+const CSS_MODULE_SCRIPT_IMPORT_REGEX =
+  /import\s+\S+\s+from\s+["'](chrome:\/\/[^"']+?\.css|moz-src:\/\/\/[^"']+?\.css)["']\s+with\s*{\s*type:\s*["']css["']\s*,?\s*}\s*;?/g;
+
+/**
+ * Rewrite CSS module script imports (`import styles from "chrome://..." with
+ * { type: "css" };`) to import the same file via a `?css-module`
+ * resourceQuery instead, which our custom webpack rule in main.js recognizes
+ * and runs through css-loader's `exportType: "css-style-sheet"` so the
+ * default export is still a CSSStyleSheet, matching real CSS module script
+ * behavior. Returns the rewritten source and the set of URIs it handled, so
+ * the caller doesn't also try to rewrite them as `<link>`-style references.
+ *
+ * @this {WebpackLoader} https://webpack.js.org/api/loaders/
+ * @param {string} source - The source file to update.
+ * @returns {{ source: string, handledUris: Set<string> }}
+ */
+function rewriteCssModuleScriptImports(source) {
+  const handledUris = new Set();
+  const rewrittenSource = source.replace(
+    CSS_MODULE_SCRIPT_IMPORT_REGEX,
+    (statement, cssUri) => {
+      const { localPath, dependencyPath } = resolveCssUri(
+        cssUri,
+        this.resourcePath
+      );
+      if (!localPath) {
+        return statement;
+      }
+      handledUris.add(cssUri);
+      this.addMissingDependency(dependencyPath);
+      return statement
+        .replace(cssUri, `${localPath}?css-module`)
+        .replace(/\s+with\s*{\s*type:\s*["']css["']\s*,?\s*}/, "");
+    }
+  );
+  return { source: rewrittenSource, handledUris };
+}
+
+/**
  * Replace references to chrome:// and moz-src:/// URIs with the relative path
  * on disk from the project root.
  *
@@ -139,9 +201,16 @@ function resolveCssUri(cssUri, resourcePath) {
  * @returns {string} The updated source.
  */
 async function rewriteCssUris(source) {
+  const { source: sourceAfterModuleScripts, handledUris } =
+    rewriteCssModuleScriptImports.call(this, source);
+
   const cssUriToLocalPath = new Map();
-  // We're going to rewrite the chrome:// and moz-src:/// URIs, find all referenced URIs.
-  let cssDependencies = getReferencedCssUris(source);
+  // We're going to rewrite the remaining chrome:// and moz-src:/// URIs
+  // (i.e. ones used via the older `<link>`-based approach), find all
+  // referenced URIs.
+  let cssDependencies = getReferencedCssUris(sourceAfterModuleScripts).filter(
+    cssUri => !handledUris.has(cssUri)
+  );
   for (let cssUri of cssDependencies) {
     const { localPath, dependencyPath } = resolveCssUri(
       cssUri,
@@ -155,7 +224,7 @@ async function rewriteCssUris(source) {
     }
   }
   // Rewrite the source file with mapped chrome:// and moz-src:/// URIs.
-  let rewrittenSource = source;
+  let rewrittenSource = sourceAfterModuleScripts;
   for (let [cssUri, localPath] of cssUriToLocalPath.entries()) {
     // Generate an import friendly variable name for the default export from
     // the CSS file e.g. __chrome_styles_loader__moztoggleStyles.

@@ -5,8 +5,13 @@
 #ifndef mozilla_intl_locale_MozLocaleBindings_h
 #define mozilla_intl_locale_MozLocaleBindings_h
 
+#include "nsTArray.h"
+#include "nsTString.h"
+
 #include "mozilla/intl/unic_langid_ffi_generated.h"
 #include "mozilla/intl/fluent_langneg_ffi_generated.h"
+
+#include <memory>
 
 namespace std {
 

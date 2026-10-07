@@ -10,6 +10,24 @@ import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 let searchRequestSeq = 0;
 
 /**
+ * Focus a moz-button that may have just been created. Its inner button only
+ * exists after its first render, and focus() on the host does nothing before
+ * that, so wait for the render when there is one to wait for.
+ *
+ * @param {HTMLElement|null} el
+ */
+export function focusOnceRendered(el) {
+  if (!el) {
+    return;
+  }
+  if (el.updateComplete) {
+    el.updateComplete.then(() => el.focus());
+  } else {
+    el.focus();
+  }
+}
+
+/**
  * Owns the ticker-search panel lifecycle: whether it is open, sending a search,
  * and returning focus when it closes. The watchlist mutation on add stays in the
  * parent; this hook only opens, closes, and submits.
@@ -17,28 +35,43 @@ let searchRequestSeq = 0;
  * @param {object} options
  * @param {Function} options.dispatch The store's dispatch.
  * @param {Function} options.recordUserAction Telemetry recorder from useWidgetTelemetry.
- * @param {object} options.menuButtonRef Ref to the widget menu button, refocused on close.
- * @returns {{ active: boolean, open: () => void, close: () => void, submit: (query: string) => void }}
+ * @param {object} options.menuButtonRef Ref to the widget menu button, the last-resort focus target on close.
+ * @returns {{ active: boolean, open: (openedFrom?: object) => void, close: () => void, submit: (query: string) => void, searchButtonRef: object, emptySearchButtonRef: object }}
+ *   `open` takes the ref of the control that opened search.
+ *   The two returned refs are for the toolbar and empty-state search buttons.
  */
 export function useStockSearch({ dispatch, recordUserAction, menuButtonRef }) {
   const [active, setActive] = useState(false);
   const wasActiveRef = useRef(false);
+  const searchButtonRef = useRef(null);
+  const emptySearchButtonRef = useRef(null);
+  const openedFromRef = useRef(null);
 
-  // Once search closes, return focus to the widget menu button.
+  // Once search closes, return focus to the control that opened it. The
+  // empty-state button is gone after an add, so fall through to the toolbar
+  // button, then the menu button.
   useLayoutEffect(() => {
     if (active) {
       wasActiveRef.current = true;
     } else if (wasActiveRef.current) {
       wasActiveRef.current = false;
-      menuButtonRef.current?.focus();
+      focusOnceRendered(
+        openedFromRef.current?.current ??
+          searchButtonRef.current ??
+          menuButtonRef.current
+      );
     }
   }, [active, menuButtonRef]);
 
-  const openPanel = useCallback(() => {
-    // Start clean so results from a previous search never flash on reopen.
-    dispatch({ type: at.WIDGETS_STOCKS_SEARCH_CLEAR });
-    setActive(true);
-  }, [dispatch]);
+  const openPanel = useCallback(
+    openedFrom => {
+      openedFromRef.current = openedFrom ?? null;
+      // Start clean so results from a previous search never flash on reopen.
+      dispatch({ type: at.WIDGETS_STOCKS_SEARCH_CLEAR });
+      setActive(true);
+    },
+    [dispatch]
+  );
 
   const closePanel = useCallback(() => {
     setActive(false);
@@ -67,5 +100,12 @@ export function useStockSearch({ dispatch, recordUserAction, menuButtonRef }) {
     [dispatch, recordUserAction]
   );
 
-  return { active, open: openPanel, close: closePanel, submit };
+  return {
+    active,
+    open: openPanel,
+    close: closePanel,
+    submit,
+    searchButtonRef,
+    emptySearchButtonRef,
+  };
 }

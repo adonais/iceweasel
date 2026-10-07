@@ -10,6 +10,7 @@
 #include "mozilla/Range.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/Types.h"
+#include "mozilla/layers/GpuFence.h"
 #include "mozilla/layers/ScreenshotGrabber.h"
 #include "nsISupportsImpl.h"
 #include "nsRegion.h"
@@ -110,9 +111,9 @@ class NativeLayerRootSnapshotter : public profiler_screenshots::Window {
   // modifications by doing an offscreen commit.)
   // The readback buffer's stride is assumed to be aReadbackSize.width * 4. Only
   // BGRA is supported.
-  virtual bool ReadbackPixels(const gfx::IntSize& aReadbackSize,
-                              gfx::SurfaceFormat aReadbackFormat,
-                              const Range<uint8_t>& aReadbackBuffer) = 0;
+  virtual bool ReadbackPixels(
+      const gfx::IntSize& aReadbackSize, gfx::SurfaceFormat aReadbackFormat,
+      const mozilla::Range<uint8_t>& aReadbackBuffer) = 0;
 };
 
 // Represents a native layer. Native layers, such as CoreAnimation layers on
@@ -252,7 +253,7 @@ class NativeLayer {
 
   virtual void AttachExternalImage(wr::RenderTextureHost* aExternalImage) = 0;
 
-  virtual GpuFence* GetGpuFence() = 0;
+  virtual RefPtr<GpuFence> GetGpuFence() = 0;
 
  protected:
   virtual ~NativeLayer() = default;
@@ -264,6 +265,7 @@ class RenderSourceNLRS : public profiler_screenshots::RenderSource {
  public:
   explicit RenderSourceNLRS(UniquePtr<gl::MozFramebuffer>&& aFramebuffer);
   auto& FB() { return *mFramebuffer; }
+  ~RenderSourceNLRS() override;
 
  protected:
   UniquePtr<gl::MozFramebuffer> mFramebuffer;

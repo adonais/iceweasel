@@ -120,6 +120,8 @@ Possible SAPs are:
 > - `about_home`
 > - `about_newtab`
 > - `contextmenu`
+> - `contextmenu_visual` Used when searching from the context menu's visual
+>   search menuitem.
 > - `errorpage` Used when a DNS error occurs
 > - `newtab_searchbar` Used when searching from the New Tab search bar.
 > - `newtab_search_widget` Used when searching from the New Tab search widget.
@@ -127,6 +129,8 @@ Possible SAPs are:
 > - `smartbar` Used when searching from Smart Window.
 > - `smartwindow_assistant` Used when searching from Smart Window assistant.
 > - `system` Indicates a search from the command line.
+> - `text_selection` Used when searching from the actions menu shown when
+>   text is selected on a page.
 > - `urlbar` Except search mode.
 > - `urlbar_handoff` Used when searching from `about:newtab`.
 > - `urlbar_persisted` Used when searching from the Urlbar while it
@@ -137,7 +141,8 @@ Possible SAPs are:
 Recorded actions may be:
 
 > - `search`
->   Used for any search from `contextmenu`, `system` and `webextension`.
+>   Used for any search from `contextmenu`, `contextmenu_visual`, `system` and
+>   `webextension`.
 > - `search_alias`
 >   For `urlbar`, indicates the user confirmed a search through an alias.
 > - `search_enter`

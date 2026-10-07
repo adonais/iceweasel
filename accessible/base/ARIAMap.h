@@ -328,14 +328,6 @@ uint8_t AttrCharacteristicsFor(nsAtom* aAtom);
 bool IsValidARIAHidden(nsIContent* aContent);
 
 /**
- * This function calls into the function above. It verifies the validity
- * of any `aria-hidden` specified on the given Doc Accessible's
- * mContent, as well as on the root element of mContent's owner
- * doc.
- */
-bool IsValidARIAHidden(DocAccessible* aDocAcc);
-
-/**
  * Return true if the element should render its subtree
  * regardless of the presence of aria-hidden.
  */

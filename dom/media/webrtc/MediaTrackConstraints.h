@@ -45,16 +45,16 @@ class NormalizedConstraintSet {
 
  public:
   template <class ValueType>
-  class Range : public BaseRange {
+  class ConstraintRange : public BaseRange {
    public:
     ValueType mMin, mMax;
     Maybe<ValueType> mIdeal;
 
-    Range(const nsCString& aName, ValueType aMin, ValueType aMax)
+    ConstraintRange(const nsCString& aName, ValueType aMin, ValueType aMax)
         : BaseRange(aName), mMin(aMin), mMax(aMax), mMergeDenominator(0) {}
-    virtual ~Range() = default;
+    virtual ~ConstraintRange() = default;
 
-    bool operator==(const Range& aOther) const noexcept {
+    bool operator==(const ConstraintRange& aOther) const noexcept {
       return BaseRange::operator==(aOther) && mMin == aOther.mMin &&
              mMax == aOther.mMax && mIdeal == aOther.mIdeal;
     }
@@ -62,17 +62,18 @@ class NormalizedConstraintSet {
     template <class ConstrainRange>
     void SetFrom(const ConstrainRange& aOther);
 
-    /// Clamp n based on Range. The range must be valid (mMin <= mMax).
+    /// Clamp n based on ConstraintRange. The range must be valid (mMin <=
+    /// mMax).
     ValueType Clamp(ValueType n) const { return std::clamp(n, mMin, mMax); }
     /// Get ideal value, if present, or defaultValue otherwise, clamped based on
-    /// Range. The range must be valid (mMin <= mMax).
+    /// ConstraintRange. The range must be valid (mMin <= mMax).
     ValueType Get(ValueType defaultValue) const {
       return Clamp(mIdeal.valueOr(defaultValue));
     }
-    bool Intersects(const Range& aOther) const {
+    bool Intersects(const ConstraintRange& aOther) const {
       return mMax >= aOther.mMin && mMin <= aOther.mMax;
     }
-    void Intersect(const Range& aOther) {
+    void Intersect(const ConstraintRange& aOther) {
       mMin = std::max(mMin, aOther.mMin);
       if (Intersects(aOther)) {
         mMax = std::min(mMax, aOther.mMax);
@@ -81,7 +82,7 @@ class NormalizedConstraintSet {
         mMax = std::max(mMax, aOther.mMax);
       }
     }
-    bool Merge(const Range& aOther) {
+    bool Merge(const ConstraintRange& aOther) {
       if (mName != "width" && mName != "height" && mName != "frameRate" &&
           !Intersects(aOther)) {
         return false;
@@ -112,7 +113,7 @@ class NormalizedConstraintSet {
         mMergeDenominator = 0;
       }
     }
-    void TakeHighestIdeal(const Range& aOther) {
+    void TakeHighestIdeal(const ConstraintRange& aOther) {
       if (aOther.mIdeal.isSome()) {
         if (mIdeal.isNothing()) {
           mIdeal.emplace(aOther.Get(0));
@@ -124,30 +125,30 @@ class NormalizedConstraintSet {
 
    private:
     bool Merge(const BaseRange& aOther) override {
-      return Merge(static_cast<const Range&>(aOther));
+      return Merge(static_cast<const ConstraintRange&>(aOther));
     }
 
     uint32_t mMergeDenominator;
   };
 
-  struct LongRange final : public Range<int32_t> {
+  struct LongRange final : public ConstraintRange<int32_t> {
     LongRange(const nsCString& aName,
               const dom::Optional<dom::OwningLongOrConstrainLongRange>& aOther,
               bool advanced);
   };
 
-  struct LongLongRange final : public Range<int64_t> {
+  struct LongLongRange final : public ConstraintRange<int64_t> {
     LongLongRange(const nsCString& aName, const dom::Optional<int64_t>& aOther);
   };
 
-  struct DoubleRange final : public Range<double> {
+  struct DoubleRange final : public ConstraintRange<double> {
     DoubleRange(
         const nsCString& aName,
         const dom::Optional<dom::OwningDoubleOrConstrainDoubleRange>& aOther,
         bool advanced);
   };
 
-  struct BooleanRange final : public Range<bool> {
+  struct BooleanRange final : public ConstraintRange<bool> {
     BooleanRange(
         const nsCString& aName,
         const dom::Optional<dom::OwningBooleanOrConstrainBooleanParameters>&
@@ -155,7 +156,7 @@ class NormalizedConstraintSet {
         bool advanced);
 
     BooleanRange(const nsCString& aName, const bool& aOther)
-        : Range<bool>(aName, false, true) {
+        : ConstraintRange<bool>(aName, false, true) {
       mIdeal.emplace(aOther);
     }
   };
@@ -264,9 +265,10 @@ class NormalizedConstraintSet {
 };
 
 template <>
-bool NormalizedConstraintSet::Range<bool>::Merge(const Range& aOther);
+bool NormalizedConstraintSet::ConstraintRange<bool>::Merge(
+    const ConstraintRange& aOther);
 template <>
-void NormalizedConstraintSet::Range<bool>::FinalizeMerge();
+void NormalizedConstraintSet::ConstraintRange<bool>::FinalizeMerge();
 
 // Used instead of MediaTrackConstraints in lower-level code.
 struct NormalizedConstraints : public NormalizedConstraintSet {

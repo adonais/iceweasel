@@ -40,7 +40,7 @@ sys.path.append(
 WEBEXT_METRICS_PATH = Path("browser", "extensions", "newtab", "webext-glue", "metrics")
 sys.path.append(str(WEBEXT_METRICS_PATH.absolute()))
 import glean_utils
-from gen_runtime_metrics import get_new_metrics, get_new_pings
+from gen_runtime_metrics import fetch_version_yaml, get_new_metrics, get_new_pings
 from run_glean_parser import parse_with_options
 
 FIREFOX_L10N_REPO = "https://github.com/mozilla-l10n/firefox-l10n.git"
@@ -585,17 +585,10 @@ def channel_metrics_diff(command_context, channel):
 
         output_filename = f"runtime-metrics-{firefox_version}.json"
 
-        # Base URL for fetching YAML files from GitHub
-        GITHUB_URL_TEMPLATE = "https://raw.githubusercontent.com/mozilla-firefox/firefox/refs/heads/{branch}/browser/components/newtab/{yaml}"
-
         main_metrics_yaml = yaml.safe_load(open(METRICS_LOCAL_YAML_PATH))
-        compare_metrics_yaml = fetch_yaml(
-            GITHUB_URL_TEMPLATE.format(branch=channel, yaml="metrics.yaml")
-        )
+        compare_metrics_yaml = fetch_version_yaml(firefox_version, "metrics.yaml")
         main_pings_yaml = yaml.safe_load(open(PINGS_LOCAL_YAML_PATH))
-        compare_pings_yaml = fetch_yaml(
-            GITHUB_URL_TEMPLATE.format(branch=channel, yaml="pings.yaml")
-        )
+        compare_pings_yaml = fetch_version_yaml(firefox_version, "pings.yaml")
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir_path = Path(temp_dir)
@@ -658,12 +651,6 @@ def channel_metrics_diff(command_context, channel):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return 1
-
-
-def fetch_yaml(url):
-    response = requests.get(url)
-    response.raise_for_status()
-    return yaml.safe_load(response.text)
 
 
 def process_yaml_file(main_yaml, compare_yaml, yaml_type: YamlType, temp_dir_path):

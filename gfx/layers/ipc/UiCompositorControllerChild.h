@@ -40,7 +40,6 @@ class UiCompositorControllerChild final
   bool ResumeAndResize(const int32_t& aX, const int32_t& aY,
                        const int32_t& aHeight, const int32_t& aWidth);
   bool InvalidateAndRender();
-  bool SetMaxToolbarHeight(const int32_t& aHeight);
   bool SetFixedBottomOffset(int32_t aOffset);
   bool ToolbarAnimatorMessageFromUI(const int32_t& aMessage);
   bool SetDefaultClearColor(const uint32_t& aColor);
@@ -100,7 +99,6 @@ class UiCompositorControllerChild final
   bool mIsOpen;
   uint64_t mProcessToken;
   Maybe<gfx::IntRect> mResize;
-  Maybe<int32_t> mMaxToolbarHeight;
   Maybe<uint32_t> mDefaultClearColor;
   Maybe<bool> mLayerUpdateEnabled;
   RefPtr<nsIWidget> mWidget;

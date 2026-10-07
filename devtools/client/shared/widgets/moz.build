@@ -18,3 +18,8 @@ DevToolsModules(
     "TreeWidget.js",
     "view-helpers.js",
 )
+
+LICENSED_UNDER += ["cubic-bezier"]
+LICENSED_UNDER["cubic-bezier"].paths = [
+    "CubicBezierWidget.js",
+]

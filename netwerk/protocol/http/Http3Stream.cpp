@@ -112,6 +112,7 @@ nsresult Http3Stream::TryActivating() {
     int64_t len;
     if (nsHttp::ParseInt64(contentLength.get(), nullptr, &len)) {
       mRequestBodyLenExpected = len;
+      mRequestBodyLenKnown = true;
     }
   }
 #endif
@@ -395,9 +396,11 @@ nsresult Http3Stream::ReadSegments() {
       glean::http3::sending_blocked_by_flow_control_per_trans
           .AccumulateSingleSample(mSendingBlockedByFlowControlCount);
 
-#ifdef DEBUG
-      MOZ_ASSERT(mRequestBodyLenSent == mRequestBodyLenExpected);
-#endif
+      // For streaming uploads the request body has no Content-Length, so the
+      // number of bytes sent isn't known in advance; only cross-check when it
+      // is.
+      MOZ_ASSERT(!mRequestBodyLenKnown ||
+                 mRequestBodyLenSent == mRequestBodyLenExpected);
       rv = NS_OK;
       again = false;
     }

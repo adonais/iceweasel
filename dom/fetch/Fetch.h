@@ -8,6 +8,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/AbortSignal.h"
 #include "mozilla/dom/BodyConsumer.h"
+#include "mozilla/dom/FetchBindingFwd.h"
 #include "mozilla/dom/FetchStreamReader.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReadableStream.h"
@@ -31,13 +32,8 @@ class PrincipalInfo;
 
 namespace dom {
 
-class BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString;
-class
-    BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrReadableStreamOrUSVString;
 class BlobImpl;
 class InternalRequest;
-class
-    OwningBlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString;
 
 class ReadableStreamDefaultReader;
 class RequestOrUTF8String;
@@ -55,12 +51,11 @@ nsresult UpdateRequestReferrer(nsIGlobalObject* aGlobal,
                                InternalRequest* aRequest);
 
 namespace fetch {
-using BodyInit =
-    BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString;
-using ResponseBodyInit =
-    BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrReadableStreamOrUSVString;
-using OwningBodyInit =
-    OwningBlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString;
+using BodyInit = dom::BodyInit;
+// ResponseBodyInit is now the same as BodyInit since both include
+// ReadableStream
+using ResponseBodyInit = BodyInit;
+using OwningBodyInit = dom::OwningBodyInit;
 };  // namespace fetch
 
 /*
@@ -77,15 +72,6 @@ nsresult ExtractByteStreamFromBody(const fetch::OwningBodyInit& aBodyInit,
  * Non-owning version.
  */
 nsresult ExtractByteStreamFromBody(const fetch::BodyInit& aBodyInit,
-                                   nsIInputStream** aStream,
-                                   nsCString& aContentType,
-                                   uint64_t& aContentLength);
-
-/*
- * Non-owning version. This method should go away when BodyInit will contain
- * ReadableStream.
- */
-nsresult ExtractByteStreamFromBody(const fetch::ResponseBodyInit& aBodyInit,
                                    nsIInputStream** aStream,
                                    nsCString& aContentType,
                                    uint64_t& aContentLength);
@@ -144,6 +130,21 @@ class FetchBody : public FetchBodyBase, public AbortFollower {
   NS_INLINE_DECL_REFCOUNTING_INHERITED(FetchBody, FetchBodyBase)
 
   bool BodyUsed() const;
+
+  // https://fetch.spec.whatwg.org/#body-unusable: the body's stream is
+  // disturbed or locked.
+  bool IsBodyUnusable() const;
+
+  // Cancels the body, per the Streams "cancel" operation, and
+  // marks it used so later consumers and clone() see it as unusable. Closes
+  // the underlying native stream when no ReadableStream reflector exists yet.
+  //
+  // This is marked as a script boundary to minimize changes required for
+  // annotation while we work out how to correctly annotate this code.
+  // Tracked in Bug 1750650.
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  void CancelBody(JSContext* aCx, ErrorResult& aRv,
+                  JS::Handle<JS::Value> aReason = JS::UndefinedHandleValue);
 
   already_AddRefed<Promise> ArrayBuffer(JSContext* aCx, ErrorResult& aRv) {
     return ConsumeBody(aCx, BodyConsumer::ConsumeType::ArrayBuffer, aRv);

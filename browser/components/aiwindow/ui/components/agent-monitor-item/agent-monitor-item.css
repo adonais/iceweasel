@@ -16,6 +16,14 @@
   gap: var(--space-medium);
 }
 
+/* A host that frames the card itself only wants the contents. The padding stays
+   so the fields don't sit against the host's edge. */
+:host(:not([self-contained])) .monitor-card {
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
 .monitor-card-head {
   display: flex;
   align-items: center;
@@ -107,24 +115,6 @@
   color: white;
   font-weight: var(--font-weight-bold);
   font-size: var(--font-size-small);
-}
-
-.monitor-value {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-small);
-  flex-wrap: wrap;
-
-  & .now {
-    font-size: var(--font-size-xxxlarge);
-    font-weight: var(--font-weight-bold);
-    line-height: 1;
-  }
-
-  & .from {
-    color: var(--text-color-deemphasized);
-    font-size: var(--font-size-small);
-  }
 }
 
 .field {
@@ -221,9 +211,22 @@ moz-input-text::part(label),
 }
 
 .error-message {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xsmall);
   color: var(--text-color-error);
   font-size: var(--font-size-small);
   margin-inline-start: var(--space-small);
+
+  &::before {
+    content: "";
+    width: var(--icon-size-xsmall);
+    height: var(--icon-size-xsmall);
+    flex: none;
+    -moz-context-properties: fill;
+    fill: currentColor;
+    background: url("chrome://browser/content/aiwindow/assets/error-outline.svg") no-repeat center / contain;
+  }
 }
 
 .monitor-row {
@@ -243,26 +246,20 @@ moz-input-text::part(label),
   }
 }
 
-.status-chip {
+.last-result {
   display: inline-flex;
   align-items: center;
   gap: var(--space-xsmall);
   font-size: var(--font-size-small);
-  font-weight: var(--font-weight-semibold);
   padding: var(--space-xxsmall) var(--space-small);
   border-radius: var(--border-radius-circle);
   white-space: nowrap;
   flex: none;
-}
+  color: var(--text-color-deemphasized);
 
-.status-chip.watching {
-  color: var(--icon-color-success);
-  background: var(--background-color-success);
-}
-
-.status-chip.paused {
-  color: var(--icon-color-warning);
-  background: var(--background-color-warning);
+  &.match {
+    font-weight: var(--font-weight-semibold);
+  }
 }
 
 @keyframes pulse {
@@ -296,6 +293,12 @@ moz-input-text::part(label),
   flex-direction: column;
   gap: var(--space-medium);
   cursor: auto;
+}
+
+.required-note {
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-small);
+  margin: 0;
 }
 
 .monitor-card-actions {
@@ -338,7 +341,7 @@ hr.rule {
 
 .history-item {
   display: grid;
-  grid-template-columns: minmax(200px, 30%) minmax(80px, 15%) 1fr;
+  grid-template-columns: minmax(170px, 25%) minmax(110px, 18%) 1fr;
   align-items: baseline;
   gap: var(--space-medium);
   padding: var(--space-small) 0;
@@ -397,6 +400,7 @@ hr.rule {
 
 .task-content {
   color: var(--text-color);
+  overflow-wrap: anywhere;
 }
 
 .url-section {
@@ -416,6 +420,10 @@ hr.rule {
 
 .condition-badge.met {
   color: var(--icon-color-success);
+}
+
+.condition-badge.could-not-check {
+  color: var(--text-color-deemphasized);
 }
 
 .monitor-condition-input {

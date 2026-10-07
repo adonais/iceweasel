@@ -356,6 +356,9 @@ def test_generate_deb_archive(
             "all",
             True,
             [
+                "unshare",
+                "--user",
+                "--map-root-user",
                 "chroot",
                 "/srv/jessie-amd64",
                 "bash",
@@ -368,6 +371,9 @@ def test_generate_deb_archive(
             "x86",
             True,
             [
+                "unshare",
+                "--user",
+                "--map-root-user",
                 "chroot",
                 "/srv/jessie-i386",
                 "bash",
@@ -380,6 +386,9 @@ def test_generate_deb_archive(
             "x86_64",
             True,
             [
+                "unshare",
+                "--user",
+                "--map-root-user",
                 "chroot",
                 "/srv/jessie-amd64",
                 "bash",

@@ -723,6 +723,28 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 #endif
   }
 
+  // Used by irregexp code to delay calling ReportOverRecursed until we can
+  // allocate.
+ private:
+  js::ContextData<bool> hasDelayedOverRecursed;
+
+ public:
+  void noteDelayedOverRecursed() {
+    MOZ_ASSERT(!hasDelayedOverRecursed);
+    hasDelayedOverRecursed = true;
+  }
+  bool maybeReportDelayedOverRecursed() {
+    if (hasDelayedOverRecursed) {
+      hasDelayedOverRecursed = false;
+      ReportOverRecursed(this);
+      return false;
+    }
+    return true;
+  }
+  static constexpr size_t offsetOfHasDelayedOverRecursed() {
+    return offsetof(JSContext, hasDelayedOverRecursed);
+  }
+
   // OOM stack trace buffer management
   void unsetOOMStackTrace();
   const char* getOOMStackTrace() const;

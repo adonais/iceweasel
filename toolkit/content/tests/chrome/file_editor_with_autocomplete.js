@@ -1,21 +1,6 @@
 // nsDoTestsForEditorWithAutoComplete tests basic functions of editor with autocomplete.
 // Users must include SimpleTest.js and EventUtils.js, and register "Mozilla" to the autocomplete for the target.
-
-async function waitForCondition(condition) {
-  return new Promise(resolve => {
-    var tries = 0;
-    var interval = setInterval(function () {
-      if (condition() || tries >= 60) {
-        moveOn();
-      }
-      tries++;
-    }, 100);
-    var moveOn = function () {
-      clearInterval(interval);
-      resolve();
-    };
-  });
-}
+/* globals TestUtils */
 
 function nsDoTestsForEditorWithAutoComplete(
   aDescription,
@@ -78,14 +63,21 @@ nsDoTestsForEditorWithAutoComplete.prototype = {
         continue;
       }
 
-      await waitForCondition(() => {
-        return (
+      await SimpleTest.promiseWaitForCondition(
+        () =>
           this._controller.searchStatus >=
-          Ci.nsIAutoCompleteController.STATUS_COMPLETE_NO_MATCH
-        );
-      });
+          Ci.nsIAutoCompleteController.STATUS_COMPLETE_NO_MATCH,
+        "waiting for search to complete",
+        100,
+        60
+      );
       if (test.popup) {
-        await waitForCondition(() => this._controller.input.popupOpen);
+        await SimpleTest.promiseWaitForCondition(
+          () => this._controller.input.popupOpen,
+          "waiting for popup to open",
+          100,
+          60
+        );
       }
 
       this._target.removeEventListener("beforeinput", onBeforeInput);

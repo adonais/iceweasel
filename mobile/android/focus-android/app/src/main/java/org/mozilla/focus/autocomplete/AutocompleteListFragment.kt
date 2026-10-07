@@ -18,6 +18,7 @@ import android.widget.TextView
 import androidx.annotation.LayoutRes
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.ItemTouchHelper.SimpleCallback
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -32,6 +33,7 @@ import org.mozilla.focus.ext.showToolbar
 import org.mozilla.focus.settings.BaseSettingsLikeFragment
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.state.Screen
+import org.mozilla.focus.utils.ListDiffCallback
 import org.mozilla.focus.utils.ViewUtils
 
 typealias DomainFormatter = (String) -> String
@@ -185,11 +187,12 @@ open class AutocompleteListFragment : BaseSettingsLikeFragment() {
             body: (() -> Unit)? = null,
         ) {
             val updatedDomains = CustomDomains.load(context)
+            val diff = DiffUtil.calculateDiff(ListDiffCallback(domains, updatedDomains) { it })
 
             domains.clear()
             domains.addAll(updatedDomains)
 
-            notifyDataSetChanged()
+            diff.dispatchUpdatesTo(this)
 
             body?.invoke()
         }

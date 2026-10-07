@@ -1,4 +1,4 @@
-// |reftest| skip async -- import-defer is not supported
+// |reftest| shell-option(--enable-defer-import-eval) skip-if(release_or_beta||!xulRuntime.shell) async -- import-defer is not released yet, requires shell-options
 // This file was procedurally generated from the following sources:
 // - src/dynamic-import/import-defer-specifier-tostring-abrupt-rejects.case
 // - src/dynamic-import/catch/nested-do-while.template

@@ -99,6 +99,5 @@ export const SUPPORTED_INPUT_TYPES = [
   "email",
   "tel",
   "number",
-  "search",
   "month",
 ];

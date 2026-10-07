@@ -28,7 +28,6 @@ from mozharness.mozilla.testing.codecoverage import (
 from mozharness.mozilla.testing.testbase import TestingMixin, testing_config_options
 from mozharness.mozilla.tooltool import TooltoolMixin
 
-PY2 = sys.version_info.major == 2
 scripts_path = os.path.abspath(os.path.dirname(os.path.dirname(mozharness.__file__)))
 external_tools_path = os.path.join(scripts_path, "external_tools")
 
@@ -224,7 +223,7 @@ class AWSY(TestingMixin, MercurialScript, TooltoolMixin, CodeCoverageMixin):
             env["EXTERNALTOOLSPATH"] = external_tools_path
 
         runtime_testvars_path = os.path.join(self.awsy_path, "runtime-testvars.json")
-        runtime_testvars_file = open(runtime_testvars_path, "wb" if PY2 else "w")
+        runtime_testvars_file = open(runtime_testvars_path, "w")
         runtime_testvars_file.write(json.dumps(runtime_testvars, indent=2))
         runtime_testvars_file.close()
 

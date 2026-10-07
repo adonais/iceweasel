@@ -147,6 +147,11 @@ add_task(async function basic() {
   );
 
   info("Press on the bing menu button and enter search mode");
+  let viewOpened = false;
+  let observer = new MutationObserver(() => {
+    viewOpened ||= gURLBar.view.isOpen;
+  });
+  observer.observe(gURLBar, { attributeFilter: ["open"] });
   let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
   popup.querySelector("panel-item[data-engine-id=bing]").click();
   await popupHidden;
@@ -156,10 +161,16 @@ add_task(async function basic() {
     entry: "searchbutton",
     source: 3,
   });
+  await gURLBar.lastQueryContextPromise;
 
   info("Press the close button and escape search mode");
   gURLBar.querySelector(".searchmode-switcher-close").click();
   await UrlbarTestUtils.assertSearchMode(window, null);
+  observer.disconnect();
+  Assert.ok(
+    !viewOpened,
+    "The view never opened, since the engine had no results to show"
+  );
 });
 
 add_task(async function privileged_chicklet() {

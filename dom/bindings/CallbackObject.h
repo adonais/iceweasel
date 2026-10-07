@@ -264,6 +264,9 @@ class MOZ_STACK_CLASS CallSetup {
 
   MOZ_CAN_RUN_SCRIPT ~CallSetup();
 
+  // We better not get copy-constructed
+  CallSetup(const CallSetup&) = delete;
+
   JSContext* GetContext() const { return mCx; }
 
   // Safe to call this after the constructor has run without throwing on the
@@ -285,9 +288,6 @@ class MOZ_STACK_CLASS CallSetup {
             CallbackObjectBase::ExceptionHandling aExceptionHandling,
             JS::Realm* aRealm, bool aIsMainThread,
             CycleCollectedJSContext* aCCJS);
-
-  // We better not get copy-constructed
-  CallSetup(const CallSetup&) = delete;
 
   bool ShouldRethrowException(JS::Handle<JS::Value> aException);
 
@@ -376,6 +376,9 @@ class CallbackObject : public nsISupports,
     Init(aCallback, aCallbackGlobal, aAsyncStack, aIncumbentGlobal);
   }
 
+  CallbackObject(const CallbackObject&) = delete;
+  CallbackObject& operator=(const CallbackObject&) = delete;
+
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     return aMallocSizeOf(this);
   }
@@ -440,9 +443,6 @@ class CallbackObject : public nsISupports,
   };
 
  private:
-  CallbackObject(const CallbackObject&) = delete;
-  CallbackObject& operator=(const CallbackObject&) = delete;
-
   inline void Init(JSObject* aCallback, JSObject* aCallbackGlobal,
                    JSObject* aCreationStack,
                    nsIGlobalObject* aIncumbentGlobal) {

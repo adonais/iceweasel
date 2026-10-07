@@ -143,3 +143,9 @@ if CONFIG["MOZ_VALGRIND"]:
         "valgrind/i386-pc-linux-gnu.sup",
         "valgrind/x86_64-pc-linux-gnu.sup",
     ]
+
+LICENSED_UNDER += ["unicode-v3"]
+LICENSED_UNDER["unicode-v3"].paths = [
+    "pgo/js-input/collator_bench.html",
+    "pgo/js-input/normalizer_bench.html",
+]

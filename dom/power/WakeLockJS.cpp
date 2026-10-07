@@ -15,8 +15,8 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventTarget.h"
-#include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/Navigator.h"
+#include "mozilla/dom/PermissionsPolicyUtils.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WakeLockBinding.h"
 #include "nsCOMPtr.h"
@@ -63,7 +63,7 @@ WakeLockJS::RequestError WakeLockJS::WakeLockAllowedForDocument(
   }
 
   // Step 2. check policy-controlled feature screen-wake-lock
-  if (!FeaturePolicyUtils::IsFeatureAllowed(aDoc, u"screen-wake-lock"_ns)) {
+  if (!PermissionsPolicyUtils::IsFeatureAllowed(aDoc, u"screen-wake-lock"_ns)) {
     return RequestError::PolicyDisallowed;
   }
 

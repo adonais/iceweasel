@@ -29,11 +29,8 @@ async function setupPrefs() {
 }
 
 async function resetPrefs() {
-  // We set 5 prefs in setupPrefs, so we should reset 5 prefs.
-  // 1 popPrefEnv from pushPrefEnv
-  // and 4 popPrefEnv happen internally in setDefaultTopSites.
-  await SpecialPowers.popPrefEnv();
-  await SpecialPowers.popPrefEnv();
+  // setupPrefs pushes 3 pref environments: 1 from its own pushPrefEnv and
+  // 2 inside setDefaultTopSites.
   await SpecialPowers.popPrefEnv();
   await SpecialPowers.popPrefEnv();
   await SpecialPowers.popPrefEnv();
@@ -44,21 +41,31 @@ let initialWidth;
 // Sizes the content area rather than the outer window: the window decoration
 // in between varies by OS and pixel density, so a fixed outer size gives a
 // different viewport per platform. setPrimaryContentSize takes device pixels.
-function setSize(width, height) {
-  initialHeight = window.innerHeight;
-  initialWidth = window.innerWidth;
-  let resizePromise = BrowserTestUtils.waitForEvent(window, "resize", false);
+async function setSize(width, height) {
   const dpr = window.devicePixelRatio;
+  const contentRect = gBrowser.selectedBrowser.getBoundingClientRect();
+  initialWidth ??= contentRect.width;
+  initialHeight ??= contentRect.height;
+  const deviceWidth = Math.round(width * dpr);
+  const deviceHeight = Math.round(height * dpr);
+  // Asking for the size the content area already has changes nothing, so no
+  // resize event comes and waiting for one would hang until the test times out.
+  if (
+    Math.round(contentRect.width * dpr) === deviceWidth &&
+    Math.round(contentRect.height * dpr) === deviceHeight
+  ) {
+    return;
+  }
+  let resizePromise = BrowserTestUtils.waitForEvent(window, "resize", false);
   window.docShell.treeOwner
     .QueryInterface(Ci.nsIDocShellTreeOwner)
-    .setPrimaryContentSize(Math.round(width * dpr), Math.round(height * dpr));
-  return resizePromise;
+    .setPrimaryContentSize(deviceWidth, deviceHeight);
+  await resizePromise;
 }
 
+// The first size setSize saw is the one the file found; the rest are its own.
 function resetSize() {
-  let resizePromise = BrowserTestUtils.waitForEvent(window, "resize", false);
-  window.resizeTo(initialWidth, initialHeight);
-  return resizePromise;
+  return setSize(initialWidth, initialHeight);
 }
 
 add_task(async function test_newtab_last_LinkMenu() {
@@ -86,8 +93,8 @@ add_task(async function test_newtab_last_LinkMenu() {
     "Should render activity stream content"
   );
 
-  // @nova-cleanup(remove-conditional): Remove novaEnabled; use 900, 740 and
-  // "6n" unconditionally.
+  // @nova-cleanup(remove-conditional): Remove novaEnabled; use 900 and 740
+  // unconditionally.
   const novaEnabled = Services.prefs.getBoolPref(
     "browser.newtabpage.activity-stream.nova.enabled",
     false
@@ -97,23 +104,31 @@ add_task(async function test_newtab_last_LinkMenu() {
   // $break-point-large (866px) for open-left to match the rendered columns.
   const topSitesWidth = novaEnabled ? 900 : 600;
   const storiesWidth = novaEnabled ? 740 : 600;
-  const topSiteNthChild = novaEnabled ? "6n" : "2n";
 
   await setSize(topSitesWidth, 450);
 
   // Test context menu position for topsites.
-  await SpecialPowers.spawn(browser, [topSiteNthChild], async nthChild => {
-    // Topsites might not be ready, so wait for the button.
-    await ContentTaskUtils.waitForCondition(
-      () =>
-        content.document.querySelector(
-          `.top-site-outer:nth-child(${nthChild}) .context-menu-button`
+  await SpecialPowers.spawn(browser, [], async () => {
+    // The subject is the rightmost top site of the row, whose menu has to open
+    // to the left. Found rather than counted to, because the placeholders, the
+    // add-shortcut tile and the search shortcut have no menu to open.
+    const lastTileWithMenu = () => {
+      const tiles = [
+        ...content.document.querySelectorAll(
+          ".top-site-outer:not(.placeholder, .add-button-tile, .search-shortcut)"
         ),
-      "Wait for the topsite card and button"
+      ].filter(
+        tile =>
+          tile.querySelector(".context-menu-button") &&
+          tile.getBoundingClientRect().width
+      );
+      return tiles[tiles.length - 1];
+    };
+    await ContentTaskUtils.waitForCondition(
+      lastTileWithMenu,
+      "Wait for the topsite cards to render"
     );
-    const topsiteOuter = content.document.querySelector(
-      `.top-site-outer:nth-child(${nthChild})`
-    );
+    const topsiteOuter = lastTileWithMenu();
     const topsiteContextMenuButton = topsiteOuter.querySelector(
       ".context-menu-button"
     );

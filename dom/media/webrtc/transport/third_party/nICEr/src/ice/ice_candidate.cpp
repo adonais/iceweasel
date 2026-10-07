@@ -356,7 +356,6 @@ int nr_ice_candidate_destroy(nr_ice_candidate **candp)
         break;
     }
 
-    free(cand->mdns_addr);
     free(cand->foundation);
     free(cand->raw_addr);
     free(cand->raw_raddr);
@@ -1048,15 +1047,9 @@ int nr_ice_format_candidate_attribute(nr_ice_candidate *cand, char *attr, int ma
     assert(!strcmp(nr_ice_candidate_type_names[HOST], "host"));
     assert(!strcmp(nr_ice_candidate_type_names[RELAYED], "relay"));
 
-    if (cand->mdns_addr) {
-      // This function is used on remote candidates, so permit larger mDNS
-      // addresses than we use.
-      strncpy(addr, cand->mdns_addr, sizeof(addr));
-      addr[sizeof(addr) - 1] = 0;
-    } else {
-      if(r=nr_transport_addr_get_addrstring(&cand->addr,addr,sizeof(addr)))
-        ABORT(r);
-    }
+    if(r=nr_transport_addr_get_addrstring(&cand->addr,addr,sizeof(addr)))
+      ABORT(r);
+
     if(r=nr_transport_addr_get_port(&cand->addr,&port))
       ABORT(r);
     /* https://tools.ietf.org/html/rfc6544#section-4.5 */

@@ -51,10 +51,10 @@ import mozilla.components.ui.icons.R as iconsR
  * A menu item shown as a cell in a grid.
  *
  * @param title The title of the menu item.
- * @param contentDescription The content description of the menu item.
  * @param icon An icon of the menu item.
  * @param onClickEvent [MenuEvent] to dispatch when the menu item is clicked.
  * @param onInteraction The callback to invoke when the menu item is interacted with.
+ * @param contentDescription Optional custom content description for the menu item.
  * @param index The optional index of this item in the grid.
  * @param modifier The modifier to apply to the menu item.
  * @param state The state of this menu item.
@@ -65,18 +65,18 @@ import mozilla.components.ui.icons.R as iconsR
 @Composable
 internal fun MenuGridItem(
     title: Text,
-    contentDescription: Text,
     icon: MenuItemIcon,
     onClickEvent: MenuEvent,
     onInteraction: (MenuEvent) -> Unit,
     modifier: Modifier = Modifier,
+    contentDescription: Text?,
     index: Int? = null,
     state: MenuItemState = DEFAULT,
     onLongClickEvent: MenuEvent? = null,
     showContainer: Boolean = false,
     shape: Shape = RectangleShape,
 ) {
-    val description = contentDescription.value
+    val description = contentDescription?.value
     val backgroundColor =
         if (showContainer) {
             MaterialTheme.colorScheme.surfaceBright
@@ -147,7 +147,7 @@ private fun Modifier.menuGridItemClickable(
 @Composable
 private fun Modifier.menuGridItemSemantics(
     index: Int?,
-    description: String,
+    description: String?,
 ): Modifier {
     return this.semantics(mergeDescendants = true) {
         index?.let {
@@ -159,7 +159,7 @@ private fun Modifier.menuGridItemSemantics(
                     columnSpan = 1,
                 )
         }
-        this.contentDescription = description
+        description?.let { this.contentDescription = it }
         this.role = Button
     }
 }

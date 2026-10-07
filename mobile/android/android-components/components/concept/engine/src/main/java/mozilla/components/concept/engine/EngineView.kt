@@ -82,6 +82,16 @@ interface EngineView {
      */
     fun captureThumbnail(onFinish: (Bitmap?) -> Unit)
 
+    /**
+     * Request a screenshot of the full (scrollable) web page currently being rendered, including content outside the
+     * currently visible viewport.
+     *
+     * @param onFinish A callback invoked with the captured [Bitmap], or `null` if the capture failed. Important for
+     *   engine-gecko: Make sure not to reference the context or view in this callback to prevent memory leaks:
+     *   https://bugzilla.mozilla.org/show_bug.cgi?id=1678364
+     */
+    fun captureFullPage(onFinish: (Bitmap?) -> Unit) = Unit
+
     /** Clears the current selection if possible. */
     fun clearSelection() = Unit
 

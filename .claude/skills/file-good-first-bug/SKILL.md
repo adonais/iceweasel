@@ -1,6 +1,6 @@
 ---
 name: file-good-first-bug
-description: Use this skill when the user wants to file good-first-bugs in Bugzilla for Firefox. A good-first-bug is a narrow, self-contained, low-risk task scoped so a first-time contributor can land it without deep context. Sources include lint warnings, small typos, dead-code removal, mechanical refactors, docs conversions, or any other small task the user points at. Produces prefilled `enter_bug.cgi` URLs the user clicks to submit. Trigger on phrases like "file a good first bug", "open good first bugs for X", "create a good-first-bug from this".
+description: Use this skill when the user wants to file good-first-bugs in Bugzilla for Firefox. A good-first-bug is a narrow, self-contained, low-risk task scoped so a first-time contributor can land it without deep context. Sources include lint warnings, small typos, dead-code removal, mechanical refactors, docs conversions, or any other small task the user points at. Opens a prefilled `enter_bug.cgi` form per bug in the user's browser for them to submit. Trigger on phrases like "file a good first bug", "open good first bugs for X", "create a good-first-bug from this".
 ---
 
 ## What is a good first bug
@@ -31,9 +31,9 @@ If the task touches many files, requires API design, or needs deep domain knowle
 
 3. **Propose to the user before filing.** Use `AskUserQuestion` to confirm scope and which items to file. Never generate bug URLs without explicit approval - filing bugs is user-visible.
 
-4. **Generate prefilled `enter_bug.cgi` URLs.** There is no MCP tool to create Bugzilla bugs - the user submits each bug by clicking its URL. Use the URL builder below.
+4. **Open a prefilled `enter_bug.cgi` form per bug.** There is no MCP tool to create Bugzilla bugs - the user submits each one from the form. Use the URL builder below, which opens it in their browser.
 
-5. **Print the URLs**, one per item, prefixed with what the bug is about so the user can scan and click.
+5. **Report one line per bug** - its title and where it went (product/component). **Never paste the URL into your reply.** Terminal linkification gives up past some length, and a prefilled form's URL clears that threshold: it carries the whole bug body percent-encoded in its query string, which ran to 2413 and 2635 characters for two ordinary good-first-bugs. Past the threshold the reader gets an unclickable wall of `%20`. It costs you as well as the reader: those characters stay resident in your context and are re-sent with every later request in the session, which is also why the script no longer prints the URL - having it in front of you is what invites pasting it. Do **not** respond by writing a terser bug body - a good-first-bug has to be self-sufficient, and that is worth more than a URL a reader was never meant to click. The script already put the form in front of the user.
 
 ## Choosing product/component
 
@@ -112,13 +112,13 @@ The last paragraph (about auto-assignment) is canonical - keep it verbatim.
 
 ## URL builder
 
-Use the helper script `scripts/build_url.py` (path relative to this skill file) to generate each prefilled `enter_bug.cgi` URL:
+Use the helper script `scripts/build_url.py` (path relative to this skill file) to open each prefilled `enter_bug.cgi` form:
 
 ```bash
 ./scripts/build_url.py "<title>" "<comment>" --tracker 1361342 --lang rust
 ```
 
-Run it with `--help` for the full list of options (`--product`, `--component`, `--tracker`, `--keywords`, `--lang`, `--mentor`). It can also be imported and its `build_url()` function called directly, which stays offline and omits the mentor unless you pass one; the command line resolves it (see [Mentor](#mentor)).
+It opens the form in the user's default browser and prints a one-line confirmation. `--print-url` prints the URL instead, for a headless host - and if you use it, hand the user the URL by writing it to a file rather than into your reply, for the length reason in step 5. Run it with `--help` for the full list of options (`--product`, `--component`, `--tracker`, `--keywords`, `--lang`, `--mentor`). It can also be imported and its `build_url()` function called directly, which stays offline and omits the mentor unless you pass one; the command line resolves it (see [Mentor](#mentor)).
 
 ## Example: lint warnings (canonical case)
 
@@ -160,5 +160,6 @@ awk '/^\// { f=$0; next } /warning/ { c[f]++; lines[f]=lines[f] "\n" $0 }
 - **One bug per atomic task** unless the user opts into a combined bug.
 - **Always set a mentor, and never hand-write the address** - let the builder resolve it, or ask the filer. Without a mentor the bug is invisible in some dashboards and a newcomer's questions go unanswered.
 - **Don't auto-assign** - the template explicitly tells contributors not to ask.
+- **Never paste a prefilled URL into your reply** - it is long enough to defeat terminal linkification. Let the script open the form, and don't trim the bug body to shorten it.
 - **Push back on scope** that's too big, too vague, or requires design decisions - those are not good-first-bugs.
 - **Match the component to the work** - don't dump everything under Lint and Formatting if the bug isn't a lint bug.

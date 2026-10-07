@@ -80,7 +80,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "pairingVersion",
   "identity.fxaccounts.pairing.version",
-  1
+  2
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -690,7 +690,9 @@ FxAccountsWebChannelHelpers.prototype = {
     // Importantly, the message from (a) is the one that actually has the service information we care about
     // (eg, the sync engine selections) - (c) *will* have `services.sync` but it will be an empty object.
     // This means we need to take care to not lose the services from (a) when processing (c).
-    const signedInUser = await this._fxAccounts.getSignedInUser([
+    let signedInUser = await this._fxAccounts._internal.getUserAccountData([
+      "uid",
+      "sessionToken",
       "requestedServices",
     ]);
     let existingServices;
@@ -700,6 +702,9 @@ FxAccountsWebChannelHelpers.prototype = {
           "the webchannel found a different user signed in - signing them out."
         );
         await this._disconnect();
+        // They are no longer signed in, so everything below treats this message
+        // as a new user signing in.
+        signedInUser = null;
       } else {
         existingServices = signedInUser.requestedServices
           ? JSON.parse(signedInUser.requestedServices)
@@ -738,16 +743,41 @@ FxAccountsWebChannelHelpers.prototype = {
 
     this.setPreviousAccountHashPref(accountData.uid);
 
-    // For scenarios like user is logged in via third-party but wants
-    // to enable sync (password) the server will send an additional login command
-    // we need to ensure we don't destroy the existing session
-    if (signedInUser && signedInUser.uid === accountData.uid) {
-      await this._fxAccounts._internal.updateUserAccountData(accountData);
-      log.debug("Webchannel finished updating already logged in user.");
-    } else {
+    // Reauth can omit the stored token, while third-party auth can repeat the
+    // current session; neither should replace the device.
+    const previousSessionToken = signedInUser?.sessionToken;
+    const isReplacementSession =
+      !!previousSessionToken &&
+      !!accountData.sessionToken &&
+      previousSessionToken !== accountData.sessionToken;
+
+    if (!signedInUser) {
       await this._fxAccounts._internal.setSignedInUser(accountData);
       log.debug("Webchannel finished logging a user in.");
+      return;
     }
+
+    if (isReplacementSession) {
+      // Our device record belongs to the old session, so forget it - the next
+      // registration then creates a new record rather than trying to move the
+      // old one, which the server rejects as a device/session conflict.
+      accountData.device = null;
+      accountData.encryptedSendTabKeys = null;
+    }
+    await this._fxAccounts._internal.updateUserAccountData(accountData);
+    if (isReplacementSession) {
+      // Destroying the session also removes its device record. Failing to
+      // clean up must not fail the login we've already stored.
+      log.debug("Webchannel is destroying the previous session.");
+      try {
+        await this._fxAccounts._internal.fxAccountsClient.signOut(
+          previousSessionToken
+        );
+      } catch (ex) {
+        log.warn("failed to destroy the previous session", ex);
+      }
+    }
+    log.debug("Webchannel finished updating already logged in user.");
   },
 
   /**

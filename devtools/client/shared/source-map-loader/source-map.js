@@ -107,9 +107,6 @@ async function loadSourceMap(generatedSource) {
       resolvedSourceMapURL,
       baseURL
     );
-    if (!map.sources.length) {
-      throw new Error("No sources are declared in this source map.");
-    }
     let ignoreListUrls = [];
     if (map.x_google_ignoreList?.length) {
       ignoreListUrls = map.x_google_ignoreList.map(

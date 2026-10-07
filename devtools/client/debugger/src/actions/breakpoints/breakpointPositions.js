@@ -3,9 +3,9 @@
  * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 import {
-  getBreakpointPositionsForSource,
-  getSourceActorsForSource,
-  getFirstSourceActorForGeneratedSource,
+  getBreakpointPositionsForLocationSource,
+  getRelevantSourceActorsForLocation,
+  getBreakpointPositionsKeyForLocation,
 } from "../../selectors/index";
 
 import { makeBreakpointId } from "../../utils/breakpoint/index";
@@ -169,22 +169,9 @@ async function _setBreakpointPositions(location, thunkArgs) {
   }
 
   // Retrieve the list of source actors related to the selected source
-  let sourceActors;
-  if (generatedSource.isHTML) {
-    // For HTML file may have many inline <script> and need to coalesce all their breakable positions
-    sourceActors = getSourceActorsForSource(getState(), generatedSource.id);
-  } else {
-    // Retrieve the first source actor matching this original source url.
-    // If we run this original in multiple threads (workers),
-    // or if the bundle is evaluated many times.
-    //
-    // This is an arbitrary choice, ideally we should receive a precise source actor
-    // to show a precise context but the debugger UI, especially its source tree
-    // isn't capable to make the distinction.
-    sourceActors = [
-      getFirstSourceActorForGeneratedSource(getState(), generatedSource.id),
-    ];
-  }
+  const sourceActors = getRelevantSourceActorsForLocation(getState(), location);
+  // Compute the source key at the same time as it is also derived from source actors
+  const sourceKey = getBreakpointPositionsKeyForLocation(getState(), location);
 
   // Note: While looping here may not look ideal, in the vast majority of
   // cases, the number of ranges here should be very small, and is quite
@@ -247,22 +234,9 @@ async function _setBreakpointPositions(location, thunkArgs) {
 
   dispatch({
     type: "ADD_BREAKPOINT_POSITIONS",
-    source: location.source,
+    sourceKey,
     positions,
   });
-}
-
-function generatedSourceActorKey(state, source) {
-  if (source.isOriginal) {
-    return getFirstSourceActorForGeneratedSource(
-      state,
-      source.generatedSource.id
-    ).actor;
-  }
-  const actors = getSourceActorsForSource(state, source.id).map(
-    ({ actor }) => actor
-  );
-  return [source.id, ...actors].join(":");
 }
 
 /**
@@ -291,9 +265,9 @@ export const setBreakpointPositions = memoizeableAction(
   "setBreakpointPositions",
   {
     getValue: (location, { getState }) => {
-      const positions = getBreakpointPositionsForSource(
+      const positions = getBreakpointPositionsForLocationSource(
         getState(),
-        location.source.id
+        location
       );
       if (!positions) {
         return null;
@@ -312,10 +286,14 @@ export const setBreakpointPositions = memoizeableAction(
       return fulfilled(positions);
     },
     createKey(location, { getState }) {
-      const key = generatedSourceActorKey(getState(), location.source);
+      // Use the same key as the source-actors reducer
+      const sourceKey = getBreakpointPositionsKeyForLocation(
+        getState(),
+        location
+      );
       return !location.source.isOriginal && location.line
-        ? `${key}-${location.line}`
-        : key;
+        ? `${sourceKey}-${location.line}`
+        : sourceKey;
     },
     action: async (location, thunkArgs) =>
       _setBreakpointPositions(location, thunkArgs),
@@ -326,9 +304,10 @@ export function updateBreakpointPositionsForNewPrettyPrintedSource(
   minifiedSource
 ) {
   return async ({ dispatch, getState }) => {
-    const oldPositions = getBreakpointPositionsForSource(
+    const location = createLocation({ source: minifiedSource });
+    const oldPositions = getBreakpointPositionsForLocationSource(
       getState(),
-      minifiedSource.id
+      location
     );
     if (!oldPositions) {
       return;
@@ -339,12 +318,20 @@ export function updateBreakpointPositionsForNewPrettyPrintedSource(
       Number(lineString)
     );
 
-    dispatch({ type: "CLEAR_BREAKPOINT_POSITIONS", source: minifiedSource });
+    const sourceKey = getBreakpointPositionsKeyForLocation(
+      getState(),
+      location
+    );
+    dispatch({ type: "CLEAR_BREAKPOINT_POSITIONS", sourceKey });
 
     // recompute the breakpoint positions for all lines for which we had breakpointPositions before
     await Promise.all(
       lines.map(line =>
-        dispatch(setBreakpointPositions({ source: minifiedSource, line }))
+        dispatch(
+          setBreakpointPositions(
+            createLocation({ source: minifiedSource, line })
+          )
+        )
       )
     );
   };

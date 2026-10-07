@@ -322,7 +322,7 @@ Other examples can be found in the {searchfox}`test coverage <toolkit/components
 
 - Firefox 58
 
-  - Added support for recording new scalars from add-ons ([bug 1393801](bughttps://bugzilla.mozilla.org/show_bug.cgi?id=1393801)).
+  - Added support for recording new scalars from add-ons ([bug 1393801](https://bugzilla.mozilla.org/show_bug.cgi?id=1393801)).
   - Ignore re-registering existing scalars for a category instead of failing ([bug 1409323](https://bugzilla.mozilla.org/show_bug.cgi?id=1409323)).
 
 - Firefox 60: Enabled support for adding scalars in artifact builds and build-faster workflows ([bug 1425909](https://bugzilla.mozilla.org/show_bug.cgi?id=1425909)).

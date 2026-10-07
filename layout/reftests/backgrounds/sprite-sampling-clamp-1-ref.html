@@ -1,0 +1,24 @@
+<!DOCTYPE HTML>
+<!--
+    Any copyright is dedicated to the Public Domain.
+    http://creativecommons.org/licenses/publicdomain/
+    -->
+<html reftest-zoom="1.1">
+<head>
+<meta charset="utf-8">
+<title>Reference: the sprite cell on its own</title>
+<style>
+html, body { margin: 0; background: white; }
+/* The same cell as a standalone image, so it is the same kind of primitive
+   with the same geometry, just with nothing around it to bleed in. */
+div {
+  width: 16px;
+  height: 16px;
+  background-image: url(sprite-sampling-clamp-ref.png);
+  background-position: 0 0;
+  background-repeat: no-repeat;
+}
+</style>
+</head>
+<body><div></div></body>
+</html>

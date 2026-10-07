@@ -7,6 +7,8 @@
 
 #include <glib.h>
 
+#include <cstdint>
+
 // Some gobject functions expect functions for gpointer arguments.
 // gpointer is void* but C++ doesn't like casting functions to void*.
 template <class T>

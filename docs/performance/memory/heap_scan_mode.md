@@ -174,7 +174,7 @@ contains a strong reference to the EventListenerManager
 `0x7f0899b4e550`. "[via hash] mListenerManager" is a description of
 that strong reference. Together, these lines show a chain of strong
 references from an object the cycle collector thinks needs to be kept
-alive, `0x7f0899b4e550`, to the object` 0x7f0897082c00` that you asked
+alive, `0x7f0899b4e550`, to the object `0x7f0897082c00` that you asked
 about. Most of the time, the actual chain is not important, because the
 cycle collector can only tell us about what went right. Let us call the
 address of the leaking object (`0x7f0882fe3230` in this case)

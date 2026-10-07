@@ -50,14 +50,20 @@ add_task(async function test_searchmode_switcher_exposed_once() {
     barAcc,
     "The button's host and the input container contribute no accessible of their own"
   );
-  let dropmarkerLabel = switcher.querySelector(
-    ".searchmode-switcher-dropmarker"
-  ).title;
-  Assert.ok(dropmarkerLabel, "The dropmarker is localized");
+  await BrowserTestUtils.waitForMutationCondition(
+    button,
+    { attributeFilter: ["aria-label"] },
+    () => switcher.ariaLabel
+  );
+  is(
+    switcher.ariaLabel,
+    switcher.title,
+    "The button's aria-label is its tooltip"
+  );
   is(
     buttonAcc.name,
-    dropmarkerLabel,
-    "The button takes its name from the dropmarker"
+    switcher.title,
+    "The button takes its name from its tooltip"
   );
 
   let state = {},

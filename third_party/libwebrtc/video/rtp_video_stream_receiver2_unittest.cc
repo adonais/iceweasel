@@ -59,6 +59,7 @@
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
+#include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "modules/video_coding/nack_requester.h"
 #include "rtc_base/copy_on_write_buffer.h"
@@ -200,7 +201,7 @@ class RtpVideoStreamReceiver2Test : public ::testing::Test,
         env_, TaskQueueBase::Current(), &mock_transport_, nullptr, nullptr,
         &config_, rtp_receive_statistics_.get(), nullptr, nullptr,
         &nack_periodic_processor_, &mock_on_complete_frame_callback_, nullptr,
-        nullptr);
+        nullptr, nullptr);
     rtp_video_stream_receiver_->AddReceiveCodec(kPayloadType,
                                                 kVideoCodecGeneric, {},
                                                 /*raw_payload=*/false);
@@ -1729,7 +1730,7 @@ TEST_F(RtpVideoStreamReceiver2Test, TransformFrame) {
       env_, TaskQueueBase::Current(), &mock_transport_, nullptr, nullptr,
       &config_, rtp_receive_statistics_.get(), nullptr, nullptr,
       &nack_periodic_processor_, &mock_on_complete_frame_callback_, nullptr,
-      mock_frame_transformer);
+      mock_frame_transformer, nullptr);
   receiver->AddReceiveCodec(kPayloadType, kVideoCodecGeneric, {},
                             /*raw_payload=*/false);
 
@@ -1762,7 +1763,7 @@ TEST_F(RtpVideoStreamReceiver2Test, TransformFrameWithAbsoluteCaptureTime) {
       env_, TaskQueueBase::Current(), &mock_transport_, nullptr, nullptr,
       &config_, rtp_receive_statistics_.get(), nullptr, nullptr,
       &nack_periodic_processor_, &mock_on_complete_frame_callback_, nullptr,
-      mock_frame_transformer);
+      mock_frame_transformer, nullptr);
   receiver->AddReceiveCodec(kPayloadType, kVideoCodecGeneric, {},
                             /*raw_payload=*/false);
 
@@ -2112,6 +2113,520 @@ TEST_F(RtpVideoStreamReceiver2Test, RemoveReceiveCodecsResetsState) {
           [&](EncodedFrame* frame) { EXPECT_TRUE(frame->is_keyframe()); });
   rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
       idr_data, rtp_packet, idr_video_header);
+  mock_on_complete_frame_callback_.ClearExpectedBitstream();
+}
+
+TEST_F(RtpVideoStreamReceiver2Test, SetReceiveCodecsUpdatesInPlace) {
+  constexpr uint8_t kH264Pt = 99;
+  constexpr uint8_t kVp8Pt = 100;
+
+  RtpVideoStreamReceiver2::ReceiveCodec h264_codec{
+      .payload_type = kH264Pt,
+      .video_codec = kVideoCodecH264,
+  };
+  RtpVideoStreamReceiver2::ReceiveCodec vp8_codec{
+      .payload_type = kVp8Pt,
+      .video_codec = kVideoCodecVP8,
+  };
+
+  rtp_video_stream_receiver_->SetReceiveCodecs({h264_codec});
+  rtp_video_stream_receiver_->StartReceive();
+
+  // Update codecs in-place by adding VP8 while keeping H264.
+  rtp_video_stream_receiver_->SetReceiveCodecs({h264_codec, vp8_codec});
+
+  // Verify VP8 payload is accepted and produces a complete frame.
+  const uint8_t vp8_payload[] = {1, 2, 3, 4};
+  CopyOnWriteBuffer payload(vp8_payload);
+  RtpPacketReceived rtp_packet;
+  rtp_packet.SetPayloadType(kVp8Pt);
+  rtp_packet.SetSequenceNumber(1);
+
+  RTPVideoHeader video_header;
+  video_header.codec = kVideoCodecVP8;
+  video_header.video_type_header.emplace<RTPVideoHeaderVP8>();
+  video_header.is_first_packet_in_frame = true;
+  video_header.is_last_packet_in_frame = true;
+  video_header.frame_type = VideoFrameType::kVideoFrameKey;
+
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(payload);
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .WillOnce(
+          [&](EncodedFrame* frame) { EXPECT_TRUE(frame->is_keyframe()); });
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      payload, rtp_packet, video_header);
+  mock_on_complete_frame_callback_.ClearExpectedBitstream();
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       SetReceiveCodecsPreservesPacketBufferAndFrameAssembly) {
+  constexpr uint8_t kH264Pt = 99;
+  constexpr uint8_t kVp8Pt = 100;
+
+  RtpVideoStreamReceiver2::ReceiveCodec h264_codec{
+      .payload_type = kH264Pt,
+      .video_codec = kVideoCodecH264,
+  };
+  RtpVideoStreamReceiver2::ReceiveCodec vp8_codec{
+      .payload_type = kVp8Pt,
+      .video_codec = kVideoCodecVP8,
+  };
+
+  rtp_video_stream_receiver_->SetReceiveCodecs({h264_codec});
+  rtp_video_stream_receiver_->StartReceive();
+
+  // Send SPS packet of H.264 frame.
+  CopyOnWriteBuffer sps_data;
+  RtpPacketReceived rtp_packet;
+  RTPVideoHeader sps_video_header = GetDefaultH264VideoHeader();
+  AddSps(&sps_video_header, 0, &sps_data);
+  rtp_packet.SetSequenceNumber(0);
+  rtp_packet.SetPayloadType(kH264Pt);
+  sps_video_header.is_first_packet_in_frame = true;
+  sps_video_header.frame_type = VideoFrameType::kEmptyFrame;
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(kH264StartCode);
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(sps_data);
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      sps_data, rtp_packet, sps_video_header);
+
+  // Send PPS packet of H.264 frame.
+  CopyOnWriteBuffer pps_data;
+  RTPVideoHeader pps_video_header = GetDefaultH264VideoHeader();
+  AddPps(&pps_video_header, 0, 1, &pps_data);
+  rtp_packet.SetSequenceNumber(1);
+  rtp_packet.SetPayloadType(kH264Pt);
+  pps_video_header.is_first_packet_in_frame = true;
+  pps_video_header.frame_type = VideoFrameType::kEmptyFrame;
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(kH264StartCode);
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(pps_data);
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      pps_data, rtp_packet, pps_video_header);
+
+  // Update receive codecs in-place mid-frame assembly (adding VP8).
+  rtp_video_stream_receiver_->SetReceiveCodecs({h264_codec, vp8_codec});
+
+  // Send final IDR packet. Packet buffer must be preserved so that the complete
+  // frame (SPS + PPS + IDR) is assembled and delivered.
+  CopyOnWriteBuffer idr_data;
+  RTPVideoHeader idr_video_header = GetDefaultH264VideoHeader();
+  AddIdr(&idr_video_header, 1);
+  rtp_packet.SetSequenceNumber(2);
+  rtp_packet.SetPayloadType(kH264Pt);
+  rtp_packet.SetMarker(true);
+  idr_video_header.is_first_packet_in_frame = true;
+  idr_video_header.is_last_packet_in_frame = true;
+  idr_video_header.frame_type = VideoFrameType::kVideoFrameKey;
+
+  const uint8_t idr[] = {0x65, 1, 2, 3};
+  idr_data.AppendData(idr);
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(kH264StartCode);
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(idr_data);
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .WillOnce(
+          [&](EncodedFrame* frame) { EXPECT_TRUE(frame->is_keyframe()); });
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      idr_data, rtp_packet, idr_video_header);
+  mock_on_complete_frame_callback_.ClearExpectedBitstream();
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       SetReceiveCodecsSelectivelyRemovesAndPreservesPayloadTypes) {
+  constexpr uint8_t kH264Pt = 99;
+  constexpr uint8_t kVp8Pt = 100;
+  constexpr uint8_t kVp9Pt = 101;
+
+  RtpVideoStreamReceiver2::ReceiveCodec h264_codec{
+      .payload_type = kH264Pt,
+      .video_codec = kVideoCodecH264,
+  };
+  RtpVideoStreamReceiver2::ReceiveCodec vp8_codec{
+      .payload_type = kVp8Pt,
+      .video_codec = kVideoCodecVP8,
+  };
+  RtpVideoStreamReceiver2::ReceiveCodec vp9_codec{
+      .payload_type = kVp9Pt,
+      .video_codec = kVideoCodecVP9,
+  };
+
+  // Initially configure H264, VP8, and VP9.
+  rtp_video_stream_receiver_->SetReceiveCodecs(
+      {h264_codec, vp8_codec, vp9_codec});
+  rtp_video_stream_receiver_->StartReceive();
+
+  // Reconfigure codecs to keep H264 and VP8, but remove VP9.
+  rtp_video_stream_receiver_->SetReceiveCodecs({h264_codec, vp8_codec});
+
+  const uint8_t dummy_payload[] = {1, 2, 3, 4};
+  CopyOnWriteBuffer payload(dummy_payload);
+
+  // 1. Packet for retained VP8 (PT 100) completes a frame.
+  RtpPacketReceived vp8_packet;
+  vp8_packet.SetPayloadType(kVp8Pt);
+  vp8_packet.SetSequenceNumber(1);
+  RTPVideoHeader vp8_header;
+  vp8_header.codec = kVideoCodecVP8;
+  vp8_header.video_type_header.emplace<RTPVideoHeaderVP8>();
+  vp8_header.is_first_packet_in_frame = true;
+  vp8_header.is_last_packet_in_frame = true;
+  vp8_header.frame_type = VideoFrameType::kVideoFrameKey;
+
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(payload);
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame).Times(1);
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      payload, vp8_packet, vp8_header);
+  mock_on_complete_frame_callback_.ClearExpectedBitstream();
+
+  // 2. Packet for removed VP9 (PT 101) is dropped by OnRtpPacket.
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame).Times(0);
+  RtpPacketReceived vp9_packet;
+  vp9_packet.SetPayloadType(kVp9Pt);
+  vp9_packet.SetSequenceNumber(2);
+  rtp_video_stream_receiver_->OnRtpPacket(vp9_packet);
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       BufferedFrameForRemovedCodecDoesNotCrashOnAssembly) {
+  constexpr uint8_t kAv1Pt = 100;
+  RtpVideoStreamReceiver2::ReceiveCodec av1_codec{
+      .payload_type = kAv1Pt,
+      .video_codec = kVideoCodecAV1,
+  };
+
+  rtp_video_stream_receiver_->SetReceiveCodecs({av1_codec});
+  rtp_video_stream_receiver_->StartReceive();
+
+  const uint8_t av1_payload[] = {1, 2, 3, 4};
+  CopyOnWriteBuffer payload(av1_payload);
+
+  // 1. Packet 1 (first in frame) arrives.
+  RtpPacketReceived rtp_packet1;
+  rtp_packet1.SetPayloadType(kAv1Pt);
+  rtp_packet1.SetSequenceNumber(1);
+  RTPVideoHeader header1;
+  header1.codec = kVideoCodecAV1;
+  header1.is_first_packet_in_frame = true;
+  header1.is_last_packet_in_frame = false;
+  header1.frame_type = VideoFrameType::kVideoFrameKey;
+
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      payload, rtp_packet1, header1);
+
+  // 2. Packet 3 (last in frame) arrives. Packet 2 is missing.
+  RtpPacketReceived rtp_packet3;
+  rtp_packet3.SetPayloadType(kAv1Pt);
+  rtp_packet3.SetSequenceNumber(3);
+  RTPVideoHeader header3;
+  header3.codec = kVideoCodecAV1;
+  header3.is_first_packet_in_frame = false;
+  header3.is_last_packet_in_frame = true;
+  header3.frame_type = VideoFrameType::kVideoFrameKey;
+
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      payload, rtp_packet3, header3);
+
+  // 3. AV1 codec is removed via SetReceiveCodecs.
+  rtp_video_stream_receiver_->SetReceiveCodecs({});
+
+  // 4. Packet 2 arrives to complete the frame in packet_buffer_.
+  // Verify frame assembly is skipped and does not crash.
+  RtpPacketReceived rtp_packet2;
+  rtp_packet2.SetPayloadType(kAv1Pt);
+  rtp_packet2.SetSequenceNumber(2);
+  RTPVideoHeader header2;
+  header2.codec = kVideoCodecAV1;
+  header2.is_first_packet_in_frame = false;
+  header2.is_last_packet_in_frame = false;
+  header2.frame_type = VideoFrameType::kVideoFrameKey;
+
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame).Times(0);
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      payload, rtp_packet2, header2);
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       BufferedFrameForReplacedCodecDoesNotCrashOnAssembly) {
+  constexpr uint8_t kPt = 100;
+  RtpVideoStreamReceiver2::ReceiveCodec av1_codec{
+      .payload_type = kPt,
+      .video_codec = kVideoCodecAV1,
+  };
+
+  rtp_video_stream_receiver_->SetReceiveCodecs({av1_codec});
+  rtp_video_stream_receiver_->StartReceive();
+
+  const uint8_t payload_bytes[] = {1, 2, 3, 4};
+  CopyOnWriteBuffer payload(payload_bytes);
+
+  // 1. Packet 1 (first in frame) and packet 3 (last in frame) for AV1 arrive.
+  RtpPacketReceived rtp_packet1;
+  rtp_packet1.SetPayloadType(kPt);
+  rtp_packet1.SetSequenceNumber(1);
+  RTPVideoHeader header1;
+  header1.codec = kVideoCodecAV1;
+  header1.is_first_packet_in_frame = true;
+  header1.is_last_packet_in_frame = false;
+  header1.frame_type = VideoFrameType::kVideoFrameKey;
+
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      payload, rtp_packet1, header1);
+
+  RtpPacketReceived rtp_packet3;
+  rtp_packet3.SetPayloadType(kPt);
+  rtp_packet3.SetSequenceNumber(3);
+  RTPVideoHeader header3;
+  header3.codec = kVideoCodecAV1;
+  header3.is_first_packet_in_frame = false;
+  header3.is_last_packet_in_frame = true;
+  header3.frame_type = VideoFrameType::kVideoFrameKey;
+
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      payload, rtp_packet3, header3);
+
+  // 2. Reconfigure PT 100 to H264.
+  RtpVideoStreamReceiver2::ReceiveCodec h264_codec{
+      .payload_type = kPt,
+      .video_codec = kVideoCodecH264,
+  };
+  rtp_video_stream_receiver_->SetReceiveCodecs({h264_codec});
+
+  // 3. Packet 2 arrives to complete the AV1 frame in packet_buffer_.
+  RtpPacketReceived rtp_packet2;
+  rtp_packet2.SetPayloadType(kPt);
+  rtp_packet2.SetSequenceNumber(2);
+  RTPVideoHeader header2;
+  header2.codec = kVideoCodecAV1;
+  header2.is_first_packet_in_frame = false;
+  header2.is_last_packet_in_frame = false;
+  header2.frame_type = VideoFrameType::kVideoFrameKey;
+
+  // H264 depacketizer concatenates payloads for the 3 packets.
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(payload);
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(payload);
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(payload);
+
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame);
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      payload, rtp_packet2, header2);
+  mock_on_complete_frame_callback_.ClearExpectedBitstream();
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       SetReceiveCodecsResetsH264KeyframeModeInPlace) {
+  constexpr uint8_t kH264Pt = 99;
+
+  RtpVideoStreamReceiver2::ReceiveCodec h264_sps_pps_codec{
+      .payload_type = kH264Pt,
+      .video_codec = kVideoCodecH264,
+      .codec_params = {{std::string(kH264FmtpSpsPpsIdrInKeyframe), "1"}},
+  };
+
+  rtp_video_stream_receiver_->SetReceiveCodecs({h264_sps_pps_codec});
+
+  // Update codecs in-place to plain H264 without sps_pps_idr_is_h264_keyframe.
+  RtpVideoStreamReceiver2::ReceiveCodec plain_h264_codec{
+      .payload_type = kH264Pt,
+      .video_codec = kVideoCodecH264,
+  };
+  rtp_video_stream_receiver_->SetReceiveCodecs({plain_h264_codec});
+  rtp_video_stream_receiver_->StartReceive();
+
+  // Send SPS, PPS, and IDR packet. Because sps_pps_idr_is_h264_keyframe_ was
+  // reset to false, IDR-only keyframes are allowed and frame completes.
+  CopyOnWriteBuffer sps_data;
+  RtpPacketReceived rtp_packet;
+  RTPVideoHeader sps_video_header = GetDefaultH264VideoHeader();
+  AddSps(&sps_video_header, 0, &sps_data);
+  rtp_packet.SetSequenceNumber(0);
+  rtp_packet.SetPayloadType(kH264Pt);
+  sps_video_header.is_first_packet_in_frame = true;
+  sps_video_header.frame_type = VideoFrameType::kEmptyFrame;
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(kH264StartCode);
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(sps_data);
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      sps_data, rtp_packet, sps_video_header);
+
+  CopyOnWriteBuffer pps_data;
+  RTPVideoHeader pps_video_header = GetDefaultH264VideoHeader();
+  AddPps(&pps_video_header, 0, 1, &pps_data);
+  rtp_packet.SetSequenceNumber(1);
+  rtp_packet.SetPayloadType(kH264Pt);
+  pps_video_header.is_first_packet_in_frame = true;
+  pps_video_header.frame_type = VideoFrameType::kEmptyFrame;
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(kH264StartCode);
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(pps_data);
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      pps_data, rtp_packet, pps_video_header);
+
+  CopyOnWriteBuffer idr_data;
+  RTPVideoHeader idr_video_header = GetDefaultH264VideoHeader();
+  AddIdr(&idr_video_header, 1);
+  rtp_packet.SetSequenceNumber(2);
+  rtp_packet.SetPayloadType(kH264Pt);
+  rtp_packet.SetMarker(true);
+  idr_video_header.is_first_packet_in_frame = true;
+  idr_video_header.is_last_packet_in_frame = true;
+  idr_video_header.frame_type = VideoFrameType::kVideoFrameKey;
+
+  const uint8_t idr[] = {0x65, 1, 2, 3};
+  idr_data.AppendData(idr);
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(kH264StartCode);
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(idr_data);
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .WillOnce(
+          [&](EncodedFrame* frame) { EXPECT_TRUE(frame->is_keyframe()); });
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      idr_data, rtp_packet, idr_video_header);
+  mock_on_complete_frame_callback_.ClearExpectedBitstream();
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       SetReceiveCodecsTogglesH264KeyframeModeInPlace) {
+  constexpr uint8_t kH264Pt = 99;
+
+  RtpVideoStreamReceiver2::ReceiveCodec plain_h264_codec{
+      .payload_type = kH264Pt,
+      .video_codec = kVideoCodecH264,
+  };
+  rtp_video_stream_receiver_->SetReceiveCodecs({plain_h264_codec});
+  rtp_video_stream_receiver_->StartReceive();
+
+  // Toggle in-place to SPS/PPS IDR keyframe mode.
+  RtpVideoStreamReceiver2::ReceiveCodec h264_sps_pps_codec{
+      .payload_type = kH264Pt,
+      .video_codec = kVideoCodecH264,
+      .codec_params = {{std::string(kH264FmtpSpsPpsIdrInKeyframe), "1"}},
+  };
+  rtp_video_stream_receiver_->SetReceiveCodecs({h264_sps_pps_codec});
+
+  // Toggle in-place back to plain H264 mode.
+  rtp_video_stream_receiver_->SetReceiveCodecs({plain_h264_codec});
+
+  // Verify IDR frame completes properly under plain H264 mode.
+  CopyOnWriteBuffer sps_data;
+  RtpPacketReceived rtp_packet;
+  RTPVideoHeader sps_video_header = GetDefaultH264VideoHeader();
+  AddSps(&sps_video_header, 0, &sps_data);
+  rtp_packet.SetSequenceNumber(0);
+  rtp_packet.SetPayloadType(kH264Pt);
+  sps_video_header.is_first_packet_in_frame = true;
+  sps_video_header.frame_type = VideoFrameType::kEmptyFrame;
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(kH264StartCode);
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(sps_data);
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      sps_data, rtp_packet, sps_video_header);
+
+  CopyOnWriteBuffer pps_data;
+  RTPVideoHeader pps_video_header = GetDefaultH264VideoHeader();
+  AddPps(&pps_video_header, 0, 1, &pps_data);
+  rtp_packet.SetSequenceNumber(1);
+  rtp_packet.SetPayloadType(kH264Pt);
+  pps_video_header.is_first_packet_in_frame = true;
+  pps_video_header.frame_type = VideoFrameType::kEmptyFrame;
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(kH264StartCode);
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(pps_data);
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      pps_data, rtp_packet, pps_video_header);
+
+  CopyOnWriteBuffer idr_data;
+  RTPVideoHeader idr_video_header = GetDefaultH264VideoHeader();
+  AddIdr(&idr_video_header, 1);
+  rtp_packet.SetSequenceNumber(2);
+  rtp_packet.SetPayloadType(kH264Pt);
+  rtp_packet.SetMarker(true);
+  idr_video_header.is_first_packet_in_frame = true;
+  idr_video_header.is_last_packet_in_frame = true;
+  idr_video_header.frame_type = VideoFrameType::kVideoFrameKey;
+
+  const uint8_t idr[] = {0x65, 1, 2, 3};
+  idr_data.AppendData(idr);
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(kH264StartCode);
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(idr_data);
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .WillOnce(
+          [&](EncodedFrame* frame) { EXPECT_TRUE(frame->is_keyframe()); });
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      idr_data, rtp_packet, idr_video_header);
+  mock_on_complete_frame_callback_.ClearExpectedBitstream();
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       SetReceiveCodecsPreservesDepacketizerInstanceForUnchangedCodecs) {
+  constexpr uint8_t kVp8Pt = 100;
+
+  RtpVideoStreamReceiver2::ReceiveCodec vp8_codec{
+      .payload_type = kVp8Pt,
+      .video_codec = kVideoCodecVP8,
+  };
+
+  rtp_video_stream_receiver_->SetReceiveCodecs({vp8_codec});
+  rtp_video_stream_receiver_->StartReceive();
+
+  // Call SetReceiveCodecs with identical codec configuration.
+  rtp_video_stream_receiver_->SetReceiveCodecs({vp8_codec});
+
+  // Verify frame delivery completes as expected.
+  const uint8_t vp8_payload[] = {1, 2, 3, 4};
+  CopyOnWriteBuffer payload(vp8_payload);
+  RtpPacketReceived rtp_packet;
+  rtp_packet.SetPayloadType(kVp8Pt);
+  rtp_packet.SetSequenceNumber(1);
+
+  RTPVideoHeader video_header;
+  video_header.codec = kVideoCodecVP8;
+  video_header.video_type_header.emplace<RTPVideoHeaderVP8>();
+  video_header.is_first_packet_in_frame = true;
+  video_header.is_last_packet_in_frame = true;
+  video_header.frame_type = VideoFrameType::kVideoFrameKey;
+
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(payload);
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .WillOnce(
+          [&](EncodedFrame* frame) { EXPECT_TRUE(frame->is_keyframe()); });
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      payload, rtp_packet, video_header);
+  mock_on_complete_frame_callback_.ClearExpectedBitstream();
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       SetReceiveCodecsUpdatesDepacketizerWhenRawPayloadToggles) {
+  constexpr uint8_t kVp8Pt = 100;
+
+  RtpVideoStreamReceiver2::ReceiveCodec vp8_normal{
+      .payload_type = kVp8Pt,
+      .video_codec = kVideoCodecVP8,
+      .raw_payload = false,
+  };
+  rtp_video_stream_receiver_->SetReceiveCodecs({vp8_normal});
+
+  // Reconfigure in-place with raw_payload = true.
+  RtpVideoStreamReceiver2::ReceiveCodec vp8_raw{
+      .payload_type = kVp8Pt,
+      .video_codec = kVideoCodecVP8,
+      .raw_payload = true,
+  };
+  rtp_video_stream_receiver_->SetReceiveCodecs({vp8_raw});
+  rtp_video_stream_receiver_->StartReceive();
+
+  // Verify raw payload is delivered properly.
+  const uint8_t raw_payload_bytes[] = {1, 2, 3, 4};
+  CopyOnWriteBuffer payload(raw_payload_bytes);
+  RtpPacketReceived rtp_packet;
+  rtp_packet.SetPayloadType(kVp8Pt);
+  rtp_packet.SetSequenceNumber(1);
+
+  RTPVideoHeader video_header;
+  video_header.codec = kVideoCodecVP8;
+  video_header.video_type_header.emplace<RTPVideoHeaderVP8>();
+  video_header.is_first_packet_in_frame = true;
+  video_header.is_last_packet_in_frame = true;
+  video_header.frame_type = VideoFrameType::kVideoFrameKey;
+
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(payload);
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .WillOnce(
+          [&](EncodedFrame* frame) { EXPECT_TRUE(frame->is_keyframe()); });
+  rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+      payload, rtp_packet, video_header);
   mock_on_complete_frame_callback_.ClearExpectedBitstream();
 }
 

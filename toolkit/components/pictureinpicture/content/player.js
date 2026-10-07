@@ -172,6 +172,7 @@ let Player = {
     "command",
     "dblclick",
     "keydown",
+    "mousedown",
     "mouseup",
     "mousemove",
     "MozDOMFullscreen:Entered",
@@ -221,6 +222,12 @@ let Player = {
    * Set a shortcut that can be used for unpiping without pausing
    */
   isUnpipWithoutPauseShortcut: e => e.shiftKey === true,
+
+  /**
+   * Becomes true once the first Tab press puts focus on the play/pause button
+   * or, for Shift + Tab, on the visible control preceding it.
+   */
+  didTabOverrideControlFocus: false,
 
   /**
    * Initializes the player browser, and sets up the initial state.
@@ -477,6 +484,28 @@ let Player = {
         if (event.keyCode == KeyEvent.DOM_VK_TAB) {
           this.controls.setAttribute(KEYING_ATTRIBUTE, true);
           this.showVideoControls();
+          // Tab order follows DOM order. To ensure Tab lands on primary controls
+          // after opening PiP for the first time, override the default Tab
+          // behaviour and focus on the primary buttons.
+          // Do not override in init() to prevent regressing the "space" play/pause shortcut.
+          if (
+            !this.didTabOverrideControlFocus &&
+            !this.controls.contains(document.activeElement)
+          ) {
+            if (!event.shiftKey) {
+              this.didTabOverrideControlFocus = true;
+              event.preventDefault();
+              // On all window sizes, the play/pause button is always visible.
+              this.playpauseButton.focus();
+            } else {
+              let previousControl = this.getControlBefore(this.playpauseButton);
+              if (previousControl) {
+                this.didTabOverrideControlFocus = true;
+                event.preventDefault();
+                previousControl.focus();
+              }
+            }
+          }
         } else if (event.keyCode == KeyEvent.DOM_VK_ESCAPE) {
           let isSettingsPanelInFocus = this.settingsPanel.contains(
             document.activeElement
@@ -514,14 +543,19 @@ let Player = {
           this.cyclePlaybackRate(event.key == ">" ? 1 : -1);
         } else if (
           Services.prefs.getBoolPref(KEYBOARD_CONTROLS_ENABLED_PREF, false) &&
-          (event.keyCode != KeyEvent.DOM_VK_SPACE || !event.target.id)
+          (event.key != " " || !event.target.closest(".control-button, .panel"))
         ) {
-          // Pressing "space" fires a "keydown" event which can also trigger a control
-          // button's "click" event. Handle the "keydown" event only when the event did
-          // not originate from a control button and it is not a "space" keypress.
+          // Pressing "space" fires a "keydown" event which can also activate a
+          // focused control. Let "space" toggle playback unless a control that
+          // it would activate has focus.
           this.onKeyDown(event);
         }
 
+        break;
+      }
+
+      case "mousedown": {
+        this.onMouseDown(event);
         break;
       }
 
@@ -1256,6 +1290,21 @@ let Player = {
   },
 
   /**
+   * Event handler for "mousedown" events on the PiP window.
+   *
+   * @param {Event} event
+   *  Event context details
+   */
+  onMouseDown(event) {
+    // Prevent mouse clicks moving focus onto the control buttons.
+    // Otherwise, if focus stays, "space" key presses would act on that button
+    // instead of toggling playback.
+    if (event.target.closest(".control-button")) {
+      event.preventDefault();
+    }
+  },
+
+  /**
    * Event handler for "mouseup" events on the PiP window.
    *
    * @param {Event} event
@@ -1429,9 +1478,42 @@ let Player = {
     this.closePipWindow({ reason: "Shortcut" });
   },
 
+  /**
+   * Get the visible control preceding another button, wrapping around
+   * if needed. For example, if the next preceding button is at the top
+   * right corner from the buttom center, return the button from that position.
+   *
+   * @returns {Element|null}
+   *  The preceding control
+   */
+  getControlBefore(control) {
+    let controls = this.focusableControls;
+    let index = controls.indexOf(control);
+    if (index < 0) {
+      return null;
+    }
+    return controls.at(index - 1) ?? null;
+  },
+
   get controls() {
     delete this.controls;
     return (this.controls = document.getElementById("controls"));
+  },
+
+  /**
+   * Get an array of visible controls that can take focus, in DOM order.
+   * Don't store the result, for the layout can change when the window
+   * resizes or metadata loads.
+   *
+   * @returns {Array<Element>}
+   *  Array of focusable, visible controls
+   */
+  get focusableControls() {
+    return [
+      ...this.controls.querySelectorAll(
+        "button.control-item, input.control-item"
+      ),
+    ].filter(control => !control.disabled && control.checkVisibility());
   },
 
   get scrubber() {
@@ -1457,6 +1539,11 @@ let Player = {
   get seekBackward() {
     delete this.seekBackward;
     return (this.seekBackward = document.getElementById("seekBackward"));
+  },
+
+  get playpauseButton() {
+    delete this.playpauseButton;
+    return (this.playpauseButton = document.getElementById("playpause"));
   },
 
   get seekForward() {

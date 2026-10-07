@@ -21,8 +21,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 // ${InstallDir}/distribution folder.
 const POLICIES_FILENAME = "policies.json";
 
-// When true browser policy is loaded per-user from
-// /run/user/$UID/appname
+// Load browser policy per-user from /run/user/$UID/appname for
+// testing only.
 const PREF_PER_USER_DIR = "toolkit.policies.perUserDir";
 // For easy testing, modify the helpers/sample.json file,
 // and set PREF_ALTERNATE_PATH in firefox.js as:
@@ -67,7 +67,8 @@ function shouldIgnoreLocalPolicies() {
 // We're only testing for empty objects, not
 // empty strings or empty arrays.
 function isEmptyObject(obj) {
-  if (typeof obj != "object" || Array.isArray(obj)) {
+  // typeof null == "object", so null has to be rejected before Object.keys().
+  if (obj === null || typeof obj != "object" || Array.isArray(obj)) {
     return false;
   }
   for (let key of Object.keys(obj)) {
@@ -94,7 +95,12 @@ EnterprisePoliciesManager.prototype = {
   ]),
 
   _initialize() {
-    if (Services.prefs.getBoolPref(PREF_POLICIES_APPLIED, false)) {
+    let previouslyApplied = Services.prefs.getBoolPref(
+      PREF_POLICIES_APPLIED,
+      false
+    );
+
+    if (previouslyApplied) {
       if ("_cleanup" in lazy.Policies) {
         let policyImpl = lazy.Policies._cleanup;
 
@@ -118,11 +124,17 @@ EnterprisePoliciesManager.prototype = {
     let provider = this._buildProvider();
 
     if (provider.failed) {
+      if (previouslyApplied) {
+        this._runMissingPolicyCallbacks();
+      }
       this.status = Ci.nsIEnterprisePolicies.FAILED;
       return;
     }
 
     if (!provider.hasPolicies) {
+      if (previouslyApplied) {
+        this._runMissingPolicyCallbacks();
+      }
       this.status = Ci.nsIEnterprisePolicies.INACTIVE;
       return;
     }
@@ -151,7 +163,7 @@ EnterprisePoliciesManager.prototype = {
       .setBoolPref("dom.webserial.enabled", false);
 
     this._parsedPolicies = {};
-    this._activatePolicies(provider.policies);
+    this._activatePolicies(provider.policies, previouslyApplied);
 
     Services.prefs.setBoolPref(PREF_POLICIES_APPLIED, true);
   },
@@ -189,10 +201,20 @@ EnterprisePoliciesManager.prototype = {
     return provider;
   },
 
-  _activatePolicies(unparsedPolicies) {
+  _activatePolicies(unparsedPolicies, previouslyApplied) {
     let { schema } = ChromeUtils.importESModule(
       "resource:///modules/policies/schema.sys.mjs"
     );
+
+    if (previouslyApplied) {
+      // Allow a policy to provide a default for when the provider did not set a policy.
+      for (let policyName of Object.keys(lazy.Policies)) {
+        let policyImpl = lazy.Policies[policyName];
+        if (policyImpl.onMissing && !(policyName in unparsedPolicies)) {
+          unparsedPolicies[policyName] = policyImpl.onMissing();
+        }
+      }
+    }
 
     for (let policyName of Object.keys(unparsedPolicies)) {
       let policySchema = schema.properties[policyName];
@@ -257,6 +279,26 @@ EnterprisePoliciesManager.prototype = {
               this /* the EnterprisePoliciesManager */,
               parsedParameters
             )
+          );
+        }
+      }
+    }
+  },
+
+  _runMissingPolicyCallbacks() {
+    for (let policyName of Object.keys(lazy.Policies)) {
+      let policyImpl = lazy.Policies[policyName];
+      if (!policyImpl.onMissing) {
+        continue;
+      }
+      let params = policyImpl.onMissing();
+      for (let timing of Object.keys(this._callbacks)) {
+        let policyCallback = policyImpl[timing];
+        if (policyCallback) {
+          this._schedulePolicyCallback(
+            timing,
+            policyName,
+            policyCallback.bind(policyImpl, this, params)
           );
         }
       }
@@ -449,6 +491,26 @@ EnterprisePoliciesManager.prototype = {
       feature,
       uri
     );
+  },
+
+  getContainerForURI(uri) {
+    for (let policies of SitePolicies) {
+      if (
+        policies.exceptions.matches(uri) ||
+        policies.exceptions.matchesAllWebUrls
+      ) {
+        continue;
+      }
+
+      if (!policies.match.matches(uri) && !policies.match.matchesAllWebUrls) {
+        continue;
+      }
+
+      if ("container" in policies.features) {
+        return policies.features.container;
+      }
+    }
+    return 0;
   },
 
   getActivePolicies() {
@@ -715,7 +777,9 @@ class JSONPoliciesProvider extends PoliciesProvider {
 
     try {
       let configFile;
-      let perUserPath = Services.prefs.getBoolPref(PREF_PER_USER_DIR, false);
+      let perUserPath =
+        Cu.isInAutomation &&
+        Services.prefs.getBoolPref(PREF_PER_USER_DIR, false);
       if (perUserPath) {
         configFile = Services.dirsvc.get("XREUserRunTimeDir", Ci.nsIFile);
       } else {

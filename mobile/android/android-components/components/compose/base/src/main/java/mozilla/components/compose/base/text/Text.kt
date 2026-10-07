@@ -24,11 +24,16 @@ sealed interface Text {
     data class String(val value: kotlin.String) : Text
 
     /**
-     * A resource text.
+     * A resource text, optionally formatted with [args].
      *
      * @property value The [Int] resource value.
+     * @property args The format arguments to apply to the resource, if it declares any. A [List] rather than a `vararg`
+     *   so that equality between two instances stays structural.
      */
-    data class Resource(@param:StringRes val value: Int) : Text
+    data class Resource(
+        @param:StringRes val value: Int,
+        val args: List<Any> = emptyList(),
+    ) : Text
 }
 
 /** Unpacks and returns the value of the text based on the type of [Text]. */
@@ -38,5 +43,13 @@ val Text.value: String
     get() =
         when (this) {
             is Text.String -> this.value
-            is Text.Resource -> stringResource(this.value)
+            is Text.Resource ->
+                when {
+                    // Not simply always using the formatting overload, since that one runs the resource through
+                    // `String.format` even with no arguments, which would fail for strings containing a literal "%".
+                    args.isEmpty() -> stringResource(this.value)
+                    else -> {
+                        @Suppress("SpreadOperator") stringResource(this.value, *args.toTypedArray())
+                    }
+                }
         }

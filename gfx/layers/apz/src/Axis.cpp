@@ -514,15 +514,15 @@ const ScrollMetadata& Axis::GetScrollMetadata() const {
 bool Axis::OverscrollBehaviorAllowsHandoff() const {
   // Scroll handoff is a "non-local" overscroll behavior, so it's allowed
   // with "auto" and "chain" and disallowed with "contain" and "none".
-  return GetOverscrollBehavior() == OverscrollBehavior::Auto ||
-         GetOverscrollBehavior() == OverscrollBehavior::Chain;
+  return GetOverscrollBehavior() == StyleOverscrollBehavior::Auto ||
+         GetOverscrollBehavior() == StyleOverscrollBehavior::Chain;
 }
 
 bool Axis::OverscrollBehaviorAllowsOverscrollEffect() const {
   // An overscroll effect is a "local" overscroll behavior, so it's allowed
   // with "auto" and "contain" and disallowed with "chain" and "none".
-  return GetOverscrollBehavior() == OverscrollBehavior::Auto ||
-         GetOverscrollBehavior() == OverscrollBehavior::Contain;
+  return GetOverscrollBehavior() == StyleOverscrollBehavior::Auto ||
+         GetOverscrollBehavior() == StyleOverscrollBehavior::Contain;
 }
 
 AxisX::AxisX(AsyncPanZoomController* aAsyncPanZoomController)
@@ -610,7 +610,7 @@ SideBits AxisX::ScrollableDirections() const {
   return directions;
 }
 
-OverscrollBehavior AxisX::GetOverscrollBehavior() const {
+StyleOverscrollBehavior AxisX::GetOverscrollBehavior() const {
   return GetScrollMetadata().GetOverscrollBehavior().mBehaviorX;
 }
 
@@ -736,7 +736,7 @@ bool AxisY::CanVerticalScrollWithDynamicToolbar() const {
                    GetCompositionLengthWithoutDynamicToolbar());
 }
 
-OverscrollBehavior AxisY::GetOverscrollBehavior() const {
+StyleOverscrollBehavior AxisY::GetOverscrollBehavior() const {
   return GetScrollMetadata().GetOverscrollBehavior().mBehaviorY;
 }
 

@@ -140,7 +140,7 @@ class SyncStoreSupportTest {
         }
 
     @Test
-    fun `GIVEN account observer WHEN onAuthenticated observed without profile THEN account and account state are not updated`() =
+    fun `GIVEN account observer WHEN onAuthenticated observed without profile THEN account state is authenticated without account details`() =
         runTest(testDispatcher) {
             val constellation = mock<DeviceConstellation>()
             val account =
@@ -150,9 +150,10 @@ class SyncStoreSupportTest {
                 }
 
             accountObserver.onAuthenticated(account, AuthType.Existing)
+            testDispatcher.scheduler.advanceUntilIdle()
 
             assertNull(store.state.account)
-            assertEquals(AccountState.Unknown, store.state.accountState)
+            assertEquals(AccountState.Authenticated, store.state.accountState)
         }
 
     @Test
@@ -194,9 +195,6 @@ class SyncStoreSupportTest {
 
     @Test
     fun `GIVEN account observer WHEN onProfileUpdated then update the account state`() {
-        // Prerequisite is having a non-null account already.
-        store.dispatch(SyncAction.UpdateAccount(Account(null, null, null, null)))
-
         val profile = generateProfile()
         accountObserver.onProfileUpdated(profile)
 
@@ -205,6 +203,27 @@ class SyncStoreSupportTest {
         assertEquals(profile.email, store.state.account!!.email)
         assertEquals(profile.displayName, store.state.account!!.displayName)
     }
+
+    @Test
+    fun `GIVEN an authenticated account without details WHEN onProfileUpdated observed THEN account details are populated`() =
+        runTest(testDispatcher) {
+            val account =
+                coMock<OAuthAccount> {
+                    whenever(deviceConstellation()).thenReturn(mock())
+                    whenever(getProfile(eq(false))).thenReturn(null)
+                }
+            accountObserver.onAuthenticated(account, AuthType.Existing)
+            testDispatcher.scheduler.advanceUntilIdle()
+            assertNull(store.state.account)
+            assertEquals(AccountState.Authenticated, store.state.accountState)
+
+            val profile = generateProfile()
+            accountObserver.onProfileUpdated(profile)
+
+            assertEquals(profile.uid, store.state.account?.uid)
+            assertEquals(profile.displayName, store.state.account?.displayName)
+            assertEquals(AccountState.Authenticated, store.state.accountState)
+        }
 
     @Test
     fun `GIVEN account observer WHEN onReady is triggered THEN do nothing`() =

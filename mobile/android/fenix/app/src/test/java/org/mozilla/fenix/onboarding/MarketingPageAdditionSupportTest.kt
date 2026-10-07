@@ -162,4 +162,52 @@ class MarketingPageAdditionSupportTest {
 
         assertEquals(listOf(true, false), results)
     }
+
+    @Test
+    fun `GIVEN collection was cancelled WHEN the preference changes THEN the listener does not throw`() = runTest {
+        val prefs = mockk<SharedPreferences>(relaxed = true)
+        val lifecycleOwner = TestLifecycleOwner()
+        val listenerSlot = slot<SharedPreferences.OnSharedPreferenceChangeListener>()
+
+        every { prefs.registerOnSharedPreferenceChangeListener(capture(listenerSlot)) } just Runs
+        every { prefs.unregisterOnSharedPreferenceChangeListener(any()) } just Runs
+        every { prefs.getBoolean("my_key", false) } returns true
+
+        val job = backgroundScope.launch {
+            prefs.flowScopedBooleanPreference(lifecycleOwner, testScheduler, "my_key", false).collect {}
+        }
+
+        lifecycleOwner.onResume()
+        testScheduler.runCurrent()
+
+        job.cancel()
+        testScheduler.runCurrent()
+
+        listenerSlot.captured.onSharedPreferenceChanged(prefs, "my_key")
+    }
+
+    @Test
+    fun `GIVEN the flow closed itself WHEN the preference changes again THEN the listener does not throw`() = runTest {
+        val prefs = mockk<SharedPreferences>(relaxed = true)
+        val lifecycleOwner = TestLifecycleOwner()
+        val listenerSlot = slot<SharedPreferences.OnSharedPreferenceChangeListener>()
+
+        every { prefs.registerOnSharedPreferenceChangeListener(capture(listenerSlot)) } just Runs
+        every { prefs.unregisterOnSharedPreferenceChangeListener(any()) } just Runs
+        every { prefs.getBoolean("my_key", false) } returnsMany listOf(false, true, false)
+
+        val results = mutableListOf<Boolean>()
+        backgroundScope.launch {
+            prefs.flowScopedBooleanPreference(lifecycleOwner, testScheduler, "my_key", false).toList(results)
+        }
+
+        lifecycleOwner.onResume()
+        testScheduler.runCurrent()
+
+        listenerSlot.captured.onSharedPreferenceChanged(prefs, "my_key")
+        listenerSlot.captured.onSharedPreferenceChanged(prefs, "my_key")
+        testScheduler.runCurrent()
+
+        assertEquals(listOf(false, true), results)
+    }
 }

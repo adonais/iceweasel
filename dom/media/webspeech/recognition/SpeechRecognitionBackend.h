@@ -22,6 +22,7 @@
 #include "mozilla/ThreadSafety.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/dom/SpeechRecognitionBinding.h"
 #include "mozilla/hwinference/HWInferenceTypes.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "nsIThread.h"
@@ -48,6 +49,13 @@ class Promise;
 // that pair the ones capture opened. See
 // SpeechRecognitionBackend::DispatchTrailingEvents().
 enum class TrailingEvents { Fire, Skip };
+
+// What the engine did over a session, in milliseconds: the audio it was fed,
+// and the wall clock it spent on it. Their ratio is the real-time factor.
+struct EnginePerfStats {
+  double mFedAudioMs = 0.0;
+  double mInferenceMs = 0.0;
+};
 
 // Keeps the shared IPC actor open for as long as this guard is alive,
 // releasing it on destruction - the hold is tied to the guard's own lifetime
@@ -120,6 +128,7 @@ class SpeechRecognitionBackend {
       MOZ_REQUIRES(sMainThreadCapability);
   // Detach from the current audio track.
   void DetachFromTrack() MOZ_REQUIRES(sMainThreadCapability);
+  void SetEnabled(bool aEnabled) MOZ_REQUIRES(sMainThreadCapability);
 
   // == Graph thread
   // Called by SpeechTrackListener on the graph's real-time thread
@@ -131,6 +140,12 @@ class SpeechRecognitionBackend {
 
   static already_AddRefed<Promise> Available(
       nsIGlobalObject* aGlobal, const nsTArray<nsCString>& aLanguages);
+  // Resolves an available() promise, recording
+  // media.speech_recognition.availability. Every path that answers available()
+  // goes through here, including the early-outs in SpeechRecognition, so the
+  // metric and the resolved value cannot drift apart.
+  static void ResolveAvailability(Promise* aPromise,
+                                  AvailabilityStatus aStatus);
   // Requests installation of the on-device model(s) for aLanguages. The
   // request is relayed by the utility to the trusted parent, which obtains the
   // user's consent and performs the download (see nsIMLModelResolver);
@@ -173,9 +188,9 @@ class SpeechRecognitionBackend {
   // left open, then audioend, as one task ahead of the one that fires "end".
   void DispatchTrailingEvents() MOZ_REQUIRES(sMainThreadCapability);
   // Tells the SpeechRecognition the session is over and whether the engine
-  // finalized anything, so it can fire nomatch before end. Callable from the
-  // main and IPC threads.
-  void NotifySessionFinished(bool aProducedResult);
+  // finalized anything, so it can fire nomatch before end, along with what the
+  // engine did. Callable from the main and IPC threads.
+  void NotifySessionFinished(bool aProducedResult, EnginePerfStats aStats);
 
   // == Resampling thread
   void ProcessAudioChunk() MOZ_REQUIRES(mResamplingCapability);
@@ -265,6 +280,8 @@ class SpeechRecognitionBackend {
   // Graph-thread downmixing scratch buffer, freed with the backend after
   // DetachFromTrack() has stopped the callbacks.
   nsTArray<AudioDataValue> mMonoBuffer;
+  // Graph thread only
+  bool mEnabled = false;
   const uint32_t mGraphRate;
   // Graph-thread only, number of frames that couldn't be pushed into
   // mRingBuffer and has been dropped.

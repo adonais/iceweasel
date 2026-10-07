@@ -2,6 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import os
+import tempfile
+import zipfile
 from unittest import TestCase, mock
 
 import buildconfig
@@ -15,6 +18,7 @@ from mozbuild.artifacts import (
     LinuxArtifactJob,
     MacArtifactJob,
     ThunderbirdJobConfiguration,
+    UnfilteredProjectPackageArtifactJob,
     WinArtifactJob,
 )
 
@@ -79,6 +83,28 @@ class TestArtifactJob(TestCase):
         # `MOZ_APP_VERSION_DISPLAY` won't have any impact.
         buildconfig.substs["MOZ_APP_VERSION_DISPLAY"] = ""
         self.assertEqual(job.candidate_trees, expected_trees)
+
+
+class TestLicensesArtifact(TestCase):
+    def test_only_filtered_jobs_download_licenses_json(self):
+        artifacts = [{"name": "public/build/licenses.json"}]
+        linux = LinuxArtifactJob(download_tests=False)
+        self.assertEqual(
+            list(linux.find_candidate_artifacts(artifacts)),
+            ["public/build/licenses.json"],
+        )
+        unfiltered = UnfilteredProjectPackageArtifactJob(download_tests=False)
+        self.assertEqual(list(unfiltered.find_candidate_artifacts(artifacts)), [])
+
+    def test_licenses_json_is_installed_for_gen_license_html(self):
+        job = FakeArtifactJob(download_tests=False)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            downloaded = os.path.join(tmpdir, "0123456789abcdef-licenses.json")
+            with open(downloaded, "w") as fh:
+                fh.write("{}")
+            job.process_artifact(downloaded, downloaded + ".jar")
+            with zipfile.ZipFile(downloaded + ".jar") as zf:
+                self.assertEqual(zf.namelist(), ["licenses.artifact.json"])
 
 
 class TestTestArtifactPatterns(TestCase):

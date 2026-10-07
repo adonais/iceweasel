@@ -168,3 +168,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
 # Work around bug 1841201.
 if CONFIG["TARGET_CPU"] in ("mips32", "mips64"):
     DEFINES["musttail"] = "nomusttail"
+
+LICENSED_UNDER += [
+    "google-bsd",
+]

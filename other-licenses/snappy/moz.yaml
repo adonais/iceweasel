@@ -1,0 +1,48 @@
+schema: 1
+
+bugzilla:
+  product: Core
+  component: "Storage: IndexedDB"
+
+origin:
+  name: snappy
+  description: A fast compressor/decompressor.
+  url: https://github.com/google/snappy
+  release: 1.3.0 (2026-09-14T17:32:01+01:00).
+  revision: 1.3.0
+  license: BSD-3-Clause
+  license-file: COPYING
+
+vendoring:
+  url: https://github.com/google/snappy
+  source-hosting: github
+  tracking: tag
+  vendor-directory: other-licenses/snappy/src
+
+  exclude:
+    - "**"
+    - snappy_benchmark.cc
+    - snappy_test_data.cc
+    - snappy_test_data.h
+    - snappy_test_tool.cc
+
+  include:
+    - AUTHORS
+    - CONTRIBUTING.md
+    - COPYING
+    - NEWS
+    - README.md
+    - format_description.txt
+    - framing_format.txt
+    - snappy*.cc
+    - snappy*.h
+    - snappy-stubs-public.h.in
+
+  update-actions:
+    - action: run-script
+      script: '{yaml_dir}/update-version.py'
+      cwd: '{yaml_dir}'
+      args: ['{revision}']
+
+  patches:
+    - 01-explicit.patch

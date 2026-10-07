@@ -1630,7 +1630,9 @@ impl RenderBackend {
                             }
                             DebugQueryKind::CompositorView { .. } |
                             DebugQueryKind::CompositorConfig { .. } |
-                            DebugQueryKind::Textures { .. } => {
+                            DebugQueryKind::Textures { .. } |
+                            DebugQueryKind::Shaders { .. } |
+                            DebugQueryKind::ShaderSource { .. } => {
                                 ResultMsg::DebugCommand(option)
                             }
                         }

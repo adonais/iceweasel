@@ -25,10 +25,15 @@
 using namespace mozilla;
 using namespace mozilla::gfx;
 
-template <class T>
-struct TagEquals {
-  bool Equals(const T& aIter, uint32_t aTag) const {
+struct AxisTagEquals {
+  bool Equals(const gfxFontVariationAxis& aIter, uint32_t aTag) const {
     return aIter.mTag == aTag;
+  }
+};
+
+struct VariationTagEquals {
+  bool Equals(const gfxFontVariation& aIter, uint32_t aTag) const {
+    return aIter.tag == aTag;
   }
 };
 
@@ -66,25 +71,27 @@ gfxMacFont::gfxMacFont(const RefPtr<UnscaledFontMac>& aUnscaledFont,
       if (!aFontEntry->mOpszAxis.mTag) {
         AutoTArray<gfxFontVariationAxis, 4> axes;
         aFontEntry->GetVariationAxes(axes);
-        auto index =
-            axes.IndexOf(kOpszTag, 0, TagEquals<gfxFontVariationAxis>());
+        auto index = axes.IndexOf(kOpszTag, 0, AxisTagEquals());
         MOZ_ASSERT(index != axes.NoIndex);
         if (index != axes.NoIndex) {
-          const auto& axis = axes[index];
-          aFontEntry->mOpszAxis = axis;
-          // Pick a slightly-adjusted version of the default that we'll
-          // use to work around Core Text's habit of ignoring any attempt
-          // to explicitly set the default value.
-          aFontEntry->mAdjustedDefaultOpsz =
-              axis.mDefaultValue == axis.mMinValue
-                  ? axis.mDefaultValue + kOpszFudgeAmount
-                  : axis.mDefaultValue - kOpszFudgeAmount;
+          AutoWriteLock lock(aFontEntry->mLock);
+          if (!aFontEntry->mOpszAxis.mTag) {
+            const auto& axis = axes[index];
+            // Pick a slightly-adjusted version of the default that we'll
+            // use to work around Core Text's habit of ignoring any attempt
+            // to explicitly set the default value.
+            aFontEntry->mAdjustedDefaultOpsz =
+                axis.mDefaultValue == axis.mMinValue
+                    ? axis.mDefaultValue + kOpszFudgeAmount
+                    : axis.mDefaultValue - kOpszFudgeAmount;
+            aFontEntry->mOpszAxis = axis;
+          }
         }
       }
 
       // Add 'opsz' if not present, or tweak its value if it looks too close
       // to the default (after clamping to the font's available range).
-      auto index = vars.IndexOf(kOpszTag, 0, TagEquals<gfxFontVariation>());
+      auto index = vars.IndexOf(kOpszTag, 0, VariationTagEquals());
       if (index == vars.NoIndex) {
         // No explicit opsz; set to the font's default.
         vars.AppendElement(
@@ -92,7 +99,7 @@ gfxMacFont::gfxMacFont(const RefPtr<UnscaledFontMac>& aUnscaledFont,
       } else {
         // An 'opsz' value was already present; use it, but adjust if necessary
         // to a "safe" value that Core Text won't ignore.
-        auto& value = vars[index].mValue;
+        auto& value = vars[index].value;
         auto& axis = aFontEntry->mOpszAxis;
         value = fmin(fmax(value, axis.mMinValue), axis.mMaxValue);
         if (std::abs(value - axis.mDefaultValue) < kOpszFudgeAmount) {
@@ -101,9 +108,16 @@ gfxMacFont::gfxMacFont(const RefPtr<UnscaledFontMac>& aUnscaledFont,
       }
     }
 
+    static_assert(
+        sizeof(gfxFontVariation) == sizeof(wr::FontVariation) &&
+            offsetof(gfxFontVariation, tag) ==
+                offsetof(wr::FontVariation, tag) &&
+            offsetof(gfxFontVariation, value) == offsetof(FontVariation, value),
+        "gfxFontVariation vs Moz2D FontVariation struct mismatch!");
     mCGFont = UnscaledFontMac::CreateCGFontWithVariations(
         baseFont, aUnscaledFont->CGAxesCache(), aUnscaledFont->CTAxesCache(),
-        vars.Length(), vars.Elements());
+        vars.Length(),
+        reinterpret_cast<const wr::FontVariation*>(vars.Elements()));
     if (!mCGFont) {
       ::CFRetain(baseFont);
       mCGFont = baseFont;
@@ -236,7 +250,6 @@ void gfxMacFont::InitMetricsByGlyphMeasurement(CFDataRef aCmap,
 
 void gfxMacFont::InitMetrics() {
   mIsValid = false;
-  ::memset(&mMetrics, 0, sizeof(mMetrics));
 
   uint32_t upem = 0;
 
@@ -289,9 +302,9 @@ void gfxMacFont::InitMetrics() {
   // platform APIs. The InitMetrics...() functions will set mIsValid on success.
   if (
 #if MOZ_FONTATIONS
-      !InitMetricsFromSkrifa(mMetrics) &&
+      !InitMetricsFromSkrifa() &&
 #endif
-      !InitMetricsFromSfntTables(mMetrics) &&
+      !InitMetricsFromSfntTables() &&
       (!mFontEntry->IsUserFont() || mFontEntry->IsLocalUserFont())) {
     InitMetricsFromPlatform();
   }
@@ -371,9 +384,9 @@ void gfxMacFont::InitMetrics() {
       mMetrics.xHeight = 0.0;
       if (
 #if MOZ_FONTATIONS
-          !InitMetricsFromSkrifa(mMetrics) &&
+          !InitMetricsFromSkrifa() &&
 #endif
-          !InitMetricsFromSfntTables(mMetrics) &&
+          !InitMetricsFromSfntTables() &&
           (!mFontEntry->IsUserFont() || mFontEntry->IsLocalUserFont())) {
         InitMetricsFromPlatform();
       }
@@ -407,9 +420,9 @@ void gfxMacFont::InitMetrics() {
     InitMetricsByGlyphMeasurement(cmap, cgConvFactor);
   }
 
-  CalculateDerivedMetrics(mMetrics);
+  CalculateDerivedMetrics();
 
-  SanitizeMetrics(&mMetrics, mFontEntry->mIsBadUnderlineFont);
+  SanitizeMetrics(mFontEntry->mIsBadUnderlineFont);
 
   if (ApplySyntheticBold()) {
     auto delta = GetSyntheticBoldOffset();

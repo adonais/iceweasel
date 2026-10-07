@@ -12,7 +12,7 @@ namespace devtools {
 
 class HeapSnapshotTempFileHelperChild
     : public PHeapSnapshotTempFileHelperChild {
-  explicit HeapSnapshotTempFileHelperChild() {}
+  explicit HeapSnapshotTempFileHelperChild() = default;
 
  public:
   static inline PHeapSnapshotTempFileHelperChild* Create();

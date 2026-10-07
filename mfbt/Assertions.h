@@ -468,8 +468,8 @@ MOZ_END_EXTERN_C
  * *only* during debugging, not "in the field". If you want the latter, use
  * MOZ_RELEASE_ASSERT, which applies to non-debug builds as well.
  *
- * MOZ_DIAGNOSTIC_ASSERT works like MOZ_RELEASE_ASSERT in Nightly and early beta
- * and MOZ_ASSERT in late Beta and Release - use this when a condition is
+ * MOZ_DIAGNOSTIC_ASSERT works like MOZ_RELEASE_ASSERT in Nightly and Developer
+ * Edition and MOZ_ASSERT in Beta and Release - use this when a condition is
  * potentially rare enough to require real user testing to hit, but is not
  * security-sensitive. This can cause user pain, so use it sparingly. If a
  * MOZ_DIAGNOSTIC_ASSERT is firing, it should promptly be converted to a

@@ -32,6 +32,8 @@ class xpcObjectHelper {
     }
   }
 
+  xpcObjectHelper(xpcObjectHelper& aOther) = delete;
+
   nsISupports* Object() { return mObject; }
 
   nsIClassInfo* GetClassInfo() {
@@ -55,8 +57,6 @@ class xpcObjectHelper {
   nsWrapperCache* GetWrapperCache() { return mCache; }
 
  private:
-  xpcObjectHelper(xpcObjectHelper& aOther) = delete;
-
   nsISupports* MOZ_UNSAFE_REF(
       "xpcObjectHelper has been specifically optimized "
       "to avoid unnecessary AddRefs and Releases. "

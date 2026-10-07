@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.components
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.core.net.toUri
 import mozilla.components.feature.push.AutoPushFeature
@@ -35,6 +36,7 @@ class Push(val context: Context, crashReporter: CrashReporter) {
     private val pushConfig: PushConfig? by lazyMonitored {
         val logger = Logger("PushConfig")
         val projectIdKey = context.getString(R.string.pref_key_push_project_id)
+        @SuppressLint("DiscouragedApi")
         val resId = context.resources.getIdentifier(projectIdKey, "string", context.packageName)
         if (resId == 0) {
             logger.warn("No firebase configuration found; cannot support push service.")

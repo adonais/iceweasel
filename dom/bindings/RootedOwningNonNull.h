@@ -16,6 +16,7 @@
 #define mozilla_RootedOwningNonNull_h_
 
 #include "js/GCPolicyAPI.h"
+#include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
 #include "mozilla/OwningNonNull.h"
 

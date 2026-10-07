@@ -4,11 +4,269 @@
 :depth: 3
 ```
 
-Performance tests all run on bare metal, or real hardware devices instead of virtual machines. This gives us more realistic performance metrics, and helps with decreasing the variability of our data. See below for information on what hardware is used for each of the platforms we test on, try run wait times as well as guidelines for requesting new devices.
+Performance tests run on bare metal, or real hardware devices instead of virtual machines (the memory tests and Talos xperf are the only exceptions). This gives us more realistic performance metrics, and helps with decreasing the variability of our data. See below for information on what hardware is used for each of the platforms we test on, try run wait times as well as guidelines for requesting new devices.
 
 ## Platforms and Hardware Used
 
-At the moment, these are listed in the Mozilla Wiki which is [found here](https://wiki.mozilla.org/Performance/Platforms) (see [bug 1883400](https://bugzilla.mozilla.org/show_bug.cgi?id=1883400) for progress on this).
+The hardware below is maintained by the Relops (Release Operations) team. A platform label doesn't determine the machine on its own, as the same label can run different harnesses on different worker pools, so the platforms are listed under the worker pool they run on. The platforms found in the test documentation link back to this section.
+
+This information is generated from `python/mozperftest/mozperftest/perfdocs/hardware.yml`, where each hardware is mapped to the worker pools it makes up. If a new worker pool starts running performance tests, it must be added there or the documentation generation will fail.
+
+### Desktop
+
+(hardware-hpe-moonshot)=
+
+#### [HPE Moonshot](https://mana.mozilla.org/wiki/display/ROPS/HPE+Moonshot)
+
+The HPE Moonshot System supports up to 45 servers in a single chassis, where each server resides on a cartridge. The `netperf` pools are the subset of them that is set up for the network bandwidth tests.
+
+* **Location**: MDC1
+* **Machines**: 45 cartridges per 4.3U chassis
+* **Worker pools, and their platforms**:
+  * `releng-hardware/gecko-t-linux-talos-2404`
+    * `test-linux2404-64-clang-trunk/opt`
+    * `test-linux2404-64-nightlyasrelease/opt`
+    * `test-linux2404-64-shippable/opt`
+    * `test-linux2404-64/opt`
+  * `releng-hardware/gecko-t-linux-netperf-2404`
+    * `test-linux2404-64-nightlyasrelease/opt`
+    * `test-linux2404-64-shippable/opt`
+    * `test-linux2404-64/opt`
+
+```text
+Model: m710x ProLiant cartridge
+Processor: Intel E3-1585L v5 3.0GHz (4 cores)
+Memory: 8GB DDR4 2400MHz
+Disk: 256GB PCIe M.2 2280 SSD, and 64GB SATA M.2 2242 SSD
+GPU: Intel Iris Pro Graphics P580
+Power: 1500W Hot Plug redundant (1+1) power supply
+```
+
+(hardware-mac-mini-r8)=
+
+#### [Apple Mac Mini R8](https://mana.mozilla.org/wiki/display/ROPS/Apple+Mac+Mini+R8)
+
+Intel based Mac Minis. All of them have EDID devices attached that set the resolution.
+
+* **Location**: MDC1
+* **Worker pools, and their platforms**:
+  * `releng-hardware/gecko-t-osx-1400-r8`
+    * `test-macosx1470-64-shippable/opt`
+    * `test-macosx1470-64/opt`
+  * `releng-hardware/gecko-t-osx-1015-r8`
+
+```text
+Model Name: Mac Mini
+Model Identifier: Macmini8,1
+Processor Name: 6-Core Intel Core i7 (i7-8700B)
+Processor Speed: 3.2 GHz
+Number of Processors: 1
+Total Number of Cores: 6
+L2 Cache (per Core): 256 KB
+L3 Cache: 12 MB
+Memory: 16 GB
+Disk: SSD 251 GB (251,000,193,024 bytes)
+```
+
+(hardware-mac-mini-m4)=
+
+#### Apple Silicon (M4)
+
+Apple Silicon Mac Minis running macOS 15. They also host the Android arm64 emulator tests.
+
+* **Worker pools, and their platforms**:
+  * `releng-hardware/gecko-t-osx-1500-m4`
+    * `test-android-em-14-arm64-shippable/opt`
+    * `test-macosx1500-aarch64-nightlyasrelease/opt`
+    * `test-macosx1500-aarch64-shippable/opt`
+
+```text
+Model Name: Mac mini
+Model Identifier: Mac16,10
+Model Number: MU9D3LL/A
+Processor Name: Apple M4
+Processor Speed: 4.46 GHz
+Number of Processors: 1
+Total Number of Cores: 10 (4 performance and 6 efficiency)
+GPU: 10 Core
+L2 Cache (per performance Core): 16 MB
+L2 Cache (per efficiency Core): 4 MB
+L3 Cache: None (Uses System Level Cache)
+Memory: 16 GB
+Disk: SSD 256 GB
+```
+
+(hardware-nuc12-windows11-reference)=
+
+#### Windows 11 Reference
+
+Low-end reference hardware used to catch regressions that are only visible on slower machines.
+
+* **Location**: MDC1
+* **Machines**: 15 machines
+* **Worker pools, and their platforms**:
+  * `releng-hardware/win11-64-24h2-hw-ref`
+    * `test-windows11-64-24h2-hw-ref-shippable/opt`
+    * `test-windows11-64-24h2-hw-ref/opt`
+
+```text
+Model Name: NUC12WSKi3
+Processor Name: Intel Core i3-1220P
+Processor Speed: 2.96 GHz
+Number of Processors: 12
+Total Number of Cores: 10
+GPU: Intel UHD Graphics for 12th Gen Intel Processors
+Memory: 8GB
+Disk: 500GB SSD
+Resolution: 1920 x 1080
+```
+
+(hardware-nuc13-windows11)=
+
+#### Windows 11
+
+* **Location**: MDC1
+* **Machines**: 160 machines
+* **Worker pools, and their platforms**:
+  * `releng-hardware/win11-64-24h2-hw`
+    * `test-windows11-64-24h2-nightlyasrelease/opt`
+    * `test-windows11-64-24h2-shippable/opt`
+    * `test-windows11-64-24h2/opt`
+
+```text
+Model Name: NUC13ANHi5
+Processor Name: 13th Gen Intel Core i5-1340P
+Processor Speed: 1.9/4.6 GHz
+Number of Processors: 16
+Total Number of Cores: 12
+GPU: Intel Iris Xe Adapter
+Memory: 8GB
+Disk: 500GB SSD
+Resolution: 1920 x 1080
+```
+
+### Mobile
+
+(hardware-samsung-a55)=
+
+#### Samsung A55
+
+The devices are split across two device farms: a subset of the performance tests, as well as the unit tests, run on the LambdaTest devices, and the rest run on the Bitbar ones.
+
+* **Location**: Bitbar, and LambdaTest
+* **Machines**: 67 devices total
+* **Worker pools, and their platforms**:
+  * `proj-autophone/gecko-t-bitbar-gw-perf-a55`
+    * `test-android-hw-a55-14-0-aarch64-shippable/opt`
+    * `test-android-hw-a55-14-0-aarch64/opt`
+  * `proj-autophone/gecko-t-lambda-perf-a55`
+    * `test-android-hw-a55-14-0-aarch64-shippable/opt`
+    * `test-android-hw-a55-14-0-aarch64/opt`
+
+```text
+Model Name: Samsung A55
+Model Identifier: SM_A556E (International)
+Processor Name: Exynos 1480
+Processor Speed: Octa-core (4x2.75GHz ARM Cortex-A78 and 4x2GHz ARM Cortex-A55)
+Number of Processors: 2
+Total Number of Cores: 8
+GPU: Samsung Xclipse 530
+Memory: 8GB
+Disk: 128 | 256 GB
+More Info: https://www.phonemore.com/specs/samsung/galaxy-a55/
+```
+
+(hardware-samsung-s24)=
+
+#### Samsung Galaxy S24
+
+* **Location**: Bitbar
+* **Machines**: 4 devices total
+* **Worker pools, and their platforms**:
+  * `proj-autophone/gecko-t-bitbar-gw-perf-s24`
+    * `test-android-hw-s24-14-0-aarch64-shippable/opt`
+  * `proj-autophone/gecko-t-bitbar-gw-unit-s24`
+
+```text
+Model Name: Samsung Galaxy S24
+Model Identifier: SM_S921B (International)
+Processor Name: Exynos 2400
+Processor Speed: Deca-core (1x3.21GHz ARM Cortex-X4, 2x2.9GHz ARM Cortex-A720, 3x2.59GHz ARM Cortex-A720 and 4x1.96GHz ARM Cortex-A520)
+Number of Processors: 4
+Total Number of Cores: 10
+GPU: Samsung Xclipse 940
+Memory: 8 GB
+Disk: 128 | 256 GB
+More Info: https://www.phonemore.com/specs/samsung/galaxy-s24/sm-s921bds-128gb/
+```
+
+(hardware-google-pixel-6)=
+
+#### Google Pixel 6
+
+* **Location**: Bitbar
+* **Machines**: 4 devices total
+* **Worker pools, and their platforms**:
+  * `proj-autophone/gecko-t-bitbar-gw-perf-p6`
+    * `test-android-hw-p6-13-0-aarch64-shippable/opt`
+  * `proj-autophone/gecko-t-bitbar-gw-unit-p6`
+
+```text
+Model Name: Google Pixel 6
+Model Identifier: Pixel 6
+Processor Name: Google Tensor
+Processor Speed: Octa-core (2x2.80 GHz Cortex-X1, 2x2.25 GHz Cortex-A76 and 4x1.80 GHz Cortex-A55)
+Number of Processors: 1
+Total Number of Cores: 8
+GPU: Mali-G78 MP20
+Memory: 8 GB
+Disk: 128 | 256 GB
+More Info: https://www.phonemore.com/specs/google/pixel-6/
+```
+
+### Virtual machines
+
+(hardware-gcp-c3d-standard-8)=
+
+#### GCP c3d-standard-8
+
+Google Cloud virtual machines running the tests in a docker container. They are only used by the memory tests, which are not sensitive enough to the noise introduced by the hypervisor to require bare metal.
+
+* **Worker pools, and their platforms**:
+  * `gecko-t/t-linux-docker-noscratch-amd`
+    * `test-linux2404-64-clang-trunk/opt`
+    * `test-linux2404-64-shippable/opt`
+    * `test-linux2404-64/opt`
+
+```text
+Instance Type: c3d-standard-8
+Processor Name: AMD EPYC (Genoa)
+Total Number of Cores: 8 vCPUs
+Memory: 32 GB
+Image: ubuntu-2404-headless
+```
+
+(hardware-azure-standard-f8alds-v7)=
+
+#### Azure Standard_F8alds_v7
+
+Azure virtual machines. As with the Linux virtual machines above, they are only used by the tests that do not need bare metal: the memory tests and the Talos xperf test, which needs the privileged pool to record ETW traces.
+
+* **Worker pools, and their platforms**:
+  * `gecko-t/win11-64-25h2`
+    * `test-windows11-64-25h2-shippable/opt`
+    * `test-windows11-64-25h2/opt`
+  * `gecko-t/win11-64-25h2-privileged`
+    * `test-windows11-64-25h2-shippable/opt`
+    * `test-windows11-64-25h2/opt`
+
+```text
+Instance Type: Standard_F8alds_v7
+Processor Name: AMD EPYC
+Total Number of Cores: 8 vCPUs
+Memory: 16 GB
+```
+
 
 ## Try Runs and Wait Times
 

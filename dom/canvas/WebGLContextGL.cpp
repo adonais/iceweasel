@@ -41,9 +41,8 @@
 
 namespace mozilla {
 
-using namespace mozilla::dom;
-using namespace mozilla::gfx;
-using namespace mozilla::gl;
+using namespace gfx;
+using namespace gl;
 
 //
 //  WebGL API
@@ -902,7 +901,7 @@ bool WebGLContext::DoReadPixelsAndConvert(
 }
 
 webgl::ReadPixelsResult WebGLContext::ReadPixelsInto(
-    const webgl::ReadPixelsDesc& desc, const Range<uint8_t>& dest) {
+    const webgl::ReadPixelsDesc& desc, const mozilla::Range<uint8_t>& dest) {
   const FuncScope funcScope(*this, "readPixels");
   if (IsContextLost()) return {};
 
@@ -1565,6 +1564,17 @@ void WebGLContext::PolygonOffset(GLfloat factor, GLfloat units) {
   if (IsContextLost()) return;
 
   gl->fPolygonOffset(factor, units);
+}
+
+void WebGLContext::PolygonOffsetClampEXT(const GLfloat factor,
+                                         const GLfloat units,
+                                         const GLfloat clamp) {
+  const FuncScope funcScope(*this, "polygonOffsetClampEXT");
+  if (IsContextLost()) return;
+  MOZ_RELEASE_ASSERT(
+      IsExtensionEnabled(WebGLExtensionID::EXT_polygon_offset_clamp));
+
+  gl->fPolygonOffsetClamp(factor, units, clamp);
 }
 
 void WebGLContext::ProvokingVertex(const webgl::ProvokingVertex mode) const {

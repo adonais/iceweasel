@@ -63,7 +63,11 @@ fn crash_annotations() {
         let scope = v["scope"].as_str().unwrap_or("client");
         match scope {
             "ping" | "report" => {
-                annotations.entry(k.into_string().unwrap());
+                let name = v["altname"]
+                    .as_str()
+                    .map(str::to_owned)
+                    .unwrap_or_else(|| k.into_string().unwrap());
+                annotations.entry(name);
             }
             _ => (),
         }

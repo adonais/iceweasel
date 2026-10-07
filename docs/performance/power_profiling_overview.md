@@ -214,7 +214,7 @@ physical meaning. Avoid them.
 
 The most notable example of a hybrid proxy measurement is the ["Energy
 Impact" used by OS X's Activity
-[Monitor](activity_monitor_and_top.md#What-does-Energy-Impact-measure).
+[Monitor](activity_monitor_and_top.md#what-does-energy-impact-measure).
 
 ## Ways to user power-related measurements
 

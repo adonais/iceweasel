@@ -1,0 +1,34 @@
+<!DOCTYPE HTML>
+<!--
+    Any copyright is dedicated to the Public Domain.
+    http://creativecommons.org/licenses/publicdomain/
+    -->
+<html>
+<head>
+<meta charset="utf-8">
+<title>Bug 2068996: a repeating sprite sheet must sample the cell it is positioned on</title>
+<style>
+html, body { margin: 0; background: white; }
+/* The strip's middle cell is green with a black square in one corner, between
+   two red cells. The square is what makes a shift visible: measuring the sampled
+   part against the wrong extent lands it in the middle of the cell, where the
+   shader's clamp holds sampling on flat green and the square never appears.
+
+   A positive background-position under background-repeat picks the same cell as
+   a negative one a whole period away, but reaches WebRender differently: the
+   item's rect starts on the first tile, one period to the left, and is trimmed
+   to the fill area, so it is narrower than a single repetition. The sampled
+   part of the image has to be measured against the repetition, not against
+   that rect. */
+div {
+  width: 16px;
+  height: 16px;
+  background-image: url(sprite-sampling-strip.png);
+  background-size: 48px 16px;
+  background-position-x: 32px;
+  background-repeat: repeat;
+}
+</style>
+</head>
+<body><div></div></body>
+</html>

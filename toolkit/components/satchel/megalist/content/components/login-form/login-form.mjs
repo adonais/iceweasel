@@ -72,11 +72,35 @@ export class LoginForm extends MozLitElement {
     this.passwordField.inputEl.type = "password";
   }
 
-  #addHTTPSPrefix() {
-    const originValue = this.originField.value.trim();
-    if (originValue && !originValue.match(/:\/\//)) {
-      this.originField.value = "https://" + originValue;
+  #normalizeOrigin() {
+    const field = this.originField;
+    if (!field) {
+      return "";
     }
+
+    const input = field.inputEl;
+    const originValue = (input?.value ?? field.value).trim();
+    const normalized =
+      originValue && !originValue.match(/:\/\//)
+        ? `https://${originValue}`
+        : originValue;
+
+    if (field.value !== normalized) {
+      field.value = normalized;
+    }
+
+    if (input) {
+      if (input.value !== normalized) {
+        input.value = normalized;
+      }
+      this._originInvalid = !input.checkValidity();
+      if (!this._originInvalid) {
+        this.#removeWarning(this.originWarning);
+        input.removeAttribute("aria-describedby");
+      }
+    }
+
+    return normalized;
   }
 
   #renderReadonlyOrigin() {
@@ -214,12 +238,14 @@ export class LoginForm extends MozLitElement {
   onSubmit(e) {
     e.preventDefault();
 
+    const origin = this.originValue || this.#normalizeOrigin();
+
     if (!this.#isFormValid()) {
       return;
     }
 
     const loginFromForm = {
-      origin: this.originValue || this.originField?.value,
+      origin,
       username: this.usernameField.value.trim(),
       password: this.passwordField.value,
     };
@@ -346,7 +372,7 @@ export class LoginForm extends MozLitElement {
                       data-l10n-id="contextual-manager-passwords-origin-field"
                       .value=${this.originValue}
                       @input=${e => this.onInput(e)}
-                      @change=${() => this.#addHTTPSPrefix()}
+                      @change=${() => this.#normalizeOrigin()}
                     ></moz-input-url>
                     <p
                       id="origin-description"

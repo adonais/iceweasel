@@ -7,7 +7,6 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/EnumeratedArray.h"
-#include "mozilla/HashFunctions.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
@@ -20,8 +19,8 @@
 #include "gc/Marking.h"
 #include "gc/WeakMap.h"
 #include "jit/CacheIRAOT.h"
+#include "jit/CacheIRStubKey.h"
 #include "jit/ExecutableAllocator.h"
-#include "jit/ICStubSpace.h"
 #include "jit/Invalidation.h"
 #include "jit/JitScript.h"
 #include "js/AllocPolicy.h"
@@ -43,8 +42,6 @@ class BaseScript;
 
 namespace jit {
 
-enum class CacheKind : uint8_t;
-class CacheIRStubInfo;
 class JitCode;
 class JitScript;
 
@@ -59,46 +56,6 @@ class JitScript;
  *  automatically removed.
  */
 using EntryTrampolineMap = WeakMap<BaseScript*, JitCode*, ZoneAllocPolicy>;
-
-enum class ICStubEngine : uint8_t {
-  // Baseline IC, see BaselineIC.h.
-  Baseline = 0,
-
-  // Ion IC, see IonIC.h.
-  IonIC
-};
-
-struct CacheIRStubKey : public DefaultHasher<CacheIRStubKey> {
-  struct Lookup {
-    const uint8_t* code;
-    uint32_t length;
-    HashNumber hash;
-    CacheKind kind;
-    ICStubEngine engine;
-
-    Lookup(CacheKind kind, ICStubEngine engine, const uint8_t* code,
-           uint32_t length)
-        : code(code),
-          length(length),
-          hash(mozilla::AddToHash(mozilla::HashBytes(code, length),
-                                  uint32_t(kind), uint32_t(engine))),
-          kind(kind),
-          engine(engine) {}
-  };
-
-  static HashNumber hash(const Lookup& l) { return l.hash; }
-  static bool match(const CacheIRStubKey& entry, const Lookup& l);
-
-  UniquePtr<CacheIRStubInfo, JS::FreePolicy> stubInfo;
-
-  explicit CacheIRStubKey(CacheIRStubInfo* info) : stubInfo(info) {}
-  CacheIRStubKey(CacheIRStubKey&& other)
-      : stubInfo(std::move(other.stubInfo)) {}
-
-  void operator=(CacheIRStubKey&& other) {
-    stubInfo = std::move(other.stubInfo);
-  }
-};
 
 struct BaselineCacheIRStubCodeMapGCPolicy {
   static bool traceWeak(JSTracer* trc, CacheIRStubKey*,
@@ -124,15 +81,8 @@ class JitZone {
       mozilla::EnumeratedArray<StubKind, Code, size_t(StubKind::Count)>;
 
  private:
-  // Allocated space for CacheIR stubs.
-  ICStubSpace stubSpace_;
-
-  // Set of CacheIRStubInfo instances used by Ion stubs in this Zone.
-  using IonCacheIRStubInfoSet =
-      HashSet<CacheIRStubKey, CacheIRStubKey, SystemAllocPolicy>;
-  IonCacheIRStubInfoSet ionCacheIRStubInfoSet_;
-
-  // Map CacheIRStubKey to shared JitCode objects.
+  // Map CacheIRStubKey to shared JitCode objects. We store this in JitZone
+  // instead of JitRealm because we want to share stub code across realms.
   using BaselineCacheIRStubCodeMap =
       GCHashMap<CacheIRStubKey, WeakHeapPtr<JitCode*>, CacheIRStubKey,
                 SystemAllocPolicy, BaselineCacheIRStubCodeMapGCPolicy>;
@@ -182,6 +132,10 @@ class JitZone {
 
   gc::Heap initialStringHeap = gc::Heap::Tenured;
 
+  // If we are interrupted while executing a regexp, we disable discarding
+  // regexp code until we're done executing the regexp.
+  uint32_t regExpInterruptDepth_ = 0;
+
   JitCode* generateStringConcatStub(JSContext* cx);
   JitCode* generateRegExpMatcherStub(JSContext* cx);
   JitCode* generateRegExpSearcherStub(JSContext* cx);
@@ -204,10 +158,7 @@ class JitZone {
   void traceWeak(JSTracer* trc, Zone* zone);
 
   void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
-                              JS::CodeSizes* code, size_t* jitZone,
-                              size_t* cacheIRStubs) const;
-
-  ICStubSpace* stubSpace() { return &stubSpace_; }
+                              JS::CodeSizes* code, size_t* jitZone) const;
 
   JitCode* getBaselineCacheIRStubCode(const CacheIRStubKey::Lookup& key,
                                       CacheIRStubInfo** stubInfo) {
@@ -226,19 +177,6 @@ class JitZone {
     MOZ_ASSERT(!p);
     return baselineCacheIRStubCodes_.add(p, std::move(key), stubCode);
   }
-
-  CacheIRStubInfo* getIonCacheIRStubInfo(const CacheIRStubKey::Lookup& key) {
-    IonCacheIRStubInfoSet::Ptr p = ionCacheIRStubInfoSet_.lookup(key);
-    return p ? p->stubInfo.get() : nullptr;
-  }
-  [[nodiscard]] bool putIonCacheIRStubInfo(const CacheIRStubKey::Lookup& lookup,
-                                           CacheIRStubKey& key) {
-    IonCacheIRStubInfoSet::AddPtr p =
-        ionCacheIRStubInfoSet_.lookupForAdd(lookup);
-    MOZ_ASSERT(!p);
-    return ionCacheIRStubInfoSet_.add(p, std::move(key));
-  }
-  void purgeIonCacheIRStubInfo() { ionCacheIRStubInfoSet_.clearAndCompact(); }
 
   ExecutableAllocator& execAlloc() { return execAlloc_.ref(); }
   const ExecutableAllocator& execAlloc() const { return execAlloc_.ref(); }
@@ -398,6 +336,26 @@ class JitZone {
     return offsetof(JitZone, stubs_) +
            size_t(StubKind::RegExpExecTest) * sizeof(uintptr_t);
   }
+
+  bool keepRegExpJitCode() const { return regExpInterruptDepth_ > 0; }
+  void incRegExpInterruptDepth() {
+    MOZ_RELEASE_ASSERT(regExpInterruptDepth_ < UINT32_MAX);
+    regExpInterruptDepth_++;
+  }
+  void decRegExpInterruptDepth() {
+    MOZ_RELEASE_ASSERT(regExpInterruptDepth_ > 0);
+    regExpInterruptDepth_--;
+  }
+};
+
+class MOZ_RAII AutoInterruptingRegExp {
+  JitZone* jitZone_;
+
+ public:
+  explicit AutoInterruptingRegExp(JitZone* jitZone) : jitZone_(jitZone) {
+    jitZone_->incRegExpInterruptDepth();
+  }
+  ~AutoInterruptingRegExp() { jitZone_->decRegExpInterruptDepth(); }
 };
 
 }  // namespace jit

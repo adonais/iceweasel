@@ -88,7 +88,7 @@ add_task(async function testSendingMoreInfo() {
         {
           level: "error",
           log(actual) {
-            // "Blocked loading mixed active content http://tracking.example.org/browser/browser/base/content/test/protectionsUI/benignPage.html",
+            // "Blocked loading mixed active content http://tracking.example.org/browser/browser/base/content/test/browser-protectionsUI/benignPage.html",
             return (
               Array.isArray(actual) &&
               actual.length == 1 &&

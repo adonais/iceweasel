@@ -4,10 +4,6 @@ support-files = [
   "data/testPref.js",
   "extdata/testExt.js",
 ]
-# resetPrefs() is racy in SocketProcess (and probably elsewhere as well)
-skip-if = [
-  "socketprocess_networking",
-]
 
 ["test_backupPrefFile.js"]
 

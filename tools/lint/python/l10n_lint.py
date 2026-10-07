@@ -65,6 +65,7 @@ def lint_strings(name, paths, lintconfig, **lintargs):
         lintconfig["include"],
         exclude=exclude,
         extensions=extensions,
+        expand_excludes=False,
     )
     # Filter again, our directories might have picked up files that should be
     # excluded in l10n.yml

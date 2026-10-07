@@ -466,9 +466,8 @@ struct ParamTraits<mozilla::dom::MediaKeySessionType>
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::CDMKeyInfo, mKeyId, mStatus);
 
 template <typename T>
-struct ParamTraits<mozilla::NormalizedConstraintSet::Range<T>> {
-  typedef mozilla::NormalizedConstraintSet::Range<T> paramType;
-
+struct ParamTraits<mozilla::NormalizedConstraintSet::ConstraintRange<T>> {
+  using paramType = mozilla::NormalizedConstraintSet::ConstraintRange<T>;
   static void Write(MessageWriter* aWriter, const paramType& aParam) {
     WriteParams(aWriter, aParam.mMin, aParam.mMax, aParam.mIdeal);
   }
@@ -480,16 +479,16 @@ struct ParamTraits<mozilla::NormalizedConstraintSet::Range<T>> {
 
 DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS(
     mozilla::NormalizedConstraintSet::LongRange,
-    mozilla::NormalizedConstraintSet::Range<int32_t>);
+    mozilla::NormalizedConstraintSet::ConstraintRange<int32_t>);
 DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS(
     mozilla::NormalizedConstraintSet::LongLongRange,
-    mozilla::NormalizedConstraintSet::Range<int64_t>);
+    mozilla::NormalizedConstraintSet::ConstraintRange<int64_t>);
 DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS(
     mozilla::NormalizedConstraintSet::DoubleRange,
-    mozilla::NormalizedConstraintSet::Range<double>);
+    mozilla::NormalizedConstraintSet::ConstraintRange<double>);
 DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS(
     mozilla::NormalizedConstraintSet::BooleanRange,
-    mozilla::NormalizedConstraintSet::Range<bool>);
+    mozilla::NormalizedConstraintSet::ConstraintRange<bool>);
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::NormalizedConstraintSet::StringRange,
                                   mExact, mIdeal);
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::NormalizedConstraintSet, mWidth,

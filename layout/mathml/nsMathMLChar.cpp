@@ -656,7 +656,7 @@ bool nsMathMLChar::SetFontFamily(nsPresContext* aPresContext,
     font.family.families = familyList;
     const nsStyleFont* styleFont = mComputedStyle->StyleFont();
     nsFontMetrics::Params params;
-    params.language = styleFont->mLanguage;
+    params.language = styleFont->GetLangAtom();
     params.explicitLanguage = styleFont->mExplicitLanguage;
     params.userFontSet = aPresContext->GetUserFontSet();
     params.textPerf = aPresContext->GetTextPerfMetrics();
@@ -1188,7 +1188,7 @@ nsresult nsMathMLChar::StretchInternal(
 
   const nsStyleFont* styleFont = mComputedStyle->StyleFont();
   nsFontMetrics::Params params;
-  params.language = styleFont->mLanguage;
+  params.language = styleFont->GetLangAtom();
   params.explicitLanguage = styleFont->mExplicitLanguage;
   params.userFontSet = presContext->GetUserFontSet();
   params.textPerf = presContext->GetTextPerfMetrics();

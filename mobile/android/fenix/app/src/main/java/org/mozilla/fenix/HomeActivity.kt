@@ -110,6 +110,7 @@ import org.mozilla.fenix.bindings.HomepageTabBinding
 import org.mozilla.fenix.bindings.SummarizeToolbarHighlightBinding
 import org.mozilla.fenix.bookmarks.DesktopFolders
 import org.mozilla.fenix.browser.BrowserFragment
+import org.mozilla.fenix.browser.BrowserFragmentDirections
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.browser.browsingmode.DefaultBrowsingModeManager
@@ -169,7 +170,7 @@ import org.mozilla.fenix.home.intent.OpenRecentlyClosedIntentProcessor
 import org.mozilla.fenix.home.intent.OpenSpecificTabIntentProcessor
 import org.mozilla.fenix.home.intent.SpeechProcessingIntentProcessor
 import org.mozilla.fenix.home.intent.StartSearchIntentProcessor
-import org.mozilla.fenix.home.topsites.DefaultTopSitesBinding
+import org.mozilla.fenix.home.topsites.DefaultPinnedSitesBinding
 import org.mozilla.fenix.messaging.FenixMessageSurfaceId
 import org.mozilla.fenix.messaging.MessageNotificationWorker
 import org.mozilla.fenix.nimbus.FxNimbus
@@ -284,8 +285,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         }
     }
 
-    private val defaultTopSitesBinding by lazy {
-        DefaultTopSitesBinding(
+    private val defaultPinnedSitesBinding by lazy {
+        DefaultPinnedSitesBinding(
             browserStore = components.core.store,
             topSitesStorage = components.core.topSitesStorage,
             settings = components.settings,
@@ -384,7 +385,11 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             ),
             SpeechProcessingIntentProcessor(this, components.core.store),
             AssistIntentProcessor(),
-            StartSearchIntentProcessor { components.fenixOnboarding.userHasBeenOnboarded() },
+            StartSearchIntentProcessor(
+                fenixBrowserUseCases = components.useCases.fenixBrowserUseCases,
+                browsingModeManager = browsingModeManager,
+                userHasBeenOnboarded = { components.fenixOnboarding.userHasBeenOnboarded() },
+            ),
             LensResultIntentProcessor(this),
             OpenHomeIntentProcessor(
                 fenixBrowserUseCases = components.useCases.fenixBrowserUseCases,
@@ -593,7 +598,9 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             }
 
             if (shouldNavigateToBrowserOnColdStart(savedInstanceState)) {
-                if (!shouldStartOnHome()) {
+                if (shouldStartOnHome() && components.settings.enableHomepageAsNewTab) {
+                    components.useCases.fenixBrowserUseCases.addNewHomepageTab()
+                } else if (!shouldStartOnHome()) {
                     navigateToBrowserOnColdStart()
                 }
                 maybeShowSetAsDefaultBrowserPrompt()
@@ -631,7 +638,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             extensionsProcessDisabledBackgroundController,
             serviceWorkerSupport,
             crashReporterBinding,
-            defaultTopSitesBinding,
+            defaultPinnedSitesBinding,
             TopSitesRefresher(
                 settings = components.settings,
                 topSitesProvider = components.core.macTopSitesProvider,
@@ -1336,7 +1343,11 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                 }
 
                 is BrowserFragment -> {
-                    val action = NavGraphDirections.actionGlobalMenuDialogFragment(MenuAccessPoint.Browser)
+                    val action =
+                        when (getSettings().isMenuCustomizationEnabled) {
+                            true -> BrowserFragmentDirections.actionBrowserFragmentToMenuFragment()
+                            else -> NavGraphDirections.actionGlobalMenuDialogFragment(MenuAccessPoint.Browser)
+                        }
                     navHost.navController.navigate(action)
                     return true
                 }

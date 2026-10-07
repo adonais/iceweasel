@@ -13,8 +13,8 @@ namespace net {
 void HostRecordQueue::InsertRecord(nsHostRecord* aRec,
                                    nsIDNSService::DNSFlags aFlags) {
   if (aRec->isInList()) {
-    MOZ_DIAGNOSTIC_ASSERT(!mEvictionQ.contains(aRec),
-                          "Already in eviction queue");
+    MOZ_ASSERT(aRec->mInEvictionQueue == mEvictionQ.contains(aRec));
+    MOZ_DIAGNOSTIC_ASSERT(!aRec->mInEvictionQueue, "Already in eviction queue");
     MOZ_DIAGNOSTIC_ASSERT(!mHighQ.contains(aRec), "Already in high queue");
     MOZ_DIAGNOSTIC_ASSERT(!mMediumQ.contains(aRec), "Already in med queue");
     MOZ_DIAGNOSTIC_ASSERT(!mLowQ.contains(aRec), "Already in low queue");
@@ -37,11 +37,26 @@ void HostRecordQueue::InsertRecord(nsHostRecord* aRec,
   mPendingCount++;
 }
 
+void HostRecordQueue::PutInEvictionQ(nsHostRecord* aRec) {
+  MOZ_ASSERT(!aRec->isInList());
+  MOZ_ASSERT(!aRec->mInEvictionQueue);
+  mEvictionQ.insertBack(aRec);
+  aRec->mInEvictionQueue = true;
+}
+
+void HostRecordQueue::RemoveFromEvictionQ(nsHostRecord* aRec) {
+  MOZ_ASSERT(aRec->mInEvictionQueue == mEvictionQ.contains(aRec));
+  MOZ_ASSERT(aRec->mInEvictionQueue);
+  aRec->remove();
+  aRec->mInEvictionQueue = false;
+}
+
 void HostRecordQueue::AddToEvictionQ(
     nsHostRecord* aRec, uint32_t aMaxCacheEntries,
     nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord>& aDB) {
   if (aRec->isInList()) {
-    bool inEvictionQ = mEvictionQ.contains(aRec);
+    MOZ_ASSERT(aRec->mInEvictionQueue == mEvictionQ.contains(aRec));
+    bool inEvictionQ = aRec->mInEvictionQueue;
     MOZ_DIAGNOSTIC_ASSERT(!inEvictionQ, "Already in eviction queue");
     bool inHighQ = mHighQ.contains(aRec);
     MOZ_DIAGNOSTIC_ASSERT(!inHighQ, "Already in high queue");
@@ -53,46 +68,61 @@ void HostRecordQueue::AddToEvictionQ(
 
     // Bug 1678117 - it's not clear why this can happen, but let's fix it
     // for release users.
-    aRec->remove();
     if (inEvictionQ) {
+      RemoveFromEvictionQ(aRec);
       MOZ_DIAGNOSTIC_ASSERT(mEvictionQSize > 0);
       mEvictionQSize--;
-    } else if (inHighQ || inMediumQ || inLowQ) {
-      MOZ_DIAGNOSTIC_ASSERT(mPendingCount > 0);
-      mPendingCount--;
+    } else {
+      aRec->remove();
+      if (inHighQ || inMediumQ || inLowQ) {
+        MOZ_DIAGNOSTIC_ASSERT(mPendingCount > 0);
+        mPendingCount--;
+      }
     }
   }
-  mEvictionQ.insertBack(aRec);
+  PutInEvictionQ(aRec);
   if (mEvictionQSize < aMaxCacheEntries) {
     mEvictionQSize++;
   } else {
     // remove first element on mEvictionQ
-    RefPtr<nsHostRecord> head = mEvictionQ.popFirst();
+    RefPtr<nsHostRecord> head = mEvictionQ.getFirst();
+    RemoveFromEvictionQ(head);
     aDB.Remove(*static_cast<nsHostKey*>(head.get()));
 
+    bool stillValid =
+        head->CheckExpiration(TimeStamp::Now()) != nsHostRecord::EXP_EXPIRED;
     if (!head->negative) {
-      // record the age of the entry upon eviction.
+      // record the age of the entry upon eviction. Only positive records have a
+      // valid mValidStart (set in PrepareRecordExpiration); negative records
+      // may leave it null, so computing the age there would assert.
       TimeDuration age = TimeStamp::NowLoRes() - head->mValidStart;
-      if (aRec->IsAddrRecord()) {
+      if (head->IsAddrRecord()) {
         glean::dns::cleanup_age.AccumulateRawDuration(age);
+        if (stillValid) {
+          glean::dns::premature_eviction.AccumulateRawDuration(age);
+        }
       } else {
         glean::dns::by_type_cleanup_age.AccumulateRawDuration(age);
-      }
-      if (head->CheckExpiration(TimeStamp::Now()) !=
-          nsHostRecord::EXP_EXPIRED) {
-        if (aRec->IsAddrRecord()) {
-          glean::dns::premature_eviction.AccumulateRawDuration(age);
-        } else {
+        if (stillValid) {
           glean::dns::by_type_premature_eviction.AccumulateRawDuration(age);
         }
       }
+    } else {
+      // Negative record (A/AAAA or by-type, e.g. HTTPS) evicted because the
+      // cache reached its size limit. Split by family and by whether it was
+      // still within its (short) negative lifetime, to distinguish size-driven
+      // eviction from TTL expiry.
+      glean::dns::negative_eviction
+          .Get(RecordFamilyLabel(head),
+               stillValid ? "premature"_ns : "expired"_ns)
+          .Add(1);
     }
   }
 }
 
 void HostRecordQueue::MoveToEvictionQueueTail(nsHostRecord* aRec) {
-  bool inEvictionQ = mEvictionQ.contains(aRec);
-  if (!inEvictionQ) {
+  MOZ_ASSERT(aRec->mInEvictionQueue == mEvictionQ.contains(aRec));
+  if (!aRec->mInEvictionQueue) {
     // Note: this function can be called when the record isn't in the
     // mEvictionQ. For example, if we immediately start a TTL lookup (see
     // nsHostResolver::CompleteLookupLocked), the record may not be in
@@ -100,8 +130,9 @@ void HostRecordQueue::MoveToEvictionQueueTail(nsHostRecord* aRec) {
     return;
   }
 
-  aRec->remove();
-  mEvictionQ.insertBack(aRec);
+  // Re-link to the tail (most-recently-used end).
+  RemoveFromEvictionQ(aRec);
+  PutInEvictionQ(aRec);
 }
 
 void HostRecordQueue::MaybeRenewHostRecord(nsHostRecord* aRec) {
@@ -109,7 +140,8 @@ void HostRecordQueue::MaybeRenewHostRecord(nsHostRecord* aRec) {
     return;
   }
 
-  bool inEvictionQ = mEvictionQ.contains(aRec);
+  MOZ_ASSERT(aRec->mInEvictionQueue == mEvictionQ.contains(aRec));
+  bool inEvictionQ = aRec->mInEvictionQueue;
   MOZ_DIAGNOSTIC_ASSERT(inEvictionQ, "Should be in eviction queue");
   bool inHighQ = mHighQ.contains(aRec);
   MOZ_DIAGNOSTIC_ASSERT(!inHighQ, "Already in high queue");
@@ -119,29 +151,30 @@ void HostRecordQueue::MaybeRenewHostRecord(nsHostRecord* aRec) {
   MOZ_DIAGNOSTIC_ASSERT(!inLowQ, "Already in low queue");
 
   // we're already on the eviction queue. This is a renewal
-  aRec->remove();
   if (inEvictionQ) {
+    RemoveFromEvictionQ(aRec);
     MOZ_DIAGNOSTIC_ASSERT(mEvictionQSize > 0);
     mEvictionQSize--;
-  } else if (inHighQ || inMediumQ || inLowQ) {
-    MOZ_DIAGNOSTIC_ASSERT(mPendingCount > 0);
-    mPendingCount--;
+  } else {
+    aRec->remove();
+    if (inHighQ || inMediumQ || inLowQ) {
+      MOZ_DIAGNOSTIC_ASSERT(mPendingCount > 0);
+      mPendingCount--;
+    }
   }
 }
 
 void HostRecordQueue::FlushEvictionQ(
     nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord>& aDB) {
-  mEvictionQSize = 0;
-
   // Clear the evictionQ and remove all its corresponding entries from
   // the cache first
-  if (!mEvictionQ.isEmpty()) {
-    for (const RefPtr<nsHostRecord>& rec : mEvictionQ) {
-      rec->Cancel();
-      aDB.Remove(*static_cast<nsHostKey*>(rec));
-    }
-    mEvictionQ.clear();
+  for (const RefPtr<nsHostRecord>& rec : mEvictionQ) {
+    rec->Cancel();
+    rec->mInEvictionQueue = false;
+    aDB.Remove(*static_cast<nsHostKey*>(rec));
   }
+  mEvictionQ.clear();
+  mEvictionQSize = 0;
 }
 
 void HostRecordQueue::MaybeRemoveFromQ(nsHostRecord* aRec) {
@@ -149,16 +182,18 @@ void HostRecordQueue::MaybeRemoveFromQ(nsHostRecord* aRec) {
     return;
   }
 
+  MOZ_ASSERT(aRec->mInEvictionQueue == mEvictionQ.contains(aRec));
   if (mHighQ.contains(aRec) || mMediumQ.contains(aRec) ||
       mLowQ.contains(aRec)) {
     mPendingCount--;
-  } else if (mEvictionQ.contains(aRec)) {
+    aRec->remove();
+  } else if (aRec->mInEvictionQueue) {
+    RemoveFromEvictionQ(aRec);
     mEvictionQSize--;
   } else {
     MOZ_ASSERT(false, "record is in other queue");
+    aRec->remove();
   }
-
-  aRec->remove();
 }
 
 void HostRecordQueue::MoveToAnotherPendingQ(nsHostRecord* aRec,
@@ -215,14 +250,12 @@ void HostRecordQueue::ClearAll(
   clearPendingQ(mMediumQ);
   clearPendingQ(mLowQ);
 
-  mEvictionQSize = 0;
-  if (!mEvictionQ.isEmpty()) {
-    for (const RefPtr<nsHostRecord>& rec : mEvictionQ) {
-      rec->Cancel();
-    }
+  for (const RefPtr<nsHostRecord>& rec : mEvictionQ) {
+    rec->Cancel();
+    rec->mInEvictionQueue = false;
   }
-
   mEvictionQ.clear();
+  mEvictionQSize = 0;
 }
 
 }  // namespace net

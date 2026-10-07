@@ -103,6 +103,8 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
   // Runs on mRecognitionThread, and returns once mState leaves Running.
   void ProcessAudioStreaming();
   bool IsRunning() MOZ_EXCLUDES(mLock);
+  // Milliseconds of audio fed to the model, and of wall clock spent in it.
+  std::pair<double, double> PerfCounters() MOZ_EXCLUDES(mTimingLock);
   // Runs on mRecognitionThread, which alone owns mCapiCtx and mCapiStream.
   void DestroyParakeetContext(mozilla::llama::LlamaLibWrapper* aLib);
   void SignalError(const nsCString& aErrorMessage);
@@ -156,6 +158,11 @@ class SpeechRecognitionParent final : public PSpeechRecognitionParent {
 
   // Position in the audio stream that has been processed, in samples.
   size_t mProcessedAudioPos;
+
+  // Counts the feed path only, so the ratio of the two is the real-time
+  // factor. The end-of-stream flush shows up as finalization latency instead.
+  uint64_t mFedAudioFrames MOZ_GUARDED_BY(mTimingLock) = 0;
+  uint64_t mInferenceMicroseconds MOZ_GUARDED_BY(mTimingLock) = 0;
 
   // Capture-time samples reported alongside audio in RecvProcessAudioData
   // (IPC thread), consumed by CaptureTimeForPosition() on mRecognitionThread.

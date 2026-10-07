@@ -33,7 +33,15 @@ uint16_t RotorRule::Match(Accessible* aAcc) {
     result |= nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
   }
 
-  if (mDirectDescendantsFrom && (aAcc != mDirectDescendantsFrom)) {
+  if (mDirectDescendantsFrom && aAcc != mDirectDescendantsFrom) {
+    if (aAcc->TagName() == nsGkAtoms::body && mDirectDescendantsFrom->IsDoc() &&
+        aAcc->Parent() == mDirectDescendantsFrom) {
+      // The body is often the only direct descendant of the document. If it
+      // is present, skip it and treat its content as "direct" instead.
+      // FILTER_MATCH can't be set yet, so returning result leaves the body
+      // unmatched.
+      return result;
+    }
     result |= nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
   }
 

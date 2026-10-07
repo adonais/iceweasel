@@ -10,6 +10,8 @@
 
 #include "js/UniquePtr.h"
 
+class JSLinearString;
+
 namespace js {
 class MatchPairs;
 }
@@ -62,35 +64,39 @@ class Stack;
 class StackScope;
 
 struct InputOutputData {
-  const void* inputStart;
-  const void* inputEnd;
+  JSLinearString* input;
 
-  // Index into inputStart (in chars) at which to begin matching.
+  // Index into input (in chars) at which to begin matching.
   size_t startIndex;
 
   js::MatchPairs* matches;
 
-  template <typename CharT>
-  InputOutputData(const CharT* inputStart, const CharT* inputEnd,
-                  size_t startIndex, js::MatchPairs* matches)
-      : inputStart(inputStart),
-        inputEnd(inputEnd),
+  // Whether this execution of the regexp can resume after an interrupt.
+  // If not, it will return ERROR when interrupted, and the caller must
+  // handle the interrupt. Setting this to true is an assertion that
+  // nothing is unrooted in the caller.
+  uint32_t canResume;
+
+  InputOutputData(JSLinearString* input, size_t startIndex,
+                  js::MatchPairs* matches, bool canResume)
+      : input(input),
         startIndex(startIndex),
-        matches(matches) {}
+        matches(matches),
+        canResume(canResume) {}
 
   // Note: return int32_t instead of size_t to prevent signed => unsigned
   // conversions in caller functions.
-  static constexpr int32_t offsetOfInputStart() {
-    return int32_t(offsetof(InputOutputData, inputStart));
-  }
-  static constexpr int32_t offsetOfInputEnd() {
-    return int32_t(offsetof(InputOutputData, inputEnd));
+  static constexpr int32_t offsetOfInput() {
+    return int32_t(offsetof(InputOutputData, input));
   }
   static constexpr int32_t offsetOfStartIndex() {
     return int32_t(offsetof(InputOutputData, startIndex));
   }
   static constexpr int32_t offsetOfMatches() {
     return int32_t(offsetof(InputOutputData, matches));
+  }
+  static constexpr int32_t offsetOfCanResume() {
+    return int32_t(offsetof(InputOutputData, canResume));
   }
 };
 

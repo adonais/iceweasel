@@ -72,10 +72,10 @@ class RangeUtils final {
   static nsINode* ComputeRootNode(nsINode* aNode);
 
   /**
-   * XXX nsRange should accept 0 - UINT32_MAX as offset.  However, users of
-   *     nsRange treat offset as int32_t.  Additionally, some other internal
+   * XXX Range should accept 0 - UINT32_MAX as offset.  However, users of
+   *     Range treat offset as int32_t.  Additionally, some other internal
    *     APIs like nsINode::ComputeIndexOf_Deprecated() use int32_t.  Therefore,
-   *     nsRange should accept only 0 - INT32_MAX as valid offset for now.
+   *     Range should accept only 0 - INT32_MAX as valid offset for now.
    */
   static bool IsValidOffset(uint32_t aOffset) { return aOffset <= INT32_MAX; }
 

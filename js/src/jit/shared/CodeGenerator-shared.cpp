@@ -143,11 +143,12 @@ bool CodeGeneratorShared::generatePrologue() {
   MOZ_ASSERT(!gen->compilingWasm());
 
 #ifdef JS_USE_LINK_REGISTER
-  masm.pushReturnAddress();
-#endif
-
+  // LR, then FP for frame prologue.
+  masm.pushRegs(LinkRegister, FramePointer);
+#else
   // Frame prologue.
   masm.push(FramePointer);
+#endif
   masm.moveStackPtrTo(FramePointer);
 
   // Ensure that the Ion frame is properly aligned.
@@ -221,6 +222,32 @@ bool CodeGeneratorShared::generateOutOfLineCode() {
   }
 
   return !masm.oom();
+}
+
+void CodeGeneratorShared::bailoutFrom(Label* label, LSnapshot* snapshot) {
+  MOZ_ASSERT_IF(!masm.oom(), label->used());
+  MOZ_ASSERT_IF(!masm.oom(), !label->bound());
+
+  encode(snapshot);
+
+  InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
+  auto* ool = new (alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
+    masm.push(Imm32(snapshot->snapshotOffset()));
+    masm.jump(&deoptLabel_);
+  });
+
+  // All bailout code is associated with the bytecodeSite of the block we are
+  // bailing out from.
+  addOutOfLineCode(ool,
+                   new (alloc()) BytecodeSite(tree, tree->script()->code()));
+
+  masm.retarget(label, ool->entry());
+}
+
+void CodeGeneratorShared::bailout(LSnapshot* snapshot) {
+  Label label;
+  masm.jump(&label);
+  bailoutFrom(&label, snapshot);
 }
 
 void CodeGeneratorShared::addOutOfLineCode(OutOfLineCode* code,

@@ -12,7 +12,7 @@ import tempfile
 import zipfile
 
 import mozfile
-from mozgeckoprofiler import ProfileSymbolicator, save_gecko_profile
+from mozgeckoprofiler import save_gecko_profile, symbolicate_profile
 from mozlog import get_proxy_logger
 
 LOG = get_proxy_logger()
@@ -25,10 +25,9 @@ class GeckoProfile:
     This allow to collect Gecko profiling data and to zip results in one file.
     """
 
-    def __init__(self, upload_dir, browser_config, test_config):
+    def __init__(self, upload_dir, test_config):
         self.upload_dir = upload_dir
-        self.browser_config, self.test_config = browser_config, test_config
-        self.cleanup = True
+        self.test_config = test_config
 
         # Create a temporary directory into which the tests can put
         # their profiles. These files will be assembled into one big
@@ -70,12 +69,6 @@ class GeckoProfile:
             LOG.info(f"Clearing archive {self.profile_arcname}")
             mozfile.remove(self.profile_arcname)
 
-        self.symbol_paths = {
-            "FIREFOX": tempfile.mkdtemp(),
-            "THUNDERBIRD": tempfile.mkdtemp(),
-            "WINDOWS": tempfile.mkdtemp(),
-        }
-
         LOG.info(
             "Activating Gecko Profiling. Temp. profile dir:"
             f" {gecko_profile_dir}, interval: {gecko_profile_interval}, entries: {gecko_profile_entries}"
@@ -112,16 +105,11 @@ class GeckoProfile:
             "MOZ_PROFILER_STARTUP_FILTERS": str(self.option("threads")),
         })
 
-    def _save_gecko_profile(
-        self, cycle, symbolicator, missing_symbols_zip, profile_path
-    ):
+    def _save_gecko_profile(self, cycle, profile_path):
         try:
             with open(profile_path, encoding="utf-8") as profile_file:
                 profile = json.load(profile_file)
-            symbolicator.dump_and_integrate_missing_symbols(
-                profile, missing_symbols_zip
-            )
-            symbolicator.symbolicate_profile(profile)
+            symbolicate_profile(profile)
             save_gecko_profile(profile, profile_path)
         except MemoryError:
             LOG.critical(
@@ -142,47 +130,6 @@ class GeckoProfile:
 
         :param cycle: the number of the cycle of the test currently run.
         """
-        symbolicator = ProfileSymbolicator({
-            # Trace-level logging (verbose)
-            "enableTracing": 0,
-            # Fallback server if symbol is not found locally
-            "remoteSymbolServer": "https://symbolication.services.mozilla.com/symbolicate/v4",
-            # Maximum number of symbol files to keep in memory
-            "maxCacheEntries": 2000000,
-            # Frequency of checking for recent symbols to
-            # cache (in hours)
-            "prefetchInterval": 12,
-            # Oldest file age to prefetch (in hours)
-            "prefetchThreshold": 48,
-            # Maximum number of library versions to pre-fetch
-            # per library
-            "prefetchMaxSymbolsPerLib": 3,
-            # Default symbol lookup directories
-            "defaultApp": "FIREFOX",
-            "defaultOs": "WINDOWS",
-            # Paths to .SYM files, expressed internally as a
-            # mapping of app or platform names to directories
-            # Note: App & OS names from requests are converted
-            # to all-uppercase internally
-            "symbolPaths": self.symbol_paths,
-        })
-
-        if self.browser_config["symbols_path"]:
-            if mozfile.is_url(self.browser_config["symbols_path"]):
-                symbolicator.integrate_symbol_zip_from_url(
-                    self.browser_config["symbols_path"]
-                )
-            elif os.path.isfile(self.browser_config["symbols_path"]):
-                symbolicator.integrate_symbol_zip_from_file(
-                    self.browser_config["symbols_path"]
-                )
-            elif os.path.isdir(self.browser_config["symbols_path"]):
-                sym_path = self.browser_config["symbols_path"]
-                symbolicator.options["symbolPaths"]["FIREFOX"] = sym_path
-                self.cleanup = False
-
-        missing_symbols_zip = os.path.join(self.upload_dir, "missingsymbols.zip")
-
         try:
             mode = zipfile.ZIP_DEFLATED
         except NameError:
@@ -198,9 +145,7 @@ class GeckoProfile:
                 if testname.endswith(".profile"):
                     testname = testname[0:-8]
                 profile_path = os.path.join(gecko_profile_dir, profile_filename)
-                self._save_gecko_profile(
-                    cycle, symbolicator, missing_symbols_zip, profile_path
-                )
+                self._save_gecko_profile(cycle, profile_path)
 
                 # Our zip will contain one directory per subtest,
                 # and each subtest directory will contain one or
@@ -232,6 +177,3 @@ class GeckoProfile:
         Clean up temp folders created with the instance creation.
         """
         mozfile.remove(self.option("dir"))
-        if self.cleanup:
-            for symbol_path in self.symbol_paths.values():
-                mozfile.remove(symbol_path)

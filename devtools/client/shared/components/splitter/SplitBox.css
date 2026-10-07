@@ -83,6 +83,14 @@
   background-color: var(--theme-emphasized-splitter-color-hover);
 }
 
+/* The toolbox-wide focus ring would paint over both panels here, and be
+   clipped where a consumer sets `overflow: hidden`. */
+.split-box > .splitter:focus-visible {
+  outline: auto;
+  outline-offset: -2px;
+  box-shadow: none;
+}
+
 .split-box.disabled {
   pointer-events: none;
 }

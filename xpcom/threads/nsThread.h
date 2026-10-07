@@ -11,6 +11,7 @@
 #include "mozilla/DataMutex.h"
 #include "mozilla/EventQueue.h"
 #include "mozilla/LinkedList.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/NotNull.h"
@@ -23,7 +24,13 @@
 #include "nsISupportsPriority.h"
 #include "nsIThread.h"
 #include "nsIThreadInternal.h"
+#include "nsString.h"
 #include "nsTArray.h"
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#  define NS_THREAD_SHUTDOWN_ANNOTATIONS_ENABLED
+#  include "mozilla/StaticMutex.h"
+#endif
 
 namespace mozilla {
 class CycleCollectedJSContext;
@@ -213,6 +220,32 @@ class nsThread : public nsIThreadInternal,
 
   void WaitForAllAsynchronousShutdowns();
 
+#ifdef NS_THREAD_SHUTDOWN_ANNOTATIONS_ENABLED
+  enum class ShutdownAnnotationPhase : uint8_t { None, Joining, Recv, Ack };
+
+  struct ShutdownHandshakeInfo {
+    uint32_t mJoiningTid = 0;
+    nsCString mJoiningName;
+    uint32_t mClosingTid = 0;
+    nsCString mClosingName;
+    ShutdownAnnotationPhase mPhase = ShutdownAnnotationPhase::None;
+    int64_t mPhaseSinceEpochSec = 0;
+  };
+
+  static void CollectShutdownHangAnnotation();
+
+  // Nothing if the state could not be read without blocking; see
+  // mozilla::CollectShutdownHangAnnotations.
+  static mozilla::Maybe<nsTArray<ShutdownHandshakeInfo>>
+  CollectShutdownHandshakes();
+  static nsCString BuildShutdownAnnotationJson(
+      const nsTArray<ShutdownHandshakeInfo>& aEntries);
+
+  // Same shape as BuildShutdownAnnotationJson, holding a single entry that
+  // says the state could not be read instead of the handshakes.
+  static nsCString BuildContendedAnnotationJson();
+#endif  // NS_THREAD_SHUTDOWN_ANNOTATIONS_ENABLED
+
   static const uint32_t kRunnableNameBufSize = 1000;
   static mozilla::Array<char, kRunnableNameBufSize> sMainThreadRunnableName;
 
@@ -279,7 +312,18 @@ class nsThread : public nsIThreadInternal,
 
   void* mStackBase = nullptr;
   uint32_t mStackSize;
+  // Set by InitCommon() running on the new thread; undefined before that point.
   uint32_t mThreadId;
+
+#ifdef NS_THREAD_SHUTDOWN_ANNOTATIONS_ENABLED
+  static mozilla::StaticMutex sShutdownAnnotationMutex;
+  ShutdownAnnotationPhase mShutdownAnnotationPhase
+      MOZ_GUARDED_BY(sShutdownAnnotationMutex) = ShutdownAnnotationPhase::None;
+  uint32_t mShutdownJoiningTid MOZ_GUARDED_BY(sShutdownAnnotationMutex) = 0;
+  int64_t mShutdownPhaseSinceEpochSec MOZ_GUARDED_BY(sShutdownAnnotationMutex) =
+      0;
+  nsCString mShutdownJoiningName MOZ_GUARDED_BY(sShutdownAnnotationMutex);
+#endif  // NS_THREAD_SHUTDOWN_ANNOTATIONS_ENABLED
 
   uint32_t mNestedEventLoopDepth;
 
@@ -323,7 +367,7 @@ class nsThreadShutdownContext final : public nsIThreadShutdown {
         mJoiningThreadMutex("nsThreadShutdownContext::mJoiningThreadMutex"),
         mJoiningThread(aJoiningThread) {}
 
-  ~nsThreadShutdownContext() = default;
+  ~nsThreadShutdownContext();
 
   // Must be called on the joining thread.
   void MarkCompleted();

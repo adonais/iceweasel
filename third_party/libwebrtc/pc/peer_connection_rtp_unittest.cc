@@ -36,6 +36,7 @@
 #include "api/set_remote_description_observer_interface.h"
 #include "api/units/data_rate.h"
 #include "api/video/render_resolution.h"
+#include "api/video/video_codec_constants.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_decoder_factory_template.h"
 #include "api/video_codecs/video_decoder_factory_template_dav1d_adapter.h"
@@ -75,6 +76,7 @@ namespace webrtc {
 
 using RTCConfiguration = PeerConnectionInterface::RTCConfiguration;
 using ::testing::ElementsAre;
+using ::testing::Eq;
 using ::testing::UnorderedElementsAre;
 using ::testing::Values;
 
@@ -1841,6 +1843,57 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan, CheckForInvalidEncodingParameters) {
       RTCErrorType::UNSUPPORTED_OPERATION,
       caller->pc()->AddTransceiver(MediaType::VIDEO, init).error().type());
   init.send_encodings = default_send_encodings;
+}
+
+TEST_F(PeerConnectionRtpTestUnifiedPlan,
+       DefaultsMissingScaleResolutionDownByToOne) {
+  auto caller = CreatePeerConnection();
+
+  RtpTransceiverInit init;
+  init.send_encodings.resize(2);
+  init.send_encodings[1].scale_resolution_down_by = 3.0;
+
+  auto result = caller->pc()->AddTransceiver(MediaType::VIDEO, init);
+  ASSERT_TRUE(result.ok());
+
+  const auto parameters = result.value()->sender()->GetParameters();
+  ASSERT_EQ(parameters.encodings.size(), 2u);
+  EXPECT_THAT(parameters.encodings[0].scale_resolution_down_by, Eq(1.0));
+  EXPECT_THAT(parameters.encodings[1].scale_resolution_down_by, Eq(3.0));
+}
+
+TEST_F(PeerConnectionRtpTestUnifiedPlan,
+       DefaultsScaleResolutionDownByToPowersOfTwo) {
+  auto caller = CreatePeerConnection();
+
+  RtpTransceiverInit init;
+  init.send_encodings.resize(2);
+
+  auto result = caller->pc()->AddTransceiver(MediaType::VIDEO, init);
+  ASSERT_TRUE(result.ok());
+
+  const auto parameters = result.value()->sender()->GetParameters();
+  ASSERT_EQ(parameters.encodings.size(), 2u);
+  EXPECT_THAT(parameters.encodings[0].scale_resolution_down_by, Eq(2.0));
+  EXPECT_THAT(parameters.encodings[1].scale_resolution_down_by, Eq(1.0));
+}
+
+TEST_F(PeerConnectionRtpTestUnifiedPlan,
+       DefaultsScaleResolutionDownByBeforeTrimmingEncodings) {
+  auto caller = CreatePeerConnection();
+
+  RtpTransceiverInit init;
+  init.send_encodings.resize(kMaxSimulcastStreams + 1);
+  init.send_encodings.back().scale_resolution_down_by = 3.0;
+
+  auto result = caller->pc()->AddTransceiver(MediaType::VIDEO, init);
+  ASSERT_TRUE(result.ok());
+
+  const auto parameters = result.value()->sender()->GetParameters();
+  ASSERT_EQ(parameters.encodings.size(), kMaxSimulcastStreams);
+  for (const RtpEncodingParameters& encoding : parameters.encodings) {
+    EXPECT_THAT(encoding.scale_resolution_down_by, Eq(1.0));
+  }
 }
 
 // Test that AddTransceiver transfers the send_encodings to the sender and they

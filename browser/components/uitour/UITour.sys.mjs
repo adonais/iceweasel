@@ -501,6 +501,13 @@ export var UITour = {
       }
 
       case "showFirefoxAccountsForAIWindow": {
+        if (AppConstants.IS_ESR) {
+          lazy.log.warn(
+            "showFirefoxAccountsForAIWindow: Smart Window is not available on ESR"
+          );
+          break;
+        }
+
         // if user "Blocked" Smart Window feature from AI Control or global AI Control default
         // override Smart Window feature to "available"
         if (lazy.AIWindow.isBlocked) {

@@ -10,6 +10,7 @@ license:
         - browser/branding/
         # Trademarks
         - browser/components/topsites/content/tippytop/images/
+        - browser/themes/shared/urlbar/engine-wordmarks/
         - toolkit/components/pdfjs/content/web/images/
         # We probably want a specific license
         - browser/extensions/webcompat/injections/
@@ -58,6 +59,8 @@ license:
         - testing/marionette/harness/marionette_harness/www/
         # Browsertime can't handle this script when there's a comment at the top
         - testing/raptor/browsertime/browsertime_benchmark.js
+        # Verbatim upstream license notices rendered by about:license
+        - toolkit/content/licenses
         - toolkit/components/reputationservice/chromium/chrome/common/safe_browsing/csd.pb.cc
         - toolkit/components/reputationservice/chromium/chrome/common/safe_browsing/csd.pb.h
         - toolkit/mozapps/update/updater/crctable.h
@@ -115,3 +118,32 @@ license:
     setup: mozcheck:setup
     check: license
     find-dotfiles: true
+
+---
+license-declarations:
+    description: |
+        Checks that every LICENSED_UNDER id in a moz.build has a matching
+        LICENSES declaration somewhere in the tree, that every `spdx` flag is
+        a valid SPDX expression, that neither `spdx` nor `text` repeats the
+        `origin.license` or `origin.license-file` of a covering moz.yaml, and
+        that nothing still sets the APP_LICENSE_*_BLOCK defines about:license
+        no longer reads.
+    include:
+        - .
+    exclude:
+        # Deliberately broken declarations for the linter's own tests.
+        - tools/lint/test/files/license-declarations
+        # Fixture moz.builds for the build system's own tests, which reuse the
+        # same license ids across unrelated fixture trees.
+        - python/mozbuild/mozbuild/test
+    extensions:
+        - build
+        - mozbuild
+    support-files:
+        - 'tools/lint/license/**'
+        - 'python/mozbuild/mozbuild/licenses.py'
+        - '**/moz.yaml'
+    # The declared set is gathered from the whole tree on every run, so this
+    # wants the paths in one job rather than once per parallel chunk.
+    type: global
+    payload: license:lint

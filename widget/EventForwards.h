@@ -61,7 +61,7 @@ enum EventMessage : EventMessageType {
 #define NS_EVENT_MESSAGE_FIRST_LAST(aMessage, aFirst, aLast) \
   aMessage##First = aFirst, aMessage##Last = aLast,
 
-#include "mozilla/EventMessageList.h"
+#include "mozilla/EventMessageList.inc"
 
 #undef NS_EVENT_MESSAGE
 #undef NS_EVENT_MESSAGE_FIRST_LAST
@@ -154,6 +154,28 @@ enum CodeNameIndex : uint8_t {
 #undef NS_DEFINE_PHYSICAL_KEY_CODE_NAME
 
 const nsCString ToString(CodeNameIndex aCodeNameIndex);
+
+enum class ExpandToClusterBoundary : bool { No, Yes };
+
+inline auto format_as(ExpandToClusterBoundary aExpand) {
+  return aExpand == ExpandToClusterBoundary::Yes ? "Yes" : "No";
+}
+
+inline std::ostream& operator<<(std::ostream& aStream,
+                                ExpandToClusterBoundary aExpand) {
+  return aStream << format_as(aExpand);
+}
+
+enum class RangeDirection : bool { Normal, Reversed };
+
+inline auto format_as(RangeDirection aDirection) {
+  return aDirection == RangeDirection::Reversed ? "Reversed" : "Normal";
+}
+
+inline std::ostream& operator<<(std::ostream& aStream,
+                                RangeDirection aDirection) {
+  return aStream << format_as(aDirection);
+}
 
 #define NS_DEFINE_INPUTTYPE(aCPPName, aDOMName) e##aCPPName,
 
@@ -395,6 +417,28 @@ inline bool IsCancelableBeforeInputEvent(EditorInputType aInputType) {
       MOZ_ASSERT_UNREACHABLE("The new input type is not handled");
       return false;
   }
+}
+
+enum class OnlyEnabledCheck : bool { No, Yes };
+
+inline auto format_as(OnlyEnabledCheck aOnlyEnabledCheck) {
+  return aOnlyEnabledCheck == OnlyEnabledCheck::Yes ? "Yes" : "No";
+}
+
+inline std::ostream& operator<<(std::ostream& aStream,
+                                OnlyEnabledCheck aOnlyEnabledCheck) {
+  return aStream << format_as(aOnlyEnabledCheck);
+}
+
+enum class PreventSetSelection : bool { No, Yes };
+
+inline auto format_as(PreventSetSelection aPrevent) {
+  return aPrevent == PreventSetSelection::Yes ? "Yes" : "No";
+}
+
+inline std::ostream& operator<<(std::ostream& aStream,
+                                PreventSetSelection aPrevent) {
+  return aStream << format_as(aPrevent);
 }
 
 #define NS_DEFINE_COMMAND(aName, aCommandStr) , aName

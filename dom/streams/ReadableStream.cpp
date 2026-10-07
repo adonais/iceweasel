@@ -284,7 +284,7 @@ class ReadableStreamFromAlgorithms final
 
     // Step 3. Let nextPromise be a promise resolved with nextResult.[[Value]].
     RefPtr<Promise> nextPromise = Promise::CreateInfallible(mGlobal);
-    nextPromise->MaybeResolve(nextResult);
+    nextPromise->MaybeSafeResolve(nextResult);
 
     // Step 4. Return the result of reacting to nextPromise with the following
     // fulfillment steps, given iterResult:
@@ -392,7 +392,7 @@ class ReadableStreamFromAlgorithms final
     // Step 7. Let returnPromise be a promise resolved with
     // returnResult.[[Value]].
     RefPtr<Promise> returnPromise = Promise::CreateInfallible(mGlobal);
-    returnPromise->MaybeResolve(returnResult);
+    returnPromise->MaybeSafeResolve(returnResult);
 
     // Step 8. Return the result of reacting to returnPromise with the following
     // fulfillment steps, given iterResult:
@@ -934,7 +934,7 @@ ReadableStreamDefaultTeeSourceAlgorithms::CancelCallback(
     }
 
     // Step 3.3
-    mTeeState->CancelPromise()->MaybeResolve(cancelResult);
+    mTeeState->CancelPromise()->MaybeSafeResolve(cancelResult);
   }
 
   // Step 4.
@@ -1111,7 +1111,7 @@ struct IteratorReadRequest : public ReadRequest {
   void ChunkSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
                   ErrorResult& aRv) override {
     // Step 1. Resolve promise with chunk.
-    mPromise->MaybeResolve(aChunk);
+    mPromise->MaybeSafeResolve(aChunk);
   }
 
   // close steps

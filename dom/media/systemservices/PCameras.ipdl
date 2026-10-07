@@ -12,6 +12,7 @@ include "mozilla/dom/MediaIPCUtils.h";
 using mozilla::camera::CaptureEngine from "mozilla/media/CamerasTypes.h";
 using mozilla::dom::VideoResizeModeEnum from "mozilla/dom/MediaStreamTrackBinding.h";
 using mozilla::TimeStamp from "mozilla/TimeStamp.h";
+using mozilla::VideoRotation from "MediaInfo.h";
 using mozilla::media::TimeUnit from "TimeUnits.h";
 using mozilla::NormalizedConstraints from "MediaTrackConstraints.h";
 using webrtc::VideoType from "mozilla/media/CamerasTypes.h";
@@ -43,8 +44,14 @@ struct VideoFrameProperties
   uint32_t rtpTimeStamp;
   int64_t ntpTimeMs;
   int64_t renderTimeMs;
-  // See webrtc/**/rotation.h
-  int rotation;
+  // The rotation the capture backend reported as required to straighten the
+  // frame. The negotiated capability describes the frame as the backend
+  // produced it, so size calculations need this even after the rotation has
+  // been applied.
+  VideoRotation originalRotationRequired;
+  // Whether the parent already applied originalRotationRequired to the buffer.
+  // If false the rotation is still pending and the consumer has to apply it.
+  bool rotationApplied;
   int yAllocatedSize;
   int uAllocatedSize;
   int vAllocatedSize;

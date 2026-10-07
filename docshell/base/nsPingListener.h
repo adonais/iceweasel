@@ -5,6 +5,7 @@
 #ifndef nsPingListener_h_
 #define nsPingListener_h_
 
+#include "nsILoadGroup.h"
 #include "nsIStreamListener.h"
 #include "nsIReferrerInfo.h"
 #include "nsCOMPtr.h"
@@ -17,7 +18,6 @@ class DocGroup;
 
 class nsIContent;
 class nsIDocShell;
-class nsILoadGroup;
 class nsITimer;
 class nsIURI;
 

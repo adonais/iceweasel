@@ -29,3 +29,4 @@ scale(*) fuzzy-if(platform(android),123,45) == tiled-thin-quads.yaml tiled-thin-
 scale(*) == extreme-scale-rounded-rect.yaml extreme-scale-rounded-rect.yaml
 scale(*) == different-scale-rounded-rect.yaml different-scale-rounded-rect-ref.yaml
 == clip-radius-exceeds-rect.yaml clip-radius-exceeds-rect.png
+scale(*) == flipped-rounded-rect.yaml flipped-rounded-rect-ref.yaml

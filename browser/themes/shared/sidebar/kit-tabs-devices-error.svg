@@ -2,7 +2,7 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
 
-<svg xmlns="http://www.w3.org/2000/svg" width="262" height="109" fill="none" viewBox="0 0 262 109">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 262 109">
   <style>
     @media (prefers-color-scheme: dark) {
       [fill="#fcf5f0"] { fill: #210340; }

@@ -3028,13 +3028,13 @@ nestegg_track_codec_data_count(nestegg * ctx, unsigned int track,
 
   /* Usually don't have codec private */
   if (codec_id == NESTEGG_CODEC_MP3 || codec_id == NESTEGG_CODEC_VP8 ||
-      codec_id == NESTEGG_CODEC_VP9) {
+      codec_id == NESTEGG_CODEC_VP9 || codec_id == NESTEGG_CODEC_PCM) {
     *count = 0;
     return 0;
   }
 
   /* Usually one codec private */
-  if (codec_id == NESTEGG_CODEC_OPUS || codec_id == NESTEGG_CODEC_PCM ||
+  if (codec_id == NESTEGG_CODEC_OPUS ||
       codec_id == NESTEGG_CODEC_AAC  || codec_id == NESTEGG_CODEC_FLAC ||
       codec_id == NESTEGG_CODEC_AVC || codec_id == NESTEGG_CODEC_HEVC ||
       codec_id == NESTEGG_CODEC_AV1) {

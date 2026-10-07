@@ -45,19 +45,23 @@ data class TabGroupFormState(
 }
 
 /**
- * Returns an initial [TabGroupFormState] derived from [TabsTrayState].
+ * Returns an initial [TabGroupFormState] for a new tab group, derived from the groups that already exist.
  *
  * Note: Because we need a localized string for the initial name, this is constructed at render time in [EditTabGroup].
  */
-fun TabsTrayState.initializeTabGroupForm(isStarterTabGroup: Boolean = false) =
+internal fun newTabGroupForm(existingGroups: List<TabGroup>, isStarterTabGroup: Boolean = false) =
     TabGroupFormState(
         tabGroupId = null,
         name = "",
-        nextTabGroupNumber = tabGroupState.groups.size + 1,
-        theme = tabGroupState.groups.maxByOrNull { it.lastModified }?.theme?.next() ?: TabGroupTheme.default,
+        nextTabGroupNumber = existingGroups.size + 1,
+        theme = existingGroups.maxByOrNull { it.lastModified }?.theme?.next() ?: TabGroupTheme.default,
         edited = false,
         isStarterTabGroup = isStarterTabGroup,
     )
+
+/** Returns an initial [TabGroupFormState] derived from [TabsTrayState]. */
+fun TabsTrayState.initializeTabGroupForm(isStarterTabGroup: Boolean = false) =
+    newTabGroupForm(existingGroups = tabGroupState.groups, isStarterTabGroup = isStarterTabGroup)
 
 /** Returns an initial [TabGroupFormState] derived from a [TabGroup]. */
 fun TabGroup.initializeTabGroupForm() =

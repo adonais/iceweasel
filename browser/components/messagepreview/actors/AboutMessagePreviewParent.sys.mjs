@@ -8,7 +8,6 @@ const lazy = XPCOMUtils.declareLazy({
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
   BookmarksBarButton: "resource:///modules/asrouter/BookmarksBarButton.sys.mjs",
-  CFRPageActions: "resource:///modules/asrouter/CFRPageActions.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   FeatureCalloutBroker:
@@ -66,13 +65,6 @@ const MESSAGE_HANDLERS = Object.freeze({
 
   spotlight: (message, browser) =>
     lazy.Spotlight.showSpotlightDialog(browser, message, () => {}),
-
-  cfr_doorhanger: (message, browser) =>
-    lazy.CFRPageActions.forceRecommendation(
-      browser,
-      message,
-      dispatchCFRAction
-    ),
 
   feature_callout: async (message, browser) => {
     // Clear the Feature Tour prefs used by some callouts, to ensure

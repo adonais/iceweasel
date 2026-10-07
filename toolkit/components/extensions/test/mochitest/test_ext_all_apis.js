@@ -34,6 +34,7 @@ let expectedCommonApis = [
   "runtime.getDocumentId",
   "runtime.getFrameId",
   "runtime.getURL",
+  "runtime.getVersion",
   "runtime.id",
   "runtime.lastError",
   "runtime.onConnect",

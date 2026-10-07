@@ -45,7 +45,7 @@ export function registerEventSink(
 FfiConverterTypeEventSinkSpecification.checkType(targets);
 FfiConverterTypeEventSink.checkType(sink);
 const result = UniFFIScaffolding.callSync(
-    229, // uniffi_tracing_support_fn_func_register_event_sink
+    28, // uniffi_tracing_support_fn_func_register_event_sink
     FfiConverterTypeEventSinkSpecification.lower(targets),
     FfiConverterTypeEventSink.lower(sink),
 )
@@ -65,7 +65,7 @@ export function unregisterEventSink(
    
 FfiConverterTypeEventSinkId.checkType(id);
 const result = UniFFIScaffolding.callSync(
-    230, // uniffi_tracing_support_fn_func_unregister_event_sink
+    29, // uniffi_tracing_support_fn_func_unregister_event_sink
     FfiConverterTypeEventSinkId.lower(id),
 )
 return handleRustResult(
@@ -74,6 +74,7 @@ return handleRustResult(
     null,
 )
 }
+
 
 
 
@@ -670,11 +671,11 @@ export class FfiConverterTypeEventSink extends FfiConverter {
         if (!(callbackObj instanceof EventSink)) {
             throw new UniFFITypeError("expected 'EventSink' subclass");
         }
-        return uniffiCallbackHandlerTracingEventSink.storeCallbackObj(callbackObj)
+        return uniffiCallbackHandlerEventSink.storeCallbackObj(callbackObj)
     }
 
     static lift(handleId) {
-        return uniffiCallbackHandlerTracingEventSink.takeCallbackObj(handleId)
+        return uniffiCallbackHandlerEventSink.takeCallbackObj(handleId)
     }
 
     static read(dataStream) {
@@ -689,9 +690,9 @@ export class FfiConverterTypeEventSink extends FfiConverter {
         return 8;
     }
 }
-const uniffiCallbackHandlerTracingEventSink = new UniFFICallbackHandler(
+const uniffiCallbackHandlerEventSink = new UniFFICallbackHandler(
     "EventSink",
-    7,
+    6,
     [
         new UniFFICallbackMethodHandler(
             "onEvent",
@@ -707,6 +708,4 @@ const uniffiCallbackHandlerTracingEventSink = new UniFFICallbackHandler(
 );
 
 // Allow the shutdown-related functionality to be tested in the unit tests
-UnitTestObjs.uniffiCallbackHandlerTracingEventSink = uniffiCallbackHandlerTracingEventSink;
-
-
+UnitTestObjs.uniffiCallbackHandlerEventSink = uniffiCallbackHandlerEventSink;

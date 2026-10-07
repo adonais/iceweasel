@@ -223,7 +223,14 @@ def _get_command(source_dir, target_dir, arch):
 
     if _is_chroot_available(arch):
         flattened_command = " ".join(command)
+        # chroot(2) requires CAP_SYS_CHROOT. Rather than running the whole task as
+        # root, enter an unprivileged user namespace: --map-root-user maps us to
+        # uid 0 inside it, which grants CAP_SYS_CHROOT and makes rpmbuild package
+        # files as root without needing real root.
         command = [
+            "unshare",
+            "--user",
+            "--map-root-user",
             "chroot",
             _get_chroot_path(arch),
             "bash",

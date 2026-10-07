@@ -42,6 +42,7 @@ pub unsafe extern "C" fn gluesmith(
         tail_call_enabled: true,
         threads_enabled: true,
         gc_enabled: true,
+        max_memory64_bytes: 1u128 << 48,
         ..Config::default()
     };
     let module = match Module::new(config, &mut u) {

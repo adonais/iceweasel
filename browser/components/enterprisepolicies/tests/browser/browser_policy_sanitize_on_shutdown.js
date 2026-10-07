@@ -86,6 +86,20 @@ add_task(async function test_sanitizeOnShutdown_object_locked_false() {
   await checkPrivacyPreferences(NONE_DISABLED);
 });
 
+// A locked policy locks the history dropdown, but not what sits under it.
+add_task(async function test_locked_policy_still_allows_sub_settings() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      SanitizeOnShutdown: { Cookies: true, Locked: true },
+    },
+  });
+  await checkPrivacyPreferences({
+    historyMode: true,
+    shutdownClearingExceptions: false,
+    clearDataSettings: false,
+  });
+});
+
 // Bug 2049937: end-to-end check that a SanitizeOnShutdown.Exceptions entry set
 // via enterprise policy causes the Sanitizer to preserve that site's data on
 // shutdown, while a non-excepted site is cleared.

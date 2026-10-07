@@ -570,7 +570,7 @@ async function doTelemetryTypeTest({ feature, tests }) {
  *     Additional histories that will be passed to PlacesTestUtils.addVisits().
  *   {UrlbarQueryContext} context
  *     The query context that will be passed to check_results().
- *   {object} conditionalPayloadProperties (optional)
+ *   {object} payloadRules (optional)
  *     The properties that will be passed to check_results().
  *   {Array} expected
  *     The expected results that will be passed to check_results().
@@ -616,7 +616,7 @@ async function doResultCheckTest({ env, tests }) {
     nimbus,
     histories,
     context,
-    conditionalPayloadProperties,
+    payloadRules,
     expected,
     merinoSuggestions = null,
   } of tests) {
@@ -646,7 +646,7 @@ async function doResultCheckTest({ env, tests }) {
 
     await check_results({
       context,
-      conditionalPayloadProperties,
+      payloadRules,
       matches: expected,
     });
 
@@ -805,7 +805,7 @@ async function doShowLessFrequentlyTest({
  *
  *   {UrlbarQueryContext} context
  *     The query context that will be passed to check_results().
- *   {object} conditionalPayloadProperties (optional)
+ *   {object} payloadRules (optional)
  *     The properties that will be passed to check_results().
  *   {number} targetIndex
  *     Index of result that will be executed the command.
@@ -831,16 +831,10 @@ async function doDismissTest({ env, tests }) {
   await QuickSuggestTestUtils.forceSync();
 
   // Test
-  for (let {
-    context,
-    conditionalPayloadProperties,
-    targetIndex,
-    before,
-    after,
-  } of tests) {
+  for (let { context, payloadRules, targetIndex, before, after } of tests) {
     await check_results({
       context,
-      conditionalPayloadProperties,
+      payloadRules,
       matches: before.results,
     });
 
@@ -859,7 +853,7 @@ async function doDismissTest({ env, tests }) {
     // Do another search. The result shouldn't be added.
     await check_results({
       context,
-      conditionalPayloadProperties,
+      payloadRules,
       matches: after.results,
     });
 

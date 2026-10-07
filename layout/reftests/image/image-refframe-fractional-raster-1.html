@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<title>An image under a reference frame at a fractional position is not resampled</title>
+
+<!--
+  The size an image is rasterized at is picked by rounding its destination
+  rect, so it has to be rounded at the sub-pixel phase that rect is snapped
+  at. WebRender composes a reference frame's origin into the transform it
+  snaps against, but the inherited transform Gecko rounds the rect with does
+  not carry it, so a reference frame whose origin is not on a device pixel
+  shifts the phase for everything inside it: the size comes out a pixel away
+  from the one the rect is snapped to and the image is resampled to fit
+  (bug 2070683).
+
+  The transform creates the reference frame; the query parameter is the
+  frame's top followed by the image's top inside it, in CSS pixels, and at
+  devPixelsPerPx 1 those are also device offsets:
+
+    ?100.6,0    a fractional origin, the image on the frame's own grid
+    ?100,0.6    the origin on the grid, the image at the same fraction inside
+
+  Both put the image at device rows 100.6 to 301.2, so they snap to the same
+  rect and have to render identically. In the second Gecko sees the fraction
+  itself and picks the size that rect snaps to; in the first the fraction is
+  in the origin and the size has to be picked as if it were not.
+
+  The image's height is deliberately fractional: with a whole extent every
+  rounding agrees at every phase and there is nothing to detect.
+-->
+
+<style>
+
+body {
+  margin: 0;
+}
+
+#refframe {
+  position: absolute;
+  left: 20px;
+  transform: translate(0, 0);
+}
+
+img {
+  display: block;
+  position: relative;
+  width: 400px;
+  height: 200.6px;
+}
+
+</style>
+
+<div id="refframe">
+  <img src="stripes-fractional.svg">
+</div>
+
+<script>
+const [frameTop, imageTop] = location.search.substring(1).split(",");
+document.getElementById("refframe").style.top = frameTop + "px";
+document.querySelector("img").style.top = imageTop + "px";
+</script>
+</html>

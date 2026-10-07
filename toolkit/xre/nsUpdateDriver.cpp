@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <stdlib.h>
+#include <iterator>
 #include "nsUpdateDriver.h"
 
 #include "nsDebug.h"
@@ -137,6 +138,45 @@ static bool GetFile(nsIFile* dir, const nsACString& name,
   result = std::move(file);
   return true;
 }
+
+#if defined(XP_WIN) && defined(MOZ_PUSH_NOTIFICATION_HELPER)
+/**
+ * Signal the push notification helpers to stop.
+ *
+ * @param installationDir The installation directory containing the helper.
+ */
+static void SignalPushNotificationHelperStop(nsIFile* installationDir) {
+  nsCOMPtr<nsIFile> helper;
+  if (!GetFile(installationDir, "notification-helper.exe"_ns, helper)) {
+    return;
+  }
+
+  bool exists{false};
+  if (NS_FAILED(helper->Exists(&exists)) || !exists) {
+    LOG(("SignalPushNotificationHelperStop - the helper is not installed"));
+    return;
+  }
+
+  nsAutoString helperPath;
+  if (NS_FAILED(helper->GetPath(helperPath))) {
+    return;
+  }
+
+  wchar_t* argv[]{helperPath.get(), const_cast<wchar_t*>(L"--stop")};
+  HANDLE rawProcess{nullptr};
+  if (!WinLaunchChild(helperPath.get(), std::size(argv), argv, nullptr,
+                      &rawProcess)) {
+    LOG(("SignalPushNotificationHelperStop - failed to launch the helper"));
+    return;
+  }
+  nsAutoHandle process{rawProcess};
+
+  constexpr DWORD kStopTimeoutMs{5000};
+  if (WaitForSingleObject(process, kStopTimeoutMs) != WAIT_OBJECT_0) {
+    LOG(("SignalPushNotificationHelperStop - --stop did not return in time"));
+  }
+}
+#endif
 
 static bool GetStatusFile(nsIFile* dir, nsCOMPtr<nsIFile>& result) {
   return GetFile(dir, "update.status"_ns, result);
@@ -604,6 +644,11 @@ static void ApplyUpdate(nsIFile* greDir, nsIFile* updateDir, nsIFile* appDir,
     exit(execResult);
   }
 #elif defined(XP_WIN)
+#  ifdef MOZ_PUSH_NOTIFICATION_HELPER
+  if (restart) {
+    SignalPushNotificationHelperStop(greDir);
+  }
+#  endif
   if (isStaged) {
     // Launch the updater to replace the installation with the staged updated.
     if (!WinLaunchChild(updaterPathW.get(), argc, argv)) {

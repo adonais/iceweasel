@@ -70,3 +70,26 @@ about-private-browsing-nova-info-header = You’re off the record
 about-private-browsing-nova-info-subheader2 = We’ll erase every search and sign-in when you close all your Private Windows. { -brand-short-name }’s built-in protections are on here too, like blocking trackers.
 about-private-browsing-nova-info-body = Closing all your private windows deletes your cookies, history and site data.
 about-private-browsing-nova-info-link = Who might still be able to see my activity?
+about-private-browsing-private-window-basics-link = Private Window basics
+about-private-browsing-private-window-redesign-subheader = { -brand-short-name } is designed to protect your privacy as you browse, with built-in tracking protections. Closing this window erases its history, cookies, and site data to keep your browsing private from others who use this device.
+
+## Strings for the Private Window basics spotlight
+
+about-private-browsing-spotlight-basics-title = Private Window basics
+about-private-browsing-spotlight-basics-subtitle = Private Windows help keep your browsing private from others on this device. They don’t make you anonymous or clear all of your data.
+# This is a section header in the Private Window basics spotlight dialog,
+# introducing information about what users should know about Private Windows.
+about-private-browsing-spotlight-basics-what-to-know = What to know
+about-private-browsing-spotlight-basics-activity-seen = Some activity may still be seen by sites, search engines, internet providers, or your employer.
+about-private-browsing-spotlight-basics-bookmarks-downloads = Bookmarks and downloads stay on your device and may appear in the address bar.
+# This is a section header in the Private Window basics spotlight dialog,
+# introducing additional privacy protection features available in { -brand-short-name }.
+about-private-browsing-spotlight-basics-more-privacy = More privacy protections
+about-private-browsing-spotlight-basics-malware-alerts = { -brand-short-name } automatically alerts you about malware and deceptive sites.
+# "Participating sites" refers to websites that honor Global Privacy Control (GPC) signals, either voluntarily or where legally required.
+about-private-browsing-spotlight-basics-no-sell-data = { -brand-short-name } automatically asks participating sites not to sell or share your personal data.
+about-private-browsing-spotlight-basics-vpn = Use built-in VPN to make your location harder to trace.
+# "Strict" refers to the Strict level of Enhanced Tracking Protection settings.
+# Translations should be consistent with the existing "Strict" string in about:preferences.
+about-private-browsing-spotlight-basics-strict-tracking = Switch to Strict in settings for stronger tracking protections.
+about-private-browsing-spotlight-basics-learn-more = Learn more

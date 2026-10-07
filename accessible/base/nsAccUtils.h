@@ -314,6 +314,12 @@ class nsAccUtils {
    */
   static bool IsValidDetailsTargetForAnchor(const Accessible* aDetails,
                                             const Accessible* aTarget);
+
+  static bool IsARIARoleAllowedOnContentDoc(role aRole) {
+    // We don't need to allow document because the native role for a document is
+    // already document, so ARIA role="document" is redundant.
+    return aRole == roles::APPLICATION || aRole == roles::DIALOG;
+  }
 };
 
 }  // namespace a11y

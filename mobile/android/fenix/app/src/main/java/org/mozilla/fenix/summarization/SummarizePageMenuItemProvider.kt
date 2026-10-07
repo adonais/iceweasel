@@ -1,0 +1,102 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+package org.mozilla.fenix.summarization
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.compose.base.text.Text
+import mozilla.components.compose.menu.data.MenuItem
+import mozilla.components.compose.menu.data.StandardMenuItem
+import mozilla.components.compose.menu.ui.MenuItemIconRes
+import mozilla.components.compose.menu.ui.MenuItemState
+import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.fenix.R
+import org.mozilla.fenix.components.menu.MenuItemProvider
+import org.mozilla.fenix.components.menu.store.MenuAction
+import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
+import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
+
+/**
+ * [MenuItemProvider] for the menu item allowing to summarize the current page.
+ *
+ * Shown only where the feature is available, and enabled only for a page that can actually be summarized.
+ *
+ * @param browserStore [BrowserStore] used to know which page the item is about.
+ * @param summarizationSettings [SummarizationFeatureDiscoveryConfiguration] telling whether to offer the feature.
+ * @param eligibilityChecker [SummarizationEligibilityChecker] used to know whether the page can be summarized.
+ * @param scope [CoroutineScope] tied to the lifetime of the menu, on which to keep the item up to date and check
+ *   whether the current page can be summarized.
+ */
+class SummarizePageMenuItemProvider(
+    private val browserStore: BrowserStore,
+    private val summarizationSettings: SummarizationFeatureDiscoveryConfiguration,
+    private val eligibilityChecker: SummarizationEligibilityChecker,
+    scope: CoroutineScope,
+) : MenuItemProvider {
+    // The item is first offered as not usable, since knowing whether the page can be summarized means asking the
+    // engine about it and the menu should not wait for that.
+    private val isPageEligible = MutableStateFlow(false)
+
+    override val itemFlow: StateFlow<MenuItem?> =
+        combine(browserStore.stateFlow, isPageEligible) { state, isEligible ->
+                state.summarizePageItem(isPageEligible = isEligible)
+            }
+            .stateIn(
+                scope = scope,
+                started = SharingStarted.Eagerly,
+                initialValue = browserStore.state.summarizePageItem(isPageEligible = isPageEligible.value),
+            )
+
+    init {
+        scope.launch { resolvePageEligibility() }
+    }
+
+    private suspend fun resolvePageEligibility() {
+        val session = browserStore.state.selectedTab?.engineState?.engineSession ?: return
+
+        isPageEligible.value = eligibilityChecker.checkLanguage(session).getOrDefault(false)
+    }
+
+    /** Summarizing is only offered where the feature is available, and only usable for a normal page. */
+    private fun BrowserState.summarizePageItem(isPageEligible: Boolean): MenuItem? {
+        if (!summarizationSettings.showMenuItem) return null
+
+        // Private browsing is not something to send off to be summarized.
+        val isNormalTab = selectedTab?.content?.private == false
+
+        return summarizePageItem(
+            isEnabled = isNormalTab && isPageEligible,
+            isHighlighted = summarizationSettings.shouldHighlightMenuItem && isNormalTab,
+        )
+    }
+}
+
+private fun summarizePageItem(
+    isEnabled: Boolean,
+    isHighlighted: Boolean,
+) =
+    StandardMenuItem(
+        title = Text.Resource(R.string.browser_menu_summarize_page),
+        icon = MenuItemIconRes(iconsR.drawable.mozac_ic_lightning_24, isHighlighted = isHighlighted),
+        onClickEvent = MenuAction.Navigate.Summarizer,
+        onShownEvent = MenuAction.OnSummarizationMenuExposed,
+        showNewIndicator = true,
+        state =
+            when (isEnabled) {
+                true -> MenuItemState.DEFAULT
+                else -> MenuItemState.DISABLED
+            },
+    )
+
+/** Whether this menu item is the summarization one. */
+internal fun StandardMenuItem.isSummarizePageMenuItem() = onClickEvent == MenuAction.Navigate.Summarizer

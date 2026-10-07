@@ -1369,8 +1369,7 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
       nsCOMPtr<nsIAppStartup> appStartup =
           mozilla::components::AppStartup::Service();
       if (appStartup) {
-        bool userAllowedQuit = true;
-        appStartup->Quit(nsIAppStartup::eAttemptQuit, 0, &userAllowedQuit);
+        appStartup->Quit(nsIAppStartup::eAttemptQuit, 0);
       }
     }
     return;

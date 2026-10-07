@@ -9,7 +9,6 @@ import shutil
 import subprocess
 import sys
 import time
-from collections import OrderedDict
 from pathlib import Path
 from typing import Optional
 
@@ -58,13 +57,13 @@ Please choose the version of Firefox you want to build (see note above):
 %s
 Your choice: """
 
-APPLICATIONS = OrderedDict([
-    ("Firefox for Desktop Artifact Mode", "browser_artifact_mode"),
-    ("Firefox for Desktop", "browser"),
-    ("GeckoView/Firefox for Android Artifact Mode", "mobile_android_artifact_mode"),
-    ("GeckoView/Firefox for Android", "mobile_android"),
-    ("SpiderMonkey JavaScript engine", "js"),
-])
+APPLICATIONS = {
+    "Firefox for Desktop Artifact Mode": "browser_artifact_mode",
+    "Firefox for Desktop": "browser",
+    "GeckoView/Firefox for Android Artifact Mode": "mobile_android_artifact_mode",
+    "GeckoView/Firefox for Android": "mobile_android",
+    "SpiderMonkey JavaScript engine": "js",
+}
 
 FINISHED = """
 Your system should be ready to build %s!

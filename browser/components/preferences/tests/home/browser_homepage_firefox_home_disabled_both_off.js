@@ -49,17 +49,18 @@ async function assertSectionDisabled(win) {
     "Disabled notice is visible when both settings are not Firefox Home"
   );
 
-  // firefoxLogo is only registered when Nova is enabled.
+  // firefoxLogo is only registered when Nova is enabled. With Nova on and the
+  // widgets container on, Weather is nested in the Widgets group; without Nova
+  // it has its own row.
   const novaEnabled = Services.prefs.getBoolPref(NOVA_ENABLED_PREF, false);
   for (let settingId of [
     "webSearch",
-    "weather",
     "widgets",
     "shortcuts",
     "stories",
     "supportFirefox",
     "recentActivity",
-    ...(novaEnabled ? ["firefoxLogo"] : []),
+    ...(novaEnabled ? ["firefoxLogo"] : ["weatherStandalone"]),
   ]) {
     let control = await settingControlRenders(settingId, win);
     ok(

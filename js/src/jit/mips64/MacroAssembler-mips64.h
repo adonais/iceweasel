@@ -5,6 +5,8 @@
 #ifndef jit_mips64_MacroAssembler_mips64_h
 #define jit_mips64_MacroAssembler_mips64_h
 
+#include <type_traits>
+
 #include "jit/mips-shared/MacroAssembler-mips-shared.h"
 #include "jit/MoveResolver.h"
 #include "vm/BytecodeUtil.h"
@@ -381,6 +383,39 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
   void push(FloatRegister reg) { ma_push(reg); }
   void pop(Register reg) { ma_pop(reg); }
   void pop(FloatRegister reg) { ma_pop(reg); }
+
+  template <typename... Regs>
+  void pushRegs(const Regs&... regs) {
+    static_assert((std::is_convertible_v<Regs, Register> && ...));
+    static_assert(sizeof...(Regs) > 0);
+
+    if (((static_cast<Register>(regs) == StackPointer) || ...)) {
+      (ma_push(regs), ...);
+      return;
+    }
+
+    int32_t offset = int32_t(sizeof...(Regs) * sizeof(intptr_t));
+    ma_dsubu(StackPointer, StackPointer, Imm32(offset));
+    (storePtr(regs, Address(StackPointer, offset -= int32_t(sizeof(intptr_t)))),
+     ...);
+  }
+
+  template <typename... Regs>
+  void popRegs(const Regs&... regs) {
+    static_assert((std::is_convertible_v<Regs, Register> && ...));
+    static_assert(sizeof...(Regs) > 0);
+
+    if (((static_cast<Register>(regs) == StackPointer) || ...)) {
+      (ma_pop(regs), ...);
+      return;
+    }
+
+    int32_t offset = -int32_t(sizeof(intptr_t));
+    (loadPtr(Address(StackPointer, offset += int32_t(sizeof(intptr_t))), regs),
+     ...);
+    ma_daddu(StackPointer, StackPointer,
+             Imm32(int32_t(sizeof...(Regs) * sizeof(intptr_t))));
+  }
 
   // Emit a branch that can be toggled to a non-operation. On MIPS64 we use
   // "andi" instruction to toggle the branch.

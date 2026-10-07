@@ -199,8 +199,9 @@ export var SessionStartup = {
           }, 0)
         );
       }, 0);
+      let savedGroupsCount = initialState.savedGroups.length;
       lazy.sessionStoreLogger.debug(
-        `initialState contains ${pinnedTabCount} pinned tabs`
+        `initialState contains ${pinnedTabCount} pinned tabs and ${savedGroupsCount} saved groups`
       );
 
       lazy.BrowserUsageTelemetry.updateMaxTabPinnedCount(pinnedTabCount);

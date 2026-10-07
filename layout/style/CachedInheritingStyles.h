@@ -61,13 +61,7 @@ class CachedInheritingStyles {
   void ForEachLazyPseudoEntry(Func&& aFunc) const;
 
   CachedInheritingStyles() : mBits(0) {}
-  ~CachedInheritingStyles() {
-    if (IsIndirect()) {
-      delete AsIndirect();
-    } else if (!IsEmpty() && !IsNullDirect()) {
-      RefPtr<ComputedStyle> ref = dont_AddRef(AsDirect());
-    }
-  }
+  ~CachedInheritingStyles();
 
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes, size_t* aCVsSize) const;
 

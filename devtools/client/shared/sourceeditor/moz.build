@@ -20,3 +20,8 @@ BROWSER_CHROME_MANIFESTS += ["test/browser.toml"]
 
 with Files("**"):
     BUG_COMPONENT = ("DevTools", "Source Editor")
+
+LICENSED_UNDER += ["codemirror"]
+LICENSED_UNDER["codemirror"].paths = [
+    "codemirror",
+]

@@ -5,6 +5,9 @@
 #ifndef mozilla_dom_StorageDBUpdater_h
 #define mozilla_dom_StorageDBUpdater_h
 
+#include "ErrorList.h"
+class mozIStorageConnection;
+
 namespace mozilla::dom::StorageDBUpdater {
 
 // Must only be called on an empty database.

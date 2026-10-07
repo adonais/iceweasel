@@ -91,7 +91,7 @@ void NativeLayerRemoteMac::AttachExternalImage(
   mDirtyChangedSurface = true;
 }
 
-GpuFence* NativeLayerRemoteMac::GetGpuFence() { return nullptr; }
+RefPtr<GpuFence> NativeLayerRemoteMac::GetGpuFence() { return nullptr; }
 
 IntSize NativeLayerRemoteMac::GetSize() {
   if (mSurfaceHandler) {

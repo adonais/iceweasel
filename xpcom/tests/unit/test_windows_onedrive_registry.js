@@ -103,9 +103,8 @@ function setupMockRegistryComponent() {
   const { MockRegistrar } = ChromeUtils.importESModule(
     "resource://testing-common/MockRegistrar.sys.mjs"
   );
-  let cid = MockRegistrar.registerEx(
+  let cid = MockRegistrar.register(
     "@mozilla.org/windows-registry-key;1",
-    { shouldCreateInstance: false },
     mockRegistry
   );
   do_cleanup = () => {

@@ -226,6 +226,18 @@ bool Quota::VerifyRequestParams(const RequestParams& aParams) const {
       break;
     }
 
+    case RequestParams::TEstimateGroupUsageParams: {
+      const EstimateGroupUsageParams& params =
+          aParams.get_EstimateGroupUsageParams();
+
+      if (NS_WARN_IF(!VerifyPrincipalInfo(params.principalInfo()))) {
+        MOZ_CRASH_UNLESS_FUZZING();
+        return false;
+      }
+
+      break;
+    }
+
     default:
       MOZ_CRASH("Should never get here!");
   }
@@ -255,6 +267,13 @@ PQuotaRequestParent* Quota::AllocPQuotaRequestParent(
     return nullptr;
   }
 
+  // Group usage must not be exposed to content processes.
+  if (aParams.type() == RequestParams::TEstimateGroupUsageParams &&
+      NS_WARN_IF(VerifyIsParentProcessActor().isErr())) {
+    MOZ_CRASH_UNLESS_FUZZING();
+    return nullptr;
+  }
+
   QM_TRY_UNWRAP(const NotNull<RefPtr<QuotaManager>> quotaManager,
                 QuotaManager::GetOrCreate(), nullptr);
 
@@ -275,6 +294,10 @@ PQuotaRequestParent* Quota::AllocPQuotaRequestParent(
 
       case RequestParams::TEstimateParams:
         return CreateEstimateOp(quotaManager, aParams.get_EstimateParams());
+
+      case RequestParams::TEstimateGroupUsageParams:
+        return CreateEstimateGroupUsageOp(
+            quotaManager, aParams.get_EstimateGroupUsageParams());
 
       default:
         MOZ_CRASH("Should never get here!");

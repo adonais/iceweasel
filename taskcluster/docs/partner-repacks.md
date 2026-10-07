@@ -37,7 +37,7 @@ release. They're both true for Firefox betas >= b8 and releases, but otherwise d
 
 `release_partner_config` is a dictionary of configuration data which drives the task generation
 logic. It's usually looked up during the release promotion action task, using the Github
-GraphQL API in the [get_partner_config_by_url()](python/taskgraph.util.html#taskgraph.util.partners.get_partner_config_by_url) function, with the
+GraphQL API in the `gecko_taskgraph.util.partners.get_partner_config_by_url()` function, with the
 url defined in [taskcluster/config.yml](https://searchfox.org/mozilla-release/search?q=regexp%3A^partner+path%3Aconfig.yml&redirect=true).
 
 That lookup happens only once per release, in the first promotion action that needs it —

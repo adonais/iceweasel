@@ -16,6 +16,7 @@ dependencies = [
     "colorama==0.4.6",
     "compare-locales~=9.0",
     "cookies==2.2.1",
+    "cyclonedx-python-lib==11.11.0",
     "distro~=1.8",
     "ecdsa==0.19.1",
     "esprima==4.0.1",
@@ -61,7 +62,7 @@ dependencies = [
     "six~=1.16",
     "slugid~=2.0",
     "taskcluster-urls==13.0.1",
-    "taskcluster~=93.0",
+    "taskcluster~=110.0",
     "toml~=0.10",
     "tomlkit~=0.12",
     "tqdm~=4.66",
@@ -72,5 +73,5 @@ dependencies = [
     # Mozharness needs since it bootstraps a virtualenv from these wheels alone.
     "wheel==0.45.1",
     "yamllint~=1.23",
-    "diskarzhan==0.1.6",
+    "diskarzhan==0.1.7",
 ]

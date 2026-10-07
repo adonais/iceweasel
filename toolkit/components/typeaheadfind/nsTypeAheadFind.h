@@ -19,13 +19,13 @@
 
 class nsPIDOMWindowInner;
 class nsPresContext;
-class nsRange;
 
 namespace mozilla {
 class PresShell;
 namespace dom {
 class Document;
 class Element;
+class Range;
 class Selection;
 }  // namespace dom
 }  // namespace mozilla
@@ -58,15 +58,15 @@ class nsTypeAheadFind : public nsITypeAheadFind,
                                            bool aDontIterateFrames,
                                            uint16_t* aResult);
 
-  void RangeStartsInsideLink(nsRange* aRange, bool* aIsInsideLink,
+  void RangeStartsInsideLink(mozilla::dom::Range* aRange, bool* aIsInsideLink,
                              bool* aIsStartingLink);
 
   void GetSelection(mozilla::PresShell* aPresShell,
                     nsISelectionController** aSelCon,
                     mozilla::dom::Selection** aDomSel);
-  bool IsRangeVisible(nsRange* aRange, bool aMustBeVisible,
+  bool IsRangeVisible(mozilla::dom::Range* aRange, bool aMustBeVisible,
                       bool aGetTopVisibleLeaf, bool* aUsesIndependentSelection);
-  bool IsRangeRendered(nsRange* aRange);
+  bool IsRangeRendered(mozilla::dom::Range* aRange);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult FindItNow(uint32_t aMode, bool aIsLinksOnly,
                      bool aIsFirstVisiblePreferred, bool aDontIterateFrames,
@@ -95,14 +95,14 @@ class nsTypeAheadFind : public nsITypeAheadFind,
   nsCOMPtr<mozilla::dom::Element>
       mFoundLink;  // Most recent elem found, if a link
   nsCOMPtr<mozilla::dom::Element>
-      mFoundEditable;           // Most recent elem found, if editable
-  RefPtr<nsRange> mFoundRange;  // Most recent range found
+      mFoundEditable;  // Most recent elem found, if editable
+  RefPtr<mozilla::dom::Range> mFoundRange;  // Most recent range found
 
   // where selection was when user started the find
-  RefPtr<nsRange> mStartFindRange;
-  RefPtr<nsRange> mSearchRange;
-  RefPtr<nsRange> mStartPointRange;
-  RefPtr<nsRange> mEndPointRange;
+  RefPtr<mozilla::dom::Range> mStartFindRange;
+  RefPtr<mozilla::dom::Range> mSearchRange;
+  RefPtr<mozilla::dom::Range> mStartPointRange;
+  RefPtr<mozilla::dom::Range> mEndPointRange;
 
   // Cached useful interfaces
   nsCOMPtr<nsIFind> mFind;

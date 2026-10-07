@@ -125,10 +125,16 @@ describe("chat message table rendering", () => {
     await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
       await content.customElements.whenDefined("ai-chat-table");
 
+      // The copy button shows when the table is inside a message that has an
+      // id; the table reads it from its shadow host's data-message-id.
+      const host = content.document.createElement("div");
+      host.dataset.messageId = "test-message-id";
+      const shadow = host.attachShadow({ mode: "open" });
+      content.document.body.appendChild(host);
+
       const table = content.document.createElement("ai-chat-table");
-      table.setAttribute("message-id", "test-message-id");
       table.setAttribute("data-line-range", "[0,3]");
-      content.document.body.appendChild(table);
+      shadow.appendChild(table);
       await table.updateComplete;
 
       const copyButton = table.shadowRoot.querySelector(".table-copy-button");
@@ -140,9 +146,13 @@ describe("chat message table rendering", () => {
     await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
       await content.customElements.whenDefined("ai-chat-table");
 
+      const host = content.document.createElement("div");
+      host.dataset.messageId = "test-message-id";
+      const shadow = host.attachShadow({ mode: "open" });
+      content.document.body.appendChild(host);
+
       const table = content.document.createElement("ai-chat-table");
-      table.setAttribute("message-id", "test-message-id");
-      content.document.body.appendChild(table);
+      shadow.appendChild(table);
       await table.updateComplete;
 
       Assert.ok(

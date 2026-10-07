@@ -18,7 +18,12 @@ def split_locales(config, jobs):
         dep_job = get_primary_dependency(config, job)
         assert dep_job
 
-        for locale in dep_job.attributes.get("chunk_locales", []):
+        # The shippable `l10n` kind is chunked and carries `chunk_locales`; the
+        # non-shippable `l10n` kind is unchunked, so fall back to `all_locales`.
+        locales = dep_job.attributes.get("chunk_locales") or dep_job.attributes.get(
+            "all_locales", []
+        )
+        for locale in locales:
             locale_job = deepcopy(job)  # don't overwrite dict values here
             treeherder = locale_job.setdefault("treeherder", {})
             treeherder_group = locale_job.pop("treeherder-group")

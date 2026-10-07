@@ -135,6 +135,10 @@ struct CGTryNoteList {
     return {list.begin(), list.length()};
   }
   size_t length() const { return list.length(); }
+
+#ifdef DEBUG
+  void checkTryNotes(uint32_t codeLength) const;
+#endif
 };
 
 struct CGScopeNoteList {
@@ -149,6 +153,10 @@ struct CGScopeNoteList {
     return {list.begin(), list.length()};
   }
   size_t length() const { return list.length(); }
+
+#ifdef DEBUG
+  void checkScopeNotes(uint32_t codeLength) const;
+#endif
 
  private:
   void recordEndImpl(uint32_t index, uint32_t offset);

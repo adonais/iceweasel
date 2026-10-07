@@ -289,6 +289,24 @@ UNIFIED_SOURCES += [
     'skia/src/pathops/SkPathOpsWinding.cpp',
     'skia/src/pathops/SkPathWriter.cpp',
     'skia/src/pathops/SkReduceOrder.cpp',
+    'skia/src/pdf/SkClusterator.cpp',
+    'skia/src/pdf/SkDeflate.cpp',
+    'skia/src/pdf/SkKeyedImage.cpp',
+    'skia/src/pdf/SkPDFBitmap.cpp',
+    'skia/src/pdf/SkPDFDocument.cpp',
+    'skia/src/pdf/SkPDFFormXObject.cpp',
+    'skia/src/pdf/SkPDFGradientShader.cpp',
+    'skia/src/pdf/SkPDFGraphicStackState.cpp',
+    'skia/src/pdf/SkPDFGraphicState.cpp',
+    'skia/src/pdf/SkPDFMakeCIDGlyphWidthsArray.cpp',
+    'skia/src/pdf/SkPDFMakeToUnicodeCmap.cpp',
+    'skia/src/pdf/SkPDFMetadata.cpp',
+    'skia/src/pdf/SkPDFResourceDict.cpp',
+    'skia/src/pdf/SkPDFShader.cpp',
+    'skia/src/pdf/SkPDFSubsetFont.cpp',
+    'skia/src/pdf/SkPDFTag.cpp',
+    'skia/src/pdf/SkPDFTypes.cpp',
+    'skia/src/pdf/SkPDFUtils.cpp',
     'skia/src/ports/SkDiscardableMemory_none.cpp',
     'skia/src/ports/SkGlobalInitialization_default.cpp',
     'skia/src/ports/SkMemory_mozalloc.cpp',
@@ -487,6 +505,9 @@ SOURCES += [
     'skia/src/core/SkVertices.cpp',
     'skia/src/effects/colorfilters/SkColorSpaceXformColorFilter.cpp',
     'skia/src/pathops/SkPathOpsDebug.cpp',
+    'skia/src/pdf/SkPDFDevice.cpp',
+    'skia/src/pdf/SkPDFFont.cpp',
+    'skia/src/pdf/SkPDFType1Font.cpp',
     'skia/src/sksl/SkSLLexer.cpp',
     'skia/src/utils/SkParse.cpp',
     'skia/src/utils/SkParsePath.cpp',
@@ -518,32 +539,6 @@ SOURCES['skia/src/core/SkSwizzler_opts.cpp'].flags += skia_opt_flags
 SOURCES['skia/src/core/SkSwizzler_opts_lasx.cpp'].flags += skia_opt_flags
 SOURCES['skia/src/core/SkSwizzler_opts_ml3.cpp'].flags += skia_opt_flags
 SOURCES['skia/src/core/SkSwizzler_opts_ssse3.cpp'].flags += skia_opt_flags
-if CONFIG['MOZ_ENABLE_SKIA_PDF']:
-    UNIFIED_SOURCES += [
-        'skia/src/pdf/SkClusterator.cpp',
-        'skia/src/pdf/SkDeflate.cpp',
-        'skia/src/pdf/SkKeyedImage.cpp',
-        'skia/src/pdf/SkPDFBitmap.cpp',
-        'skia/src/pdf/SkPDFDocument.cpp',
-        'skia/src/pdf/SkPDFFormXObject.cpp',
-        'skia/src/pdf/SkPDFGradientShader.cpp',
-        'skia/src/pdf/SkPDFGraphicStackState.cpp',
-        'skia/src/pdf/SkPDFGraphicState.cpp',
-        'skia/src/pdf/SkPDFMakeCIDGlyphWidthsArray.cpp',
-        'skia/src/pdf/SkPDFMakeToUnicodeCmap.cpp',
-        'skia/src/pdf/SkPDFMetadata.cpp',
-        'skia/src/pdf/SkPDFResourceDict.cpp',
-        'skia/src/pdf/SkPDFShader.cpp',
-        'skia/src/pdf/SkPDFSubsetFont.cpp',
-        'skia/src/pdf/SkPDFTag.cpp',
-        'skia/src/pdf/SkPDFTypes.cpp',
-        'skia/src/pdf/SkPDFUtils.cpp',
-    ]
-    SOURCES += [
-        'skia/src/pdf/SkPDFDevice.cpp',
-        'skia/src/pdf/SkPDFFont.cpp',
-        'skia/src/pdf/SkPDFType1Font.cpp',
-    ]
 if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'android':
     UNIFIED_SOURCES += [
         'skia/src/ports/SkLog_android.cpp',
@@ -692,3 +687,25 @@ if CONFIG['TARGET_CPU'] == 'loongarch64':
     SOURCES['skia/src/core/SkBlitRow_opts_lasx.cpp'].flags += ['-mlasx']
     SOURCES['skia/src/core/SkSwizzler_opts_lasx.cpp'].flags += ['-mlasx']
     SOURCES['skia/src/opts/SkOpts_lasx.cpp'].flags += ['-mlasx']
+
+LICENSES += ["android"]
+LICENSES["android"].title = "Android Open Source License"
+LICENSES["android"].text = "LICENSE-NOTICE-android.txt"
+LICENSES["android"].spdx = "BSD-2-Clause"
+LICENSES["android"].notice = """
+<p>This license applies to various files in the Mozilla codebase, including those in the directory <code>gfx/skia/</code>.</p>
+            <!-- This is the wrong directory, what was intended? -->
+"""
+
+LICENSES += ["skia"]
+LICENSES["skia"].title = "Skia License"
+LICENSES["skia"].text = "LICENSE-NOTICE-skia.txt"
+LICENSES["skia"].spdx = "BSD-3-Clause"
+LICENSES["skia"].notice = """
+<p>This license applies to certain files in the directory <code>gfx/skia/</code>.</p>
+"""
+
+LICENSED_UNDER += [
+    "android",
+    "skia",
+]

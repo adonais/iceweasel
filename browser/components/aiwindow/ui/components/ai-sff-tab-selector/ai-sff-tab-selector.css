@@ -26,6 +26,11 @@
   border-radius: var(--border-radius-xlarge);
   background-color: var(--card-background-color);
   box-shadow: var(--card-box-shadow);
+  max-height: 90vh;
+}
+
+.ai-smart-form-fill-suggested-tabs {
+  min-height: calc(var(--size-item-xlarge) * 2 + var(--border-width) * 2);
 }
 
 .tab-selector-title {
@@ -36,6 +41,12 @@
 .tab-selector-list-heading {
   font-size: var(--font-size-large);
   margin: 0;
+}
+
+.ai-smart-form-fill-suggested-tabs,
+.tab-selector-tabs-scrollable {
+  display: flex;
+  flex-direction: column;
 }
 
 .tab-selector-tabs-scrollable {

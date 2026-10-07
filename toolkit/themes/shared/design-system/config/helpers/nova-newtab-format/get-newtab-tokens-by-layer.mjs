@@ -11,12 +11,13 @@ import { shouldSkipToken } from "../desktop-format/should-skip-token.mjs";
  *
  * @typedef {object} layers
  * @property {string[]} foundation - Foundation tokens
+ * @property {string[]} prefersContrast - Prefers contrast tokens
  * @property {string[]} forcedColors - Forced colors tokens
  */
 
 /**
- * Get foundation and forced colors tokens that are different in Nova, checking
- * for brand tokens, then falling back to default values.
+ * Get foundation, prefers contrast and forced colors tokens that are different
+ * in Nova, checking for brand tokens, then falling back to default values.
  *
  * @param {object} dictionary - The token dictionary, provided by style-dictionary.
  * @returns {layers}
@@ -26,6 +27,7 @@ export const getNewtabTokensByLayer = dictionary => {
   const tokens = dictionary.allTokens;
   const layers = {
     foundation: [],
+    prefersContrast: [],
     forcedColors: [],
   };
 
@@ -52,6 +54,18 @@ export const getNewtabTokensByLayer = dictionary => {
       layers.foundation.push(foundationToken);
     }
 
+    const prefersContrastToken = formatToken({
+      originalName,
+      originalValue:
+        originalValue.brand?.prefersContrast ?? originalValue.prefersContrast,
+      tokens: dictionary.tokens,
+      comment,
+      overrideIdentifier,
+    });
+    if (prefersContrastToken) {
+      layers.prefersContrast.push(prefersContrastToken);
+    }
+
     const forcedColorsToken = formatToken({
       originalName,
       originalValue:
@@ -67,6 +81,7 @@ export const getNewtabTokensByLayer = dictionary => {
 
   return {
     foundation: groupAndSortTokens({ tokens: layers.foundation }),
+    prefersContrast: groupAndSortTokens({ tokens: layers.prefersContrast }),
     forcedColors: groupAndSortTokens({ tokens: layers.forcedColors }),
   };
 };

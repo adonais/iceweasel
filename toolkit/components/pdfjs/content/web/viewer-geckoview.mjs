@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.3.335
- * pdfjsBuild = 74515c623
+ * pdfjsVersion = 6.4.195
+ * pdfjsBuild = d54c193bd
  */
 
 ;// ./web/ui_utils.js
@@ -146,10 +146,7 @@ function removeNullCharacters(str, replaceInvisible = false) {
   if (!InvisibleCharsRegExp.test(str)) {
     return str;
   }
-  if (replaceInvisible) {
-    return str.replaceAll(InvisibleCharsRegExp, m => m === "\x00" ? "" : " ");
-  }
-  return str.replaceAll("\x00", "");
+  return replaceInvisible ? str.replaceAll(InvisibleCharsRegExp, m => m === "\x00" ? "" : " ") : str.replaceAll("\x00", "");
 }
 function binarySearchFirstItem(items, condition, start = 0) {
   let minIndex = start;
@@ -895,7 +892,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "251ee865-0628-461b-917a-61511965a918";
+const INTERNAL_EVT = "6059afab-e34a-4dff-9dfa-3909d4d805dc";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -1441,6 +1438,7 @@ class BaseExternalServices {
   createSignatureVerifier() {
     return null;
   }
+  printToPDF = null;
   updateEditorStates(data) {
     throw new Error("Not implemented: updateEditorStates");
   }
@@ -1612,10 +1610,20 @@ let viewerApp = {
 function initCom(app) {
   viewerApp = app;
 }
+const PRINT_TO_PDF_BASE_DELAY = 4_500;
+const PRINT_TO_PDF_PER_ENTRY_DELAY = 50;
+const PRINT_TO_PDF_MIN_TIMEOUT = 10_000;
+function getPrintToPDFTimeout(entries) {
+  return Math.max(PRINT_TO_PDF_MIN_TIMEOUT, 2 * (PRINT_TO_PDF_BASE_DELAY + PRINT_TO_PDF_PER_ENTRY_DELAY * entries));
+}
 class FirefoxCom {
-  static requestAsync(action, data) {
-    return new Promise(resolve => {
-      this.request(action, data, resolve);
+  static requestAsync(action, data, timeout = 0) {
+    return new Promise((resolve, reject) => {
+      const timeoutId = timeout ? setTimeout(reject, timeout, new Error(`"${action}" timed out.`)) : 0;
+      this.request(action, data, response => {
+        clearTimeout(timeoutId);
+        resolve(response);
+      });
     });
   }
   static request(action, data, callback = null) {
@@ -1779,6 +1787,20 @@ class Preferences extends BasePreferences {
         }
       }));
     });
+  })();
+  (function listenAddSignatureEvent() {
+    const handleEvent = function ({
+      detail
+    }) {
+      if (!viewerApp.initialized) {
+        return;
+      }
+      viewerApp.eventBus.dispatch("addsignature", {
+        source: window,
+        text: detail?.text
+      });
+    };
+    window.addEventListener("addsignature", handleEvent);
   })();
 }
 class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
@@ -2080,13 +2102,10 @@ function mapVerificationStatus(signatureCode, certificateCode) {
       errorCode: certificateCode
     };
   }
-  if (NSS_ERR_CODES.UNTRUSTED.has(certificateCode)) {
-    return {
-      status: "untrusted",
-      errorCode: certificateCode
-    };
-  }
-  return {
+  return NSS_ERR_CODES.UNTRUSTED.has(certificateCode) ? {
+    status: "untrusted",
+    errorCode: certificateCode
+  } : {
     status: "untrusted",
     errorCode: certificateCode
   };
@@ -2172,6 +2191,10 @@ class SignatureVerifier {
   }
 }
 class ExternalServices extends BaseExternalServices {
+  printToPDF = async data => {
+    const buffer = await FirefoxCom.requestAsync("printToPDF", data, getPrintToPDFTimeout(data.length));
+    return buffer ? new Uint8Array(buffer) : null;
+  };
   updateFindControlState(data) {
     FirefoxCom.request("updateFindControlState", data);
   }
@@ -2239,7 +2262,11 @@ class ExternalServices extends BaseExternalServices {
     FirefoxCom.request("updateEditorStates", data);
   }
   async createL10n() {
-    await document.l10n.ready;
+    try {
+      await document.l10n.ready;
+    } catch (ex) {
+      console.error(`createL10n: "${ex}".`);
+    }
     return new L10n(AppOptions.get("localeProperties"), document.l10n);
   }
   createScripting() {
@@ -3046,10 +3073,7 @@ class CommentSidebar extends Sidebar {
     if (a.rect[1] !== b.rect[1]) {
       return b.rect[1] - a.rect[1];
     }
-    if (a.rect[2] !== b.rect[2]) {
-      return a.rect[2] - b.rect[2];
-    }
-    return a.id.localeCompare(b.id);
+    return a.rect[2] !== b.rect[2] ? a.rect[2] - b.rect[2] : a.id.localeCompare(b.id);
   }
 }
 class CommentDialog {
@@ -4239,10 +4263,7 @@ class PDFFindController {
       if (query.startsWith(original)) {
         return `${fixed}[ ]*`;
       }
-      if (query.endsWith(original)) {
-        return `[ ]*${fixed}`;
-      }
-      return `[ ]*${fixed}[ ]*`;
+      return query.endsWith(original) ? `[ ]*${fixed}` : `[ ]*${fixed}[ ]*`;
     };
     query = query.replaceAll(SPECIAL_CHARS_REG_EXP, (match, p1, p2, p3, p4, p5) => {
       if (p1) {
@@ -4955,10 +4976,7 @@ class PDFHistory {
         return false;
       }
     }
-    if (!Number.isInteger(state.uid) || state.uid < 0) {
-      return false;
-    }
-    if (state.destination === null || typeof state.destination !== "object") {
+    if (!Number.isInteger(state.uid) || state.uid < 0 || state.destination === null || typeof state.destination !== "object") {
       return false;
     }
     return true;
@@ -5112,10 +5130,7 @@ function isDestHashesEqual(destHash, pushHash) {
 }
 function isDestArraysEqual(firstDest, secondDest) {
   function isEntryEqual(first, second) {
-    if (typeof first !== typeof second) {
-      return false;
-    }
-    if (Array.isArray(first) || Array.isArray(second)) {
+    if (typeof first !== typeof second || Array.isArray(first) || Array.isArray(second)) {
       return false;
     }
     if (first !== null && typeof first === "object" && second !== null) {
@@ -5961,10 +5976,7 @@ class AnnotationEditorLayerBuilder {
     viewport,
     intent = "display"
   }) {
-    if (intent !== "display") {
-      return;
-    }
-    if (this._cancelled) {
+    if (intent !== "display" || this._cancelled) {
       return;
     }
     const clonedViewport = viewport.clone({
@@ -7586,10 +7598,7 @@ class TextHighlighter {
         span.className = `${className} appended`;
         span.append(node);
         div.append(span);
-        if (className.includes("selected")) {
-          return span;
-        }
-        return null;
+        return className.includes("selected") ? span : null;
       }
       div.append(node);
       return 0;
@@ -8801,7 +8810,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.3.335";
+    const viewerVersion = "6.4.195";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -9187,7 +9196,9 @@ class PDFViewer {
       this._scriptingManager?.setDocument(null);
       this.#annotationEditorUIManager?.destroy();
       this.#annotationEditorUIManager = null;
-      this.#annotationEditorMode = AnnotationEditorType.NONE;
+      if (this.#annotationEditorMode !== AnnotationEditorType.DISABLE) {
+        this.#annotationEditorMode = AnnotationEditorType.NONE;
+      }
       this.#printingAllowed = true;
     }
     this.pdfDocument = pdfDocument;
@@ -9798,10 +9809,7 @@ class PDFViewer {
       return null;
     }
     const i = this._pageLabels.indexOf(label);
-    if (i < 0) {
-      return null;
-    }
-    return i + 1;
+    return i < 0 ? null : i + 1;
   }
   scrollPageIntoView({
     pageNumber,
@@ -10014,10 +10022,10 @@ class PDFViewer {
     return this.presentationModeState === PresentationModeState.CHANGING;
   }
   get isHorizontalScrollbarEnabled() {
-    return this.isInPresentationMode ? false : this.container.scrollWidth > this.container.clientWidth;
+    return !this.isInPresentationMode && this.container.scrollWidth > this.container.clientWidth;
   }
   get isVerticalScrollbarEnabled() {
-    return this.isInPresentationMode ? false : this.container.scrollHeight > this.container.clientHeight;
+    return !this.isInPresentationMode && this.container.scrollHeight > this.container.clientHeight;
   }
   _getVisiblePages() {
     const views = this._scrollMode === ScrollMode.PAGE ? this.#scrollModePageState.pages : this._pages,
@@ -10510,6 +10518,106 @@ class PDFViewer {
   }
 }
 
+;// ./web/signature_manager-geckoview.js
+
+
+const DEFAULT_HEIGHT_IN_PAGE = 40;
+const SIGNATURE_FONT = Object.freeze({
+  fontFamily: "cursive",
+  fontStyle: "normal",
+  fontWeight: "400"
+});
+class SignatureManager {
+  #eventBus;
+  #mode = AnnotationEditorType.NONE;
+  #pendingSignatures = [];
+  constructor(eventBus, signal) {
+    this.#eventBus = eventBus;
+    const opts = {
+      signal,
+      ...internalOpt
+    };
+    eventBus.on("addsignature", this.#onAddSignature.bind(this), opts);
+    eventBus.on("annotationeditormodechanged", this.#onModeChanged.bind(this), opts);
+  }
+  #onAddSignature({
+    text
+  }) {
+    const signatureData = SignatureManager.#getSignatureData(text);
+    if (!signatureData) {
+      return;
+    }
+    if (this.#mode === AnnotationEditorType.SIGNATURE) {
+      this.#createEditor(signatureData);
+      return;
+    }
+    this.#pendingSignatures.push(signatureData);
+    this.#eventBus.dispatch("switchannotationeditormode", {
+      source: this,
+      mode: AnnotationEditorType.SIGNATURE
+    });
+  }
+  #onModeChanged({
+    mode
+  }) {
+    this.#mode = mode;
+    if (mode !== AnnotationEditorType.SIGNATURE) {
+      return;
+    }
+    const pendingSignatures = this.#pendingSignatures;
+    this.#pendingSignatures = [];
+    for (const signatureData of pendingSignatures) {
+      this.#createEditor(signatureData);
+    }
+  }
+  #createEditor(signatureData) {
+    this.#eventBus.dispatch("switchannotationeditorparams", {
+      source: this,
+      type: AnnotationEditorParamsType.CREATE,
+      value: {
+        signatureData
+      }
+    });
+  }
+  static #getSignatureData(text) {
+    text = typeof text === "string" ? text.trim() : "";
+    if (!text) {
+      return null;
+    }
+    const data = SignatureExtractor.extractContoursFromText(text, SIGNATURE_FONT, 1, 1, 0, 0);
+    if (!data) {
+      return null;
+    }
+    const {
+      newCurves,
+      width,
+      height
+    } = data;
+    return {
+      lines: {
+        curves: newCurves.map(points => ({
+          points
+        })),
+        width,
+        height
+      },
+      mustSmooth: false,
+      areContours: true,
+      description: text,
+      uuid: null,
+      heightInPage: DEFAULT_HEIGHT_IN_PAGE
+    };
+  }
+  getSignature() {}
+  loadSignatures() {}
+  renderEditButton() {
+    return null;
+  }
+  destroy() {
+    this.#pendingSignatures.length = 0;
+  }
+}
+
 ;// ./web/toolbar-geckoview.js
 class Toolbar {
   #buttons;
@@ -10605,22 +10713,12 @@ class ViewHistory {
   async _readFromStorage() {
     return sessionStorage.getItem("pdfjs.history");
   }
-  async set(name, val) {
-    await this._initializedPromise;
-    this.file[name] = val;
-    return this._writeToStorage();
-  }
   async setMultiple(properties) {
     await this._initializedPromise;
     for (const name in properties) {
       this.file[name] = properties[name];
     }
     return this._writeToStorage();
-  }
-  async get(name, defaultValue) {
-    await this._initializedPromise;
-    const val = this.file[name];
-    return val !== undefined ? val : defaultValue;
   }
   async getMultiple(properties) {
     await this._initializedPromise;
@@ -10924,7 +11022,12 @@ const PDFViewerApplication = {
     if (appConfig.editorUndoBar) {
       this.editorUndoBar = new EditorUndoBar(appConfig.editorUndoBar, eventBus);
     }
-    const signatureManager = AppOptions.get("enableSignatureEditor") && appConfig.addSignatureDialog ? new (/* inlined export .SignatureManager */null)(appConfig.addSignatureDialog, appConfig.editSignatureDialog, appConfig.annotationEditorParams?.editorSignatureAddSignature || null, overlayManager, l10n, externalServices.createSignatureStorage(eventBus, abortSignal), eventBus) : null;
+    let signatureManager = null;
+    if (AppOptions.get("enableSignatureEditor")) {
+      if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
+        signatureManager = new SignatureManager(eventBus, abortSignal);
+      }
+    }
     const commentManager = AppOptions.get("enableComment") && appConfig.editCommentDialog ? new CommentManager(appConfig.editCommentDialog, {
       learnMoreUrl: AppOptions.get("commentLearnMoreUrl"),
       sidebar: appConfig.annotationEditorParams?.editorCommentsSidebar || null,
@@ -11401,7 +11504,7 @@ const PDFViewerApplication = {
     this._saveInProgress = true;
     await this.pdfScriptingManager.dispatchWillSave();
     try {
-      const data = await this.pdfDocument.saveDocument();
+      const data = await this.pdfDocument.saveDocument(this.externalServices.printToPDF);
       this.downloadManager.download(data, this._downloadUrl, this._docFilename);
     } catch (reason) {
       console.error(`Error when saving the document:`, reason);
@@ -12129,10 +12232,7 @@ const PDFViewerApplication = {
       copyLevels
     }
   }) {
-    if (!this.downloadManager) {
-      return;
-    }
-    if (!this.pdfDocument) {
+    if (!this.downloadManager || !this.pdfDocument) {
       return;
     }
     const modifiedPdfBytes = await this.pdfDocument.extractPages(pageInfos, copyLevels);
@@ -12266,7 +12366,9 @@ function onSidebarViewChanged({
 }) {
   this.pdfRenderingQueue.isThumbnailViewEnabled = view === SidebarView.THUMBS;
   if (this.isInitialViewSet) {
-    this.store?.set("sidebarView", view).catch(() => {});
+    this.store?.setMultiple({
+      sidebarView: view
+    }).catch(() => {});
   }
 }
 function onUpdateViewarea({
@@ -12287,7 +12389,9 @@ function onUpdateViewarea({
 }
 function onViewerModesChanged(name, evt) {
   if (this.isInitialViewSet && !this.pdfViewer.isInPresentationMode) {
-    this.store?.set(name, evt.mode).catch(() => {});
+    this.store?.setMultiple({
+      [name]: evt.mode
+    }).catch(() => {});
   }
 }
 function onResize() {

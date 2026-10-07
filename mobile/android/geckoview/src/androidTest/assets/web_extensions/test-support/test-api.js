@@ -113,8 +113,18 @@ this.test = class extends ExtensionAPI {
         },
 
         async waitForContentTransformsReceived(tabId) {
-          return getActorForTab(tabId).sendQuery(
-            "WaitForContentTransformsReceived"
+          const { browsingContext } =
+            context.extension.tabManager.get(tabId).browser;
+          return Promise.all(
+            browsingContext
+              .getAllBrowsingContextsInSubtree()
+              .map(bc => bc.currentWindowGlobal)
+              .filter(windowGlobal => windowGlobal?.isProcessRoot)
+              .map(windowGlobal =>
+                windowGlobal
+                  .getActor("TestSupport")
+                  .sendQuery("WaitForContentTransformsReceived")
+              )
           );
         },
 
@@ -267,10 +277,10 @@ this.test = class extends ExtensionAPI {
           alertsService.teardown();
         },
 
-        async notifyUserGestureActivation(tabId) {
-          return getActorForTab(tabId, "TestSupport").sendQuery(
-            "NotifyUserGestureActivation"
-          );
+        async showPicker(tabId, selector) {
+          return getActorForTab(tabId, "TestSupport").sendQuery("ShowPicker", {
+            selector,
+          });
         },
 
         /* Seeds the tracking protection database with the given content blocking log. */

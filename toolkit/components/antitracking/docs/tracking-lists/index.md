@@ -12,7 +12,7 @@ Disconnect provides Mozilla with an updated blocklist every so often, with a pul
 
 ### The Lists
 
-The following lists are kept in the [shavar-prod-lists]([https://github.com/mozilla-services/shavar-prod-lists](https://github.com/mozilla-services/shavar-prod-lists)) repository.
+The following lists are kept in the [shavar-prod-lists](https://github.com/mozilla-services/shavar-prod-lists) repository.
 
 | List | Purpose |
 | ---  | ------- |

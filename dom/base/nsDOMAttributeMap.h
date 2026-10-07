@@ -18,6 +18,7 @@
 class nsAtom;
 class nsINode;
 class nsIPrincipal;
+class nsNodeInfoManager;
 
 namespace mozilla {
 class ErrorResult;
@@ -103,10 +104,10 @@ class nsDOMAttributeMap final : public nsISupports, public nsWrapperCache {
   Element* GetContent() { return mContent; }
 
   /**
-   * Called when mContent is moved into a new document.
-   * Updates the nodeinfos of all owned nodes.
+   * Called when mContent is adopted into a new document.
+   * Adopts all cached Attr nodes into aManager's document.
    */
-  nsresult SetOwnerDocument(Document* aDocument);
+  void AdoptCachedAttributes(nsNodeInfoManager* aManager);
 
   /**
    * Drop an attribute from the map's cache (does not remove the attribute

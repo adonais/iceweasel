@@ -575,6 +575,14 @@
             ? gBrowser.pinnedTabCount
             : dropIndex,
         });
+
+        // The group's tabs leave the window along with the group, so there is
+        // no _expandGroupOnDrop to release the space _resetTabsAfterDrop keeps
+        // reserved for them.
+        let periphery = draggedTab.ownerDocument.getElementById(
+          "tabbrowser-arrowscrollbox-periphery"
+        );
+        this.#releaseSpaceInScrolledContent(periphery);
       } else if (draggedTab) {
         // Move the tabs into this window. To avoid multiple tab-switches in
         // the original window, the selected tab should be adopted last.
@@ -886,26 +894,26 @@
         window.moveTo(left, top);
         window.focus();
       } else {
-        // We're opening a new window in a new screen, so make sure to use sizes
-        // relative to the new screen.
-        winWidth /= screenCssToDesktopScale;
-        winHeight /= screenCssToDesktopScale;
-
         let props = {
-          screenX: left,
-          screenY: top,
           suppressanimation: 1,
           metricsContext: gBrowser.TabMetrics.userTriggeredContext(
             gBrowser.TabMetrics.METRIC_SOURCE.DRAG_AND_DROP
           ),
         };
         if (window.fullScreen) {
-          // Detaching from a fullscreen window makes macOS adopt the new
-          // window into its own fullscreen space on its initial show, which
-          // can hang on a synchronous Dock transition (bug 2051071) and isn't
-          // what the user wants for a tab they're dragging to a location. This
-          // flag suppresses that.
+          // `left` and `top` above leave room for a window as large as this
+          // one, and a fullscreen window covers the screen, so they collapse
+          // onto the corner of it. The new window doesn't take our size
+          // either, so there is no drop position to compute for it and it is
+          // better off opening where any other new window would.
+          //
+          // The flag below keeps macOS from adopting the new window into its
+          // own fullscreen space during its initial show, which can hang on a
+          // synchronous transition to the Dock (bug 2051071).
           props.suppressinitialfullscreen = 1;
+        } else {
+          props.screenX = left;
+          props.screenY = top;
         }
         gBrowser.replaceTabsWithWindow(draggedTab, props);
       }

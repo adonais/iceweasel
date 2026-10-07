@@ -72,6 +72,11 @@ testRule({
       code: ".a { outline-color: var(--border-color); }",
       description: "Using border token in outline-color is valid.",
     },
+    {
+      code: ".a { border-block-start: 1px solid var(--panel-separator-color); }",
+      description:
+        "Using the panel separator token as a border color is valid.",
+    },
     // allowed CSS values
     {
       code: ".a { border-color: currentColor; }",

@@ -27,9 +27,9 @@ namespace dom {
 template <typename Collection, typename Function>
 static auto ForAllPublicRTCStatsCollectionMembers(Collection& aStats,
                                                   Function aFunction) {
-  static_assert(std::is_same_v<typename std::remove_const<Collection>::type,
-                               RTCStatsCollection>,
-                "aStats must be a const or non-const RTCStatsCollection");
+  static_assert(
+      std::is_same_v<std::remove_const_t<Collection>, RTCStatsCollection>,
+      "aStats must be a const or non-const RTCStatsCollection");
   return aFunction(
       aStats.mInboundRtpStreamStats, aStats.mOutboundRtpStreamStats,
       aStats.mRemoteInboundRtpStreamStats, aStats.mRemoteOutboundRtpStreamStats,
@@ -47,9 +47,9 @@ static auto ForAllPublicRTCStatsCollectionMembers(Collection& aStats,
 template <typename Collection, typename Function>
 static auto ForAllRTCStatsCollectionMembers(Collection& aStats,
                                             Function aFunction) {
-  static_assert(std::is_same_v<typename std::remove_const<Collection>::type,
-                               RTCStatsCollection>,
-                "aStats must be a const or non-const RTCStatsCollection");
+  static_assert(
+      std::is_same_v<std::remove_const_t<Collection>, RTCStatsCollection>,
+      "aStats must be a const or non-const RTCStatsCollection");
   return ForAllPublicRTCStatsCollectionMembers(aStats, [&](auto&... aMember) {
     return aFunction(aMember..., aStats.mRawLocalCandidates,
                      aStats.mRawRemoteCandidates, aStats.mVideoFrameHistories,

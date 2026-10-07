@@ -1,0 +1,12 @@
+[package]
+name = "mixed-rust"
+version = "0.1.0"
+authors = [
+  "The Mozilla Project Developers",
+]
+
+[[bin]]
+name = "mixed-rust"
+
+[dependencies]
+mozilla-central-workspace-hack = { version = "0.1", features = ["mixed-rust"], optional = true }

@@ -117,10 +117,10 @@ internal class FxaAccountObserver(
                     autoPause = autoPause,
                 )
         }
+        store.dispatch(SyncAction.UpdateAccountState(AccountState.Authenticated))
         scope.launch {
             val syncAccount = account.getProfile()?.toAccount() ?: return@launch
             store.dispatch(SyncAction.UpdateAccount(syncAccount))
-            store.dispatch(SyncAction.UpdateAccountState(AccountState.Authenticated))
         }
     }
 
@@ -140,15 +140,7 @@ internal class FxaAccountObserver(
     }
 
     override fun onProfileUpdated(profile: Profile) {
-        val currentAccount = store.state.account ?: return
-        val updatedAccount =
-            currentAccount.copy(
-                uid = profile.uid,
-                email = profile.email,
-                avatar = profile.avatar,
-                displayName = profile.displayName,
-            )
-        store.dispatch(SyncAction.UpdateAccount(updatedAccount))
+        store.dispatch(SyncAction.UpdateAccount(profile.toAccount()))
     }
 }
 

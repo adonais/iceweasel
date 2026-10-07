@@ -23,7 +23,8 @@ struct ExternalStringCallbacks : public JSExternalStringCallbacks {
   int* finalizedCount = nullptr;
   bool isTwoBytes = false;
 
-  explicit ExternalStringCallbacks(int* finalizedCount, bool isTwoBytes)
+  explicit constexpr ExternalStringCallbacks(int* finalizedCount,
+                                             bool isTwoBytes)
       : finalizedCount(finalizedCount), isTwoBytes(isTwoBytes) {}
 
   void finalize(JS::Latin1Char* chars) const override {
@@ -49,10 +50,10 @@ struct ExternalStringCallbacks : public JSExternalStringCallbacks {
   }
 };
 
-MOZ_RUNINIT static const ExternalStringCallbacks callbacks1(&finalized1, true);
-MOZ_RUNINIT static const ExternalStringCallbacks callbacks2(&finalized2, true);
-MOZ_RUNINIT static const ExternalStringCallbacks callbacks3(&finalized3, false);
-MOZ_RUNINIT static const ExternalStringCallbacks callbacks4(&finalized4, false);
+static constexpr ExternalStringCallbacks callbacks1(&finalized1, true);
+static constexpr ExternalStringCallbacks callbacks2(&finalized2, true);
+static constexpr ExternalStringCallbacks callbacks3(&finalized3, false);
+static constexpr ExternalStringCallbacks callbacks4(&finalized4, false);
 
 BEGIN_TEST(testExternalStrings) {
   const unsigned N = 1000;

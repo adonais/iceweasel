@@ -225,9 +225,6 @@ fail-if = [
 ["browser_jsterm_helpers_no_override.js"]
 
 ["browser_jsterm_hide_when_devtools_chrome_enabled_false.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028
-]
 
 ["browser_jsterm_history.js"]
 

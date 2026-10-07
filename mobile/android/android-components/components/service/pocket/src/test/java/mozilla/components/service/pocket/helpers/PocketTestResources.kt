@@ -25,16 +25,6 @@ private const val POCKET_DIR = "pocket"
 
 /** Accessors to resources used in testing. */
 internal object PocketTestResources {
-    val contentRecommendationsJSONResponse =
-        this::class.java.classLoader!!.getResource("$POCKET_DIR/content_recommendations_response.json")!!.readText()
-
-    val contentRecommendationsNullUrlResponse =
-        this::class
-            .java
-            .classLoader!!
-            .getResource("$POCKET_DIR/content_recommendations_null_url_response.json")!!
-            .readText()
-
     val marsSponsoredStoriesJSONResponse =
         this::class.java.classLoader!!.getResource("$POCKET_DIR/mars_sponsored_stories_response.json")!!.readText()
 

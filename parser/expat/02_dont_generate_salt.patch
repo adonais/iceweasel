@@ -1,7 +1,7 @@
 diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
 --- a/expat/lib/xmlparse.c
 +++ b/expat/lib/xmlparse.c
-@@ -119,6 +119,8 @@
+@@ -125,6 +125,8 @@
  #include "siphash.h"
  #include "xcsinc.c"
  
@@ -10,7 +10,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  #if defined(HAVE_ARC4RANDOM)
  #  include "random_arc4random.h"
  #endif /* defined(HAVE_ARC4RANDOM) */
-@@ -142,6 +144,8 @@
+@@ -148,6 +150,8 @@
  #if defined(_WIN32)
  #  include "random_rand_s.h"
  #endif /* defined(_WIN32) */
@@ -19,7 +19,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  #if ! defined(HAVE_GETRANDOM) && ! defined(HAVE_SYSCALL_GETRANDOM)             \
      && ! defined(HAVE_ARC4RANDOM_BUF) && ! defined(HAVE_ARC4RANDOM)            \
-@@ -1083,6 +1087,8 @@ static const XML_Char implicitContext[]
+@@ -1101,6 +1105,8 @@ static const XML_Char implicitContext[]
         ASCII_s,     ASCII_p,     ASCII_a,      ASCII_c,      ASCII_e,
         '\0'};
  
@@ -28,7 +28,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  #if ! defined(HAVE_ARC4RANDOM_BUF) && ! defined(HAVE_ARC4RANDOM)
  
  static unsigned long
-@@ -1109,9 +1115,14 @@ gather_time_entropy(void) {
+@@ -1127,9 +1133,14 @@ gather_time_entropy(void) {
  }
  
  #endif /* ! defined(HAVE_ARC4RANDOM_BUF) && ! defined(HAVE_ARC4RANDOM) */
@@ -43,7 +43,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
    if (getDebugLevel("EXPAT_ENTROPY_DEBUG", 0) >= 1u) {
      fprintf(stderr,
              "expat: Entropy: %s --> [0x" EXPAT_FMT_LLX(
-@@ -1119,11 +1130,16 @@ ENTROPY_DEBUG(const char *label, struct sipkey entropy_128) {
+@@ -1137,11 +1148,16 @@ ENTROPY_DEBUG(const char *label, struct sipkey entropy_128) {
              label, (unsigned long long)entropy_128.k[0],
              (unsigned long long)entropy_128.k[1]);
    }
@@ -60,7 +60,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
    struct sipkey entropy;
  
    /* "Failproof" high quality providers: */
-@@ -1172,6 +1188,8 @@ generate_hash_secret_salt(void) {
+@@ -1190,6 +1206,8 @@ generate_hash_secret_salt(void) {
      return ENTROPY_DEBUG("fallback(8)", entropy);
    }
  #endif

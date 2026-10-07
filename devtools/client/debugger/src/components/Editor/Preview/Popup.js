@@ -143,7 +143,6 @@ export class Popup extends Component {
         mode: usesCustomFormatter ? MODE.LONG : MODE.SHORT,
         disableWrap: true,
         displayRootNodeAsHeader: true,
-        focusable: false,
         openLink: this.props.openLink,
         defaultRep: Grip,
         createElement: this.createElement,

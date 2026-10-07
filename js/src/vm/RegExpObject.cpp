@@ -718,6 +718,37 @@ bool RegExpShared::compileIfNecessary(JSContext* cx,
   return true;
 }
 
+// This is inlined in jitcode in PrepareAndExecuteRegExp.
+// The two should be kept in sync.
+bool RegExpShared::quickCheckRejects(const JS::Latin1Char* chars, size_t length,
+                                     size_t index) const {
+  MOZ_ASSERT(hasQuickCheck());
+
+  // If we're at the end of the string, there are no characters to test.
+  if (index >= length) {
+    return false;
+  }
+
+  // Check the first character against the reject bitset.
+  auto [word, bit] = quickCheckBitsetBit(chars[index]);
+  if ((quickCheckRejectBitset_[word] & bit) != 0) {
+    return true;
+  }
+
+  // If there are at least 4 characters remaining in the string, test the mask.
+  if (index + sizeof(uint32_t) <= length) {
+    // We use memcpy here because this load may not be aligned. It will generate
+    // a regular load on every platform we care about.
+    uint32_t word;
+    memcpy(&word, chars + index, sizeof(word));
+    if ((word & quickCheckMask_) != quickCheckValue_) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 /* static */
 RegExpRunStatus RegExpShared::execute(JSContext* cx,
                                       MutableHandleRegExpShared re,
@@ -730,6 +761,14 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
   /* Compile the code at point-of-use. */
   if (!compileIfNecessary(cx, re, input, RegExpShared::CodeKind::Any)) {
     return RegExpRunStatus::Error;
+  }
+
+  if (re->hasQuickCheck() && input->hasLatin1Chars()) {
+    AutoCheckCannotGC nogc;
+    if (re->quickCheckRejects(input->latin1Chars(nogc), input->length(),
+                              start)) {
+      return RegExpRunStatus::Success_NotFound;
+    }
   }
 
   /*
@@ -745,10 +784,12 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
     return RegExpShared::executeAtom(re, input, start, matches);
   }
 
+  // There should not be a pending stack overflow at this point.
+  MOZ_ASSERT(cx->maybeReportDelayedOverRecursed());
+
   uint32_t interruptRetries = 0;
   const uint32_t maxInterruptRetries = 4;
   do {
-    DebugOnly<bool> alreadyThrowing = cx->isExceptionPending();
     RegExpRunStatus result = irregexp::Execute(cx, re, input, start, matches);
 #ifdef DEBUG
     // Check if we must simulate the interruption
@@ -758,42 +799,53 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
     }
 #endif
     if (result == RegExpRunStatus::Error) {
-      /* Execute can return RegExpRunStatus::Error:
-       *
-       *  1. If the native stack overflowed
-       *  2. If the backtrack stack overflowed
-       *  3. If an interrupt was requested during execution.
-       *
-       * In the first two cases, we want to throw an error. In the
-       * third case, we want to handle the interrupt and try again.
-       * We cap the number of times we will retry.
-       */
-      if (cx->isExceptionPending()) {
-        // If this regexp is being executed by recovery instructions
-        // while bailing out to handle an exception, there may already
-        // be an exception pending. If so, just return that exception
-        // instead of reporting a new one.
-        MOZ_ASSERT(alreadyThrowing);
+      if (!cx->maybeReportDelayedOverRecursed()) {
         return RegExpRunStatus::Error;
       }
       if (cx->hasAnyPendingInterrupt()) {
+        if (!cx->isExceptionPending() &&
+            re->isCompiled(input->hasLatin1Chars(),
+                           RegExpShared::CodeKind::Jitcode)) {
+          // We can end up here if a compiled regexp is interrupted and invokes
+          // a handler that requests another interrupt and then returns false to
+          // signal that we should terminate. In that case, we should return now
+          // instead of handling the interrupt and retrying.  This can only
+          // happen with a custom interrupt handler in the shell, but it's
+          // easier to handle it here than to prevent the fuzzer from writing
+          // silly interrupt handlers.
+          MOZ_ASSERT(cx->hadUncatchableException());
+          return RegExpRunStatus::Error;
+        }
+
         if (!CheckForInterrupt(cx)) {
           return RegExpRunStatus::Error;
         }
+
+        // We should not have to restart more than once if native compilation
+        // is available, because the compiled regexp can handle interrupts.
+        MOZ_ASSERT_IF(IsNativeRegExpEnabled(), interruptRetries == 0);
         if (interruptRetries++ < maxInterruptRetries) {
-          // The initial execution may have been interpreted, or the
-          // interrupt may have triggered a GC that discarded jitcode.
-          // To maximize the chance of succeeding before being
-          // interrupted again, we want to ensure we are compiled.
+          // Ensure we're compiled, then try again.
           if (!compileIfNecessary(cx, re, input,
                                   RegExpShared::CodeKind::Jitcode)) {
             return RegExpRunStatus::Error;
           }
           continue;
         }
+        // If we've failed multiple times, give up
+        // This should only happen if regexp compilation is unavailable.
+        JS_ReportErrorASCII(cx, "regexp timed out");
       }
-      // If we have run out of retries, this regexp takes too long to execute.
-      ReportOverRecursed(cx);
+      // If we reached this point, then we failed for a reason that was not
+      // stack overflow. Cases where this can occur:
+      // 1. We invoked the interrupt handler and it returned false. We are
+      //    terminating.
+      // 2. The realm is a debuggee with single-step mode enabled. After
+      //    checking for interrupts, we called DebugAPI::onSingleStep, which
+      //    threw an error.
+      // 3. The multiple-interrupt case above.
+      // In all cases, we can simply propagate the current error here.
+      MOZ_ASSERT(cx->isExceptionPending() || cx->hadUncatchableException());
       return RegExpRunStatus::Error;
     }
 

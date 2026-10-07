@@ -9,6 +9,14 @@ import {
   BitsUnknownError,
 } from "moz-src:///toolkit/components/bitsdownload/Bits.sys.mjs";
 
+const BITS_CODE_TYPE_NAMES = new Map([
+  [Ci.nsIBits.ERROR_CODE_TYPE_NONE, "none"],
+  [Ci.nsIBits.ERROR_CODE_TYPE_NSRESULT, "nsresult"],
+  [Ci.nsIBits.ERROR_CODE_TYPE_HRESULT, "hresult"],
+  [Ci.nsIBits.ERROR_CODE_TYPE_STRING, "string"],
+  [Ci.nsIBits.ERROR_CODE_TYPE_EXCEPTION, "exception"],
+]);
+
 export var AUSTLMY = {
   // Telemetry for the application update background update check occurs when
   // the background update timer fires after the update interval which is
@@ -275,16 +283,16 @@ export var AUSTLMY = {
 
   /**
    * Records a failed BITS update download using Telemetry.
-   * In addition to the BITS Result custom_distribution metric, this also sends
-   * data to an update.bitshresult labeled_counter value.
+   * In addition to the BITS Result custom_distribution metric, this also
+   * records an update.bits_error event with the patch type, the error type,
+   * action and stage, and the nsresult or HRESULT code if there is one.
    *
    * @param aIsComplete
    *        If true the patch type is complete, if false the patch type is
    *        partial. This will determine the metric id out of the following:
    *        Glean.update.bitsResultComplete
    *        Glean.update.bitsResultPartial
-   *        This value is also used to determine the key for the keyed scalar
-   *        update.bitshresult (key is either "COMPLETE" or "PARTIAL")
+   *        It is also recorded as the patch_type of the event.
    * @param aError
    *        The BitsError that occurred. See Bits.sys.mjs for details on BitsError.
    */
@@ -317,18 +325,25 @@ export var AUSTLMY = {
     }
     this._pingBitsResult(aIsComplete, type);
 
-    if (aError.codeType == Ci.nsIBits.ERROR_CODE_TYPE_HRESULT) {
-      let scalarKey;
-      if (aIsComplete) {
-        scalarKey = this.PATCH_COMPLETE;
-      } else {
-        scalarKey = this.PATCH_PARTIAL;
-      }
-      try {
-        Glean.update.bitshresult[scalarKey.toUpperCase()].set(aError.code);
-      } catch (e) {
-        console.error(e);
-      }
+    let extra = {
+      patch_type: aIsComplete ? "complete" : "partial",
+      error_type: type,
+      error_action: +aError.action,
+      error_stage: +aError.stage,
+      code_type: BITS_CODE_TYPE_NAMES.get(aError.codeType) ?? "unknown",
+    };
+    switch (aError.codeType) {
+      case Ci.nsIBits.ERROR_CODE_TYPE_NSRESULT:
+      case Ci.nsIBits.ERROR_CODE_TYPE_HRESULT:
+        extra.code = "0x" + (aError.code >>> 0).toString(16).padStart(8, "0");
+        break;
+      // String and exception codes are free-form messages that may contain
+      // file paths, so only their type is recorded.
+    }
+    try {
+      Glean.update.bitsError.record(extra);
+    } catch (e) {
+      console.error(e);
     }
   },
 

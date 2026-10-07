@@ -130,6 +130,11 @@ class TextInputHandler;
 // to create its "frame view".
 + (Class)frameViewClassForStyleMask:(NSUInteger)styleMask;
 
+// Sanitizes a style mask before AppKit stores it. NSWindow clears the
+// non-activating panel bit here; NSPanel keeps it. Both -initWithContentRect:
+// and -setStyleMask: go through it.
++ (NSUInteger)_validateStyleMask:(NSUInteger)aStyleMask;
+
 @end
 
 @interface PopupWindow : BaseWindow <NSPopoverDelegate> {
@@ -316,6 +321,8 @@ class nsCocoaWindow final : public nsIWidget {
 
   void DispatchAPZWheelInputEvent(mozilla::InputData& aEvent);
   nsEventStatus DispatchAPZInputEvent(mozilla::InputData& aEvent);
+
+  void PerformHapticFeedback(mozilla::HapticFeedbackType aType) override;
 
   void DispatchDoubleTapGesture(mozilla::TimeStamp aEventTimeStamp,
                                 LayoutDeviceIntPoint aScreenPosition,

@@ -28,7 +28,6 @@ RemoteCompositorSession::RemoteCompositorSession(
     RefPtr<APZCTreeManagerChild>&& aAPZ, const LayersId& aRootLayerTreeId)
     : CompositorSession(aWidget, aWidgetDelegate, aChild, aRootLayerTreeId),
       mAPZ(std::move(aAPZ)) {
-  MOZ_ASSERT(!gfxPlatform::IsHeadless());
   GPUProcessManager::Get()->RegisterRemoteProcessSession(this);
   if (mAPZ) {
     mAPZ->SetCompositorSession(this);

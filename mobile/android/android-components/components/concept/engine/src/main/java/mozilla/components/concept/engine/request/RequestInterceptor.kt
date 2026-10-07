@@ -5,7 +5,6 @@
 package mozilla.components.concept.engine.request
 
 import android.content.Intent
-import mozilla.components.browser.errorpages.ErrorType
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 

@@ -167,7 +167,7 @@ static MConstant* EvaluateIntConstantOperands(TempAllocator& alloc,
   }
 
   using IntT = decltype(ToIntConstant<Type>(nullptr));
-  using UnsigedInt = std::make_unsigned_t<IntT>;
+  using UnsignedInt = std::make_unsigned_t<IntT>;
 
   // Right-hand side operand of shift must be non-negative and be less-than the
   // number of bits in the left-hand side operand. Otherwise the behavior is
@@ -196,7 +196,7 @@ static MConstant* EvaluateIntConstantOperands(TempAllocator& alloc,
       // undefined. Cast to unsigned to ensure the behavior is always defined.
       //
       // Note: Cast to unsigned is no longer needed when compiling to C++20.
-      ret = UnsigedInt(lhs) << (rhs & shiftMask);
+      ret = UnsignedInt(lhs) << (rhs & shiftMask);
       break;
     case MDefinition::Opcode::Rsh:
       // The result is implementation-defined if the left-hand side operand is
@@ -208,11 +208,12 @@ static MConstant* EvaluateIntConstantOperands(TempAllocator& alloc,
       break;
     case MDefinition::Opcode::Ursh:
       // Decline folding if the output doesn't fit into a signed result and
-      // bailouts are disabled. (Wasm has bailouts disabled.)
-      if (lhs < 0 && rhs == 0 && !ins->toUrsh()->bailoutsDisabled()) {
+      // bailouts are enabled. (Wasm has bailouts disabled.)
+      if (lhs < 0 && (rhs & shiftMask) == 0 &&
+          !ins->toUrsh()->bailoutsDisabled()) {
         return nullptr;
       }
-      ret = UnsigedInt(lhs) >> (UnsigedInt(rhs) & shiftMask);
+      ret = UnsignedInt(lhs) >> (UnsignedInt(rhs) & shiftMask);
       break;
     case MDefinition::Opcode::BigIntPtrLsh:
     case MDefinition::Opcode::BigIntPtrRsh: {
@@ -221,7 +222,7 @@ static MConstant* EvaluateIntConstantOperands(TempAllocator& alloc,
       // 2. Negative shifts reverse the shift direction.
 
       // Decline folding for excess shift amounts.
-      UnsigedInt shift = mozilla::Abs(rhs);
+      UnsignedInt shift = mozilla::Abs(rhs);
       if ((shift & shiftMask) != shift) {
         return nullptr;
       }
@@ -229,7 +230,11 @@ static MConstant* EvaluateIntConstantOperands(TempAllocator& alloc,
       bool isLsh = (ins->isBigIntPtrLsh() && rhs >= 0) ||
                    (ins->isBigIntPtrRsh() && rhs < 0);
       if (isLsh) {
-        ret = UnsigedInt(lhs) << shift;
+        ret = UnsignedInt(lhs) << shift;
+        // Decline folding that overflows signed Intptr.
+        if ((ret >> shift) != lhs) {
+          return nullptr;
+        }
       } else {
         ret = lhs >> shift;
       }
@@ -264,8 +269,8 @@ static MConstant* EvaluateIntConstantOperands(TempAllocator& alloc,
     }
     case MDefinition::Opcode::Div: {
       if (ins->toDiv()->isUnsigned()) {
-        auto checked =
-            mozilla::CheckedInt<UnsigedInt>(UnsigedInt(lhs)) / UnsigedInt(rhs);
+        auto checked = mozilla::CheckedInt<UnsignedInt>(UnsignedInt(lhs)) /
+                       UnsignedInt(rhs);
         if (!checked.isValid()) {
           return nullptr;
         }
@@ -292,8 +297,8 @@ static MConstant* EvaluateIntConstantOperands(TempAllocator& alloc,
     }
     case MDefinition::Opcode::Mod: {
       if (ins->toMod()->isUnsigned()) {
-        auto checked =
-            mozilla::CheckedInt<UnsigedInt>(UnsigedInt(lhs)) % UnsigedInt(rhs);
+        auto checked = mozilla::CheckedInt<UnsignedInt>(UnsignedInt(lhs)) %
+                       UnsignedInt(rhs);
         if (!checked.isValid()) {
           return nullptr;
         }
@@ -3002,7 +3007,6 @@ static inline bool NeedNegativeZeroCheck(MDefinition* def) {
         break;
       case MDefinition::Opcode::StoreElementHole:
       case MDefinition::Opcode::StoreTypedArrayElementHole:
-      case MDefinition::Opcode::PostWriteElementBarrier:
         // Only allowed to remove check when definition is the third operand.
         for (size_t i = 0, e = use_def->numOperands(); i < e; i++) {
           if (i == 2) {

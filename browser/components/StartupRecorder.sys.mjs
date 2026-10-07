@@ -72,7 +72,7 @@ let afterPaintListener = () => {
  * startup and records the set of JS modules that were already loaded at
  * each of these points.
  * The records are meant to be used by startup tests in
- * browser/base/content/test/performance
+ * browser/base/content/test/browser-performance
  * This component only exists in nightly and debug builds, it doesn't ship in
  * our release builds.
  */
@@ -231,7 +231,7 @@ StartupRecorder.prototype = {
         this.data.profile = profileData;
         // There's no equivalent StartProfiler call in this file because the
         // profiler is started using the MOZ_PROFILER_STARTUP environment
-        // variable in browser/base/content/test/performance/browser.toml
+        // variable in browser/base/content/test/browser-performance/browser.toml
         Services.profiler.StopProfiler();
 
         this._resolve();

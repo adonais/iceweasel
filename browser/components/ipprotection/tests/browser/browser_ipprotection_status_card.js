@@ -233,7 +233,9 @@ add_task(async function test_ipprotection_events_on_toggle() {
  */
 add_task(async function test_status_card_excluded() {
   let sandbox = sinon.createSandbox();
-  sandbox.stub(IPPExceptionsManager, "hasExclusion").returns(true);
+  sandbox
+    .stub(IPPSiteRuleManager, "getRule")
+    .returns(IPPPrincipalRules.EXCLUDED);
 
   await setupStatusCardTest();
 

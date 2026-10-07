@@ -65,11 +65,9 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
   // BaselineStubFrame if needed.
 
   // Push frame descriptor and return address.
+  // Save old frame pointer, stack pointer, and stub reg.
   masm.Push(FrameDescriptor(FrameType::BaselineJS));
-  masm.Push(ICTailCallReg);
-
-  // Save old frame pointer, stack pointer and stub reg.
-  masm.Push(FramePointer);
+  masm.PushRegs(ICTailCallReg, FramePointer);
   masm.movePtr(StackPointer, FramePointer);
   masm.Push(ICStubReg);
 

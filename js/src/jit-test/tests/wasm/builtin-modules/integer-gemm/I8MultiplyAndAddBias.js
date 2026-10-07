@@ -41,6 +41,12 @@ function testInvalidAlignment() {
 
   // inputB: Not an integral multiple of ARRAY_ALIGNMENT
   assertErrorMessage(() => int8_multiply_and_add_bias(VALID.inputA, VALID.scaleA, VALID.zeroPointA, invalidAlignment, VALID.scaleB, VALID.zeroPointB, VALID.inputBiasPrepared, VALID.unquantMultiplier, VALID.rowsA, VALID.width, VALID.colsB, VALID.output), WebAssembly.RuntimeError, /index out of bounds/);
+
+  // inputBiasPrepared: Not an integral multiple of ARRAY_ALIGNMENT (read via aligned SIMD load)
+  assertErrorMessage(() => int8_multiply_and_add_bias(VALID.inputA, VALID.scaleA, VALID.zeroPointA, VALID.inputB, VALID.scaleB, VALID.zeroPointB, invalidAlignment, VALID.unquantMultiplier, VALID.rowsA, VALID.width, VALID.colsB, VALID.output), WebAssembly.RuntimeError, /index out of bounds/);
+
+  // output: Not an integral multiple of ARRAY_ALIGNMENT (written via aligned SIMD store)
+  assertErrorMessage(() => int8_multiply_and_add_bias(VALID.inputA, VALID.scaleA, VALID.zeroPointA, VALID.inputB, VALID.scaleB, VALID.zeroPointB, VALID.inputBiasPrepared, VALID.unquantMultiplier, VALID.rowsA, VALID.width, VALID.colsB, invalidAlignment), WebAssembly.RuntimeError, /index out of bounds/);
 }
 
 function testOutOfBounds() {

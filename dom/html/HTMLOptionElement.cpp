@@ -17,6 +17,7 @@
 #include "mozilla/dom/Document.h"
 #include "nsCOMPtr.h"
 #include "nsContentCreatorFunctions.h"
+#include "nsContentUtils.h"
 #include "nsNodeInfoManager.h"
 #include "nsTextNode.h"
 
@@ -88,6 +89,7 @@ void HTMLOptionElement::SetSelected(bool aValue) {
   // Note: The select content obj maintains all the PresState
   // so defer to it to get the answer
   if (HTMLSelectElement* select = GetSelect()) {
+    nsAutoScriptBlocker scriptBlocker;
     int32_t index = Index();
     HTMLSelectElement::OptionFlags mask{
         HTMLSelectElement::OptionFlag::SetDisabled,
@@ -129,6 +131,7 @@ int32_t HTMLOptionElement::Index() {
     return defaultIndex;
   }
 
+  nsAutoScriptBlocker scriptBlocker;
   int32_t index = defaultIndex;
   MOZ_ALWAYS_SUCCEEDS(options->GetOptionIndex(this, 0, true, &index));
   return index;

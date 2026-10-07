@@ -34,6 +34,7 @@
 #include "libwebrtcglue/WebrtcImageBuffer.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "mozilla/AbstractThread.h"
 #include "mozilla/Logging.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/PeerIdentity.h"
@@ -971,7 +972,7 @@ void MediaPipelineTransmit::UpdateSendState() {
       mSendTrack->RemoveDirectListener(mListener);
     }
     mSendTrack->RemoveListener(mListener)->Then(
-        GetMainThreadSerialEventTarget(), __func__,
+        AbstractThread::MainThread(), __func__,
         [this, self = RefPtr<MediaPipelineTransmit>(this)] {
           mUnsettingSendTrack = false;
           mSendTrack = nullptr;

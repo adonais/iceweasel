@@ -206,7 +206,6 @@ class FieldTrials : public FieldTrialsView {
     if (key == "WebRTC-CongestionWindow" ||
         key == "WebRTC-UseBaseHeavyVP8TL3RateAllocation" ||
         key == "WebRTC-VideoRateControl" ||
-        key == "WebRTC-Video-CalculatePsnr" ||
         key == "WebRTC-GetEncoderInfoOverride" ||
         key == "WebRTC-VP9-GetEncoderInfoOverride" ||
         key == "WebRTC-VP9-PerformanceFlags" ||

@@ -6,7 +6,7 @@ use std::{
     alloc::{alloc, dealloc, Layout},
     ffi::{c_char, OsString},
     mem::align_of,
-    os::unix::ffi::OsStringExt,
+    os::unix::ffi::{OsStrExt, OsStringExt},
 };
 
 use bytes::Bytes;
@@ -24,6 +24,10 @@ impl BreakpadString for OsString {
 
     fn deserialize(bytes: Vec<u8>) -> Result<OsString, MessageError> {
         Ok(OsString::from_vec(bytes))
+    }
+
+    fn len(&self) -> usize {
+        self.as_os_str().as_bytes().len()
     }
 
     unsafe fn from_ptr(ptr: *const BreakpadChar) -> OsString {

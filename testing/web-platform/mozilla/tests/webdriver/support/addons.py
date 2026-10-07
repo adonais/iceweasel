@@ -46,6 +46,31 @@ def is_addon_temporary_installed(session, addon_id):
         )
 
 
+def disable_addon(session, addon_id):
+    with using_context(session, "chrome"):
+        return session.execute_async_script(
+            """
+              const [addon_id, resolve] = arguments;
+              const { AddonManager } = ChromeUtils.importESModule(
+                "resource://gre/modules/AddonManager.sys.mjs"
+              );
+
+              async function disableAddon() {
+                const addon = await AddonManager.getAddonByID(addon_id);
+                if (addon) {
+                  await addon.disable();
+                  resolve();
+                } else {
+                  throw new Error(`Add-on with ID ${addon_id} doesn't exist`)
+                }
+              }
+
+              disableAddon();
+            """,
+            args=[addon_id],
+        )
+
+
 def get_internal_addon_id(session, addon_id):
     with using_context(session, "chrome"):
         return session.execute_script(

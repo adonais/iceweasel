@@ -1,0 +1,3 @@
+LICENSES += ["notice"]
+LICENSES["notice"].title = "Notice License"
+LICENSES["notice"].text = "LICENSE"

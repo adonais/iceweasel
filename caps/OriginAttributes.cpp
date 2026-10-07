@@ -8,6 +8,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/quota/QuotaManager.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsIURI.h"
 #include "nsNetCID.h"

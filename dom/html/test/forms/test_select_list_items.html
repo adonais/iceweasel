@@ -1,0 +1,99 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Test for HTMLSelectElement.getListItems</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div id="host"></div>
+<pre id="test">
+<script type="application/javascript">
+
+// Builds the select subtree from script to avoid parser reparenting.
+//
+// <select>
+//   <div>                       wrapper, transparent
+//     <option>One
+//     <div><option>Two</div>     nested wrapper, transparent
+//     <hr>
+//     <optgroup label=Group>
+//       <div><option>Three</div> wrapper inside an optgroup
+//       <optgroup label=Nested>  a grouped optgroup groups nothing
+//         <option>Four
+//     <datalist><option>Five     not a list item
+//     <select><option>Six        not a list item
+function buildSelect() {
+  const el = (name, parent, text) => {
+    const node = document.createElement(name);
+    if (text != null) {
+      node.textContent = text;
+    }
+    parent.appendChild(node);
+    return node;
+  };
+
+  const host = document.getElementById("host");
+  host.textContent = "";
+  const select = el("select", host);
+  const wrapper = el("div", select);
+  const one = el("option", wrapper, "One");
+  const two = el("option", el("div", wrapper), "Two");
+  const hr = el("hr", wrapper);
+
+  const group = el("optgroup", wrapper);
+  group.label = "Group";
+  const three = el("option", el("div", group), "Three");
+  const nested = el("optgroup", group);
+  nested.label = "Nested";
+  const four = el("option", nested, "Four");
+
+  el("option", el("datalist", wrapper), "Five");
+  el("option", el("select", wrapper), "Six");
+
+  return { select, one, two, hr, group, nested, three, four };
+}
+
+const listItems = (select, group) =>
+  Array.from(SpecialPowers.wrap(select).getListItems(group ?? null),
+             item => SpecialPowers.unwrap(item));
+
+function checkItems(actual, expected, msg) {
+  is(actual.length, expected.length, `${msg}: number of items`);
+  for (let i = 0; i < expected.length; ++i) {
+    is(actual[i], expected[i], `${msg}: item ${i}`);
+  }
+}
+
+{
+  const { select, one, two, hr, group } = buildSelect();
+  checkItems(listItems(select), [one, two, hr, group],
+             "getListItems() lists the select's items, wrappers are transparent");
+}
+
+{
+  const { select, group, nested, three, four } = buildSelect();
+  checkItems(listItems(select, group), [three],
+             "getListItems(group) lists an optgroup's members");
+  checkItems(listItems(select, nested), [],
+             "A grouped optgroup groups nothing");
+  ok(!listItems(select).includes(four),
+     "An option of a grouped optgroup is not a top-level item");
+
+  const other = buildSelect();
+  checkItems(listItems(select, other.group), [],
+             "A group of another select lists nothing");
+}
+
+{
+  const { one, two } = buildSelect();
+  one.label = "Label";
+  is(SpecialPowers.wrap(one).renderedLabel, "Label",
+     "renderedLabel is the label attribute");
+  is(SpecialPowers.wrap(two).renderedLabel, "Two",
+     "renderedLabel falls back to the option's text");
+}
+</script>
+</pre>
+</body>
+</html>

@@ -814,13 +814,15 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
 #if MOZ_FONTATIONS
   // Give the new gfxFontEntry a Skrifa reference backed by our downloaded and
   // sanitized font data.
-  SkrifaFontRef* skf = skrifa_font_new(fontData->Data(), fontData->Length());
-  if (skf) {
-    fe->SetSkrifaFont(skf);
+  if (StaticPrefs::gfx_font_rendering_fontations_enabled_AtStartup()) {
+    SkrifaFontRef* skf = skrifa_font_new(fontData->Data(), fontData->Length());
+    if (skf) {
+      fe->SetSkrifaFont(skf);
 #  if NIGHTLY_BUILD
-    // also append (skrifa) to the name for devtools visibility
-    originalFullName.AppendLiteral(" (skrifa)");
+      // also append (skrifa) to the name for devtools visibility
+      originalFullName.AppendLiteral(" (skrifa)");
 #  endif
+    }
   }
 #endif
 

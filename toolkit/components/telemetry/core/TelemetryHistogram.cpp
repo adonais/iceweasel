@@ -6,6 +6,7 @@
 
 #include <limits>
 #include "base/histogram.h"
+#include "ETWTools.h"
 #include "ipc/TelemetryIPCAccumulator.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
@@ -1497,10 +1498,26 @@ nsresult internal_GetKeyedHistogramsSnapshot(
 
 namespace geckoprofiler::markers {
 
-struct HistogramMarker {
-  static constexpr mozilla::Span<const char> MarkerTypeName() {
-    return mozilla::MakeStringSpan("Hist");
-  }
+struct HistogramMarker : public mozilla::BaseMarkerType<HistogramMarker> {
+  static constexpr const char* Name = "Hist";
+  // "Histogram::Add" and "ChildHistogram::Add" only differ by their name.
+  static constexpr bool ETWStoreName = true;
+  using MS = mozilla::MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"id", MS::InputType::CString, "Histogram Name",
+       MS::Format::UniqueString},
+      {"key", MS::InputType::CString, "Key", MS::Format::String},
+      {"val", MS::InputType::Uint32, "Sample", MS::Format::Integer},
+  };
+  static constexpr const char* TooltipLabel =
+      "{marker.data.id}[{marker.data.key}] {marker.data.val}";
+  static constexpr const char* TableLabel =
+      "{marker.data.id}[{marker.data.key}]: "
+      "{marker.data.val}";
   static void StreamJSONMarkerData(
       mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
       mozilla::Telemetry::HistogramID aId, const nsCString& key,
@@ -1512,18 +1529,16 @@ struct HistogramMarker {
     }
     aWriter.IntProperty("val", aSample);
   }
-  using MS = mozilla::MarkerSchema;
-  static MS MarkerTypeDisplay() {
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormat("id", "Histogram Name", MS::Format::UniqueString);
-    schema.AddKeyLabelFormat("key", "Key", MS::Format::String);
-    schema.AddKeyLabelFormat("val", "Sample", MS::Format::Integer);
-    schema.SetTooltipLabel(
-        "{marker.data.id}[{marker.data.key}] {marker.data.val}");
-    schema.SetTableLabel(
-        "{marker.data.id}[{marker.data.key}]: "
-        "{marker.data.val}");
-    return schema;
+
+  static void TranslateMarkerInputToSchema(void* aContext,
+                                           mozilla::Telemetry::HistogramID aId,
+                                           const nsCString& aKey,
+                                           uint32_t aSample) {
+    ETW::OutputMarkerSchema(
+        aContext, HistogramMarker{},
+        mozilla::ProfilerString8View::WrapNullTerminatedString(
+            GetHistogramName(aId)),
+        mozilla::ProfilerString8View(aKey), aSample);
   }
 };
 

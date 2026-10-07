@@ -38,7 +38,7 @@ objects to be replaced. The general rules look something like this:
 ### in-process navigations
 
 An in-process navigation is the traditional type of navigation, and the most
-common type of navigation when {ref}`Fission` is not enabled.
+common type of navigation when Fission is not enabled.
 
 These navigations are used when no process switching or BrowsingContext
 replacement is required, which includes most navigations with Fission
@@ -50,7 +50,7 @@ disabled, and most same site-origin navigations when Fission is enabled.
 
 A cross-process navigation is used when a navigation requires a process
 switch to occur, and no BrowsingContext replacement is required. This is a
-common type of load when {ref}`Fission` is enabled, though it is also used
+common type of load when Fission is enabled, though it is also used
 for navigations to and from special URLs like `file://` URIs when
 Fission is disabled.
 

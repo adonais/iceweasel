@@ -348,7 +348,6 @@ partial interface Element {
 
 // https://w3c.github.io/pointerlock/#pointerlockoptions-dictionary
 dictionary PointerLockOptions {
-  [Pref="dom.pointer-lock.unadjusted-movement.enabled"]
   boolean unadjustedMovement = false;
 };
 
@@ -440,7 +439,7 @@ dictionary GetHTMLOptions {
 
 partial interface Element {
   // https://html.spec.whatwg.org/#dom-element-sethtmlunsafe
-  [UseCounter, NeedsSubjectPrincipal=NonSystem, Throws]
+  [CEReactions, UseCounter, NeedsSubjectPrincipal=NonSystem, Throws]
   undefined setHTMLUnsafe((TrustedHTML or DOMString) html, optional SetHTMLUnsafeOptions options = {});
   DOMString getHTML(optional GetHTMLOptions options = {});
 };

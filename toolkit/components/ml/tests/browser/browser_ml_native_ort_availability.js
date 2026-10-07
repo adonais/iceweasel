@@ -15,11 +15,11 @@ const UNAVAILABLE_WORKER_URL =
   "chrome://mochitests/content/browser/toolkit/components/ml/tests/browser/ml_native_ort_unavailable_stub.worker.mjs";
 
 add_setup(async function () {
+  setupNativeOnnxRuntimeAvailabilityTest();
   await SpecialPowers.pushPrefEnv({
     set: [["browser.ml.enable", true]],
   });
   registerCleanupFunction(async () => {
-    EngineProcess.resetNativeOnnxRuntimeAvailabilityForTests();
     await SpecialPowers.popPrefEnv();
   });
 });

@@ -92,30 +92,6 @@ void CodeGeneratorARM::bailoutIf(Assembler::Condition condition,
   masm.ma_b(ool->entry(), condition);
 }
 
-void CodeGeneratorARM::bailoutFrom(Label* label, LSnapshot* snapshot) {
-  MOZ_ASSERT_IF(!masm.oom(), label->used());
-  MOZ_ASSERT_IF(!masm.oom(), !label->bound());
-
-  encode(snapshot);
-
-  InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
-  auto* ool = new (alloc()) LambdaOutOfLineCode(
-      [=, this](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
-
-  // All bailout code is associated with the bytecodeSite of the block we are
-  // bailing out from.
-  addOutOfLineCode(ool,
-                   new (alloc()) BytecodeSite(tree, tree->script()->code()));
-
-  masm.retarget(label, ool->entry());
-}
-
-void CodeGeneratorARM::bailout(LSnapshot* snapshot) {
-  Label label;
-  masm.ma_b(&label);
-  bailoutFrom(&label, snapshot);
-}
-
 void CodeGenerator::visitMinMaxD(LMinMaxD* ins) {
   FloatRegister first = ToFloatRegister(ins->first());
   FloatRegister second = ToFloatRegister(ins->second());
@@ -1723,7 +1699,8 @@ void CodeGeneratorARM::emitWasmLoad(T* lir) {
   }
 
   if (resultType == MIRType::Int64) {
-    masm.wasmLoadI64(mir->access(), memoryBase, ptr, ptr, ToOutRegister64(lir));
+    masm.wasmLoadI32x2(mir->access(), memoryBase, ptr, ptr,
+                       ToOutRegister64(lir));
   } else {
     masm.wasmLoad(mir->access(), memoryBase, ptr, ptr,
                   ToAnyRegister(lir->output()));
@@ -1772,7 +1749,7 @@ void CodeGeneratorARM::emitWasmStore(T* lir) {
   if constexpr (std::is_same_v<T, LWasmStoreI64>) {
     Register64 value = ToRegister64(lir->value());
     Register ptr = ToRegister(lir->temp0());
-    masm.wasmStoreI64(mir->access(), value, memoryBase, ptr, ptr);
+    masm.wasmStoreI32x2(mir->access(), value, memoryBase, ptr, ptr);
   } else {
     // Maybe add the offset.
     Register ptr;

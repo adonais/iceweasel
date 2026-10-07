@@ -36,13 +36,21 @@ function fakeTwoGroupManager() {
 }
 
 async function addWebTabs(win, paths = ["a", "b", "c", "d"]) {
+  const tabs = [];
   for (const path of paths) {
     const url = `https://example.com/${path}`;
     const tab = BrowserTestUtils.addTab(win.gBrowser, url, {
       skipAnimation: true,
     });
     await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, url);
+    tabs.push(tab);
   }
+  // Clustering skips a tab that is still busy or untitled, and both can
+  // outlast the load event.
+  await TestUtils.waitForCondition(() => {
+    const candidates = AutoTabGroupingSuggestions.getCandidateTabs(win);
+    return tabs.every(tab => candidates.includes(tab));
+  }, "Every added tab is clusterable");
 }
 
 async function navigateToContent(win, url = "https://example.com/") {
@@ -100,6 +108,9 @@ add_setup(async function setup() {
       ["browser.tabs.groups.smart.enabled", true],
       ["browser.tabs.groups.smart.userEnabled", true],
       ["browser.tabs.groups.smart.optin", true],
+      // Navigating a Smart Window off about:aiwindow opens the sidebar, whose
+      // composer then takes focus out of the panel a test has just opened.
+      ["browser.smartwindow.sidebar.openByDefault", false],
     ],
   });
 
@@ -124,11 +135,13 @@ function setupAutoTabGroupingTest() {
 }
 
 async function cleanupAutoTabGroupingTest(win, mockEngineManager) {
-  await SpecialPowers.popPrefEnv();
   mockEngineManager.rejectAllRequests();
   if (win) {
     await BrowserTestUtils.closeWindow(win);
   }
   TabGroupTestUtils.forgetSavedTabGroups();
+  // Popping the feature pref while the window is alive would tear the widget
+  // down under a panel that may still be open.
+  await SpecialPowers.popPrefEnv();
   mockEngineManager.cleanupMocks();
 }

@@ -746,7 +746,8 @@ class BrowserToolbarMiddlewareTest {
     }
 
     @Test
-    fun `WHEN choosing to load URL from clipboard THEN start load the URL from clipboard in a new tab`() {
+    fun `GIVEN homepage as new tab is disabled WHEN choosing to load URL from clipboard THEN start load the URL from clipboard in a new tab`() {
+        every { testContext.components.settings.enableHomepageAsNewTab } returns false
         val browsingModeManager = SimpleBrowsingModeManager(Normal)
         val navController: NavController = mockk(relaxed = true)
         val clipboardUrl = "https://www.mozilla.com"
@@ -770,6 +771,39 @@ class BrowserToolbarMiddlewareTest {
             fenixBrowserUseCases.loadUrlOrSearch(
                 searchTermOrURL = clipboardUrl,
                 newTab = true,
+                private = false,
+                searchEngine = selectedSearchEngine,
+            )
+        }
+        verify { navController.navigate(R.id.browserFragment) }
+    }
+
+    @Test
+    fun `GIVEN homepage as new tab is enabled WHEN choosing to load URL from clipboard THEN start load the URL from clipboard in the current tab`() {
+        every { testContext.components.settings.enableHomepageAsNewTab } returns true
+        val browsingModeManager = SimpleBrowsingModeManager(Normal)
+        val navController: NavController = mockk(relaxed = true)
+        val clipboardUrl = "https://www.mozilla.com"
+        val clipboard =
+            ClipboardHandler(testContext).also {
+                it.text = clipboardUrl
+            }
+        val fenixBrowserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
+        val selectedSearchEngine = appStore.state.searchState.selectedSearchEngine?.searchEngine
+        val (_, toolbarStore) =
+            buildMiddlewareAndAddToStore(
+                clipboard = clipboard,
+                fenixBrowserUseCases = fenixBrowserUseCases,
+                navController = navController,
+                browsingModeManager = browsingModeManager,
+            )
+
+        toolbarStore.dispatch(LoadFromClipboardClicked)
+
+        verify {
+            fenixBrowserUseCases.loadUrlOrSearch(
+                searchTermOrURL = clipboardUrl,
+                newTab = false,
                 private = false,
                 searchEngine = selectedSearchEngine,
             )

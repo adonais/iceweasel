@@ -61,7 +61,7 @@ def output_file_with_key(objs, output_fd, options={}):
         if isinstance(value, Rate):  # `numerators` for an external Denominator metric
             args = []
             for arg_name in jog.common_metric_data_args:
-                if arg_name == "dynamic_label":
+                if arg_name == "label":
                     args.append(None)
                     continue
                 args.append(getattr(value, arg_name))

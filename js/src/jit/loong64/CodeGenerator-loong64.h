@@ -24,35 +24,12 @@ class CodeGeneratorLOONG64 : public CodeGeneratorShared {
   CodeGeneratorLOONG64(MIRGenerator* gen, LIRGraph* graph, MacroAssembler* masm,
                        const wasm::CodeMetadata* wasmCodeMeta);
 
-  NonAssertingLabel deoptLabel_;
-
   Operand ToOperand(const LAllocation& a);
   Operand ToOperand(const LAllocation* a);
   Operand ToOperand(const LDefinition* def);
 
   MoveOperand toMoveOperand(LAllocation a) const;
 
-  template <typename T1, typename T2>
-  void bailoutCmp32(Assembler::Condition c, T1 lhs, T2 rhs,
-                    LSnapshot* snapshot) {
-    Label bail;
-    masm.branch32(c, lhs, rhs, &bail);
-    bailoutFrom(&bail, snapshot);
-  }
-  template <typename T1, typename T2>
-  void bailoutTest32(Assembler::Condition c, T1 lhs, T2 rhs,
-                     LSnapshot* snapshot) {
-    Label bail;
-    masm.branchTest32(c, lhs, rhs, &bail);
-    bailoutFrom(&bail, snapshot);
-  }
-  template <typename T1, typename T2>
-  void bailoutCmpPtr(Assembler::Condition c, T1 lhs, T2 rhs,
-                     LSnapshot* snapshot) {
-    Label bail;
-    masm.branchPtr(c, lhs, rhs, &bail);
-    bailoutFrom(&bail, snapshot);
-  }
   void bailoutIfFalseBool(Register reg, LSnapshot* snapshot) {
     Label bail;
     UseScratchRegisterScope temps(masm);
@@ -61,9 +38,6 @@ class CodeGeneratorLOONG64 : public CodeGeneratorShared {
     masm.ma_b(scratch, scratch, &bail, Assembler::Zero);
     bailoutFrom(&bail, snapshot);
   }
-
-  void bailoutFrom(Label* label, LSnapshot* snapshot);
-  void bailout(LSnapshot* snapshot);
 
   bool generateOutOfLineCode();
 

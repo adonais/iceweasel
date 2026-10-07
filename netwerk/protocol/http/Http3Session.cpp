@@ -414,7 +414,10 @@ void Http3Session::Shutdown() {
     } else if (mError == NS_ERROR_NET_RESET) {
       stream->Close(NS_ERROR_NET_RESET);
     } else {
-      stream->Close(NS_ERROR_ABORT);
+      // The session went away without a clean reset/protocol error, but this
+      // stream never received any response data, so it is safe to retry it
+      // on a new connection.
+      stream->Close(NS_ERROR_NET_UNCLEAN_SHUTDOWN);
     }
     RemoveStreamFromQueues(stream);
     if (stream->HasStreamId()) {
@@ -953,8 +956,16 @@ nsresult Http3Session::ProcessEvents() {
             LOG(("reason.tag=%u err=%u data=%s\n",
                  static_cast<uint32_t>(reasonExternal.tag), status,
                  reason.get()));
-            wt->OnSessionClosed(cleanly, status, reason);
-
+            // Get stats before the session is closed (spec requirement).
+            // neqo drops the session as it processes the close, before we get
+            // here to drain the event, so for a server-initiated close only
+            // the connection-level counters are still available -- they cover
+            // everything we report except the session's datagram counters.
+            mozilla::dom::WebTransportStatsData stats;
+            if (!mHttp3Connection->GetWebTransportSessionStats(id, stats)) {
+              mHttp3Connection->GetWebTransportTransportStats(stats);
+            }
+            wt->OnSessionClosedWithStats(cleanly, status, reason, stats);
           } break;
           case WebTransportEventExternal::Tag::NewStream: {
             LOG(
@@ -3126,9 +3137,11 @@ PRIntervalTime Http3Session::LastWriteTime() { return mLastWriteTime; }
 // WebTransport
 //=========================================================================
 
-nsresult Http3Session::CloseWebTransport(uint64_t aSessionId, uint32_t aError,
-                                         const nsACString& aMessage) {
-  return mHttp3Connection->CloseWebTransport(aSessionId, aError, aMessage);
+bool Http3Session::CloseWebTransport(
+    uint64_t aSessionId, uint32_t aError, const nsACString& aMessage,
+    mozilla::dom::WebTransportStatsData& aStats) {
+  return mHttp3Connection->CloseWebTransport(aSessionId, aError, aMessage,
+                                             aStats);
 }
 
 nsresult Http3Session::CreateWebTransportStream(
@@ -3178,6 +3191,11 @@ nsresult Http3Session::ExportWebTransportKeyingMaterial(
     const nsTArray<uint8_t>& aContext, nsTArray<uint8_t>& aKeyingMaterial) {
   return mHttp3Connection->ExportWebTransportKeyingMaterial(
       aSessionId, aLabel, aContext, aKeyingMaterial);
+}
+
+bool Http3Session::GetWebTransportSessionStats(
+    uint64_t aSessionId, mozilla::dom::WebTransportStatsData& aStats) {
+  return mHttp3Connection->GetWebTransportSessionStats(aSessionId, aStats);
 }
 
 nsresult Http3Session::RegisterWebTransportSendGroup(uint64_t aSessionId,

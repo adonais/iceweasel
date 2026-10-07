@@ -38,6 +38,7 @@ import mozilla.components.compose.menu.store.MenuStore
 import mozilla.components.compose.menu.ui.ListMenuItemsGroup
 import mozilla.components.compose.menu.ui.MenuGridContainer
 import mozilla.components.compose.menu.ui.utils.MenuPreviewParameterProvider
+import mozilla.components.lib.state.ext.observeAsComposableState
 
 /**
  * A vertically scrollable container for menu items.
@@ -55,7 +56,7 @@ fun Menu(
         color = MaterialTheme.colorScheme.surfaceContainer,
     ) {
         val onInteraction: (MenuEvent) -> Unit = remember(store) { { store.dispatch(it) } }
-        val menuGroups = store.state.menuGroups
+        val menuGroups by store.observeAsComposableState { it.menuGroups }
 
         val headerGroup =
             remember(menuGroups) {

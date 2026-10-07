@@ -3610,8 +3610,9 @@ export const SearchService = new (class SearchService {
   }
 
   /**
+   * Records the previous changed event details that were sent on telemetry.
+   *
    * @type { Record<"private"|"normal", ?Parameters<typeof Glean.searchEngineDefault.changed.record>[0]>}
-   *   Records the previous changed event details that were sent on telemetry.
    */
   #previousEngineChangedEvent = { private: null, normal: null };
 

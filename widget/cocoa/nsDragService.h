@@ -29,6 +29,10 @@ class nsDragSession : public nsBaseDragSession {
 
   NSDraggingSession* GetNSDraggingSession() { return mNSDraggingSession; }
 
+  // Ends this session as a drag that the user cancelled, unless it is being
+  // ended already or an automated test drives it by hand.
+  MOZ_CAN_RUN_SCRIPT void EndAsStale();
+
   MOZ_CAN_RUN_SCRIPT nsresult
   EndDragSessionImpl(bool aDoneDrag, uint32_t aKeyModifiers) override;
 
@@ -70,6 +74,14 @@ class nsDragSession : public nsBaseDragSession {
 class nsDragService final : public nsBaseDragService {
  public:
   already_AddRefed<nsIDragSession> CreateDragSession() override;
+
+  // Ends the current drag session if the system is no longer running a native
+  // drag for it. The system keeps mouse events to itself while it tracks a
+  // drag, so mouse input that reaches one of our views tells us that a session
+  // which is still around has lost its native counterpart. Such a session would
+  // otherwise stay alive until shutdown, keep sending drag events to the front
+  // end and stop any new drag from starting.
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void EndStaleDragSession();
 };
 
 #endif  // nsDragService_h_

@@ -1,0 +1,16 @@
+[DEFAULT]
+support-files = [
+  "data/readableEn.html",
+]
+prefs = [
+  "browser.newtabpage.enabled=false",
+  "browser.newtabpage.activity-stream.widgets.pictureOfTheDay.enabled=false",
+  "browser.ml.enable=true",
+  "browser.ml.linkPreview.collapsed=false",
+  "browser.ml.linkPreview.optin=true",
+  "browser.ml.linkPreview.prefetchOnEnable=false",
+  "browser.ml.linkPreview.shiftAlt=true",
+]
+
+["browser_link_preview_perf.js"]
+disabled = "Disabled since we want to run this only as perftest, not in regular CI."

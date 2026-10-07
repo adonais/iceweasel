@@ -56,18 +56,6 @@ AccessibleWrap::AccessibleWrap(nsIContent* aContent, DocAccessible* aDoc)
 //-----------------------------------------------------
 AccessibleWrap::~AccessibleWrap() {}
 
-nsresult AccessibleWrap::HandleAccEvent(AccEvent* aEvent) {
-  auto accessible = static_cast<AccessibleWrap*>(aEvent->GetAccessible());
-  NS_ENSURE_TRUE(accessible, NS_ERROR_FAILURE);
-
-  nsresult rv = LocalAccessible::HandleAccEvent(aEvent);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  accessible->HandleLiveRegionEvent(aEvent);
-
-  return NS_OK;
-}
-
 void AccessibleWrap::Shutdown() {
   if (!IPCAccessibilityActive()) {
     MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
@@ -411,83 +399,4 @@ int32_t AccessibleWrap::GetInputType(const nsString& aInputTypeAttr) {
   }
 
   return 0;
-}
-
-void AccessibleWrap::GetTextEquiv(nsString& aText) {
-  // 1. Start with the name, since it might have been explicitly specified.
-  if (Name(aText) != eNameFromSubtree) {
-    // 2. If the name didn't come from the subtree, add the text from the
-    // subtree.
-    if (aText.IsEmpty()) {
-      nsTextEquivUtils::GetTextEquivFromSubtree(this, aText);
-    } else {
-      nsAutoString subtree;
-      nsTextEquivUtils::GetTextEquivFromSubtree(this, subtree);
-      if (!subtree.IsEmpty()) {
-        aText.Append(' ');
-        aText.Append(subtree);
-      }
-    }
-  }
-}
-
-bool AccessibleWrap::HandleLiveRegionEvent(AccEvent* aEvent) {
-  auto eventType = aEvent->GetEventType();
-  if (eventType != nsIAccessibleEvent::EVENT_TEXT_INSERTED &&
-      eventType != nsIAccessibleEvent::EVENT_NAME_CHANGE) {
-    // XXX: Right now only announce text inserted events. aria-relevant=removals
-    // is potentially on the chopping block[1]. We also don't support editable
-    // text because we currently can't descern the source of the change[2].
-    // 1. https://github.com/w3c/aria/issues/712
-    // 2. https://bugzilla.mozilla.org/show_bug.cgi?id=1531189
-    return false;
-  }
-
-  if (aEvent->IsFromUserInput()) {
-    return false;
-  }
-
-  auto attributes = MakeRefPtr<AccAttributes>();
-  nsAccUtils::SetLiveContainerAttributes(attributes, this);
-  nsString live;
-  if (!attributes->GetAttribute(nsGkAtoms::containerLive, live)) {
-    return false;
-  }
-
-  uint16_t priority = live.EqualsIgnoreCase("assertive")
-                          ? nsIAccessibleAnnouncementEvent::ASSERTIVE
-                          : nsIAccessibleAnnouncementEvent::POLITE;
-
-  Maybe<bool> atomic =
-      attributes->GetAttribute<bool>(nsGkAtoms::containerAtomic);
-  LocalAccessible* announcementTarget = this;
-  nsAutoString announcement;
-  if (atomic && *atomic) {
-    LocalAccessible* atomicAncestor = nullptr;
-    for (LocalAccessible* parent = announcementTarget; parent;
-         parent = parent->LocalParent()) {
-      dom::Element* element = parent->Elm();
-      if (element &&
-          nsAccUtils::ARIAAttrValueIs(element, nsGkAtoms::aria_atomic,
-                                      nsGkAtoms::_true, eCaseMatters)) {
-        atomicAncestor = parent;
-        break;
-      }
-    }
-
-    if (atomicAncestor) {
-      announcementTarget = atomicAncestor;
-      static_cast<AccessibleWrap*>(atomicAncestor)->GetTextEquiv(announcement);
-    }
-  } else {
-    GetTextEquiv(announcement);
-  }
-
-  announcement.CompressWhitespace();
-  if (announcement.IsEmpty()) {
-    return false;
-  }
-
-  announcementTarget->Announce(announcement, priority);
-  return true;
 }

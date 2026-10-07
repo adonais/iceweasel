@@ -5,7 +5,6 @@
 import os
 
 config = {
-    "stage_platform": "macosx64-noopt-debug",
     "debug_build": True,
     #### 64 bit build specific #####
     "env": {

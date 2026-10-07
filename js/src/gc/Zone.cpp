@@ -171,7 +171,6 @@ JS::Zone::Zone(JSRuntime* rt, Kind kind)
       shapeZone_(this),
       gcScheduled_(false),
       gcScheduledSaved_(false),
-      gcPreserveCode_(false),
       keepPropMapTables_(false),
       wasCollected_(false),
       listNext_(NotOnList),
@@ -303,26 +302,54 @@ void Zone::checkStringWrappersAfterMovingGC() {
 }
 #endif
 
-void Zone::maybeDiscardJitCode(JS::GCContext* gcx) {
-  if (!isPreservingCode()) {
-    forceDiscardJitCode(gcx);
+#ifdef DEBUG
+bool Zone::isAnyRealmPreservingCode() {
+  for (RealmsInZoneIter r(this); !r.done(); r.next()) {
+    if (r->jitRealm().isPreservingCode()) {
+      return true;
+    }
   }
+  return false;
+}
+#endif
+
+void Zone::discardJitCodeForAllRealms(JS::GCContext* gcx) {
+  MOZ_ASSERT(!isAnyRealmPreservingCode());
+  discardJitCode(gcx);
 }
 
-void Zone::forceDiscardJitCode(JS::GCContext* gcx,
-                               const JitDiscardOptions& options) {
+void Zone::discardJitCode(JS::GCContext* gcx,
+                          const JitDiscardOptions& options) {
   if (!jitZone()) {
     return;
   }
 
-  if (options.discardJitScripts) {
-    lastDiscardedCodeTime_ = mozilla::TimeStamp::Now();
+  // Move IC stub data from realms not preserving JIT code to a separate
+  // LifoAlloc. Stubs that must survive are copied back to their realm's stub
+  // space below.
+  jit::ICStubSpace discardedStubSpace;
+  const mozilla::TimeStamp now = mozilla::TimeStamp::Now();
+  size_t numRealms = 0;
+  size_t numDiscardedRealms = 0;
+  for (RealmsInZoneIter r(this); !r.done(); r.next()) {
+    numRealms++;
+    if (r->jitRealm().isPreservingCode()) {
+      continue;
+    }
+    numDiscardedRealms++;
+    if (options.discardJitScripts) {
+      r->jitRealm().setLastDiscardedCodeTime(now);
+    }
+    discardedStubSpace.transferFrom(*r->jitRealm().stubSpace());
   }
 
-  // Copy Baseline IC stubs that are active on the stack to a new LifoAlloc.
-  // After freeing stub memory, these chunks are then transferred to the
-  // zone-wide allocator.
-  jit::ICStubSpace newStubSpace;
+  bool resetAllocSites =
+      options.resetNurseryAllocSites || options.resetPretenuredAllocSites;
+  if (numDiscardedRealms == 0 && !resetAllocSites) {
+    return;
+  }
+
+  const bool anyRealmPreservingCode = numDiscardedRealms != numRealms;
 
 #ifdef DEBUG
   // Assert no ICScripts are marked as active.
@@ -332,14 +359,37 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 #endif
 
   // Mark ICScripts on the stack as active and copy active Baseline stubs.
-  jit::MarkActiveICScriptsAndCopyStubs(this, newStubSpace);
+  jit::MarkActiveICScriptsAndCopyStubs(this);
 
-  // Invalidate all Ion code in this zone.
+  // Invalidate all Ion code in this zone for realms not preserving JIT code.
   jit::InvalidateAll(gcx, this);
 
   jitZone()->forEachJitScript<jit::IncludeDyingScripts>(
       [&](jit::JitScript* jitScript) {
+        // Note: if we're currently sweeping, |script| may be dying and we
+        // shouldn't call script->realm() because it goes through the
+        // ScriptSourceObject. |anyRealmPreservingCode| is only true at the
+        // start of a GC so we check that first.
         JSScript* script = jitScript->owningScript();
+        MOZ_ASSERT_IF(anyRealmPreservingCode,
+                      !gc::IsAboutToBeFinalizedUnbarriered(script));
+        if (anyRealmPreservingCode &&
+            script->realm()->jitRealm().isPreservingCode()) {
+          // We're not discarding this realm's JIT code, but we may still have
+          // to reset allocation sites.
+          if (resetAllocSites &&
+              jitScript->resetAllocSites(options.resetNurseryAllocSites,
+                                         options.resetPretenuredAllocSites)) {
+            if (script->hasIonScript()) {
+              jit::Invalidate(runtime_->mainContextFromOwnThread(), script,
+                              /* resetUses = */ true,
+                              /* cancelOffThread = */ false);
+            }
+          }
+          MOZ_ASSERT(!jitScript->icScript()->active());
+          return;
+        }
+
         jit::FinishInvalidation(gcx, script);
 
         // Discard baseline script if it's not marked as active.
@@ -370,19 +420,19 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
                 !gcx->runtime()->profilingScripts) {
               script->destroyScriptCounts();
             }
-            script->realm()->removeFromCompileQueue(script);
+            script->realm()->jitRealm().removeFromCompileQueue(script);
             return;  // Continue script loop.
           }
         }
 
         // If we did not release the JitScript, we need to purge IC stubs
-        // because the ICStubSpace will be purged below. Also purge all
-        // trial-inlined ICScripts that are not active on the stack.
+        // because their stub data was moved to discardedStubSpace above.
+        // Also purge all trial-inlined ICScripts that are not active on
+        // the stack.
         jitScript->purgeInactiveICScripts();
-        jitScript->purgeStubs(script, newStubSpace);
+        jitScript->purgeStubs(script);
 
-        if (options.resetNurseryAllocSites ||
-            options.resetPretenuredAllocSites) {
+        if (resetAllocSites) {
           jitScript->resetAllocSites(options.resetNurseryAllocSites,
                                      options.resetPretenuredAllocSites);
         }
@@ -392,23 +442,32 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
       });
 
   // Also clear references to jit code from RegExpShared cells at this point.
-  // This avoid holding onto ExecutablePools.
-  for (auto regExp = cellIterUnsafe<RegExpShared>(); !regExp.done();
-       regExp.next()) {
-    regExp->discardJitCode();
+  // This avoid holding onto ExecutablePools. RegExpShareds are not associated
+  // with a realm, so we only do this when discarding JIT code for all realms.
+  // Do not discard if an interrupted regexp is currently on the stack.
+  const bool discardRegExpJitCode =
+      !anyRealmPreservingCode && !jitZone()->keepRegExpJitCode();
+  if (discardRegExpJitCode) {
+    for (auto regExp = cellIterUnsafe<RegExpShared>(); !regExp.done();
+         regExp.next()) {
+      regExp->discardJitCode();
+    }
   }
 
   /*
    * When scripts contain pointers to nursery things, the store buffer
-   * can contain entries that point into the optimized stub space. Since
+   * can contain entries that point into the discarded stub space. Since
    * this method can be called outside the context of a GC, this situation
    * could result in us trying to mark invalid store buffer entries.
    *
    * Defer freeing any allocated blocks until after the next minor GC.
    */
-  jitZone()->stubSpace()->freeAllAfterMinorGC(this);
-  jitZone()->stubSpace()->transferFrom(newStubSpace);
-  jitZone()->purgeIonCacheIRStubInfo();
+  discardedStubSpace.freeAllAfterMinorGC(this);
+  for (RealmsInZoneIter r(this); !r.done(); r.next()) {
+    if (!r->jitRealm().isPreservingCode()) {
+      r->jitRealm().purgeIonCacheIRStubInfo();
+    }
+  }
 
   // Generate a profile marker
   if (gcx->runtime()->geckoProfiler().enabled()) {
@@ -416,44 +475,20 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
     char discardingBaseline = 'Y';
     char discardingIon = 'Y';
 
-    char discardingRegExp = 'Y';
+    char discardingRegExp = discardRegExpJitCode ? 'Y' : 'N';
     char discardingNurserySites = options.resetNurseryAllocSites ? 'Y' : 'N';
     char discardingPretenuredSites =
         options.resetPretenuredAllocSites ? 'Y' : 'N';
 
-    char buf[100];
+    char buf[160];
     SprintfLiteral(buf,
-                   "JitScript:%c Baseline:%c Ion:%c "
+                   "Realms:%zu/%zu JitScript:%c Baseline:%c Ion:%c "
                    "RegExp:%c NurserySites:%c PretenuredSites:%c",
-                   discardingJitScript, discardingBaseline, discardingIon,
-                   discardingRegExp, discardingNurserySites,
-                   discardingPretenuredSites);
+                   numDiscardedRealms, numRealms, discardingJitScript,
+                   discardingBaseline, discardingIon, discardingRegExp,
+                   discardingNurserySites, discardingPretenuredSites);
     gcx->runtime()->geckoProfiler().markEvent("DiscardJit", buf);
   }
-}
-
-void JS::Zone::resetAllocSitesAndInvalidate(bool resetNurserySites,
-                                            bool resetPretenuredSites) {
-  MOZ_ASSERT(resetNurserySites || resetPretenuredSites);
-
-  if (!jitZone()) {
-    return;
-  }
-
-  JSContext* cx = runtime_->mainContextFromOwnThread();
-  jitZone()->forEachJitScript<jit::IncludeDyingScripts>(
-      [&](jit::JitScript* jitScript) {
-        if (jitScript->resetAllocSites(resetNurserySites,
-                                       resetPretenuredSites)) {
-          JSScript* script = jitScript->owningScript();
-          CancelOffThreadIonCompile(script);
-          if (script->hasIonScript()) {
-            jit::Invalidate(cx, script,
-                            /* resetUses = */ true,
-                            /* cancelOffThread = */ true);
-          }
-        }
-      });
 }
 
 void JS::Zone::traceWeakJitScripts(JSTracer* trc) {
@@ -534,9 +569,7 @@ Zone* Zone::nextZone() const {
 
 void Zone::prepareForMovingGC() {
   JS::GCContext* gcx = runtimeFromMainThread()->gcContext();
-
-  MOZ_ASSERT(!isPreservingCode());
-  forceDiscardJitCode(gcx);
+  discardJitCodeForAllRealms(gcx);
 }
 
 void Zone::fixupAfterMovingGC() {
@@ -556,15 +589,15 @@ void Zone::purgeAtomCache() {
 
 void Zone::addSizeOfIncludingThis(
     mozilla::MallocSizeOf mallocSizeOf, size_t* zoneObject, JS::CodeSizes* code,
-    size_t* regexpZone, size_t* jitZone, size_t* cacheIRStubs,
-    size_t* objectFusesArg, size_t* uniqueIdMap, size_t* initialPropMapTable,
-    size_t* shapeTables, size_t* atomReferenceBitmaps,
-    size_t* compartmentObjects, size_t* crossCompartmentWrappersTables,
-    size_t* compartmentsPrivateData, size_t* scriptCountsMapArg) {
+    size_t* regexpZone, size_t* jitZone, size_t* objectFusesArg,
+    size_t* uniqueIdMap, size_t* initialPropMapTable, size_t* shapeTables,
+    size_t* atomReferenceBitmaps, size_t* compartmentObjects,
+    size_t* crossCompartmentWrappersTables, size_t* compartmentsPrivateData,
+    size_t* scriptCountsMapArg) {
   *zoneObject += mallocSizeOf(this);
   *regexpZone += regExps().sizeOfIncludingThis(mallocSizeOf);
   if (jitZone_) {
-    jitZone_->addSizeOfIncludingThis(mallocSizeOf, code, jitZone, cacheIRStubs);
+    jitZone_->addSizeOfIncludingThis(mallocSizeOf, code, jitZone);
   }
   *objectFusesArg += objectFuses.sizeOfExcludingThis(mallocSizeOf);
   *uniqueIdMap += uniqueIds().shallowSizeOfExcludingThis(mallocSizeOf);

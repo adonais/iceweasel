@@ -53,7 +53,7 @@ add_task(async function basic() {
     index,
     suggestion: SUGGESTION,
     impressionOnly: {
-      pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+      pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
       matchType,
       advertiser,
       blockId: SUGGESTION.block_id.toString(),
@@ -70,7 +70,7 @@ add_task(async function basic() {
     },
     click: [
       {
-        pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+        pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
         matchType,
         advertiser,
         blockId: SUGGESTION.block_id.toString(),
@@ -86,7 +86,7 @@ add_task(async function basic() {
         suggestionId: SUGGESTION.custom_details.amp.suggestion_id,
       },
       {
-        pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION,
+        pingType: QUICK_SUGGEST_PING_TYPE.CLICK,
         matchType,
         advertiser,
         blockId: SUGGESTION.block_id.toString(),
@@ -106,7 +106,7 @@ add_task(async function basic() {
         command: "dismiss",
         pings: [
           {
-            pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+            pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
             matchType,
             advertiser,
             blockId: SUGGESTION.block_id.toString(),
@@ -122,7 +122,7 @@ add_task(async function basic() {
             suggestionId: SUGGESTION.custom_details.amp.suggestion_id,
           },
           {
-            pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK,
+            pingType: QUICK_SUGGEST_PING_TYPE.BLOCK,
             matchType,
             advertiser,
             blockId: SUGGESTION.block_id.toString(),
@@ -142,7 +142,7 @@ add_task(async function basic() {
         command: "manage",
         pings: [
           {
-            pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+            pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
             matchType,
             advertiser,
             blockId: SUGGESTION.block_id.toString(),
@@ -190,7 +190,7 @@ add_task(async function suggestionId() {
       suggestion,
       impressionOnly: {
         suggestionId: expectedSuggestionId,
-        pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+        pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
         matchType,
         advertiser,
         blockId,
@@ -207,7 +207,7 @@ add_task(async function suggestionId() {
       click: [
         {
           suggestionId: expectedSuggestionId,
-          pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+          pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
           matchType,
           advertiser,
           blockId,
@@ -223,7 +223,7 @@ add_task(async function suggestionId() {
         },
         {
           suggestionId: expectedSuggestionId,
-          pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION,
+          pingType: QUICK_SUGGEST_PING_TYPE.CLICK,
           matchType,
           advertiser,
           blockId,
@@ -243,7 +243,7 @@ add_task(async function suggestionId() {
           pings: [
             {
               suggestionId: expectedSuggestionId,
-              pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+              pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
               matchType,
               advertiser,
               blockId,
@@ -259,7 +259,7 @@ add_task(async function suggestionId() {
             },
             {
               suggestionId: expectedSuggestionId,
-              pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK,
+              pingType: QUICK_SUGGEST_PING_TYPE.BLOCK,
               matchType,
               advertiser,
               blockId,
@@ -279,7 +279,7 @@ add_task(async function suggestionId() {
           pings: [
             {
               suggestionId: expectedSuggestionId,
-              pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+              pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
               matchType,
               advertiser,
               blockId,

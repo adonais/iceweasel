@@ -47,6 +47,7 @@ const char* kClientSignature = "browser.contentanalysis.client_signature";
 const char* kAgentNamePref = "browser.contentanalysis.agent_name";
 const char* kInterceptionPointPrefNames[] = {
     "browser.contentanalysis.interception_point.clipboard.enabled",
+    "browser.contentanalysis.interception_point.clipboard_copy.enabled",
     "browser.contentanalysis.interception_point.download.enabled",
     "browser.contentanalysis.interception_point.drag_and_drop.enabled",
     "browser.contentanalysis.interception_point.file_upload.enabled",

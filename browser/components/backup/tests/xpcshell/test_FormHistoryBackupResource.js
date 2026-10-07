@@ -4,7 +4,7 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
 const { FormHistoryBackupResource } = ChromeUtils.importESModule(
-  "resource:///modules/backup/FormHistoryBackupResource.sys.mjs"
+  "moz-src:///browser/components/backup/resources/FormHistoryBackupResource.sys.mjs"
 );
 
 /**

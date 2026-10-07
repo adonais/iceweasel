@@ -362,6 +362,8 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
                               bool aValidTransaction, bool aRenderOffscreen,
                               const VsyncId& aVsyncId);
 
+  void SanitizeScrollData(WebRenderScrollData& aScrollData);
+
   bool SetDisplayList(const LayoutDeviceRect& aRect, ipc::ByteBuf&& aDLItems,
                       ipc::ByteBuf&& aSpatialTreeDL,
                       const wr::BuiltDisplayListDescriptor& aDLDesc,

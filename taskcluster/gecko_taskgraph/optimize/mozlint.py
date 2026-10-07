@@ -81,13 +81,14 @@ class SkipUnlessMozlint(OptimizationStrategy):
                 if match_path(path, pattern):
                     return False
 
-        to_lint, to_exclude = filterpaths(
+        to_lint, _ = filterpaths(
             GECKO,
             list(files_changed),
             include=include,
             exclude=exclude,
             extensions=extensions,
             exclude_extensions=exclude_extensions,
+            expand_excludes=False,
         )
 
         # to_lint should be an empty list if there is nothing to check

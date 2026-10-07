@@ -435,7 +435,8 @@ void DcSctpSocket::RestoreFromState(const DcSctpSocketHandoverState& state) {
       capabilities.negotiated_maximum_outgoing_streams =
           state.capabilities.negotiated_maximum_outgoing_streams;
 
-      send_queue_.RestoreFromState(callbacks_.Now(), state);
+      webrtc::Timestamp now = callbacks_.Now();
+      send_queue_.RestoreFromState(now, state);
 
       CreateTransmissionControlBlock(
           capabilities, my_verification_tag, TSN(state.my_initial_tsn),
@@ -443,7 +444,7 @@ void DcSctpSocket::RestoreFromState(const DcSctpSocketHandoverState& state) {
           TSN(state.peer_initial_tsn), static_cast<size_t>(0),
           TieTag(state.tie_tag));
 
-      tcb_->RestoreFromState(state);
+      tcb_->RestoreFromState(now, state);
 
       SetState(State::kEstablished, "restored from handover state");
       callbacks_.OnConnected();
@@ -1907,8 +1908,9 @@ DcSctpSocket::GetHandoverStateAndClose() {
     state.socket_state = DcSctpSocketHandoverState::SocketState::kClosed;
   } else if (state_ == State::kEstablished) {
     state.socket_state = DcSctpSocketHandoverState::SocketState::kConnected;
-    tcb_->AddHandoverState(state);
-    send_queue_.AddHandoverState(callbacks_.Now(), state);
+    webrtc::Timestamp now = callbacks_.Now();
+    tcb_->AddHandoverState(now, state);
+    send_queue_.AddHandoverState(now, state);
     InternalClose(ErrorKind::kNoError, "handover");
   }
 

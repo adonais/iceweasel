@@ -24,6 +24,9 @@ enum class GLVersion : uint32_t {
   GL4_1 = 410,
   GL4_2 = 420,
   GL4_3 = 430,
+  GL4_4 = 440,
+  GL4_5 = 450,
+  GL4_6 = 460,
 };
 
 enum class GLESVersion : uint32_t {
@@ -309,6 +312,11 @@ static const FeatureInfo sFeatureInfoArr[] = {
      GLContext::Extension_None,
      {GLContext::EXT_packed_depth_stencil, GLContext::OES_packed_depth_stencil,
       GLContext::Extensions_End}},
+    {"polygon_offset_clamp",
+     GLVersion::GL4_6,
+     GLESVersion::NONE,
+     GLContext::ARB_polygon_offset_clamp,
+     {GLContext::EXT_polygon_offset_clamp, GLContext::Extensions_End}},
     {"prim_restart",
      GLVersion::GL3_1,
      GLESVersion::NONE,

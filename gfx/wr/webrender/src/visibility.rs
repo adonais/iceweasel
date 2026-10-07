@@ -34,6 +34,7 @@ use api::units::*;
 use crate::clip::ClipStore;
 use crate::composite::CompositeState;
 use crate::profiler::{self, TransactionProfile};
+use crate::quad::QuadTransformState;
 use crate::renderer::GpuBufferBuilder;
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
 use crate::clip::{snap_local_clip_rect, ClipChainInstance, ClipTree, ClipNodeId};
@@ -53,10 +54,10 @@ use crate::prim_store::text_run::TextRunScratch;
 use crate::render_backend::{DataStores, ScratchBuffer};
 use crate::render_task_graph::RenderTaskGraphBuilder;
 use crate::resource_cache::ResourceCache;
+use crate::util::MaxRect;
 use crate::scene::SceneProperties;
 use crate::scene_debug::SceneDebugOverride;
 use crate::space::{SpaceMapper, SpaceSnapper};
-use crate::util::MaxRect;
 
 pub struct FrameVisibilityContext<'a> {
     pub spatial_tree: &'a SpatialTree,
@@ -307,13 +308,13 @@ pub fn update_prim_visibility(
             if let Some(parent_surface_index) = parent_surface_index {
                 let parent_surface = &frame_state.surfaces[parent_surface_index.0];
                 let parent_culling_rect = parent_surface.culling_rect;
-                let parent_vis_spatial_node_index = parent_surface.visibility_spatial_node_index;
+                let parent_raster_spatial_node_index = parent_surface.raster_spatial_node_index;
 
                 let surface = &mut frame_state
                     .surfaces[raster_config.surface_index.0 as usize];
 
                 surface.update_culling_rect(
-                    parent_vis_spatial_node_index,
+                    parent_raster_spatial_node_index,
                     parent_culling_rect,
                     &raster_config.composite_mode,
                     frame_context,
@@ -341,19 +342,42 @@ pub fn update_prim_visibility(
         }
     };
 
+    // A snapshot is sampled as a texture, so content inside its area can be
+    // needed even when it falls outside of the screen. A detached snapshot is
+    // only ever read through that texture, so its area is the sole region it
+    // contributes to; a composited one is also drawn on screen and needs both.
+    if let Some(snapshot) = &pic.snapshot {
+        let surface = &mut frame_state.surfaces[surface_index.0 as usize];
+        let map_surface_to_raster: SpaceMapper<PicturePixel, RasterPixel> =
+            SpaceMapper::new_with_target(
+                surface.raster_spatial_node_index,
+                surface.surface_spatial_node_index,
+                RasterRect::max_rect(),
+                frame_context.spatial_tree,
+            );
+        match map_surface_to_raster.map(&snapshot.area.cast_unit()) {
+            Some(area) if snapshot.detached => surface.culling_rect = area,
+            Some(area) => surface.culling_rect = surface.culling_rect.union(&area),
+            None => {
+                surface.culling_rect = RasterRect::max_rect();
+                surface.culling_rect_projection_failed = true;
+            }
+        }
+    }
+
     let surface = &frame_state.surfaces[surface_index.0 as usize];
     let surface_culling_rect = surface.culling_rect;
 
     let mut map_local_to_picture = surface.map_local_to_picture.clone();
 
-    let visibility_spatial_node_index = surface.visibility_spatial_node_index;
+    let raster_spatial_node_index = surface.raster_spatial_node_index;
 
     if surface.culling_rect_projection_failed {
         frame_state.profile.add(profiler::VIS_CULLING_RECT_FALLBACKS, 1);
     }
 
-    let map_surface_to_vis = SpaceMapper::new_with_target(
-        visibility_spatial_node_index,
+    let map_surface_to_raster = SpaceMapper::new_with_target(
+        raster_spatial_node_index,
         surface.surface_spatial_node_index,
         surface.culling_rect,
         frame_context.spatial_tree,
@@ -492,7 +516,7 @@ pub fn update_prim_visibility(
             frame_state.clip_store.set_active_clips(
                 cluster.spatial_node_index,
                 map_local_to_picture.ref_spatial_node_index,
-                visibility_spatial_node_index,
+                raster_spatial_node_index,
                 &mut clip_snapper,
                 policy.clip,
                 prim_instance.clip_node_id,
@@ -508,7 +532,7 @@ pub fn update_prim_visibility(
                 .build_clip_chain_instance(
                     local_coverage_rect,
                     &map_local_to_picture,
-                    &map_surface_to_vis,
+                    &map_surface_to_raster,
                     &mut frame_state.frame_gpu_data.f32,
                     frame_state.resource_cache,
                     &surface_culling_rect,
@@ -636,22 +660,16 @@ pub fn update_prim_visibility(
 /// `bounds` is the primitive's own extent: the result never exceeds it, and it
 /// is the fallback if the primitive's transform cannot be inverted.
 pub fn compute_surface_visible_rect(
-    surface: &SurfaceInfo,
-    clip_chain: &ClipChainInstance,
-    prim_spatial_node_index: SpatialNodeIndex,
+    surface_clipping_rect: &DeviceRect,
+    device_coverage_rect: DeviceRect,
+    transform: &QuadTransformState,
     bounds: &LayoutRect,
-    spatial_tree: &SpatialTree,
 ) -> LayoutRect {
-    let map_prim_to_surface: SpaceMapper<LayoutPixel, PicturePixel> = SpaceMapper::new_with_target(
-        surface.surface_spatial_node_index,
-        prim_spatial_node_index,
-        PictureRect::max_rect(),
-        spatial_tree,
-    );
-
-    surface.clipping_rect
-        .intersection(&clip_chain.pic_coverage_rect)
-        .and_then(|rect| map_prim_to_surface.unmap(&rect))
+    // The intersection happens in device space so that a `max_rect` clipping
+    // rect never has to be mapped: scaling it would overflow to infinities.
+    surface_clipping_rect
+        .intersection(&device_coverage_rect)
+        .and_then(|rect| transform.unmap_rect(&rect))
         .unwrap_or(*bounds)
         .intersection_unchecked(bounds)
 }

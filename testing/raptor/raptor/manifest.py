@@ -48,6 +48,28 @@ playback_settings = [
     "playback_pageset_manifest",
 ]
 
+bool_settings = [
+    "lower_is_better",
+    "subtest_lower_is_better",
+    "accept_zero_vismet",
+    "interactive",
+    "host_from_parent",
+    "expose_browser_profiler",
+    "expose_chrome_trace",
+    "gather_cpuTime",
+    "sparse_checkout",
+    "verbose",
+    "browser_visualmetrics",
+    "login",
+    "cold",
+    "use_live_sites",
+    "newtab_per_cycle",
+    "background_test",
+    "benchmark_page",
+    "benchmark_webserver",
+    "screen_capture",
+]
+
 
 def filter_app(tests, values, strict=False):
     for test in tests:
@@ -298,16 +320,16 @@ def write_test_settings_json(args, test_details, oskey):
         test_settings["raptor-options"]["extra_profiler_run"] = True
 
     if test_details.get("newtab_per_cycle", None) is not None:
-        test_settings["raptor-options"]["newtab_per_cycle"] = bool(
-            test_details["newtab_per_cycle"]
-        )
+        test_settings["raptor-options"]["newtab_per_cycle"] = test_details[
+            "newtab_per_cycle"
+        ]
 
     if test_details["type"] == "scenario":
         test_settings["raptor-options"]["scenario_time"] = test_details["scenario_time"]
         if "background_test" in test_details:
-            test_settings["raptor-options"]["background_test"] = bool(
-                test_details["background_test"]
-            )
+            test_settings["raptor-options"]["background_test"] = test_details[
+                "background_test"
+            ]
         else:
             test_settings["raptor-options"]["background_test"] = False
 
@@ -402,6 +424,10 @@ def get_raptor_test_list(args, oskey):
         LOG.info(f"configuring settings for test {next_test['name']}")
         max_page_cycles = int(next_test.get("page_cycles", 1))
         max_browser_cycles = int(next_test.get("browser_cycles", 1))
+
+        for setting in bool_settings:
+            if next_test.get(setting, None) is not None:
+                next_test[setting] = bool_from_str(next_test.get(setting))
 
         # If using playback, the playback recording info may need to be transformed.
         # This transformation needs to happen before the test name is changed
@@ -531,7 +557,7 @@ def get_raptor_test_list(args, oskey):
         _running_cold = False
 
         # check command line to see if we set cold page load from command line
-        if args.cold or next_test.get("cold") == "true":
+        if args.cold or next_test.get("cold"):
             # for raptor-webext jobs cold page-load is determined by the 'cold' key
             # in test manifest TOML
             _running_cold = True
@@ -574,7 +600,7 @@ def get_raptor_test_list(args, oskey):
                 f"resulting: {next_test['test_url']}"
             )
 
-        if next_test.get("use_live_sites", "false") == "true":
+        if next_test.get("use_live_sites"):
             # when using live sites we want to turn off playback
             LOG.info("using live sites so turning playback off!")
             next_test["playback"] = None
@@ -621,10 +647,7 @@ def get_raptor_test_list(args, oskey):
             next_test["measure"] = _measures
 
             # if using live sites, don't measure hero element as it only exists in recordings
-            if (
-                "hero" in next_test["measure"]
-                and next_test.get("use_live_sites", "false") == "true"
-            ):
+            if "hero" in next_test["measure"] and next_test.get("use_live_sites"):
                 # remove 'hero' from the 'measures =' list
                 next_test["measure"].remove("hero")
                 # remove the 'hero =' line since no longer measuring hero
@@ -642,19 +665,6 @@ def get_raptor_test_list(args, oskey):
             )
             next_test["support_class"] = support_class()
             next_test["support_class"].setup_test(next_test, args)
-
-        bool_settings = [
-            "lower_is_better",
-            "subtest_lower_is_better",
-            "accept_zero_vismet",
-            "interactive",
-            "host_from_parent",
-            "expose_browser_profiler",
-            "sparse_checkout",
-        ]
-        for setting in bool_settings:
-            if next_test.get(setting, None) is not None:
-                next_test[setting] = bool_from_str(next_test.get(setting))
 
     # write out .json test setting files for the control server to read and send to web ext
     if len(tests_to_run) != 0:

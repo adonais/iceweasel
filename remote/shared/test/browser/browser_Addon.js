@@ -9,7 +9,109 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   Addon: "chrome://remote/content/shared/Addon.sys.mjs",
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
+  AddonManagerPrivate: "resource://gre/modules/AddonManager.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
+});
+
+add_task(async function test_getAddons() {
+  const addonPath = getSupportFilePath("webextensions/amosigned.xpi");
+  const addonId = await lazy.Addon.installWithPath(addonPath, true, false);
+  const addon = await lazy.AddonManager.getAddonByID(addonId);
+  try {
+    const addons = await lazy.Addon.getAddons("extension", {
+      includeHidden: false,
+    });
+    const info = addons.find(candidate => candidate.id === addonId);
+    ok(info, "The installed extension is listed");
+    const policy = WebExtensionPolicy.getByID(addonId);
+    ok(policy, "The installed extension has an active policy");
+    Assert.deepEqual(info, {
+      id: addonId,
+      name: "XPI Test",
+      version: "2.2",
+      manifestVersion: 2,
+      isActive: true,
+      isSystem: false,
+      hidden: false,
+      temporarilyInstalled: true,
+      sourceURL: addon.sourceURI.spec,
+      policy: {
+        uuid: policy.mozExtensionHostname,
+        baseURL: policy.baseURL,
+        extensionURL: policy.getURL(""),
+        backgroundScripts: [],
+      },
+    });
+
+    await addon.disable();
+    const disabledAddons = await lazy.Addon.getAddons("extension", {
+      includeHidden: false,
+    });
+    const disabledInfo = disabledAddons.find(
+      candidate => candidate.id === addonId
+    );
+    Assert.deepEqual(disabledInfo, {
+      ...info,
+      isActive: false,
+      policy: null,
+    });
+  } finally {
+    await addon.uninstall();
+  }
+});
+
+add_task(async function test_getAddons_filters() {
+  const addons = [
+    { id: "visible@remote.test", type: "extension", hidden: false },
+    { id: "hidden@remote.test", type: "extension", hidden: true },
+    { id: "theme@remote.test", type: "theme", hidden: false },
+  ];
+  const provider = {
+    async getAddonsByTypes(types) {
+      return addons.filter(addon => !types || types.includes(addon.type));
+    },
+  };
+  lazy.AddonManagerPrivate.registerProvider(provider);
+  try {
+    for (const { type, options, expected } of [
+      {
+        expected: ["visible@remote.test", "theme@remote.test"],
+      },
+      {
+        type: "extension",
+        expected: ["visible@remote.test"],
+      },
+      {
+        type: "extension",
+        options: { includeHidden: true },
+        expected: ["visible@remote.test", "hidden@remote.test"],
+      },
+      {
+        type: "extension",
+        options: { includeHidden: false },
+        expected: ["visible@remote.test"],
+      },
+      {
+        type: null,
+        options: { includeHidden: false },
+        expected: ["visible@remote.test", "theme@remote.test"],
+      },
+      { type: "theme", expected: ["theme@remote.test"] },
+      { type: "unknown", expected: [] },
+    ]) {
+      const result = await lazy.Addon.getAddons(type, options);
+      const ids = result
+        .filter(info => addons.some(addon => addon.id === info.id))
+        .map(info => info.id);
+      Assert.deepEqual(
+        ids,
+        expected,
+        `Expected addons for type=${type}, options=${JSON.stringify(options)}`
+      );
+    }
+  } finally {
+    lazy.AddonManagerPrivate.unregisterProvider(provider);
+  }
 });
 
 add_task(async function test_installWithPath() {

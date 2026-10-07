@@ -29,6 +29,8 @@ struct NSSCMSDecoderContextStr {
     PRBool first_decoded;
     PRBool need_indefinite_finish;
     unsigned int max_asn_len;
+    unsigned long max_input_size;
+    PRBool max_input_size_set;
     unsigned int depth; /* nesting depth of this decoder context */
 };
 
@@ -307,6 +309,13 @@ nss_cms_before_data(NSSCMSDecoderContext *p7dcx)
 
     if (p7dcx->max_asn_len) {
         nss_cms_set_max_asn_length(childp7dcx, p7dcx->max_asn_len);
+    }
+
+    if (p7dcx->max_input_size_set) {
+        childp7dcx->max_input_size = p7dcx->max_input_size;
+        childp7dcx->max_input_size_set = PR_TRUE;
+        SEC_ASN1DecoderSetMaximumInputSize(childp7dcx->dcx,
+                                           p7dcx->max_input_size);
     }
 
     /* the new decoder needs to notify, too */
@@ -747,6 +756,24 @@ NSS_CMSDecoder_Start(PLArenaPool *poolp,
 }
 
 /*
+ * NSS_CMSDecoder_SetMaxInputSize - set the maximum number of bytes that may
+ * be fed to the decoder. Set to 0 to indicate there is no limit.
+ */
+SECStatus
+NSS_CMSDecoder_SetMaxInputSize(NSSCMSDecoderContext *p7dcx,
+                               unsigned long max_input_size)
+{
+    if (!p7dcx || !p7dcx->dcx) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+    p7dcx->max_input_size = max_input_size;
+    p7dcx->max_input_size_set = PR_TRUE;
+    SEC_ASN1DecoderSetMaximumInputSize(p7dcx->dcx, max_input_size);
+    return SECSuccess;
+}
+
+/*
  * NSS_CMSDecoder_Update - feed DER-encoded data to decoder
  */
 SECStatus
@@ -833,6 +860,15 @@ NSS_CMSMessage_CreateFromDER(SECItem *DERmessage,
 {
     NSSCMSDecoderContext *p7dcx;
 
+    /* The limits below are tied to the message length so that they can only
+     * tighten the decoder defaults. Callers that need to decode more than
+     * the default input size must use the streaming API and opt out
+     * explicitly with NSS_CMSDecoder_SetMaxInputSize. */
+    if (DERmessage->len > SEC_ASN1D_MAX_INPUT_SIZE) {
+        PORT_SetError(SEC_ERROR_BAD_DER);
+        return NULL;
+    }
+
     /* first arg(poolp) == NULL => create our own pool */
     p7dcx = NSS_CMSDecoder_Start(NULL, cb, cb_arg, pwfn, pwfn_arg,
                                  decrypt_key_cb, decrypt_key_cb_arg);
@@ -840,6 +876,7 @@ NSS_CMSMessage_CreateFromDER(SECItem *DERmessage,
         return NULL;
     }
     nss_cms_set_max_asn_length(p7dcx, DERmessage->len);
+    NSS_CMSDecoder_SetMaxInputSize(p7dcx, DERmessage->len);
 
     NSS_CMSDecoder_Update(p7dcx, (char *)DERmessage->data, DERmessage->len);
     return NSS_CMSDecoder_Finish(p7dcx);

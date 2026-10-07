@@ -27,7 +27,7 @@ let handler = {
         print("x=", frame.environment.getVariable("x"));
     }
 };
-for (let offset of script.getLineOffsets(2))
+for (let offset of script.getPossibleBreakpointOffsets({ line: 2 }))
     script.setBreakpoint(offset, handler);
 
 let result;

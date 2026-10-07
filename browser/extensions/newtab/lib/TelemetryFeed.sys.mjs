@@ -682,6 +682,10 @@ export class TelemetryFeed {
         tile_id,
         // eslint-disable-next-line no-unused-vars
         topic,
+        // eslint-disable-next-line no-unused-vars
+        variant_id,
+        // eslint-disable-next-line no-unused-vars
+        source_section_id,
         ...result
       } = pingDict;
       result.content_redacted = true;
@@ -695,6 +699,10 @@ export class TelemetryFeed {
       selected_topics,
       // eslint-disable-next-line no-unused-vars
       topic,
+      // eslint-disable-next-line no-unused-vars
+      variant_id,
+      // eslint-disable-next-line no-unused-vars
+      source_section_id,
       ...result
     } = pingDict;
 
@@ -705,6 +713,32 @@ export class TelemetryFeed {
     }
 
     result.content_redacted = true;
+    return result;
+  }
+
+  /**
+   * Removes the tile_id from a top sites event bound for the newtab ping when
+   * the redactTileIdForSponsored trainhop config is enabled.
+   *
+   * Kept separate from redactNewTabPing because the topsites metrics are
+   * recorded directly rather than through the stories redaction path, and
+   * because content_redacted is not a declared extra key on most of them.
+   *
+   * @param {*} pingDict Input dictionary
+   * @param {boolean} isSponsored Whether this event is for a sponsored top
+   *   site. Defaults to true so that omitting it redacts rather than leaks.
+   * @returns {*} Possibly redacted dictionary
+   */
+  redactTopSitesTileId(pingDict, isSponsored = true) {
+    if (!isSponsored || !this.tileIdRedactedForSponsored) {
+      return pingDict;
+    }
+
+    const {
+      // eslint-disable-next-line no-unused-vars
+      tile_id,
+      ...result
+    } = pingDict;
     return result;
   }
 
@@ -1044,7 +1078,7 @@ export class TelemetryFeed {
             session.session_id
           );
         } else {
-          Glean.topsites.impression.record({
+          const gleanData = {
             advertiser_name,
             tile_id,
             newtab_visit_id: session.session_id,
@@ -1054,7 +1088,10 @@ export class TelemetryFeed {
             ...(is_ad_eligible_position && isAdEligiblePositionSupported()
               ? { is_ad_eligible_position: true }
               : {}),
-          });
+          };
+          Glean.topsites.impression.record(
+            this.redactTopSitesTileId(gleanData, true)
+          );
         }
       }
     } else if (type === "click") {
@@ -1078,14 +1115,17 @@ export class TelemetryFeed {
             session.session_id
           );
         } else {
-          Glean.topsites.click.record({
+          const gleanData = {
             advertiser_name,
             tile_id,
             newtab_visit_id: session.session_id,
             is_sponsored: true,
             position,
             visible_topsites,
-          });
+          };
+          Glean.topsites.click.record(
+            this.redactTopSitesTileId(gleanData, true)
+          );
         }
       }
     } else {
@@ -1313,6 +1353,7 @@ export class TelemetryFeed {
       ...item,
       topic: randomItem.topic,
       corpus_item_id: randomItem.corpus_item_id,
+      source_section_id: randomItem.source_section_id ?? randomItem.section,
     };
     // If we're replacing a non top stories item, then assign the appropriate
     // section and layout to the item
@@ -1326,6 +1367,8 @@ export class TelemetryFeed {
       resultItem.layout_name = this.getAllSections().find(
         section => section.sectionKey === randomItem.section
       )?.layout?.name;
+      // variant_id is section-level, so only adopt the swapped item's when we adopt its section.
+      resultItem.variant_id = randomItem.variant_id;
     }
     return resultItem;
   }
@@ -1364,8 +1407,10 @@ export class TelemetryFeed {
           section,
           selected_topics,
           shim,
+          source_section_id,
           tile_id,
           topic,
+          variant_id,
         } = action.data.value ?? {};
 
         if (
@@ -1401,6 +1446,8 @@ export class TelemetryFeed {
             matches_selected_topic,
             selected_topics,
             topic,
+            variant_id,
+            source_section_id: source_section_id ?? section,
             position: action.data.action_position,
             tile_id,
             event_source,
@@ -2671,13 +2718,16 @@ export class TelemetryFeed {
             session.session_id
           );
         } else {
-          Glean.topsites.dismiss.record({
+          const gleanData = {
             advertiser_name,
             tile_id,
             newtab_visit_id: session.session_id,
             is_sponsored: !!isSponsoredTopSite,
             position,
-          });
+          };
+          Glean.topsites.dismiss.record(
+            this.redactTopSitesTileId(gleanData, !!isSponsoredTopSite)
+          );
         }
       }
     }
@@ -2698,12 +2748,15 @@ export class TelemetryFeed {
           });
         }
       } else {
-        Glean.topsites.showPrivacyClick.record({
+        const gleanData = {
           advertiser_name,
           tile_id,
           newtab_visit_id: session.session_id,
           position,
-        });
+        };
+        Glean.topsites.showPrivacyClick.record(
+          this.redactTopSitesTileId(gleanData, true)
+        );
       }
     }
   }
@@ -2748,6 +2801,8 @@ export class TelemetryFeed {
         position: tile.pos,
         tile_id: tile.id,
         topic: tile.topic,
+        variant_id: tile.variant_id,
+        source_section_id: tile.source_section_id ?? tile.section,
         selected_topics: tile.selectedTopics,
         is_list_card: tile.is_list_card,
         // We conditionally add in a few props.

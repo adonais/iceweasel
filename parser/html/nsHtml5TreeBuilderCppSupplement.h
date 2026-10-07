@@ -139,6 +139,11 @@ class nsHtml5TreeBuilder::SanitizerState {
     return mDropped.Contains(aElement);
   }
 
+  bool IsReplacedWithChildren(nsIContent* aElement) const {
+    auto entry = mDropped.Lookup(aElement);
+    return entry && entry.Data().mReplaceWithChildren;
+  }
+
   // Redirects the content of an element the configuration replaces with its
   // children to where the content of aParent goes. The adoption agency
   // algorithm never inserts the clones it makes, so a clone that is replaced
@@ -272,6 +277,7 @@ void nsHtml5TreeBuilder::SetSanitizer(mozilla::dom::Sanitizer* aSanitizer,
   MOZ_ASSERT(!aSanitizer || mBuilder,
              "Sanitizing while parsing needs the op-less builder.");
   if (aSanitizer) {
+    aSanitizer->RecordSanitizeUse();
     mSanitizerState = mozilla::MakeUnique<SanitizerState>(aSanitizer, aSafe);
   } else {
     mSanitizerState = nullptr;
@@ -1215,11 +1221,8 @@ void nsHtml5TreeBuilder::appendChildrenToNewParent(
 
   if (mBuilder) {
     nsIContent* newParent = static_cast<nsIContent*>(aNewParent);
-    // The adoption agency algorithm's new parent. When the sanitizer removes
-    // it or replaces it with its children, the spec does nothing here, so
-    // that the old parent keeps the children it already has.
     if (MOZ_UNLIKELY(mSanitizerState) &&
-        mSanitizerState->IsDropped(newParent)) {
+        mSanitizerState->IsReplacedWithChildren(newParent)) {
       return;
     }
     nsresult rv = nsHtml5TreeOperation::AppendChildrenToNewParent(

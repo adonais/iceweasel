@@ -62,11 +62,11 @@ class TimingDistributionStandalone {
    public:
     void Cancel();
     ~AutoTimer();  // NOLINT(performance-trivially-destructible)
+    AutoTimer(AutoTimer& aOther) = delete;
 
    private:
     AutoTimer(uint32_t aMetricId, TimerId aTimerId)
         : mMetricId(aMetricId), mTimerId(aTimerId) {}
-    AutoTimer(AutoTimer& aOther) = delete;
 
     const uint32_t mMetricId;
     TimerId mTimerId;

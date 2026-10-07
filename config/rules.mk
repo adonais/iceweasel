@@ -615,7 +615,7 @@ endif
 endef
 
 ifneq (,$(filter $(DIST)/bin%,$(FINAL_TARGET)))
-DUMP_SYMS_TARGETS := $(SHARED_LIBRARY) $(PROGRAM) $(SIMPLE_PROGRAMS)
+DUMP_SYMS_TARGETS := $(filter-out $(MOZBUILD_NON_DEFAULT_TARGETS),$(SHARED_LIBRARY) $(PROGRAM) $(SIMPLE_PROGRAMS) $(RUST_PROGRAMS))
 endif
 
 ifdef MOZ_AUTOMATION
@@ -814,17 +814,6 @@ export:: $(FINAL_TARGET)
 endif
 
 ################################################################################
-# The default location for prefs is the gre prefs directory.
-PREF_DIR = defaults/pref
-
-# If DIST_SUBDIR is defined it indicates that app and gre dirs are
-# different and that we are building app related resources. Hence,
-# PREF_DIR should point to the app prefs location.
-ifneq (,$(DIST_SUBDIR)$(XPI_NAME))
-PREF_DIR = defaults/preferences
-endif
-
-################################################################################
 # CHROME PACKAGING
 
 chrome::
@@ -835,23 +824,6 @@ $(FINAL_TARGET)/chrome: $(call mkdir_deps,$(FINAL_TARGET)/chrome)
 
 ifneq (,$(JAR_MANIFEST))
 ifndef NO_DIST_INSTALL
-
-ifdef XPI_NAME
-ifdef XPI_ROOT_APPID
-# For add-on packaging we may specify that an application
-# sub-dir should be added to the root chrome manifest with
-# a specific application id.
-MAKE_JARS_FLAGS += --root-manifest-entry-appid='$(XPI_ROOT_APPID)'
-endif
-
-# if DIST_SUBDIR is defined but XPI_ROOT_APPID is not there's
-# no way langpacks will get packaged right, so error out.
-ifneq (,$(DIST_SUBDIR))
-ifndef XPI_ROOT_APPID
-$(error XPI_ROOT_APPID is not defined - langpacks will break.)
-endif
-endif
-endif
 
 misc realchrome:: $(FINAL_TARGET)/chrome
 	$(call py_action,jar_maker $(subst $(topsrcdir)/,,$(JAR_MANIFEST)),\

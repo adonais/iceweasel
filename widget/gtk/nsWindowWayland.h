@@ -58,6 +58,8 @@ class nsWindowWayland final : public nsWindow {
 
   bool ApplyEnterLeaveMutterWorkaround();
 
+  void ForceToplevelCommit();
+
  protected:
   virtual ~nsWindowWayland() = default;
 
@@ -247,6 +249,10 @@ class nsWindowWayland final : public nsWindow {
     struct xx_pip_v1* mPipSurface = nullptr;
     LayoutDeviceIntSize mConfigureSize;
   } mPipResources;
+
+  RefPtr<GdkWindow> mCommitWindow;
+  static constexpr int sCommitOrigin = -100;
+  int mCommitWindowPosition = sCommitOrigin;
 };
 
 }  // namespace mozilla::widget

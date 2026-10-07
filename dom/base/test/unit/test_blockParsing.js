@@ -24,11 +24,17 @@ const server = XPCShellContentUtils.createHttpServer({
 
 // XML document with only a <script> tag as the document element.
 const PAGE_URL = "http://example.com/";
+const DCL_PAGE_URL = "http://example.com/blockdcl";
 server.registerPathHandler("/", (request, response) => {
   response.setHeader("Content-Type", "application/xhtml+xml");
   response.write(String.raw`<!DOCTYPE html>
     <script xmlns="http://www.w3.org/1999/xhtml" src="slow.js"/>
   `);
+});
+
+server.registerPathHandler("/blockdcl", (request, response) => {
+  response.setHeader("Content-Type", "text/html");
+  response.write("<!DOCTYPE html><html><body>blockdcl</body></html>");
 });
 
 let resolveResumeScriptPromise;
@@ -116,6 +122,60 @@ add_task(async function test_nested_blockParser() {
   await delay();
 
   // Wait for the document to finish loading, and then close it.
+  let page = await pagePromise;
+  await page.close();
+});
+
+// Tests that blockParsing() also blocks DOMContentLoaded, and that
+// DOMContentLoaded is fired once the blocker promise settles.
+add_task(async function test_blockParsing_blocksDOMContentLoaded() {
+  let resolveBlockerPromise;
+  let dclFired = false;
+  let dclPromise;
+
+  let docElementPromise = TestUtils.topicObserved(
+    "document-element-inserted",
+    doc => {
+      if (doc.location.href !== DCL_PAGE_URL) {
+        return false;
+      }
+
+      let blockerPromise = new Promise(resolve => {
+        resolveBlockerPromise = resolve;
+      });
+      doc.blockParsing(blockerPromise);
+
+      dclPromise = new Promise(resolve => {
+        doc.addEventListener(
+          "DOMContentLoaded",
+          () => {
+            dclFired = true;
+            resolve();
+          },
+          { once: true }
+        );
+      });
+      return true;
+    }
+  );
+
+  let pagePromise = XPCShellContentUtils.loadContentPage(DCL_PAGE_URL, {
+    remote: false,
+  });
+
+  await docElementPromise;
+
+  // Make some trips through the event loop to be safe.
+  await delay();
+  await delay();
+
+  Assert.ok(!dclFired, "DOMContentLoaded is blocked while parsing is blocked");
+
+  resolveBlockerPromise();
+  await dclPromise;
+
+  Assert.ok(dclFired, "DOMContentLoaded is fired once the blocker settles");
+
   let page = await pagePromise;
   await page.close();
 });

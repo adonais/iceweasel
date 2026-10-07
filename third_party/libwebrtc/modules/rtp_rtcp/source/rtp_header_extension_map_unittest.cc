@@ -70,9 +70,8 @@ TEST(RtpHeaderExtensionTest, RegisterTwoByteHeaderExtensions) {
 
 TEST(RtpHeaderExtensionTest, RegisterIllegalArg) {
   RtpHeaderExtensionMap map;
-  // Valid range for id: [1-255].
-  EXPECT_FALSE(map.Register<TransmissionOffset>(RtpHeaderExtensionId(0)));
-  EXPECT_FALSE(map.Register<TransmissionOffset>(RtpHeaderExtensionId(256)));
+  EXPECT_FALSE(
+      map.Register<TransmissionOffset>(RtpHeaderExtensionId::NotSet()));
 }
 
 TEST(RtpHeaderExtensionTest, Idempotent) {

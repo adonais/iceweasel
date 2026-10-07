@@ -27,6 +27,7 @@ class FxSuggestFactsTest {
                     reportingUrl = "https://example.com/reporting",
                     iabCategory = "22 - Shopping",
                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                 ),
                 positionInAwesomeBar = 0,
                 clientCountry = "TZ",
@@ -56,6 +57,7 @@ class FxSuggestFactsTest {
                 assertEquals(clickInfo.reportingUrl, "https://example.com/reporting")
                 assertEquals(clickInfo.iabCategory, "22 - Shopping")
                 assertEquals(clickInfo.contextId, "c303282d-f2e6-46ca-a04a-35d3d873712d")
+                assertEquals(clickInfo.suggestionId, "d303282d-f2e6-46ca-a04a-35d3d873712d")
 
                 val positionInAwesomebar = requireNotNull(metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)
                 assertEquals(0, positionInAwesomebar)
@@ -76,6 +78,7 @@ class FxSuggestFactsTest {
                     reportingUrl = "https://example.com/reporting",
                     iabCategory = "22 - Shopping",
                     contextId = "c303282d-f2e6-46ca-a04a-35d3d873712d",
+                    suggestionId = "d303282d-f2e6-46ca-a04a-35d3d873712d",
                 ),
                 positionInAwesomeBar = 0,
                 isClicked = true,
@@ -109,6 +112,7 @@ class FxSuggestFactsTest {
                 assertEquals(impressionInfo.reportingUrl, "https://example.com/reporting")
                 assertEquals(impressionInfo.iabCategory, "22 - Shopping")
                 assertEquals(impressionInfo.contextId, "c303282d-f2e6-46ca-a04a-35d3d873712d")
+                assertEquals(impressionInfo.suggestionId, "d303282d-f2e6-46ca-a04a-35d3d873712d")
 
                 val positionInAwesomebar = requireNotNull(metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)
                 assertEquals(0, positionInAwesomebar)

@@ -10,6 +10,7 @@ from gecko_taskgraph.util.attributes import match_run_on_projects
 from manifestparser import TestManifest
 
 from mozperftest.perfdocs.doc_helpers import TableBuilder
+from mozperftest.perfdocs.hardware import HardwareDocs
 from mozperftest.perfdocs.logger import PerfDocLogger
 from mozperftest.perfdocs.utils import read_yaml
 from mozperftest.script import ScriptInfo
@@ -50,6 +51,33 @@ class FrameworkGatherer:
         self.script_infos = {}
         self._task_list = {}
         self._task_match_pattern = re.compile(r"([\w\W]*/[pgo|opt]*)-([\w\W]*)")
+        self._hardware_docs = HardwareDocs()
+
+    def record_worker_pool(self, platform, task_def):
+        """
+        Returns the worker pool a task runs on, and records that the platform
+        was found running on it so that it can be documented under it.
+
+        :param str platform: The taskcluster platform label.
+        :param dict task_def: The task definition from the task graph.
+        :return str: The `<provisioner>/<worker type>` pool.
+        """
+        worker_pool = f"{task_def['provisionerId']}/{task_def['workerType']}"
+        self._hardware_docs.record_platform(platform, worker_pool)
+        return worker_pool
+
+    def get_platform_title(self, platform, tasks):
+        """
+        Returns the title to use for a platform, linking it to the hardware
+        the given tasks run on.
+
+        :param str platform: The taskcluster platform label.
+        :param list tasks: The task entries of `_task_list` for that platform.
+        :return str: The platform, linked to its hardware.
+        """
+        return self._hardware_docs.get_platform_link(
+            platform, [task["worker_pool"] for task in tasks]
+        )
 
     def _build_section_with_header(self, title, content, header_type=None):
         """
@@ -231,11 +259,12 @@ class RaptorGatherer(FrameworkGatherer):
     def _get_ci_tasks(self):
         for task in self._taskgraph.keys():
             if type(self._taskgraph[task]) is dict:
-                command = self._taskgraph[task]["task"]["payload"].get("command", [])
+                task_def = self._taskgraph[task]["task"]
                 run_on_projects = self._taskgraph[task]["attributes"]["run_on_projects"]
             else:
-                command = self._taskgraph[task].task["payload"].get("command", [])
+                task_def = self._taskgraph[task].task
                 run_on_projects = self._taskgraph[task].attributes["run_on_projects"]
+            command = task_def["payload"].get("command", [])
 
             test_match = re.search(r"[\s']--test[\s=](.+?)[\s']", str(command))
             task_match = self.get_task_match(task)
@@ -244,7 +273,11 @@ class RaptorGatherer(FrameworkGatherer):
                 platform = task_match.group(1)
                 test_name = task_match.group(2)
 
-                item = {"test_name": test_name, "run_on_projects": run_on_projects}
+                item = {
+                    "test_name": test_name,
+                    "run_on_projects": run_on_projects,
+                    "worker_pool": self.record_worker_pool(platform, task_def),
+                }
                 self._task_list.setdefault(test, {}).setdefault(platform, []).append(
                     item
                 )
@@ -431,7 +464,9 @@ class RaptorGatherer(FrameworkGatherer):
                     self._task_list[title][platform].sort(key=lambda x: x["test_name"])
 
                     table = TableBuilder(
-                        title=platform,
+                        title=self.get_platform_title(
+                            platform, self._task_list[title][platform]
+                        ),
                         widths=[30] + [15 for x in BRANCHES],
                         header_rows=1,
                         headers=[["Test Name"] + BRANCHES],
@@ -566,13 +601,13 @@ class TalosGatherer(FrameworkGatherer):
             task = self._taskgraph[task_name]
 
             if type(task) is dict:
-                is_talos = task["task"]["extra"].get("suite", [])
-                command = task["task"]["payload"].get("command", [])
+                task_def = task["task"]
                 run_on_projects = task["attributes"]["run_on_projects"]
             else:
-                is_talos = task.task["extra"].get("suite", [])
-                command = task.task["payload"].get("command", [])
+                task_def = task.task
                 run_on_projects = task.attributes["run_on_projects"]
+            is_talos = task_def["extra"].get("suite", [])
+            command = task_def["payload"].get("command", [])
 
             suite_match = re.search(r"[\s']--suite[\s=](.+?)[\s']", str(command))
             task_match = self.get_task_match(task_name)
@@ -580,7 +615,11 @@ class TalosGatherer(FrameworkGatherer):
                 suite = suite_match.group(1)
                 platform = task_match.group(1)
                 test_name = task_match.group(2)
-                item = {"test_name": test_name, "run_on_projects": run_on_projects}
+                item = {
+                    "test_name": test_name,
+                    "run_on_projects": run_on_projects,
+                    "worker_pool": self.record_worker_pool(platform, task_def),
+                }
 
                 for test in config_suites[suite]["tests"]:
                     self._task_list.setdefault(test, {}).setdefault(
@@ -659,7 +698,9 @@ class TalosGatherer(FrameworkGatherer):
                 self._task_list[title][platform].sort(key=lambda x: x["test_name"])
 
                 table = TableBuilder(
-                    title=platform,
+                    title=self.get_platform_title(
+                        platform, self._task_list[title][platform]
+                    ),
                     widths=[30] + [15 for x in BRANCHES],
                     header_rows=1,
                     headers=[["Test Name"] + BRANCHES],
@@ -698,18 +739,23 @@ class AwsyGatherer(FrameworkGatherer):
             task = self._taskgraph[task_name]
 
             if type(task) is dict:
-                awsy_test = task["task"]["extra"].get("suite", [])
+                task_def = task["task"]
                 run_on_projects = task["attributes"]["run_on_projects"]
             else:
-                awsy_test = task.task["extra"].get("suite", [])
+                task_def = task.task
                 run_on_projects = task.attributes["run_on_projects"]
+            awsy_test = task_def["extra"].get("suite", [])
 
             task_match = self.get_task_match(task_name)
 
             if "awsy" in awsy_test and task_match:
                 platform = task_match.group(1)
                 test_name = task_match.group(2)
-                item = {"test_name": test_name, "run_on_projects": run_on_projects}
+                item = {
+                    "test_name": test_name,
+                    "run_on_projects": run_on_projects,
+                    "worker_pool": self.record_worker_pool(platform, task_def),
+                }
                 self._task_list.setdefault(platform, []).append(item)
 
     def get_suite_list(self):
@@ -752,7 +798,10 @@ class AwsyGatherer(FrameworkGatherer):
         # while the others have their title in test names
         search_tag = "awsy-e10s" if title == "tp5" else title
         for platform in sorted(self._task_list.keys()):
-            result += f"  * {platform}\n"
+            platform_title = self.get_platform_title(
+                platform, self._task_list[platform]
+            )
+            result += f"  * {platform_title}\n"
             for test_dict in sorted(
                 self._task_list[platform], key=lambda d: d["test_name"]
             ):

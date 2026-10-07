@@ -217,6 +217,34 @@ class AsyncLogger {
   bool Enabled() { return mRunning.load(std::memory_order_acquire); }
 
  private:
+  struct TracingMarkerWithComment
+      : public BaseMarkerType<TracingMarkerWithComment> {
+    static constexpr const char* Name = "Real-Time";
+    using MS = MarkerSchema;
+    static constexpr MS::Location Locations[] = {
+        MS::Location::MarkerChart,
+        MS::Location::MarkerTable,
+    };
+    static constexpr MS::PayloadField PayloadFields[] = {
+        {"name", MS::InputType::CString, "Comment"},
+    };
+    static constexpr const char* ChartLabel = "{marker.data.name}";
+    static constexpr const char* TableLabel = "{marker.data.name}";
+    // Each marker carries the name of the traced section.
+    static constexpr bool ETWStoreName = true;
+  };
+
+  struct TracingMarker : public BaseMarkerType<TracingMarker> {
+    static constexpr const char* Name = "Real-time";
+    using MS = MarkerSchema;
+    static constexpr MS::Location Locations[] = {
+        MS::Location::MarkerChart,
+        MS::Location::MarkerTable,
+    };
+    // Each marker carries the name of the traced section.
+    static constexpr bool ETWStoreName = true;
+  };
+
   bool BeginLogging() {
     if (!mRunning.load(std::memory_order_acquire)) {
       return false;
@@ -235,39 +263,6 @@ class AsyncLogger {
     mThread = std::thread([this]() {
       for (;;) {
         {
-          struct TracingMarkerWithComment {
-            static constexpr Span<const char> MarkerTypeName() {
-              return MakeStringSpan("Real-Time");
-            }
-            static void StreamJSONMarkerData(
-                baseprofiler::SpliceableJSONWriter& aWriter,
-                const ProfilerString8View& aText) {
-              aWriter.StringProperty("name", aText);
-            }
-            static MarkerSchema MarkerTypeDisplay() {
-              using MS = MarkerSchema;
-              MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-              schema.SetChartLabel("{marker.data.name}");
-              schema.SetTableLabel("{marker.data.name}");
-              schema.AddKeyLabelFormat("name", "Comment", MS::Format::String);
-              return schema;
-            }
-          };
-
-          struct TracingMarker {
-            static constexpr Span<const char> MarkerTypeName() {
-              return MakeStringSpan("Real-time");
-            }
-            static void StreamJSONMarkerData(
-                baseprofiler::SpliceableJSONWriter& aWriter) {}
-            static MarkerSchema MarkerTypeDisplay() {
-              using MS = MarkerSchema;
-              MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-              // Nothing outside the defaults.
-              return schema;
-            }
-          };
-
           TracePayload message;
           while (mMessageQueueProfiler.Pop(&message)) {
             if (message.mPhase != TracingPhase::COMPLETE) {

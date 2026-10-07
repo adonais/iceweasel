@@ -610,6 +610,8 @@ skip-if = [
 
 ["test_ext_runtime_getPlatformInfo.js"]
 
+["test_ext_runtime_getVersion.js"]
+
 ["test_ext_runtime_id.js"]
 
 ["test_ext_runtime_messaging_self.js"]

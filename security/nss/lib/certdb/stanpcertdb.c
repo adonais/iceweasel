@@ -294,17 +294,6 @@ __CERT_AddTempCertToPerm(CERTCertificate *cert, char *nickname,
     nssPKIObject_Unlock(&c->object);
     nssCertificateStore_Unlock(context->certStore, &lockTrace, &unlockTrace);
 
-    /* if the id has not been set explicitly yet, create one from the public
-     * key. */
-    if (c->id.data == NULL) {
-        SECItem *keyID = pk11_mkcertKeyID(cert);
-        if (keyID) {
-            nssItem_Create(c->object.arena, &c->id, keyID->len, keyID->data);
-            SECITEM_FreeItem(keyID, PR_TRUE);
-        }
-        /* if any of these failed, continue with our null c->id */
-    }
-
     /* Import the perm instance onto the internal token */
     slot = PK11_GetInternalKeySlot();
     internal = PK11Slot_GetNSSToken(slot);
@@ -447,6 +436,10 @@ CERT_NewTempCertificate(CERTCertDBHandle *handle, SECItem *derCert,
                    derSerial.data);
     PORT_Free(derSerial.data);
 
+    if (nssCertificate_SetCertKeyID(c) != PR_SUCCESS) {
+        goto loser;
+    }
+
     if (nickname) {
         c->object.tempName =
             nssUTF8_Create(c->object.arena, nssStringType_UTF8String,
@@ -480,8 +473,7 @@ CERT_NewTempCertificate(CERTCertDBHandle *handle, SECItem *derCert,
     CERT_UnlockCertTempPerm(cc);
     return cc;
 loser:
-    /* Perhaps this should be nssCertificate_Destroy(c) */
-    nssPKIObject_Destroy(&c->object);
+    nssCertificate_Destroy(c);
     return NULL;
 }
 

@@ -55,6 +55,8 @@ class ClientStorageScope {
  public:
   ClientStorageScope() : mData(Null()) {}
 
+  bool operator==(const ClientStorageScope& aOther) = delete;
+
   static ClientStorageScope CreateFromClient(quota::Client::Type aClientType) {
     return ClientStorageScope(std::move(Client(aClientType)));
   }
@@ -155,8 +157,6 @@ class ClientStorageScope {
 
     return mData.match(MetadataMatcher(aOther));
   }
-
-  bool operator==(const ClientStorageScope& aOther) = delete;
 };
 
 }  // namespace mozilla::dom::quota

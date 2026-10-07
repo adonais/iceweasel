@@ -466,6 +466,17 @@ void Promise::MaybeReject(JSContext* aCx, JS::Handle<JS::Value> aValue) {
   }
 }
 
+void Promise::MaybeSafeResolve(JSContext* aCx, JS::Handle<JS::Value> aValue) {
+  NS_ASSERT_OWNINGTHREAD(Promise);
+
+  JS::Rooted<JSObject*> p(aCx, PromiseObj());
+  const bool ok = p && JS::SafeResolve(aCx, p, aValue);
+  if (!ok) {
+    // Now what?  There's nothing sane to do here.
+    JS_ClearPendingException(aCx);
+  }
+}
+
 #define SLOT_NATIVEHANDLER 0
 #define SLOT_NATIVEHANDLER_TASK 1
 

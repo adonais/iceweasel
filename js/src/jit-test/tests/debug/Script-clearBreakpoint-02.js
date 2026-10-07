@@ -11,7 +11,7 @@ dbg.onDebuggerStatement = function (frame) {
             return function () { log += i; s.clearBreakpoint(h[1]); s.clearBreakpoint(h[2]); };
         return function () { log += i; };
     }
-    var offs = s.getLineOffsets(g.line0 + 2);
+    var offs = s.getPossibleBreakpointOffsets({ line: g.line0 + 2 });
     var h = [];
     for (var i = 0; i < 4; i++) {
         h[i] = {hit: handler(i)};

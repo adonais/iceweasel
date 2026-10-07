@@ -199,6 +199,22 @@ def test_run_if(tests):
     assert "disabled" not in tests[2]
 
 
+def test_run_if_multiple_conditions(create_tests):
+    """The conditions of a single run-if are OR'd, not AND'd."""
+    # Shaped like a real manifest entry: run on linux or win, nowhere else.
+    ref = create_tests((
+        "browser_history_recently_closed_tabs.js",
+        {"run-if": "os == 'linux'\nos == 'win'"},
+    ))
+
+    for values in ({"os": "linux"}, {"os": "win"}):
+        test = list(run_if(deepcopy(ref), values))[0]
+        assert "disabled" not in test, f"should run with {values}"
+
+    test = list(run_if(deepcopy(ref), {"os": "mac"}))[0]
+    assert test["disabled"] == "run-if: os == 'linux'\nos == 'win'"
+
+
 def test_fail_if(tests):
     ref = deepcopy(tests)
     tests = list(fail_if(tests, {}))

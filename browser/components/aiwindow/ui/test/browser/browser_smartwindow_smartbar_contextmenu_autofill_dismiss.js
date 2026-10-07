@@ -35,8 +35,7 @@ async function triggerContextMenuCommand(browser, anonid) {
     const smartbar = aiWindowElement.shadowRoot.querySelector(
       "#ai-window-smartbar"
     );
-    const inputBox = smartbar.querySelector("moz-input-box");
-    const menupopup = inputBox.menupopup;
+    const menupopup = content.EditContextMenu.popup;
 
     await ContentTaskUtils.waitForCondition(
       () => smartbar._resultForCurrentValue?.autofill?.type === "adaptive_url",
@@ -60,7 +59,7 @@ async function triggerContextMenuCommand(browser, anonid) {
       "Wait for context menu to be fully open"
     );
 
-    const item = inputBox.getMenuItem(itemAnonid);
+    const item = menupopup.querySelector(`[anonid="${itemAnonid}"]`);
     menupopup.activateItem(item);
   });
 }

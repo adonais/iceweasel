@@ -74,8 +74,7 @@ void WriteVector(S& aStream, const mozilla::Vector<T, N>& aVector) {
 // operation fails for any reason, aElement is set to the default-initialized
 // value of T and the stream is set to bad state.
 // ReadElement is disabled for enum types. Use ReadElementConstrained instead.
-template <class S, class T,
-          typename = typename std::enable_if<!std::is_enum<T>::value>::type>
+template <class S, class T, typename = std::enable_if_t<!std::is_enum_v<T>>>
 void ReadElement(S& aStream, T& aElement) {
   if (!ElementStreamFormat<S, T>::Read(aStream, aElement)) {
     aElement = T{};

@@ -94,7 +94,13 @@ interface nsIWebBrowserChrome : nsISupports
     // ignored for Linux.
     const unsigned long CHROME_SUPPRESS_ANIMATION     = 1 << 24;
 
-    // Two bits are free here.
+    // Whether this is the media Picture-in-Picture player window. Set by
+    // PictureInPicture.sys.mjs via the `mediapip` feature, which only chrome
+    // can pass; the widget code uses it to identify the player rather than
+    // matching on a combination of ordinary window features.
+    const unsigned long CHROME_MEDIA_PIP              = 1 << 25;
+
+    // One bit is free here.
 
     const unsigned long CHROME_CENTER_SCREEN          = 1 << 27;
 

@@ -2445,7 +2445,7 @@ class HTMLEditUtils final {
     if (!aSelection.RangeCount()) {
       return nullptr;
     }
-    const nsRange* firstRange = aSelection.GetRangeAt(0);
+    const dom::Range* firstRange = aSelection.GetRangeAt(0);
     if (NS_WARN_IF(!firstRange) || NS_WARN_IF(!firstRange->IsPositioned())) {
       return nullptr;
     }
@@ -3368,7 +3368,7 @@ class MOZ_STACK_CLASS SelectedTableCellScanner final {
     const uint32_t rangeCount = aSelection.RangeCount();
     for (const uint32_t i : IntegerRange(1u, rangeCount)) {
       MOZ_ASSERT(aSelection.RangeCount() == rangeCount);
-      nsRange* range = aSelection.GetRangeAt(i);
+      dom::Range* range = aSelection.GetRangeAt(i);
       if (MOZ_UNLIKELY(NS_WARN_IF(!range)) ||
           MOZ_UNLIKELY(NS_WARN_IF(!range->IsPositioned()))) {
         continue;  // Shouldn't occur in normal conditions.

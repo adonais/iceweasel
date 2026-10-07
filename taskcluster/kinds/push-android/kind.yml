@@ -1,0 +1,151 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+loader: taskgraph.loader.transform:loader
+
+transforms:
+    - taskgraph.transforms.from_deps
+    - taskgraph.transforms.task_context
+    - android_taskgraph.transforms.upstream_artifacts
+    - android_taskgraph.transforms.treeherder
+    - android_taskgraph.transforms.push_android_app
+    - android_taskgraph.transforms.startup_tests_deps
+    - gecko_taskgraph.transforms.task
+
+kind-dependencies:
+    - signing-apk
+    - signing-bundle
+    - android-startup-test
+
+task-defaults:
+    worker-type: push-apk
+    from-deps:
+        group-by:
+            attribute: build-type
+        copy-attributes: true
+    task-context:
+        # `{name}` in each task's label is the build type, which `from-deps`
+        # assigns from the signing dependency. Setting `set-name` here would
+        # break that.
+        substitution-fields: [label]
+    worker:
+        dep:
+            by-level:
+                '3': false
+                default: true
+    shipping-phase: push
+    shipping-product: firefox-android
+    routes:
+        by-level:
+            '3':
+                - "notify.email.release-mgmt@mozilla.com.on-failed"
+            'default': []
+
+tasks:
+    google:
+        description: Publish Fenix, Focus and Klar AABs to Google Play
+        label: "push-android-google-{name}"
+        attributes:
+            target-store: google
+        from-deps:
+            kinds: [signing-bundle]
+            with-attributes:
+                build-type:
+                    - fenix-nightly
+                    - fenix-beta
+                    - fenix-release
+                    - focus-nightly
+                    - focus-beta
+                    - focus-release
+                    - klar-release
+        worker:
+            target-store: google
+            certificate-alias:
+                by-build-type:
+                    fenix-nightly: fenix-nightly
+                    fenix-beta: fenix-beta
+                    fenix-release: fenix-release
+                    default: focus
+            commit: true
+            channel:
+                by-build-type:
+                    fenix-nightly: fenix-nightly
+                    fenix-beta: fenix-beta
+                    fenix-release: fenix-release
+                    focus-nightly: focus-nightly
+                    focus-beta: focus-beta
+                    focus-release: focus-release
+                    klar-release: klar-release
+            product:
+                by-build-type:
+                    fenix-.*: fenix
+                    default: focus-android
+        treeherder:
+            symbol:
+                by-build-type:
+                    focus-.*: push-google-f
+                    klar-.*: push-google-kl
+                    default: push-google
+
+    samsung:
+        description: Publish Fenix and Focus APKs to the Samsung Galaxy Store
+        label: "push-android-samsung-{name}"
+        attributes:
+            target-store: samsung
+        only-archs:
+            - arm64-v8a
+            - armeabi-v7a
+        from-deps:
+            kinds: [signing-apk]
+            with-attributes:
+                build-type:
+                    - fenix-release
+                    - focus-release
+        worker:
+            target-store: samsung
+            commit:
+                by-level:
+                    '3': true
+                    default: false
+            channel:
+                by-build-type:
+                    fenix-release: fenix-release
+                    focus-release: focus-release
+            product:
+                by-build-type:
+                    fenix-.*: fenix
+                    default: focus-android
+        treeherder:
+            symbol:
+                by-build-type:
+                    focus-.*: push-samsung-f
+                    default: push-samsung
+
+    huawei:
+        description: Publish Fenix APKs to the Huawei AppGallery
+        label: "push-android-huawei-{name}"
+        attributes:
+            target-store: huawei
+        only-archs:
+            - arm64-v8a
+        from-deps:
+            kinds: [signing-apk]
+            with-attributes:
+                build-type:
+                    - fenix-release
+        worker:
+            target-store: huawei
+            commit:
+                by-level:
+                    '3': true
+                    default: false
+            channel:
+                by-build-type:
+                    fenix-release: fenix-release
+            product:
+                by-build-type:
+                    fenix-.*: fenix
+                    default: focus-android
+        treeherder:
+            symbol: push-huawei

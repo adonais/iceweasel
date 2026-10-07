@@ -20,11 +20,11 @@ origin:
 
   # Human-readable identifier for this version/release
   # Generally "version NNN", "tag SSS", "bookmark SSS"
-  release: 5c880e08d21386049adec8e5537c4e726458b563 (Thu Aug 27 16:55:36 2026).
+  release: d2413e2ca11039724ca33bb4d661ca2c94cb501e (Tue Sep 01 14:12:42 2026).
 
   # Revision to pull in
   # Must be a long or short commit SHA (long preferred)
-  revision: 5c880e08d21386049adec8e5537c4e726458b563
+  revision: d2413e2ca11039724ca33bb4d661ca2c94cb501e
 
   # The package's license, where possible using the mnemonic from
   # https://spdx.org/licenses/
@@ -57,7 +57,6 @@ vendoring:
     - input_frame_validation.patch
     - input_frame_validation_vp9.patch
     - missing_header.patch
-    - vp8_clamp_fullpixel_chroma_mv.patch
 
   update-actions:
     - action: move-file

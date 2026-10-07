@@ -18,7 +18,11 @@ const is = parent.is;
 const isnot = parent.isnot;
 const ok = parent.ok;
 
-window.addEventListener("load", runTest);
+window.addEventListener("load", () => {
+  // The window does not have its final screen position at the load event,
+  // and synthesizeTouch needs that position to calculate screen coordinates.
+  parent.requestAnimationFrame(() => parent.requestAnimationFrame(runTest));
+});
 
 function runTest() {
   let target = document.getElementById("input");

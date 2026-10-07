@@ -59,6 +59,28 @@ interface AddonsInfoResponse {
   hasInstalledAddons: boolean;
 }
 ```
+### `allowedNotificationOrigins`
+
+The number of origins the user has allowed to send web notifications. Origins the
+user has explicitly blocked are not counted. A count rather than a boolean, so it
+can also be used to distinguish users with a single allowed site from those with
+many.
+
+#### Examples
+* Has the user allowed any site to send notifications?
+```java
+allowedNotificationOrigins > 0
+```
+* Has the user allowed five or more sites?
+```java
+allowedNotificationOrigins >= 5
+```
+
+#### Definition
+```ts
+declare const allowedNotificationOrigins: number;
+```
+
 ### `attributionData`
 
 An object containing information on exactly how Firefox was downloaded
@@ -218,6 +240,17 @@ declare const isDefaultBrowser: boolean;
 ### `isDefaultBrowserUncached`
 
 Behaves the same as `isDefaultBrowser`, but retrieves the current value directly from shell service instead of using the cached value. This may not be as performant.
+
+### `hasAttemptedSetDefault`
+
+Has the user asked Firefox to make itself the default browser during this session. True as soon as the request is made, whether or not the OS honours it.
+Does not persist across restarts.
+
+#### Definition
+
+```ts
+declare const hasAttemptedSetDefault: boolean;
+```
 
 ### `isOneClickSetDefaultEnabled`
 
@@ -494,6 +527,25 @@ The date the profile was reset as a UNIX Epoch timestamp (if it was reset).
 // profileAgeReset can be undefined if the profile was never reset
 // UnixEpochNumber is number, e.g. 1522843725924
 declare const profileAgeReset: undefined | UnixEpochNumber;
+// UnixEpochNumber is UNIX Epoch timestamp, e.g. 1522843725924
+type UnixEpochNumber = number;
+```
+
+### `profileLastUse`
+
+The date the profile was last used before the current session, as a UNIX Epoch
+timestamp. This is the more recent of the previous session's lock file time and
+the `prefs.js` modification time, and is `0` when neither is available.
+
+#### Examples
+* Has the profile been unused for at least 60 days?
+```java
+profileLastUse && currentDate|date - profileLastUse >= 5184000000
+```
+
+#### Definition
+```ts
+declare const profileLastUse: UnixEpochNumber;
 // UnixEpochNumber is UNIX Epoch timestamp, e.g. 1522843725924
 type UnixEpochNumber = number;
 ```
@@ -1359,6 +1411,16 @@ restore the previous session on startup; `false` otherwise.
 ### `canCreateSelectableProfiles`
 
 A boolean. `true` when both the current install and current profile support creating additional profiles using the `SelectableProfileService`; `false` otherwise.
+
+### `canResetProfile`
+
+A boolean. `true` when the current profile can be refreshed.
+
+Any message using the `RESET_PROFILE` action should include this in its targeting.
+
+### `isFirefoxReinstalled`
+
+Windows-only. A boolean. `true` when Firefox was uninstalled and then reinstalled over an existing profile since the previous run; `false` otherwise.
 
 ### `hasSelectableProfiles`
 

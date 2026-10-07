@@ -573,13 +573,23 @@ add_task(async function test_ctrl_tab() {
   gURLBar.handleRevert();
 });
 
-add_task(async function test_accesskeys() {
-  info("Test 'E' to enter search mode for engine1.");
-  await UrlbarTestUtils.openSearchModeSwitcher(window);
+add_task(async function test_first_letter_selection() {
+  info("Test 'E' to cycle through engines starting with 'e'.");
+  let popup = await UrlbarTestUtils.openSearchModeSwitcher(window);
+  let focusedEngine = () =>
+    popup.getRootNode().activeElement?.dataset.engineName;
+  await TestUtils.waitForCondition(
+    () => focusedEngine() == "engine1",
+    "Wait for the first engine to be focused"
+  );
   EventUtils.synthesizeKey("E");
+  Assert.equal(focusedEngine(), "engine2", "First 'E' focuses engine2");
+  EventUtils.synthesizeKey("E");
+  Assert.equal(focusedEngine(), "engine3", "Second 'E' focuses engine3");
+  EventUtils.synthesizeKey("KEY_Enter");
   await UrlbarTestUtils.promiseSearchComplete(window);
   await UrlbarTestUtils.assertSearchMode(window, {
-    engineName: "engine1",
+    engineName: "engine3",
     source: UrlbarShared.RESULT_SOURCE.SEARCH,
     entry: "searchbutton",
   });
@@ -604,4 +614,28 @@ add_task(async function test_accesskeys() {
     "about:preferences#search",
     "Opened search settings"
   );
+});
+
+add_task(async function test_first_letter_selection_after_mouse_open() {
+  info("Open the switcher with the mouse, which leaves focus outside it.");
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({ window, value: "" });
+  let popup = await UrlbarTestUtils.openSearchModeSwitcher(window, () =>
+    EventUtils.synthesizeMouseAtCenter(searchmodeSwitcher, {
+      type: "mousedown",
+    })
+  );
+  EventUtils.synthesizeMouseAtCenter(searchmodeSwitcher, { type: "mouseup" });
+  Assert.ok(
+    !popup.contains(document.activeElement),
+    "Focus is not in the popup"
+  );
+
+  info("Test 'T' to enter search mode for tabs.");
+  EventUtils.synthesizeKey("T");
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.assertSearchMode(window, {
+    source: UrlbarShared.RESULT_SOURCE.TABS,
+    entry: "searchbutton",
+  });
+  await UrlbarTestUtils.exitSearchMode(window);
 });

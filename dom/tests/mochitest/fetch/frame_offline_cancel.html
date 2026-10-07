@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<script>
+  // Hosts the dedicated worker at this frame's origin and relays one reply per
+  // command, so the test can drive a worker on an origin of its choosing.
+  const worker = new Worker("worker_offline_cancel.js");
+
+  window.addEventListener("message", function (e) {
+    worker.addEventListener("message", ev => parent.postMessage(ev.data, "*"), {
+      once: true,
+    });
+    worker.postMessage(e.data);
+  });
+</script>

@@ -1,0 +1,26 @@
+# A flat reference frame with a plain 2D transform sits between a perspective
+# and a child with a Z translation. The flat frame must flatten the child into
+# its plane before the perspective applies, so the rect renders unshrunk. Used
+# to fail because a 2D flat transform did not open its own coordinate system.
+---
+root:
+  items:
+    - type: reference-frame
+      bounds: 0 0 100 100
+      perspective: 1000
+      perspective-origin: 0 0
+      transform-style: flat
+      items:
+        - type: reference-frame
+          bounds: 0 0 100 100
+          transform: scale(1)
+          transform-style: flat
+          items:
+            - type: reference-frame
+              bounds: 0 0 100 100
+              transform: translate(0, 0, -500)
+              transform-style: flat
+              items:
+                - type: rect
+                  bounds: 0 0 100 100
+                  color: green

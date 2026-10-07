@@ -324,7 +324,7 @@ def getDocUia():
     # could perhaps implement a custom property.
     hwnd = getFirefoxHwnd()
     root = uiaClient.ElementFromHandle(hwnd)
-    doc = findUiaByDomId(root, "body")
+    doc = findUiaByDomId(root, "default-content-doc-id")
     if not doc:
         # Sometimes, when UIA is disabled, we can't find the document for some
         # unknown reason. Since this only happens when UIA is disabled, we want

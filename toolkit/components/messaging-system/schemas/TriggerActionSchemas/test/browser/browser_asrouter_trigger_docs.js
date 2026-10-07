@@ -4,42 +4,6 @@ const TEST_URL =
 const { ASRouterTriggerListeners } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/ASRouterTriggerListeners.sys.mjs"
 );
-const { CFRMessageProvider } = ChromeUtils.importESModule(
-  "resource:///modules/asrouter/CFRMessageProvider.sys.mjs"
-);
-const { JsonSchema } = ChromeUtils.importESModule(
-  "resource://gre/modules/JsonSchema.sys.mjs"
-);
-
-ChromeUtils.defineLazyGetter(this, "fetchTriggerActionSchema", async () => {
-  const response = await fetch(
-    "resource://testing-common/TriggerActionSchemas.json"
-  );
-  const schema = await response.json();
-  if (!schema) {
-    throw new Error("Failed to load TriggerActionSchemas");
-  }
-  return schema.definitions.TriggerActionSchemas;
-});
-
-async function validateTrigger(trigger) {
-  const schema = await fetchTriggerActionSchema;
-  const result = JsonSchema.validate(trigger, schema);
-  if (result.errors.length) {
-    throw new Error(
-      `Trigger with id ${trigger.id} was not valid. Errors: ${JSON.stringify(
-        result.errors,
-        undefined,
-        2
-      )}`
-    );
-  }
-  Assert.equal(
-    result.errors.length,
-    0,
-    `should be a valid trigger of type ${trigger.id}`
-  );
-}
 
 function getHeadingsFromDocs(docs) {
   const re = /### `(\w+)`/g;
@@ -63,12 +27,5 @@ add_task(async function test_trigger_docs() {
       headings.includes(triggerName),
       `${triggerName} not found in TriggerActionSchemas/index.md`
     );
-  }
-});
-
-add_task(async function test_message_triggers() {
-  const messages = await CFRMessageProvider.getMessages();
-  for (let message of messages) {
-    await validateTrigger(message.trigger);
   }
 });

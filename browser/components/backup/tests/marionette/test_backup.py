@@ -136,7 +136,7 @@ class BackupTest(MarionetteTestCase):
         archivePath = self.marionette.execute_async_script(
             """
 
-          const { BackupService } = ChromeUtils.importESModule("resource:///modules/backup/BackupService.sys.mjs");
+          const { BackupService } = ChromeUtils.importESModule("moz-src:///browser/components/backup/BackupService.sys.mjs");
           let bs = BackupService.init();
           if (!bs) {
             throw new Error("Could not get initialized BackupService.");
@@ -194,7 +194,7 @@ class BackupTest(MarionetteTestCase):
             """
           const { OSKeyStore } = ChromeUtils.importESModule("resource://gre/modules/OSKeyStore.sys.mjs");
           const { ClientID } = ChromeUtils.importESModule("resource://gre/modules/ClientID.sys.mjs");
-          const { BackupService } = ChromeUtils.importESModule("resource:///modules/backup/BackupService.sys.mjs");
+          const { BackupService } = ChromeUtils.importESModule("moz-src:///browser/components/backup/BackupService.sys.mjs");
           let bs = BackupService.get();
           if (!bs) {
             throw new Error("Could not get initialized BackupService.");
@@ -244,7 +244,7 @@ class BackupTest(MarionetteTestCase):
         # Ensure that all postRecovery actions have completed.
         self.marionette.execute_async_script(
             """
-          const { BackupService } = ChromeUtils.importESModule("resource:///modules/backup/BackupService.sys.mjs");
+          const { BackupService } = ChromeUtils.importESModule("moz-src:///browser/components/backup/BackupService.sys.mjs");
           let bs = BackupService.get();
           if (!bs) {
             throw new Error("Could not get initialized BackupService.");
@@ -331,7 +331,7 @@ class BackupTest(MarionetteTestCase):
 
         [archivePath, lastBackupFileName] = self.marionette.execute_async_script(
             """
-          const { BackupService } = ChromeUtils.importESModule("resource:///modules/backup/BackupService.sys.mjs");
+          const { BackupService } = ChromeUtils.importESModule("moz-src:///browser/components/backup/BackupService.sys.mjs");
           let bs = BackupService.init();
           if (!bs) {
             throw new Error("Could not get initialized BackupService.");
@@ -368,7 +368,7 @@ class BackupTest(MarionetteTestCase):
             """
 
           ChromeUtils.defineESModuleGetters(this, {
-            BackupService: "resource:///modules/backup/BackupService.sys.mjs",
+            BackupService: "moz-src:///browser/components/backup/BackupService.sys.mjs",
             ASRouterTargeting: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
           });
 

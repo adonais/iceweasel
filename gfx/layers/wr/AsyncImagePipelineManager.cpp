@@ -665,7 +665,7 @@ void AsyncImagePipelineManager::HoldExternalImage(
 void AsyncImagePipelineManager::NotifyPipelinesUpdated(
     RefPtr<const wr::WebRenderPipelineInfo> aInfo,
     wr::RenderedFrameId aLatestFrameId,
-    wr::RenderedFrameId aLastCompletedFrameId, RefPtr<Fence>&& aFence) {
+    wr::RenderedFrameId aLastCompletedFrameId, RefPtr<Fence>&& aReadFence) {
   MOZ_ASSERT(wr::RenderThread::IsInRenderThread());
   MOZ_ASSERT(mLastCompletedFrameId <= aLastCompletedFrameId.mId);
   MOZ_ASSERT(aLatestFrameId.IsValid());
@@ -680,7 +680,7 @@ void AsyncImagePipelineManager::NotifyPipelinesUpdated(
     // Move the pending updates into the submitted ones.
     mRenderSubmittedUpdates.emplace_back(
         aLatestFrameId,
-        WebRenderPipelineInfoHolder(std::move(aInfo), std::move(aFence)));
+        WebRenderPipelineInfoHolder(std::move(aInfo), std::move(aReadFence)));
   }
 
   // Queue a runnable on the compositor thread to process the updates.
@@ -712,7 +712,7 @@ void AsyncImagePipelineManager::ProcessPipelineUpdates() {
     auto& holder = update.second;
     const auto& info = holder.mInfo->Raw();
 
-    mReadFence = std::move(holder.mFence);
+    mReadFence = std::move(holder.mReadFence);
 
     for (auto& epoch : info.epochs) {
       ProcessPipelineRendered(epoch.pipeline_id, epoch.epoch, update.first);
@@ -841,8 +841,8 @@ wr::Epoch AsyncImagePipelineManager::GetNextImageEpoch() {
 
 AsyncImagePipelineManager::WebRenderPipelineInfoHolder::
     WebRenderPipelineInfoHolder(RefPtr<const wr::WebRenderPipelineInfo>&& aInfo,
-                                RefPtr<Fence>&& aFence)
-    : mInfo(aInfo), mFence(std::move(aFence)) {}
+                                RefPtr<Fence>&& aReadFence)
+    : mInfo(aInfo), mReadFence(std::move(aReadFence)) {}
 
 AsyncImagePipelineManager::WebRenderPipelineInfoHolder::
     ~WebRenderPipelineInfoHolder() = default;

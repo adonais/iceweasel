@@ -5,7 +5,7 @@
 <popupset id="mainPopupSet">
   <script src="chrome://browser/content/main-popupset.js" />
 
-  <menupopup id="tabContextMenu">
+  <menupopup id="tabContextMenu" accesskey-conflicts-bug="2073890">
     <menuitem id="context_openANewTab" data-lazy-l10n-id="tab-context-new-tab-open"/>
     <menuitem id="context_moveTabToNewGroup"
       data-lazy-l10n-id="tab-context-move-tab-to-new-group"
@@ -69,6 +69,9 @@
          in place of the #context_askChat submenu. Populated by
          GenAI.buildTabSummarizeItem; hidden by default. -->
     <menuitem id="context_askChatSummarize" hidden="true"/>
+    <menuitem id="context_createAITab"
+              hidden="true"
+              data-l10n-id="tab-context-create-aitab"/>
     <menuseparator id="context_aiSeparator"/>
     <menuitem id="context_bookmarkSelectedTabs"
               hidden="true"
@@ -82,7 +85,7 @@
     <menu id="context_moveTabOptions"
           data-lazy-l10n-id="tab-context-move-tabs"
           data-l10n-args='{"tabCount": 1}'>
-      <menupopup id="moveTabOptionsMenu">
+      <menupopup id="moveTabOptionsMenu" accesskey-conflicts-bug="2073897">
         <menuitem id="context_moveToStart"
                   data-lazy-l10n-id="move-to-start"
                   tbattr="tabbrowser-multiple-visible"/>
@@ -91,6 +94,9 @@
                   tbattr="tabbrowser-multiple-visible"/>
         <menuitem id="context_openTabInWindow" data-lazy-l10n-id="move-to-new-window"
                   tbattr="tabbrowser-multiple-visible"/>
+        <menuitem id="context_openTabInMiniWindow"
+                  data-lazy-l10n-id="move-to-mini-window"
+                  hidden="true"/>
         <menuseparator id="moveTabSeparator" hidden="true"/>
         <menuseparator id="context_moveTabToGroupSeparator" hidden="true"/>
         <menuseparator id="context_selectAllSeparator" hidden="true"/>
@@ -225,6 +231,19 @@
          type="arrow">
     <hbox class="panel-subview-body">
       <html:moz-button id="ai-action-button"/>
+      <!-- The search label needs the engine and the selection, so it is set
+           from GenAI.initializeSelectionShortcutPanel rather than here. -->
+      <html:moz-button id="search-action-button"
+                       hidden="true"
+                       type="icon ghost"/>
+      <html:moz-button id="copy-action-button"
+                       hidden="true"
+                       type="icon ghost"
+                       data-l10n-id="genai-shortcut-copy-button"/>
+      <html:moz-button id="more-actions-button"
+                       hidden="true"
+                       type="icon ghost"
+                       data-l10n-id="genai-shortcut-more-actions-button"/>
     </hbox>
   </panel>
 
@@ -398,12 +417,15 @@
     <menuitem data-l10n-id="sidebar-history-sort-option-last-visited"
               id="sidebar-history-sort-by-last-visited"
               type="checkbox"/>
+    <menuitem data-l10n-id="sidebar-history-sort-option-most-visited"
+              id="sidebar-history-sort-by-most-visited"
+              type="checkbox"/>
     <menuseparator/>
     <menuitem data-l10n-id="sidebar-history-clear"
               id="sidebar-history-clear"/>
   </menupopup>
 
-  <menupopup id="sidebar-history-context-menu">
+  <menupopup id="sidebar-history-context-menu" accesskey-conflicts-bug="2073894">
     <menuitem data-l10n-id="sidebar-context-menu-open-in-tab"
               id="sidebar-history-context-open-in-tab"/>
     <menu id="sidebar-history-context-menu-container-tab"
@@ -438,7 +460,7 @@
               class="sidebar-history-multiselect-command"/>
   </menupopup>
 
-  <menupopup id="sidebar-synced-tabs-context-menu">
+  <menupopup id="sidebar-synced-tabs-context-menu" accesskey-conflicts-bug="2073894">
     <menuitem data-l10n-id="sidebar-context-menu-open-in-tab"
               id="sidebar-synced-tabs-context-open-in-tab"/>
     <menu id="sidebar-synced-tabs-context-menu-container-tab"
@@ -472,7 +494,7 @@
               id="sidebar-synced-tabs-context-manage-this-device"/>
   </menupopup>
 
-  <menupopup id="sidebar-opentabs-menu">
+  <menupopup id="sidebar-opentabs-menu" accesskey-conflicts-bug="2073894">
     <menucaption data-l10n-id="sidebar-opentabs-sort-by-heading"
                  id="sidebar-opentabs-sort-by-heading"
                  role="heading"/>
@@ -500,7 +522,7 @@
               id="sidebar-opentabs-context-close-tab"/>
   </menupopup>
 
-  <menupopup id="sidebar-bookmarks-context-menu">
+  <menupopup id="sidebar-bookmarks-context-menu" accesskey-conflicts-bug="2073894">
     <menuitem data-l10n-id="places-open-all-bookmarks"
               id="sidebar-bookmarks-context-open-all-bookmarks"/>
     <menuseparator id="sidebar-bookmarks-context-sep-open-all"/>
@@ -555,7 +577,7 @@
               data-l10n-id="split-view-menuitem-close-both-tabs"/>
   </menupopup>
 
-  <menupopup id="toolbar-context-menu">
+  <menupopup id="toolbar-context-menu" accesskey-conflicts-bug="2073893">
     <menuitem id="toolbar-context-manage-extension"
               data-lazy-l10n-id="toolbar-context-menu-manage-extension"
               contexttype="toolbaritem"
@@ -643,7 +665,7 @@
               data-lazy-l10n-id="full-screen-exit"/>
   </menupopup>
 
-  <menupopup id="blockedPopupOptions">
+  <menupopup id="blockedPopupOptions" accesskey-conflicts-bug="2073898">
     <menuitem id="blockedPopupAllowSite"/>
     <menuitem id="blockedPopupEdit"
               data-l10n-id="edit-popup-settings2"/>
@@ -656,7 +678,8 @@
 
   <menupopup id="contentAreaContextMenu"
 # read by macOS cocoa code to enable the "services" menu here:
-             showservicesmenu="true">
+             showservicesmenu="true"
+             accesskey-conflicts-bug="2073889">
 #include browser-context.inc.xhtml
   </menupopup>
 
@@ -801,10 +824,10 @@
   </menupopup>
 
   <menupopup id="userContext-indicator-menu">
-    <menuitem data-l10n-id="user-context-add-container"
+    <menuitem data-l10n-id="user-context-add-container2"
               data-container-entrypoint="container_indicator_menu"
               command="Browser:AddContainer"/>
-    <menuitem data-l10n-id="user-context-manage-containers"
+    <menuitem data-l10n-id="user-context-manage-containers2"
               data-container-entrypoint="container_indicator_menu"
               command="Browser:OpenAboutContainers"/>
   </menupopup>

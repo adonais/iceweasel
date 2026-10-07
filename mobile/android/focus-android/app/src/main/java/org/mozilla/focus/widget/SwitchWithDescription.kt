@@ -24,11 +24,10 @@ constructor(
     defStyleAttr: Int = 0,
 ) : ConstraintLayout(context, attrs, defStyleAttr) {
 
-    internal var binding: SwitchWithDescriptionBinding
+    internal val binding: SwitchWithDescriptionBinding
 
     init {
-        val view = LayoutInflater.from(context).inflate(R.layout.switch_with_description, this, true)
-        binding = SwitchWithDescriptionBinding.bind(view)
+        binding = SwitchWithDescriptionBinding.inflate(LayoutInflater.from(context), this)
 
         context.withStyledAttributes(attrs, R.styleable.SwitchWithDescription, defStyleAttr, 0) {
             val icon =

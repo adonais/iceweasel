@@ -43,6 +43,9 @@ notes = "This is the upstream code plus a fix for https://github.com/rust-lang/c
 audit-as-crates-io = true
 notes = "This is upstream plus a warning fix from bug 1823866."
 
+[policy."crash-context:0.8.0@git:6744feee58804a78730d176cdcc31bb4f3021107"]
+audit-as-crates-io = true
+
 [policy.cssparser]
 audit-as-crates-io = true
 notes = "Upstream not yet published changes"
@@ -75,10 +78,6 @@ notes = "This is upstream plus a build fix from rust-windowing/gl-rs#566. Can be
 [policy."gleam:0.15.1@git:68ca4e5cc31135b843af07ff213a94b9ddce64cf"]
 audit-as-crates-io = true
 notes = "This is upstream plus servo/gleam#235. Can be removed once PR is merged upstream."
-
-[policy.glean-sym]
-audit-as-crates-io = false
-notes = "crates.io release is a placeholder for the moment. glean-sym is consumed via git"
 
 [policy.gluesmith]
 criteria = "safe-to-run"
@@ -138,7 +137,7 @@ notes = "Patched version of upstream"
 
 [policy.jxl_simd]
 audit-as-crates-io = true
-notes = "Upstream 0.6.0 with a local Mac/x86_64 workaround patched in (see bug 2043090) and path-sourced via a [patch.crates-io] entry in the root Cargo.toml."
+notes = "Upstream 0.7.4 with a local Mac/x86_64 workaround patched in (see bug 2043090) and path-sourced via a [patch.crates-io] entry in the root Cargo.toml."
 
 [policy."khronos_api:3.1.0@git:71c792dbfe0ec5caeb242fc90937e19098386342"]
 audit-as-crates-io = true
@@ -251,13 +250,16 @@ audit-as-crates-io = false
 [policy.peek-poke-derive]
 audit-as-crates-io = false
 
-[policy."process-backend:0.0.0@git:ee5b9d59d85bea1d4c6845f6b854e04fe204adf2"]
+[policy."process-backend:0.1.0@git:6744feee58804a78730d176cdcc31bb4f3021107"]
 audit-as-crates-io = false
 notes = """
 This was originally intended to be a minidump-writer internal crate (and thus
 audited as part of minidump-writer), however an author accidentally published
 it publicly (so it is on crates.io now).
 """
+
+[policy."process-reader:0.1.0@git:6744feee58804a78730d176cdcc31bb4f3021107"]
+audit-as-crates-io = false
 
 [policy.pulse]
 audit-as-crates-io = false

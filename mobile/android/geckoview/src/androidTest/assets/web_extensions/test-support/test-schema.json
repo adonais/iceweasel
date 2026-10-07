@@ -334,14 +334,18 @@
       },
 
       {
-        "name": "notifyUserGestureActivation",
+        "name": "showPicker",
         "type": "function",
         "async": true,
-        "description": "Invokes document.notifyUserGestureActivation to simulate user gesture activation.",
+        "description": "Calls showPicker() on the element matching the selector, with a simulated user gesture activation in the same turn.",
         "parameters": [
           {
             "type": "number",
             "name": "tabId"
+          },
+          {
+            "type": "string",
+            "name": "selector"
           }
         ]
       },

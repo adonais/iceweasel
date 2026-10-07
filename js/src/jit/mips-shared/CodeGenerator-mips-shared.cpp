@@ -89,33 +89,6 @@ bool CodeGeneratorMIPSShared::generateOutOfLineCode() {
   return !masm.oom();
 }
 
-void CodeGeneratorMIPSShared::bailoutFrom(Label* label, LSnapshot* snapshot) {
-  MOZ_ASSERT_IF(!masm.oom(), label->used());
-  MOZ_ASSERT_IF(!masm.oom(), !label->bound());
-
-  encode(snapshot);
-
-  InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
-  auto* ool = new (alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
-    // Push snapshotOffset and make sure stack is aligned.
-    masm.subPtr(Imm32(sizeof(Value)), StackPointer);
-    masm.storePtr(ImmWord(snapshot->snapshotOffset()),
-                  Address(StackPointer, 0));
-
-    masm.jump(&deoptLabel_);
-  });
-  addOutOfLineCode(ool,
-                   new (alloc()) BytecodeSite(tree, tree->script()->code()));
-
-  masm.retarget(label, ool->entry());
-}
-
-void CodeGeneratorMIPSShared::bailout(LSnapshot* snapshot) {
-  Label label;
-  masm.jump(&label);
-  bailoutFrom(&label, snapshot);
-}
-
 void CodeGenerator::visitMinMaxD(LMinMaxD* ins) {
   FloatRegister first = ToFloatRegister(ins->first());
   FloatRegister second = ToFloatRegister(ins->second());
@@ -1076,14 +1049,14 @@ void CodeGenerator::visitWasmTruncateToInt32(LWasmTruncateToInt32* lir) {
 void CodeGeneratorMIPSShared::visitOutOfLineWasmTruncateCheck(
     OutOfLineWasmTruncateCheck* ool) {
   if (ool->toType() == MIRType::Int32) {
-    masm.outOfLineWasmTruncateToInt32Check(ool->input(), ool->output(),
-                                           ool->fromType(), ool->flags(),
-                                           ool->rejoin(), ool->trapSiteDesc());
+    masm.outOfLineWasmTruncateToInt32Check(
+        ool->input(), ool->output(), ool->fromType(), ool->flags(),
+        ool->rejoin(), ool->trapSiteDesc(), nullptr, nullptr);
   } else {
     MOZ_ASSERT(ool->toType() == MIRType::Int64);
-    masm.outOfLineWasmTruncateToInt64Check(ool->input(), ool->output64(),
-                                           ool->fromType(), ool->flags(),
-                                           ool->rejoin(), ool->trapSiteDesc());
+    masm.outOfLineWasmTruncateToInt64Check(
+        ool->input(), ool->output64(), ool->fromType(), ool->flags(),
+        ool->rejoin(), ool->trapSiteDesc(), nullptr, nullptr);
   }
 }
 

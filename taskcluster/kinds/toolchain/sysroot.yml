@@ -18,12 +18,12 @@ sysroot-i686-linux-gnu:
         local-toolchain: true
     worker:
         env:
-            PACKAGES_TASKS: {task-reference: '<gcc-10>'}
-            GCC_VERSION: '10'
+            PACKAGES_TASKS: {task-reference: '<gcc-11>'}
+            GCC_VERSION: '11'
     treeherder:
         symbol: TL32(sysroot)
     dependencies:
-        gcc-10: packages-deb8-32-gcc-10
+        gcc-11: packages-deb8-32-gcc-11
     run:
         toolchain-artifact: public/build/sysroot-i686-linux-gnu.tar.zst
         arguments:
@@ -35,12 +35,12 @@ sysroot-x86_64-linux-gnu:
         local-toolchain: true
     worker:
         env:
-            PACKAGES_TASKS: {task-reference: '<gcc-10>'}
-            GCC_VERSION: '10'
+            PACKAGES_TASKS: {task-reference: '<gcc-11>'}
+            GCC_VERSION: '11'
     treeherder:
         symbol: TL(sysroot)
     dependencies:
-        gcc-10: packages-deb8-gcc-10
+        gcc-11: packages-deb8-gcc-11
     run:
         toolchain-artifact: public/build/sysroot-x86_64-linux-gnu.tar.zst
         arguments:
@@ -52,12 +52,12 @@ sysroot-x86_64-linux-gnu-x11:
         local-toolchain: true
     worker:
         env:
-            PACKAGES_TASKS: {task-reference: '<gcc-10> <gtk3>'}
-            GCC_VERSION: '10'
+            PACKAGES_TASKS: {task-reference: '<gcc-11> <gtk3>'}
+            GCC_VERSION: '11'
     treeherder:
         symbol: TL(sysroot-x11)
     dependencies:
-        gcc-10: packages-deb8-gcc-10
+        gcc-11: packages-deb8-gcc-11
         gtk3: packages-deb8-gtk3
     run:
         toolchain-artifact: public/build/sysroot-x86_64-linux-gnu.tar.zst
@@ -69,9 +69,7 @@ sysroot-wasm32-wasi-clang-19:
     attributes:
         local-toolchain: true
     treeherder:
-        symbol: TL(sysroot-wasi-19)
-    worker:
-        docker-image: {in-tree: deb13-toolchain-build}
+        symbol: WASI(sysroot-19)
     run:
         script: build-wasi-sdk.sh
         arguments:
@@ -94,9 +92,7 @@ sysroot-wasm32-wasi-clang-22:
     attributes:
         local-toolchain: true
     treeherder:
-        symbol: TL(sysroot-wasi-22)
-    worker:
-        docker-image: {in-tree: deb13-toolchain-build}
+        symbol: WASI(sysroot-22)
     run:
         script: build-wasi-sdk.sh
         arguments:
@@ -122,9 +118,7 @@ sysroot-wasm32-wasi-clang-23:
     attributes:
         local-toolchain: true
     treeherder:
-        symbol: TL(sysroot-wasi-23)
-    worker:
-        docker-image: {in-tree: deb13-toolchain-build}
+        symbol: WASI(sysroot-23)
     run:
         script: build-wasi-sdk.sh
         arguments:
@@ -144,9 +138,7 @@ sysroot-wasm32-wasi-clang-trunk:
     attributes:
         cached_task: false
     treeherder:
-        symbol: TL(sysroot-wasi-trunk)
-    worker:
-        docker-image: {in-tree: deb13-toolchain-build}
+        symbol: WASI(sysroot-trunk)
     run:
         script: build-wasi-sdk.sh
         arguments:
@@ -171,12 +163,12 @@ sysroot-aarch64-linux-gnu:
         local-toolchain: true
     worker:
         env:
-            PACKAGES_TASKS: {task-reference: '<gcc-10>'}
-            GCC_VERSION: '10'
+            PACKAGES_TASKS: {task-reference: '<gcc-11>'}
+            GCC_VERSION: '11'
     treeherder:
         symbol: TLA64(sysroot)
     dependencies:
-        gcc-10: packages-deb10-arm64-gcc-10
+        gcc-11: packages-deb10-arm64-gcc-11
     run:
         toolchain-artifact: public/build/sysroot-aarch64-linux-gnu.tar.zst
         arguments:
@@ -228,23 +220,23 @@ linux64-toolchain-sysroot:
             # For socorro-cli
             - libdbus-1-dev
 
-linux64-toolchain-sysroot-gcc10:
+linux64-toolchain-sysroot-gcc11:
     description: "Sysroot for linux64 toolchain builds"
     worker:
         env:
-            PACKAGES_TASKS: {task-reference: '<gcc-10>'}
-            GCC_VERSION: '10'
+            PACKAGES_TASKS: {task-reference: '<gcc-11>'}
+            GCC_VERSION: '11'
     treeherder:
-        symbol: TL(sysroot-toolchain-gcc10)
+        symbol: TL(sysroot-toolchain-gcc11)
     dependencies:
-        gcc-10: packages-deb8-gcc-10
+        gcc-11: packages-deb8-gcc-11
     run:
         arguments:
             - amd64
             # For clang
             - binutils-dev
             - gcc-multilib
-            - lib32stdc++-10-dev
+            - lib32stdc++-11-dev
             - libxml2-dev
             # For minidump-stackwalk
             - libcurl4-openssl-dev
@@ -254,6 +246,8 @@ linux64-toolchain-sysroot-gcc10:
             - libicu-dev
             # For libdmg-hfsplus
             - liblzma-dev
+            # For hfsplus
+            - uuid-dev
 
 linux64-aarch64-toolchain-sysroot:
     description: "Sysroot for aarch64 linux64 toolchain builds"

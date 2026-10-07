@@ -423,8 +423,6 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   bool IsHTMLLink(nsIURI** aURI) const;
 
   // HTML element methods
-  void Compact() { mAttrs.Compact(); }
-
   void UpdateEditableState(bool aNotify) override;
 
   bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,

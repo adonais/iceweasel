@@ -65,6 +65,14 @@ class HostRecordQueue final {
       MOZ_REQUIRES(mLock);
 
  private:
+  // Per-record link/unlink of mEvictionQ goes through these two helpers, which
+  // keep nsHostRecord::mInEvictionQueue in lockstep with actual list membership
+  // so no call site can forget to update the flag. (The bulk-teardown paths
+  // FlushEvictionQ/ClearAll clear the whole list at once and reset the flags in
+  // their loop instead.)
+  void PutInEvictionQ(nsHostRecord* aRec) MOZ_REQUIRES(mLock);
+  void RemoveFromEvictionQ(nsHostRecord* aRec) MOZ_REQUIRES(mLock);
+
   Atomic<uint32_t> mPendingCount{0};
   Atomic<uint32_t> mEvictionQSize{0};
   LinkedList<RefPtr<nsHostRecord>> mHighQ;

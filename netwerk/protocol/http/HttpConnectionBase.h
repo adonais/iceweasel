@@ -159,6 +159,9 @@ class HttpConnectionBase : public nsSupportsWeakReference {
                                   TimeStamp tcpConnectEnd,
                                   TimeStamp secureConnectionStart = TimeStamp(),
                                   TimeStamp connectEnd = TimeStamp());
+  // Gives aTrans, which is being activated on this connection, the connect
+  // phase of this connection, and hands it out only once.
+  void HandOffConnectPhase(nsAHttpTransaction* aTrans);
 
   virtual bool IsPersistent() = 0;
   virtual bool IsReused() = 0;
@@ -218,8 +221,11 @@ class HttpConnectionBase : public nsSupportsWeakReference {
   // Used to track whether this connection is serving the first request.
   bool mHasFirstHttpTransaction{false};
 
-  bool mBootstrappedTimingsSet{false};
+  // The connect phase of this connection, handed to the transaction it was
+  // established for when that transaction is activated. Set once afterwards,
+  // so that no other transaction can claim the same connect phase.
   TimingStruct mBootstrappedTimings;
+  bool mConnectPhaseHandedOff{false};
 
   Mutex mCallbacksLock{"nsHttpConnection::mCallbacksLock"};
   nsMainThreadPtrHandle<nsIInterfaceRequestor> mCallbacks

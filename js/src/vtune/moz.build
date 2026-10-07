@@ -25,3 +25,7 @@ if CONFIG["CC_TYPE"] == "gcc":
     SOURCES["ittnotify_static.c"].flags += ["-Wno-stringop-overflow"]
     if int(CONFIG["CC_VERSION"].split(".")[0]) >= 8:
         SOURCES["ittnotify_static.c"].flags += ["-Wno-stringop-truncation"]
+
+LICENSED_UNDER += [
+    "vtune",
+]

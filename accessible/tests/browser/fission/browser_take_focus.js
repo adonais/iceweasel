@@ -17,7 +17,7 @@ addAccessibleTask(
     const iframe = findAccessibleChildByID(contentDocAcc, "default-iframe-id");
     const iframeDoc = findAccessibleChildByID(
       contentDocAcc,
-      "default-iframe-body-id"
+      DEFAULT_IFRAME_DOC_ID
     );
     const root = getRootAccessible(document);
 
@@ -55,17 +55,17 @@ addAccessibleTask(
 
     is(
       getAccessibleDOMNodeID(contentDocAcc.focusedChild),
-      "default-iframe-body-id",
+      DEFAULT_IFRAME_DOC_ID,
       "correct focusedChild of child doc from top doc"
     );
     is(
       getAccessibleDOMNodeID(iframe.focusedChild),
-      "default-iframe-body-id",
+      DEFAULT_IFRAME_DOC_ID,
       "correct focusedChild of child doc from iframe"
     );
     is(
       getAccessibleDOMNodeID(root.focusedChild),
-      "default-iframe-body-id",
+      DEFAULT_IFRAME_DOC_ID,
       "correct focusedChild of child doc from root"
     );
   },

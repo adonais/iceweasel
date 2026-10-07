@@ -31,3 +31,8 @@ if CONFIG["CC_TYPE"] in ("clang", "gcc"):
     CXXFLAGS += ["-frtti"]
 elif CONFIG["OS_TARGET"] == "WINNT":
     CXXFLAGS += ["-GR"]
+
+LICENSED_UNDER += ["unicode"]
+LICENSED_UNDER["unicode"].paths = [
+    "ICU4XChineseBasedCalendar.cpp",
+]

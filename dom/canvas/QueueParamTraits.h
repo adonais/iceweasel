@@ -22,8 +22,7 @@ namespace mozilla::webgl {
 
 template <typename T>
 struct RemoveCVR {
-  using Type =
-      typename std::remove_reference<typename std::remove_cv<T>::type>::type;
+  using Type = std::remove_reference_t<std::remove_cv_t<T>>;
 };
 
 /**
@@ -53,7 +52,7 @@ template <typename Arg>
 struct QueueParamTraits;  // Todo: s/QueueParamTraits/SizedParamTraits/
 
 template <typename T>
-inline Range<T> AsRange(T* const begin, T* const end) {
+inline mozilla::Range<T> AsRange(T* const begin, T* const end) {
   const auto size = MaybeAs<size_t>(end - begin);
   MOZ_RELEASE_ASSERT(size);
   return {begin, *size};
@@ -64,9 +63,9 @@ inline Range<T> AsRange(T* const begin, T* const end) {
 
 template <class T>
 struct BytesAlwaysValidT {
-  using non_cv = typename std::remove_cv<T>::type;
+  using non_cv = std::remove_cv_t<T>;
   static constexpr bool value =
-      std::is_arithmetic<T>::value && !std::is_same<non_cv, bool>::value;
+      std::is_arithmetic_v<T> && !std::is_same_v<non_cv, bool>;
 };
 static_assert(BytesAlwaysValidT<float>::value);
 static_assert(!BytesAlwaysValidT<bool>::value);
@@ -115,7 +114,7 @@ class ProducerView {
   explicit ProducerView(Producer* aProducer) : mProducer(aProducer) {}
 
   template <typename T>
-  bool WriteFromRange(const Range<const T>& src) {
+  bool WriteFromRange(const mozilla::Range<const T>& src) {
     static_assert(BytesAlwaysValidT<T>::value);
     if (mOk) [[likely]] {
       mOk &= mProducer->WriteFromRange(src);
@@ -182,7 +181,7 @@ class ConsumerView {
 
   /// Return a view wrapping the shmem.
   template <typename T>
-  inline Maybe<Range<const T>> ReadRange(const size_t elemCount) {
+  inline Maybe<mozilla::Range<const T>> ReadRange(const size_t elemCount) {
     static_assert(BytesAlwaysValidT<T>::value);
     if (!mOk) [[unlikely]] {
       return {};
@@ -294,7 +293,7 @@ struct QueueParamTraits_TiedFields {
 template <typename E, typename EnumValidator>
 struct EnumSerializer {
   using ParamType = E;
-  using DataType = typename std::underlying_type<E>::type;
+  using DataType = std::underlying_type_t<E>;
 
   template <typename U>
   static auto Write(ProducerView<U>& aProducerView, const ParamType& aValue) {
@@ -373,7 +372,7 @@ struct QueueParamTraits<webgl::TexUnpackBlobDesc> {
 
       const size_t dataSize = stride * surfSize.height;
       const auto& begin = map.GetData();
-      const auto range = Range<const uint8_t>{begin, dataSize};
+      const auto range = mozilla::Range<const uint8_t>{begin, dataSize};
       if (!view.WriteFromRange(range)) {
         return false;
       }

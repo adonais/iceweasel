@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import argparse
-import collections
 import csv
 import os
 import sys
@@ -54,7 +53,7 @@ def generate_report(tuple_list, filepath, mode="variance"):
             data = data_dict["test_runs"]
             data.sort(key=lambda x: x[3])
             data = data[int(0.1 * len(data)) : int(0.9 * len(data) + 1)]
-            time_dict = collections.OrderedDict()
+            time_dict = {}
             days = {}
 
             for point in data:

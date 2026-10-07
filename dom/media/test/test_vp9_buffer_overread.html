@@ -1,0 +1,32 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Test VP9 sw decoding with custom buffer allocation (bug 2073852)</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script type="text/javascript" src="manifest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<pre id="test">
+<script class="testbody" type="text/javascript">
+
+// VP9 video whose chroma plane dimensions (128x64) are exact multiples of
+// the SIMD alignment, leaving zero within-row slack.  Without trailing
+// padding in the decode buffer the AVX-512 horizontal filter over-reads
+// past the allocation (bug 2073852).
+add_task(async function testVP9OverreadPlayback() {
+  let video = document.createElement('video');
+  info(`try to play VP9 aligned video`);
+  video.preload = "auto";
+  video.src = "vp9_256x128.webm";
+  document.body.appendChild(video);
+  ok(await video.play().then(_=>true, _=>false), "video started playing");
+  ok(await new Promise(r => video.onended = r).then(_=>true, _=>false),
+     "video played to end");
+  removeNodeAndSource(video);
+});
+
+</script>
+</pre>
+</body>
+</html>

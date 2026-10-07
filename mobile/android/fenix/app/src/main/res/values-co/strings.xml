@@ -2766,7 +2766,7 @@
   <!-- Bullet point 2 for "Default Protection" information page under "DNS over HTTPS" -->
   <string name="preference_doh_default_protection_info_2">Impiegà u vostru sistema predefinitu di risuluzione di nome s’ella ci hè un prublema cù u furnidore di DNS sicuru</string>
   <!-- Bullet point 3 for "Default Protection" information page under "DNS over HTTPS". %1$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->
-  <string name="preference_doh_default_protection_info_3">Impiegà un furnidore lucale, s\'ella hè pussibule. %1$s</string>
+  <string name="preference_doh_default_protection_info_3">Impiegà un furnidore lucale, s’ella hè pussibule. %1$s</string>
   <!-- Bullet point 4 for "Default Protection" information page under "DNS over HTTPS" -->
   <string name="preference_doh_default_protection_info_4">Disattivà in presenza di VPN, di cuntrollu parentale, o di strategie d’impresa</string>
   <!-- Bullet point 5 for "Default Protection" information page under "DNS over HTTPS". %1$s is the name of the application (e.g. Fenix). %2$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->

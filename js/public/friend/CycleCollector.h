@@ -14,6 +14,11 @@
 #include "js/HeapAPI.h"  // JS::GCCellPtr
 #include "js/TraceKind.h"
 
+namespace JS {
+class AutoRequireNoGC;
+class SliceBudget;
+}  // namespace JS
+
 /*
  * Trace hook used to trace gray roots incrementally.
  *

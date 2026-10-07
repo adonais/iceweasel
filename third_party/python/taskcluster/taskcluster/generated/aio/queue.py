@@ -32,7 +32,7 @@ class Queue(AsyncBaseClient):
     * **Error artifacts**, only consists of meta-data which the queue will
     store for you. These artifacts are only meant to indicate that you the
     worker or the task failed to generate a specific artifact, that you
-    would otherwise have uploaded. For example docker-worker will upload an
+    would otherwise have uploaded. For example generic-worker will upload an
     error artifact, if the file it was supposed to upload doesn't exists or
     turns out to be a directory. Clients requesting an error artifact will
     get a `424` (Failed Dependency) response. This is mainly designed to
@@ -227,6 +227,11 @@ class Queue(AsyncBaseClient):
         Task group can be sealed once and is irreversible. Calling it multiple times
         will return same result and will not update it again.
 
+        Sealing makes `cancelTaskGroup` meaningful by stopping task creators
+        from adding more tasks to a group being cancelled. It is not a
+        security feature: the check is not atomic with task creation, so a
+        `createTask` racing this call may still succeed.
+
         This method is ``experimental``
         """
 
@@ -367,6 +372,39 @@ class Queue(AsyncBaseClient):
         """
 
         return await self._makeApiCall(self.funcinfo["cancelTask"], *args, **kwargs)
+
+    async def changeTaskPriority(self, *args, **kwargs):
+        """
+        Change Task Priority
+
+        This method updates the priority of a single unresolved task.
+
+        * Claimed or running tasks keep their current run priority until they are retried.
+        * Emits `taskPriorityChanged` events so downstream tooling can observe manual overrides.
+
+        This method is ``experimental``
+        """
+
+        return await self._makeApiCall(
+            self.funcinfo["changeTaskPriority"], *args, **kwargs
+        )
+
+    async def changeTaskGroupPriority(self, *args, **kwargs):
+        """
+        Change Task Group Priority
+
+        This method applies a new priority to unresolved tasks within a task group.
+
+        * Updates run in bounded batches to avoid long locks.
+        * Claimed or running tasks keep their current run priority until they are retried.
+        * Emits `taskGroupPriorityChanged` summary event at the end.
+
+        This method is ``experimental``
+        """
+
+        return await self._makeApiCall(
+            self.funcinfo["changeTaskGroupPriority"], *args, **kwargs
+        )
 
     async def claimWork(self, *args, **kwargs):
         """
@@ -786,28 +824,6 @@ class Queue(AsyncBaseClient):
 
         return await self._makeApiCall(self.funcinfo["getProvisioner"], *args, **kwargs)
 
-    async def declareProvisioner(self, *args, **kwargs):
-        """
-        Update a provisioner
-
-        Declare a provisioner, supplying some details about it.
-
-        `declareProvisioner` allows updating one or more properties of a provisioner as long as the required scopes are
-        possessed. For example, a request to update the `my-provisioner`
-        provisioner with a body `{description: 'This provisioner is great'}` would require you to have the scope
-        `queue:declare-provisioner:my-provisioner#description`.
-
-        The term "provisioner" is taken broadly to mean anything with a provisionerId.
-        This does not necessarily mean there is an associated service performing any
-        provisioning activity.
-
-        This method is ``deprecated``
-        """
-
-        return await self._makeApiCall(
-            self.funcinfo["declareProvisioner"], *args, **kwargs
-        )
-
     async def pendingTasks(self, *args, **kwargs):
         """
         Get Number of Pending Tasks
@@ -823,6 +839,26 @@ class Queue(AsyncBaseClient):
         """
 
         return await self._makeApiCall(self.funcinfo["pendingTasks"], *args, **kwargs)
+
+    async def taskQueueCountsBatch(self, *args, **kwargs):
+        """
+        Get Pending and Claimed Task Counts for Multiple Task Queues
+
+        Get approximate pending and claimed task counts for the given task queues.
+
+        The caller must have both `queue:pending-count:<taskQueueId>` and
+        `queue:claimed-count:<taskQueueId>` scopes for every requested task queue.
+        If any task queue is unauthorized, the entire request will fail.
+
+        As task states may change rapidly, these counts may not represent the exact
+        number of pending and claimed tasks, but are very good approximations.
+
+        This method is ``experimental``
+        """
+
+        return await self._makeApiCall(
+            self.funcinfo["taskQueueCountsBatch"], *args, **kwargs
+        )
 
     async def taskQueueCounts(self, *args, **kwargs):
         """
@@ -900,24 +936,6 @@ class Queue(AsyncBaseClient):
         """
 
         return await self._makeApiCall(self.funcinfo["getWorkerType"], *args, **kwargs)
-
-    async def declareWorkerType(self, *args, **kwargs):
-        """
-        Update a worker-type
-
-        Declare a workerType, supplying some details about it.
-
-        `declareWorkerType` allows updating one or more properties of a worker-type as long as the required scopes are
-        possessed. For example, a request to update the `highmem` worker-type within the `my-provisioner`
-        provisioner with a body `{description: 'This worker type is great'}` would require you to have the scope
-        `queue:declare-worker-type:my-provisioner/highmem#description`.
-
-        This method is ``deprecated``
-        """
-
-        return await self._makeApiCall(
-            self.funcinfo["declareWorkerType"], *args, **kwargs
-        )
 
     async def listTaskQueues(self, *args, **kwargs):
         """
@@ -1051,6 +1069,24 @@ class Queue(AsyncBaseClient):
             "route": "/task-group/<taskGroupId>/cancel",
             "stability": "experimental",
         },
+        "changeTaskGroupPriority": {
+            "args": ["taskGroupId"],
+            "input": "v1/change-task-priority-request.json#",
+            "method": "post",
+            "name": "changeTaskGroupPriority",
+            "output": "v1/task-group-priority-change-response.json#",
+            "route": "/task-group/<taskGroupId>/priority",
+            "stability": "experimental",
+        },
+        "changeTaskPriority": {
+            "args": ["taskId"],
+            "input": "v1/change-task-priority-request.json#",
+            "method": "post",
+            "name": "changeTaskPriority",
+            "output": "v1/task-status-response.json#",
+            "route": "/task/<taskId>/priority",
+            "stability": "experimental",
+        },
         "claimTask": {
             "args": ["taskId", "runId"],
             "input": "v1/task-claim-request.json#",
@@ -1087,15 +1123,6 @@ class Queue(AsyncBaseClient):
             "route": "/task/<taskId>",
             "stability": "stable",
         },
-        "declareProvisioner": {
-            "args": ["provisionerId"],
-            "input": "v1/update-provisioner-request.json#",
-            "method": "put",
-            "name": "declareProvisioner",
-            "output": "v1/provisioner-response.json#",
-            "route": "/provisioners/<provisionerId>",
-            "stability": "deprecated",
-        },
         "declareWorker": {
             "args": ["provisionerId", "workerType", "workerGroup", "workerId"],
             "input": "v1/update-worker-request.json#",
@@ -1104,15 +1131,6 @@ class Queue(AsyncBaseClient):
             "output": "v1/worker-response.json#",
             "route": "/provisioners/<provisionerId>/worker-types/<workerType>/<workerGroup>/<workerId>",
             "stability": "experimental",
-        },
-        "declareWorkerType": {
-            "args": ["provisionerId", "workerType"],
-            "input": "v1/update-workertype-request.json#",
-            "method": "put",
-            "name": "declareWorkerType",
-            "output": "v1/workertype-response.json#",
-            "route": "/provisioners/<provisionerId>/worker-types/<workerType>",
-            "stability": "deprecated",
         },
         "finishArtifact": {
             "args": ["taskId", "runId", "name"],
@@ -1412,6 +1430,15 @@ class Queue(AsyncBaseClient):
             "output": "v1/task-queue-counts-response.json#",
             "route": "/task-queues/<taskQueueId>/counts",
             "stability": "stable",
+        },
+        "taskQueueCountsBatch": {
+            "args": [],
+            "input": "v1/task-queue-counts-request.json#",
+            "method": "post",
+            "name": "taskQueueCountsBatch",
+            "output": "v1/task-queue-counts-list-response.json#",
+            "route": "/task-queues/counts",
+            "stability": "experimental",
         },
         "tasks": {
             "args": [],

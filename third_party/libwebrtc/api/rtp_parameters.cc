@@ -385,8 +385,8 @@ const std::vector<RtpExtension> RtpExtension::DeduplicateHeaderExtensions(
   // which is defined for int, but not for RtpHeaderExtensionId.
   std::sort(filtered.begin(), filtered.end(),
             [](const RtpExtension& a, const RtpExtension& b) {
-              return std::tie(a.uri, a.encrypt, a.id.value()) <
-                     std::tie(b.uri, b.encrypt, b.id.value());
+              return std::tie(a.uri, a.encrypt, a.id) <
+                     std::tie(b.uri, b.encrypt, b.id);
             });
 
   return filtered;

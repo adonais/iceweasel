@@ -10,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.res.use
 import androidx.core.content.withStyledAttributes
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.DeleteBrowsingDataItemBinding
@@ -27,7 +28,7 @@ constructor(
         private const val DISABLED_ALPHA = 0.6f
     }
 
-    private var binding: DeleteBrowsingDataItemBinding
+    private val binding: DeleteBrowsingDataItemBinding
 
     val titleView: TextView
         get() = binding.title
@@ -44,9 +45,15 @@ constructor(
     var onCheckListener: ((Boolean) -> Unit)? = null
 
     init {
-        val view = LayoutInflater.from(context).inflate(R.layout.delete_browsing_data_item, this, true)
+        binding = DeleteBrowsingDataItemBinding.inflate(LayoutInflater.from(context), this)
 
-        binding = DeleteBrowsingDataItemBinding.bind(view)
+        val preferredItemHeight =
+            context.obtainStyledAttributes(intArrayOf(android.R.attr.listPreferredItemHeight)).use {
+                it.getDimensionPixelSize(0, 0)
+            }
+        if (preferredItemHeight != 0) {
+            minHeight = preferredItemHeight
+        }
 
         setOnClickListener {
             binding.checkbox.isChecked = !binding.checkbox.isChecked

@@ -206,8 +206,7 @@ class GeckoThreadSupport final
     nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service();
 
     if (appStartup) {
-      bool userAllowedQuit = true;
-      appStartup->Quit(nsIAppStartup::eForceQuit, 0, &userAllowedQuit);
+      appStartup->Quit(nsIAppStartup::eForceQuit, 0);
     }
   }
 

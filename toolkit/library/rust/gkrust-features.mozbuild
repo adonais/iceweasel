@@ -95,5 +95,8 @@ if CONFIG["MOZ_BACKGROUNDTASKS"] and CONFIG["OS_ARCH"] == "WINNT":
 if CONFIG["ENABLE_TESTS"]:
     gkrust_features += ["enable_tests"]
 
+# Tell noise it is being built in Gecko.
+gkrust_features += ["noise_xpcom"]
+
 # This must remain last.
 gkrust_features = ["gkrust-shared/%s" % f for f in gkrust_features]

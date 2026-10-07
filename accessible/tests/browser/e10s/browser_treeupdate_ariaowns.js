@@ -711,8 +711,11 @@ addAccessibleTask(
 AAAAAAAA
 <label>
   `,
-  async function testRelocateChildWithCaretMove(browser, docAcc) {
-    let moved = waitForEvent(EVENT_TEXT_CARET_MOVED, docAcc);
+  async function testRelocateChildWithCaretMove(browser) {
+    let moved = waitForEvent(
+      EVENT_TEXT_CARET_MOVED,
+      DEFAULT_CONTENT_DOC_BODY_ID
+    );
     await invokeContentTask(browser, [], () => {
       content.document.body.setAttribute("aria-owns", "a");
       content.getSelection().selectAllChildren(content.document.body);

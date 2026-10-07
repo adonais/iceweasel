@@ -6,19 +6,25 @@
 //!
 //! This crate provides site category lookup for telemetry purposes.
 
-use std::cell::LazyCell;
+use std::cell::{LazyCell, RefCell};
+use std::os::raw::c_char;
 
-use nserror::{nsresult, NS_ERROR_UNEXPECTED, NS_OK};
-use nsstring::{nsACString, nsCString};
+use nserror::{nsresult, NS_ERROR_FAILURE, NS_ERROR_UNEXPECTED, NS_OK};
+use nsstring::{nsACString, nsCStr, nsCString};
 use serde_json::{Map, Value};
-use xpcom::interfaces::nsIPrincipal;
-use xpcom::{xpcom, xpcom_method};
+use xpcom::interfaces::{nsIPrefBranch, nsIPrincipal, nsISupports};
+use xpcom::{xpcom, xpcom_method, RefPtr};
 
-#[xpcom(implement(nsISiteCategory), nonatomic)]
+type LazyCategories = LazyCell<Result<Map<String, Value>, nsresult>>;
+
+#[xpcom(implement(nsISiteCategory, nsIObserver), nonatomic)]
 struct SiteCategory {
-    categories: LazyCell<Result<Map<String, Value>, nsresult>>,
+    /// Parsed from `toolkit.telemetry.site_categories` on first use, and reset
+    /// whenever that preference changes.
+    categories: RefCell<LazyCategories>,
 }
 
+#[allow(non_snake_case)]
 impl SiteCategory {
     fn parse_categories() -> Result<Map<String, Value>, nsresult> {
         let categories = static_prefs::pref!("toolkit.telemetry.site_categories").to_string();
@@ -31,9 +37,34 @@ impl SiteCategory {
         Ok(categories)
     }
 
+    fn observe_pref(&self) -> Result<(), nsresult> {
+        let pref_branch: RefPtr<nsIPrefBranch> =
+            xpcom::components::Preferences::service().map_err(|_| NS_ERROR_FAILURE)?;
+        let pref_name = &nsCStr::from("toolkit.telemetry.site_categories") as &nsACString;
+        // SAFETY: We pass a valid string and a valid nsIObserver, and the
+        // preference service holds a strong reference to the observer until
+        // it drops its observers at xpcom-shutdown.
+        unsafe { pref_branch.AddObserverImpl(pref_name, self.coerce(), false) }.to_result()
+    }
+
+    /// Invalidate the cached categories so that the new preference value is
+    /// picked up by the next `get_category` call. Note that recalculating here
+    /// would also be safe (static preference mirrors are updated before any
+    /// observer runs), but there is no need to do the work eagerly.
+    unsafe fn Observe(
+        &self,
+        _subject: *const nsISupports,
+        _topic: *const c_char,
+        _data: *const u16,
+    ) -> nsresult {
+        *self.categories.borrow_mut() = LazyCell::new(Self::parse_categories);
+        NS_OK
+    }
+
     xpcom_method!(get_category => GetCategory(principal: *const nsIPrincipal) -> nsACString);
     fn get_category(&self, principal: &nsIPrincipal) -> Result<nsCString, nsresult> {
-        let categories = (&*self.categories).as_ref().map_err(|err| err.to_owned())?;
+        let cell = self.categories.borrow();
+        let categories = (**cell).as_ref().map_err(|err| err.to_owned())?;
 
         // Check the full host first for specific subdomain matches
         // (e.g., "mail.google.com" should match before falling back to "google.com")
@@ -71,8 +102,11 @@ pub extern "C" fn new_site_category(
     result: *mut *mut xpcom::reexports::libc::c_void,
 ) -> nsresult {
     let service = SiteCategory::allocate(InitSiteCategory {
-        categories: LazyCell::new(SiteCategory::parse_categories),
+        categories: RefCell::new(LazyCell::new(SiteCategory::parse_categories)),
     });
+    if let Err(err) = service.observe_pref() {
+        return err;
+    }
     // SAFETY: The caller is responsible to pass a valid IID and pointer-to-pointer.
     unsafe { service.QueryInterface(iid, result) }
 }

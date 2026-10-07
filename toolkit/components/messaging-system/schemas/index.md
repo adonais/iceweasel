@@ -2,7 +2,7 @@
 
 ## Docs
 
-More information about [Messaging System](/browser/components/asrouter/docs).
+More information about [Messaging System](/browser/components/asrouter/docs/index.md).
 
 ## Messages
 
@@ -10,8 +10,6 @@ There are JSON schemas for each type of message that the Firefox Messaging
 System handles:
 
 - {searchfox}`Action Only <browser/components/asrouter/content-src/templates/OnboardingMessage/ActionOnlyMessage.schema.json>`
-- {searchfox}`CFR URLBar Chiclet <browser/components/asrouter/content-src/templates/CFR/templates/CFRUrlbarChiclet.schema.json>`
-- {searchfox}`Extension Doorhanger <browser/components/asrouter/content-src/templates/CFR/templates/ExtensionDoorhanger.schema.json>`
 - {searchfox}`Infobar <browser/components/asrouter/content-src/templates/InfoBar/InfoBar.schema.json>`
 - {searchfox}`Spotlight <browser/components/asrouter/content-src/templates/OnboardingMessage/Spotlight.schema.json>`
 - {searchfox}`Toast Notification <browser/components/asrouter/content-src/templates/ToastNotification/ToastNotification.schema.json>`
@@ -134,14 +132,13 @@ An example of using the `localizableText` definition in a message schema follows
 
 ## Schema Tests
 
-We have in-tree tests ({searchfox}`Test_CFRMessageProvider <browser/components/asrouter/tests//xpcshell/test_CFMessageProvider.js>`,
-{searchfox}`Test_OnboardingMessageProvider <browser/components/asrouter/tests//xpcshell/test_OnboardingMessageProvider.js>`, and {searchfox}`Test_PanelTestProvider <browser/components/asrouter/tests//xpcshell/test_PanelTestProvider.js>`), which
+We have in-tree tests ({searchfox}`Test_OnboardingMessageProvider <browser/components/asrouter/tests//xpcshell/test_OnboardingMessageProvider.js>` and {searchfox}`Test_PanelTestProvider <browser/components/asrouter/tests//xpcshell/test_PanelTestProvider.js>`), which
 validate existing messages with the generated schema.
 
 We also have compatibility tests for ensuring that our schemas work in
 [Experimenter]. [Experimenter] uses a different JSON schema validation
 library, which is reused in the {searchfox}`Firefox MS Schemas CI job <taskcluster/kinds/source-test/python.yml#425-438>`. This test validates a test corpus from
-{searchfox}`CFRMessageProvider <browser/components/asrouter/modules/CFRMessageProvider.sys.mjs>`, {searchfox}`OnboardingMessageProvider <browser/components/asrouter/modules/OnboardingMessageProvider.sys.mjs>`, and {searchfox}`PanelTestProvider <browser/components/asrouter/modules/PanelTestProvider.sys.mjs>`
+{searchfox}`OnboardingMessageProvider <browser/components/asrouter/modules/OnboardingMessageProvider.sys.mjs>` and {searchfox}`PanelTestProvider <browser/components/asrouter/modules/PanelTestProvider.sys.mjs>`
 with the same JSON schema validation library and configuration as Experimenter.
 
 See how to run these tests {ref}`above <run-make-schemas>`.

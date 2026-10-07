@@ -59,6 +59,7 @@ android {
 
         // Is the underlying compiled C/C++ code compiled with --enable-debug?
         buildConfigField 'boolean', 'DEBUG_BUILD', mozconfig.substs.MOZ_DEBUG ? 'true' : 'false';
+        buildConfigField 'boolean', 'MOZ_CODE_COVERAGE', mozconfig.substs.MOZ_CODE_COVERAGE ? 'true' : 'false';
 
         // See this wiki page for more details about channel specific build defines:
         // https://wiki.mozilla.org/Platform/Channel-specific_build_defines

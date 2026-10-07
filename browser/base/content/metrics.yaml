@@ -371,13 +371,14 @@ browser.engagement:
       Windows Start menu search.
     bugs:
       - https://bugzil.la/2026849
+      - https://bugzil.la/2068815
     data_reviews:
       - https://bugzil.la/2026849
     notification_emails:
       - install-update@mozilla.com
     send_in_pings:
       - metrics
-    expires: 159
+    expires: 163
     labels:
       - startup
       - new_tab

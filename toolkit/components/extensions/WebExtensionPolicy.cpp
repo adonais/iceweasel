@@ -984,12 +984,12 @@ bool MozDocumentMatcher::Matches(const DocInfo& aDoc,
     // In MV3, activeTab only allows access to same-origin iframes.
     if (mHasActiveTabPermission && aDoc.IsSameOriginWithTop() &&
         MatchPattern::MatchesAllURLs(urlinfo)) {
-      return true;
+      return mExtension->CheckGuarded(urlinfo).IsNull();
     }
   } else {
     if (mHasActiveTabPermission && aDoc.ShouldMatchActiveTabPermission() &&
         MatchPattern::MatchesAllURLs(urlinfo)) {
-      return true;
+      return !mExtension || mExtension->CheckGuarded(urlinfo).IsNull();
     }
   }
 

@@ -692,25 +692,6 @@ security:
           If the principal is a ContentPrincipal, we also collect the scheme
         type: string
 
-  shadowed_html_document_property_access:
-    type: event
-    description: >
-      When accessing a property on the HTMLDocument like (document.currentScript),
-      if that property was shadowed/"clobbered" (e.g. using <img name=currentScript>), the
-      name of the shadowed built-in property is collected.
-    bugs:
-      - https://bugzil.la/1955578
-    data_reviews:
-      - https://bugzil.la/1955578
-    notification_emails:
-      - tschuster@mozilla.com
-    expires: 160
-    extra_keys:
-      name:
-        description: >
-          Name of the shadowed HTML property that was accessed.
-        type: string
-
 dom.contentprocess:
   build_id_mismatch:
     type: counter
@@ -820,7 +801,6 @@ dom.contentprocess:
       - jimm@mozilla.com
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: CONTENT_PROCESS_LAUNCH_MAINTHREAD_MS
 
   launch_total:
     type: timing_distribution
@@ -840,7 +820,6 @@ dom.contentprocess:
       - jimm@mozilla.com
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: CONTENT_PROCESS_LAUNCH_TOTAL_MS
 
   sync_launch:
     type: timing_distribution
@@ -860,7 +839,6 @@ dom.contentprocess:
       - jimm@mozilla.com
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: CONTENT_PROCESS_SYNC_LAUNCH_MS
 
   launch_is_sync:
     type: labeled_counter
@@ -882,7 +860,6 @@ dom.contentprocess:
       - jimm@mozilla.com
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: h#CONTENT_PROCESS_LAUNCH_IS_SYNC
 
 dom.parentprocess:
   private_window_used:

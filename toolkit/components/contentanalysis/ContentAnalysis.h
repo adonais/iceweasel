@@ -140,7 +140,7 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
   int64_t mUserActionRequestsCount = 1;
 
   // Type of text to display, see nsIContentAnalysisRequest for values
-  OperationType mOperationTypeForDisplay = OperationType::eClipboard;
+  OperationType mOperationTypeForDisplay = OperationType::ePasteClipboard;
 
   // File name to display if mOperationTypeForDisplay is
   // eUpload or eDownload.
@@ -233,6 +233,13 @@ class ContentAnalysis final : public nsIContentAnalysis,
       nsITransferable* aTransferable,
       nsIClipboard::ClipboardType aClipboardType,
       ContentAnalysisCallback* aResolver, bool aForFullClipboard = false);
+
+  // Checks data that aWindow is writing to the clipboard. aWindow must be
+  // non-null, and parent-process and chrome copies are not analyzed. Only the
+  // global clipboard should be checked -- see nsBaseClipboard::SetData.
+  static void CheckClipboardCopyContentAnalysis(
+      mozilla::dom::WindowGlobalParent* aWindow, nsITransferable* aTransferable,
+      ContentAnalysisCallback* aResolver);
 
   using FilesAllowedPromise = MozPromise<nsCOMArray<nsIFile>, nsresult, true>;
   // Checks the passed in files in "batch mode", meaning that all requests will

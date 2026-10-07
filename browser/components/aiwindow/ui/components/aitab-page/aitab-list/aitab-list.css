@@ -1,0 +1,100 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  --aitab-list-column-min: 180px;
+  --aitab-list-row-split: 1fr 2fr;
+  --aitab-list-group-gap: 36px;
+  --aitab-list-column-gap: 32px;
+  --aitab-list-row-gap: 48px;
+  --aitab-list-border-color: var(--color-gray-20);
+}
+
+.aitab-list {
+  display: grid;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  gap: var(--aitab-list-column-gap);
+}
+
+.aitab-list-intro {
+  display: grid;
+  align-content: start;
+  gap: var(--space-small);
+}
+
+.aitab-list-title {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  font-size: var(--aitab-heading-3);
+  font-weight: var(--font-weight-semibold);
+}
+
+.aitab-list-groups {
+  display: grid;
+  align-items: start;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  row-gap: var(--aitab-list-group-gap);
+  column-gap: var(--space-xlarge);
+  grid-template-columns: repeat(auto-fit, minmax(var(--aitab-list-column-min), 1fr));
+
+  @container aitab-page (width <= 900px) {
+    grid-template-columns: 1fr;
+  }
+
+  /* An untitled block has no intro to sit beside, so the groups take the
+     whole width rather than leaving an empty gutter. */
+  &:only-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.aitab-list-group-heading {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  font-size: var(--aitab-heading-4);
+  font-weight: var(--font-weight-semibold);
+}
+
+.aitab-list-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aitab-list-group-heading,
+.aitab-list-item {
+  padding-block: var(--space-small);
+}
+
+/* The rules are separators, so the item a group ends on has nothing to be
+   separated from. */
+.aitab-list-group-heading,
+.aitab-list-item:not(:last-child) {
+  border-block-end: var(--border-width) solid var(--aitab-list-border-color);
+}
+
+.aitab-list-item {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  font-size: var(--aitab-body);
+  line-height: 1.5;
+}
+
+:host([layout="row"]) {
+  & .aitab-list {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    gap: var(--aitab-list-row-gap);
+    grid-template-columns: var(--aitab-list-row-split);
+  }
+
+  & .aitab-list-groups {
+    grid-template-columns: 1fr;
+  }
+
+  /* The gutter needs room the narrow page does not have, and the type scale
+     steps down at the same width; see aitab-base.css. */
+  @container aitab-page (width <= 900px) {
+    & .aitab-list {
+      gap: var(--space-large);
+      grid-template-columns: 1fr;
+    }
+  }
+}

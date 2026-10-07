@@ -5,6 +5,8 @@
 #ifndef MOZILLA_GFX_ETAGERE_H
 #define MOZILLA_GFX_ETAGERE_H
 
+#include <cstdint>
+
 namespace Etagere {
 
 constexpr static const uint32_t FLAGS_VERTICAL_SHELVES = 1;

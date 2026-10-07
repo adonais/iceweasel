@@ -56,7 +56,6 @@ class nsISupports;
 class nsITransferable;
 class nsITransaction;
 class nsIWidget;
-class nsRange;
 
 namespace mozilla {
 class AlignStateAtSelection;
@@ -80,6 +79,7 @@ class DragEvent;
 class Element;
 class EventTarget;
 class HTMLBRElement;
+class Range;
 }  // namespace dom
 
 namespace widget {
@@ -152,37 +152,6 @@ class EditorBase : public nsIEditor,
    *                            DevTools.
    */
   [[nodiscard]] bool MaybeNodeRemovalsObservedByDevTools() const;
-
-  /**
-   * MayHaveBeforeInputEventListenersForTelemetry() returns true when the
-   * window may have or have had one or more `beforeinput` event listeners.
-   * Note that this may return false even if there is a `beforeinput`.
-   * See nsPIDOMWindowInner::HasBeforeInputEventListenersForTelemetry()'s
-   * comment for the detail.
-   */
-  bool MayHaveBeforeInputEventListenersForTelemetry() const {
-    if (const nsPIDOMWindowInner* window = GetInnerWindow()) {
-      return window->HasBeforeInputEventListenersForTelemetry();
-    }
-    return false;
-  }
-
-  /**
-   * MutationObserverHasObservedNodeForTelemetry() returns true when a node in
-   * the window may have been observed by the web apps with a mutation observer
-   * (i.e., `MutationObserver.observe()` called by chrome script and addon's
-   * script does not make this returns true).
-   * Note that this may return false even if there is a node observed by
-   * a MutationObserver.  See
-   * nsPIDOMWindowInner::MutationObserverHasObservedNodeForTelemetry()'s comment
-   * for the detail.
-   */
-  bool MutationObserverHasObservedNodeForTelemetry() const {
-    if (const nsPIDOMWindowInner* window = GetInnerWindow()) {
-      return window->MutationObserverHasObservedNodeForTelemetry();
-    }
-    return false;
-  }
 
   /**
    * This checks whether the call with aPrincipal should or should not be
@@ -732,11 +701,6 @@ class EditorBase : public nsIEditor,
     Yes,
   };
 
-  enum class PreventSetSelection {
-    No,
-    Yes,
-  };
-
   /**
    * Replace text in aReplaceRange or all text in this editor with aString and
    * treat the change as inserting the string.
@@ -758,7 +722,7 @@ class EditorBase : public nsIEditor,
    *                            called by system.
    */
   MOZ_CAN_RUN_SCRIPT nsresult ReplaceTextAsAction(
-      const nsAString& aString, nsRange* aReplaceRange,
+      const nsAString& aString, dom::Range* aReplaceRange,
       AllowBeforeInputEventCancelable aAllowBeforeInputEventCancelable,
       PreventSetSelection aPreventSetSelection = PreventSetSelection::No,
       nsIPrincipal* aPrincipal = nullptr);
@@ -877,7 +841,7 @@ class EditorBase : public nsIEditor,
     RefPtr<RangeItem> mSelectedRange;
 
     // Computing changed range while we're handling sub actions.
-    RefPtr<nsRange> mChangedRange;
+    RefPtr<dom::Range> mChangedRange;
 
     // XXX In strict speaking, mCachedPendingStyles isn't enough to cache
     //     inline styles because inline style can be specified with "style"
@@ -2061,23 +2025,23 @@ class EditorBase : public nsIEditor,
    */
   already_AddRefed<nsTextNode> CreateTextNode(const nsAString& aData) const;
 
+  class MOZ_STACK_CLASS AutoTextEditVerifier;
+
   /**
    * DoInsertText(), DoDeleteText(), DoReplaceText() and DoSetText() are
    * wrapper of `CharacterData::InsertData()`, `CharacterData::DeleteData()`,
    * `CharacterData::ReplaceData()` and `CharacterData::SetData()`.
    */
-  MOZ_CAN_RUN_SCRIPT void DoInsertText(dom::Text& aText, uint32_t aOffset,
-                                       const nsAString& aStringToInsert,
-                                       ErrorResult& aRv);
-  MOZ_CAN_RUN_SCRIPT void DoDeleteText(dom::Text& aText, uint32_t aOffset,
-                                       uint32_t aCount, ErrorResult& aRv);
-  MOZ_CAN_RUN_SCRIPT void DoReplaceText(dom::Text& aText, uint32_t aOffset,
-                                        uint32_t aCount,
-                                        const nsAString& aStringToInsert,
-                                        ErrorResult& aRv);
-  MOZ_CAN_RUN_SCRIPT void DoSetText(dom::Text& aText,
-                                    const nsAString& aStringToSet,
-                                    ErrorResult& aRv);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult DoInsertText(
+      dom::Text& aText, uint32_t aOffset, const nsAString& aStringToInsert);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult DoDeleteText(dom::Text& aText,
+                                                         uint32_t aOffset,
+                                                         uint32_t aCount);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  DoReplaceText(dom::Text& aText, uint32_t aOffset, uint32_t aCount,
+                const nsAString& aStringToInsert);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  DoSetText(dom::Text& aText, const nsAString& aStringToSet);
 
   /**
    * Delete text in the range in aTextNode.  Use
@@ -2806,7 +2770,7 @@ class EditorBase : public nsIEditor,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
   DeleteRangeWithTransaction(nsIEditor::EDirection aDirectionAndAmount,
                              nsIEditor::EStripWrappers aStripWrappers,
-                             nsRange& aRangeToDelete);
+                             dom::Range& aRangeToDelete);
 
   /**
    * DeleteRangesWithTransaction() removes content in aRangesToDelete or content
@@ -2855,7 +2819,7 @@ class EditorBase : public nsIEditor,
    */
   already_AddRefed<DeleteContentTransactionBase>
   CreateTransactionForCollapsedRange(
-      const nsRange& aCollapsedRange,
+      const dom::Range& aCollapsedRange,
       HowToHandleCollapsedRange aHowToHandleCollapsedRange);
 
   /**

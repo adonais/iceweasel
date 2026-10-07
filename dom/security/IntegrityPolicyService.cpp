@@ -276,7 +276,6 @@ void dom::IntegrityPolicyService::ReportViolation(
   // 9. Let documentURL be the result of strip URL for use in reports on url.
   nsAutoCString documentURL;
   ReportingUtils::StripURL(uri, documentURL);
-  NS_ConvertUTF8toUTF16 documentURLUTF16(documentURL);
 
   // 10. Let blockedURL be the result of strip URL for use in reports on
   // request’s URL.
@@ -328,9 +327,8 @@ void dom::IntegrityPolicyService::ReportViolation(
       //      endpoint
       // data
       //      body
-      ReportingUtils::Report(global, nsGkAtoms::integrity_violation,
-                             NS_ConvertUTF8toUTF16(endpoint), documentURLUTF16,
-                             body);
+      ReportingUtils::Report(global, nsGkAtoms::integrity_violation, endpoint,
+                             documentURL, body);
     }
   }
 
@@ -362,9 +360,8 @@ void dom::IntegrityPolicyService::ReportViolation(
       //      endpoint
       // data
       //      reportBody
-      ReportingUtils::Report(global, nsGkAtoms::integrity_violation,
-                             NS_ConvertUTF8toUTF16(endpoint), documentURLUTF16,
-                             reportBody);
+      ReportingUtils::Report(global, nsGkAtoms::integrity_violation, endpoint,
+                             documentURL, reportBody);
     }
   }
 }

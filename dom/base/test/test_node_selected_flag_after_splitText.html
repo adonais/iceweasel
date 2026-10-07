@@ -1,0 +1,72 @@
+<!DOCTYPE HTML>
+<html>
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=2072095
+-->
+<head>
+  <meta charset="utf-8">
+  <title>Selection state flags after Text.splitText()</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<p id="target">ABCDEFGHI</p>
+<script>
+"use strict";
+
+// The per-node selection flags (closest common inclusive ancestor and
+// descendant thereof) are not observable from JS.  Debug builds assert in
+// nsINode::IsSelected() when a node is flagged as maybe selected but has no
+// registered common ancestor above it, and the harness fails the test on an
+// unexpected assertion count.  Painting a text frame calls IsSelected().
+
+function paint() {
+  return new Promise(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  });
+}
+
+function freshText() {
+  const p = document.getElementById("target");
+  p.replaceChildren(document.createTextNode("ABCDEFGHI"));
+  return p.firstChild;
+}
+
+add_task(async function newTextBecomesCommonAncestorThenSelectionLeaves() {
+  const text = freshText();
+  const sel = getSelection();
+  sel.setBaseAndExtent(text, "AB".length, text, "ABCDEFG".length);
+  await paint();
+
+  const newText = text.splitText("A".length);
+  const range = sel.getRangeAt(0);
+  is(range.startContainer, newText, "start moved into the new Text");
+  is(range.endContainer, newText, "end moved into the new Text");
+  await paint();
+
+  sel.removeAllRanges();
+  await paint();
+  ok(true, "new Text must not stay flagged as maybe selected");
+});
+
+add_task(async function rangeOutsideSelectionSplitsCommonAncestorOfSelection() {
+  const text = freshText();
+  const sel = getSelection();
+  sel.collapse(text, 0);
+  const range = document.createRange();
+  range.setStart(text, "ABCDE".length);
+  range.setEnd(text, "ABCDEFG".length);
+  await paint();
+
+  const newText = text.splitText("ABC".length);
+  is(range.startContainer, newText, "range start moved into the new Text");
+  is(range.startOffset, "DE".length, "range start offset adjusted");
+  is(sel.getRangeAt(0).startContainer, text, "selection stayed in old Text");
+  await paint();
+  ok(true, "new Text must not be flagged as descendant of a selected node");
+
+  sel.removeAllRanges();
+});
+</script>
+</body>
+</html>

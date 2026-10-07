@@ -233,7 +233,7 @@ export class AdsFeed {
    */
   async getAdsData(isStartup = false) {
     const supportedAdTypes = this.getSupportedAdTypes();
-    const cachedData = (await this.cache.get()) || {};
+    const cachedData = this.adsClient ? {} : (await this.cache.get()) || {};
 
     const { ads } = cachedData;
     const adsCacheValid = ads
@@ -544,9 +544,8 @@ export class AdsFeed {
    */
   async update(isStartup) {
     // The ads-client has its own HTTP response cache, so it is the only cache
-    // on that path. Leaving this one unwritten also keeps getAdsData from
-    // reading it, since a missing entry always falls through to a fetch.
-    if (!lazy.AdsClient.isEnabled(this.store.getState().Prefs.values)) {
+    // on that path.
+    if (!this.adsClient) {
       await this.cache.set("ads", {
         ...(this.tiles ? { tiles: this.tiles } : {}),
         ...(this.spocs ? { spocs: this.spocs } : {}),

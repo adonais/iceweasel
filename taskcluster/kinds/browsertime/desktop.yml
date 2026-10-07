@@ -63,7 +63,7 @@ task-defaults:
                             - win64-minidump-stackwalk
                             - win64-fix-stacks
                         macosx.*-aarch64.*:
-                            - macosx-arm64-custom-car
+                            - macosx64-aarch64-custom-car
                             - macosx64-aarch64-minidump-stackwalk
                             - macosx64-aarch64-fix-stacks
                         default: []

@@ -485,10 +485,17 @@ export class NetworkObserver {
    */
   async #checkForLocalModeHook(httpActivity) {
     const channel = httpActivity.channel;
+
     const localFolderPath = this.#localModeMappings[channel.URI.host];
 
     // Only intercept requests matching a local mode host name
     if (!localFolderPath) {
+      return;
+    }
+
+    // Ignore any request done on a custom port which isn't http, nor https
+    const { port } = channel.URI;
+    if (port != -1 && port != 80 && port != 443) {
       return;
     }
 

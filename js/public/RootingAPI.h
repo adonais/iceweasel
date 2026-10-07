@@ -699,9 +699,8 @@ class MOZ_STACK_CLASS MutableHandle
   inline MOZ_IMPLICIT MutableHandle(RootedField<T, N>* root);
   inline MOZ_IMPLICIT MutableHandle(PersistentRooted<T>* root);
 
- private:
   // Disallow nullptr for overloading purposes.
-  MutableHandle(decltype(nullptr)) = delete;
+  MutableHandle(std::nullptr_t) = delete;
 
  public:
   MutableHandle(const MutableHandle<T>&) = default;
@@ -1093,6 +1092,10 @@ class JS_PUBLIC_API AutoGCRooter {
     *stackTop = down;
   }
 
+  /* No copy or assignment semantics. */
+  AutoGCRooter(AutoGCRooter& ida) = delete;
+  void operator=(AutoGCRooter& ida) = delete;
+
   void trace(JSTracer* trc);
 
  private:
@@ -1107,9 +1110,6 @@ class JS_PUBLIC_API AutoGCRooter {
    */
   Kind kind_;
 
-  /* No copy or assignment semantics. */
-  AutoGCRooter(AutoGCRooter& ida) = delete;
-  void operator=(AutoGCRooter& ida) = delete;
 } JS_HAZ_ROOTED_BASE;
 
 /**
@@ -1225,6 +1225,8 @@ class MOZ_RAII Rooted : public detail::RootedTraits<T>::StackBase,
     *this->stack = this->prev;
   }
 
+  Rooted(const Rooted&) = delete;
+
   /*
    * This method is public for Rooted so that Codegen.py can use a Rooted
    * interchangeably with a MutableHandleValue.
@@ -1251,8 +1253,6 @@ class MOZ_RAII Rooted : public detail::RootedTraits<T>::StackBase,
 
  private:
   T ptr;
-
-  Rooted(const Rooted&) = delete;
 } JS_HAZ_ROOTED;
 
 namespace detail {
@@ -1374,6 +1374,9 @@ class MOZ_RAII RootedField : public js::RootedOperations<T, RootedField<T, N>> {
   }
 #endif
 
+  RootedField() = delete;
+  RootedField(const RootedField& other) = delete;
+
   T& get() { return *ptr; }
   const T& get() const { return *ptr; }
   void set(const T& value) {
@@ -1390,10 +1393,6 @@ class MOZ_RAII RootedField : public js::RootedOperations<T, RootedField<T, N>> {
   DECLARE_POINTER_ASSIGN_OPS(WrapperT, T);
   // DECLARE_NONPOINTER_ACCESSOR_METHODS(*ptr);
   // DECLARE_NONPOINTER_MUTABLE_ACCESSOR_METHODS(*ptr);
-
- private:
-  RootedField() = delete;
-  RootedField(const RootedField& other) = delete;
 };
 
 namespace detail {

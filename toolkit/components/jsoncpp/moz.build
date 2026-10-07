@@ -42,3 +42,7 @@ if CONFIG['CC_TYPE'] in ('clang', 'clang-cl'):
 CXXFLAGS += [
     '-Wno-implicit-fallthrough',
 ]
+
+LICENSED_UNDER += [
+    "mit",
+]

@@ -1187,6 +1187,7 @@ JSContext::JSContext(JSRuntime* runtime, const JS::ContextOptions& options)
       hadResourceExhaustion_(this, false),
       hadUncatchableException_(this, false),
 #endif
+      hasDelayedOverRecursed(this, false),
       reportGranularity(this, JS_DEFAULT_JITREPORT_GRANULARITY),
       resolvingList(this, nullptr),
 #ifdef DEBUG

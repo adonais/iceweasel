@@ -48,7 +48,7 @@ addAccessibleTask(
       "No accessible for an IFRAME present."
     );
     ok(
-      !findAccessibleChildByID(contentDocAcc, DEFAULT_IFRAME_DOC_BODY_ID),
+      !findAccessibleChildByID(contentDocAcc, DEFAULT_IFRAME_DOC_ID),
       "No accessible for the IFRAME document present."
     );
 
@@ -65,7 +65,7 @@ addAccessibleTask(
           const scEvent = event.QueryInterface(nsIAccessibleStateChangeEvent);
           const id = getAccessibleDOMNodeID(event.accessible);
           return (
-            id === DEFAULT_IFRAME_DOC_BODY_ID &&
+            id === DEFAULT_IFRAME_DOC_ID &&
             scEvent.state === STATE_BUSY &&
             scEvent.isEnabled === false
           );

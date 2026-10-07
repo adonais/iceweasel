@@ -465,26 +465,35 @@ class SingleTestMixin:
             self.tests_downloaded = True
             return
 
-        files_per_chunk = total_tests / float(self.config.get("total_chunks", 1))
-        files_per_chunk = int(math.ceil(files_per_chunk))
+        self.suites = self._chunk_suites(
+            int(self.config.get("total_chunks", 1)),
+            int(self.config.get("this_chunk", 1)),
+        )
+        self.tests_downloaded = True
 
-        chunk_number = int(self.config.get("this_chunk", 1))
+    def _chunk_suites(self, total_chunks, this_chunk):
+        """Return the share of self.suites that this chunk should run.
+
+        The suites are sorted because they are built by iterating a set of
+        paths, whose order varies between processes: every chunk has to slice
+        the same list for the chunks to together cover each test once.
+        """
+        total_tests = sum(len(tests) for tests in self.suites.values())
+        files_per_chunk = int(math.ceil(total_tests / float(total_chunks)))
+
         suites = {}
-        start = (chunk_number - 1) * files_per_chunk
-        end = chunk_number * files_per_chunk
+        start = (this_chunk - 1) * files_per_chunk
+        end = this_chunk * files_per_chunk
         current = -1
-        for suite in self.suites:
-            for test in self.suites[suite]:
+        for suite in sorted(self.suites):
+            for test in sorted(self.suites[suite]):
                 current += 1
                 if current >= start and current < end:
-                    if suite not in suites:
-                        suites[suite] = []
-                    suites[suite].append(test)
+                    suites.setdefault(suite, []).append(test)
             if current >= end:
                 break
 
-        self.suites = suites
-        self.tests_downloaded = True
+        return suites
 
     def query_args(self, suite):
         """

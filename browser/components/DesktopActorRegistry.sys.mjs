@@ -284,10 +284,12 @@ let JSWINDOWACTORS = {
       esModuleURI:
         "moz-src:///browser/components/aiwindow/ui/actors/AITabChild.sys.mjs",
       events: {
-        "AITab:RequestPage": { wantUntrusted: true },
+        "AITab:GetPage": { wantUntrusted: true },
+        "AITab:DeletePage": { wantUntrusted: true },
+        "AITab:OpenLink": { wantUntrusted: true },
       },
     },
-    matches: ["about:aitab", "about:aitab?*"],
+    matches: ["about:smartpage", "about:smartpage?*"],
     remoteTypes: ["privilegedabout"],
     enablePreference: "browser.smartwindow.aitab.enabled",
   },
@@ -322,10 +324,12 @@ let JSWINDOWACTORS = {
 
   BackupUI: {
     parent: {
-      esModuleURI: "resource:///actors/BackupUIParent.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/backup/actors/BackupUIParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource:///actors/BackupUIChild.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/backup/actors/BackupUIChild.sys.mjs",
       events: {
         "BackupUI:InitWidget": { wantUntrusted: true },
         "BackupUI:TriggerCreateBackup": { wantUntrusted: true },
@@ -488,6 +492,22 @@ let JSWINDOWACTORS = {
     safeForUntrustedWebProcess: true,
   },
 
+  MiniWindow: {
+    parent: {
+      esModuleURI:
+        "moz-src:///browser/components/miniwindow/MiniWindowParent.sys.mjs",
+    },
+    child: {
+      esModuleURI:
+        "moz-src:///browser/components/miniwindow/MiniWindowChild.sys.mjs",
+      // TODO: These actors will be responsible for handling
+      // events later down the stack.
+    },
+    enablePreference: "browser.mini-window.enabled",
+    allFrames: false,
+    safeForUntrustedWebProcess: true,
+  },
+
   CustomKeys: {
     parent: {
       esModuleURI:
@@ -578,10 +598,10 @@ let JSWINDOWACTORS = {
 
   GenAI: {
     parent: {
-      esModuleURI: "resource:///actors/GenAIParent.sys.mjs",
+      esModuleURI: "moz-src:///browser/components/genai/GenAIParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource:///actors/GenAIChild.sys.mjs",
+      esModuleURI: "moz-src:///browser/components/genai/GenAIChild.sys.mjs",
       events: {
         mousedown: {},
         mouseup: {},
@@ -591,13 +611,17 @@ let JSWINDOWACTORS = {
     onAddActor(register, unregister) {
       let isRegistered = false;
 
-      // Register the actor if an external chat provider is set, page summarization is enabled, or shortcuts are enabled
+      // Register the actor if an external chat provider is set, page summarization is enabled, shortcuts are enabled, or the selection menu is enabled.
       const maybeRegister = () => {
         if (
           Services.prefs.getCharPref("browser.ml.chat.provider", "") ||
           Services.prefs.getBoolPref("browser.ml.chat.page") ||
           Services.prefs.getBoolPref("browser.ml.chat.shortcuts") ||
-          Services.prefs.getBoolPref("browser.ml.chat.shortcuts.smartwindow")
+          Services.prefs.getBoolPref("browser.ml.chat.shortcuts.smartwindow") ||
+          (Services.prefs.getBoolPref(
+            "browser.highlightToSearch.featureGate"
+          ) &&
+            Services.prefs.getBoolPref("browser.highlightToSearch.enabled"))
         ) {
           if (!isRegistered) {
             register();
@@ -614,6 +638,14 @@ let JSWINDOWACTORS = {
       Services.prefs.addObserver("browser.ml.chat.shortcuts", maybeRegister);
       Services.prefs.addObserver(
         "browser.ml.chat.shortcuts.smartwindow",
+        maybeRegister
+      );
+      Services.prefs.addObserver(
+        "browser.highlightToSearch.featureGate",
+        maybeRegister
+      );
+      Services.prefs.addObserver(
+        "browser.highlightToSearch.enabled",
         maybeRegister
       );
       maybeRegister();
@@ -678,10 +710,12 @@ let JSWINDOWACTORS = {
 
   LinkPreview: {
     parent: {
-      esModuleURI: "resource:///actors/LinkPreviewParent.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/genai/LinkPreviewParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource:///actors/LinkPreviewChild.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/genai/LinkPreviewChild.sys.mjs",
     },
     includeChrome: true,
     enablePreference: "browser.ml.linkPreview.enabled",
@@ -690,10 +724,12 @@ let JSWINDOWACTORS = {
 
   PageAssist: {
     parent: {
-      esModuleURI: "resource:///actors/PageAssistParent.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/genai/PageAssistParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource:///actors/PageAssistChild.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/genai/PageAssistChild.sys.mjs",
     },
     includeChrome: true,
     enablePreference: "browser.ml.pageAssist.enabled",
@@ -846,6 +882,7 @@ let JSWINDOWACTORS = {
       events: {
         "Screenshots:Close": {},
         "Screenshots:Copy": {},
+        "Screenshots:MiniWindow": {},
         "Screenshots:Download": {},
         "Screenshots:HidePanel": {},
         "Screenshots:OverlaySelection": {},

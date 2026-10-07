@@ -1,0 +1,111 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: stop() during session init ends the session without an error</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="head.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div id="content"></div>
+<pre id="test">
+<script>
+"use strict";
+
+// Bringing the engine up takes as long as loading the model's weights takes,
+// which on a first run can be seconds, so a page can call stop() before the
+// session is listening. That leaves nothing to recognize, which is a "nomatch"
+// and an "end" - not an error: nothing broke, the session merely ended before
+// it started. The engine reporting its abandoned init as a failure must not
+// reach the page as "error".
+//
+// media.webspeech.recognition.testing.parakeet_init_delay_ms makes the window
+// deterministic instead of scheduling-dependent: it holds the recognition
+// thread in init long enough for stop() to land inside it every run.
+
+const SERVER_PORT = 8766;
+const LANG = "en-US";
+const INIT_DELAY_MS = 8000;
+// Long enough that Init has reached the utility process (otherwise the whole
+// session is a no-op and there is no init to stop inside of), well under
+// INIT_DELAY_MS. Same reasoning as test_stress_init_abort_race.html.
+const STOP_DELAY_MS = 2000;
+
+SimpleTest.requestCompleteLog();
+SimpleTest.requestFlakyTimeout("landing stop() inside a delayed session init by design");
+
+add_setup(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.webspeech.recognition.enable", true],
+      ["browser.ml.modelHubRootUrl", `http://localhost:${SERVER_PORT}/`],
+      ["media.webspeech.recognition.testing.parakeet_init_delay_ms", INIT_DELAY_MS],
+      ["media.webspeech.recognition.model-download.prompt.testing", true],
+      ["media.navigator.permission.disabled", true],
+    ],
+  });
+});
+
+add_task(async function stop_during_init_is_not_an_error() {
+  const installed = await ensureModelInstalled([LANG]);
+  ok(installed, "Model installed successfully");
+  if (!installed) {
+    return;
+  }
+
+  const ctx = await createResumedAudioContext();
+
+  // No clip: the session is stopped before it ever consumes audio, so silence
+  // on a live track is all this needs.
+  const kick = ctx.createBufferSource();
+  kick.buffer = ctx.createBuffer(1, 2048, ctx.sampleRate);
+  kick.loop = true;
+  kick.connect(ctx.destination);
+  kick.start(0);
+
+  const dst = ctx.createMediaStreamDestination();
+  const track = dst.stream.getAudioTracks()[0];
+  ok(track, "Got audio track");
+
+  const sr = new SpeechRecognition();
+  sr.lang = LANG;
+
+  const events = [];
+  for (const name of ["start", "audiostart", "audioend", "result", "nomatch",
+                      "error", "end"]) {
+    sr.addEventListener(name, e => {
+      events.push(name === "error" ? `error:${e.error}` : name);
+      info(`event: ${events[events.length - 1]}`);
+    });
+  }
+
+  const ended = new Promise(resolve =>
+    sr.addEventListener("end", resolve, { once: true }));
+
+  const startedAt = performance.now();
+  sr.start(track);
+  await new Promise(r => setTimeout(r, STOP_DELAY_MS));
+  info("calling sr.stop() while init is deliberately delayed");
+  sr.stop();
+
+  await ended;
+  const endElapsed = performance.now() - startedAt;
+
+  await ctx.close();
+
+  // A faster "end" means STOP_DELAY_MS was too short: the session was a no-op.
+  ok(endElapsed >= INIT_DELAY_MS,
+     `"end" came ${endElapsed}ms after start(), so stop() landed inside the ` +
+     `${INIT_DELAY_MS}ms init`);
+
+  is(events.filter(e => e.startsWith("error:")).join(", "), "",
+     `Stopping a session before it is listening ends it rather than failing ` +
+     `it. Got: ${events.join(", ")}`);
+  is(events[events.length - 1], "end",
+     `"end" is the session's last event. Got: ${events.join(", ")}`);
+});
+</script>
+</pre>
+</body>
+</html>

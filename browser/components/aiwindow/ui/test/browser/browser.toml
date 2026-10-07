@@ -11,6 +11,7 @@ support-files = [
   "head_smartformfill_autocomplete.js",
   "head_history_thumbnails.js",
   "head_smartformfill_form_review.js",
+  "head_smartformfill_telemetry.js",
   "test_agent_monitor_item_page.html",
   "test_agent_monitor_item.mjs",
   "test_ai_action_result_page.html",
@@ -82,6 +83,12 @@ skip-if = [
 ["browser_aichat_open_link.js"]
 
 ["browser_aichat_same_link_click.js"]
+
+["browser_aitab_actions.js"]
+
+["browser_aitab_blocks.js"]
+
+["browser_aitab_menu_triggers.js"]
 
 ["browser_aitab_page.js"]
 
@@ -160,6 +167,8 @@ skip-if = [
 
 ["browser_aiwindow_monitor_button.js"]
 
+["browser_aiwindow_monitor_button_panel.js"]
+
 ["browser_aiwindow_monitor_create.js"]
 
 ["browser_aiwindow_new_chat_button.js"]
@@ -193,6 +202,10 @@ skip-if = [
 
 ["browser_aiwindow_smartbar_inline_mentions.js"]
 
+["browser_aiwindow_smartbar_inline_mentions_context.js"]
+
+["browser_aiwindow_smartbar_inline_mentions_suggestions.js"]
+
 ["browser_aiwindow_smartbar_input_cta.js"]
 
 ["browser_aiwindow_smartbar_interactions.js"]
@@ -202,6 +215,8 @@ skip-if = [
 ["browser_aiwindow_smartbar_placeholder.js"]
 
 ["browser_aiwindow_smartbar_quicksuggest.js"]
+
+["browser_aiwindow_smartbar_shortcuts.js"]
 
 ["browser_aiwindow_smartbar_suggestions.js"]
 
@@ -278,6 +293,8 @@ skip-if = [
 
 ["browser_smartformfill_shadow_dom.js"]
 
+["browser_smartformfill_stored_values.js"]
+
 ["browser_smartformfill_tab_selector.js"]
 
 ["browser_smartwindow_abort_on_tab_close.js"]
@@ -333,6 +350,8 @@ skip-if = [
 
 ["browser_smartwindow_manage_tabs_tool.js"]
 
+["browser_smartwindow_manage_tabs_tool_telemetry.js"]
+
 ["browser_smartwindow_metrics_telemetry.js"]
 
 ["browser_smartwindow_nimbus.js"]
@@ -347,6 +366,10 @@ skip-if = [
 skip-if = [
   "os == 'win' && debug && standalone", # Bug 2028654
 ]
+
+["browser_smartwindow_resume_card.js"]
+
+["browser_smartwindow_resume_section.js"]
 
 ["browser_smartwindow_retry_context.js"]
 
@@ -377,7 +400,15 @@ skip-if = [
 
 ["browser_smartwindow_smartformfill_metadata_lifecycle.js"]
 
-["browser_smartwindow_smartformfill_telemetry.js"]
+["browser_smartwindow_smartformfill_telemetry_generation.js"]
+
+["browser_smartwindow_smartformfill_telemetry_metadata.js"]
+
+["browser_smartwindow_smartformfill_telemetry_outcomes.js"]
+
+["browser_smartwindow_smartformfill_telemetry_review.js"]
+
+["browser_smartwindow_smartformfill_telemetry_tab_selection.js"]
 
 ["browser_smartwindow_switcher_telemetry.js"]
 

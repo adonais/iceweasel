@@ -27,10 +27,16 @@ import {
   LoginMeta,
   LoginEntryWithMeta,
   BulkResultEntry,
-  PrimaryPasswordAuthenticator,
   createLoginStoreWithNssKeymanager,
-  AuthenticationCanceled,
 } from "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustLogins.sys.mjs";
+
+// AuthenticationCanceled must come from db_crypto, not logins: it is the error
+// PrimaryPasswordAuthenticator declares, and the two namespaces export unrelated
+// classes under that name.
+import {
+  PrimaryPasswordAuthenticator,
+  AuthenticationCanceled,
+} from "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustDbCrypto.sys.mjs";
 
 const LoginInfo = Components.Constructor(
   "@mozilla.org/login-manager/loginInfo;1",
@@ -361,24 +367,40 @@ class RustLoginStorageAuthenticator extends PrimaryPasswordAuthenticator {
 
       if (!result.getProperty("ok")) {
         this.authCanceled = true;
+        this.#recordPrompt("cancel");
         Services.obs.notifyObservers(null, "passwordmgr-crypto-loginCanceled");
         throw new AuthenticationCanceled("User cancelled");
       }
 
       this.#logger.log("got a password");
       return result.getProperty("pass");
+    } catch (e) {
+      if (!(e instanceof AuthenticationCanceled)) {
+        this.#recordPrompt("error");
+      }
+      throw e;
     } finally {
       this.uiBusy = false;
     }
   }
 
   async onAuthenticationSuccess() {
+    this.#recordPrompt("success");
     Services.obs.notifyObservers(null, "passwordmgr-crypto-login");
     this.#logger.log("authenticated with success");
   }
 
+  // Rust prompts again after a failure, so every attempt gets its own event.
   async onAuthenticationFailure() {
+    this.#recordPrompt("wrong_password");
     this.#logger.log("failed to authenticate");
+  }
+
+  #recordPrompt(result) {
+    Glean.pwmgr.primaryPasswordPrompt.record({
+      source: "rust_storage",
+      result,
+    });
   }
 }
 
@@ -386,12 +408,21 @@ export class LoginManagerRustStorage {
   #storageAdapter = null;
   #authenticator = null;
   #initializationPromise = null;
+  #initTimings = null;
   // Only the active backend fires storage-changed events to avoid duplicates
   // when both JSON and Rust stores are initialized.
   // Default is false (json is active)
   #isActive = false;
   set isActive(v) {
     this.#isActive = v;
+  }
+
+  get backendName() {
+    return "rust";
+  }
+
+  get initTimings() {
+    return this.#initTimings;
   }
 
   // have it a singleton
@@ -407,35 +438,59 @@ export class LoginManagerRustStorage {
     if (this.#initializationPromise) {
       this.log("rust storage already initialized");
     } else {
-      try {
-        const profilePath = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
-        const path = `${profilePath}/logins.db`;
-
-        this.#initializationPromise = new Promise(resolve => {
-          this.log(`Initializing Rust login storage at ${path}`);
-
-          initRustComponents(profilePath).then(() => {
-            const authenticator = new RustLoginStorageAuthenticator();
-            this.#authenticator = authenticator;
-            const store = createLoginStoreWithNssKeymanager(
-              path,
-              authenticator
-            );
-
-            this.#storageAdapter = new RustLoginsStoreAdapter(store);
-            this.log("Rust login storage ready.");
-
-            this._registerShutdownBlocker().then(() => resolve(this));
-          });
-        });
-      } catch (e) {
-        this.log(`Initialization failed ${e.name}.`);
-        this.log(e);
-        throw new Error("Initialization failed");
-      }
+      this.#initializationPromise = this.#doInitialize();
     }
 
     return this.#initializationPromise;
+  }
+
+  async #doInitialize() {
+    try {
+      // If we are already in the “Profile-Change-Teardown” phase or have
+      // already completed it, “false” is returned and initialization is
+      // aborted.
+      if (!(await this._registerShutdownBlocker())) {
+        throw new Error(
+          "Shutdown is past profile-change-teardown, not opening the store"
+        );
+      }
+
+      const profilePath = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
+      const path = `${profilePath}/logins.db`;
+      this.log(`Initializing Rust login storage at ${path}`);
+
+      const startedAt = ChromeUtils.now();
+      await initRustComponents(profilePath);
+      const componentsReadyAt = ChromeUtils.now();
+
+      this.#authenticator = new RustLoginStorageAuthenticator();
+      const store = await createLoginStoreWithNssKeymanager(
+        path,
+        this.#authenticator
+      );
+      this.#initTimings = {
+        initRustComponentsMs: Math.round(componentsReadyAt - startedAt),
+        createRustStoreMs: Math.round(ChromeUtils.now() - componentsReadyAt),
+      };
+      this.#storageAdapter = new RustLoginsStoreAdapter(store);
+
+      this.log("Rust login storage ready.");
+      return this;
+    } catch (e) {
+      this.log(`Initialization failed: ${e}`);
+      // Failing after the store was created leaves it holding the only
+      // reference to the authenticator, and UniFFI asserts at xpcom-shutdown
+      // that no callback object is still registered. Let it go, and report the
+      // original failure rather than anything shutdown runs into.
+      try {
+        await this.#storageAdapter?.shutdown();
+      } catch (shutdownError) {
+        this.log(`Shutdown after failed initialization: ${shutdownError}`);
+      }
+      this.#storageAdapter = null;
+      this.#authenticator = null;
+      throw e;
+    }
   }
 
   /**
@@ -445,29 +500,42 @@ export class LoginManagerRustStorage {
     // TODO: Currently we do not mark the instance as closed, not sure if later
     // calls would be rejected elsewhere.
 
-    await this.#storageAdapter.shutdown();
+    // Null when initialization failed, which shuts the store down itself.
+    await this.#storageAdapter?.shutdown();
   }
 
   /**
    * Ensure the storage is finalized at shutdown. All LoginManager storage
    * backends must have their own shutdown blocker to finalize properly.
    *
+   * Called before the store is opened, so the blocker waits for
+   * initialization to settle before finalizing: the store holds the only
+   * reference to the authenticator, and UniFFI asserts at `xpcom-shutdown`
+   * that no callback object is still registered.
+   *
    * In the corner case where the shutdown phase has already passed by the time
    * we get here, registering a blocker would throw, so we call `finalize()`
-   * immediately instead.
+   * immediately instead and report that nothing is in place to close a store.
    *
    * @param {object} phase An `AsyncShutdown` phase object. Exposed as a
    *   parameter for testing.
+   * @returns {Promise<boolean>} Whether a blocker was registered.
    */
-  _registerShutdownBlocker(phase = lazy.AsyncShutdown.profileChangeTeardown) {
+  async _registerShutdownBlocker(
+    phase = lazy.AsyncShutdown.profileChangeTeardown
+  ) {
     if (phase.isClosed) {
-      return this.finalize();
+      await this.finalize();
+      return false;
     }
     phase.addBlocker(
       "LoginManagerRustStorage: Interrupt IO operations on login store",
-      async () => this.finalize()
+      async () => {
+        await this.initialize().catch(() => {});
+        await this.finalize();
+      }
     );
-    return Promise.resolve();
+    return true;
   }
 
   /**

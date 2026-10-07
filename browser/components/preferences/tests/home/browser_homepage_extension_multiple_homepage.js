@@ -8,10 +8,7 @@ const ADDON_ID_2 = "homepage-multi-2@tests.mozilla.org";
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.settings-redesign.enabled", true],
-      ["browser.startup.homepage", "about:home"],
-    ],
+    set: [["browser.startup.homepage", "about:home"]],
   });
 });
 

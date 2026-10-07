@@ -6,6 +6,7 @@
 
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_fission.h"
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/RemoteType.h"
@@ -229,6 +230,8 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
   LOG(("DocumentChannelChild RecvRedirectToRealChannel [this=%p, uri=%s]", this,
        aArgs.uri()->GetSpecOrDefault().get()));
 
+  ContentChild::MaybeBecomeUntrusted();
+
   // The document that created the cspToInherit.
   // This is used when deserializing LoadInfo from the parent
   // process, since we can't serialize Documents directly.
@@ -246,6 +249,13 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
   MOZ_ALWAYS_SUCCEEDS(LoadInfoArgsToLoadInfo(
       aArgs.loadInfo(), RemoteType::NotRemote(), cspToInheritLoadingDocument,
       getter_AddRefs(loadInfo)));
+
+  // The parent process has already validated this PrincipalToInherit.
+  if (nsCOMPtr<nsIPrincipal> principalToInherit =
+          loadInfo->PrincipalToInherit()) {
+    MOZ_ALWAYS_SUCCEEDS(
+        loadInfo->SetTrustedPrincipalToInherit(principalToInherit));
+  }
 
   mRedirectResolver = std::move(aResolve);
 
@@ -321,6 +331,13 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
   if (docShell && aArgs.loadingSessionHistoryInfo().isSome()) {
     docShell->SetLoadingSessionHistoryInfo(
         aArgs.loadingSessionHistoryInfo().ref());
+  }
+
+  // The parent only hands its timing back on a process switch.
+  if (docShell && loadInfo->GetActivatedFromNavigationalPrefetch()) {
+    if (nsDOMNavigationTiming* timing = docShell->GetNavigationTiming()) {
+      timing->SetWasActivatedFromNavigationalPrefetch();
+    }
   }
 
   // transfer any properties. This appears to be entirely a content-side

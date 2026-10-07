@@ -19,7 +19,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import org.mozilla.fenix.onboarding.view.OnboardingPageUiData
-import org.mozilla.fenix.perf.runBlockingIncrement
 import org.mozilla.fenix.settings.OnSharedPreferenceChangeListener
 import org.mozilla.fenix.utils.Settings
 
@@ -87,10 +86,10 @@ internal fun SharedPreferences.flowScopedBooleanPreference(
     val listener =
         OnSharedPreferenceChangeListener(this@flowScopedBooleanPreference) { pref, updatedKey ->
             if (key == updatedKey) {
-                val result = pref.getBoolean(key, defValue)
-                runBlockingIncrement {
-                    send(result)
-                }
+                // The framework snapshots its listener set when the write is committed, so this can run after the
+                // flow was cancelled or closed. trySend fails silently there, where send would throw the
+                // cancellation out into the framework's callback and crash the app.
+                trySend(pref.getBoolean(key, defValue))
                 this@channelFlow.close()
             }
         }

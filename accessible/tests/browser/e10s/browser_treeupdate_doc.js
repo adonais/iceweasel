@@ -8,12 +8,12 @@
 loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 
 const iframeSrc = `data:text/html,
-  <html>
+  <html id='inner-iframe'>
     <head>
       <meta charset='utf-8'/>
       <title>Inner Iframe</title>
     </head>
-    <body id='inner-iframe'></body>
+    <body></body>
   </html>`;
 
 addAccessibleTask(
@@ -39,7 +39,7 @@ addAccessibleTask(
       let newHTMLNode = docNode.createElement("html");
       let newBodyNode = docNode.createElement("body");
       let newTextNode = docNode.createTextNode("New Wave");
-      newBodyNode.id = contentId;
+      newHTMLNode.id = contentId;
       newBodyNode.appendChild(newTextNode);
       newHTMLNode.appendChild(newBodyNode);
       docNode.replaceChild(newHTMLNode, docNode.documentElement);
@@ -66,7 +66,7 @@ addAccessibleTask(
       let script = docNode.createElement("script");
       script.textContent = `
       document.open();
-      document.write('<body id="${contentId}">hello</body>');
+      document.write('<html id="${contentId}"><body>hello</body></html>');
       document.close();`;
       docNode.body.appendChild(script);
     });
@@ -85,11 +85,10 @@ addAccessibleTask(
 
     /* ================= Replace iframe body ================================== */
     reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-    await invokeContentTask(browser, [id], contentId => {
+    await invokeContentTask(browser, [], () => {
       let docNode = content.document.getElementById("iframe").contentDocument;
       let newBodyNode = docNode.createElement("body");
       let newTextNode = docNode.createTextNode("New Hello");
-      newBodyNode.id = contentId;
       newBodyNode.appendChild(newTextNode);
       newBodyNode.setAttribute("role", "application");
       docNode.documentElement.replaceChild(newBodyNode, docNode.body);
@@ -120,7 +119,7 @@ addAccessibleTask(
       }
       window.closeMe = closeMe;
       document.open();
-      document.write('<body id="${contentId}"></body>');`;
+      document.write('<html id="${contentId}"><body></body></html>');`;
       docNode.body.appendChild(script);
     });
     await reorderEventPromise;
@@ -180,7 +179,7 @@ addAccessibleTask(
       let body = docNode.createElement("body");
       let text = docNode.createTextNode("Haha");
       body.appendChild(text);
-      body.id = contentId;
+      html.id = contentId;
       html.appendChild(body);
       docNode.appendChild(html);
     });
@@ -253,14 +252,13 @@ addAccessibleTask(
 
     /* ================= Insert body to iframe document ======================= */
     reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-    await invokeContentTask(browser, [id], contentId => {
+    await invokeContentTask(browser, [], () => {
       // Write and close document.
       let docNode = content.document.getElementById("iframe").contentDocument;
       // Insert body element.
       let body = docNode.createElement("body");
       let text = docNode.createTextNode("Yo ho ho i butylka roma!");
       body.appendChild(text);
-      body.id = contentId;
       docNode.documentElement.appendChild(body);
     });
     await reorderEventPromise;
@@ -285,7 +283,7 @@ addAccessibleTask(
       browser,
       "iframe",
       "src",
-      `data:text/html,<html><body id="${id}"><input></body></html>`
+      `data:text/html,<html id="${id}"><body><input></body></html>`
     );
     event = await reorderEventPromise;
 
@@ -297,13 +295,12 @@ addAccessibleTask(
 
     /* ================= Replace iframe body on ARIA role body ================ */
     reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-    await invokeContentTask(browser, [id], contentId => {
+    await invokeContentTask(browser, [], () => {
       let docNode = content.document.getElementById("iframe").contentDocument;
       let newBodyNode = docNode.createElement("body");
       let newTextNode = docNode.createTextNode("New Hello");
       newBodyNode.appendChild(newTextNode);
       newBodyNode.setAttribute("role", "application");
-      newBodyNode.id = contentId;
       docNode.documentElement.replaceChild(newBodyNode, docNode.body);
     });
     await reorderEventPromise;

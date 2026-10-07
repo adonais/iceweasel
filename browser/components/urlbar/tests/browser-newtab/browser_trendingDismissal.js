@@ -91,6 +91,10 @@ add_task(async function dismissTrending() {
       () => !utils.getResultCount(content),
       "waiting for the tip to go"
     );
+    let state = utils.getState(content);
+    Assert.ok(!state.viewOpen, "The view closes with its last row");
+    Assert.ok(!state.popoverOpen, "The popover closes with the view");
+    Assert.ok(state.focused, "The bar keeps focus");
   });
 
   BrowserTestUtils.removeTab(tab);

@@ -327,9 +327,13 @@ crash:
     type: boolean
   java_exception:
     bugs:
-    - https://bugzilla.mozilla.org/1950749
+    - https://bugzilla.mozilla.org/1904847
+    - https://bugzilla.mozilla.org/1961011
+    - https://bugzilla.mozilla.org/2073234
     data_reviews:
-    - https://bugzilla.mozilla.org/1950749
+    - https://bugzilla.mozilla.org/1904847
+    - https://bugzilla.mozilla.org/1961011
+    - https://bugzilla.mozilla.org/2073234
     data_sensitivity:
     - technical
     description: JSON structured Java stack trace, only present on Firefox for Android
@@ -345,8 +349,6 @@ crash:
         throwables:
           items:
             properties:
-              message:
-                type: string
               stack:
                 items:
                   properties:
@@ -503,7 +505,7 @@ crash:
     data_sensitivity:
     - technical
     description: Type of the process that crashed, the possible values are defined
-      in GeckoProcessTypes.h.
+      in GeckoProcessTypes.inc.
     expires: never
     notification_emails:
     - crash-reporting-wg@mozilla.org
@@ -640,6 +642,26 @@ crash:
     - technical
     description: One out of "Unknown", "AppClose", "AppRestart", "OSForceClose", "OSSessionEnd"
       or "OSShutdown".
+    expires: never
+    notification_emails:
+    - crash-reporting-wg@mozilla.org
+    - stability@mozilla.org
+    send_in_pings:
+    - crash
+    type: string
+  shutting_down_threads:
+    bugs:
+    - https://bugzilla.mozilla.org/1950749
+    data_reviews:
+    - https://bugzilla.mozilla.org/1950749
+    data_sensitivity:
+    - technical
+    description: 'JSON array of the nsThread::Shutdown handshakes still in flight
+      when the process crashed during shutdown. Each entry has the joining and closing
+      thread TID and name, the handshake phase ("Joining", "Recv" or "Ack") and when
+      that phase was entered, in seconds since the Epoch. A single entry of {"error":
+      "contended"} means the thread list was locked and could not be read without
+      blocking.'
     expires: never
     notification_emails:
     - crash-reporting-wg@mozilla.org

@@ -18,6 +18,7 @@
 #include "nsThreadUtils.h"
 #include "nsTHashMap.h"
 #include "nsTHashSet.h"
+#include "nsCharSeparatedTokenizer.h"
 #ifdef ANDROID
 #  include "nsContentUtils.h"
 #  include "nsIChannel.h"

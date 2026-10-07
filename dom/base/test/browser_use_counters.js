@@ -271,6 +271,270 @@ add_task(async function test_page_counters() {
       ],
     },
 
+    // Sanitizer API: a config dictionary counts the keys it contains, whether
+    // it came from the constructor or inline from setHTML.
+    {
+      type: "direct",
+      filename: "file_use_counter_sanitizer_config.html",
+      counters: [
+        { name: "SANITIZER_ELEMENTS", glean: ["", "sanitizerConfigElements"] },
+        {
+          name: "SANITIZER_REMOVE_ELEMENTS",
+          glean: ["", "sanitizerConfigRemoveElements"],
+        },
+        // Per-element attribute lists nested inside an "elements" entry.
+        {
+          name: "SANITIZER_ELEMENT_ATTRIBUTES",
+          glean: ["", "sanitizerConfigElementAttributes"],
+        },
+        {
+          name: "SANITIZER_ELEMENT_REMOVE_ATTRIBUTES",
+          glean: ["", "sanitizerConfigElementRemoveAttributes"],
+        },
+        // Present in a dictionary, so counted even though its value is the
+        // built-in default.
+        {
+          name: "SANITIZER_JAVASCRIPT_URLS",
+          glean: ["", "sanitizerConfigJavascriptUrls"],
+        },
+        // Untouched keys must stay untouched. In particular the global
+        // attributes keys are not implied by the per-element ones.
+        {
+          name: "SANITIZER_ATTRIBUTES",
+          glean: ["", "sanitizerConfigAttributes"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_REMOVE_ATTRIBUTES",
+          glean: ["", "sanitizerConfigRemoveAttributes"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_COMMENTS",
+          glean: ["", "sanitizerConfigComments"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_DEFAULT_CONFIG",
+          glean: ["", "sanitizerDefaultConfig"],
+          value: 0,
+        },
+      ],
+    },
+
+    // Sanitizer API: the methods set the same counters as the dictionary keys
+    // they correspond to.
+    {
+      type: "direct",
+      filename: "file_use_counter_sanitizer_methods.html",
+      counters: [
+        { name: "SANITIZER_ELEMENTS", glean: ["", "sanitizerConfigElements"] },
+        {
+          name: "SANITIZER_REMOVE_ELEMENTS",
+          glean: ["", "sanitizerConfigRemoveElements"],
+        },
+        {
+          name: "SANITIZER_ELEMENT_REMOVE_ATTRIBUTES",
+          glean: ["", "sanitizerConfigElementRemoveAttributes"],
+        },
+        { name: "SANITIZER_COMMENTS", glean: ["", "sanitizerConfigComments"] },
+        // setJavascriptURLs() counts once, even though removeUnsafe() then
+        // resets the key again.
+        {
+          name: "SANITIZER_JAVASCRIPT_URLS",
+          glean: ["", "sanitizerConfigJavascriptUrls"],
+        },
+        {
+          name: "SANITIZER_REMOVE_UNSAFE",
+          glean: ["", "sanitizerRemoveunsafe"],
+        },
+        // The document sanitizes right after setComments(), which modifies the
+        // configuration without materializing the lazy default config.
+        {
+          name: "SANITIZER_DEFAULT_CONFIG",
+          glean: ["", "sanitizerDefaultConfig"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_ATTRIBUTES",
+          glean: ["", "sanitizerConfigAttributes"],
+          value: 0,
+        },
+        // The only call that passed a per-element "attributes" list was
+        // rejected, so it did not configure anything.
+        {
+          name: "SANITIZER_ELEMENT_ATTRIBUTES",
+          glean: ["", "sanitizerConfigElementAttributes"],
+          value: 0,
+        },
+      ],
+    },
+
+    // Sanitizer API: calls that change nothing are not configuration, and
+    // reading the configuration is not configuration either.
+    {
+      type: "direct",
+      filename: "file_use_counter_sanitizer_noop.html",
+      counters: [
+        {
+          name: "SANITIZER_DEFAULT_CONFIG",
+          glean: ["", "sanitizerDefaultConfig"],
+        },
+        {
+          name: "SANITIZER_COMMENTS",
+          glean: ["", "sanitizerConfigComments"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_DATA_ATTRIBUTES",
+          glean: ["", "sanitizerConfigDataAttributes"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_JAVASCRIPT_URLS",
+          glean: ["", "sanitizerConfigJavascriptUrls"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_REMOVE_ELEMENTS",
+          glean: ["", "sanitizerConfigRemoveElements"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_ELEMENTS",
+          glean: ["", "sanitizerConfigElements"],
+          value: 0,
+        },
+      ],
+    },
+
+    // Sanitizer API: no authored config counts the default, and nothing else.
+    {
+      type: "direct",
+      filename: "file_use_counter_sanitizer_default.html",
+      counters: [
+        {
+          name: "SANITIZER_DEFAULT_CONFIG",
+          glean: ["", "sanitizerDefaultConfig"],
+        },
+        // The built-in default is not an empty dictionary.
+        {
+          name: "SANITIZER_EMPTY_CONFIG",
+          glean: ["", "sanitizerEmptyConfig"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_ELEMENTS",
+          glean: ["", "sanitizerConfigElements"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_REMOVE_ELEMENTS",
+          glean: ["", "sanitizerConfigRemoveElements"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_ATTRIBUTES",
+          glean: ["", "sanitizerConfigAttributes"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_REMOVE_ATTRIBUTES",
+          glean: ["", "sanitizerConfigRemoveAttributes"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_COMMENTS",
+          glean: ["", "sanitizerConfigComments"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_DATA_ATTRIBUTES",
+          glean: ["", "sanitizerConfigDataAttributes"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_JAVASCRIPT_URLS",
+          glean: ["", "sanitizerConfigJavascriptUrls"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_ELEMENT_ATTRIBUTES",
+          glean: ["", "sanitizerConfigElementAttributes"],
+          value: 0,
+        },
+      ],
+    },
+
+    // Sanitizer API: an empty dictionary names no key and is not the default.
+    {
+      type: "direct",
+      filename: "file_use_counter_sanitizer_empty.html",
+      counters: [
+        {
+          name: "SANITIZER_EMPTY_CONFIG",
+          glean: ["", "sanitizerEmptyConfig"],
+        },
+        {
+          name: "SANITIZER_DEFAULT_CONFIG",
+          glean: ["", "sanitizerDefaultConfig"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_ELEMENTS",
+          glean: ["", "sanitizerConfigElements"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_REMOVE_ELEMENTS",
+          glean: ["", "sanitizerConfigRemoveElements"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_COMMENTS",
+          glean: ["", "sanitizerConfigComments"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_DATA_ATTRIBUTES",
+          glean: ["", "sanitizerConfigDataAttributes"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_JAVASCRIPT_URLS",
+          glean: ["", "sanitizerConfigJavascriptUrls"],
+          value: 0,
+        },
+      ],
+    },
+
+    // Sanitizer API: a rejected config counts as invalid and nothing else.
+    {
+      type: "direct",
+      filename: "file_use_counter_sanitizer_invalid.html",
+      counters: [
+        {
+          name: "SANITIZER_INVALID_CONFIG",
+          glean: ["", "sanitizerInvalidConfig"],
+        },
+        {
+          name: "SANITIZER_ELEMENTS",
+          glean: ["", "sanitizerConfigElements"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_REMOVE_ELEMENTS",
+          glean: ["", "sanitizerConfigRemoveElements"],
+          value: 0,
+        },
+        {
+          name: "SANITIZER_ATTRIBUTES",
+          glean: ["", "sanitizerConfigAttributes"],
+          value: 0,
+        },
+      ],
+    },
+
     // // data: URLs don't correctly propagate to their referring document yet.
     // {
     //   type: "direct",

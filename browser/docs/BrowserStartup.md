@@ -40,6 +40,7 @@ are listed in the order they fire.
 | `browser-window-load` | During the window `load` event, after SessionStore has initialized the window. |
 | `browser-window-delayed-startup` | After the window's first paint, for code that can run after the window is visible. |
 | `browser-window-sessionstore-initialized` | Fired from the window's delayed startup once SessionStore is initialized. |
+| `browser-window-idle-tasks` | Invoked once all windows have been restored, for per-window work that can wait until the browser is idle. Each consumer runs in its own idle callback, and is dropped if the window closes before it runs. |
 | `browser-window-location-change` | Fires on every `XULBrowserWindow.onLocationChange` for the window. |
 | `browser-window-unload-begin` | At the very start of window unload, before checking whether the window finished loading. Runs even if the window never fully loaded. |
 | `browser-window-unload` | During window unload, before `Tabbrowser` is destroyed. Preferred entry point for window unload cleanup. |

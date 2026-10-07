@@ -45,17 +45,13 @@ already_AddRefed<SpeechGrammar> SpeechGrammarList::Item(uint32_t aIndex) {
   return result.forget();
 }
 
-void SpeechGrammarList::AddFromURI(const nsAString& aSrc,
-                                   const Optional<float>& aWeight,
-                                   ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-}
+void SpeechGrammarList::AddFromUri(const nsAString& aSrc,
+                                   const Optional<float>& aWeight) {}
 
 void SpeechGrammarList::AddFromString(const nsAString& aString,
-                                      const Optional<float>& aWeight,
-                                      ErrorResult& aRv) {
+                                      const Optional<float>& aWeight) {
   SpeechGrammar* speechGrammar = new SpeechGrammar(mParent);
-  speechGrammar->SetSrc(aString, aRv);
+  speechGrammar->SetSrc(aString);
   mItems.AppendElement(speechGrammar);
 }
 

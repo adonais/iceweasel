@@ -75,11 +75,11 @@ add_task(async () => {
   do_load_profile();
 
   // test a few random cookies
-  Assert.equal(Services.cookies.countCookiesFromHost("999.com"), 1);
-  Assert.equal(Services.cookies.countCookiesFromHost("abc.com"), 0);
-  Assert.equal(Services.cookies.countCookiesFromHost("100.com"), 1);
-  Assert.equal(Services.cookies.countCookiesFromHost("400.com"), 1);
-  Assert.equal(Services.cookies.countCookiesFromHost("xyz.com"), 0);
+  Assert.equal(Services.cookies.countCookiesFromHost("999.com", {}), 1);
+  Assert.equal(Services.cookies.countCookiesFromHost("abc.com", {}), 0);
+  Assert.equal(Services.cookies.countCookiesFromHost("100.com", {}), 1);
+  Assert.equal(Services.cookies.countCookiesFromHost("400.com", {}), 1);
+  Assert.equal(Services.cookies.countCookiesFromHost("xyz.com", {}), 0);
 
   // force synchronous load of everything
   Assert.equal(do_count_cookies(), CMAX);
@@ -87,7 +87,7 @@ add_task(async () => {
   // check that everything's precisely correct
   for (let i = 0; i < CMAX; ++i) {
     let host = i.toString() + ".com";
-    Assert.equal(Services.cookies.countCookiesFromHost(host), 1);
+    Assert.equal(Services.cookies.countCookiesFromHost(host, {}), 1);
   }
 
   // reload again, to make sure the additions were written correctly
@@ -122,7 +122,7 @@ add_task(async () => {
   Assert.equal(do_count_cookies(), CMAX - 200);
   for (let i = 100; i < CMAX - 100; ++i) {
     let host = i.toString() + ".com";
-    Assert.equal(Services.cookies.countCookiesFromHost(host), 1);
+    Assert.equal(Services.cookies.countCookiesFromHost(host, {}), 1);
   }
 
   Services.prefs.clearUserPref("network.cookie.sameSite.laxByDefault");

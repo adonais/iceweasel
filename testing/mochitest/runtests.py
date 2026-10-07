@@ -52,7 +52,7 @@ from manifestparser.filters import (
     subsuite,
     tags,
 )
-from manifestparser.util import normsep
+from manifestparser.util import normsep, split_manifest_list
 from mozgeckoprofiler import (
     symbolicate_profile_json,
     symbolicate_profiles,
@@ -1037,6 +1037,12 @@ class MochitestDesktop:
     # XXX use automation.py for test name to avoid breaking legacy
     # TODO: replace this with 'runtests.py' or 'mochitest' or the like
     test_name = "automation.py"
+
+    # The test currently running, and whether it has already reported a result.
+    # Tracked apart from each other so crash and leak attribution get a test
+    # path, not a status marker.
+    lastTestSeen = None
+    lastTestFinished = False
 
     def __init__(self, flavor, logger_options, staged_addons=None, quiet=False):
         update_mozinfo()
@@ -3063,6 +3069,7 @@ toolbar#nav-bar {
 
             # create mozrunner instance and start the system under test process
             self.lastTestSeen = self.test_name
+            self.lastTestFinished = False
             self.lastManifest = currentManifest
             startTime = datetime.now()
 
@@ -3220,9 +3227,7 @@ toolbar#nav-bar {
                     # this requires a custom message vs log.error/log.warning/etc.
                     self.message_logger.process_message(message)
             else:
-                self.lastTestSeen = (
-                    currentManifest or "Main app process exited normally"
-                )
+                self.log.info("runtests.py | Main app process exited normally")
 
             self.log.info(
                 f"runtests.py | Application ran for: {str(datetime.now() - startTime)}"
@@ -3874,7 +3879,7 @@ toolbar#nav-bar {
             prefs = list(self.prefs_by_manifest[m])[0]
             self.extraPrefs = origPrefs.copy()
             if prefs:
-                prefs = [p.strip() for p in prefs.strip().split("\n")]
+                prefs = split_manifest_list(prefs)
                 self.log.info(
                     "The following extra prefs will be set:\n  {}".format(
                         "\n  ".join(prefs)
@@ -3885,7 +3890,7 @@ toolbar#nav-bar {
             envVars = list(self.env_vars_by_manifest[m])[0]
             self.extraEnv = {}
             if envVars:
-                self.extraEnv = envVars.strip().split()
+                self.extraEnv = split_manifest_list(envVars)
                 env_list = "\n  ".join(self.extraEnv)
                 self.log.info(
                     f"The following extra environment variables will be set:\n  {env_list}"
@@ -4578,8 +4583,10 @@ toolbar#nav-bar {
             """record last test on harness"""
             if message["action"] == "test_start":
                 self.harness.lastTestSeen = message["test"]
+                self.harness.lastTestFinished = False
             elif message["action"] == "test_end":
-                self.harness.lastTestSeen = "{} (finished)".format(message["test"])
+                self.harness.lastTestSeen = message["test"]
+                self.harness.lastTestFinished = True
             return message
 
         def dumpScreenOnTimeout(self, message):
@@ -4610,7 +4617,7 @@ toolbar#nav-bar {
                     if message["action"] == "log"
                     else message["data"]
                 )
-                if "(finished)" in self.harness.lastTestSeen:
+                if self.harness.lastTestFinished:
                     self.lsanLeaks.log(line, self.harness.lastManifest)
                 else:
                     self.lsanLeaks.log(line, self.harness.lastTestSeen)
@@ -4624,7 +4631,7 @@ toolbar#nav-bar {
                     else message["data"]
                 )
                 pid = message.get("process")
-                if "(finished)" in self.harness.lastTestSeen:
+                if self.harness.lastTestFinished:
                     scope = self.harness.lastManifest
                 else:
                     scope = self.harness.lastTestSeen

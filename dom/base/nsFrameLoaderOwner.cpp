@@ -19,6 +19,7 @@
 #include "mozilla/dom/FrameLoaderBinding.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
 #include "mozilla/dom/MozFrameLoaderOwnerBinding.h"
+#include "nsContentUtils.h"
 #include "nsFocusManager.h"
 #include "nsFrameLoader.h"
 #include "nsNetUtil.h"
@@ -112,6 +113,8 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
   // with the SessionHistoryEntry which now owns the frame.
   RefPtr<SessionHistoryEntry> bfcacheEntry;
 
+  Maybe<LayerState> layerState;
+
   {
     // Introduce a script blocker to ensure no JS is executed during the
     // nsFrameLoader teardown & recreation process. Unload listeners will be run
@@ -133,6 +136,7 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
       }
 
       networkCreated = mFrameLoader->IsNetworkCreated();
+      layerState = GetLayerState();
 
       MOZ_ASSERT_IF(aOptions.mTryUseBFCache, aOptions.mReplaceBrowsingContext);
       if (aOptions.mTryUseBFCache && bc) {
@@ -196,6 +200,72 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
   ChangeFrameLoaderCommon(owner, retainPaint);
 
   UpdateFocusAndMouseEnterStateAfterFrameLoaderChange(owner);
+
+  if (TransferLayerState(layerState)) {
+    DispatchLayerTreeEvent();
+  }
+}
+
+Maybe<nsFrameLoaderOwner::LayerState> nsFrameLoaderOwner::GetLayerState()
+    const {
+  auto* browserParent =
+      mFrameLoader ? mFrameLoader->GetBrowserParent() : nullptr;
+  if (!browserParent) {
+    return Nothing();
+  }
+  return Some(LayerState{
+      browserParent->GetRenderLayers(), browserParent->IsPreservingLayers(),
+      browserParent->GetPriorityHint(), browserParent->GetHasLayers()});
+}
+
+bool nsFrameLoaderOwner::TransferLayerState(
+    const Maybe<LayerState>& aOldLayerState) {
+  if (!mFrameLoader) {
+    return false;
+  }
+  // A <browser> without a frame, because no style flush ran since its tab was
+  // inserted, gets no BrowserParent from ChangeFrameLoaderCommon's frame reset.
+  if (XRE_IsParentProcess() && mFrameLoader->IsRemoteFrame()) {
+    (void)mFrameLoader->EnsureRemoteBrowser();
+  }
+  auto* browserParent = mFrameLoader->GetBrowserParent();
+  if (!browserParent) {
+    return false;
+  }
+
+  bool hadLayers = false;
+  if (aOldLayerState) {
+    browserParent->TransferLayerState(aOldLayerState->mRenderLayers,
+                                      aOldLayerState->mPreserveLayers,
+                                      aOldLayerState->mPriorityHint);
+    hadLayers = aOldLayerState->mHasLayers;
+  } else {
+    CanonicalBrowsingContext* bc = browserParent->GetBrowsingContext();
+    // A BrowsingContext that manages its own activeness gets no renderLayers
+    // from SetCurrentBrowserParent.
+    if (bc->ManuallyManagesActiveness()) {
+      browserParent->SetRenderLayers(bc->IsActive());
+    }
+  }
+
+  // Neither BrowserParent reports this change itself: a destroyed one skips
+  // its layer tree notifications and a bfcached one keeps its layers.
+  return browserParent->GetHasLayers() != hadLayers;
+}
+
+void nsFrameLoaderOwner::DispatchLayerTreeEvent() {
+  auto* browserParent =
+      mFrameLoader ? mFrameLoader->GetBrowserParent() : nullptr;
+  if (!browserParent) {
+    return;
+  }
+  RefPtr<Element> owner = do_QueryObject(this);
+  RefPtr<Document> doc = owner->OwnerDoc();
+  nsContentUtils::DispatchEventOnlyToChrome(doc, owner,
+                                            browserParent->GetHasLayers()
+                                                ? u"MozLayerTreeReady"_ns
+                                                : u"MozLayerTreeCleared"_ns,
+                                            CanBubble::eYes, Cancelable::eNo);
 }
 
 void nsFrameLoaderOwner::ChangeFrameLoaderCommon(Element* aOwner,
@@ -355,30 +425,24 @@ void nsFrameLoaderOwner::SubframeCrashed() {
                          /* group */ nullptr, frameLoaderInit, IgnoreErrors());
 }
 
-void nsFrameLoaderOwner::RestoreFrameLoaderFromBFCache(
+bool nsFrameLoaderOwner::RestoreFrameLoaderFromBFCache(
     nsFrameLoader* aNewFrameLoader) {
   MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug,
           ("nsFrameLoaderOwner::RestoreFrameLoaderFromBFCache: Replace "
            "frameloader"));
 
-  Maybe<bool> renderLayers;
-  if (mFrameLoader) {
-    if (auto* oldParent = mFrameLoader->GetBrowserParent()) {
-      renderLayers.emplace(oldParent->GetRenderLayers());
-    }
-  }
+  Maybe<LayerState> layerState = GetLayerState();
 
   mFrameLoader = aNewFrameLoader;
 
   if (auto* browserParent = mFrameLoader->GetBrowserParent()) {
     browserParent->AddWindowListeners();
-    if (renderLayers.isSome()) {
-      browserParent->SetRenderLayers(renderLayers.value());
-    }
   }
 
   RefPtr<Element> owner = do_QueryObject(this);
   ChangeFrameLoaderCommon(owner, /* aRetainPaint = */ false);
+
+  return TransferLayerState(layerState);
 }
 
 void nsFrameLoaderOwner::AttachFrameLoader(nsFrameLoader* aFrameLoader) {

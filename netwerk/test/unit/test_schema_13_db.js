@@ -62,7 +62,7 @@ add_task(async function test_schema_13_db() {
   await promise_load_profile();
 
   // Assert inserted cookies are in the db and correctly handled by services.
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com"), N);
+  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), N);
 
   // Open connection to manipulated db
   dbConnection = Services.storage.openDatabase(do_get_cookie_file(profile));

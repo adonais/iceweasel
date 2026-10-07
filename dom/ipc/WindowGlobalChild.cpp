@@ -6,9 +6,12 @@
 
 #include "GeckoProfiler.h"
 #include "Navigator.h"
+#include "Units.h"
+#include "gfxPlatform.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/MozPrintCallbackRunner.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -20,7 +23,9 @@
 #include "mozilla/dom/CloseWatcherManager.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/dom/IdentityCredential.h"
 #include "mozilla/dom/InProcessChild.h"
 #include "mozilla/dom/InProcessParent.h"
@@ -39,6 +44,8 @@
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalActorsBinding.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/CrossProcessPaint.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "nsAtom.h"
 #include "nsContentUtils.h"
@@ -267,8 +274,8 @@ WindowGlobalChild::WindowGlobalChild(dom::WindowContext* aWindowContext,
   // loaded, the first url loaded in it will be about:blank. This call keeps the
   // first non-about:blank registration of window and discards the previous one.
   uint64_t embedderInnerWindowID = 0;
-  if (BrowsingContext()->GetParent()) {
-    embedderInnerWindowID = BrowsingContext()->GetEmbedderInnerWindowId();
+  if (auto* parent = WindowContext()->GetParentWindowContext()) {
+    embedderInnerWindowID = parent->InnerWindowId();
   }
   profiler_register_page(
       BrowsingContext()->BrowserId(), InnerWindowId(),
@@ -789,10 +796,132 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameRemote(
   return IPC_OK();
 }
 
+class PrintCallbackSnapshot final : public nsITimerCallback, public nsINamed {
+ public:
+  NS_DECL_ISUPPORTS
+
+  // Returns false if there's nothing to wait for, in which case the caller
+  // should record the snapshot synchronously.
+  static bool MaybeStart(dom::BrowsingContext* aBc,
+                         const Maybe<gfx::IntRect>& aRect, float aScale,
+                         nscolor aBackgroundColor,
+                         gfx::CrossProcessPaintFlags aFlags,
+                         WindowGlobalChild::DrawSnapshotResolver&& aResolve) {
+    if (!(aFlags & gfx::CrossProcessPaintFlags::ForPrinting)) {
+      return false;
+    }
+    nsCOMPtr<nsIDocShell> ds = aBc->GetDocShell();
+    if (!ds) {
+      return false;
+    }
+    RefPtr<Document> doc = ds->GetDocument();
+    if (!doc || !DocumentTreeHasPrintCallbacks(*doc)) {
+      return false;
+    }
+    // Flush upfront so that the frame tree walk below finds the canvases.
+    nsContentUtils::FlushLayoutForTree(ds->GetWindow());
+    RefPtr<PresShell> presShell = doc->GetPresShell();
+    if (!presShell) {
+      return false;
+    }
+    MozPrintCallbackRunner runner;
+    runner.CollectCanvases(presShell->GetRootFrame());
+    if (!runner.HasCanvases()) {
+      return false;
+    }
+
+    // This matches PaintFragment::Record.
+    RefPtr<gfx::DrawTarget> referenceDt = gfx::Factory::CreateDrawTarget(
+        gfxPlatform::GetPlatform()->GetSoftwareBackend(), gfx::IntSize(1, 1),
+        gfx::SurfaceFormat::B8G8R8A8);
+    if (!referenceDt) {
+      return false;
+    }
+
+    RefPtr self = new PrintCallbackSnapshot(aBc, std::move(runner), aRect,
+                                            aScale, aBackgroundColor, aFlags,
+                                            std::move(aResolve));
+    self->mRunner.DispatchCallbacks(referenceDt, self);
+    if (self->mRunner.AreCallbacksDone()) {
+      // No callback could be dispatched, so nothing will notify us.
+      self->Finish();
+    }
+    return true;
+  }
+
+  NS_IMETHOD Notify(nsITimer*) override {
+    if (mRunner.AreCallbacksDone()) {
+      Finish();
+    }
+    return NS_OK;
+  }
+
+  NS_IMETHOD GetName(nsACString& aName) override {
+    aName.AssignLiteral("PrintCallbackSnapshot");
+    return NS_OK;
+  }
+
+ private:
+  static bool DocumentTreeHasPrintCallbacks(Document& aDoc) {
+    if (aDoc.HasPrintCallbacks()) {
+      return true;
+    }
+    bool found = false;
+    aDoc.EnumerateSubDocuments([&found](Document& aSubDoc) {
+      found = DocumentTreeHasPrintCallbacks(aSubDoc);
+      return found ? CallState::Stop : CallState::Continue;
+    });
+    return found;
+  }
+
+  PrintCallbackSnapshot(dom::BrowsingContext* aBc,
+                        MozPrintCallbackRunner&& aRunner,
+                        const Maybe<gfx::IntRect>& aRect, float aScale,
+                        nscolor aBackgroundColor,
+                        gfx::CrossProcessPaintFlags aFlags,
+                        WindowGlobalChild::DrawSnapshotResolver&& aResolve)
+      : mBrowsingContext(aBc),
+        mRunner(std::move(aRunner)),
+        mRect(aRect),
+        mScale(aScale),
+        mBackgroundColor(aBackgroundColor),
+        mFlags(aFlags),
+        mResolve(std::move(aResolve)) {}
+
+  ~PrintCallbackSnapshot() = default;
+
+  void Finish() {
+    if (!mResolve) {
+      return;
+    }
+    gfx::PaintFragment fragment = gfx::PaintFragment::Record(
+        mBrowsingContext, mRect, mScale, mBackgroundColor, mFlags);
+    mRunner.Reset();
+    auto resolve = std::move(mResolve);
+    mResolve = nullptr;
+    resolve(std::move(fragment));
+  }
+
+  RefPtr<dom::BrowsingContext> mBrowsingContext;
+  MozPrintCallbackRunner mRunner;
+  Maybe<gfx::IntRect> mRect;
+  float mScale;
+  nscolor mBackgroundColor;
+  gfx::CrossProcessPaintFlags mFlags;
+  WindowGlobalChild::DrawSnapshotResolver mResolve;
+};
+
+NS_IMPL_ISUPPORTS(PrintCallbackSnapshot, nsITimerCallback, nsINamed)
+
 mozilla::ipc::IPCResult WindowGlobalChild::RecvDrawSnapshot(
     const Maybe<IntRect>& aRect, const float& aScale,
     const nscolor& aBackgroundColor, const gfx::CrossProcessPaintFlags& aFlags,
     DrawSnapshotResolver&& aResolve) {
+  if (PrintCallbackSnapshot::MaybeStart(BrowsingContext(), aRect, aScale,
+                                        aBackgroundColor, aFlags,
+                                        std::move(aResolve))) {
+    return IPC_OK();
+  }
   aResolve(gfx::PaintFragment::Record(BrowsingContext(), aRect, aScale,
                                       aBackgroundColor, aFlags));
   return IPC_OK();
@@ -975,6 +1104,30 @@ IPCResult WindowGlobalChild::RecvGetModelContextTools(
   return IPC_OK();
 }
 
+IPCResult WindowGlobalChild::RecvGetContentMetrics(
+    GetContentMetricsResolver&& aResolver) {
+  CSSSize size;
+  float devicePixelRatio = 1.0f;
+
+  if (IsCurrentGlobal()) {
+    if (RefPtr<nsGlobalWindowInner> win = GetWindowGlobal()) {
+      if (RefPtr<Document> doc = win->GetExtantDoc()) {
+        if (RefPtr<Element> root = doc->GetDocumentElement()) {
+          size = CSSPixel::FromAppUnits(root->GetScrollSize());
+        }
+      }
+
+      IgnoredErrorResult rv;
+      double dpr = win->GetDevicePixelRatio(CallerType::System, rv);
+      if (!rv.Failed() && dpr > 0.0) {
+        devicePixelRatio = float(dpr);
+      }
+    }
+  }
+  aResolver(std::make_tuple(size, devicePixelRatio));
+  return IPC_OK();
+}
+
 IPCResult WindowGlobalChild::RecvInvokeModelContextTool(
     const nsCString& aToolName, NotNull<StructuredCloneData*> aInput,
     InvokeModelContextToolResolver&& aResolver) {
@@ -1058,8 +1211,8 @@ void WindowGlobalChild::SetDocumentURI(nsIURI* aDocumentURI) {
   // loaded, the first url loaded in it will be about:blank. This call keeps the
   // first non-about:blank registration of window and discards the previous one.
   uint64_t embedderInnerWindowID = 0;
-  if (BrowsingContext()->GetParent()) {
-    embedderInnerWindowID = BrowsingContext()->GetEmbedderInnerWindowId();
+  if (auto* parent = WindowContext()->GetParentWindowContext()) {
+    embedderInnerWindowID = parent->InnerWindowId();
   }
   profiler_register_page(
       BrowsingContext()->BrowserId(), InnerWindowId(),
@@ -1282,7 +1435,7 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(WindowGlobalChild)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WindowGlobalChild)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mWindowGlobal)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mContainerFeaturePolicy)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mContainerPermissionsPolicy)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mWindowContext)
   tmp->UnlinkManager();
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
@@ -1291,7 +1444,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(WindowGlobalChild)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWindowGlobal)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mContainerFeaturePolicy)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mContainerPermissionsPolicy)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWindowContext)
   if (!tmp->IsInProcess()) {
     CycleCollectionNoteChild(cb, static_cast<BrowserChild*>(tmp->Manager()),

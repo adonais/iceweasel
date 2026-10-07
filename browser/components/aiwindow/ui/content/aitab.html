@@ -13,11 +13,24 @@
       http-equiv="Content-Security-Policy"
       content="default-src resource: chrome:; object-src 'none'; img-src chrome: page-icon:;"
     />
+    <!-- TODO 2072395 -->
+    <!-- <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src resource: chrome:; object-src 'none'; img-src chrome: page-icon:; style-src resource: chrome: https://fonts.googleapis.com; font-src resource: chrome: https://fonts.gstatic.com;"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Mozilla+Headline:wdth,wght@75,600&amp;display=swap"
+    /> -->
     <meta name="color-scheme" content="light dark" />
     <title data-l10n-id="ai-tab-default-page-title"></title>
     <link rel="stylesheet" href="chrome://global/skin/in-content/common.css" />
     <link rel="localization" href="toolkit/branding/brandings.ftl" />
     <link rel="localization" href="preview/aiWindow.ftl" />
+    <!-- ai-grouped-chip-container labels its trigger from this file. -->
+    <link rel="localization" href="browser/aiWindowContent.ftl" />
     <script src="chrome://browser/content/contentTheme.js"></script>
     <script
       type="module"

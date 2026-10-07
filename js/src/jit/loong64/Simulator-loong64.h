@@ -34,6 +34,8 @@
 
 #include "mozilla/Atomics.h"
 
+#include <optional>
+
 #include "jit/IonTypes.h"
 #include "js/ProfilingFrameIterator.h"
 #include "threading/Thread.h"
@@ -68,13 +70,12 @@ const int kNumRegisters = 32;
 // In the simulator, the PC register is simulated as the 34th register.
 const int kPCRegister = 32;
 
-// Number coprocessor registers.
+// Number of FPU registers.
 const int kNumFPURegisters = 32;
 
-// FPU (coprocessor 1) control registers. Currently only FCSR is implemented.
-// TODO fcsr0 fcsr1 fcsr2 fcsr3
-const int kFCSRRegister = 0;
-const int kInvalidFPUControlRegister = -1;
+// FPU control registers. Currently only FCSR0 is implemented.
+// TODO(loong64): fcsr0 fcsr1 fcsr2 fcsr3
+
 const uint32_t kFPUInvalidResult = static_cast<uint32_t>(1 << 31) - 1;
 const int32_t kFPUInvalidResultNegative = static_cast<int32_t>(1u << 31);
 const uint64_t kFPU64InvalidResult =
@@ -127,6 +128,16 @@ const uint32_t kFCSRFlagMask =
     kFCSRInexactFlagMask | kFCSRUnderflowFlagMask | kFCSROverflowFlagMask |
     kFCSRDivideByZeroFlagMask | kFCSRInvalidOpFlagMask;
 
+const uint32_t kFCSRInexactCauseMask = 1 << kFCSRInexactCauseBit;
+const uint32_t kFCSRUnderflowCauseMask = 1 << kFCSRUnderflowCauseBit;
+const uint32_t kFCSROverflowCauseMask = 1 << kFCSROverflowCauseBit;
+const uint32_t kFCSRDivideByZeroCauseMask = 1 << kFCSRDivideByZeroCauseBit;
+const uint32_t kFCSRInvalidOpCauseMask = 1 << kFCSRInvalidOpCauseBit;
+
+const uint32_t kFCSRCauseMask =
+    kFCSRInexactCauseMask | kFCSRUnderflowCauseMask | kFCSROverflowCauseMask |
+    kFCSRDivideByZeroCauseMask | kFCSRInvalidOpCauseMask;
+
 const uint32_t kFCSRExceptionFlagMask = kFCSRFlagMask ^ kFCSRInexactFlagMask;
 
 // On LoongArch64 Simulator breakpoints can have different codes:
@@ -156,7 +167,7 @@ class Simulator {
     no_reg = -1,
     zero_reg = 0,
     ra,
-    gp,
+    tp,
     sp,
     a0,
     a1,
@@ -175,7 +186,7 @@ class Simulator {
     t6,
     t7,
     t8,
-    tp,
+    rx,
     fp,
     s0,
     s1,
@@ -188,9 +199,6 @@ class Simulator {
     s8,
     pc,  // pc must be the last register.
     kNumSimuRegisters,
-    // aliases
-    v0 = a0,
-    v1 = a1,
   };
 
   // Condition flag registers.
@@ -264,8 +272,7 @@ class Simulator {
   uintptr_t* addressOfStackLimit();
 
   // Accessors for register state. Reading the pc value adheres to the LOONG64
-  // architecture specification and is off by a 8 from the currently executing
-  // instruction.
+  // architecture specification.
   void setRegister(int reg, int64_t value);
   int64_t getRegister(int reg) const;
   // Same for FPURegisters.
@@ -286,8 +293,6 @@ class Simulator {
                                      int fpureg);
 
   int64_t getFpuRegister(int fpureg) const;
-  //  int32_t getFpuRegisterLo(int fpureg) const;
-  //  int32_t getFpuRegisterHi(int fpureg) const;
   int32_t getFpuRegisterWord(int fpureg) const;
   int32_t getFpuRegisterSignedWord(int fpureg) const;
   int32_t getFpuRegisterHiWord(int fpureg) const;
@@ -297,20 +302,47 @@ class Simulator {
   void setCFRegister(int cfreg, bool value);
   bool getCFRegister(int cfreg) const;
 
-  void set_fcsr_rounding_mode(FPURoundingMode mode);
-
   void setFCSRBit(uint32_t cc, bool value);
   bool testFCSRBit(uint32_t cc);
+
+  enum class FCSRException {
+    Inexact,
+    Underflow,
+    Overflow,
+    DivideByZero,
+    InvalidOp
+  };
+  void setFCSRBitsByException(FCSRException ex);
+
+  void clearFCSRCauseBits();
   unsigned int getFCSRRoundingMode();
   template <typename T>
   bool setFCSRRoundError(double original, double rounded);
-  bool setFCSRRound64Error(float original, float rounded);
 
   template <typename T>
   void roundAccordingToFCSR(T toRound, T* rounded, int32_t* rounded_int);
 
   template <typename T>
   void round64AccordingToFCSR(T toRound, T* rounded, int64_t* rounded_int);
+
+  template <typename T>
+  std::optional<T> FPUPropagateNaN(T fj, T fk);
+  template <typename T>
+  std::optional<T> FPUPropagateNaN(T fa, T fj, T fk);
+
+  template <typename T, typename Func>
+  T FPUProcessNaNBinop(T fj, T fk, Func fn);
+
+  template <typename T>
+  T FPUFmaHelper(T fj, T fk, T fa, bool negateMultiplicand, bool negateAddend);
+  template <typename T>
+  T FPUMin(T fj, T fk);
+  template <typename T>
+  T FPUMax(T fj, T fk);
+  template <typename T>
+  T FPUMinA(T fj, T fk);
+  template <typename T>
+  T FPUMaxA(T fj, T fk);
 
   // Special case of set_register and get_register to access the raw PC value.
   void set_pc(int64_t value);
@@ -359,9 +391,7 @@ class Simulator {
     // the ra is set to this value on transition from native C code to
     // simulated execution, so that the simulator can "return" to the native
     // C code.
-    end_sim_pc = -2,
-    // Unpredictable value.
-    Unpredictable = 0xbadbeaf
+    end_sim_pc = -2
   };
 
   bool init();
@@ -491,7 +521,7 @@ class Simulator {
   // Handle any wasm faults, returning true if the fault was handled.
   // This method is rather hot so inline the normal (no-wasm) case.
   bool MOZ_ALWAYS_INLINE handleWasmSegFault(uint64_t addr, unsigned numBytes) {
-    if (MOZ_LIKELY(!js::wasm::CodeExists)) {
+    if (MOZ_LIKELY(!js::wasm::CodeExists())) {
       return false;
     }
 

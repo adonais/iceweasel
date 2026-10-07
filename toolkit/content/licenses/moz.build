@@ -1,0 +1,797 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# Licenses whose text is shared across the tree, or whose code lives in a
+# directory the build system does not traverse (third_party/, nsprpub/).
+# Prefer declaring a license in the directory that owns the code.
+
+LICENSES += ["mpl"]
+LICENSES["mpl"].title = "Mozilla Public License 2.0"
+LICENSES["mpl"].text = "mpl.html"
+LICENSES["mpl"].spdx = "MPL-2.0"
+
+LICENSES += ["lgpl"]
+LICENSES["lgpl"].title = "GNU Lesser General Public License 2.1"
+LICENSES["lgpl"].text = "lgpl.html"
+LICENSES["lgpl"].spdx = "LGPL-2.1-only"
+LICENSES["lgpl"].notice = """
+<p>This product contains code from the following LGPLed libraries:</p>
+            <ul>
+              <li><a href="https://www.surina.net/soundtouch/">libsoundtouch</a>
+              <li><a href="https://libav.org/">Libav</a>
+              <li><a href="https://ffmpeg.org/">FFmpeg</a>
+            </ul>
+            <p>This license also applies to the following files or to files in the following directories:
+"""
+
+LICENSES += ["lgpl-3.0"]
+LICENSES["lgpl-3.0"].title = "GNU Lesser General Public License 3.0"
+LICENSES["lgpl-3.0"].text = "lgpl-3.0.html"
+LICENSES["lgpl-3.0"].spdx = "LGPL-3.0-only"
+LICENSES["lgpl-3.0"].notice = """
+<p>Some versions of this product contains code from the following LGPLed libraries:</p>
+            <ul>
+              <li>
+                <a href="https://addons.mozilla.org/en-US/firefox/addon/görans-hemmasnickrade-ordli/">Swedish dictionary</a>
+            </ul>
+"""
+
+LICENSES += ["acorn"]
+LICENSES["acorn"].title = "acorn License"
+LICENSES["acorn"].text = "acorn.txt"
+LICENSES["acorn"].spdx = "MIT"
+LICENSES["acorn"].notice = """
+<p>This license applies to part of the <code>devtools/shared/jsbeautify/src/beautify-js.js</code> file.
+            </p>
+"""
+
+LICENSES += ["apache"]
+LICENSES["apache"].title = "Apache License 2.0"
+LICENSES["apache"].text = "apache.txt"
+LICENSES["apache"].spdx = "Apache-2.0"
+LICENSES["apache"].notice = """
+<p>This license applies to various files in the Mozilla codebase including, but not limited to:</p>
+"""
+LICENSES["apache"].paths = [
+    "third_party/cups/include",
+    "third_party/rust/calendrical_calculations",
+]
+
+# These crates have no moz.build of their own to carry a LICENSED_UNDER, so the
+# feature that pulls them into the build is checked here instead.
+if CONFIG["MOZ_FONTATIONS"]:
+    LICENSES["apache"].paths += [
+        "third_party/rust/font-types/",
+        "third_party/rust/read-fonts/",
+        "third_party/rust/skrifa/",
+    ]
+
+if CONFIG["MOZ_CLANG_RT_ASAN_LIB_PATH"]:
+    LICENSES += ["apache-llvm"]
+    LICENSES["apache-llvm"].title = "Apache License 2.0 with LLVM exception"
+    LICENSES["apache-llvm"].text = "apache-llvm.txt"
+    LICENSES["apache-llvm"].spdx = "Apache-2.0"
+
+LICENSES += ["apple"]
+LICENSES["apple"].title = "Apple License"
+LICENSES["apple"].text = "apple.txt"
+LICENSES["apple"].spdx = "BSD-2-Clause"
+LICENSES["apple"].notice = """
+<p>This license applies to parts of the code in:</p>
+"""
+
+LICENSES += ["apple-password-rules-parser"]
+LICENSES["apple-password-rules-parser"].title = "Apple Password Rules Parser License"
+LICENSES["apple-password-rules-parser"].text = "apple-password-rules-parser.txt"
+LICENSES["apple-password-rules-parser"].spdx = "MIT"
+LICENSES["apple-password-rules-parser"].notice = """
+<p>This license applies to the file <code>toolkit/components/passwordmgr/shared/PasswordRulesParser.sys.mjs</code>.</p>
+"""
+
+LICENSES += ["arm"]
+LICENSES["arm"].title = "ARM License"
+LICENSES["arm"].text = "arm.txt"
+LICENSES["arm"].spdx = "BSD-3-Clause"
+LICENSES["arm"].notice = """
+<p>This license applies to files in the directory <code>js/src/jit/arm64/vixl/</code>.</p>
+"""
+
+LICENSES += ["boost"]
+LICENSES["boost"].title = "boost License"
+LICENSES["boost"].text = "boost.txt"
+LICENSES["boost"].spdx = "BSL-1.0"
+LICENSES["boost"].notice = """
+<p>This license applies to files in the following directories, whose
+            copyright owners are named in the individual LICENSE files:</p>
+"""
+LICENSES["boost"].paths = [
+    "third_party/function2",
+]
+
+LICENSES += ["bsd2clause"]
+LICENSES["bsd2clause"].title = "BSD 2-Clause License"
+LICENSES["bsd2clause"].text = "bsd2clause.txt"
+LICENSES["bsd2clause"].spdx = "BSD-2-Clause"
+LICENSES["bsd2clause"].notice = """
+<p>This license applies to files in the following directories, whose
+            copyright owners are named in the individual LICENSE files:</p>
+"""
+LICENSES["bsd2clause"].paths = [
+    "third_party/dav1d",
+    "third_party/rust/arrayref",
+    "third_party/rust/mach2",
+    "third_party/rust/qlog",
+]
+
+LICENSES += ["bsd3clause"]
+LICENSES["bsd3clause"].title = "BSD 3-Clause License"
+LICENSES["bsd3clause"].text = "bsd3clause.txt"
+LICENSES["bsd3clause"].spdx = "BSD-3-Clause"
+LICENSES["bsd3clause"].notice = """
+<p>This license applies to portions of WHATWG specification incorporated
+            into source code and to files in the following directories, whose
+            copyright owners are named in the individual LICENSE files:</p>
+"""
+LICENSES["bsd3clause"].paths = [
+    "third_party/node/node_modules/react-transition-group/",
+    "third_party/rust/bindgen/",
+    "third_party/rust/subtle/",
+    "third_party/rust/uritemplate-next/",
+    "third_party/xsimd/",
+]
+if CONFIG["MOZ_JXL"]:
+    LICENSES["bsd3clause"].paths += [
+        "third_party/rust/jxl",
+        "third_party/rust/jxl_macros",
+        "third_party/rust/jxl_simd",
+        "third_party/rust/jxl_transforms",
+    ]
+
+LICENSES += ["bspatch"]
+LICENSES["bspatch"].title = "bspatch License"
+LICENSES["bspatch"].text = "bspatch.txt"
+LICENSES["bspatch"].spdx = "BSD-2-Clause"
+LICENSES["bspatch"].notice = """
+<p>
+              This license applies to the following files:
+            </p>
+"""
+
+LICENSES += ["chromium"]
+LICENSES["chromium"].title = "Chromium License"
+LICENSES["chromium"].text = "chromium.txt"
+LICENSES["chromium"].spdx = "BSD-3-Clause"
+LICENSES["chromium"].notice = """
+<p>This license applies to parts of the code in:</p>
+"""
+
+LICENSES += ["codemirror"]
+LICENSES["codemirror"].title = "CodeMirror License"
+LICENSES["codemirror"].text = "codemirror.txt"
+LICENSES["codemirror"].spdx = "MIT"
+LICENSES["codemirror"].notice = """
+<p>This license applies to all files in <code>devtools/client/shared/sourceeditor/codemirror</code></p>
+"""
+
+LICENSES += ["cryptogams"]
+LICENSES["cryptogams"].title = "CRYPTOGAMS License"
+LICENSES["cryptogams"].text = "cryptogams.txt"
+LICENSES["cryptogams"].spdx = "BSD-3-Clause"
+LICENSES["cryptogams"].notice = """
+<p>This license applies all files in <code>security/nss/lib/freebl/scripts/</code>
+            and to the file <code>security/nss/lib/freebl/sha512-p8.s</code>.</p>
+"""
+
+LICENSES += ["cubic-bezier"]
+LICENSES["cubic-bezier"].title = "cubic-bezier License"
+LICENSES["cubic-bezier"].text = "cubic-bezier.txt"
+LICENSES["cubic-bezier"].spdx = "MIT"
+LICENSES["cubic-bezier"].notice = """
+<p>This license applies to the file <code>devtools/client/shared/widgets/CubicBezierWidget.js </code>.</p>
+"""
+
+LICENSES += ["d3"]
+LICENSES["d3"].title = "D3 License"
+LICENSES["d3"].text = "d3.txt"
+LICENSES["d3"].spdx = "BSD-2-Clause"
+LICENSES["d3"].notice = """
+<p>This license applies to the file <code>third_party/js/d3/d3.js</code>.</p>
+"""
+LICENSES["d3"].paths = [
+    "third_party/js/d3/d3.js",
+]
+
+LICENSES += ["dagre-d3"]
+LICENSES["dagre-d3"].title = "Dagre-D3 License"
+LICENSES["dagre-d3"].text = "dagre-d3.txt"
+LICENSES["dagre-d3"].spdx = "MIT"
+LICENSES["dagre-d3"].notice = """
+<p>This license applies to the file <code>devtools/client/shared/vendor/dagre-d3.js</code>.</p>
+"""
+
+LICENSES += ["diff"]
+LICENSES["diff"].title = "diff License"
+LICENSES["diff"].text = "diff.txt"
+LICENSES["diff"].spdx = "MIT"
+LICENSES["diff"].notice = """
+<p>This license applies to the file <code>devtools/client/inspector/markup/test/events/helper_diff.js</code>.</p>
+"""
+
+LICENSES += ["disconnect.me"]
+LICENSES[
+    "disconnect.me"
+].title = "Disconnect.Me License - Creative Commons BY-NC-SA-4.0"
+LICENSES["disconnect.me"].text = "disconnect.me.html"
+LICENSES["disconnect.me"].notice = """
+<p>This license does not apply to any of the code shipped with Firefox,
+            but may apply to blocklists downloaded after installation for use with
+            the tracking protection feature. Our blocklist is based on one originally
+            written by Disconnect.me that is provided to the Mozilla Corporation for use
+            in Firefox pursuant to a contract between Mozilla and Disconnect.me. For
+            use outside Firefox, the blocklist is licensed under the Creative Commons
+            Attribution-NonCommercial-ShareAlike 4.0 International License.</p>
+"""
+
+LICENSES += ["dtoa"]
+LICENSES["dtoa"].title = "dtoa License"
+LICENSES["dtoa"].text = "dtoa.txt"
+LICENSES["dtoa"].notice = """
+<p>This license applies to the file <code>nsprpub/pr/src/misc/dtoa.c</code>.</p>
+"""
+LICENSES["dtoa"].paths = [
+    "nsprpub/pr/src/misc/dtoa.c",
+]
+
+LICENSES += ["hunspell-nl"]
+LICENSES["hunspell-nl"].title = "Dutch Spellchecking Dictionary License"
+LICENSES["hunspell-nl"].text = "hunspell-nl.txt"
+LICENSES["hunspell-nl"].spdx = "BSD-3-Clause"
+LICENSES["hunspell-nl"].notice = """
+<p>This license applies to the Dutch Spellchecking Dictionary. (This code only ships in some localized versions of this product.)</p>
+"""
+
+LICENSES += ["hunspell-en"]
+LICENSES["hunspell-en"].title = "English Spellchecking Dictionary Licenses"
+LICENSES["hunspell-en"].text = "hunspell-en.html"
+LICENSES["hunspell-en"].spdx = "BSD-2-Clause"
+LICENSES["hunspell-en"].notice = """
+<p>These licenses apply to certain files in the directory <code>extensions/spellcheck/locales/en-US/hunspell/</code>,
+            and the Canadian English dictionary. (This code only ships in some localized versions of this product.)</p>
+"""
+
+LICENSES += ["hunspell-ee"]
+LICENSES["hunspell-ee"].title = "Estonian Spellchecking Dictionary License"
+LICENSES["hunspell-ee"].text = "hunspell-ee.txt"
+LICENSES["hunspell-ee"].notice = """
+<p>This license applies to precursor works to certain files which are part of the Estonian Spellchecking Dictionary. The shipped
+            versions are under the GNU Lesser General Public License. (This code only ships in some localized versions of this product.)</p>
+"""
+
+LICENSES += ["firebug"]
+LICENSES["firebug"].title = "Firebug License"
+LICENSES["firebug"].text = "firebug.txt"
+LICENSES["firebug"].notice = """
+<p>This license applies to the code <code>devtools/shared/network-observer/NetworkHelper.sys.mjs</code>.</p>
+"""
+
+LICENSES += ["gfx-font-list"]
+LICENSES["gfx-font-list"].title = "gfxFontList License"
+LICENSES["gfx-font-list"].text = "gfx-font-list.txt"
+LICENSES["gfx-font-list"].spdx = "BSD-3-Clause"
+LICENSES["gfx-font-list"].notice = """
+<p>This license applies to the following files:</p>
+            </p>
+"""
+
+LICENSES += ["google-bsd"]
+LICENSES["google-bsd"].title = "Google BSD License"
+LICENSES["google-bsd"].text = "google-bsd.txt"
+LICENSES["google-bsd"].spdx = "BSD-3-Clause"
+LICENSES["google-bsd"].notice = """
+<p>This license applies to files in the following directories:</p>
+"""
+
+LICENSES += ["gears-istumbler"]
+LICENSES["gears-istumbler"].title = "Google Gears/iStumbler License"
+LICENSES["gears-istumbler"].text = "gears-istumbler.txt"
+LICENSES["gears-istumbler"].spdx = "BSD-3-Clause"
+LICENSES["gears-istumbler"].notice = """
+<p>This license applies to the file <code>netwerk/wifi/mac/Wifi.h</code>.</p>
+"""
+
+LICENSES += ["gyp"]
+LICENSES["gyp"].title = "gyp License"
+LICENSES["gyp"].text = "gyp.txt"
+LICENSES["gyp"].spdx = "BSD-3-Clause"
+LICENSES["gyp"].notice = """
+<p>This license applies to certain files in the directory <code>third_party/python/gyp</code>.</p>
+"""
+LICENSES["gyp"].paths = [
+    "third_party/python/gyp",
+]
+
+LICENSES += ["harfbuzz"]
+LICENSES["harfbuzz"].title = "HarfBuzz License"
+LICENSES["harfbuzz"].text = "harfbuzz.txt"
+LICENSES["harfbuzz"].notice = """
+<p>This license, with different copyright holders, applies to the files in the directory <code>gfx/harfbuzz/</code>.
+            The copyright holders and the applicable ranges of dates are as follows:</p>
+            <ul>
+                <li>1998-2004  David Turner and Werner Lemberg</li>
+                <li>2004, 2007, 2008, 2009, 2010  Red Hat, Inc.</li>
+                <li>2006  Behdad Esfahbod</li>
+                <li>2007  Chris Wilson</li>
+                <li>2009  Keith Stribley &lt;devel@thanlwinsoft.org&gt;</li>
+                <li>2010  Mozilla Foundation</li>
+            </ul>
+"""
+
+LICENSES += ["immutable"]
+LICENSES["immutable"].title = "Immutable.js License"
+LICENSES["immutable"].text = "immutable.txt"
+LICENSES["immutable"].spdx = "BSD-2-Clause"
+
+LICENSES += ["jquery"]
+LICENSES["jquery"].title = "jQuery License"
+LICENSES["jquery"].text = "jquery.txt"
+LICENSES["jquery"].spdx = "MIT"
+LICENSES["jquery"].notice = """
+<p>This license applies to all copies of jQuery in the code.</p>
+"""
+
+LICENSES += ["k_exp"]
+LICENSES["k_exp"].title = "k_exp License"
+LICENSES["k_exp"].text = "k_exp.txt"
+LICENSES["k_exp"].spdx = "BSD-2-Clause"
+LICENSES["k_exp"].notice = """
+<p>This license applies to the file <code>modules/fdlibm/src/k_exp.cpp</code>.</p>
+"""
+
+if CONFIG["MOZ_USE_LIBCXX"]:
+    LICENSES += ["libc++"]
+    LICENSES["libc++"].title = "libc++ License"
+    LICENSES["libc++"].text = "libc++.txt"
+    LICENSES["libc++"].spdx = "MIT"
+    LICENSES["libc++"].notice = """
+    <p class="correctme">This license applies to the copy of libc++ obtained from the Android NDK.</p>
+    """
+
+LICENSES += ["libevent"]
+LICENSES["libevent"].title = "libevent License"
+LICENSES["libevent"].text = "libevent.txt"
+LICENSES["libevent"].spdx = "BSD-2-Clause"
+LICENSES["libevent"].notice = """
+<p>This license applies to files in the directory <code>ipc/chromium/src/third_party/libevent/</code>.</p>
+"""
+
+LICENSES += ["libffi"]
+LICENSES["libffi"].title = "libffi License"
+LICENSES["libffi"].text = "libffi.txt"
+LICENSES["libffi"].spdx = "MIT"
+LICENSES["libffi"].notice = """
+<p>This license applies to files in the directory <code>js/src/ctypes/libffi/</code>.</p>
+"""
+
+LICENSES += ["libjingle"]
+LICENSES["libjingle"].title = "libjingle License"
+LICENSES["libjingle"].text = "libjingle.txt"
+LICENSES["libjingle"].spdx = "BSD-2-Clause"
+LICENSES["libjingle"].notice = """
+<p>This license applies to the following files:</p>
+"""
+
+LICENSES += ["hunspell-lt"]
+LICENSES["hunspell-lt"].title = "Lithuanian Spellchecking Dictionary License"
+LICENSES["hunspell-lt"].text = "hunspell-lt.txt"
+LICENSES["hunspell-lt"].spdx = "BSD-3-Clause"
+LICENSES["hunspell-lt"].notice = """
+<p>This license applies to the Lithuanian Spellchecking Dictionary. (This code only ships in some localized versions of this product.)</p>
+"""
+
+LICENSES += ["lodash"]
+LICENSES["lodash"].title = "lodash License"
+LICENSES["lodash"].text = "lodash.txt"
+LICENSES["lodash"].spdx = "MIT"
+LICENSES["lodash"].notice = """
+<p>This license applies to some of the code in <var>node_modules/lodash/lodash.js</var>.</p>
+"""
+
+LICENSES += ["mit"]
+LICENSES["mit"].title = "MIT License"
+LICENSES["mit"].text = "mit.txt"
+LICENSES["mit"].spdx = "MIT"
+LICENSES["mit"].notice = """
+<p>This license applies to the following files or to files in the following
+            directories, whose copyright owners are named in the individual
+            LICENSE files or headers:</p>
+"""
+LICENSES["mit"].paths = [
+    "third_party/js/cfworker/json-schema.js",
+    "third_party/node/node_modules/@babel/runtime",
+    "third_party/node/node_modules/dom-helpers",
+    "third_party/node/node_modules/js-tokens",
+    "third_party/node/node_modules/loose-envify",
+    "third_party/node/node_modules/object-assign",
+    "third_party/node/node_modules/prop-types",
+    "third_party/node/node_modules/react",
+    "third_party/node/node_modules/react-dom",
+    "third_party/node/node_modules/react-is",
+    "third_party/node/node_modules/scheduler",
+    "third_party/node/node_modules/use-sync-external-store",
+    "third_party/node/node_modules/webpack",
+    "third_party/node/node_modules/webpack-cli",
+    "third_party/rlbox",
+    "third_party/rust/bincode",
+    "third_party/rust/byteorder",
+    "third_party/rust/lazy_static",
+    "third_party/rust/libm",
+    "third_party/rust/ordered-float",
+    "third_party/rust/phf",
+    "third_party/rust/phf_codegen",
+    "third_party/rust/phf_generator",
+    "third_party/rust/phf_shared",
+    "third_party/rust/precomputed-hash",
+    "third_party/rust/proc-macro2",
+    "third_party/rust/synstructure",
+    "third_party/rust/void",
+]
+if CONFIG["MOZ_JXL"]:
+    LICENSES["mit"].paths += [
+        "third_party/rust/array-init",
+    ]
+
+if CONFIG["OS_ARCH"] == "WINNT":
+    LICENSES["mit"].paths += [
+        "CoreMessagingXP.dll",
+        "Microsoft.InputStateManager.dll",
+        "Microsoft.Internal.FrameworkUdk.dll",
+        "Microsoft.UI.Composition.OSSupport.dll",
+        "Microsoft.UI.Input.dll",
+        "Microsoft.UI.Windowing.Core.dll",
+        "Microsoft.UI.Windowing.dll",
+        "Microsoft.WindowsAppRuntime.Insights.Resource.dll",
+        "Microsoft.WindowsAppRuntime.dll",
+        "marshal.dll",
+    ]
+
+# The ONNX Runtime is a prebuilt library with no directory in the tree to hang a
+# LICENSED_UNDER off, so its shipped file name is named here per platform.
+if CONFIG["ONNX_RUNTIME"]:
+    if CONFIG["OS_ARCH"] == "WINNT":
+        LICENSES["mit"].paths += ["onnxruntime.dll"]
+    elif CONFIG["OS_ARCH"] == "Darwin":
+        LICENSES["mit"].paths += ["libonnxruntime.dylib"]
+    elif CONFIG["OS_ARCH"] == "Linux":
+        LICENSES["mit"].paths += ["libonnxruntime.so"]
+
+LICENSES += ["nicer"]
+LICENSES["nicer"].title = "nICEr License"
+LICENSES["nicer"].text = "nicer.txt"
+LICENSES["nicer"].spdx = "BSD-3-Clause"
+LICENSES["nicer"].notice = """
+<p>This license applies to certain files in the directory <code>dom/media/webrtc/transport/third_party/nICEr</code>.</p>
+"""
+
+LICENSES += ["nom"]
+LICENSES["nom"].title = "nom License"
+LICENSES["nom"].text = "nom.txt"
+LICENSES["nom"].spdx = "MIT"
+LICENSES["nom"].notice = """
+<p>This license applies to files in the directory <code>third_party/rust/nom</code>.</p>
+"""
+LICENSES["nom"].paths = [
+    "third_party/rust/nom",
+]
+
+LICENSES += ["nrappkit"]
+LICENSES["nrappkit"].title = "nrappkit License"
+LICENSES["nrappkit"].text = "nrappkit.txt"
+LICENSES["nrappkit"].spdx = "BSD-3-Clause"
+LICENSES["nrappkit"].notice = """
+<p>This license applies to certain files in the directory <code>dom/media/webrtc/transport/third_party/nrappkit</code>.</p>
+"""
+
+LICENSES += ["nrappkit-cont-1"]
+LICENSES["nrappkit-cont-1"].title = "nrappkit License (cont.)"
+LICENSES["nrappkit-cont-1"].text = "nrappkit-cont-1.html"
+LICENSES["nrappkit-cont-1"].spdx = "BSD-3-Clause"
+LICENSES["nrappkit-cont-1"].notice = """
+<p>This license applies to certain files in the directory <code>dom/media/webrtc/transport/third_party/nrappkit</code>.</p>
+"""
+
+LICENSES += ["nrappkit-cont-2"]
+LICENSES["nrappkit-cont-2"].title = "nrappkit License (cont.)"
+LICENSES["nrappkit-cont-2"].text = "nrappkit-cont-2.txt"
+LICENSES["nrappkit-cont-2"].spdx = "BSD-3-Clause"
+LICENSES["nrappkit-cont-2"].notice = """
+<p>This license applies to the file <code>dom/media/webrtc/transport/third_party/nrappkit/src/port/generic/include/sys/queue.h</code>.</p>
+"""
+
+LICENSES += ["nrappkit-cont-3"]
+LICENSES["nrappkit-cont-3"].title = "nrappkit License (cont.)"
+LICENSES["nrappkit-cont-3"].text = "nrappkit-cont-3.txt"
+LICENSES["nrappkit-cont-3"].spdx = "BSD-2-Clause"
+LICENSES["nrappkit-cont-3"].notice = """
+<p>This license applies to the file: <code>dom/media/webrtc/transport/third_party/nrappkit/src/util/util.cpp</code>.</p>
+"""
+
+LICENSES += ["openvision"]
+LICENSES["openvision"].title = "OpenVision License"
+LICENSES["openvision"].text = "openvision.txt"
+LICENSES["openvision"].notice = """
+<p>This license applies to the file <code>extensions/auth/gssapi.h</code>.</p>
+"""
+
+LICENSES += ["praton"]
+LICENSES["praton"].title = "praton License"
+LICENSES["praton"].text = "praton.txt"
+LICENSES["praton"].spdx = "BSD-3-Clause"
+LICENSES["praton"].notice = """
+<p>This license applies to the file <code>nsprpub/pr/src/misc/praton.c</code>.</p>
+"""
+LICENSES["praton"].paths = [
+    "nsprpub/pr/src/misc/praton.c",
+]
+
+LICENSES += ["praton1"]
+LICENSES["praton1"].title = "praton and inet_ntop License"
+LICENSES["praton1"].text = "praton1.txt"
+LICENSES["praton1"].notice = """
+<p>This license applies to the files <code>nsprpub/pr/src/misc/praton.c</code> and
+            <code>dom/media/webrtc/transport/third_party/nrappkit/src/util/util.cpp</code>.</p>
+"""
+LICENSES["praton1"].paths = [
+    "nsprpub/pr/src/misc/praton.c",
+]
+
+LICENSES += ["prosemirror"]
+LICENSES["prosemirror"].title = "ProseMirror Licenses"
+LICENSES["prosemirror"].text = "prosemirror.html"
+LICENSES["prosemirror"].spdx = "MIT AND Apache-2.0"
+LICENSES["prosemirror"].notice = """
+<p>This entry applies to all files in <code>third_party/js/prosemirror/</code> and its subdirectories. The ProseMirror packages are licensed under the MIT license, except for
+<code>third_party/js/prosemirror/prosemirror-suggestions</code>, which is licensed under the Apache License 2.0.</p>
+"""
+LICENSES["prosemirror"].paths = [
+    "third_party/js/prosemirror/prosemirror-commands",
+    "third_party/js/prosemirror/prosemirror-history",
+    "third_party/js/prosemirror/prosemirror-keymap",
+    "third_party/js/prosemirror/prosemirror-model",
+    "third_party/js/prosemirror/prosemirror-schema-basic",
+    "third_party/js/prosemirror/prosemirror-state",
+    "third_party/js/prosemirror/prosemirror-suggestions",
+    "third_party/js/prosemirror/prosemirror-transform",
+    "third_party/js/prosemirror/prosemirror-view",
+]
+
+LICENSES += ["qrcode-generator"]
+LICENSES["qrcode-generator"].title = "QR Code Generator License"
+LICENSES["qrcode-generator"].text = "qrcode-generator.txt"
+LICENSES["qrcode-generator"].spdx = "MIT"
+LICENSES["qrcode-generator"].notice = """
+<p>This license applies to certain files in the directory <code>third_party/js/qrcode/</code>.</p>
+"""
+LICENSES["qrcode-generator"].paths = [
+    "third_party/js/qrcode/",
+]
+
+LICENSES += ["react"]
+LICENSES["react"].title = "React License"
+LICENSES["react"].text = "react.txt"
+LICENSES["react"].spdx = "BSD-2-Clause"
+LICENSES["react"].notice = """
+<p>This license applies to various files in the Mozilla codebase.</p>
+"""
+
+LICENSES += ["react-redux"]
+LICENSES["react-redux"].title = "React-Redux License"
+LICENSES["react-redux"].text = "react-redux.txt"
+LICENSES["react-redux"].spdx = "MIT"
+LICENSES["react-redux"].notice = """
+<p>This license applies to the following files:</p>
+"""
+LICENSES["react-redux"].paths = [
+    "third_party/node/node_modules/react-redux",
+]
+
+LICENSES += ["xdg"]
+LICENSES["xdg"].title = "Red Hat xdg_user_dir_lookup License"
+LICENSES["xdg"].text = "xdg.txt"
+LICENSES["xdg"].spdx = "MIT"
+LICENSES["xdg"].notice = """
+<p>This license applies to the <var>xdg_user_dir_lookup</var> function in <code>xpcom/io/SpecialSystemDirectory.cpp</code>.</p>
+"""
+
+LICENSES += ["redux"]
+LICENSES["redux"].title = "Redux License"
+LICENSES["redux"].text = "redux.txt"
+LICENSES["redux"].spdx = "MIT"
+LICENSES["redux"].notice = """
+<p>This license applies to the following files:</p>
+"""
+LICENSES["redux"].paths = [
+    "third_party/node/node_modules/redux",
+]
+
+LICENSES += ["hunspell-ru"]
+LICENSES["hunspell-ru"].title = "Russian Spellchecking Dictionary License"
+LICENSES["hunspell-ru"].text = "hunspell-ru.txt"
+LICENSES["hunspell-ru"].spdx = "BSD-2-Clause"
+LICENSES["hunspell-ru"].notice = """
+<p>This license applies to the Russian Spellchecking Dictionary. (This code only ships in some localized versions of this product.)</p>
+"""
+
+LICENSES += ["sprintf.js"]
+LICENSES["sprintf.js"].title = "sprintf.js License"
+LICENSES["sprintf.js"].text = "sprintf.js.txt"
+LICENSES["sprintf.js"].spdx = "BSD-3-Clause"
+LICENSES["sprintf.js"].notice = """
+<p>This license applies to <code>devtools/shared/sprintfjs/sprintf.js</code>.</p>
+"""
+
+LICENSES += ["sunsoft"]
+LICENSES["sunsoft"].title = "SunSoft License"
+LICENSES["sunsoft"].text = "sunsoft.txt"
+LICENSES["sunsoft"].notice = """
+<p>This license applies to the <var>ICC_H</var> block in <code>gfx/qcms/qcms.h</code>.</p>
+"""
+
+LICENSES += ["superfasthash"]
+LICENSES["superfasthash"].title = "SuperFastHash License"
+LICENSES["superfasthash"].text = "superfasthash.txt"
+LICENSES["superfasthash"].spdx = "BSD-2-Clause"
+LICENSES["superfasthash"].notice = """
+<p>This license applies to files in the directory <code>security/sandbox/chromium/base/third_party/superfasthash/</code>.</p>
+"""
+
+if CONFIG["OS_ARCH"] in ("WINNT", "Linux"):
+    LICENSES += ["twemoji"]
+    LICENSES["twemoji"].title = "Twemoji License"
+    LICENSES["twemoji"].text = "twemoji.txt"
+    LICENSES["twemoji"].notice = """
+    <p>This license applies to the emoji art contained within the bundled emoji font file.</p>
+    """
+
+LICENSES += ["unicase"]
+LICENSES["unicase"].title = "unicase License"
+LICENSES["unicase"].text = "unicase.txt"
+LICENSES["unicase"].spdx = "MIT"
+LICENSES["unicase"].notice = """
+<p>This license applies to files in the directory <code>third_party/rust/unicase</code>.</p>
+"""
+LICENSES["unicase"].paths = [
+    "third_party/rust/unicase",
+]
+
+LICENSES += ["unicode"]
+LICENSES["unicode"].title = "Unicode License"
+LICENSES["unicode"].text = "unicode.txt"
+LICENSES["unicode"].spdx = "BSD-3-Clause"
+LICENSES["unicode"].notice = """
+<p>This license applies to the following files or, in the case of directories, certain files in those directories:</p>
+            <p>and to parts of the code in:</p>
+"""
+
+LICENSES += ["unicode-v3"]
+LICENSES["unicode-v3"].title = "Unicode License V3"
+LICENSES["unicode-v3"].text = "unicode-v3.txt"
+LICENSES["unicode-v3"].spdx = "Unicode-3.0"
+LICENSES["unicode-v3"].notice = """
+<p>This license applies to the following files or, in the case of directories, certain files in those directories:</p>
+"""
+LICENSES["unicode-v3"].paths = [
+    "third_party/rust/icu_calendar",
+    "third_party/rust/icu_calendar_data",
+    "third_party/rust/icu_casemap",
+    "third_party/rust/icu_casemap_data",
+    "third_party/rust/icu_collections",
+    "third_party/rust/icu_locale",
+    "third_party/rust/icu_locale_core",
+    "third_party/rust/icu_locale_data",
+    "third_party/rust/icu_normalizer",
+    "third_party/rust/icu_normalizer_data",
+    "third_party/rust/icu_provider",
+    "third_party/rust/icu_provider_adapters",
+    "third_party/rust/icu_segmenter",
+    "third_party/rust/icu_time",
+    "third_party/rust/litemap",
+    "third_party/rust/tinystr",
+    "third_party/rust/writeable",
+    "third_party/rust/yoke",
+    "third_party/rust/yoke-derive",
+    "third_party/rust/zerofrom",
+    "third_party/rust/zerofrom-derive",
+    "third_party/rust/zerovec",
+    "third_party/rust/zerovec-derive",
+]
+
+LICENSES += ["ucal"]
+LICENSES["ucal"].title = "University of California License"
+LICENSES["ucal"].text = "ucal.html"
+LICENSES["ucal"].spdx = "BSD-3-Clause"
+LICENSES["ucal"].notice = """
+<p>This license applies to the following files or, in the case of directories, certain files in those directories:</p>
+"""
+LICENSES["ucal"].paths = [
+    "nsprpub/pr/src/misc/praton.c",
+]
+
+LICENSES += ["v8"]
+LICENSES["v8"].title = "V8 License"
+LICENSES["v8"].text = "v8.txt"
+LICENSES["v8"].spdx = "BSD-3-Clause"
+LICENSES["v8"].notice = """
+<p>This license applies to certain files in the following directories:</p>
+"""
+
+LICENSES += ["vtune"]
+LICENSES["vtune"].title = "VTune License"
+LICENSES["vtune"].text = "vtune.txt"
+LICENSES["vtune"].spdx = "BSD-3-Clause"
+LICENSES["vtune"].notice = """
+<p>This license applies to certain files in the following directories:</p>
+"""
+
+LICENSES += ["webrtc"]
+LICENSES["webrtc"].title = "WebRTC License"
+LICENSES["webrtc"].text = "webrtc.txt"
+LICENSES["webrtc"].spdx = "BSD-3-Clause"
+LICENSES["webrtc"].notice = """
+<p>This license applies to certain files in the directory <code>third_party/libwebrtc/</code> and <code>dom/media/systemservices/android_video_capture/</code>.</p>
+"""
+
+LICENSES += ["x264"]
+LICENSES["x264"].title = "x264 License"
+LICENSES["x264"].text = "x264.txt"
+LICENSES["x264"].spdx = "ISC"
+LICENSES["x264"].notice = """
+<p>This license applies to the file <code> third_party/aom/third_party/x86inc/x86inc.asm</code>.</p>
+"""
+LICENSES["x264"].paths = [
+    "third_party/aom/third_party/x86inc/x86inc.asm",
+]
+
+LICENSES += ["xiph"]
+LICENSES["xiph"].title = "Xiph.org Foundation License"
+LICENSES["xiph"].text = "xiph.txt"
+LICENSES["xiph"].spdx = "BSD-3-Clause"
+# The license text leaves the copyright year as a placeholder, so the ranges are
+# spelled out here; the covered directories come from their LICENSED_UNDER.
+LICENSES["xiph"].notice = """
+<p>The Xiph.org Foundation copyright year is 2002 for <code>media/libogg/</code>,
+2002-2004 for <code>media/libvorbis/</code> and 2002-2008 for
+<code>media/libspeex_resampler/</code>.</p>
+"""
+
+if CONFIG["MOZ_DXCOMPILER"]:
+    LICENSES += ["llvm"]
+    LICENSES["llvm"].title = "LLVM Release License"
+    LICENSES["llvm"].text = "llvm.txt"
+    LICENSES["llvm"].spdx = "NCSA"
+    LICENSES["llvm"].notice = """
+    <p>These libraries are only bundled with Firefox on Windows.</p>
+    <p>This license applies to the following dynamic libraries:</p>
+    """
+    if CONFIG["OS_ARCH"] == "WINNT":
+        LICENSES["llvm"].paths += [
+            "dxcompiler.dll",
+            "dxil.dll",
+        ]
+
+if CONFIG["MOZ_DXCOMPILER"]:
+    LICENSES += ["dxcompiler-deps"]
+    LICENSES["dxcompiler-deps"].title = "DirectXShaderCompiler dependencies"
+    LICENSES["dxcompiler-deps"].text = "dxcompiler-deps.html"
+    LICENSES["dxcompiler-deps"].spdx = "MIT"
+    LICENSES["dxcompiler-deps"].notice = """
+    <p>These libraries are only bundled with Firefox on Windows.</p>
+    <p>For more details, refer to <a href="https://github.com/microsoft/DirectXShaderCompiler/blob/main/LICENSE.TXT">
+    DirectXShaderCompiler's upstream repository</a>.</p>
+    <p>These licenses apply to various subsets of the code within the following dynamic libraries:</p>
+    """
+    if CONFIG["OS_ARCH"] == "WINNT":
+        LICENSES["dxcompiler-deps"].paths += [
+            "dxcompiler.dll",
+            "dxil.dll",
+        ]

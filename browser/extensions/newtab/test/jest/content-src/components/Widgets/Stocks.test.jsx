@@ -9,6 +9,7 @@ import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
 import { actionTypes as at } from "common/Actions.mjs";
 import { parseWatchlist } from "common/StocksWatchlist.mjs";
 import { Stocks } from "content-src/components/Widgets/Stocks/Stocks";
+import { focusOnceRendered } from "content-src/components/Widgets/Stocks/useStockSearch";
 
 const mockState = {
   ...INITIAL_STATE,
@@ -101,6 +102,8 @@ function renderStocksState({
   watchlistTickers = [],
   watchlistReconciledSymbols = parseWatchlist(watchlist),
   lastUpdated = 1,
+  searchStatus = "idle",
+  searchResults = [],
   dispatch = jest.fn(),
 } = {}) {
   const state = {
@@ -119,6 +122,8 @@ function renderStocksState({
       error,
       watchlistTickers,
       watchlistReconciledSymbols,
+      searchStatus,
+      searchResults,
     },
   };
   const store = createStore(combineReducers(reducers), state);
@@ -155,24 +160,81 @@ describe("Stocks widget", () => {
     expect(root.className).toContain("medium-widget");
   });
 
-  it.each(["small", "medium", "large"])(
-    "with no watchlist, labels the region with a visible <h2> Stocks heading and no dropdown at %s size",
+  it("with no watchlist at small, labels the region with a visible <h2> Stocks heading and no dropdown", () => {
+    const { container } = renderStocksState({ size: "small" });
+    const article = container.querySelector("article.stocks");
+    expect(article.getAttribute("aria-labelledby")).toBe("stocks-widget-label");
+    const label = container.querySelector("#stocks-widget-label");
+    expect(label.tagName).toBe("H2");
+    expect(label.getAttribute("data-l10n-id")).toBe(
+      "newtab-stocks-widget-title"
+    );
+    expect(label.classList.contains("sr-only")).toBe(false);
+    expect(container.querySelector(".stocks-list-button")).toBeNull();
+    expect(container.querySelector(".stocks-search-button")).toBeNull();
+  });
+
+  it.each(["medium", "large"])(
+    "with no watchlist at %s, shows the Markets dropdown and the search button and hides the heading",
     size => {
-      const { container } = renderStocksState({ size });
-      const article = container.querySelector("article.stocks");
-      expect(article.getAttribute("aria-labelledby")).toBe(
-        "stocks-widget-label"
-      );
+      const { container } = renderStocksState({
+        size,
+        tickers: WATCHLIST_SAMPLE,
+      });
       const label = container.querySelector("#stocks-widget-label");
       expect(label.tagName).toBe("H2");
-      expect(label.getAttribute("data-l10n-id")).toBe(
-        "newtab-stocks-widget-title"
+      expect(label.classList.contains("sr-only")).toBe(true);
+      const button = container.querySelector(".stocks-list-button");
+      expect(button.getAttribute("data-l10n-id")).toBe(
+        "newtab-stocks-list-markets"
       );
-      expect(label.hasAttribute("hidden")).toBe(false);
-      expect(label.classList.contains("sr-only")).toBe(false);
-      expect(container.querySelector(".stocks-list-button")).toBeNull();
+      expect(button.getAttribute("type")).toBe("default");
+      const search = container.querySelector(".stocks-search-button");
+      expect(search.getAttribute("data-l10n-id")).toBe(
+        "newtab-stocks-search-button"
+      );
+      expect(search.getAttribute("type")).toBe("primary");
+      expect(search.getAttribute("iconSrc")).toBe(
+        "chrome://global/skin/icons/search-glass.svg"
+      );
+      expect(search.getAttribute("size")).toBe("small");
     }
   );
+
+  it.each(["medium", "large"])(
+    "at %s, shows the search button on a populated Watchlist and hides it in the empty state",
+    size => {
+      const { container } = renderStocksState({
+        size,
+        tickers: WATCHLIST_SAMPLE,
+        watchlist: "SPY",
+      });
+      expect(container.querySelector(".stocks-search-button")).toBeTruthy();
+      const empty = renderStocksState({ size, tickers: WATCHLIST_SAMPLE });
+      fireEvent.click(
+        empty.container.querySelector('panel-item[data-list="watchlist"]')
+      );
+      expect(
+        empty.container.querySelector(".stocks-watchlist-empty")
+      ).toBeTruthy();
+      expect(empty.container.querySelector(".stocks-search-button")).toBeNull();
+    }
+  );
+
+  it("the toolbar search button opens search and records search_tickers from the widget", () => {
+    const dispatch = jest.fn();
+    const handleUserInteraction = jest.fn();
+    const { container } = renderStocks(dispatch, { handleUserInteraction });
+    fireEvent.click(container.querySelector(".stocks-search-button"));
+    expect(container.querySelector(".stocks-search")).toBeTruthy();
+    const evt = dispatch.mock.calls.find(
+      ([action]) =>
+        action.type === at.WIDGETS_USER_EVENT &&
+        action.data?.user_action === "search_tickers"
+    );
+    expect(evt[0].data.widget_source).toBe("widget");
+    expect(handleUserInteraction).toHaveBeenCalledWith("stocks");
+  });
 
   it("at large with a non-empty watchlist, shows the dropdown (defaulted to Watchlist) and hides the heading", () => {
     const { container } = renderStocksState({
@@ -296,12 +358,16 @@ describe("Stocks widget", () => {
     expect(grid.querySelector(".stock-ticker-added")).toBeNull();
   });
 
-  it("medium with an empty watchlist shows Markets and no dropdown", () => {
+  it("medium with an empty watchlist shows Markets with the dropdown", () => {
     const { container } = renderStocksState({
       size: "medium",
       tickers: WATCHLIST_SAMPLE,
     });
-    expect(container.querySelector(".stocks-list-button")).toBeNull();
+    expect(
+      container
+        .querySelector(".stocks-list-button")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-stocks-list-markets");
     expect(
       container.querySelectorAll(".stocks-grid .stock-ticker").length
     ).toBeGreaterThan(0);
@@ -351,7 +417,7 @@ describe("Stocks widget", () => {
     expect(grid.textContent).not.toContain("Microsoft");
   });
 
-  it("medium returns to Markets when every saved symbol fails to resolve", () => {
+  it("medium shows the Watchlist empty state when every saved symbol fails to resolve", () => {
     const { container } = renderStocksState({
       size: "medium",
       tickers: WATCHLIST_SAMPLE,
@@ -359,29 +425,117 @@ describe("Stocks widget", () => {
       watchlistTickers: [],
       watchlistReconciledSymbols: ["AAPL", "MSFT"],
     });
-    expect(container.querySelector(".stocks-list-button")).toBeNull();
-    expect(container.querySelector("ul.stocks-grid").textContent).toContain(
-      "SPY"
-    );
+    expect(
+      container
+        .querySelector(".stocks-list-button")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-stocks-list-watchlist");
+    expect(container.querySelector(".stocks-watchlist-empty")).toBeTruthy();
+    expect(container.querySelector("ul.stocks-grid")).toBeNull();
   });
 
-  it("medium watchlist collapses to Markets when the watchlist is emptied after display", () => {
+  it("medium watchlist shows the empty state when an external change empties it", () => {
     const { container, store } = renderStocksState({
       size: "medium",
       tickers: WATCHLIST_SAMPLE,
       watchlist: "AAPL,MSFT",
       watchlistTickers: WL_ROWS.slice(0, 2),
     });
+    broadcastPref(store, "widgets.stocks.watchlist", "");
     expect(
       container
         .querySelector(".stocks-list-button")
         .getAttribute("data-l10n-id")
     ).toBe("newtab-stocks-list-watchlist");
-    broadcastPref(store, "widgets.stocks.watchlist", "");
-    expect(container.querySelector(".stocks-list-button")).toBeNull();
-    expect(container.querySelector("ul.stocks-grid").textContent).toContain(
-      "SPY"
+    expect(container.querySelector(".stocks-watchlist-empty")).toBeTruthy();
+  });
+
+  it.each(["medium", "large"])(
+    "the Watchlist empty state at %s shows Kit, the message and a Search button that opens search",
+    size => {
+      const dispatch = jest.fn();
+      const { container } = renderStocksState({
+        size,
+        tickers: WATCHLIST_SAMPLE,
+        dispatch,
+      });
+      fireEvent.click(
+        container.querySelector('panel-item[data-list="watchlist"]')
+      );
+      const empty = container.querySelector(".stocks-watchlist-empty");
+      expect(empty).toBeTruthy();
+      const img = empty.querySelector("img.stocks-watchlist-empty-image");
+      expect(img.getAttribute("alt")).toBe("");
+      expect(img.getAttribute("src")).toBe(
+        "chrome://newtab/content/data/content/assets/kit-stocks-watchlist.svg"
+      );
+      expect(
+        empty
+          .querySelector(".stocks-watchlist-empty-text")
+          .getAttribute("data-l10n-id")
+      ).toBe("newtab-stocks-watchlist-empty");
+      const cta = empty.querySelector(
+        "moz-button.stocks-watchlist-empty-search"
+      );
+      expect(cta.getAttribute("data-l10n-id")).toBe(
+        "newtab-stocks-watchlist-empty-search"
+      );
+      expect(cta.getAttribute("type")).toBe("primary");
+      expect(cta.getAttribute("iconSrc")).toBe(
+        "chrome://global/skin/icons/search-glass.svg"
+      );
+      fireEvent.click(cta);
+      expect(container.querySelector(".stocks-search")).toBeTruthy();
+      const evt = dispatch.mock.calls.find(
+        ([action]) =>
+          action.type === at.WIDGETS_USER_EVENT &&
+          action.data?.user_action === "search_tickers"
+      );
+      expect(evt[0].data.widget_source).toBe("empty_state");
+    }
+  );
+
+  it("shows placeholders, not the empty state, while saved symbols are still loading", () => {
+    const { container } = renderStocksState({
+      size: "large",
+      tickers: [],
+      watchlist: "AAPL",
+      watchlistTickers: [],
+      watchlistReconciledSymbols: [],
+    });
+    expect(container.querySelector(".stocks-watchlist-empty")).toBeNull();
+    expect(container.querySelectorAll(".stock-ticker--loading").length).toBe(1);
+  });
+
+  it("the empty state wins over the default-feed error on the Watchlist", () => {
+    const { container } = renderStocksState({
+      size: "large",
+      error: true,
+      tickers: [],
+    });
+    expect(container.querySelector(".stocks-error")).toBeTruthy();
+    fireEvent.click(
+      container.querySelector('panel-item[data-list="watchlist"]')
     );
+    expect(container.querySelector(".stocks-error")).toBeNull();
+    expect(container.querySelector(".stocks-watchlist-empty")).toBeTruthy();
+  });
+
+  it("selecting Watchlist while it is empty stays on the empty state", () => {
+    const { container } = renderStocksState({
+      size: "large",
+      tickers: WATCHLIST_SAMPLE,
+    });
+    fireEvent.click(
+      container.querySelector('panel-item[data-list="watchlist"]')
+    );
+    expect(
+      container
+        .querySelector(".stocks-list-button")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-stocks-list-watchlist");
+    expect(container.querySelector(".stocks-watchlist-empty")).toBeTruthy();
+    expect(container.querySelector("ul.stocks-list--watchlist")).toBeNull();
   });
 
   it("medium watchlist stays visible when the default feed errored", () => {
@@ -1232,22 +1386,26 @@ describe("Stocks watchlist add/remove", () => {
       '.stocks-list moz-button.stock-ticker-action[data-l10n-id="newtab-stocks-add-to-watchlist"]'
     );
 
-  it("empty watchlist at large: plain heading, no dropdown, Markets rows show add", () => {
+  it("empty watchlist at large: Markets dropdown, hidden heading, Markets rows show add", () => {
     const { container } = renderStocksState({
       size: "large",
       tickers: SAMPLE,
       watchlist: "",
     });
-    expect(container.querySelector(".stocks-list-button")).toBeNull();
+    expect(
+      container
+        .querySelector(".stocks-list-button")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-stocks-list-markets");
     expect(
       container
         .querySelector("#stocks-widget-label")
         .classList.contains("sr-only")
-    ).toBe(false);
+    ).toBe(true);
     expect(firstAddButton(container)).toBeTruthy();
   });
 
-  it("adding a ticker writes the pref, reveals the dropdown, stays on Markets, marks the row added", () => {
+  it("adding a ticker writes the pref, stays on Markets, marks the row added", () => {
     const dispatch = jest.fn();
     const { container } = renderStocksState({
       size: "large",
@@ -1384,7 +1542,7 @@ describe("Stocks watchlist add/remove", () => {
     );
   });
 
-  it("removing the last ticker reverts to the plain heading", () => {
+  it("removing the last ticker stays on the Watchlist and shows the empty state", () => {
     const { container } = renderStocksState({
       size: "large",
       tickers: SAMPLE,
@@ -1393,10 +1551,32 @@ describe("Stocks watchlist add/remove", () => {
     fireEvent.click(
       container.querySelector(".stocks-list moz-button.stock-ticker-action")
     );
-    expect(container.querySelector(".stocks-list-button")).toBeNull();
+    expect(
+      container
+        .querySelector(".stocks-list-button")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-stocks-list-watchlist");
+    expect(container.querySelector(".stocks-watchlist-empty")).toBeTruthy();
   });
 
-  it("after emptying the watchlist, a fresh add starts on Markets (not the Watchlist tab)", () => {
+  it("removing the last resolved row while an unresolvable symbol stays saved shows the empty state", () => {
+    const { container } = renderStocksState({
+      size: "large",
+      tickers: SAMPLE,
+      watchlist: "VOO,GONE",
+    });
+    fireEvent.click(
+      container.querySelector(".stocks-list moz-button.stock-ticker-action")
+    );
+    expect(
+      container
+        .querySelector(".stocks-list-button")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-stocks-list-watchlist");
+    expect(container.querySelector(".stocks-watchlist-empty")).toBeTruthy();
+  });
+
+  it("after emptying the watchlist, picking Markets from the dropdown leaves the empty state and shows the add rows", () => {
     const { container } = renderStocksState({
       size: "large",
       tickers: SAMPLE,
@@ -1405,8 +1585,13 @@ describe("Stocks watchlist add/remove", () => {
     fireEvent.click(
       container.querySelector(".stocks-list moz-button.stock-ticker-action")
     );
-    expect(container.querySelector(".stocks-list-button")).toBeNull();
-    fireEvent.click(firstAddButton(container));
+    fireEvent.click(
+      container.querySelector(
+        '#stocks-list-menu panel-item[data-list="markets"]'
+      )
+    );
+    expect(container.querySelector(".stocks-watchlist-empty")).toBeNull();
+    expect(firstAddButton(container)).toBeTruthy();
     expect(
       container
         .querySelector(".stocks-list-button")
@@ -1493,7 +1678,7 @@ describe("Stocks watchlist add/remove", () => {
     expect(wroteWatchlist).toBe(false);
   });
 
-  it("reverts to the plain heading when no saved symbol is in the feed", () => {
+  it("shows the empty state, without rewriting the pref, when no saved symbol is in the feed", () => {
     const dispatch = jest.fn();
     const { container } = renderStocksState({
       size: "large",
@@ -1501,12 +1686,12 @@ describe("Stocks watchlist add/remove", () => {
       watchlist: "GONE,ALSOGONE",
       dispatch,
     });
-    expect(container.querySelector(".stocks-list-button")).toBeNull();
     expect(
       container
-        .querySelector("#stocks-widget-label")
-        .classList.contains("sr-only")
-    ).toBe(false);
+        .querySelector(".stocks-list-button")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-stocks-list-watchlist");
+    expect(container.querySelector(".stocks-watchlist-empty")).toBeTruthy();
     const wroteWatchlist = dispatch.mock.calls.some(
       ([a]) =>
         a.type === at.SET_PREF && a.data?.name === "widgets.stocks.watchlist"
@@ -1569,13 +1754,33 @@ describe("Stocks watchlist add/remove", () => {
     focusSpy.mockRestore();
   });
 
-  it("after removing the sole row, focus moves to the widget menu button", () => {
+  it("after removing the sole row, focus moves to the empty-state Search button", () => {
     const focusedEls = [];
     const focusSpy = spyOnFocus(focusedEls);
     const { container } = renderStocksState({
       size: "large",
       tickers: SAMPLE,
       watchlist: "VOO",
+    });
+    focusedEls.length = 0;
+    fireEvent.click(
+      container.querySelector(".stocks-list moz-button.stock-ticker-action")
+    );
+    const focused = focusedEls[focusedEls.length - 1];
+    expect(focused?.classList.contains("stocks-watchlist-empty-search")).toBe(
+      true
+    );
+    focusSpy.mockRestore();
+  });
+
+  it("after removing the last resolved row while another saved symbol is still loading, focus moves to the widget menu button", () => {
+    const focusedEls = [];
+    const focusSpy = spyOnFocus(focusedEls);
+    const { container } = renderStocksState({
+      size: "large",
+      tickers: SAMPLE,
+      watchlist: "VOO,PENDING",
+      watchlistReconciledSymbols: ["VOO"],
     });
     focusedEls.length = 0;
     fireEvent.click(
@@ -1803,6 +2008,7 @@ describe("Stocks small size", () => {
     expect(
       container.querySelector("moz-button.stock-ticker-action")
     ).toBeNull();
+    expect(container.querySelector(".stocks-search-button")).toBeNull();
   });
 });
 
@@ -1852,7 +2058,7 @@ describe("Stocks reducer - search", () => {
       data: {
         requestId: "r1",
         status: "success",
-        values: [{ ticker: "AAPL" }],
+        matches: [{ ticker: "AAPL" }],
       },
     });
     expect(next.searchStatus).toBe("success");
@@ -1869,7 +2075,7 @@ describe("Stocks reducer - search", () => {
       data: {
         requestId: "r1",
         status: "success",
-        values: [{ ticker: "AAPL" }],
+        matches: [{ ticker: "AAPL" }],
       },
     });
     expect(next).toBe(prev);
@@ -1946,6 +2152,19 @@ describe("Stocks watchlist data rendering", () => {
     const list = container.querySelector("ul.stocks-list--watchlist");
     expect(list.className).toContain("stocks-list--loading");
     expect(list.querySelectorAll(".stock-ticker--large").length).toBe(1);
+    expect(list.querySelectorAll(".stock-ticker--loading").length).toBe(1);
+  });
+
+  it("caps the placeholders at four while no saved symbol has resolved", () => {
+    const { container } = renderStocksState({
+      size: "large",
+      tickers: [],
+      watchlist: "AAPL,MSFT,AMZN,NVDA,SPYX,TSLA",
+      watchlistTickers: [],
+      watchlistReconciledSymbols: [],
+    });
+    const ul = container.querySelector("ul.stocks-list--watchlist");
+    expect(ul.querySelectorAll(".stock-ticker--loading").length).toBe(4);
   });
 
   it("shows a resolved row plus a placeholder while another saved symbol is pending", () => {
@@ -1960,7 +2179,23 @@ describe("Stocks watchlist data rendering", () => {
     expect(ul.getAttribute("aria-busy")).toBe("true");
     // One resolved AAPL row plus one placeholder for the pending MSFT.
     expect(ul.querySelectorAll(".stock-ticker--large").length).toBe(2);
+    expect(ul.querySelectorAll(".stock-ticker--loading").length).toBe(1);
     expect(ul.textContent).toContain("AAPL");
+  });
+
+  it("shows no placeholder for a reconciled symbol that has no data, even while the saved list changes", () => {
+    // MSFT was just removed: the pref no longer lists it, but the feed's last
+    // broadcast still does. PARADE never resolves and must not read as pending.
+    const { container } = renderStocksState({
+      size: "large",
+      tickers: [],
+      watchlist: "AAPL,PARADE",
+      watchlistTickers: [AAPL],
+      watchlistReconciledSymbols: ["AAPL", "MSFT", "PARADE"],
+    });
+    const ul = container.querySelector("ul.stocks-list");
+    expect(ul.querySelectorAll(".stock-ticker--large").length).toBe(1);
+    expect(ul.querySelectorAll(".stock-ticker--loading").length).toBe(0);
   });
 
   it("small size shows a placeholder (not an error) while a saved symbol loads", () => {
@@ -2002,7 +2237,8 @@ describe("Stocks watchlist data rendering", () => {
 
 describe("Stocks watchlist limit and scroll", () => {
   it("disables the Markets add buttons when the watchlist is full", () => {
-    // With no matching watchlist rows, the large widget shows SPY in Markets.
+    // None of the ten saved symbols resolve, so the widget opens on the Watchlist
+    // empty state; switch to Markets to reach the add buttons.
     const saved = Array.from({ length: 10 }, (_, i) => `S${i}`).join(",");
     const { container } = renderStocksState({
       size: "large",
@@ -2016,12 +2252,13 @@ describe("Stocks watchlist limit and scroll", () => {
         },
       ],
     });
+    fireEvent.click(container.querySelector('panel-item[data-list="markets"]'));
     const addBtn = container.querySelector("moz-button.stock-ticker-action");
     expect(addBtn.getAttribute("iconSrc")).toContain("plus.svg");
     expect(addBtn.getAttribute("disabled")).not.toBeNull();
   });
 
-  it("adds the scroll modifier to the Watchlist list", () => {
+  it("adds the scroll modifier to the Watchlist list and makes it focusable", () => {
     const { container } = renderStocksState({
       size: "large",
       watchlist: "AAPL",
@@ -2034,7 +2271,10 @@ describe("Stocks watchlist limit and scroll", () => {
         },
       ],
     });
-    expect(container.querySelector("ul.stocks-list--watchlist")).toBeTruthy();
+    const list = container.querySelector("ul.stocks-list--watchlist");
+    expect(list).toBeTruthy();
+    expect(list.getAttribute("tabindex")).toBe("0");
+    expect(list.getAttribute("aria-labelledby")).toBe("stocks-widget-label");
   });
 });
 
@@ -2042,8 +2282,8 @@ describe("Stocks ticker search", () => {
   const AAPL = {
     ticker: "AAPL",
     name: "Apple Inc",
-    last_price: "$1 USD",
-    todays_change_perc: "+0.1",
+    exchange: "NASDAQ",
+    is_etf: false,
   };
 
   function openSearch(container) {
@@ -2102,6 +2342,67 @@ describe("Stocks ticker search", () => {
     expect(focused?.classList.contains("stocks-context-menu-button")).toBe(
       true
     );
+  });
+
+  it("returns focus to the toolbar search button when it opened search", () => {
+    const focusSpy = jest
+      .spyOn(HTMLElement.prototype, "focus")
+      .mockImplementation(() => {});
+    const { container } = renderStocks();
+    fireEvent.click(container.querySelector(".stocks-search-button"));
+    focusSpy.mockClear();
+    fireEvent.click(container.querySelector("moz-button.stocks-search-back"));
+    const focused = focusSpy.mock.contexts.at(-1);
+    expect(focused?.classList.contains("stocks-search-button")).toBe(true);
+  });
+
+  it("returns focus to the empty-state Search button when search closes without an add", () => {
+    const focusSpy = jest
+      .spyOn(HTMLElement.prototype, "focus")
+      .mockImplementation(() => {});
+    const { container } = renderStocksState({
+      size: "large",
+      tickers: WATCHLIST_SAMPLE,
+    });
+    fireEvent.click(
+      container.querySelector('panel-item[data-list="watchlist"]')
+    );
+    fireEvent.click(
+      container.querySelector("moz-button.stocks-watchlist-empty-search")
+    );
+    focusSpy.mockClear();
+    fireEvent.click(container.querySelector("moz-button.stocks-search-back"));
+    const focused = focusSpy.mock.contexts.at(-1);
+    expect(focused?.classList.contains("stocks-watchlist-empty-search")).toBe(
+      true
+    );
+  });
+
+  it("moves focus to the toolbar search button after an add from the empty state", () => {
+    const focusSpy = jest
+      .spyOn(HTMLElement.prototype, "focus")
+      .mockImplementation(() => {});
+    const { container } = renderStocksState({
+      size: "large",
+      tickers: WATCHLIST_SAMPLE,
+      searchStatus: "success",
+      searchResults: [AAPL],
+    });
+    fireEvent.click(
+      container.querySelector('panel-item[data-list="watchlist"]')
+    );
+    fireEvent.click(
+      container.querySelector("moz-button.stocks-watchlist-empty-search")
+    );
+    focusSpy.mockClear();
+    fireEvent.click(
+      container.querySelector(
+        ".stock-ticker--result moz-button.stock-ticker-action"
+      )
+    );
+    expect(container.querySelector(".stocks-watchlist-empty")).toBeNull();
+    const focused = focusSpy.mock.contexts.at(-1);
+    expect(focused?.classList.contains("stocks-search-button")).toBe(true);
   });
 
   it("submits: a content-only started action plus a request to main, with telemetry", () => {
@@ -2200,5 +2501,22 @@ describe("Stocks ticker search", () => {
     expect(container.querySelector("article.stocks").className).toContain(
       "medium-widget"
     );
+  });
+});
+
+describe("focusOnceRendered", () => {
+  it("waits for a moz-button's first render before focusing it", async () => {
+    const focus = jest.fn();
+    focusOnceRendered({ updateComplete: Promise.resolve(), focus });
+    expect(focus).not.toHaveBeenCalled();
+    await Promise.resolve();
+    expect(focus).toHaveBeenCalledTimes(1);
+  });
+
+  it("focuses an element with no pending render straight away and ignores null", () => {
+    const focus = jest.fn();
+    focusOnceRendered({ focus });
+    expect(focus).toHaveBeenCalledTimes(1);
+    expect(() => focusOnceRendered(null)).not.toThrow();
   });
 });

@@ -200,8 +200,17 @@ void wgpu_child_resolve_create_shader_module_promise(
     msg.offset = message.utf16_offset;
     msg.length = message.utf16_length;
     msg.message = message.message;
-    // wgpu currently only returns errors.
-    msg.messageType = WebGPUCompilationMessageType::Error;
+    switch (message.message_type) {
+      case WGPUCompilationMessageType_Error:
+        msg.messageType = WebGPUCompilationMessageType::Error;
+        break;
+      case WGPUCompilationMessageType_Warning:
+        msg.messageType = WebGPUCompilationMessageType::Warning;
+        break;
+      case WGPUCompilationMessageType_Info:
+        msg.messageType = WebGPUCompilationMessageType::Info;
+        break;
+    }
     messages.AppendElement(std::move(msg));
   }
 

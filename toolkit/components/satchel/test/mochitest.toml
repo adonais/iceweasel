@@ -1,6 +1,6 @@
 [DEFAULT]
-skip-if = [
-  "os == 'android'",
+run-if = [
+  "os != 'android'",
 ]
 support-files = [
   "satchel_common.js",

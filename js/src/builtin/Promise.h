@@ -111,6 +111,10 @@ extern bool Promise_static_resolve(JSContext* cx, unsigned argc, JS::Value* vp);
 [[nodiscard]] JSObject* GetWaitForAllPromise(JSContext* cx,
                                              JS::HandleObjectVector promises);
 
+// https://tc39.es/proposal-defer-import-eval/#sec-safe-perform-promise-all
+[[nodiscard]] JSObject* SafePerformPromiseAll(JSContext* cx,
+                                              JS::HandleObjectVector promises);
+
 /**
  * Enqueues resolve/reject reactions in the given Promise's reactions lists
  * as though by calling the original value of Promise.prototype.then, and
@@ -269,14 +273,12 @@ struct PromiseReactionRecordBuilder {
     JS::Handle<JS::Value> reason,
     JS::Handle<SavedFrame*> unwrappedRejectionStack = nullptr);
 
-#ifdef NIGHTLY_BUILD
 // Implements the SafePromiseResolve abstract operation from the
 // https://tc39.es/proposal-thenable-curtailment/
 // See the function definition in Promise.cpp for the observable contract.
 [[nodiscard]] bool SafeResolvePromise(JSContext* cx,
                                       JS::Handle<PromiseObject*> promise,
                                       JS::Handle<JS::Value> resolution);
-#endif  // NIGHTLY_BUILD
 
 [[nodiscard]] bool InternalAsyncGeneratorAwait(
     JSContext* cx, JS::Handle<AsyncGeneratorObject*> generator,

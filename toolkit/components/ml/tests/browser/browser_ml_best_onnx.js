@@ -19,6 +19,8 @@ const BEST_ONNX_OPTIONS = {
   modelHubUrlTemplate: "{model}/resolve/{revision}",
 };
 
+add_setup(setupNativeOnnxRuntimeAvailabilityTest);
+
 add_task(async function test_best_onnx_resolves_to_native() {
   const { cleanup } = await setup();
 

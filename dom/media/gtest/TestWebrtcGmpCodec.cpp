@@ -68,6 +68,12 @@ struct TestWebrtcGmpVideoEncoder : public Test {
               WEBRTC_VIDEO_CODEC_OK);
     (void)WaitFor(init);
   }
+
+  void WaitForGmpThread() {
+    NS_DispatchAndSpinEventLoopUntilComplete(
+        "TestWebrtcGmpVideoEncoder::WaitForGmpThread"_ns, mGmpThread,
+        NS_NewRunnableFunction(__func__, [] {}));
+  }
 };
 
 struct MockEncodedImageCallback : public webrtc::EncodedImageCallback {
@@ -115,6 +121,8 @@ TEST_F(TestWebrtcGmpVideoEncoder, Encode) {
                        &types),
       WEBRTC_VIDEO_CODEC_OK);
   EXPECT_EQ(WaitForResolve(donePromise), true);
+  // Don't destroy the stack objects until the GMP thread has run to completion.
+  WaitForGmpThread();
 }
 
 TEST_F(TestWebrtcGmpVideoEncoder, BackPressure) {
@@ -172,6 +180,8 @@ TEST_F(TestWebrtcGmpVideoEncoder, BackPressure) {
   }
   EXPECT_EQ(WaitForResolve(donePromise), true);
   EXPECT_EQ(eventCount, iterations);
+  // Don't destroy the stack objects until the GMP thread has run to completion.
+  WaitForGmpThread();
 }
 
 TEST_F(TestWebrtcGmpVideoEncoder, ReUse) {
@@ -233,6 +243,8 @@ TEST_F(TestWebrtcGmpVideoEncoder, ReUse) {
                        &types),
       WEBRTC_VIDEO_CODEC_OK);
   EXPECT_EQ(WaitForResolve(donePromise), true);
+  // Don't destroy the stack objects until the GMP thread has run to completion.
+  WaitForGmpThread();
 }
 
 TEST_F(TestWebrtcGmpVideoEncoder, TrackedFrameDrops) {

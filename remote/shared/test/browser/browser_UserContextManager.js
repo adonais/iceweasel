@@ -169,7 +169,9 @@ add_task(async function test_create_context_prefix() {
   const userContextManager = new UserContextManagerClass();
 
   info("Create a context with a custom prefix via createContext");
-  const userContextId = userContextManager.createContext("test_prefix");
+  const userContextId = userContextManager.createContext({
+    prefix: "test_prefix",
+  });
   const internalId = userContextManager.getInternalIdById(userContextId);
   const identity =
     ContextualIdentityService.getPublicIdentityFromId(internalId);
@@ -179,6 +181,157 @@ add_task(async function test_create_context_prefix() {
   );
 
   userContextManager.removeUserContext(userContextId);
+  userContextManager.destroy();
+});
+
+add_task(async function test_create_context_icon_and_color() {
+  const userContextManager = new UserContextManagerClass();
+
+  info("Create a context without icon or color via createContext");
+  const userContextId1 = userContextManager.createContext();
+  const internalId1 = userContextManager.getInternalIdById(userContextId1);
+  const identity1 =
+    ContextualIdentityService.getPublicIdentityFromId(internalId1);
+  is(identity1.icon, undefined, "The new identity has no icon");
+  is(identity1.color, undefined, "The new identity has no color");
+
+  userContextManager.removeUserContext(userContextId1);
+
+  info("Create a context with a custom icon and color via createContext");
+  const userContextId2 = userContextManager.createContext({
+    color: "red",
+    icon: "circle",
+  });
+  const internalId2 = userContextManager.getInternalIdById(userContextId2);
+  const identity2 =
+    ContextualIdentityService.getPublicIdentityFromId(internalId2);
+  is(identity2.icon, "circle", "The new identity used the provided icon");
+  is(identity2.color, "red", "The new identity used the provided color");
+
+  userContextManager.removeUserContext(userContextId2);
+  userContextManager.destroy();
+});
+
+add_task(async function test_create_context_name() {
+  const userContextManager = new UserContextManagerClass();
+
+  info("Create a context with a custom name via createContext");
+  const userContextId1 = userContextManager.createContext({
+    name: "foo",
+  });
+  const internalId1 = userContextManager.getInternalIdById(userContextId1);
+  const identity1 =
+    ContextualIdentityService.getPublicIdentityFromId(internalId1);
+  is(identity1.name, "foo", "The new identity used the provided name");
+  is(
+    userContextManager.getUserContextIdsByName(identity1.name).length,
+    1,
+    "getUserContextIdsByName returned the expected number of context ids"
+  );
+  ok(
+    userContextManager
+      .getUserContextIdsByName(identity1.name)
+      .includes(userContextId1),
+    "getUserContextIdsByName returns the expected user context id"
+  );
+
+  info("Create another context with the same custom name via createContext");
+  const userContextId2 = userContextManager.createContext({
+    name: "foo",
+  });
+  const internalId2 = userContextManager.getInternalIdById(userContextId2);
+  const identity2 =
+    ContextualIdentityService.getPublicIdentityFromId(internalId2);
+  is(identity2.name, "foo", "The new identity used the (same) provided name");
+  is(
+    userContextManager.getUserContextIdsByName(identity2.name).length,
+    2,
+    "getUserContextIdsByName returned the expected number of context ids"
+  );
+  ok(
+    userContextManager
+      .getUserContextIdsByName(identity2.name)
+      .includes(userContextId2),
+    "getUserContextIdsByName returns the expected user context id"
+  );
+
+  info("Create another context with another custom name");
+  const userContextId3 = userContextManager.createContext({
+    name: "bar",
+  });
+  const internalId3 = userContextManager.getInternalIdById(userContextId3);
+  const identity3 =
+    ContextualIdentityService.getPublicIdentityFromId(internalId3);
+  is(identity3.name, "bar", "The new identity used the provided name");
+  is(
+    userContextManager.getUserContextIdsByName(identity3.name).length,
+    1,
+    "getUserContextIdsByName returned the expected number of context ids"
+  );
+  ok(
+    userContextManager
+      .getUserContextIdsByName(identity3.name)
+      .includes(userContextId3),
+    "getUserContextIdsByName returns the expected user context id"
+  );
+
+  info("Create another context with a custom name and a prefix");
+  const userContextId4 = userContextManager.createContext({
+    name: "baz",
+    prefix: "should-be-ignored",
+  });
+  const internalId4 = userContextManager.getInternalIdById(userContextId4);
+  const identity4 =
+    ContextualIdentityService.getPublicIdentityFromId(internalId4);
+  is(
+    identity4.name,
+    "baz",
+    "The new identity used the provided name without using the prefix"
+  );
+  is(
+    userContextManager.getUserContextIdsByName(identity4.name).length,
+    1,
+    "getUserContextIdsByName returned the expected number of context ids"
+  );
+  ok(
+    userContextManager
+      .getUserContextIdsByName(identity4.name)
+      .includes(userContextId4),
+    "getUserContextIdsByName returns the expected user context id"
+  );
+
+  for (const invalidName of [null, undefined, "", "   "]) {
+    info("Create a context with an invalid name");
+    const invalidUserContextId = userContextManager.createContext({
+      name: invalidName,
+      prefix: "should-be-used",
+    });
+    const invalidInternalId =
+      userContextManager.getInternalIdById(invalidUserContextId);
+    const invalidIdentity =
+      ContextualIdentityService.getPublicIdentityFromId(invalidInternalId);
+    ok(
+      invalidIdentity.name.startsWith("should-be-used"),
+      "The identity used the prefix"
+    );
+    is(
+      userContextManager.getUserContextIdsByName(invalidIdentity.name).length,
+      1,
+      "getUserContextIdsByName returned the expected number of context ids"
+    );
+    ok(
+      userContextManager
+        .getUserContextIdsByName(invalidIdentity.name)
+        .includes(invalidUserContextId),
+      "getUserContextIdsByName returns the expected user context id"
+    );
+    userContextManager.removeUserContext(invalidUserContextId);
+  }
+
+  userContextManager.removeUserContext(userContextId1);
+  userContextManager.removeUserContext(userContextId2);
+  userContextManager.removeUserContext(userContextId3);
+  userContextManager.removeUserContext(userContextId4);
   userContextManager.destroy();
 });
 
@@ -302,7 +455,7 @@ function assertContextRemoved(manager, contextId, internalId) {
 
 add_task(async function test_external_deletion_emits_event() {
   const manager = new UserContextManagerClass();
-  const userContextId = manager.createContext("test");
+  const userContextId = manager.createContext({ prefix: "test" });
   const internalId = manager.getInternalIdById(userContextId);
 
   const deletedPromise = new Promise(resolve => {

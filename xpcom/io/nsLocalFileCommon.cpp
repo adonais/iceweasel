@@ -42,6 +42,7 @@ const char* const sExecutableExts[] = {
   ".afploc",      // Apple Filing Protocol Location
   ".air",         // Adobe AIR installer
   ".app",         // executable application
+  ".appcontent-ms",
   ".application", // from bug 348763
   ".appref-ms",   // ClickOnce link
   ".appx",

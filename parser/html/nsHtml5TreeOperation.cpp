@@ -775,8 +775,10 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
       }
     }
 
-    if (auto* linkStyle = LinkStyle::FromNode(*element)) {
-      linkStyle->DisableUpdates();
+    if (aName == nsGkAtoms::link || aName == nsGkAtoms::style) [[unlikely]] {
+      if (auto* linkStyle = LinkStyle::FromNode(*element)) {
+        linkStyle->DisableUpdates();
+      }
     }
 
     if (!aAttributes) {

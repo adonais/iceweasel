@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <jni.h>
 #include <optional>
+#include <utility>
 
 #define LOG(level, message, ...)                                        \
   __android_log_print(ANDROID_LOG_##level, "NativeCrashTools", message, \
@@ -36,6 +37,7 @@ Utf16String crashtools_crashping_init(const Utf16String& data_dir,
                                       const Utf16String& app_id,
                                       const Utf16String* build_id,
                                       const Utf16String* display_version,
+                                      const Utf16String* server_endpoint,
                                       bool upload_enabled,
                                       crashtools_upload_fn upload_fn);
 Utf16String crashtools_analyze_minidump(const Utf16String& minidump_path,
@@ -297,6 +299,18 @@ void drop_closure(void* obj) {
   env->DeleteGlobalRef(static_cast<jobject>(obj));
 }
 
+static std::optional<LocalString> nullable_string(JNIEnv* env, jstring s) {
+  if (s == nullptr) {
+    return {};
+  } else {
+    return std::optional<LocalString>(std::in_place, env, s);
+  }
+}
+
+static const Utf16String* as_ptr(const std::optional<LocalString>& s) {
+  return s ? &*s : nullptr;
+}
+
 }  // namespace
 
 extern "C" {
@@ -311,7 +325,8 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void*) {
 // The init Java static method which configures the data path and build id.
 JNIEXPORT void Java_mozilla_components_lib_crash_NativeCrashTools_nativeInit(
     JNIEnv* env, jclass clazz, jstring data_path, jstring app_id,
-    jstring build_id, jstring display_version, jboolean ping_upload_enabled) {
+    jstring build_id, jstring display_version, jstring server_endpoint,
+    jboolean ping_upload_enabled) {
   LocalString data_str(env, data_path);
   LocalString app_id_str(env, app_id);
 
@@ -322,19 +337,13 @@ JNIEXPORT void Java_mozilla_components_lib_crash_NativeCrashTools_nativeInit(
                "failed to create a NativeCrashTools global ref");
   }
 
-  std::optional<LocalString> build_id_str;
-  if (build_id != nullptr) {
-    build_id_str.emplace(env, build_id);
-  }
-
-  std::optional<LocalString> display_version_str;
-  if (display_version != nullptr) {
-    display_version_str.emplace(env, build_id);
-  }
+  auto build_id_str = nullable_string(env, build_id);
+  auto display_version_str = nullable_string(env, display_version);
+  auto server_endpoint_str = nullable_string(env, server_endpoint);
 
   if (auto result = ForeignString(crashtools_crashping_init(
-          data_str, app_id_str, build_id_str ? &*build_id_str : nullptr,
-          display_version_str ? &*display_version_str : nullptr,
+          data_str, app_id_str, as_ptr(build_id_str),
+          as_ptr(display_version_str), as_ptr(server_endpoint_str),
           ping_upload_enabled, upload_fn))) {
     auto result_jstring = result.to_jstring(env);
     const char* utf8Chars = nullptr;

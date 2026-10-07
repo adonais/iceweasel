@@ -26,7 +26,6 @@
 #include "nsIWebProgress.h"
 #include "nsIWebProgressListener.h"
 #include "nsIURI.h"
-#include "nsIWebBrowserPersist.h"
 #include "nsFocusManager.h"
 #include "nsILoadContext.h"
 #include "nsComponentManagerUtils.h"
@@ -45,10 +44,8 @@
 #include "mozilla/ServoStyleConsts.h"
 
 // Printing Includes
-#ifdef NS_PRINTING
-#  include "nsIWebBrowserPrint.h"
-#  include "nsIDocumentViewer.h"
-#endif
+#include "nsIWebBrowserPrint.h"
+#include "nsIDocumentViewer.h"
 
 // PSM2 includes
 #include "nsISecureBrowserUI.h"
@@ -60,17 +57,8 @@ using namespace mozilla::layers;
 
 nsWebBrowser::nsWebBrowser(int aItemType)
     : mContentType(aItemType),
-      mShouldEnableHistory(true),
       mWillChangeProcess(false),
-      mProgressListener(nullptr),
-      mBackgroundColor(0),
-      mPersistCurrentState(nsIWebBrowserPersist::PERSIST_STATE_READY),
-      mPersistResult(NS_OK),
-      mPersistFlags(nsIWebBrowserPersist::PERSIST_FLAGS_NONE),
-      mParentWidget(nullptr) {
-  mWWatch = do_GetService(NS_WINDOWWATCHER_CONTRACTID);
-  NS_ASSERTION(mWWatch, "failed to get WindowWatcher");
-}
+      mParentWidget(nullptr) {}
 
 nsWebBrowser::~nsWebBrowser() { InternalDestroy(); }
 
@@ -115,13 +103,6 @@ nsresult nsWebBrowser::Create(nsIWebBrowserChrome* aContainerWindow,
   }
   browser->SetDocShell(docShell);
   MOZ_ASSERT(browser->mDocShell == docShell);
-
-  // get the system default window background colour
-  //
-  // TODO(emilio): Can we get the color-scheme from somewhere here?
-  browser->mBackgroundColor =
-      LookAndFeel::Color(LookAndFeel::ColorID::Window, ColorScheme::Light,
-                         LookAndFeel::UseStandins::No);
 
   // HACK ALERT - this registration registers the nsDocShellTreeOwner as a
   // nsIWebBrowserListener so it can setup its MouseListener in one of the
@@ -169,9 +150,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsWebBrowser)
   NS_INTERFACE_MAP_ENTRY(nsIBaseWindow)
   NS_INTERFACE_MAP_ENTRY(nsIDocShellTreeItem)
   NS_INTERFACE_MAP_ENTRY(nsIInterfaceRequestor)
-  NS_INTERFACE_MAP_ENTRY(nsIWebBrowserPersist)
-  NS_INTERFACE_MAP_ENTRY(nsICancelable)
-  NS_INTERFACE_MAP_ENTRY(nsIWebProgressListener)
   NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
 NS_INTERFACE_MAP_END
 
@@ -188,7 +166,6 @@ nsWebBrowser::GetInterface(const nsIID& aIID, void** aSink) {
   }
 
   if (mDocShell) {
-#ifdef NS_PRINTING
     if (aIID.Equals(NS_GET_IID(nsIWebBrowserPrint))) {
       nsCOMPtr<nsIDocumentViewer> viewer;
       mDocShell->GetDocViewer(getter_AddRefs(viewer));
@@ -203,7 +180,6 @@ nsWebBrowser::GetInterface(const nsIID& aIID, void** aSink) {
       *aSink = print;
       return NS_OK;
     }
-#endif
     return mDocShell->GetInterface(aIID, aSink);
   }
 
@@ -563,279 +539,6 @@ nsWebBrowser::GetDocument(dom::Document** aDocument) {
 void nsWebBrowser::SetAllowDNSPrefetch(bool aAllowPrefetch) {
   MOZ_ASSERT(mDocShell);
   mDocShell->SetAllowDNSPrefetch(aAllowPrefetch);
-}
-
-//*****************************************************************************
-// nsWebBrowser::nsIWebProgressListener
-//*****************************************************************************
-
-NS_IMETHODIMP
-nsWebBrowser::OnStateChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
-                            uint32_t aStateFlags, nsresult aStatus) {
-  if (mPersist) {
-    mPersist->GetCurrentState(&mPersistCurrentState);
-  }
-  if (aStateFlags & STATE_IS_NETWORK && aStateFlags & STATE_STOP) {
-    mPersist = nullptr;
-  }
-  if (mProgressListener) {
-    return mProgressListener->OnStateChange(aWebProgress, aRequest, aStateFlags,
-                                            aStatus);
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::OnProgressChange(nsIWebProgress* aWebProgress,
-                               nsIRequest* aRequest, int32_t aCurSelfProgress,
-                               int32_t aMaxSelfProgress,
-                               int32_t aCurTotalProgress,
-                               int32_t aMaxTotalProgress) {
-  if (mPersist) {
-    mPersist->GetCurrentState(&mPersistCurrentState);
-  }
-  if (mProgressListener) {
-    return mProgressListener->OnProgressChange(
-        aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress,
-        aCurTotalProgress, aMaxTotalProgress);
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::OnLocationChange(nsIWebProgress* aWebProgress,
-                               nsIRequest* aRequest, nsIURI* aLocation,
-                               uint32_t aFlags) {
-  if (mProgressListener) {
-    return mProgressListener->OnLocationChange(aWebProgress, aRequest,
-                                               aLocation, aFlags);
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::OnStatusChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
-                             nsresult aStatus, const char16_t* aMessage) {
-  if (mProgressListener) {
-    return mProgressListener->OnStatusChange(aWebProgress, aRequest, aStatus,
-                                             aMessage);
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::OnSecurityChange(nsIWebProgress* aWebProgress,
-                               nsIRequest* aRequest, uint32_t aState) {
-  if (mProgressListener) {
-    return mProgressListener->OnSecurityChange(aWebProgress, aRequest, aState);
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::OnContentBlockingEvent(nsIWebProgress* aWebProgress,
-                                     nsIRequest* aRequest, uint32_t aEvent) {
-  if (mProgressListener) {
-    return mProgressListener->OnContentBlockingEvent(aWebProgress, aRequest,
-                                                     aEvent);
-  }
-  return NS_OK;
-}
-
-//*****************************************************************************
-// nsWebBrowser::nsIWebBrowserPersist
-//*****************************************************************************
-
-NS_IMETHODIMP
-nsWebBrowser::GetPersistFlags(uint32_t* aPersistFlags) {
-  NS_ENSURE_ARG_POINTER(aPersistFlags);
-  nsresult rv = NS_OK;
-  if (mPersist) {
-    rv = mPersist->GetPersistFlags(&mPersistFlags);
-  }
-  *aPersistFlags = mPersistFlags;
-  return rv;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::SetPersistFlags(uint32_t aPersistFlags) {
-  nsresult rv = NS_OK;
-  mPersistFlags = aPersistFlags;
-  if (mPersist) {
-    rv = mPersist->SetPersistFlags(mPersistFlags);
-    mPersist->GetPersistFlags(&mPersistFlags);
-  }
-  return rv;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::GetCurrentState(uint32_t* aCurrentState) {
-  NS_ENSURE_ARG_POINTER(aCurrentState);
-  if (mPersist) {
-    mPersist->GetCurrentState(&mPersistCurrentState);
-  }
-  *aCurrentState = mPersistCurrentState;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::GetResult(nsresult* aResult) {
-  NS_ENSURE_ARG_POINTER(aResult);
-  if (mPersist) {
-    mPersist->GetResult(&mPersistResult);
-  }
-  *aResult = mPersistResult;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::GetProgressListener(nsIWebProgressListener** aProgressListener) {
-  NS_ENSURE_ARG_POINTER(aProgressListener);
-  *aProgressListener = mProgressListener;
-  NS_IF_ADDREF(*aProgressListener);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::SetProgressListener(nsIWebProgressListener* aProgressListener) {
-  mProgressListener = aProgressListener;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::SaveURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
-                      uint32_t aCacheKey, nsIReferrerInfo* aReferrerInfo,
-                      nsICookieJarSettings* aCookieJarSettings,
-                      nsIInputStream* aPostData, const char* aExtraHeaders,
-                      nsISupports* aFile,
-                      nsContentPolicyType aContentPolicyType, bool aIsPrivate) {
-  if (mPersist) {
-    uint32_t currentState;
-    mPersist->GetCurrentState(&currentState);
-    if (currentState == PERSIST_STATE_FINISHED) {
-      mPersist = nullptr;
-    } else {
-      // You can't save again until the last save has completed
-      return NS_ERROR_FAILURE;
-    }
-  }
-
-  nsCOMPtr<nsIURI> uri;
-  if (aURI) {
-    uri = aURI;
-  } else {
-    nsresult rv = GetCurrentURI(getter_AddRefs(uri));
-    if (NS_FAILED(rv)) {
-      return NS_ERROR_FAILURE;
-    }
-  }
-
-  // Create a throwaway persistence object to do the work
-  nsresult rv;
-  mPersist = do_CreateInstance(NS_WEBBROWSERPERSIST_CONTRACTID, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-  mPersist->SetProgressListener(this);
-  mPersist->SetPersistFlags(mPersistFlags);
-  mPersist->GetCurrentState(&mPersistCurrentState);
-
-  rv = mPersist->SaveURI(uri, aPrincipal, aCacheKey, aReferrerInfo,
-                         aCookieJarSettings, aPostData, aExtraHeaders, aFile,
-                         aContentPolicyType, aIsPrivate);
-  if (NS_FAILED(rv)) {
-    mPersist = nullptr;
-  }
-  return rv;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::SaveChannel(nsIChannel* aChannel, nsISupports* aFile) {
-  if (mPersist) {
-    uint32_t currentState;
-    mPersist->GetCurrentState(&currentState);
-    if (currentState == PERSIST_STATE_FINISHED) {
-      mPersist = nullptr;
-    } else {
-      // You can't save again until the last save has completed
-      return NS_ERROR_FAILURE;
-    }
-  }
-
-  // Create a throwaway persistence object to do the work
-  nsresult rv;
-  mPersist = do_CreateInstance(NS_WEBBROWSERPERSIST_CONTRACTID, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-  mPersist->SetProgressListener(this);
-  mPersist->SetPersistFlags(mPersistFlags);
-  mPersist->GetCurrentState(&mPersistCurrentState);
-  rv = mPersist->SaveChannel(aChannel, aFile);
-  if (NS_FAILED(rv)) {
-    mPersist = nullptr;
-  }
-  return rv;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::SaveDocument(nsISupports* aDocumentish, nsISupports* aFile,
-                           nsISupports* aDataPath,
-                           const char* aOutputContentType,
-                           uint32_t aEncodingFlags, uint32_t aWrapColumn) {
-  if (mPersist) {
-    uint32_t currentState;
-    mPersist->GetCurrentState(&currentState);
-    if (currentState == PERSIST_STATE_FINISHED) {
-      mPersist = nullptr;
-    } else {
-      // You can't save again until the last save has completed
-      return NS_ERROR_FAILURE;
-    }
-  }
-
-  // Use the specified DOM document, or if none is specified, the one
-  // attached to the web browser.
-
-  nsCOMPtr<nsISupports> doc;
-  if (aDocumentish) {
-    doc = aDocumentish;
-  } else {
-    RefPtr<dom::Document> domDoc;
-    GetDocument(getter_AddRefs(domDoc));
-    doc = already_AddRefed<nsISupports>(ToSupports(domDoc.forget().take()));
-  }
-  if (!doc) {
-    return NS_ERROR_FAILURE;
-  }
-
-  // Create a throwaway persistence object to do the work
-  nsresult rv;
-  mPersist = do_CreateInstance(NS_WEBBROWSERPERSIST_CONTRACTID, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-  RefPtr<nsIWebBrowserPersist> localPersist(mPersist);
-  (void)localPersist;
-  mPersist->SetProgressListener(this);
-  mPersist->SetPersistFlags(mPersistFlags);
-  mPersist->GetCurrentState(&mPersistCurrentState);
-  rv = mPersist->SaveDocument(doc, aFile, aDataPath, aOutputContentType,
-                              aEncodingFlags, aWrapColumn);
-  if (NS_FAILED(rv)) {
-    mPersist = nullptr;
-  }
-  return rv;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::CancelSave() {
-  if (mPersist) {
-    return mPersist->CancelSave();
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::Cancel(nsresult aReason) {
-  if (mPersist) {
-    return mPersist->Cancel(aReason);
-  }
-  return NS_OK;
 }
 
 //*****************************************************************************

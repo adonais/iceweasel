@@ -4320,7 +4320,7 @@ SelectedTableCellScanner::SelectedTableCellScanner(
   mSelectedCellElements.SetCapacity(aRanges.Ranges().Length());
   mSelectedCellElements.AppendElement(*firstSelectedCellElement);
   for (uint32_t i = 1; i < aRanges.Ranges().Length(); i++) {
-    nsRange* range = aRanges.Ranges()[i];
+    dom::Range* range = aRanges.Ranges()[i];
     if (NS_WARN_IF(!range) || NS_WARN_IF(!range->IsPositioned())) {
       continue;  // Shouldn't occur in normal conditions.
     }

@@ -29,7 +29,6 @@ parent:
     returns (bool aOutResumed);
 
   async InvalidateAndRender();
-  async MaxToolbarHeight(int32_t aHeight);
   async FixedBottomOffset(int32_t aOffset);
   async DefaultClearColor(uint32_t aColor);
   async RequestScreenPixels(uint64_t aRequestId, IntRect aSourceRect,

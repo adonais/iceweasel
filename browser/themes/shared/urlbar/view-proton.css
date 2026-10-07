@@ -103,29 +103,15 @@
   .urlbar[in-page]:not([noresults]) > & {
     padding-block-start: calc(var(--urlbarView-results-padding) - var(--urlbarView-row-gutter));
 
-    > .urlbarView-body-outer > .urlbarView-body-inner > .urlbarView-results {
+    > .urlbarView-results {
       padding-block-start: 0;
     }
   }
 }
 
-.urlbarView-body-outer,
-.urlbarView-body-inner {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.urlbarView-body-inner {
+.urlbarView-results {
   width: calc(100% + 2 * var(--urlbarView-row-gutter));
   margin-inline: calc(-1 * var(--urlbarView-row-gutter));
-
-  #urlbar[open] > .urlbarView > .urlbarView-body-outer > & {
-    border-top: 1px solid var(--urlbarview-separator-color);
-  }
-}
-
-.urlbarView-results {
   padding-block: calc(var(--urlbarView-results-padding) - var(--urlbarView-row-gutter));
   white-space: nowrap;
 
@@ -135,8 +121,12 @@
   overflow-y: auto;
   scrollbar-width: thin;
 
+  #urlbar[open] > .urlbarView > & {
+    border-top: 1px solid var(--urlbarview-separator-color);
+  }
+
   /* Vertically center the one-offs when no results are present. */
-  .urlbar[noresults] > .urlbarView > .urlbarView-body-outer > .urlbarView-body-inner > & {
+  .urlbar[noresults] > .urlbarView > & {
     padding-block: 0;
   }
 }

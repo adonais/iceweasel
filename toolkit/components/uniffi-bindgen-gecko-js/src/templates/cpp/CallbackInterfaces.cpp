@@ -3,9 +3,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 
-{%- for (preprocessor_condition, return_handlers, preprocessor_condition_end) in callback_return_handler_classes.iter() %}
-{{ preprocessor_condition }}
-{%- for return_handler in return_handlers %}
+{%- for lib in root.libraries() %}
+{{ lib.ifdef_start() }}
+{%- for return_handler in lib.cpp_callback_return_handlers %}
 
 /**
   * Handle callback interface return values for a single return type
@@ -21,7 +21,7 @@ public:
     * - On success, it returns the FFI return value
     * - On error, it updates the `RustCallStatus` struct and returns a default FFI value.
     */
-  static {{ return_handler.return_type_name }}
+  static {{ return_handler.return_type_name() }}
   Lower(const RootedDictionary<UniFFIScaffoldingCallResult>& aCallResult,
               RustCallStatus* aOutCallStatus,
               ErrorResult& aRv) {
@@ -75,14 +75,14 @@ public:
   }
 };
 {%- endfor %}
-{{ preprocessor_condition_end }}
+{{ lib.ifdef_end() }}
 {%- endfor %}
 
 // Callback interface method handlers, vtables, etc.
-{%- for (preprocessor_condition, callback_interfaces, preprocessor_condition_end) in callback_interfaces.iter() %}
-{{ preprocessor_condition }}
+{%- for lib in root.libraries() %}
+{{ lib.ifdef_start() }}
 
-{%- for cbi in callback_interfaces %}
+{%- for cbi in lib.callback_interfaces %}
 static StaticRefPtr<dom::UniFFICallbackHandler> {{ cbi.handler_var }};
 
 {%- for meth in cbi.methods %}
@@ -101,22 +101,22 @@ class {{ meth.async_handler_class_name }} final : public AsyncCallbackMethodHand
 private:
   // Rust arguments
   {%- for a in arguments %}
-  {{ a.ffi_value_class }} {{ a.field_name }}{};
+  {{ a.ffi_value_class }} {{ a.field_name_cpp() }}{};
   {%- endfor %}
-  {{ async_data.complete_callback_type_name }} mUniffiCompleteCallback;
+  {{ async_data.ffi_foreign_future_complete.0 }} mUniffiCompleteCallback;
   uint64_t mUniffiCallbackData;
 
 public:
   {{ meth.async_handler_class_name }}(
       uint64_t aUniffiHandle,
       {%- for a in arguments %}
-      {{ a.ty.type_name }} {{ a.name }},
+      {{ a.ty.ffi_type.type_name }} {{ a.arg_name_cpp() }},
       {%- endfor %}
-      {{ async_data.complete_callback_type_name }} aUniffiCompleteCallback,
+      {{ async_data.ffi_foreign_future_complete.0 }} aUniffiCompleteCallback,
       uint64_t aUniffiCallbackData
   ) : AsyncCallbackMethodHandlerBase ("{{ cbi.name }}.{{ meth.fn_name }}", aUniffiHandle),
       {%- for a in arguments %}
-      {{ a.field_name }}({{ a.ffi_value_class }}::FromRust({{ a.name }})),
+      {{ a.field_name_cpp() }}({{ a.ffi_value_class }}::FromRust({{ a.arg_name_cpp() }})),
       {%- endfor %}
       mUniffiCompleteCallback(aUniffiCompleteCallback),
       mUniffiCallbackData(aUniffiCallbackData) { }
@@ -132,7 +132,7 @@ public:
       return nullptr;
     }
     {%- for a in arguments %}
-    {{ a.field_name }}.Lift(aCx, &uniffiArgs[{{ loop.index0 }}], aError);
+    {{ a.field_name_cpp() }}.Lift(aCx, &uniffiArgs[{{ loop.index0 }}], aError);
     if (aError.Failed()) {
       return nullptr;
     }
@@ -149,7 +149,7 @@ public:
       return;
     }
 
-    {{ async_data.result_type_name }} result{};
+    {{ async_data.ffi_foreign_future_result.0 }} result{};
     {%- if meth.return_ty.is_some() %}
     result.return_value  = {{ meth.return_handler_class_name }}::Lower(aCallResult, &result.call_status, aRv);
     {%- else %}
@@ -162,7 +162,7 @@ public:
   ~{{ meth.async_handler_class_name }}() {
     if (mUniffiCompleteCallback) {
       MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[{{ meth.return_handler_class_name }}] promise never completed"));
-      {{ async_data.result_type_name }} result{};
+      {{ async_data.ffi_foreign_future_result.0 }} result{};
       result.call_status.code = RUST_CALL_INTERNAL_ERROR;
       mUniffiCompleteCallback(mUniffiCallbackData, result);
     }
@@ -177,9 +177,9 @@ public:
 extern "C" void {{ meth.fn_name }}(
   uint64_t aUniffiHandle,
   {%- for a in meth.arguments %}
-  {{ a.ty.type_name }} {{ a.name }},
+  {{ a.ty.ffi_type.type_name }} {{ a.name }},
   {%- endfor %}
-  {{ async_data.complete_callback_type_name }} aUniffiForeignFutureCallback,
+  {{ async_data.ffi_foreign_future_complete.0 }} aUniffiForeignFutureCallback,
   uint64_t aUniffiForeignFutureCallbackData,
   // This can be used to detected when the future is dropped from the Rust side and cancel the
   // async task on the foreign side.  However, there's no way to do that in JS, so we just ignore
@@ -212,7 +212,7 @@ class {{ meth.async_handler_class_name }} final : public AsyncCallbackMethodHand
 private:
   // Rust arguments
   {%- for a in arguments %}
-  {{ a.ffi_value_class }} {{ a.field_name }}{};
+  {{ a.ffi_value_class }} {{ a.field_name_cpp() }}{};
   {%- endfor %}
 
 public:
@@ -220,13 +220,13 @@ public:
       {%- filter remove_trailing_comma %}
       uint64_t aUniffiHandle,
       {%- for a in arguments %}
-      {{ a.ty.type_name }} {{ a.name }},
+      {{ a.ty.ffi_type.type_name }} {{ a.arg_name_cpp() }},
       {%- endfor %}
       {%- endfilter %}
   ) {% filter remove_trailing_comma -%}
     : AsyncCallbackMethodHandlerBase ("{{ cbi.name }}.{{ meth.fn_name }}", aUniffiHandle),
       {% for a in arguments -%}
-      {{ a.field_name }}({{ a.ffi_value_class }}::FromRust({{ a.name }})),
+      {{ a.field_name_cpp() }}({{ a.ffi_value_class }}::FromRust({{ a.arg_name_cpp() }})),
       {% endfor -%}
     {% endfilter -%}
   { }
@@ -242,7 +242,7 @@ public:
       return nullptr;
     }
     {%- for a in arguments %}
-    {{ a.field_name }}.Lift(aCx, &uniffiArgs[{{ loop.index0 }}], aError);
+    {{ a.field_name_cpp() }}.Lift(aCx, &uniffiArgs[{{ loop.index0 }}], aError);
     if (aError.Failed()) {
       return nullptr;
     }
@@ -261,7 +261,7 @@ public:
 extern "C" void {{ meth.fn_name }}(
   uint64_t aUniffiHandle,
   {%- for a in meth.arguments %}
-  {{ a.ty.type_name }} {{ a.name }},
+  {{ a.ty.ffi_type.type_name }} {{ a.name }},
   {%- endfor %}
   {{ meth.out_pointer_ty.type_name }} aUniffiOutReturn,
   RustCallStatus* uniffiOutStatus
@@ -279,7 +279,7 @@ extern "C" void {{ meth.fn_name }}(
 extern "C" void {{ meth.fn_name }}(
   uint64_t aUniffiHandle,
   {%- for a in meth.arguments %}
-  {{ a.ty.type_name }} {{ a.name }},
+  {{ a.ty.ffi_type.type_name }} {{ a.arg_name_cpp() }},
   {%- endfor %}
   {{ meth.out_pointer_ty.type_name }} aUniffiOutReturn,
   RustCallStatus* aUniffiOutStatus
@@ -305,8 +305,8 @@ extern "C" void {{ meth.fn_name }}(
   }
   IgnoredErrorResult error;
   {%- for a in arguments %}
-  {{ a.ffi_value_class }} {{ a.var_name }} = {{ a.ffi_value_class }}::FromRust({{ a.name }});
-  {{ a.var_name }}.Lift(aes.cx(), &uniffiArgs[{{ loop.index0 }}], error);
+  {{ a.ffi_value_class }} {{ a.var_name_cpp() }} = {{ a.ffi_value_class }}::FromRust({{ a.arg_name_cpp() }});
+  {{ a.var_name_cpp() }}.Lift(aes.cx(), &uniffiArgs[{{ loop.index0 }}], error);
   if (error.Failed()) {
     MOZ_LOG(
         gUniffiLogger, LogLevel::Error,
@@ -356,15 +356,15 @@ static {{ cbi.vtable_struct_type.type_name }} {{ cbi.vtable_var }} {
 };
 
 {%- endfor %}
-{{ preprocessor_condition_end }}
+{{ lib.ifdef_end() }}
 {%- endfor %}
 
 void RegisterCallbackHandler(uint64_t aInterfaceId, UniFFICallbackHandler& aCallbackHandler, ErrorResult& aError) {
   switch (aInterfaceId) {
-    {%- for (preprocessor_condition, callback_interfaces, preprocessor_condition_end) in callback_interfaces.iter() %}
-    {{ preprocessor_condition }}
+    {%- for lib in root.libraries() %}
+{{ lib.ifdef_start() }}
 
-    {%- for cbi in callback_interfaces %}
+    {%- for cbi in lib.callback_interfaces %}
     case {{ cbi.id }}: {
       if ({{ cbi.handler_var }}) {
         aError.ThrowUnknownError("[UniFFI] Callback handler already registered for {{ cbi.name }}"_ns);
@@ -378,7 +378,7 @@ void RegisterCallbackHandler(uint64_t aInterfaceId, UniFFICallbackHandler& aCall
 
 
     {%- endfor %}
-    {{ preprocessor_condition_end }}
+{{ lib.ifdef_end() }}
     {%- endfor %}
 
     default:
@@ -389,10 +389,10 @@ void RegisterCallbackHandler(uint64_t aInterfaceId, UniFFICallbackHandler& aCall
 
 void DeregisterCallbackHandler(uint64_t aInterfaceId, ErrorResult& aError) {
   switch (aInterfaceId) {
-    {%- for (preprocessor_condition, callback_interfaces, preprocessor_condition_end) in callback_interfaces.iter() %}
-    {{ preprocessor_condition }}
+    {%- for lib in root.libraries() %}
+{{ lib.ifdef_start() }}
 
-    {%- for cbi in callback_interfaces %}
+    {%- for cbi in lib.callback_interfaces %}
     case {{ cbi.id }}: {
       if (!{{ cbi.handler_var }}) {
         aError.ThrowUnknownError("[UniFFI] Callback handler not registered for {{ cbi.name }}"_ns);
@@ -405,7 +405,7 @@ void DeregisterCallbackHandler(uint64_t aInterfaceId, ErrorResult& aError) {
 
 
     {%- endfor %}
-    {{ preprocessor_condition_end }}
+{{ lib.ifdef_end() }}
     {%- endfor %}
 
     default:

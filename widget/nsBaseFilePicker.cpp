@@ -296,8 +296,8 @@ NS_IMETHODIMP nsBaseFilePicker::SetDisplayDirectory(nsIFile* aDirectory) {
     return NS_OK;
   }
 
-  if (!IsPotentiallyReadableDirectory(*aDirectory)) {
-    return NS_ERROR_FAILURE;
+  if (NS_WARN_IF(!IsPotentiallyReadableDirectory(*aDirectory))) {
+    return NS_OK;
   }
 
   nsCOMPtr<nsIFile> directory;

@@ -4,9 +4,14 @@
 
 #include "HeadlessClipboard.h"
 
+#include "imgIContainer.h"
+#include "imgITools.h"
 #include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIInputStream.h"
 #include "nsISupportsPrimitives.h"
+#include "nsStreamUtils.h"
+#include "nsStringStream.h"
 
 namespace mozilla::widget {
 
@@ -20,6 +25,27 @@ HeadlessClipboard::HeadlessClipboard()
   for (auto& clipboard : mClipboards) {
     clipboard = MakeUnique<HeadlessClipboardData>();
   }
+}
+
+static nsresult EncodeImageAsPNG(imgIContainer* aImage,
+                                 nsTArray<uint8_t>& aPNG) {
+  nsCOMPtr<imgITools> imgTools =
+      do_CreateInstance("@mozilla.org/image/tools;1");
+  if (!imgTools) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsCOMPtr<nsIInputStream> stream;
+  nsresult rv = imgTools->EncodeImage(aImage, nsLiteralCString(kPNGImageMime),
+                                      u""_ns, getter_AddRefs(stream));
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  if (!stream) {
+    return NS_ERROR_FAILURE;
+  }
+
+  return NS_ConsumeStream(stream, UINT32_MAX, aPNG);
 }
 
 NS_IMETHODIMP
@@ -42,13 +68,25 @@ HeadlessClipboard::SetNativeClipboardData(nsITransferable* aTransferable,
   MOZ_ASSERT(clipboard);
 
   for (const auto& flavor : flavors) {
-    if (!flavor.EqualsLiteral(kTextMime) && !flavor.EqualsLiteral(kHTMLMime)) {
+    const bool isText = flavor.EqualsLiteral(kTextMime);
+    const bool isHTML = flavor.EqualsLiteral(kHTMLMime);
+    const bool isImage = flavor.EqualsLiteral(kNativeImageMime);
+    if (!isText && !isHTML && !isImage) {
       continue;
     }
 
     nsCOMPtr<nsISupports> data;
     rv = aTransferable->GetTransferData(flavor.get(), getter_AddRefs(data));
     if (NS_FAILED(rv)) {
+      continue;
+    }
+
+    if (isImage) {
+      nsCOMPtr<imgIContainer> image = do_QueryInterface(data);
+      nsTArray<uint8_t> png;
+      if (image && NS_SUCCEEDED(EncodeImageAsPNG(image, png))) {
+        clipboard->SetPNG(std::move(png));
+      }
       continue;
     }
 
@@ -59,8 +97,7 @@ HeadlessClipboard::SetNativeClipboardData(nsITransferable* aTransferable,
 
     nsAutoString utf16string;
     wideString->GetData(utf16string);
-    flavor.EqualsLiteral(kTextMime) ? clipboard->SetText(utf16string)
-                                    : clipboard->SetHTML(utf16string);
+    isText ? clipboard->SetText(utf16string) : clipboard->SetHTML(utf16string);
   }
 
   return NS_OK;
@@ -75,6 +112,20 @@ HeadlessClipboard::GetNativeClipboardData(const nsACString& aFlavor,
 
   auto& clipboard = mClipboards[aWhichClipboard];
   MOZ_ASSERT(clipboard);
+
+  if (aFlavor.EqualsLiteral(kPNGImageMime)) {
+    if (!clipboard->HasPNG()) {
+      return nsCOMPtr<nsISupports>{};
+    }
+
+    nsCOMPtr<nsIInputStream> stream;
+    nsresult rv = NS_NewByteInputStream(getter_AddRefs(stream),
+                                        clipboard->GetPNG().Clone());
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return nsCOMPtr<nsISupports>{};
+    }
+    return nsCOMPtr<nsISupports>(std::move(stream));
+  }
 
   if (!aFlavor.EqualsLiteral(kTextMime) && !aFlavor.EqualsLiteral(kHTMLMime)) {
     return nsCOMPtr<nsISupports>{};
@@ -134,7 +185,8 @@ HeadlessClipboard::HasNativeClipboardDataMatchingFlavors(
   // Retrieve the union of all aHasType in aFlavorList
   for (auto& flavor : aFlavorList) {
     if ((flavor.EqualsLiteral(kTextMime) && clipboard->HasText()) ||
-        (flavor.EqualsLiteral(kHTMLMime) && clipboard->HasHTML())) {
+        (flavor.EqualsLiteral(kHTMLMime) && clipboard->HasHTML()) ||
+        (flavor.EqualsLiteral(kPNGImageMime) && clipboard->HasPNG())) {
       return true;
     }
   }

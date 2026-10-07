@@ -181,6 +181,23 @@ describe("Auto Tab Grouping toolbar button", () => {
     });
   });
 
+  describe("default placement", () => {
+    it("renders to the left of the window switcher", async () => {
+      await SpecialPowers.pushPrefEnv({
+        set: [["browser.smartwindow.autoTabGrouping.enabled", true]],
+      });
+
+      win = await openAIWindow();
+      const { area } = CustomizableUI.getPlacementOfWidget("ai-window-toggle");
+      const ids = CustomizableUI.getWidgetIdsInArea(area);
+      Assert.equal(
+        ids[ids.indexOf("ai-window-toggle") - 1],
+        "smartwindow-group-tabs-button",
+        "The button sits immediately left of the window switcher"
+      );
+    });
+  });
+
   describe("model preloading", () => {
     let preloadStub;
 

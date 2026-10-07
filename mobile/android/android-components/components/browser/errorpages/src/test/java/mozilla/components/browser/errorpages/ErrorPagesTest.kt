@@ -4,8 +4,10 @@
 
 package mozilla.components.browser.errorpages
 
+import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.browser.errorpages.ErrorPages.createUrlEncodedErrorPage
+import mozilla.components.concept.engine.request.ErrorType
 import mozilla.components.support.ktx.kotlin.urlEncode
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
@@ -93,14 +95,18 @@ class ErrorPagesTest {
                 testContext,
                 ErrorType.ERROR_HTTPS_ONLY,
                 "https://localhost/",
-                titleOverride = { errorType ->
-                    assertEquals(ErrorType.ERROR_HTTPS_ONLY, errorType)
-                    "radio"
-                },
-                descriptionOverride = { errorType ->
-                    assertEquals(ErrorType.ERROR_HTTPS_ONLY, errorType)
-                    "spider"
-                },
+                errorStringsProvider =
+                    object : DefaultErrorStringsProvider() {
+                        override fun errorStringsFor(
+                            context: Context,
+                            errorType: ErrorType,
+                            uri: String?,
+                        ): ErrorStrings {
+                            assertEquals(ErrorType.ERROR_HTTPS_ONLY, errorType)
+                            return super.errorStringsFor(context, errorType, uri)
+                                .copy(title = "radio", message = "spider")
+                        }
+                    },
             )
 
         assertTrue(customErrorPage.contains("radio"))
@@ -160,6 +166,8 @@ class ErrorPagesTest {
             )
         assertTrue(archivablePage.contains("&archiveUrl=${"https://example.com/".urlEncode()}"))
         assertTrue(archivablePage.contains("&archiveCheckButtonLabel="))
+        assertTrue(archivablePage.contains("&archiveDescriptionMessage="))
+        assertTrue(archivablePage.contains("&archiveDescriptionLinkLabel="))
 
         val nonArchivablePage =
             createUrlEncodedErrorPage(
@@ -170,6 +178,24 @@ class ErrorPagesTest {
             )
         assertFalse(nonArchivablePage.contains("&archiveUrl="))
         assertFalse(nonArchivablePage.contains("&archiveCheckButtonLabel="))
+    }
+
+    @Test
+    fun `createUrlEncodedErrorPage interpolates uri param when required`() {
+        listOf(
+                "https://example1.org",
+                "http://example2.com/", // Note trailing slash.
+            )
+            .forEach { uri ->
+                val page =
+                    createUrlEncodedErrorPage(
+                        testContext,
+                        ErrorType.ERROR_BAD_HSTS_CERT,
+                        uri,
+                    )
+                assertTrue("generated page contains '${uri}' (encoded)", page.contains(uri.urlEncode()))
+                assertFalse("generated page does not contain uninterpolated strings", page.contains("\$s"))
+            }
     }
 
     @Test
@@ -198,20 +224,18 @@ class ErrorPagesTest {
                 htmlFilename,
             )
 
+        val errorStrings = DefaultErrorStringsProvider().errorStringsFor(testContext, errorType, uri)
         val expectedImageName =
-            if (errorType.imageNameRes != null) {
-                testContext.resources.getString(errorType.imageNameRes) + ".svg"
+            if (errorStrings.imageName != null) {
+                errorStrings.imageName + ".svg"
             } else {
                 ""
             }
 
         assertTrue(errorPage.startsWith("resource://android/assets/$htmlFilename"))
-        assertTrue(
-            errorPage.contains("&button=${testContext.resources.getString(errorType.refreshButtonRes).urlEncode()}")
-        )
+        assertTrue(errorPage.contains("&button=${errorStrings.refreshButton.urlEncode()}"))
 
-        val description =
-            testContext.resources.getString(errorType.messageRes, uri).replace("<ul>", "<ul role=\"presentation\">")
+        val description = errorStrings.message.replace("<ul>", "<ul role=\"presentation\">")
 
         assertTrue(errorPage.contains("&description=${description.urlEncode()}"))
         assertTrue(errorPage.contains("&image=$expectedImageName"))

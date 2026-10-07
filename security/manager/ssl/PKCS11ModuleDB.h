@@ -21,6 +21,7 @@ namespace psm {
 // attempt is in progress if there's an active window to host it. In headless
 // contexts (xpcshell, very early startup) there's no WindowCreator registered
 // and OpenWindow would assert/fail.
+MOZ_CAN_RUN_SCRIPT
 void ShowProtectedAuthDialog(const nsCString& tokenName,
                              const nsString& promptId);
 

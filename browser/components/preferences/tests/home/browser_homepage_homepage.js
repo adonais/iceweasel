@@ -87,6 +87,18 @@ add_task(async function test_homepage_new_windows_dropdown() {
     "Dropdown value is 'custom' when custom selected"
   );
 
+  await changeMozSelectValue(select, "blank");
+  is(
+    nativeSelect.value,
+    "blank",
+    "Dropdown value is 'blank' when blank selected"
+  );
+  is(
+    Services.prefs.getStringPref(HOMEPAGE_PREF),
+    BLANK_HOMEPAGE_URL,
+    "Selecting Blank writes the blank tab URL"
+  );
+
   await changeMozSelectValue(select, "home");
   is(
     Services.prefs.getStringPref(HOMEPAGE_PREF),

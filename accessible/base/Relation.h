@@ -44,6 +44,9 @@ class Relation {
     return *this;
   }
 
+  Relation& operator=(const Relation&) = delete;
+  Relation(const Relation&) = delete;
+
   inline void AppendIter(AccIterable* aIter) {
     if (mLastIter) {
       mLastIter->mNextIter.reset(aIter);
@@ -90,9 +93,6 @@ class Relation {
   }
 
  private:
-  Relation& operator=(const Relation&) = delete;
-  Relation(const Relation&) = delete;
-
   std::unique_ptr<AccIterable> mFirstIter;
   AccIterable* mLastIter;
 };

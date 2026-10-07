@@ -25,7 +25,7 @@ TEST(ReportingEndpointsParser, Basic)
   // Empty header
   EndpointsList endpoints;
 
-  auto endpointConstructor = [&endpoints](const nsAString& aKey,
+  auto endpointConstructor = [&endpoints](const nsACString& aKey,
                                           nsCOMPtr<nsIURI> aEndpointURL) {
     endpoints.mData.EmplaceBack(
         ReportingHeader::Endpoint::Create(aEndpointURL.forget(), aKey));
@@ -112,7 +112,7 @@ TEST(ReportingEndpointsParser, LoopbackDocumentIsTrustworthy)
 {
   EndpointsList endpoints;
 
-  auto endpointConstructor = [&endpoints](const nsAString& aKey,
+  auto endpointConstructor = [&endpoints](const nsACString& aKey,
                                           nsCOMPtr<nsIURI> aEndpointURL) {
     endpoints.mData.EmplaceBack(
         ReportingHeader::Endpoint::Create(aEndpointURL.forget(), aKey));

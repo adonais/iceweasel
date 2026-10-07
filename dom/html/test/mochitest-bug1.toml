@@ -189,6 +189,8 @@ support-files = [
   "!/gfx/layers/apz/test/mochitest/apz_test_utils.js",
 ]
 
+["include:mochitest-xslt.toml"]
+
 ["test_bug589.html"]
 
 ["test_bug691.html"]
@@ -301,10 +303,6 @@ skip-if = [
 ["test_bug347174.html"]
 
 ["test_bug347174_write.html"]
-
-["test_bug347174_xsl.html"]
-
-["test_bug347174_xslp.html"]
 
 ["test_bug353415-1.html"]
 

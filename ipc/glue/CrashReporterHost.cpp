@@ -124,6 +124,19 @@ void CrashReporterHost::DeleteCrashReport() {
   }
 }
 
+bool CrashReporterHost::GenerateMinidumpAndPair(
+    GeckoChildProcessHost* aChildProcessHost, const nsACString& aPairName) {
+  AnnotationTable annotations;
+  nsCOMPtr<nsIFile> targetDump;
+  if (!CrashReporter::CreateMinidumpsAndPair(
+          aChildProcessHost->GetChildID(), GetRawThreadId(), aPairName,
+          annotations, getter_AddRefs(targetDump))) {
+    return false;
+  }
+
+  return AdoptMinidump(targetDump, annotations);
+}
+
 const char* CrashReporterHost::ProcessType() const {
   return XRE_ChildProcessTypeToAnnotation(mProcessType);
 }
@@ -159,7 +172,7 @@ void CrashReporterHost::RecordCrashWithTelemetry(GeckoProcessType aProcessType,
   case GeckoProcessType_##enum_name:                                          \
     key.AssignLiteral(string_name);                                           \
     break;
-#include "mozilla/GeckoProcessTypes.h"
+#include "mozilla/GeckoProcessTypes.inc"
 #undef GECKO_PROCESS_TYPE
     // We can't really hit this, thanks to the above switch, but having it
     // here will placate the compiler.

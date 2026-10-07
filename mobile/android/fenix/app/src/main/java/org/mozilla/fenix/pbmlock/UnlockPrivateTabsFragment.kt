@@ -11,10 +11,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.content.getSystemService
 import androidx.fragment.app.Fragment
+import androidx.fragment.compose.content
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import androidx.navigation.fragment.findNavController
@@ -52,20 +51,10 @@ class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler, SystemInse
                 onFailure = { onAuthFailure() },
             )
 
-        return ComposeView(requireContext()).apply {
-            isTransitionGroup = true
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-        }
-    }
+        val isCustomPrivateTab =
+            isCustomTabIntent(requireActivity().intent) && requireComponents.appStore.state.mode.isPrivate
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        PrivateBrowsingLocked.promptShown.record()
-
-        val appStore = requireComponents.appStore
-        val isCustomPrivateTab = isCustomTabIntent(requireActivity().intent) && appStore.state.mode.isPrivate
-
-        (view as ComposeView).setContent {
+        return content {
             FirefoxTheme {
                 UnlockPrivateTabsScreen(
                     onUnlockClicked = { requestPrompt() },
@@ -77,6 +66,12 @@ class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler, SystemInse
                 )
             }
         }
+            .apply { isTransitionGroup = true }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        PrivateBrowsingLocked.promptShown.record()
         maybeRequestPrompt()
     }
 

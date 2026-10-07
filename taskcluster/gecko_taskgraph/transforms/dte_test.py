@@ -20,6 +20,7 @@ POLL_TIMEOUT_PADDING = 600
 def update_env(config, tasks):
     for task in tasks:
         name = task["name"]
+        target_info_artifact = "target_info.txt"
         if "win" in name:
             input_key = "win_installer_link"
             artifact = "target.zip"
@@ -36,5 +37,8 @@ def update_env(config, tasks):
             },
             "INPUT_KEY": input_key,
             "POLL_TIMEOUT": str(task["worker"]["max-run-time"] - POLL_TIMEOUT_PADDING),
+            "TARGET_INFO_LINK": {
+                "artifact-reference": f"<build/{get_artifact_path(task, target_info_artifact)}>"
+            },
         }
         yield task

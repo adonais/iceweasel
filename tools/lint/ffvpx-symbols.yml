@@ -1,0 +1,12 @@
+---
+ffvpx-symbols:
+    description: Check FFmpegLibWrapper only binds symbols bundled ffvpx exports
+    include:
+        - dom/media/platforms/ffmpeg/FFmpegLibWrapper.cpp
+        - media/ffvpx/libavcodec/avcodec.symbols
+        - media/ffvpx/libavcodec/version_major.h
+        - media/ffvpx/libavutil/avutil.symbols
+    support-files:
+        - 'tools/lint/ffvpx-symbols/**'
+    type: global
+    payload: ffvpx-symbols:lint

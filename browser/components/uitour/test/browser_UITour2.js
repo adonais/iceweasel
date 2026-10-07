@@ -138,12 +138,12 @@ var tests = [
     is(bookmarksMenuButton.open, false, "Menu should initially be closed");
     gContentAPI.showMenu("bookmarks");
 
-    await waitForConditionPromise(() => {
+    await TestUtils.waitForCondition(() => {
       return bookmarksMenuButton.open;
     }, "Menu should be visible after showMenu()");
 
     gContentAPI.hideMenu("bookmarks");
-    await waitForConditionPromise(() => {
+    await TestUtils.waitForCondition(() => {
       return !bookmarksMenuButton.open;
     }, "Menu should be hidden after hideMenu()");
   }),

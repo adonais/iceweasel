@@ -918,6 +918,65 @@ TEST(H264, CreateNewExtraData)
   EXPECT_TRUE(res.isErr());
 }
 
+// Build an AVCC sample holding a single recovery point SEI (payload type 6)
+// NALU, per H.264 D.1.7 Recovery point SEI message syntax.
+static already_AddRefed<MediaRawData> GetRecoveryPointSEISample(
+    uint32_t aRecoveryFrameCnt, bool aExactMatchFlag) {
+  RefPtr<MediaByteBuffer> payload = new MediaByteBuffer();
+  BitWriter payloadWriter(payload);
+  payloadWriter.WriteUE(aRecoveryFrameCnt);
+  payloadWriter.WriteBit(aExactMatchFlag);
+  payloadWriter.WriteBit(false);  // broken_link_flag
+  payloadWriter.WriteBits(0, 2);  // changing_slice_group_idc
+  payloadWriter.CloseWithRbspTrailing();
+
+  nsTArray<uint8_t> nalu;
+  nalu.AppendElement(0x06);  // nal_ref_idc=0, nal_unit_type=6 (SEI)
+  nalu.AppendElement(6);     // payloadType, recovery point
+  nalu.AppendElement(static_cast<uint8_t>(payload->Length()));  // payloadSize
+  nalu.AppendElements(payload->Elements(), payload->Length());
+  nalu.AppendElement(0x80);  // rbsp_trailing_bits
+
+  nsTArray<uint8_t> sampleData;
+  ByteWriter<BigEndian> writer(sampleData);
+  EXPECT_TRUE(writer.WriteU32(nalu.Length()));
+  sampleData.AppendElements(nalu);
+
+  RefPtr<MediaRawData> rawData =
+      new MediaRawData{sampleData.Elements(), sampleData.Length()};
+  rawData->mExtraData = GetExtraData();
+  return rawData.forget();
+}
+
+TEST(H264, RecoveryPointSEIFrameType)
+{
+  // recovery_frame_cnt == 0 and exact_match_flag == 1 means decoding from here
+  // matches decoding from a previous IDR exactly, so this is a true IDR
+  // substitute.
+  RefPtr<MediaRawData> exactAtCurrentFrame = GetRecoveryPointSEISample(0, true);
+  EXPECT_EQ(H264::GetFrameType(exactAtCurrentFrame),
+            H264::FrameType::I_FRAME_IDR);
+
+  // Only one of the two conditions holds in the next two cases. Streams are
+  // often muxed without setting these correctly, so they are still reported as
+  // IDR to keep them playable.
+  RefPtr<MediaRawData> approximateAtCurrentFrame =
+      GetRecoveryPointSEISample(0, false);
+  EXPECT_EQ(H264::GetFrameType(approximateAtCurrentFrame),
+            H264::FrameType::I_FRAME_IDR);
+
+  RefPtr<MediaRawData> exactAtLaterFrame = GetRecoveryPointSEISample(5, true);
+  EXPECT_EQ(H264::GetFrameType(exactAtLaterFrame),
+            H264::FrameType::I_FRAME_IDR);
+
+  // Neither condition holds: the recovery point is five frames away and the
+  // match is only approximate, so this is not an IDR substitute.
+  RefPtr<MediaRawData> approximateAtLaterFrame =
+      GetRecoveryPointSEISample(5, false);
+  EXPECT_EQ(H264::GetFrameType(approximateAtLaterFrame),
+            H264::FrameType::I_FRAME_OTHER);
+}
+
 TEST(H264, AnnexBExtractExtraDataForAVCC)
 {
   // First create an AnnexB config

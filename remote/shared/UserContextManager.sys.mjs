@@ -82,18 +82,38 @@ export class UserContextManagerClass {
   /**
    * Creates a new user context.
    *
-   * @param {string} prefix
-   *     The prefix to use for the name of the user context.
+   * @param {object} options
+   * @param {string=} options.color
+   *     The color to use for the container, from the list of container colors
+   *     supported by ContextualIdentityService. No color is set by default.
+   * @param {string=} options.icon
+   *     The icon to use for the container, from the list of container icons
+   *     supported by ContextualIdentityService. No icon is set by default.
+   * @param {string=} options.name
+   *     The name to use for the user context. When provided options.prefix will
+   *     be ignored. Defaults to null.
+   * @param {string=} options.prefix
+   *     A prefix to use for the name of the user context. Defaults to "remote".
    *
    * @returns {string}
    *     The user context id of the new user context.
    */
-  createContext(prefix = "remote") {
-    // Prepare a unique name.
-    const name = `${prefix}-${lazy.generateUUID()}`;
+  createContext(options = {}) {
+    const { color, icon, name = null, prefix = "remote" } = options;
+
+    // Use provided name if valid or generate a unique name.
+    // Note that several containers can use the same name.
+    const isValidName = typeof name == "string" && name.trim();
+    const userContextName = isValidName
+      ? name
+      : `${prefix}-${lazy.generateUUID()}`;
 
     // Create the user context.
-    const identity = lazy.ContextualIdentityService.create(name);
+    const identity = lazy.ContextualIdentityService.create(
+      userContextName,
+      icon,
+      color
+    );
 
     // An id has been set already by the contextual-identity-created observer.
     return this.#userContextIds.get(identity.userContextId);
@@ -206,6 +226,27 @@ export class UserContextManagerClass {
    */
   getUserContextIds() {
     return Array.from(this.#userContextIds.values());
+  }
+
+  /**
+   * Retrieve the user context ids for containers matching the provided name.
+   *
+   * @param {string} name
+   *     The expected name for the container.
+   *
+   * @returns {Array<string>}
+   *     The array of user context ids with the expected name, can be empty.
+   */
+  getUserContextIdsByName(name) {
+    const userContextIds = [];
+    for (const [internalId, id] of this.#userContextIds) {
+      const identity =
+        lazy.ContextualIdentityService.getPublicIdentityFromId(internalId);
+      if (identity?.name === name) {
+        userContextIds.push(id);
+      }
+    }
+    return userContextIds;
   }
 
   /**

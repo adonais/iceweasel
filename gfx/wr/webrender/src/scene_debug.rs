@@ -246,7 +246,7 @@ impl<'a> TreeWalker<'a> {
                 self.picture_children(pic_index),
             ),
             PrimitiveKind::TextRun { data_handle } => {
-                let data = &data_stores.text_run[data_handle];
+                let data = &data_stores.text_run[data_handle].kind;
                 color = Some(data.font.color.into());
                 ("TextRun", format!("{} glyphs", data.glyphs.len()), None, Vec::new())
             }

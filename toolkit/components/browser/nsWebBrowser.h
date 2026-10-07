@@ -22,7 +22,6 @@
 #include "nsIWebProgress.h"
 #include "nsIWebBrowser.h"
 #include "nsIWebNavigation.h"
-#include "nsIWebBrowserPersist.h"
 #include "nsIWindowWatcher.h"
 #include "nsIPrintSettings.h"
 #include "nsIWidgetListener.h"
@@ -62,8 +61,6 @@ class nsWebBrowser final : public nsIWebBrowser,
                            public nsIDocShellTreeItem,
                            public nsIBaseWindow,
                            public nsIInterfaceRequestor,
-                           public nsIWebBrowserPersist,
-                           public nsIWebProgressListener,
                            public nsSupportsWeakReference {
   friend class nsDocShellTreeOwner;
 
@@ -76,9 +73,6 @@ class nsWebBrowser final : public nsIWebBrowser,
   NS_DECL_NSIINTERFACEREQUESTOR
   NS_DECL_NSIWEBBROWSER
   NS_DECL_NSIWEBNAVIGATION
-  NS_DECL_NSIWEBBROWSERPERSIST
-  NS_DECL_NSICANCELABLE
-  NS_DECL_NSIWEBPROGRESSLISTENER
 
   void SetAllowDNSPrefetch(bool aAllowPrefetch);
   // TODO: Convert FocusDeactivate() to MOZ_CAN_RUN_SCRIPT
@@ -109,22 +103,8 @@ class nsWebBrowser final : public nsIWebBrowser,
   RefPtr<nsDocShell> mDocShell;
   mozilla::OriginAttributes mOriginAttributes;
 
-  nsCOMPtr<nsIWindowWatcher> mWWatch;
   const uint32_t mContentType;
-  bool mShouldEnableHistory;
   bool mWillChangeProcess;
-  nsIWebProgressListener* mProgressListener;
-
-  nsCOMPtr<nsIPrintSettings> mPrintSettings;
-
-  // cached background color
-  nscolor mBackgroundColor;
-
-  // persistence object
-  nsCOMPtr<nsIWebBrowserPersist> mPersist;
-  uint32_t mPersistCurrentState;
-  nsresult mPersistResult;
-  uint32_t mPersistFlags;
 
   // Weak Reference interfaces...
   nsIWidget* mParentWidget;

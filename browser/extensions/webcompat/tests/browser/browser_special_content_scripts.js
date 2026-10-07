@@ -85,45 +85,7 @@ function outputContentScript(overrides) {
 }
 
 async function contentChecker(checkFor) {
-  const waitForCondition = async (
-    condition,
-    msg,
-    interval = 100,
-    maxTries = 50
-  ) => {
-    return new Promise((resolve, reject) => {
-      let tries = 0;
-
-      async function tryOnce() {
-        if (tries >= maxTries) {
-          condition = null;
-          reject(msg);
-          return;
-        }
-
-        let conditionPassed = false;
-        try {
-          conditionPassed = await condition();
-        } catch (e) {
-          msg += ` - threw exception: ${e}`;
-          condition = null;
-          reject(msg);
-          return;
-        }
-
-        if (conditionPassed) {
-          condition = null;
-          ok(true, msg);
-          resolve(conditionPassed);
-          return;
-        }
-        tries++;
-        content.setTimeout(tryOnce, interval);
-      }
-
-      content.setTimeout(tryOnce, 1);
-    });
-  };
+  /* globals ContentTaskUtils */
 
   const {
     meta_viewports,
@@ -136,13 +98,13 @@ async function contentChecker(checkFor) {
   } = checkFor;
 
   if (meta_viewports) {
-    await waitForCondition(
+    await ContentTaskUtils.waitForCondition(
       () =>
         content.document.head?.querySelector("meta[name]")?.content ==
         meta_viewports[0],
       "meta viewport on top frame is overridden as expected"
     );
-    await waitForCondition(
+    await ContentTaskUtils.waitForCondition(
       () =>
         content.frames[0].document.head?.querySelector("meta[name]")?.content ==
         meta_viewports[1],
@@ -151,39 +113,39 @@ async function contentChecker(checkFor) {
   }
 
   if (hidden_messages?.[0]) {
-    await waitForCondition(
+    await ContentTaskUtils.waitForCondition(
       () => !content.document.querySelector(hidden_messages[0]),
       "message to hide on top frame is hidden"
     );
   }
   if (hidden_messages?.[1]) {
-    await waitForCondition(
+    await ContentTaskUtils.waitForCondition(
       () => !content.frames[0].document.querySelector(hidden_messages[1]),
       "message to hide on sub-frame is hidden"
     );
   }
 
   if (shown_messages?.[0]) {
-    await waitForCondition(
+    await ContentTaskUtils.waitForCondition(
       () => content.frames[0].document.querySelector(shown_messages[0]),
       "message to only hide on top frame remains visible"
     );
   }
   if (shown_messages?.[1]) {
-    await waitForCondition(
+    await ContentTaskUtils.waitForCondition(
       () => content.frames[0].document.querySelector(shown_messages[1]),
       "message to only hide on sub-frame remains visible"
     );
   }
 
   if (useragents?.[0]) {
-    await waitForCondition(
+    await ContentTaskUtils.waitForCondition(
       () => content.navigator.wrappedJSObject.userAgent.includes(useragents[0]),
       "top frame gets expected UA change"
     );
   }
   if (useragents?.[1]) {
-    await waitForCondition(
+    await ContentTaskUtils.waitForCondition(
       () =>
         content.frames[0].wrappedJSObject.navigator.userAgent.includes(
           useragents[1]
@@ -193,13 +155,13 @@ async function contentChecker(checkFor) {
   }
 
   if (has_window_chrome?.[0]) {
-    await waitForCondition(
+    await ContentTaskUtils.waitForCondition(
       () => content.wrappedJSObject.chrome,
       "top frame gets window.chrome"
     );
   }
   if (has_window_chrome?.[1]) {
-    await waitForCondition(
+    await ContentTaskUtils.waitForCondition(
       () => content.frames[0].wrappedJSObject.chrome,
       "sub-frame gets window.chrome"
     );
@@ -218,7 +180,7 @@ async function contentChecker(checkFor) {
     };
 
     if (console_messages?.[0]) {
-      await waitForCondition(
+      await ContentTaskUtils.waitForCondition(
         () =>
           checkForConsoleMessage(
             content.windowGlobalChild.innerWindowId,
@@ -228,7 +190,7 @@ async function contentChecker(checkFor) {
       );
     }
     if (console_messages?.[1]) {
-      await waitForCondition(
+      await ContentTaskUtils.waitForCondition(
         () =>
           checkForConsoleMessage(
             content.frames[0].windowGlobalChild.innerWindowId,
@@ -265,14 +227,14 @@ async function contentChecker(checkFor) {
 
     if (alert_counts?.[0]) {
       const context = getContentScriptContext(content);
-      await waitForCondition(
+      await ContentTaskUtils.waitForCondition(
         () => checkAlerts(context, alert_counts[0]),
         "waiting for blocked/allowed alerts alerts on top frame"
       );
     }
     if (alert_counts?.[1]) {
       const context = getContentScriptContext(content.frames[0]);
-      await waitForCondition(
+      await ContentTaskUtils.waitForCondition(
         () => checkAlerts(context, alert_counts[1]),
         "waiting for blocked/allowed alerts alerts on sub-frame"
       );

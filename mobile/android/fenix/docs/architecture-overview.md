@@ -166,7 +166,7 @@ Calls: [Controllers](#controller), other Interactors
 
 ### Description
 
-This is the first object called whenever the user performs an action. Typically this will result in code in the [View](#view) that looks something like `some_button.onClickListener { interactor.onSomeButtonClicked() } `. It is the Interactors job to delegate this button click to whichever object should handle it.
+This is the first object called whenever the user performs an action. Typically this will result in code in the [View](#view) that looks something like `some_button.onClickListener { interactor.onSomeButtonClicked() }`. It is the Interactors job to delegate this button click to whichever object should handle it.
 
 Interactors may hold references to multiple other Interactors and Controllers, in which case they delegate specific methods to their appropriate handlers. This helps prevent bloated Controllers that both perform logic and delegate to other objects.
 

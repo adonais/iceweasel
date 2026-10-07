@@ -40,10 +40,18 @@ struct ValidateOptions {
   Features features;
 };
 
+enum class TableImportStatus {
+  TableIsImported,
+  TableIsNotImported,
+};
+
 class SharedValidator {
  public:
   WABT_DISALLOW_COPY_AND_ASSIGN(SharedValidator);
-  SharedValidator(Errors*, const ValidateOptions& options);
+  using FuncType = TypeChecker::FuncType;
+  SharedValidator(Errors*,
+                  std::string_view filename,
+                  const ValidateOptions& options);
 
   // TODO: Move into SharedValidator?
   using Label = TypeChecker::Label;
@@ -55,7 +63,7 @@ class SharedValidator {
     return typechecker_.GetCatchCount(depth, out_count);
   }
 
-  Result WABT_PRINTF_FORMAT(3, 4)
+  void WABT_PRINTF_FORMAT(3, 4)
       PrintError(const Location& loc, const char* fmt, ...);
 
   void OnTypecheckerError(const char* msg);
@@ -74,7 +82,7 @@ class SharedValidator {
   Result OnArrayType(const Location&, TypeMut field);
 
   Result OnFunction(const Location&, Var sig_var);
-  Result OnTable(const Location&, Type elem_type, const Limits&);
+  Result OnTable(const Location&, Type elem_type, const Limits&, TableImportStatus import_status, TableInitExprStatus init_provided);
   Result OnMemory(const Location&, const Limits&, uint32_t page_size);
   Result OnGlobalImport(const Location&, Type type, bool mutable_);
   Result OnGlobal(const Location&, Type type, bool mutable_);
@@ -132,15 +140,19 @@ class SharedValidator {
                       Address align,
                       Address offset);
   Result OnBinary(const Location&, Opcode);
+  Result OnTernary(const Location&, Opcode);
+  Result OnQuaternary(const Location&, Opcode);
   Result OnBlock(const Location&, Type sig_type);
   Result OnBr(const Location&, Var depth);
   Result OnBrIf(const Location&, Var depth);
+  Result OnBrOnNonNull(const Location&, Var depth);
+  Result OnBrOnNull(const Location&, Var depth);
   Result BeginBrTable(const Location&);
   Result OnBrTableTarget(const Location&, Var depth);
   Result EndBrTable(const Location&);
   Result OnCall(const Location&, Var func_var);
   Result OnCallIndirect(const Location&, Var sig_var, Var table_var);
-  Result OnCallRef(const Location&, Index* function_type_index);
+  Result OnCallRef(const Location&, Var function_type_var);
   Result OnCatch(const Location&, Var tag_var, bool is_catch_all);
   Result OnCompare(const Location&, Opcode);
   Result OnConst(const Location&, Type);
@@ -175,14 +187,17 @@ class SharedValidator {
   Result OnMemoryInit(const Location&, Var segment_var, Var memidx);
   Result OnMemorySize(const Location&, Var memidx);
   Result OnNop(const Location&);
+  Result OnRefAsNonNull(const Location&);
   Result OnRefFunc(const Location&, Var func_var);
   Result OnRefIsNull(const Location&);
-  Result OnRefNull(const Location&, Type type);
+  Result OnRefNull(const Location&, Var func_type_var);
   Result OnRethrow(const Location&, Var depth);
   Result OnReturnCall(const Location&, Var func_var);
   Result OnReturnCallIndirect(const Location&, Var sig_var, Var table_var);
+  Result OnReturnCallRef(const Location&, Var function_type_var);
   Result OnReturn(const Location&);
   Result OnSelect(const Location&, Index result_count, Type* result_types);
+  Result OnSelectCondition(const Location&);
   Result OnSimdLaneOp(const Location&, Opcode, uint64_t lane_idx);
   Result OnSimdLoadLane(const Location&,
                         Opcode,
@@ -209,25 +224,16 @@ class SharedValidator {
   Result OnTableInit(const Location&, Var segment_var, Var table_var);
   Result OnTableSet(const Location&, Var table_var);
   Result OnTableSize(const Location&, Var table_var);
-  Result OnTernary(const Location&, Opcode);
   Result OnThrow(const Location&, Var tag_var);
+  Result OnThrowRef(const Location&);
   Result OnTry(const Location&, Type sig_type);
+  Result BeginTryTable(const Location&, Type sig_type);
+  Result OnTryTableCatch(const Location&, const TableCatch&);
+  Result EndTryTable(const Location&, Type sig_type);
   Result OnUnary(const Location&, Opcode);
   Result OnUnreachable(const Location&);
 
  private:
-  struct FuncType {
-    FuncType() = default;
-    FuncType(const TypeVector& params,
-             const TypeVector& results,
-             Index type_index)
-        : params(params), results(results), type_index(type_index) {}
-
-    TypeVector params;
-    TypeVector results;
-    Index type_index;
-  };
-
   struct StructType {
     StructType() = default;
     StructType(const TypeMutVector& fields) : fields(fields) {}
@@ -284,12 +290,20 @@ class SharedValidator {
     Index end;
   };
 
+  struct LocalReferenceMap {
+    Type type;
+    // An index for a single bit value, which represents that
+    // the corresponding local reference has been set before.
+    size_t local_ref_is_set;
+  };
+
   bool ValidInitOpcode(Opcode opcode) const;
   Result CheckInstr(Opcode opcode, const Location& loc);
   Result CheckType(const Location&,
                    Type actual,
                    Type expected,
                    const char* desc);
+  Result CheckReferenceType(const Location&, Type type, const char* desc);
   Result CheckLimits(const Location&,
                      const Limits&,
                      uint64_t absolute_max,
@@ -330,8 +344,13 @@ class SharedValidator {
 
   TypeVector ToTypeVector(Index count, const Type* types);
 
+  Result SaveLocalRefs();
+  Result RestoreLocalRefs(Result result);
+  void IgnoreLocalRefs();
+
   ValidateOptions options_;
   Errors* errors_;
+  std::string_view filename_;
   TypeChecker typechecker_;  // TODO: Move into SharedValidator.
   // Cached for access by OnTypecheckerError.
   Location expr_loc_ = Location(kInvalidOffset);
@@ -355,6 +374,8 @@ class SharedValidator {
   // Includes parameters, since this is only used for validating
   // local.{get,set,tee} instructions.
   std::vector<LocalDecl> locals_;
+  std::map<Index, LocalReferenceMap> local_refs_map_;
+  std::vector<bool> local_ref_is_set_;
 
   std::set<std::string> export_names_;  // Used to check for duplicates.
   std::set<Index> declared_funcs_;      // TODO: optimize?

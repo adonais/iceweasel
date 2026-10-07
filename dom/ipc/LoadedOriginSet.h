@@ -26,7 +26,7 @@ namespace mozilla::dom {
  *
  * In addition to the primary originNoSuffix, loaded siteOrigins are also
  * tracked. If an originNoSuffix is only loaded as a siteOrigin, it will be
- * stored with mSiteOnly set.
+ * stored with a lower Level.
  */
 class LoadedOriginSet {
  public:
@@ -36,7 +36,9 @@ class LoadedOriginSet {
 
   enum class Level : uint8_t {
     Unloaded,
-    // The principal's site-origin has been (potentially tentatively) loaded.
+    // A null principal with this site-origin as its precursor is being loaded.
+    PrecursorOnly,
+    // The principal's site-origin is being loaded.
     SiteOnly,
     // The principal's origin is being loaded.
     // Auxiliary information (e.g. permissions) has not been sent/received yet.
@@ -66,11 +68,11 @@ class LoadedOriginSet {
 
   // Internal method to add a new principal to the loaded origin set.
   //
-  // Returns the previous level the entry was loaded at.
+  // Returns true if the principal's origin entry increased in Level.
   //
   // Should only be directly called by ContentParent::AboutToLoadOrigin and
   // ContentChild::RecvAddLoadedOrigin.
-  [[nodiscard]] Level AddInternal(nsIPrincipal* aPrincipal, bool aTentative);
+  [[nodiscard]] bool AddInternal(nsIPrincipal* aPrincipal, bool aTentative);
 
   bool ValidatePrincipal(
       nsIPrincipal* aPrincipal,

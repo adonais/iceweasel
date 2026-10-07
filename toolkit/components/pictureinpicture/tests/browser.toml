@@ -78,10 +78,14 @@ prefs = [
 
 ["browser_contextMenu.js"]
 
+["browser_controlButtonClickFocus.js"]
+
 ["browser_controlsHover.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && socketprocess_networking", # bug 1784652
 ]
+
+["browser_controlsTabOrder.js"]
 
 ["browser_cornerSnapping.js"]
 run-if = [
@@ -151,6 +155,8 @@ support-files = ["test-page-with-nan-video-duration.html"]
 ["browser_playbackRate.js"]
 
 ["browser_playerControls.js"]
+
+["browser_playerFullscreenFocus.js"]
 
 ["browser_preserveTabPipIconOverlay.js"]
 

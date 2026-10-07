@@ -19,6 +19,7 @@
 #include "mozilla/dom/AnimationEffectBinding.h"  // for PlaybackDirection
 #include "mozilla/gfx/gfxVarReceiver.h"
 #include "mozilla/gfx/gfxVars.h"  // for UseWebRender
+#include "nsContentUtils.h"
 #include "nsIWidget.h"
 #include "nsLayoutUtils.h"
 #include "nsString.h"
@@ -58,6 +59,17 @@ void nsCSSProps::RecomputeEnabledState(const char* aPref, void*) {
     }
   }
   MOZ_ASSERT(foundPref);
+}
+
+bool nsCSSProps::IsPropertyExposedToJS(NonCustomCSSPropertyId aId,
+                                       JSContext* aCx, JSObject*) {
+  if (aId == eCSSProperty__moz_appearance &&
+      !StaticPrefs::layout_css_moz_appearance_webidl_enabled()) {
+    return false;
+  }
+  return IsEnabled(aId, nsContentUtils::IsSystemCaller(aCx)
+                            ? EnabledState::InChrome
+                            : EnabledState::ForAllContent);
 }
 
 void nsCSSProps::Init() {

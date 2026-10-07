@@ -213,7 +213,6 @@ class JarMaker:
         self.localedirs = None
         self.l10nbase = None
         self.relativesrcdir = None
-        self.rootManifestAppId = None
         self._seen_output = set()
 
     def getCommandLineParser(self):
@@ -265,11 +264,6 @@ class JarMaker:
             help="relativesrcdir to be used for localization",
         )
         p.add_option("-d", type="string", help="base directory")
-        p.add_option(
-            "--root-manifest-entry-appid",
-            type="string",
-            help="add an app id specific root chrome manifest entry.",
-        )
         return p
 
     def finalizeJar(
@@ -299,32 +293,6 @@ class JarMaker:
             chromebase = os.path.dirname(jarname) + "/"
             self.updateManifest(
                 chromeManifest, chromebasepath.format(chromebase), register
-            )
-
-        # If requested, add a root chrome manifest entry (assumed to be in the parent directory
-        # of chromeManifest) with the application specific id. In cases where we're building
-        # lang packs, the root manifest must know about application sub directories.
-
-        if self.rootManifestAppId:
-            rootChromeManifest = os.path.join(
-                os.path.normpath(os.path.dirname(chromeManifest)),
-                "..",
-                "chrome.manifest",
-            )
-            rootChromeManifest = os.path.normpath(rootChromeManifest)
-            chromeDir = os.path.basename(
-                os.path.dirname(os.path.normpath(chromeManifest))
-            )
-            logging.info(
-                "adding '%s' entry to root chrome manifest appid=%s"
-                % (chromeDir, self.rootManifestAppId)
-            )
-            addEntriesToListFile(
-                rootChromeManifest,
-                [
-                    "manifest %s/chrome.manifest application=%s"
-                    % (chromeDir, self.rootManifestAppId)
-                ],
             )
 
     def updateManifest(self, manifestPath, chromebasepath, register):
@@ -618,8 +586,6 @@ def main(args=None):
         jm.l10nbase = options.l10n_base
         jm.relativesrcdir = options.relativesrcdir
     jm.localedirs = options.l10n_src
-    if options.root_manifest_entry_appid:
-        jm.rootManifestAppId = options.root_manifest_entry_appid
     noise = logging.INFO
     if options.verbose is not None:
         noise = options.verbose and logging.DEBUG or logging.WARN

@@ -9,6 +9,29 @@ smartwindow-monitor-button =
     .label = Monitors
     .tooltiptext = Monitors
 
+# Title of the panel opened by the toolbar button above
+smartwindow-monitor-panel-title = Tasks
+
+# Label above tasks that newly met their condition since the panel was last opened
+smartwindow-monitor-panel-new-matches = New matches
+# Label above the list of tasks the user has running
+smartwindow-monitor-panel-watching = Recent
+smartwindow-monitor-panel-empty-title = Nothing watched yet.
+smartwindow-monitor-panel-empty-description = { -brand-short-name } can keep an eye on a page and tell you the moment it changes. It only checks while { -brand-short-name } is open. Create new task below to get started.
+# Shown when the task's condition was met on its last check
+smartwindow-monitor-panel-result-match = Match
+smartwindow-monitor-panel-result-no-match = No match
+# Shown when the most recent check failed, so there is no match to report.
+smartwindow-monitor-panel-result-could-not-check = Couldn’t check
+smartwindow-monitor-panel-create = Create new task
+# Panel title while the user is filling in the create form
+smartwindow-monitor-panel-create-title = Create new task
+# Variables:
+#   $used (number) - How many tasks the user has
+#   $max (number) - The maximum number of tasks allowed
+smartwindow-monitor-panel-count = { $used } of { $max }
+smartwindow-monitor-panel-manage = Manage and view all tasks
+
 ## AI Tasks
 
 # Desktop notification shown when a AI Tasks fires. A "monitor" is
@@ -19,6 +42,34 @@ ai-tasks-monitor-notification-title = { -smart-window-brand-name } monitor agent
 ai-tasks-monitor-notification-body = Found what you’re watching for.
 ai-tasks-monitor-notification-snooze = Snooze
 ai-tasks-monitor-notification-dismiss = Dismiss
+
+# Desktop notification shown right after the user creates a monitor, so they
+# know a match will be announced the same way. The notification title is the
+# monitor's name.
+# Variables:
+#   $site (String) - Hostname of the first page the monitor watches, e.g. "example.com"
+#   $extraCount (Number) - How many more pages the monitor watches besides $site
+ai-tasks-monitor-created-notification-body =
+    { $extraCount ->
+        [0] Now watching { $site }. You’ll get a notification like this one when there’s a match.
+        [one] Now watching { $site } and { $extraCount } other page. You’ll get a notification like this one when there’s a match.
+       *[other] Now watching { $site } and { $extraCount } other pages. You’ll get a notification like this one when there’s a match.
+    }
+
+# Desktop notification shown when a monitor pauses itself, either because it
+# went a long time without its condition being met or because it reached its
+# maximum lifetime. The notification title is the monitor's name.
+# Variables:
+#   $days (Number) - Number of days the monitor ran without a match
+ai-tasks-monitor-expired-notification-body-no-match = This task was automatically paused after { $days } days without a match. You can resume it anytime.
+# Variables:
+#   $days (Number) - Number of days the monitor has been running
+ai-tasks-monitor-expired-notification-body-max-age = This task was automatically paused after { $days } days. You can resume it anytime.
+ai-tasks-monitor-expired-notification-resume = Resume
+# Desktop notification shown when a task's check could not run at all, for
+# example because the page could not be loaded. The task's name is the
+# notification title, so the body does not repeat it.
+ai-tasks-monitor-error-notification-body = This task couldn’t run. Please check.
 
 # Smart Window Alerts
 # This file contains localized strings for the Smart Window alerts feature,
@@ -81,6 +132,10 @@ ai-tasks-alert-check-now-button = Check now
 
 ai-tasks-alert-modal-title = Create task
 
+# Note shown at the bottom of the create form indicating required fields
+# The asterisk (*) marks form fields that must be filled in.
+ai-tasks-alert-required-note = * Required
+
 ## Page Content - Strings displayed on the alerts page
 
 ai-tasks-page-title = Tasks
@@ -105,15 +160,24 @@ ai-tasks-alert-watching-pages = { $count ->
 
 ## Error Messages - Validation and error messages for alert creation
 
-ai-tasks-alert-error-http-only = Only HTTP and HTTPS URLs are allowed
-ai-tasks-alert-error-invalid-url = Please enter a valid URL
-ai-tasks-alert-error-duplicate-url = This URL has already been added
+# Shown under the task name field when it is left empty on submit
+ai-tasks-alert-error-name-required = Enter a name for this task.
+# Shown under the "Notify me when" field when it is left empty on submit
+ai-tasks-alert-error-condition-required = Enter what you want to watch for.
+# Shown under the page field for input that isn't a web address. A missing
+# scheme is filled in with https automatically
+ai-tasks-alert-error-invalid-url = Enter a valid URL.
+ai-tasks-alert-error-duplicate-url = This URL has already been added.
+# Shown under the page field when submitting with no pages added
+ai-tasks-alert-error-no-pages = Add at least one page to watch.
 # Variables:
-#   $maxUrls (number) - Maximum number of URLs allowed per alert
+#   $maxUrls (number) - Maximum number of pages allowed per task
 ai-tasks-alert-error-max-urls = { $maxUrls ->
-    [one] Maximum of { $maxUrls } URL allowed
-   *[other] Maximum of { $maxUrls } URLs allowed
-  }
+ *[other] You can watch up to { $maxUrls } pages. Delete one to add another.
+}
+# Shown when creating or resuming a task is refused because the limit of
+# active tasks has been reached. Paused tasks don’t count toward the limit.
+ai-tasks-alert-error-active-limit = You’ve reached the limit of active tasks. Pause or delete one to add or resume another.
 
 ## Accessibility - ARIA labels and accessibility text
 
@@ -191,6 +255,9 @@ smartwindow-agent-monitor-watching = I’ll check { $monitorName } { $schedule }
 #   $monitorName (string) - The name of the page or target that was being watched
 smartwindow-agent-monitor-deleted = I’ve stopped watching { $monitorName } and removed this task.
 
+# Shown in place of the card when the user cancels creating a task from the chat.
+smartwindow-agent-monitor-canceled = Canceled. Is there anything else I can assist you with?
+
 # Check watch schedule, added { $schedule } in the chat message.
 # Variables:
 #   $time (date) - The scheduled check time
@@ -203,7 +270,6 @@ smartwindow-agent-monitor-schedule-weekly = weekly on { DATETIME($time, weekday:
 # Status chip and change-history rows shown on a monitor card in chat.
 smartwindow-agent-monitor-status-watching = Watching
 smartwindow-agent-monitor-status-paused = Paused
-smartwindow-agent-monitor-history-check-failed = Check failed. Check again later.
 smartwindow-agent-monitor-history-no-match = Checked, didn’t meet your task. Check again later.
 
 ## Alert deletion confirmation
@@ -216,15 +282,47 @@ ai-tasks-alert-delete-confirm-button = Delete
 
 ## Used in the header to show the last check result
 
-ai-tasks-alert-last-result-met = Last result: Match
-ai-tasks-alert-last-result-not-met = Last result: No match
+ai-tasks-alert-last-result-met = Match
+ai-tasks-alert-last-result-not-met = No match
+
+# Shown when the most recent check failed, so there is no match to report.
+ai-tasks-alert-last-result-could-not-check = Couldn’t check
 
 ## Used in the history table as a simple status badge
 
 ai-tasks-alert-condition-met = Match
 ai-tasks-alert-condition-not-met = No match
+# Shown in place of Match / No match when the check itself failed to run.
+ai-tasks-alert-condition-could-not-check = Couldn’t check
+
+## Notes shown beside a Couldn’t check badge, explaining why a check failed.
+## One per failure the run can produce.
+
+ai-tasks-alert-history-error-network = { -smart-window-brand-name } couldn’t connect to this page, so nothing was compared. This task will try again at its next scheduled time.
+
+ai-tasks-alert-history-error-timeout = The page took too long to respond. This task will try again at its next scheduled time.
+
+ai-tasks-alert-history-error-rate-limit = { -smart-window-brand-name } has reached its check limit for today. This task will try again at its next scheduled time.
+
+ai-tasks-alert-history-error-auth = This page asked us to sign in, so there was nothing to compare. Open the page, sign in, and the next check should work.
+
+ai-tasks-alert-history-error-content-extraction = This page couldn’t be read — it may have moved or been deleted. Check the address saved on this task.
+
+ai-tasks-alert-history-error-canceled = You stopped this check before it finished, so nothing was compared.
+
+ai-tasks-alert-history-error-interrupted = { -brand-short-name } closed while this check was running, so nothing was compared. This task will try again at its next scheduled time.
+
+ai-tasks-alert-history-error-model = { -smart-window-brand-name } couldn’t reach the service that reads pages. Nothing was compared. This task will try again at its next scheduled time.
+
+ai-tasks-alert-history-error-prompt-load = { -smart-window-brand-name } couldn’t load the instructions for this check, so nothing was compared. This task will try again at its next scheduled time.
+
+ai-tasks-alert-history-error-unknown = Something went wrong on our side and this check didn’t run. Nothing was compared.
 
 ## AI Tab - A page generated from the content of the user's tabs
+
+# The feature name. It stays here rather than in brandings.ftl until the AI Tab
+# strings are exposed to localization.
+-ai-tab-brand-name = AI Tab
 
 # Title given to a generated page when the model returns no title of its own and
 # the user did not say what the page should focus on.
@@ -236,6 +334,31 @@ ai-tab-page-unavailable = This page isn’t available anymore.
 
 # Shown in place of a generated page when it could not be loaded.
 ai-tab-page-error = Something went wrong loading this page.
+
+# Page context menu entry that builds a generated page from the current page.
+main-context-menu-create-aitab =
+    .label = Create { -ai-tab-brand-name }
+    .accesskey = A
+
+# Tab context menu entry that builds a generated page from the tabs the menu
+# was opened on.
+tab-context-create-aitab =
+    .label = Create { -ai-tab-brand-name }
+
+# Tab group menu entry that builds a generated page from the group's tabs.
+tab-group-editor-action-create-aitab =
+    .label = Create { -ai-tab-brand-name }
+
+# Chat message that starts the conversation created by a "Create AI Tab" menu
+# entry, written in the user's voice. The URLs of the chosen tabs are appended
+# on the lines below it.
+# Variables:
+#   $tabCount (Number) - How many tabs the page is built from.
+ai-tab-create-page-prompt =
+    { $tabCount ->
+        [one] Create an { -ai-tab-brand-name } from this tab:
+       *[other] Create an { -ai-tab-brand-name } from these tabs:
+    }
 
 ## Smartbar command palette
 ## Slash commands shown in the smartbar when the user types "/".
@@ -328,3 +451,75 @@ ai-smart-form-fill-error-description = Something went wrong. To try again, selec
 
 ai-smart-form-fill-try-again =
     .label = Try again
+
+## AI Tab generated pages
+
+# Shown above the title of a generated page that was created today.
+aitab-created-today = Created today
+
+# Shown above the title of a generated page created on an earlier date.
+# Variables:
+#   $date (number) - Timestamp of when the page was generated.
+aitab-created-on = Created { DATETIME($date, month: "short", day: "numeric") }
+
+# Button that re-fetches the sources a generated page was built from.
+aitab-page-refresh-sources =
+    .label = Refresh sources
+
+# Replaces the refresh label while the sources are being re-fetched.
+aitab-page-refreshing-sources =
+    .label = Refreshing sources
+
+# Icon-only button that deletes the generated page.
+aitab-page-delete =
+    .aria-label = Delete page
+    .title = Delete page
+
+aitab-page-delete-dialog-title = Delete this { -ai-tab-brand-name }?
+aitab-page-delete-dialog-message = This generated page will be removed. The sources it was built from aren’t affected.
+
+aitab-page-delete-dialog-cancel =
+    .label = Cancel
+
+aitab-page-delete-dialog-confirm =
+    .label = Delete
+
+## "Pick up where you left off" cards for resuming browsing or chat journeys.
+## A "journey" is a past browsing or chat session the user was in the middle
+## of - for example, a set of tabs open toward some task, or an ongoing
+## conversation - that the user can pick back up from where they left off.
+
+# Variables:
+#   $count (Number) - Number of tabs in the journey
+aiwindow-resume-card-tab-count =
+    { $count ->
+        [one] { $count } tab
+       *[other] { $count } tabs
+    }
+# Variables:
+#   $text (String) - The journey title
+aiwindow-resume-card-more = More
+    .aria-label = More options for { $text }
+aiwindow-resume-card-open-tabs = Open tabs
+aiwindow-resume-card-snooze = Snooze for now
+# Variables:
+#   $text (String) - The journey title
+aiwindow-resume-card-resume = Resume
+    .aria-label = Resume { $text }
+# Variables:
+#   $text (String) - The journey title being dismissed
+aiwindow-resume-card-dismiss =
+    .title = Dismiss { $text }
+    .aria-label = Dismiss { $text }
+
+## Resume section
+## Toggles between showing a couple of "Pick up where you left off" resume
+## cards and showing all of them.
+
+aiwindow-resume-section-heading = Jump back in
+# Variables:
+#   $count (Number) - Total number of resume cards in the section
+aiwindow-resume-section-show-more = Show more ({ $count })
+# Variables:
+#   $count (Number) - Total number of resume cards in the section
+aiwindow-resume-section-show-less = Show less ({ $count })

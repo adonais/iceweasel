@@ -23,8 +23,8 @@
 #include "VideoOutput.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/Performance.h"
+#include "mozilla/dom/PermissionsPolicyUtils.h"
 #include "mozilla/dom/PictureInPictureEvent.h"
 #include "mozilla/dom/PictureInPictureEventBinding.h"
 #include "mozilla/dom/PictureInPictureService.h"
@@ -1034,8 +1034,8 @@ already_AddRefed<Promise> HTMLVideoElement::RequestPictureInPicture(
   // 2. If this’s node document is not allowed to use the policy-controlled
   // feature named "picture-in-picture", reject p with a SecurityError
   // exception and return p.
-  if (!FeaturePolicyUtils::IsFeatureAllowed(OwnerDoc(),
-                                            u"picture-in-picture"_ns)) {
+  if (!PermissionsPolicyUtils::IsFeatureAllowed(OwnerDoc(),
+                                                u"picture-in-picture"_ns)) {
     p->MaybeRejectWithSecurityError(
         "Permissions policy: picture-in-picture not allowed");
     return p.forget();

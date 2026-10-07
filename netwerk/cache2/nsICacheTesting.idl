@@ -40,14 +40,20 @@ interface nsICacheTesting : nsISupports
   /**
    * Corrupt the hash of a stored dictionary for testing hash mismatch handling.
    * @param aURI The URI of the dictionary to corrupt
+   * @param aOriginAttributes The OriginAttributes of the partition the
+   *   dictionary was stored under (e.g. {} for the default partition).
    */
-  void corruptDictionaryHash(in ACString aURI);
+  [implicit_jscontext]
+  void corruptDictionaryHash(in ACString aURI, in jsval aOriginAttributes);
 
   /**
    * Clear the loaded dictionary data for a specific entry while keeping the
    * entry metadata (including hash). This forces the data to be reloaded from
    * disk on next prefetch.
    * @param aURI The URI of the dictionary
+   * @param aOriginAttributes See corruptDictionaryHash.
    */
-  void clearDictionaryDataForTesting(in ACString aURI);
+  [implicit_jscontext]
+  void clearDictionaryDataForTesting(in ACString aURI,
+                                     in jsval aOriginAttributes);
 };

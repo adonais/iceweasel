@@ -66,9 +66,9 @@ const TICKER_STATUS_L10N_ID = {
   flat: "newtab-stocks-ticker-status-flat",
 };
 
-// A single read-only ticker card. The visible rows are hidden from screen
-// readers; the spoken label comes from the localized `.stock-ticker-sr` span
-// instead (one of the newtab-stocks-ticker-status-* messages, by direction).
+// Quote rows hide their visible text from screen readers and speak the
+// localized `.stock-ticker-sr` summary instead; a search match has no quote,
+// so its visible text is the accessible text.
 function StockTicker({
   loading,
   size = "medium",
@@ -76,12 +76,19 @@ function StockTicker({
   ticker,
   price,
   changePercent,
+  exchange,
   watchlistState,
   onWatchlistToggle,
   disabled,
   variant,
 }) {
   const direction = getDirection(changePercent);
+  const isMatch = variant === "search";
+  // The tooltip goes on the two aria-hidden spans, not the li: there Firefox
+  // would expose it as the row's description and screen readers would read
+  // the stock name a second time after the row summary.
+  const tooltip =
+    !loading && !isMatch && size !== "small" ? stockName : undefined;
   const locale =
     typeof navigator !== "undefined" ? navigator.language : undefined;
   const displayPrice = formatPrice(price, locale);
@@ -131,11 +138,11 @@ function StockTicker({
   return (
     <li
       className={`stock-ticker stock-ticker--${size}${
-        variant === "search" ? " stock-ticker--result" : ""
-      }`}
+        isMatch ? " stock-ticker--result" : ""
+      }${loading ? " stock-ticker--loading" : ""}`}
       aria-hidden={loading ? "true" : undefined}
     >
-      {!loading && (
+      {!loading && !isMatch && (
         <span
           className="stock-ticker-sr"
           data-l10n-id={TICKER_STATUS_L10N_ID[direction]}
@@ -146,12 +153,19 @@ function StockTicker({
           })}
         />
       )}
+      {!isMatch && (
+        <span
+          className={`stock-indicator stock-indicator--${direction}`}
+          style={indicatorStyle}
+          aria-hidden="true"
+          title={tooltip}
+        />
+      )}
       <span
-        className={`stock-indicator stock-indicator--${direction}`}
-        style={indicatorStyle}
-        aria-hidden="true"
-      />
-      <span className="stock-ticker-label" aria-hidden="true">
+        className="stock-ticker-label"
+        aria-hidden={isMatch ? undefined : "true"}
+        title={tooltip}
+      >
         {size === "large" && (
           <>
             <span className="stock-ticker-line">
@@ -159,11 +173,18 @@ function StockTicker({
               <span className="stock-ticker-dot" />
               <span className="stock-ticker-symbol">{ticker}</span>
             </span>
-            <span className="stock-ticker-line">
-              {changeText}
-              <span className="stock-ticker-dot" />
-              <span className="stock-ticker-price">{displayPrice}</span>
-            </span>
+            {isMatch && exchange && (
+              <span className="stock-ticker-line">
+                <span className="stock-ticker-exchange">{exchange}</span>
+              </span>
+            )}
+            {!isMatch && (
+              <span className="stock-ticker-line">
+                {changeText}
+                <span className="stock-ticker-dot" />
+                <span className="stock-ticker-price">{displayPrice}</span>
+              </span>
+            )}
           </>
         )}
         {size === "medium" && (

@@ -66,6 +66,9 @@ export const BLOCKED_ACTION_ONLY_ACTIONS = new Set([
   "IPPROTECTION_ENROLL",
   "CREATE_NEW_SELECTABLE_PROFILE",
 
+  // Offers to erase the user's profile data and restart the browser.
+  "RESET_PROFILE",
+
   // Sends data off the device, or fabricates a record that the user consented
   // to something.
   "SUMMARIZE_PAGE",

@@ -33,6 +33,7 @@
 #include "gc/AllocKind.h"
 #include "gc/Barrier.h"
 #include "gc/GCEnum.h"
+#include "jit/InlinableNatives.h"
 #include "js/CallArgs.h"
 #include "js/CallNonGenericMethod.h"
 #include "js/Class.h"
@@ -525,7 +526,7 @@ static ZonedDateTimeObject* CreateTemporalZonedDateTime(
   // Step 4.
   auto epochNs = ToEpochNanoseconds(epochNanoseconds);
   object->initFixedSlotTyped(ZonedDateTimeObject::SECONDS_SLOT,
-                             NumberValue(epochNs.seconds));
+                             DoubleValue(epochNs.seconds));
   object->initFixedSlotTyped(ZonedDateTimeObject::NANOSECONDS_SLOT,
                              Int32Value(epochNs.nanoseconds));
 
@@ -559,7 +560,7 @@ ZonedDateTimeObject* js::temporal::CreateTemporalZonedDateTime(
 
   // Step 4.
   object->initFixedSlotTyped(ZonedDateTimeObject::SECONDS_SLOT,
-                             NumberValue(epochNanoseconds.seconds));
+                             DoubleValue(epochNanoseconds.seconds));
   object->initFixedSlotTyped(ZonedDateTimeObject::NANOSECONDS_SLOT,
                              Int32Value(epochNanoseconds.nanoseconds));
 
@@ -3149,7 +3150,8 @@ static const JSPropertySpec ZonedDateTime_prototype_properties[] = {
     JS_PSG("millisecond", ZonedDateTime_millisecond, 0),
     JS_PSG("microsecond", ZonedDateTime_microsecond, 0),
     JS_PSG("nanosecond", ZonedDateTime_nanosecond, 0),
-    JS_PSG("epochMilliseconds", ZonedDateTime_epochMilliseconds, 0),
+    JS_INLINABLE_PSG("epochMilliseconds", ZonedDateTime_epochMilliseconds, 0,
+                     ZonedDateTimeEpochMilliseconds),
     JS_PSG("epochNanoseconds", ZonedDateTime_epochNanoseconds, 0),
     JS_PSG("dayOfWeek", ZonedDateTime_dayOfWeek, 0),
     JS_PSG("dayOfYear", ZonedDateTime_dayOfYear, 0),

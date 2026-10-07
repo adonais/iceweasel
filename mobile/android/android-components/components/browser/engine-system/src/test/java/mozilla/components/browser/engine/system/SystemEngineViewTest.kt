@@ -37,7 +37,6 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.engine.system.matcher.UrlMatcher
-import mozilla.components.browser.errorpages.ErrorType
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicy
 import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicy.TrackingCategory
@@ -47,6 +46,7 @@ import mozilla.components.concept.engine.content.blocking.Tracker
 import mozilla.components.concept.engine.history.HistoryTrackingDelegate
 import mozilla.components.concept.engine.permission.PermissionRequest
 import mozilla.components.concept.engine.prompt.PromptRequest
+import mozilla.components.concept.engine.request.ErrorType
 import mozilla.components.concept.engine.request.RequestInterceptor
 import mozilla.components.concept.engine.window.WindowRequest
 import mozilla.components.concept.fetch.Response

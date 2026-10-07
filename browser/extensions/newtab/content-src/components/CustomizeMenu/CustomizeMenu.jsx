@@ -21,20 +21,18 @@ const THEME_PICKER_ELEMENTS = [
   "chrome://global/content/elements/moz-segmented-control.mjs",
   "chrome://global/content/elements/theme-picker.mjs",
 ];
+
 const THEME_PICKER_FTL = "toolkit/global/theme-picker.ftl";
 let themePickerElementsLoaded = false;
 
 /**
- * @backward-compat { version 155 }
- * The `theme-picker` element, its `moz-visual-picker` / `moz-segmented-control`
- * dependencies, and its `theme-picker.ftl` only exist in Firefox 155+. Load them lazily
- * and only on a supported host (callers gate on `browserNovaEnabled`, which encodes the
- * 155+ check) so their `chrome://` URLs / l10n resources are never referenced when
- * newtab train-hops onto an older host — there a missing chrome URL is a fatal
- * `CheckForBrokenChromeURL` process crash, not a catchable load error. The element's own
- * `insertFTLIfNeeded` does not run in the newtab content context (no `MozXULElement`), so
- * the ftl is registered here instead of via a static `<link>`. Remove once 155 reaches
- * Release.
+ * Pulls in the THEME_PICKER_ELEMENTS dependencies the first time the customize
+ * panel is opened with the theme picker enabled.
+ *
+ * The element's own `insertFTLIfNeeded` does not run in the newtab content
+ * context (no `MozXULElement`), so its ftl is registered here. Rejections are
+ * swallowed so a load failure leaves the panel without a theme picker rather
+ * than raising an unhandled rejection.
  */
 function loadThemePickerElements() {
   if (themePickerElementsLoaded) {
@@ -247,9 +245,14 @@ export class _CustomizeMenu extends React.PureComponent {
                 mayHaveWidgets={this.props.mayHaveWidgets}
                 mayHaveWeatherForecast={this.props.mayHaveWeatherForecast}
                 weatherDisplay={this.props.weatherDisplay}
+                // @nova-cleanup(remove-conditional): Delete the eight
+                // mayHave*Widget props forwarded below once the classic widget
+                // toggle block in ContentSection.jsx is deleted. Keep
+                // enabledWidgets: its widgetsMaximized and widgetsMayBeMaximized
+                // members are read by the widget size telemetry in
+                // ContentSection.jsx.
                 mayHaveTimerWidget={this.props.mayHaveTimerWidget}
                 mayHaveListsWidget={this.props.mayHaveListsWidget}
-                mayHaveSportsWidget={this.props.mayHaveSportsWidget}
                 mayHaveClocksWidget={this.props.mayHaveClocksWidget}
                 mayHavePrivacyWidget={this.props.mayHavePrivacyWidget}
                 mayHaveCrosswordWidget={this.props.mayHaveCrosswordWidget}

@@ -513,5 +513,17 @@ ScopedBindPBO::~ScopedBindPBO() {
   mGL->fBindBuffer(mTarget, mPBO);
 }
 
+// ScopedBindProgram
+
+ScopedBindProgram::ScopedBindProgram(GLContext* aGL)
+    : mGL(aGL), mOld(mGL->GetIntAs<GLuint>(LOCAL_GL_CURRENT_PROGRAM)) {}
+
+ScopedBindProgram::ScopedBindProgram(GLContext* aGL, GLuint aNewProg)
+    : ScopedBindProgram(aGL) {
+  mGL->fUseProgram(aNewProg);
+}
+
+ScopedBindProgram::~ScopedBindProgram() { mGL->fUseProgram(mOld); }
+
 } /* namespace gl */
 } /* namespace mozilla */

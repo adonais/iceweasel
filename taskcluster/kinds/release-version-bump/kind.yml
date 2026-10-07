@@ -13,7 +13,7 @@ transforms:
 kind-dependencies:
     - release-beetmover-push-to-release
     - post-beetmover-components-dummy
-    - push-bundle
+    - push-android
 
 task-defaults:
     run-on-repo-type: [hg]

@@ -15,6 +15,7 @@ const kPrivilegedAboutPrefs = new Set([
   "browser.aboutpdf.promo.dismissed",
   "browser.contentblocking.report.hide_vpn_banner",
   "browser.contentblocking.report.show_mobile_app",
+  "browser.privatebrowsing.introAnimationShown",
 ]);
 
 /**

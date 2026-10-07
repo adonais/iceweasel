@@ -95,7 +95,11 @@
 }
 
 .main a {
-  color: var(--fxview-primary-action-background);
+  color: var(--link-color);
+
+  &:hover {
+    color: var(--link-color-hover);
+  }
 }
 
 img.greyscale {

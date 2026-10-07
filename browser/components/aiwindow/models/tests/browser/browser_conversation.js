@@ -12,6 +12,9 @@ const { buildConversation, loadPrompt } = ChromeUtils.importESModule(
 const { MODEL_FEATURES, renderPrompt } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
 );
+const { ConversationStore } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/ConversationStore.sys.mjs"
+);
 
 add_task(function test_default_conversation_is_usable() {
   const conversation = new Conversation();
@@ -123,5 +126,41 @@ add_task(async function test_load_monitor_prompts_from_v2_remote_settings() {
   const renderedUserData = renderPrompt(userData.prompt, userValues);
   for (const value of Object.values(userValues)) {
     Assert.ok(renderedUserData.includes(value), `User data accepts ${value}`);
+  }
+});
+
+add_task(async function test_save_persists_committed_security_flags() {
+  // Built the same way a tool call builds its conversation.
+  const conversation = await buildConversation(MODEL_FEATURES.AITAB);
+  conversation.addSeenUrls(["https://parent.example/seen"]);
+  conversation.securityProperties.setPrivateData();
+  conversation.securityProperties.setUntrustedInput();
+  conversation.securityProperties.commit();
+
+  try {
+    await conversation.save();
+
+    // Read the row back: an uncommitted flag looks true in memory and
+    // false on disk, so only a round trip tells them apart.
+    const stored = await ConversationStore.findConversationById(
+      conversation.id
+    );
+    Assert.ok(stored, "the conversation is persisted");
+    Assert.equal(stored.feature, "aitab", "its feature is stored");
+    Assert.ok(
+      stored.securityProperties.privateData,
+      "privateData reaches the database as true"
+    );
+    Assert.ok(
+      stored.securityProperties.untrustedInput,
+      "untrustedInput reaches the database as true"
+    );
+    Assert.deepEqual(
+      Array.from(stored.seenUrls),
+      ["https://parent.example/seen"],
+      "seen URLs are stored exactly as they were set"
+    );
+  } finally {
+    await ConversationStore.deleteConversationById(conversation.id);
   }
 });

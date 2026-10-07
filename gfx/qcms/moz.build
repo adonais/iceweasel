@@ -6,3 +6,20 @@ EXPORTS += [
     'qcms.h',
     'qcmstypes.h',
 ]
+
+LICENSES += ["qcms"]
+LICENSES["qcms"].title = "qcms License"
+LICENSES["qcms"].text = "LICENSE-NOTICE.txt"
+LICENSES["qcms"].spdx = "MIT"
+LICENSES["qcms"].notice = """
+<p>This license applies to certain files in the directory <code>gfx/qcms/</code>.</p>
+"""
+
+LICENSED_UNDER += [
+    "qcms",
+]
+
+LICENSED_UNDER += ["sunsoft"]
+LICENSED_UNDER["sunsoft"].paths = [
+    "qcms.h",
+]

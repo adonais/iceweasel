@@ -70,8 +70,6 @@ struct JSPropertySpec {
     };
 
    private:
-    ValueWrapper() = delete;
-
     explicit constexpr ValueWrapper(int32_t n) : type(Type::Int32), int32(n) {}
 
     explicit constexpr ValueWrapper(const char* s)
@@ -82,6 +80,7 @@ struct JSPropertySpec {
 
    public:
     ValueWrapper(const ValueWrapper& other) = default;
+    ValueWrapper() = delete;
 
     static constexpr ValueWrapper int32Value(int32_t n) {
       return ValueWrapper(n);
@@ -101,14 +100,13 @@ struct JSPropertySpec {
     SelfHostedWrapper selfHosted;
 
    private:
-    Accessor() = delete;
-
     constexpr Accessor(JSNative op, const JSJitInfo* info) : native(op, info) {}
 
     explicit constexpr Accessor(const char* funname) : selfHosted(funname) {}
 
    public:
     Accessor(const Accessor& other) = default;
+    Accessor() = delete;
 
     static constexpr Accessor nativeAccessor(JSNative op,
                                              const JSJitInfo* info = nullptr) {
@@ -135,8 +133,6 @@ struct JSPropertySpec {
     ValueWrapper value;
 
    private:
-    AccessorsOrValue() = delete;
-
     constexpr AccessorsOrValue(Accessor getter, Accessor setter)
         : accessors(getter, setter) {}
 
@@ -144,6 +140,7 @@ struct JSPropertySpec {
 
    public:
     AccessorsOrValue(const AccessorsOrValue& other) = default;
+    AccessorsOrValue() = delete;
 
     static constexpr AccessorsOrValue fromAccessors(Accessor getter,
                                                     Accessor setter) {
@@ -196,9 +193,6 @@ struct JSPropertySpec {
  public:
   AccessorsOrValue u;
 
- private:
-  JSPropertySpec() = delete;
-
   constexpr JSPropertySpec(const char* name, uint8_t attributes, Kind kind,
                            AccessorsOrValue u)
       : name(name), attributes_(attributes), kind_(kind), u(u) {}
@@ -208,6 +202,7 @@ struct JSPropertySpec {
 
  public:
   JSPropertySpec(const JSPropertySpec& other) = default;
+  JSPropertySpec() = delete;
 
   static constexpr JSPropertySpec nativeAccessors(
       const char* name, uint8_t attributes, JSNative getter,

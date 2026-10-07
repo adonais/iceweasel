@@ -321,7 +321,7 @@ void gfxFontconfigFontEntry::GetUserFontFeatures(FcPattern* aPattern) {
     bool ret = hb_feature_from_string(s, -1, &tmpFeature);
     if (ret) {
       mFeatureSettings.AppendElement(
-          (gfxFontFeature){tmpFeature.tag, tmpFeature.value});
+          gfxFontFeature{tmpFeature.tag, int32_t(tmpFeature.value)});
     }
     fontFeaturesNum++;
   }

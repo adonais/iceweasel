@@ -1,0 +1,133 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test SpeechRecognition with a one-word utterance</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="head.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div id="content"></div>
+<div id="results">
+  <label>Recognized:</label>
+  <div class="recognized" id="rec-text">waiting...</div>
+</div>
+<pre id="test">
+<script>
+"use strict";
+
+// Plays a one-word clip, then feeds 3s of silence, and checks the word is
+// delivered once, before stop(). Uses the default English model, which marks
+// utterance ends itself.
+
+const SERVER_PORT = 8766;
+const LANG = "en-US";
+const WORD = "dog";
+// Silence after the word, where a repeat would show up.
+const LISTEN_AFTER_MS = 3000;
+
+SimpleTest.requestCompleteLog();
+SimpleTest.requestFlakyTimeout(
+  "createResumedAudioContext() is bounded by setTimeout, and the silence after " +
+  "the word is waited out with one");
+
+const T0 = performance.now();
+const ms = () => "+" + Math.round(performance.now() - T0) + "ms";
+function diag(msg) { info("[diag " + ms() + "] " + msg); }
+
+function words(text) {
+  return text.toLowerCase().replace(/[^\p{L}\p{N}\s']/gu, " ").split(/\s+/).filter(Boolean);
+}
+
+add_setup(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.webspeech.recognition.enable", true],
+      ["browser.ml.modelHubRootUrl", `http://localhost:${SERVER_PORT}/`],
+      ["media.webspeech.recognition.model-download.prompt.testing", true],
+      ["media.navigator.permission.disabled", true],
+    ],
+  });
+});
+
+add_task(async function one_word_one_result() {
+  const installed = await ensureModelInstalled([LANG]);
+  ok(installed, "Model installed successfully");
+  if (!installed) {
+    return;
+  }
+
+  const ctx = await createResumedAudioContext();
+
+  // Keeps the graph running past the end of the clip, so we feed silence.
+  const kick = ctx.createBufferSource();
+  kick.buffer = ctx.createBuffer(1, 2048, ctx.sampleRate);
+  kick.loop = true;
+  kick.connect(ctx.destination);
+  kick.start(0);
+
+  const audio = await loadTestAudio("single_word_dog.opus", a => {
+    a.id = "audioElement";
+    a.controls = true;
+  });
+
+  const src = ctx.createMediaElementSource(audio);
+  const dst = ctx.createMediaStreamDestination();
+  src.connect(dst);
+  src.connect(ctx.destination);
+
+  const track = dst.stream.getAudioTracks()[0];
+  ok(track, "Got audio track");
+
+  const sr = new SpeechRecognition();
+  sr.continuous = true;
+  sr.lang = LANG;
+
+  const finals = [];
+  sr.onresult = e => {
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        const text = e.results[i][0].transcript;
+        finals.push({ text, at: performance.now() });
+        diag(`final result #${finals.length}: "${text}"`);
+      }
+    }
+    document.getElementById("rec-text").textContent =
+      finals.map(f => f.text).join(" | ");
+  };
+  const ended = new Promise((resolve, reject) => {
+    sr.onend = resolve;
+    sr.onerror = e => reject(new Error(e.error));
+  });
+
+  sr.start(track);
+  await audio.play();
+  await new Promise(r => { audio.onended = r; });
+  diag(`word over, listening to silence for ${LISTEN_AFTER_MS}ms`);
+  await new Promise(r => setTimeout(r, LISTEN_AFTER_MS));
+
+  const stoppedAt = performance.now();
+  sr.stop();
+  await ended;
+  audio.pause();
+  await ctx.close();
+
+  const listening = finals.filter(f => f.at < stoppedAt);
+  const transcript = finals.map(f => f.text).join(" | ");
+  is(listening.length, 1,
+     `One word is one final result, delivered while the session is still ` +
+     `listening. Got ${listening.length} of ${finals.length}: "${transcript}"`);
+  if (!listening.length) {
+    return;
+  }
+  is(words(listening[0].text).join(" "), WORD,
+     `The result is the word that was said. Got: "${listening[0].text}"`);
+  is(finals.length, 1,
+     `The word is not delivered again over the silence that follows it, nor ` +
+     `by the end-of-stream flush. Got ${finals.length}: "${transcript}"`);
+});
+</script>
+</pre>
+</body>
+</html>

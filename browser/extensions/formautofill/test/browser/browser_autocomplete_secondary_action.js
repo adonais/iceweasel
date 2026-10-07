@@ -141,7 +141,7 @@ add_task(async function test_delete_confirms_without_device_sign_in() {
           callback: win => {
             sawDialog = true;
             const [title, message] = AC_L10N.formatValuesSync([
-              { id: "autocomplete-remove-address-title" },
+              { id: "autocomplete-delete-address-title" },
               { id: "autocomplete-remove-record-message" },
             ]);
             is(

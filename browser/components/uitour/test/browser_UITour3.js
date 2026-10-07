@@ -282,7 +282,7 @@ add_UITour_task(async function test_setSearchTerm() {
 
   // The UITour gets to the searchbar element through a promise, so the value setting
   // only happens after a tick.
-  await waitForConditionPromise(
+  await TestUtils.waitForCondition(
     () => searchbar.value == TERM,
     "Correct term set"
   );
@@ -298,7 +298,7 @@ add_UITour_task(async function test_clearSearchTerm() {
 
   // The UITour gets to the searchbar element through a promise, so the value setting
   // only happens after a tick.
-  await waitForConditionPromise(
+  await TestUtils.waitForCondition(
     () => searchbar.value == "",
     "Search term cleared"
   );

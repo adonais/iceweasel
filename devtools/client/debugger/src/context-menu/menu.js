@@ -5,26 +5,26 @@
 const Menu = require("resource://devtools/client/framework/menu.js");
 const MenuItem = require("resource://devtools/client/framework/menu-item.js");
 
-export function showMenu(evt, items) {
+export function showMenu(evt, items, { accesskeyConflictsBug } = {}) {
   if (items.length === 0) {
     return;
   }
 
-  const menu = new Menu();
+  const menu = new Menu({ accesskeyConflictsBug });
   items
     .filter(item => item.visible === undefined || item.visible === true)
     .forEach(item => {
       const menuItem = new MenuItem(item);
-      menuItem.submenu = createSubMenu(item.submenu);
+      menuItem.submenu = createSubMenu(item.submenu, accesskeyConflictsBug);
       menu.append(menuItem);
     });
 
   menu.popup(evt.screenX, evt.screenY, window.parent.document);
 }
 
-function createSubMenu(subItems) {
+function createSubMenu(subItems, accesskeyConflictsBug) {
   if (subItems) {
-    const subMenu = new Menu();
+    const subMenu = new Menu({ accesskeyConflictsBug });
     subItems.forEach(subItem => {
       subMenu.append(new MenuItem(subItem));
     });

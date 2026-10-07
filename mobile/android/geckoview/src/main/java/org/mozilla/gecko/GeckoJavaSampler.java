@@ -4,6 +4,7 @@
 
 package org.mozilla.gecko;
 
+import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.os.Build;
@@ -580,6 +581,7 @@ public class GeckoJavaSampler {
     }
   }
 
+  @SuppressLint("DiscouragedApi")
   @WrapForJNI
   public static void start(
       @NonNull final Object[] aFilters, final int aInterval, final int aEntryCount) {
@@ -746,6 +748,7 @@ public class GeckoJavaSampler {
     }
   }
 
+  @SuppressLint("DiscouragedApi")
   @WrapForJNI
   public static void unpauseSampling() {
     synchronized (GeckoJavaSampler.class) {

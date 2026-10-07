@@ -105,6 +105,11 @@ static bool SubjectToCSP(nsILoadInfo* aLoadInfo, nsIURI* aURI,
             "chrome://global/content/TopLevelVideoDocument.js")) {
       return false;
     }
+    // Treat chrome: scripts loaded by pdf.js like resource://pdf.js/ scripts.
+    if (contentType == ExtContentPolicyType::TYPE_SCRIPT &&
+        nsContentUtils::IsPDFJS(aLoadInfo->GetLoadingPrincipal())) {
+      return false;
+    }
     if (!isImgOrStyleOrDTD) {
       return true;
     }

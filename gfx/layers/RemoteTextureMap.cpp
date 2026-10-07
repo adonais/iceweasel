@@ -172,6 +172,7 @@ void RemoteTextureOwnerClient::PushTexture(
                                                         TextureFlags::DEFAULT);
     if (textureHost) {
       if (aDesc.type() == SurfaceDescriptor::TSurfaceDescriptorD3D10 ||
+          aDesc.type() == SurfaceDescriptor::TSurfaceDescriptorMacIOSurface ||
           aDesc.type() == SurfaceDescriptor::TSurfaceDescriptorDMABuf ||
           aDesc.type() == layers::SurfaceDescriptor::
                               TSurfaceDescriptorAndroidHardwareBuffer) {
@@ -211,6 +212,7 @@ void RemoteTextureOwnerClient::PushTexture(
                                                         TextureFlags::DEFAULT);
     if (textureHost) {
       if (aDesc.type() == SurfaceDescriptor::TSurfaceDescriptorD3D10 ||
+          aDesc.type() == SurfaceDescriptor::TSurfaceDescriptorMacIOSurface ||
           aDesc.type() == SurfaceDescriptor::TSurfaceDescriptorDMABuf ||
           aDesc.type() == layers::SurfaceDescriptor::
                               TSurfaceDescriptorAndroidHardwareBuffer) {

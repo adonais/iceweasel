@@ -6,6 +6,7 @@
 #define ProfileBufferChunkManagerSingle_h
 
 #include "mozilla/ProfileBufferChunkManager.h"
+#include "mozilla/Maybe.h"
 
 #ifdef DEBUG
 #  include "mozilla/Atomics.h"

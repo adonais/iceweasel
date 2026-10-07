@@ -6,12 +6,15 @@ package org.mozilla.fenix.ui.efficiency.tests
 
 import org.junit.Ignore
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
+import org.mozilla.fenix.helpers.TestAssetHelper.downloadPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.storageCheckPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.storageWritePageAsset
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.DownloadsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.HistorySelectors
 
 class SettingsDeleteBrowsingDataTest : BaseTest() {
@@ -114,5 +117,35 @@ class SettingsDeleteBrowsingDataTest : BaseTest() {
             .verifyPageContent("Local storage empty")
 
         on.browserPage.navigateToPage(storageWritePage, forceNavigation = true).verifyPageContent("No cookies set")
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1243095
+    @Critical
+    @Test
+    fun deleteDownloadsDataTest() {
+        val downloadTestPage = mockWebServer.downloadPageAsset.url.toString()
+        val downloadFile = "zip_small.zip"
+
+        on.browserPage
+            .navigateToPage(downloadTestPage)
+            .clickDownloadLink(downloadFile, downloadTestPage)
+            .verifyDownloadPrompt()
+            .clickDownloadPromptConfirmButton()
+
+        on.downloads.navigateToPage().verifyDownloadedFileExistsInDownloadsList(downloadFile)
+
+        on.settingsDeleteBrowsingData
+            .navigateToPage()
+            .verifyAllCheckBoxesAreChecked()
+            .selectOnlyDownloadsCheckBox()
+            .clickDeleteBrowsingDataButton()
+            .verifyDeleteBrowsingDataDialog()
+            .clickDialogCancelButton()
+            .verifyDownloadsCheckBox(true)
+            .clickDeleteBrowsingDataButton()
+            .verifyDeleteBrowsingDataDialog()
+            .confirmDeletionAndAssertSnackbar()
+
+        on.downloads.navigateToPage().mozVerifyElementsByGroup(DownloadsSelectors.Group.EMPTY_DOWNLOADS)
     }
 }

@@ -11,7 +11,7 @@ use crate::{APZScrollGeneration, HasScrollLinkedEffect, PipelineId, PropertyBind
 use crate::serde::{Serialize, Deserialize};
 use crate::color::ColorF;
 use crate::image::{ColorDepth, ImageKey};
-use crate::key_types::EdgeMask;
+use crate::key_types::{EdgeMask, StretchSizeKey};
 use crate::units::*;
 use std::hash::{Hash, Hasher};
 
@@ -54,6 +54,11 @@ bitflags! {
         const ANTIALISED = 1 << 4;
         /// If true, this primitive is used as a background for checkerboarding
         const CHECKERBOARD_BACKGROUND = 1 << 5;
+        /// For an image primitive: the texture was rasterized at the device
+        /// size of the primitive rect. If the rect's snapped extent disagrees
+        /// with the texture by a device pixel, the texture is drawn 1:1 from
+        /// the snapped origin instead of being stretched to fit.
+        const RASTERIZED_FOR_RECT = 1 << 6;
     }
 }
 
@@ -150,7 +155,6 @@ pub enum DisplayItem {
     RadialGradient(RadialGradientDisplayItem),
     ConicGradient(ConicGradientDisplayItem),
     Image(ImageDisplayItem),
-    RepeatingImage(RepeatingImageDisplayItem),
     YuvImage(YuvImageDisplayItem),
     BackdropFilter(BackdropFilterDisplayItem),
 
@@ -196,7 +200,6 @@ pub enum DebugDisplayItem {
     RadialGradient(RadialGradientDisplayItem),
     ConicGradient(ConicGradientDisplayItem),
     Image(ImageDisplayItem),
-    RepeatingImage(RepeatingImageDisplayItem),
     YuvImage(YuvImageDisplayItem),
     BackdropFilter(BackdropFilterDisplayItem),
 
@@ -687,17 +690,19 @@ pub enum ExtendMode {
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct Gradient {
-    pub start_point: LayoutPoint,
-    pub end_point: LayoutPoint,
+    /// Relative to the primitive bounds.
+    pub start: LayoutVector2D,
+    /// Relative to the primitive bounds.
+    pub end: LayoutVector2D,
     pub extend_mode: ExtendMode,
 } // IMPLICIT: stops: Vec<GradientStop>
 
 impl Gradient {
     pub fn is_valid(&self) -> bool {
-        self.start_point.x.is_finite() &&
-            self.start_point.y.is_finite() &&
-            self.end_point.x.is_finite() &&
-            self.end_point.y.is_finite()
+        self.start.x.is_finite() &&
+            self.start.y.is_finite() &&
+            self.end.x.is_finite() &&
+            self.end.y.is_finite()
     }
 }
 
@@ -726,7 +731,8 @@ pub struct GradientStop {
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct RadialGradient {
-    pub center: LayoutPoint,
+    /// Relative to the primitive bounds.
+    pub center: LayoutVector2D,
     pub radius: LayoutSize,
     pub start_offset: f32,
     pub end_offset: f32,
@@ -744,7 +750,8 @@ impl RadialGradient {
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct ConicGradient {
-    pub center: LayoutPoint,
+    /// Relative to the primitive bounds.
+    pub center: LayoutVector2D,
     pub angle: f32,
     pub start_offset: f32,
     pub end_offset: f32,
@@ -1950,10 +1957,9 @@ pub struct IframeDisplayItem {
     pub ignore_missing_pipeline: bool,
 }
 
-/// This describes an image that fills the specified area. It stretches or shrinks
-/// the image as necessary. While RepeatingImageDisplayItem could otherwise provide
-/// a superset of the functionality, it has been problematic inferring the desired
-/// repetition properties when snapping changes the size of the primitive.
+/// An image drawn over `bounds`, either stretched to fill it or tiled across
+/// it. The builder's `push_image` and `push_repeating_image` both produce this
+/// item; which one it was is in `stretch_size`.
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct ImageDisplayItem {
     pub common: CommonItemProperties,
@@ -1961,24 +1967,10 @@ pub struct ImageDisplayItem {
     // FIXME: this should ideally just be `tile_origin` here, with the clip_rect
     // defining the bounds of the item. Needs non-trivial backend changes.
     pub bounds: LayoutRect,
-    pub image_key: ImageKey,
-    pub image_rendering: ImageRendering,
-    pub alpha_type: AlphaType,
-    /// A hack used by gecko to color a simple bitmap font used for tofu glyphs
-    pub color: ColorF,
-}
-
-/// This describes a background-image and its tiling. It repeats in a grid to fill
-/// the specified area.
-#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
-pub struct RepeatingImageDisplayItem {
-    pub common: CommonItemProperties,
-    /// The area to tile the image over (first tile starts at origin of this rect)
-    // FIXME: this should ideally just be `tile_origin` here, with the clip_rect
-    // defining the bounds of the item. Needs non-trivial backend changes.
-    pub bounds: LayoutRect,
-    /// How large to make a single tile of the image (common case: bounds.size)
-    pub stretch_size: LayoutSize,
+    /// How large to make a single tile of the image. An axis that fills the
+    /// bounds is recorded as such rather than by its size, so a stretched
+    /// image's key does not depend on how big it is drawn.
+    pub stretch_size: StretchSizeKey,
     /// The space between tiles (common case: 0)
     pub tile_spacing: LayoutSize,
     pub image_key: ImageKey,
@@ -2078,6 +2070,19 @@ pub enum YuvData {
 }
 
 impl YuvData {
+    /// The planes actually referenced, padded with `ImageKey::DUMMY` to the
+    /// three a yuv primitive holds.
+    pub fn planes(&self) -> [ImageKey; 3] {
+        match *self {
+            YuvData::NV12(p0, p1)
+            | YuvData::P010(p0, p1)
+            | YuvData::NV16(p0, p1)
+            | YuvData::P210(p0, p1) => [p0, p1, ImageKey::DUMMY],
+            YuvData::PlanarYCbCr(p0, p1, p2) => [p0, p1, p2],
+            YuvData::InterleavedYCbCr(p0) => [p0, ImageKey::DUMMY, ImageKey::DUMMY],
+        }
+    }
+
     pub fn get_format(&self) -> YuvFormat {
         match *self {
             YuvData::NV12(..) => YuvFormat::NV12,
@@ -2418,7 +2423,6 @@ impl DisplayItem {
             DisplayItem::Gradient(..) => "gradient",
             DisplayItem::Iframe(..) => "iframe",
             DisplayItem::Image(..) => "image",
-            DisplayItem::RepeatingImage(..) => "repeating_image",
             DisplayItem::Line(..) => "line",
             DisplayItem::PopReferenceFrame => "pop_reference_frame",
             DisplayItem::PopStackingContext => "pop_stacking_context",

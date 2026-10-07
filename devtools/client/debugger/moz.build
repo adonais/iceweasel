@@ -26,3 +26,8 @@ DevToolsModules(
 
 with Files("**"):
     BUG_COMPONENT = ("DevTools", "Debugger")
+
+LICENSED_UNDER += ["mit"]
+LICENSED_UNDER["mit"].paths = [
+    "test/mochitest/examples/react/build/main.js",
+]

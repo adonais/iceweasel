@@ -6,6 +6,8 @@
 #include "nsISimpleEnumerator.idl"
 
 %{C++
+#include "mozilla/TypedEnumBits.h"
+
 #define NS_WINDOWMEDIATOR_CID \
 { 0x79a2b7cc, 0xf05b, 0x4605, \
   { 0xbf, 0xa0, 0xfa, 0xc5, 0x4f, 0x27, 0xee, 0xc8 } }

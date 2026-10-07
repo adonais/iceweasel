@@ -13,7 +13,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
-  BackupService: "resource:///modules/backup/BackupService.sys.mjs",
+  BackupService: "moz-src:///browser/components/backup/BackupService.sys.mjs",
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
   formAutofillStorage: "resource://autofill/FormAutofillStorage.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",

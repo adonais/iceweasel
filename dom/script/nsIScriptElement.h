@@ -14,6 +14,7 @@
 #include "nsCOMPtr.h"
 #include "nsID.h"
 #include "nsIScriptLoaderObserver.h"
+#include "nsIURI.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsStringFwd.h"
 #include "nscore.h"
@@ -24,7 +25,6 @@
 class nsIContent;
 class nsIParser;
 class nsIPrincipal;
-class nsIURI;
 
 namespace mozilla::dom {
 class Document;

@@ -45,7 +45,9 @@ add_task(async function test_do_not_update_non_mergeable_fields() {
       });
       await onUpdatePopupShown;
 
+      const onUpdated = waitForStorageChangedEvents("update");
       await clickAddressDoorhangerButton(MAIN_BUTTON);
+      await onUpdated;
     }
   );
 

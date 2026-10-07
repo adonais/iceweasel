@@ -268,6 +268,20 @@ uint64_t CSSStyleRule::SelectorSpecificityAt(uint32_t aSelectorIndex,
   return s;
 }
 
+static bool IsShadowRelevantForElement(const Element& aElement,
+                                       const ShadowRoot& aShadow) {
+  if (aShadow.Host() == &aElement) {
+    return true;
+  }
+  for (auto* s = aElement.GetContainingShadow(); s;
+       s = s->Host()->GetContainingShadow()) {
+    if (s == &aShadow) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static void GetHosts(StyleSheet* aSheet, const Element& aElement,
                      nsTArray<Element*>& aHosts) {
   if (!aSheet) {
@@ -285,8 +299,9 @@ static void GetHosts(StyleSheet* aSheet, const Element& aElement,
     if (!shadow) {
       continue;
     }
+
     if (shadow->Host() == &aElement ||
-        shadow == aElement.GetContainingShadow()) {
+        IsShadowRelevantForElement(aElement, *shadow)) {
       aHosts.AppendElement(shadow->Host());
     }
   }

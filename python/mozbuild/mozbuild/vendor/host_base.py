@@ -69,7 +69,14 @@ class BaseHost:
 
             try:
                 tag = subprocess.run(
-                    ["git", "--no-pager", "tag", "-l", "--sort=creatordate"]
+                    [
+                        "git",
+                        "--no-pager",
+                        "tag",
+                        "-l",
+                        "--no-column",
+                        "--sort=creatordate",
+                    ]
                     + revision_arg,
                     cwd=repo_clone,
                     capture_output=True,

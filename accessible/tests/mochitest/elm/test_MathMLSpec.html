@@ -22,12 +22,37 @@
   <script type="application/javascript"
           src="../name.js"></script>
 
+  <style>
+    mphantom, annotation, annotation-xml {
+      display: inline-block;
+      visibility: visible;
+    }
+  </style>
+
   <script type="application/javascript">
     function doTest() {
       // ////////////////////////////////////////////////////////////////////////
-      // math
+      // a (MathML anchor)
 
       let obj = {
+        role: ROLE_MATHML_LINK,
+      };
+      testElm("a-with-href", obj);
+
+      obj = {
+        role: ROLE_MATHML_LINK,
+      };
+      testElm("a-onclick", obj);
+
+      obj = {
+        role: ROLE_MATHML_ROW,
+      };
+      testElm("a-row", obj);
+
+      // ////////////////////////////////////////////////////////////////////////
+      // math
+
+      obj = {
         role: ROLE_MATHML_MATH,
       };
       testElm("math", obj);
@@ -81,7 +106,7 @@
       // ms
 
       obj = {
-        role: ROLE_MATHML_STRING_LITERAL,
+        role: ROLE_MATHML_TEXT,
       };
       testElm("ms", obj);
 
@@ -164,8 +189,15 @@
       };
       testElm("mstyle", obj);
 
-      ok(!isAccessible("mpadded"), "mpadded should not have accessible");
-      ok(!isAccessible("mphantom"), "mphantom should not have accessible");
+      obj = {
+        role: ROLE_MATHML_ROW,
+      };
+      testElm("mpadded", obj);
+
+      obj = {
+        role: ROLE_MATHML_ROW,
+      };
+      testElm("mphantom", obj);
 
       // ////////////////////////////////////////////////////////////////////////
       // msub
@@ -219,12 +251,30 @@
       testElm("munderover", obj);
 
       // ////////////////////////////////////////////////////////////////////////
-      // mmultiscripts
+      // mmultiscripts, mprescripts, none
 
       obj = {
         role: ROLE_MATHML_MULTISCRIPTS,
       };
       testElm("mmultiscripts", obj);
+
+      obj = {
+        role: ROLE_MATHML_EMPTY_GROUP,
+      };
+      testElm("mprescripts", obj);
+
+      obj = {
+        role: ROLE_MATHML_EMPTY_GROUP,
+      };
+      testElm("none", obj);
+
+      // ////////////////////////////////////////////////////////////////////////
+      // mspace
+
+      obj = {
+        role: ROLE_MATHML_EMPTY_GROUP,
+      };
+      testElm("mspace", obj);
 
       // ////////////////////////////////////////////////////////////////////////
       // mtable
@@ -263,7 +313,7 @@
       // maction
 
       obj = {
-        role: ROLE_MATHML_ACTION,
+        role: ROLE_MATHML_ROW,
         attributes: { actiontype: "toggle", selection: "1" },
       };
       testElm("maction", obj);
@@ -278,9 +328,21 @@
 
       // ////////////////////////////////////////////////////////////////////////
       // semantics, annotation, annotation-xml
-      ok(!isAccessible("semantics"), "semantics should not have accessible");
-      ok(!isAccessible("annotation"), "annotation should not have accessible");
-      ok(!isAccessible("annotation-xml"), "annotation-xml should not have accessible");
+
+      obj = {
+        role: ROLE_MATHML_ROW,
+      };
+      testElm("semantics", obj);
+
+      obj = {
+        role: ROLE_MATHML_TEXT,
+      };
+      testElm("annotation", obj);
+
+      obj = {
+        role: ROLE_MATHML_ROW,
+      };
+      testElm("annotation-xml", obj);
 
       // ////////////////////////////////////////////////////////////////////////
       // mstack
@@ -366,6 +428,23 @@
   </pre>
 
   <math id="math">
+    <a id="a-with-href" href="https://google.com">
+      <mi>x</mi>
+      <mo>+</mo>
+      <mi>y</mi>
+    </a>
+
+    <a id="a-onclick" onclick="void(0)">
+      <mi>u</mi>
+      <mo>+</mo>
+      <mi>v</mi>
+    </a>
+
+    <a id="a-row">
+      <mi>a</mi>
+      <mo>=</mo>
+      <mi>b</mi>
+    </a>
     <mrow id="mrow">
       <mrow>
         <msup id="msup">
@@ -458,8 +537,9 @@
     <mmultiscripts id="mmultiscripts">
       <mi> R </mi>
       <mi> i </mi>
+      <none id="none"/>
       <none/>
-      <none/>
+      <mprescripts id="mprescripts"/>
       <mi> j </mi>
       <mi> k </mi>
       <none/>

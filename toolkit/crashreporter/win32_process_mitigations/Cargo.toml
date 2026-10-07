@@ -1,0 +1,10 @@
+[package]
+name = "win32_process_mitigations"
+version = "0.1.0"
+edition = "2021"
+license = "MPL-2.0"
+
+[dependencies]
+log = "0.4"
+thiserror = "2"
+winapi = { version = "0.3", features = ["winerror", "winreg"] }

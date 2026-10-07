@@ -1,0 +1,11 @@
+[package]
+name = "mach2"
+version = "0.4.999"
+edition = "2024"
+license = "Mozilla Public License 2.0"
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+mach2 = "0.6.0"

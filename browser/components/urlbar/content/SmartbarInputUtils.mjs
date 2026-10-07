@@ -5,6 +5,10 @@
 import { MultilineEditor } from "chrome://browser/content/multilineeditor/multiline-editor.mjs";
 import { createMentionsPlugin } from "chrome://browser/content/multilineeditor/plugins/MentionsPlugin.mjs";
 import { createCommandsPlugin } from "chrome://browser/content/multilineeditor/plugins/CommandsPlugin.mjs";
+import {
+  AGENT_COMMAND_ITEMS,
+  parseAgentCommand,
+} from "chrome://browser/content/aiwindow/modules/AgentCommands.mjs";
 import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs";
 import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 
@@ -36,15 +40,6 @@ const logger = () =>
 // Debounce delay for the mention suggestions query.
 const MENTION_QUERY_DEBOUNCE_MS = 150;
 
-const AGENT_COMMAND_ITEMS = [
-  {
-    id: "watch",
-    l10nId: "smartbar-command-watch-label",
-    descriptionL10nId: "smartbar-command-watch-description",
-    icon: "chrome://browser/content/aiwindow/assets/agent-watch.svg",
-  },
-];
-
 // Marks the shared panel as showing "/" command results, so the mention and
 // command selection handlers don't cross fire on the same panel
 const COMMAND_TRIGGER = "inline-command";
@@ -71,11 +66,8 @@ export function isAgentCommand(value) {
   if (!isAgentCommandAvailable()) {
     return false;
   }
-  const match = /^\/(\w{1,20})/.exec(String(value ?? "").trimStart());
-  return (
-    !!match &&
-    AGENT_COMMAND_ITEMS.some(command => command.id === match[1].toLowerCase())
-  );
+  const parsed = parseAgentCommand(value);
+  return !!parsed && AGENT_COMMAND_ITEMS.has(parsed.command);
 }
 
 /**
@@ -89,9 +81,10 @@ function getCommandSuggestions(query) {
     return [];
   }
   const normalized = query.trim().toLowerCase();
-  const items = AGENT_COMMAND_ITEMS.filter(command =>
-    command.id.startsWith(normalized)
-  );
+  // The panel keys off an id on each item, so fold the Map key into its value
+  const items = [...AGENT_COMMAND_ITEMS]
+    .filter(([id]) => id.startsWith(normalized))
+    .map(([id, command]) => ({ id, ...command }));
   return items.length
     ? [{ headerL10nId: "smartbar-command-tasks-header", items }]
     : [];

@@ -92,9 +92,13 @@ async function handleRequest(request, response) {
       false
     );
     setHeaders();
-    // This is a hack to set the correct id for the content document that is to be
-    // loaded in the iframe.
-    response.write(doc.replace(`id="body"`, `id="default-iframe-body-id"`));
+    // This is a hack to set the correct ids for the content document that is to
+    // be loaded in the iframe.
+    response.write(
+      doc
+        .replace(`id="default-content-doc-id"`, `id="default-iframe-doc-id"`)
+        .replace(`id="body"`, `id="default-iframe-body-id"`)
+    );
   }
 
   response.finish();

@@ -9,7 +9,7 @@ support-files = [
   "sandboxed_iframe.html",
   "sandboxed_iframe_inner.html",
   "console-test-worker.js",
-  "!/browser/base/content/test/general/browser_star_hsts.sjs",
+  "!/browser/base/content/test/browser-general/browser_star_hsts.sjs",
 ]
 prefs = [
   "devtools.chrome.enabled=true",

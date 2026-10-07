@@ -19,11 +19,6 @@
 
   --categories-width: var(--size-sidebar);
   --dialog-warning-text-color: var(--text-color-error);
-  --message-bar-button-background-color: oklch(from var(--color-gray-100) l c h / 10%);
-  --message-bar-button-background-color-hover: oklch(from var(--color-gray-100) l c h / 20%);
-  --message-bar-button-background-color-active: oklch(from var(--color-gray-100) l c h / 30%);
-  --message-bar-background-color-warning: var(--color-yellow-20);
-  --message-bar-text-color-warning: var(--color-yellow-100);
   --input-border-color-warning: var(--color-yellow-30);
   --input-box-shadow-color-warning: oklch(from var(--color-yellow-30) l c h / 30%);
   --card-padding: var(--space-large);
@@ -482,7 +477,7 @@ html|a:focus-visible,
 ::part(support-link):focus-visible {
   outline: var(--focus-outline);
   outline-offset: var(--link-focus-outline-offset);
-  border-radius: var(--border-radius-small);
+  border-radius: var(--link-border-radius-focus);
 }
 
 button.text-link {
@@ -894,64 +889,6 @@ xul|treechildren::-moz-tree-cell-text(selected),
 xul|treechildren::-moz-tree-twisty(selected),
 xul|treechildren::-moz-tree-image(selected) {
   color: var(--text-color-accent-primary-selected);
-}
-
-/* Message bars */
-.message-bar {
-  background-color: var(--background-color-box-info);
-  border-radius: var(--border-radius-small);
-  min-height: var(--size-item-large);
-  align-items: center;
-  padding: var(--space-xsmall);
-}
-
-.message-bar-description {
-  margin: var(--space-xxsmall) 0;
-  line-height: 1.25;
-}
-
-.message-bar-description.rtl-locale {
-  direction: rtl;
-  text-align: match-parent;
-}
-
-/* The message-bar-button styles have extra specificity to override
- * the defaults for buttons. */
-.message-bar-content > .message-bar-button {
-  background-color: var(--message-bar-button-background-color);
-  border: none;
-  border-radius: var(--border-radius-xsmall);
-  height: var(--size-item-medium);
-  margin-inline-start: var(--space-small);
-  padding: 0 var(--space-small);
-}
-
-.message-bar-content > .message-bar-button:hover {
-  background-color: var(--message-bar-button-background-color-hover);
-}
-
-.message-bar-content > .message-bar-button:hover:active {
-  background-color: var(--message-bar-button-background-color-active);
-}
-
-.message-bar-icon {
-  content: url("chrome://global/skin/icons/info.svg");
-  width: var(--icon-size-large);
-  height: var(--icon-size-large);
-  padding: var(--space-xsmall);
-  margin-inline-end: var(--space-xsmall);
-  -moz-context-properties: fill;
-  fill: currentColor;
-}
-
-/* Warning styles */
-.message-bar-warning {
-  background-color: var(--message-bar-background-color-warning);
-  color: var(--message-bar-text-color-warning);
-}
-
-.message-bar-warning > .message-bar-icon {
-  content: url("chrome://global/skin/icons/warning.svg");
 }
 
 input[type="text"][warning]:enabled:not(:focus) {

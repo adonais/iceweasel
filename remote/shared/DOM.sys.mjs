@@ -126,7 +126,7 @@ dom.find = function (container, strategy, selector, options = {}) {
           reject(e);
         }
       },
-      { timeout }
+      { timeout, throws: null }
     );
 
     findElements.then(foundEls => {

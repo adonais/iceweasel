@@ -101,8 +101,12 @@ nsresult WebTransportSessionProxy::AsyncConnectWithClient(
   }
   auto cleanup = MakeScopeExit([self = RefPtr<WebTransportSessionProxy>(this)] {
     MutexAutoLock lock(self->mMutex);
-    self->mListener->OnSessionClosed(false, 0,
-                                     ""_ns);  // TODO: find a better error.
+    mozilla::dom::WebTransportStatsData stats;  // Zero-initialized
+    nsCOMPtr<nsIWebTransportSessionStats> statsWrapper =
+        new WebTransportSessionStatsWrapper(stats);
+    self->mListener->OnSessionClosed(
+        false, 0, ""_ns,
+        statsWrapper);  // TODO: find a better error.
     self->mChannel = nullptr;
     self->mListener = nullptr;
     self->ChangeState(WebTransportSessionProxyState::DONE);
@@ -286,26 +290,13 @@ WebTransportSessionProxy::RetargetTo(nsIEventTarget* aTarget) {
   return NS_OK;
 }
 
-NS_IMETHODIMP
-WebTransportSessionProxy::RegisterSendGroup(uint64_t aGroupId) {
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+void WebTransportSessionProxy::GetStatsInternal(
+    const RefPtr<WebTransportSessionBase>& aSession) {
+  MOZ_ASSERT(OnSocketThread());
 
-  RefPtr<WebTransportSessionBase> session;
-  {
-    MutexAutoLock lock(mMutex);
-    session = mWebTransportSession;
-  }
-
-  if (!session) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  LOG(("RegisterSendGroup with ID: %" PRIu64, aGroupId));
-  return session->RegisterSendGroup(aGroupId);
+  aSession->GetStats();
 }
 
-NS_IMETHODIMP
-WebTransportSessionProxy::GetStats() { return NS_ERROR_NOT_IMPLEMENTED; }
 NS_IMETHODIMP
 WebTransportSessionProxy::ExportKeyingMaterial(
     const nsTArray<uint8_t>& aLabel, const nsTArray<uint8_t>& aContext,
@@ -326,12 +317,118 @@ WebTransportSessionProxy::ExportKeyingMaterial(
   return session->ExportKeyingMaterial(aLabel, aContext, aKeyingMaterial);
 }
 
+bool WebTransportSessionProxy::CloseSessionAndGetStats(
+    uint32_t aStatus, const nsACString& aReason,
+    mozilla::dom::WebTransportStatsData& aStats) {
+  MOZ_ASSERT(OnSocketThread());
+  LOG(("WebTransportSessionProxy::CloseSessionAndGetStats"));
+  MutexAutoLock lock(mMutex);
+
+  if (mState != WebTransportSessionProxyState::ACTIVE ||
+      !mWebTransportSession) {
+    return false;
+  }
+
+  RefPtr<WebTransportSessionBase> session = mWebTransportSession;
+
+  {
+    MutexAutoUnlock unlock(mMutex);
+    Http3WebTransportSession* http3Session =
+        session->GetHttp3WebTransportSession();
+    if (http3Session &&
+        http3Session->CloseSessionAndGetStats(aStatus, aReason, aStats)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+NS_IMETHODIMP
+WebTransportSessionProxy::GetStats() {
+  RefPtr<WebTransportSessionBase> session;
+  mozilla::dom::WebTransportStatsData cachedStats;
+  bool useCachedStats = false;
+  {
+    MutexAutoLock lock(mMutex);
+
+    if (!mStopRequestCalled) {
+      LOG(("WebTransportSessionProxy::GetStats queuing - not ready yet"));
+      // Pending events run on the socket thread once the session is ready. If
+      // the session went away in the meantime, report the failure rather than
+      // dropping it on the floor: the return value of this retry has nowhere
+      // to go, and the caller is waiting for exactly one OnStatsAvailable().
+      mPendingEvents.AppendElement([self = RefPtr{this}]() {
+        if (NS_FAILED(self->GetStats())) {
+          (void)self->OnStatsAvailable(nullptr);
+        }
+      });
+      return NS_OK;
+    }
+
+    // Per spec: If transport.[[State]] is "closed", return the most recent
+    // stats available for the connection.
+    if (mState == WebTransportSessionProxyState::DONE) {
+      if (mHasCachedStats) {
+        LOG(
+            ("WebTransportSessionProxy::GetStats using cached stats - "
+             "connection closed"));
+        useCachedStats = true;
+        cachedStats = mCachedStats;
+      } else {
+        return NS_ERROR_NOT_AVAILABLE;
+      }
+    } else if (mState != WebTransportSessionProxyState::ACTIVE ||
+               !mWebTransportSession) {
+      return NS_ERROR_NOT_AVAILABLE;
+    } else {
+      session = mWebTransportSession;
+    }
+  }
+
+  // If we're using cached stats, call OnStatsAvailable directly
+  if (useCachedStats) {
+    nsCOMPtr<nsIWebTransportSessionStats> statsWrapper =
+        new WebTransportSessionStatsWrapper(cachedStats);
+    return OnStatsAvailable(statsWrapper);
+  }
+
+  if (!OnSocketThread()) {
+    return gSocketTransportService->Dispatch(NS_NewRunnableFunction(
+        "WebTransportSessionProxy::GetStatsInternal",
+        [self = RefPtr{this}, session{std::move(session)}]() {
+          self->GetStatsInternal(session);
+        }));
+  }
+
+  GetStatsInternal(session);
+  return NS_OK;
+}
+
 NS_IMETHODIMP
 WebTransportSessionProxy::GetNegotiatedProtocol(nsACString& aProtocol) {
   MutexAutoLock lock(mMutex);
   aProtocol = mProtocol;
   return NS_OK;
 }
+NS_IMETHODIMP
+WebTransportSessionProxy::RegisterSendGroup(uint64_t aGroupId) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+
+  RefPtr<WebTransportSessionBase> session;
+  {
+    MutexAutoLock lock(mMutex);
+    session = mWebTransportSession;
+  }
+
+  if (!session) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  LOG(("RegisterSendGroup with ID: %" PRIu64, aGroupId));
+  return session->RegisterSendGroup(aGroupId);
+}
+
 NS_IMETHODIMP
 WebTransportSessionProxy::CloseSession(uint32_t status,
                                        const nsACString& reason) {
@@ -775,7 +872,10 @@ WebTransportSessionProxy::OnStartRequest(nsIRequest* aRequest) {
     }
   }
   if (listener) {
-    listener->OnSessionClosed(false, closeStatus, reason);
+    mozilla::dom::WebTransportStatsData stats;  // Zero-initialized
+    nsCOMPtr<nsIWebTransportSessionStats> statsWrapper =
+        new WebTransportSessionStatsWrapper(stats);
+    listener->OnSessionClosed(false, closeStatus, reason, statsWrapper);
   }
   return NS_OK;
 }
@@ -860,9 +960,13 @@ WebTransportSessionProxy::OnStopRequest(nsIRequest* aRequest,
     if (succeeded) {
       listener->OnSessionReady(sessionId);
     } else {
-      listener->OnSessionClosed(false, closeStatus,
-                                reason);  // TODO: find a better error.
-                                          // Currently error code 0 is used.
+      mozilla::dom::WebTransportStatsData stats;  // Zero-initialized
+      nsCOMPtr<nsIWebTransportSessionStats> statsWrapper =
+          new WebTransportSessionStatsWrapper(stats);
+      listener->OnSessionClosed(
+          false, closeStatus, reason,
+          statsWrapper);  // TODO: find a better error.
+                          // Currently error code 0 is used.
     }
   }
 
@@ -1109,15 +1213,31 @@ WebTransportSessionProxy::OnSessionReady(uint64_t ready) {
   return NS_OK;
 }
 
+// Pointer lifetime: aStats is owned by the caller
+// (Http3WebTransportSession::OnSessionClosed) and remains valid for the
+// duration of this synchronous call. We copy the data immediately to cache it
+// and when capturing it in lambdas for deferred execution.
 NS_IMETHODIMP
 WebTransportSessionProxy::OnSessionClosed(bool aCleanly, uint32_t aStatus,
-                                          const nsACString& aReason) {
+                                          const nsACString& aReason,
+                                          nsIWebTransportSessionStats* aStats) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MutexAutoLock lock(mMutex);
   LOG(
       ("WebTransportSessionProxy::OnSessionClosed %p mState=%d "
        "mStopRequestCalled=%d",
        this, mState, mStopRequestCalled));
+
+  mozilla::dom::WebTransportStatsData* rawStats = nullptr;
+  MOZ_ALWAYS_SUCCEEDS(aStats->GetRawStats(&rawStats));
+  MOZ_ASSERT(rawStats);
+
+  // Cache stats (spec requirement for GetStats after close)
+  if (!mHasCachedStats) {
+    mHasCachedStats = true;
+    mCachedStats = *rawStats;
+  }
+
   // Since OnSessionReady on the listener is called on the main thread,
   // OnSessionClosed and OnSessionReady can be racy. If OnStopRequest is not
   // called yet, OnSessionClosed needs to wait.
@@ -1125,8 +1245,11 @@ WebTransportSessionProxy::OnSessionClosed(bool aCleanly, uint32_t aStatus,
     nsCString closeReason(aReason);
     mPendingEvents.AppendElement([self = RefPtr{this}, status(aStatus),
                                   closeReason(std::move(closeReason)),
-                                  cleanly(aCleanly)]() {
-      (void)self->OnSessionClosed(cleanly, status, closeReason);
+                                  cleanly(aCleanly),
+                                  stats = *rawStats]() mutable {
+      nsCOMPtr<nsIWebTransportSessionStats> statsWrapper =
+          new WebTransportSessionStatsWrapper(stats);
+      (void)self->OnSessionClosed(cleanly, status, closeReason, statsWrapper);
     });
     return NS_OK;
   }
@@ -1180,6 +1303,77 @@ WebTransportSessionProxy::OnDraining() {
   return NS_OK;
 }
 
+// Pointer lifetime: aStats is owned by the caller (Http3WebTransportSession::
+// GetStats) and remains valid for the duration of this synchronous call, or
+// null if the caller was unable to gather stats. We copy the data (if any)
+// before dispatching to another thread or calling into mListener.
+void WebTransportSessionProxy::OnStatsAvailableInternal(
+    const Maybe<mozilla::dom::WebTransportStatsData>& aStats) {
+  // The listener must be called without mMutex held: it may re-enter this
+  // object (e.g. via GetStats()).
+  nsCOMPtr<WebTransportSessionEventListener> listener;
+  {
+    MutexAutoLock lock(mMutex);
+    MOZ_ASSERT(mTarget->IsOnCurrentThread());
+    listener = mListener;
+  }
+  if (!listener) {
+    return;
+  }
+  if (aStats) {
+    nsCOMPtr<nsIWebTransportSessionStats> statsWrapper =
+        new WebTransportSessionStatsWrapper(*aStats);
+    listener->OnStatsAvailable(statsWrapper);
+  } else {
+    listener->OnStatsAvailable(nullptr);
+  }
+}
+
+NS_IMETHODIMP
+WebTransportSessionProxy::OnStatsAvailable(
+    nsIWebTransportSessionStats* aStats) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  mozilla::dom::WebTransportStatsData* rawStats = nullptr;
+  if (aStats) {
+    MOZ_ALWAYS_SUCCEEDS(aStats->GetRawStats(&rawStats));
+  }
+  if (rawStats) {
+    LOG(("WebTransportSessionProxy::OnStatsAvailable %p - bytesSent=%" PRIu64
+         ", bytesReceived=%" PRIu64 ", minRtt=%f, smoothedRtt=%f",
+         this, rawStats->bytesSent(), rawStats->bytesReceived(),
+         rawStats->minRtt(), rawStats->smoothedRtt()));
+  } else {
+    LOG(("WebTransportSessionProxy::OnStatsAvailable %p - stats unavailable",
+         this));
+  }
+
+  Maybe<mozilla::dom::WebTransportStatsData> stats =
+      rawStats ? Some(*rawStats) : Nothing();
+
+  {
+    MutexAutoLock lock(mMutex);
+    // RetargetTo() runs synchronously before content can ever reach this
+    // point (its promise chain depends on it), so mTarget should already be
+    // the socket thread here.
+    MOZ_ASSERT(mTarget->IsOnCurrentThread());
+    // Cache stats for use after connection is closed (spec requirement).
+    if (rawStats) {
+      mHasCachedStats = true;
+      mCachedStats = *rawStats;
+    }
+    if (!mTarget->IsOnCurrentThread()) {
+      return mTarget->Dispatch(
+          NS_NewRunnableFunction("WebTransportSessionProxy::OnStatsAvailable",
+                                 [self = RefPtr{this}, stats]() {
+                                   self->OnStatsAvailableInternal(stats);
+                                 }));
+    }
+  }
+
+  OnStatsAvailableInternal(stats);
+  return NS_OK;
+}
+
 void WebTransportSessionProxy::CallOnSessionClosedLocked() {
   MutexAutoLock lock(mMutex);
   CallOnSessionClosed();
@@ -1201,6 +1395,7 @@ void WebTransportSessionProxy::CallOnSessionClosed() MOZ_REQUIRES(mMutex) {
   bool cleanly = false;
   nsAutoCString reason;
   uint32_t closeStatus = 0;
+  mozilla::dom::WebTransportStatsData stats;
 
   switch (mState) {
     case WebTransportSessionProxyState::INIT:
@@ -1216,6 +1411,9 @@ void WebTransportSessionProxy::CallOnSessionClosed() MOZ_REQUIRES(mMutex) {
       cleanly = mCleanly;
       reason = mReason;
       closeStatus = mCloseStatus;
+      if (mHasCachedStats) {
+        stats = mCachedStats;
+      }
       ChangeState(WebTransportSessionProxyState::DONE);
       break;
     case WebTransportSessionProxyState::DONE:
@@ -1225,7 +1423,9 @@ void WebTransportSessionProxy::CallOnSessionClosed() MOZ_REQUIRES(mMutex) {
   if (listener) {
     // Don't invoke the callback under the lock.
     MutexAutoUnlock unlock(mMutex);
-    listener->OnSessionClosed(cleanly, closeStatus, reason);
+    nsCOMPtr<nsIWebTransportSessionStats> statsWrapper =
+        new WebTransportSessionStatsWrapper(stats);
+    listener->OnSessionClosed(cleanly, closeStatus, reason, statsWrapper);
   }
 }
 

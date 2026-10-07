@@ -24,6 +24,7 @@ xpcom/threads/nsThreadPool.cpp
 
 # Tests for XPCOM threads themselves.
 xpcom/tests/gtest/TestThreadManager.cpp
+xpcom/tests/gtest/TestThreadShutdownAnnotations.cpp
 xpcom/tests/gtest/TestThreads.cpp
 xpcom/tests/gtest/TestThreadUtils.cpp
 xpcom/tests/gtest/TestTaskQueue.cpp

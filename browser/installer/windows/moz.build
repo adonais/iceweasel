@@ -2,20 +2,118 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-DEFINES["APP_VERSION"] = CONFIG["MOZ_APP_VERSION"]
-
-DEFINES["MOZ_APP_NAME"] = CONFIG["MOZ_APP_NAME"]
-DEFINES["MOZ_APP_DISPLAYNAME"] = CONFIG["MOZ_APP_DISPLAYNAME"]
-DEFINES["MOZILLA_VERSION"] = CONFIG["MOZILLA_VERSION"]
-
-# Turn `firefox` into `Firefox`.
-DEFINES["MOZ_TOAST_APP_NAME"] = "%s" % CONFIG["MOZ_APP_NAME"].title()
-
-if CONFIG["MOZ_DEFAULT_BROWSER_AGENT"]:
-    DEFINES["MOZ_DEFAULT_BROWSER_AGENT"] = CONFIG["MOZ_DEFAULT_BROWSER_AGENT"]
-
 SPHINX_TREES["installer"] = "docs"
 
 DIRS += [
     "nsis",
 ]
+
+if CONFIG["MAKENSISU"] and not CONFIG["MOZ_USE_MAKEFILE_INSTALLER_BUILD"]:
+    FINAL_TARGET = "dist/bin"
+
+    nsis_config_dir = f"{OBJDIR}/instgen"
+
+    nsis_srcdir_files = CONFIG["NSIS_INSTALLER_FILES"] + [
+        "nsis/defines.nsi.in",
+        "nsis/extensionsLocale.nsh",
+    ]
+    nsis_topsrcdir_files = (
+        [
+            f"/{CONFIG['MOZ_BRANDING_DIRECTORY']}/{f}"
+            for f in CONFIG["NSIS_BRANDING_FILES"]
+        ]
+        + [
+            f"/toolkit/mozapps/installer/windows/nsis/{f}"
+            for f in CONFIG["NSIS_TOOLKIT_FILES"]
+        ]
+        + [f"/other-licenses/nsis/Plugins/{f}" for f in CONFIG["NSIS_CUSTOM_PLUGINS"]]
+        + [f"/other-licenses/nsis/{f}" for f in CONFIG["NSIS_CUSTOM_UI"]]
+    )
+
+    nsis_locale_files = [
+        f"/browser/locales/en-US/installer/{f}"
+        for f in [
+            "custom.properties",
+            "mui.properties",
+            "nsisstrings.properties",
+            "override.properties",
+        ]
+    ]
+
+    nsis_preprocess_locale = (
+        "/toolkit/mozapps/installer/windows/nsis/preprocess-locale.py"
+    )
+
+    GeneratedFile(
+        "nsis-stage.stamp",
+        "nsis-stage.json",
+        script="/python/mozbuild/mozbuild/action/nsis_stage.py",
+        entry_point="generate",
+        extra_deps=nsis_srcdir_files
+        + nsis_topsrcdir_files
+        + nsis_locale_files
+        + [
+            nsis_preprocess_locale,
+            "!/buildid.h",
+        ],
+        flags=[
+            f"--config-dir={nsis_config_dir}",
+            f"--spec-out={OBJDIR}/nsis-stage.json",
+            "--repack-l10n-dir=browser/installer",
+        ]
+        + [f"--install={SRCDIR}/{f}" for f in CONFIG["NSIS_INSTALLER_FILES"]]
+        + [f"--install={TOPSRCDIR}{f}" for f in nsis_topsrcdir_files]
+        + [
+            f"--defines-in={SRCDIR}/nsis/defines.nsi.in",
+            f"--defines-out={nsis_config_dir}/defines.nsi",
+            f"--topsrcdir={TOPSRCDIR}",
+            f"--preprocess-locale-script={TOPSRCDIR}{nsis_preprocess_locale}",
+            # Localized repacks stage their locale through `l10n_repackage`.
+            f"--locale-arg={TOPSRCDIR}/browser/locales/en-US/installer",
+            "--ab-cd=en-US",
+            "--preprocess-locale",
+            "--single-file",
+            "nsisstrings.properties",
+            "nsisstrings.nlf",
+            "--convert-utf8",
+            f"{SRCDIR}/nsis/extensionsLocale.nsh",
+            f"{nsis_config_dir}/extensionsLocale.nsh",
+            f"--defines-string={CONFIG['NSIS_INSTALLER_DEFINES']}",
+            "-DAB_CD=en-US",
+            f"-DTOPOBJDIR={TOPOBJDIR}",
+        ],
+    )
+
+    nsis_build_flags = [
+        f"--config-dir={nsis_config_dir}",
+        f"--makensis={CONFIG['MAKENSISU']}",
+    ] + [f"--makensis-flag={f}" for f in CONFIG["MAKENSISU_FLAGS"].split()]
+
+    GeneratedFile(
+        "helper.exe",
+        script="/python/mozbuild/mozbuild/action/nsis_build.py",
+        entry_point="generate",
+        extra_deps=["!nsis-stage.stamp"],
+        flags=nsis_build_flags + ["--nsi=uninstaller.nsi"],
+    )
+    FINAL_TARGET_FILES.uninstall += ["!helper.exe"]
+
+    if CONFIG["MOZ_MAINTENANCE_SERVICE"]:
+        GeneratedFile(
+            "maintenanceservice_installer.exe",
+            script="/python/mozbuild/mozbuild/action/nsis_build.py",
+            entry_point="generate",
+            extra_deps=["!nsis-stage.stamp"],
+            flags=nsis_build_flags + ["--nsi=maintenanceservice_installer.nsi"],
+        )
+        FINAL_TARGET_FILES += ["!maintenanceservice_installer.exe"]
+
+    if CONFIG["ENABLE_TESTS"]:
+        GeneratedFile(
+            "test_stub_installer.exe",
+            script="/python/mozbuild/mozbuild/action/nsis_build.py",
+            entry_point="generate",
+            extra_deps=["!nsis-stage.stamp"],
+            flags=nsis_build_flags + ["--nsi=test_stub.nsi"],
+        )
+        FINAL_TARGET_FILES += ["!test_stub_installer.exe"]

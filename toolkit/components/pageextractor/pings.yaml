@@ -1,0 +1,29 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+---
+$schema: moz://mozilla.org/schemas/glean/pings/2-0-0
+
+page-extractor:
+  description: |
+    PageExtractor phase instrumentation: one `page_extractor.phase` event per
+    phase of each PageExtractor call. Submitted on `idle-daily` from the
+    parent process, so a session that never reads a page submits nothing.
+
+    Carries no `client_id`: every analysis this ping supports is either
+    aggregate (success rate, error mix, and latency per phase, strategy and
+    site_strategy) or grouped by the ping's own per-call `flow_id`, so
+    nothing needs to know that two calls came from the same profile.
+  include_client_id: false
+  metadata:
+    include_info_sections: false
+  bugs:
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2058247
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2073656
+  data_reviews:
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2058247
+  notification_emails:
+    - firefox-ai-and-ml@mozilla.com
+  uploader_capabilities:
+    - ohttp

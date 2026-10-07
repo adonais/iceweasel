@@ -762,7 +762,7 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   // Copy parameters out of argv and into the wasm ABI registers/stack-slots.
   SetupABIArguments(masm, fe, funcType, argv, scratch);
 
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
 
   masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
                                      WasmCalleeInstanceOffsetBeforeCall));
@@ -1233,7 +1233,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   GenPrintf(DebugChannel::Function, masm, "\n");
 
   // Setup wasm register state.
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
 
   masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
                                      WasmCalleeInstanceOffsetBeforeCall));
@@ -1532,7 +1532,7 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
   masm.movePtr(ImmPtr(&inst), InstanceReg);
   masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
                                      WasmCalleeInstanceOffsetBeforeCall));
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
 
   // Actual call.
   const CodeBlock& codeBlock = inst.code().funcCodeBlock(fe.funcIndex());
@@ -1957,7 +1957,7 @@ static bool GenerateImportFunction(jit::MacroAssembler& masm,
   masm.loadPtr(
       Address(masm.getStackPointer(), framePushed - sizeOfInstanceSlot),
       InstanceReg);
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
 
   // Restore cx->realm.
   masm.switchToWasmInstanceRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
@@ -2993,7 +2993,8 @@ bool wasm::GenerateContBaseFrameStub(jit::MacroAssembler& masm,
   wasm::CalleeDesc callee = wasm::CalleeDesc::wasmFuncRef();
   CodeOffset fastCallOffset;
   CodeOffset slowCallOffset;
-  masm.wasmCallRef(callSite, callee, &fastCallOffset, &slowCallOffset);
+  masm.wasmCallRef(callSite, callee, &fastCallOffset, &slowCallOffset, nullptr,
+                   nullptr);
 
   // The current stack pointer might not match the one before the call if the
   // callee performed a tail call, so recover it from FP before reading the
@@ -3113,7 +3114,7 @@ void wasm::GenerateJumpToCatchHandler(MacroAssembler& masm, Register rfe,
                                       Register scratch3) {
   masm.loadPtr(Address(rfe, ResumeFromException::offsetOfInstance()),
                InstanceReg);
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
   masm.switchToWasmInstanceRealm(scratch1, scratch2);
 
 #ifdef ENABLE_WASM_JSPI
@@ -3237,7 +3238,7 @@ static bool GenerateDebugStub(MacroAssembler& masm, Label* throwLabel,
   // Memory can moving-grow during debugging, so we need to update the HeapReg.
   // InstanceReg is still live here because it is non-volatile.
   MOZ_ASSERT(NonVolatileRegs.has(InstanceReg));
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
 
   masm.setFramePushed(framePushed);
 

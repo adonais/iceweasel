@@ -393,6 +393,6 @@ export function showBreakpointContextMenu(event, breakpoint, source) {
       },
     ];
 
-    showMenu(event, buildMenu(items));
+    showMenu(event, buildMenu(items), { accesskeyConflictsBug: 2073896 });
   };
 }

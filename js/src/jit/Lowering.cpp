@@ -4381,12 +4381,7 @@ void LIRGenerator::visitStoreDynamicSlot(MStoreDynamicSlot* ins) {
 void LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
 
-  // We need a barrier if the value might be allocated in the nursery. If the
-  // value is a constant, it must be tenured because MIR can't contain nursery
-  // pointers.
-  MConstant* constValue = ins->value()->maybeConstantValue();
-  if (constValue) {
-    MOZ_ASSERT(JS::GCPolicy<Value>::isTenured(constValue->toJSValue()));
+  if (!ValueNeedsPostBarrier(ins->value())) {
     return;
   }
 
@@ -4428,10 +4423,7 @@ void LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins) {
       break;
     }
     default:
-      // Currently, only objects, strings, and bigints can be in the nursery.
-      // Other instruction types cannot hold nursery pointers.
-      MOZ_ASSERT(!NeedsPostBarrier(ins->value()->type()));
-      break;
+      MOZ_CRASH("Unexpected value type");
   }
 }
 
@@ -4439,12 +4431,7 @@ void LIRGenerator::visitPostWriteElementBarrier(MPostWriteElementBarrier* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
   MOZ_ASSERT(ins->index()->type() == MIRType::Int32);
 
-  // We need a barrier if the value might be allocated in the nursery. If the
-  // value is a constant, it must be tenured because MIR can't contain nursery
-  // pointers.
-  MConstant* constValue = ins->value()->maybeConstantValue();
-  if (constValue) {
-    MOZ_ASSERT(JS::GCPolicy<Value>::isTenured(constValue->toJSValue()));
+  if (!ValueNeedsPostBarrier(ins->value())) {
     return;
   }
 
@@ -4490,10 +4477,7 @@ void LIRGenerator::visitPostWriteElementBarrier(MPostWriteElementBarrier* ins) {
       break;
     }
     default:
-      // Currently, only objects, strings, and bigints can be in the nursery.
-      // Other instruction types cannot hold nursery pointers.
-      MOZ_ASSERT(!NeedsPostBarrier(ins->value()->type()));
-      break;
+      MOZ_CRASH("Unexpected value type");
   }
 }
 
@@ -6484,6 +6468,10 @@ void LIRGenerator::visitIteratorEnd(MIteratorEnd* ins) {
 }
 
 void LIRGenerator::visitCloseIterCache(MCloseIterCache* ins) {
+  // Emit an overrecursed check: this is necessary because the cache can
+  // attach a scripted getter stub that calls this script recursively.
+  gen->setNeedsOverrecursedCheck();
+
   LCloseIterCache* lir =
       new (alloc()) LCloseIterCache(useRegister(ins->iter()), temp());
   add(lir, ins);
@@ -8433,6 +8421,25 @@ void LIRGenerator::visitDateFromTime(MDateFromTime* ins) {
       LDateFromTime(useRegisterAtStart(ins->utcTime()), tempFixed(CallTempReg0),
                     tempFixed(CallTempReg1));
   defineReturn(lir, ins);
+}
+
+void LIRGenerator::visitUnpackTime(MUnpackTime* ins) {
+  // Allocate an additional register on 32-bit targets to hold half of a 64-bit
+  // value.
+#ifdef JS_NUNBOX32
+  auto* lir = new (alloc()) LUnpackTime(useBox(ins->packedVal()), temp());
+#else
+  auto* lir = new (alloc())
+      LUnpackTime(useBoxAtStart(ins->packedVal()), LDefinition::BogusTemp());
+#endif
+  define(lir, ins);
+}
+
+void LIRGenerator::visitEpochMilliseconds(MEpochMilliseconds* ins) {
+  auto* lir = new (alloc())
+      LEpochMilliseconds(useRegisterAtStart(ins->seconds()),
+                         useRegisterAtStart(ins->nanoseconds()), temp());
+  define(lir, ins);
 }
 
 void LIRGenerator::visitPostIntPtrConversion(MPostIntPtrConversion* ins) {

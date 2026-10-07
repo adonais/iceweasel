@@ -39,7 +39,9 @@ class LintIssueRegistry : IssueRegistry() {
             AssertIsDetector.ISSUE_USE_ASSERT_IS,
             JUnitAssertNotNullDetector.ISSUE_USE_KOTLIN_TEST_ASSERT_NOT_NULL,
             PixelSizeForDetector.ISSUE_USE_PIXEL_SIZE_FOR,
-        ) + ConstraintLayoutPerfDetector.ISSUES + ContextCompatDetector.ISSUES + FragmentComposeViewDetector.ISSUES
+            ConstraintLayoutPerfDetector.ISSUE,
+            ConstraintLayoutInflationDetector.ISSUE,
+        ) + ContextCompatDetector.ISSUES + FragmentComposeViewDetector.ISSUES
     override val vendor: Vendor =
         Vendor(
             vendorName = "Mozilla",

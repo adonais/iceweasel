@@ -68,7 +68,8 @@ class TimestampExtrapolator {
         "alarm_threshold", &alarm_threshold,
         "acc_drift", &acc_drift,
         "acc_max_error", &acc_max_error,
-        "reset_full_cov_on_alarm", &reset_full_cov_on_alarm);
+        "reset_full_cov_on_alarm", &reset_full_cov_on_alarm,
+        "p00", &p00);
       // clang-format on
     }
 
@@ -128,6 +129,9 @@ class TimestampExtrapolator {
     // TODO(brandtr): Flip so that the frequency term won't get hit tpp badly
     // when a large delay spike happens.
     bool reset_full_cov_on_alarm = false;
+
+    // Initial prior variance for the RTP clock rate w0 in (ticks/ms)^2.
+    double p00 = 1.0;
   };
 
   TimestampExtrapolator(Timestamp start, const FieldTrialsView& field_trials);

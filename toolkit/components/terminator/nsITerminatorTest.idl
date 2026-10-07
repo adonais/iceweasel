@@ -13,4 +13,9 @@ interface nsITerminatorTest : nsISupports
     * not meant to be used outside of tests.
    */
   [implicit_jscontext] jsval getTicksForShutdownPhases();
+
+  /**
+    * Shorten the watchdog's deadline to aTicks heartbeats.
+   */
+  void setTicksBeforeCrash(in unsigned long aTicks);
 };

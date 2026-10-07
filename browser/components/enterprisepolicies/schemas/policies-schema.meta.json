@@ -3,6 +3,28 @@
   "$comment": "Meta-schema enforced by tests/xpcshell/test_policies_schema.js. Every policy must declare metadata that downstream tooling relies on.",
   "type": "object",
   "definitions": {
+    "versionString": {
+      "$comment": "A version string in major, major.minor or major.minor.patch format.",
+      "type": "string",
+      "pattern": "^\\d+(\\.\\d+){0,2}$"
+    },
+    "notes": {
+      "$comment": "Notes describing compatibility data beyond a version number. Accepts a string or an array of strings.",
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ]
+    },
     "compatEntry": {
       "type": "object",
       "required": ["version_added"],
@@ -10,22 +32,44 @@
       "properties": {
         "version_added": {
           "anyOf": [
-            {
-              "type": "string",
-              "pattern": "^\\d+(\\.\\d+){0,2}$"
-            },
-            {
-              "const": false
-            }
+            { "$ref": "#/definitions/versionString" },
+            { "const": false }
           ]
-        }
+        },
+        "version_removed": { "$ref": "#/definitions/versionString" },
+        "notes": { "$ref": "#/definitions/notes" }
       }
+    },
+    "compatibility": {
+      "$comment": "A compat block. A policy has to name every channel. A sub-property may only name channels where it differs, or contain only notes.",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "firefox": { "$ref": "#/definitions/compatEntry" },
+        "firefox_esr": { "$ref": "#/definitions/compatEntry" },
+        "firefox_enterprise": { "$ref": "#/definitions/compatEntry" },
+        "notes": { "$ref": "#/definitions/notes" }
+      }
+    },
+    "subCompat": {
+      "$comment": "Recursively validates x-compatibility on nodes below a policy. Value-containing keywords can be excluded.",
+      "properties": {
+        "x-compatibility": { "$ref": "#/definitions/compatibility" },
+        "examples": true,
+        "default": true,
+        "const": true,
+        "enum": true
+      },
+      "additionalProperties": { "$ref": "#/definitions/subCompat" },
+      "items": { "$ref": "#/definitions/subCompat" }
     }
   },
   "properties": {
     "properties": {
       "type": "object",
       "additionalProperties": {
+        "allOf": [{ "$ref": "#/definitions/subCompat" }],
         "type": "object",
         "required": [
           "description",
@@ -44,18 +88,14 @@
             "minLength": 1
           },
           "x-compatibility": {
-            "type": "object",
-            "required": ["firefox", "firefox_esr", "firefox_enterprise"],
-            "additionalProperties": false,
-            "properties": {
-              "firefox": { "$ref": "#/definitions/compatEntry" },
-              "firefox_esr": { "$ref": "#/definitions/compatEntry" },
-              "firefox_enterprise": { "$ref": "#/definitions/compatEntry" }
-            }
+            "allOf": [
+              { "$ref": "#/definitions/compatibility" },
+              { "required": ["firefox", "firefox_esr", "firefox_enterprise"] }
+            ]
           },
           "x-restart-required": {
             "type": "boolean",
-            "description": "Whether the policy takes effect only after a restart. Firefox ignores this flag, since it applies all policies once at startup (set it to true for new policies in Firefox); it is consumed only by Firefox Enterprise, which can apply policies live."
+            "description": "Whether the policy takes effect only after a restart. Firefox ignores this flag, Firefox Enterprise is the only consumer."
           },
           "examples": {
             "type": "array",

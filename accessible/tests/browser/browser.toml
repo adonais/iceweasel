@@ -1,12 +1,13 @@
 [DEFAULT]
-skip-if = [
-  "a11y_checks", # 1534855
+run-if = [
+  "!a11y_checks", # these tests start and stop the accessibility service themselves
 ]
 subsuite = "a11y"
 support-files = [
   "!/accessible/tests/mochitest/*.js",
   "*.sys.mjs",
   "atk/a11y_setup.py",
+  "doc_mathml.html",
   "head.js",
   "python_runner_wsh.py",
   "shared-head.js",

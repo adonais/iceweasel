@@ -1,0 +1,141 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: the model's weights are reported to about:memory</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="head.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div id="content"></div>
+<pre id="test">
+<script>
+"use strict";
+
+// The model's weights sit in a ggml backend buffer in the HWInference process,
+// which no other reporter accounts for: they reach about:memory only through
+// the speech recognition reporter this covers.
+//
+// Reports are collected on demand, so this drives nsIMemoryReporterManager
+// from the parent process - which gathers the utility processes' reporters,
+// exactly like opening about:memory does - while a session holds the model,
+// and again once the session is over. The figure is live: it follows the
+// model rather than accumulating.
+//
+// Feeds silence: what the session recognizes does not matter, only that it
+// initialized, which is what loads the model.
+//
+// Requires (headless): pipewire + pipewire-pulse + wireplumber and
+// python3 testing/tools/serve_model.py (see test_parakeet_e2e.html).
+
+const SERVER_PORT = 8766;
+const LANG = "en-US";
+const REPORT_PATH = "explicit/media/speech-recognition/model-weights";
+// The model is freed as the streaming loop exits, which happens after "end".
+const RELEASE_TIMEOUT_MS = 10000;
+const RELEASE_POLL_MS = 250;
+
+SimpleTest.requestCompleteLog();
+SimpleTest.requestFlakyTimeout(
+  "polling the memory reports until the model is released, and head.js' " +
+  "bounded wait for AudioContext.resume()");
+
+// Bytes reported under REPORT_PATH, over every process. Runs in the parent
+// process: only there does the manager gather the child processes' reports.
+function reportedWeightsBytes() {
+  return SpecialPowers.spawnChrome([REPORT_PATH], async path => {
+    const manager = Cc["@mozilla.org/memory-reporter-manager;1"].getService(
+      Ci.nsIMemoryReporterManager
+    );
+    let bytes = 0;
+    await new Promise(resolve =>
+      manager.getReports(
+        (process, reportPath, kind, units, amount) => {
+          if (reportPath === path) {
+            bytes += amount;
+          }
+        },
+        null,
+        resolve,
+        null,
+        /* anonymize */ false
+      )
+    );
+    return bytes;
+  });
+}
+
+async function waitForWeightsReleased() {
+  const deadline = performance.now() + RELEASE_TIMEOUT_MS;
+  let bytes = await reportedWeightsBytes();
+  while (bytes && performance.now() < deadline) {
+    await new Promise(r => setTimeout(r, RELEASE_POLL_MS));
+    bytes = await reportedWeightsBytes();
+  }
+  return bytes;
+}
+
+add_setup(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.webspeech.recognition.enable", true],
+      ["browser.ml.modelHubRootUrl", `http://localhost:${SERVER_PORT}/`],
+      ["media.webspeech.recognition.model-download.prompt.testing", true],
+      ["media.navigator.permission.disabled", true],
+    ],
+  });
+});
+
+add_task(async function model_weights_are_reported_while_loaded() {
+  const installed = await ensureModelInstalled([LANG]);
+  ok(installed, "Model installed successfully");
+  if (!installed) {
+    return;
+  }
+
+  const ctx = await createResumedAudioContext();
+
+  const silence = ctx.createBufferSource();
+  silence.buffer = ctx.createBuffer(1, 2048, ctx.sampleRate);
+  silence.loop = true;
+  const dst = ctx.createMediaStreamDestination();
+  silence.connect(dst);
+  silence.connect(ctx.destination);
+  silence.start(0);
+
+  const sr = new SpeechRecognition();
+  sr.continuous = true;
+  sr.lang = LANG;
+
+  let errorFired = null;
+  sr.onerror = e => { errorFired = e.error; };
+  // audiostart is dispatched once the session is initialized, and the model is
+  // loaded as part of that: it is the point where the weights are in memory.
+  const audioStarted = new Promise(r => { sr.onaudiostart = r; });
+  const ended = new Promise(r => { sr.onend = r; });
+
+  sr.start(dst.stream.getAudioTracks()[0]);
+  await audioStarted;
+
+  const loadedBytes = await reportedWeightsBytes();
+  info(`reported ${loadedBytes} bytes of model weights`);
+  ok(loadedBytes > 0,
+     "The weights of the model the session loaded are reported. Got " +
+     `${loadedBytes} bytes.`);
+
+  sr.stop();
+  await ended;
+  is(errorFired, null, "the session produced no error");
+
+  silence.stop();
+  await ctx.close();
+
+  is(await waitForWeightsReleased(), 0,
+     "Nothing is reported once the session let the model go: the report is " +
+     "the memory held right then, not a total the session accumulated.");
+});
+</script>
+</pre>
+</body>
+</html>

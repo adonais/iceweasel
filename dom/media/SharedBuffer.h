@@ -7,6 +7,7 @@
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/fallible.h"
 #include "mozilla/mozalloc.h"
 #include "nsISupportsImpl.h"
 

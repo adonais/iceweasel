@@ -10,6 +10,8 @@
 <div id="display">
   <textarea id="textarea"></textarea>
   <div id="editable" contenteditable>x<br>x<br>x</div>
+  <div id="plaintextEditable" contenteditable="plaintext-only"
+       style="white-space: pre-wrap"></div>
 </div>
 <div id="content" style="display: none">
 </div>
@@ -19,11 +21,20 @@
 <script class="testbody" type="application/javascript">
 // Shift+Option+ArrowDown/ArrowUp is mapped to a character selection command
 // followed by a paragraph selection command, because the paragraph command on
-// its own cannot cross a paragraph boundary. These tests check that a press
-// extends the selection by exactly one paragraph, and in particular that the
-// leading character step does not make a press skip a whole paragraph when
-// that paragraph is only one character long.
+// its own cannot cross a paragraph boundary.
+//
+// The character command moves visually or logically depending on
+// "bidi.edit.caret_movement_style", and that pref's default differs per
+// channel: 1 on macOS Nightly, 2 on beta and release. Each case therefore runs
+// under every value, because a caret movement style that only ships on release
+// once let a broken sequence through.
 SimpleTest.waitForExplicitFinish();
+
+const CARET_MOVEMENT_STYLES = [
+  0, // logical
+  1, // visual (the macOS Nightly default)
+  2, // visual, but logical while extending (the beta and release default)
+];
 
 function selectDown() {
   synthesizeKey("KEY_ArrowDown", { altKey: true, shiftKey: true });
@@ -40,56 +51,98 @@ function checkTextarea(aTextarea, aExpectedStart, aExpectedEnd, aDescription) {
      aDescription + ": selection should end at " + aExpectedEnd);
 }
 
-function testDownwardInTextarea() {
+// Press repeatedly from the start of the value and check every step. Pressing
+// once from a caret that the test placed itself is not enough: the caret
+// association left behind by the previous press is part of what decides where
+// the next one lands.
+function checkDownwardSequence(aValue, aExpectedEnds, aDescription) {
   const textarea = document.getElementById("textarea");
-  textarea.value = "x\nx\nx";
+  textarea.value = aValue;
   textarea.focus();
   textarea.setSelectionRange(0, 0);
-
-  selectDown();
-  checkTextarea(textarea, 0, 1,
-                "Shift+Option+ArrowDown from the start of a one character " +
-                "paragraph should select only that paragraph");
-
-  selectDown();
-  checkTextarea(textarea, 0, 3,
-                "A second Shift+Option+ArrowDown should extend across the " +
-                "next paragraph");
-
-  selectDown();
-  checkTextarea(textarea, 0, 5,
-                "A third Shift+Option+ArrowDown should extend to the end of " +
-                "the last paragraph");
-
-  selectDown();
-  checkTextarea(textarea, 0, 5,
-                "Shift+Option+ArrowDown at the end of the value should not " +
-                "change the selection");
+  for (let i = 0; i < aExpectedEnds.length; i++) {
+    selectDown();
+    checkTextarea(textarea, 0, aExpectedEnds[i],
+                  aDescription + ", press " + (i + 1));
+  }
 }
 
-function testUpwardInTextarea() {
+function checkUpwardSequence(aValue, aExpectedStarts, aDescription) {
   const textarea = document.getElementById("textarea");
-  textarea.value = "x\nx\nx";
+  textarea.value = aValue;
   textarea.focus();
-  textarea.setSelectionRange(5, 5);
-
-  selectUp();
-  checkTextarea(textarea, 4, 5,
-                "Shift+Option+ArrowUp from the end of a one character " +
-                "paragraph should select only that paragraph");
-
-  selectUp();
-  checkTextarea(textarea, 2, 5,
-                "A second Shift+Option+ArrowUp should extend across the " +
-                "previous paragraph");
-
-  selectUp();
-  checkTextarea(textarea, 0, 5,
-                "A third Shift+Option+ArrowUp should extend to the start of " +
-                "the value");
+  const end = aValue.length;
+  textarea.setSelectionRange(end, end);
+  for (let i = 0; i < aExpectedStarts.length; i++) {
+    selectUp();
+    checkTextarea(textarea, aExpectedStarts[i], end,
+                  aDescription + ", press " + (i + 1));
+  }
 }
 
-function testEmptyParagraphInTextarea() {
+function testDownwardInTextarea(aStyle) {
+  checkDownwardSequence(
+      "x\nx\nx", [1, 3, 5, 5],
+      "Shift+Option+ArrowDown across single newlines with caret movement " +
+      "style " + aStyle);
+}
+
+function testUpwardInTextarea(aStyle) {
+  checkUpwardSequence(
+      "x\nx\nx", [4, 2, 0, 0],
+      "Shift+Option+ArrowUp across single newlines with caret movement " +
+      "style " + aStyle);
+}
+
+// A blank line is a paragraph of its own on macOS, so every second press
+// advances by exactly one character. Pressing repeatedly must still keep
+// extending rather than stalling on the blank line.
+function testBlankLineSequenceInTextarea(aStyle) {
+  checkDownwardSequence(
+      "x\n\nx\n\nx", [1, 2, 4, 5, 7, 7],
+      "Shift+Option+ArrowDown across blank lines with caret movement style " +
+      aStyle);
+}
+
+function testBlankLineUpwardSequenceInTextarea(aStyle) {
+  checkUpwardSequence(
+      "x\n\nx\n\nx", [6, 5, 3, 2, 0, 0],
+      "Shift+Option+ArrowUp across blank lines with caret movement style " +
+      aStyle);
+}
+
+// A plaintext-only editing host with "white-space: pre-wrap" keeps the newlines
+// in a single text node, the same shape a textarea has, so it exercises the same
+// paragraph boundaries without going through a text control.
+function checkPlaintextEditableSequence(aValue, aExpectedEnds, aDescription) {
+  const editable = document.getElementById("plaintextEditable");
+  editable.textContent = aValue;
+  editable.focus();
+  const selection = window.getSelection();
+  selection.collapse(editable.firstChild, 0);
+  for (let i = 0; i < aExpectedEnds.length; i++) {
+    selectDown();
+    is(selection.toString(), aValue.slice(0, aExpectedEnds[i]),
+       aDescription + ", press " + (i + 1) + ": should have selected the " +
+       "first " + aExpectedEnds[i] + " characters");
+  }
+}
+
+function testBlankLineSequenceInPlaintextEditable(aStyle) {
+  checkPlaintextEditableSequence(
+      "x\n\nx\n\nx", [1, 2, 4, 5, 7],
+      "Shift+Option+ArrowDown across blank lines in a plaintext-only editing " +
+      "host with caret movement style " + aStyle);
+}
+
+function testSingleNewlineSequenceInPlaintextEditable(aStyle) {
+  checkPlaintextEditableSequence(
+      "x\nx\nx", [1, 3, 5],
+      "Shift+Option+ArrowDown across single newlines in a plaintext-only " +
+      "editing host with caret movement style " + aStyle);
+}
+
+function testEmptyParagraphInTextarea(aStyle) {
   const textarea = document.getElementById("textarea");
   textarea.value = "x\n\nx";
   textarea.focus();
@@ -98,10 +151,11 @@ function testEmptyParagraphInTextarea() {
   selectDown();
   checkTextarea(textarea, 2, 4,
                 "Shift+Option+ArrowDown from an empty paragraph should " +
-                "extend to the end of the following paragraph");
+                "extend to the end of the following paragraph with caret " +
+                "movement style " + aStyle);
 }
 
-function testDownwardInContentEditable() {
+function testDownwardInContentEditable(aStyle) {
   const editable = document.getElementById("editable");
   editable.focus();
   const selection = window.getSelection();
@@ -111,25 +165,28 @@ function testDownwardInContentEditable() {
     return (selection.toString().match(/x/g) || []).length;
   };
 
-  selectDown();
-  is(countSelectedCharacters(), 1,
-     "Shift+Option+ArrowDown should select the single character of the first " +
-     "line only");
-
-  selectDown();
-  is(countSelectedCharacters(), 2,
-     "A second Shift+Option+ArrowDown should select two characters");
-
-  selectDown();
-  is(countSelectedCharacters(), 3,
-     "A third Shift+Option+ArrowDown should select three characters");
+  for (let expected = 1; expected <= 3; expected++) {
+    selectDown();
+    is(countSelectedCharacters(), expected,
+       "Shift+Option+ArrowDown press " + expected + " should select " +
+       expected + " character(s) with caret movement style " + aStyle);
+  }
 }
 
-function runTests() {
-  testDownwardInTextarea();
-  testUpwardInTextarea();
-  testEmptyParagraphInTextarea();
-  testDownwardInContentEditable();
+async function runTests() {
+  for (const style of CARET_MOVEMENT_STYLES) {
+    await SpecialPowers.pushPrefEnv(
+        { set: [["bidi.edit.caret_movement_style", style]] });
+    testDownwardInTextarea(style);
+    testUpwardInTextarea(style);
+    testBlankLineSequenceInTextarea(style);
+    testBlankLineUpwardSequenceInTextarea(style);
+    testEmptyParagraphInTextarea(style);
+    testDownwardInContentEditable(style);
+    testSingleNewlineSequenceInPlaintextEditable(style);
+    testBlankLineSequenceInPlaintextEditable(style);
+    await SpecialPowers.popPrefEnv();
+  }
   SimpleTest.finish();
 }
 

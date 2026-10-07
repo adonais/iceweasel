@@ -38,6 +38,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.core.text.isDigitsOnly
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.BrowserState
@@ -48,12 +50,11 @@ import mozilla.components.compose.base.textfield.TextField
 import mozilla.components.compose.base.theme.PreviewThemeProvider
 import mozilla.components.compose.base.theme.Theme
 import mozilla.components.compose.base.utils.toLocaleString
+import mozilla.components.feature.tabgroups.storage.data.TabGroup
+import mozilla.components.feature.tabgroups.storage.data.TabGroupData
+import mozilla.components.feature.tabgroups.storage.repository.TabGroupRepository
 import org.mozilla.fenix.R
 import org.mozilla.fenix.debugsettings.ui.DebugDrawer
-import org.mozilla.fenix.tabgroups.fakes.FakeTabGroupRepository
-import org.mozilla.fenix.tabgroups.storage.data.TabGroup
-import org.mozilla.fenix.tabgroups.storage.data.TabGroupData
-import org.mozilla.fenix.tabgroups.storage.repository.TabGroupRepository
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.repository.uistate.DefaultTabManagerUiStateRepository
 import org.mozilla.fenix.tabstray.repository.uistate.data.PersistedUIState
@@ -141,6 +142,7 @@ fun TabGroupTools(
 private fun generateTabGroup(
     counter: Int,
     isClosed: Boolean = false,
+    tabIDs: List<String>,
     timestamp: Long = System.currentTimeMillis(),
 ): TabGroup {
     return TabGroup(
@@ -148,6 +150,7 @@ private fun generateTabGroup(
         theme = TabGroupTheme.entries.random().name,
         closed = isClosed,
         lastModified = timestamp,
+        tabIds = tabIDs,
     )
 }
 
@@ -190,12 +193,10 @@ private suspend fun autoPopulateTabGroupsUseCase(
                 theme = theme,
                 closed = false,
                 lastModified = now,
+                tabIds = groupTabs.map { it.id },
             )
 
-        tabGroupRepository.createTabGroupWithTabs(
-            tabGroup = newGroup,
-            tabIds = groupTabs.map { it.id },
-        )
+        tabGroupRepository.createTabGroupWithTabs(tabGroup = newGroup)
 
         val ungroupedCountToGenerate =
             when (index) {
@@ -226,20 +227,28 @@ private suspend fun createTabGroupsUseCase(
     getAndIncrementCounter: () -> Int,
 ) {
     repeat(groupQuantity) {
-        val newGroup = generateTabGroup(counter = getAndIncrementCounter(), isClosed = isClosed)
         if (tabsPerGroup > 0) {
             val realTabs =
                 List(tabsPerGroup) { index ->
                     createTab(url = "https://example.com", title = "Generated Tab ${index + 1}")
                 }
+            val newGroup =
+                generateTabGroup(
+                    counter = getAndIncrementCounter(),
+                    isClosed = isClosed,
+                    tabIDs = realTabs.map { it.id },
+                )
 
             browserStore.dispatch(TabListAction.AddMultipleTabsAction(tabs = realTabs))
 
-            tabGroupRepository.createTabGroupWithTabs(
-                tabGroup = newGroup,
-                tabIds = realTabs.map { it.id },
-            )
+            tabGroupRepository.createTabGroupWithTabs(tabGroup = newGroup)
         } else {
+            val newGroup =
+                generateTabGroup(
+                    counter = getAndIncrementCounter(),
+                    isClosed = isClosed,
+                    tabIDs = emptyList(),
+                )
             tabGroupRepository.addNewTabGroup(tabGroup = newGroup)
         }
     }
@@ -512,7 +521,7 @@ private fun validateTabGroupInput(text: String): Int? {
 @Preview
 @Composable
 private fun TabGroupToolsPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
-    val mockTabGroupRepository = FakeTabGroupRepository()
+    val mockTabGroupRepository = PreviewTabGroupRepository
 
     FirefoxTheme(theme) {
         TabGroupTools(
@@ -521,3 +530,84 @@ private fun TabGroupToolsPreview(@PreviewParameter(PreviewThemeProvider::class) 
         )
     }
 }
+
+private val PreviewTabGroupRepository =
+    object : TabGroupRepository {
+        private val mutableTabGroupFlow = MutableStateFlow(TabGroupData())
+
+        override val tabGroupDataFlow: Flow<TabGroupData>
+            get() = mutableTabGroupFlow
+
+        override suspend fun createTabGroupWithTabs(tabGroup: TabGroup) {
+            val updatedAssignments = HashMap(mutableTabGroupFlow.value.tabGroupAssignments)
+            tabGroup.tabIds.forEach { id -> updatedAssignments[id] = tabGroup.id }
+            mutableTabGroupFlow.emit(
+                mutableTabGroupFlow.value.copy(
+                    tabGroups = mutableTabGroupFlow.value.tabGroups + tabGroup,
+                    tabGroupAssignments = updatedAssignments,
+                )
+            )
+        }
+
+        override suspend fun deleteAllTabGroupData() {
+            mutableTabGroupFlow.emit(TabGroupData())
+        }
+
+        override suspend fun addNewTabGroup(tabGroup: TabGroup) {
+            mutableTabGroupFlow.emit(
+                mutableTabGroupFlow.value.copy(tabGroups = mutableTabGroupFlow.value.tabGroups + tabGroup)
+            )
+        }
+
+        override suspend fun updateTabGroup(tabGroup: TabGroup) {
+            // no-op
+        }
+
+        override suspend fun closeTabGroup(tabGroupId: String) {
+            // no-op
+        }
+
+        override suspend fun openTabGroup(tabGroupId: String) {
+            // no-op
+        }
+
+        override suspend fun closeAllTabGroups() {
+            // no-op
+        }
+
+        override suspend fun deleteTabGroupById(tabGroupId: String) {
+            // no-op
+        }
+
+        override suspend fun deleteTabGroupsById(ids: List<String>) {
+            // no-op
+        }
+
+        override suspend fun ungroupTabGroup(tabGroupId: String) {
+            // no-op
+        }
+
+        override suspend fun addTabGroupAssignment(tabId: String, tabGroupId: String) {
+            // no-op
+        }
+
+        override suspend fun addTabsToTabGroup(tabGroupId: String, tabIds: List<String>) {
+            // no-op
+        }
+
+        override suspend fun updateTabGroupAssignment(tabId: String, tabGroupId: String) {
+            // no-op
+        }
+
+        override suspend fun deleteTabGroupAssignmentById(tabId: String) {
+            // no-op
+        }
+
+        override suspend fun deleteTabGroupAssignmentsById(tabIds: List<String>) {
+            // no-op
+        }
+
+        override suspend fun deleteAllTabGroupAssignmentsForGroup(tabGroupId: String) {
+            // no-op
+        }
+    }

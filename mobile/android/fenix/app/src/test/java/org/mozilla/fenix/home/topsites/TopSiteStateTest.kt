@@ -25,7 +25,7 @@ class TopSiteStateTest {
     @get:Rule val composeTestRule = createComposeRule()
 
     private fun buildState(
-        count: Int,
+        count: Int = 12,
         showMoreShortcuts: Boolean = true,
         isAddShortcutEnabled: Boolean = true,
     ): TopSiteState {
@@ -56,35 +56,33 @@ class TopSiteStateTest {
     }
 
     @Test
-    fun `GIVEN exactly the collapsed limit and the add shortcut tile enabled THEN the toggle is shown`() {
-        assertTrue(buildState(count = TOP_SITES_TO_SHOW).showExpandToggle)
+    fun `GIVEN the secret setting is on THEN the toggle is enabled and the library button is hidden`() {
+        val state = buildState()
+
+        assertTrue(state.isExpandToggleEnabled)
+        assertFalse(state.showShortcutsLibraryButton)
     }
 
     @Test
-    fun `GIVEN exactly the collapsed limit and the add shortcut tile disabled THEN the toggle is hidden`() {
-        assertFalse(buildState(count = TOP_SITES_TO_SHOW, isAddShortcutEnabled = false).showExpandToggle)
-    }
+    fun `GIVEN the secret setting is off THEN the toggle is disabled and the library button is shown`() {
+        val state = buildState(showMoreShortcuts = false)
 
-    @Test
-    fun `GIVEN more than the collapsed limit THEN the toggle is shown`() {
-        assertTrue(buildState(count = TOP_SITES_TO_SHOW + 1).showExpandToggle)
-    }
-
-    @Test
-    fun `GIVEN fewer than the collapsed limit THEN the toggle is hidden`() {
-        assertFalse(buildState(count = TOP_SITES_TO_SHOW - 1).showExpandToggle)
-    }
-
-    @Test
-    fun `GIVEN the secret setting is off THEN the toggle is hidden and the library button is shown`() {
-        val state = buildState(count = TOP_SITES_TO_SHOW + 1, showMoreShortcuts = false)
-
-        assertFalse(state.showExpandToggle)
+        assertFalse(state.isExpandToggleEnabled)
         assertTrue(state.showShortcutsLibraryButton)
     }
 
     @Test
-    fun `GIVEN the secret setting is on THEN the library button is hidden`() {
-        assertFalse(buildState(count = TOP_SITES_TO_SHOW + 1).showShortcutsLibraryButton)
+    fun `GIVEN only a couple of shortcuts THEN the toggle is still enabled`() {
+        assertTrue(buildState(count = 2).isExpandToggleEnabled)
+    }
+
+    @Test
+    fun `GIVEN the add shortcut setting is on THEN it is carried into the state`() {
+        assertTrue(buildState(isAddShortcutEnabled = true).isAddShortcutEnabled)
+    }
+
+    @Test
+    fun `GIVEN the add shortcut setting is off THEN it is carried into the state`() {
+        assertFalse(buildState(isAddShortcutEnabled = false).isAddShortcutEnabled)
     }
 }

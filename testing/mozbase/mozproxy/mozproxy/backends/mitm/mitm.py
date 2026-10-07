@@ -27,6 +27,8 @@ mitm_folder = os.path.dirname(os.path.realpath(__file__))
 
 # maximal allowed runtime of a mitmproxy command
 MITMDUMP_COMMAND_TIMEOUT = 30
+# Direct playback needs multiple --mode listen specs (mitmproxy >= 9).
+DIRECT_PLAYBACK_VERSIONS = ("11.0.0", "12.2.1")
 
 # maximal wait for mitmproxy to write its CA certificate
 MITMPROXY_CERT_TIMEOUT = 60
@@ -43,6 +45,11 @@ class Mitmproxy(Playback):
             "127.0.0.1" if "localhost" in self.config["host"] else self.config["host"]
         )
         self.port = None
+        self.http_port = None
+        self.https_port = None
+        self.playback_mode = config.get("playback_mode", "proxy")
+        if self.playback_mode not in ("proxy", "direct"):
+            raise ValueError(f"Unsupported playback mode: {self.playback_mode}")
         self.mitmproxy_proc = None
         self.mitmdump_path = None
         self.mitmdump_path_dir = None
@@ -94,6 +101,17 @@ class Mitmproxy(Playback):
                 "Please provide a valid playback version"
             )
             raise Exception("playback_version not specified!")
+
+        if (
+            self.playback_mode == "direct"
+            and self.config["playback_version"] not in DIRECT_PLAYBACK_VERSIONS
+        ):
+            supported_versions = ", ".join(DIRECT_PLAYBACK_VERSIONS)
+            raise ValueError(
+                f"Direct playback does not support mitmproxy "
+                f"{self.config['playback_version']}; supported versions: "
+                f"{supported_versions}"
+            )
 
         # mozproxy_dir is where we will download all mitmproxy required files
         # when running locally it comes from obj_path via mozharness/mach
@@ -342,7 +360,13 @@ class Mitmproxy(Playback):
         """Startup mitmproxy and replay the specified flow file"""
         if self.mitmproxy_proc is not None:
             raise Exception("Proxy already started.")
-        self.port = get_available_port()
+        if self.playback_mode == "direct":
+            self.http_port = get_available_port()
+            self.https_port = get_available_port()
+            while self.https_port == self.http_port:
+                self.https_port = get_available_port()
+        else:
+            self.port = get_available_port()
 
         LOG.info(f"mitmdump path: {mitmdump_path}")
         LOG.info(f"browser path: {browser_path}")
@@ -356,13 +380,20 @@ class Mitmproxy(Playback):
             # Generate mitmproxy verbose logs
             command.extend(["-v"])
 
-        # add proxy host and port options
-        command.extend([
-            "--listen-host",
-            self.host,
-            "--listen-port",
-            str(self.port),
-        ])
+        command.extend(["--listen-host", self.host])
+        if self.playback_mode == "direct":
+            command.extend([
+                "--mode",
+                f"reverse:http://example.invalid@{self.http_port}",
+                "--mode",
+                f"reverse:https://example.invalid@{self.https_port}",
+                "--set",
+                "keep_host_header=true",
+                "--set",
+                "upstream_cert=false",
+            ])
+        else:
+            command.extend(["--listen-port", str(self.port)])
 
         # record mode
         if self.record_mode:
@@ -500,6 +531,9 @@ class Mitmproxy(Playback):
             else:
                 raise Exception("Mitmproxy version is unknown!")
 
+            if self.playback_mode == "direct":
+                command.extend(["--set", "alt_server_replay_ignore_port=true"])
+
         else:
             raise Exception(
                 "Mitmproxy can't start playback! Playback settings missing."
@@ -530,12 +564,18 @@ class Mitmproxy(Playback):
 
         end_time = time.time() + MITMDUMP_COMMAND_TIMEOUT
 
+        ports = (
+            [self.http_port, self.https_port]
+            if self.playback_mode == "direct"
+            else [self.port]
+        )
         ready = False
         while time.time() < end_time:
-            ready = self.check_proxy(host=self.host, port=self.port)
+            ready = all(self.check_proxy(host=self.host, port=port) for port in ports)
             if ready:
+                listening = ", ".join(f"{self.host}:{port}" for port in ports)
                 LOG.info(
-                    f"Mitmproxy playback successfully started on {self.host}:{self.port} as pid {self.mitmproxy_proc.pid}"
+                    f"Mitmproxy playback successfully started on {listening} as pid {self.mitmproxy_proc.pid}"
                 )
                 return
             time.sleep(0.25)

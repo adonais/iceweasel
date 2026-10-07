@@ -24,7 +24,7 @@ RUNTIME_PING_BIT = PING_INDEX_BITS - 1
 # The list of all args to CommonMetricData.
 # No particular order is required, but I have these in common_metric_data.rs
 # order just to be organized.
-# Note that this is util.common_metric_args with "dynamic_label" in the spot
+# Note that this is util.common_metric_args with "label" in the spot
 # expected by glean-core's CommonMetricData.
 common_metric_data_args = [
     "name",
@@ -32,8 +32,8 @@ common_metric_data_args = [
     "send_in_pings",
     "lifetime",
     "disabled",
-    "dynamic_label",
     "in_session",
+    "label",
 ]
 
 # List of all metric-type-specific args that JOG understands.
@@ -194,8 +194,8 @@ def output_file(objs, output_fd, options={}):
         if isinstance(value, Rate):  # `numerators` for an external Denominator metric
             args = []
             for arg_name in common_metric_data_args:
-                if arg_name == "dynamic_label":
-                    # "dynamic_label" is special because it is on the Rust
+                if arg_name == "label":
+                    # "label" is special because it is on the Rust
                     # CommonMetricData struct, but isn't in the glean_parser
                     # object model.
                     # Luckily, JOG doesn't need it. So merely supply None.
@@ -211,7 +211,7 @@ def output_file(objs, output_fd, options={}):
         for metric in metrics.values():
             metric_arg_list = [camel_to_snake(metric.__class__.__name__)]
             for arg in common_metric_data_args:
-                if arg in ["category", "dynamic_label"]:
+                if arg in ["category", "label"]:
                     continue
                 metric_arg_list.append(getattr(metric, arg))
             extra = {}

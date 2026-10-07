@@ -437,12 +437,11 @@ class ModuleLoaderBase : public nsISupports {
   friend class JS::loader::ImportMap;
 
   static ModuleLoaderBase* GetCurrentModuleLoader(JSContext* aCx);
-  static ScriptFetchInfo* GetScriptFetchInfoOrNull(Handle<JSScript*> aReferrer);
+  static ScriptFetchInfo* GetScriptFetchInfoOrNull(Handle<Value> aReferrer);
 
   static void EnsureModuleHooksInitialized();
 
-  static bool HostLoadImportedModule(JSContext* aCx,
-                                     Handle<JSScript*> aReferrer,
+  static bool HostLoadImportedModule(JSContext* aCx, Handle<Value> aReferrer,
                                      Handle<JSObject*> aModuleRequest,
                                      Handle<Value> aHostDefined,
                                      Handle<Value> aPayload,

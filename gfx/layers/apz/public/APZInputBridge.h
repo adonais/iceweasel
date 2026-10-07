@@ -31,8 +31,9 @@ struct PointerEventsConsumableFlags;
 // like APZ waits for the content's response if there's an APZ ware event
 // listener in the content process.
 enum class BrowserGestureResponse : bool {
-  NotConsumed = 0,  // Representing the browser doesn't consume the gesture
-  Consumed = 1,  // Representing the browser has started consuming the gesture.
+  NotConsumed = false,  // Representing the browser doesn't consume the gesture
+  Consumed =
+      true,  // Representing the browser has started consuming the gesture.
 };
 
 enum class APZHandledPlace : uint8_t {

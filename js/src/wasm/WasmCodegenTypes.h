@@ -241,6 +241,19 @@ const char* ToString(TrapMachineInsn tmi);
 // resulting FaultingCodeRange is ignored.  Hence the burden of
 // error/consistency checking is placed on the (infrequently used) access
 // routines rather than the constructors.
+//
+// In typical use, there are two reasons why FaultingCodeRange may fail
+// `isValid()`:
+//
+// * The generating assembler OOMd.  In this case, routines handling
+//   FaultingCodeRanges will ignore the ranges, and at the end of compilation
+//   the assembler's OOM flag is checked and as a result all code and metadata
+//   resulting from the compilation is discarded.
+//
+// * or, the FaultingCodeRange was deliberately created as invalid, using
+//   `FaultingCodeRange()`.  This can be used to signify to callers that "no
+//   trap required here / no stackmap required here" and is detected and handled
+//   accordingly.
 
 class FaultingCodeRange {
   // Definitions that summarise the range of instruction lengths in the code we

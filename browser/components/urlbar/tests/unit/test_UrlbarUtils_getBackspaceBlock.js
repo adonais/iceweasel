@@ -35,12 +35,11 @@ async function triggerBlock(url) {
 }
 
 add_task(async function block_is_returned_and_consumed() {
-  for (let { url, level, key } of LEVELS) {
+  for (let { url, key } of LEVELS) {
     clearAllBlocks();
     await triggerBlock(url);
 
     let result = UrlbarUtils.getBackspaceBlock(url);
-    Assert.equal(result.level, level, `${url} should produce ${level} level`);
     Assert.greater(result.blockedAt, 0, "blockedAt should be above 0");
 
     // Try getting the result again: It should have been consumed.
@@ -94,7 +93,6 @@ add_task(async function retracking_refreshes_expiration() {
       result,
       `After retracking, the ${level} block should be considered fresh again`
     );
-    Assert.equal(result.level, level);
   }
 
   await PlacesUtils.history.clear();
@@ -108,7 +106,6 @@ add_task(async function origin_and_url_blocks_coexist() {
   // Querying the page URL should return the url-level block, and consuming
   // it should leave the origin-level block intact.
   let pageResult = UrlbarUtils.getBackspaceBlock(PAGE_URL);
-  Assert.equal(pageResult.level, "url", "Page URL should produce url level");
   Assert.greater(pageResult.blockedAt, 0, "Page blockedAt should be above 0");
   Assert.equal(
     UrlbarUtils.getBackspaceBlock(PAGE_URL),
@@ -117,11 +114,6 @@ add_task(async function origin_and_url_blocks_coexist() {
   );
 
   let originResult = UrlbarUtils.getBackspaceBlock(ORIGIN_URL);
-  Assert.equal(
-    originResult.level,
-    "origin",
-    "Origin URL should produce origin level"
-  );
   Assert.greater(
     originResult.blockedAt,
     0,

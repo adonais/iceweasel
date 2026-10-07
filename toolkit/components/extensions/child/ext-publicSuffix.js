@@ -37,13 +37,23 @@ this.publicSuffix = class extends ExtensionAPI {
     return {
       publicSuffix: {
         isKnownSuffix: function (hostname) {
+          let suffix;
           try {
-            const suffix = Services.eTLD.getKnownPublicSuffixFromHost(hostname);
-            if (suffix) {
-              return suffix === ensureValidHostname(hostname);
+            suffix = Services.eTLD.getKnownPublicSuffixFromHost(
+              removeIPv6Brackets(hostname)
+            );
+          } catch (e) {
+            if (e.result === Cr.NS_ERROR_HOST_IS_IP_ADDRESS) {
+              if (hostname.includes(":") && !hostname.startsWith("[")) {
+                // IPv6 address without brackets.
+                throw invalidHostnameError(hostname);
+              }
+              return false;
             }
-          } catch {}
-          return false;
+            throw invalidHostnameError(hostname);
+          }
+
+          return suffix === ensureValidHostname(hostname);
         },
 
         getKnownSuffix: function (hostname) {

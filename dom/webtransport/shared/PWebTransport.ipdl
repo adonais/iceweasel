@@ -27,6 +27,29 @@ struct BidirectionalStream {
   nullable DataPipeSender outStream;
 };
 
+struct WebTransportDatagramStatsData {
+  uint64_t droppedIncoming;
+  uint64_t expiredIncoming;
+  uint64_t expiredOutgoing;
+  uint64_t lostOutgoing;
+};
+
+struct WebTransportStatsData {
+  uint64_t bytesSent;
+  uint64_t bytesAcknowledged;
+  uint64_t packetsSent;
+  uint64_t bytesLost;
+  uint64_t packetsLost;
+  uint64_t bytesReceived;
+  uint64_t packetsReceived;
+  double smoothedRtt;
+  double rttVariation;
+  double minRtt;
+  int64_t estimatedSendRate;   // -1 = null
+  bool atSendCapacity;
+  WebTransportDatagramStatsData datagrams;
+};
+
 union BidirectionalStreamResponse {
   nsresult;
   BidirectionalStream;
@@ -52,7 +75,8 @@ async protocol PWebTransport
   /**
    * TODO: documentation
    */
-  async Close(uint32_t code, nsCString reason);
+  async Close(uint32_t code, nsCString reason)
+      returns(WebTransportStatsData? stats);
   async CreateUnidirectionalStream(int64_t sendOrder, uint64_t? sendGroupId)
       returns(UnidirectionalStreamResponse response);
   async CreateBidirectionalStream(int64_t sendOrder, uint64_t? sendGroupId)
@@ -104,6 +128,12 @@ async protocol PWebTransport
   async ExportKeyingMaterial(uint8_t[] label, uint8_t[]? context)
     returns(uint8_t[] keyingMaterial);
 
+  /**
+  * Get connection statistics
+  */
+  async GetStats()
+    returns(WebTransportStatsData? stats);
+
  child:
 
   async IncomingUnidirectionalStream(uint64_t streamId, nullable DataPipeReceiver receive);
@@ -123,7 +153,8 @@ async protocol PWebTransport
 
   async Draining();
 
-  async RemoteClosed(bool cleanly, uint32_t code, nsCString reason);
+  async RemoteClosed(bool cleanly, uint32_t code, nsCString reason,
+                     WebTransportStatsData? stats);
 
   async OnStreamResetOrStopSending(uint64_t streamId,
                                    StreamResetOrStopSendingError error);

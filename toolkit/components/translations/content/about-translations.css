@@ -155,16 +155,22 @@ body {
 }
 
 #about-translations-translation-error-message {
-  --message-bar-border-radius: 0;
+  border-radius: 0;
+  border-start-start-radius: calc(var(--border-radius-medium) - 1px);
+  border-start-end-radius: calc(var(--border-radius-medium) - 1px);
+  --message-bar-icon-container-border-radius-end-start: 0;
   --message-bar-border-width: 0;
-  padding-inline: var(--space-xsmall);
+  --message-bar-content-padding-inline: var(--space-xsmall);
   border-block-end: var(--border-width) solid var(--border-color);
 }
 
 .about-translations-section-message {
-  --message-bar-border-radius: 0;
+  border-radius: 0;
+  border-start-start-radius: calc(var(--border-radius-medium) - 1px);
+  border-start-end-radius: calc(var(--border-radius-medium) - 1px);
+  --message-bar-icon-container-border-radius-end-start: 0;
   --message-bar-border-width: 0;
-  padding-inline: var(--space-xsmall);
+  --message-bar-content-padding-inline: var(--space-xsmall);
   border-block-end: var(--border-width) solid var(--border-color);
 }
 

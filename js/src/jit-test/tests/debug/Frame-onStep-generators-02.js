@@ -24,7 +24,7 @@ let dbg = new Debugger(g);
 dbg.onEnterFrame = frame => {
     log += frame.callee.name + "{";
     frame.onStep = () => {
-        let line = frame.script.getOffsetLocation(frame.offset).lineNumber;
+        let line = frame.script.getOffsetMetadata(frame.offset).lineNumber;
         if (previousLine != line) { // We stepped to a new line.
             log += line;
             previousLine = line;

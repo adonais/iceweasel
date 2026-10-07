@@ -286,7 +286,7 @@ interface nsIWebNavigation : nsISupports
    *        A JSObject defined in LoadURIOptions.webidl holding info like e.g.
    *        the triggeringPrincipal, the referrer info.
    */
-  [implicit_jscontext, binaryname(LoadURIFromScript)]
+  [can_run_script, implicit_jscontext, binaryname(LoadURIFromScript)]
   void loadURI(in nsIURI aURI,
                in jsval  aLoadURIOptions);
 
@@ -310,21 +310,22 @@ interface nsIWebNavigation : nsISupports
    *        A JSObject defined in LoadURIOptions.webidl holding info like e.g.
    *        the triggeringPrincipal, the referrer info.
    */
-  [implicit_jscontext, binaryname(FixupAndLoadURIStringFromScript)]
+  [can_run_script, implicit_jscontext,
+   binaryname(FixupAndLoadURIStringFromScript)]
   void fixupAndLoadURIString(in AString aURIString,
                              in jsval   aLoadURIOptions);
 
   /**
    * A C++ friendly version of loadURI
    */
-  [nostdcall, binaryname(LoadURI)]
+  [can_run_script, nostdcall, binaryname(LoadURI)]
   void binaryLoadURI(in nsIURI            aURI,
                      in LoadURIOptionsRef aLoadURIOptions);
 
   /**
    * A C++ friendly version of fixupAndLoadURIString
    */
-  [nostdcall, binaryname(FixupAndLoadURIString)]
+  [can_run_script, nostdcall, binaryname(FixupAndLoadURIString)]
   void binaryFixupAndLoadURIString(in AString           aURIString,
                                    in LoadURIOptionsRef aLoadURIOptions);
 

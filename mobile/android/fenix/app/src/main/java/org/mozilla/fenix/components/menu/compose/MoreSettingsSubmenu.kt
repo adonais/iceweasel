@@ -16,8 +16,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.badge.StatusBadge
 import mozilla.components.compose.base.theme.PreviewThemeProvider
 import mozilla.components.compose.base.theme.Theme
+import mozilla.components.compose.base.theme.information
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.store.SummarizationMenuState
@@ -41,6 +43,7 @@ internal fun MoreSettingsSubmenu(
     isAndroidAutomotiveAvailable: Boolean,
     summarizationMenuState: SummarizationMenuState,
     isPrivate: Boolean,
+    showTabGroupsInMenu: Boolean,
     onWebCompatReporterClick: () -> Unit,
     onSummarizePageMenuExposed: () -> Unit,
     onSummarizePageClick: () -> Unit,
@@ -51,6 +54,7 @@ internal fun MoreSettingsSubmenu(
     onPrintMenuClick: () -> Unit,
     onOpenInAppMenuClick: () -> Unit,
     onMoveToNonPrivateTabMenuClick: () -> Unit,
+    onAddToTabGroupClick: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         TranslationMenuItem(
@@ -80,6 +84,9 @@ internal fun MoreSettingsSubmenu(
             isInstallable = isInstallable,
             onAddToHomeScreenMenuClick = onAddToHomeScreenMenuClick,
         )
+        if (showTabGroupsInMenu) {
+            AddToTabGroupMenuItem(onAddToTabGroupClick = onAddToTabGroupClick)
+        }
         SaveToCollectionMenuItem(
             showSaveToCollection = showSaveToCollection,
             onSaveToCollectionMenuClick = onSaveToCollectionMenuClick,
@@ -108,6 +115,25 @@ private fun WebCompatReporterMenuItem(
         beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_lightbulb_24),
         state = if (isWebCompatEnabled) MenuItemState.ENABLED else MenuItemState.DISABLED,
         onClick = onWebCompatReporterClick,
+    )
+}
+
+@Composable
+private fun AddToTabGroupMenuItem(onAddToTabGroupClick: () -> Unit) {
+    MenuItem(
+        label = stringResource(id = R.string.browser_menu_add_to_tab_group),
+        stateDescription = stringResource(id = R.string.browser_menu_page_badge_text),
+        beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_tab_group_24),
+        state = MenuItemState.ENABLED,
+        isBeforeIconHighlighted = true,
+        onClick = onAddToTabGroupClick,
+        afterContent = {
+            StatusBadge(
+                containerColor = MaterialTheme.colorScheme.information,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                status = stringResource(R.string.browser_menu_page_badge_text),
+            )
+        },
     )
 }
 
@@ -290,6 +316,7 @@ private fun MoreSettingsSubmenuPreview(@PreviewParameter(PreviewThemeProvider::c
                             showNewFeatureBadge = true,
                         ),
                     isPrivate = true,
+                    showTabGroupsInMenu = true,
                     onWebCompatReporterClick = {},
                     onSummarizePageMenuExposed = {},
                     onSummarizePageClick = {},
@@ -300,6 +327,7 @@ private fun MoreSettingsSubmenuPreview(@PreviewParameter(PreviewThemeProvider::c
                     onPrintMenuClick = {},
                     onOpenInAppMenuClick = {},
                     onMoveToNonPrivateTabMenuClick = {},
+                    onAddToTabGroupClick = {},
                 )
             }
         }
@@ -338,6 +366,7 @@ private fun MoreSettingsSubmenuDisabledOpenPreview(@PreviewParameter(PreviewThem
                     isAndroidAutomotiveAvailable = false,
                     summarizationMenuState = SummarizationMenuState.Default,
                     isPrivate = false,
+                    showTabGroupsInMenu = false,
                     onWebCompatReporterClick = {},
                     onSummarizePageMenuExposed = {},
                     onSummarizePageClick = {},
@@ -348,6 +377,7 @@ private fun MoreSettingsSubmenuDisabledOpenPreview(@PreviewParameter(PreviewThem
                     onPrintMenuClick = {},
                     onOpenInAppMenuClick = {},
                     onMoveToNonPrivateTabMenuClick = {},
+                    onAddToTabGroupClick = {},
                 )
             }
         }

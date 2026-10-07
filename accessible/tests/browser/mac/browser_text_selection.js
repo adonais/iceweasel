@@ -93,7 +93,7 @@ addAccessibleTask(
     // which is "link".
     let selTextChanged = waitForMacEvent(
       "AXSelectedTextChanged",
-      e => e.getAttributeValue("AXDOMIdentifier") != "body"
+      e => e.getAttributeValue("AXDOMIdentifier") != currentContentDoc()
     );
 
     let focusChanged = waitForMacEvent("AXFocusedUIElementChanged");
@@ -126,7 +126,7 @@ addAccessibleTask(
     );
     selTextChanged = waitForMacEvent(
       "AXSelectedTextChanged",
-      e => e.getAttributeValue("AXDOMIdentifier") != "body"
+      e => e.getAttributeValue("AXDOMIdentifier") != currentContentDoc()
     );
     focusChanged = waitForMacEvent("AXFocusedUIElementChanged");
     await SpecialPowers.spawn(browser, [], () => {

@@ -128,8 +128,6 @@ struct EmbedderColorSchemes {
   /* Current opener for the BrowsingContext. Weak reference */                \
   FIELD(OpenerId, uint64_t)                                                   \
   FIELD(OnePermittedSandboxedNavigatorId, uint64_t)                           \
-  /* WindowID of the inner window which embeds this BC */                     \
-  FIELD(EmbedderInnerWindowId, uint64_t)                                      \
   FIELD(CurrentInnerWindowId, uint64_t)                                       \
   FIELD(HadOriginalOpener, bool)                                              \
   /* Was this window created by a webpage through window.open or an anchor    \
@@ -209,7 +207,7 @@ struct EmbedderColorSchemes {
   FIELD(CurrentOrientationType, mozilla::dom::OrientationType)                \
   FIELD(OrientationLock, mozilla::hal::ScreenOrientation)                     \
   FIELD(HasOrientationOverride, bool)                                         \
-  FIELD(UserAgentOverride, nsString)                                          \
+  FIELD(UserAgentOverride, nsCString)                                         \
   FIELD(TouchEventsOverrideInternal, mozilla::dom::TouchEventsOverride)       \
   FIELD(EmbedderElementType, Maybe<nsString>)                                 \
   FIELD(MessageManagerGroup, nsString)                                        \
@@ -411,6 +409,9 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   // message.
   bool IsDiscarded() const { return mIsDiscarded; }
 
+  // https://html.spec.whatwg.org/#script-closable
+  bool IsScriptClosable() const;
+
   // Returns true if none of the BrowsingContext's ancestor BrowsingContexts or
   // WindowContexts are discarded or cached.
   bool AncestorsAreCurrent() const;
@@ -475,12 +476,13 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void PrepareForProcessChange();
 
   // Triggers a load in the process which currently owns this BrowsingContext.
+  MOZ_CAN_RUN_SCRIPT
   nsresult LoadURI(nsDocShellLoadState* aLoadState,
                    bool aSetNavigating = false);
 
   nsresult InternalLoad(nsDocShellLoadState* aLoadState);
 
-  void Navigate(
+  MOZ_CAN_RUN_SCRIPT void Navigate(
       nsIURI* aURI, Document* aSourceDocument, nsIPrincipal& aSubjectPrincipal,
       ErrorResult& aRv,
       NavigationHistoryBehavior aHistoryHandling =
@@ -493,10 +495,13 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   // if it is cached, and returns true if it was.
   bool RemoveRootFromBFCacheSync();
 
-  // If the load state includes a source BrowsingContext has been passed, check
-  // to see if we are sandboxed from it as the result of an iframe or CSP
-  // sandbox.
-  nsresult CheckSandboxFlags(nsDocShellLoadState* aLoadState);
+  // Check to see if we are sandboxed from the source BrowsingContext as the
+  // result of an iframe or CSP sandbox. Reports a console error if so.
+  // This also applies to window.close(), aForClose adjusts the error.
+  nsresult EnsureSourceSandboxAllowsNavigation(BrowsingContext* aSourceBC,
+                                               bool aForClose = false);
+  nsresult EnsureSourceSandboxAllowsNavigation(nsDocShellLoadState* aLoadState,
+                                               bool aForClose = false);
 
   // If the current BrowsingContext is top-level, we run checks to see if
   // the source BrowsingContext is allowed to perform the navigation.
@@ -885,11 +890,11 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
                       const WindowPostMessageOptions& aOptions,
                       nsIPrincipal& aSubjectPrincipal, ErrorResult& aError);
 
-  void GetCustomUserAgent(nsAString& aUserAgent) {
+  void GetCustomUserAgent(nsACString& aUserAgent) {
     aUserAgent = Top()->GetUserAgentOverride();
   }
-  nsresult SetCustomUserAgent(const nsAString& aUserAgent);
-  void SetCustomUserAgent(const nsAString& aUserAgent, ErrorResult& aRv);
+  nsresult SetCustomUserAgent(const nsACString& aUserAgent);
+  void SetCustomUserAgent(const nsACString& aUserAgent, ErrorResult& aRv);
 
   void GetCustomPlatform(nsAString& aPlatform) {
     aPlatform = Top()->GetPlatformOverride();
@@ -1254,6 +1259,11 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
       return GetBrowsingContext()->Release();
     }
 
+    // Deleted catch-all overload: every field must provide a `CanSet` whose
+    // value parameter exactly matches the field's type.
+    template <size_t I, typename T>
+    bool CanSet(FieldIndex<I>, const T&, ContentParent*) = delete;
+
    protected:
     friend class RemoteLocationProxy;
     BrowsingContext* GetBrowsingContext() override {
@@ -1274,11 +1284,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void ActivenessChanged(bool aIsActive);
 
   using CanSetResult = syncedcontext::CanSetResult;
-
-  // Deleted catch-all overload: every field must provide a `CanSet` whose value
-  // parameter exactly matches the field's type.
-  template <size_t I, typename T>
-  bool CanSet(FieldIndex<I>, const T&, ContentParent*) = delete;
 
   // Overload `DidSet` to get notifications for a particular field being set.
   //
@@ -1456,9 +1461,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
               ContentParent* aSource);
   void DidSet(FieldIndex<IDX_OverrideDPPX>, float aOldValue);
 
-  bool CanSet(FieldIndex<IDX_EmbedderInnerWindowId>, const uint64_t& aValue,
-              ContentParent* aSource);
-
   CanSetResult CanSet(FieldIndex<IDX_CurrentInnerWindowId>,
                       const uint64_t& aValue, ContentParent* aSource);
 
@@ -1500,7 +1502,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   void DidSet(FieldIndex<IDX_UserAgentOverride>);
   CanSetResult CanSet(FieldIndex<IDX_UserAgentOverride>,
-                      const nsString& aUserAgent, ContentParent* aSource);
+                      const nsCString& aUserAgent, ContentParent* aSource);
   bool CanSet(FieldIndex<IDX_OrientationLock>,
               const mozilla::hal::ScreenOrientation& aOrientationLock,
               ContentParent* aSource);

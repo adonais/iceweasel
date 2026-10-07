@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Use counter test for rejected Sanitizer configurations</title>
+<style>
+  /* Sentinel use counter to signal that telemetry for this document has been captured */
+  div {
+    marker-mid: initial;
+  }
+</style>
+<div id="host"></div>
+<script>
+  // "elements" and "removeElements" are mutually exclusive, so this config is
+  // rejected. No configuration key may be counted for it.
+  try {
+    new Sanitizer({ elements: ["p"], removeElements: ["script"] });
+  } catch (e) {}
+
+  // Same via the inline dictionary path, with a different rejection reason
+  // (duplicate entries).
+  try {
+    document.getElementById("host").setHTML("<p>x</p>", {
+      sanitizer: { attributes: ["title", "title"] },
+    });
+  } catch (e) {}
+</script>

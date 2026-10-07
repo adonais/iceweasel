@@ -60,7 +60,7 @@ matches this filter. This may be temporary, due to network errors, or
 permanent due to syntax errors.
 
 This should be considered a temporary error, because it may be the result of
-infrastructure, such as [Classify Client](./services.html#classify-client),
+infrastructure, such as [Classify Client](./services.md#classify-client),
 temporarily failing.
 
 ### `ARGUMENTS_INVALID`

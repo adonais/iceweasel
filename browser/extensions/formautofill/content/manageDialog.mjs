@@ -390,13 +390,45 @@ export class ManageCreditCards extends ManageRecords {
     const typeName = typeL10nId
       ? await document.l10n.formatValue(typeL10nId)
       : (type ?? ""); // Unknown card type
-    return lazy.CreditCard.getLabelInfo({
+    const labelInfo = lazy.CreditCard.getLabelInfo({
       name: creditCard["cc-name"],
       number: creditCard["cc-number"],
       month: creditCard["cc-exp-month"],
       year: creditCard["cc-exp-year"],
       type: typeName,
     });
+
+    if (!FormAutofill.isAutofillCreditCardCVVEnabled || !creditCard["cc-csc"]) {
+      return labelInfo;
+    }
+    return this.#withSecurityCodeLabel(labelInfo);
+  }
+
+  /**
+   * Wrap a credit card label so that it notes a security code is saved for the
+   * card. The wrapping string takes the label as an argument, so the label has
+   * to be formatted here rather than by the element it ends up on.
+   *
+   * @param {object} labelInfo
+   *        The pair returned by CreditCard.getLabelInfo().
+   * @param {string} labelInfo.id
+   *        Fluent id of the label to wrap.
+   * @param {object} labelInfo.args
+   *        Fluent arguments for that label.
+   * @returns {Promise<object>} An { id, args } pair for the wrapping string.
+   */
+  async #withSecurityCodeLabel({ id, args }) {
+    const [message] = await document.l10n.formatMessages([{ id, args }]);
+    const ariaLabel = message?.attributes?.find(
+      attribute => attribute.name == "aria-label"
+    )?.value;
+    return {
+      id: "credit-card-label-with-security-code",
+      args: {
+        label: message?.value ?? "",
+        ariaLabel: ariaLabel ?? message?.value ?? "",
+      },
+    };
   }
 
   async renderRecordElements(records) {

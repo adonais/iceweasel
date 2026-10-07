@@ -102,6 +102,7 @@ BROWSER_CHROME_MANIFESTS += [
     "tests/browser-editing/browser-proton.toml",
     "tests/browser-engagementTelemetry/browser-nova.toml",
     "tests/browser-engagementTelemetry/browser-proton.toml",
+    "tests/browser-ml/perftest.toml",
     "tests/browser-newtab/browser.toml",
     "tests/browser-quickactions/browser-nova.toml",
     "tests/browser-quickactions/browser-proton.toml",

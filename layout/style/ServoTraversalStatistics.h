@@ -5,6 +5,8 @@
 #ifndef mozilla_ServoTraversalStatistics_h
 #define mozilla_ServoTraversalStatistics_h
 
+#include <cstdint>
+
 namespace mozilla {
 
 // Traversal statistics for Servo traversal.

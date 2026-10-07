@@ -14,39 +14,48 @@ ProfilerIOInterposeObserver& ProfilerIOInterposeObserver::GetInstance() {
 }
 
 namespace geckoprofiler::markers {
-struct FileIOMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("FileIO");
+struct FileIOMarker : public BaseMarkerType<FileIOMarker> {
+  static constexpr const char* Name = "FileIO";
+
+  using MS = MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"operation", MS::InputType::CString, "Operation", MS::Format::String},
+      {"source", MS::InputType::CString, "Source", MS::Format::String},
+      {"filename", MS::InputType::CString, "Filename", MS::Format::FilePath},
+      {"threadId", MS::InputType::Int64, "Thread ID", MS::Format::String},
+  };
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable,
+                                               MS::Location::TimelineFileIO};
+
+  // Tech note: If `ToNumber()` returns a uint64_t, the conversion to int64_t is
+  // "implementation-defined" before C++20. This is acceptable here, because
+  // this is a one-way conversion to a unique identifier that's used to visually
+  // separate data by thread on the front-end.
+  static int64_t ThreadId(MarkerThreadId aOperationThreadId) {
+    return static_cast<int64_t>(aOperationThreadId.ThreadId().ToNumber());
   }
+
   static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
                                    const ProfilerString8View& aOperation,
                                    const ProfilerString8View& aSource,
                                    const ProfilerString8View& aFilename,
                                    MarkerThreadId aOperationThreadId) {
-    aWriter.StringProperty("operation", aOperation);
-    aWriter.StringProperty("source", aSource);
+    StreamJSONMarkerDataImpl(aWriter, aOperation, aSource);
     if (aFilename.Length() != 0) {
       aWriter.StringProperty("filename", aFilename);
     }
     if (!aOperationThreadId.IsUnspecified()) {
-      // Tech note: If `ToNumber()` returns a uint64_t, the conversion to
-      // int64_t is "implementation-defined" before C++20. This is acceptable
-      // here, because this is a one-way conversion to a unique identifier
-      // that's used to visually separate data by thread on the front-end.
-      aWriter.IntProperty(
-          "threadId",
-          static_cast<int64_t>(aOperationThreadId.ThreadId().ToNumber()));
+      aWriter.IntProperty("threadId", ThreadId(aOperationThreadId));
     }
   }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable,
-              MS::Location::TimelineFileIO};
-    schema.AddKeyLabelFormat("operation", "Operation", MS::Format::String);
-    schema.AddKeyLabelFormat("source", "Source", MS::Format::String);
-    schema.AddKeyLabelFormat("filename", "Filename", MS::Format::FilePath);
-    schema.AddKeyLabelFormat("threadId", "Thread ID", MS::Format::String);
-    return schema;
+
+  static void TranslateMarkerInputToSchema(
+      void* aContext, const ProfilerString8View& aOperation,
+      const ProfilerString8View& aSource, const ProfilerString8View& aFilename,
+      MarkerThreadId aOperationThreadId) {
+    ETW::OutputMarkerSchema(aContext, FileIOMarker{}, aOperation, aSource,
+                            aFilename, ThreadId(aOperationThreadId));
   }
 };
 }  // namespace geckoprofiler::markers

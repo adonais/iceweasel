@@ -216,6 +216,8 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && debug && verify-standalone",
 ]
 
+["include:mochitest-xslt.toml"]
+
 ["test_bug564863.xhtml"]
 
 ["test_bug567350.html"]
@@ -270,8 +272,6 @@ skip-if = [
 ["test_bug602838.html"]
 
 ["test_bug604592.html"]
-
-["test_bug604660.html"]
 
 ["test_bug605982.html"]
 

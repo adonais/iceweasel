@@ -126,12 +126,13 @@ class nsCSSProps {
   static const NonCustomCSSPropertyId* const
       kSubpropertyTable[eCSSProperty_COUNT - eCSSProperty_COUNT_no_shorthands];
 
+  static bool IsPropertyExposedToJS(NonCustomCSSPropertyId, JSContext*,
+                                    JSObject*);
+
  public:
-  /**
-   * Returns true if the backdrop-filter pref and the gfx blocklist are enabled.
-   */
-  static bool IsBackdropFilterAvailable(JSContext*, JSObject*) {
-    return IsEnabled(eCSSProperty_backdrop_filter, EnabledState::ForAllContent);
+  template <NonCustomCSSPropertyId aId>
+  static bool IsPropertyExposedToJS(JSContext* aCx, JSObject* aObj) {
+    return IsPropertyExposedToJS(aId, aCx, aObj);
   }
 
   /**

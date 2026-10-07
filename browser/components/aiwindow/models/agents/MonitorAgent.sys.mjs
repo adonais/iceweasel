@@ -4,16 +4,23 @@
 
 import {
   Monitor,
+  MonitorLimitError,
+  expiryRuleDays,
   monitorAgeMs,
   trimAndFilterWatchUrls,
   urlListsEqual,
   TOTAL_NUM_MONITORS,
   MONITOR_ERROR_CODES,
+  MONITOR_EXPIRY_REASONS,
   MONITOR_PROMPT_VERSION,
   MONITOR_AGENTS_CHANGED_TOPIC,
   MONITOR_CONDITION_MET_TOPIC,
+  MONITOR_RUN_FAILED_TOPIC,
 } from "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs";
-import { Schedule } from "moz-src:///browser/components/aiwindow/models/agents/Schedule.sys.mjs";
+import {
+  Schedule,
+  SCHEDULE_TYPES,
+} from "moz-src:///browser/components/aiwindow/models/agents/Schedule.sys.mjs";
 
 export {
   Monitor,
@@ -23,7 +30,17 @@ export {
   TOTAL_NUM_URLS_IN_MONITOR,
   MONITOR_AGENTS_CHANGED_TOPIC,
   MONITOR_CONDITION_MET_TOPIC,
+  MONITOR_EXPIRY_REASONS,
+  MONITOR_RUN_FAILED_TOPIC,
 } from "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs";
+
+// Notification body shown for each auto-expiry reason.
+const EXPIRY_BODY_IDS = Object.freeze({
+  [MONITOR_EXPIRY_REASONS.NO_MATCH]:
+    "ai-tasks-monitor-expired-notification-body-no-match",
+  [MONITOR_EXPIRY_REASONS.MAX_AGE]:
+    "ai-tasks-monitor-expired-notification-body-max-age",
+});
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -55,14 +72,117 @@ const AlertNotification = Components.Constructor(
   "initWithObject"
 );
 
+const TASKS_PAGE_URL = "about:smartwindowtasks";
+
 let gMonitors = null;
 let gLoadPromise = null;
+let gShuttingDown = false;
 const gNotifiedRunIds = new Set();
+const gSnapshotRefreshPromises = new Map();
 
 export const NOTIFICATION_ACTIONS = {
   SNOOZE: "monitor-snooze",
   DISMISS: "monitor-dismiss",
+  RESUME: "monitor-resume",
 };
+
+const CREATE_SOURCES = new Set([
+  "in_line_chat",
+  "toolbar_panel",
+  "about_page",
+  "test",
+]);
+
+const AGENT_TYPE = "monitor";
+
+// Which desktop notification was shown, recorded as the telemetry
+// notification_type on the display and close events.
+export const NOTIFICATION_TYPES = {
+  CONDITION_MET: "condition_met",
+  RUN_FAILED: "run_failed",
+  CREATED: "created",
+  EXPIRED: "expired",
+};
+
+// Failures the user already knows about, or that only mean Firefox is going
+// away: telling them their monitor could not run would be noise.
+const UNREPORTED_ERROR_CODES = new Set([
+  MONITOR_ERROR_CODES.CANCELED,
+  MONITOR_ERROR_CODES.INTERRUPTED,
+]);
+
+/**
+ * Treats history that already exists at load time as seen, so restoring
+ * monitors on startup doesn't replay old alerts as fresh notifications.
+ *
+ * @param {Iterable<Monitor>} monitors
+ */
+function seedNotifiedRunIds(monitors) {
+  for (const monitor of monitors) {
+    for (const entry of monitor.history) {
+      if (entry.conditionMet || entry.status === "error") {
+        gNotifiedRunIds.add(entry.id);
+      }
+    }
+  }
+}
+
+function isShuttingDown() {
+  return (
+    gShuttingDown ||
+    Services.startup.isInOrBeyondShutdownPhase(
+      Ci.nsIAppStartup.SHUTDOWN_PHASE_APPSHUTDOWNCONFIRMED
+    )
+  );
+}
+
+/**
+ * Indicates that a MonitorAgent operation was interrupted by application
+ * shutdown.
+ */
+class MonitorAgentShutdownError extends Error {
+  constructor(options) {
+    super("Monitor agent is shutting down.", options);
+    this.name = "MonitorAgentShutdownError";
+  }
+}
+
+function activeMonitorCount() {
+  let count = 0;
+  for (const monitor of gMonitors.values()) {
+    if (monitor.enabled) {
+      count++;
+    }
+  }
+  return count;
+}
+
+function isClockField(value, max) {
+  return Number.isInteger(value) && value >= 0 && value <= max;
+}
+
+// Works on both a Schedule instance and the raw schedule argument of a
+// creation request; only validated values are recorded.
+function buildScheduleTelemetryExtra(schedule) {
+  if (!Object.values(SCHEDULE_TYPES).includes(schedule?.type)) {
+    return {};
+  }
+  const extra = { schedule_type: schedule.type };
+  if (schedule.type === SCHEDULE_TYPES.INTERVAL) {
+    return extra;
+  }
+  if (isClockField(schedule.hour, 23) && isClockField(schedule.minute, 59)) {
+    const pad = value => String(value).padStart(2, "0");
+    extra.check_time = `${pad(schedule.hour)}:${pad(schedule.minute)}`;
+  }
+  if (
+    schedule.type === SCHEDULE_TYPES.WEEKLY &&
+    isClockField(schedule.weekday, 6)
+  ) {
+    extra.check_weekday = schedule.weekday;
+  }
+  return extra;
+}
 
 function monitorTelemetryExtra(monitor) {
   return {
@@ -70,10 +190,102 @@ function monitorTelemetryExtra(monitor) {
     urls: monitor.watchUrls.length,
     length: monitor.monitorPrompt.length,
     age: monitorAgeMs(monitor),
-    schedule_type: monitor.schedule.type,
+    active_age: monitorAgeMs(monitor, monitor.activeSince),
+    ...buildScheduleTelemetryExtra(monitor.schedule),
     prompt_version: MONITOR_PROMPT_VERSION,
     enabled: monitor.enabled,
+    action_id: monitor.id,
+    agent: AGENT_TYPE,
   };
+}
+
+// Optional context the front end passes with an action, validated before it
+// is recorded. Keys the caller did not provide stay unset.
+function buildTelemetryContextExtra({ source, chatId, messageSeq } = {}) {
+  const extra = {};
+  if (source !== undefined) {
+    extra.source = CREATE_SOURCES.has(source) ? source : "unknown";
+  }
+  if (typeof chatId === "string" && chatId.length <= 64) {
+    extra.chat_id = chatId;
+  }
+  if (Number.isInteger(messageSeq) && messageSeq >= 0) {
+    extra.message_seq = messageSeq;
+  }
+  return extra;
+}
+
+function buildCreationArgsExtra({ prompt, watchUrls, schedule }) {
+  return {
+    agent: AGENT_TYPE,
+    urls: Array.isArray(watchUrls) ? watchUrls.length : 0,
+    length: String(prompt ?? "").length,
+    ...buildScheduleTelemetryExtra(schedule),
+  };
+}
+
+function getCreationErrorCode(error) {
+  if (error instanceof MonitorAgentShutdownError) {
+    return MONITOR_ERROR_CODES.INTERRUPTED;
+  }
+  if (DOMException.isInstance(error)) {
+    return "storage_error";
+  }
+  if (error instanceof MonitorLimitError) {
+    return "limit_reached";
+  }
+  const message = error?.message ?? "";
+  if (/invalid|cannot watch more than/i.test(message)) {
+    return "invalid_input";
+  }
+  return MONITOR_ERROR_CODES.UNKNOWN;
+}
+
+// executionSeq is captured when the notification is shown so a later click
+// still joins to the run the notification was about.
+function buildNotificationTelemetryExtra(
+  monitor,
+  notificationType,
+  executionSeq
+) {
+  const extra = {
+    ...monitorTelemetryExtra(monitor),
+    notification_type: notificationType,
+    execution_seq: executionSeq,
+  };
+  if (notificationType === NOTIFICATION_TYPES.CONDITION_MET) {
+    extra.outcome = true;
+  }
+  return extra;
+}
+
+// The user paused the monitor; auto-expiry pauses record MONITOR_EXPIRY_REASONS.
+const PAUSE_REASON_USER = "user";
+
+// A plain pause or resume is not an edit; an edit that also flips the enabled
+// state records both.
+function recordUpdateTelemetry(
+  monitor,
+  { updates, wasEnabled, telemetryContext }
+) {
+  const extra = {
+    ...monitorTelemetryExtra(monitor),
+    ...buildTelemetryContextExtra(telemetryContext),
+  };
+  if (!Object.keys(updates).every(key => key === "enabled")) {
+    Glean.smartWindow.agenticActionEditComplete.record(extra);
+  }
+  if (wasEnabled === monitor.enabled) {
+    return;
+  }
+  if (monitor.enabled) {
+    Glean.smartWindow.agenticActionResume.record(extra);
+  } else {
+    Glean.smartWindow.agenticActionPause.record({
+      ...extra,
+      reason: PAUSE_REASON_USER,
+    });
+  }
 }
 
 /**
@@ -85,14 +297,37 @@ function monitorTelemetryExtra(monitor) {
  */
 export const MonitorAgent = {
   async init() {
-    await this._ensureLoaded();
+    try {
+      await this._ensureLoaded();
+    } catch (error) {
+      if (error instanceof MonitorAgentShutdownError) {
+        return;
+      }
+      throw error;
+    }
+    if (isShuttingDown()) {
+      return;
+    }
+
     for (const monitor of gMonitors.values()) {
       monitor.restore();
+      // a monitor that outlived its expiry window while the browser was
+      // closed is paused right away instead of waiting for its next run
+      const expiryReason = monitor.enabled && monitor.getExpiryReason();
+      if (expiryReason) {
+        try {
+          await this._expireMonitor(monitor, expiryReason);
+        } catch (error) {
+          lazy.log.error(`Failed to expire monitor ${monitor.id}`, error);
+        }
+        continue;
+      }
       monitor.scheduleNextRun();
     }
   },
 
   uninit() {
+    gShuttingDown = true;
     if (!gMonitors) {
       return;
     }
@@ -115,22 +350,58 @@ export const MonitorAgent = {
    * @param {string[]} options.watchUrls - Array of URLs to watch
    * @param {string} [options.pageTitle=""] - Optional title for the monitor
    * @param {object} options.schedule - Schedule configuration (type, hours, etc.)
-   * @param {string} [options.source="unknown"] - Source of monitor creation for telemetry (e.g., "in_line_chat", "about_page", "test")
+   * @param {string} [options.source="unknown"] - Surface the monitor is created from, for telemetry: "in_line_chat", "toolbar_panel", "about_page" or "test"
+   * @param {string} [options.chatId] - Telemetry context the front end passes for chat-originated creations: the chat's id
+   * @param {number} [options.messageSeq] - Telemetry context the front end passes for chat-originated creations: the message number within that chat
    * @returns {Promise<string>} The ID of the created monitor
-   * @throws {Error} If the maximum number of monitors has been reached
+   * @throws {MonitorLimitError} If the maximum number of active monitors has been reached
    */
   async createMonitor({
-    prompt,
-    watchUrls,
-    pageTitle = "",
-    schedule,
     source = "unknown",
+    chatId = null,
+    messageSeq = null,
+    ...args
   }) {
+    const context = buildTelemetryContextExtra({ source, chatId, messageSeq });
+    // Load the store first so the submit event counts the stored monitors;
+    // a load failure is still reported through create_complete below.
+    const loadError = await this._ensureLoaded().then(
+      () => null,
+      error => error
+    );
+    const submitExtra = {
+      ...context,
+      ...buildCreationArgsExtra(args),
+      monitors: gMonitors?.size ?? 0,
+    };
+    Glean.smartWindow.agenticActionCreateSubmit.record(submitExtra);
+    try {
+      if (loadError) {
+        throw loadError;
+      }
+      const id = await this._createMonitor(args);
+      const monitor = gMonitors.get(id);
+      Glean.smartWindow.agenticActionCreateComplete.record({
+        ...monitorTelemetryExtra(monitor),
+        ...context,
+        success: true,
+      });
+      this._notifyMonitorCreated(monitor);
+      return id;
+    } catch (error) {
+      Glean.smartWindow.agenticActionCreateComplete.record({
+        ...submitExtra,
+        success: false,
+        error_code: getCreationErrorCode(error),
+      });
+      throw error;
+    }
+  },
+
+  async _createMonitor({ prompt, watchUrls, pageTitle = "", schedule }) {
     await this._ensureLoaded();
-    if (gMonitors.size >= TOTAL_NUM_MONITORS) {
-      throw new Error(
-        `Cannot create more than ${TOTAL_NUM_MONITORS} monitors.`
-      );
+    if (activeMonitorCount() >= TOTAL_NUM_MONITORS) {
+      throw new MonitorLimitError(TOTAL_NUM_MONITORS);
     }
 
     const monitor = new Monitor({
@@ -148,13 +419,20 @@ export const MonitorAgent = {
     }
     monitor.scheduleNextRun();
     this._refreshInitialSnapshot(monitor);
-    const telemetryData = monitorTelemetryExtra(monitor);
-    telemetryData.source = source;
-    Glean.smartWindow.monitorCreate.record(telemetryData);
     return monitor.id;
   },
 
-  async updateMonitor(id, updates) {
+  /**
+   * Updates a monitor's definition or enabled state.
+   *
+   * @param {string} id - The monitor ID
+   * @param {object} updates - Fields to change: title, monitorPrompt,
+   *   watchUrls, schedule and/or enabled
+   * @param {object} [telemetryContext] - Optional source, chatId and
+   *   messageSeq the front end passes for telemetry
+   * @returns {Promise<void>}
+   */
+  async updateMonitor(id, updates, telemetryContext = {}) {
     await this._ensureLoaded();
     const monitor = gMonitors.get(id);
     if (!monitor) {
@@ -162,7 +440,9 @@ export const MonitorAgent = {
     }
 
     const next = {
+      activeSince: monitor.activeSince,
       enabled: monitor.enabled,
+      expiry: monitor.expiry,
       monitorPrompt: monitor.monitorPrompt,
       nextRunTime: monitor.nextRunTime,
       schedule: monitor.schedule,
@@ -191,6 +471,9 @@ export const MonitorAgent = {
         .getNextRunTime(new Date().toISOString())
         .toISOString();
     } else if (!monitor.enabled && next.enabled) {
+      if (activeMonitorCount() >= TOTAL_NUM_MONITORS) {
+        throw new MonitorLimitError(TOTAL_NUM_MONITORS);
+      }
       // else if so we don't compute nextRunTime twice
       // Re-enabling: schedule the next run a full interval from now rather than
       // reusing a stale nextRunTime that may already be in the past.
@@ -217,29 +500,35 @@ export const MonitorAgent = {
       next.title !== monitor.title ||
       !urlListsEqual(next.watchUrls, monitor.watchUrls);
 
-    // save old in case the update fails, so we can restore it
-    const previous = {
-      enabled: monitor.enabled,
-      initialSnapshot: monitor.initialSnapshot,
-      monitorPrompt: monitor.monitorPrompt,
-      nextRunTime: monitor.nextRunTime,
-      schedule: monitor.schedule,
-      title: monitor.title,
-      updatedAt: monitor.updatedAt,
-      watchUrls: monitor.watchUrls,
-    };
+    const now = new Date().toISOString();
+    const resumed = !monitor.enabled && next.enabled;
+    // Only a resume clears the expiry record; an edit of a still-paused
+    // monitor keeps the reason it paused itself.
+    if (resumed) {
+      next.expiry = null;
+    }
+    // Resuming or editing restarts the auto-expiry windows, otherwise a
+    // monitor resumed after expiring would pause itself again on its next run.
+    // lastMatchAt is kept: the no-match window starts at the later of it and
+    // activeSince, so an older match no longer counts anyway.
+    if (resumed || definitionChanged) {
+      next.activeSince = now;
+    }
+    next.updatedAt = now;
+    if (definitionChanged) {
+      next.initialSnapshot = null;
+    }
 
-    monitor.enabled = next.enabled;
-    monitor.monitorPrompt = next.monitorPrompt;
-    monitor.nextRunTime = next.nextRunTime;
-    monitor.schedule = next.schedule;
-    monitor.title = next.title;
-    monitor.watchUrls = next.watchUrls;
-    monitor.updatedAt = new Date().toISOString();
+    // save old in case the update fails, so we can restore it; every field
+    // written to the monitor is a key of next, so previous is derived from it
+    const previous = Object.fromEntries(
+      Object.keys(next).map(key => [key, monitor[key]])
+    );
+
+    Object.assign(monitor, next);
     if (definitionChanged) {
       // stop any in-flight capture so a stale baseline can't land post-edit
       monitor.cancelSnapshotCapture();
-      monitor.initialSnapshot = null;
     }
     try {
       await this._saveAndNotify(monitor);
@@ -251,14 +540,11 @@ export const MonitorAgent = {
     if (definitionChanged) {
       this._refreshInitialSnapshot(monitor);
     }
-    const telemetryExtra = monitorTelemetryExtra(monitor);
-    Glean.smartWindow.monitorEdit.record(telemetryExtra);
-    if (previous.enabled !== monitor.enabled) {
-      const event = monitor.enabled
-        ? Glean.smartWindow.monitorEnable
-        : Glean.smartWindow.monitorDisable;
-      event.record(telemetryExtra);
-    }
+    recordUpdateTelemetry(monitor, {
+      updates,
+      wasEnabled: previous.enabled,
+      telemetryContext,
+    });
   },
 
   /**
@@ -267,9 +553,11 @@ export const MonitorAgent = {
    * @param {string} id - The monitor ID
    * @param {boolean} [pause] - Optional. If provided, sets enabled to !pause.
    *                            If not provided, toggles the current enabled state.
+   * @param {object} [telemetryContext] - Optional source, chatId and
+   *   messageSeq the front end passes for telemetry
    * @returns {Promise<void>}
    */
-  async pauseMonitor(id, pause) {
+  async pauseMonitor(id, pause, telemetryContext = {}) {
     await this._ensureLoaded();
     const monitor = gMonitors.get(id);
     if (!monitor) {
@@ -287,10 +575,20 @@ export const MonitorAgent = {
     }
 
     // Use updateMonitor to handle the state change
-    await this.updateMonitor(id, { enabled: newEnabledState });
+    await this.updateMonitor(
+      id,
+      { enabled: newEnabledState },
+      telemetryContext
+    );
   },
 
-  async deleteMonitor(id) {
+  /**
+   * @param {string} id - The monitor ID
+   * @param {object} [telemetryContext] - Optional source, chatId and
+   *   messageSeq the front end passes for telemetry
+   * @returns {Promise<boolean>} Whether a monitor with that id was deleted
+   */
+  async deleteMonitor(id, telemetryContext = {}) {
     await this._ensureLoaded();
     const monitor = gMonitors.get(id);
     if (!monitor) {
@@ -301,6 +599,7 @@ export const MonitorAgent = {
       monitor.dispose(MONITOR_ERROR_CODES.CANCELED);
       gMonitors.delete(id);
       await lazy.MonitorStore.deleteMonitor(id);
+      gSnapshotRefreshPromises.delete(id);
     } catch (error) {
       monitor.restore();
       gMonitors.set(id, monitor);
@@ -309,7 +608,11 @@ export const MonitorAgent = {
     } finally {
       Services.obs.notifyObservers(null, MONITOR_AGENTS_CHANGED_TOPIC);
     }
-    Glean.smartWindow.monitorDelete.record(monitorTelemetryExtra(monitor));
+    this._updateActionGauges();
+    Glean.smartWindow.agenticActionDelete.record({
+      ...monitorTelemetryExtra(monitor),
+      ...buildTelemetryContextExtra(telemetryContext),
+    });
     return true;
   },
 
@@ -323,6 +626,9 @@ export const MonitorAgent = {
   },
 
   async _ensureLoaded() {
+    if (isShuttingDown()) {
+      throw new MonitorAgentShutdownError();
+    }
     if (gMonitors) {
       return;
     }
@@ -331,7 +637,12 @@ export const MonitorAgent = {
       return;
     }
 
-    gLoadPromise = this._loadMonitors();
+    gLoadPromise = this._loadMonitors().catch(error => {
+      if (isShuttingDown() && !(error instanceof MonitorAgentShutdownError)) {
+        throw new MonitorAgentShutdownError({ cause: error });
+      }
+      throw error;
+    });
     try {
       await gLoadPromise;
     } finally {
@@ -342,9 +653,6 @@ export const MonitorAgent = {
   async _loadMonitors() {
     const monitors = new Map();
     for (const savedMonitor of await lazy.MonitorStore.listMonitors()) {
-      if (monitors.size >= TOTAL_NUM_MONITORS) {
-        break;
-      }
       try {
         const monitor = Monitor.fromJSON(savedMonitor);
         monitors.set(monitor.id, monitor);
@@ -353,17 +661,14 @@ export const MonitorAgent = {
       }
     }
 
+    if (isShuttingDown()) {
+      throw new MonitorAgentShutdownError();
+    }
+
     gMonitors = monitors;
 
-    // Treat history that already exists at load time as "seen" so restoring
-    // monitors on startup doesn't replay old alerts as fresh notifications
-    for (const monitor of monitors.values()) {
-      for (const entry of monitor.history) {
-        if (entry.conditionMet) {
-          gNotifiedRunIds.add(entry.id);
-        }
-      }
-    }
+    seedNotifiedRunIds(monitors.values());
+    this._updateActionGauges();
   },
 
   /**
@@ -374,21 +679,28 @@ export const MonitorAgent = {
    * @param {Monitor} monitor
    */
   _refreshInitialSnapshot(monitor) {
-    monitor
+    const refreshPromise = monitor
       .ensureInitialSnapshot()
-      .then(() => {
+      .then(async snapshot => {
         // the monitor may have been deleted or replaced while capturing
         if (gMonitors?.get(monitor.id) === monitor) {
-          return this._saveAndNotify(monitor);
+          await this._saveAndNotify(monitor);
         }
-        return null;
-      })
+        return snapshot;
+      });
+    gSnapshotRefreshPromises.set(monitor.id, refreshPromise);
+    refreshPromise
       .catch(error => {
         lazy.log.warn(
           `Failed to capture initial snapshot for monitor ${monitor.id}: ${
             error.message ?? error
           }`
         );
+      })
+      .finally(() => {
+        if (gSnapshotRefreshPromises.get(monitor.id) === refreshPromise) {
+          gSnapshotRefreshPromises.delete(monitor.id);
+        }
       });
   },
 
@@ -401,10 +713,125 @@ export const MonitorAgent = {
     } else {
       await lazy.MonitorStore.saveMonitors(Array.from(gMonitors.values()));
     }
+    this._updateActionGauges();
     Services.obs.notifyObservers(null, MONITOR_AGENTS_CHANGED_TOPIC);
 
     if (monitor) {
       this._notifyIfConditionMet(monitor);
+      this._notifyIfRunFailed(monitor);
+    }
+  },
+
+  _updateActionGauges() {
+    if (!gMonitors) {
+      return;
+    }
+    const active = activeMonitorCount();
+    Glean.smartWindow.agentActiveActions[AGENT_TYPE].set(active);
+    Glean.smartWindow.agentPausedActions[AGENT_TYPE].set(
+      gMonitors.size - active
+    );
+  },
+
+  _telemetryExtra(monitor) {
+    return monitorTelemetryExtra(monitor);
+  },
+
+  /**
+   * Pauses a monitor that hit an auto-expiry rule, records why so the UI can
+   * tell, and lets the user know with a desktop notification offering to
+   * resume it.
+   *
+   * @param {Monitor} monitor
+   * @param {string} reason - One of MONITOR_EXPIRY_REASONS.
+   */
+  async _expireMonitor(monitor, reason) {
+    const now = new Date().toISOString();
+    const previous = {
+      enabled: monitor.enabled,
+      expiry: monitor.expiry,
+      updatedAt: monitor.updatedAt,
+    };
+    monitor.clearTimer();
+    monitor.enabled = false;
+    monitor.expiry = { expiredAt: now, reason };
+    monitor.updatedAt = now;
+    try {
+      await this._saveAndNotify(monitor);
+    } catch (error) {
+      // keep running in memory to match the store, and try again on the next
+      // scheduled slot rather than right away
+      Object.assign(monitor, previous);
+      monitor.nextRunTime = monitor.schedule.getNextRunTime(now).toISOString();
+      monitor.scheduleNextRun();
+      throw error;
+    }
+    lazy.log.info(`Monitor ${monitor.id} expired: ${reason}`);
+    Glean.smartWindow.agenticActionPause.record({
+      ...monitorTelemetryExtra(monitor),
+      reason,
+    });
+    this._notifyExpired(monitor, reason);
+  },
+
+  /**
+   * Desktop notification telling the user a monitor paused itself. Clicking
+   * the body opens the tasks page, the "resume" action turns the monitor back
+   * on. Sent even when the monitor's match notifications are muted, since it
+   * is about the monitor stopping rather than a match.
+   *
+   * @param {Monitor} monitor
+   * @param {string} reason - One of MONITOR_EXPIRY_REASONS.
+   */
+  _notifyExpired(monitor, reason) {
+    const bodyId = EXPIRY_BODY_IDS[reason];
+    if (!bodyId) {
+      lazy.log.error(`Unknown monitor expiry reason: ${reason}`);
+      return;
+    }
+    const id = monitor.id;
+    const executionSeq = monitor.runCount;
+    const recordClick = clickReason =>
+      Glean.smartWindow.agenticActionNotificationClose.record({
+        ...buildNotificationTelemetryExtra(
+          monitor,
+          NOTIFICATION_TYPES.EXPIRED,
+          executionSeq
+        ),
+        reason: clickReason,
+      });
+
+    const shown = this._showMonitorAlert(monitor, {
+      textId: bodyId,
+      textArgs: { days: expiryRuleDays(reason) },
+      actions: [
+        {
+          action: NOTIFICATION_ACTIONS.RESUME,
+          titleId: "ai-tasks-monitor-expired-notification-resume",
+        },
+      ],
+      onClick: action => {
+        if (action === NOTIFICATION_ACTIONS.RESUME) {
+          recordClick("resume");
+          this.pauseMonitor(id, false).catch(error =>
+            lazy.log.error("Failed to resume expired monitor", error)
+          );
+          return;
+        }
+        if (!action) {
+          recordClick("open_tasks");
+          this._openWatchedUrl(TASKS_PAGE_URL);
+        }
+      },
+    });
+    if (shown) {
+      Glean.smartWindow.agenticActionNotificationDisplay.record(
+        buildNotificationTelemetryExtra(
+          monitor,
+          NOTIFICATION_TYPES.EXPIRED,
+          executionSeq
+        )
+      );
     }
   },
 
@@ -437,19 +864,212 @@ export const MonitorAgent = {
       return;
     }
 
-    const [titleFallback, bodyFallback, snoozeTitle, dismissTitle] =
-      lazy.l10n.formatValuesSync([
-        "ai-tasks-monitor-notification-title",
-        "ai-tasks-monitor-notification-body",
-        "ai-tasks-monitor-notification-snooze",
-        "ai-tasks-monitor-notification-dismiss",
-      ]);
-    const title = monitor.title || titleFallback;
-    const text = entry.resultExplanation || bodyFallback;
+    const executionSeq = monitor.runCount;
+    const shown = this._showMonitorAlert(monitor, {
+      text: entry.resultExplanation,
+      textId: "ai-tasks-monitor-notification-body",
+      ...this._runNotificationActions(
+        monitor,
+        NOTIFICATION_TYPES.CONDITION_MET,
+        executionSeq
+      ),
+    });
+
+    if (shown) {
+      Glean.smartWindow.agenticActionNotificationDisplay.record(
+        buildNotificationTelemetryExtra(
+          monitor,
+          NOTIFICATION_TYPES.CONDITION_MET,
+          executionSeq
+        )
+      );
+    }
+  },
+
+  /**
+   * Tells the user that a monitor could not check, so a monitor that keeps
+   * failing does not fail silently. Follows the condition-met path: the same
+   * topic-then-notification shape and the same actions, and it stays quiet
+   * about a run it has already reported.
+   *
+   * A run the user cancelled or that shutdown cut short is not news, so it is
+   * left alone entirely rather than reported through either channel.
+   *
+   * @param {Monitor} monitor - The monitor whose latest run just saved
+   */
+  _notifyIfRunFailed(monitor) {
+    const entry = monitor.history.at(-1);
+    if (
+      !entry ||
+      entry.status !== "error" ||
+      UNREPORTED_ERROR_CODES.has(entry.errorCode)
+    ) {
+      return;
+    }
+
+    if (gNotifiedRunIds.has(entry.id)) {
+      return;
+    }
+    gNotifiedRunIds.add(entry.id);
+
+    Services.obs.notifyObservers(null, MONITOR_RUN_FAILED_TOPIC, monitor.id);
+
+    if (monitor.notificationsMuted) {
+      return;
+    }
+
+    // resultExplanation holds the raw error message, so the body is the
+    // localized copy rather than anything the run produced.
+    const executionSeq = monitor.runCount;
+    const shown = this._showMonitorAlert(monitor, {
+      textId: "ai-tasks-monitor-error-notification-body",
+      ...this._runNotificationActions(
+        monitor,
+        NOTIFICATION_TYPES.RUN_FAILED,
+        executionSeq
+      ),
+    });
+
+    if (shown) {
+      Glean.smartWindow.agenticActionNotificationDisplay.record(
+        buildNotificationTelemetryExtra(
+          monitor,
+          NOTIFICATION_TYPES.RUN_FAILED,
+          executionSeq
+        )
+      );
+    }
+  },
+
+  /**
+   * The snooze and dismiss actions that every notification about a run
+   * carries, with the click handling for them and for the body, which opens
+   * the watched page. Spread into a _showMonitorAlert call.
+   *
+   * @param {Monitor} monitor - The monitor the notification is about
+   * @param {string} notificationType - A NOTIFICATION_TYPES entry, recorded
+   *   with each click so a match and a failed check can be told apart.
+   * @param {number} executionSeq - The monitor's run count when the
+   *   notification was shown, repeated on each click so it joins to that run.
+   * @returns {{actions: object[], onClick: Function}}
+   */
+  _runNotificationActions(monitor, notificationType, executionSeq) {
     const url = monitor.watchUrls[0];
     const id = monitor.id;
+    const recordClick = reason =>
+      Glean.smartWindow.agenticActionNotificationClose.record({
+        ...buildNotificationTelemetryExtra(
+          monitor,
+          notificationType,
+          executionSeq
+        ),
+        reason,
+      });
 
+    return {
+      actions: [
+        {
+          action: NOTIFICATION_ACTIONS.SNOOZE,
+          titleId: "ai-tasks-monitor-notification-snooze",
+        },
+        {
+          action: NOTIFICATION_ACTIONS.DISMISS,
+          titleId: "ai-tasks-monitor-notification-dismiss",
+        },
+      ],
+      onClick: action => {
+        if (!action) {
+          if (url) {
+            recordClick("open_url");
+            this._openWatchedUrl(url);
+          }
+          return;
+        }
+        if (action === NOTIFICATION_ACTIONS.SNOOZE) {
+          recordClick("snooze");
+          this.snoozeMonitor(id).catch(error =>
+            lazy.log.error("Failed to snooze monitor", error)
+          );
+          return;
+        }
+        if (action === NOTIFICATION_ACTIONS.DISMISS) {
+          recordClick("dismiss");
+          this.muteMonitorNotifications(id).catch(error =>
+            lazy.log.error("Failed to mute monitor notifications", error)
+          );
+        }
+      },
+    };
+  },
+
+  /**
+   * Shows a one-off desktop notification right after a monitor is created so
+   * the user knows a match will arrive the same way. Clicking the body opens
+   * the tasks page listing the monitors.
+   *
+   * @param {Monitor} monitor - The monitor that was just created
+   */
+  _notifyMonitorCreated(monitor) {
+    const executionSeq = monitor.runCount;
+    const shown = this._showMonitorAlert(monitor, {
+      textId: "ai-tasks-monitor-created-notification-body",
+      textArgs: {
+        site: URL.parse(monitor.watchUrls[0])?.hostname ?? "",
+        extraCount: monitor.watchUrls.length - 1,
+      },
+      onClick: action => {
+        if (!action) {
+          Glean.smartWindow.agenticActionNotificationClose.record({
+            ...buildNotificationTelemetryExtra(
+              monitor,
+              NOTIFICATION_TYPES.CREATED,
+              executionSeq
+            ),
+            reason: "open_tasks",
+          });
+          this._openWatchedUrl(TASKS_PAGE_URL);
+        }
+      },
+    });
+    if (shown) {
+      Glean.smartWindow.agenticActionNotificationDisplay.record(
+        buildNotificationTelemetryExtra(
+          monitor,
+          NOTIFICATION_TYPES.CREATED,
+          executionSeq
+        )
+      );
+    }
+  },
+
+  /**
+   * Shows a desktop notification about a monitor, titled with the monitor's
+   * name. Best effort: any failure is logged and never reaches the caller, so
+   * a notification problem cannot fail the operation that triggered it.
+   *
+   * @param {Monitor} monitor - The monitor the notification is about
+   * @param {object} options
+   * @param {string} [options.text] - Body text; when empty, textId is used
+   * @param {string} options.textId - Fluent id of the body text
+   * @param {object} [options.textArgs] - Fluent arguments for textId
+   * @param {Array<{action: string, titleId: string}>} [options.actions] -
+   *   Action buttons, each with the Fluent id of its label
+   * @param {(action: string|null) => void} options.onClick - Called with the
+   *   clicked action, or null when the body itself was clicked
+   * @returns {boolean} Whether the notification was shown
+   */
+  _showMonitorAlert(
+    monitor,
+    { text, textId, textArgs, actions = [], onClick }
+  ) {
     try {
+      const [titleFallback, body, ...actionTitles] = lazy.l10n.formatValuesSync(
+        [
+          "ai-tasks-monitor-notification-title",
+          { id: textId, args: textArgs },
+          ...actions.map(({ titleId }) => titleId),
+        ]
+      );
       const alertsService = Cc["@mozilla.org/alerts-service;1"].getService(
         Ci.nsIAlertsService
       );
@@ -458,71 +1078,25 @@ export const MonitorAgent = {
           if (topic !== "alertclickcallback") {
             return;
           }
-
-          // Notification body clicked.
-          if (!subject) {
-            if (url) {
-              // Record telemetry for opening URL
-              const telemetryData = {
-                ...monitorTelemetryExtra(monitor),
-                click_type: "open_url",
-              };
-              Glean.smartWindow.monitorNotificationClick.record(telemetryData);
-
-              this._openWatchedUrl(url);
-            }
-            return;
-          }
-
-          const action = subject.QueryInterface(Ci.nsIAlertAction).action;
-
-          if (action === NOTIFICATION_ACTIONS.SNOOZE) {
-            // Record telemetry for snooze action
-            const telemetryData = {
-              ...monitorTelemetryExtra(monitor),
-              click_type: "snooze",
-            };
-            Glean.smartWindow.monitorNotificationClick.record(telemetryData);
-
-            this.snoozeMonitor(id).catch(error =>
-              lazy.log.error("Failed to snooze monitor", error)
-            );
-            return;
-          }
-
-          if (action === NOTIFICATION_ACTIONS.DISMISS) {
-            // Record telemetry for dismiss action
-            const telemetryData = {
-              ...monitorTelemetryExtra(monitor),
-              click_type: "dismiss",
-            };
-            Glean.smartWindow.monitorNotificationClick.record(telemetryData);
-
-            this.muteMonitorNotifications(id).catch(error =>
-              lazy.log.error("Failed to mute monitor notifications", error)
-            );
-          }
+          onClick(
+            subject ? subject.QueryInterface(Ci.nsIAlertAction).action : null
+          );
         },
       };
-
       const alert = new AlertNotification({
-        title,
-        text,
+        title: monitor.title || titleFallback,
+        text: text || body,
         textClickable: true,
-        actions: [
-          { action: NOTIFICATION_ACTIONS.SNOOZE, title: snoozeTitle },
-          { action: NOTIFICATION_ACTIONS.DISMISS, title: dismissTitle },
-        ],
+        actions: actions.map(({ action }, i) => ({
+          action,
+          title: actionTitles[i],
+        })),
       });
-
       alertsService.showAlert(alert, observer);
-
-      // Record telemetry for notification being sent (after successful showAlert)
-      Glean.smartWindow.monitorNotificationSend.record(
-        monitorTelemetryExtra(monitor)
-      );
+      return true;
     } catch (error) {
       lazy.log.error("Failed to show monitor notification", error);
+      return false;
     }
   },
 
@@ -589,14 +1163,35 @@ export const MonitorAgent = {
     gMonitors = null;
     gLoadPromise = null;
     gNotifiedRunIds.clear();
+    gSnapshotRefreshPromises.clear();
+    gShuttingDown = false;
+  },
+
+  /**
+   * Waits for the latest background snapshot capture and its persistence.
+   *
+   * @param {string} id
+   * @returns {Promise<{ capturedAt: string, pageContent: string }>}
+   */
+  async _waitForSnapshotForTesting(id) {
+    await this._ensureLoaded();
+    const monitor = gMonitors.get(id);
+    if (!monitor) {
+      throw new Error(`Monitor with id ${id} not found`);
+    }
+
+    const refreshPromise = gSnapshotRefreshPromises.get(id);
+    if (refreshPromise) {
+      return refreshPromise;
+    }
+    if (monitor.initialSnapshot) {
+      return monitor.initialSnapshot;
+    }
+    throw new Error(`Monitor with id ${id} has no pending snapshot capture`);
   },
 
   async _resetForTesting() {
     this._unloadForTesting();
     await lazy.MonitorStore.destroyDatabase();
-  },
-
-  _monitorCountForTelemetry() {
-    return gMonitors?.size ?? 0;
   },
 };

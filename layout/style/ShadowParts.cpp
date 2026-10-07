@@ -4,6 +4,7 @@
 
 #include "ShadowParts.h"
 
+#include "nsCharSeparatedTokenizer.h"
 #include "nsContentUtils.h"
 #include "nsString.h"
 

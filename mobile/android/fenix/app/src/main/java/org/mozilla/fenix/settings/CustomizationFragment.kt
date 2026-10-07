@@ -115,36 +115,20 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
         bindLightTheme()
         bindAutoBatteryTheme()
         setupRadioGroups()
-        val tabletAndTabStripEnabled = Settings(requireContext()).isTabStripEnabled
-        updateToolbarCategoryBasedOnTabStrip(tabletAndTabStripEnabled)
-        setupTabStripCategory()
+        setupToolbarCategory()
+        setupTabStripDisplayCategory()
+        setupTabStripLocationCategory()
         setupToolbarLayout()
         updateToolbarShortcut()
 
         // if tab strip is enabled, swipe toolbar to switch tabs should not be enabled so the
         // preference is not shown
+        val tabletAndTabStripEnabled = Settings(requireContext()).isTabStripEnabled
         setupGesturesCategory(
             isSwipeToolbarToSwitchTabsVisible = !tabletAndTabStripEnabled,
             isSummarizationEnabled = status.isSummarizationFeatureEnabled,
             isSummarizationGestureEnabled = status.isSummarizationGestureEnabled,
         )
-    }
-
-    private fun updateToolbarCategoryBasedOnTabStrip(tabStripEnabled: Boolean) {
-        val topPreference = requirePreference<RadioButtonPreference>(R.string.pref_key_toolbar_top)
-        val bottomPreference = requirePreference<RadioButtonPreference>(R.string.pref_key_toolbar_bottom)
-        val tabStripMessagePref = findPreference<Preference>(getString(R.string.pref_key_tab_strip_message))
-
-        topPreference.isEnabled = !tabStripEnabled
-        bottomPreference.isEnabled = !tabStripEnabled
-        tabStripMessagePref?.isVisible = tabStripEnabled
-
-        if (tabStripEnabled && !topPreference.isChecked) {
-            topPreference.setCheckedWithoutClickListener(true)
-            bottomPreference.setCheckedWithoutClickListener(false)
-        } else {
-            setupToolbarCategory()
-        }
     }
 
     private fun updateToolbarShortcut() {
@@ -316,7 +300,7 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
         addToRadioGroup(topPreference, bottomPreference)
     }
 
-    private fun setupTabStripCategory() {
+    private fun setupTabStripDisplayCategory() {
         val tabStripSwitch = requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tab_strip_show)
         val context = requireContext()
 
@@ -325,11 +309,34 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
         tabStripSwitch.setOnPreferenceChangeListener { _, newValue ->
             val enabled = newValue as Boolean
             context.components.settings.isTabStripEnabled = enabled
-            updateToolbarCategoryBasedOnTabStrip(enabled)
             setupToolbarLayout()
+            setupTabStripLocationCategory()
             updateToolbarShortcut()
             true
         }
+    }
+
+    private fun setupTabStripLocationCategory() {
+        val settings = requireComponents.settings
+        val isTabStripEnabled = settings.isTabStripEnabled
+
+        requirePreference<PreferenceCategory>(R.string.pref_key_tab_strip_location).isVisible = isTabStripEnabled
+        if (!isTabStripEnabled) return
+
+        val topPreference = requirePreference<RadioButtonPreference>(R.string.pref_key_tab_bar_top)
+        topPreference.onClickListener {
+            ToolbarSettings.changedPosition.record(ToolbarSettings.ChangedPositionExtra(Position.TOP.name))
+        }
+        val bottomPreference = requirePreference<RadioButtonPreference>(R.string.pref_key_tab_bar_bottom)
+        bottomPreference.onClickListener {
+            ToolbarSettings.changedPosition.record(ToolbarSettings.ChangedPositionExtra(Position.BOTTOM.name))
+        }
+
+        val tabStripPosition = settings.tabStripPosition
+        topPreference.setCheckedWithoutClickListener(tabStripPosition == ToolbarPosition.TOP)
+        bottomPreference.setCheckedWithoutClickListener(tabStripPosition == ToolbarPosition.BOTTOM)
+
+        addToRadioGroup(topPreference, bottomPreference)
     }
 
     private fun setupToolbarLayout() {

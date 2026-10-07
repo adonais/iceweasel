@@ -21,7 +21,7 @@ const STATUS_MESSAGE_L10N_ID = {
  *
  * @param {object} props
  * @param {string} props.searchStatus Current state: "idle", "loading", "success", "empty", or "error".
- * @param {object[]} props.searchResults Tickers returned by a successful search.
+ * @param {object[]} props.searchResults Matches returned by a successful search: ticker, name, exchange.
  * @param {string[]} props.savedSymbols The user's watchlist, to mark added rows.
  * @param {boolean} props.atWatchlistLimit Whether the watchlist is full.
  * @param {function(string): void} props.onSubmit Called with a non-empty search query.
@@ -124,6 +124,7 @@ export function StockSearch({
         className="stocks-search-results"
         data-l10n-id="newtab-stocks-search-results"
         aria-busy={searchStatus === "loading"}
+        tabIndex={searchResults.length ? 0 : -1}
       >
         {searchStatus === "success" &&
           searchResults.map(t => {
@@ -135,8 +136,7 @@ export function StockSearch({
                 variant="search"
                 name={t.name}
                 ticker={t.ticker}
-                price={t.last_price}
-                changePercent={t.todays_change_perc}
+                exchange={t.exchange}
                 watchlistState={saved ? "added" : "add"}
                 disabled={!saved && atWatchlistLimit}
                 onWatchlistToggle={onAdd}
@@ -144,6 +144,13 @@ export function StockSearch({
             );
           })}
       </ul>
+
+      {searchStatus === "idle" && (
+        <p
+          className="stocks-search-hint"
+          data-l10n-id="newtab-stocks-search-hint"
+        />
+      )}
 
       <p className="stocks-search-message" role="status" aria-live="polite">
         {statusMessageId && (

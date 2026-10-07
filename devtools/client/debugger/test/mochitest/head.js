@@ -152,25 +152,14 @@ function checkSourceTree(dbg, expected) {
  * @param {Array<number>} breakableLines
  *        This list of all breakable line numbers
  */
-async function assertBreakableLines(
-  dbg,
-  source,
-  numberOfLines,
-  breakableLines
-) {
-  await selectSource(dbg, source);
+async function assertBreakableLines(dbg, numberOfLines, breakableLines) {
   is(
     getLineCount(dbg),
     numberOfLines,
-    `We show the expected number of lines in CodeMirror for ${source}`
+    `We show the expected number of lines in CodeMirror`
   );
   for (let line = 1; line <= numberOfLines; line++) {
-    await assertLineIsBreakable(
-      dbg,
-      source,
-      line,
-      breakableLines.includes(line)
-    );
+    await assertLineIsBreakable(dbg, line, breakableLines.includes(line));
   }
 }
 

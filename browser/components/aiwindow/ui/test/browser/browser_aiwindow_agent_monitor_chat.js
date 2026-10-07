@@ -46,6 +46,7 @@ const MONITOR_CARD = {
     uiType: "agent-monitor-item",
     properties: {
       agent: {
+        monitorName: "Example product",
         url: "https://example.com/product",
         watchUrls: ["https://example.com/product"],
         condition: "the price drops",
@@ -207,6 +208,41 @@ add_task(async function test_agent_monitor_item_renders_in_chat() {
         parent?.classList.contains("chat-bubble-assistant"),
         "card is inside the assistant message bubble"
       );
+    });
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+    restoreSignIn();
+    await restore();
+  }
+});
+
+add_task(async function test_create_card_autofocuses_task_name() {
+  const restoreSignIn = skipSignIn();
+  const { restore } = await stubEngineNetworkBoundaries({
+    serverOptions: { streamChunks: ["Set up a monitor for this page."] },
+  });
+  const win = await openAIWindow();
+
+  try {
+    const browser = win.gBrowser.selectedBrowser;
+    const aichatBrowser = await getAichatBrowser(browser);
+
+    await setupConversationWithToolUI(aichatBrowser, MONITOR_CARD);
+
+    await SpecialPowers.spawn(aichatBrowser, [], async () => {
+      const chatContent = content.document.querySelector("ai-chat-content");
+
+      const card = await ContentTaskUtils.waitForCondition(
+        () => chatContent.shadowRoot.querySelector("agent-monitor-item"),
+        "Wait for agent-monitor-item"
+      );
+      await card.updateComplete;
+
+      // Keyboard users must land on the task name field without a click.
+      await ContentTaskUtils.waitForCondition(() => {
+        const nameInput = card.shadowRoot.querySelector(".monitor-name-input");
+        return nameInput && card.shadowRoot.activeElement === nameInput;
+      }, "The task name field is focused when a create card is seeded");
     });
   } finally {
     await BrowserTestUtils.closeWindow(win);
@@ -491,4 +527,162 @@ add_task(async function test_watch_url_chip_dispatches_open_link() {
     detail.preferSwitchToTab,
     "A watched page prefers an already open tab"
   );
+});
+
+// The sidebar's chat header lives in chrome and floats over the chat document,
+// so a dropdown placed against the top of the viewport is painted over and the
+// header's buttons take the clicks meant for its first row (bug 2073461).
+
+/**
+ * Opens the create card's time dropdown with the field pinned to an edge of
+ * the chat viewport, so the list has to open in a known direction.
+ *
+ * @param {MozBrowser} aichatBrowser
+ * @param {"top"|"bottom"} pinTo - Viewport edge to pin the time field to
+ * @returns {Promise<object>} Where the list was placed and where it ended up
+ */
+function showTimeDropdown(aichatBrowser, pinTo) {
+  return SpecialPowers.spawn(aichatBrowser, [pinTo], async edge => {
+    const chatContent = content.document.querySelector("ai-chat-content");
+    const cardEl = await ContentTaskUtils.waitForCondition(
+      () => chatContent.shadowRoot.querySelector("agent-monitor-item"),
+      "Wait for agent-monitor-item"
+    );
+    const card = cardEl.wrappedJSObject || cardEl;
+    await card.updateComplete;
+
+    // The time field is the last of the scheduler's selects.
+    const selects = cardEl.shadowRoot.querySelectorAll("moz-select");
+    const timeSelectEl = selects[selects.length - 1];
+    const timeSelect = timeSelectEl.wrappedJSObject || timeSelectEl;
+    timeSelectEl.style.position = "fixed";
+    timeSelectEl.style.insetInlineStart = "10px";
+    timeSelectEl.style[edge === "top" ? "insetBlockStart" : "insetBlockEnd"] =
+      "0px";
+    await timeSelect.updateComplete;
+
+    const panel = timeSelect.panelList;
+    Assert.ok(panel, "The time field opens a panel-list");
+
+    // panel-list dispatches "shown" at its own target before the event bubbles
+    // to the chat, so this records where the list was placed before the chat
+    // corrects it.
+    let placed;
+    panel.addEventListener(
+      "shown",
+      () => {
+        const rect = panel.getBoundingClientRect();
+        placed = { top: rect.top, bottom: rect.bottom };
+      },
+      { once: true }
+    );
+    const shown = new Promise(resolve =>
+      panel.addEventListener("shown", resolve, { once: true })
+    );
+    timeSelect.panelTrigger.click();
+    await shown;
+
+    const rect = panel.getBoundingClientRect();
+    return {
+      valign: panel.getAttribute("valign"),
+      placed,
+      corrected: { top: rect.top, bottom: rect.bottom },
+      viewportHeight: content.innerHeight,
+    };
+  });
+}
+
+/**
+ * How far the floating chat header reaches into the chat document.
+ *
+ * @param {MozBrowser} sidebarBrowser
+ * @param {MozBrowser} aichatBrowser
+ * @returns {number}
+ */
+function getHeaderBottom(sidebarBrowser, aichatBrowser) {
+  const aiWindow = sidebarBrowser.contentDocument.querySelector("ai-window");
+  const header = aiWindow.shadowRoot.querySelector(".sidebar-header");
+  return (
+    header.getBoundingClientRect().bottom -
+    aichatBrowser.getBoundingClientRect().top
+  );
+}
+
+/**
+ * Opens a sidebar chat holding the monitor create card.
+ *
+ * @param {Function} task - Receives { sidebarBrowser, aichatBrowser }
+ */
+async function withMonitorCardInSidebar(task) {
+  const restoreSignIn = skipSignIn();
+  const { restore } = await stubEngineNetworkBoundaries({
+    serverOptions: { streamChunks: ["Set up a monitor for this page."] },
+  });
+  const { win, sidebarBrowser } = await openAIWindowWithSidebar();
+
+  try {
+    const aichatBrowser = await getAichatBrowser(sidebarBrowser);
+    await setupConversationWithToolUI(aichatBrowser, MONITOR_CARD);
+    await task({ sidebarBrowser, aichatBrowser });
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+    restoreSignIn();
+    await restore();
+  }
+}
+
+add_task(async function test_time_dropdown_opening_up_clears_the_header() {
+  await withMonitorCardInSidebar(async ({ sidebarBrowser, aichatBrowser }) => {
+    const headerBottom = getHeaderBottom(sidebarBrowser, aichatBrowser);
+    Assert.greater(headerBottom, 0, "The chat header floats over the chat");
+
+    const { valign, placed, corrected } = await showTimeDropdown(
+      aichatBrowser,
+      "bottom"
+    );
+
+    Assert.equal(valign, "top", "The list opens above the time field");
+    Assert.greaterOrEqual(
+      corrected.top,
+      headerBottom,
+      "The list starts below the header floating over the chat"
+    );
+    Assert.greater(
+      corrected.top,
+      placed.top,
+      "The list was moved out of the header's strip"
+    );
+    // Moving the list down has to cost it height, not slide it down over the
+    // field it belongs to.
+    Assert.lessOrEqual(
+      Math.round(corrected.bottom),
+      Math.round(placed.bottom),
+      "The list still ends where it did, at the time field"
+    );
+  });
+});
+
+// A field scrolled up under the header would otherwise have its list open
+// downwards from underneath it.
+add_task(async function test_time_dropdown_opening_down_clears_the_header() {
+  await withMonitorCardInSidebar(async ({ sidebarBrowser, aichatBrowser }) => {
+    const headerBottom = getHeaderBottom(sidebarBrowser, aichatBrowser);
+
+    const { valign, corrected, viewportHeight } = await showTimeDropdown(
+      aichatBrowser,
+      "top"
+    );
+
+    Assert.equal(valign, "bottom", "The list opens below the time field");
+    Assert.greaterOrEqual(
+      corrected.top,
+      headerBottom,
+      "The list starts below the header floating over the chat"
+    );
+    Assert.lessOrEqual(
+      Math.round(corrected.bottom),
+      viewportHeight,
+      "Moving the list down keeps it inside the viewport"
+    );
+  });
 });

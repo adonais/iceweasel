@@ -6,10 +6,12 @@
 #define MOZILLA_PAINTING_TRANSFORMCLIPNODE_H
 
 #include "mozilla/Maybe.h"
-#include "mozilla/gfx/MatrixFwd.h"
+#include "mozilla/gfx/Matrix.h"
 #include "mozilla/gfx/Rect.h"
+#include "nsCoord.h"
 #include "nsISupports.h"
-#include "nsRegionFwd.h"
+#include "nsRect.h"
+#include "nsRegion.h"
 
 namespace mozilla {
 

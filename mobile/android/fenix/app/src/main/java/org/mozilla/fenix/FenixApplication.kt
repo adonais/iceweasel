@@ -453,6 +453,8 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         CoroutineScope(IO).launch {
             components.useCases.wallpaperUseCases.fetchCurrentWallpaperUseCase.invoke()
         }
+
+        components.tabDataCoordinator.initialize()
     }
 
     private fun restoreBrowserState() = applicationScope.launch {

@@ -36,7 +36,7 @@ class TransportLayerIce : public TransportLayer {
   void IceReady(NrIceMediaStream* stream);
   void IceFailed(NrIceMediaStream* stream);
   void IcePacketReceived(NrIceMediaStream* stream, int component,
-                         const unsigned char* data, int len);
+                         uint32_t dtls_id, MediaPacket& packet);
 
   // Useful for capturing encrypted packets
   sigslot::signal2<TransportLayer*, MediaPacket&> SignalPacketSending;
@@ -49,6 +49,11 @@ class TransportLayerIce : public TransportLayer {
 
   RefPtr<NrIceMediaStream> stream_;
   int component_;
+  // The DTLS association this layer is bound to; packets for other associations
+  // (during a fingerprint-changing ICE restart) are filtered out, and this id
+  // is passed along to NrIceMediaStream when sending a packet so the correct
+  // ICE stream is used.
+  uint32_t dtls_id_;
 };
 
 }  // namespace mozilla

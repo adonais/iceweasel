@@ -117,6 +117,45 @@ export class SidebarBookmarkList extends SidebarTabList {
     return folder?.parentElement?.querySelector("sidebar-bookmark-list");
   }
 
+  /**
+   * Force the virtual-list chunk holding an item to render, so the item's row
+   * exists in the DOM even while it is scrolled out of view. Sublists are
+   * otherwise only rendered once they intersect the viewport, which leaves
+   * items in a long list unreachable until the user scrolls to them.
+   *
+   * @param {string} guid
+   * @returns {Promise<boolean>} False if this list has no item with that guid.
+   *   The lists render from a snapshot of the bookmarks tree, so a folder that
+   *   Places reports in a path can be absent from them; a caller walking that
+   *   path uses this to learn it can't descend any further.
+   */
+  async renderItemForGuid(guid) {
+    const index = this.tabItems?.findIndex(item => item.guid === guid) ?? -1;
+    if (index < 0) {
+      return false;
+    }
+    // A nested list is created by its parent list's render, so on the first
+    // call it hasn't rendered its own shadow root yet and the <virtual-list>
+    // queried below is still missing. That's also why the null check on it
+    // can't move any higher.
+    await this.updateComplete;
+    const virtualList = this.rootVirtualListEl;
+    if (!virtualList) {
+      return false;
+    }
+    // A list that has never intersected the viewport renders no chunks at all,
+    // so make it render them before asking for the one holding the item.
+    virtualList.isVisible = true;
+    await virtualList.updateComplete;
+    const subList = virtualList.getSubListForItem(index);
+    if (!subList) {
+      return false;
+    }
+    subList.isVisible = true;
+    await subList.updateComplete;
+    return true;
+  }
+
   willUpdate(changes) {
     super.willUpdate(changes);
     if (changes.has("expandedFolderGuids")) {
@@ -192,7 +231,12 @@ export class SidebarBookmarkList extends SidebarTabList {
           @mouseenter=${e => this.#updateFolderTooltip(e, title)}
           .guid=${tabItem.guid}
         >
-          ${title}
+          <span
+            class="bookmark-folder-title text-truncated-ellipsis"
+            dir="auto"
+          >
+            ${title}
+          </span>
         </div>`;
       }
       return html`
@@ -210,7 +254,12 @@ export class SidebarBookmarkList extends SidebarTabList {
             @auxclick=${e => this.#onFolderAuxClick(e, tabItem.guid)}
             @mouseenter=${e => this.#updateFolderTooltip(e, title)}
           >
-            ${title}
+            <span
+              class="bookmark-folder-title text-truncated-ellipsis"
+              dir="auto"
+            >
+              ${title}
+            </span>
           </summary>
           <div id="content">
             <sidebar-bookmark-list

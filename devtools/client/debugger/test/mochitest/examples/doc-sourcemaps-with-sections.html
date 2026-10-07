@@ -1,0 +1,18 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Debugger test page</title>
+  </head>
+
+  <body>
+    <!-- xbundle.js installs a setInterval that throws once a second and never
+       - clears it, so that a breakpoint set on it after page load is still hit.
+       - It lives on its own page for that reason: any test loading it takes a
+       - thrown error every second for as long as the page is open. -->
+    <script src="sourcemaps-with-sections/xbundle.js"></script>
+  </body>
+</html>

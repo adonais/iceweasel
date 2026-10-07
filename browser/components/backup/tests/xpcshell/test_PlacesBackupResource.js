@@ -4,7 +4,7 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
 const { PlacesBackupResource } = ChromeUtils.importESModule(
-  "resource:///modules/backup/PlacesBackupResource.sys.mjs"
+  "moz-src:///browser/components/backup/resources/PlacesBackupResource.sys.mjs"
 );
 const { PlacesDBUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/PlacesDBUtils.sys.mjs"

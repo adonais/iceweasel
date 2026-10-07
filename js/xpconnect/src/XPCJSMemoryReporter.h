@@ -5,6 +5,9 @@
 #ifndef XPCJSMemoryReporter_h
 #define XPCJSMemoryReporter_h
 
+#include "nsHashKeys.h"
+#include "nsTHashMap.h"
+
 class nsISupports;
 class nsIHandleReportCallback;
 

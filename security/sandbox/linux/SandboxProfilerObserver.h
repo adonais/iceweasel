@@ -5,6 +5,7 @@
 #ifndef SANDBOX_PROFILER_STARTUP_H
 #define SANDBOX_PROFILER_STARTUP_H
 
+#include "mozilla/Sandbox.h"
 #include "mozilla/Services.h"
 #include "nsCOMPtr.h"
 #include "nsIObserver.h"

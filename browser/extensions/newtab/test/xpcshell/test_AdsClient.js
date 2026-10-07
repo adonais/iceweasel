@@ -13,6 +13,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 const PREF_UNIFIED_ADS_ADSCLIENT_ENABLED = "unifiedAds.adsClient.enabled";
+const PREF_BLOCKED_LIST = "unifiedAds.blockedAds";
 
 let gSandbox;
 add_setup(() => {
@@ -60,6 +61,82 @@ add_task(function test_isEnabled() {
     }),
     false,
     "Disabled when trainhopConfig.adsClient.enabled is false"
+  );
+});
+
+add_task(function test_getBlocks() {
+  const deepEqualSorted = (actual, expected, message) =>
+    Assert.deepEqual(actual.toSorted(), expected.toSorted(), message);
+
+  deepEqualSorted(
+    lazy.AdsClient.getBlocks({}),
+    [],
+    "Blocks are empty when pref is not present"
+  );
+
+  deepEqualSorted(
+    lazy.AdsClient.getBlocks({ [PREF_BLOCKED_LIST]: "" }),
+    [],
+    "Blocks are empty when pref is empty"
+  );
+
+  deepEqualSorted(
+    lazy.AdsClient.getBlocks({ [PREF_BLOCKED_LIST]: "   " }),
+    [],
+    "Blocks are empty when pref is blank"
+  );
+
+  deepEqualSorted(
+    lazy.AdsClient.getBlocks({ [PREF_BLOCKED_LIST]: "foo" }),
+    ["foo"],
+    "Blocks are present when single value"
+  );
+
+  deepEqualSorted(
+    lazy.AdsClient.getBlocks({ [PREF_BLOCKED_LIST]: "foo,bar,baz" }),
+    ["foo", "bar", "baz"],
+    "Blocks are present with multiple value"
+  );
+
+  deepEqualSorted(
+    lazy.AdsClient.getBlocks({ [PREF_BLOCKED_LIST]: "foo  ,   bar  ,  baz" }),
+    ["foo", "bar", "baz"],
+    "Blocks trim all entries"
+  );
+
+  deepEqualSorted(
+    lazy.AdsClient.getBlocks({ [PREF_BLOCKED_LIST]: ",,foo,,bar,baz," }),
+    ["foo", "bar", "baz"],
+    "Blocks remove all empty entries"
+  );
+
+  deepEqualSorted(
+    lazy.AdsClient.getBlocks({}, "foo"),
+    ["foo"],
+    "Blocks are present when pref is not present, but additional block is present as scalar"
+  );
+
+  deepEqualSorted(
+    lazy.AdsClient.getBlocks({}, ["foo"]),
+    ["foo"],
+    "Blocks are present when pref is not present, but additional block is present as array"
+  );
+
+  deepEqualSorted(
+    lazy.AdsClient.getBlocks({}, ["foo", "bar"]),
+    ["foo", "bar"],
+    "Blocks are present when pref is not present, but additional blocks is present"
+  );
+
+  deepEqualSorted(
+    lazy.AdsClient.getBlocks({ [PREF_BLOCKED_LIST]: "foo,foo,baz,spam" }, [
+      "bar",
+      "bar",
+      "baz",
+      "eggs",
+    ]),
+    ["foo", "bar", "baz", "spam", "eggs"],
+    "Blocks are deduplicated across all inputs"
   );
 });
 

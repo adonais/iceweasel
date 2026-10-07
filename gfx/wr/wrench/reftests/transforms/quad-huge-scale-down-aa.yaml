@@ -1,0 +1,22 @@
+# A large antialiased rectangle scaled down to occupy a small amount of pixels
+# on screen.
+# Previously, it the rectangled used AA segments due to the large local space
+# size, but overlapping AA segments once scaled down caused rendering issues.
+---
+root:
+  items:
+    - type: "stacking-context"
+      transform-origin: 0 0
+      transform: "scale(0.001)"
+      items:
+        - type: "stacking-context"
+          transform-origin: 0 0
+          filters: [identity]
+          items:
+            - type: rect
+              bounds: [0, 0, 80000, 64000]
+              color: blue
+            - type: rect
+              bounds: [3000, 3000, 70000, 1000]
+              color: red
+              antialiased: true

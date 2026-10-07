@@ -32,6 +32,10 @@
     opacity: var(--input-text-opacity-disabled);
   }
 
+  &:focus-visible {
+    outline: var(--focus-outline);
+  }
+
   &.with-icon {
     padding-inline-start: calc(2 * var(--space-medium) + var(--input-text-icon-size));
     background-repeat: no-repeat;

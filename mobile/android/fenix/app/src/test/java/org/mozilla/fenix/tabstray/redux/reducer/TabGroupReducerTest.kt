@@ -577,7 +577,7 @@ class TabGroupReducerTest {
         val resultState =
             TabGroupActionReducer.reduce(
                 state = TabsTrayState(),
-                action = TabGroupAction.TabAddedToGroup(tabId = "54321", groupId = "12345"),
+                action = TabGroupAction.TabAddedToExistingTabGroup(tabId = "54321", groupId = "12345"),
             )
         assertEquals(TabsTrayState(), resultState)
     }
@@ -960,5 +960,15 @@ class TabGroupReducerTest {
             expected = TabsTrayState.DragProcessingState.EDIT_IN_PROGRESS,
             resultState.tabGroupState.dragProcessingState,
         )
+    }
+
+    @Test
+    fun `WHEN CollectionsMigrationCardDismissed THEN the migration card is hidden`() {
+        val initialState =
+            TabsTrayState(tabGroupState = TabsTrayState.TabGroupState(showCollectionsMigrationCard = true))
+
+        val resultState = TabGroupActionReducer.reduce(initialState, TabGroupAction.CollectionsMigrationCardDismissed)
+
+        assertFalse(resultState.tabGroupState.showCollectionsMigrationCard)
     }
 }

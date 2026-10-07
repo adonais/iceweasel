@@ -11,6 +11,7 @@ import java.util.UUID
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.isActive
 import mozilla.components.compose.base.theme.layout.AcornWindowSize
+import mozilla.components.concept.engine.mediasession.MediaSession
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import org.mozilla.fenix.compose.TabThumbnailImageData
 import org.mozilla.fenix.ext.maxActiveTime
@@ -31,6 +32,9 @@ sealed interface TabsTrayItem {
     /** Whether the entity is focused. */
     val isFocused: Boolean
 
+    /** Whether the entity has active media. */
+    val isMediaActive: Boolean
+
     /**
      * Data entity representing a tab in the Tabs Tray.
      *
@@ -40,6 +44,7 @@ sealed interface TabsTrayItem {
      * @property inactive Whether the tab is inactive.
      * @property private Whether the tab is private.
      * @property icon The bitmap of the tab's favicon.
+     * @property isMediaActive Whether the tab has active media.
      * @property lastAccess The last time this tab was accessed.
      * @property isFocused Whether the tab is focused. This is only set when the tab data model is generated.
      */
@@ -51,6 +56,7 @@ sealed interface TabsTrayItem {
         val inactive: Boolean,
         val private: Boolean,
         val icon: Bitmap?,
+        override val isMediaActive: Boolean,
         val lastAccess: Long,
         override val isFocused: Boolean,
     ) : TabsTrayItem {
@@ -66,6 +72,7 @@ sealed interface TabsTrayItem {
             inactive = !tab.isActive(maxActiveTime = maxActiveTime),
             private = tab.content.private,
             icon = tab.content.icon,
+            isMediaActive = tab.mediaSessionState?.playbackState == MediaSession.PlaybackState.PLAYING,
             lastAccess = tab.lastAccess,
             isFocused = isFocused,
         )
@@ -105,6 +112,8 @@ sealed interface TabsTrayItem {
         val initialScrollIndex: Int = 0,
     ) : TabsTrayItem {
         override val isHomepageItem: Boolean = false
+        override val isMediaActive: Boolean
+            get() = tabs.any { it.isMediaActive }
 
         /** Retrieves the thumbnail image data for the first 4 tabs in the group's tab collection. */
         val thumbnails by lazy {
@@ -143,6 +152,7 @@ internal fun createTab(
     private: Boolean = false,
     lastAccess: Long = 0L,
     isFocused: Boolean = false,
+    isMediaActive: Boolean = false,
 ): TabsTrayItem.Tab =
     TabsTrayItem.Tab(
         id = id,
@@ -151,6 +161,7 @@ internal fun createTab(
         inactive = inactive,
         private = private,
         icon = null,
+        isMediaActive = isMediaActive,
         lastAccess = lastAccess,
         isFocused = isFocused,
     )

@@ -32,7 +32,6 @@ HOST_SOURCES += [
     "/third_party/wasm2c/src/color.cc",
     "/third_party/wasm2c/src/common.cc",
     "/third_party/wasm2c/src/config.cc",
-    "/third_party/wasm2c/src/decompiler.cc",
     "/third_party/wasm2c/src/emscripten-helpers.cc",
     "/third_party/wasm2c/src/error-formatter.cc",
     "/third_party/wasm2c/src/expr-visitor.cc",

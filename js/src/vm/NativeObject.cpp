@@ -9,6 +9,7 @@
 
 #include "gc/MaybeRooted.h"
 #include "gc/StableCellHasher.h"
+#include "jit/JitRuntime.h"
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/friend/StackLimits.h"    // js::AutoCheckRecursionLimit
 #include "js/Printer.h"               // js::GenericPrinter
@@ -351,15 +352,17 @@ bool NativeObject::growSlots(JSContext* cx, uint32_t oldCapacity,
       new (allocation) ObjectSlots(newCapacity, dictionarySpan, uid);
 
   HeapSlot* newSlots = newHeaderSlots->slots();
-#ifdef JS_GC_CONCURRENT_MARKING
-  InitializeSlotRange(newSlots + oldCapacity, newSlots + newCapacity);
-#else
   Debug_SetSlotRangeToCrashOnTouch(newSlots + oldCapacity,
                                    newCapacity - oldCapacity);
-#endif
 
   gc::MemoryReleaseFence(zone());
   slots_ = newSlots;
+
+  if (cx->runtime()->hasJitRuntime() &&
+      MOZ_UNLIKELY(cx->runtime()->jitRuntime()->inPureCall()) &&
+      is<GlobalObject>()) {
+    cx->runtime()->jitRuntime()->handleGrowSlotsForPureCall(cx);
+  }
 
   MOZ_ASSERT(hasDynamicSlots());
   return true;
@@ -395,13 +398,7 @@ bool NativeObject::allocateInitialSlots(JSContext* cx, uint32_t capacity) {
       ObjectSlots(capacity, 0, ObjectSlots::NoUniqueIdInDynamicSlots);
   HeapSlot* slots = headerSlots->slots();
 
-#ifdef JS_GC_CONCURRENT_MARKING
-  // TODO: This (and the other uses of InitializeSlotRange in this file) may
-  // unnecessarily initialize slots that get explicitly initialized later.
-  InitializeSlotRange(slots, slots + capacity);
-#else
   Debug_SetSlotRangeToCrashOnTouch(slots, capacity);
-#endif
 
   // Fence between initializing slot data and writing the slots_ pointer ensure
   // marking doesn't observe uninitialized memory.
@@ -432,11 +429,7 @@ bool NativeObject::allocateSlots(Nursery& nursery, uint32_t newCapacity) {
       newCapacity, dictionarySpan, ObjectSlots::NoUniqueIdInDynamicSlots);
 
   HeapSlot* newSlots = newHeaderSlots->slots();
-#ifdef JS_GC_CONCURRENT_MARKING
-  InitializeSlotRange(newSlots, newSlots + newCapacity);
-#else
   Debug_SetSlotRangeToCrashOnTouch(newSlots, newCapacity);
-#endif
 
   gc::MemoryReleaseFence(zone());
   slots_ = newSlots;
@@ -526,6 +519,15 @@ void NativeObject::shrinkSlots(JSContext* cx, uint32_t oldCapacity,
 
   auto* newHeaderSlots =
       new (allocation) ObjectSlots(newCapacity, dictionarySpan, uid);
+
+#ifdef JS_GC_CONCURRENT_MARKING
+  // Clear any unused slots up to the end of the allocation in case we end up
+  // marking them.
+  // TODO: Not required for correctness. Could be removed.
+  InitializeSlotRange(newHeaderSlots->slots() + newCapacity,
+                      allocation + newAllocated);
+#endif
+
   gc::MemoryReleaseFence(zone());
   slots_ = newHeaderSlots->slots();
 }

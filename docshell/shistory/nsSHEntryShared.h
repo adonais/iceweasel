@@ -9,7 +9,9 @@
 #include "nsCOMPtr.h"
 #include "nsExpirationTracker.h"
 #include "nsIBFCacheEntry.h"
+#include "nsILayoutHistoryState.h"
 #include "nsIPolicyContainer.h"
+#include "nsIPrincipal.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsRect.h"
 #include "nsString.h"
@@ -22,9 +24,7 @@ class nsISHEntry;
 class nsISHistory;
 class nsIDocShellTreeItem;
 class nsIDocumentViewer;
-class nsILayoutHistoryState;
 class nsIPolicyContainer;
-class nsIPrincipal;
 class nsDocShellEditorData;
 class nsFrameLoader;
 class nsIMutableArray;
@@ -144,6 +144,8 @@ class SHEntrySharedParentState : public SHEntrySharedState {
   bool mDynamicallyCreated = false;
 
   // This flag is about necko cache, not bfcache.
+  // True when the HTTP response was already expired at the time this entry was
+  // committed.
   bool mExpired = false;
 };
 

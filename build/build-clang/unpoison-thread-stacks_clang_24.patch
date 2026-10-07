@@ -13,7 +13,6 @@ variant causes failures in our test suite, so revert the TLS handler in favor of
 the interceptor approach from the first patch.
 
 diff --git a/compiler-rt/lib/asan/asan_win.cpp b/compiler-rt/lib/asan/asan_win.cpp
-index c671a2d..4608792 100644
 --- a/compiler-rt/lib/asan/asan_win.cpp
 +++ b/compiler-rt/lib/asan/asan_win.cpp
 @@ -172,6 +172,14 @@ INTERCEPTOR_WINAPI(void, ExitThread, DWORD dwExitCode) {
@@ -42,7 +41,7 @@ index c671a2d..4608792 100644
  #ifdef _WIN64
    ASAN_INTERCEPT_FUNC(__C_specific_handler);
  #else
-@@ -401,19 +411,6 @@ IN_SECTION(".CRT$XLAB")
+@@ -405,21 +415,6 @@ IN_SECTION(".CRT$XLAB")
  void(NTAPI* __asan_tls_init)(void*, unsigned long, void*) = asan_thread_init;
  #  endif
  
@@ -55,7 +54,9 @@ index c671a2d..4608792 100644
 -  }
 -}
 -
--#pragma section(".CRT$XLY", long, read)
+-#  if !defined(__GNUC__) || defined(__clang__)
+-#    pragma section(".CRT$XLY", long, read)
+-#  endif
 -IN_SECTION(".CRT$XLY")
 -void(NTAPI* __asan_tls_exit)(void*, unsigned long, void*) = asan_thread_exit;
 -

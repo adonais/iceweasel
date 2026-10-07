@@ -15,14 +15,16 @@
  *     "application/json") are parsed into objects/arrays. No validity decisions
  *     happen here.
  *  2. VALIDATE: the compliant validator in JsonSchema.sys.mjs checks the
- *     normalized value using only standard JSON Schema keywords (type, format,
- *     pattern, enum, required). Every entry of a list, and every open-ended key
- *     of an object (one matched by patternProperties, e.g. an extension ID in
+ *     normalized value using standard JSON Schema keywords (type, format,
+ *     pattern, enum, required), plus the "moz-url" format for URLs the URL
+ *     parser accepts. Every entry of a list, and every open-ended key of an
+ *     object (one matched by patternProperties, e.g. an extension ID in
  *     ExtensionSettings), is validated individually: invalid entries are dropped
  *     (and logged) so one bad entry never discards the whole collection. Any
  *     other bad value fails its policy.
- *  3. HYDRATE: validated "format": "uri" strings are turned into URL objects,
- *     which the policy implementations consume (.href, .hostname, etc.).
+ *  3. HYDRATE: validated "format": "moz-url" strings are turned into URL
+ *     objects, which the policy implementations consume (.href, .hostname,
+ *     etc.).
  *
  * The schema itself stays standard JSON Schema, so the same file can drive
  * other tooling (e.g. the enterprise console). "contentMediaType" is the only
@@ -65,7 +67,7 @@ const JSON_MEDIA_TYPE = "application/json";
  *   invalid entry is dropped.
  * @returns {{valid: boolean, parsedValue?: any, error?: Error}}
  *   On success, `parsedValue` holds the normalized and hydrated value (URL
- *   objects for uri-formatted fields, parsed objects for JSON-string fields,
+ *   objects for moz-url fields, parsed objects for JSON-string fields,
  *   booleans for 0/1 and "true"/"false", and collections with invalid entries
  *   removed).
  */
@@ -225,11 +227,11 @@ function isPatternProperty(schema, key) {
 }
 
 function isUriSchema(schema) {
-  if (schema.format === "uri") {
+  if (schema.format === "moz-url") {
     return true;
   }
   if (Array.isArray(schema.anyOf)) {
-    return schema.anyOf.some(branch => branch.format === "uri");
+    return schema.anyOf.some(branch => branch.format === "moz-url");
   }
   return false;
 }
@@ -363,7 +365,7 @@ function trimInvalidEntries(value, schema, path = "") {
 }
 
 /*
- * Stage 3. Build the value the policy implementations consume: uri-formatted
+ * Stage 3. Build the value the policy implementations consume: moz-url
  * strings become URL objects, and object properties the schema does not
  * describe are stripped (or rejected when additional properties are
  * disallowed). Runs only after validation succeeds.
@@ -377,13 +379,7 @@ function hydrate(value, schema, allowAdditionalProperties) {
     if (value === "") {
       return "";
     }
-    try {
-      return new URL(value);
-    } catch {
-      // The validator accepted this string as a uri but the URL parser does
-      // not; leave it as-is rather than throwing.
-      return value;
-    }
+    return new URL(value);
   }
 
   if (typeof value == "object" && !Array.isArray(value)) {

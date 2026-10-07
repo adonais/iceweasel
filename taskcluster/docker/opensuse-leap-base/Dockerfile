@@ -30,8 +30,8 @@ RUN zypper refresh && zypper install -y \
       python3-psutil \
     && zypper clean --all
 
-# %include testing/mozharness/external_tools/robustcheckout.py
-COPY topsrcdir/testing/mozharness/external_tools/robustcheckout.py /usr/local/mercurial/robustcheckout.py
+# %include taskcluster/scripts/robustcheckout.py
+COPY topsrcdir/taskcluster/scripts/robustcheckout.py /usr/local/mercurial/robustcheckout.py
 
 # %include taskcluster/docker/recipes/hgrc
 COPY topsrcdir/taskcluster/docker/recipes/hgrc /etc/mercurial/hgrc.d/mozilla.rc

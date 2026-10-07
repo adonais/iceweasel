@@ -362,7 +362,11 @@ bool RelR<bits>::hack(std::fstream& f, bool set_relrhack_bit) {
 
 std::vector<std::string> get_path() {
   std::vector<std::string> result;
-  std::stringstream stream{std::getenv("PATH")};
+  const char* path = std::getenv("PATH");
+  if (!path) {
+    return result;
+  }
+  std::stringstream stream{path};
   std::string item;
 
   while (std::getline(stream, item, ':')) {

@@ -569,10 +569,6 @@ class TabbedBrowsingTest {
         homeScreen(composeTestRule) {}
             .openTabDrawer {
                 verifyNormalTabsList()
-            }
-            .closeTabDrawer {}
-        homeScreen(composeTestRule) {}
-            .openTabDrawer {
                 verifyOpenTabsOrder(title = webPages[0].title, position = 1, isListViewEnabled = true)
                 verifyOpenTabsOrder(title = webPages[1].title, position = 2, isListViewEnabled = true)
                 verifyOpenTabsOrder(title = webPages[2].title, position = 3, isListViewEnabled = true)
@@ -601,10 +597,6 @@ class TabbedBrowsingTest {
         homeScreen(composeTestRule) {}
             .openTabDrawer {
                 verifyNormalTabsList()
-            }
-            .closeTabDrawer {}
-        homeScreen(composeTestRule) {}
-            .openTabDrawer {
                 verifyOpenTabsOrder(title = webPages[0].title, position = 1)
                 verifyOpenTabsOrder(title = webPages[1].title, position = 2)
                 verifyOpenTabsOrder(title = webPages[2].title, position = 3)

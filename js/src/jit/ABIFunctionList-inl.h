@@ -116,6 +116,7 @@ namespace jit {
   _(js::irregexp::CaseInsensitiveCompareNonUnicode)                            \
   _(js::irregexp::CaseInsensitiveCompareUnicode)                               \
   _(js::irregexp::GrowBacktrackStack)                                          \
+  _(js::irregexp::HandleRegExpInterrupt)                                       \
   _(js::irregexp::IsCharacterInRangeArray)                                     \
   _(js::jit::AllocateAndInitTypedArrayBuffer)                                  \
   _(js::jit::AllocateBigIntNoGC)                                               \

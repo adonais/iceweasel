@@ -2,7 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { UrlbarUtils } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+
 import { RealtimeSuggestProvider } from "moz-src:///browser/components/urlbar/private/RealtimeSuggestProvider.sys.mjs";
+
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
+});
 
 /**
  * A feature that supports flight status suggestions.
@@ -90,7 +98,7 @@ export class FlightStatusSuggestions extends RealtimeSuggestProvider {
     ];
   }
 
-  getViewUpdateForPayloadItem(item, index) {
+  getViewUpdateForPayloadItem(item, index, controller) {
     let status;
     switch (item.status) {
       case "Scheduled": {
@@ -145,6 +153,16 @@ export class FlightStatusSuggestions extends RealtimeSuggestProvider {
 
     let foregroundImage;
     let backgroundImage;
+
+    let iconUrl;
+    if (item.airline.icon) {
+      iconUrl = UrlbarUtils.getRemoteIconUrl(
+        item.airline.icon,
+        lazy.UrlbarShared.TOP_PICK_ICON_SIZE,
+        controller
+      );
+    }
+
     if (status == "inflight") {
       let backgroundImageId =
         item.progress_percent == 100
@@ -161,16 +179,14 @@ export class FlightStatusSuggestions extends RealtimeSuggestProvider {
       };
       foregroundImage = {
         attributes: {
-          src: item.airline.icon,
+          src: iconUrl,
         },
       };
     } else {
       foregroundImage = {
         attributes: {
-          src:
-            item.airline.icon ??
-            "chrome://browser/skin/urlbar/flight-airline.svg",
-          fallback: !item.airline.icon,
+          src: iconUrl ?? "chrome://browser/skin/urlbar/flight-airline.svg",
+          fallback: !iconUrl,
         },
       };
     }

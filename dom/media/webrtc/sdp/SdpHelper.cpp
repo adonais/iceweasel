@@ -4,6 +4,7 @@
 
 #include "sdp/SdpHelper.h"
 
+#include <algorithm>
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
@@ -110,6 +111,37 @@ bool SdpHelper::IceCredentialsDiffer(const SdpMediaSection& msection1,
   if ((attrs1.GetIceUfrag() != attrs2.GetIceUfrag()) ||
       (attrs1.GetIcePwd() != attrs2.GetIcePwd())) {
     return true;
+  }
+
+  return false;
+}
+
+bool SdpHelper::FingerprintsDiffer(const SdpMediaSection& msection1,
+                                   const SdpMediaSection& msection2) {
+  const SdpAttributeList& attrs1(msection1.GetAttributeList());
+  const SdpAttributeList& attrs2(msection2.GetAttributeList());
+
+  bool has1 = attrs1.HasAttribute(SdpAttribute::kFingerprintAttribute);
+  bool has2 = attrs2.HasAttribute(SdpAttribute::kFingerprintAttribute);
+  if (has1 != has2) {
+    return true;
+  }
+  if (!has1) {
+    return false;
+  }
+
+  const auto& fps1 = attrs1.GetFingerprint().mFingerprints;
+  const auto& fps2 = attrs2.GetFingerprint().mFingerprints;
+  if (fps1.size() != fps2.size()) {
+    return true;
+  }
+
+  // Compare as sets; a peer could reorder the fingerprints without a meaningful
+  // change.
+  for (const auto& fp1 : fps1) {
+    if (std::find(fps2.begin(), fps2.end(), fp1) == fps2.end()) {
+      return true;
+    }
   }
 
   return false;

@@ -3,34 +3,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :host {
-  /* 800px - wider than the chat column because generated pages carry tables
-     and card grids rather than a conversation. */
-  --aitab-page-max-width: calc(var(--size-layout-xlarge) + var(--dimension-300));
+  /* The type scale in aitab-base.css sizes against this rather than the
+     viewport, which is wider than the page whenever the chat pane is open.
+     container-type has no effect on an inline box, hence display. */
+  display: block;
+  container: aitab-page / inline-size;
 }
 
 .aitab-sheet {
   display: flex;
   flex-direction: column;
   gap: var(--space-xlarge);
-  max-width: var(--aitab-page-max-width);
   margin-inline: auto;
   padding: var(--space-xlarge);
-}
-
-.aitab-eyebrow {
-  margin: 0;
-  color: var(--text-color-deemphasized);
-  font-size: var(--font-size-small);
-  text-transform: uppercase;
-}
-
-.aitab-title {
-  margin: 0;
-}
-
-.aitab-subhead {
-  margin: 0;
-  color: var(--text-color-deemphasized);
 }
 
 .aitab-blocks {

@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.ui.efficiency.devtools
 
+import kotlin.test.assertIs
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -39,8 +40,8 @@ class SelectorContainerContractTest {
     fun unorderedGroupedScrollingSelectorsFailCatalogValidation() {
         val error = runCatching { UnorderedSelectors.all }.exceptionOrNull()
 
-        assertTrue(error is IllegalArgumentException)
-        assertTrue(error?.message?.contains("must declare every scrolling selector") == true)
+        assertIs<IllegalArgumentException>(error)
+        assertTrue(error.message.orEmpty().contains("must declare every scrolling selector"))
     }
 
     private object AutoDiscoveredSelectors : SelectorContainer {

@@ -1,7 +1,7 @@
 diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
 --- a/expat/lib/xmlparse.c
 +++ b/expat/lib/xmlparse.c
-@@ -606,8 +606,12 @@ static XML_Bool setContext(XML_Parser parser, const XML_Char *context);
+@@ -620,8 +620,12 @@ static XML_Bool setContext(XML_Parser parser, const XML_Char *context);
  static void FASTCALL normalizePublicId(XML_Char *s);
  
  static DTD *dtdCreate(XML_Parser parser);
@@ -14,7 +14,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  static void dtdDestroy(DTD *p, XML_Bool isDocEntity, XML_Parser parser);
  static int dtdCopy(XML_Parser oldParser, DTD *newDtd, const DTD *oldDtd,
                     XML_Parser parser);
-@@ -616,7 +620,11 @@ static int copyEntityTable(XML_Parser oldParser, HASH_TABLE *newTable,
+@@ -632,7 +636,11 @@ static NAMED *lookupWithLength(XML_Parser parser, HASH_TABLE *table, KEY name,
  static NAMED *lookup(XML_Parser parser, HASH_TABLE *table, KEY name,
                       size_t createSize);
  static void FASTCALL hashTableInit(HASH_TABLE *table, XML_Parser parser);
@@ -26,7 +26,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  static void FASTCALL hashTableDestroy(HASH_TABLE *table);
  static void FASTCALL hashTableIterInit(HASH_TABLE_ITER *iter,
                                         const HASH_TABLE *table);
-@@ -1115,6 +1123,8 @@ expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine) {
+@@ -1133,6 +1141,8 @@ expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine) {
  }
  #endif // XML_GE == 1
  
@@ -35,7 +35,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  XML_Parser XMLCALL
  XML_ParserCreate(const XML_Char *encodingName) {
    return XML_ParserCreate_MM(encodingName, NULL, NULL);
-@@ -1125,6 +1135,8 @@ XML_ParserCreateNS(const XML_Char *encodingName, XML_Char nsSep) {
+@@ -1143,6 +1153,8 @@ XML_ParserCreateNS(const XML_Char *encodingName, XML_Char nsSep) {
    XML_Char tmp[2] = {nsSep, 0};
    return XML_ParserCreate_MM(encodingName, NULL, tmp);
  }
@@ -44,7 +44,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  // "xml=http://www.w3.org/XML/1998/namespace"
  static const XML_Char implicitContext[]
-@@ -1655,6 +1667,8 @@ parserInit(XML_Parser parser, const XML_Char *encodingName) {
+@@ -1693,6 +1705,8 @@ parserInit(XML_Parser parser, const XML_Char *encodingName) {
  #endif
  }
  
@@ -53,7 +53,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  /* moves list of bindings to m_freeBindingList */
  static void FASTCALL
  moveToFreeBindingList(XML_Parser parser, BINDING *bindings) {
-@@ -1716,6 +1730,8 @@ XML_ParserReset(XML_Parser parser, const XML_Char *encodingName) {
+@@ -1754,6 +1768,8 @@ XML_ParserReset(XML_Parser parser, const XML_Char *encodingName) {
    dtdReset(parser->m_dtd, parser);
    return XML_TRUE;
  }
@@ -62,7 +62,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  static XML_Bool
  parserBusy(XML_Parser parser) {
-@@ -1730,6 +1746,8 @@ parserBusy(XML_Parser parser) {
+@@ -1768,6 +1784,8 @@ parserBusy(XML_Parser parser) {
    }
  }
  
@@ -71,7 +71,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  enum XML_Status XMLCALL
  XML_SetEncoding(XML_Parser parser, const XML_Char *encodingName) {
    if (parser == NULL)
-@@ -1755,6 +1773,8 @@ XML_SetEncoding(XML_Parser parser, const XML_Char *encodingName) {
+@@ -1793,6 +1811,8 @@ XML_SetEncoding(XML_Parser parser, const XML_Char *encodingName) {
    }
    return XML_STATUS_OK;
  }
@@ -80,7 +80,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  XML_Parser XMLCALL
  XML_ExternalEntityParserCreate(XML_Parser oldParser, const XML_Char *context,
-@@ -2028,6 +2048,8 @@ XML_UseParserAsHandlerArg(XML_Parser parser) {
+@@ -2066,6 +2086,8 @@ XML_UseParserAsHandlerArg(XML_Parser parser) {
      parser->m_handlerArg = parser;
  }
  
@@ -89,7 +89,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  enum XML_Error XMLCALL
  XML_UseForeignDTD(XML_Parser parser, XML_Bool useDTD) {
    if (parser == NULL)
-@@ -2043,6 +2065,8 @@ XML_UseForeignDTD(XML_Parser parser, XML_Bool useDTD) {
+@@ -2081,6 +2103,8 @@ XML_UseForeignDTD(XML_Parser parser, XML_Bool useDTD) {
    return XML_ERROR_FEATURE_REQUIRES_XML_DTD;
  #endif
  }
@@ -98,7 +98,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  void XMLCALL
  XML_SetReturnNSTriplet(XML_Parser parser, int do_nst) {
-@@ -2117,6 +2141,8 @@ XML_SetElementHandler(XML_Parser parser, XML_StartElementHandler start,
+@@ -2155,6 +2179,8 @@ XML_SetElementHandler(XML_Parser parser, XML_StartElementHandler start,
    parser->m_endElementHandler = end;
  }
  
@@ -107,7 +107,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  void XMLCALL
  XML_SetStartElementHandler(XML_Parser parser, XML_StartElementHandler start) {
    if (parser != NULL)
-@@ -2128,6 +2154,8 @@ XML_SetEndElementHandler(XML_Parser parser, XML_EndElementHandler end) {
+@@ -2166,6 +2192,8 @@ XML_SetEndElementHandler(XML_Parser parser, XML_EndElementHandler end) {
    if (parser != NULL)
      parser->m_endElementHandler = end;
  }
@@ -116,7 +116,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  void XMLCALL
  XML_SetCharacterDataHandler(XML_Parser parser,
-@@ -2159,6 +2187,8 @@ XML_SetCdataSectionHandler(XML_Parser parser,
+@@ -2197,6 +2225,8 @@ XML_SetCdataSectionHandler(XML_Parser parser,
    parser->m_endCdataSectionHandler = end;
  }
  
@@ -125,7 +125,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  void XMLCALL
  XML_SetStartCdataSectionHandler(XML_Parser parser,
                                  XML_StartCdataSectionHandler start) {
-@@ -2180,6 +2210,8 @@ XML_SetDefaultHandler(XML_Parser parser, XML_DefaultHandler handler) {
+@@ -2218,6 +2248,8 @@ XML_SetDefaultHandler(XML_Parser parser, XML_DefaultHandler handler) {
    parser->m_defaultHandler = handler;
    parser->m_defaultExpandInternalEntities = XML_FALSE;
  }
@@ -134,7 +134,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  void XMLCALL
  XML_SetDefaultHandlerExpand(XML_Parser parser, XML_DefaultHandler handler) {
-@@ -2198,6 +2230,8 @@ XML_SetDoctypeDeclHandler(XML_Parser parser, XML_StartDoctypeDeclHandler start,
+@@ -2236,6 +2268,8 @@ XML_SetDoctypeDeclHandler(XML_Parser parser, XML_StartDoctypeDeclHandler start,
    parser->m_endDoctypeDeclHandler = end;
  }
  
@@ -143,7 +143,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  void XMLCALL
  XML_SetStartDoctypeDeclHandler(XML_Parser parser,
                                 XML_StartDoctypeDeclHandler start) {
-@@ -2210,6 +2244,8 @@ XML_SetEndDoctypeDeclHandler(XML_Parser parser, XML_EndDoctypeDeclHandler end) {
+@@ -2248,6 +2282,8 @@ XML_SetEndDoctypeDeclHandler(XML_Parser parser, XML_EndDoctypeDeclHandler end) {
    if (parser != NULL)
      parser->m_endDoctypeDeclHandler = end;
  }
@@ -152,7 +152,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  void XMLCALL
  XML_SetUnparsedEntityDeclHandler(XML_Parser parser,
-@@ -2234,6 +2270,8 @@ XML_SetNamespaceDeclHandler(XML_Parser parser,
+@@ -2272,6 +2308,8 @@ XML_SetNamespaceDeclHandler(XML_Parser parser,
    parser->m_endNamespaceDeclHandler = end;
  }
  
@@ -161,7 +161,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  void XMLCALL
  XML_SetStartNamespaceDeclHandler(XML_Parser parser,
                                   XML_StartNamespaceDeclHandler start) {
-@@ -2254,6 +2292,8 @@ XML_SetNotStandaloneHandler(XML_Parser parser,
+@@ -2292,6 +2330,8 @@ XML_SetNotStandaloneHandler(XML_Parser parser,
    if (parser != NULL)
      parser->m_notStandaloneHandler = handler;
  }
@@ -170,7 +170,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  void XMLCALL
  XML_SetExternalEntityRefHandler(XML_Parser parser,
-@@ -2272,6 +2312,8 @@ XML_SetExternalEntityRefHandlerArg(XML_Parser parser, void *arg) {
+@@ -2310,6 +2350,8 @@ XML_SetExternalEntityRefHandlerArg(XML_Parser parser, void *arg) {
      parser->m_externalEntityRefHandlerArg = parser;
  }
  
@@ -179,7 +179,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  void XMLCALL
  XML_SetSkippedEntityHandler(XML_Parser parser,
                              XML_SkippedEntityHandler handler) {
-@@ -2305,6 +2347,8 @@ XML_SetEntityDeclHandler(XML_Parser parser, XML_EntityDeclHandler handler) {
+@@ -2343,6 +2385,8 @@ XML_SetEntityDeclHandler(XML_Parser parser, XML_EntityDeclHandler handler) {
    if (parser != NULL)
      parser->m_entityDeclHandler = handler;
  }
@@ -188,7 +188,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  void XMLCALL
  XML_SetXmlDeclHandler(XML_Parser parser, XML_XmlDeclHandler handler) {
-@@ -2808,6 +2852,8 @@ XML_GetCurrentByteIndex(XML_Parser parser) {
+@@ -2852,6 +2896,8 @@ XML_GetCurrentByteIndex(XML_Parser parser) {
  /* END MOZILLA CHANGE */
  }
  
@@ -197,7 +197,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  int XMLCALL
  XML_GetCurrentByteCount(XML_Parser parser) {
    if (parser == NULL)
-@@ -2836,6 +2882,8 @@ XML_GetInputContext(XML_Parser parser, int *offset, int *size) {
+@@ -2880,6 +2926,8 @@ XML_GetInputContext(XML_Parser parser, int *offset, int *size) {
  #endif /* XML_CONTEXT_BYTES > 0 */
    return NULL;
  }
@@ -206,8 +206,8 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  XML_Size XMLCALL
  XML_GetCurrentLineNumber(XML_Parser parser) {
-@@ -2861,6 +2909,8 @@ XML_GetCurrentColumnNumber(XML_Parser parser) {
-   return parser->m_position.columnNumber;
+@@ -2915,6 +2963,8 @@ XML_GetCurrentColumnNumber(XML_Parser parser) {
+   return (XML_Size)parser->m_position.columnNumber;
  }
  
 +/* BEGIN MOZILLA CHANGE (unused API) */
@@ -215,7 +215,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  void XMLCALL
  XML_FreeContentModel(XML_Parser parser, XML_Content *model) {
    if (parser == NULL)
-@@ -3111,6 +3161,8 @@ XML_GetFeatureList(void) {
+@@ -3165,6 +3215,8 @@ XML_GetFeatureList(void) {
  
    return features;
  }
@@ -224,7 +224,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  #if XML_GE == 1
  XML_Bool XMLCALL
-@@ -7828,6 +7880,8 @@ dtdCreate(XML_Parser parser) {
+@@ -7916,6 +7968,8 @@ dtdCreate(XML_Parser parser) {
    return p;
  }
  
@@ -233,7 +233,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  static void
  dtdReset(DTD *p, XML_Parser parser) {
    HASH_TABLE_ITER iter;
-@@ -7869,6 +7923,8 @@ dtdReset(DTD *p, XML_Parser parser) {
+@@ -7957,6 +8011,8 @@ dtdReset(DTD *p, XML_Parser parser) {
    p->hasParamEntityRefs = XML_FALSE;
    p->standalone = XML_FALSE;
  }
@@ -242,8 +242,8 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  static void
  dtdDestroy(DTD *p, XML_Bool isDocEntity, XML_Parser parser) {
-@@ -8235,6 +8291,8 @@ lookup(XML_Parser parser, HASH_TABLE *table, KEY name, size_t createSize) {
-   return table->v[i];
+@@ -8380,6 +8436,8 @@ lookup(XML_Parser parser, HASH_TABLE *table, KEY name, size_t createSize) {
+   return lookupWithLength(parser, table, name, keylen(name), createSize);
  }
  
 +/* BEGIN MOZILLA CHANGE (unused API) */
@@ -251,7 +251,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  static void FASTCALL
  hashTableClear(HASH_TABLE *table) {
    size_t i;
-@@ -8244,6 +8302,8 @@ hashTableClear(HASH_TABLE *table) {
+@@ -8389,6 +8447,8 @@ hashTableClear(HASH_TABLE *table) {
    }
    table->used = 0;
  }
@@ -260,7 +260,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  static void FASTCALL
  hashTableDestroy(HASH_TABLE *table) {
-@@ -8955,6 +9015,8 @@ accountingDiffTolerated(XML_Parser originParser, int tok, const char *before,
+@@ -9102,6 +9162,8 @@ accountingDiffTolerated(XML_Parser originParser, int tok, const char *before,
    return tolerated;
  }
  
@@ -269,7 +269,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  unsigned long long
  testingAccountingGetCountBytesDirect(XML_Parser parser) {
    if (! parser)
-@@ -8968,6 +9030,8 @@ testingAccountingGetCountBytesIndirect(XML_Parser parser) {
+@@ -9115,6 +9177,8 @@ testingAccountingGetCountBytesIndirect(XML_Parser parser) {
      return 0;
    return parser->m_accounting.countBytesIndirect;
  }

@@ -82,11 +82,16 @@ UNIFIED_SOURCES += [
     "nsColorPicker.cpp",
     "nsDataObj.cpp",
     "nsDataObjCollection.cpp",
+    "nsDeviceContextSpecWin.cpp",
     "nsDragService.cpp",
     "nsLookAndFeel.cpp",
     "nsNativeDragSource.cpp",
     "nsNativeDragTarget.cpp",
     "nsNativeThemeWin.cpp",
+    "nsPrintDialogWin.cpp",
+    "nsPrinterWin.cpp",
+    "nsPrintSettingsServiceWin.cpp",
+    "nsPrintSettingsWin.cpp",
     "nsSound.cpp",
     "nsToolkit.cpp",
     "nsUserIdleServiceWin.cpp",
@@ -133,6 +138,7 @@ SOURCES += [
     "MediaKeysEventSourceFactory.cpp",
     "nsBidiKeyboard.cpp",
     "nsFilePicker.cpp",
+    "nsPrintDialogUtil.cpp",
     "nsSharePicker.cpp",
     "nsWidgetFactory.cpp",
     "OSKInputPaneManager.cpp",
@@ -154,18 +160,6 @@ SOURCES["WindowsUIUtils.cpp"].flags += [
     "-fcxx-exceptions",
 ]
 
-if CONFIG["NS_PRINTING"]:
-    UNIFIED_SOURCES += [
-        "nsDeviceContextSpecWin.cpp",
-        "nsPrintDialogWin.cpp",
-        "nsPrinterWin.cpp",
-        "nsPrintSettingsServiceWin.cpp",
-        "nsPrintSettingsWin.cpp",
-    ]
-    SOURCES += [
-        "nsPrintDialogUtil.cpp",
-    ]
-
 XPIDL_SOURCES += [
     "nsIAlertsServiceRust.idl",
     "nsIWindowsTestDebug.idl",
@@ -181,8 +175,7 @@ include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
 
-if CONFIG["MOZ_ENABLE_SKIA_PDF"]:
-    LOCAL_INCLUDES += CONFIG["SKIA_INCLUDES"]
+LOCAL_INCLUDES += CONFIG["SKIA_INCLUDES"]
 
 LOCAL_INCLUDES += [
     "/gfx/cairo/cairo/src",
@@ -245,3 +238,8 @@ if CONFIG["MOZ_WINDOWSAPPSDK_DIR"]:
             "Microsoft.WindowsAppRuntime.Insights.Resource.dll",
         )
     ]
+
+LICENSED_UNDER += ["chromium"]
+LICENSED_UNDER["chromium"].paths = [
+    "nsWindow.cpp",
+]

@@ -1202,12 +1202,12 @@ class ExternalPythonSite:
                 # paths from the site paths.
                 "-S",
                 "-c",
-                "import sys; from collections import OrderedDict; "
+                "import sys;"
                 # Skip the first item in the sys.path, as it's the working directory
                 # of the invoked script (so, in this case, "").
-                # Use list(OrderectDict...) to de-dupe items, such as when using
+                # Use list(dict(...)) to de-dupe items, such as when using
                 # pyenv on Linux.
-                "print(list(OrderedDict.fromkeys(sys.path[1:])))",
+                "print(list(dict.fromkeys(sys.path[1:])))",
             ],
             universal_newlines=True,
             env=env,

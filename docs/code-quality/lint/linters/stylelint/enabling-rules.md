@@ -10,7 +10,7 @@ plugins to our Stylelint configuration.
 ## General Notes
 
 - Enabling of new rules and adding plugins should happen in agreement with the
-  [Desktop Theme module owner and peers](/mots/index.html#desktop-theme).
+  [Desktop Theme module owner and peers](/mots/index.md#desktop-theme).
 
 ## Enabling a New Rule
 

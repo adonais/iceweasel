@@ -50,6 +50,7 @@ class nsNSSCertificateDB final : public nsIX509CertDB
 
   nsresult getCertsFromPackage(nsTArray<nsTArray<uint8_t>>& collectArgs,
                                uint8_t* data, uint32_t length);
+  MOZ_CAN_RUN_SCRIPT
   nsresult handleCACertDownload(mozilla::NotNull<nsIArray*> x509Certs,
                                 nsIInterfaceRequestor* ctx);
   nsresult ConstructX509FromSpan(const mozilla::Span<const uint8_t> aInputSpan,

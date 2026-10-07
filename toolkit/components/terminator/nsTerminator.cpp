@@ -9,7 +9,7 @@
  * common case in which Firefox just won't shutdown.
  *
  * We spawn a thread during quit-application. If any of the shutdown
- * steps takes more than n milliseconds (63000 by default), kill the
+ * steps takes more than n milliseconds (70000 by default), kill the
  * process as fast as possible, without any cleanup.
  */
 
@@ -40,10 +40,10 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IntentionalCrash.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryChecking.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SpinEventLoopUntil.h"
-#include "mozilla/UniquePtr.h"
 
 #include "mozilla/dom/workerinternals/RuntimeService.h"
 
@@ -145,12 +145,10 @@ PRThread* CreateSystemThread(void (*start)(void* arg), void* arg) {
 // extracted from gHeartbeat must be considered rounded up.
 Atomic<uint32_t> gHeartbeat(0);
 
-struct Options {
-  /**
-   * How many ticks before we should crash the process.
-   */
-  uint32_t crashAfterTicks;
-};
+/**
+ * How many ticks before we should crash the process.
+ */
+Atomic<uint32_t> gCrashAfterTicks(0);
 
 /**
  * Save a profile of this process before we crash on a shutdown hang, so a
@@ -208,16 +206,9 @@ void MaybeSaveShutdownHangProfile() {
 /**
  * Entry point for the watchdog thread
  */
-void RunWatchdog(void* arg) {
+void RunWatchdog(void*) {
   NS_SetCurrentThreadName("Shutdown Hang Terminator");
 
-  // Let's copy and deallocate options, that's one less leak to worry
-  // about.
-  UniquePtr<Options> options((Options*)arg);
-  uint32_t crashAfterTicks = options->crashAfterTicks;
-  options = nullptr;
-
-  const uint32_t timeToLive = crashAfterTicks;
   while (true) {
     //
     // We do not want to sleep for the entire duration,
@@ -235,20 +226,14 @@ void RunWatchdog(void* arg) {
     usleep(HEARTBEAT_INTERVAL_MS * 1000 /* usec */);
 #endif
 
-    if (gHeartbeat++ < timeToLive) {
+    if (gHeartbeat++ < gCrashAfterTicks) {
       continue;
     }
 
     // Arrived here we know we will crash in a way or another.
 
-    // If the sampler thread is mid-write on a scheduled profile dump, let it
-    // finish (and, since it exits the process on completion, we never reach the
-    // crash below) rather than crashing over a half-written profile.
-    profiler_wait_for_scheduled_dump();
-
-    NoteIntentionalCrash(XRE_GetProcessTypeString());
-
-    MaybeSaveShutdownHangProfile();
+    // Gather our diagnosis before anything that can end the process: the
+    // scheduled-dump wait below exits on completion and never returns.
 
     // Until we have general log output for crash annotations in treeherder
     // (bug 1728721) we manually spit out our nested event loop stack.
@@ -272,20 +257,40 @@ void RunWatchdog(void* arg) {
       }
     }
 
+    printf_stderr("RunWatchdog: Shutdown hanging at step %s.\n",
+                  mozilla::AppShutdown::GetShutdownPhaseName(lastPhase));
+
+    // Collect running workers, if worker shutdown started and is incomplete.
+    mozilla::Maybe<nsCString> workersMsg;
+    if (mozilla::dom::workerinternals::RuntimeService* runtimeService =
+            mozilla::dom::workerinternals::RuntimeService::GetService()) {
+      workersMsg = runtimeService->GetHangingWorkersInfo();
+    }
+    if (workersMsg) {
+      printf_stderr("RunWatchdog: %s\n", workersMsg->get());
+    }
+
+    // If the sampler thread is mid-write on a scheduled profile dump, let it
+    // finish (and, since it exits the process on completion, we never reach the
+    // crash below) rather than crashing over a half-written profile.
+    profiler_wait_for_scheduled_dump();
+
+    NoteIntentionalCrash(XRE_GetProcessTypeString());
+
+    CollectShutdownHangAnnotations();
+
+    MaybeSaveShutdownHangProfile();
+
     if (lastPhase == mozilla::ShutdownPhase::NotInShutdown) {
       // This is not something we expect to ever happen, but still.
       CrashReporter::SetMinidumpAnalysisAllThreads();
       MOZ_CRASH("Shutdown hanging before starting any known phase.");
     }
 
-    // First check if worker shutdown started and is incomplete, in case
-    // report running workers.
-    mozilla::dom::workerinternals::RuntimeService* runtimeService =
-        mozilla::dom::workerinternals::RuntimeService::GetService();
-    if (runtimeService) {
-      // CrashIfHanging will check if we actually ever asked for worker
-      // shutdown, so calling it before is a no-op.
-      runtimeService->CrashIfHanging();
+    if (workersMsg) {
+      CrashReporter::SetMinidumpAnalysisAllThreads();
+      // This string will be leaked.
+      MOZ_CRASH_UNSAFE(strdup(workersMsg->get()));
     }
 
     // Otherwise just report our shutdown phase.
@@ -398,12 +403,11 @@ void nsTerminator::StartWatchdog() {
   }
 #endif
 
-  UniquePtr<Options> options(new Options());
-  // Guarantee that crashAfterTicks is non-zero
-  options->crashAfterTicks = std::max(1, crashAfterMS / HEARTBEAT_INTERVAL_MS);
+  // Guarantee that gCrashAfterTicks is non-zero
+  gCrashAfterTicks = std::max(1, crashAfterMS / HEARTBEAT_INTERVAL_MS);
 
   DebugOnly<PRThread*> watchdogThread =
-      CreateSystemThread(RunWatchdog, options.release());
+      CreateSystemThread(RunWatchdog, nullptr);
   MOZ_ASSERT(watchdogThread);
 }
 
@@ -471,5 +475,12 @@ nsTerminator::GetTicksForShutdownPhases(JSContext* aCx,
   }
 
   return NS_OK;
-}  // namespace mozilla
+}
+
+NS_IMETHODIMP
+nsTerminator::SetTicksBeforeCrash(uint32_t aTicks) {
+  gCrashAfterTicks = aTicks;
+  return NS_OK;
+}
+
 }  // namespace mozilla

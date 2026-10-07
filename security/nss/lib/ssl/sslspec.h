@@ -139,7 +139,9 @@ typedef struct DTLSRecvdRecordsStr {
  */
 struct ssl3CipherSpecStr {
     PRCList link;
-    PRUint8 refCt;
+    /* Must be wide enough that it cannot wrap: in DTLS one reference is held
+     * per queued handshake message (see dtls_AllocQueuedMessage). */
+    PRUint32 refCt;
 
     SSLSecretDirection direction;
     SSL3ProtocolVersion version;

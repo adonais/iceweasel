@@ -168,3 +168,94 @@ add_task(async function test_collapsing_group_keeps_tabs_in_place_vertical() {
     vertical: true,
   });
 });
+
+/**
+ * Drags the label of a tab group from an overflowing tab strip into another
+ * window, which takes the space the strip reserved for the collapsed group's
+ * tabs with it.
+ */
+add_task(async function test_dropping_group_in_other_window_frees_up_space() {
+  let tabContainer = gBrowser.tabContainer;
+
+  await BrowserTestUtils.overflowTabs(registerCleanupFunction, window, {
+    overflowAtStart: false,
+    overflowBy: OVERFLOW_TABS,
+  });
+
+  // Every tab but the first, so that what stays behind fits the tab strip
+  // however narrow the window is.
+  let groupedTabs = [...gBrowser.tabs].slice(1);
+  let group = gBrowser.addTabGroup(groupedTabs, {
+    insertBefore: groupedTabs[0],
+  });
+  Assert.ok(
+    tabContainer.overflowing,
+    "Tab strip is overflowing with the tab group in it"
+  );
+
+  // The other window opens on top of this one, and a window Windows reports as
+  // fully occluded stops ticking, which freezes the overflow state the tab
+  // strip picks up from a requestAnimationFrame. See bug 1733955 / bug 1779559.
+  await SpecialPowers.pushPrefEnv({
+    set: [["widget.windows.window_occlusion_tracking.enabled", false]],
+  });
+
+  let otherWindow = await BrowserTestUtils.openNewBrowserWindow();
+  let label = group.labelElement;
+
+  let collapsed = BrowserTestUtils.waitForEvent(
+    group,
+    "TabGroupAnimationComplete"
+  );
+  EventUtils.startDragSession(window, "move");
+  let [, dataTransfer] = EventUtils.synthesizeDragOver(
+    label,
+    label,
+    null,
+    "move",
+    window,
+    window,
+    {}
+  );
+  await collapsed;
+  Assert.ok(group.collapsed, "Tab group collapsed as part of the drag");
+
+  let groupAdopted = BrowserTestUtils.waitForEvent(
+    otherWindow.gBrowser.tabContainer,
+    "TabGroupCreate"
+  );
+
+  // Take the drag over to the other window's tab strip and drop it there.
+  let dropTarget = otherWindow.gBrowser.tabContainer.arrowScrollbox;
+  let result = EventUtils.sendDragEvent(
+    EventUtils.createDragEventObject(
+      "dragover",
+      dropTarget,
+      otherWindow,
+      dataTransfer,
+      {}
+    ),
+    dropTarget,
+    otherWindow
+  );
+  EventUtils.synthesizeDropAfterDragOver(
+    result,
+    dataTransfer,
+    dropTarget,
+    otherWindow
+  );
+  window.windowUtils.dragSession?.endDragSession(true);
+
+  await groupAdopted;
+  await BrowserTestUtils.waitForMutationCondition(
+    tabContainer,
+    { attributes: true, attributeFilter: ["overflow"] },
+    () => !tabContainer.overflowing,
+    { msg: "Tab strip stopped overflowing" }
+  );
+
+  await BrowserTestUtils.closeWindow(otherWindow);
+  while (gBrowser.tabs.length > 1) {
+    BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
+  }
+});

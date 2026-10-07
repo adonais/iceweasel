@@ -2,7 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { UrlbarUtils } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+
 import { RealtimeSuggestProvider } from "moz-src:///browser/components/urlbar/private/RealtimeSuggestProvider.sys.mjs";
+
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
+});
 
 /**
  * A feature that supports Yelp realtime suggestions.
@@ -73,7 +81,7 @@ export class YelpRealtimeSuggestions extends RealtimeSuggestProvider {
     ];
   }
 
-  getViewUpdateForPayloadItem(item, index) {
+  getViewUpdateForPayloadItem(item, index, controller) {
     return {
       [`item_${index}`]: {
         attributes: {
@@ -82,7 +90,11 @@ export class YelpRealtimeSuggestions extends RealtimeSuggestProvider {
       },
       [`image_${index}`]: {
         attributes: {
-          src: item.image_url,
+          src: UrlbarUtils.getRemoteIconUrl(
+            item.image_url,
+            lazy.UrlbarShared.TOP_PICK_ICON_SIZE,
+            controller
+          ),
         },
       },
       [`title_${index}`]: {

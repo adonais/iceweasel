@@ -42,6 +42,7 @@ scale(*) != large-raster-root.yaml blank.yaml
 == flatten-preserve-3d-root.yaml flatten-preserve-3d-root-ref.yaml
 scale(*) == flatten-twice.yaml flatten-twice-ref.yaml
 scale(*) fuzzy(1,10) == flatten-all-flat.yaml flatten-all-flat-ref.yaml
+scale(*) == flatten-perspective-flat-2d.yaml flatten-perspective-flat-2d-ref.yaml
 scale(*) == strange-w.yaml strange-w-ref.yaml
 scale(*) == big-axis-aligned-scale.yaml big-axis-aligned-scale-ref.yaml
 # Compare ~8K raster root (>MAX_SURFACE_SIZE) with ~2K raster root. fuzzy due to lerping on edges.
@@ -67,3 +68,4 @@ fuzzy(5,100) fuzzy-if(platform(win),1,201) == corner-scale.yaml corner-scale-2.y
 # Run the scaled version only on linux to avoid complicated fuzzy annotations.
 scale(1,2) platform(linux) fuzzy(5,100) == corner-scale.yaml corner-scale-2.yaml
 scale(0.51,1.51) platform(linux) fuzzy(72,700) == corner-scale.yaml corner-scale-2.yaml
+== quad-huge-scale-down-aa.yaml quad-huge-scale-down-aa-ref.yaml

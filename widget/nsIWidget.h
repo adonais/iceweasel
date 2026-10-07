@@ -82,6 +82,7 @@ enum class HapticFeedbackType : uint8_t {
   ShortPress = 0,
   LongPress = 1,
   TextHandleMove = 2,
+  ThresholdCrossing = 3,
 
   End,  // Not a feedback type, only to mark the upper boundary
 };

@@ -130,6 +130,16 @@ class BufferSurface {
     mColorRange = aColorRange;
   };
 
+  virtual void SetWPChromaLocation(uint32_t aWPChromaLocation) {};
+  virtual uint32_t GetWPChromaLocation() { return 0; }
+
+#ifdef MOZ_WAYLAND
+  int GetWLColorCoeficients();
+#  ifdef MOZ_LOGGING
+  static const char* GetWLColorCoeficientsName(int aWLColorCoeficients);
+#  endif
+#endif
+
 #ifdef MOZ_WAYLAND
   // Create wl_buffer over BufferSurface, ownership is transfered to caller.
   // If underlying BufferSurface is deleted before wl_buffer destroy,

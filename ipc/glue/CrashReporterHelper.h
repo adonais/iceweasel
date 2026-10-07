@@ -57,6 +57,11 @@ class CrashReporterHelper {
       HandleOrphanedMinidump(minidumpId);
     } else if (mCrashReporter->GenerateCrashReport()) {
       minidumpId = mCrashReporter->MinidumpID();
+    } else {
+      NS_WARNING(nsPrintfCString("child process pid = %" PRIPID
+                                 " crashed but no minidump could be taken",
+                                 static_cast<Derived*>(this)->OtherPid())
+                     .get());
     }
 
     if (aMinidumpId) {
@@ -66,17 +71,25 @@ class CrashReporterHelper {
     mCrashReporter = nullptr;
   }
 
-  void MaybeTerminateProcess() {
-    if (PR_GetEnv("MOZ_CRASHREPORTER_SHUTDOWN")) {
-      NS_WARNING(nsPrintfCString("Shutting down due to %s process crash.",
-                                 XRE_GetProcessTypeString())
-                     .get());
-      nsCOMPtr<nsIAppStartup> appService =
-          do_GetService("@mozilla.org/toolkit/app-startup;1");
-      if (appService) {
-        bool userAllowedQuit = true;
-        appService->Quit(nsIAppStartup::eForceQuit, 1, &userAllowedQuit);
-      }
+  /**
+   * Under MOZ_CRASHREPORTER_SHUTDOWN, quit for a child crash that left a
+   * minidump, or for any child crash when the crash reporter cannot produce
+   * one (disabled, or the dummy implementation).
+   */
+  void MaybeTerminateProcess(const nsAString& aMinidumpId) {
+    if (!PR_GetEnv("MOZ_CRASHREPORTER_SHUTDOWN")) {
+      return;
+    }
+    if (aMinidumpId.IsEmpty() && CrashReporter::GetEnabled()) {
+      return;
+    }
+    NS_WARNING(nsPrintfCString("Shutting down due to %s process crash.",
+                               XRE_GetProcessTypeString())
+                   .get());
+    nsCOMPtr<nsIAppStartup> appService =
+        do_GetService("@mozilla.org/toolkit/app-startup;1");
+    if (appService) {
+      appService->Quit(nsIAppStartup::eForceQuit, 1);
     }
   }
 

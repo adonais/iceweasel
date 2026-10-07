@@ -117,27 +117,56 @@ export let WebsiteFilter = {
         false,
         true
       );
+
+      // Backstop for redirects the observers below never see.
+      Services.catMan.addCategoryEntry(
+        "net-channel-event-sinks",
+        this.contractID,
+        this.contractID,
+        false,
+        true
+      );
     }
-    // We have to do this to catch 30X redirects.
+    // Cancelling here, rather than in the event sink, is what gives the user
+    // the error page.
     // See bug 456957.
     if (!this._observerAdded) {
       this._observerAdded = true;
-      // We rely on weak references, so we never remove this observer.
+      // We rely on weak references, so we never remove these observers.
+      // A 30X can also come from the cache, so all three topics matter.
       Services.obs.addObserver(this, "http-on-examine-response", true);
+      Services.obs.addObserver(this, "http-on-examine-cached-response", true);
+      Services.obs.addObserver(this, "http-on-examine-merged-response", true);
     }
+  },
+
+  asyncOnChannelRedirect(oldChannel, newChannel, flags, callback) {
+    let contentType = newChannel.loadInfo.externalContentPolicyType;
+    if (
+      (contentType == Ci.nsIContentPolicy.TYPE_DOCUMENT ||
+        contentType == Ci.nsIContentPolicy.TYPE_SUBDOCUMENT ||
+        contentType == Ci.nsIContentPolicy.TYPE_OBJECT) &&
+      !this.isAllowed(newChannel.URI.spec)
+    ) {
+      oldChannel.cancel(Cr.NS_ERROR_BLOCKED_BY_POLICY);
+      callback.onRedirectVerifyCallback(Cr.NS_ERROR_BLOCKED_BY_POLICY);
+      return;
+    }
+    callback.onRedirectVerifyCallback(Cr.NS_OK);
   },
 
   shouldLoad(contentLocation, loadInfo) {
     let contentType = loadInfo.externalContentPolicyType;
-    let url = contentLocation.spec.toLowerCase();
+    let url = contentLocation.spec;
     if (contentLocation.scheme == "view-source") {
       url = contentLocation.pathQueryRef;
-    } else if (url.startsWith("about:reader?")) {
-      url = lazy.ReaderMode.getOriginalUrl(url);
+    } else if (url.toLowerCase().startsWith("about:reader?")) {
+      url = lazy.ReaderMode.getOriginalUrl("about:reader?" + url.substring(13));
     }
     if (
       contentType == Ci.nsIContentPolicy.TYPE_DOCUMENT ||
-      contentType == Ci.nsIContentPolicy.TYPE_SUBDOCUMENT
+      contentType == Ci.nsIContentPolicy.TYPE_SUBDOCUMENT ||
+      contentType == Ci.nsIContentPolicy.TYPE_OBJECT
     ) {
       if (!url || !this.isAllowed(url)) {
         return Ci.nsIContentPolicy.REJECT_POLICY;
@@ -151,10 +180,17 @@ export let WebsiteFilter = {
   observe(subject) {
     try {
       let channel = subject.QueryInterface(Ci.nsIHttpChannel);
+      if (channel.responseStatus < 300 || channel.responseStatus >= 400) {
+        return;
+      }
+      // isDocument alone misses document loads whose channel has had
+      // LOAD_DOCUMENT_URI cleared.
+      let contentType = channel.loadInfo.externalContentPolicyType;
       if (
-        !channel.isDocument ||
-        channel.responseStatus < 300 ||
-        channel.responseStatus >= 400
+        !channel.isDocument &&
+        contentType != Ci.nsIContentPolicy.TYPE_DOCUMENT &&
+        contentType != Ci.nsIContentPolicy.TYPE_SUBDOCUMENT &&
+        contentType != Ci.nsIContentPolicy.TYPE_OBJECT
       ) {
         return;
       }
@@ -174,6 +210,7 @@ export let WebsiteFilter = {
   classID: Components.ID("{c0bbb557-813e-4e25-809d-b46a531a258f}"),
   QueryInterface: ChromeUtils.generateQI([
     "nsIContentPolicy",
+    "nsIChannelEventSink",
     "nsIObserver",
     "nsISupportsWeakReference",
   ]),

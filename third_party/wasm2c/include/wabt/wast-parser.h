@@ -34,7 +34,7 @@ struct WastParseOptions {
   WastParseOptions(const Features& features) : features(features) {}
 
   Features features;
-  bool debug_parsing = false;
+  bool parse_binary_modules = true;
 };
 
 using TokenTypePair = std::array<TokenType, 2>;
@@ -53,6 +53,41 @@ class WastParser {
   enum class ConstType {
     Normal,
     Expectation,
+  };
+
+  struct ResolveRefType {
+    ResolveRefType(Type* target_type, Var var)
+      : target_type(target_type), var(var) {}
+
+    Type* target_type;
+    Var var;
+  };
+
+  struct ReferenceVar {
+    ReferenceVar(uint32_t index, Var var)
+      : index(index), var(var) {}
+
+    uint32_t index;
+    Var var;
+  };
+
+  typedef std::vector<ReferenceVar> ReferenceVars;
+
+  struct ResolveTypeVector {
+    ResolveTypeVector(TypeVector* target_vector)
+      : target_vector(target_vector) {}
+
+    TypeVector* target_vector;
+    ReferenceVars vars;
+  };
+
+  struct ResolveFunc {
+    ResolveFunc(Func* target_func)
+      : target_func(target_func) {}
+
+    Func* target_func;
+    TypeVector types;
+    ReferenceVars vars;
   };
 
   void ErrorUnlessOpcodeEnabled(const Token&);
@@ -96,6 +131,9 @@ class WastParser {
   // Returns true if the next two tokens are form reference type - (ref $t)
   bool PeekMatchRefType();
 
+  // Returns true if the next token represents a var.
+  bool PeekMatchVar();
+
   // Returns true if the next token's type is equal to the parameter. If so,
   // then the token is consumed.
   bool Match(TokenType);
@@ -111,6 +149,14 @@ class WastParser {
   // Consume one token and return it.
   Token Consume();
 
+  // Drop tokens.
+  void DropToken() {
+    tokens_.pop_front();
+  }
+  void DropTwoTokens() {
+    tokens_.pop_both();
+  }
+
   // Give the Match() function a clearer name when used to optionally consume a
   // token (used for printing better error messages).
   void ConsumeIfLpar() { Match(TokenType::Lpar); }
@@ -123,9 +169,13 @@ class WastParser {
   // synchronized.
   Result Synchronize(SynchronizeFunc);
 
-  bool ParseBindVarOpt(std::string* name);
+  // Check the maximum allowed declarations.
+  Result CheckIndexRange(Location& loc, size_t size, const char* decl);
+
+  Result ParseVarText(Token& token, std::string* out_text);
+  Result ParseBindVarOpt(std::string* name);
   Result ParseVar(Var* out_var);
-  bool ParseVarOpt(Var* out_var, Var default_var = Var());
+  Result ParseVarOpt(Var* out_var, Var default_var = Var());
   Result ParseOffsetExpr(ExprList* out_expr_list);
   bool ParseOffsetExprOpt(ExprList* out_expr_list);
   Result ParseTextList(std::vector<uint8_t>* out_data);
@@ -133,14 +183,15 @@ class WastParser {
   Result ParseVarList(VarVector* out_var_list);
   bool ParseElemExprOpt(ExprList* out_elem_expr);
   bool ParseElemExprListOpt(ExprListVector* out_list);
-  bool ParseElemExprVarListOpt(ExprListVector* out_list);
+  Result ParseElemExprVarListOpt(ExprListVector* out_list);
+  Result ParseRefDeclaration(Var* out_type);
   Result ParseValueType(Var* out_type);
   Result ParseValueTypeList(
       TypeVector* out_type_list,
-      std::unordered_map<uint32_t, std::string>* type_names);
-  Result ParseRefKind(Type* out_type);
-  Result ParseRefType(Type* out_type);
-  bool ParseRefTypeOpt(Type* out_type);
+      ReferenceVars* type_vars);
+  Result ParseRefKind(Var* out_type);
+  Result ParseRefType(Var* out_type);
+  bool ParseRefTypeOpt(Var* out_type, Result& result);
   Result ParseQuotedText(std::string* text, bool check_utf8 = true);
   bool ParseOffsetOpt(Address* offset);
   bool ParseAlignOpt(Address* align);
@@ -150,8 +201,12 @@ class WastParser {
   Result ParsePageSize(uint32_t*);
   Result ParseNat(uint64_t*, bool is_64);
 
+  static Result ResolveTargetRefType(const Module&, Type*, const Var&, Errors*);
+  static Result ResolveTargetTypeVector(const Module&, TypeVector*,
+                                        ReferenceVars*, Errors*);
   Result ParseModuleFieldList(Module*);
   Result ParseModuleField(Module*);
+  Result ParseModuleFieldImpl(Module*);
   Result ParseDataModuleField(Module*);
   Result ParseElemModuleField(Module*);
   Result ParseTagModuleField(Module*);
@@ -176,13 +231,13 @@ class WastParser {
   Result ParseBoundValueTypeList(TokenType,
                                  TypeVector*,
                                  BindingHash*,
-                                 std::unordered_map<uint32_t, std::string>*,
+                                 ReferenceVars*,
                                  Index binding_index_offset = 0);
   Result ParseUnboundValueTypeList(TokenType,
                                    TypeVector*,
-                                   std::unordered_map<uint32_t, std::string>*);
+                                   ReferenceVars*);
   Result ParseResultList(TypeVector*,
-                         std::unordered_map<uint32_t, std::string>*);
+                         ReferenceVars*);
   Result ParseInstrList(ExprList*);
   Result ParseTerminatingInstrList(ExprList*);
   Result ParseInstr(ExprList*);
@@ -203,6 +258,7 @@ class WastParser {
   Result ParseBlock(Block*);
   Result ParseExprList(ExprList*);
   Result ParseExpr(ExprList*);
+  Result ParseTryTableCatches(TryTableVector* catches);
   Result ParseCatchInstrList(CatchVector* catches);
   Result ParseCatchExprList(CatchVector* catches);
   Result ParseGlobalType(Global*);
@@ -242,6 +298,7 @@ class WastParser {
   Result ParseOutputCommand(CommandPtr*);
 
   Result ParseAction(ActionPtr*);
+  Result ParseScriptModuleNoLpar(std::unique_ptr<ScriptModule>*);
   Result ParseScriptModule(std::unique_ptr<ScriptModule>*);
 
   template <typename T>
@@ -257,11 +314,29 @@ class WastParser {
 
   void CheckImportOrdering(Module*);
   bool HasError() const;
+  bool CheckRefType(Type::Enum type);
+  void VarToType(const Var& var, Type* type);
 
   WastLexer* lexer_;
   Index last_module_index_ = kInvalidIndex;
   Errors* errors_;
   WastParseOptions* options_;
+
+  // Reference types can have names or indicies. For example (ref $foo)
+  // represents a type which name is $foo, and (ref 5) represents
+  // the fifth type declaration. Both of these variants needs to
+  // be validated after the parsing is completed.
+
+  // Single type references are stored in the following vector.
+  std::vector<ResolveRefType> resolve_ref_types_;
+
+  // Type vectors and their corresponding references are stored in the
+  // following vector. At least one reference must be present for each vector.
+  std::vector<ResolveTypeVector> resolve_type_vectors_;
+
+  // Local vectors and their corresponding references are stored in the
+  // following vector. At least one reference must be present for each vector.
+  std::vector<ResolveFunc> resolve_funcs_;
 
   // two-element queue of upcoming tokens
   class TokenQueue {
@@ -271,6 +346,7 @@ class WastParser {
    public:
     void push_back(Token t);
     void pop_front();
+    void pop_both();
     const Token& at(size_t n) const;
     const Token& front() const;
     bool empty() const;

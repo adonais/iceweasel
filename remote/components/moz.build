@@ -11,6 +11,8 @@ XPIDL_SOURCES += [
 
 XPCOM_MANIFESTS += ["components.conf"]
 
+XPCSHELL_TESTS_MANIFESTS += ["test/xpcshell/xpcshell.toml"]
+
 with Files("Marionette.sys.mjs"):
     BUG_COMPONENT = ("Remote Protocol", "Marionette")
 with Files("nsIMarionette.idl"):

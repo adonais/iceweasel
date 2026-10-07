@@ -23,9 +23,13 @@ support-files = ["../browser/slow-page.sjs"]
 
 ["browser_engineIcon.js"]
 
+["browser_engineWordmark.js"]
+
 ["browser_escape.js"]
 
 ["browser_inputBackground.js"]
+
+["browser_inputmode.js"]
 
 ["browser_mousedown.js"]
 
@@ -36,6 +40,8 @@ support-files = ["../browser/slow-page.sjs"]
 ["browser_resultIcon.js"]
 
 ["browser_resultMenu.js"]
+
+["browser_resultMenuOpenIn.js"]
 
 ["browser_rtl.js"]
 
@@ -56,6 +62,8 @@ support-files = [
 support-files = ["../../../search/test/browser/trendingSuggestionEngine.sjs"]
 
 ["browser_undo_history.js"]
+
+["browser_variantB.js"]
 
 ["browser_viewBounds.js"]
 

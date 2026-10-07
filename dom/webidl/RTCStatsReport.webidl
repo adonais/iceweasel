@@ -219,7 +219,7 @@ dictionary RTCIceCandidatePairStats : RTCStats {
 
 dictionary RTCIceCandidateStats : RTCStats {
   required DOMString transportId;
-  DOMString address;
+  DOMString? address;
   long port;
   DOMString protocol;
   RTCIceCandidateType candidateType;

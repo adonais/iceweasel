@@ -30,6 +30,8 @@ support-files = [
   "unknownContentType.EXE^headers^",
 ]
 
+["browser_unknownContentType_openwith.js"]
+
 ["browser_unknownContentType_policy.js"]
 run-if = [
   "os == 'win'", # jnlp file are not considered executable on macOS or Linux

@@ -341,9 +341,8 @@ class WaylandSurface final {
                        RefPtr<WaylandSurface> aParent);
 
   void SetColorRepresentationLocked(const WaylandSurfaceLock& aProofOfLock,
-                                    mozilla::gfx::YUVColorSpace aColorSpace,
-                                    bool aFullRange,
-                                    uint32_t aWPChromaLocation);
+                                    int aWLColorCoeficients, bool aFullRange,
+                                    uint32_t aWPChromaLocation = 0);
 
   static void ImageDescriptionFailed(
       void* aData, struct wp_image_description_v1* aImageDescription,

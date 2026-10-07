@@ -39,7 +39,7 @@ export const SidebarChatBotPromo = {
    */
   async getPromoElement(browser, force) {
     const win =
-      browser?.browsingContext?.topChromeWindow ?? browser?.ownerGlobal;
+      browser?.browsingContext?.topChromeWindow ?? browser?.documentGlobal;
     if (force) {
       await win?.SidebarController?.show?.("viewGenaiChatSidebar");
     }

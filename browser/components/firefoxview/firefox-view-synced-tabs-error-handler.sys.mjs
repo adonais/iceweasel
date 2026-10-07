@@ -150,27 +150,32 @@ export const SyncedTabsErrorHandler = {
   // error state strings.
   _errorStateStringMappings: {
     [ErrorType.SYNC_ERROR]: {
+      asset: "chrome://browser/content/firefoxview/synced-tabs-error.svg",
       header: "firefoxview-tabpickup-sync-error-header",
       description: "firefoxview-tabpickup-generic-sync-error-description",
       buttonLabel: "firefoxview-tabpickup-sync-error-primarybutton",
     },
     [ErrorType.FXA_ADMIN_DISABLED]: {
+      asset: "chrome://browser/content/firefoxview/synced-tabs-error.svg",
       header: "firefoxview-tabpickup-fxa-admin-disabled-header",
       description: "firefoxview-tabpickup-fxa-disabled-by-policy-description",
       // The button is hidden for this errorState, so we don't include the
       // buttonLabel property.
     },
     [ErrorType.NETWORK_OFFLINE]: {
+      asset: "chrome://browser/content/firefoxview/synced-tabs-error.svg",
       header: "firefoxview-tabpickup-network-offline-header",
       description: "firefoxview-tabpickup-network-offline-description",
       buttonLabel: "firefoxview-tabpickup-network-offline-primarybutton",
     },
     [ErrorType.SYNC_DISCONNECTED]: {
+      asset: "chrome://browser/content/firefoxview/synced-tabs-error.svg",
       header: "firefoxview-tabpickup-sync-disconnected-header",
       description: "firefoxview-tabpickup-sync-disconnected-description",
       buttonLabel: "firefoxview-tabpickup-sync-disconnected-primarybutton",
     },
     [ErrorType.PASSWORD_LOCKED]: {
+      asset: "chrome://browser/content/firefoxview/synced-tabs-error.svg",
       header: "firefoxview-tabpickup-password-locked-header",
       description: "firefoxview-tabpickup-password-locked-description",
       buttonLabel: "firefoxview-tabpickup-password-locked-primarybutton",
@@ -182,6 +187,7 @@ export const SyncedTabsErrorHandler = {
       },
     },
     [ErrorType.SIGNED_OUT]: {
+      asset: "chrome://browser/content/firefoxview/synced-tabs-error.svg",
       header: "firefoxview-tabpickup-signed-out-header",
       description: "firefoxview-tabpickup-signed-out-description2",
       buttonLabel: "firefoxview-tabpickup-signed-out-primarybutton",
@@ -190,27 +196,32 @@ export const SyncedTabsErrorHandler = {
 
   _novaErrorStateStringMappings: {
     [ErrorType.SYNC_ERROR]: {
+      asset: "chrome://browser/skin/sidebar/kit-tabs-devices-error.svg",
       header: "firefoxview-tabpickup-sync-error-header-2",
       description: "firefoxview-tabpickup-generic-sync-error-description-2",
       buttonLabel: "firefoxview-tabpickup-sync-error-primarybutton",
     },
     [ErrorType.FXA_ADMIN_DISABLED]: {
+      asset: "chrome://browser/skin/sidebar/kit-tabs-devices-error.svg",
       header: "firefoxview-tabpickup-fxa-admin-disabled-header-2",
       description: "firefoxview-tabpickup-fxa-disabled-by-policy-description-2",
       // The button is hidden for this errorState, so we don't include the
       // buttonLabel property.
     },
     [ErrorType.NETWORK_OFFLINE]: {
+      asset: "chrome://browser/skin/sidebar/kit-tabs-devices-error.svg",
       header: "firefoxview-tabpickup-network-offline-header-2",
       description: "firefoxview-tabpickup-network-offline-description-2",
       buttonLabel: "firefoxview-tabpickup-network-offline-primarybutton",
     },
     [ErrorType.SYNC_DISCONNECTED]: {
+      asset: "chrome://browser/skin/sidebar/kit-tabs-devices.svg",
       header: "firefoxview-syncedtabs-synctabs-header-2",
       description: "firefoxview-syncedtabs-synctabs-description-2",
       buttonLabel: "firefoxview-tabpickup-synctabs-primarybutton-2",
     },
     [ErrorType.PASSWORD_LOCKED]: {
+      asset: "chrome://browser/skin/sidebar/kit-tabs-devices-error.svg",
       header: "firefoxview-tabpickup-password-locked-header-2",
       description: "firefoxview-tabpickup-password-locked-description-2",
       buttonLabel: "firefoxview-tabpickup-password-locked-primarybutton",
@@ -222,6 +233,7 @@ export const SyncedTabsErrorHandler = {
       },
     },
     [ErrorType.SIGNED_OUT]: {
+      asset: "chrome://browser/skin/sidebar/kit-tabs-devices-error.svg",
       header: "firefoxview-tabpickup-signed-out-header-2",
       description: "firefoxview-tabpickup-signed-out-description-2",
       buttonLabel: "firefoxview-tabpickup-signed-out-primarybutton",

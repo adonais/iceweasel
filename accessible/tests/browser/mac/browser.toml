@@ -40,6 +40,8 @@ skip-if = [
 
 ["browser_aria_expanded.js"]
 
+["browser_aria_grabbed.js"]
+
 ["browser_aria_haspopup.js"]
 
 ["browser_aria_keyshortcuts.js"]

@@ -147,6 +147,7 @@ add_task(async function url() {
 // Basic adaptive history autofill test.
 add_task(async function adaptiveHistory() {
   UrlbarPrefs.set("autoFill.adaptiveHistory.enabled", true);
+  UrlbarPrefs.set("autoFill.adaptiveHistory.urlMinPicks", 1);
 
   await addVisits("http://example.com/test");
   await UrlbarUtils.addToInputHistory("http://example.com/test", "exa");
@@ -219,6 +220,7 @@ add_task(async function adaptiveHistory() {
   });
 
   UrlbarPrefs.clear("autoFill.adaptiveHistory.enabled");
+  UrlbarPrefs.clear("autoFill.adaptiveHistory.urlMinPicks");
   await cleanUp();
 });
 
@@ -836,6 +838,7 @@ add_task(async function noPathMatch() {
 // autofill it.
 add_task(async function noAdaptiveHistoryMatch() {
   UrlbarPrefs.set("autoFill.adaptiveHistory.enabled", true);
+  UrlbarPrefs.set("autoFill.adaptiveHistory.urlMinPicks", 1);
 
   await addVisits("http://example.com/test");
   await UrlbarUtils.addToInputHistory("http://example.com/test", "exam");
@@ -870,6 +873,7 @@ add_task(async function noAdaptiveHistoryMatch() {
   });
 
   UrlbarPrefs.clear("autoFill.adaptiveHistory.enabled");
+  UrlbarPrefs.clear("autoFill.adaptiveHistory.urlMinPicks");
   await cleanUp();
 });
 

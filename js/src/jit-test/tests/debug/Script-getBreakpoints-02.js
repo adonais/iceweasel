@@ -8,7 +8,7 @@ function attach(g, i) {
     var dbg = Debugger(g);
     dbg.onDebuggerStatement = function (frame) {
         var s = frame.script;
-        var offs = s.getLineOffsets(g.line0 + 2);
+        var offs = s.getPossibleBreakpointOffsets({ line: g.line0 + 2 });
         var hitAny = false;
         var handler = {
             hit: function (frame) {

@@ -1,0 +1,2 @@
+LICENSES += ["broken"]
+LICENSES["broken"].text = "notice.txt"

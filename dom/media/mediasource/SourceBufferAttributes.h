@@ -31,6 +31,8 @@ class SourceBufferAttributes {
 
   SourceBufferAttributes(const SourceBufferAttributes& aOther) = default;
 
+  SourceBufferAttributes() = delete;
+
   double GetAppendWindowStart() const { return mAppendWindowStart; }
 
   double GetAppendWindowEnd() const { return mAppendWindowEnd; }
@@ -95,8 +97,6 @@ class SourceBufferAttributes {
       default;
 
  private:
-  SourceBufferAttributes() = delete;
-
   double mAppendWindowStart;
   double mAppendWindowEnd;
   dom::SourceBufferAppendMode mAppendMode;

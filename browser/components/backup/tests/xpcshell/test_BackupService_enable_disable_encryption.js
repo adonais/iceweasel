@@ -4,7 +4,7 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
 const { ArchiveEncryptionState } = ChromeUtils.importESModule(
-  "resource:///modules/backup/ArchiveEncryptionState.sys.mjs"
+  "moz-src:///browser/components/backup/ArchiveEncryptionState.sys.mjs"
 );
 
 const { ERRORS } = ChromeUtils.importESModule(

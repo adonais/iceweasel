@@ -166,7 +166,6 @@ ASWebAuthSessionRequestWrapper::Cancel() {
   return NS_OK;
 }
 
-API_AVAILABLE(macos(12.0))
 @interface ASWebAuthSessionHandler
     : NSObject <ASWebAuthenticationSessionWebBrowserSessionHandling>
 @end
@@ -231,7 +230,7 @@ API_AVAILABLE(macos(12.0))
   mozilla::CopyNSStringToXPCOMString(request.UUID.UUIDString, uuidXPCOM);
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       "ASWebAuthSessionHandler::cancelHandling",
-      [uuidXPCOM = nsString(uuidXPCOM)]() {
+      [request = [request retain], uuidXPCOM = nsString(uuidXPCOM)]() {
         sPendingBeginRequests.Remove(uuidXPCOM);
 
         nsCOMPtr<nsIObserverService> obsServ =
@@ -240,6 +239,12 @@ API_AVAILABLE(macos(12.0))
           obsServ->NotifyObservers(nullptr, "aswebauthsession-request-cancel",
                                    uuidXPCOM.get());
         }
+
+        // AuthenticationServices requires -cancelWithError: once teardown is
+        // done, even when the app is the one that asked for the cancellation.
+        // Without it the app cannot start another session.
+        CancelRequestObject(request);
+        [request release];
       }));
 }
 
@@ -247,8 +252,7 @@ API_AVAILABLE(macos(12.0))
 
 namespace {
 
-class API_AVAILABLE(macos(12.0)) ASWebAuthServiceReadyObserver final
-    : public nsIObserver {
+class ASWebAuthServiceReadyObserver final : public nsIObserver {
  public:
   NS_DECL_ISUPPORTS
 
@@ -256,6 +260,11 @@ class API_AVAILABLE(macos(12.0)) ASWebAuthServiceReadyObserver final
                      const char16_t* aData) override {
     if (!strcmp(aTopic, "aswebauthsession-service-shutdown")) {
       sServiceReady = false;
+      // Queued requests never reached the browser UI, so the apps waiting
+      // on them have to be told that nothing is handling them.
+      for (const auto& request : sPendingBeginRequests.Values()) {
+        request->Cancel();
+      }
       sPendingBeginRequests.Clear();
       return NS_OK;
     }
@@ -293,10 +302,16 @@ NS_IMPL_ISUPPORTS(ASWebAuthServiceReadyObserver, nsIObserver)
 
 }  // namespace
 
-static ASWebAuthSessionHandler* sHandler API_AVAILABLE(macos(12.0)) = nil;
+static ASWebAuthSessionHandler* sHandler = nil;
 static bool sObserversRegistered = false;
 
-static void RegisterObservers() API_AVAILABLE(macos(12.0)) {
+void RegisterASWebAuthSessionHandler() {
+  sHandler = [[ASWebAuthSessionHandler alloc] init];
+  ASWebAuthenticationSessionWebBrowserSessionManager.sharedManager
+      .sessionHandler = sHandler;
+}
+
+void RegisterASWebAuthSessionObservers() {
   if (sObserversRegistered || !sHandler) {
     return;
   }
@@ -315,16 +330,10 @@ static void RegisterObservers() API_AVAILABLE(macos(12.0)) {
   obsServ->NotifyObservers(nullptr, "aswebauthsession-native-ready", nullptr);
 }
 
-void RegisterASWebAuthSessionHandler() {
-  if (@available(macOS 12.0, *)) {
-    sHandler = [[ASWebAuthSessionHandler alloc] init];
-    ASWebAuthenticationSessionWebBrowserSessionManager.sharedManager
-        .sessionHandler = sHandler;
-  }
-}
-
-void RegisterASWebAuthSessionObservers() {
-  if (@available(macOS 12.0, *)) {
-    RegisterObservers();
-  }
+bool WasLaunchedByAuthenticationServices() {
+  bool wasLaunched = ASWebAuthenticationSessionWebBrowserSessionManager
+                         .sharedManager.wasLaunchedByAuthenticationServices;
+  MOZ_LOG(gASWebAuthLog, mozilla::LogLevel::Info,
+          ("wasLaunchedByAuthenticationServices: %d", wasLaunched));
+  return wasLaunched;
 }

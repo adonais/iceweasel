@@ -115,7 +115,8 @@ class WebRtcVideoEngine : public VideoEngineInterface {
       const Environment& env,
       Call* call,
       const MediaConfig& config,
-      const CryptoOptions& crypto_options) override;
+      const CryptoOptions& crypto_options,
+      absl::AnyInvocable<void(uint32_t ssrc)> on_first_packet) override;
 
   // TODO: https://issues.webrtc.org/360058654 - remove Legacy functions.
   std::vector<Codec> LegacySendCodecs() const override {
@@ -485,11 +486,13 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
 class WebRtcVideoReceiveChannel : public MediaChannelUtil,
                                   public VideoMediaReceiveChannelInterface {
  public:
-  WebRtcVideoReceiveChannel(const Environment& env,
-                            Call* absl_nonnull call,
-                            const MediaConfig& config,
-                            const CryptoOptions& crypto_options,
-                            VideoDecoderFactory* absl_nullable decoder_factory);
+  WebRtcVideoReceiveChannel(
+      const Environment& env,
+      Call* absl_nonnull call,
+      const MediaConfig& config,
+      const CryptoOptions& crypto_options,
+      VideoDecoderFactory* absl_nullable decoder_factory,
+      absl::AnyInvocable<void(uint32_t ssrc)> on_first_packet);
   ~WebRtcVideoReceiveChannel() override;
 
  public:
@@ -644,13 +647,10 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
     // when disabled.
     void SetFlexFecPayload(int payload_type);
 
-    void RecreateReceiveStream();
     void CreateReceiveStream();
 
-    // Applies a new receive codecs configration to `config_`. Returns true
-    // if the internal stream needs to be reconstructed, or false if no changes
-    // were applied.
-    bool ReconfigureCodecs(const std::vector<VideoCodecSettings>& recv_codecs);
+    // Applies a new receive codecs configuration to `config_` and `stream_`.
+    void ReconfigureCodecs(const std::vector<VideoCodecSettings>& recv_codecs);
 
     const Environment env_;
     Call* const call_;
@@ -675,6 +675,10 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
 
     RTC_NO_UNIQUE_ADDRESS SequenceChecker thread_checker_;
     bool receiving_ RTC_GUARDED_BY(&thread_checker_);
+    // One-shot callback invoked when this specific stream receives its first
+    // packet.
+    absl::AnyInvocable<void(uint32_t) &&> on_first_packet_
+        RTC_GUARDED_BY(&thread_checker_);
   };
   bool GetChangedReceiverParameters(const VideoReceiverParameters& params,
                                     ChangedReceiverParameters* changed_params)
@@ -754,6 +758,11 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
       RTC_GUARDED_BY(thread_checker_);
 
   const int receive_buffer_size_;
+
+  // Channel-level callback invoked when a receive stream on this channel
+  // receives its first packet. Can be invoked multiple times (e.g. simulcast).
+  absl::AnyInvocable<void(uint32_t ssrc)> on_first_packet_
+      RTC_GUARDED_BY(thread_checker_);
 };
 
 // Keeping the old name "WebRtcVideoChannel" around because some external

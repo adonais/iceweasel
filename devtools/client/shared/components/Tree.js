@@ -970,14 +970,42 @@ class Tree extends Component {
       : !!this.props.getChildren(item).length;
   }
 
+  /**
+   * The item to focus when the tree is focused while no item is focused yet.
+   *
+   * @param {Array} traversal
+   *        The depth first traversal of the tree, as returned by
+   *        `_dfsFromRoots`.
+   * @return {*}
+   *         The first item of the tree, or undefined when it is empty.
+   */
+  _getDefaultSelectedItem(traversal) {
+    return traversal[0]?.item;
+  }
+
   render() {
     const traversal = this._dfsFromRoots();
     const { active, focused } = this.props;
+    const focusedKey = focused != null ? this.props.getKey(focused) : null;
+
+    // Only set aria-activedescendant if the tree can manage focus (i.e. if
+    // `onFocus` is passed)
+    let activeDescendantId;
+    if (this.props.onFocus) {
+      if (focused != null) {
+        activeDescendantId = focusedKey;
+      } else {
+        // Fall back to the item onFocus would select.
+        const defaultItem = this._getDefaultSelectedItem(traversal);
+        if (defaultItem != null) {
+          activeDescendantId = this.props.getKey(defaultItem);
+        }
+      }
+    }
 
     const nodes = traversal.map((v, i) => {
       const { item, depth } = traversal[i];
-      const key = this.props.getKey(item, i);
-      const focusedKey = focused ? this.props.getKey(focused, i) : null;
+      const key = this.props.getKey(item);
       return TreeNodeFactory({
         // We make a key unique depending on whether the tree node is in active
         // or inactive state to make sure that it is actually replaced and the
@@ -1027,7 +1055,7 @@ class Tree extends Component {
         onKeyPress: this._preventArrowKeyScrolling,
         onKeyUp: this._preventArrowKeyScrolling,
         onFocus: ({ nativeEvent }) => {
-          if (focused || !nativeEvent || !this.treeRef.current) {
+          if (focused != null || !nativeEvent || !this.treeRef.current) {
             return;
           }
 
@@ -1039,13 +1067,13 @@ class Tree extends Component {
             explicitOriginalTarget !== this.treeRef.current &&
             !this.treeRef.current.contains(explicitOriginalTarget)
           ) {
-            this._focus(traversal[0].item);
+            this._focus(this._getDefaultSelectedItem(traversal));
           }
         },
         onBlur: this._onBlur,
         "aria-label": this.props.label,
         "aria-labelledby": this.props.labelledby,
-        "aria-activedescendant": focused && this.props.getKey(focused),
+        "aria-activedescendant": activeDescendantId,
         style,
       },
       nodes

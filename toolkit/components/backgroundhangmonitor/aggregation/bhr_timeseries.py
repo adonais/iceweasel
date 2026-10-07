@@ -346,6 +346,7 @@ def build_timeseries(
     window_days=DEFAULT_WINDOW_DAYS,
     top_count=DEFAULT_TOP_COUNT,
     per_day_top_n=DEFAULT_PER_DAY_TOP_N,
+    refill_dates=(),
 ):
     """Incrementally update the timeseries state and emit the published artifact.
 
@@ -353,6 +354,11 @@ def build_timeseries(
     `hangs_timeseries_<tag>_state.json.gz` (per-day top-N), and writes the slim
     `hangs_timeseries_<tag>.json` the frontend consumes. Returns the published
     dict.
+
+    A day already summarized in state is normally left alone. `refill_dates`
+    recomputes the listed days from their artifacts instead, which is how a
+    backfilled or re-run day reaches the roll-up: without it the state keeps
+    whatever the original run produced.
     """
     artifacts = available_artifacts(input_dir, output_tag)
     if not artifacts:
@@ -376,15 +382,19 @@ def build_timeseries(
             del days[date]
             total_sketches.pop(date, None)
 
+    refill = set(refill_dates)
     for date in dates:
-        if date in days or date not in artifacts:
+        if (date in days and date not in refill) or date not in artifacts:
             continue
-        print(f"Filling {date} from {artifacts[date]}", flush=True)
+        verb = "Refilling" if date in days else "Filling"
+        print(f"{verb} {date} from {artifacts[date]}", flush=True)
         with open(artifacts[date], encoding="utf-8") as profile_file:
             profile = json.load(profile_file)
         days[date], day_total_sketch = aggregate_day(profile, per_day_top_n)
         if day_total_sketch is not None:
             total_sketches[date] = day_total_sketch
+        else:
+            total_sketches.pop(date, None)
 
     state["windowDays"] = window_days
     state["perDayTopN"] = per_day_top_n

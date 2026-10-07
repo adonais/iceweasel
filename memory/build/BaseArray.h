@@ -25,7 +25,7 @@ class BaseArray {
   T* mArray = nullptr;
 
  public:
-  BaseArray() {}
+  BaseArray() = default;
 
   ~BaseArray() {
     for (size_t i = 0; i < mCapacity; i++) {

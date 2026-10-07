@@ -1,0 +1,6 @@
+[DEFAULT]
+prefs = ["dom.xslt.enabled=true"]
+
+["test_bug347174_xsl.html"]
+
+["test_bug347174_xslp.html"]

@@ -21,6 +21,8 @@ head = "head.js"
 
 ["test_RecommendedPreferences.js"]
 
+["test_RemoteError.js"]
+
 ["test_Stack.js"]
 
 ["test_Sync.js"]

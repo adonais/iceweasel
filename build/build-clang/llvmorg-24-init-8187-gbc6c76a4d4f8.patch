@@ -1,0 +1,250 @@
+From bc6c76a4d4f8b4f6d5e9b663736703f91fcbb6ed Mon Sep 17 00:00:00 2001
+From: Ryan VanderMeulen <ryanvm@gmail.com>
+Date: Thu, 10 Sep 2026 03:14:23 -0400
+Subject: [PATCH] [Windows] Export Registry<T> members and accessors for
+ plugins again (#221296)
+
+Since #185141 reworked `llvm::Registry`, the registered-node list lives
+behind the explicitly specialized
+`llvm::detail::getRegistryLinkListInstance<R>()` accessor defined by
+`LLVM_DEFINE_REGISTRY`, and the `Head`/`Tail` static data members that
+used to be referenced across objects are gone (#163391 had special-cased
+those).
+
+`extract_symbols.py` handles neither. The accessor is a `??$` function
+template specialization, which the script drops on the assumption that
+it can be instantiated in the importing translation unit; here it
+cannot, it is defined once by `LLVM_DEFINE_REGISTRY`. And `Registry<T>`
+members are only exported when some object references the `Registry`
+template, which nothing does anymore because every use goes through the
+accessor. On a static clang.exe built with
+`LLVM_EXPORT_SYMBOLS_FOR_PLUGINS`, the export table went from 11
+`Registry<clang::PluginASTAction>` symbols on 22.1.8 to zero on 23.1.0,
+and linking a plugin fails:
+
+```
+lld-link: error: undefined symbol: __declspec(dllimport) public: static void __cdecl llvm::Registry<class clang::PluginASTAction>::add_node(class llvm::Registry<class clang::PluginASTAction>::node *)
+>>> referenced by host_Registration.obj:(_GLOBAL__sub_I_Registration.cpp)
+```
+
+Keep the accessor specializations, and treat a reference to an accessor
+as a reference to the `Registry` template so its explicitly instantiated
+members are exported as they were before. Verified on the 23.1.0 static
+libraries: `Registry<PluginASTAction>::add_node`, the node/iterator
+members and the accessor come back for every registry (PluginASTAction,
+PragmaHandler, GCStrategy, GCMetadataPrinter, ...), 141 symbols in total
+in the Itanium run over the clang libraries. The `Head`/`Tail` rule from
+#163391 no longer matches anything and is dropped.
+
+Related: #163367 / #163391 (the previous Registry export fix), #87865.
+
+---
+**AI tool use disclosure** (per the [LLVM AI Tool Use
+Policy](https://llvm.org/docs/AIToolPolicy.html)): this change was
+developed with Claude Code assisting in the analysis and drafting. The
+root cause was established against real 23.1.0 binaries and libraries,
+and the fix was verified by running extract_symbols.py over the 23.1.0
+clang static libraries (the Registry members and accessors come back)
+and against MSVC-mangled test objects; Firefox's Windows clang-plugin
+and mozsearch builds link and run against a clang.exe built with it.
+`llvm/test/tools/extract_symbols/` adds lit coverage for both manglings.
+The author reviewed the change and is accountable for and able to answer
+questions about it. Commits carry an `Assisted-by:` trailer.
+---
+ .../extract_symbols/Inputs/lib-itanium.s      | 10 +++++++++
+ .../tools/extract_symbols/Inputs/lib-msvc.s   | 12 +++++++++++
+ .../extract_symbols/Inputs/user-itanium.s     |  8 +++++++
+ .../tools/extract_symbols/Inputs/user-msvc.s  | 10 +++++++++
+ llvm/test/tools/extract_symbols/lit.local.cfg | 21 +++++++++++++++++++
+ .../extract_symbols/registry-itanium.test     | 13 ++++++++++++
+ .../extract_symbols/registry-microsoft.test   | 19 +++++++++++++++++
+ llvm/utils/extract_symbols.py                 | 20 +++++++++++-------
+ 8 files changed, 105 insertions(+), 8 deletions(-)
+ create mode 100644 llvm/test/tools/extract_symbols/Inputs/lib-itanium.s
+ create mode 100644 llvm/test/tools/extract_symbols/Inputs/lib-msvc.s
+ create mode 100644 llvm/test/tools/extract_symbols/Inputs/user-itanium.s
+ create mode 100644 llvm/test/tools/extract_symbols/Inputs/user-msvc.s
+ create mode 100644 llvm/test/tools/extract_symbols/lit.local.cfg
+ create mode 100644 llvm/test/tools/extract_symbols/registry-itanium.test
+ create mode 100644 llvm/test/tools/extract_symbols/registry-microsoft.test
+
+diff --git a/llvm/test/tools/extract_symbols/Inputs/lib-itanium.s b/llvm/test/tools/extract_symbols/Inputs/lib-itanium.s
+new file mode 100644
+index 0000000000000..bedd90e523de1
+--- /dev/null
++++ b/llvm/test/tools/extract_symbols/Inputs/lib-itanium.s
+@@ -0,0 +1,10 @@
++	.text
++	.globl	_ZN4llvm6detail27getRegistryLinkListInstanceINS_8RegistryIN5clang15PluginASTActionEJEEEEERNS0_23RegistryLinkListStorageIT_EEv
++_ZN4llvm6detail27getRegistryLinkListInstanceINS_8RegistryIN5clang15PluginASTActionEJEEEEERNS0_23RegistryLinkListStorageIT_EEv:
++	retq
++	.globl	_ZN4llvm8RegistryIN5clang15PluginASTActionEJEE8add_nodeEPNS3_4nodeE
++_ZN4llvm8RegistryIN5clang15PluginASTActionEJEE8add_nodeEPNS3_4nodeE:
++	retq
++	.globl	_ZN4llvm8RegistryIN5clang15PluginASTActionEJEE5beginEv
++_ZN4llvm8RegistryIN5clang15PluginASTActionEJEE5beginEv:
++	retq
+diff --git a/llvm/test/tools/extract_symbols/Inputs/lib-msvc.s b/llvm/test/tools/extract_symbols/Inputs/lib-msvc.s
+new file mode 100644
+index 0000000000000..11fd9fa5525fe
+--- /dev/null
++++ b/llvm/test/tools/extract_symbols/Inputs/lib-msvc.s
+@@ -0,0 +1,12 @@
++# Explicit specialization defined by LLVM_DEFINE_REGISTRY, plus the explicitly instantiated Registry<T> member
++# that only a plugin references (LLVM_INSTANTIATE_REGISTRY's `template class Registry<...>`).
++	.text
++	.globl	"??$getRegistryLinkListInstance@V?$Registry@VPluginASTAction@clang@@$$V@llvm@@@detail@llvm@@YAAEAU?$RegistryLinkListStorage@V?$Registry@VPluginASTAction@clang@@$$V@llvm@@@01@XZ"
++"??$getRegistryLinkListInstance@V?$Registry@VPluginASTAction@clang@@$$V@llvm@@@detail@llvm@@YAAEAU?$RegistryLinkListStorage@V?$Registry@VPluginASTAction@clang@@$$V@llvm@@@01@XZ":
++	retq
++	.globl	"?add_node@?$Registry@VPluginASTAction@clang@@$$V@llvm@@SAXPEAVnode@12@@Z"
++"?add_node@?$Registry@VPluginASTAction@clang@@$$V@llvm@@SAXPEAVnode@12@@Z":
++	retq
++	.globl	"?begin@?$Registry@VPluginASTAction@clang@@$$V@llvm@@SA?AViterator@12@XZ"
++"?begin@?$Registry@VPluginASTAction@clang@@$$V@llvm@@SA?AViterator@12@XZ":
++	retq
+diff --git a/llvm/test/tools/extract_symbols/Inputs/user-itanium.s b/llvm/test/tools/extract_symbols/Inputs/user-itanium.s
+new file mode 100644
+index 0000000000000..b1cffcdd5e08d
+--- /dev/null
++++ b/llvm/test/tools/extract_symbols/Inputs/user-itanium.s
+@@ -0,0 +1,8 @@
++	.text
++	.globl	_Z10HasPluginsv
++_Z10HasPluginsv:
++	callq	_ZN4llvm6detail27getRegistryLinkListInstanceINS_8RegistryIN5clang15PluginASTActionEJEEEEERNS0_23RegistryLinkListStorageIT_EEv
++	retq
++	.weak	_ZN4llvm8RegistryIN5clang15PluginASTActionEJEE5beginEv
++_ZN4llvm8RegistryIN5clang15PluginASTActionEJEE5beginEv:
++	retq
+diff --git a/llvm/test/tools/extract_symbols/Inputs/user-msvc.s b/llvm/test/tools/extract_symbols/Inputs/user-msvc.s
+new file mode 100644
+index 0000000000000..e5cdc14f87161
+--- /dev/null
++++ b/llvm/test/tools/extract_symbols/Inputs/user-msvc.s
+@@ -0,0 +1,10 @@
++# A TU that iterates the registry: references the accessor (declared-only via LLVM_DECLARE_REGISTRY) and
++# carries its own inline copy of begin(), but never touches add_node.
++	.text
++	.globl	"?HasPlugins@@YA_NXZ"
++"?HasPlugins@@YA_NXZ":
++	callq	"??$getRegistryLinkListInstance@V?$Registry@VPluginASTAction@clang@@$$V@llvm@@@detail@llvm@@YAAEAU?$RegistryLinkListStorage@V?$Registry@VPluginASTAction@clang@@$$V@llvm@@@01@XZ"
++	retq
++	.globl	"?begin@?$Registry@VPluginASTAction@clang@@$$V@llvm@@SA?AViterator@12@XZ"
++"?begin@?$Registry@VPluginASTAction@clang@@$$V@llvm@@SA?AViterator@12@XZ":
++	retq
+diff --git a/llvm/test/tools/extract_symbols/lit.local.cfg b/llvm/test/tools/extract_symbols/lit.local.cfg
+new file mode 100644
+index 0000000000000..70cdd4f079418
+--- /dev/null
++++ b/llvm/test/tools/extract_symbols/lit.local.cfg
+@@ -0,0 +1,21 @@
++import os
++
++import lit.util
++
++config.suffixes = [".test"]
++
++if not "X86" in config.root.targets:
++    config.unsupported = True
++
++config.substitutions.append(
++    (
++        "%extract_symbols",
++        "'%s' %s --nm=%s --readobj=%s"
++        % (
++            config.python_executable,
++            os.path.join(config.llvm_src_root, "utils", "extract_symbols.py"),
++            lit.util.which("llvm-nm", config.llvm_tools_dir),
++            lit.util.which("llvm-readobj", config.llvm_tools_dir),
++        ),
++    )
++)
+diff --git a/llvm/test/tools/extract_symbols/registry-itanium.test b/llvm/test/tools/extract_symbols/registry-itanium.test
+new file mode 100644
+index 0000000000000..f94e4e4df7947
+--- /dev/null
++++ b/llvm/test/tools/extract_symbols/registry-itanium.test
+@@ -0,0 +1,13 @@
++## Itanium counterpart of registry-microsoft.test: a reference to the
++## getRegistryLinkListInstance<R>() accessor counts as a reference to Registry,
++## so its explicitly instantiated members that are defined once are exported.
++## Symbols are printed in input order, so the checks are ordered.
++
++# RUN: rm -rf %t && mkdir -p %t
++# RUN: llvm-mc -triple=x86_64-linux-gnu -filetype=obj %S/Inputs/lib-itanium.s -o %t/lib.o
++# RUN: llvm-mc -triple=x86_64-linux-gnu -filetype=obj %S/Inputs/user-itanium.s -o %t/user.o
++# RUN: %extract_symbols --mangling=itanium %t/lib.o %t/user.o \
++# RUN:   | FileCheck %s --implicit-check-not=Registry
++
++# CHECK:      _ZN4llvm6detail27getRegistryLinkListInstanceINS_8RegistryIN5clang15PluginASTActionEJEEEEERNS0_23RegistryLinkListStorageIT_EEv
++# CHECK-NEXT: _ZN4llvm8RegistryIN5clang15PluginASTActionEJEE8add_nodeEPNS3_4nodeE
+diff --git a/llvm/test/tools/extract_symbols/registry-microsoft.test b/llvm/test/tools/extract_symbols/registry-microsoft.test
+new file mode 100644
+index 0000000000000..41ff71c8441f5
+--- /dev/null
++++ b/llvm/test/tools/extract_symbols/registry-microsoft.test
+@@ -0,0 +1,19 @@
++## Registry<T> is only ever used through the getRegistryLinkListInstance<R>()
++## accessor that LLVM_DEFINE_REGISTRY defines once, so the accessor (a ??$
++## specialization) and the explicitly instantiated Registry<T> members that only
++## a plugin references must both be exported, or a plugin cannot link against a
++## static tool built with LLVM_EXPORT_SYMBOLS_FOR_PLUGINS.
++##
++## Symbols are printed in input order, so the checks are ordered.
++
++# RUN: rm -rf %t && mkdir -p %t
++# RUN: llvm-mc -triple=x86_64-pc-windows-msvc -filetype=obj %S/Inputs/lib-msvc.s -o %t/lib.obj
++# RUN: llvm-mc -triple=x86_64-pc-windows-msvc -filetype=obj %S/Inputs/user-msvc.s -o %t/user.obj
++# RUN: %extract_symbols --mangling=microsoft %t/lib.obj %t/user.obj \
++# RUN:   | FileCheck %s --implicit-check-not=Registry
++
++## The accessor specialization and add_node are defined once and referenced
++## only through the accessor, so both are exported. begin() is defined in both
++## objects (the user TU instantiated the inline member itself), so it is not.
++# CHECK:      ??$getRegistryLinkListInstance@V?$Registry@VPluginASTAction@clang@@$$V@llvm@@@detail@llvm@@YAAEAU?$RegistryLinkListStorage@V?$Registry@VPluginASTAction@clang@@$$V@llvm@@@01@XZ
++# CHECK-NEXT: ?add_node@?$Registry@VPluginASTAction@clang@@$$V@llvm@@SAXPEAVnode@12@@Z
+diff --git a/llvm/utils/extract_symbols.py b/llvm/utils/extract_symbols.py
+index 6aeef4b2cddca..14f9ca74db862 100644
+--- a/llvm/utils/extract_symbols.py
++++ b/llvm/utils/extract_symbols.py
+@@ -106,6 +106,13 @@ def should_keep_microsoft_symbol(symbol, calling_convention_decoration):
+         # instantiated locally. Pattern: ??$getAs@<template_arg>@Type@clang@@...
+         if symbol.startswith("??$getAs@") and "@Type@clang@@" in symbol:
+             return symbol
++        # Keep the Registry<T> storage accessors: explicit specializations that
++        # LLVM_DEFINE_REGISTRY defines once, and that plugins call to register.
++        if (
++            symbol.startswith("??$getRegistryLinkListInstance@")
++            and "@detail@llvm@@" in symbol
++        ):
++            return symbol
+         return None
+     # Delete lambda object constructors and operator() functions. These start
+     # with ??R<lambda_ or ??0<lambda_ and can be discarded because lambdas are
+@@ -120,14 +127,6 @@ def should_keep_microsoft_symbol(symbol, calling_convention_decoration):
+     # Skip X86GenMnemonicTables functions, they are not exposed from llvm/include/.
+     elif re.match(r"\?is[A-Z0-9]*@X86@llvm", symbol):
+         return None
+-    # Keep Registry<T>::Head and Registry<T>::Tail static members for plugin support.
+-    # Pattern matches: ?Head@?$Registry@<template_args>@llvm@@ or ?Tail@?$Registry@...
+-    elif (
+-        "?$Registry@" in symbol
+-        and "@llvm@@" in symbol
+-        and (symbol.startswith("?Head@") or symbol.startswith("?Tail@"))
+-    ):
+-        return symbol
+     # Skip symbols added by the compiler with -fprofile-generate.
+     elif symbol.startswith("__prof"):
+         return None
+@@ -519,6 +518,11 @@ def parse_tool_path(parser, tool, val):
+         template = get_template_name(sym, args.mangling)
+         if template:
+             template_instantiation_refs.add(template)
++            # Registry<T> is only ever used through its storage accessor.
++            if template.endswith("getRegistryLinkListInstance"):
++                template_instantiation_refs.add(
++                    "Registry" if args.mangling == "microsoft" else "8Registry"
++                )
+ 
+     # Print symbols which both:
+     #  * Appear in exactly one input, as symbols defined in multiple

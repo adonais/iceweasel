@@ -25,6 +25,7 @@ dependencies {
     api ComponentsDependencies.mozilla_appservices_sync15
     implementation libs.androidx.work.runtime
 
+    implementation ComponentsDependencies.mozilla_appservices_db_crypto
     implementation project(':components:concept-storage')
     implementation project(':components:support-utils')
 

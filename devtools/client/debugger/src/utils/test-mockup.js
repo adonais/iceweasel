@@ -12,6 +12,7 @@
 import * as asyncValue from "./async-value";
 
 import { getDisplayURL } from "./sources-tree/getURL";
+import { sourceTree } from "../constants";
 
 function makeMockSource(url = "url", id = "source", thread = "FakeThread") {
   return {
@@ -189,7 +190,7 @@ function makeMockThread(fields) {
 function formatTree(tree, depth = 0, str = "") {
   const whitespace = new Array(depth * 2).join(" ");
 
-  if (tree.type === "directory") {
+  if (tree.type === sourceTree.itemTypes.DIRECTORY) {
     str += `${whitespace} - ${tree.name} path=${tree.path} \n`;
     tree.contents.forEach(t => {
       str = formatTree(t, depth + 1, str);

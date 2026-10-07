@@ -13,6 +13,7 @@ import org.mozilla.fenix.GleanMetrics.TabSearch
 import org.mozilla.fenix.GleanMetrics.TabsTray
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.metrics.MetricsUtils.BookmarkAction.Source
+import org.mozilla.fenix.tabgroups.TabGroupTelemetry
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
@@ -30,6 +31,8 @@ class TabsTrayTelemetryMiddleware(private val nimbusEventStore: NimbusEventStore
     Middleware<TabsTrayState, TabsTrayAction> {
 
     private var shouldReportInactiveTabMetrics: Boolean = true
+    private val tabGroupTelemetry: TabGroupTelemetry =
+        TabGroupTelemetry(tabGroupAccessPoint = MetricsUtils.TabGroupAccessPoint.TABS_TRAY)
 
     override fun invoke(
         store: Store<TabsTrayState, TabsTrayAction>,
@@ -200,7 +203,7 @@ class TabsTrayTelemetryMiddleware(private val nimbusEventStore: NimbusEventStore
                 }
             }
 
-            is TabGroupAction.TabAddedToGroup,
+            is TabGroupAction.TabAddedToExistingTabGroup,
             is TabGroupAction.SelectedTabsAddedToGroup -> {
                 handleTabAdditionToGroupAction(store, action)
             }
@@ -247,29 +250,16 @@ class TabsTrayTelemetryMiddleware(private val nimbusEventStore: NimbusEventStore
         store: Store<TabsTrayState, TabsTrayAction>,
         action: TabGroupAction,
     ) {
-        val formState = store.state.tabGroupState.formState ?: return
-        val inEditState = formState.inEditState
-
         when (action) {
             is TabGroupAction.SaveClicked -> {
-                if (inEditState) {
-                    val originalGroup = store.state.tabGroupState.groups.find { it.id == formState.tabGroupId }
-                    if (originalGroup != null && originalGroup.title != formState.name) {
-                        TabsTray.tabGroupNameChanged.record(NoExtras())
-                    }
-                } else {
-                    TabsTray.tabGroupCreated.record(NoExtras())
-                    TabsTray.tabGroupNamed.record(NoExtras())
-                }
+                tabGroupTelemetry.recordSaveClicked(context = store.state.tabGroupState)
             }
 
             is TabGroupAction.ThemeChanged -> {
-                val themeName = action.theme.name
-                if (inEditState) {
-                    TabsTray.tabGroupColorChanged.record(TabsTray.TabGroupColorChangedExtra(themeName))
-                } else {
-                    TabsTray.tabGroupColorAssigned.record(TabsTray.TabGroupColorAssignedExtra(themeName))
-                }
+                tabGroupTelemetry.recordThemeChanged(
+                    context = store.state.tabGroupState,
+                    theme = action.theme,
+                )
             }
 
             else -> {
@@ -283,14 +273,12 @@ class TabsTrayTelemetryMiddleware(private val nimbusEventStore: NimbusEventStore
         action: TabGroupAction,
     ) {
         when (action) {
-            is TabGroupAction.TabAddedToGroup -> {
-                TabsTray.tabAddedToGroup.record(TabsTray.TabAddedToGroupExtra(tabCount = 1))
+            is TabGroupAction.TabAddedToExistingTabGroup -> {
+                tabGroupTelemetry.recordTabAddedToGroup(tabCount = 1)
             }
 
             is TabGroupAction.SelectedTabsAddedToGroup -> {
-                TabsTray.tabAddedToGroup.record(
-                    TabsTray.TabAddedToGroupExtra(tabCount = store.state.mode.selectedTabs.size)
-                )
+                tabGroupTelemetry.recordTabAddedToGroup(tabCount = store.state.mode.selectedTabs.size)
             }
 
             else -> {
@@ -306,18 +294,18 @@ class TabsTrayTelemetryMiddleware(private val nimbusEventStore: NimbusEventStore
         when (action) {
             is TabGroupAction.AddToNewTabGroup,
             is TabGroupAction.NewTabGroupMenuClicked -> {
-                Metrics.tabGroupCreationMode["menu"].add()
+                tabGroupTelemetry.recordCreatedFromMenu()
             }
 
             is TabGroupAction.NewTabGroupFabClicked -> {
-                Metrics.tabGroupCreationMode["fab"].add()
+                tabGroupTelemetry.recordCreatedFromFab()
             }
 
             is TabGroupAction.DragAndDropInitiated -> {
                 val isDraggingOntoTab =
                     store.state.normalTabsState.items.find { it.id == action.destinationId } is TabsTrayItem.Tab
                 if (isDraggingOntoTab) {
-                    Metrics.tabGroupCreationMode["drag_and_drop"].add()
+                    tabGroupTelemetry.recordCreatedFromDragAndDrop()
                 }
             }
 

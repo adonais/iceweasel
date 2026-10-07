@@ -391,7 +391,7 @@ function Clocks({ dispatch, handleUserInteraction, widgetEnabledMap }) {
         )}
         <moz-button
           className="clocks-context-menu-button"
-          data-l10n-id="newtab-clock-widget-menu-button"
+          data-l10n-id="newtab-clock-widget-menu-button2"
           iconSrc="chrome://global/skin/icons/more.svg"
           menuId="clocks-widget-context-menu"
           type="icon ghost"

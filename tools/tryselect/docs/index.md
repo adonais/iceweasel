@@ -139,7 +139,7 @@ curl -L <artifact-url> -o <file-name>
 
 ## Profiler symbols for try builds
 
-When [profiling a tryserver build](/testing/debugging-intermittents/index.html#use-the-firefox-profiler),
+When [profiling a tryserver build](/testing/debugging-intermittents/index.md#use-the-firefox-profiler),
 symbols are only available by default for artifact builds. With full
 (non-artifact) builds, you don't get symbols by default. You have to trigger an
 additional `upload-symbols` job on your try push so that the symbols are

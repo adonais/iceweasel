@@ -12,9 +12,9 @@ import androidx.core.net.toUri
 import androidx.navigation.NavController
 import java.lang.ref.WeakReference
 import mozilla.components.browser.errorpages.ErrorPages
-import mozilla.components.browser.errorpages.ErrorType
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.concept.engine.EngineSession
+import mozilla.components.concept.engine.request.ErrorType
 import mozilla.components.concept.engine.request.RequestInterceptor
 import mozilla.components.feature.search.ext.buildSearchUrl
 import org.mozilla.fenix.GleanMetrics.ErrorPage
@@ -95,8 +95,7 @@ class AppRequestInterceptor(
                 errorType = improvedErrorType,
                 uri = uri,
                 htmlResource = riskLevel.htmlRes,
-                titleOverride = { type -> getErrorPageTitle(context, type) },
-                descriptionOverride = { type -> getErrorPageDescription(context, type) },
+                errorStringsProvider = FenixErrorStringsProvider(),
                 isPrivate = isPrivate,
                 archiveActionEnabled = archiveActionEnabled,
             )
@@ -145,6 +144,7 @@ class AppRequestInterceptor(
                 ErrorPage.archiveButtonClicked.record()
                 RequestInterceptor.InterceptionResponse.Deny
             }
+
             ERROR_PAGE_ACTION_SEARCH -> {
                 val query = parsed.getQueryParameter("q").orEmpty()
                 val searchEngine = context.components.core.store.state.search.selectedOrDefaultSearchEngine
@@ -155,6 +155,7 @@ class AppRequestInterceptor(
                     RequestInterceptor.InterceptionResponse.Url(searchEngine.buildSearchUrl(query))
                 }
             }
+
             ERROR_PAGE_ACTION_OPEN -> {
                 val archiveUrl = parsed.getQueryParameter("url").orEmpty()
                 if (archiveUrl.isEmpty()) {
@@ -164,6 +165,7 @@ class AppRequestInterceptor(
                     RequestInterceptor.InterceptionResponse.Url(archiveUrl)
                 }
             }
+
             else -> RequestInterceptor.InterceptionResponse.Deny
         }
     }
@@ -218,25 +220,6 @@ class AppRequestInterceptor(
             ErrorType.ERROR_SAFEBROWSING_UNWANTED_URI,
             ErrorType.ERROR_HARMFULADDON_URI -> RiskLevel.High
         }
-
-    private fun getErrorPageTitle(context: Context, type: ErrorType): String? {
-        return when (type) {
-            ErrorType.ERROR_HTTPS_ONLY -> context.getString(R.string.errorpage_httpsonly_title)
-            // Returning `null` will let the component use its default title for this error type
-            else -> null
-        }
-    }
-
-    private fun getErrorPageDescription(context: Context, type: ErrorType): String? {
-        return when (type) {
-            ErrorType.ERROR_HTTPS_ONLY ->
-                context.getString(R.string.errorpage_httpsonly_message_title) +
-                    "<br><br>" +
-                    context.getString(R.string.errorpage_httpsonly_message_summary)
-            // Returning `null` will let the component use its default description for this error type
-            else -> null
-        }
-    }
 
     internal enum class RiskLevel(val htmlRes: String) {
         Low(LOW_AND_MEDIUM_RISK_ERROR_PAGES),

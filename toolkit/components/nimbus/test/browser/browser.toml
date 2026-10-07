@@ -9,7 +9,6 @@ prefs = [
 ]
 skip-if = [
   "appname == 'thunderbird'",
-  "os == 'android'",
 ]
 
 ["browser_SharedDataMap.js"]

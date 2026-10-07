@@ -14,6 +14,29 @@ name = "notification-helper"
 path = "src/main.rs"
 
 [dependencies]
+clap = { version = "4", default-features = false, features = [
+  "derive",
+  "error-context",
+  "help",
+  "std",
+  "usage",
+] }
+fnv = "1"
+mozbuild = "0.1"
 mozilla-central-workspace-hack = { version = "0.1", features = [
   "pushnotificationhelper",
 ], optional = true }
+serde_json = "1.0"
+tempfile = "3"
+thiserror = "2"
+url = "2.4"
+
+[dependencies.windows-sys]
+version = "0.61"
+features = [
+    "Win32_Foundation",
+    "Win32_Networking_WinHttp",
+    "Win32_Security",
+    "Win32_Security_Authorization",
+    "Win32_System_Threading",
+]

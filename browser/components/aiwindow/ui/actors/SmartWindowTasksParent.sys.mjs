@@ -55,7 +55,7 @@ export class SmartWindowTasksParent extends JSWindowActorParent {
       return { success: true, monitors };
     } catch (error) {
       console.error("Failed to list monitors:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: error.message, code: error.code };
     }
   }
 
@@ -65,7 +65,7 @@ export class SmartWindowTasksParent extends JSWindowActorParent {
       return { success: true, monitor };
     } catch (error) {
       console.error("Failed to create monitor:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: error.message, code: error.code };
     }
   }
 
@@ -88,7 +88,7 @@ export class SmartWindowTasksParent extends JSWindowActorParent {
       return { success: true, monitor };
     } catch (error) {
       console.error("Failed to update monitor:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: error.message, code: error.code };
     }
   }
 
@@ -98,7 +98,7 @@ export class SmartWindowTasksParent extends JSWindowActorParent {
       return { success: true, result };
     } catch (error) {
       console.error("Failed to run monitor:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: error.message, code: error.code };
     }
   }
 
@@ -108,7 +108,7 @@ export class SmartWindowTasksParent extends JSWindowActorParent {
       return { success: true };
     } catch (error) {
       console.error("Failed to pause monitor:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: error.message, code: error.code };
     }
   }
 

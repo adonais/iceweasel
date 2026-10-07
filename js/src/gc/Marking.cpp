@@ -951,6 +951,11 @@ bool MarkingTracerT<opts>::onEdge(T** thingp, const char* name) {
   return true;
 }
 
+template <uint32_t opts>
+bool MarkingTracerT<opts>::onBufferEdge(void** bufferp, const char* name) {
+  return BufferAllocator::MarkBuffer(this, bufferp, name);
+}
+
 #define INSTANTIATE_ONEDGE_METHOD(name, type, _1, _2)                 \
   template bool MarkingTracerT<MarkingOptions::None>::onEdge<type>(   \
       type * *thingp, const char* name);                              \
@@ -1794,12 +1799,10 @@ inline bool MarkingTracerT<opts>::processMarkStackTop(SliceBudget& budget) {
       case SlotsOrElementsKind::DynamicSlots: {
         base = nobj->slots_.getForTracing();
         if constexpr (hasOption(MarkingOptions::ConcurrentMarking)) {
-          // TODO: Investigate whether we can safely restrict this to the number
-          // of used slots.
-
           // Initialization fence.
           MemoryAcquireFence<opts>(gcMarker()->runtime());
-          end = ObjectSlots::fromSlots(base)->capacity_.getForTracing();
+          Shape* shape = nobj->headerPtrForTracing();
+          end = NumNativeObjectUsedDynamicSlotsForTracing(shape, base);
         } else {
           end = NumUsedDynamicSlots(nobj);
         }

@@ -787,9 +787,7 @@ bool BaselineInterpreterCodeGen::emitNextIC() {
     JSOp op = *handler.currentOp();
     MOZ_ASSERT(BytecodeOpHasIC(op));
     if (IsIonInlinableOp(op)) {
-      if (!handler.icReturnOffsets().emplaceBack(returnOffset, op)) {
-        return false;
-      }
+      handler.setICReturnOffset(returnOffset);
     }
   }
 
@@ -6955,10 +6953,11 @@ bool BaselineCodeGen<Handler>::emitPrologue() {
 
 #ifdef JS_USE_LINK_REGISTER
   // Push link register from generateEnterJIT()'s BLR.
-  masm.pushReturnAddress();
+  masm.pushRegs(LinkRegister, FramePointer);
+#else
+  masm.push(FramePointer);
 #endif
 
-  masm.push(FramePointer);
   masm.moveStackPtrTo(FramePointer);
 
   masm.checkStackAlignment();
@@ -7145,6 +7144,23 @@ bool BaselineCompiler::emitBody() {
   return true;
 }
 
+bool BaselineInterpreterGenerator::emitICBailoutStub() {
+  MOZ_ASSERT(handler.currentOp());
+  JSOp op = *handler.currentOp();
+  MOZ_ASSERT(BytecodeOpHasIC(op) && IsIonInlinableOp(op));
+
+  Label icReturn;
+  icReturn.bind(handler.takeICReturnOffset());
+  uint32_t offset = masm.currentOffset();
+  // The bailoutTail jumps here when performing bailout stack
+  // reconstruction. The Baseline frame has been rebuilt.
+  // Only the return address remains to be pushed.
+  masm.call(BailoutStubHandlerReg);
+  masm.jump(&icReturn);
+
+  return handler.icBailoutStubOffsets().emplaceBack(offset, op);
+}
+
 bool BaselineInterpreterGenerator::emitDebugTrap() {
   CodeOffset offset = masm.nopPatchableToCall();
   if (!debugTrapOffsets_.append(offset.offset())) {
@@ -7234,19 +7250,23 @@ bool BaselineInterpreterGenerator::emitInterpreterLoop() {
 
   // Emit code for each bytecode op.
   Label opLabels[JSOP_LIMIT];
-#define EMIT_OP(OP, ...)                          \
-  {                                               \
-    AutoCreatedBy acb(masm, "op=" #OP);           \
-    perfSpewer_.recordOffset(masm, JSOp::OP);     \
-    masm.bind(&opLabels[uint8_t(JSOp::OP)]);      \
-    handler.setCurrentOp(JSOp::OP);               \
-    if (!this->emit_##OP()) {                     \
-      return false;                               \
-    }                                             \
-    if (!opEpilogue(JSOp::OP, JSOpLength_##OP)) { \
-      return false;                               \
-    }                                             \
-    handler.resetCurrentOp();                     \
+#define EMIT_OP(OP, ...)                                           \
+  {                                                                \
+    AutoCreatedBy acb(masm, "op=" #OP);                            \
+    perfSpewer_.recordOffset(masm, JSOp::OP);                      \
+    masm.bind(&opLabels[uint8_t(JSOp::OP)]);                       \
+    handler.setCurrentOp(JSOp::OP);                                \
+    if (!this->emit_##OP()) {                                      \
+      return false;                                                \
+    }                                                              \
+    if (!opEpilogue(JSOp::OP, JSOpLength_##OP)) {                  \
+      return false;                                                \
+    }                                                              \
+    if (BytecodeOpHasIC(JSOp::OP) && IsIonInlinableOp(JSOp::OP) && \
+        !this->emitICBailoutStub()) {                              \
+      return false;                                                \
+    }                                                              \
+    handler.resetCurrentOp();                                      \
   }
   FOR_EACH_OPCODE(EMIT_OP)
 #undef EMIT_OP
@@ -7450,7 +7470,7 @@ bool BaselineInterpreterGenerator::generate(JSContext* cx,
         profilerExitFrameToggleOffset_.offset(), debugTrapHandlerOffset_,
         std::move(handler.debugInstrumentationOffsets()),
         std::move(debugTrapOffsets_), std::move(handler.codeCoverageOffsets()),
-        std::move(handler.icReturnOffsets()), handler.callVMOffsets());
+        std::move(handler.icBailoutStubOffsets()), handler.callVMOffsets());
   }
 
   if (cx->runtime()->geckoProfiler().enabled()) {
@@ -7523,8 +7543,7 @@ JitCode* JitRuntime::generateDebugTrapHandler(JSContext* cx,
   VMFunctionId id = VMFunctionToId<Fn, jit::HandleDebugTrap>::id;
   TrampolinePtr code = cx->runtime()->jitRuntime()->getVMWrapper(id);
 
-  masm.push(scratch1);
-  masm.push(scratch2);
+  masm.pushRegs(scratch1, scratch2);
   EmitBaselineCallVM(code, masm);
 
   EmitBaselineLeaveStubFrame(masm);

@@ -812,7 +812,8 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, SVGBBoxFlags aFlags,
     aFrame = aFrame->GetParent();
   }
 
-  if (aFrame->IsInSVGTextSubtree()) {
+  if (aFrame->IsInSVGTextSubtree() &&
+      !aFlags.contains(SVGBBoxFlag::TextContentBounds)) {
     // It is possible to apply a gradient, pattern, clipping path, mask or
     // filter to text. When one of these facilities is applied to text
     // the bounding box is the entire text element in all cases.
@@ -822,10 +823,23 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, SVGBBoxFlags aFlags,
 
   ISVGDisplayableFrame* svg = do_QueryFrame(aFrame);
   const bool hasSVGLayout = aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT);
-  if (hasSVGLayout && !svg) {
-    // An SVG frame, but not one that can be displayed directly (for
-    // example, nsGradientFrame). These can't contribute to the bbox.
-    return gfxRect();
+  if (!svg) {
+    if (hasSVGLayout) {
+      // An SVG frame, but not one that can be displayed directly (for
+      // example, nsGradientFrame). These can't contribute to the bbox.
+      return gfxRect();
+    }
+    if (aFrame->IsInSVGTextSubtree()) {
+      SVGTextFrame* text =
+          static_cast<SVGTextFrame*>(nsLayoutUtils::GetClosestFrameOfType(
+              aFrame->GetParent(), LayoutFrameType::SVGText));
+
+      if (text->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
+        return gfxRect();
+      }
+
+      return ThebesRect(text->GetSubtreeBBox(aFrame, {}, aFlags));
+    }
   }
 
   const bool isOuterSVG = svg && !hasSVGLayout;
@@ -960,18 +974,16 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, SVGBBoxFlags aFlags,
   return bbox;
 }
 
-gfxPoint SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(const nsIFrame* aFrame) {
+CSSPoint SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(const nsIFrame* aFrame) {
   if (!aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
     // The user space for non-SVG frames is defined as the bounding box of the
     // frame's border-box rects over all continuations.
-    return gfxPoint();
+    return {};
   }
 
   // Leaf frames apply their own offset inside their user space.
   if (FrameDoesNotIncludePositionInTM(aFrame)) {
-    return nsLayoutUtils::RectToGfxRect(aFrame->GetRect(),
-                                        AppUnitsPerCSSPixel())
-        .TopLeft();
+    return CSSRect::FromAppUnits(aFrame->GetRect()).TopLeft();
   }
 
   // For foreignObject frames, SVGUtils::GetBBox applies their local
@@ -981,10 +993,11 @@ gfxPoint SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(const nsIFrame* aFrame) {
                               ->ChildToUserSpaceTransform();
     NS_ASSERTION(!transform.HasNonTranslation(),
                  "we're relying on this being an offset-only transform");
-    return transform.GetTranslation();
+    auto translation = transform.GetTranslation();
+    return CSSPoint(translation.x, translation.y);
   }
 
-  return gfxPoint();
+  return {};
 }
 
 static gfxRect GetBoundingBoxRelativeRect(const SVGAnimatedLength* aXYWH,
@@ -1552,7 +1565,8 @@ gfxMatrix SVGUtils::GetTransformMatrixInUserSpace(const nsIFrame* aFrame) {
     trans = nsStyleTransformMatrix::ReadTransforms(
         properties.mTranslate, properties.mRotate, properties.mScale,
         properties.mMotion.ptrOr(nullptr), properties.mTransform, refBox,
-        AppUnitsPerCSSPixel(), aFrame->Style()->EffectiveZoom());
+        AppUnitsPerCSSPixel(), aFrame->Style()->EffectiveZoom(),
+        nsStyleTransformMatrix::Zoomed::Yes);
   }
 
   trans.ChangeBasis(svgTransformOrigin);

@@ -75,7 +75,7 @@ cp browser/config/mozconfigs/macosx64/debug-asan browser/config/mozconfigs/macos
 ```
 
 You can then [push to Try in the usual
-way](/tools/try/index.html#using-try)
+way](/tools/try/index.md)
 and, once the build is complete, download the appropriate build
 artifact.
 

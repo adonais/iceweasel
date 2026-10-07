@@ -11,9 +11,8 @@ import android.view.ViewGroup
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
+import androidx.fragment.compose.content
 import mozilla.components.lib.auth.AuthenticationDelegate
 import mozilla.components.lib.auth.BiometricPromptAuth
 import mozilla.components.lib.auth.canUseBiometricFeature
@@ -36,16 +35,7 @@ class BiometricAuthenticationFragment : Fragment(), AuthenticationDelegate {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        return ComposeView(requireContext()).apply {
-            setBiometricPrompt(this)
-            isTransitionGroup = true
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        (view as ComposeView).setContent {
+        return content {
             FocusTheme {
                 val biometricErrorText by biometricErrorText
                 BiometricPromptContent(biometricErrorText) {
@@ -57,6 +47,10 @@ class BiometricAuthenticationFragment : Fragment(), AuthenticationDelegate {
                 }
             }
         }
+            .apply {
+                setBiometricPrompt(this)
+                isTransitionGroup = true
+            }
     }
 
     override fun onResume() {

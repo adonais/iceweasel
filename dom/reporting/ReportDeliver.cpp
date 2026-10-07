@@ -165,9 +165,9 @@ void SendReports(nsTArray<ReportDeliver::ReportData>& aReports,
         "age",
         std::max((TimeStamp::Now() - report.mCreationTime).ToMilliseconds(),
                  gMinReportAgeInMs));
-    w.StringProperty("type", NS_ConvertUTF16toUTF8(report.mType));
-    w.StringProperty("url", NS_ConvertUTF16toUTF8(report.mURL));
-    w.StringProperty("user_agent", NS_ConvertUTF16toUTF8(report.mUserAgent));
+    w.StringProperty("type", report.mType);
+    w.StringProperty("url", report.mURL);
+    w.StringProperty("user_agent", report.mUserAgent);
     w.JSONProperty(MakeStringSpan("body"),
                    Span<const char>(report.mReportBodyJSON.Data(),
                                     report.mReportBodyJSON.Length()));
@@ -252,9 +252,9 @@ void SendReports(nsTArray<ReportDeliver::ReportData>& aReports,
 
 /* static */
 void ReportDeliver::AttemptDelivery(nsIGlobalObject* aGlobal,
-                                    const nsAString& aType,
-                                    const nsAString& aGroupName,
-                                    const nsAString& aURL, ReportBody* aBody,
+                                    const nsACString& aType,
+                                    const nsACString& aGroupName,
+                                    const nsACString& aURL, ReportBody* aBody,
                                     uint64_t aAssociatedBrowsingContextId) {
   MOZ_ASSERT(aGlobal && aBody);
 
@@ -279,8 +279,8 @@ void ReportDeliver::AttemptDelivery(nsIGlobalObject* aGlobal,
   RefPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
       "ReportDeliver::AttemptDelivery",
       [aGlobalKey = reinterpret_cast<uintptr_t>(aGlobal),
-       type = nsString{aType}, group = nsString{aGroupName},
-       reportUrl = nsString{aURL},
+       type = nsCString{aType}, group = nsCString{aGroupName},
+       reportUrl = nsCString{aURL},
        reportBody = std::move(reportBodyJSON).StringRRef(), principal,
        browsingContextId = aAssociatedBrowsingContextId]() mutable {
         ReportData data;
@@ -399,20 +399,19 @@ void ReportDeliver::WorkerInitializeReportingEndpoints(
         EndpointsList list;
         ReportingHeader::ParseReportingEndpointsHeader(
             header, uri,
-            [&list](const nsAString& aEndpointName,
+            [&list](const nsACString& aEndpointName,
                     nsCOMPtr<nsIURI> aEndpointURL) {
               list.mData.EmplaceBack(ReportingHeader::Endpoint::Create(
                   aEndpointURL.forget(), aEndpointName));
             });
 
-        nsString userAgent;
+        nsAutoCString userAgent;
         mozilla::dom::Navigator::GetUserAgent(
             nullptr, nullptr, Some(aShouldResistFingerprinting), userAgent);
 
         gReportDeliver->mGlobalsEndpointLists.InsertOrUpdate(
             aGlobalKey,
-            GlobalReportingData{std::move(userAgent), std::move(list),
-                                cookieJarSettings});
+            GlobalReportingData{userAgent, std::move(list), cookieJarSettings});
       }));
 }
 
@@ -421,7 +420,6 @@ void ReportDeliver::WindowInitializeReportingEndpoints(
     nsIGlobalObject* aGlobal, mozilla::dom::EndpointsList aEndpointList) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsString userAgentData;
   if (aEndpointList.mData.IsEmpty()) {
     return;
   }
@@ -437,19 +435,20 @@ void ReportDeliver::WindowInitializeReportingEndpoints(
     cookieJarSettings = doc->CookieJarSettings();
   }
 
+  nsAutoCString userAgent;
   (void)mozilla::dom::Navigator::GetUserAgent(
       win, doc,
       mozilla::Some(
           aGlobal->ShouldResistFingerprinting(RFPTarget::NavigatorUserAgent)),
-      userAgentData);
+      userAgent);
   gReportDeliver->mGlobalsEndpointLists.InsertOrUpdate(
       reinterpret_cast<uintptr_t>(aGlobal),
-      GlobalReportingData{std::move(userAgentData), std::move(aEndpointList),
+      GlobalReportingData{userAgent, std::move(aEndpointList),
                           std::move(cookieJarSettings)});
 }
 
 nsIURI* ReportDeliver::GetEndpointURLFor(uintptr_t aGlobalKey,
-                                         const nsAString& aGroupName) {
+                                         const nsACString& aGroupName) {
   MOZ_ASSERT(NS_IsMainThread());
   auto reportingGlobal = mGlobalsEndpointLists.Lookup(aGlobalKey);
   if (!reportingGlobal) {
@@ -464,7 +463,7 @@ nsIURI* ReportDeliver::GetEndpointURLFor(uintptr_t aGlobalKey,
 }
 
 void ReportDeliver::EndpointRespondedWithRemove(
-    uint64_t aGlobalKey, const nsAString& aEndpointName) {
+    uint64_t aGlobalKey, const nsACString& aEndpointName) {
   auto reportingGlobal = mGlobalsEndpointLists.Lookup(aGlobalKey);
   if (!reportingGlobal) {
     return;

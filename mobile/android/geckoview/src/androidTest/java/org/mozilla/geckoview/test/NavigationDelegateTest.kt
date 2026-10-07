@@ -3134,6 +3134,8 @@ class NavigationDelegateTest : BaseSessionTest() {
     @WithDisplay(width = 100, height = 100)
     @Test
     fun userGesture() {
+        sessionRule.setPrefsUntilTestEnd(mapOf("dom.user_activation.transient.timeout" to 60000))
+
         mainSession.loadUri("$TEST_ENDPOINT$CLICK_TO_RELOAD_HTML_PATH")
         mainSession.waitForPageStop()
 
@@ -3158,6 +3160,8 @@ class NavigationDelegateTest : BaseSessionTest() {
     @WithDisplay(width = 100, height = 100)
     @Test
     fun locationReplaceOnUserGesture() {
+        sessionRule.setPrefsUntilTestEnd(mapOf("dom.user_activation.transient.timeout" to 60000))
+
         mainSession.loadUri("$TEST_ENDPOINT$CLICK_TO_REPLACE_HTML_PATH")
         mainSession.waitForPageStop()
 

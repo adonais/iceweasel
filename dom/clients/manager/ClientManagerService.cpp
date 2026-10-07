@@ -709,9 +709,10 @@ RefPtr<ClientOpPromise> ClientManagerService::OpenWindow(
     ThreadsafeContentParentHandle* aOriginContent,
     const ClientOpenWindowArgs& aArgs) {
   return InvokeAsync(GetMainThreadSerialEventTarget(), __func__,
-                     [originContent = RefPtr{aOriginContent}, aArgs]() {
-                       return ClientOpenWindow(originContent, aArgs);
-                     });
+                     [originContent = RefPtr{aOriginContent}, aArgs]()
+                         MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                           return ClientOpenWindow(originContent, aArgs);
+                         });
 }
 
 bool ClientManagerService::HasWindow(

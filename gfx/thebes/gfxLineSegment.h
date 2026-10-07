@@ -9,7 +9,7 @@
 #include "gfxTypes.h"
 
 struct gfxLineSegment {
-  gfxLineSegment() {}
+  gfxLineSegment() = default;
   gfxLineSegment(const gfxPoint& aStart, const gfxPoint& aEnd)
       : mStart(aStart), mEnd(aEnd) {}
 

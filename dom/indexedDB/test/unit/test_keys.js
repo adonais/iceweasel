@@ -292,6 +292,12 @@ function* testSteps() {
     [1, [null]],
     [1, [/x/]],
     [1, [{}]],
+    // Test that resizable ArrayBuffer (or view on them) returns an error
+    // instead of crashing. See bug 2074390.
+    // Note this might become valid later, in which case this test will need to
+    // be updated (see https://github.com/w3c/IndexedDB/issues/509)
+    new ArrayBuffer(8, { maxByteLength: 16 }),
+    new Uint8Array(new ArrayBuffer(8, { maxByteLength: 16 })),
   ];
 
   try {

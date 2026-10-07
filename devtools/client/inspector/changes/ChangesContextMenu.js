@@ -20,7 +20,7 @@ const {
  */
 class ChangesContextMenu extends Menu {
   constructor(config = {}) {
-    super(config);
+    super({ ...config, accesskeyConflictsBug: 2073896 });
     this.onCopy = config.onCopy;
     this.onCopyAllChanges = config.onCopyAllChanges;
     this.onCopyDeclaration = config.onCopyDeclaration;

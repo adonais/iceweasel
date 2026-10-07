@@ -5,7 +5,10 @@
 package mozilla.components.lib.crash
 
 import android.content.Intent
+import android.os.Parcel
+import android.os.Parcelable
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotSame
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -67,14 +70,46 @@ class CrashTest {
         val intent = Intent()
         originalCrash.fillIn(intent)
 
+        val parceledIntent = intent.parcelRoundTrip()
         val recoveredCrash =
-            Crash.fromIntent(intent) as? Crash.UncaughtExceptionCrash
+            Crash.fromIntent(parceledIntent) as? Crash.UncaughtExceptionCrash
                 ?: throw AssertionError("Expected UncaughtExceptionCrash instance")
 
-        assertEquals(exception, recoveredCrash.throwable)
+        assertNotSame(exception, recoveredCrash.throwable, "Recovered crash should not be the same instance")
         assertEquals("Hello World!", recoveredCrash.throwable.message)
         assertArrayEquals(exception.stackTrace, recoveredCrash.throwable.stackTrace)
         assert(recoveredCrash.runtimeTags == runtimeTags)
+    }
+
+    @Test
+    fun `GIVEN a Parcelable throwable WHEN the crash Intent is parceled THEN the stack trace is preserved`() {
+        val original = ParcelableException("Parcelable crash")
+
+        val intent = Intent()
+        Crash.UncaughtExceptionCrash(0, original, arrayListOf()).fillIn(intent)
+
+        val parceledIntent = intent.parcelRoundTrip()
+
+        val restored = Crash.fromIntent(parceledIntent) as Crash.UncaughtExceptionCrash
+
+        assertNotSame(original, restored.throwable, "Recovered crash should not be the same instance")
+        assertEquals("Parcelable crash", restored.throwable.message)
+
+        assertArrayEquals(original.stackTrace, restored.throwable.stackTrace)
+    }
+
+    @Test
+    fun `GIVEN a non-Parcelable throwable WHEN the crash Intent is parceled THEN the stack trace is preserved`() {
+        val original = RuntimeException("Serializable only")
+
+        val intent = Intent()
+        Crash.UncaughtExceptionCrash(0, original, arrayListOf()).fillIn(intent)
+
+        val parceledIntent = intent.parcelRoundTrip()
+        val restoredCrash = Crash.fromIntent(parceledIntent) as Crash.UncaughtExceptionCrash
+
+        assertNotSame(original, restoredCrash.throwable, "Recovered crash should not be the same instance")
+        assertArrayEquals(original.stackTrace, restoredCrash.throwable.stackTrace)
     }
 
     @Test
@@ -108,5 +143,43 @@ class CrashTest {
                 }
             )
         )
+    }
+
+    /**
+     * A throwable that is [Parcelable] - mimicking some Android framework exceptions like
+     * [android.app.ForegroundServiceStartNotAllowedException]
+     */
+    private class ParcelableException(message: String) : Throwable(message), Parcelable {
+
+        override fun describeContents(): Int = 0
+
+        override fun writeToParcel(dest: Parcel, flags: Int) {
+            dest.writeString(message)
+        }
+
+        companion object CREATOR : Parcelable.Creator<ParcelableException> {
+            // Constructing a new instance here is what recaptures the stack trace, discarding the
+            // one from the original throw site.
+            override fun createFromParcel(source: Parcel) = ParcelableException(source.readString().orEmpty())
+
+            override fun newArray(size: Int): Array<ParcelableException?> = arrayOfNulls(size)
+        }
+    }
+
+    /**
+     * Simulate the persistence of an intent and a recreation, rather than using the same instance of the intent - for
+     * which the bundles will often reference the same instances
+     */
+    private fun Intent.parcelRoundTrip(): Intent {
+        val parcel = Parcel.obtain()
+        return try {
+            writeToParcel(parcel, 0)
+            parcel.setDataPosition(0)
+            Intent.CREATOR.createFromParcel(parcel).apply {
+                setExtrasClassLoader(ParcelableException::class.java.classLoader)
+            }
+        } finally {
+            parcel.recycle()
+        }
     }
 }

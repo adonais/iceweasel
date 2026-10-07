@@ -508,6 +508,11 @@ class GridInspector {
         ? await this.#getGridFragments(grid.gridFront)
         : [];
 
+      // Bail out if nodeFront was destroyed while retrieving grid fragments.
+      if (nodeFront.isDestroyed()) {
+        return;
+      }
+
       this.store.dispatch(
         updateGridHighlighted(nodeFront, highlighted, gridFragments)
       );
@@ -678,6 +683,11 @@ class GridInspector {
         ? await this.#getGridFragments(grid.gridFront)
         : [];
 
+      // Bail out if nodeFront was destroyed while retrieving grid fragments.
+      if (node.isDestroyed()) {
+        return;
+      }
+
       this.store.dispatch(
         updateGridHighlighted(node, highlighted, gridFragments)
       );
@@ -802,17 +812,23 @@ class GridInspector {
    *
    * @param  {GridFront} gridFront
    *         The GridFront of the grid container.
-   * @return {Array} The grid fragments or an empty array if the inspector was
-   *         destroyed in the meantime.
+   * @return {Array} The grid fragments or an empty array if the inspector or
+   *         the grid front was destroyed in the meantime.
    */
   async #getGridFragments(gridFront) {
     try {
       return await gridFront.getFragments();
     } catch (e) {
-      this._throwUnlessDestroyed(
-        e,
-        "Inspector destroyed while executing getGridFragments"
-      );
+      if (gridFront.isDestroyed()) {
+        // The GridFront can be destroyed while the inspector is still alive if
+        // it belonged to an iframe target which was destroyed.
+        console.warn("GridFront destroyed while executing getGridFragments");
+      } else {
+        this._throwUnlessDestroyed(
+          e,
+          "Inspector destroyed while executing getGridFragments"
+        );
+      }
     }
 
     return [];

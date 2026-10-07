@@ -49,7 +49,6 @@
 #include "pc/data_channel_controller.h"
 #include "pc/jsep_transport_controller.h"
 #include "pc/media_options.h"
-#include "pc/media_session.h"
 #include "pc/media_stream_observer.h"
 #include "pc/rtp_receiver.h"
 #include "pc/rtp_transceiver.h"
@@ -225,6 +224,9 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   class ImplicitCreateSessionDescriptionObserver;
 
   friend class ImplicitCreateSessionDescriptionObserver;
+  class CreateSessionDescriptionObserverOperationWrapper;
+
+  friend class CreateSessionDescriptionObserverOperationWrapper;
   class SetSessionDescriptionObserverAdapter;
 
   friend class SetSessionDescriptionObserverAdapter;
@@ -313,6 +315,15 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
       scoped_refptr<SetLocalDescriptionObserverInterface> observer);
   void DoSetRemoteDescription(
       std::unique_ptr<RemoteDescriptionOperation> operation);
+
+  // Fire `OnSessionDescription{Success,Failure}` for the given action through
+  // the tracer if one is attached.
+  void TraceCreateSessionDescriptionComplete(
+      SdpType type,
+      const SessionDescriptionInterface* desc,
+      const RTCError& error);
+  void TraceSetLocalDescriptionComplete(const RTCError& error);
+  void TraceSetRemoteDescriptionComplete(const RTCError& error);
 
   // Called after a DoSetRemoteDescription operation completes.
   void SetRemoteDescriptionPostProcess(bool was_answer)

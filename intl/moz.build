@@ -54,3 +54,15 @@ with Files("icu_sources_data.py"):
     BUG_COMPONENT = ("Firefox Build System", "General")
 
 SPHINX_TREES["/intl"] = "docs"
+
+LICENSED_UNDER += ["unicode"]
+LICENSED_UNDER["unicode"].paths = [
+    "icu",
+    "tzdata",
+]
+
+LICENSED_UNDER += ["unicode-v3"]
+LICENSED_UNDER["unicode-v3"].paths = [
+    "icu_capi",
+    "icu_segmenter_data",
+]

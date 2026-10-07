@@ -27,7 +27,6 @@ import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.RestoreCompleteAction
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.BrowserState
-import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
@@ -45,7 +44,6 @@ import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.toolbar.BrowserToolbarComposable
 import org.mozilla.fenix.ext.application
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.onboarding.FenixOnboarding
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 
@@ -63,7 +61,6 @@ class BrowserFragmentTest {
     private lateinit var resources: Resources
     private lateinit var lifecycleOwner: MockedLifecycleOwner
     private lateinit var navController: NavController
-    private lateinit var onboarding: FenixOnboarding
     private lateinit var settings: Settings
     private lateinit var appStore: AppStore
 
@@ -82,7 +79,6 @@ class BrowserFragmentTest {
         view = mockk(relaxed = true)
         lifecycleOwner = MockedLifecycleOwner(Lifecycle.State.STARTED)
         navController = mockk(relaxed = true)
-        onboarding = mockk(relaxed = true)
         settings = mockk(relaxed = true)
         appStore = AppStore(initialState = AppState())
 
@@ -94,7 +90,6 @@ class BrowserFragmentTest {
         every { browserFragment.activity } returns homeActivity
         every { browserFragment.lifecycle } returns lifecycleOwner.lifecycle
         every { browserFragment.viewLifecycleOwner } returns lifecycleOwner
-        every { context.components.fenixOnboarding } returns onboarding
         every { context.components.settings } returns settings
 
         every { context.components.appStore } returns appStore
@@ -250,111 +245,6 @@ class BrowserFragmentTest {
 
         verify(exactly = 1) { navController.popBackStack(R.id.homeFragment, false) }
     }
-
-    @Test
-    fun `GIVEN the onboarding is finished WHEN visiting any link THEN the onboarding is not dismissed `() = runTest {
-        every { onboarding.userHasBeenOnboarded() } returns true
-
-        browserFragment.observeTabSource(
-            store,
-            coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-        )
-
-        val newSelectedTab = createTab("any-tab.org")
-        addAndSelectTab(newSelectedTab)
-        testScheduler.advanceUntilIdle()
-
-        verify(exactly = 0) { onboarding.finish() }
-    }
-
-    @Test
-    fun `GIVEN the onboarding is not finished WHEN visiting a link THEN the onboarding is dismissed `() = runTest {
-        every { onboarding.userHasBeenOnboarded() } returns false
-
-        browserFragment.observeTabSource(
-            store,
-            coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-        )
-
-        val newSelectedTab = createTab("any-tab.org")
-        addAndSelectTab(newSelectedTab)
-        testScheduler.advanceUntilIdle()
-
-        verify(exactly = 1) { onboarding.finish() }
-    }
-
-    @Test
-    fun `GIVEN the onboarding is not finished WHEN visiting an onboarding link THEN the onboarding is not dismissed `() =
-        runTest {
-            every { onboarding.userHasBeenOnboarded() } returns false
-
-            browserFragment.observeTabSource(
-                store,
-                coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            )
-
-            val newSelectedTab = createTab(BaseBrowserFragment.onboardingLinksList[0])
-            addAndSelectTab(newSelectedTab)
-            testScheduler.advanceUntilIdle()
-
-            verify(exactly = 0) { onboarding.finish() }
-        }
-
-    @Test
-    fun `GIVEN the onboarding is not finished WHEN opening a page from another app THEN the onboarding is not dismissed `() =
-        runTest {
-            every { onboarding.userHasBeenOnboarded() } returns false
-
-            browserFragment.observeTabSource(
-                store,
-                coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            )
-
-            val newSelectedTab1 =
-                createTab("any-tab-1.org", source = SessionState.Source.External.ActionSearch(mockk()))
-            val newSelectedTab2 = createTab("any-tab-2.org", source = SessionState.Source.External.ActionView(mockk()))
-            val newSelectedTab3 = createTab("any-tab-3.org", source = SessionState.Source.External.ActionSend(mockk()))
-            val newSelectedTab4 = createTab("any-tab-4.org", source = SessionState.Source.External.CustomTab(mockk()))
-
-            addAndSelectTab(newSelectedTab1)
-            testScheduler.advanceUntilIdle()
-
-            verify(exactly = 0) { onboarding.finish() }
-
-            addAndSelectTab(newSelectedTab2)
-            testScheduler.advanceUntilIdle()
-
-            verify(exactly = 0) { onboarding.finish() }
-
-            addAndSelectTab(newSelectedTab3)
-            testScheduler.advanceUntilIdle()
-
-            verify(exactly = 0) { onboarding.finish() }
-
-            addAndSelectTab(newSelectedTab4)
-            testScheduler.advanceUntilIdle()
-
-            verify(exactly = 0) { onboarding.finish() }
-        }
-
-    @Test
-    fun `GIVEN the onboarding is not finished WHEN visiting an link after redirect THEN the onboarding is not dismissed `() =
-        runTest {
-            every { onboarding.userHasBeenOnboarded() } returns false
-
-            val newSelectedTab: TabSessionState = mockk(relaxed = true)
-            every { newSelectedTab.content.loadRequest?.triggeredByRedirect } returns true
-            every { newSelectedTab.parentId } returns null
-
-            browserFragment.observeTabSource(
-                store,
-                coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            )
-            addAndSelectTab(newSelectedTab)
-            testScheduler.advanceUntilIdle()
-
-            verify(exactly = 0) { onboarding.finish() }
-        }
 
     @Test
     fun `WHEN isPullToRefreshEnabledInBrowser is disabled THEN pull down refresh is disabled`() {

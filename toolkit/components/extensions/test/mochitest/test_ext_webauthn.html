@@ -36,7 +36,7 @@ add_setup(async () => {
   });
 });
 
-function loadTestExtension(testScript) {
+function loadTestExtension(testScript, manifestExtras = {}) {
   return ExtensionTestUtils.loadExtension({
     manifest: {
       host_permissions: ["https://www.example.com/*"],
@@ -44,6 +44,7 @@ function loadTestExtension(testScript) {
       browser_specific_settings: {
         gecko: { id: "@webauthn-test" },
       },
+      ...manifestExtras,
     },
     files: {
       "test.html": `<!DOCTYPE html>
@@ -99,6 +100,27 @@ add_task(async function test_webauthn_extension_origin_rpid() {
   );
 
   await extension.awaitMessage("done");
+
+  await AppTestDelegate.removeTab(window, tab);
+  await extension.unload();
+});
+
+add_task(async function test_webauthn_rpid_in_web_content_process() {
+  let extension = loadTestExtension(framed_rpid_script, {
+    web_accessible_resources: ["test.html"],
+  });
+
+  await extension.startup();
+
+  let tab = await AppTestDelegate.openNewForegroundTab(
+    window,
+    `moz-extension://${extension.uuid}/test.html`
+  );
+
+  await extension.awaitMessage("framed-done");
+
+  extension.sendMessage("close-web-tab");
+  await extension.awaitMessage("web-tab-closed");
 
   await AppTestDelegate.removeTab(window, tab);
   await extension.unload();
@@ -361,6 +383,65 @@ async function extension_origin_rpid_script() {
   );
 
   browser.test.sendMessage("done");
+}
+
+async function framed_rpid_script() {
+  if (window.parent !== window) {
+    // This instance of test.html is framed by a web page, so it is hosted by
+    // the web page's process and cannot claim www.example.com as an RP ID.
+    //
+    // Note: Bug 2044384 may move extension frames to the extension process,
+    // which would make IsWebAuthnAllowedInContext accept this request and
+    // cause the test to fail.
+    let challenge = new Uint8Array(32);
+    crypto.getRandomValues(challenge);
+
+    await browser.test.assertRejects(
+      navigator.credentials.get({
+        publicKey: {
+          rpId: "www.example.com",
+          allowCredentials: [
+            {
+              type: "public-key",
+              id: crypto.getRandomValues(new Uint8Array(32)),
+            },
+          ],
+          challenge,
+        },
+      }),
+      /The operation is insecure/,
+      "get() from an extension frame in a web page throws SecurityError"
+    );
+
+    browser.test.sendMessage("framed-done");
+    return;
+  }
+
+  let tabReady = new Promise(resolve => {
+    browser.tabs.onUpdated.addListener((id, { status }, { url }) => {
+      if (status === "complete" && url === "https://www.example.com/") {
+        resolve();
+      }
+    });
+  });
+  const tab = await browser.tabs.create({ url: "https://www.example.com/" });
+  await tabReady;
+
+  browser.test.onMessage.addListener(async () => {
+    await browser.tabs.remove(tab.id);
+    browser.test.sendMessage("web-tab-closed");
+  });
+
+  await browser.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: frameUrl => {
+      let frame = document.createElement("iframe");
+      frame.setAttribute("allow", "publickey-credentials-get");
+      frame.setAttribute("src", frameUrl);
+      document.body.appendChild(frame);
+    },
+    args: [browser.runtime.getURL("test.html")],
+  });
 }
 
 async function forbidden_rpid_script() {

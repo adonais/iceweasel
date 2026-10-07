@@ -596,7 +596,7 @@ struct ProfileBufferEntryWriter::Serializer {
   static constexpr Length Bytes(const T&) { return sizeof(T); }
 
   static void Write(ProfileBufferEntryWriter& aEW, const T& aT) {
-    static_assert(!std::is_pointer<T>::value,
+    static_assert(!std::is_pointer_v<T>,
                   "Serializer won't write raw pointers by default, use "
                   "WrapProfileBufferRawPointer or other.");
     aEW.WriteBytes(&aT, sizeof(T));

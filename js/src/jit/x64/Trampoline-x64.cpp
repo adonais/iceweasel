@@ -113,14 +113,9 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
   // Save non-volatile registers. These must be saved by the trampoline, rather
   // than by the JIT'd code, because they are scanned by the conservative
   // scanner.
-  masm.push(rbx);
-  masm.push(r12);
-  masm.push(r13);
-  masm.push(r14);
-  masm.push(r15);
+  masm.pushRegs(rbx, r12, r13, r14, r15);
 #if defined(_WIN64)
-  masm.push(rdi);
-  masm.push(rsi);
+  masm.pushRegs(rdi, rsi);
 
   // 16-byte aligment for vmovdqa
   masm.subq(Imm32(sizeof(EnterJITStackEntry::XMM) + 8), rsp);
@@ -157,7 +152,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
                                        reg_argc);
   }
 
-  CodeLabel returnLabel;
+  Label returnLabel;
   Label oomReturnLabel;
   if (mode != EnterJitMode::GeneratorResume) {
     // Handle Interpreter -> Baseline OSR.
@@ -171,12 +166,17 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
     Label notOsr;
     masm.branchTestPtr(Assembler::Zero, OsrFrameReg, OsrFrameReg, &notOsr);
 
+    // Push a return address onto the stack that actually jumps to the OSR
+    // cleanup code. This balances the shadow stack for when the Baseline frame
+    // eventually returns.
+    Label osrEntry;
+    masm.call(&osrEntry);
+    masm.jump(&returnLabel);
+
+    masm.bind(&osrEntry);
+
     Register numStackValues = regs.takeAny();
     masm.movq(numStackValuesAddr, numStackValues);
-
-    // Push return address
-    masm.mov(&returnLabel, scratch);
-    masm.push(scratch);
 
     // Frame prologue.
     masm.push(rbp);
@@ -250,7 +250,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
   if (mode != EnterJitMode::GeneratorResume) {
     // Interpreter -> Baseline OSR will return here.
     masm.bind(&returnLabel);
-    masm.addCodeLabel(returnLabel);
     masm.bind(&oomReturnLabel);
   }
 
@@ -279,14 +278,9 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
 
   masm.addq(Imm32(sizeof(EnterJITStackEntry::XMM) + 8), rsp);
 
-  masm.pop(rsi);
-  masm.pop(rdi);
+  masm.popRegs(rsi, rdi);
 #endif
-  masm.pop(r15);
-  masm.pop(r14);
-  masm.pop(r13);
-  masm.pop(r12);
-  masm.pop(rbx);
+  masm.popRegs(r15, r14, r13, r12, rbx);
 
   // Restore frame pointer and return.
   masm.pop(rbp);
@@ -537,17 +531,13 @@ uint32_t JitRuntime::generatePreBarrier(JSContext* cx, MacroAssembler& masm,
   Register temp1 = rax;
   Register temp2 = rbx;
   Register temp3 = rcx;
-  masm.push(temp1);
-  masm.push(temp2);
-  masm.push(temp3);
+  masm.pushRegs(temp1, temp2, temp3);
 
   Label noBarrier;
   masm.emitPreBarrierFastPath(type, temp1, temp2, temp3, &noBarrier);
 
   // Call into C++ to mark this GC thing.
-  masm.pop(temp3);
-  masm.pop(temp2);
-  masm.pop(temp1);
+  masm.popRegs(temp3, temp2, temp1);
 
   LiveRegisterSet regs =
       LiveRegisterSet(GeneralRegisterSet(Registers::VolatileMask),
@@ -565,9 +555,7 @@ uint32_t JitRuntime::generatePreBarrier(JSContext* cx, MacroAssembler& masm,
   masm.ret();
 
   masm.bind(&noBarrier);
-  masm.pop(temp3);
-  masm.pop(temp2);
-  masm.pop(temp1);
+  masm.popRegs(temp3, temp2, temp1);
   masm.ret();
 
   return offset;

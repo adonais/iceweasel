@@ -9,8 +9,8 @@
 subsuite = "webgpu"
 dupe-manifest = true # duplicates mochitest-disabled.toml
 
-skip-if = [
-  "verify", # `test-verify` jobs don't guarantee a GPU, so skip them.
+run-if = [
+  "!verify", # `test-verify` jobs don't guarantee a GPU.
 ]
 
 prefs = [

@@ -84,6 +84,9 @@ struct DcSctpSocketHandoverState {
     int32_t time_since_sent_ms = 0;
     uint16_t retransmission_count = 0;
     bool acked = false;
+    bool is_abandoned = false;
+    bool is_nacked = false;
+    bool is_to_be_retransmitted = false;
     uint64_t message_id = 0;
   };
 

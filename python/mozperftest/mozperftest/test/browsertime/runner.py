@@ -1,7 +1,6 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-import collections
 import json
 import os
 import pathlib
@@ -227,9 +226,7 @@ class BrowsertimeRunner(NodeRunner):
                 )
 
             with package_json_path.open() as f:
-                existing_body = json.loads(
-                    f.read(), object_pairs_hook=collections.OrderedDict
-                )
+                existing_body = json.loads(f.read())
 
             existing_body["devDependencies"]["browsertime"] = install_url
             updated_body = json.dumps(existing_body)

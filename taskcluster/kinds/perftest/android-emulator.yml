@@ -47,7 +47,7 @@ shippable-newssite-applink-startup:
             - android-sdk-macos
             - android-system-image-arm64-macos
             - android-avd-arm64-macos
-            - macosx64-jdk-repack
+            - macosx64-aarch64-jdk-repack
         build:
             - artifact: target.arm64-v8a.apk
               extract: false
@@ -89,7 +89,7 @@ shippable-first-frame-startup:
             - android-sdk-macos
             - android-system-image-arm64-macos
             - android-avd-arm64-macos
-            - macosx64-jdk-repack
+            - macosx64-aarch64-jdk-repack
         build:
             - artifact: target.arm64-v8a.apk
               extract: false

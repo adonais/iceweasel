@@ -15,6 +15,7 @@
 #include "mozilla/Base64.h"
 #include "mozilla/Components.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsContentUtils.h"
 #include "nsIDirectoryEnumerator.h"
 #include "nsIEffectiveTLDService.h"

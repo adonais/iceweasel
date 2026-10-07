@@ -15,7 +15,7 @@ class FileSearch extends Component {
   static get propTypes() {
     return {
       editor: PropTypes.object.isRequired,
-      selectedSource: PropTypes.object.isRequired,
+      selectedLocation: PropTypes.object.isRequired,
       modifiers: PropTypes.object.isRequired,
       textContent: PropTypes.object,
       searchInFileEnabled: PropTypes.bool.isRequired,
@@ -36,7 +36,8 @@ class FileSearch extends Component {
 
   shouldComponentUpdate(nextProps) {
     return (
-      this.props.selectedSource?.id !== nextProps.selectedSource?.id ||
+      this.props.selectedLocation?.source.id !==
+        nextProps.selectedLocation?.source.id ||
       this.props.textContent !== nextProps.textContent ||
       this.props.searchInFileEnabled !== nextProps.searchInFileEnabled ||
       this.props.shouldScroll !== nextProps.shouldScroll ||
@@ -55,7 +56,8 @@ class FileSearch extends Component {
   setCursorLocation = (line, ch, matchContent) => {
     this.props.selectLocation(
       this.props.createLocation({
-        source: this.props.selectedSource,
+        source: this.props.selectedLocation.source,
+        sourceActor: this.props.selectedLocation.sourceActor,
         line: line + 1,
         column: ch + matchContent.length,
       }),

@@ -51,6 +51,7 @@
 #include "mozilla/dom/EventTarget.h"
 #include "mozilla/dom/LargestContentfulPaint.h"
 #include "mozilla/dom/Nullable.h"
+#include "mozilla/dom/PermissionsPolicy.h"
 #include "mozilla/dom/RadioGroupContainer.h"
 #include "mozilla/dom/TreeOrderedArray.h"
 #include "mozilla/dom/UserActivation.h"
@@ -174,7 +175,6 @@ class nsIVariant;
 class nsNodeInfoManager;
 class nsPIWindowRoot;
 class nsPresContext;
-class nsRange;
 class nsTextNode;
 class nsViewManager;
 class nsViewportInfo;
@@ -242,7 +242,7 @@ class EditContext;
 class Event;
 class EventListener;
 struct FailedCertSecurityInfo;
-class FeaturePolicy;
+class PermissionsPolicy;
 class FontFaceSet;
 class FragmentDirective;
 class FrameRequestCallback;
@@ -272,6 +272,7 @@ enum class SkipTransitionReason : uint8_t;
 class ProcessingInstruction;
 class Promise;
 struct PropertyDefinition;
+class Range;
 class ScriptLoader;
 class Selection;
 class ServiceWorkerDescriptor;
@@ -1614,6 +1615,9 @@ class Document : public nsINode,
   EditContext* GetActiveEditContext() const { return mActiveEditContext; }
   // https://w3c.github.io/edit-context/#dfn-update-the-text-edit-context
   MOZ_CAN_RUN_SCRIPT void UpdateTextEditContext();
+  // Deactivate the current EditContext and, even if the active editor
+  // is not an EditContext, commit the current composition.
+  MOZ_CAN_RUN_SCRIPT void DeactivateEditContextAndEndComposition();
 
   void SetKeyPressEventModel(uint16_t aKeyPressEventModel);
 
@@ -1640,9 +1644,10 @@ class Document : public nsINode,
 
   MOZ_CAN_RUN_SCRIPT void DoNotifyPossibleTitleChange();
 
-  void InitFeaturePolicy(const Variant<Nothing, FeaturePolicyInfo, Element*>&
-                             aContainerFeaturePolicy);
-  nsresult InitFeaturePolicy(nsIChannel* aChannel);
+  void InitPermissionsPolicy(
+      const Variant<Nothing, PermissionsPolicyInfo, Element*>&
+          aContainerPermissionsPolicy);
+  nsresult InitPermissionsPolicy(nsIChannel* aChannel);
 
   void EnsureNotEnteringAndExitFullscreen();
 
@@ -1653,6 +1658,7 @@ class Document : public nsINode,
   nsresult InitCSP(nsIChannel* aChannel);
   nsresult InitIntegrityPolicy(nsIChannel* aChannel);
   nsresult InitIntegrityPolicyWAICT(nsIChannel* aChannel);
+  nsresult InitConnectionAllowlists(nsIChannel* aChannel);
   nsresult InitCOEP(nsIChannel* aChannel);
   nsresult InitDocPolicy(nsIChannel* aChannel);
   nsresult InitTLSCertificateBinding(nsIChannel* aChannel);
@@ -1671,7 +1677,9 @@ class Document : public nsINode,
                          NotNull<const Encoding*>& aEncoding,
                          nsHtml5TreeOpExecutor* aExecutor);
 
-  MOZ_CAN_RUN_SCRIPT void DispatchContentLoadedEvents();
+  MOZ_CAN_RUN_SCRIPT void DispatchContentLoadedEvents(bool aFinishSync);
+  // Unblocks the load event. An aborted load also gets readyState complete.
+  MOZ_CAN_RUN_SCRIPT void FinishDOMContentLoaded();
 
   // TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void DispatchPageTransition(
@@ -2244,7 +2252,10 @@ class Document : public nsINode,
   uint32_t UpdateNestingLevel() { return mUpdateNestLevel; }
 
   void BeginLoad();
-  virtual void EndLoad();
+  // aFireDOMContentLoadedSync must be false for a terminated parse.
+  // See bug 344305.
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void EndLoad(
+      bool aFireDOMContentLoadedSync);
 
   enum ReadyState {
     READYSTATE_UNINITIALIZED = 0,
@@ -2647,7 +2658,8 @@ class Document : public nsINode,
 
   void BlockDOMContentLoaded() { ++mBlockDOMContentLoaded; }
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void UnblockDOMContentLoaded();
+  // If aFireSync is false, DOMContentLoaded fires from a task instead.
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void UnblockDOMContentLoaded(bool aFireSync);
 
   /**
    * Notification that the page has been shown, for documents which are loaded
@@ -3605,7 +3617,7 @@ class Document : public nsINode,
   already_AddRefed<Event> CreateEvent(const nsAString& aEventType,
                                       CallerType aCallerType,
                                       ErrorResult& rv) const;
-  already_AddRefed<nsRange> CreateRange(ErrorResult& rv);
+  already_AddRefed<Range> CreateRange(ErrorResult& rv);
   already_AddRefed<NodeIterator> CreateNodeIterator(nsINode& aRoot,
                                                     uint32_t aWhatToShow,
                                                     NodeFilter* aFilter,
@@ -3650,6 +3662,7 @@ class Document : public nsINode,
   Document* Open(const mozilla::dom::Optional<nsAString>& /* unused */,
                  const mozilla::dom::Optional<nsAString>& /* unused */,
                  mozilla::ErrorResult& aError);
+  MOZ_CAN_RUN_SCRIPT
   mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> Open(
       const nsACString& aURL, const nsAString& aName,
       const nsAString& aFeatures, mozilla::ErrorResult& rv);
@@ -3861,7 +3874,7 @@ class Document : public nsINode,
    * Wrapper around CaretPositionFromPoint that returns Range instead of
    * CaretPosition.
    */
-  already_AddRefed<nsRange> CaretRangeFromPoint(int32_t aX, int32_t aY);
+  already_AddRefed<Range> CaretRangeFromPoint(int32_t aX, int32_t aY);
 
   MOZ_CAN_RUN_SCRIPT Element* GetScrollingElement();
   // Like GetScrollingElement, but does not flush pending layout. Callers get
@@ -4001,12 +4014,6 @@ class Document : public nsINode,
   // Reports document use counters via telemetry.  This method only has an
   // effect once per document, and so is called during document destruction.
   void ReportDocumentUseCounters();
-
-  // Report the names of the HTMLDocument properties that had
-  // been shadowed using ID/name, and which were subsequently accessed
-  // ("DOM clobbering"). This data is collected by the corresponding NamedGetter
-  // method and limited to 10 unique entries.
-  void ReportShadowedProperties();
 
   // Reports largest contentful paint via telemetry. We want the most up to
   // date value for LCP and so this is called during document destruction.
@@ -4419,9 +4426,11 @@ class Document : public nsINode,
   // mScaleMinFloat, mScaleMaxFloat and mScaleFloat respectively.
   void ParseScalesInViewportMetaData(const ViewportMetaData& aViewportMetaData);
 
-  // Get parent FeaturePolicy from container. The parent FeaturePolicy is
-  // stored in parent iframe or container's browsingContext (cross process)
-  already_AddRefed<mozilla::dom::FeaturePolicy> GetParentFeaturePolicy();
+  // Get the parent PermissionsPolicy from the container. The parent
+  // PermissionsPolicy is stored in parent iframe or container's browsingContext
+  // (cross process)
+  already_AddRefed<mozilla::dom::PermissionsPolicy>
+  GetParentPermissionsPolicy();
 
  public:
   const OriginTrials& Trials() const { return mTrials; }
@@ -4494,7 +4503,7 @@ class Document : public nsINode,
     --mIgnoreOpensDuringUnloadCounter;
   }
 
-  mozilla::dom::FeaturePolicy* FeaturePolicy() const;
+  mozilla::dom::PermissionsPolicy* PermissionsPolicy() const;
 
   /**
    * Find the (non-anonymous) content in this document for aFrame. It will
@@ -4513,7 +4522,7 @@ class Document : public nsINode,
 
   dom::XPathEvaluator* XPathEvaluator();
 
-  void MaybeInitializeFinalizeFrameLoaders();
+  MOZ_CAN_RUN_SCRIPT void MaybeInitializeFinalizeFrameLoaders();
 
   void SetDelayFrameLoaderInitialization(bool aDelayFrameLoaderInitialization) {
     mDelayFrameLoaderInitialization = aDelayFrameLoaderInitialization;
@@ -4931,7 +4940,8 @@ class Document : public nsINode,
   Element* GetScrollingElementImpl(Flush);
   bool IsPotentiallyScrollableImpl(HTMLBodyElement* aBody, Flush);
 
-  void MaybeAllowStorageForOpenerAfterUserInteraction();
+  void MaybeAllowStorageForOpenerAfterUserInteraction(
+      bool aHadPriorUserInteraction);
 
   void MaybeStoreUserInteractionAsPermission();
 
@@ -5079,8 +5089,8 @@ class Document : public nsINode,
 
   RefPtr<Promise> mReadyForIdle;
 
-  // Lazily created in FeaturePolicy().
-  mutable RefPtr<mozilla::dom::FeaturePolicy> mFeaturePolicy;
+  // Lazily created in PermissionsPolicy().
+  mutable RefPtr<mozilla::dom::PermissionsPolicy> mPermissionsPolicy;
 
   // Permission Delegate Handler, lazily-initialized in
   // GetPermissionDelegateHandler
@@ -5805,7 +5815,7 @@ class Document : public nsINode,
 
   nsTArray<RefPtr<nsFrameLoader>> mInitializableFrameLoaders;
   nsTArray<nsCOMPtr<nsIRunnable>> mFrameLoaderFinalizers;
-  RefPtr<nsRunnableMethod<Document>> mFrameLoaderRunner;
+  RefPtr<nsIRunnable> mFrameLoaderRunner;
 
   nsTArray<PendingFrameStaticClone> mPendingFrameStaticClones;
 
@@ -5952,10 +5962,6 @@ class Document : public nsINode,
 
   // See SetNotifyFormOrPasswordRemoved and ShouldNotifyFormOrPasswordRemoved.
   bool mShouldNotifyFormOrPasswordRemoved;
-
-  // Used by the shadowed_html_document_property_access telemetry probe to
-  // collected shadowed HTMLDocument properties. (Limited to 10 entries)
-  nsTArray<nsString> mShadowedHTMLDocumentProperties;
 
   // Collection of data used by the pageload event.
   PageloadEventData mPageloadEventData;

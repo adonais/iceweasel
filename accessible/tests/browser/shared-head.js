@@ -13,7 +13,8 @@
             addAccessibleTask, findAccessibleChildByID, isDefunct,
             CURRENT_CONTENT_DIR, loadScripts, loadContentScripts, snippetToURL,
             Cc, Cu, arrayFromChildren, forceGC, contentSpawnMutation,
-            DEFAULT_CONTENT_DOC_BODY_ID, DEFAULT_IFRAME_ID,
+            DEFAULT_CONTENT_DOC_ID, DEFAULT_CONTENT_DOC_BODY_ID,
+            DEFAULT_IFRAME_ID, DEFAULT_IFRAME_DOC_ID,
             DEFAULT_IFRAME_DOC_BODY_ID, invokeContentTask,
             matchContentDoc, currentContentDoc, getContentDPR,
             waitForImageMap, getContentBoundsForDOMElm, untilCacheIs,
@@ -40,8 +41,10 @@ const CURRENT_CONTENT_DIR = `https://example.com${CURRENT_FILE_DIR}`;
 
 const LOADED_CONTENT_SCRIPTS = new Map();
 
+const DEFAULT_CONTENT_DOC_ID = "default-content-doc-id";
 const DEFAULT_CONTENT_DOC_BODY_ID = "body";
 const DEFAULT_IFRAME_ID = "default-iframe-id";
+const DEFAULT_IFRAME_DOC_ID = "default-iframe-doc-id";
 const DEFAULT_IFRAME_DOC_BODY_ID = "default-iframe-body-id";
 
 const HTML_MIME_TYPE = "text/html";
@@ -73,7 +76,7 @@ let gIsIframe = false;
 let gIsRemoteIframe = false;
 
 function currentContentDoc() {
-  return gIsIframe ? DEFAULT_IFRAME_DOC_BODY_ID : DEFAULT_CONTENT_DOC_BODY_ID;
+  return gIsIframe ? DEFAULT_IFRAME_DOC_ID : DEFAULT_CONTENT_DOC_ID;
 }
 
 /**
@@ -376,7 +379,7 @@ function wrapWithIFrame(doc, options = {}) {
       srcURL.searchParams.append(
         "html",
         `<!doctype html>
-        <html>
+        <html id="${DEFAULT_IFRAME_DOC_ID}">
           <head>
             <meta charset="utf-8"/>
             <title>Accessibility Fission Test</title>
@@ -391,12 +394,18 @@ function wrapWithIFrame(doc, options = {}) {
     if (doc.endsWith("html")) {
       doc = loadHTMLFromFile(`${CURRENT_FILE_DIR}${doc}`);
       doc = doc.replace(
+        `id="${DEFAULT_CONTENT_DOC_ID}"`,
+        `id="${DEFAULT_IFRAME_DOC_ID}"`
+      );
+      doc = doc.replace(
         /<body[.\s\S]*?>/,
         `<body ${attrsToString(iframeDocBodyAttrs)}>`
       );
     } else {
       doc = `<!doctype html>
-      <body ${attrsToString(iframeDocBodyAttrs)}>${doc}</body>`;
+      <html id="${DEFAULT_IFRAME_DOC_ID}">
+        <body ${attrsToString(iframeDocBodyAttrs)}>${doc}</body>
+      </html>`;
     }
 
     src = `data:${mimeType};charset=utf-8,${encodeURIComponent(doc)}`;
@@ -427,8 +436,12 @@ function wrapWithIFrame(doc, options = {}) {
  *        a base64 encoded data url of the document container the snippet.
  */
 function snippetToURL(doc, options = {}) {
-  const { contentDocBodyAttrs = {} } = options;
+  const { contentDocAttrs = {}, contentDocBodyAttrs = {} } = options;
   const isIframe = options.iframe || options.remoteIframe;
+  const docAttrs = {
+    id: DEFAULT_CONTENT_DOC_ID,
+    ...contentDocAttrs,
+  };
   const attrs = {
     id: DEFAULT_CONTENT_DOC_BODY_ID,
     ...contentDocBodyAttrs,
@@ -446,7 +459,7 @@ function snippetToURL(doc, options = {}) {
 
   const encodedDoc = encodeURIComponent(
     `<!doctype html>
-    <html>
+    <html ${attrsToString(docAttrs)}>
       <head>
         <meta charset="utf-8"/>
         <title>Accessibility Test</title>
@@ -540,7 +553,7 @@ function accessibleTask(doc, task, options = {}) {
     if (!options.chrome) {
       onContentDocLoad = waitForEvent(
         EVENT_DOCUMENT_LOAD_COMPLETE,
-        DEFAULT_CONTENT_DOC_BODY_ID
+        DEFAULT_CONTENT_DOC_ID
       );
     }
 
@@ -548,7 +561,7 @@ function accessibleTask(doc, task, options = {}) {
     if (options.remoteIframe && !options.skipFissionDocLoad) {
       onIframeDocLoad = waitForEvent(
         EVENT_DOCUMENT_LOAD_COMPLETE,
-        DEFAULT_IFRAME_DOC_BODY_ID
+        DEFAULT_IFRAME_DOC_ID
       );
     }
 
@@ -725,6 +738,11 @@ function accessibleTask(doc, task, options = {}) {
  *         - {Boolean} skipFissionDocLoad
  *           If true, the test will not wait for iframe document document
  *           loaded event (useful for when IFRAME is initially hidden).
+ *         - {Object} contentDocAttrs
+ *           a set of attributes to be applied to the root element (<html>) of
+ *           a top level content document.
+ *           The id defaults to DEFAULT_CONTENT_DOC_ID, the ID used by the
+ *           content document's DocAccessible.
  *         - {Object} contentDocBodyAttrs
  *           a set of attributes to be applied to a top level content document
  *           body

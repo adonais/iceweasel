@@ -31,7 +31,7 @@ export const NetworkLocalMode = {
       overrideChannelIntoCustomCode(channel, 400, "400 Bad request");
       return;
     }
-    const path = decodeURI(channel.URI.filePath).replace(/^\/+/, "");
+    const path = decodeURI(channel.URI.filePath).replace(/^\//, "");
 
     // On Windows, replace all URI's '/' path separators with '\'
     let systemPath = path;
@@ -39,8 +39,21 @@ export const NetworkLocalMode = {
       systemPath = systemPath.replace(/\//g, "\\");
     }
 
-    const overridePath = PathUtils.joinRelative(localFolderPath, systemPath);
-    let file = new lazy.FileUtils.File(overridePath);
+    let file;
+    try {
+      const overridePath = PathUtils.joinRelative(localFolderPath, systemPath);
+      file = new lazy.FileUtils.File(overridePath);
+    } catch (e) {
+      console.error(
+        "Exception while processing local mode request path",
+        channel.URI.spec,
+        localFolderPath,
+        systemPath,
+        e
+      );
+      overrideChannelInto404(channel);
+      return;
+    }
 
     if (!file.exists()) {
       // Create a 404 response to avoid leaving any request matching the host

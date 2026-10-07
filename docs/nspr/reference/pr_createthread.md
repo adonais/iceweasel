@@ -76,7 +76,7 @@ something, enter a lock before creating the thread and then have the
 thread's root function enter and exit the same lock. When you are ready
 for the thread to run, exit the lock. For more information on locks and
 thread synchronization, see [Introduction to
-NSPR](Introduction_to_NSPR).
+NSPR](introduction_to_nspr.md).
 
 If you want to detect the completion of the created thread, make it
 joinable. You can then use {ref}`PR_JoinThread` to synchronize the

@@ -6,7 +6,9 @@ package org.mozilla.fenix.ui.efficiency.tests
 
 import org.junit.Ignore
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
+import org.mozilla.fenix.helpers.MockBrowserDataHelper.createHistoryItem
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.selectors.HistorySelectors
@@ -56,5 +58,27 @@ class HistoryTest : BaseTest() {
             .mozClick(HistorySelectors.DELETE_EVERYTHING_OPTION_BUTTON)
             .mozClick(HistorySelectors.DELETE_CONFIRM_BUTTON)
             .mozVerifyElementsByGroup(HistorySelectors.Group.EMPTY_HISTORY_MENU_VIEW)
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/243287
+    @Critical
+    @Test
+    fun openHistoryItemTest() {
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val secondWebPage = mockWebServer.getGenericAsset(2)
+
+        createHistoryItem(firstWebPage.url.toString())
+        createHistoryItem(secondWebPage.url.toString())
+
+        on.history.navigateToPage().mozClick(HistorySelectors.HISTORY_ITEM_WITH_TEXT(firstWebPage.url.toString()))
+        on.browserPage.navigateToPage().verifyUrl(firstWebPage.url.toString())
+        // Re-opening firstWebPage records a fresh visit, so it now sorts above secondWebPage in the
+        // recency-ordered list.
+        on.history
+            .navigateToPage()
+            .mozVerifyElementIsAbove(
+                HistorySelectors.HISTORY_ITEM_WITH_TEXT(firstWebPage.url.toString()),
+                HistorySelectors.HISTORY_ITEM_WITH_TEXT(secondWebPage.url.toString()),
+            )
     }
 }

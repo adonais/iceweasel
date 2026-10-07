@@ -11,9 +11,12 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.res.use
 import androidx.core.view.isVisible
 import mozilla.components.concept.menu.MenuController
 import mozilla.components.concept.menu.Orientation
+import mozilla.components.support.ktx.android.view.pixelSizeFor
+import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.LibrarySiteItemBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.loadIntoView
@@ -33,8 +36,18 @@ constructor(
         LibrarySiteItemBinding.inflate(
             LayoutInflater.from(context),
             this,
-            true,
         )
+
+    init {
+        minHeight = pixelSizeFor(R.dimen.library_item_height)
+        val selectableBackground =
+            context.obtainStyledAttributes(intArrayOf(android.R.attr.selectableItemBackground)).use {
+                it.getResourceId(0, 0)
+            }
+        if (background == null && selectableBackground != 0) {
+            setBackgroundResource(selectableBackground)
+        }
+    }
 
     val titleView: TextView
         get() = binding.title

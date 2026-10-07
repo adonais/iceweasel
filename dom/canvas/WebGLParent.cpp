@@ -45,10 +45,10 @@ IPCResult WebGLParent::RecvDispatchCommands(BigBuffer&& shmem,
   const gl::GLContext::TlsScope tlsIsCurrent(gl);
 
   MOZ_ASSERT(cmdsByteSize);
-  const auto shmemBytes = Range<uint8_t>{shmem.AsSpan()};
+  const auto shmemBytes = mozilla::Range<uint8_t>{shmem.AsSpan()};
   const auto byteSize = std::min<uint64_t>(shmemBytes.length(), cmdsByteSize);
-  const auto cmdsBytes =
-      Range<const uint8_t>{shmemBytes.begin(), shmemBytes.begin() + byteSize};
+  const auto cmdsBytes = mozilla::Range<const uint8_t>{
+      shmemBytes.begin(), shmemBytes.begin() + byteSize};
   auto view = webgl::RangeConsumerView{cmdsBytes};
 
   if (kIsDebug) {
@@ -190,7 +190,7 @@ IPCResult WebGLParent::RecvGetBufferSubData(const GLenum target,
 
   const auto shmemRange = shmem.ByteRange();
   const auto dataRange =
-      Range<uint8_t>{shmemRange.begin() + 1, shmemRange.end()};
+      mozilla::Range<uint8_t>{shmemRange.begin() + 1, shmemRange.end()};
 
   // We need to always send the shmem:
   // https://bugzilla.mozilla.org/show_bug.cgi?id=1463831#c2

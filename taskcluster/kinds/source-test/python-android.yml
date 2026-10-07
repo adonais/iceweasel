@@ -22,6 +22,13 @@ android-gradle-build:
             MOZ_OBJDIR: obj-firefox
             PERFHERDER_EXTRA_OPTIONS: android-gradle-build
             TINDERBOX_OUTPUT: '1'
+            # The tests run artifact builds. Let `mach artifact install` accept
+            # the regular (non-shippable) Android opt builds, which run on every
+            # integration push, instead of only the shippable index. Shippable
+            # Android builds are release-only, so on autoland the shippable
+            # index is almost always empty and the pushhead search fails with
+            # "no built artifacts found" (bug 2062847).
+            MOZ_ARTIFACT_ALLOW_NON_SHIPPABLE: '1'
         max-run-time: 7200
     run-on-repo-type: [hg]
     run:

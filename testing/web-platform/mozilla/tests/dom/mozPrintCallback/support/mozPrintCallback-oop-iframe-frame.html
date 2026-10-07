@@ -1,0 +1,18 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  body { margin: 0 }
+  canvas { display: block }
+</style>
+<canvas id="canvas" width="80" height="80"></canvas>
+<script>
+  document.getElementById("canvas").mozPrintCallback = obj => {
+    // Take a while before calling obj.done(), to mimic asynchronous rendering
+    // work, so that a print job which doesn't wait for us finishes first.
+    setTimeout(() => {
+      obj.context.fillStyle = "green";
+      obj.context.fillRect(0, 0, 80, 80);
+      obj.done();
+    }, 1000);
+  };
+</script>

@@ -38,8 +38,17 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
   // single implementation. Without this, a DocAccessibleParent stored in
   // another node's mChildren/mParent would be tracked by two independent,
   // disconnected refcounts.
-  NS_INLINE_DECL_VIRTUAL_REFCOUNTING_WITH_DESTROY(RemoteAccessible,
-                                                  delete (this))
+  //
+  // They're hand-written here rather than using
+  // NS_INLINE_DECL_VIRTUAL_REFCOUNTING_WITH_DESTROY because that macro's
+  // NS_ASSERT_OWNINGTHREAD assumes a single owning thread. On Android, the
+  // RemoteAccessible tree is legitimately touched from both the main thread
+  // and the Android UI thread, protected by
+  // nsAccessibilityService::GetAndroidMonitor() rather than by restricting
+  // access to a single thread. See AssertActiveThread in the .cpp for the
+  // assertion this uses instead.
+  NS_IMETHOD_(MozExternalRefCountType) AddRef(void) override;
+  NS_IMETHOD_(MozExternalRefCountType) Release(void) override;
 
   virtual bool IsRemote() const override { return true; }
 
@@ -525,6 +534,12 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
       mChildren[idx]->mIndexInParent = idx;
     }
   }
+
+  // Asserts that it's safe for the calling thread to touch this
+  // RemoteAccessible's refcount right now. See the comment on AddRef/Release.
+  void AssertActiveThread() const;
+
+  nsAutoRefCnt mRefCnt;
 
   RefPtr<RemoteAccessible> mParent;
 

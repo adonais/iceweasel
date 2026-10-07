@@ -34,6 +34,9 @@ class RemoteEncoderModule final : public PlatformEncoderModule {
   media::EncodeSupportSet Supports(const EncoderConfig& aConfig) const override;
   media::EncodeSupportSet SupportsCodec(CodecType aCodecType) const override;
 
+  RefPtr<SupportsEncoderPromise> SupportsAsync(
+      const EncoderConfig& aConfig) const override;
+
   const char* GetName() const override;
 
  private:

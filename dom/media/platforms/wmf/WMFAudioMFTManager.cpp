@@ -40,7 +40,7 @@ WMFAudioMFTManager::WMFAudioMFTManager(const AudioInfo& aConfig)
 
       mRemainingEncoderDelay = mEncoderDelay =
           aacCodecSpecificData.mEncoderDelayFrames;
-      mTotalMediaFrames = aacCodecSpecificData.mMediaFrameCount;
+      mTotalMediaFrames = aacCodecSpecificData.mMediaFrameCount.valueOr(0);
       LOG("AudioMFT decoder: Found AAC decoder delay ({}frames) and total "
           "media frames ({} frames)\n",
           mEncoderDelay, mTotalMediaFrames);

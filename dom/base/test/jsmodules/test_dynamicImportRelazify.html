@@ -1,0 +1,44 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Bug 2014283 - dynamic import must survive relazification of its referrer script</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css">
+</head>
+<body>
+<script>
+SimpleTest.waitForExplicitFinish();
+
+// A dynaimc import inside a relazifiable function.
+const REFERRER_SOURCE = `
+  function startImport() {
+    return import("./module_simpleExport.mjs");
+  }
+`;
+
+async function runTest() {
+  // A function is only relazifiable if it was delazified on demand: with the
+  // default eager strategy the whole script is compiled up front and
+  // AllowRelazify is never set.
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.script_loader.delazification.strategy", 0]],
+  });
+
+  const script = document.createElement("script");
+  script.textContent = REFERRER_SOURCE;
+  document.head.appendChild(script);
+
+  const promise = startImport();
+
+  SpecialPowers.Cu.getJSTestingFunctions().relazifyFunctions();
+
+  const ns = await promise;
+  is(ns.x, 42, "Dynamic import completes after the referrer is relazified");
+  SimpleTest.finish();
+}
+
+runTest();
+</script>
+</body>
+</html>

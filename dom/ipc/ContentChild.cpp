@@ -7,6 +7,7 @@
 #endif
 
 #include "BrowserChild.h"
+#include "ChildProfilerController.h"
 #include "ContentChild.h"
 #include "GMPServiceChild.h"
 #include "GeckoProfiler.h"
@@ -113,12 +114,7 @@
 #include "mozilla/layers/CompositorManagerChild.h"
 #include "mozilla/layers/ContentProcessController.h"
 #include "mozilla/layers/ImageBridgeChild.h"
-#include "nsNSSComponent.h"
-#include "nsXPLookAndFeel.h"
-#ifdef NS_PRINTING
-#  include "mozilla/layout/RemotePrintJobChild.h"
-#endif
-#include "ChildProfilerController.h"
+#include "mozilla/layout/RemotePrintJobChild.h"
 #include "mozilla/loader/ScriptCacheActors.h"
 #include "mozilla/media/MediaChild.h"
 #include "mozilla/net/CaptivePortalService.h"
@@ -142,10 +138,12 @@
 #include "nsISimpleEnumerator.h"
 #include "nsIStringBundle.h"
 #include "nsIURIMutator.h"
+#include "nsNSSComponent.h"
 #include "nsOpenWindowInfo.h"
 #include "nsQueryObject.h"
 #include "nsRefreshDriver.h"
 #include "nsSandboxFlags.h"
+#include "nsXPLookAndFeel.h"
 
 #if defined(MOZ_SANDBOX)
 #  if defined(XP_WIN)
@@ -326,50 +324,40 @@ using namespace mozilla::widget;
 using mozilla::loader::PScriptCacheChild;
 
 namespace geckoprofiler::markers {
-struct ProcessPriorityChange {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("ProcessPriorityChange");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   const ProfilerString8View& aPreviousPriority,
-                                   const ProfilerString8View& aNewPriority) {
-    aWriter.StringProperty("Before", aPreviousPriority);
-    aWriter.StringProperty("After", aNewPriority);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyFormat("Before", MS::Format::String);
-    schema.AddKeyFormat("After", MS::Format::String);
-    schema.AddStaticLabelValue("Note",
-                               "This is a notification of the priority change "
-                               "that was done by the parent process");
-    schema.SetAllLabels(
-        "priority: {marker.data.Before} -> {marker.data.After}");
-    return schema;
-  }
+struct ProcessPriorityChange : public BaseMarkerType<ProcessPriorityChange> {
+  static constexpr const char* Name = "ProcessPriorityChange";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"Before", MS::InputType::CString, nullptr,
+       MS::Format::UniqueString},  // TODO: Use enum encoding
+      {"After", MS::InputType::CString, nullptr,
+       MS::Format::UniqueString},  // TODO: Use enum encoding
+  };
+  static constexpr const char* AllLabels =
+      "priority: {marker.data.Before} -> {marker.data.After}";
+  static constexpr const char* Description =
+      "This is a notification of the priority change "
+      "that was done by the parent process";
 };
 
-struct ProcessPriority {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("ProcessPriority");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   const ProfilerString8View& aPriority,
-                                   const ProfilingState& aProfilingState) {
-    aWriter.StringProperty("Priority", aPriority);
-    aWriter.StringProperty("Marker cause",
-                           ProfilerString8View::WrapNullTerminatedString(
-                               ProfilingStateToString(aProfilingState)));
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyFormat("Priority", MS::Format::String);
-    schema.AddKeyFormat("Marker cause", MS::Format::String);
-    schema.SetAllLabels("priority: {marker.data.Priority}");
-    return schema;
-  }
+struct ProcessPriority : public BaseMarkerType<ProcessPriority> {
+  static constexpr const char* Name = "ProcessPriority";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"Priority", MS::InputType::CString, nullptr,
+       MS::Format::UniqueString},  // TODO: Use enum encoding
+      {"Marker cause", MS::InputType::CString, nullptr,
+       MS::Format::UniqueString},  // TODO: Use enum encoding
+  };
+  static constexpr const char* AllLabels = "priority: {marker.data.Priority}";
 };
 }  // namespace geckoprofiler::markers
 
@@ -629,7 +617,8 @@ ContentChild::ContentChild()
                         mozilla::MarkerThreadId::MainThread(), ProcessPriority,
                         ProfilerString8View::WrapNullTerminatedString(
                             ProcessPriorityToString(selfPtr->mProcessPriority)),
-                        aProfilingState);
+                        ProfilerString8View::WrapNullTerminatedString(
+                            ProfilingStateToString(aProfilingState)));
       },
       self);
 
@@ -2068,11 +2057,7 @@ mozilla::ipc::IPCResult ContentChild::RecvSocketProcessCrashed() {
 }
 
 PRemotePrintJobChild* ContentChild::AllocPRemotePrintJobChild() {
-#ifdef NS_PRINTING
   return new RemotePrintJobChild();
-#else
-  return nullptr;
-#endif
 }
 
 media::PMediaChild* ContentChild::AllocPMediaChild() {
@@ -3526,6 +3511,13 @@ mozilla::ipc::IPCResult ContentChild::RecvCrossProcessRedirect(
   if (NS_FAILED(rv)) {
     MOZ_DIAGNOSTIC_CRASH("LoadInfoArgsToLoadInfo failed");
     return IPC_OK();
+  }
+
+  // The parent process has already validated this PrincipalToInherit.
+  if (nsCOMPtr<nsIPrincipal> principalToInherit =
+          loadInfo->PrincipalToInherit()) {
+    MOZ_ALWAYS_SUCCEEDS(
+        loadInfo->SetTrustedPrincipalToInherit(principalToInherit));
   }
 
   nsCOMPtr<nsIChannel> newChannel;

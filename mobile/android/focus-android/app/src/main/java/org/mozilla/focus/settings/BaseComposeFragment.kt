@@ -20,13 +20,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.compose.content
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.focus.R
@@ -50,8 +49,6 @@ abstract class BaseComposeFragment : Fragment() {
 
     open val backgroundColorResource: Int = R.color.settings_background
 
-    private lateinit var composeView: ComposeView
-
     /** Callback for the up navigation button shown in toolbar. */
     open fun onNavigateUp(): () -> Unit = {
         activity?.onBackPressedDispatcher?.onBackPressed()
@@ -65,24 +62,8 @@ abstract class BaseComposeFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        return ComposeView(requireContext()).apply {
-            composeView = this
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            isTransitionGroup = true
-            setBackgroundColor(
-                ContextCompat.getColor(
-                    requireContext(),
-                    backgroundColorResource,
-                )
-            )
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        hideToolbar()
         val title = getTitle()
-        composeView.setContent {
+        return content {
             FocusTheme {
                 Scaffold(
                     modifier = Modifier.systemBarsPadding(),
@@ -103,6 +84,15 @@ abstract class BaseComposeFragment : Fragment() {
                 }
             }
         }
+            .apply {
+                isTransitionGroup = true
+                setBackgroundColor(ContextCompat.getColor(requireContext(), backgroundColorResource))
+            }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        hideToolbar()
     }
 
     private fun getTitle(): String {

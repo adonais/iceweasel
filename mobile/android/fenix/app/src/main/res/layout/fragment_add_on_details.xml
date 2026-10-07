@@ -160,58 +160,56 @@
             android:importantForAccessibility="no"
             app:layout_constraintTop_toBottomOf="@+id/home_page_label" />
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/rating"
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/rating_label"
+            style="@style/AboutHeaderContentText"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@+id/home_page_divider">
+            android:gravity="center"
+            android:minHeight="48dp"
+            android:text="@string/mozac_feature_addons_rating"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/home_page_divider" />
 
-            <TextView
-                android:id="@+id/rating_label"
-                style="@style/AboutHeaderContentText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:minHeight="48dp"
-                android:text="@string/mozac_feature_addons_rating"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+        <RatingBar
+            android:id="@+id/rating_view"
+            style="@style/Widget.AppCompat.RatingBar.Small"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/addon_details_rating_view_margin_start"
+            android:layout_marginEnd="@dimen/addon_details_rating_view_margin_end"
+            android:importantForAccessibility="no"
+            android:isIndicator="true"
+            android:numStars="5"
+            app:layout_constraintBottom_toBottomOf="@+id/rating_label"
+            app:layout_constraintEnd_toStartOf="@+id/review_count"
+            app:layout_constraintHorizontal_bias="1"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintStart_toEndOf="@+id/rating_label"
+            app:layout_constraintTop_toTopOf="@+id/rating_label" />
 
-            <RatingBar
-                android:id="@+id/rating_view"
-                style="@style/Widget.AppCompat.RatingBar.Small"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/addon_details_rating_view_margin_start"
-                android:layout_marginEnd="@dimen/addon_details_rating_view_margin_end"
-                android:isIndicator="true"
-                android:numStars="5"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/review_count"
-                app:layout_constraintHorizontal_bias="1"
-                app:layout_constraintHorizontal_chainStyle="packed"
-                app:layout_constraintStart_toEndOf="@+id/rating_label"
-                android:importantForAccessibility="no"
-                app:layout_constraintTop_toTopOf="parent" />
+        <TextView
+            android:id="@+id/review_count"
+            style="@style/AboutHeaderContentText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="end|center_vertical"
+            android:minHeight="48dp"
+            android:minWidth="48dp"
+            android:textAlignment="textEnd"
+            app:layout_constrainedWidth="true"
+            app:layout_constraintBottom_toBottomOf="@+id/rating_label"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/rating_view"
+            app:layout_constraintTop_toTopOf="@+id/rating_label"
+            tools:text="591,642" />
 
-            <TextView
-                android:id="@+id/review_count"
-                style="@style/AboutHeaderContentText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="end|center_vertical"
-                android:textAlignment="textEnd"
-                android:minWidth="48dp"
-                android:minHeight="48dp"
-                app:layout_constrainedWidth="true"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@+id/rating_view"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:text="591,642" />
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/rating_barrier"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="rating_label,rating_view,review_count" />
 
         <View
             android:id="@+id/detail_url_divider"
@@ -219,7 +217,7 @@
             android:layout_height="1dp"
             android:background="?android:attr/listDivider"
             android:importantForAccessibility="no"
-            app:layout_constraintTop_toBottomOf="@+id/rating" />
+            app:layout_constraintTop_toBottomOf="@+id/rating_barrier" />
 
         <TextView
             android:id="@+id/detail_url"

@@ -8,7 +8,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/MediaControlKeySource.h"
 #include "mozilla/dom/BrowsingContextWebProgress.h"
-#include "mozilla/dom/FeaturePolicy.h"
+#include "mozilla/dom/PermissionsPolicy.h"
 #include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
@@ -52,7 +52,7 @@ namespace dom {
 
 class BrowserParent;
 class BrowserBridgeParent;
-class FeaturePolicy;
+class PermissionsPolicy;
 struct LoadURIOptions;
 class MediaController;
 enum class AudioFocusInterruptAction : uint8_t;
@@ -121,7 +121,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   // Same as `GetParentWindowContext`, but will also cross <browser> and
   // content/chrome boundaries.
-  already_AddRefed<WindowGlobalParent> GetEmbedderWindowGlobal() const;
+  already_AddRefed<WindowGlobalParent> GetEmbedderWindowGlobal();
 
   CanonicalBrowsingContext* GetParentCrossChromeBoundary();
   CanonicalBrowsingContext* TopCrossChromeBoundary();
@@ -179,7 +179,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   // is true and aLoadState and aReloadActiveEntry are not set then we should
   // attempt to reload based on the current document in the docshell.
   void NotifyOnHistoryReload(
-      bool aForceReload, bool& aCanReload,
+      uint32_t aReloadFlags, bool& aCanReload,
       Maybe<NotNull<RefPtr<nsDocShellLoadState>>>& aLoadState,
       Maybe<bool>& aReloadActiveEntry);
 
@@ -238,9 +238,11 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   // Triggers a load in the process
   using BrowsingContext::LoadURI;
+  MOZ_CAN_RUN_SCRIPT
   void FixupAndLoadURIString(const nsAString& aURI,
                              const LoadURIOptions& aOptions,
                              ErrorResult& aError);
+  MOZ_CAN_RUN_SCRIPT
   void LoadURI(nsIURI* aURI, const LoadURIOptions& aOptions,
                ErrorResult& aError);
 
@@ -326,8 +328,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   void AddLoadingSessionHistoryEntry(uint64_t aLoadId,
                                      SessionHistoryEntry* aEntry);
 
-  void GetLoadingSessionHistoryInfoFromParent(
-      Maybe<LoadingSessionHistoryInfo>& aLoadingInfo);
+  void AdoptChildSHEntry(Maybe<LoadingSessionHistoryInfo>& aLoadingInfo);
 
   MOZ_CAN_RUN_SCRIPT
   void HistoryCommitIndexAndLength();
@@ -344,10 +345,10 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   void ResetScalingZoom();
 
-  void SetContainerFeaturePolicy(
-      Maybe<FeaturePolicyInfo>&& aContainerFeaturePolicyInfo);
-  const Maybe<FeaturePolicyInfo>& GetContainerFeaturePolicy() const {
-    return mContainerFeaturePolicyInfo;
+  void SetContainerPermissionsPolicy(
+      Maybe<PermissionsPolicyInfo>&& aContainerPermissionsPolicyInfo);
+  const Maybe<PermissionsPolicyInfo>& GetContainerPermissionsPolicy() const {
+    return mContainerPermissionsPolicyInfo;
   }
 
   void SetRestoreData(SessionStoreRestoreData* aData, ErrorResult& aError);
@@ -434,7 +435,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   const JS::Heap<JS::Value>& PermanentKey() { return mPermanentKey; }
   void ClearPermanentKey() { mPermanentKey.setNull(); }
-  void MaybeSetPermanentKey(Element* aEmbedder);
+
+  void SetCrossGroupEmbedderElement(Element* aEmbedder);
 
   // When request for page awake, it would increase a count that is used to
   // prevent whole browsing context tree from being suspended. The request can
@@ -642,6 +644,17 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   uint64_t mCrossGroupOpenerId = 0;
 
+  // Window ID of the cross-group WindowGlobalParent which most recently
+  // embedded this toplevel content BrowsingContext.
+  //
+  // This member is 0 for subframes, toplevel chrome documents, and windows
+  // which have not yet been embedded within a cross-group context.
+  //
+  // Unlike the embedder element, this will not be cleared when the document is
+  // removed from the DOM, and can be used on a CanonicalBrowsingContext which
+  // is actively being torn down.
+  uint64_t mCrossGroupEmbedderWindowId = 0;
+
   // This function will make the top window context reset its
   // "SHEntryHasUserInteraction" cache that prevents documents from repeatedly
   // setting user interaction on SH entries. Should be called anytime SH
@@ -685,7 +698,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   nsCOMPtr<nsIWebProgressListener> mDocShellProgressBridge;
   RefPtr<nsBrowserStatusFilter> mStatusFilter;
 
-  Maybe<FeaturePolicyInfo> mContainerFeaturePolicyInfo;
+  Maybe<PermissionsPolicyInfo> mContainerPermissionsPolicyInfo;
 
   friend class BrowserSessionStore;
   WeakPtr<SessionStoreFormData>& GetSessionStoreFormDataRef() {

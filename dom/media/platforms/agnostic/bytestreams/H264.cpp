@@ -1003,7 +1003,7 @@ uint32_t H264::ComputeMaxRefFrames(const mozilla::MediaByteBuffer* aExtraData) {
         // However, since some video streams are incorrectly muxed without
         // proper attributes, allowing playback with a few visual imperfections
         // is preferable to failing to play them at all.
-        return (data.recovery_frame_cnt == 0 || data.exact_match_flag == 0)
+        return (data.recovery_frame_cnt == 0 || data.exact_match_flag == 1)
                    ? FrameType::I_FRAME_IDR
                    : FrameType::I_FRAME_OTHER;
       }

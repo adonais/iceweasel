@@ -53,6 +53,78 @@ function applyProps(element, props) {
   }
 }
 
+/**
+ * Creates a `<link>` without adding it to the document.
+ *
+ * @param {string} rel The `rel` attribute for the link.
+ * @param {string} href The URL to link.
+ * @returns {HTMLLinkElement} The link, not yet in the document.
+ */
+function createLink(rel, href) {
+  const link = document.createElement("link");
+  link.rel = rel;
+  link.href = href;
+  return link;
+}
+
+/**
+ * Resolves once a link has loaded. Errors resolve too: a stylesheet that fails
+ * to load must not block (or hide) the element indefinitely, so this never
+ * rejects.
+ *
+ * @param {HTMLLinkElement} link A link that has not been appended yet, so that
+ *   it cannot finish loading before it is being observed.
+ * @returns {Promise<void>}
+ */
+function whenLoaded(link) {
+  return new Promise(resolve => {
+    link.addEventListener("load", resolve, { once: true });
+    link.addEventListener("error", resolve, { once: true });
+  });
+}
+
+/**
+ * Creates and appends a `<link>` for each URL. Callers that need to observe
+ * loading should use `createLink` instead, so their listeners are attached
+ * before the link is appended.
+ *
+ * @param {Node} root Where the links are appended.
+ * @param {string} rel The `rel` attribute given to every link.
+ * @param {string[]} [urls] The hrefs to link, in order.
+ * @returns {HTMLLinkElement[]} The appended links, in the order given.
+ */
+function appendLinks(root, rel, urls) {
+  return (urls ?? []).map(href => {
+    const link = createLink(rel, href);
+    root.appendChild(link);
+    return link;
+  });
+}
+
+/**
+ * Creates the custom element for a configuration, applying its declared
+ * attributes, CSS variables and properties while it is still unconnected.
+ *
+ * @param {object} config The component configuration.
+ * @param {object} props Properties to assign to the element.
+ * @returns {Element} The element, not yet in the document.
+ */
+function createCustomElement(config, props) {
+  const element = document.createElement(config.tagName);
+
+  for (const [key, value] of Object.entries(config.attributes ?? {})) {
+    element.setAttribute(key, value);
+  }
+
+  for (const [variable, style] of Object.entries(config.cssVariables ?? {})) {
+    element.style.setProperty(variable, style);
+  }
+
+  applyProps(element, props);
+
+  return element;
+}
+
 function ExternalComponentWrapper({
   type,
   className,
@@ -64,9 +136,9 @@ function ExternalComponentWrapper({
   const customElementRef = React.useRef(null);
   const cleanupRef = React.useRef(null);
   const scriptRef = React.useRef(null);
-  const styleRef = React.useRef(null);
   const shadowRootRef = React.useRef(null);
   const l10nLinksRef = React.useRef([]);
+  const stylesLinksRef = React.useRef([]);
   // Holds the latest props so the custom element can be created with current
   // values even though loadComponent runs asynchronously (kept updated by the
   // sync effect below).
@@ -76,6 +148,60 @@ function ExternalComponentWrapper({
 
   React.useEffect(() => {
     const container = containerRef.current;
+
+    const mountReactBundle = async config => {
+      if (!shadowRootRef.current) {
+        shadowRootRef.current =
+          container.shadowRoot ?? container.attachShadow({ mode: "open" });
+        document.l10n.connectRoot(shadowRootRef.current);
+      }
+      const shadowRoot = shadowRootRef.current;
+
+      appendLinks(shadowRoot, "stylesheet", config.stylesURLs);
+
+      if (config.moduleURLs?.length) {
+        await Promise.all(config.moduleURLs.map(url => importModule(url)));
+      }
+
+      const mountPoint = document.createElement("div");
+      shadowRoot.appendChild(mountPoint);
+
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = config.bundleURL;
+        script.onload = () => {
+          cleanupRef.current = window[config.mountFunction](mountPoint, props);
+          resolve();
+        };
+        script.onerror = reject;
+        document.head.appendChild(script);
+        scriptRef.current = script;
+      });
+    };
+
+    const mountCustomElement = async config => {
+      // If stylesURLs are declared for the component, we load those
+      // stylesheets before mounting it so it is never in the document
+      // unstyled.
+      stylesLinksRef.current = (config.stylesURLs ?? []).map(url =>
+        createLink("stylesheet", url)
+      );
+
+      const stylesLoaded = Promise.all(stylesLinksRef.current.map(whenLoaded));
+
+      for (const link of stylesLinksRef.current) {
+        document.head.appendChild(link);
+      }
+
+      await importModule(config.componentURL);
+      await stylesLoaded;
+
+      if (containerRef.current && !customElementRef.current) {
+        const element = createCustomElement(config, latestPropsRef.current);
+        customElementRef.current = element;
+        containerRef.current.appendChild(element);
+      }
+    };
 
     const loadComponent = async () => {
       try {
@@ -88,77 +214,16 @@ function ExternalComponentWrapper({
           return;
         }
 
-        l10nLinksRef.current = [];
-        for (const l10nURL of config.l10nURLs ?? []) {
-          const l10nEl = document.createElement("link");
-          l10nEl.rel = "localization";
-          l10nEl.href = l10nURL;
-          document.head.appendChild(l10nEl);
-          l10nLinksRef.current.push(l10nEl);
-        }
+        l10nLinksRef.current = appendLinks(
+          document.head,
+          "localization",
+          config.l10nURLs
+        );
 
         if (config.mountStrategy === "react-bundle") {
-          if (!shadowRootRef.current) {
-            shadowRootRef.current =
-              container.shadowRoot ?? container.attachShadow({ mode: "open" });
-            document.l10n.connectRoot(shadowRootRef.current);
-          }
-          const shadowRoot = shadowRootRef.current;
-
-          for (const stylesURL of config.stylesURLs) {
-            const link = document.createElement("link");
-            link.rel = "stylesheet";
-            link.href = stylesURL;
-            shadowRoot.appendChild(link);
-          }
-
-          if (config.moduleURLs?.length) {
-            await Promise.all(config.moduleURLs.map(url => importModule(url)));
-          }
-
-          const mountPoint = document.createElement("div");
-          shadowRoot.appendChild(mountPoint);
-
-          await new Promise((resolve, reject) => {
-            const script = document.createElement("script");
-            script.src = config.bundleURL;
-            script.onload = () => {
-              cleanupRef.current = window[config.mountFunction](
-                mountPoint,
-                props
-              );
-              resolve();
-            };
-            script.onerror = reject;
-            document.head.appendChild(script);
-            scriptRef.current = script;
-          });
-          return;
-        }
-
-        await importModule(config.componentURL);
-
-        if (containerRef.current && !customElementRef.current) {
-          const element = document.createElement(config.tagName);
-
-          if (config.attributes) {
-            for (const [key, value] of Object.entries(config.attributes)) {
-              element.setAttribute(key, value);
-            }
-          }
-
-          if (config.cssVariables) {
-            for (const [variable, style] of Object.entries(
-              config.cssVariables
-            )) {
-              element.style.setProperty(variable, style);
-            }
-          }
-
-          applyProps(element, latestPropsRef.current);
-
-          customElementRef.current = element;
-          containerRef.current.appendChild(element);
+          await mountReactBundle(config);
+        } else {
+          await mountCustomElement(config);
         }
       } catch (err) {
         console.error(
@@ -183,9 +248,6 @@ function ExternalComponentWrapper({
           shadowRootRef.current.firstChild.remove();
         }
         shadowRootRef.current = null;
-      } else {
-        styleRef.current?.remove();
-        styleRef.current = null;
       }
 
       if (customElementRef.current && container) {
@@ -197,6 +259,11 @@ function ExternalComponentWrapper({
         link.remove();
       }
       l10nLinksRef.current = [];
+
+      for (const link of stylesLinksRef.current) {
+        link.remove();
+      }
+      stylesLinksRef.current = [];
     };
     // props is intentionally excluded from the dependency array because it creates
     // a new object reference on every render, which would cause the effect to

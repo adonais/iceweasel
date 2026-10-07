@@ -28,6 +28,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/SpeechRecognitionBinding.h"
+#include "mozilla/glean/DomMediaWebspeechMetrics.h"
 #include "mozilla/hwinference/PSpeechRecognition.h"
 #include "mozilla/hwinference/SpeechRecognitionChild.h"
 #include "mozilla/ipc/MessageChannel.h"
@@ -299,7 +300,8 @@ void SpeechRecognitionBackend::Shutdown(bool aWaitForFlush,
           AssertOnIPCThread();
           LOG("Stopping HWInference speech recognition session");
           if (!child->CanSend()) {
-            self->NotifySessionFinished(/* aProducedResult */ true);
+            self->NotifySessionFinished(/* aProducedResult */ true,
+                                        EnginePerfStats{});
             return;
           }
           child->SendStop()->Then(
@@ -307,10 +309,17 @@ void SpeechRecognitionBackend::Shutdown(bool aWaitForFlush,
               [self, child](hwinference::PSpeechRecognitionChild::StopPromise::
                                 ResolveOrRejectValue&& aValue) {
                 child->Close();
-                // A dead channel means the engine never reported back, so
-                // don't claim a nomatch it never determined.
-                self->NotifySessionFinished(aValue.IsReject() ||
-                                            aValue.ResolveValue());
+                if (aValue.IsReject()) {
+                  // A dead channel means the engine never reported back, so
+                  // don't claim a nomatch it never determined.
+                  self->NotifySessionFinished(/* aProducedResult */ true,
+                                              EnginePerfStats{});
+                  return;
+                }
+                const auto& [any, fedAudioMs, inferenceMs] =
+                    aValue.ResolveValue();
+                self->NotifySessionFinished(
+                    any, EnginePerfStats{fedAudioMs, inferenceMs});
               });
         });
     sIPCCapability->Dispatch(stopSession.forget());
@@ -329,7 +338,7 @@ void SpeechRecognitionBackend::Shutdown(bool aWaitForFlush,
   } else if (aWaitForFlush) {
     // Nothing ever reached the engine, so there is no flush to wait for. Still
     // queued after the audioend above, so "end" stays last.
-    NotifySessionFinished(/* aProducedResult */ true);
+    NotifySessionFinished(/* aProducedResult */ true, EnginePerfStats{});
   }
 
   // Dispatch to the resampling thread to tell it to stop.
@@ -377,11 +386,13 @@ void SpeechRecognitionBackend::DispatchTrailingEvents() {
                              }));
 }
 
-void SpeechRecognitionBackend::NotifySessionFinished(bool aProducedResult) {
-  DispatchToParentIfAlive("SpeechRecognitionBackend::NotifySessionFinished",
-                          [aProducedResult](SpeechRecognition* aParent) {
-                            aParent->OnSessionFinished(aProducedResult);
-                          });
+void SpeechRecognitionBackend::NotifySessionFinished(bool aProducedResult,
+                                                     EnginePerfStats aStats) {
+  DispatchToParentIfAlive(
+      "SpeechRecognitionBackend::NotifySessionFinished",
+      [aProducedResult, aStats](SpeechRecognition* aParent) {
+        aParent->OnSessionFinished(aProducedResult, aStats);
+      });
 }
 
 void SpeechRecognitionBackend::AttachToTrack(AudioStreamTrack* aTrack) {
@@ -395,6 +406,17 @@ void SpeechRecognitionBackend::AttachToTrack(AudioStreamTrack* aTrack) {
   mTrack->AddListener(mTrackListener);
 
   LOG("SpeechRecognitionBackend::AttachToTrack");
+}
+
+void SpeechRecognitionBackend::SetEnabled(bool aEnabled) {
+  AssertIsOnMainThread();
+
+  if (!mTrack) {
+    return;
+  }
+
+  mTrack->GetTrack()->QueueControlMessageWithNoShutdown(
+      [self = RefPtr{this}, aEnabled] { self->mEnabled = aEnabled; });
 }
 
 void SpeechRecognitionBackend::DetachFromTrack() {
@@ -433,7 +455,7 @@ void SpeechRecognitionBackend::DataCallback(MediaTrackGraph* aGraph,
   // absence of audio, so it is fed as zeros rather than dropped. Dropping it
   // would splice together the audio on either side of a silent gap, hiding the
   // silence that ends an utterance from the recognizer.
-  const bool isSilence = aChunk.IsNull();
+  const bool isSilence = aChunk.IsNull() || !mEnabled;
 
   // Downmix to mono into the fixed-size scratch buffer and enqueue. A single
   // graph chunk can be larger than the scratch buffer, so process it in slices
@@ -677,10 +699,11 @@ void SpeechRecognitionBackend::StartSpeechRecognitionSession(
         }
       });
 
+  TimeStamp initStart = TimeStamp::Now();
   aChild->SendInit(SPEECH_RECOGNITION_ENGINE_ID, aLanguage, mPhrases)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [self = RefPtr{this}](const nsCString& aError) {
+          [self = RefPtr{this}, initStart](const nsCString& aError) {
             AssertOnIPCThread();
             if (!aError.IsEmpty()) {
               LOGE("Failed to initialize speech recognition session: {}",
@@ -688,6 +711,8 @@ void SpeechRecognitionBackend::StartSpeechRecognitionSession(
               self->HandleRecognitionError(aError);
             } else {
               LOG("Speech recognition session initialized successfully");
+              glean::media_speech_recognition::session_init_time
+                  .AccumulateRawDuration(TimeStamp::Now() - initStart);
               self->DispatchToParentIfAlive(
                   "SpeechRecognitionBackend::NotifyBackendListening",
                   [](SpeechRecognition* aParent) {
@@ -736,11 +761,20 @@ void SpeechRecognitionBackend::HandleRecognitionError(
   AssertOnIPCThread();
   LOGE("HandleRecognitionError: {}", nsCString(aError).get());
 
-  DispatchToParentIfAlive(
-      "SpeechRecognitionBackend::HandleRecognitionError",
-      [error = nsCString(aError)](SpeechRecognition* aParent) {
-        aParent->HandleRecognitionErrorFromBackend(error);
-      });
+  // A stopped session ends through stop()'s own path, with "nomatch" and
+  // "end". A failure the engine reports while it winds down - an init
+  // abandoned because the session went away, say - is not the page's problem,
+  // and firing "error" here would claim the session broke when it merely
+  // ended.
+  DispatchToParentIfAlive("SpeechRecognitionBackend::HandleRecognitionError",
+                          [self = RefPtr{this}, error = nsCString(aError)](
+                              SpeechRecognition* aParent) {
+                            AssertIsOnMainThread();
+                            if (self->mStopped) {
+                              return;
+                            }
+                            aParent->HandleRecognitionErrorFromBackend(error);
+                          });
 }
 
 void SpeechRecognitionBackend::NotifyTrackEnded() {
@@ -827,6 +861,35 @@ auto SpeechRecognitionBackend::RunWithTransientSession(SendFunc&& aSendFunc) {
 }
 
 /* static */
+void SpeechRecognitionBackend::ResolveAvailability(Promise* aPromise,
+                                                   AvailabilityStatus aStatus) {
+  AssertIsOnMainThread();
+  using Label = glean::media_speech_recognition::AvailabilityLabel;
+  Label label;
+  switch (aStatus) {
+    case AvailabilityStatus::Unavailable:
+      label = Label::eUnavailable;
+      break;
+    case AvailabilityStatus::Downloadable:
+      label = Label::eDownloadable;
+      break;
+    case AvailabilityStatus::Downloading:
+      label = Label::eDownloading;
+      break;
+    case AvailabilityStatus::Available:
+      label = Label::eAvailable;
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE(
+          "Unhandled AvailabilityStatus, add a label for it in metrics.yaml");
+      label = Label::e__Other__;
+      break;
+  }
+  glean::media_speech_recognition::availability.EnumGet(label).Add(1);
+  aPromise->MaybeResolve(aStatus);
+}
+
+/* static */
 already_AddRefed<Promise> SpeechRecognitionBackend::Available(
     nsIGlobalObject* aGlobal, const nsTArray<nsCString>& aLanguages) {
   AssertIsOnMainThread();
@@ -899,9 +962,10 @@ already_AddRefed<Promise> SpeechRecognitionBackend::Available(
       })
       ->Then(GetMainThreadSerialEventTarget(), __func__,
              [promise](AvailabilityPromise::ResolveOrRejectValue&& aValue) {
-               promise->MaybeResolve(aValue.IsResolve()
-                                         ? aValue.ResolveValue()
-                                         : AvailabilityStatus::Unavailable);
+               ResolveAvailability(promise,
+                                   aValue.IsResolve()
+                                       ? aValue.ResolveValue()
+                                       : AvailabilityStatus::Unavailable);
              });
 
   return promise.forget();

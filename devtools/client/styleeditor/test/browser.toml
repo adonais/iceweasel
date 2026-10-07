@@ -245,6 +245,8 @@ fail-if = [
 
 ["browser_styleeditor_syncIntoRuleView.js"]
 
+["browser_styleeditor_telemetry.js"]
+
 ["browser_styleeditor_transition_rule.js"]
 fail-if = [
   "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled

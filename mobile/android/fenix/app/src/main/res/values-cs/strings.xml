@@ -1149,6 +1149,10 @@
   <string name="preferences_sync_category">Vyberte, co chcete synchronizovat</string>
   <!-- Preference category for sync controls -->
   <string name="preferences_category_sync">Synchronizované údaje</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">Spravujte obsah, který se synchronizuje na vašich připojených zařízeních</string>
+  <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+  <string name="preferences_sync_category_no_engine_selected_summary">Nic nesynchronizujete. Vyberte, co se má synchronizovat na vašich zařízeních.</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">Historii</string>
   <!-- Preference for syncing bookmarks -->
@@ -1473,6 +1477,8 @@
     Category header for the preferences that control how tabs are organized
   -->
   <string name="preferences_tab_organization">Organizace panelů</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">Neaktivní panely</string>
   <!--
     Inactive tabs
 
@@ -1481,6 +1487,10 @@
   <string name="preferences_inactive_tabs">Přesun neaktivních panelů</string>
   <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Panely, které jste dva týdny neotevřeli, budou přesunuty do sekce pro neaktivní panely.</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">Skupiny panelů</string>
+  <!-- Summary of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_description">Uspořádejte své panely do skupin, které můžete pojmenovat a ukládat.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Povolit skupiny panelů</string>
   <!--
@@ -2405,6 +2415,10 @@
   <string name="sync_send_to_all">Poslat do všech zařízení</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Znovu se připojit k synchronizaci</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">Odeslat</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">Vybrané</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">Offline</string>
   <!-- An option to connect additional devices -->
@@ -2441,6 +2455,8 @@
   <string name="sync_send_tab_error_connection_title">Zkontrolujte své připojení k internetu</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">Potom zkuste panel odeslat znovu.</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">Opakovat</string>
   <!--
     Notifications
 
@@ -2623,6 +2639,12 @@
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[Ještě nemáte účet? <u>Vytvořte si ho</u> a synchronizujte svůj Firefox mezi zařízeními.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s ukončí synchronizaci s vaším účtem, ale nesmaže z tohoto zařízení žádná vaše data.</string>
+  <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_title">Chcete se odhlásit z účtu?</string>
+  <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_message">Synchronizovaná data zůstávají uložena ve vašem účtu.</string>
+  <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_confirm_button">Odhlásit se</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">Odpojit</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -4616,4 +4638,6 @@
   <string name="reader_mode_panel_content_description">Nastavení režimu čtení</string>
   <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
   <string name="reader_mode_panel_listen_content_description">Přečíst nahlas</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">Přehrávač médií</string>
 </resources>

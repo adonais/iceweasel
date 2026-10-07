@@ -34,9 +34,9 @@ task-defaults:
               path: /builds/worker/artifacts
               name: public/dte_tests
         env:
-            BRANCH: main
-            TEST_SET: ci
-            WORKFLOW_ID: main.yml
+            BRANCH: nightly
+            TEST_SETS: '["smoke"]'
+            WORKFLOW_ID: nightly.yml
             BUILD_TASK_ID: {task-reference: '<build>'}
             UPLOAD_DIR: /builds/worker/artifacts
         max-run-time: 4800

@@ -60,25 +60,18 @@ const ElectronKeysMapping = {
 /**
  * Helper to listen for keyboard events described in .properties file.
  *
- * let shortcuts = new KeyShortcuts({
- *   window
- * });
+ * let shortcuts = new KeyShortcuts(target);
  * shortcuts.on("Ctrl+F", event => {
  *   // `event` is the KeyboardEvent which relates to the key shortcuts
  * });
  */
 class KeyShortcuts {
   /**
-   * @param {object} options
-   * @param {Window} options.window
-   *        The window object of the document to listen events from.
-   * @param {HTMLElement} options.target
-   *        Optional DOM Element on which we should listen events from.
-   *        If omitted, we listen for all events fired on `window`.
+   * @param {Window | HTMLElement} target
+   *        The window object or DOM Element on which we should listen events from.
    */
-  constructor({ window, target }) {
-    this.window = window;
-    this.target = target || window;
+  constructor(target) {
+    this.target = target;
     this.keys = new Map();
     this.eventEmitter = new EventEmitter();
     this.target.addEventListener("keydown", this);

@@ -15,6 +15,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
+XPCOMUtils.defineLazyServiceGetter(
+  lazy,
+  "gFormFillService",
+  "@mozilla.org/satchel/form-fill-controller;1",
+  Ci.nsIFormFillController
+);
+
 XPCOMUtils.defineLazyPreferenceGetter(lazy, "gDebug", "browser.formfill.debug");
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -30,6 +37,25 @@ function log(message) {
 }
 
 export class FormHistoryChild extends JSWindowActorChild {
+  receiveMessage({ name }) {
+    switch (name) {
+      case "FormHistory:RepopulateAutocompletePopup":
+        this.#repopulateAutocompletePopup();
+        break;
+    }
+  }
+
+  #repopulateAutocompletePopup() {
+    const input = lazy.gFormFillService.QueryInterface(Ci.nsIAutoCompleteInput);
+    if (!input.popupOpen) {
+      return;
+    }
+
+    const { controller } = input;
+    controller.resetInternalState();
+    controller.startSearch(controller.searchString);
+  }
+
   handleEvent(event) {
     switch (event.type) {
       case "DOMFormBeforeSubmit":

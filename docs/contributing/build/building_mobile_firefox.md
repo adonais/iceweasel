@@ -7,7 +7,7 @@ devices, and audiences:
   mobile browser is split into several different artifact layers:
 - [The fenix Android application](/mobile/android/fenix.md)
 - {searchfox}`The android-components Android library <mobile/android/android-components>`
-- [The GeckoView platform](/mobile/android/geckoview)
+- [The GeckoView platform](/mobile/android/geckoview/index.md)
 - [Firefox for iOS](https://github.com/mozilla-mobile/firefox-ios),
   our general-purpose browser for iOS with desktop sync built-in.
 - Building **Firefox Focus**, our privacy-focused browser for

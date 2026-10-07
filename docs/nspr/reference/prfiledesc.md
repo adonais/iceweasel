@@ -54,4 +54,4 @@ functions such as {ref}`PR_Open` and {ref}`PR_NewTCPSocket` to obtain a file
 descriptor, which you should treat as an opaque structure.
 
 For more details about the use of {ref}`PRFileDesc` and related structures,
-see [File Descriptor Types](I_O_Types#File_Descriptor_Types).
+see [File Descriptor Types](i_o_types.md#file-descriptor-types).

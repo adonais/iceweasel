@@ -25,7 +25,7 @@ task-defaults:
     run-on-projects: []
     worker-type: b-linux-docker-amd
     worker:
-        docker-image: {in-tree: deb12-toolchain-build}
+        docker-image: {in-tree: deb13-toolchain-build}
         chain-of-trust: true
         max-run-time: 1800
         artifacts:

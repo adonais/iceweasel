@@ -126,7 +126,7 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
                 onDebugActionClick = { showDebugDialog = true },
                 onNavigateBack = { findNavController().popBackStack() },
                 onLocationClicked = { handleOnLocationClicked() },
-                isLocationSelectionEnabled = requireComponents.settings.isIPProtectionLocationsEnabled,
+                isLocationSelectionEnabled = true,
             )
 
             if (showDebugDialog) {

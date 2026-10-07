@@ -12,16 +12,15 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.ComposeView
 import androidx.core.content.getSystemService
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat.Type.systemBars
-import androidx.fragment.app.viewModels
 import androidx.fragment.compose.content
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewModelScope
 import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -31,47 +30,28 @@ import kotlinx.coroutines.launch
 import mozilla.components.concept.sync.TabData
 import mozilla.components.concept.sync.TabPrivacy
 import mozilla.components.feature.accounts.push.SendTabUseCases
-import mozilla.components.feature.share.RecentAppsStorage
+import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
+import mozilla.components.lib.state.helpers.StoreProvider.Companion.storeProvider
 import mozilla.components.service.fxa.manager.SCOPE_PROFILE
 import mozilla.components.service.fxa.manager.SCOPE_SYNC
 import mozilla.components.support.utils.ext.isLandscape
-import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.SyncAuth
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
+import org.mozilla.fenix.components.share.store.ShareUiAction
+import org.mozilla.fenix.components.share.store.ShareUiState
+import org.mozilla.fenix.components.share.store.ShareUiStore
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.settings.account.SignOutFragment
-import org.mozilla.fenix.share.DefaultShareController.Companion.ACTION_COPY_LINK_TO_CLIPBOARD
-import org.mozilla.fenix.share.ShareViewModel
-import org.mozilla.fenix.share.listadapters.AppShareOption
 import org.mozilla.fenix.share.listadapters.SyncShareOption
 import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
 
 /** A [BottomSheetDialogFragment] that allows the user to send a tab to their other devices. */
 class SendToDevicesDialogFragment : BottomSheetDialogFragment() {
 
-    private val model: ShareViewModel by viewModels {
-        object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val app = requireContext().applicationContext
-                return ShareViewModel(
-                    fxaAccountManager = requireComponents.backgroundServices.accountManager,
-                    recentAppsStorage = RecentAppsStorage(app),
-                    connectivityManager = app.getSystemService<ConnectivityManager>(),
-                    packageManager = app.packageManager,
-                    packageName = app.packageName,
-                    getCopyApp = ::getCopyApp,
-                    queryIntentActivitiesCompat = { intent ->
-                        app.packageManagerCompatHelper.queryIntentActivitiesCompat(intent, 0)
-                    },
-                )
-                    as T
-            }
-        }
-    }
+    private lateinit var shareUiStore: ShareUiStore
 
     private val sendTabUseCases by lazy {
         SendTabUseCases(requireComponents.backgroundServices.accountManager)
@@ -83,23 +63,44 @@ class SendToDevicesDialogFragment : BottomSheetDialogFragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ) = content {
-        val uiState = model.uiState.collectAsState().value
-        SendToDevicesContent(
-            uiState = uiState,
-            onDismiss = { dismiss() },
-            onSendToDevice = { option: SyncShareOption.SingleDevice ->
-                sendAndDismiss { sendTabsToDevice(option.device.id, tabs) }
-            },
-            onSendToAll = {
-                sendAndDismiss { sendTabsToAllDevices(tabs) }
-            },
-            onSignInClicked = {
-                reconnectToSync(requireContext())
-            },
-            onSignOutClicked = {
-                removeAccountFromSync()
-            },
+    ): ComposeView {
+        shareUiStore =
+            fragmentStore(ShareUiState.initial) {
+                    ShareUiStore(initialState = it)
+                }
+                .value
+
+        return content {
+            val uiState by shareUiStore.stateFlow.collectAsState()
+            SendToDevicesContent(
+                uiState = uiState,
+                onDismiss = { dismiss() },
+                onSend = { devices: Set<SyncShareOption.SingleDevice> ->
+                    sendAndDismiss {
+                        sendTabUseCases.sendToDeviceAsync.invoke(devices.map { it.device }, tabs).await()
+                    }
+                },
+                onDeviceSelectionToggle = { shareUiStore.dispatch(ShareUiAction.DeviceSelectionToggle(it)) },
+                onSignInClicked = {
+                    reconnectToSync(requireContext())
+                },
+                onSignOutClicked = {
+                    removeAccountFromSync()
+                },
+            )
+        }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        val app = requireContext().applicationContext
+        viewLifecycleOwner.lifecycle.addObserver(
+            ShareUiDevicesObserver(
+                store = shareUiStore,
+                fxaAccountManager = requireComponents.backgroundServices.accountManager,
+                connectivityManager = app.getSystemService<ConnectivityManager>(),
+                scope = storeProvider.viewModelScope,
+            )
         )
     }
 
@@ -152,12 +153,6 @@ class SendToDevicesDialogFragment : BottomSheetDialogFragment() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        // HomeActivity only shows this once signed in, so we can load the device list straight away.
-        model.initDataLoad()
-    }
-
     private fun reconnectToSync(context: Context) {
         context.components.services.accountsAuthFeature.beginAuthentication(
             context,
@@ -172,18 +167,6 @@ class SendToDevicesDialogFragment : BottomSheetDialogFragment() {
         dismiss()
         if (fragmentManager.findFragmentByTag("SignOutFragment") == null) {
             SignOutFragment().show(fragmentManager, "SignOutFragment")
-        }
-    }
-
-    private fun getCopyApp(): AppShareOption? {
-        val copyIcon = AppCompatResources.getDrawable(requireContext(), R.drawable.ic_share_clipboard)
-        return copyIcon?.let {
-            AppShareOption(
-                requireContext().getString(R.string.share_copy_link_to_clipboard),
-                it,
-                ACTION_COPY_LINK_TO_CLIPBOARD,
-                "",
-            )
         }
     }
 
@@ -238,22 +221,6 @@ class SendToDevicesDialogFragment : BottomSheetDialogFragment() {
                 showSendResult(retryScope, onSuccess, onFailure, send)
             }
         }
-    }
-
-    private suspend fun sendTabsToDevice(
-        deviceId: String,
-        tabs: List<TabData>,
-    ): Boolean {
-        return sendTabUseCases.sendToDeviceAsync
-            .invoke(
-                deviceId = deviceId,
-                tabs = tabs,
-            )
-            .await()
-    }
-
-    private suspend fun sendTabsToAllDevices(tabs: List<TabData>): Boolean {
-        return sendTabUseCases.sendToAllAsync.invoke(tabs = tabs).await()
     }
 
     companion object {

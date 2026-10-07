@@ -384,6 +384,8 @@ function Crossword({
             iconSrc="chrome://global/skin/icons/more.svg"
             menuId="crossword-context-menu"
             type="ghost"
+            title="Crossword options"
+            aria-label="Crossword options"
           />
           <panel-list
             className="panel-list-no-icons"

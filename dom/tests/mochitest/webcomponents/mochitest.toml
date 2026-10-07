@@ -31,6 +31,8 @@ support-files = [
 
 ["test_custom_element_lifecycle.html"]
 
+["test_custom_element_scoped_registry_gc.html"]
+
 ["test_custom_element_set_element_creation_callback.html"]
 
 ["test_custom_element_stack.html"]

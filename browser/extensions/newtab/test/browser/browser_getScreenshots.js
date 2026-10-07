@@ -13,7 +13,7 @@ const { Screenshots } = ChromeUtils.importESModule(
 );
 
 function get_pixels(stringOrObject, width, height) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     // get the pixels out of the screenshot that we just took
     let img = document.createElementNS(XHTMLNS, "img");
     let imgPath;
@@ -49,6 +49,11 @@ function get_pixels(stringOrObject, width, height) {
       },
       { once: true }
     );
+    img.addEventListener(
+      "error",
+      () => reject(new Error(`Failed to load the thumbnail at ${imgPath}`)),
+      { once: true }
+    );
   });
 }
 
@@ -56,6 +61,14 @@ add_task(async function test_screenshot() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.pagethumbnails.capturing_disabled", false]],
   });
+
+  // The browser-cleanup-thumbnails timer removes every thumbnail that no
+  // expiration filter asks to keep, and nothing else knows about TEST_URL.
+  let keepTestThumbnail = callback => callback([TEST_URL]);
+  PageThumbs.addExpirationFilter(keepTestThumbnail);
+  registerCleanupFunction(() =>
+    PageThumbs.removeExpirationFilter(keepTestThumbnail)
+  );
 
   // take a screenshot of a blue page and save it as a blob
   const screenshotAsObject = await Screenshots.getScreenshotForURL(TEST_URL);

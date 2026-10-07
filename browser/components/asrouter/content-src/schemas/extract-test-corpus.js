@@ -4,9 +4,6 @@
 
 "use strict";
 
-const { CFRMessageProvider } = ChromeUtils.importESModule(
-  "resource:///modules/asrouter/CFRMessageProvider.sys.mjs"
-);
 const { OnboardingMessageProvider } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/OnboardingMessageProvider.sys.mjs"
 );
@@ -18,10 +15,6 @@ const CWD = Services.dirsvc.get("CurWorkD", Ci.nsIFile).path;
 const CORPUS_DIR = PathUtils.join(CWD, "corpus");
 
 const CORPUS = [
-  {
-    name: "CFRMessageProvider.messages.json",
-    provider: CFRMessageProvider,
-  },
   {
     name: "OnboardingMessageProvider.messages.json",
     provider: OnboardingMessageProvider,

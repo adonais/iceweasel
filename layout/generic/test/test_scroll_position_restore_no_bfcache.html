@@ -14,7 +14,7 @@ function handlePageShow(persisted) {
   ok(typeof persisted == "boolean", "Should get the persisted state from the pageshow event");
   ok(!persisted, "Shouldn't have gotten into the bfcache");
   is(childWin.getComputedStyle(childWin.document.body).color, "rgb(0, 255, 0)", "Sheet should have been applied");
-  let scroller = childWin.document.querySelector("#scroll");
+  let scroller = childWin.document.scrollingElement;
   if (loadCount == 0) {
     loadCount++;
     targetScrollPosition = childWin.innerHeight;

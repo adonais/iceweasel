@@ -1,0 +1,229 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin" type="text/css"?>
+<?xml-stylesheet href="chrome://mochikit/content/tests/SimpleTest/test.css" type="text/css"?>
+
+<window title="Menu Access Key Conflicts Test"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+
+  <label id="anchor" value="anchor"/>
+  <menupopup id="distinct">
+    <menuitem label="One" accesskey="o"/>
+    <menu label="Two" accesskey="t">
+      <menupopup>
+        <menuitem label="Three"/>
+        <menuitem label="Four"/>
+      </menupopup>
+    </menu>
+  </menupopup>
+  <menupopup id="none">
+    <menuitem label="One"/>
+    <menuseparator/>
+    <menuitem label="Two"/>
+  </menupopup>
+  <menupopup id="duplicate">
+    <menuitem label="Two" accesskey="t"/>
+    <menuitem label="Three" accesskey="T"/>
+    <menuitem label="Four" accesskey="f"/>
+  </menupopup>
+  <menupopup id="mixed">
+    <menuitem label="One" accesskey="o"/>
+    <menugroup>
+      <menuitem label="Two"/>
+    </menugroup>
+    <menuitem label="Three"/>
+  </menupopup>
+  <menupopup id="hidden">
+    <menuitem label="One" accesskey="o"/>
+    <menuitem label="Two" hidden="true"/>
+  </menupopup>
+  <menupopup id="disabled">
+    <menuitem label="One" accesskey="o"/>
+    <menuitem label="Two" disabled="true"/>
+    <menuitem label="Three" accesskey="o" disabled="true"/>
+    <menuitem label="Note" disabled="true" role="note"/>
+  </menupopup>
+  <menupopup id="tracked" accesskey-conflicts-bug="2073885">
+    <menuitem label="One" accesskey="o"/>
+    <menuitem label="Two" accesskey="o"/>
+    <menuitem label="Three"/>
+  </menupopup>
+  <menupopup id="intended">
+    <menuitem label="One" accesskey="o"/>
+    <menuitem label="Two" accesskey="o" intended-duplicate-accesskey="true"/>
+    <menuitem label="Three" accesskey="o"/>
+  </menupopup>
+  <menupopup id="intended-only">
+    <menuitem label="One" accesskey="o"/>
+    <menuitem label="Two" accesskey="o" intended-duplicate-accesskey="true"/>
+  </menupopup>
+  <menupopup id="extension">
+    <menuitem label="One" accesskey="o"/>
+    <menuitem label="Two" accesskey="o" class="webextension-menuitem"/>
+    <menuitem label="Three" accesskey="t" class="webextension-menuitem"/>
+    <menuitem label="Four" accesskey="t" class="webextension-menuitem"/>
+  </menupopup>
+
+  <script class="testbody" type="application/javascript">
+  <![CDATA[
+
+const { Assert } = ChromeUtils.importESModule(
+  "resource://testing-common/Assert.sys.mjs"
+);
+const assert = new Assert((err, message) =>
+  ok(!err, err ? err.message : message)
+);
+
+async function openAndCollectErrors(id) {
+  let errors = [];
+  let sentinel = new Promise(resolve => {
+    SpecialPowers.registerConsoleListener(msg => {
+      if (msg.message == "SENTINEL") {
+        resolve();
+      } else if (msg.errorMessage?.startsWith("AccessKeyConflictError:")) {
+        errors.push(msg.errorMessage);
+      }
+    });
+  });
+  let popup = document.getElementById(id);
+  let shown = new Promise(resolve =>
+    popup.addEventListener("popupshown", resolve, { once: true })
+  );
+  popup.openPopup(document.getElementById("anchor"), "after_start");
+  await shown;
+  // The check runs in a system-group listener, after this one.
+  await new Promise(resolve => SimpleTest.executeSoon(resolve));
+  let hidden = new Promise(resolve =>
+    popup.addEventListener("popuphidden", resolve, { once: true })
+  );
+  popup.hidePopup();
+  await hidden;
+  SpecialPowers.postConsoleSentinel();
+  await sentinel;
+  return errors;
+}
+
+add_task(async function testDistinctAccessKeys() {
+  is(
+    (await openAndCollectErrors("distinct")).length,
+    0,
+    "Distinct accesskeys on every item are fine, submenu items don't count"
+  );
+});
+
+add_task(async function testNoAccessKeys() {
+  is(
+    (await openAndCollectErrors("none")).length,
+    0,
+    "No accesskey on any item is fine"
+  );
+});
+
+add_task(async function testDuplicateAccessKey() {
+  let errors = await openAndCollectErrors("duplicate");
+  is(errors.length, 1, "A shared accesskey is reported once");
+  assert.stringContains(
+    errors[0],
+    `menupopup#duplicate: accesskey "t" is shared by "Two", "Three"`,
+    "Message names the key and both items"
+  );
+  assert.stringContains(
+    errors[0],
+    "Fix a shared accesskey",
+    "Message recommends remedies for the problem it found"
+  );
+  ok(
+    !errors[0].includes("Fix a missing accesskey"),
+    "Message recommends nothing for a problem it didn't find"
+  );
+});
+
+add_task(async function testIntendedDuplicate() {
+  let errors = await openAndCollectErrors("intended");
+  is(errors.length, 1, "Unmarked items sharing the key are still reported");
+  assert.stringContains(
+    errors[0],
+    `accesskey "o" is shared by "One", "Three"`,
+    "Unmarked items sharing the key are reported"
+  );
+  ok(
+    !errors[0].includes("Two"),
+    "An item with intended-duplicate-accesskey is left out"
+  );
+  is(
+    (await openAndCollectErrors("intended-only")).length,
+    0,
+    "A key shared only with a marked item is not a conflict"
+  );
+});
+
+add_task(async function testMixedAccessKeys() {
+  let errors = await openAndCollectErrors("mixed");
+  is(errors.length, 1, "Mixing items with and without an accesskey is reported once");
+  assert.stringContains(
+    errors[0],
+    `"Two", "Three" have no accesskey while "One" does`,
+    "Message names the items on both sides, including one in a menugroup"
+  );
+  assert.stringContains(
+    errors[0],
+    "Fix a missing accesskey",
+    "Message recommends remedies for the problem it found"
+  );
+  ok(
+    !errors[0].includes("Fix a shared accesskey"),
+    "Message recommends nothing for a problem it didn't find"
+  );
+});
+
+add_task(async function testHiddenItemIgnored() {
+  is(
+    (await openAndCollectErrors("hidden")).length,
+    0,
+    "A hidden item doesn't count as an item without an accesskey"
+  );
+});
+
+add_task(async function testTrackedMenuSkipped() {
+  is(
+    (await openAndCollectErrors("tracked")).length,
+    0,
+    "A menu naming its accesskey-conflicts bug is skipped"
+  );
+});
+
+add_task(async function testExtensionItemsSkipped() {
+  is(
+    (await openAndCollectErrors("extension")).length,
+    0,
+    "A WebExtension's items don't count, whatever their accesskeys"
+  );
+});
+
+add_task(async function testDisabledItems() {
+  let errors = await openAndCollectErrors("disabled");
+  is(errors.length, 1, "Disabled items are checked like any other");
+  assert.stringContains(
+    errors[0],
+    `accesskey "o" is shared by "One", "Three"`,
+    "A disabled item counts for a shared accesskey"
+  );
+  assert.stringContains(
+    errors[0],
+    `"Two" has no accesskey`,
+    "A disabled item counts for a missing accesskey"
+  );
+  ok(!errors[0].includes("Note"), "A disabled note counts for neither");
+});
+
+  ]]>
+  </script>
+
+  <body xmlns="http://www.w3.org/1999/xhtml">
+    <p id="display"/>
+    <div id="content" style="display: none"/>
+    <pre id="test"/>
+  </body>
+
+</window>

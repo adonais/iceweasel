@@ -106,6 +106,7 @@ add_task(async function engagement_type_dismiss_adaptive_autofill_origin() {
       ["browser.urlbar.autoFill.adaptiveHistory.enabled", true],
       ["browser.urlbar.autoFill.adaptiveHistory.minCharsThreshold", 0],
       ["browser.urlbar.autoFill.adaptiveHistory.useCountThreshold", 0],
+      ["browser.urlbar.autoFill.adaptiveHistory.urlMinPicks", 1],
     ],
   });
 
@@ -146,6 +147,7 @@ add_task(async function engagement_type_dismiss_adaptive_autofill_url() {
       ["browser.urlbar.autoFill.adaptiveHistory.enabled", true],
       ["browser.urlbar.autoFill.adaptiveHistory.minCharsThreshold", 0],
       ["browser.urlbar.autoFill.adaptiveHistory.useCountThreshold", 0],
+      ["browser.urlbar.autoFill.adaptiveHistory.urlMinPicks", 1],
     ],
   });
 
@@ -187,6 +189,7 @@ add_task(
         ["browser.urlbar.autoFill.adaptiveHistory.enabled", true],
         ["browser.urlbar.autoFill.adaptiveHistory.minCharsThreshold", 0],
         ["browser.urlbar.autoFill.adaptiveHistory.useCountThreshold", 0],
+        ["browser.urlbar.autoFill.adaptiveHistory.urlMinPicks", 1],
       ],
     });
 

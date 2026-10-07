@@ -13,9 +13,9 @@ internal class ReaderViewControlsPresenter(
     private val config: ReaderViewConfig,
 ) {
     /** Sets the initial state of the ReaderView controls and makes the controls visible. */
-    fun show(isListenEnabled: Boolean) {
+    fun show() {
         view.apply {
-            tryInflate(isListenEnabled)
+            tryInflate()
             setColorScheme(config.colorScheme)
             setFont(config.fontType)
             setFontSize(config.fontSize)

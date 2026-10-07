@@ -14,10 +14,10 @@ NSPR also provides "assert"-style macros and functions to aid in
 application debugging.
 
 - [Conditional Compilation and
-  Execution](#Conditional_Compilation_and_Execution)
-- [Log Types and Variables](#Log_Types_and_Variables)
-- [Logging Functions and Macros](#Logging_Functions_and_Macros)
-- [Use Example](#Use_Example)
+  Execution](#conditional-compilation-and-execution)
+- [Log Types and Variables](#log-types-and-variables)
+- [Logging Functions and Macros](#logging-functions-and-macros)
+- [Use Example](#use-example)
 
 (conditional-compilation-and-execution)=
 

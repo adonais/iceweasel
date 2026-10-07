@@ -93,6 +93,43 @@ var data = [
       encodeURIComponent("whatever://this/is/a@b/test.html")
     ),
   },
+  {
+    // Quoted strings should be searched, not navigated (bug 2070768).
+    wrong: '".local/bin"',
+    fixed: kSearchEngineURL.replace(
+      "{searchTerms}",
+      encodeURIComponent('".local/bin"')
+    ),
+    allowKeyword: true,
+    // The leading " lands in the host (accepted by the URL parser per bug
+    // 1815926); the trailing " in the path is percent-encoded as %22.
+    fixedSpec: 'http://".local/bin%22',
+    keywordAsSent: '".local/bin"',
+  },
+  {
+    // Consecutive dots in the host are collapsed; the result should still
+    // be searched rather than navigated.
+    wrong: '"..local/bin"',
+    fixed: kSearchEngineURL.replace(
+      "{searchTerms}",
+      encodeURIComponent('"..local/bin"')
+    ),
+    allowKeyword: true,
+    // fixupConsecutiveDotsHost collapses "..local to ".local.
+    fixedSpec: 'http://".local/bin%22',
+    keywordAsSent: '"..local/bin"',
+  },
+  {
+    // Wildcard-prefixed hostnames should be searched, not navigated.
+    wrong: "*.example.com",
+    fixed: kSearchEngineURL.replace(
+      "{searchTerms}",
+      encodeURIComponent("*.example.com")
+    ),
+    allowKeyword: true,
+    fixedSpec: "http://*.example.com/",
+    keywordAsSent: "*.example.com",
+  },
 ];
 
 var extProtocolSvc = Cc[
@@ -140,8 +177,23 @@ add_task(function test_fix_unknown_schemes() {
     if (item.inPrivateBrowsing) {
       flags |= Services.uriFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
     }
-    let { preferredURI } = Services.uriFixup.getFixupURIInfo(item.wrong, flags);
-    Assert.equal(preferredURI.spec, item.fixed);
+    if (item.allowKeyword) {
+      flags |= Services.uriFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
+    }
+    let info = Services.uriFixup.getFixupURIInfo(item.wrong, flags);
+    Assert.equal(info.preferredURI.spec, item.fixed);
+    if (item.fixedSpec) {
+      Assert.equal(
+        info.fixedURI.spec,
+        item.fixedSpec,
+        "fixedURI should be the http-fixed URI"
+      );
+      Assert.equal(
+        info.keywordAsSent,
+        item.keywordAsSent,
+        "keywordAsSent should be the original input"
+      );
+    }
   }
 });
 

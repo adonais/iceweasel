@@ -444,16 +444,11 @@ class nsCocoaUtils {
   static mozilla::TimeStamp GetEventTimeStamp(NSTimeInterval aEventTime);
 
   /**
-   * Check whether double clicking on the titlebar should cause the window to
-   * zoom (maximize).
+   * Run the action that the "Double-click a window's title bar to" system
+   * setting asks for on aWindow. Called when a double click lands in one of
+   * our own draggable regions, which stand in for the titlebar that we hide.
    */
-  static bool ShouldZoomOnTitlebarDoubleClick();
-
-  /**
-   * Check whether double clicking on the titlebar should cause the window to
-   * minimize.
-   */
-  static bool ShouldMinimizeOnTitlebarDoubleClick();
+  static void PerformTitlebarDoubleClickAction(NSWindow* aWindow);
 
   /**
    * Get the current video capture permission status.

@@ -19,7 +19,7 @@
 
 ## Contribute
 
-* [Contributing (Writing code, translating the app, testing the app)](../../docs/shared/android/CONTRIBUTING.md)
+* [Contributing (Writing code, translating the app, testing the app)](/mobile/android/shared/android/CONTRIBUTING.md)
 * [List of issues](https://codetribute.mozilla.org/projects/focus?tag%3Dgood-first-bug)
 * [Mozilla Community Participation Guidelines](https://www.mozilla.org/en-US/about/governance/policies/participation/)
 
@@ -31,7 +31,7 @@
 ## Developer Documentation
 
 * [Architecture decisions](Architecture-Decisions.md)
-* [Automation](../../docs/shared/android/automation.md)
+* [Automation](/mobile/android/shared/android/automation.md)
 * [Content blocking](Content-blocking.md)
 * [Multisession architecture](Multisession-architecture.md)
 * [Telemetry](Telemetry.md)

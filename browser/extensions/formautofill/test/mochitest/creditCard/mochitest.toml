@@ -11,9 +11,10 @@ support-files = [
   "!/browser/extensions/formautofill/test/mochitest/formautofill_common.js",
   "!/browser/extensions/formautofill/test/mochitest/formautofill_parent_utils.js",
 ]
-skip-if = [
-  "os == 'android'", # bug 1730213
-  "xorigin",
+# browser/ is not built for Android (bug 1730213), and credit card autofill is
+# refused in cross-origin iframes by design.
+run-if = [
+  "os != 'android' && !xorigin",
 ]
 
 ["test_basic_creditcard_autocomplete_form.html"]

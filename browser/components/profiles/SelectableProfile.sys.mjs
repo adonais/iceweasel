@@ -7,8 +7,8 @@ import { DownloadPaths } from "resource://gre/modules/DownloadPaths.sys.mjs";
 import { FileUtils } from "resource://gre/modules/FileUtils.sys.mjs";
 import { ProfilesDatastoreService } from "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs";
 import { SelectableProfileService } from "resource:///modules/profiles/SelectableProfileService.sys.mjs";
-import { BackupService } from "resource:///modules/backup/BackupService.sys.mjs";
-import { ArchiveEncryptionState } from "resource:///modules/backup/ArchiveEncryptionState.sys.mjs";
+import { BackupService } from "moz-src:///browser/components/backup/BackupService.sys.mjs";
+import { ArchiveEncryptionState } from "moz-src:///browser/components/backup/ArchiveEncryptionState.sys.mjs";
 
 const lazy = {};
 

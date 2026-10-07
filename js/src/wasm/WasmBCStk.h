@@ -248,20 +248,20 @@ struct Stk {
   void showStackElem() const {
     switch (kind_) {
       case MemI32:
-        fprintf(stderr, "MemI32()");
+        fprintf(stderr, "MemI32(%u)", offs());
         break;
       case MemI64:
-        fprintf(stderr, "MemI64()");
+        fprintf(stderr, "MemI64(%u)", offs());
         break;
       case MemF32:
-        fprintf(stderr, "MemF32()");
+        fprintf(stderr, "MemF32(%u)", offs());
         break;
       case MemF64:
-        fprintf(stderr, "MemF64()");
+        fprintf(stderr, "MemF64(%u)", offs());
         break;
 #  ifdef ENABLE_JIT_SIMD
       case MemV128:
-        fprintf(stderr, "MemV128()");
+        fprintf(stderr, "MemV128(%u)", offs());
         break;
 #  endif
       case MemRef:
@@ -339,6 +339,21 @@ struct Stk {
 };
 
 using StkVector = Vector<Stk, 0, SystemAllocPolicy>;
+
+#ifdef DEBUG
+static inline void ShowStack(const StkVector& stk, const char* who) {
+  fprintf(stderr, "Stack(%s) [", who);
+  size_t n = stk.length();
+  for (size_t i = 0; i < n; i++) {
+    const Stk& v = stk[i];
+    v.showStackElem();
+    if (i + 1 < n) {
+      fprintf(stderr, ", ");
+    }
+  }
+  fprintf(stderr, "]\n");
+}
+#endif
 
 }  // namespace wasm
 }  // namespace js

@@ -4,6 +4,9 @@
 let { LoginBreaches } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aboutlogins/LoginBreaches.sys.mjs"
 );
+let { BreachAlertsData } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/passwordmgr/BreachAlertsData.sys.mjs"
+);
 let { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"
 );
@@ -20,6 +23,10 @@ const { OSKeyStore } = ChromeUtils.importESModule(
 
 let { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
+);
+
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
 );
 
 // Always pretend OS Auth is enabled in this dir.
@@ -79,7 +86,13 @@ const CryptoErrors = {
   INVALID_ARG_ENCRYPT: "Need at least one plaintext to encrypt",
   INVALID_ARG_DECRYPT: "Need at least one ciphertext to decrypt",
   DECRYPTION_FAILURE: "Couldn't decrypt string",
+  PRIMARY_PASSWORD_LOCKED: "Primary password locked",
 };
+
+// The Rust store's counterpart of DECRYPTION_FAILURE below: operations that
+// race an unanswered primary password prompt reject with it, and about:logins
+// does not catch that on its breach alert path (Bug 2070874).
+PromiseTestUtils.allowMatchingRejectionsGlobally(/Primary password locked/);
 
 async function addLogin(login) {
   const result = await Services.logins.addLoginAsync(login);
@@ -102,7 +115,7 @@ async function addLogin(login) {
 let EXPECTED_BREACH = null;
 let EXPECTED_ERROR_MESSAGE = null;
 add_setup(async function setup_head() {
-  const db = RemoteSettings(LoginBreaches.REMOTE_SETTINGS_COLLECTION).db;
+  const db = RemoteSettings(BreachAlertsData.REMOTE_SETTINGS_COLLECTION).db;
   if (EXPECTED_BREACH) {
     await db.create(EXPECTED_BREACH, {
       useRecordId: true,
@@ -110,7 +123,7 @@ add_setup(async function setup_head() {
   }
   await db.importChanges({}, Date.now());
   if (EXPECTED_BREACH) {
-    await RemoteSettings(LoginBreaches.REMOTE_SETTINGS_COLLECTION).emit(
+    await RemoteSettings(BreachAlertsData.REMOTE_SETTINGS_COLLECTION).emit(
       "sync",
       { data: { current: [EXPECTED_BREACH] } }
     );
@@ -176,6 +189,10 @@ add_setup(async function setup_head() {
       "NotFoundError: No such JSWindowActor 'MarionetteEvents'"
     ) {
       // Ignore MarionetteEvents error (Bug 1730837, Bug 1710079).
+      return;
+    }
+    if (msg.errorMessage.includes(CryptoErrors.PRIMARY_PASSWORD_LOCKED)) {
+      // See the PromiseTestUtils call above.
       return;
     }
     if (msg.errorMessage.includes(CryptoErrors.DECRYPTION_FAILURE)) {

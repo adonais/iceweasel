@@ -122,18 +122,10 @@ Not intended for user configuration, but is programmatically updated. Used for t
 
 When this is set to `true` the Discovery Stream experience will show up if `enabled` is also `true` on `browser.newtabpage.activity-stream.discoverystream.config`. Otherwise the old Activity Stream experience will be shown.
 
-### `browser.newtabpage.activity-stream.discoverystream.endpointSpocsClear`
-
-- Type: `string (URL)`
-- Default: `https://spocs.getpocket.com/user`
-- Pref Type: AS
-
-Endpoint for when a user opts-out of sponsored content to delete the corresponding data from the ad server.
-
 ### `browser.newtabpage.activity-stream.discoverystream.endpoints`
 
 - Type: `string (URLs, CSV)`
-- Default: `https://getpocket.cdn.mozilla.net/,https://spocs.getpocket.com/`
+- Default: `https://getpocket.cdn.mozilla.net/,https://firefox-api-proxy.cdn.mozilla.net/,https://merino.services.mozilla.com/,https://ads.mozilla.org/`
 - Pref Type: AS
 
 A list of endpoints that are allowed to be used by Discovery Stream for remote content (eg: story metadata) and configuration (eg: remote layout definitions for experimentation).

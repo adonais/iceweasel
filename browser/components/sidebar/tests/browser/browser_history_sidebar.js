@@ -43,6 +43,7 @@ const SORT_BUTTONS = {
   site: "_menuSortBySite",
   dateSite: "_menuSortByDateSite",
   lastVisited: "_menuSortByLastVisited",
+  mostVisited: "_menuSortByMostVisited",
 };
 
 async function sortBy(sortOption, { component, contentWindow }) {
@@ -60,6 +61,12 @@ async function sortBy(sortOption, { component, contentWindow }) {
     { attributes: true, attributeFilter: ["checked"] },
     () => sortButton.hasAttribute("checked")
   );
+  await TestUtils.waitForCondition(
+    () =>
+      component.controller.historyCache.sortOption === sortOption.toLowerCase(),
+    `History is sorted by ${sortOption}.`
+  );
+  await component.updateComplete;
 }
 
 // TO DO - move below helper into universal helper with Places Bug 1954843
@@ -280,7 +287,13 @@ async function test_history_search({ component, contentWindow }) {
 
 add_task(async function test_history_search_for_all_sort_options() {
   const { component, contentWindow } = await showHistorySidebar();
-  const sortOptions = ["date", "site", "dateSite", "lastVisited"];
+  const sortOptions = [
+    "date",
+    "site",
+    "dateSite",
+    "lastVisited",
+    "mostVisited",
+  ];
   for (const option of sortOptions) {
     info(`Testing search with sort option: ${option}`);
     await sortBy(option, { component, contentWindow });
@@ -349,6 +362,15 @@ add_task(async function test_history_sort() {
     { childList: true, subtree: true },
     () => component.lists.length === 1
   );
+  Assert.equal(
+    component.lists[0].tabItems.length,
+    URLs.length,
+    "There is a single card with a row for each site."
+  );
+
+  info("Sort history by most visited.");
+  await sortBy("mostVisited", { component, contentWindow });
+  Assert.equal(component.lists.length, 1, "There is a single card.");
   Assert.equal(
     component.lists[0].tabItems.length,
     URLs.length,

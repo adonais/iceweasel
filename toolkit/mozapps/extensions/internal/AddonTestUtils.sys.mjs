@@ -687,6 +687,8 @@ export var AddonTestUtils = {
     };
 
     let FakeCertDB = {
+      _genuine: Cc[CERTDB_CONTRACTID].createInstance(Ci.nsIX509CertDB),
+
       init() {
         for (let property of Object.keys(
           this._genuine.QueryInterface(Ci.nsIX509CertDB)

@@ -202,6 +202,7 @@ struct BootstrapConfig;
  * @note           If the binary is linked against the standalone XPCOM glue,
  *                 XPCOMGlueStartup() should be called before this method.
  */
+MOZ_CAN_RUN_SCRIPT_BOUNDARY
 int XRE_main(int argc, char* argv[], const mozilla::BootstrapConfig& aConfig);
 
 /**
@@ -291,7 +292,7 @@ bool XRE_IsE10sParentProcess();
                            process_bin_type, procinfo_typename,               \
                            webidl_typename, allcaps_name)                     \
   bool XRE_Is##proc_typename##Process();
-#include "mozilla/GeckoProcessTypes.h"
+#include "mozilla/GeckoProcessTypes.inc"
 #undef GECKO_PROCESS_TYPE
 
 bool XRE_IsSocketProcess();

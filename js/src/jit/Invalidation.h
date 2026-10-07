@@ -45,7 +45,8 @@ class IonScriptKey {
 // single IonScript doesn't require an allocation.
 using IonScriptKeyVector = JS::GCVector<IonScriptKey, 1, SystemAllocPolicy>;
 
-// Called from Zone::discardJitCode().
+// Called from Zone::discardJitCode(). Invalidates the Ion code in the zone,
+// except for the realms that are preserving their JIT code.
 void InvalidateAll(JS::GCContext* gcx, JS::Zone* zone);
 void FinishInvalidation(JS::GCContext* gcx, JSScript* script);
 

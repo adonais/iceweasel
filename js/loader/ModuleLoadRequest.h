@@ -66,8 +66,8 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   void SetReady() override;
   void Cancel() override { mLoader->Cancel(this); };
 
-  void SetImport(Handle<JSScript*> aReferrerScript,
-                 Handle<JSObject*> aModuleRequestObj, Handle<Value> aPayload);
+  void SetImport(Handle<Value> aReferrer, Handle<JSObject*> aModuleRequestObj,
+                 Handle<Value> aPayload);
   void ClearImport();
 
   void ModuleLoaded();
@@ -156,7 +156,9 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   // failure.
   RefPtr<ModuleScript> mModuleScript;
 
-  Heap<JSScript*> mReferrerScript;
+  // The referrer value passed to the HostLoadImportedModule hook, to be passed
+  // back to FinishLoadingImportedModule.
+  Heap<Value> mReferrerValue;
   Heap<JSObject*> mModuleRequestObj;
   Heap<Value> mPayload;
 };

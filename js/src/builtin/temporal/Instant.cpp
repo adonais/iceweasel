@@ -32,6 +32,7 @@
 #include "builtin/temporal/ZonedDateTime.h"
 #include "gc/AllocKind.h"
 #include "gc/Barrier.h"
+#include "jit/InlinableNatives.h"
 #include "js/CallArgs.h"
 #include "js/CallNonGenericMethod.h"
 #include "js/Class.h"
@@ -369,7 +370,7 @@ InstantObject* js::temporal::CreateTemporalInstant(
 
   // Step 4.
   object->initFixedSlotTyped(InstantObject::SECONDS_SLOT,
-                             NumberValue(epochNanoseconds.seconds));
+                             DoubleValue(epochNanoseconds.seconds));
   object->initFixedSlotTyped(InstantObject::NANOSECONDS_SLOT,
                              Int32Value(epochNanoseconds.nanoseconds));
 
@@ -399,7 +400,7 @@ static InstantObject* CreateTemporalInstant(JSContext* cx, const CallArgs& args,
   // Step 4.
   auto epochNs = ToEpochNanoseconds(epochNanoseconds);
   object->initFixedSlotTyped(InstantObject::SECONDS_SLOT,
-                             NumberValue(epochNs.seconds));
+                             DoubleValue(epochNs.seconds));
   object->initFixedSlotTyped(InstantObject::NANOSECONDS_SLOT,
                              Int32Value(epochNs.nanoseconds));
 
@@ -1279,7 +1280,8 @@ static const JSFunctionSpec Instant_prototype_methods[] = {
 };
 
 static const JSPropertySpec Instant_prototype_properties[] = {
-    JS_PSG("epochMilliseconds", Instant_epochMilliseconds, 0),
+    JS_INLINABLE_PSG("epochMilliseconds", Instant_epochMilliseconds, 0,
+                     InstantEpochMilliseconds),
     JS_PSG("epochNanoseconds", Instant_epochNanoseconds, 0),
     JS_STRING_SYM_PS(toStringTag, "Temporal.Instant", JSPROP_READONLY),
     JS_PS_END,

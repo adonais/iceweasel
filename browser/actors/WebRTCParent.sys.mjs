@@ -555,9 +555,14 @@ function prompt(aActor, aBrowser, aRequest) {
     }
   }
 
-  // If aBrowser is sidebar browser, its ownerDocument is sidebar panel document.
-  // We need top chrome window's document to access notification elements.
-  let chromeDoc = aBrowser.browsingContext.topChromeWindow?.document;
+  // promptBrowser drives UI placement only. Permissions, grace periods and
+  // indicators stay keyed on aBrowser, since that's what owns the stream.
+  let promptBrowser = getPromptBrowser(aBrowser, aRequest);
+
+  // If promptBrowser is sidebar browser, its ownerDocument is sidebar panel
+  // document. We need top chrome window's document to access notification
+  // elements.
+  let chromeDoc = promptBrowser.browsingContext.topChromeWindow?.document;
   const localization = new Localization(
     ["browser/webrtcIndicator.ftl", "branding/brand.ftl"],
     true
@@ -596,6 +601,7 @@ function prompt(aActor, aBrowser, aRequest) {
     originToShow = lazy.webrtcUI.getHostOrExtensionName(principal.URI);
   }
   let notification; // Used by action callbacks.
+  let stopWatchingPromptWindow; // Set when prompting in a document PiP window.
   const actionL10nIds = [{ id: "webrtc-action-allow" }];
 
   let notificationSilencingEnabled = Services.prefs.getBoolPref(
@@ -630,7 +636,10 @@ function prompt(aActor, aBrowser, aRequest) {
               permissionName,
               lazy.SitePermissions.BLOCK,
               lazy.SitePermissions.SCOPE_TEMPORARY,
-              notification.browser
+              // Resolved now rather than captured above: tearing the tab into
+              // its own window replaces the browser element, and temporary
+              // permissions are keyed on it.
+              aActor.getBrowser()
             );
           }
         },
@@ -644,7 +653,7 @@ function prompt(aActor, aBrowser, aRequest) {
             permissionName,
             lazy.SitePermissions.BLOCK,
             lazy.SitePermissions.SCOPE_PERSISTENT,
-            notification.browser
+            aActor.getBrowser()
           );
         },
       },
@@ -676,9 +685,9 @@ function prompt(aActor, aBrowser, aRequest) {
           // Denying a camera / microphone prompt means we set a temporary or
           // persistent permission block. There may still be active grace period
           // permissions at this point. We need to remove them.
-          let notificationBrowser = notification.browser;
+          const actorBrowser = aActor.getBrowser();
           clearTemporaryGrants(
-            notificationBrowser,
+            actorBrowser,
             reqVideoInput === "Camera",
             !!reqAudioInput
           );
@@ -690,28 +699,28 @@ function prompt(aActor, aBrowser, aRequest) {
             if (!isPersistent) {
               // After a temporary block, having permissions.query() calls
               // persistently report "granted" would be misleading
-              maybeClearAlwaysAsk(principal, "microphone", notificationBrowser);
+              maybeClearAlwaysAsk(principal, "microphone", actorBrowser);
             }
             lazy.SitePermissions.setForPrincipal(
               principal,
               "microphone",
               lazy.SitePermissions.BLOCK,
               scope,
-              notificationBrowser
+              actorBrowser
             );
           }
           if (reqVideoInput) {
             if (!isPersistent && !sharingScreen) {
               // After a temporary block, having permissions.query() calls
               // persistently report "granted" would be misleading
-              maybeClearAlwaysAsk(principal, "camera", notificationBrowser);
+              maybeClearAlwaysAsk(principal, "camera", actorBrowser);
             }
             lazy.SitePermissions.setForPrincipal(
               principal,
               sharingScreen ? "screen" : "camera",
               lazy.SitePermissions.BLOCK,
               scope,
-              notificationBrowser
+              actorBrowser
             );
           }
         },
@@ -785,6 +794,11 @@ function prompt(aActor, aBrowser, aRequest) {
             menuPopup._commandEventListener = null;
           }
         }
+      }
+
+      if (aTopic == "removed") {
+        stopWatchingPromptWindow?.();
+        stopWatchingPromptWindow = null;
       }
 
       if (aTopic == "removed" && notification && withoutUserResponse) {
@@ -1365,7 +1379,7 @@ function prompt(aActor, aBrowser, aRequest) {
   }
 
   notification = chromeDoc.defaultView.PopupNotifications.show(
-    aBrowser,
+    promptBrowser,
     "webRTC-shareDevices",
     message,
     anchorId,
@@ -1374,6 +1388,24 @@ function prompt(aActor, aBrowser, aRequest) {
     options
   );
   notification.callID = aRequest.callID;
+
+  if (promptBrowser != aBrowser) {
+    // Closing a window tears its tabs down without firing TabClose, so
+    // PopupNotifications never fires its removal callback for a prompt in a
+    // document PiP window. Deny the request here instead, or the site is left
+    // holding a promise that never settles, since its window outlives the PiP.
+    const promptWindow = chromeDoc.defaultView;
+    const onUnload = () => {
+      stopWatchingPromptWindow = null;
+      if (!aActor.manager || aActor.manager.isClosed) {
+        return;
+      }
+      aActor.denyRequest(aRequest);
+    };
+    promptWindow.addEventListener("unload", onUnload, { once: true });
+    stopWatchingPromptWindow = () =>
+      promptWindow.removeEventListener("unload", onUnload);
+  }
 }
 
 /**
@@ -1527,17 +1559,24 @@ function allowedOrActiveCameraOrMicrophone(browser) {
 }
 
 function removePrompt(aBrowser, aCallId) {
-  let chromeWin = aBrowser.browsingContext?.topChromeWindow;
-  if (!chromeWin) {
-    return;
+  // The prompt lives in exactly one window: either aBrowser's, or that of a
+  // document PiP window opened by aBrowser. See getPromptBrowser().
+  if (!removePromptFrom(aBrowser, aCallId)) {
+    removePromptFrom(getDocumentPiPBrowser(aBrowser), aCallId);
   }
-  let notification = chromeWin.PopupNotifications.getNotification(
+}
+
+function removePromptFrom(aBrowser, aCallId) {
+  let chromeWin = aBrowser?.browsingContext?.topChromeWindow;
+  let notification = chromeWin?.PopupNotifications.getNotification(
     "webRTC-shareDevices",
     aBrowser
   );
-  if (notification && notification.callID == aCallId) {
-    notification.remove();
+  if (!notification || notification.callID != aCallId) {
+    return false;
   }
+  notification.remove();
+  return true;
 }
 
 /**
@@ -1673,6 +1712,62 @@ function onCameraPromptShown(doc, isHandlingUserInput) {
   // Pass deviceId and mediaSource to make sure they're up to date,
   // matching the user selection.
   webrtcPreview?.startPreview({ deviceId, mediaSource: "camera" });
+}
+
+/**
+ * If aBrowser is the opener of a document picture-in-picture window, return
+ * that window's browser element, otherwise null.
+ *
+ * @param {Element} aBrowser - Browser element of the potential PiP opener.
+ * @returns {Element?} Browser element of the PiP window, if any.
+ */
+function getDocumentPiPBrowser(aBrowser) {
+  const openerBC = aBrowser.browsingContext;
+  if (!openerBC || openerBC.isDocumentPiP) {
+    return null;
+  }
+  const pipBC = openerBC.group
+    .getToplevels()
+    .find(bc => bc.isDocumentPiP && bc.opener == openerBC);
+  return pipBC?.embedderElement ?? null;
+}
+
+/**
+ * Pick the browser element to anchor the prompt to.
+ *
+ * Returns the browser of a document picture-in-picture window opened by
+ * aBrowser, when that window has focus. Prompting there puts the prompt where
+ * the user just interacted, instead of in a background window where
+ * PopupNotifications would suppress it until they went looking.
+ *
+ * Returns aBrowser in every other case, including all camera, microphone and
+ * speaker requests. Only screen sharing redirects, because only screen sharing
+ * has the use case: presenting from a meeting PiP, where the stream has to
+ * outlive the PiP and so must belong to the opener. We can widen this later if
+ * other prompts turn out to want it.
+ *
+ * @param {Element} aBrowser - Browser element the request came from.
+ * @param {object} aRequest - The webrtc:Request data.
+ * @returns {Element} Browser element to anchor the prompt to.
+ */
+function getPromptBrowser(aBrowser, aRequest) {
+  if (!aRequest.sharingScreen) {
+    return aBrowser;
+  }
+  const activeWindow = Services.focus.activeWindow;
+  const pipBrowser = getDocumentPiPBrowser(aBrowser);
+  if (
+    activeWindow &&
+    activeWindow == pipBrowser?.browsingContext?.topChromeWindow &&
+    // Keep the prompt in the opener while it's in DOM fullscreen. The spoofing
+    // protections in browser-fullScreenAndPointerLock.js only ever see their
+    // own window's PopupNotifications, so a prompt in the PiP would neither
+    // exit fullscreen nor be cancelled by entering it.
+    !aBrowser.browsingContext?.topChromeWindow?.document.fullscreenElement
+  ) {
+    return pipBrowser;
+  }
+  return aBrowser;
 }
 
 function isSidebarBrowser(browser) {

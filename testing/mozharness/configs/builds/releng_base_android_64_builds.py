@@ -33,8 +33,6 @@ config = {
     #########################################################################
     #########################################################################
     "platform": "android",
-    "stage_platform": "android",
-    "enable_max_vsize": False,
     "env": {
         "MOZBUILD_STATE_PATH": os.path.join(os.getcwd(), ".mozbuild"),
         "DISPLAY": ":2",

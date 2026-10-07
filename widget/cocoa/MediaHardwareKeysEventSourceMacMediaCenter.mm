@@ -280,20 +280,29 @@ void MediaHardwareKeysEventSourceMacMediaCenter::SetSupportedMediaKeys(
 
 void MediaHardwareKeysEventSourceMacMediaCenter::SetPositionState(
     const Maybe<PositionState>& aState) {
-  if (aState.isSome()) {
-    MPNowPlayingInfoCenter* center = [MPNowPlayingInfoCenter defaultCenter];
-    NSMutableDictionary* nowPlayingInfo =
-        [[center.nowPlayingInfo mutableCopy] autorelease]
-            ?: [NSMutableDictionary dictionary];
+  MPNowPlayingInfoCenter* center = [MPNowPlayingInfoCenter defaultCenter];
+  NSDictionary* currentInfo = center.nowPlayingInfo;
+  if (!currentInfo && aState.isNothing()) {
+    return;
+  }
 
+  NSMutableDictionary* nowPlayingInfo = [[currentInfo mutableCopy] autorelease]
+                                            ?: [NSMutableDictionary dictionary];
+
+  if (aState.isSome()) {
     [nowPlayingInfo setObject:@(aState->mDuration)
                        forKey:MPMediaItemPropertyPlaybackDuration];
     [nowPlayingInfo setObject:@(aState->CurrentPlaybackPosition())
                        forKey:MPNowPlayingInfoPropertyElapsedPlaybackTime];
     [nowPlayingInfo setObject:@(aState->mPlaybackRate)
                        forKey:MPNowPlayingInfoPropertyPlaybackRate];
-    center.nowPlayingInfo = nowPlayingInfo;
+  } else {
+    [nowPlayingInfo removeObjectForKey:MPMediaItemPropertyPlaybackDuration];
+    [nowPlayingInfo
+        removeObjectForKey:MPNowPlayingInfoPropertyElapsedPlaybackTime];
+    [nowPlayingInfo removeObjectForKey:MPNowPlayingInfoPropertyPlaybackRate];
   }
+  center.nowPlayingInfo = nowPlayingInfo;
 }
 
 }  // namespace widget

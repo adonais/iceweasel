@@ -1,17 +1,34 @@
-# Address browser tests run with the Rust address store enabled, so it serves
-# every address read and write.
+# The address browser tests, run with the Rust address store serving every
+# address read and write.
 #
-# head.js asserts the backend actually switched, since a migration that quietly
-# fell back to JSON would let these pass while proving nothing.
+# The include at the end of this file runs everything in test/browser/address/
+# under the prefs in [DEFAULT]. The entries listed here are the address tests
+# that live in test/browser/ instead, whose manifest also holds credit card,
+# passport and ML tests that must not run against this store; each is a shim
+# that loads its original rather than a copy.
+#
+# Every file here is a second run of a test that lives elsewhere, so this
+# directory can be deleted whole once the Rust store is the only one.
+#
+# This suite is the only coverage of the read path: the xpcshell comparisons run
+# both stores through the same AddressRecord.computeFields, so they agree even
+# when the recompute is wrong. Only filling a form from a stored record and
+# checking the DOM catches that.
 #
 # Addresses only. Credit cards are not copied into Rust, and the open Rust store
-# races the NSS token reset their tests perform (Bug 2041273).
+# races the NSS token reset their tests perform (bug 2041273).
 [DEFAULT]
-head = "head.js"
+dupe-manifest = true
 prefs = [
   "extensions.formautofill.addresses.enabled=true",
   "extensions.formautofill.skipProgrammaticCheckForTests=true",
   "extensions.formautofill.addresses.storage.rust.enabled=true",
+  # State Firefox writes for itself once the migration has copied the profile
+  # over, set here so the store is already handed over when the first test runs.
+  # Writing it mid-session instead would put it out of step with the startup
+  # snapshot mochitest restores prefs to after every test, and the restore would
+  # hand the rest of this manifest back to the JSON store.
+  "extensions.formautofill.addresses.storage.rust.active=true",
 ]
 support-files = [
   "head_address.js",
@@ -19,4 +36,40 @@ support-files = [
   "../../fixtures/**",
 ]
 
-["browser_address_migration.js"]
+["browser_autofill_address_housenumber.js"]
+
+["browser_autofill_address_level.js"]
+
+["browser_autofill_address_name.js"]
+
+["browser_autofill_address_select.js"]
+
+["browser_autofill_address_select_inexact.js"]
+
+["browser_autofill_address_select_match_isoid.js"]
+
+["browser_autofill_address_textarea.js"]
+
+["browser_autofill_duplicate_fields.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1917060
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1917060
+]
+
+["browser_clearPopulatedForm.js"]
+
+["browser_editAddressDialog.js"]
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1788900
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1788900
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && socketprocess_networking && verify-standalone",
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug && socketprocess_networking && verify-standalone",
+]
+
+["browser_fillclear_events.js"]
+
+["browser_manageAddressesDialog.js"]
+
+["browser_previewFormFields.js"]
+
+["include:../address/browser.toml"]

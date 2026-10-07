@@ -20,12 +20,16 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AutofillDataTypes: "resource://gre/modules/shared/AutofillDataTypes.sys.mjs",
   CreditCard: "resource://gre/modules/CreditCard.sys.mjs",
-  AddressStorageMigrator: "resource://autofill/AddressStorageMigrator.sys.mjs",
+  AddressStorageMigrator: "resource://autofill/AutofillStorageMigrator.sys.mjs",
+  CreditCardStorageMigrator:
+    "resource://autofill/AutofillStorageMigrator.sys.mjs",
   JSONFile: "resource://gre/modules/JSONFile.sys.mjs",
   OSKeyStore: "resource://gre/modules/OSKeyStore.sys.mjs",
   Passports: "resource://autofill/PassportStorage.sys.mjs",
   RustAutofillAddressesAdapter:
     "resource://autofill/RustAutofillAddressStorage.sys.mjs",
+  RustAutofillCreditCardsAdapter:
+    "resource://autofill/RustAutofillCreditCardStorage.sys.mjs",
   RustAutofillStore: "resource://autofill/RustAutofillStore.sys.mjs",
 });
 
@@ -56,6 +60,19 @@ const ADDRESS_RUST_ACTIVE_PREF =
 const ADDRESS_RUST_MIGRATION_TEST_PREF =
   "extensions.formautofill.addresses.storage.rust.runMigrationTest";
 
+// The credit card counterparts of the three above. Kept separate rather than
+// derived from a collection name so that each can be flipped on its own: the
+// two migrations are independent and a profile can have moved one and not the
+// other.
+const CREDIT_CARD_RUST_ENABLED_PREF =
+  "extensions.formautofill.creditCards.storage.rust.enabled";
+
+const CREDIT_CARD_RUST_ACTIVE_PREF =
+  "extensions.formautofill.creditCards.storage.rust.active";
+
+const CREDIT_CARD_RUST_MIGRATION_TEST_PREF =
+  "extensions.formautofill.creditCards.storage.rust.runMigrationTest";
+
 // Observed rather than read once: the migration sets this mid-session, and a
 // snapshot taken before that would keep handing back the JSON collection until
 // the next restart.
@@ -66,97 +83,14 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-class Addresses extends AddressesBase {
-  /**
-   * The write half of the migration contract. Each of these writes `_data`
-   * directly, so a record keeps the guid, timestamps and sync metadata it was
-   * handed, and none of them notifies or announces anything.
-   *
-   * The derived fields are stripped and recomputed, as _saveRecord() does,
-   * since a record read out of a store that computes them on read arrives with
-   * them already set and this store persists what it is given.
-   */
-  /**
-   * @param {Array<object>} records
-   * @returns {Promise<Array<{guid: string}|{error: string}>>} One entry per
-   *   record, in order.
-   */
-  async addManyWithMeta(records) {
-    const results = [];
-    for (const record of records) {
-      const index = this._findIndexByGUID(record.guid, {
-        includeDeleted: true,
-      });
-      if (index != -1) {
-        if (!this._data[index].deleted) {
-          results.push({ error: `a record with guid ${record.guid} exists` });
-          continue;
-        }
-        // A tombstone here and a live record in the source means the source
-        // has it back, from sync or from the store it was copied to. Unlike a
-        // store with a column per field, this one can drop the tombstone and
-        // take the record.
-        this._data.splice(index, 1);
-      }
-      this._data.push(await this.#recordForMigration(record));
-      results.push({ guid: record.guid });
-    }
-    this._store.saveSoon();
-    return results;
-  }
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "creditCardRustActive",
+  CREDIT_CARD_RUST_ACTIVE_PREF,
+  false
+);
 
-  /**
-   * @param {Array<object>} records
-   * @returns {Promise<Array<{guid: string}|{error: string}>>}
-   */
-  async updateManyWithMeta(records) {
-    const results = [];
-    for (const record of records) {
-      const index = this._findIndexByGUID(record.guid);
-      if (index == -1) {
-        results.push({ error: `no record with guid ${record.guid}` });
-        continue;
-      }
-      this._data[index] = await this.#recordForMigration(record);
-      results.push({ guid: record.guid });
-    }
-    this._store.saveSoon();
-    return results;
-  }
-
-  /**
-   * Delete by guid, through remove() so that the rule about which deletions
-   * leave a tombstone stays in one place. The one write here that announces
-   * itself, once per record.
-   *
-   * @param {Array<string>} guids
-   * @returns {Promise<Array<{guid: string}|{error: string}>>}
-   */
-  async removeMany(guids) {
-    const results = [];
-    for (const guid of guids) {
-      if (!this._findByGUID(guid)) {
-        results.push({ error: `no record with guid ${guid}` });
-        continue;
-      }
-      this.remove(guid);
-      results.push({ guid });
-    }
-    return results;
-  }
-
-  async #recordForMigration(record) {
-    // Whatever the record arrives with, including no `_sync` at all: a store
-    // that cannot export its sync metadata leaves the record looking unsynced,
-    // which costs one upload. Keeping the entry this store already had would
-    // cost more -- a counter of 0 from before the other store took over would
-    // suppress the upload of everything done since.
-    const stored = { ...record, version: this.version };
-    await this._stripComputedFields(stored);
-    await this.computeFields(stored);
-    return stored;
-  }
-}
+class Addresses extends AddressesBase {}
 
 class CreditCards extends CreditCardsBase {
   constructor(store) {
@@ -190,6 +124,7 @@ export class FormAutofillStorage extends FormAutofillStorageBase {
   // The switch in progress, if any. Kept so the next one queues behind it
   // rather than copying over the same pair of stores at the same time.
   #addressSwitch = null;
+  #creditCardSwitch = null;
 
   /**
    * Settles which store serves addresses at startup, once the JSON store has
@@ -204,19 +139,29 @@ export class FormAutofillStorage extends FormAutofillStorageBase {
     this.#initPromise ??= super
       .initialize()
       .then(() => this.#setUpAddressRustStorage())
-      .then(() => Services.prefs.addObserver(ADDRESS_RUST_ENABLED_PREF, this));
+      .then(() => this.#setUpCreditCardRustStorage())
+      .then(() => {
+        Services.prefs.addObserver(ADDRESS_RUST_ENABLED_PREF, this);
+        Services.prefs.addObserver(CREDIT_CARD_RUST_ENABLED_PREF, this);
+      });
     return this.#initPromise;
   }
 
   observe(subject, topic, data) {
-    if (topic == "nsPref:changed" && data == ADDRESS_RUST_ENABLED_PREF) {
+    if (topic != "nsPref:changed") {
+      return;
+    }
+    if (data == ADDRESS_RUST_ENABLED_PREF) {
       this.#switchAddressStorage();
+    } else if (data == CREDIT_CARD_RUST_ENABLED_PREF) {
+      this.#switchCreditCardStorage();
     }
   }
 
   _finalize() {
     if (this.#initPromise) {
       Services.prefs.removeObserver(ADDRESS_RUST_ENABLED_PREF, this);
+      Services.prefs.removeObserver(CREDIT_CARD_RUST_ENABLED_PREF, this);
     }
     return super._finalize();
   }
@@ -381,6 +326,186 @@ export class FormAutofillStorage extends FormAutofillStorageBase {
     Services.prefs.setBoolPref(ADDRESS_RUST_ACTIVE_PREF, true);
   }
 
+  /**
+   * The credit card counterpart of #switchAddressStorage. Kept on its own
+   * promise so a flip of one pref does not queue behind a copy of the other
+   * collection.
+   */
+  #switchCreditCardStorage() {
+    this.#creditCardSwitch = (this.#creditCardSwitch ?? this.initialize())
+      .then(() => this.#migrateToEnabledCreditCardStorage())
+      // Caught rather than left to reject: the next flip chains onto this
+      // promise, and a rejected one would swallow every switch after it.
+      .catch(e =>
+        lazy.logger.error("Could not switch the credit card store", e)
+      );
+    return this.#creditCardSwitch;
+  }
+
+  // For test only: the switch the last pref flip started, so a test can wait
+  // for one that is not going to change anything observable.
+  get _creditCardSwitch() {
+    return this.#creditCardSwitch;
+  }
+
+  /**
+   * Copy the credit cards into the store the pref now names and hand the
+   * profile over, or leave everything where it is if the copy does not
+   * complete. The address version documents the reasoning; it is the same here.
+   *
+   * One thing differs. The copy reads each card's number in the clear so the
+   * receiving store can encrypt it itself, which means it needs the OS key
+   * store readable. #creditCardNumbersReadable settles that before any copying
+   * starts, and a profile whose numbers cannot be read is left where it is.
+   */
+  async #migrateToEnabledCreditCardStorage() {
+    const enabled = Services.prefs.getBoolPref(
+      CREDIT_CARD_RUST_ENABLED_PREF,
+      false
+    );
+    if (enabled == lazy.creditCardRustActive) {
+      return;
+    }
+
+    const json = this.#jsonCreditCards();
+    const rust = lazy.RustAutofillCreditCardsAdapter.getInstance();
+    const [source, target] = enabled ? [json, rust] : [rust, json];
+
+    if (!(await this.#creditCardNumbersReadable(source))) {
+      return;
+    }
+
+    const migrator = new lazy.CreditCardStorageMigrator(source, target);
+    if (
+      await migrator.maybeRun({
+        // Emptying the target first would mean a copy that fails partway leaves
+        // the user with less than they started with.
+        wipe: false,
+      })
+    ) {
+      Services.prefs.setBoolPref(CREDIT_CARD_RUST_ACTIVE_PREF, enabled);
+
+      Services.obs.notifyObservers(
+        {
+          wrappedJSObject: {
+            sourceSync: false,
+            guid: null,
+            collectionName: lazy.AutofillDataTypes.get(
+              lazy.AutofillDataTypes.CREDIT_CARD
+            ).collectionName,
+          },
+        },
+        "formautofill-storage-changed",
+        "migrate"
+      );
+    }
+  }
+
+  /**
+   * Whether the source's card numbers can be read, so the copy can hand them
+   * over in the clear.
+   *
+   * Answered by decrypting one record, not by asking the OS key store, which
+   * cannot answer it: ensureLoggedIn() without a reauth prompt reports success
+   * unconditionally, whether or not the ciphertext the store holds is readable.
+   *
+   * Decrypting has the same side effect rather than avoiding it --
+   * OSKeyStore.decrypt() goes through that same ensureLoggedIn(), which
+   * generates a key when none exists. What spares a profile that has never
+   * saved a card is the early return below: there is nothing to decrypt, so
+   * the key store is never reached, and an empty profile still moves to the
+   * other store. A profile that does hold a ciphertext has the key already.
+   *
+   * Neither direction prompts today, both stores encrypting through the OS key
+   * store; RustAutofillCreditCardsAdapter documents why it does not yet hold a
+   * key of its own. Once it does, decrypting a card out of it needs that key
+   * generated and unlocked, so this check becomes a primary password prompt in
+   * the copy-back direction and will have to answer without one.
+   *
+   * Settled once, before anything is copied, rather than discovered per record.
+   * A copy that stops halfway leaves the profile split across two stores, and a
+   * key store that is merely locked would otherwise spend the retry budget --
+   * a deferral costs a launch, three failed attempts cost the migration for
+   * good. LoginStorageMigrator settles the primary password up front for the
+   * same reason.
+   *
+   * @param {object} source The store being copied from.
+   * @returns {Promise<boolean>}
+   */
+  async #creditCardNumbersReadable(source) {
+    const [canary] = await source.getAll();
+    if (!canary) {
+      return true;
+    }
+    try {
+      await source._recordForMigrationExport(canary);
+      return true;
+    } catch (e) {
+      lazy.logger.log(
+        "Deferring the credit card migration: a number could not be read.",
+        e
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Settle which store serves credit cards at startup. The address version
+   * documents the four combinations; this is the same, on its own prefs.
+   */
+  async #setUpCreditCardRustStorage() {
+    const enabled = Services.prefs.getBoolPref(
+      CREDIT_CARD_RUST_ENABLED_PREF,
+      false
+    );
+
+    if (lazy.creditCardRustActive) {
+      if (!enabled) {
+        await this.#migrateToEnabledCreditCardStorage();
+      }
+      return;
+    }
+
+    const runMigrationDryRun =
+      !enabled &&
+      Services.prefs.getBoolPref(CREDIT_CARD_RUST_MIGRATION_TEST_PREF, false) &&
+      lazy.CreditCardStorageMigrator.dryRunPending;
+    if (!enabled && !runMigrationDryRun) {
+      return;
+    }
+
+    if (!(await this.#creditCardNumbersReadable(this.#jsonCreditCards()))) {
+      return;
+    }
+
+    const migrator = new lazy.CreditCardStorageMigrator(
+      this.#jsonCreditCards(),
+      lazy.RustAutofillCreditCardsAdapter.getInstance()
+    );
+    const migrated = await migrator.maybeRun({ dryRun: runMigrationDryRun });
+
+    if (runMigrationDryRun) {
+      await migrator.wipe();
+      return;
+    }
+
+    if (!migrated) {
+      return;
+    }
+
+    Services.prefs.setBoolPref(CREDIT_CARD_RUST_ACTIVE_PREF, true);
+  }
+
+  // The JSON collection, built on first use. Not the same question as
+  // getCreditCards(), which answers with whichever store is serving.
+  #jsonCreditCards() {
+    if (!this._creditCards) {
+      this._store.ensureDataReady();
+      this._creditCards = new CreditCards(this._store);
+    }
+    return this._creditCards;
+  }
+
   // The JSON collection, built on first use. Not the same question as
   // getAddresses(), which answers with whichever store is serving.
   #jsonAddresses() {
@@ -398,11 +523,9 @@ export class FormAutofillStorage extends FormAutofillStorageBase {
   }
 
   getCreditCards() {
-    if (!this._creditCards) {
-      this._store.ensureDataReady();
-      this._creditCards = new CreditCards(this._store);
-    }
-    return this._creditCards;
+    return lazy.creditCardRustActive
+      ? lazy.RustAutofillCreditCardsAdapter.getInstance()
+      : this.#jsonCreditCards();
   }
 
   getPassports() {

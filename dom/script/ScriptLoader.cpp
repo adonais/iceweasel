@@ -556,9 +556,10 @@ nsresult ScriptLoader::CheckContentPolicy(nsIScriptElement* aElement,
   nsContentPolicyType contentPolicyType =
       ScriptLoadRequestToContentPolicyType(aRequest);
 
-  nsCOMPtr<nsINode> requestingNode;
-  if (aElement) {
-    requestingNode = do_QueryInterface(aElement);
+  nsCOMPtr<nsINode> requestingNode = do_QueryInterface(aElement);
+  if (!requestingNode) {
+    MOZ_ASSERT(aRequest->IsModuleRequest());
+    requestingNode = mDocument;
   }
   nsCOMPtr<nsILoadInfo> secCheckLoadInfo = MOZ_TRY(net::LoadInfo::Create(
       mDocument->NodePrincipal(),  // loading principal
@@ -4638,9 +4639,11 @@ void ScriptLoader::ProcessPendingRequests(bool aAllowBypassingParserBlocking) {
 
   if (mDeferCheckpointReached && mDocument && !mParserBlockingRequest &&
       mNonAsyncExternalScriptInsertedRequests.isEmpty() &&
-      mXSLTRequests.isEmpty() && mDeferRequests.isEmpty() &&
-      MaybeRemovedDeferRequests()) {
-    return ProcessPendingRequests();
+      mXSLTRequests.isEmpty() && mDeferRequests.isEmpty()) {
+    const RefPtr<ScriptLoader> self = this;
+    if (self->MaybeRemovedDeferRequests()) {
+      return self->ProcessPendingRequests();
+    }
   }
 
   if (mDeferCheckpointReached && mDocument && !mParserBlockingRequest &&
@@ -5669,7 +5672,7 @@ void ScriptLoader::MaybeMoveToLoadedList(ScriptLoadRequest* aRequest) {
 bool ScriptLoader::MaybeRemovedDeferRequests() {
   if (mDeferRequests.isEmpty() && mDocument && mBlockingDOMContentLoaded) {
     mBlockingDOMContentLoaded = false;
-    mDocument->UnblockDOMContentLoaded();
+    mDocument->UnblockDOMContentLoaded(/* aFireSync = */ true);
     return true;
   }
   return false;

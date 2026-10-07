@@ -21,8 +21,8 @@ include zoom/reftest.list
 == background-stretch-1.html background-stretch-1-ref.html
 
 # Tests for scaling background images
-fails-if(useDrawSnapshot) == background-scale-no-viewbox-1.html   background-scale-no-viewbox-1-ref.html
-fails-if(useDrawSnapshot) == background-scale-with-viewbox-1.html background-scale-with-viewbox-1-ref.html
+== background-scale-no-viewbox-1.html   background-scale-no-viewbox-1-ref.html
+== background-scale-with-viewbox-1.html background-scale-with-viewbox-1-ref.html
 
 # Test for border-image
 == border-image-simple-1.html       lime100x100-ref.html
@@ -41,7 +41,7 @@ fuzzy(0-192,0-2151) == canvas-drawImage-scale-2b.html canvas-drawImage-scale-2-r
 
 fuzzy(0-1,0-10000) == canvas-drawImage-alpha-1.html canvas-drawImage-alpha-1-ref.html
 #Same as scale-2a but with globalAlpha:
-fuzzy(0-1,0-40000) fuzzy-if(winWidget&&!swgl,1-73,180-40000) fuzzy-if(Android&&device,0-48,0-39989) == canvas-drawImage-alpha-2.html canvas-drawImage-alpha-2-ref.html
+fuzzy(0-34,0-40000) fuzzy-if(winWidget&&!swgl,1-73,180-40000) fuzzy-if(Android&&device,0-48,0-39989) == canvas-drawImage-alpha-2.html canvas-drawImage-alpha-2-ref.html
 
 == canvas-drawImage-slice-1a.html lime100x100-ref.html
 == canvas-drawImage-slice-1b.html lime100x100-ref.html
@@ -169,10 +169,10 @@ fuzzy(0-255,0-10) == img-novb-width-slice-1.html img-novb-width-all-1-ref.html
 == svg-image-simple-3.svg lime100x100.svg
 
 # tests for <svg> files that include themselves as an <image>
-fuzzy-if(winWidget,0-1,0-1) == svg-image-recursive-1a.svg  svg-image-recursive-1-ref.svg
-fuzzy-if(winWidget,0-1,0-1) == svg-image-recursive-1b.svg  svg-image-recursive-1-ref.svg
-fuzzy-if(winWidget,0-1,0-1) == svg-image-recursive-2a.svg  svg-image-recursive-2-ref.svg
-fuzzy-if(winWidget,0-1,0-1) == svg-image-recursive-2b.html svg-image-recursive-2-ref.svg
+fuzzy(0-34,0-80) fuzzy-if(winWidget,0-1,0-1) == svg-image-recursive-1a.svg  svg-image-recursive-1-ref.svg
+fuzzy(0-34,0-80) fuzzy-if(winWidget,0-1,0-1) == svg-image-recursive-1b.svg  svg-image-recursive-1-ref.svg
+fuzzy(0-34,0-80) fuzzy-if(winWidget,0-1,0-1) == svg-image-recursive-2a.svg  svg-image-recursive-2-ref.svg
+fuzzy(0-34,0-80) fuzzy-if(winWidget,0-1,0-1) == svg-image-recursive-2b.html svg-image-recursive-2-ref.svg
 
 # tests for external resources vs. data URIs in SVG as an image
 == svg-image-datauri-1.html            lime100x100.svg

@@ -1,0 +1,10 @@
+root:
+  items:
+    - image: checkerboard(0, 2, 15)
+      bounds: [10, 10, 30, 30]
+    - image: checkerboard(0, 2, 15)
+      bounds: [11, 10, 30, 30]
+      clip-rect: [40, 10, 1, 30]
+    - image: checkerboard(0, 2, 15)
+      bounds: [11, 50, 30, 30]
+      clip-rect: [11, 50, 29, 30]

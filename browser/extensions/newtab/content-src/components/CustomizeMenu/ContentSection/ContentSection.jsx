@@ -203,20 +203,17 @@ export class ContentSection extends React.PureComponent {
       mayHaveWidgets,
       mayHaveTimerWidget,
       mayHaveListsWidget,
-      mayHaveSportsWidget,
       mayHaveClocksWidget,
       mayHavePrivacyWidget,
       mayHaveCrosswordWidget,
       mayHaveStocksWidget,
       mayHavePictureOfTheDayWidget,
       mayHaveRecentSearchesWidget,
-      mayHaveWeatherForecast,
       openPreferences,
       wallpapersUserEnabled,
       activeWallpaper,
       setPref,
       mayHaveTopicSections,
-      weatherDisplay,
       panelShowing,
       toggleSectionsMgmtPanel,
       showSectionsMgmtPanel,
@@ -309,6 +306,15 @@ export class ContentSection extends React.PureComponent {
               </div>
             </>
           )}
+          {/* eslint-disable-next-line jsdoc/no-bad-blocks */}
+          {/* @nova-cleanup(remove-conditional): Delete this widget toggle block.
+              With it, delete the mayHave*Widget names and the per-widget
+              enabledWidgets destructure in render() above, and the
+              mayHave*Widget props and per-widget *Enabled members of
+              enabledWidgets that Base.jsx and CustomizeMenu.jsx pass down only
+              for this block. Keep the enabledWidgets prop itself: inputUserEvent
+              reads its widgetsMaximized and widgetsMayBeMaximized members
+              through this.props. */}
           {mayHaveWidgets && !novaEnabled && (
             <div className="widgets-section">
               <div className="category-header">
@@ -388,14 +394,13 @@ export class ContentSection extends React.PureComponent {
                 {/* Crossword */}
                 {mayHaveCrosswordWidget && (
                   <div id="crossword-widget-section" className="section">
-                    {/* TODO: Add in fluent string when correct preview files are set up */}
                     <moz-toggle
                       id="crossword-toggle"
                       pressed={!!crosswordEnabled}
                       ontoggle={this.onPreferenceSelect}
                       data-preference="widgets.crossword.enabled"
                       data-event-source="WIDGET_CROSSWORD"
-                      label="Crossword"
+                      data-l10n-id="newtab-custom-widget-crossword-toggle"
                     ></moz-toggle>
                   </div>
                 )}
@@ -435,7 +440,7 @@ export class ContentSection extends React.PureComponent {
                       ontoggle={this.onPreferenceSelect}
                       data-preference="widgets.recentSearches.enabled"
                       data-event-source="WIDGET_RECENT_SEARCHES"
-                      data-l10n-id="newtab-custom-widget-recent-searches-toggle"
+                      data-l10n-id="newtab-custom-widget-search-toggle"
                     />
                   </div>
                 )}
@@ -557,24 +562,6 @@ export class ContentSection extends React.PureComponent {
                           ref={this.widgetsMgmtDrawerRef}
                         >
                           <WidgetsManagementPanel
-                            enabledSections={enabledSections}
-                            enabledWidgets={enabledWidgets}
-                            mayHaveWeather={mayHaveWeather}
-                            mayHaveTimerWidget={mayHaveTimerWidget}
-                            mayHaveListsWidget={mayHaveListsWidget}
-                            mayHaveSportsWidget={mayHaveSportsWidget}
-                            mayHaveClocksWidget={mayHaveClocksWidget}
-                            mayHavePrivacyWidget={mayHavePrivacyWidget}
-                            mayHaveCrosswordWidget={mayHaveCrosswordWidget}
-                            mayHaveStocksWidget={mayHaveStocksWidget}
-                            mayHavePictureOfTheDayWidget={
-                              mayHavePictureOfTheDayWidget
-                            }
-                            mayHaveRecentSearchesWidget={
-                              mayHaveRecentSearchesWidget
-                            }
-                            mayHaveWeatherForecast={mayHaveWeatherForecast}
-                            weatherDisplay={weatherDisplay}
                             setPref={setPref}
                             togglePanel={toggleWidgetsManagementPanel}
                             showPanel={showWidgetsManagementPanel}

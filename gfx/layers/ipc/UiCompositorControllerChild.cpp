@@ -101,15 +101,6 @@ bool UiCompositorControllerChild::InvalidateAndRender() {
   return SendInvalidateAndRender();
 }
 
-bool UiCompositorControllerChild::SetMaxToolbarHeight(const int32_t& aHeight) {
-  if (!mIsOpen) {
-    mMaxToolbarHeight = Some(aHeight);
-    // Since we are caching this value, pretend the call succeeded.
-    return true;
-  }
-  return SendMaxToolbarHeight(aHeight);
-}
-
 bool UiCompositorControllerChild::SetFixedBottomOffset(int32_t aOffset) {
   return SendFixedBottomOffset(aOffset);
 }
@@ -353,10 +344,6 @@ void UiCompositorControllerChild::SendCachedValues() {
     SendResumeAndResize(mResize.ref().x, mResize.ref().y, mResize.ref().width,
                         mResize.ref().height, &resumed);
     mResize.reset();
-  }
-  if (mMaxToolbarHeight) {
-    SendMaxToolbarHeight(mMaxToolbarHeight.ref());
-    mMaxToolbarHeight.reset();
   }
   if (mDefaultClearColor) {
     SendDefaultClearColor(mDefaultClearColor.ref());

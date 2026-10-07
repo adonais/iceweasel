@@ -26,6 +26,12 @@ class ShadowRoot;
 
 class nsDisplayListBuilder;
 
+struct AnchorPosAnchorInfo {
+  explicit AnchorPosAnchorInfo(nsIFrame* aAnchor);
+  nsIFrame* mAnchor;
+  uint32_t mFrameTreeDepth;
+};
+
 struct AnchorPosInfo {
   // Border-box of the anchor frame, offset against the positioned frame's
   // absolute containing block's padding box.
@@ -228,6 +234,7 @@ class AnchorPosReferenceData {
   nsMargin mInsets;
 
   StyleCascadeLevel mAnchorTreeScope = StyleCascadeLevel::Default();
+  uint32_t mFrameTreeDepth = 0;
 
  private:
   ResolutionMap mMap;
@@ -316,7 +323,9 @@ struct AnchorPositioningUtils {
    */
   static nsIFrame* FindFirstAcceptableAnchor(
       const ScopedNameRef& aName, const nsIFrame* aPositionedFrame,
-      const nsTArray<nsIFrame*>& aPossibleAnchorFrames);
+      const nsTArray<AnchorPosAnchorInfo>& aPossibleAnchorFrames,
+      uint32_t aPositionedFrameTreeDepth,
+      nsTArray<size_t>* aTopLayerIndexCache);
 
   static Maybe<nsRect> GetAnchorPosRect(
       const nsIFrame* aAbsoluteContainingBlock, const nsIFrame* aAnchor,

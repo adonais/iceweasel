@@ -25,20 +25,16 @@ function wholeMatch(query, wholeWord) {
   return `\\b${query}\\b`;
 }
 
-function buildFlags(caseSensitive, isGlobal) {
-  if (caseSensitive && isGlobal) {
-    return "g";
+function buildFlags({ caseSensitive, isGlobal }) {
+  let flags = "";
+  if (isGlobal) {
+    flags += "g";
+  }
+  if (!caseSensitive) {
+    flags += "i";
   }
 
-  if (!caseSensitive && isGlobal) {
-    return "gi";
-  }
-
-  if (!caseSensitive && !isGlobal) {
-    return "i";
-  }
-
-  return null;
+  return flags || null;
 }
 
 export default function buildQuery(
@@ -70,7 +66,7 @@ export default function buildQuery(
   }
 
   query = wholeMatch(query, wholeWord);
-  const flags = buildFlags(caseSensitive, isGlobal);
+  const flags = buildFlags({ caseSensitive, isGlobal });
 
   if (flags) {
     return new RegExp(query, flags);

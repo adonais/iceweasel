@@ -1,0 +1,353 @@
+<!doctype html>
+<meta charset=utf-8>
+<meta name="timeout" content="long">
+<title>mDNS obfuscation tests</title>
+<script src=/resources/testharness.js></script>
+<script src=/resources/testharnessreport.js></script>
+<script src="/webrtc/RTCPeerConnection-helper.js"></script>
+<script>
+'use strict';
+
+const OBFUSCATE_PREF = 'media.peerconnection.ice.obfuscate_host_addresses';
+
+async function withPrefs(prefs, func) {
+  await SpecialPowers.pushPrefEnv({ set: prefs });
+  try {
+    return await func();
+  } finally {
+    await SpecialPowers.popPrefEnv();
+  }
+}
+const withObfuscation = func => withPrefs([[OBFUSCATE_PREF, true]], func);
+const withoutObfuscation = func => withPrefs([[OBFUSCATE_PREF, false]], func);
+
+// Per-token and anchored, so a bare RTCIceCandidate.address is caught just as
+// well as an address embedded in a candidate-attribute string. Loose on
+// purpose; the sanity test below proves these fire on real addresses.
+const ipv4Token = /^(\d{1,3}\.){3}\d{1,3}$/;
+// At least two colons, nothing but hex, colons and dots (v4-mapped forms).
+const ipv6Token = /^(?=(?:[^:]*:){2})[0-9a-fA-F:.]+$/;
+// Our resolver only queries names with exactly one dot (see
+// PeerConnectionImpl::AddIceCandidate), so hold ourselves to producing those.
+const mdnsName = /^[^.\s]+\.local$/;
+
+const tokensOf = str => String(str ?? '').trim().split(/\s+/);
+const containsIP = str =>
+  tokensOf(str).some(tok => ipv4Token.test(tok) || ipv6Token.test(tok));
+
+async function connect(pc1, pc2) {
+  await exchangeOfferAnswer(pc1, pc2);
+  await Promise.all([listenToIceConnected(pc1), listenToIceConnected(pc2)]);
+}
+
+function iceTransportOf(pc, who) {
+  const [sender] = pc.getSenders();
+  assert_not_equals(sender?.transport, null, `${who} has a DTLS transport`);
+  return sender.transport.iceTransport;
+}
+
+function selectedPairOf(pc, who) {
+  const pair = iceTransportOf(pc, who).getSelectedCandidatePair();
+  assert_not_equals(pair, null, `${who} has a selected candidate pair`);
+  return pair;
+}
+
+function assertNoIPIn(cand, who) {
+  assert_not_equals(cand, null, `${who} exists`);
+  for (const field of ['candidate', 'address', 'relatedAddress']) {
+    assert_false(containsIP(cand[field]),
+      `${who}.${field} must not contain an IP address (got "${cand[field]}")`);
+  }
+  if (cand.type == 'host' && cand.address !== null) {
+    assert_regexp_match(cand.address, mdnsName,
+      `${who}.address is an mDNS name`);
+  }
+}
+
+// webrtc-pc's exposure rules for peer-reflexive remote candidates: the
+// candidate string is empty and the addresses are null.
+function assertHiddenPrflx(cand, who) {
+  assert_equals(cand.type, 'prflx', `${who} is peer-reflexive`);
+  assert_equals(cand.candidate, '', `${who}.candidate is hidden`);
+  assert_equals(cand.address, null, `${who}.address is hidden`);
+  assert_equals(cand.relatedAddress, null, `${who}.relatedAddress is hidden`);
+}
+
+// A remote candidate we surface, unless peer-reflexive, must be one of the
+// candidates content handed to addIceCandidate, carrying the address content
+// sent rather than whatever we resolved it to.
+function assertIsSignaled(cand, delivered, who) {
+  if (cand.type == 'prflx') {
+    assertHiddenPrflx(cand, who);
+    return;
+  }
+  assert_in_array(cand.candidate, delivered.map(c => c.candidate),
+    `${who} is a candidate signaled via addIceCandidate`);
+}
+
+const candidateStats = report =>
+  [...report.values()].filter(
+    ({type}) => type == 'local-candidate' || type == 'remote-candidate');
+
+async function checkStats(pc, who) {
+  const report = await pc.getStats();
+  const cands = candidateStats(report);
+  for (const type of ['local-candidate', 'remote-candidate']) {
+    assert_true(cands.some(c => c.type == type), `${who} has ${type} stats`);
+  }
+  for (const c of cands) {
+    const label = `${who} ${c.type} ${c.candidateType} ${c.id}`;
+    assert_false(containsIP(c.address),
+      `${label} address must not be an IP address (got "${c.address}")`);
+    if (c.type == 'remote-candidate' && c.candidateType == 'prflx') {
+      // webrtc-stats: address MUST be left null unless the address was learned
+      // through addIceCandidate.
+      assert_equals(c.address, null,
+        `${label} address is not exposed (got "${c.address}")`);
+    } else if (c.candidateType == 'host' && c.address) {
+      assert_regexp_match(c.address, mdnsName, `${label} address is an mDNS name`);
+    }
+  }
+  return report;
+}
+
+// Every way `pc` can show a candidate to content. Callers must have awaited
+// the exchange's complete() so gathered() and delivered() are final.
+async function checkEverything(pc, exchange, who) {
+  const gathered = exchange.from(pc).gathered();
+  const delivered = exchange.to(pc).delivered();
+  assert_greater_than(gathered.length, 0, `${who} gathered candidates`);
+  gathered.forEach((c, i) => assertNoIPIn(c, `${who} gathered[${i}]`));
+
+  const pair = selectedPairOf(pc, who);
+  assertNoIPIn(pair.local, `${who} selected local`);
+  assertNoIPIn(pair.remote, `${who} selected remote`);
+  assertIsSignaled(pair.remote, delivered, `${who} selected remote`);
+
+  await checkStats(pc, who);
+}
+
+promise_test(t => withoutObfuscation(async () => {
+  const [pc1, pc2] = createPeerConnectionPairWithCleanup(t, ['audio']);
+  const exchange = exchangeIceCandidates(pc1, pc2);
+  await Promise.all([exchange.complete(), connect(pc1, pc2)]);
+
+  const hosts = exchange.from(pc1).gathered().filter(({type}) => type == 'host');
+  assert_greater_than(hosts.length, 0, 'offerer gathered host candidates');
+  for (const c of hosts) {
+    assert_true(containsIP(c.candidate), `detector fires on "${c.candidate}"`);
+    assert_true(containsIP(c.address), `detector fires on bare "${c.address}"`);
+  }
+
+  // The offerer often connects through peer-reflexive candidates before the
+  // answerer's trickle reaches it, and nICEr drops candidates that arrive
+  // after that, so the answerer is the side that reliably knows signaled
+  // remote candidates.
+  const {local, remote} = selectedPairOf(pc2, 'answerer');
+  assert_true(containsIP(local.address), 'unobfuscated local address is an IP');
+  assert_equals(remote.type, 'host', 'answerer selected the signaled remote');
+  assert_true(containsIP(remote.address),
+    'a remote address learned through addIceCandidate may be shown');
+
+  const report = await pc2.getStats();
+  const signaled = candidateStats(report).filter(
+    c => c.type == 'remote-candidate' && c.candidateType == 'host');
+  assert_greater_than(signaled.length, 0, 'answerer has signaled remotes');
+  for (const c of signaled) {
+    assert_true(containsIP(c.address),
+      `a remote address learned through addIceCandidate may be shown (${c.id})`);
+  }
+  assert_true(candidateStats(report).some(
+    c => c.type == 'local-candidate' && containsIP(c.address)),
+    'detector fires on local candidate stats');
+}), 'Control: with obfuscation off, host candidates are plain IP addresses, ' +
+    'which we should detect');
+
+promise_test(t => withObfuscation(async () => {
+  const [pc1, pc2] = createPeerConnectionPairWithCleanup(t, ['audio']);
+  const exchange = exchangeIceCandidates(pc1, pc2);
+  await Promise.all([exchange.complete(), connect(pc1, pc2)]);
+  await checkEverything(pc1, exchange, 'offerer');
+  await checkEverything(pc2, exchange, 'answerer');
+}), 'Trickle both ways: nothing exposed to content contains an IP address');
+
+promise_test(t => withObfuscation(async () => {
+  const [pc1, pc2] = createPeerConnectionPairWithCleanup(t, ['audio']);
+  // Holding the answerer's candidates back means the offerer cannot send a
+  // check until the answerer has resolved the offerer's mDNS names and paired
+  // them, so the answerer's selected remote has to be the signaled candidate
+  // rather than a peer-reflexive one. This is the path that used to surface
+  // the resolved address.
+  const exchange = exchangeIceCandidates(pc1, pc2);
+  exchange.from(pc2).hold();
+  await Promise.all([exchange.complete(), connect(pc1, pc2)]);
+
+  const pc2pair = selectedPairOf(pc2, 'answerer');
+  assert_equals(pc2pair.remote.type, 'host', 'answerer selected the signaled remote');
+  assert_regexp_match(pc2pair.remote.address, mdnsName,
+    'the signaled remote keeps its mDNS name');
+  await checkEverything(pc2, exchange, 'answerer');
+
+  const pc1pair = selectedPairOf(pc1, 'offerer');
+  assertHiddenPrflx(pc1pair.remote, 'offerer selected remote');
+  await checkEverything(pc1, exchange, 'offerer');
+}), 'A resolved mDNS remote candidate is surfaced under its name, never its ' +
+    'resolved address');
+
+promise_test(t => withObfuscation(async () => {
+  const [pc1, pc2] = createPeerConnectionPairWithCleanup(t, ['audio']);
+  const exchange = exchangeIceCandidates(pc1, pc2);
+  exchange.from(pc1).hold();
+  await Promise.all([exchange.complete(), connect(pc1, pc2)]);
+
+  // The answerer never heard about the offerer's candidates, so it can only
+  // have connected through a peer-reflexive remote candidate.
+  const pc2pair = selectedPairOf(pc2, 'answerer');
+  assertHiddenPrflx(pc2pair.remote, 'answerer selected remote');
+  assertNoIPIn(pc2pair.local, 'answerer selected local');
+  const report = await checkStats(pc2, 'answerer');
+  const remotes = [...report.values()].filter(s => s.type == 'remote-candidate');
+  assert_greater_than(remotes.length, 0, 'answerer has remote candidate stats');
+  assert_true(remotes.every(s => s.candidateType == 'prflx'),
+    'answerer knows only peer-reflexive remote candidates');
+
+  // The offerer was told everything, as usual.
+  await checkEverything(pc1, exchange, 'offerer');
+
+  // Now the held candidates arrive. The addresses the answerer already knows
+  // as peer-reflexive get signaled under mDNS names. nICEr drops trickled
+  // candidates once the stream is connected, so they will not show up in
+  // stats; the remote description still mirrors them, and learning the names
+  // must not unhide the prflx entries that resolve to the same addresses.
+  await exchange.from(pc1).release();
+  const delivered = exchange.to(pc2).delivered();
+  assert_greater_than(delivered.length, 0, 'the held candidates were delivered');
+
+  const pairAfter = selectedPairOf(pc2, 'answerer (late)');
+  assertNoIPIn(pairAfter.local, 'answerer (late) selected local');
+  assertNoIPIn(pairAfter.remote, 'answerer (late) selected remote');
+  assertIsSignaled(pairAfter.remote, delivered, 'answerer (late) selected remote');
+  await checkStats(pc2, 'answerer (late)');
+}), 'One-way trickle: a side connected through prflx never sees the peer ' +
+    'address, before or after the candidates arrive late');
+
+promise_test(t => withoutObfuscation(async () => {
+  const [pc1, pc2] = createPeerConnectionPairWithCleanup(t, ['audio']);
+  exchangeIceCandidates(pc1, pc2).from(pc1).hold();
+  await connect(pc1, pc2);
+
+  const pc2pair = selectedPairOf(pc2, 'answerer');
+  assertHiddenPrflx(pc2pair.remote, 'answerer selected remote');
+  const report = await pc2.getStats();
+  const remotes = [...report.values()].filter(s => s.type == 'remote-candidate');
+  assert_greater_than(remotes.length, 0, 'answerer has remote candidate stats');
+  for (const s of remotes) {
+    assert_equals(s.candidateType, 'prflx', `${s.id} is peer-reflexive`);
+    assert_equals(s.address, null,
+      `prflx remote-candidate ${s.id} address is not exposed (got "${s.address}")`);
+  }
+}), 'Peer-reflexive remote candidates are hidden even when we are not ' +
+    'obfuscating our own addresses');
+
+promise_test(t => withObfuscation(async () => {
+  const [pc1, pc2] = createPeerConnectionPairWithCleanup(t, ['audio']);
+  const exchange = exchangeIceCandidates(pc1, pc2);
+  await Promise.all([exchange.complete(), connect(pc1, pc2)]);
+  const gatheredBefore = exchange.from(pc1).gathered().length;
+
+  async function waitForSelectedPair(pc, who) {
+    const transport = iceTransportOf(pc, who);
+    while (true) {
+      await waitUntilEvent(transport, 'selectedcandidatepairchange');
+      const pair = transport.getSelectedCandidatePair();
+      if (pair) {
+        return pair;
+      }
+    }
+  }
+
+  pc1.restartIce();
+  await Promise.all([
+    exchange.complete(),
+    exchangeOfferAnswer(pc1, pc2),
+    waitForSelectedPair(pc1, 'offerer'),
+    waitForSelectedPair(pc2, 'answerer'),
+  ]);
+
+  assert_greater_than(exchange.from(pc1).gathered().length, gatheredBefore,
+    'the restart gathered a new generation of candidates');
+  await checkEverything(pc1, exchange, 'offerer');
+  await checkEverything(pc2, exchange, 'answerer');
+}), 'ICE restart: the new generation is obfuscated too');
+
+promise_test(t => withObfuscation(async () => {
+  const [pc1] = createPeerConnectionPairWithCleanup(t, ['audio']);
+  await pc1.setLocalDescription();
+  await waitForIceGatheringState(pc1, ['complete']);
+
+  const {sdp} = pc1.localDescription;
+  const candidateLines = sdp.split('\r\n').filter(l => l.startsWith('a=candidate:'));
+  assert_greater_than(candidateLines.length, 0, 'local description has candidates');
+  for (const line of candidateLines) {
+    assert_false(containsIP(line), `no IP address in "${line}"`);
+  }
+  // The default candidates are hidden as well. Before the answer settles
+  // rtcp-mux, the offer also carries a default RTCP candidate.
+  assert_regexp_match(sdp, /\r\nm=audio 9 /, 'm= port is the placeholder');
+  assert_regexp_match(sdp, /\r\nc=IN IP4 0\.0\.0\.0\r\n/,
+    'c= line is the placeholder address');
+  const rtcpLines = sdp.split('\r\n').filter(l => l.startsWith('a=rtcp:'));
+  assert_greater_than(rtcpLines.length, 0, 'offer has an a=rtcp line');
+  for (const line of rtcpLines) {
+    assert_equals(line, 'a=rtcp:9 IN IP4 0.0.0.0',
+      'a=rtcp line is the placeholder address');
+  }
+}), 'Local description: candidate lines and the default candidates carry no ' +
+    'IP address');
+
+// The NAT simulator is configured per connection, when its ICE context is
+// created. Putting only the offerer behind it means the answerer sees the
+// offerer at a mapped port, so the offerer learns a local peer-reflexive
+// candidate: its own host address, as some peer saw it. That peer could be
+// another RTCPeerConnection in the same document, so it must be hidden like
+// everything else.
+const NAT_PREFS = [
+  ['media.peerconnection.nat_simulator.filtering_type', 'ENDPOINT_INDEPENDENT'],
+  ['media.peerconnection.nat_simulator.mapping_type', 'ENDPOINT_INDEPENDENT'],
+];
+
+// The ICE context is created asynchronously in another process. A stats
+// request is answered by that context, so once one resolves the context
+// exists and has read its configuration.
+const waitForIceContext = pc => pc.getStats();
+
+promise_test(t => withObfuscation(async () => {
+  const pc2 = createPeerConnectionWithCleanup(t);
+  await waitForIceContext(pc2);
+  const pc1 = await withPrefs(NAT_PREFS, async () => {
+    const pc = createPeerConnectionWithCleanup(t);
+    pc.addTransceiver('audio');
+    await waitForIceContext(pc);
+    return pc;
+  });
+  const exchange = exchangeIceCandidates(pc1, pc2);
+  await Promise.all([exchange.complete(), connect(pc1, pc2)]);
+
+  const pc1pair = selectedPairOf(pc1, 'offerer');
+  assert_equals(pc1pair.local.type, 'prflx',
+    'offerer connected through a local peer-reflexive candidate');
+  await checkEverything(pc1, exchange, 'offerer');
+  const localPrflx = candidateStats(await pc1.getStats()).filter(
+    c => c.type == 'local-candidate' && c.candidateType == 'prflx');
+  assert_greater_than(localPrflx.length, 0, 'offerer has local prflx stats');
+  for (const c of localPrflx) {
+    assert_equals(c.address, null,
+      `local prflx ${c.id} address is not exposed (got "${c.address}")`);
+  }
+
+  const pc2pair = selectedPairOf(pc2, 'answerer');
+  assertHiddenPrflx(pc2pair.remote, 'answerer selected remote');
+  await checkEverything(pc2, exchange, 'answerer');
+}), 'Behind a NAT: a local peer-reflexive candidate does not expose our ' +
+    'address either');
+</script>

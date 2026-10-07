@@ -213,7 +213,8 @@ CERT_DestroyGeneralNameList(CERTGeneralNameList *list)
     if (list != NULL) {
         lock = list->lock;
         PR_Lock(lock);
-        if (--list->refCount <= 0 && list->arena != NULL) {
+        PORT_ReleaseAssert(list->refCount > 0);
+        if (--list->refCount == 0 && list->arena != NULL) {
             PORT_FreeArena(list->arena, PR_FALSE);
             PR_Unlock(lock);
             PR_DestroyLock(lock);
@@ -832,6 +833,7 @@ CERT_DupGeneralNameList(CERTGeneralNameList *list)
 {
     if (list != NULL) {
         PR_Lock(list->lock);
+        PORT_ReleaseAssert(list->refCount > 0);
         list->refCount++;
         PR_Unlock(list->lock);
     }

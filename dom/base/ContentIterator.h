@@ -9,9 +9,9 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/Range.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsINode.h"
-#include "nsRange.h"
 #include "nsTArray.h"
 
 class nsIContent;
@@ -42,7 +42,7 @@ class ContentIteratorBase {
   /**
    * If you want to use `const AbstractRange*`, you can use an overload which
    * takes RawRangeBoundary instances or InitWithoutValidatingPoints().
-   * If your range is dynamic, i.e., an nsRange, you can use
+   * If your range is dynamic, i.e., an dom::Range, you can use
    * InitWithoutValidatingPoints() which skips comparing the boundary points.
    */
   [[nodiscard]] virtual nsresult Init(dom::AbstractRange* aRange);
@@ -286,7 +286,7 @@ class ContentSubtreeIterator final : public SafeContentIteratorBase {
    * FIXME: This doesn't have a overload of this method which takes
    * `const RawRangeBoundary`s. That allows the callers to make this with
    * `const AbstractRange*`. So, it and its non-validation version (for
-   * `const nsRange*` should be here.
+   * `const Range*` should be here.
    */
   [[nodiscard]] nsresult InitWithAllowCrossShadowBoundary(
       dom::AbstractRange* aRange);
@@ -298,8 +298,8 @@ class ContentSubtreeIterator final : public SafeContentIteratorBase {
                               const RawRangeBoundary& aEndBoundary) override;
   [[nodiscard]] nsresult InitWithoutValidatingPoints(
       const RawRangeBoundary& aStart, const RawRangeBoundary& aEnd) override {
-    // We need to create an nsRange from aStart and aEnd.  Therefore, anyway
-    // nsRange will validate them.
+    // We need to create a dom::Range from aStart and aEnd.  Therefore,
+    // anyway dom::Range will validate them.
     return Init(aStart, aEnd);
   }
 

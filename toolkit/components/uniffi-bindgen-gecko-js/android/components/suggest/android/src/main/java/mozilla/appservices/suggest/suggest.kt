@@ -105,6 +105,43 @@ internal open class ForeignBytes : Structure() {
 
     class ByValue : ForeignBytes(), Structure.ByValue
 }
+
+// Converter for `&[u8]` / `[ByRef] bytes` arguments.
+//
+// Only `lower` is valid — zero-copy byte buffers only flow foreign -> Rust,
+// and only in argument position. `lift`, `read`, `write`, and
+// `allocationSize` have no sound implementation here and all panic at
+// runtime. The `FfiConverter` interface is implemented so that the
+// compiler enforces the full method set (rather than relying on eyeball).
+//
+// The provided `ByteBuffer` MUST be direct — only direct buffers have a
+// stable native address that JNA can expose via `getDirectBufferPointer`.
+// The returned `ForeignBytes.ByValue` is only valid for the duration of
+// the FFI call; the Rust side treats it as a borrow.
+internal object FfiConverterByRefBytes : FfiConverter<java.nio.ByteBuffer, ForeignBytes.ByValue> {
+    override fun lower(value: java.nio.ByteBuffer): ForeignBytes.ByValue {
+        require(value.isDirect) { "UniFFI zero-copy &[u8] requires a direct ByteBuffer. Use ByteBuffer.allocateDirect()." }
+        val remaining = value.remaining()
+        val fb = ForeignBytes.ByValue()
+        fb.len = remaining
+        // Zero-length direct buffers: skip getDirectBufferPointer (platform-variable behavior)
+        // and pass null. The Rust side treats (null, 0) as &[].
+        fb.data = if (remaining == 0) null else com.sun.jna.Native.getDirectBufferPointer(value)
+        return fb
+    }
+
+    override fun lift(value: ForeignBytes.ByValue): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be lifted: zero-copy &[u8] only flows foreign->Rust")
+
+    override fun read(buf: java.nio.ByteBuffer): java.nio.ByteBuffer =
+        error("ByRef bytes cannot be read from a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun write(value: java.nio.ByteBuffer, buf: java.nio.ByteBuffer): Unit =
+        error("ByRef bytes cannot be written to a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+
+    override fun allocationSize(value: java.nio.ByteBuffer): ULong =
+        error("ByRef bytes have no RustBuffer allocation size: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+}
 /**
  * The FfiConverter interface handles converter types to and from the FFI
  *
@@ -642,57 +679,57 @@ internal object IntegrityCheckingUniffiLib {
         uniffiCheckContractApiVersion(this)
     }
     external fun uniffi_suggest_checksum_func_raw_suggestion_url_matches(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststore_any_dismissed_suggestions(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststore_clear(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststore_clear_dismissed_suggestions(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststore_dismiss_by_key(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststore_dismiss_by_suggestion(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststore_dismiss_suggestion(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststore_fetch_geoname_alternates(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststore_fetch_geonames(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststore_fetch_global_config(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststore_fetch_provider_config(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststore_ingest(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststore_interrupt(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststore_is_dismissed_by_key(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststore_is_dismissed_by_suggestion(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststore_query(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststore_query_with_metrics(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststorebuilder_build(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststorebuilder_cache_path(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststorebuilder_data_path(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststorebuilder_load_extension(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststorebuilder_remote_settings_bucket_name(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststorebuilder_remote_settings_server(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_method_suggeststorebuilder_remote_settings_service(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_constructor_suggeststore_new(
-    ): Short
+    ): Int
     external fun uniffi_suggest_checksum_constructor_suggeststorebuilder_new(
-    ): Short
+    ): Int
     external fun ffi_suggest_uniffi_contract_version(
     ): Int
 
@@ -787,7 +824,7 @@ internal object UniffiLib {
     external fun ffi_suggest_rust_future_free_u8(`handle`: Long,
     ): Unit
     external fun ffi_suggest_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Byte
+    ): Int
     external fun ffi_suggest_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
     external fun ffi_suggest_rust_future_cancel_i8(`handle`: Long,
@@ -803,7 +840,7 @@ internal object UniffiLib {
     external fun ffi_suggest_rust_future_free_u16(`handle`: Long,
     ): Unit
     external fun ffi_suggest_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Short
+    ): Int
     external fun ffi_suggest_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
     external fun ffi_suggest_rust_future_cancel_i16(`handle`: Long,
@@ -1050,6 +1087,10 @@ private class JavaLangRefCleanable(
  */
 public object FfiConverterUByte: FfiConverter<UByte, Byte> {
     override fun lift(value: Byte): UByte {
+        return value.toUByte()
+    }
+
+    fun lift(value: Int): UByte {
         return value.toUByte()
     }
 
@@ -1563,7 +1604,9 @@ open class SuggestStore: Disposable, AutoCloseable, SuggestStoreInterface
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_suggest_fn_constructor_suggeststore_new(
     
-        FfiConverterString.lower(`path`),FfiConverterTypeRemoteSettingsService.lower(`remoteSettingsService`),_status)
+        
+        FfiConverterString.lower(`path`),
+        FfiConverterTypeRemoteSettingsService.lower(`remoteSettingsService`),_status)
 }
     )
 
@@ -1572,6 +1615,11 @@ open class SuggestStore: Disposable, AutoCloseable, SuggestStoreInterface
 
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
+
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
 
     override fun destroy() {
         // Only allow a single call to this method.
@@ -1703,6 +1751,7 @@ open class SuggestStore: Disposable, AutoCloseable, SuggestStoreInterface
     uniffiRustCallWithError(SuggestApiException) { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststore_dismiss_by_key(
         it,
+        
         FfiConverterString.lower(`key`),_status)
 }
     }
@@ -1721,6 +1770,7 @@ open class SuggestStore: Disposable, AutoCloseable, SuggestStoreInterface
     uniffiRustCallWithError(SuggestApiException) { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststore_dismiss_by_suggestion(
         it,
+        
         FfiConverterTypeSuggestion.lower(`suggestion`),_status)
 }
     }
@@ -1742,6 +1792,7 @@ open class SuggestStore: Disposable, AutoCloseable, SuggestStoreInterface
     uniffiRustCallWithError(SuggestApiException) { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststore_dismiss_suggestion(
         it,
+        
         FfiConverterString.lower(`suggestionUrl`),_status)
 }
     }
@@ -1760,6 +1811,7 @@ open class SuggestStore: Disposable, AutoCloseable, SuggestStoreInterface
     uniffiRustCallWithError(SuggestApiException) { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststore_fetch_geoname_alternates(
         it,
+        
         FfiConverterTypeGeoname.lower(`geoname`),_status)
 }
     }
@@ -1780,7 +1832,10 @@ open class SuggestStore: Disposable, AutoCloseable, SuggestStoreInterface
     uniffiRustCallWithError(SuggestApiException) { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststore_fetch_geonames(
         it,
-        FfiConverterString.lower(`query`),FfiConverterBoolean.lower(`matchNamePrefix`),FfiConverterOptionalSequenceTypeGeoname.lower(`filter`),_status)
+        
+        FfiConverterString.lower(`query`),
+        FfiConverterBoolean.lower(`matchNamePrefix`),
+        FfiConverterOptionalSequenceTypeGeoname.lower(`filter`),_status)
 }
     }
     )
@@ -1814,6 +1869,7 @@ open class SuggestStore: Disposable, AutoCloseable, SuggestStoreInterface
     uniffiRustCallWithError(SuggestApiException) { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststore_fetch_provider_config(
         it,
+        
         FfiConverterTypeSuggestionProvider.lower(`provider`),_status)
 }
     }
@@ -1831,6 +1887,7 @@ open class SuggestStore: Disposable, AutoCloseable, SuggestStoreInterface
     uniffiRustCallWithError(SuggestApiException) { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststore_ingest(
         it,
+        
         FfiConverterTypeSuggestIngestionConstraints.lower(`constraints`),_status)
 }
     }
@@ -1851,6 +1908,7 @@ open class SuggestStore: Disposable, AutoCloseable, SuggestStoreInterface
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststore_interrupt(
         it,
+        
         FfiConverterOptionalTypeInterruptKind.lower(`kind`),_status)
 }
     }
@@ -1872,6 +1930,7 @@ open class SuggestStore: Disposable, AutoCloseable, SuggestStoreInterface
     uniffiRustCallWithError(SuggestApiException) { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststore_is_dismissed_by_key(
         it,
+        
         FfiConverterString.lower(`key`),_status)
 }
     }
@@ -1893,6 +1952,7 @@ open class SuggestStore: Disposable, AutoCloseable, SuggestStoreInterface
     uniffiRustCallWithError(SuggestApiException) { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststore_is_dismissed_by_suggestion(
         it,
+        
         FfiConverterTypeSuggestion.lower(`suggestion`),_status)
 }
     }
@@ -1910,6 +1970,7 @@ open class SuggestStore: Disposable, AutoCloseable, SuggestStoreInterface
     uniffiRustCallWithError(SuggestApiException) { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststore_query(
         it,
+        
         FfiConverterTypeSuggestionQuery.lower(`query`),_status)
 }
     }
@@ -1927,6 +1988,7 @@ open class SuggestStore: Disposable, AutoCloseable, SuggestStoreInterface
     uniffiRustCallWithError(SuggestApiException) { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststore_query_with_metrics(
         it,
+        
         FfiConverterTypeSuggestionQuery.lower(`query`),_status)
 }
     }
@@ -2148,6 +2210,11 @@ open class SuggestStoreBuilder: Disposable, AutoCloseable, SuggestStoreBuilderIn
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
 
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
     override fun destroy() {
         // Only allow a single call to this method.
         // TODO: maybe we should log a warning if called more than once?
@@ -2236,6 +2303,7 @@ open class SuggestStoreBuilder: Disposable, AutoCloseable, SuggestStoreBuilderIn
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststorebuilder_cache_path(
         it,
+        
         FfiConverterString.lower(`path`),_status)
 }
     }
@@ -2249,6 +2317,7 @@ open class SuggestStoreBuilder: Disposable, AutoCloseable, SuggestStoreBuilderIn
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststorebuilder_data_path(
         it,
+        
         FfiConverterString.lower(`path`),_status)
 }
     }
@@ -2269,7 +2338,9 @@ open class SuggestStoreBuilder: Disposable, AutoCloseable, SuggestStoreBuilderIn
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststorebuilder_load_extension(
         it,
-        FfiConverterString.lower(`library`),FfiConverterOptionalString.lower(`entryPoint`),_status)
+        
+        FfiConverterString.lower(`library`),
+        FfiConverterOptionalString.lower(`entryPoint`),_status)
 }
     }
     )
@@ -2282,6 +2353,7 @@ open class SuggestStoreBuilder: Disposable, AutoCloseable, SuggestStoreBuilderIn
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststorebuilder_remote_settings_bucket_name(
         it,
+        
         FfiConverterString.lower(`bucketName`),_status)
 }
     }
@@ -2295,6 +2367,7 @@ open class SuggestStoreBuilder: Disposable, AutoCloseable, SuggestStoreBuilderIn
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststorebuilder_remote_settings_server(
         it,
+        
         FfiConverterTypeRemoteSettingsServer.lower(`server`),_status)
 }
     }
@@ -2308,6 +2381,7 @@ open class SuggestStoreBuilder: Disposable, AutoCloseable, SuggestStoreBuilderIn
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_suggest_fn_method_suggeststorebuilder_remote_settings_service(
         it,
+        
         FfiConverterTypeRemoteSettingsService.lower(`rsService`),_status)
 }
     }
@@ -3163,7 +3237,7 @@ public object FfiConverterTypeGeonameType : FfiConverterRustBuffer<GeonameType>{
         }
     }
 
-    override fun allocationSize(value: GeonameType) = when(value) {
+    override fun allocationSize(value: GeonameType): ULong = when(value) {
         is GeonameType.Country -> {
             // Add the size for the Int that specifies the variant plus the size needed for all fields
             (
@@ -3455,7 +3529,7 @@ public object FfiConverterTypeSuggestProviderConfig : FfiConverterRustBuffer<Sug
         }
     }
 
-    override fun allocationSize(value: SuggestProviderConfig) = when(value) {
+    override fun allocationSize(value: SuggestProviderConfig): ULong = when(value) {
         is SuggestProviderConfig.Weather -> {
             // Add the size for the Int that specifies the variant plus the size needed for all fields
             (
@@ -3679,7 +3753,7 @@ public object FfiConverterTypeSuggestion : FfiConverterRustBuffer<Suggestion>{
         }
     }
 
-    override fun allocationSize(value: Suggestion) = when(value) {
+    override fun allocationSize(value: Suggestion): ULong = when(value) {
         is Suggestion.Amp -> {
             // Add the size for the Int that specifies the variant plus the size needed for all fields
             (
@@ -4661,11 +4735,6 @@ public object FfiConverterMapUByteTypeAlternateNames: FfiConverterRustBuffer<Map
 
 
 
-/**
- * Typealias from the type name used in the UDL file to the builtin type.  This
- * is needed because the UDL type name is used in function/method signatures.
- * It's also what we have an external type that references a custom type.
- */
 public typealias JsonValue = kotlin.String
 public typealias FfiConverterTypeJsonValue = FfiConverterString
 
@@ -4681,7 +4750,9 @@ public typealias FfiConverterTypeJsonValue = FfiConverterString
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_suggest_fn_func_raw_suggestion_url_matches(
     
-        FfiConverterString.lower(`rawUrl`),FfiConverterString.lower(`cookedUrl`),_status)
+        
+        FfiConverterString.lower(`rawUrl`),
+        FfiConverterString.lower(`cookedUrl`),_status)
 }
     )
     }

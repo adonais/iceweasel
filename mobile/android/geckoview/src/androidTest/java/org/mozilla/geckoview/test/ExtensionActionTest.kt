@@ -159,8 +159,6 @@ class ExtensionActionTest : BaseSessionTest() {
         val json = JSONObject(message)
         json.put("type", type)
 
-        backgroundPort!!.postMessage(json)
-
         sessionRule.addExternalDelegateDuringNextWait(
             WebExtension.ActionDelegate::class,
             extension!!::setActionDelegate,
@@ -197,6 +195,8 @@ class ExtensionActionTest : BaseSessionTest() {
                 }
             },
         )
+
+        backgroundPort!!.postMessage(json)
 
         sessionRule.waitForResult(result)
     }
@@ -253,8 +253,6 @@ class ExtensionActionTest : BaseSessionTest() {
         val json = JSONObject(message)
         json.put("type", type)
 
-        windowPort!!.postMessage(json)
-
         sessionRule.addExternalDelegateDuringNextWait(
             WebExtension.ActionDelegate::class,
             { delegate ->
@@ -285,6 +283,8 @@ class ExtensionActionTest : BaseSessionTest() {
                 }
             },
         )
+
+        windowPort!!.postMessage(json)
 
         sessionRule.waitForResult(result)
     }
@@ -661,7 +661,7 @@ class ExtensionActionTest : BaseSessionTest() {
                     extension: WebExtension,
                     popupAction: WebExtension.Action,
                 ): GeckoResult<GeckoSession>? {
-                    assertEquals(extension, this@ExtensionActionTest.extension)
+                    assertEquals(this@ExtensionActionTest.extension!!.id, extension.id)
                     openPopup.complete(null)
                     return null
                 }
@@ -717,7 +717,7 @@ class ExtensionActionTest : BaseSessionTest() {
                     extension: WebExtension,
                     popupAction: WebExtension.Action,
                 ): GeckoResult<GeckoSession>? {
-                    assertEquals(extension, this@ExtensionActionTest.extension)
+                    assertEquals(this@ExtensionActionTest.extension!!.id, extension.id)
                     assertEquals(popupAction, action)
                     togglePopup.complete(null)
                     return null
@@ -848,7 +848,7 @@ class ExtensionActionTest : BaseSessionTest() {
                     extension: WebExtension,
                     popupAction: WebExtension.Action,
                 ): GeckoResult<GeckoSession>? {
-                    assertEquals(extension, this@ExtensionActionTest.extension)
+                    assertEquals(this@ExtensionActionTest.extension!!.id, extension.id)
                     assertEquals(popupAction, action)
                     return GeckoResult.fromValue(popupSession)
                 }
@@ -922,7 +922,7 @@ class ExtensionActionTest : BaseSessionTest() {
                     extension: WebExtension,
                     popupAction: WebExtension.Action,
                 ): GeckoResult<GeckoSession>? {
-                    assertEquals(extension, this@ExtensionActionTest.extension)
+                    assertEquals(this@ExtensionActionTest.extension!!.id, extension.id)
                     assertEquals(popupAction, action)
                     togglePopup.complete(null)
                     return GeckoResult.fromValue(popupSession)

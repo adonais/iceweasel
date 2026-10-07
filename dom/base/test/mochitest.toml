@@ -12,6 +12,8 @@ support-files = [
   "iframe_main_bug1022229.html",
   "iframe_sandbox_bug1022229.html",
   "file_empty.html",
+  "file_domcontentloaded_document_open.html",
+  "file_domcontentloaded_terminated_parse.html",
   "iframe_postMessage_solidus.html",
   "file_setname.html",
   "345339_iframe.html",
@@ -352,6 +354,10 @@ skip-if = [
   "http3",
 ]
 
+["test_domcontentloaded_document_open.html"]
+
+["test_domcontentloaded_terminated_parse.html"]
+
 ["test_domparser_null_char.html"]
 
 ["test_domparsing.html"]
@@ -568,6 +574,8 @@ skip-if = [
 ["test_nested_event_loop_spin_and_idle_tasks.html"]
 
 ["test_nodelist_holes.html"]
+
+["test_node_selected_flag_after_splitText.html"]
 
 ["test_omt_eager_baseline.html"]
 skip-if = [

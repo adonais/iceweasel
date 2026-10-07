@@ -12,6 +12,7 @@
 #include "mozilla/java/GeckoAppShellWrappers.h"
 #include "mozilla/java/GeckoNetworkManagerWrappers.h"
 #include "mozilla/jni/Utils.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsIObserverService.h"
 #include "nsServiceManagerUtils.h"
 

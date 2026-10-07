@@ -62,7 +62,8 @@ namespace mozilla {
 
 MOZ_MTLOG_MODULE("mtransport")
 
-TransportLayerIce::TransportLayerIce() : stream_(nullptr), component_(0) {
+TransportLayerIce::TransportLayerIce()
+    : stream_(nullptr), component_(0), dtls_id_(0) {
   // setup happens later
 }
 
@@ -89,6 +90,9 @@ void TransportLayerIce::SetParameters(RefPtr<NrIceMediaStream> stream,
 }
 
 void TransportLayerIce::PostSetup() {
+  // Bind to the DTLS association current at setup time. A parallel chain
+  // created later for a changed fingerprint will bind to the new id instead.
+  dtls_id_ = stream_->GetDtlsId();
   stream_->SignalReady.connect(this, &TransportLayerIce::IceReady);
   stream_->SignalFailed.connect(this, &TransportLayerIce::IceFailed);
   stream_->SignalPacketReceived.connect(this,
@@ -100,7 +104,8 @@ void TransportLayerIce::PostSetup() {
 
 TransportResult TransportLayerIce::SendPacket(MediaPacket& packet) {
   CheckThread();
-  nsresult res = stream_->SendPacket(component_, packet.data(), packet.len());
+  nsresult res =
+      stream_->SendPacket(component_, packet.data(), packet.len(), dtls_id_);
   int len = packet.len();
   // We're done with packet.
   SignalPacketSending(this, packet);
@@ -143,21 +148,15 @@ void TransportLayerIce::IceFailed(NrIceMediaStream* stream) {
 }
 
 void TransportLayerIce::IcePacketReceived(NrIceMediaStream* stream,
-                                          int component,
-                                          const unsigned char* data, int len) {
+                                          int component, uint32_t dtls_id,
+                                          MediaPacket& packet) {
   CheckThread();
-  // We get packets for both components, so ignore the ones that aren't
-  // for us.
-  if (component_ != component) return;
+  // We get packets for both components, and (during a fingerprint-changing ICE
+  // restart) for both DTLS associations. Ignore the ones that aren't for us.
+  if (component_ != component || dtls_id_ != dtls_id) return;
 
   MOZ_MTLOG(ML_DEBUG, LAYER_INFO << "PacketReceived(" << stream->name() << ","
-                                 << component << "," << len << ")");
-  // Might be useful to allow MediaPacket to borrow a buffer (ie; not take
-  // ownership, but copy it if the MediaPacket is moved). This could be a
-  // footgun though with MediaPackets that end up on the heap.
-  MediaPacket packet;
-  packet.Copy(data, len);
-  packet.Categorize();
+                                 << component << "," << packet.len() << ")");
 
   SignalPacketReceived(this, packet);
 }

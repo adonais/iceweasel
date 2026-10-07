@@ -13,7 +13,7 @@
 
 use api::{ColorF, units::*};
 
-use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState};
+use crate::pattern::{Pattern, PatternBuilder, PatternBuilderState};
 use crate::renderer::BlendMode;
 
 pub struct Cutout;
@@ -21,9 +21,7 @@ pub struct Cutout;
 impl PatternBuilder for Cutout {
     fn build(
         &self,
-        _sub_rect: Option<DeviceRect>,
-        _offset: LayoutVector2D,
-        _ctx: &PatternBuilderContext,
+        _pattern_rect: &LayoutRect,
         _state: &mut PatternBuilderState,
     ) -> Pattern {
         Pattern::color(ColorF::WHITE)

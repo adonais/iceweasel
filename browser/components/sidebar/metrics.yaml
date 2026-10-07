@@ -870,4 +870,5 @@ browser.ui.interaction:
       sort_type:
         type: string
         description: >
-          One of "date", "site", "date_and_site", "last_visited".
+          One of "date", "site", "date_and_site", "last_visited",
+          "most_visited".

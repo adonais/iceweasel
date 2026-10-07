@@ -173,8 +173,11 @@ impl ProcessReader {
     }
 
     pub fn copy_array<T>(&self, src: usize, num: usize) -> Result<Vec<T>, ReadError> {
+        let mut array: Vec<T> = Vec::new();
+        array
+            .try_reserve_exact(num)
+            .map_err(|_| ReadError::TooLarge)?;
         let num_of_bytes = num * size_of::<T>();
-        let mut array: Vec<T> = Vec::with_capacity(num);
         let res = unsafe {
             ReadProcessMemory(
                 self.process,

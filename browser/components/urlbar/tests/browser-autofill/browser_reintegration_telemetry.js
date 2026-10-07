@@ -23,6 +23,7 @@ add_setup(async function () {
       ["browser.urlbar.autoFill.adaptiveHistory.enabled", true],
       ["browser.urlbar.autoFill.adaptiveHistory.minCharsThreshold", 0],
       ["browser.urlbar.autoFill.adaptiveHistory.useCountThreshold", 0],
+      ["browser.urlbar.autoFill.adaptiveHistory.urlMinPicks", 1],
       ["browser.urlbar.autoFill.backspaceThreshold", BACKSPACE_THRESHOLD],
       ["browser.urlbar.suggest.quicksuggest.sponsored", false],
       ["browser.urlbar.suggest.quicksuggest.nonsponsored", false],

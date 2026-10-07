@@ -100,13 +100,9 @@ class ReportRunnable final : public DiscardableRunnable {
 void ReportingObserver::MaybeReport(Report* aReport) {
   MOZ_ASSERT(aReport);
 
-  if (!mTypes.IsEmpty()) {
-    nsAutoString type;
-    aReport->GetType(type);
-
-    if (!mTypes.Contains(type)) {
-      return;
-    }
+  if (!mTypes.IsEmpty() &&
+      !mTypes.Contains(nsDependentAtomString(aReport->Type()))) {
+    return;
   }
 
   bool wasEmpty = mReports.IsEmpty();

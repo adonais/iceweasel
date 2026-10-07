@@ -397,7 +397,10 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
     border-radius: var(--border-radius-large);
   }
 
-  .ds-card-grid & {
+  // @experiment(remove) { bug 2069496 }: drop .widgets-row-ad-cell.
+  // The widgets row cell has no grid ancestor but needs the same card
+  // surface, hover and forced-colors treatment.
+  :is(.ds-card-grid, .widgets-row-ad-cell) & {
     @include newtab-card-style;
 
     &:not(.placeholder) {

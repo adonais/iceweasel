@@ -1009,6 +1009,7 @@ struct ParametersAndLevel {
   Maybe<std::set<std::tuple<FmtpParamKey, FmtpParamValue>>> mSet = Nothing();
   Maybe<uint32_t> mLevel = Nothing();
   Maybe<uint32_t> mSubprofile = Nothing();
+  Maybe<uint32_t> mProfile = Nothing();
 
   // Helper function to get the default level for a codec.
   static Maybe<uint32_t> DefaultLevelForCodec(const nsString& aMimeType) {
@@ -1034,6 +1035,15 @@ struct ParametersAndLevel {
     // See DefaultLevelCodec for comments on the default level.
     if (aMimeType.LowerCaseEqualsASCII("video/h264")) {
       return Some(JsepVideoCodecDescription::GetSubprofile(0x420010));
+    }
+    return Nothing();
+  }
+
+  // AV1 has a defined default profile of 0, which is omittable by spec.
+  // https://aomediacodec.github.io/av1-rtp-spec/#72-sdp-parameters
+  static Maybe<uint32_t> DefaultProfileForCodec(const nsString& aMimeType) {
+    if (aMimeType.LowerCaseEqualsASCII("video/av1")) {
+      return Some(0);
     }
     return Nothing();
   }
@@ -1081,6 +1091,26 @@ struct ParametersAndLevel {
     }
     return Nothing();
   }
+
+  // AV1's "profile" is, like level, an asymmetric/declarative parameter (see
+  // https://aomediacodec.github.io/av1-rtp-spec/#723-usage-with-the-sdp-offeranswer-model),
+  // but unlike H264, it's a separate fmtp key from the level ("level-idx"),
+  // not encoded together with it. So it needs its own extraction, independent
+  // of ExtractLevel.
+  static Maybe<uint32_t> ExtractProfile(const nsString& aMimeType,
+                                        const FmtpParamKey& aKey,
+                                        const FmtpParamValue& aValue) {
+    if (aMimeType.LowerCaseEqualsASCII("video/av1") &&
+        aKey.EqualsLiteral("profile")) {
+      nsresult rv;
+      auto val = aValue.ToUnsignedInteger(&rv);
+      if (NS_FAILED(rv)) {
+        return Nothing();
+      }
+      return Some(val);
+    }
+    return Nothing();
+  }
 };
 
 // We can not directly compare H264 or AV1 FMTP parameter sets, since the level
@@ -1095,6 +1125,7 @@ ParametersAndLevel FmtpToParametersAndLevel(const nsString& aMimeType,
   auto resultParams = std::set<std::tuple<FmtpParamKey, FmtpParamValue>>();
   Maybe<uint32_t> resultLevel = Nothing();
   Maybe<uint32_t> resultSubprofile = Nothing();
+  Maybe<uint32_t> resultProfile = Nothing();
   nsTArray<nsString> parts;
   for (const auto& kvp : aFmtp.Split(';')) {
     auto parts = nsTArray<nsString>();
@@ -1106,11 +1137,12 @@ ParametersAndLevel FmtpToParametersAndLevel(const nsString& aMimeType,
       // Check to see if it is the level parameter.
       auto level =
           ParametersAndLevel::ExtractLevel(aMimeType, parts[0], parts[1]);
-      if (level.isNothing()) {
-        // If it is not the level parameter, then it is a regular parameter.
-        // We store the key-value pair in the result parameter set.
-        resultParams.insert(std::make_tuple(parts[0], parts[1]));
-      } else {
+      // Check to see if it is AV1's profile parameter. Unlike H264's
+      // subprofile, this is a separate key from the level, not encoded
+      // together with it, so it's checked independently.
+      auto profile =
+          ParametersAndLevel::ExtractProfile(aMimeType, parts[0], parts[1]);
+      if (level.isSome()) {
         // It is the level parameter, so we do not store it in the result
         // parameter set. Instead we store it in the result level, and
         // subprofile (if provided).
@@ -1118,6 +1150,13 @@ ParametersAndLevel FmtpToParametersAndLevel(const nsString& aMimeType,
             aMimeType, parts[0], parts[1]);
         // Store the level separately
         resultLevel = level;
+      } else if (profile.isSome()) {
+        // It is AV1's profile parameter, so store it separately too.
+        resultProfile = profile;
+      } else {
+        // It is a regular parameter.
+        // We store the key-value pair in the result parameter set.
+        resultParams.insert(std::make_tuple(parts[0], parts[1]));
       }
     } else {
       // This is not a valid key-value pair FMTP line, so we do not have
@@ -1128,6 +1167,9 @@ ParametersAndLevel FmtpToParametersAndLevel(const nsString& aMimeType,
             return ParametersAndLevel::DefaultLevelForCodec(aMimeType);
           }),
           .mSubprofile = resultSubprofile,
+          .mProfile = resultProfile.orElse([&]() -> Maybe<uint32_t> {
+            return ParametersAndLevel::DefaultProfileForCodec(aMimeType);
+          }),
       };
     }
   }
@@ -1137,6 +1179,9 @@ ParametersAndLevel FmtpToParametersAndLevel(const nsString& aMimeType,
         return ParametersAndLevel::DefaultLevelForCodec(aMimeType);
       }),
       .mSubprofile = resultSubprofile,
+      .mProfile = resultProfile.orElse([&]() -> Maybe<uint32_t> {
+        return ParametersAndLevel::DefaultProfileForCodec(aMimeType);
+      }),
   };
 }
 
@@ -1185,7 +1230,8 @@ bool DoesCodecParameterMatchCodec(const RTCRtpCodec& aCodec1,
         return false;
       }
       if (!aIgnoreLevels && (pset1.mLevel != pset2.mLevel ||
-                             pset1.mSubprofile != pset2.mSubprofile)) {
+                             pset1.mSubprofile != pset2.mSubprofile ||
+                             pset1.mProfile != pset2.mProfile)) {
         return false;
       }
       // Compare pair-wise the two parameter sets.

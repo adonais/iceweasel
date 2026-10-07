@@ -54,7 +54,7 @@ The toolbar contains controls to activate a particular tool, to dock/float the w
 
 ## Node picker
 
-On the far left there's a button to activate the node picker. This lets you select a page element for inspection. See {doc}`Selecting elements <../page_inspector/how_to/select_an_element>`
+On the far left there's a button to activate the node picker. This lets you select a page element for inspection. See {doc}`Selecting elements <../page_inspector/how_to/select_an_element/index>`
 
 ## Toolbox-hosted tools
 
@@ -81,7 +81,6 @@ Note that not all the hosted tools are always listed here: only the tools actual
 Next there's an array of buttons that can be added or removed in the {ref}`settings <tool-toolbox-settings>`. None of these tools are enabled by default, but you can add them in the {doc}`developer tools settings <../settings/index>`
 
 - {doc}`Select a frame as the currently targeted document <../working_with_iframes/index>`
-- {doc}`Highlight painted area <../paint_flashing_tool/index>`
 - {ref}`Take a screenshot of the entire page  <taking-screenshots-taking-a-screenshot-of-the-page>`: take a screenshot of the complete web page and saves it in your Downloads directory
 - {doc}`Toggle rulers for the page <../rulers/index>`
 - {doc}`Measure a portion of the page <../measure_a_portion_of_the_page/index>`: measure a part of the website by selecting areas within the page

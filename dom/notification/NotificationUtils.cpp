@@ -4,17 +4,22 @@
 
 #include "NotificationUtils.h"
 
+#include "mozilla/AlertNotification.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Components.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/DOMTypes.h"
 #include "mozilla/dom/NotificationBinding.h"
+#include "mozilla/dom/notification/NotificationHandler.h"
 #include "mozilla/glean/DomNotificationMetrics.h"
+#include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
 #include "nsIAlertsService.h"
 #include "nsINotificationStorage.h"
 #include "nsIPermissionManager.h"
 #include "nsIPushService.h"
+#include "nsISiteCategory.h"
+#include "nsIURIClassifier.h"
 #include "nsNetUtil.h"
 #include "nsServiceManagerUtils.h"
 
@@ -112,7 +117,7 @@ bool IsNotificationForbiddenFor(nsIPrincipal* aPrincipal,
         PropertiesFile::DOM_PROPERTIES,
         "NotificationsCrossOriginIframeRequestIsForbidden");
   }
-  return !StaticPrefs::dom_webnotifications_allowcrossoriginiframe();
+  return true;
 }
 
 NotificationPermission GetRawNotificationPermission(nsIPrincipal* aPrincipal) {
@@ -357,6 +362,241 @@ nsresult AdjustPushQuota(nsIPrincipal* aPrincipal,
     return pushQuotaManager->NotificationForOriginShown(origin.get());
   }
   return pushQuotaManager->NotificationForOriginClosed(origin.get());
+}
+
+NotificationCallbacksCommon::NotificationCallbacksCommon(
+    const nsAString& aScope, nsIPrincipal* aPrincipal,
+    IPCNotification aNotification)
+    : mScope(aScope),
+      mPrincipal(aPrincipal),
+      mNotification(std::move(aNotification)) {
+  if (nsCOMPtr<nsISiteCategory> siteCategory =
+          do_GetService("@mozilla.org/site-category;1")) {
+    nsCString category;
+    if (NS_SUCCEEDED(siteCategory->GetCategory(mPrincipal, category))) {
+      mCategory = Some(category);
+    }
+  }
+}
+
+NotificationCallbacksCommon::~NotificationCallbacksCommon() = default;
+
+NS_IMETHODIMP NotificationCallbacksCommon::OnAlertDisable() {
+  glean::web_notification::clicked.Record(
+      Some(glean::web_notification::ClickedExtra{.action = Some("disable"_ns),
+                                                 .siteCategory = mCategory}));
+  return RemovePermission(mPrincipal);
+}
+
+NS_IMETHODIMP NotificationCallbacksCommon::OnAlertSettings() {
+  glean::web_notification::clicked.Record(
+      Some(glean::web_notification::ClickedExtra{.action = Some("settings"_ns),
+                                                 .siteCategory = mCategory}));
+  return OpenSettings(mPrincipal);
+}
+
+NS_IMETHODIMP NotificationCallbacksCommon::OnAlertShow() {
+  mShown = true;
+  glean::web_notification::shown.Record(
+      Some(glean::web_notification::ShownExtra{.siteCategory = mCategory}));
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationCallbacksCommon::OnAlertClick(
+    nsIAlertAction* aAction) {
+  mClicked = true;
+  glean::web_notification::clicked.Record(
+      Some(glean::web_notification::ClickedExtra{
+          .action = Some(aAction ? "action-button"_ns : "body"_ns),
+          .siteCategory = mCategory}));
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationCallbacksCommon::OnAlertDismissedFromForeground() {
+  glean::web_notification::ignored.Record(
+      Some(glean::web_notification::IgnoredExtra{.siteCategory = mCategory}));
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationCallbacksCommon::OnAlertClosed() {
+  if (mShown && !mClicked) {
+    glean::web_notification::dismissed.Record(Some(
+        glean::web_notification::DismissedExtra{.siteCategory = mCategory}));
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationCallbacksCommon::OnAlertFinished() {
+  if (mShown && !mClicked) {
+    glean::web_notification::dismissed.Record(Some(
+        glean::web_notification::DismissedExtra{.siteCategory = mCategory}));
+  }
+  return NS_OK;
+}
+
+void NotificationCallbacksCommon::PersistNotification() {
+  (void)NS_WARN_IF(
+      NS_FAILED(AdjustPushQuota(mPrincipal, NotificationStatusChange::Shown)));
+  nsresult rv =
+      notification::PersistNotification(mPrincipal, mNotification, mScope);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("Could not persist Notification");
+  }
+}
+
+void NotificationCallbacksCommon::UnpersistNotification() {
+  (void)NS_WARN_IF(
+      NS_FAILED(AdjustPushQuota(mPrincipal, NotificationStatusChange::Closed)));
+  (void)NS_WARN_IF(NS_FAILED(
+      notification::UnpersistNotification(mPrincipal, mNotification.id())));
+}
+
+nsresult NotificationCallbacksCommon::RespondOnClick(nsIAlertAction* aAction) {
+  nsAutoString actionName;
+  if (aAction) {
+    MOZ_TRY(aAction->GetAction(actionName));
+  }
+  return notification::RespondOnClick(mPrincipal, mScope, mNotification,
+                                      actionName);
+}
+
+NS_IMPL_ISUPPORTS(NotificationCallbacksCommon, nsIAlertCallbacks)
+
+class SafeBrowsingClassificationCallback final
+    : public nsIURIClassifierCallback {
+ public:
+  NS_DECL_ISUPPORTS
+
+  SafeBrowsingClassificationCallback() = default;
+
+  already_AddRefed<NotificationPermissionPromise> Promise() {
+    return mPromiseHolder.Ensure(__func__);
+  }
+
+  NS_IMETHOD OnClassifyComplete(nsresult aErrorCode, const nsACString& aList,
+                                const nsACString& aProvider,
+                                const nsACString& aFullHash) override {
+    if (NS_FAILED(aErrorCode)) {
+      mPromiseHolder.Reject(aErrorCode, __func__);
+    } else {
+      mPromiseHolder.Resolve(Ok(), __func__);
+    }
+    return NS_OK;
+  }
+
+ private:
+  ~SafeBrowsingClassificationCallback() {
+    mPromiseHolder.RejectIfExists(NS_ERROR_ABORT, __func__);
+  }
+
+  MozPromiseHolder<NotificationPermissionPromise> mPromiseHolder;
+};
+
+NS_IMPL_ISUPPORTS(SafeBrowsingClassificationCallback, nsIURIClassifierCallback)
+
+RefPtr<NotificationPermissionPromise> EnsureValidNotificationPermission(
+    nsIPrincipal* aPrincipal, nsIPrincipal* aEffectiveStoragePrincipal,
+    bool aIsSecureContext) {
+  NotificationPermission permission = GetNotificationPermission(
+      aPrincipal, aEffectiveStoragePrincipal, aIsSecureContext,
+      PermissionCheckPurpose::NotificationShow);
+  if (permission != NotificationPermission::Granted) {
+    return NotificationPermissionPromise::CreateAndReject(
+        NS_ERROR_DOM_NOT_ALLOWED_ERR, __func__);
+  }
+
+  // Check Safe Browsing blocklist if the feature is enabled (bug 1986300).
+  if (StaticPrefs::dom_webnotifications_block_if_on_safebrowsing()) {
+    nsresult rv = NS_OK;
+    nsCOMPtr<nsIURIClassifier> uriClassifier =
+        do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID, &rv);
+
+    if (NS_FAILED(rv) || !uriClassifier) {
+      NS_WARNING("URI classifier unavailable for notification check");
+    } else {
+      RefPtr<SafeBrowsingClassificationCallback> callback =
+          new SafeBrowsingClassificationCallback();
+      RefPtr<NotificationPermissionPromise> promise = callback->Promise();
+
+      bool willClassify = false;
+      rv = uriClassifier->Classify(aPrincipal, callback, &willClassify);
+
+      if (NS_SUCCEEDED(rv) && willClassify) {
+        promise->Then(
+            GetMainThreadSerialEventTarget(), __func__,
+            [principal = RefPtr(aPrincipal)](
+                const NotificationPermissionPromise::ResolveOrRejectValue&
+                    aResult) {
+              if (aResult.IsReject()) {
+                // Remove permission if it's on the blocklist
+                RemovePermission(principal);
+              }
+            });
+        return promise;
+      }
+    }
+  }
+
+  return NotificationPermissionPromise::CreateAndResolve(Ok(), __func__);
+}
+
+Result<nsCOMPtr<nsIAlertNotification>, nsresult> CreateAlertForNotification(
+    const IPCNotificationOptions& aOptions, nsIPrincipal& aPrincipal,
+    Maybe<IPCImage>&& aIcon) {
+  // Step 4.3 the show steps, which are almost all about processing `tag` and
+  // then displaying the notification. Both are handled by
+  // nsIAlertsService::ShowAlert. The below is all about constructing the
+  // observer (for show and close events) right and ultimately call the alerts
+  // service function.
+
+  // In the case of IPC, the parent process uses the cookie to map to
+  // nsIObserver. Thus the cookie must be unique to differentiate observers.
+  // XXX(krosylight): This is about ContentChild::mAlertObserver which is not
+  // useful when called by the parent process. This should be removed when we
+  // make nsIAlertsService parent process only.
+  nsString obsoleteCookie = u"notification:"_ns;
+
+  bool requireInteraction = aOptions.requireInteraction();
+  if (!StaticPrefs::dom_webnotifications_requireinteraction_enabled()) {
+    requireInteraction = false;
+  }
+
+  nsCOMPtr<nsIAlertNotification> alert =
+      do_CreateInstance(ALERT_NOTIFICATION_CONTRACTID);
+  if (!alert) {
+    return Err(NS_ERROR_NOT_AVAILABLE);
+  }
+
+  nsCOMPtr<nsIPrincipal> principal = &aPrincipal;
+  nsAutoCString iconUrl;
+  if (RefPtr<nsIURI> iconUri = aOptions.icon()) {
+    iconUri->GetSpec(iconUrl);
+  }
+  MOZ_TRY(alert->Init(aOptions.tag(), NS_ConvertUTF8toUTF16(iconUrl),
+                      aOptions.title(), aOptions.body(), true, obsoleteCookie,
+                      NS_ConvertASCIItoUTF16(GetEnumString(aOptions.dir())),
+                      aOptions.lang(), aOptions.dataSerialized(), principal,
+                      principal->GetIsInPrivateBrowsing(), requireInteraction,
+                      aOptions.silent(), aOptions.vibrate()));
+
+  if (aIcon) {
+    if (nsCOMPtr<imgIContainer> image =
+            nsContentUtils::IPCImageToImage(*aIcon)) {
+      alert->SetImage(image);
+    }
+  }
+
+  if (StaticPrefs::dom_webnotifications_actions_enabled()) {
+    nsTArray<RefPtr<nsIAlertAction>> actions;
+    MOZ_ASSERT(aOptions.actions().Length() <= kMaxActions);
+    for (const auto& action : aOptions.actions()) {
+      actions.AppendElement(
+          new AlertAction(action.name(), action.title(), action.navigate()));
+    }
+    alert->SetActions(actions);
+  }
+
+  return alert;
 }
 
 NS_IMPL_ISUPPORTS(NotificationActionStorageEntry,

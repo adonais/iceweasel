@@ -11,6 +11,10 @@ const PREF_ENABLED = "browser.shell.customIcon.enabled";
 const PREF_PER_USER_START_MENU_SHORTCUT_CREATED =
   "browser.shell.customIcon.perUserStartMenuShortcutCreated";
 
+// governingStartMenuShortcut() return values.
+const kUserShortcut = "user";
+const kCommonShortcut = "common";
+
 /**
  * Inlined catalog of selectable icons. Each entry has:
  *
@@ -175,51 +179,72 @@ function browserExePath() {
 }
 
 /**
- * Directory holding the user's pinned taskbar shortcuts. Mirrors the path
- * EnumerateInstallShortcuts scans in nsWindowsShellService.cpp.
+ * The shortcuts this install owns (by AUMID), as nsIInstallShortcutInfo.
  *
- * @returns {string}
+ * @returns {Promise<?Array<nsIInstallShortcutInfo>>} Null if the shortcuts
+ *   could not be enumerated.
  */
-function taskbarPinDir() {
-  return PathUtils.join(
-    Services.dirsvc.get("AppData", Ci.nsIFile).path,
-    "Microsoft",
-    "Internet Explorer",
-    "Quick Launch",
-    "User Pinned",
-    "TaskBar"
-  );
-}
-
-/**
- * Locate the shortcuts this install owns, by AUMID.
- *
- * Only the two locations that can govern the taskbar icon are reported: the
- * per-user Start Menu (which shadows the system-wide one) and the taskbar pin.
- *
- * @returns {Promise<?{inStartMenu: boolean, pinnedToTaskbar: boolean}>}
- *   Null if the shortcuts could not be enumerated.
- */
-async function findInstallShortcuts() {
-  let shortcuts;
+async function installShortcutEntries() {
   try {
-    shortcuts = await lazy.ShellService.enumerateInstallShortcuts(
+    return await lazy.ShellService.enumerateInstallShortcuts(
       lazy.WinTaskbar.defaultGroupId
     );
   } catch (ex) {
     lazy.logConsole.error("enumerateInstallShortcuts failed", ex);
     return null;
   }
+}
 
-  let anyUnder = dir => {
-    let prefix = dir.toLowerCase() + "\\";
-    return shortcuts.some(p => p.toLowerCase().startsWith(prefix));
-  };
+/**
+ * The Start Menu shortcut that governs the taskbar icon, if any: a per-user
+ * shortcut shadows the common (all-users) one.
+ *
+ * @param {Set<string>} locations Location tags from getInstallShortcutState().
+ * @returns {?("user"|"common")} Null when no Start Menu shortcut exists.
+ */
+function governingStartMenuShortcut(locations) {
+  if (locations.has("Programs")) {
+    return kUserShortcut;
+  }
+  if (locations.has("CommonPrograms")) {
+    return kCommonShortcut;
+  }
+  return null;
+}
 
-  return {
-    inStartMenu: anyUnder(Services.dirsvc.get("Progs", Ci.nsIFile).path),
-    pinnedToTaskbar: anyUnder(taskbarPinDir()),
-  };
+/**
+ * Whether the custom icon feature must be turned off for this state.
+ *
+ * @param {object} state A snapshot from getInstallShortcutState().
+ * @param {boolean} everCreatedShortcut The shortcut-created pref.
+ * @returns {boolean}
+ */
+function shouldDisableCustomIcon(state, everCreatedShortcut) {
+  if (governingStartMenuShortcut(state.locations) != kCommonShortcut) {
+    return false;
+  }
+  if (state.locations.has("Taskbar")) {
+    return false;
+  }
+  // In this case, we would need a per-user Start Menu shortcut to be able
+  // to modify the taskbar icon. If the shortcut was previously created,
+  // (and deleted by the user), or if the name is blocked by another install,
+  // we should disable the feature.
+  return everCreatedShortcut || state.slotTakenByOtherInstall;
+}
+
+/**
+ * Test-only wrapper around governingStartMenuShortcut().
+ */
+export function testOnlyGoverningStartMenuShortcut(locations) {
+  return governingStartMenuShortcut(locations);
+}
+
+/**
+ * Test-only wrapper around shouldDisableCustomIcon().
+ */
+export function testOnlyShouldDisableCustomIcon(state, everCreatedShortcut) {
+  return shouldDisableCustomIcon(state, everCreatedShortcut);
 }
 
 /**
@@ -237,18 +262,22 @@ async function findInstallShortcuts() {
  */
 async function applyIconToWindowsShortcuts(iconPath, iconResourceId) {
   let aumid = lazy.WinTaskbar.defaultGroupId;
-  let shortcuts = [];
-  try {
-    shortcuts = await lazy.ShellService.enumerateInstallShortcuts(aumid);
-  } catch (ex) {
-    lazy.logConsole.error("enumerateInstallShortcuts failed", ex);
+  let entries = await installShortcutEntries();
+  if (!entries) {
     return false;
   }
 
   lazy.logConsole.debug(
-    `enumerateInstallShortcuts(${aumid}) matched ${shortcuts.length} ` +
-      `shortcut(s): ${shortcuts.join(", ")}`
+    `enumerateInstallShortcuts(${aumid}) matched ${entries.length} ` +
+      `shortcut(s): ${entries.map(entry => entry.path).join(", ")}`
   );
+
+  // Never write the all-users Start Menu shortcut: modifying it
+  // requires elevation and would change the icon other users see.
+  let shortcuts = entries
+    .filter(entry => entry.location != "CommonPrograms")
+    .map(entry => entry.path);
+
   if (!shortcuts.length) {
     lazy.logConsole.warn(
       `No shortcuts matched this install (AUMID ${aumid}); nothing to update. ` +
@@ -582,7 +611,17 @@ export const CustomIconManager = {
       return;
     }
 
-    if (await this.shouldDisableForMissingShortcut()) {
+    let state = await this.getInstallShortcutState();
+    if (
+      state &&
+      shouldDisableCustomIcon(
+        state,
+        Services.prefs.getBoolPref(
+          PREF_PER_USER_START_MENU_SHORTCUT_CREATED,
+          false
+        )
+      )
+    ) {
       lazy.logConsole.warn(
         "The taskbar icon can no longer be overridden; disabling custom icons."
       );
@@ -627,57 +666,43 @@ export const CustomIconManager = {
   },
 
   /**
-   * Whether the installer's system-wide (all-users) Start Menu shortcut for this
-   * install exists.
+   * One snapshot of everything the shortcut creation / feature disabling
+   * policy depends on.
    *
-   * @returns {Promise<boolean>} True if the all-users Start Menu shortcut exists.
+   * slotTakenByOtherInstall: enumerateInstallShortcuts only reports shortcuts
+   * whose AUMID and target executable match this install, but every install
+   * of the same brand names its Start Menu shortcut "<brand>.lnk". So if that
+   * file exists in the per-user Programs folder without being among our own
+   * shortcuts, it belongs to a different install and must not be overwritten.
+   *
+   * @returns {Promise<?{locations: Set<string>,
+   *   slotTakenByOtherInstall: boolean}>}
+   *   Null if the shortcuts could not be enumerated.
    */
-  async hasSystemWideStartMenuShortcut() {
-    if (AppConstants.platform !== "win") {
-      return false;
+  async getInstallShortcutState() {
+    let entries = await installShortcutEntries();
+    if (!entries) {
+      return null;
     }
-    let programData = Services.env.get("ProgramData");
-    if (!programData) {
-      return false;
-    }
-    let path = PathUtils.join(
-      programData,
-      "Microsoft",
-      "Windows",
-      "Start Menu",
-      "Programs",
+
+    let locations = new Set(entries.map(entry => entry.location));
+
+    // The per-user Start Menu path maybeCreatePerUserStartMenuShortcut()
+    // would create, named the way the installer names shortcuts.
+    let slotPath = PathUtils.join(
+      Services.dirsvc.get("Progs", Ci.nsIFile).path,
       AppConstants.MOZ_APP_DISPLAYNAME_DO_NOT_USE + ".lnk"
     );
-    return IOUtils.exists(path);
-  },
-
-  /**
-   * Whether the custom icon feature should be turned off because we can no
-   * longer override the taskbar icon.
-   *
-   * @returns {Promise<boolean>} True if the feature can no longer take effect.
-   */
-  async shouldDisableForMissingShortcut() {
-    // We're okay with creating a shortcut for the first time, do not force
-    // disable the feature just yet.
-    if (
-      !Services.prefs.getBoolPref(
-        PREF_PER_USER_START_MENU_SHORTCUT_CREATED,
-        false
-      )
-    ) {
-      return false;
+    let slotTakenByOtherInstall = false;
+    if (await IOUtils.exists(slotPath)) {
+      let lowerPath = slotPath.toLowerCase();
+      slotTakenByOtherInstall = !entries.some(
+        entry =>
+          entry.location == "Programs" && entry.path.toLowerCase() == lowerPath
+      );
     }
 
-    let shortcuts = await findInstallShortcuts();
-    if (!shortcuts || shortcuts.inStartMenu) {
-      return false;
-    }
-
-    return (
-      !shortcuts.pinnedToTaskbar &&
-      (await this.hasSystemWideStartMenuShortcut())
-    );
+    return { locations, slotTakenByOtherInstall };
   },
 
   /**
@@ -685,7 +710,7 @@ export const CustomIconManager = {
    *
    * The taskbar gets its icon from Start Menu shortcuts with a matching AUMID,
    * and prioritizes the shortcut present in the user's Roaming folder over
-   * the system-wide Start Menu directory.
+   * the common Start Menu directory.
    *
    * No-op if shortcut already exists. Once created, we don't try again.
    *
@@ -707,22 +732,30 @@ export const CustomIconManager = {
       return;
     }
 
-    // The taskbar icon falls back to the window icon if a system-wide
-    // start menu shortcut isn't present.
-    if (!(await this.hasSystemWideStartMenuShortcut())) {
+    let state = await this.getInstallShortcutState();
+    if (!state) {
       return;
     }
 
-    let shortcuts = await findInstallShortcuts();
-    if (!shortcuts) {
-      return;
-    }
+    let governing = governingStartMenuShortcut(state.locations);
 
-    if (shortcuts.inStartMenu) {
+    // Our shortcut already exists; just record that.
+    if (governing == kUserShortcut) {
       Services.prefs.setBoolPref(
         PREF_PER_USER_START_MENU_SHORTCUT_CREATED,
         true
       );
+      return;
+    }
+
+    // We create a shortcut only to shadow the common one; a taskbar
+    // already falling back to the window icon is ours to set at runtime.
+    if (governing != kCommonShortcut) {
+      return;
+    }
+
+    // Don't overwrite another install's shortcut occupying the same name.
+    if (state.slotTakenByOtherInstall) {
       return;
     }
 

@@ -178,29 +178,33 @@ nsGNOMEShellService::IsDefaultBrowser(bool aForAllTypes,
                            (MOZ_APP_NAME ".desktop"), nullptr};
     GSpawnFlags flags = static_cast<GSpawnFlags>(G_SPAWN_SEARCH_PATH |
                                                  G_SPAWN_STDERR_TO_DEV_NULL);
+
     gchar* output = nullptr;
     gint exit_status = 0;
     if (!g_spawn_sync(nullptr, (gchar**)argv, nullptr, flags, nullptr, nullptr,
                       &output, nullptr, &exit_status, nullptr)) {
       return NS_OK;
     }
+
     if (exit_status != 0) {
       g_free(output);
       return NS_OK;
     }
+
     if (strcmp(output, "yes\n") == 0) {
       *aIsDefaultBrowser = true;
     }
+
     g_free(output);
     return NS_OK;
   }
 
   nsCOMPtr<nsIGIOService> giovfs = do_GetService(NS_GIOSERVICE_CONTRACTID);
-  nsAutoCString handler;
-  nsCOMPtr<nsIGIOMimeApp> gioApp;
 
   for (auto appProtocol : appProtocols) {
-    if (!appProtocol.essential) continue;
+    if (!appProtocol.essential) {
+      continue;
+    }
 
     if (!IsDefaultForSchemeHelper(nsDependentCString(appProtocol.name),
                                   giovfs)) {

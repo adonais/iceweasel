@@ -184,7 +184,7 @@ Firebug allows to search within the style sheets via the search field. The Style
 
 ## Performance Tool
 
-Firebug allows to profile JavaScript performance via the "Profile" button within the Console panel or the `console.profile()` and `console.profileEnd()` commands. The DevTools provide advanced tooling regarding performance profiling. A profile can be created via [console.profile()](https://developer.mozilla.org/en-US/docs/Web/API/console/profile) and [console.profileEnd()](https://developer.mozilla.org/en-US/docs/Web/API/console/profileEnd) like in Firebug or via the "Start Recording Performance" button in the {doc}`Performance Tool <../performance/index>`. The output of the {doc}`Call Tree <../performance/call_tree/index>` is the one that comes nearest to the output in Firebug, but the Performance panel provides much more information than just the JavaScript performance. E.g. it also provides information about HTML parsing or layout.
+Firebug allows to profile JavaScript performance via the "Profile" button within the Console panel or the `console.profile()` and `console.profileEnd()` commands. The DevTools provide advanced tooling regarding performance profiling. A profile can be created via [console.profile()](https://developer.mozilla.org/en-US/docs/Web/API/console/profile) and [console.profileEnd()](https://developer.mozilla.org/en-US/docs/Web/API/console/profileEnd) like in Firebug or via the "Start Recording Performance" button in the {doc}`Performance Tool <../performance/index>`. The output of the {doc}`Performance tool <../performance/index>` is the one that comes nearest to the output in Firebug, but the Performance panel provides much more information than just the JavaScript performance. E.g. it also provides information about HTML parsing or layout.
 
 This is the part where Firebug and the DevTools differ the most, because the outputs are completely different. While Firebug focuses on JavaScript performance and provides detailed information about JavaScript function calls during the profiling session, the Performance Tool in the DevTools offers a broad spectrum of information regarding a website's performance but doesn't go into detail regarding JavaScript function calls.
 
@@ -198,7 +198,7 @@ The times and percentages listed in the DevTools' Call Tree view is not equivale
 
 ### Jump to function declaration
 
-Like in Firebug's profiler output the {doc}`Call Tree view <../performance/call_tree/index>` of the DevTools' Performance Tool allows to jump to the line of code where the called JavaScript function is defined. In Firebug the source link to the function is located at the right side of the Console panel output while within the DevTools the link is placed on the right side within the Call Tree View.
+Like in Firebug's profiler output the {doc}`Performance tool <../performance/index>` of the DevTools' Performance Tool allows to jump to the line of code where the called JavaScript function is defined. In Firebug the source link to the function is located at the right side of the Console panel output while within the DevTools the link is placed on the right side within the Call Tree View.
 
 ## Network Monitor
 

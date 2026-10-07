@@ -6,10 +6,8 @@ import os
 
 config = {
     "default_actions": [
-        "clobber",
         "build",
     ],
-    "stage_platform": "win64-debug",
     "debug_build": True,
     #### 64 bit build specific #####
     "env": {

@@ -302,6 +302,7 @@ void AudioSinkWrapper::SetVolume(double aVolume) {
 
 void AudioSinkWrapper::SetStreamName(const nsAString& aStreamName) {
   AssertOwnerThread();
+  mParams.mStreamName = aStreamName;
   if (mAudioSink) {
     mAudioSink->SetStreamName(aStreamName);
   }

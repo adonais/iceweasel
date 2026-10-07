@@ -55,6 +55,7 @@ pub enum ReferrerPolicy {
 
 #[derive(Debug, PartialEq, Eq, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[repr(u8)]
 pub enum Requirement {
     AnonymousClientIpWhenCrossOrigin,
 }

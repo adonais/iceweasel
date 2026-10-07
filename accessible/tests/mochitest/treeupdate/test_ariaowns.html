@@ -384,7 +384,7 @@
         });
       }
 
-      // test9: set ARIA owns on a document (part2)
+      // test9: set ARIA owns on the root element (part2)
       {
         let p = waitForEvent(EVENT_SHOW, e => {
           let doc = getNode("t9_container").contentDocument;
@@ -392,7 +392,7 @@
           return input && e.DOMNode === input;
         });
         let doc = getNode("t9_container").contentDocument;
-        doc.body.setAttribute("aria-owns", "input");
+        doc.documentElement.setAttribute("aria-owns", "input");
         await p;
 
         testAccessibleTree("t9_container", {

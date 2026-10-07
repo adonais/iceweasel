@@ -17,3 +17,6 @@ env_logger = { version = "0.10", default-features = false }
 
 [build-dependencies]
 mozbuild = "0.1"
+
+[features]
+gecko_tests = ["glean/mozbuild-rustlib"]

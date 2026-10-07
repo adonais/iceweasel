@@ -36,24 +36,24 @@ add_task(async () => {
     Ci.nsICookie.SCHEME_HTTPS
   );
   Assert.equal(cv.result, Ci.nsICookieValidation.eOK);
-  Assert.equal(cm.countCookiesFromHost("baz.com"), 1);
-  Assert.equal(cm.countCookiesFromHost("BAZ.com"), 1);
-  Assert.equal(cm.countCookiesFromHost(".baz.com"), 1);
-  Assert.equal(cm.countCookiesFromHost("baz.com."), 0);
-  Assert.equal(cm.countCookiesFromHost(".baz.com."), 0);
+  Assert.equal(cm.countCookiesFromHost("baz.com", {}), 1);
+  Assert.equal(cm.countCookiesFromHost("BAZ.com", {}), 1);
+  Assert.equal(cm.countCookiesFromHost(".baz.com", {}), 1);
+  Assert.equal(cm.countCookiesFromHost("baz.com.", {}), 0);
+  Assert.equal(cm.countCookiesFromHost(".baz.com.", {}), 0);
   do_check_throws(function () {
-    cm.countCookiesFromHost("baz.com..");
+    cm.countCookiesFromHost("baz.com..", {});
   }, Cr.NS_ERROR_ILLEGAL_VALUE);
   do_check_throws(function () {
-    cm.countCookiesFromHost("baz..com");
+    cm.countCookiesFromHost("baz..com", {});
   }, Cr.NS_ERROR_ILLEGAL_VALUE);
   do_check_throws(function () {
-    cm.countCookiesFromHost("..baz.com");
+    cm.countCookiesFromHost("..baz.com", {});
   }, Cr.NS_ERROR_ILLEGAL_VALUE);
   cm.remove("BAZ.com.", "foo", "/", {});
-  Assert.equal(cm.countCookiesFromHost("baz.com"), 1);
+  Assert.equal(cm.countCookiesFromHost("baz.com", {}), 1);
   cm.remove("baz.com", "foo", "/", {});
-  Assert.equal(cm.countCookiesFromHost("baz.com"), 0);
+  Assert.equal(cm.countCookiesFromHost("baz.com", {}), 0);
 
   // Test that 'baz.com' and 'baz.com.' are treated differently
   cv = cm.add(
@@ -70,15 +70,15 @@ add_task(async () => {
     Ci.nsICookie.SCHEME_HTTPS
   );
   Assert.equal(cv.result, Ci.nsICookieValidation.eOK);
-  Assert.equal(cm.countCookiesFromHost("baz.com"), 0);
-  Assert.equal(cm.countCookiesFromHost("BAZ.com"), 0);
-  Assert.equal(cm.countCookiesFromHost(".baz.com"), 0);
-  Assert.equal(cm.countCookiesFromHost("baz.com."), 1);
-  Assert.equal(cm.countCookiesFromHost(".baz.com."), 1);
+  Assert.equal(cm.countCookiesFromHost("baz.com", {}), 0);
+  Assert.equal(cm.countCookiesFromHost("BAZ.com", {}), 0);
+  Assert.equal(cm.countCookiesFromHost(".baz.com", {}), 0);
+  Assert.equal(cm.countCookiesFromHost("baz.com.", {}), 1);
+  Assert.equal(cm.countCookiesFromHost(".baz.com.", {}), 1);
   cm.remove("baz.com", "foo", "/", {});
-  Assert.equal(cm.countCookiesFromHost("baz.com."), 1);
+  Assert.equal(cm.countCookiesFromHost("baz.com.", {}), 1);
   cm.remove("baz.com.", "foo", "/", {});
-  Assert.equal(cm.countCookiesFromHost("baz.com."), 0);
+  Assert.equal(cm.countCookiesFromHost("baz.com.", {}), 0);
 
   // test that domain cookies are illegal for IP addresses, aliases such as
   // 'localhost', and eTLD's such as 'co.uk'
@@ -96,13 +96,13 @@ add_task(async () => {
     Ci.nsICookie.SCHEME_HTTPS
   );
   Assert.equal(cv.result, Ci.nsICookieValidation.eOK);
-  Assert.equal(cm.countCookiesFromHost("192.168.0.1"), 1);
-  Assert.equal(cm.countCookiesFromHost("192.168.0.1."), 0);
+  Assert.equal(cm.countCookiesFromHost("192.168.0.1", {}), 1);
+  Assert.equal(cm.countCookiesFromHost("192.168.0.1.", {}), 0);
   do_check_throws(function () {
-    cm.countCookiesFromHost(".192.168.0.1");
+    cm.countCookiesFromHost(".192.168.0.1", {});
   }, Cr.NS_ERROR_ILLEGAL_VALUE);
   do_check_throws(function () {
-    cm.countCookiesFromHost(".192.168.0.1.");
+    cm.countCookiesFromHost(".192.168.0.1.", {});
   }, Cr.NS_ERROR_ILLEGAL_VALUE);
 
   cv = cm.add(
@@ -119,13 +119,13 @@ add_task(async () => {
     Ci.nsICookie.SCHEME_HTTPS
   );
   Assert.equal(cv.result, Ci.nsICookieValidation.eOK);
-  Assert.equal(cm.countCookiesFromHost("localhost"), 1);
-  Assert.equal(cm.countCookiesFromHost("localhost."), 0);
+  Assert.equal(cm.countCookiesFromHost("localhost", {}), 1);
+  Assert.equal(cm.countCookiesFromHost("localhost.", {}), 0);
   do_check_throws(function () {
-    cm.countCookiesFromHost(".localhost");
+    cm.countCookiesFromHost(".localhost", {});
   }, Cr.NS_ERROR_ILLEGAL_VALUE);
   do_check_throws(function () {
-    cm.countCookiesFromHost(".localhost.");
+    cm.countCookiesFromHost(".localhost.", {});
   }, Cr.NS_ERROR_ILLEGAL_VALUE);
 
   cv = cm.add(
@@ -142,13 +142,13 @@ add_task(async () => {
     Ci.nsICookie.SCHEME_HTTPS
   );
   Assert.equal(cv.result, Ci.nsICookieValidation.eOK);
-  Assert.equal(cm.countCookiesFromHost("co.uk"), 1);
-  Assert.equal(cm.countCookiesFromHost("co.uk."), 0);
+  Assert.equal(cm.countCookiesFromHost("co.uk", {}), 1);
+  Assert.equal(cm.countCookiesFromHost("co.uk.", {}), 0);
   do_check_throws(function () {
-    cm.countCookiesFromHost(".co.uk");
+    cm.countCookiesFromHost(".co.uk", {});
   }, Cr.NS_ERROR_ILLEGAL_VALUE);
   do_check_throws(function () {
-    cm.countCookiesFromHost(".co.uk.");
+    cm.countCookiesFromHost(".co.uk.", {});
   }, Cr.NS_ERROR_ILLEGAL_VALUE);
 
   cm.removeAll();
@@ -168,12 +168,12 @@ add_task(async () => {
   );
   Assert.equal(docCookies, "foo=bar");
 
-  Assert.equal(cm.countCookiesFromHost(""), 0);
+  Assert.equal(cm.countCookiesFromHost("", {}), 0);
   do_check_throws(function () {
-    cm.countCookiesFromHost(".");
+    cm.countCookiesFromHost(".", {});
   }, Cr.NS_ERROR_ILLEGAL_VALUE);
   do_check_throws(function () {
-    cm.countCookiesFromHost("..");
+    cm.countCookiesFromHost("..", {});
   }, Cr.NS_ERROR_ILLEGAL_VALUE);
 
   var cookies = cm.getCookiesFromHost("", {});
@@ -297,7 +297,7 @@ async function testTrailingDotCookie(uriString, domain) {
     "foo=bar; domain=" + domain + "/"
   );
 
-  Assert.equal(cm.countCookiesFromHost(domain), 0);
-  Assert.equal(cm.countCookiesFromHost(domain + "."), 0);
+  Assert.equal(cm.countCookiesFromHost(domain, {}), 0);
+  Assert.equal(cm.countCookiesFromHost(domain + ".", {}), 0);
   cm.removeAll();
 }

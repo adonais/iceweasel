@@ -382,6 +382,34 @@ add_task(async function test_dispatch() {
   sandbox.restore();
 });
 
+add_task(async function test_dispatch_isolates_a_throwing_feed() {
+  info("A feed that throws should not keep the action from the later feeds");
+  let sandbox = sinon.createSandbox();
+  let store = new Store();
+  const { dispatch } = store;
+  const thrower = {
+    onAction: sandbox.stub().throws(new Error("feed blew up")),
+  };
+  const later = { onAction: sandbox.spy() };
+  const action = { type: "FOO" };
+
+  store._prefs.set("thrower", true);
+  store._prefs.set("later", true);
+  await store.init(
+    new Map([
+      ["thrower", () => thrower],
+      ["later", () => later],
+    ])
+  );
+
+  dispatch(action);
+
+  Assert.ok(thrower.onAction.calledWith(action), "The throwing feed ran");
+  Assert.ok(later.onAction.calledWith(action), "The feed ordered after it ran");
+
+  sandbox.restore();
+});
+
 add_task(async function test_subscribe() {
   info("Store.subscribe should subscribe to changes to the store");
   let sandbox = sinon.createSandbox();

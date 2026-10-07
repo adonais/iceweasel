@@ -102,7 +102,7 @@ parent:
   async MutationEvents(MutationEventData[] aData);
   async RequestAckMutationEvents();
   async SelectionEvent(uint64_t aID, uint64_t aWidgetID, uint32_t aType);
-  async RoleChangedEvent(role aRole, uint8_t aRoleMapEntryIndex);
+  async RoleChangedEvent(uint8_t aRoleMapEntryIndex);
   async FocusEvent(uint64_t aID, LayoutDeviceIntRect aCaretRect);
   async ScrollingEvent(uint64_t aID, uint64_t aType,
                        uint32_t aScrollX, uint32_t aScrollY,
@@ -134,7 +134,6 @@ parent:
    */
   async AccessiblesWillMove(uint64_t[] aIDs);
 
-#ifdef MOZ_ENABLE_SKIA_PDF
   /*
    * Tell the parent process that this document is being printed. This must
    * be called first for the document itself that is being printed and then for
@@ -142,7 +141,6 @@ parent:
    * iframes.
    */
   async Printing();
-#endif
 
 child:
   async __delete__();

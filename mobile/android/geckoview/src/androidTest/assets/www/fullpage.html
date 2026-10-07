@@ -1,0 +1,30 @@
+<!doctype html>
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        /* The transparent.gif keeps the page solid green while giving the
+           contentful-paint detection an image to fire on: a bare
+           background-color is not "contentful" per spec, so without it
+           onFirstContentfulPaint never fires and the test would hang waiting
+           for it (same trick as colors.html). */
+        background: url("/assets/www/transparent.gif"), #00ff00;
+      }
+      /* Force the page to be several times taller than any test viewport so
+         captureFullPage must capture off-screen content (and tile it). */
+      #tall {
+        height: 2000px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="tall"></div>
+  </body>
+</html>

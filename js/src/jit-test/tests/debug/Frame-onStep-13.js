@@ -18,10 +18,16 @@ var dbg = Debugger(g);
 var badStep = false;
 
 dbg.onDebuggerStatement = function(frame) {
-  let debugLine = frame.script.getOffsetLocation(frame.offset).lineNumber;
+  let debugLine = frame.script.getOffsetMetadata(frame.offset).lineNumber;
   assertEq(debugLine, 3);
   frame.onStep = function() {
-    let foundLine = this.script.getOffsetLocation(this.offset).lineNumber;
+    // getOffsetMetadata reports the raw source-note position, which can be a
+    // nonsense position for intermediate bytecode; the debugger only shows
+    // stops at recommended breakpoints, so only assert on those.
+    if (!this.script.getOffsetMetadata(this.offset).isBreakpoint) {
+      return;
+    }
+    let foundLine = this.script.getOffsetMetadata(this.offset).lineNumber;
     assertEq(foundLine <= 4 || foundLine >= 8, true);
   };
 };

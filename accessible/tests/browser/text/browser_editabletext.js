@@ -7,6 +7,8 @@
 /* import-globals-from ../../mochitest/states.js */
 loadScripts({ name: "states.js", dir: MOCHITESTS_DIR });
 
+requestLongerTimeout(2);
+
 async function testEditable(browser, acc, aBefore = "", aAfter = "") {
   async function resetInput() {
     if (acc.childCount <= 1) {
@@ -49,6 +51,7 @@ async function testEditable(browser, acc, aBefore = "", aAfter = "") {
   //  line feed. See dom::HTMLBrElement::IsPaddingForEmptyEditor.
   const clearedText =
     acc.role == ROLE_DOCUMENT ||
+    acc.id == DEFAULT_CONTENT_DOC_BODY_ID ||
     acc.attributes.getStringProperty("tag") == "input"
       ? ""
       : "\n";
@@ -224,14 +227,73 @@ addAccessibleTask(
 
 addAccessibleTask(
   ``,
-  async function (browser, docAcc) {
+  async function testRootIsEditable(browser, docAcc) {
     await testEditable(browser, docAcc);
+  },
+  {
+    chrome: true,
+    topLevel: true,
+    contentDocAttrs: { contentEditable: "true" },
+  }
+);
+
+addAccessibleTask(
+  ``,
+  async function testBodyIsEditable(browser, docAcc) {
+    const body = findAccessibleChildByID(docAcc, DEFAULT_CONTENT_DOC_BODY_ID);
+    await testEditable(browser, body);
   },
   {
     chrome: true,
     topLevel: true,
     contentDocBodyAttrs: { contentEditable: "true" },
   }
+);
+
+/**
+ * Verify that making the body editable at runtime cascades the EDITABLE state
+ * to the document, and that the acc created to represent the body is targetted
+ * for editable events.
+ */
+addAccessibleTask(
+  ``,
+  async function testBodyBecomesEditable(browser, docAcc) {
+    // initially, the root (docAcc) shouldn't be editable
+    testStates(docAcc, 0, 0, 0, EXT_STATE_EDITABLE);
+
+    const evs = waitForEvents([
+      [
+        EVENT_STATE_CHANGE,
+        e => {
+          const sc = e.QueryInterface(nsIAccessibleStateChangeEvent);
+          return (
+            e.accessible == docAcc &&
+            sc.isExtraState &&
+            sc.state == EXT_STATE_EDITABLE &&
+            sc.isEnabled
+          );
+        },
+      ],
+      [EVENT_SHOW, DEFAULT_CONTENT_DOC_BODY_ID],
+    ]);
+    // set contentEditable on the body
+    await invokeContentTask(browser, [], () => {
+      // XXX (bug 2074310) we have to add another property here
+      // to force the body to get an acc, since `contentEditable`
+      // alone doesn't work :(
+      content.document.body.setAttribute("aria-label", "body");
+      content.document.body.contentEditable = "true";
+    });
+    await evs;
+    const bodyAcc = findAccessibleChildByID(
+      docAcc,
+      DEFAULT_CONTENT_DOC_BODY_ID
+    );
+    await testEditable(browser, bodyAcc);
+
+    testStates(docAcc, 0, EXT_STATE_EDITABLE);
+  },
+  { chrome: true, topLevel: true }
 );
 
 /**

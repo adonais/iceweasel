@@ -1251,8 +1251,6 @@ class IMEInputHandler : public TextInputHandlerBase {
    */
   void OnTextSubstitution(uint32_t aStartOffset);
 
-  enum class PreventSetSelection { Yes, No };
-
   void ReplaceTextForTextSubstitution(const nsAString& aOriginalString,
                                       NSString* aString, const NSRange& aRange,
                                       PreventSetSelection aPreventSetSelection);

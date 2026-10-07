@@ -67,6 +67,7 @@ tags = "os_integration"
 
 ["test_panel_list_shadow_node_anchor.html"]
 support-files = [
+  "../../widgets/panel-list/accesskey-check.mjs",
   "../../widgets/panel-list/panel-item.tokens.css",
   "../../widgets/panel-list/panel-item.css",
   "../../widgets/panel-list/panel-list.tokens.css",

@@ -65,6 +65,18 @@ class ServoComputedData {
   // Constructs via memcpy.  Will not move out of aValue.
   explicit ServoComputedData(const ServoComputedDataForgotten aValue);
 
+  // C++ just sees this struct as a bucket of bits, and will
+  // do the wrong thing if we let it use the default copy ctor/assignment
+  // operator. Remove them so that there is no footgun.
+  //
+  // We remove the move ctor/assignment operator as well, because
+  // moves in C++ don't prevent destructors from being called,
+  // which will lead to double frees.
+  ServoComputedData& operator=(const ServoComputedData&) = delete;
+  ServoComputedData(const ServoComputedData&) = delete;
+  ServoComputedData&& operator=(const ServoComputedData&&) = delete;
+  ServoComputedData(const ServoComputedData&&) = delete;
+
 #define SERVO_STYLE_STRUCT_ACCESSOR(name_)                        \
   const nsStyle##name_* name_;                                    \
   const nsStyle##name_* Style##name_() const MOZ_NONNULL_RETURN { \
@@ -105,18 +117,6 @@ class ServoComputedData {
   mozilla::StyleZoom effective_zoom;
   /// Various flags that affect our style.
   mozilla::StyleComputedValueFlags flags;
-
-  // C++ just sees this struct as a bucket of bits, and will
-  // do the wrong thing if we let it use the default copy ctor/assignment
-  // operator. Remove them so that there is no footgun.
-  //
-  // We remove the move ctor/assignment operator as well, because
-  // moves in C++ don't prevent destructors from being called,
-  // which will lead to double frees.
-  ServoComputedData& operator=(const ServoComputedData&) = delete;
-  ServoComputedData(const ServoComputedData&) = delete;
-  ServoComputedData&& operator=(const ServoComputedData&&) = delete;
-  ServoComputedData(const ServoComputedData&&) = delete;
 };
 
 #endif  // mozilla_ServoComputedData_h

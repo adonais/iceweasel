@@ -1646,9 +1646,10 @@ describe("<Base> Nova startup layout stability", () => {
   });
 });
 
-function renderNova(overrides = {}) {
+function renderNova(overrides = {}, stateOverrides = {}) {
   const store = createStore(combineReducers(reducers), {
     ...INITIAL_STATE,
+    ...stateOverrides,
     App: { ...INITIAL_STATE.App, initialized: true },
     Prefs: {
       ...INITIAL_STATE.Prefs,
@@ -1862,6 +1863,71 @@ describe("<Base> Nova logo placement with many topSitesRows", () => {
     expect(
       container.querySelector(".content .logo-and-wordmark-wrapper")
     ).toBeInTheDocument();
+  });
+});
+
+describe("<Base> Nova logo placement with the search bar in variant B", () => {
+  const searchComponent = attributes => ({
+    ExternalComponents: {
+      ...INITIAL_STATE.ExternalComponents,
+      components: [{ type: "SEARCH", attributes }],
+    },
+  });
+
+  // The component has no module to load here, which the wrapper reports.
+  let consoleErrorSpy;
+  beforeEach(() => {
+    consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("anchors the Logo to the sidebar when the search bar is in variant B", () => {
+    const { container, unmount } = renderNova(
+      { showSearch: true },
+      searchComponent({ "variant-b": "" })
+    );
+    expect(
+      container.querySelector(".container.nova-enabled.logo-in-content")
+    ).not.toBeInTheDocument();
+    expect(
+      container.querySelector(".container.nova-enabled.search-has-own-row")
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(".nova-outer-wrapper.search-has-own-row")
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(
+        ".sidebar-inline-start .logo-and-wordmark-wrapper"
+      )
+    ).toBeInTheDocument();
+    unmount();
+  });
+
+  it("centers the Logo when the search bar is in another variant", () => {
+    const { container, unmount } = renderNova(
+      { showSearch: true },
+      searchComponent({ "variant-a": "" })
+    );
+    expect(
+      container.querySelector(".container.nova-enabled.logo-in-content")
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(".container.nova-enabled.search-has-own-row")
+    ).not.toBeInTheDocument();
+    unmount();
+  });
+
+  it("centers the Logo when search is hidden, whatever its variant", () => {
+    const { container, unmount } = renderNova(
+      { showSearch: false, "feeds.topsites": true },
+      searchComponent({ "variant-b": "" })
+    );
+    expect(
+      container.querySelector(".container.nova-enabled.logo-in-content")
+    ).toBeInTheDocument();
+    unmount();
   });
 });
 

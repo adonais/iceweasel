@@ -14,14 +14,14 @@
 
 class nsFrameSelection;
 class nsIFrame;
-class nsRange;
 class nsIWidget;
 
 namespace mozilla {
 class EditorBase;
 namespace dom {
+class Range;
 class Selection;
-}
+}  // namespace dom
 
 namespace a11y {
 

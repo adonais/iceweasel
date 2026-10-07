@@ -24,6 +24,9 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
  * @typedef {object} NewTabComponentConfiguration
  * @property {string} type
  * @property {string[]} l10nURLs
+ * @property {string[]} [stylesURLs]
+ *   Stylesheets to link and load before the component is mounted, so it is
+ *   never shown unstyled.
  * @property {string} componentURL
  * @property {string} tagName
  */

@@ -1010,6 +1010,131 @@ add_task(
   }
 );
 
+add_task(
+  async function test_promptEmbeddedMemories_ChatConversation_receiveResponse() {
+    let sandbox = lazy.sinon.createSandbox();
+
+    const mockMemories = [
+      { id: "mem-1", lifetime_accessed_count: 0, recent_accessed_counts: {} },
+    ];
+    sandbox.stub(MemoryStore, "getMemories").resolves(mockMemories);
+    sandbox.stub(MemoryStore, "requestSave").resolves();
+
+    const conversation = new ChatConversation({});
+    conversation.promptEmbeddedMemories = [
+      { id: "mem-1", memory_summary: "Trip planning" },
+    ];
+    conversation.addAssistantMessage("text", "some response");
+    const assistantMsg = conversation.messages.at(-1);
+
+    async function* emptyStream() {}
+    await conversation.receiveResponse(emptyStream());
+
+    Assert.deepEqual(
+      assistantMsg.memoriesApplied,
+      mockMemories,
+      "memoriesApplied should include the prompt-embedded memory, resolved through resolveUsedMemories, when nothing is cited"
+    );
+    Assert.equal(
+      mockMemories[0].lifetime_accessed_count,
+      1,
+      "Prompt-embedded memory use should be recorded like a cited one"
+    );
+    Assert.deepEqual(
+      conversation.promptEmbeddedMemories,
+      [],
+      "promptEmbeddedMemories should be consumed after the turn completes"
+    );
+
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_citedAndPromptEmbeddedMemoriesAreUnioned_ChatConversation_receiveResponse() {
+    let sandbox = lazy.sinon.createSandbox();
+
+    const mockMemories = [
+      { id: "mem-1", lifetime_accessed_count: 0, recent_accessed_counts: {} },
+      {
+        id: "mem-embedded",
+        lifetime_accessed_count: 0,
+        recent_accessed_counts: {},
+      },
+    ];
+    sandbox.stub(MemoryStore, "getMemories").resolves(mockMemories);
+    sandbox.stub(MemoryStore, "requestSave").resolves();
+
+    const conversation = new ChatConversation({});
+    conversation.promptEmbeddedMemories = [
+      { id: "mem-embedded", memory_summary: "Trip planning" },
+    ];
+    conversation.addAssistantMessage("text", "some response");
+    const assistantMsg = conversation.messages.at(-1);
+    assistantMsg.tokens.existing_memory = ["mem-1"];
+
+    async function* emptyStream() {}
+    await conversation.receiveResponse(emptyStream());
+
+    const memoryIds = new Set(
+      assistantMsg.memoriesApplied.map(memory => memory.id)
+    );
+    Assert.equal(
+      memoryIds.size,
+      2,
+      "memoriesApplied should include both the cited and prompt-embedded memories"
+    );
+    Assert.ok(memoryIds.has("mem-1"), "Should include the cited memory");
+    Assert.ok(
+      memoryIds.has("mem-embedded"),
+      "Should include the prompt-embedded memory"
+    );
+    Assert.deepEqual(
+      conversation.promptEmbeddedMemories,
+      [],
+      "promptEmbeddedMemories should be cleared after the turn completes"
+    );
+
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_citedAndPromptEmbeddedSameMemoryIsDeduped_ChatConversation_receiveResponse() {
+    let sandbox = lazy.sinon.createSandbox();
+
+    const mockMemories = [
+      { id: "mem-1", lifetime_accessed_count: 0, recent_accessed_counts: {} },
+    ];
+    sandbox.stub(MemoryStore, "getMemories").resolves(mockMemories);
+    sandbox.stub(MemoryStore, "requestSave").resolves();
+
+    const conversation = new ChatConversation({});
+    conversation.promptEmbeddedMemories = [
+      { id: "mem-1", memory_summary: "Trip planning" },
+    ];
+    conversation.addAssistantMessage("text", "some response");
+    const assistantMsg = conversation.messages.at(-1);
+    assistantMsg.tokens.existing_memory = ["mem-1"];
+
+    async function* emptyStream() {}
+    await conversation.receiveResponse(emptyStream());
+
+    Assert.equal(
+      assistantMsg.memoriesApplied.length,
+      1,
+      "The same memory cited and prompt-embedded should only appear once"
+    );
+    Assert.equal(
+      mockMemories[0].lifetime_accessed_count,
+      1,
+      "Use should be recorded once, not twice, for the same memory"
+    );
+
+    sandbox.restore();
+  }
+);
+
 add_task(function test_ChatConversation_rehydratesHistoryResultsPool() {
   const records = [
     { url: "https://example.com/1", title: "Page 1" },

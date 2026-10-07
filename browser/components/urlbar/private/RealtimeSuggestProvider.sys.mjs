@@ -45,7 +45,7 @@ export class RealtimeSuggestProvider extends SuggestProvider {
     throw new Error("Trying to access the base class, must be overridden");
   }
 
-  getViewUpdateForPayloadItem(_item, _index) {
+  getViewUpdateForPayloadItem(_item, _index, _controller) {
     throw new Error("Trying to access the base class, must be overridden");
   }
 
@@ -519,7 +519,7 @@ export class RealtimeSuggestProvider extends SuggestProvider {
     ];
   }
 
-  getViewUpdate(result) {
+  getViewUpdate(result, controller) {
     let { items } = result.payload;
     let hasMultipleItems = items.length > 1;
 
@@ -531,7 +531,10 @@ export class RealtimeSuggestProvider extends SuggestProvider {
 
     for (let i = 0; i < items.length; i++) {
       let item = items[i];
-      Object.assign(update, this.getViewUpdateForPayloadItem(item, i));
+      Object.assign(
+        update,
+        this.getViewUpdateForPayloadItem(item, i, controller)
+      );
     }
 
     return update;

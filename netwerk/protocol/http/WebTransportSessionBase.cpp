@@ -8,6 +8,14 @@
 
 namespace mozilla::net {
 
+NS_IMPL_ISUPPORTS(WebTransportSessionStatsWrapper, nsIWebTransportSessionStats)
+
+NS_IMETHODIMP WebTransportSessionStatsWrapper::GetRawStats(
+    mozilla::dom::WebTransportStatsData** aStats) {
+  *aStats = &mStats;
+  return NS_OK;
+}
+
 void WebTransportSessionBase::SetWebTransportSessionEventListener(
     WebTransportSessionEventListener* listener) {
   MutexAutoLock lock(mListenerLock);

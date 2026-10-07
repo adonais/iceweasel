@@ -1269,8 +1269,8 @@ hb_font_t* gfxHarfBuzzShaper::CreateHBFont(gfxFont* aFont,
     // gfxFontVariation, so we can simply cast here.
     static_assert(
         sizeof(gfxFontVariation) == sizeof(hb_variation_t) &&
-            offsetof(gfxFontVariation, mTag) == offsetof(hb_variation_t, tag) &&
-            offsetof(gfxFontVariation, mValue) ==
+            offsetof(gfxFontVariation, tag) == offsetof(hb_variation_t, tag) &&
+            offsetof(gfxFontVariation, value) ==
                 offsetof(hb_variation_t, value),
         "Gecko vs HarfBuzz struct mismatch!");
     auto hbVars = reinterpret_cast<const hb_variation_t*>(vars.Elements());
@@ -1381,10 +1381,10 @@ bool gfxHarfBuzzShaper::ShapeText(const char16_t* aText, uint32_t aOffset,
 
   // determine whether petite-caps falls back to small-caps
   bool addSmallCaps = false;
-  if (style->variantCaps != NS_FONT_VARIANT_CAPS_NORMAL) {
+  if (style->variantCaps != StyleFontVariantCaps::Normal) {
     switch (style->variantCaps) {
-      case NS_FONT_VARIANT_CAPS_ALL_PETITE_CAPS:
-      case NS_FONT_VARIANT_CAPS_PETITE_CAPS:
+      case StyleFontVariantCaps::AllPetiteCaps:
+      case StyleFontVariantCaps::PetiteCaps:
         bool synLower, synUpper;
         mFont->SupportsVariantCaps(aScript, style->variantCaps, addSmallCaps,
                                    synLower, synUpper);

@@ -12,6 +12,7 @@
 import { MigrationUtils } from "resource:///modules/MigrationUtils.sys.mjs";
 import { SelectableProfileService } from "resource:///modules/profiles/SelectableProfileService.sys.mjs";
 import { FirefoxProfileMigrator } from "resource:///modules/FirefoxProfileMigrator.sys.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 /**
  * Firefox SelectableProfile migrator. Currently, this class only does
@@ -24,7 +25,7 @@ import { FirefoxProfileMigrator } from "resource:///modules/FirefoxProfileMigrat
  */
 export class FirefoxSelectableProfileMigrator extends FirefoxProfileMigrator {
   static get key() {
-    return "firefox-selectable-profile";
+    return AppConstants.MOZ_APP_NAME + "-selectable-profile";
   }
 
   /**

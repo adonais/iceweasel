@@ -5,6 +5,7 @@
 package org.mozilla.geckoview;
 
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.os.Build;
 import android.view.Surface;
@@ -323,6 +324,20 @@ public class GeckoDisplay {
     return screenshot().capture();
   }
 
+  /**
+   * Request a {@link Bitmap} of the web page currently being rendered, including areas outside the
+   * current view.
+   *
+   * <p>This function must be called on the UI thread.
+   *
+   * @return A {@link GeckoResult} that completes with a {@link Bitmap} containing the pixels and
+   *     size information of the currently rendered web page.
+   */
+  @UiThread
+  public @NonNull GeckoResult<Bitmap> captureFullPage() {
+    return screenshot().captureFullPage();
+  }
+
   /** Builder to construct screenshot requests. */
   public static final class ScreenshotBuilder {
     private static final int NONE = 0;
@@ -349,10 +364,10 @@ public class GeckoDisplay {
     }
 
     /**
-     * The screenshot will be of a region instead of the entire screen
+     * The screenshot will be of a region instead of the entire screen / web page
      *
-     * @param x Left most pixel of the source region.
-     * @param y Top most pixel of the source region.
+     * @param x Left most pixel of the source region (in screen pixels).
+     * @param y Top most pixel of the source region (in screen pixels).
      * @param width Width of the source region in screen pixels
      * @param height Height of the source region in screen pixels
      * @return The builder
@@ -368,7 +383,7 @@ public class GeckoDisplay {
     }
 
     /**
-     * The screenshot will be of a region instead of the entire screen
+     * The screenshot will be of a region instead of the entire screen / web page
      *
      * @param source Region of the screen to capture in screen pixels
      * @return The builder
@@ -521,6 +536,134 @@ public class GeckoDisplay {
           result, target, mOffsetX, mOffsetY, mSrcWidth, mSrcHeight, mOutWidth, mOutHeight);
 
       return result;
+    }
+
+    /**
+     * Request a {@link Bitmap} of the full web page currently being rendered using any parameters
+     * specified with the builder.
+     *
+     * <p>This function must be called on the UI thread.
+     *
+     * @return A {@link GeckoResult} that completes with a {@link Bitmap} containing the pixels and
+     *     size information of the full web page, or returns a failure {@link GeckoResult} including
+     *     the reason why in an {@link Exception}
+     */
+    @UiThread
+    public @NonNull GeckoResult<Bitmap> captureFullPage() {
+      ThreadUtils.assertOnUiThread();
+      if (!mSession.isOpen()) {
+        return GeckoResult.fromException(
+            new IllegalStateException("Session must be open before a screenshot can be captured"));
+      }
+
+      final GeckoResult<GeckoSession.Window.ContentMetrics> metricsResult = new GeckoResult<>();
+      final GeckoSession.Window.ContentMetrics metrics = new GeckoSession.Window.ContentMetrics();
+      mSession.mWindow.requestContentMetrics(metricsResult, metrics);
+
+      return metricsResult.then(
+          contentMetrics -> {
+            final float dpr = contentMetrics.devicePixelRatio;
+
+            final int cssOffsetX;
+            final int cssOffsetY;
+            final int cssWidth;
+            final int cssHeight;
+            final int srcWidth;
+            final int srcHeight;
+
+            if (mSrcWidth == 0 || mSrcHeight == 0) {
+              cssOffsetX = 0;
+              cssOffsetY = 0;
+              cssWidth = contentMetrics.width;
+              cssHeight = contentMetrics.height;
+              srcWidth = (int) (contentMetrics.width * dpr);
+              srcHeight = (int) (contentMetrics.height * dpr);
+            } else {
+              cssOffsetX = (int) (mOffsetX / dpr);
+              cssOffsetY = (int) (mOffsetY / dpr);
+              cssWidth = (int) (mSrcWidth / dpr);
+              cssHeight = (int) (mSrcHeight / dpr);
+              srcWidth = mSrcWidth;
+              srcHeight = mSrcHeight;
+            }
+
+            int outWidth = mOutWidth;
+            int outHeight = mOutHeight;
+            float effectiveRenderingScale = Float.NaN;
+
+            switch (mSizeType) {
+              case NONE:
+                outWidth = srcWidth;
+                outHeight = srcHeight;
+                effectiveRenderingScale = dpr;
+                break;
+              case SCALE:
+                outWidth = (int) (srcWidth * mScale);
+                outHeight = (int) (srcHeight * mScale);
+                break;
+              case ASPECT:
+                outWidth = mAspectPreservingWidth;
+                outHeight = (int) (srcHeight * (mAspectPreservingWidth / (double) srcWidth));
+                break;
+              case RECYCLE:
+                if (mRecycle == null) {
+                  return GeckoResult.fromException(
+                      new IllegalStateException("Bitmap to recycle is null"));
+                }
+                outWidth = mRecycle.getWidth();
+                outHeight = mRecycle.getHeight();
+                break;
+                // case FULL does not need to be handled, as width and height are already set.
+            }
+
+            if (outWidth <= 0 || outHeight <= 0 || cssWidth <= 0 || cssHeight <= 0) {
+              return GeckoResult.fromException(new IllegalStateException("Invalid dimensions"));
+            }
+
+            if (Float.isNaN(effectiveRenderingScale)) {
+              // Use the smaller axis ratio so a RECYCLE/FULL target with a
+              // different aspect ratio than the content is scaled to fit
+              // rather than clipped.
+              effectiveRenderingScale =
+                  Math.min((float) outWidth / cssWidth, (float) outHeight / cssHeight);
+            }
+
+            final Bitmap target;
+            if (mRecycle == null) {
+              try {
+                target = Bitmap.createBitmap(outWidth, outHeight, Bitmap.Config.ARGB_8888);
+              } catch (final Throwable e) {
+                if (e instanceof NullPointerException || e instanceof OutOfMemoryError) {
+                  return GeckoResult.fromException(
+                      new OutOfMemoryError("Not enough memory to allocate for bitmap"));
+                }
+                return GeckoResult.fromException(new Throwable("Failed to create bitmap", e));
+              }
+            } else {
+              target = mRecycle;
+            }
+
+            // Pre-fill with the opaque white background so device pixels not
+            // covered by a tile (edge rounding, or a skipped non-critical tile)
+            // show background instead of transparent/stale pixels
+            target.eraseColor(Color.WHITE);
+
+            if (mSession.mWindow == null) {
+              return GeckoResult.fromException(
+                  new IllegalStateException("Session closed before screenshot could be taken"));
+            }
+
+            final GeckoResult<Bitmap> result = new GeckoResult<>();
+            mSession.mWindow.requestFullScreenshot(
+                result,
+                target,
+                cssOffsetX,
+                cssOffsetY,
+                cssWidth,
+                cssHeight,
+                effectiveRenderingScale);
+            return result;
+          });
     }
   }
 

@@ -136,7 +136,7 @@ IPDL compiler](#using-the-ipdl-compiler) for a complete list of required build c
    >    Write `ParamTraits` for C++ data types that don't have them. See
    >    [Generating IPDL-Aware C++ Data Types: IPDL Structs and Unions](#generating-ipdl-aware-c-data-types-ipdl-structs-and-unions) for IPDL
    >    structures. See [Referencing Externally Defined Data Types: IPDL
-   >    Includes][referencing externally defined data types: ipdl includes] and [ParamTraits](#paramtraits) for C++ data types.
+   >    Includes](#referencing-externally-defined-data-types-ipdl-includes) and [ParamTraits](#paramtraits) for C++ data types.
    > 3. Write your actor and its messages. See [Defining Actors](#defining-actors).
 
 3. Write C++ code to create and destroy instances of your actor at runtime.
@@ -258,7 +258,7 @@ no concern.
 The second line includes the file `MyTypes.ipdlh`, which defines types like
 structs and unions, but in IPDL, which means they have behavior that goes
 beyond the similar C++ concepts. Details can be found in [Generating
-IPDL-Aware C++ Data Types: IPDL Structs and Unions][generating ipdl-aware c++ data types: ipdl structs and unions].
+IPDL-Aware C++ Data Types: IPDL Structs and Unions](#generating-ipdl-aware-c-data-types-ipdl-structs-and-unions).
 
 The final lines include types from C++ headers. Additionally, the [RefCounted]
 and [MoveOnly] attributes tell IPDL that the types have special functionality
@@ -1026,7 +1026,6 @@ that declare our actor implementation subclasses (`MyManagerParent.h` and
 
 ```{literalinclude} _static/PMyManager.ipdl
 :language: c++
-:name: PMyManager.ipdl
 ```
 
 So `MyManagerParent.h` looks like this:

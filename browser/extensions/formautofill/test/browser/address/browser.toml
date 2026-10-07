@@ -67,6 +67,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1809709
 ]
 
+["browser_address_unsupported_country.js"]
+
 ["browser_autofill_whenhidden.js"]
 
 ["browser_edit_address_doorhanger_display.js"]

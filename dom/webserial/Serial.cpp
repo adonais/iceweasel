@@ -10,8 +10,8 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/PSerialPort.h"
+#include "mozilla/dom/PermissionsPolicyUtils.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/SerialBinding.h"
 #include "mozilla/dom/SerialManagerChild.h"
@@ -230,7 +230,7 @@ static bool PortSecurityCheck(Promise& aPromise, nsIGlobalObject* aGlobal,
       return false;
     }
 
-    if (!FeaturePolicyUtils::IsFeatureAllowed(doc, u"serial"_ns)) {
+    if (!PermissionsPolicyUtils::IsFeatureAllowed(doc, u"serial"_ns)) {
       nsAutoString message;
       message.AssignLiteral("WebSerial access request was denied: ");
       message.Append(NS_ConvertUTF8toUTF16(aFunctionName));

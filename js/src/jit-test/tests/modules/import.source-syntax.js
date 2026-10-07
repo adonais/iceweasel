@@ -56,8 +56,7 @@ assertThrowsInstanceOf(() => Reflect.parse("(async () => await import.UNKNOWN('m
 assertThrowsInstanceOf(() => Reflect.parse("import.source('module.js',)"), SyntaxError);
 assertThrowsInstanceOf(() => Reflect.parse("import.source('module.js', {with: {type:'json'}})"), SyntaxError);
 
-// The `import.` property dispatch: with source phase imports enabled, only
-// `meta` and `source` are accepted after the dot, so any other property
-// reports "expected meta or source, got ...".
-assertErrorMessage(() => Reflect.parse("import.foo('module.js')"), SyntaxError, /^expected meta or source, got /);
+// The `import.` property dispatch: an unrecognized property after the dot
+// reports "unexpected token: ...".
+assertErrorMessage(() => Reflect.parse("import.foo('module.js')"), SyntaxError, /^unexpected token: /);
 

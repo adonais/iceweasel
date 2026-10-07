@@ -277,7 +277,7 @@ FFmpegLibWrapper::LinkResult FFmpegLibWrapper::Link() {
   AV_FUNC(av_buffer_create,
           (AV_FUNC_AVUTIL_55 | AV_FUNC_AVUTIL_56 | AV_FUNC_AVUTIL_57 |
            AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 | AV_FUNC_AVUTIL_60 |
-           AV_FUNC_61 | AV_FUNC_62 | AV_FUNC_63))
+           AV_FUNC_AVUTIL_61 | AV_FUNC_AVUTIL_62 | AV_FUNC_AVUTIL_63))
   AV_FUNC_OPTION(av_frame_get_colorspace,
                  AV_FUNC_AVUTIL_55 | AV_FUNC_AVUTIL_56 | AV_FUNC_AVUTIL_57 |
                      AV_FUNC_AVUTIL_58)
@@ -347,20 +347,25 @@ FFmpegLibWrapper::LinkResult FFmpegLibWrapper::Link() {
 
 #ifdef MOZ_WIDGET_GTK
   AV_FUNC_OPTION_SILENT(av_hwdevice_hwconfig_alloc,
-                        AV_FUNC_58 | AV_FUNC_59 | AV_FUNC_60 | AV_FUNC_61 |
-                            AV_FUNC_62 | AV_FUNC_63)
+                        AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 |
+                            AV_FUNC_AVUTIL_60 | AV_FUNC_AVUTIL_61 |
+                            AV_FUNC_AVUTIL_62 | AV_FUNC_AVUTIL_63)
   AV_FUNC_OPTION_SILENT(av_hwdevice_get_hwframe_constraints,
-                        AV_FUNC_58 | AV_FUNC_59 | AV_FUNC_60 | AV_FUNC_61 |
-                            AV_FUNC_62 | AV_FUNC_63)
+                        AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 |
+                            AV_FUNC_AVUTIL_60 | AV_FUNC_AVUTIL_61 |
+                            AV_FUNC_AVUTIL_62 | AV_FUNC_AVUTIL_63)
   AV_FUNC_OPTION_SILENT(av_hwframe_constraints_free,
-                        AV_FUNC_58 | AV_FUNC_59 | AV_FUNC_60 | AV_FUNC_61 |
-                            AV_FUNC_62 | AV_FUNC_63)
+                        AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 |
+                            AV_FUNC_AVUTIL_60 | AV_FUNC_AVUTIL_61 |
+                            AV_FUNC_AVUTIL_62 | AV_FUNC_AVUTIL_63)
   AV_FUNC_OPTION_SILENT(av_hwframe_transfer_get_formats,
-                        AV_FUNC_58 | AV_FUNC_59 | AV_FUNC_60 | AV_FUNC_61 |
-                            AV_FUNC_62 | AV_FUNC_63)
+                        AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 |
+                            AV_FUNC_AVUTIL_60 | AV_FUNC_AVUTIL_61 |
+                            AV_FUNC_AVUTIL_62 | AV_FUNC_AVUTIL_63)
   AV_FUNC_OPTION_SILENT(av_hwdevice_ctx_create_derived,
-                        AV_FUNC_58 | AV_FUNC_59 | AV_FUNC_60 | AV_FUNC_61 |
-                            AV_FUNC_62 | AV_FUNC_63)
+                        AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 |
+                            AV_FUNC_AVUTIL_60 | AV_FUNC_AVUTIL_61 |
+                            AV_FUNC_AVUTIL_62 | AV_FUNC_AVUTIL_63)
   AV_FUNC_OPTION_SILENT(av_hwdevice_get_type_name,
                         AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 |
                             AV_FUNC_AVUTIL_60 | AV_FUNC_AVUTIL_61 |

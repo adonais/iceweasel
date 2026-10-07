@@ -72,6 +72,9 @@ class GCHashMap : public js::HashMap<Key, Value, HashPolicy, AllocPolicy> {
     MOZ_ASSERT(this != &rhs, "self-move assignment is prohibited");
     Base::operator=(std::move(rhs));
   }
+  // GCHashMap is not copyable or assignable
+  GCHashMap(const GCHashMap& hm) = delete;
+  GCHashMap& operator=(const GCHashMap& hm) = delete;
 
   void trace(JSTracer* trc, js::gc::Cell* owner = nullptr) {
     js::TraceOwnedAllocs(trc, owner, *this, "hashmap storage");
@@ -103,9 +106,6 @@ class GCHashMap : public js::HashMap<Key, Value, HashPolicy, AllocPolicy> {
   }
 
  private:
-  // GCHashMap is not copyable or assignable
-  GCHashMap(const GCHashMap& hm) = delete;
-  GCHashMap& operator=(const GCHashMap& hm) = delete;
 } MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS;
 
 }  // namespace JS
@@ -257,6 +257,9 @@ class GCHashSet : public js::HashSet<T, HashPolicy, AllocPolicy> {
     MOZ_ASSERT(this != &rhs, "self-move assignment is prohibited");
     Base::operator=(std::move(rhs));
   }
+  // GCHashSet is not copyable or assignable
+  GCHashSet(const GCHashSet& hs) = delete;
+  GCHashSet& operator=(const GCHashSet& hs) = delete;
 
   void trace(JSTracer* trc, js::gc::Cell* owner = nullptr) {
     js::TraceOwnedAllocs(trc, owner, *this, "hashset storage");
@@ -286,9 +289,6 @@ class GCHashSet : public js::HashSet<T, HashPolicy, AllocPolicy> {
   }
 
  private:
-  // GCHashSet is not copyable or assignable
-  GCHashSet(const GCHashSet& hs) = delete;
-  GCHashSet& operator=(const GCHashSet& hs) = delete;
 } MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS;
 
 }  // namespace JS

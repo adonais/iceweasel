@@ -11,6 +11,8 @@ head = ""
 
 ["test_observed_prefs.js"]
 
+["test_sanitized_type_flip.js"]
+
 ["test_sharedMap.js"]
 
 ["test_sharedMap_static_prefs.js"]

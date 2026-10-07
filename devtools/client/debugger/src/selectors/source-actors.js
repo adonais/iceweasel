@@ -2,6 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
+import { findPosition } from "../utils/breakpoint/breakpointPositions";
+import { sortSelectedLocations } from "../utils/location";
+
+import { getRelevantSourceActorsForLocation } from "./sources";
 /**
  * Tells if a given Source Actor is registered in the redux store
  *
@@ -121,4 +125,48 @@ export function getBreakableLinesForSourceActors(state, sourceActors, isHTML) {
     }
   }
   return allBreakableLines;
+}
+
+export function getBreakpointPositionsForLocationSource(state, location) {
+  const key = getBreakpointPositionsKeyForLocation(state, location);
+  return state.sourceActors.mutableBreakpointPositions.get(key);
+}
+
+export function getBreakpointPositionsForLocationLine(state, location) {
+  const positions = getBreakpointPositionsForLocationSource(state, location);
+  return positions?.[location.line];
+}
+
+export function getBreakpointPositionsForLocationLineAndColumn(
+  state,
+  location
+) {
+  return findPosition(
+    getBreakpointPositionsForLocationSource(state, location),
+    location
+  );
+}
+
+export function getFirstBreakpointPositionForLocationLine(state, location) {
+  const breakpointPositionsForLine = getBreakpointPositionsForLocationLine(
+    state,
+    location
+  );
+  if (!breakpointPositionsForLine) {
+    return null;
+  }
+
+  return sortSelectedLocations(breakpointPositionsForLine, location.source)[0];
+}
+
+export function getBreakpointPositionsKeyForLocation(state, location) {
+  const sourceActors = getRelevantSourceActorsForLocation(state, location);
+  // We should distinguish original sources from their related bundle,
+  // by prefixing the key with the original source id
+  const key = location.source.isOriginal
+    ? `original-${location.source.id}`
+    : "";
+  // Otherwise a source is typically identified by its source actor,
+  // but HTML sources may have more than one source actor, thus the list of actors.
+  return key + sourceActors.map(actor => actor.actor).join("-");
 }

@@ -6,15 +6,20 @@ package org.mozilla.fenix.pdf
 
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.test.core.app.ApplicationProvider
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlinx.coroutines.test.TestScope
 import mozilla.components.browser.state.engine.EngineMiddleware
 import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.EngineState
+import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.engine.EngineSession
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Rule
 import org.junit.Test
@@ -33,22 +38,25 @@ class PdfToolsIntegrationGleanTest {
 
     private val container = CoordinatorLayout(ApplicationProvider.getApplicationContext())
 
-    private val browserStore =
+    private val tab = createTab(url = "https://mozilla.org", id = tabId)
+
+    private fun storeOf(tab: TabSessionState) =
         BrowserStore(
-            initialState =
-                BrowserState(
-                    tabs = listOf(createTab(url = "https://mozilla.org", id = tabId)),
-                    selectedTabId = tabId,
-                ),
+            initialState = BrowserState(tabs = listOf(tab), selectedTabId = tab.id),
             middleware = EngineMiddleware.create(engine = mockk(), scope = TestScope()),
         )
 
-    private fun integration() =
+    private val browserStore = storeOf(tab)
+
+    private fun integration(store: BrowserStore = browserStore) =
         PdfToolsIntegration(
             container = container,
-            browserStore = browserStore,
+            browserStore = store,
             isAddressBarAtBottom = true,
         )
+
+    private fun integrationWith(engineSession: EngineSession) =
+        integration(store = storeOf(tab.copy(engineState = EngineState(engineSession = engineSession))))
 
     @Test
     fun `GIVEN download has not been activated THEN nothing is recorded`() {
@@ -114,6 +122,44 @@ class PdfToolsIntegrationGleanTest {
 
         val event = assertNotNull(PdfViewer.signDialogCloseTapped.testGetValue())
         assertEquals(SignatureType.Typed.telemetryName, event.single().extra!!["signature_type"])
+    }
+
+    @Test
+    fun `WHEN the signature reaches the PDF viewer THEN the success is recorded`() {
+        val engineSession = mockk<EngineSession>()
+        val onResult = slot<() -> Unit>()
+        every { engineSession.addSignatureToPdf(any(), capture(onResult), any()) } returns Unit
+        integrationWith(engineSession).handleSignAddClick()
+
+        onResult.captured()
+
+        val event = assertNotNull(PdfViewer.signDialogAddCompleted.testGetValue())
+        assertEquals(SignatureType.Typed.telemetryName, event.single().extra!!["signature_type"])
+        assertNull(PdfViewer.signDialogAddFailure.testGetValue())
+    }
+
+    @Test
+    fun `WHEN the signature cannot reach the PDF viewer THEN the failure is recorded`() {
+        val engineSession = mockk<EngineSession>()
+        val onException = slot<(Throwable) -> Unit>()
+        every { engineSession.addSignatureToPdf(any(), any(), capture(onException)) } returns Unit
+        integrationWith(engineSession).handleSignAddClick()
+
+        onException.captured(RuntimeException())
+
+        val extra = assertNotNull(PdfViewer.signDialogAddFailure.testGetValue()).single().extra!!
+        assertEquals(SignatureFailure.EngineError.telemetryName, extra["reason"])
+        assertEquals(SignatureType.Typed.telemetryName, extra["signature_type"])
+        assertNull(PdfViewer.signDialogAddCompleted.testGetValue())
+    }
+
+    @Test
+    fun `GIVEN the selected tab has no engine session WHEN the signature is added THEN the failure is recorded`() {
+        integration().handleSignAddClick()
+
+        val extra = assertNotNull(PdfViewer.signDialogAddFailure.testGetValue()).single().extra!!
+        assertEquals(SignatureFailure.NoEngineSession.telemetryName, extra["reason"])
+        assertEquals(SignatureType.Typed.telemetryName, extra["signature_type"])
     }
 
     @Test

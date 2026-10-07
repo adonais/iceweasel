@@ -7,6 +7,8 @@
 #include <memory>
 #include "nss.h"
 #include "pk11pub.h"
+#include "secoid.h"
+#include "secpkcs5.h"
 
 #include "gtest/gtest.h"
 #include "nss_scoped_ptrs.h"
@@ -179,6 +181,88 @@ TEST_F(Pkcs11Pbkdf2Test, DeriveKnown2) {
 TEST_F(Pkcs11Pbkdf2Test, KeyLenSizes) {
   // The size controls are regardless of the algorithms.
   KeySizes(SEC_OID_HMAC_SHA256);
+}
+
+// Helper: build a SECAlgorithmID for PBKDF2 from raw DER-encoded parameters.
+// The returned algid references the input buffer (no copy), so params must
+// outlive any use of the algid.
+static SECAlgorithmID MakePbkdf2AlgId(uint8_t* params,
+                                      unsigned int params_len) {
+  SECAlgorithmID algid = {};
+  SECOidData* oid = SECOID_FindOIDByTag(SEC_OID_PKCS5_PBKDF2);
+  if (oid) {
+    algid.algorithm = oid->oid;
+  }
+  algid.parameters.type = siBuffer;
+  algid.parameters.data = params;
+  algid.parameters.len = params_len;
+  return algid;
+}
+
+// Bug 2012680 - DER_GetInteger error handling in pbe_PK11AlgidToParam.
+// A 9-byte positive INTEGER overflows long; the patched code must reject it.
+// (Note: 0xff*9 would just be -1 in non-minimal encoding; we need a value
+// whose magnitude genuinely exceeds LONG_MAX.)
+TEST_F(Pkcs11Pbkdf2Test, MalformedIterationOverflow) {
+  // clang-format off
+  uint8_t params[] = {
+    0x30, 0x15,                                                      // SEQUENCE (21)
+    0x04, 0x08, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x11, 0x22,    // OCTET STRING salt
+    0x02, 0x09, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     // INTEGER iteration
+    0x00,                                                            //   (9 bytes, 2^64)
+  };
+  // clang-format on
+
+  SECAlgorithmID algid = MakePbkdf2AlgId(params, sizeof(params));
+  ScopedSECItem result(PK11_ParamFromAlgid(&algid));
+  EXPECT_FALSE(result);
+}
+
+// Bug 2012680 - A zero-length INTEGER triggers SEC_ERROR_INPUT_LEN.
+TEST_F(Pkcs11Pbkdf2Test, MalformedIterationZeroLength) {
+  // clang-format off
+  uint8_t params[] = {
+    0x30, 0x0c,                                                      // SEQUENCE (12)
+    0x04, 0x08, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x11, 0x22,    // OCTET STRING salt
+    0x02, 0x00,                                                      // INTEGER (0 bytes)
+  };
+  // clang-format on
+
+  SECAlgorithmID algid = MakePbkdf2AlgId(params, sizeof(params));
+  ScopedSECItem result(PK11_ParamFromAlgid(&algid));
+  EXPECT_FALSE(result);
+}
+
+// Bug 2012680 - DER_GetInteger error handling in sec_pkcs5v2_key_length.
+// Iteration is valid but keyLength overflows.
+TEST_F(Pkcs11Pbkdf2Test, MalformedKeyLengthOverflow) {
+  // clang-format off
+  uint8_t params[] = {
+    0x30, 0x19,                                                      // SEQUENCE (25)
+    0x04, 0x08, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x11, 0x22,    // OCTET STRING salt
+    0x02, 0x02, 0x10, 0x00,                                          // INTEGER iter=4096
+    0x02, 0x09, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     // INTEGER keyLength
+    0x00,                                                            //   (9 bytes, 2^64)
+  };
+  // clang-format on
+
+  SECAlgorithmID algid = MakePbkdf2AlgId(params, sizeof(params));
+  EXPECT_EQ(-1, SEC_PKCS5GetKeyLength(&algid));
+}
+
+// Bug 2012680 - Zero-length keyLength INTEGER triggers an error.
+TEST_F(Pkcs11Pbkdf2Test, MalformedKeyLengthZeroLength) {
+  // clang-format off
+  uint8_t params[] = {
+    0x30, 0x10,                                                      // SEQUENCE (16)
+    0x04, 0x08, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x11, 0x22,    // OCTET STRING salt
+    0x02, 0x02, 0x10, 0x00,                                          // INTEGER iter=4096
+    0x02, 0x00,                                                      // INTEGER keyLen (0 bytes)
+  };
+  // clang-format on
+
+  SECAlgorithmID algid = MakePbkdf2AlgId(params, sizeof(params));
+  EXPECT_EQ(-1, SEC_PKCS5GetKeyLength(&algid));
 }
 
 }  // namespace nss_test

@@ -38,7 +38,7 @@ support-files = [
 fail-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && !nightly_build",
 ]
 
 ["test_conformance__glsl__misc__gl_position_unset.vert.html"]

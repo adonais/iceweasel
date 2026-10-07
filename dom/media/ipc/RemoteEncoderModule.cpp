@@ -7,6 +7,7 @@
 #include "RemoteDecodeUtils.h"
 #include "RemoteMediaDataEncoder.h"
 #include "RemoteMediaManagerChild.h"
+#include "nsThreadUtils.h"
 
 #ifdef MOZ_APPLEMEDIA
 #  include "AppleUtils.h"
@@ -170,6 +171,19 @@ media::EncodeSupportSet RemoteEncoderModule::SupportsCodec(
               !supports.isEmpty() ? "supports" : "rejects",
               static_cast<int>(aCodecType));
   return supports;
+}
+
+RefPtr<RemoteEncoderModule::SupportsEncoderPromise>
+RemoteEncoderModule::SupportsAsync(const EncoderConfig& aConfig) const {
+  return RemoteMediaManagerChild::EnsureCodecSupportFor(mLocation)->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [this, self = RefPtr(this), aConfig](bool) {
+        return SupportsEncoderPromise::CreateAndResolve(Supports(aConfig),
+                                                        __func__);
+      },
+      [](nsresult aRv) {
+        return SupportsEncoderPromise::CreateAndReject(aRv, __func__);
+      });
 }
 
 }  // namespace mozilla

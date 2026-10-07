@@ -909,13 +909,11 @@ A beetmover task for android components.
 
 A beetmover task for android APKs and AABs.
 
-## push-apks
+## push-android
 
-Push Focus and Fenix APKs to the Samsung Galaxy Store.
-
-## push-bundle
-
-Push Focus and Fenix AABs to Google Play.
+Push Focus, Klar and Fenix to the Android app stores: AABs to Google Play,
+Focus and Fenix APKs to the Samsung Galaxy Store, and Fenix APKs to the Huawei
+AppGallery.
 
 ## android-l10n
 

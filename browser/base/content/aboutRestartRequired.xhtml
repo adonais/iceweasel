@@ -31,33 +31,68 @@
     <link rel="localization" href="browser/aboutRestartRequired.ftl" />
   </head>
   <body>
-    <!-- PAGE CONTAINER (for styling purposes only) -->
-    <div id="errorPageContainer">
-      <div id="text-container">
-        <div class="title" id="title">
-          <h1
-            class="title-text"
-            id="title-text"
-            data-l10n-id="restart-required-heading"
-          />
-        </div>
-        <div id="errorLongContent">
-          <div id="errorLongDesc">
-            <p data-l10n-id="restart-required-intro" />
-            <p data-l10n-id="window-restoration-info" />
-          </div>
+    <article
+      class="error-page-card"
+      aria-labelledby="error-title"
+      aria-describedby="error-intro restoration-info"
+    >
+      <div class="img-container">
+        <img
+          src="chrome://global/skin/illustrations/kit-sympathetic.svg"
+          alt=""
+        />
+      </div>
+      <div class="container">
+        <h1 id="error-title" data-l10n-id="restart-required-heading2"></h1>
+        <p
+          id="error-intro"
+          class="error-intro closer"
+          data-l10n-id="restart-required-intro2"
+        ></p>
+        <p
+          id="restoration-info"
+          class="error-intro"
+          data-l10n-id="window-restoration-info2"
+        ></p>
+        <h4
+          class="closer"
+          data-l10n-id="restart-required-why-now-question"
+        ></h4>
+        <p data-l10n-id="restart-required-why-now-answer"></p>
+        <moz-button-group>
+          <moz-button
+            id="restart"
+            type="primary"
+            data-l10n-id="restart-button-label2"
+          ></moz-button>
+          <moz-button
+            id="details-toggle"
+            aria-expanded="false"
+            aria-controls="more-details"
+            data-l10n-id="restart-required-see-more-button"
+          ></moz-button>
+        </moz-button-group>
+        <div id="more-details" hidden="">
+          <h3 data-l10n-id="restart-required-more-details-heading"></h3>
+
+          <h4 data-l10n-id="restart-required-multiple-instances-question"></h4>
+          <p data-l10n-id="restart-required-multiple-instances-answer"></p>
+
+          <h4 data-l10n-id="restart-required-single-instance-question"></h4>
+          <p data-l10n-id="restart-required-single-instance-answer"></p>
+          <p data-l10n-id="restart-required-single-instance-answer-2"></p>
+
+          <h4 data-l10n-id="restart-required-unsaved-work-question"></h4>
+          <p data-l10n-id="restart-required-unsaved-work-answer"></p>
+
+          <h4 data-l10n-id="restart-required-fix-question"></h4>
+          <p data-l10n-id="restart-required-fix-answer"></p>
         </div>
       </div>
-      <!-- Restart Button -->
-      <div id="restartButtonContainer" class="button-container">
-        <button
-          id="restart"
-          data-l10n-id="restart-button-label"
-          class="primary"
-          autocomplete="off"
-        ></button>
-      </div>
-    </div>
+    </article>
+    <script
+      type="module"
+      src="chrome://browser/content/aboutRestartRequired.mjs"
+    ></script>
   </body>
-  <script src="chrome://browser/content/aboutRestartRequired.js" />
 </html>

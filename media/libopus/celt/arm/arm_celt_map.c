@@ -100,6 +100,46 @@ void (*const CELT_PITCH_XCORR_IMPL[OPUS_ARCHMASK+1])(const opus_val16 *,
   celt_pitch_xcorr_float_neon,     /* Neon */
   celt_pitch_xcorr_float_neon      /* DOTPROD */
 };
+
+#   if defined(__aarch64__)
+void (*const COMB_FILTER_CONST_IMPL[OPUS_ARCHMASK+1])(opus_val32 *y,
+    opus_val32 *x, int T, int N, opus_val16 g10, opus_val16 g11, opus_val16 g12) = {
+  comb_filter_const_c,             /* ARMv4 */
+  comb_filter_const_c,             /* EDSP */
+  comb_filter_const_c,             /* Media */
+  comb_filter_const_neon,          /* Neon */
+  comb_filter_const_neon           /* DOTPROD */
+};
+
+void (*const DEEMPHASIS_STEREO_SIMPLE_IMPL[OPUS_ARCHMASK+1])(celt_sig *in[],
+    opus_res *pcm, int N, opus_val16 coef, celt_sig *mem) = {
+  deemphasis_stereo_simple_c,      /* ARMv4 */
+  deemphasis_stereo_simple_c,      /* EDSP */
+  deemphasis_stereo_simple_c,      /* Media */
+  deemphasis_stereo_simple_neon,   /* Neon */
+  deemphasis_stereo_simple_neon    /* DOTPROD */
+};
+
+opus_val32 (*const CELT_DEEMPHASIS_IMPL[OPUS_ARCHMASK+1])(opus_res *y,
+    const opus_val32 *x, opus_val16 coef0, opus_val32 m, int N) = {
+  celt_deemphasis_c,               /* ARMv4 */
+  celt_deemphasis_c,               /* EDSP */
+  celt_deemphasis_c,               /* Media */
+  celt_deemphasis_neon,            /* Neon */
+  celt_deemphasis_neon             /* DOTPROD */
+};
+
+void (*const CLT_MDCT_BACKWARD_IMPL[OPUS_ARCHMASK+1])(const mdct_lookup *l,
+    kiss_fft_scalar *in, kiss_fft_scalar * OPUS_RESTRICT out,
+    const celt_coef * OPUS_RESTRICT window,
+    int overlap, int shift, int stride, int arch) = {
+  clt_mdct_backward_c,             /* ARMv4 */
+  clt_mdct_backward_c,             /* EDSP */
+  clt_mdct_backward_c,             /* Media */
+  clt_mdct_backward_tx,            /* Neon */
+  clt_mdct_backward_tx             /* DOTPROD */
+};
+#   endif /* __aarch64__ */
 #  endif
 # endif /* FIXED_POINT */
 
@@ -120,74 +160,5 @@ void (*const XCORR_KERNEL_IMPL[OPUS_ARCHMASK + 1])(
 };
 
 #endif
-
-# if defined(OPUS_ARM_MAY_HAVE_NEON_INTR)
-#  if defined(HAVE_ARM_NE10)
-#   if defined(CUSTOM_MODES)
-int (*const OPUS_FFT_ALLOC_ARCH_IMPL[OPUS_ARCHMASK+1])(kiss_fft_state *st) = {
-   opus_fft_alloc_arch_c,        /* ARMv4 */
-   opus_fft_alloc_arch_c,        /* EDSP */
-   opus_fft_alloc_arch_c,        /* Media */
-   opus_fft_alloc_arm_neon,      /* Neon with NE10 library support */
-   opus_fft_alloc_arm_neon       /* DOTPROD with NE10 library support */
-};
-
-void (*const OPUS_FFT_FREE_ARCH_IMPL[OPUS_ARCHMASK+1])(kiss_fft_state *st) = {
-   opus_fft_free_arch_c,         /* ARMv4 */
-   opus_fft_free_arch_c,         /* EDSP */
-   opus_fft_free_arch_c,         /* Media */
-   opus_fft_free_arm_neon,       /* Neon with NE10 */
-   opus_fft_free_arm_neon        /* DOTPROD with NE10 */
-};
-#   endif /* CUSTOM_MODES */
-
-void (*const OPUS_FFT[OPUS_ARCHMASK+1])(const kiss_fft_state *cfg,
-                                        const kiss_fft_cpx *fin,
-                                        kiss_fft_cpx *fout) = {
-   opus_fft_c,                   /* ARMv4 */
-   opus_fft_c,                   /* EDSP */
-   opus_fft_c,                   /* Media */
-   opus_fft_neon,                /* Neon with NE10 */
-   opus_fft_neon                 /* DOTPROD with NE10 */
-};
-
-void (*const OPUS_IFFT[OPUS_ARCHMASK+1])(const kiss_fft_state *cfg,
-                                         const kiss_fft_cpx *fin,
-                                         kiss_fft_cpx *fout) = {
-   opus_ifft_c,                   /* ARMv4 */
-   opus_ifft_c,                   /* EDSP */
-   opus_ifft_c,                   /* Media */
-   opus_ifft_neon,                /* Neon with NE10 */
-   opus_ifft_neon                 /* DOTPROD with NE10 */
-};
-
-void (*const CLT_MDCT_FORWARD_IMPL[OPUS_ARCHMASK+1])(const mdct_lookup *l,
-                                                     kiss_fft_scalar *in,
-                                                     kiss_fft_scalar * OPUS_RESTRICT out,
-                                                     const opus_val16 *window,
-                                                     int overlap, int shift,
-                                                     int stride, int arch) = {
-   clt_mdct_forward_c,           /* ARMv4 */
-   clt_mdct_forward_c,           /* EDSP */
-   clt_mdct_forward_c,           /* Media */
-   clt_mdct_forward_neon,        /* Neon with NE10 */
-   clt_mdct_forward_neon         /* DOTPROD with NE10 */
-};
-
-void (*const CLT_MDCT_BACKWARD_IMPL[OPUS_ARCHMASK+1])(const mdct_lookup *l,
-                                                      kiss_fft_scalar *in,
-                                                      kiss_fft_scalar * OPUS_RESTRICT out,
-                                                      const opus_val16 *window,
-                                                      int overlap, int shift,
-                                                      int stride, int arch) = {
-   clt_mdct_backward_c,           /* ARMv4 */
-   clt_mdct_backward_c,           /* EDSP */
-   clt_mdct_backward_c,           /* Media */
-   clt_mdct_backward_neon,        /* Neon with NE10 */
-   clt_mdct_backward_neon         /* DOTPROD with NE10 */
-};
-
-#  endif /* HAVE_ARM_NE10 */
-# endif /* OPUS_ARM_MAY_HAVE_NEON_INTR */
 
 #endif /* OPUS_HAVE_RTCD */

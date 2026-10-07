@@ -347,6 +347,48 @@ add_task(async function test_callModulesFromCategory() {
   Services.catMan.deleteCategory(CATEGORY);
 });
 
+// With idleDispatch, a consumer whose jsGlobal is a window that has closed by
+// the time the idle task runs should be dropped, so we don't initialize (and
+// leak) a closing window.
+add_task(
+  async function test_callModulesFromCategory_idleDispatch_closed_window() {
+    const CATEGORY = "test-js-global-catman-closed-window";
+    const MODULE = "chrome://browser/content/fake-catman-test.js";
+
+    let catManUpdated = TestUtils.topicObserved("xpcom-category-entry-added");
+    Services.catMan.addCategoryEntry(
+      CATEGORY,
+      MODULE,
+      "FakeObj.doThing",
+      false,
+      false
+    );
+    await catManUpdated;
+
+    let sandbox = sinon.createSandbox();
+
+    // A window that has closed: its consumer should be dropped.
+    let closedWindow = { closed: true, FakeObj: { doThing: sandbox.spy() } };
+    await BrowserUtils.callModulesFromCategory(
+      { categoryName: CATEGORY, idleDispatch: true, jsGlobal: closedWindow },
+      "win"
+    );
+    sinon.assert.notCalled(closedWindow.FakeObj.doThing);
+
+    // A window that is still open: its consumer should run as usual.
+    let openWindow = { closed: false, FakeObj: { doThing: sandbox.spy() } };
+    await BrowserUtils.callModulesFromCategory(
+      { categoryName: CATEGORY, idleDispatch: true, jsGlobal: openWindow },
+      "win"
+    );
+    sinon.assert.calledOnce(openWindow.FakeObj.doThing);
+    sinon.assert.calledWithExactly(openWindow.FakeObj.doThing, "win");
+
+    sandbox.restore();
+    Services.catMan.deleteCategory(CATEGORY);
+  }
+);
+
 // Test that errors are reported but do not throw at the callsite,
 // and that custom error handlers are invoked.
 add_task(async function test_callModulesFromCategory_errors() {

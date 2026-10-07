@@ -58,6 +58,9 @@ class CodeGeneratorShared : public LElementVisitor {
   // Label for the common return path.
   NonAssertingLabel returnLabel_;
 
+  // Label for the common non-table-based bailout path.
+  NonAssertingLabel deoptLabel_;
+
   // Amount of bytes allocated for incoming args. Used for Wasm return calls.
   uint32_t inboundStackArgBytes_;
 
@@ -393,6 +396,31 @@ class CodeGeneratorShared : public LElementVisitor {
   void addOutOfLineCode(OutOfLineCode* code, const MInstruction* mir);
   void addOutOfLineCode(OutOfLineCode* code, const BytecodeSite* site);
   bool generateOutOfLineCode();
+
+  void bailoutFrom(Label* label, LSnapshot* snapshot);
+  void bailout(LSnapshot* snapshot);
+
+  template <typename T1, typename T2>
+  void bailoutCmpPtr(Assembler::Condition c, T1 lhs, T2 rhs,
+                     LSnapshot* snapshot) {
+    Label bail;
+    masm.branchPtr(c, lhs, rhs, &bail);
+    bailoutFrom(&bail, snapshot);
+  }
+  template <typename T1, typename T2>
+  void bailoutCmp32(Assembler::Condition c, T1 lhs, T2 rhs,
+                    LSnapshot* snapshot) {
+    Label bail;
+    masm.branch32(c, lhs, rhs, &bail);
+    bailoutFrom(&bail, snapshot);
+  }
+  template <typename T1, typename T2>
+  void bailoutTest32(Assembler::Condition c, T1 lhs, T2 rhs,
+                     LSnapshot* snapshot) {
+    Label bail;
+    masm.branchTest32(c, lhs, rhs, &bail);
+    bailoutFrom(&bail, snapshot);
+  }
 
   Label* getJumpLabelForBranch(MBasicBlock* block);
 

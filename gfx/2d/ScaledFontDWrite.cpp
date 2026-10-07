@@ -351,7 +351,7 @@ bool ScaledFontDWrite::HasVariationSettings() {
 // Helper for ScaledFontDWrite::GetFontInstanceData: if the font has variation
 // axes, get their current values into the aOutput vector.
 static void GetVariationsFromFontFace(IDWriteFontFace* aFace,
-                                      std::vector<FontVariation>* aOutput) {
+                                      std::vector<wr::FontVariation>* aOutput) {
   RefPtr<IDWriteFontFace5> ff5;
   aFace->QueryInterface(__uuidof(IDWriteFontFace5),
                         (void**)getter_AddRefs(ff5));
@@ -382,7 +382,7 @@ static void GetVariationsFromFontFace(IDWriteFontFace* aFace,
       uint32_t t = TRUETYPE_TAG(
           uint8_t(values[i].axisTag), uint8_t(values[i].axisTag >> 8),
           uint8_t(values[i].axisTag >> 16), uint8_t(values[i].axisTag >> 24));
-      aOutput->push_back(FontVariation{uint32_t(t), float(v)});
+      aOutput->push_back(wr::FontVariation{uint32_t(t), float(v)});
     }
   }
 }
@@ -392,7 +392,7 @@ bool ScaledFontDWrite::GetFontInstanceData(FontInstanceDataOutput aCb,
   InstanceData instance(this);
 
   // If the font has variations, get the list of axis values.
-  std::vector<FontVariation> variations;
+  std::vector<wr::FontVariation> variations;
   GetVariationsFromFontFace(mFontFace, &variations);
 
   aCb(reinterpret_cast<uint8_t*>(&instance), sizeof(instance),
@@ -404,7 +404,7 @@ bool ScaledFontDWrite::GetFontInstanceData(FontInstanceDataOutput aCb,
 bool ScaledFontDWrite::GetWRFontInstanceOptions(
     Maybe<wr::FontInstanceOptions>* aOutOptions,
     Maybe<wr::FontInstancePlatformOptions>* aOutPlatformOptions,
-    std::vector<FontVariation>* aOutVariations) {
+    std::vector<wr::FontVariation>* aOutVariations) {
   wr::FontInstanceOptions options = {};
   options.render_mode = wr::ToFontRenderMode(GetDefaultAAMode());
   options.flags = wr::FontInstanceFlags{0};
@@ -463,7 +463,8 @@ DWriteSettings& ScaledFontDWrite::DWriteSettings() const {
 // Returns nullptr in case of failure.
 static already_AddRefed<IDWriteFontFace5> CreateFaceWithVariations(
     IDWriteFontFace* aFace, DWRITE_FONT_SIMULATIONS aSimulations,
-    const FontVariation* aVariations = nullptr, uint32_t aNumVariations = 0) {
+    const wr::FontVariation* aVariations = nullptr,
+    uint32_t aNumVariations = 0) {
   auto makeDWriteAxisTag = [](uint32_t aTag) {
     return DWRITE_MAKE_FONT_AXIS_TAG((aTag >> 24) & 0xff, (aTag >> 16) & 0xff,
                                      (aTag >> 8) & 0xff, aTag & 0xff);
@@ -487,7 +488,7 @@ static already_AddRefed<IDWriteFontFace5> CreateFaceWithVariations(
       fontAxisValues.reserve(aNumVariations);
       for (uint32_t i = 0; i < aNumVariations; i++) {
         DWRITE_FONT_AXIS_VALUE axisValue = {
-            makeDWriteAxisTag(aVariations[i].mTag), aVariations[i].mValue};
+            makeDWriteAxisTag(aVariations[i].tag), aVariations[i].value};
         fontAxisValues.push_back(axisValue);
       }
     } else {
@@ -559,7 +560,7 @@ bool UnscaledFontDWrite::InitBold() {
 
 already_AddRefed<ScaledFont> UnscaledFontDWrite::CreateScaledFont(
     Float aGlyphSize, const uint8_t* aInstanceData,
-    uint32_t aInstanceDataLength, const FontVariation* aVariations,
+    uint32_t aInstanceDataLength, const wr::FontVariation* aVariations,
     uint32_t aNumVariations) {
   if (aInstanceDataLength < sizeof(ScaledFontDWrite::InstanceData)) {
     gfxWarning() << "DWrite scaled font instance data is truncated.";
@@ -599,7 +600,7 @@ already_AddRefed<ScaledFont> UnscaledFontDWrite::CreateScaledFont(
 already_AddRefed<ScaledFont> UnscaledFontDWrite::CreateScaledFontFromWRFont(
     Float aGlyphSize, const wr::FontInstanceOptions* aOptions,
     const wr::FontInstancePlatformOptions* aPlatformOptions,
-    const FontVariation* aVariations, uint32_t aNumVariations) {
+    const wr::FontVariation* aVariations, uint32_t aNumVariations) {
   ScaledFontDWrite::InstanceData instanceData(aOptions, aPlatformOptions);
   return CreateScaledFont(aGlyphSize, reinterpret_cast<uint8_t*>(&instanceData),
                           sizeof(instanceData), aVariations, aNumVariations);

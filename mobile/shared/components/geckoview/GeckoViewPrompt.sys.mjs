@@ -81,41 +81,40 @@ export class PromptFactory {
     }
   }
 
+  // Maps the select's list items, as computed by
+  // HTMLSelectElement::GetListItems, onto the native choice items.
   _generateSelectItems(aElement) {
     const win = aElement.documentGlobal;
     let id = 0;
     const map = {};
 
-    const items = (function enumList(elem, disabled) {
+    const enumList = group => {
       const items = [];
-      const children = elem.children;
-      for (let i = 0; i < children.length; i++) {
-        const child = children[i];
+      for (const child of aElement.getListItems(group)) {
         if (win.getComputedStyle(child).display === "none") {
           continue;
         }
+        const className = ChromeUtils.getClassName(child);
         const item = {
           id: String(id),
-          disabled: disabled || child.disabled,
+          disabled: (group && group.disabled) || child.disabled,
         };
-        if (win.HTMLOptGroupElement.isInstance(child)) {
+        map[id++] = child;
+        if (className === "HTMLOptGroupElement") {
           item.label = child.label;
-          item.items = enumList(child, item.disabled);
-        } else if (win.HTMLOptionElement.isInstance(child)) {
-          item.label = child.label || child.text;
+          item.items = enumList(child);
+        } else if (className === "HTMLOptionElement") {
+          item.label = child.renderedLabel;
           item.selected = child.selected;
-        } else if (win.HTMLHRElement.isInstance(child)) {
-          item.separator = true;
         } else {
-          continue;
+          item.separator = true;
         }
         items.push(item);
-        map[id++] = child;
       }
       return items;
-    })(aElement);
+    };
 
-    return [items, map, id];
+    return [enumList(null), map, id];
   }
 
   _handleSelect(aElement, aIsDropDown) {

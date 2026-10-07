@@ -70,6 +70,7 @@
         app:layout_constraintTop_toTopOf="@id/addtohomescreen_dialog_add"
         app:layout_constraintBottom_toBottomOf="@id/addtohomescreen_dialog_add"/>
 
+    <!-- This sizes its own background around whichever of the icon and the text is taller. -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/homescreen_dialog_warning_layout"
         android:layout_width="match_parent"
@@ -80,7 +81,8 @@
         android:visibility="invisible"
         tools:visibility="visible"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/addtohomescreen_dialog_add">
+        app:layout_constraintTop_toBottomOf="@id/addtohomescreen_dialog_add"
+        tools:ignore="MozMultipleConstraintLayouts">
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/homescreen_dialog_block_icon"

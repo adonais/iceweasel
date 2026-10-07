@@ -133,6 +133,7 @@
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent" />
 
+    <!-- The transitions show and hide this bar by its own id, so its children cannot move up to the root. -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/bottom_button_bar_layout"
         android:layout_width="match_parent"
@@ -143,7 +144,8 @@
         android:foreground="@drawable/rounded_ripple"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        tools:ignore="MozMultipleConstraintLayouts">
 
         <ImageButton
             android:id="@+id/bottom_bar_icon_button"

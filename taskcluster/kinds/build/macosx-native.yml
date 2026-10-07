@@ -44,7 +44,6 @@ macosx64-plain/opt:
             - builds/taskcluster_base_macosx.py
         extra-config:
             disable_package_metrics: true
-            stage_platform: macosx64
             mozconfig_platform: macosx64
         mozconfig-variant: plain-opt
     run-on-projects: ['mozilla-central']
@@ -79,7 +78,6 @@ macosx64-plain/debug:
             - builds/taskcluster_base_macosx.py
         extra-config:
             disable_package_metrics: true
-            stage_platform: macosx64
             mozconfig_platform: macosx64
         mozconfig-variant: plain-debug
     run-on-projects: ['trunk']

@@ -7,6 +7,7 @@ package org.mozilla.fenix.crashes
 import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
@@ -24,7 +25,7 @@ class CrashContentViewTest {
     @Test
     fun `WHEN show is called THEN remember the controller, inflate and display the View`() {
         val view = spyk(CrashContentView(testContext))
-        val controller: CrashReporterController = mockk()
+        val controller: CrashReporterController = mockk(relaxed = true)
 
         view.show(controller)
 
@@ -103,5 +104,21 @@ class CrashContentViewTest {
 
         verify(exactly = 1) { view.inflate() }
         verify(exactly = 0) { view.bindViews() }
+    }
+
+    @Test
+    fun `GIVEN Auto Setting WHEN show is called again THEN the checkbox is re-checked`() {
+        val controller: CrashReporterController =
+            mockk(relaxed = true) {
+                every { isCrashReportCheckboxVisible() } returns true
+                every { isCrashReportCheckboxInitiallyChecked() } returns true
+            }
+        val view = CrashContentView(testContext)
+
+        view.show(controller)
+        view.binding.sendCrashCheckbox.isChecked = false
+        view.show(controller)
+
+        assertTrue(view.binding.sendCrashCheckbox.isChecked)
     }
 }

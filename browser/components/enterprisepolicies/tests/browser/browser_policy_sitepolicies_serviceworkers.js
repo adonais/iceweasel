@@ -77,13 +77,17 @@ async function goBack(browser) {
 }
 
 // Storing the previous page into the BFCache happens asynchronously after the
-// new page has finished loading, so poll instead of asserting synchronously.
+// new page has finished loading. The entry's URI is set synchronously when the
+// entry is created, so polling on it races ahead of the BFCache store; poll on
+// isInBFCache itself instead.
 async function assertEntryInBFCache(sh, index, expectedUrl, description) {
-  await TestUtils.waitForCondition(
-    () => sh.getEntryAtIndex(index).URI.spec == expectedUrl,
-    `Waiting for ${description}`
-  );
-  Assert.ok(sh.getEntryAtIndex(index).isInBFCache, description);
+  await TestUtils.waitForCondition(() => {
+    let entry = sh.getEntryAtIndex(index);
+    return entry.URI.spec == expectedUrl && entry.isInBFCache;
+  }, `Waiting for ${description}`);
+  let entry = sh.getEntryAtIndex(index);
+  Assert.equal(entry.URI.spec, expectedUrl, `${description} (correct entry)`);
+  Assert.ok(entry.isInBFCache, description);
 }
 
 add_task(async function test_serviceworker_api_hidden_on_blocked_site() {

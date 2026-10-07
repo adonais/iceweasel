@@ -18,6 +18,7 @@
 namespace mozilla::dom {
 
 class CanonicalBrowsingContext;
+class LoadedOriginSet;
 class WindowGlobalParent;
 
 extern mozilla::LazyLogModule gProcessIsolationLog;
@@ -90,6 +91,15 @@ Result<RemoteType, nsresult> PredictRemoteTypeForURI(
     const RemoteType& aPreferredRemoteType, bool aUseRemoteSubframes);
 
 /**
+ * If `aURI` is an `about:reader` URI whose "url" query parameter names a
+ * document about:reader will actually load, return that URL, otherwise return
+ * `nullptr`.
+ *
+ * Safe to call with any URI.
+ */
+already_AddRefed<nsIURI> GetAboutReaderURL(nsIURI* aURI);
+
+/**
  * Adds a `highValue` permission to the permissions database, and make loads of
  * that origin isolated.
  *
@@ -152,6 +162,9 @@ enum class ValidatePrincipalOptions {
 
   // Allow the system principal unconditionally, ignoring the LoadedOriginSet.
   AlwaysAllowSystem,
+
+  // Internal flag used while validating null principal precursors.
+  Internal_ValidatingPrecursor,
 };
 
 /**
@@ -164,7 +177,7 @@ enum class ValidatePrincipalOptions {
 bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
     nsIPrincipal* aPrincipal, const RemoteType& aRemoteType,
     const EnumSet<ValidatePrincipalOptions>& aOptions,
-    FunctionRef<bool(nsIPrincipal*)> aIsPrincipalLoaded = nullptr);
+    LoadedOriginSet* aLoadedOriginSet = nullptr);
 
 }  // namespace mozilla::dom
 

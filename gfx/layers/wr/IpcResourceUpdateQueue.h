@@ -35,12 +35,12 @@ class ShmSegmentsWriter {
   ShmSegmentsWriter(const ShmSegmentsWriter& aOther) = delete;
   ShmSegmentsWriter& operator=(const ShmSegmentsWriter& aOther) = delete;
 
-  layers::OffsetRange Write(Range<uint8_t> aBytes);
+  layers::OffsetRange Write(mozilla::Range<uint8_t> aBytes);
 
   template <typename T>
-  layers::OffsetRange WriteAsBytes(Range<T> aValues) {
-    return Write(Range<uint8_t>((uint8_t*)aValues.begin().get(),
-                                aValues.length() * sizeof(T)));
+  layers::OffsetRange WriteAsBytes(mozilla::Range<T> aValues) {
+    return Write(mozilla::Range<uint8_t>((uint8_t*)aValues.begin().get(),
+                                         aValues.length() * sizeof(T)));
   }
 
   void Flush(nsTArray<layers::RefCountedShmem>& aSmallAllocs,
@@ -73,20 +73,21 @@ class ShmSegmentsReader {
   // Get a read pointer, if possible, directly into the shm. If the range has
   // been broken up into multiple chunks that can't be represented by a single
   // range, nothing will be returned to indicate failure.
-  Maybe<Range<uint8_t>> GetReadPointer(const layers::OffsetRange& aRange);
+  Maybe<mozilla::Range<uint8_t>> GetReadPointer(
+      const layers::OffsetRange& aRange);
 
   // Get a read pointer, if possible, directly into the shm. Otherwise, copy
   // it into the Vec and return a pointer to that contiguous memory instead.
   // If all fails, return nothing.
-  Maybe<Range<uint8_t>> GetReadPointerOrCopy(const layers::OffsetRange& aRange,
-                                             wr::Vec<uint8_t>& aInto) {
-    if (Maybe<Range<uint8_t>> ptr = GetReadPointer(aRange)) {
+  Maybe<mozilla::Range<uint8_t>> GetReadPointerOrCopy(
+      const layers::OffsetRange& aRange, wr::Vec<uint8_t>& aInto) {
+    if (Maybe<mozilla::Range<uint8_t>> ptr = GetReadPointer(aRange)) {
       return ptr;
     } else {
       size_t initialLength = aInto.Length();
       if (Read(aRange, aInto)) {
-        return Some(Range<uint8_t>(aInto.Data() + initialLength,
-                                   aInto.Length() - initialLength));
+        return Some(mozilla::Range<uint8_t>(aInto.Data() + initialLength,
+                                            aInto.Length() - initialLength));
       } else {
         return Nothing();
       }
@@ -96,7 +97,8 @@ class ShmSegmentsReader {
  protected:
   bool ReadLarge(const layers::OffsetRange& aRange, wr::Vec<uint8_t>& aInto);
 
-  Maybe<Range<uint8_t>> GetReadPointerLarge(const layers::OffsetRange& aRange);
+  Maybe<mozilla::Range<uint8_t>> GetReadPointerLarge(
+      const layers::OffsetRange& aRange);
 
   const nsTArray<layers::RefCountedShmem>& mSmallAllocs;
   const nsTArray<mozilla::ipc::Shmem>& mLargeAllocs;
@@ -125,10 +127,10 @@ class IpcResourceUpdateQueue {
   void ReplaceResources(IpcResourceUpdateQueue&& aOther);
 
   bool AddImage(wr::ImageKey aKey, const ImageDescriptor& aDescriptor,
-                Range<uint8_t> aBytes);
+                mozilla::Range<uint8_t> aBytes);
 
   bool AddBlobImage(wr::BlobImageKey aKey, const ImageDescriptor& aDescriptor,
-                    Range<uint8_t> aBytes, ImageIntRect aVisibleRect);
+                    mozilla::Range<uint8_t> aBytes, ImageIntRect aVisibleRect);
 
   void AddSnapshotImage(wr::SnapshotImageKey aKey);
 
@@ -140,12 +142,12 @@ class IpcResourceUpdateQueue {
                                    bool aIsUpdate);
 
   bool UpdateImageBuffer(wr::ImageKey aKey, const ImageDescriptor& aDescriptor,
-                         Range<uint8_t> aBytes);
+                         mozilla::Range<uint8_t> aBytes);
 
   bool UpdateBlobImage(wr::BlobImageKey aKey,
                        const ImageDescriptor& aDescriptor,
-                       Range<uint8_t> aBytes, ImageIntRect aVisibleRect,
-                       ImageIntRect aDirtyRect);
+                       mozilla::Range<uint8_t> aBytes,
+                       ImageIntRect aVisibleRect, ImageIntRect aDirtyRect);
 
   void UpdateSharedExternalImage(ExternalImageId aExtID, ImageKey aKey,
                                  ImageIntRect aDirtyRect);
@@ -158,9 +160,10 @@ class IpcResourceUpdateQueue {
 
   void DeleteSnapshotImage(wr::SnapshotImageKey aKey);
 
-  bool AddRawFont(wr::FontKey aKey, Range<uint8_t> aBytes, uint32_t aIndex);
+  bool AddRawFont(wr::FontKey aKey, mozilla::Range<uint8_t> aBytes,
+                  uint32_t aIndex);
 
-  bool AddFontDescriptor(wr::FontKey aKey, Range<uint8_t> aBytes,
+  bool AddFontDescriptor(wr::FontKey aKey, mozilla::Range<uint8_t> aBytes,
                          uint32_t aIndex);
 
   void DeleteFont(wr::FontKey aKey);
@@ -169,7 +172,7 @@ class IpcResourceUpdateQueue {
                        float aGlyphSize,
                        const wr::FontInstanceOptions* aOptions,
                        const wr::FontInstancePlatformOptions* aPlatformOptions,
-                       Range<const gfx::FontVariation> aVariations);
+                       mozilla::Range<const wr::FontVariation> aVariations);
 
   void DeleteFontInstance(wr::FontInstanceKey aKey);
 

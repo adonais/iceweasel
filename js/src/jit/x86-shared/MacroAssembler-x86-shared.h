@@ -12,6 +12,7 @@
 #endif
 
 using js::wasm::FaultingCodeRange;
+using js::wasm::FaultingCodeRangePair;
 
 namespace js {
 namespace jit {
@@ -177,10 +178,9 @@ class MacroAssemblerX86Shared : public Assembler {
   void convertInt32ToDouble(Register src, FloatRegister dest) {
     // vcvtsi2sd and friends write only part of their output register, which
     // causes slowdowns on out-of-order processors. Explicitly break
-    // dependencies with vxorpd (and vxorps elsewhere), which are handled
-    // specially in modern CPUs, for this purpose. See sections 8.14, 9.8,
-    // 10.8, 12.9, 13.16, 14.14, and 15.8 of Agner's Microarchitecture
-    // document.
+    // dependencies with vxorps, which is handled specially in modern CPUs,
+    // for this purpose. See sections 8.14, 9.8, 10.8, 12.9, 13.16, 14.14,
+    // and 15.8 of Agner's Microarchitecture document.
     zeroDouble(dest);
     vcvtsi2sd(src, dest, dest);
   }
@@ -401,7 +401,7 @@ class MacroAssemblerX86Shared : public Assembler {
     // Use vmovapd instead of vmovsd to avoid dependencies.
     vmovapd(src, dest);
   }
-  void zeroDouble(FloatRegister reg) { vxorpd(reg, reg, reg); }
+  void zeroDouble(FloatRegister reg) { vxorps(reg, reg, reg); }
   void zeroFloat32(FloatRegister reg) { vxorps(reg, reg, reg); }
   void convertFloat32ToDouble(FloatRegister src, FloatRegister dest) {
     // If we have AVX, pass the source register as src0 to avoid a false
@@ -997,7 +997,7 @@ class MacroAssemblerX86Shared : public Assembler {
 
   bool maybeInlineSimd128Int(const SimdConstant& v, const FloatRegister& dest) {
     if (v.isZeroBits()) {
-      vpxor(dest, dest, dest);
+      vxorps(dest, dest, dest);
       return true;
     }
     if (v.isOneBits()) {

@@ -461,5 +461,7 @@ run-if = [
 
 ["test_webextension_descriptor.js"]
 
+["test_websocket_watcher.js"]
+
 ["test_xpcshell_debugging.js"]
 support-files = ["xpcshell_debugging_script.js"]

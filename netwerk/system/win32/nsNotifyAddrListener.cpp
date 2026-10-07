@@ -38,6 +38,7 @@
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/widget/WinRegistry.h"
 #include "nsCRT.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIObserverService.h"
 #include "nsNetAddr.h"

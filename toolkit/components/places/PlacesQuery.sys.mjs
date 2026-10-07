@@ -27,6 +27,8 @@ const OBSERVER_DEBOUNCE_TIMEOUT_MS = 5000;
  *   The page's title.
  * @property {string} url
  *   The page's URL.
+ * @property {number} visitCount
+ *   The number of times the page has been visited.
  * @property {string} guid
  *   The page's GUID.
  */
@@ -142,6 +144,7 @@ export class PlacesQuery {
         break;
       case SORT_BY.SITE:
       case SORT_BY.LAST_VISITED:
+      case SORT_BY.MOST_VISITED:
         groupBy = "url";
         break;
     }
@@ -151,14 +154,18 @@ export class PlacesQuery {
         : `WHERE visit_date >= (strftime('%s','now','localtime','start of day','-${Number(
             daysOld
           )} days','utc') * 1000000)`;
-    const sql = `SELECT MAX(visit_date) as visit_date, title, url, guid
+    const orderBy =
+      sortBy === SORT_BY.MOST_VISITED
+        ? "visit_count DESC, visit_date DESC"
+        : "visit_date DESC";
+    const sql = `SELECT MAX(visit_date) as visit_date, h.visit_count as visit_count, title, url, guid
       FROM moz_historyvisits v
       JOIN moz_places h
       ON v.place_id = h.id
       AND hidden = 0
       ${whereClause}
       GROUP BY ${groupBy}
-      ORDER BY visit_date DESC
+      ORDER BY ${orderBy}
       LIMIT ${limit > 0 ? limit : -1}`;
     const rows = await db.executeCached(sql);
     if (this.#isClosed) {
@@ -200,8 +207,11 @@ export class PlacesQuery {
       case SORT_BY.LAST_VISITED:
         orderBy = "visit_date DESC";
         break;
+      case SORT_BY.MOST_VISITED:
+        orderBy = "visit_count DESC, visit_date DESC";
+        break;
     }
-    const sql = `SELECT MAX(visit_date) as visit_date, title, url, guid
+    const sql = `SELECT MAX(visit_date) as visit_date, h.visit_count as visit_count, title, url, guid
       FROM moz_historyvisits v
       JOIN moz_places h
       ON v.place_id = h.id
@@ -384,6 +394,7 @@ export class PlacesQuery {
       title: row.getResultByName("title"),
       // @ts-expect-error - Bug 1966462
       url: row.getResultByName("url"),
+      visitCount: Number(row.getResultByName("visit_count")),
       // @ts-expect-error - Bug 1966462
       guid: row.getResultByName("guid"),
     };
@@ -402,6 +413,7 @@ export class PlacesQuery {
       date: new Date(event.visitTime),
       title: event.lastKnownTitle,
       url: event.url,
+      visitCount: event.visitCount,
       guid: event.pageGuid,
     };
   }
@@ -435,6 +447,16 @@ const SORT_BY = Object.freeze({
    * - No grouping.
    */
   LAST_VISITED: "lastvisited",
+
+  /**
+   * Flat list of all visited pages, ungrouped.
+   *
+   * Cache structure: `HistoryVisit[]`
+   * - An array of all pages sorted by all-time visit count, most visited
+   *   first, with ties sorted by newest first.
+   * - No grouping.
+   */
+  MOST_VISITED: "mostvisited",
 
   /**
    * Group visits by website/domain.
@@ -474,7 +496,10 @@ class HistoryCache {
   constructor(sortBy, placesQuery) {
     this.#sortBy = sortBy;
     this.#placesQuery = placesQuery;
-    this.#cache = sortBy === SORT_BY.LAST_VISITED ? [] : new Map();
+    this.#cache =
+      sortBy === SORT_BY.LAST_VISITED || sortBy === SORT_BY.MOST_VISITED
+        ? []
+        : new Map();
   }
 
   /**
@@ -547,7 +572,8 @@ class HistoryCache {
    */
   #getContainerForVisit(visit) {
     switch (this.#sortBy) {
-      case SORT_BY.LAST_VISITED: {
+      case SORT_BY.LAST_VISITED:
+      case SORT_BY.MOST_VISITED: {
         return /**@type {HistoryVisit[]} */ (this.#cache);
       }
 
@@ -673,7 +699,7 @@ class HistoryCache {
 
   /**
    * Insert a visit into a container while maintaining descending chronological
-   * order.
+   * order, or descending visit count order when sorting by most visited.
    *
    * @param {HistoryVisit} visit
    *   The visit to insert.
@@ -681,6 +707,16 @@ class HistoryCache {
    *   The container to insert into.
    */
   #insertSortedIntoContainer(visit, container) {
+    if (this.#sortBy === SORT_BY.MOST_VISITED) {
+      let insertionPoint = lazy.BinarySearch.insertionIndexOf(
+        (a, b) =>
+          b.visitCount - a.visitCount || b.date.getTime() - a.date.getTime(),
+        container,
+        visit
+      );
+      container.splice(insertionPoint, 0, visit);
+      return;
+    }
     let insertionPoint = 0;
     if (visit.date.getTime() < container[0]?.date.getTime()) {
       insertionPoint = lazy.BinarySearch.insertionIndexOf(

@@ -5,7 +5,7 @@
 task-defaults:
     fetch:
         repo: https://github.com/Microsoft/onnxruntime
-        revision: 89f8206ba4f1c22c39e0297fb55272e8ce8cd7d0
+        revision: f2c39fe2f838cf35ce7da92824f5a5e3ee6e88a7
 
 onnxruntime-src:
     description: Source code for ONNX runtime

@@ -96,7 +96,7 @@ class SyncableLoginsStorage(
             val managedKey = crypto.getOrGenerateKey()
             val key = managedKey.key
             val keyManager =
-                object : mozilla.appservices.logins.KeyManager {
+                object : mozilla.appservices.db_crypto.KeyManager {
                     override fun getKey(): ByteArray {
                         return key.toByteArray()
                     }

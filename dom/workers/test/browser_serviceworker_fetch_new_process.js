@@ -300,33 +300,14 @@ async function makeFileBlob(blobContents) {
 }
 
 function getSWTelemetrySums() {
-  let telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(
-    Ci.nsITelemetry
-  );
-  let keyedhistograms = telemetry.getSnapshotForKeyedHistograms(
-    "main",
-    false
-  ).parent;
-  let keyedscalars = telemetry.getSnapshotForKeyedScalars("main", false).parent;
-  // We're not looking at the distribution of the histograms, just that they changed
+  // We're not looking at the distribution of the metrics, just that they changed
   return {
-    SERVICE_WORKER_RUNNING_All: keyedhistograms.SERVICE_WORKER_RUNNING
-      ? keyedhistograms.SERVICE_WORKER_RUNNING.All.sum
-      : 0,
-    SERVICE_WORKER_RUNNING_Fetch: keyedhistograms.SERVICE_WORKER_RUNNING
-      ? keyedhistograms.SERVICE_WORKER_RUNNING.Fetch.sum
-      : 0,
+    runningAll: Glean.serviceWorker.running.All.testGetValue()?.sum ?? 0,
+    runningFetch: Glean.serviceWorker.running.Fetch.testGetValue()?.sum ?? 0,
   };
 }
 
 add_task(async function test() {
-  // Can't test telemetry without this since we may not be on the nightly channel
-  let oldCanRecord = Services.telemetry.canRecordExtended;
-  Services.telemetry.canRecordExtended = true;
-  registerCleanupFunction(() => {
-    Services.telemetry.canRecordExtended = oldCanRecord;
-  });
-
   let initialSums = getSWTelemetrySums();
 
   const fileBlob = await makeFileBlob(TEST_BLOB_CONTENTS);
@@ -360,24 +341,24 @@ add_task(async function test() {
   info(JSON.stringify(telemetrySums));
   info(
     "Initial Running All: " +
-      initialSums.SERVICE_WORKER_RUNNING_All +
+      initialSums.runningAll +
       ", Fetch: " +
-      initialSums.SERVICE_WORKER_RUNNING_Fetch
+      initialSums.runningFetch
   );
   info(
     "Running All: " +
-      telemetrySums.SERVICE_WORKER_RUNNING_All +
+      telemetrySums.runningAll +
       ", Fetch: " +
-      telemetrySums.SERVICE_WORKER_RUNNING_Fetch
+      telemetrySums.runningFetch
   );
   Assert.greater(
-    telemetrySums.SERVICE_WORKER_RUNNING_All,
-    initialSums.SERVICE_WORKER_RUNNING_All,
+    telemetrySums.runningAll,
+    initialSums.runningAll,
     "ServiceWorker running count changed"
   );
   Assert.greater(
-    telemetrySums.SERVICE_WORKER_RUNNING_Fetch,
-    initialSums.SERVICE_WORKER_RUNNING_Fetch,
+    telemetrySums.runningFetch,
+    initialSums.runningFetch,
     "ServiceWorker running count changed"
   );
 });

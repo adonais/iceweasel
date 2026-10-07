@@ -15,7 +15,8 @@ raptor_dir = os.path.join(os.path.dirname(here), "raptor")
 sys.path.insert(0, raptor_dir)
 
 
-from browsertime import BrowsertimeAndroid, BrowsertimeDesktop
+from browsertime import Browsertime, BrowsertimeAndroid, BrowsertimeDesktop
+from perftest import Perftest, PerftestAndroid
 
 DEFAULT_TIMEOUT = 125
 
@@ -42,6 +43,81 @@ class TestBrowserThread(threading.Thread):
 
 
 # Perftest tests
+def test_direct_playback_sets_firefox_origin_overrides():
+    perftest = mock.Mock()
+    perftest.config = {"app": "firefox"}
+    perftest.playback = mock.Mock(
+        playback_mode="direct",
+        host="127.0.0.1",
+        http_port=18080,
+        https_port=18443,
+    )
+
+    Perftest.run_test_setup(perftest, {"name": "nav-bench", "preferences": {}})
+
+    perftest.set_browser_test_prefs.assert_called_with({
+        "network.dns.forceResolve": "127.0.0.1",
+        "network.socket.forcePort": "80=18080;443=18443",
+    })
+
+
+def test_direct_playback_sets_desktop_chrome_origin_overrides():
+    perftest = object.__new__(BrowsertimeDesktop)
+    perftest.config = {"host": "127.0.0.1"}
+    perftest.debug_mode = False
+    perftest.playback = mock.Mock(
+        playback_mode="direct",
+        host="127.0.0.1",
+        http_port=18080,
+        https_port=18443,
+    )
+
+    args = perftest.desktop_chrome_args({"playback": "mitmproxy"})
+
+    assert (
+        "--host-resolver-rules=MAP *:80 127.0.0.1:18080,"
+        "MAP *:443 127.0.0.1:18443,EXCLUDE localhost"
+    ) in args
+    assert not any(arg.startswith("--proxy-server=") for arg in args)
+
+
+def test_direct_playback_forwards_both_android_ports():
+    perftest = mock.Mock()
+    perftest.is_localhost = True
+    perftest.benchmark = None
+    perftest.playback = mock.Mock(
+        playback_mode="direct",
+        http_port=18080,
+        https_port=18443,
+    )
+
+    PerftestAndroid.set_reverse_ports(perftest)
+
+    assert perftest.set_reverse_port.call_args_list == [
+        mock.call(18080),
+        mock.call(18443),
+    ]
+
+
+@pytest.mark.parametrize(
+    "playback_mode, expected_proxy_calls", [("direct", 0), ("proxy", 1)]
+)
+def test_android_firefox_proxy_depends_on_playback_mode(
+    playback_mode, expected_proxy_calls
+):
+    perftest = object.__new__(BrowsertimeAndroid)
+    perftest.config = {"app": "fenix"}
+    perftest.playback = mock.Mock(playback_mode=playback_mode)
+    perftest.set_reverse_ports = mock.Mock()
+    perftest.turn_on_android_app_proxy = mock.Mock()
+    perftest.remove_mozprofile_delimiters_from_profile = mock.Mock()
+
+    with mock.patch.object(Browsertime, "run_test_setup"):
+        perftest.run_test_setup({"name": "pageload"})
+
+    assert perftest.turn_on_android_app_proxy.call_count == expected_proxy_calls
+
+
 @patch("logger.logger.RaptorLogger.info")
 @patch("logger.logger.RaptorLogger.critical")
 @pytest.mark.parametrize(

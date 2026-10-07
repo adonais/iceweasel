@@ -1,7 +1,7 @@
 # PRDir
 
 Directory structure used with [Directory I/O
-Functions](I_O_Functions#Directory_I.2FO_Functions).
+Functions](i_o_functions.md#directory-io-functions).
 
 ## Syntax
 

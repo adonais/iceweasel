@@ -70,3 +70,71 @@ kbd {
 table.docutils {
   width: 100%;
 }
+
+/* The mermaid extension stretches a diagram's SVG to the width of its <pre>,
+   which scales the diagram up as readily as down. */
+pre.mermaid {
+  overflow-x: auto;
+
+  /* Overlay scrollbars stay hidden until the reader scrolls, so a diagram
+     wider than the column reads as cut off. The mask fades whatever sits at
+     the scrollport edge, and the padding keeps that off the diagram: the fade
+     lands on the padding at either end of the scroll, and for a diagram that
+     fits. The negative margin puts the padding in the column's gutter, which
+     the theme narrows to 1.618rem, so the fade costs no diagram width. */
+  margin-inline: -1.5rem;
+  padding-inline: 1.5rem;
+  mask-image: linear-gradient(to right, transparent, black 1.5rem, black calc(100% - 1.5rem), transparent);
+
+  /* The mask fades the focus ring along with everything else at the scrollport
+     edge, measured down to 14% opacity, and a diagram taller than the window
+     shows only those two edges. */
+  &:focus-visible {
+    mask-image: none;
+  }
+
+  /* The extension declares both of these on the same selector, from a
+     stylesheet injected after this one, so beating it takes the !important
+     and the :root prefix for specificity. */
+  :root & > svg {
+    max-width: none !important;
+    width: auto;
+  }
+
+  /* ZenUML lays its diagram out as HTML inside a foreignObject and then sizes
+     the SVG to what the HTML's root measured. The root fills the foreignObject,
+     so it measures the box, not the diagram: the 300px default object size in
+     a content-sized box, and the column in a column-wide one, either of which
+     clips a wider diagram. Shrink-wrapping the root makes it measure the
+     diagram, and the SVG then sizes and scrolls like every other type. The
+     plugin marks nothing but the SVG's contents, and a page holds few
+     diagrams. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
+  &:has(.zenuml) {
+    foreignObject > div {
+      width: max-content;
+    }
+
+    /* The plugin renders with ZenUML's own light theme in either color
+       scheme, black lines and text on a transparent background, so the dark
+       scheme takes the near-monochrome diagram and inverts it. */
+    @media (prefers-color-scheme: dark) {
+      :root & > svg {
+        filter: invert(1) hue-rotate(180deg);
+      }
+    }
+  }
+}
+
+/* The extension wraps each diagram in this flex container to hold its
+   fullscreen button, which makes the diagram's box a flex item. `safe` leaves
+   a diagram wider than the column at the column's start, where the whole of
+   it can be scrolled to. */
+.mermaid-container {
+  justify-content: safe center;
+
+  /* The caption sits under the diagram it belongs to. */
+  & + figcaption {
+    text-align: center;
+  }
+}

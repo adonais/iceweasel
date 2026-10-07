@@ -4226,6 +4226,20 @@ void AsyncPanZoomController::HandleFlingOverscroll(
       // start an overscroll animation which will enter overscroll
       // and then relieve it.
       if (!IsZero(residualVelocity)) {
+        // Another APZC in this chain may already have started an overscroll
+        // animation on this APZC through the
+        // SnapBackOverscrolledApzcForMomentum() call below. While that call
+        // hands out that another APZC's velocity, this call uses this APZC's
+        // velocity properly. So this call always overwrites that, i.e. cancel
+        // the existing animation and start over. ExcludeOverscroll preserves
+        // the overscroll amount the new animation starts from. Also, the
+        // blocker is necessary to prevent a scrollend event from being
+        // triggered, because without it setState(NOTHING) in CancelAnimation()
+        // would deliver APZStateChange::eTransformEnd.
+        StateChangeNotificationBlocker blocker(this);
+        if (mState == OVERSCROLL_ANIMATION) {
+          CancelAnimation(ExcludeOverscroll);
+        }
         mOverscrollEffect->RelieveOverscroll(residualVelocity,
                                              aOverscrollSideBits);
       }

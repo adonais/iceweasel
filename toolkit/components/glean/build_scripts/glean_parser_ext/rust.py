@@ -26,7 +26,7 @@ common_metric_data_args = [
     "lifetime",
     "disabled",
     "in_session",
-    "dynamic_label",
+    "label",
 ]
 
 

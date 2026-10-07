@@ -6,6 +6,7 @@
 
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/MacIOSurface.h"
+#include "mozilla/layers/CompositeProcessFencesHolderMap.h"
 #include "mozilla/layers/GpuFenceMTLSharedEvent.h"
 #include "mozilla/webgpu/WebGPUParent.h"
 
@@ -37,23 +38,43 @@ UniquePtr<SharedTextureMacIOSurface> SharedTextureMacIOSurface::Create(
     return nullptr;
   }
 
+  auto fencesHolderId = layers::CompositeProcessFencesHolderId::GetNext();
+  auto* fencesHolderMap = layers::CompositeProcessFencesHolderMap::Get();
+  MOZ_ASSERT(fencesHolderMap);
+  fencesHolderMap->Register(fencesHolderId);
+
   return MakeUnique<SharedTextureMacIOSurface>(
-      aParent, aDeviceId, aWidth, aHeight, aFormat, aUsage, std::move(surface));
+      aParent, aDeviceId, aWidth, aHeight, aFormat, aUsage, std::move(surface),
+      fencesHolderId);
 }
 
 SharedTextureMacIOSurface::SharedTextureMacIOSurface(
     WebGPUParent* aParent, const ffi::WGPUDeviceId aDeviceId,
     const uint32_t aWidth, const uint32_t aHeight,
     const struct ffi::WGPUTextureFormat aFormat,
-    const ffi::WGPUTextureUsages aUsage, RefPtr<MacIOSurface>&& aSurface)
+    const ffi::WGPUTextureUsages aUsage, RefPtr<MacIOSurface>&& aSurface,
+    const layers::CompositeProcessFencesHolderId aFencesHolderId)
     : SharedTexture(aWidth, aHeight, aFormat, aUsage),
       mParent(aParent),
       mDeviceId(aDeviceId),
-      mSurface(std::move(aSurface)) {}
+      mSurface(std::move(aSurface)),
+      mFencesHolderId(aFencesHolderId) {}
 
-SharedTextureMacIOSurface::~SharedTextureMacIOSurface() = default;
+SharedTextureMacIOSurface::~SharedTextureMacIOSurface() {
+  auto* fencesHolderMap = layers::CompositeProcessFencesHolderMap::Get();
+  if (fencesHolderMap) {
+    fencesHolderMap->Unregister(mFencesHolderId);
+  } else {
+    gfxCriticalNoteOnce << "CompositeProcessFencesHolderMap does not exist";
+  }
+}
 
 uint32_t SharedTextureMacIOSurface::GetIOSurfaceId() {
+  auto* fencesHolderMap = layers::CompositeProcessFencesHolderMap::Get();
+  MOZ_ASSERT(fencesHolderMap);
+  // XXX Add previous fences handling
+  auto fences = fencesHolderMap->TakeAllFencesAndForget(mFencesHolderId);
+
   return mSurface->GetIOSurfaceID();
 }
 
@@ -61,12 +82,14 @@ Maybe<layers::SurfaceDescriptor>
 SharedTextureMacIOSurface::ToSurfaceDescriptor() {
   MOZ_ASSERT(mSubmissionIndex > 0);
 
-  RefPtr<layers::GpuFence> gpuFence;
   void* const eventHandle = wgpu_server_get_device_fence_metal_shared_event(
       mParent->GetContext(), mDeviceId);
   if (eventHandle) {
-    gpuFence =
+    RefPtr<layers::GpuFence> writeFence =
         layers::GpuFenceMTLSharedEvent::Create(eventHandle, mSubmissionIndex);
+    auto* fencesHolderMap = layers::CompositeProcessFencesHolderMap::Get();
+    MOZ_ASSERT(fencesHolderMap);
+    fencesHolderMap->SetWriteFence(mFencesHolderId, writeFence);
   } else {
     gfxCriticalNoteOnce << "Failed to get MetalSharedEventHandle";
   }
@@ -74,7 +97,7 @@ SharedTextureMacIOSurface::ToSurfaceDescriptor() {
   return Some(layers::SurfaceDescriptorMacIOSurface(
       mSurface->GetIOSurfaceID(), !mSurface->HasAlpha(),
       mSurface->GetYUVColorSpace(), mSurface->GetTransferFunction(),
-      std::move(gpuFence)));
+      Some(mFencesHolderId)));
 }
 
 void SharedTextureMacIOSurface::GetSnapshot(const ipc::Shmem& aDestShmem,

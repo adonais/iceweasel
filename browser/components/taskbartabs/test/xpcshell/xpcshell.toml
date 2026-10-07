@@ -17,7 +17,7 @@ support-files = [
 ["test_taskbarTabs_iconSaving.js"]
 support-files = [
     "../../../places/tests/browser/favicon-normal16.png",
-    "../../../../base/content/test/favicons/icon.svg",
+    "../../../../base/content/test/browser-favicons/icon.svg",
 ]
 
 ["test_taskbarTabs_installedCountMetric.js"]
@@ -34,5 +34,5 @@ run-if = ["os == 'win' && !msix"]
 ["test_taskbarTabs_utils.js"]
 support-files = [
     "../../../places/tests/browser/favicon-normal16.png",
-    "../../../../base/content/test/favicons/icon.svg",
+    "../../../../base/content/test/browser-favicons/icon.svg",
 ]

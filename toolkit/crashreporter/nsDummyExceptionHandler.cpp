@@ -278,8 +278,7 @@ ThreadId CurrentThreadId() {
 
 bool TakeMinidump(nsIFile** aResult, bool aMoveToPending) { return false; }
 
-bool CreateMinidumpsAndPair(ProcessHandle aTargetPid,
-                            ThreadId aTargetBlamedThread,
+bool CreateMinidumpsAndPair(GeckoChildID aId, ThreadId aTargetBlamedThread,
                             const nsACString& aIncomingPairName,
                             AnnotationTable& aTargetAnnotations,
                             nsIFile** aTargetDumpOut) {

@@ -138,6 +138,28 @@ export class AddressRecord {
   }
 
   /**
+   * Drop a country code with no bundled address metadata, and the name derived
+   * from it, so a consumer is never handed a region there is no metadata for.
+   *
+   * A record keeps the code on disk: normalizeFields accepts any code ICU can
+   * name, which is a wider set than the one with address metadata. This runs on
+   * the way out instead, and after computeFields, so the fields derived from
+   * the country -- the telephone and street components -- are still derived
+   * from the stored code.
+   *
+   * Every store that serves addresses has to apply this, or the same profile
+   * reads differently depending on which one is serving it (bug 2071827).
+   *
+   * @param {object} address
+   */
+  static hideCountryWithoutMetaData(address) {
+    if (address.country && !FormAutofill.countries.has(address.country)) {
+      delete address.country;
+      delete address["country-name"];
+    }
+  }
+
+  /**
    * Bring a record's fields to their canonical form: country codes, name parts,
    * street address lines and telephone numbers. The inverse of computeFields,
    * which derives the presentational fields from these.

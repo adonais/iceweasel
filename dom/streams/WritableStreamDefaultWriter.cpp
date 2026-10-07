@@ -56,6 +56,14 @@ WritableStreamDefaultWriter::~WritableStreamDefaultWriter() {
   mozilla::DropJSObjects(this);
 }
 
+WritableStream* WritableStreamDefaultWriter::GetStream() const {
+  return mStream;
+}
+
+void WritableStreamDefaultWriter::SetStream(WritableStream* aStream) {
+  mStream = aStream;
+}
+
 void WritableStreamDefaultWriter::SetReadyPromise(Promise* aPromise) {
   MOZ_ASSERT(aPromise);
   mReadyPromise = aPromise;

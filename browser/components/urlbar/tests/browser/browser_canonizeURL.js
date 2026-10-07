@@ -28,30 +28,28 @@ add_task(async function checkCanonizeWorks() {
 
   let defaultEngine = await SearchService.getDefault();
   let testcases = [
-    ["example", "https://www.example.com/", CANONIZE_MODIFIERS, true],
+    ["example", "https://www.example.com/", CANONIZE_MODIFIERS],
     // Check that a direct load is not overwritten by a previous canonization.
-    ["http://example.com/test/", "http://example.com/test/", {}, false],
-    ["ex-ample", "https://www.ex-ample.com/", CANONIZE_MODIFIERS, true],
-    ["  example ", "https://www.example.com/", CANONIZE_MODIFIERS, true],
-    [" example/foo ", "https://www.example.com/foo", CANONIZE_MODIFIERS, true],
+    ["http://example.com/test/", "http://example.com/test/", {}],
+    ["ex-ample", "https://www.ex-ample.com/", CANONIZE_MODIFIERS],
+    ["  example ", "https://www.example.com/", CANONIZE_MODIFIERS],
+    [" example/foo ", "https://www.example.com/foo", CANONIZE_MODIFIERS],
     [
       " example/foo bar ",
       "https://www.example.com/foo%20bar",
       CANONIZE_MODIFIERS,
-      true,
     ],
-    ["example.net", "http://example.net/", CANONIZE_MODIFIERS, false],
-    ["http://example", "http://example/", CANONIZE_MODIFIERS, false],
-    ["example:8080", "http://example:8080/", CANONIZE_MODIFIERS, false],
-    ["ex-ample.foo", "http://ex-ample.foo/", CANONIZE_MODIFIERS, false],
-    ["example.foo/bar ", "http://example.foo/bar", CANONIZE_MODIFIERS, false],
-    ["1.1.1.1", "http://1.1.1.1/", CANONIZE_MODIFIERS, false],
-    ["ftp.example.bar", "http://ftp.example.bar/", CANONIZE_MODIFIERS, false],
+    ["example.net", "http://example.net/", CANONIZE_MODIFIERS],
+    ["http://example", "http://example/", CANONIZE_MODIFIERS],
+    ["example:8080", "http://example:8080/", CANONIZE_MODIFIERS],
+    ["ex-ample.foo", "http://ex-ample.foo/", CANONIZE_MODIFIERS],
+    ["example.foo/bar ", "http://example.foo/bar", CANONIZE_MODIFIERS],
+    ["1.1.1.1", "http://1.1.1.1/", CANONIZE_MODIFIERS],
+    ["ftp.example.bar", "http://ftp.example.bar/", CANONIZE_MODIFIERS],
     [
       "ex ample",
       defaultEngine.getSubmission("ex ample", null).uri.spec,
       CANONIZE_MODIFIERS,
-      false,
     ],
   ];
 
@@ -65,9 +63,8 @@ add_task(async function checkCanonizeWorks() {
 
   const win = await BrowserTestUtils.openNewBrowserWindow();
 
-  for (let [inputValue, expectedURL, options, suffixAdded] of testcases) {
+  for (let [inputValue, expectedURL, options] of testcases) {
     info(`Testing input string: "${inputValue}" - expected: "${expectedURL}"`);
-    Services.fog.testResetFOG();
     let promiseLoad = BrowserTestUtils.waitForDocLoadAndStopIt(
       expectedURL,
       win.gBrowser.selectedBrowser
@@ -81,10 +78,6 @@ add_task(async function checkCanonizeWorks() {
     await UrlbarTestUtils.inputIntoURLBar(win, inputValue);
     EventUtils.synthesizeKey("KEY_Enter", options, win);
     await Promise.all([promiseLoad, promiseStopped]);
-    Assert.strictEqual(
-      suffixAdded ? 1 : null,
-      Glean.urlfixup.suffix.get("urlbar", ".com").testGetValue()
-    );
   }
 
   await BrowserTestUtils.closeWindow(win);

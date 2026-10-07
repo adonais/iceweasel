@@ -159,6 +159,8 @@ functions that return it should return a UniquePtr.
 
 </div>
 
+(c-reflections-of-webidl-constructs)=
+
 ## C++ reflections of Web IDL constructs
 
 ### C++ reflections of Web IDL operations (methods)
@@ -433,6 +435,8 @@ float MyAttr();
 void SetMyAttr(float value);
 double MyMethod(const Nullable<double>& arg);
 ```
+
+(domstring-c)=
 
 #### `DOMString`
 
@@ -1513,6 +1517,8 @@ and `[Func]`. If more than one of these is specified, all conditions
 will need to test true for the interface or interface member to be
 exposed.
 
+(func-funcname)=
+
 ### `[Func="funcname"]`
 
 This extended attribute can be specified on any method, attribute, or
@@ -1720,6 +1726,8 @@ This method will be called by the JS engine's enumerate hook and must
 provide a superset of all the property names that `DoResolve` might
 resolve. Providing names that `DoResolve` won't actually resolve is
 OK.
+
+(headerfile-path-to-headerfile-h)=
 
 ### `[HeaderFile="path/to/headerfile.h"]`
 
@@ -2049,6 +2057,8 @@ class Element {
 
 The C++ side of the bindings uses a number of helper objects.
 
+(nullable-t)=
+
 ### `Nullable<T>`
 
 `Nullable<>` is a struct declared in
@@ -2066,6 +2076,8 @@ null and two setters that can be used to set it to a value:
 `void SetValue(T)` (for setting it to a given value) and
 `T& SetValue()` for directly modifying the underlying `T&`.
 
+(optional-t)=
+
 ### `Optional<T>`
 
 `Optional<>` is a struct declared in
@@ -2078,12 +2090,16 @@ have no default value.
 value is available. In that case, the `Value()` getter can be used to
 get a `const T&` for the value.
 
+(nonnull-t)=
+
 ### `NonNull<T>`
 
 `NonNull<T>` is a struct declared in
 [`BindingUtils.h`](https://searchfox.org/firefox-main/source/dom/bindings/BindingUtils.h)
 and exported to `mozilla/dom/BindingUtils.h` that is used to represent
 non-null C++ objects. It has a conversion operator that produces `T&`.
+
+(owningnonnull-t)=
 
 ### `OwningNonNull<T>`
 
@@ -2108,6 +2124,8 @@ returning `int32_t*` and a `Length()` that returns the number of
 By default, the generated bindings reject typed arrays, `ArrayBuffer`,
 and `ArrayBufferView` objects larger than 2 GB. To allow larger buffers,
 use the [`[AllowLarge]`](#allowlarge) extended attribute.
+
+(sequence-t)=
 
 ### `Sequence<T>`
 
@@ -2253,6 +2271,8 @@ MyInterface::DispatchThingChangeEvent()
 }
 ```
 
+(bindings-conf-details)=
+
 ## `Bindings.conf` details
 
 Write me. In particular, need to describe at least use of `concrete`,
@@ -2264,6 +2284,8 @@ In some rare cases you may need a `JSContext*` argument to be passed
 to a C++ method that wouldn't otherwise get such an argument. To see how
 to achieve this, search for `implicitJSContext` in
 [dom/bindings/Bindings.conf](#bindings-conf-details).
+
+(implementing-webidl-using-javascript)=
 
 ## Implementing Web IDL using Javascript
 

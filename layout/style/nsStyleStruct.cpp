@@ -207,6 +207,13 @@ static StyleXTextScale InitialTextScale(const Document& aDoc) {
   return StyleXTextScale::All;
 }
 
+static StyleAtom InitialLang(const Document& aDoc) {
+  if (auto* lang = aDoc.GetLanguageForStyle()) {
+    return StyleAtom{do_AddRef(lang)};
+  }
+  return StyleAtom{nsGkAtoms::empty};
+}
+
 nsStyleFont::nsStyleFont(const Document& aDocument)
     : mFont(*aDocument.GetFontPrefsForLang(nullptr)->GetDefaultFont(
           StyleGenericFontFamily::None)),
@@ -224,14 +231,14 @@ nsStyleFont::nsStyleFont(const Document& aDocument)
       mScriptUnconstrainedSize(mSize),
       mScriptMinSize(Length::FromPixels(
           CSSPixel::FromPoints(kMathMLDefaultScriptMinSizePt))),
-      mLanguage(aDocument.GetLanguageForStyle()) {
+      mLanguage(InitialLang(aDocument)) {
   MOZ_COUNT_CTOR(nsStyleFont);
   MOZ_ASSERT(NS_IsMainThread());
   mFont.family.is_initial = true;
   mFont.size = mSize;
   if (MinFontSizeEnabled()) {
     const Length minimumFontSize =
-        aDocument.GetFontPrefsForLang(mLanguage)->mMinimumFontSize;
+        aDocument.GetFontPrefsForLang(GetLangAtom())->mMinimumFontSize;
     mFont.size = Length::FromPixels(
         std::max(mSize.ToCSSPixels(), minimumFontSize.ToCSSPixels()));
   }
@@ -2071,10 +2078,10 @@ void nsStyleImageLayers::Layer::Initialize(
   mPosition = Position::FromPercentage(0.);
 
   if (aType == LayerType::Background) {
-    mOrigin = StyleGeometryBox::PaddingBox;
+    mOrigin = StyleBackgroundOrigin::PaddingBox;
   } else {
     MOZ_ASSERT(aType == LayerType::Mask, "unsupported layer type.");
-    mOrigin = StyleGeometryBox::BorderBox;
+    mOrigin = StyleBackgroundOrigin::BorderBox;
   }
 }
 
@@ -3299,14 +3306,9 @@ void nsStyleUI::TriggerImageLoads(Document& aDocument,
 }
 
 nsChangeHint nsStyleUI::CalcDifference(const nsStyleUI& aNewData) const {
-  // SVGGeometryFrame's mRect depends on stroke _and_ on the value of
-  // pointer-events. See SVGGeometryFrame::ReflowSVG's use of GetHitTestFlags.
-  // (Only a reflow, no visual change.)
-  //
   // pointer-events changes can change event regions overrides on layers and
   // so needs a repaint.
-  const auto kPointerEventsHint =
-      nsChangeHint_NeedReflow | nsChangeHint_SchedulePaint;
+  const auto kPointerEventsHint = nsChangeHint_SchedulePaint;
 
   nsChangeHint hint = nsChangeHint(0);
   if (mCursor != aNewData.mCursor) {

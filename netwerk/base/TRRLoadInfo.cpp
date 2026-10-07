@@ -7,7 +7,7 @@
 #include "LoadInfo.h"
 #include "mozilla/dom/ClientSource.h"
 #include "mozilla/dom/DOMTypes.h"
-#include "mozilla/dom/FeaturePolicy.h"
+#include "mozilla/dom/PermissionsPolicy.h"
 #include "nsContentUtils.h"
 #include "nsIRedirectHistoryEntry.h"
 
@@ -59,6 +59,13 @@ NS_IMETHODIMP
 TRRLoadInfo::SetPrincipalToInherit(nsIPrincipal* aPrincipalToInherit) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
+
+NS_IMETHODIMP
+TRRLoadInfo::SetTrustedPrincipalToInherit(nsIPrincipal* aPrincipalToInherit) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+bool TRRLoadInfo::IsPrincipalToInheritTrusted() { return false; }
 
 NS_IMETHODIMP
 TRRLoadInfo::GetUserNavigationInvolvement(uint8_t* aUserNavigationInvolvement) {
@@ -490,12 +497,15 @@ TRRLoadInfo::GetPolicyContainerToInherit() {
   return nullptr;
 }
 
-Maybe<FeaturePolicyInfo> TRRLoadInfo::GetContainerFeaturePolicyInfo() {
+void TRRLoadInfo::SetPolicyContainerToInherit(
+    nsIPolicyContainer* aPolicyContainerToInherit) {}
+
+Maybe<PermissionsPolicyInfo> TRRLoadInfo::GetContainerPermissionsPolicyInfo() {
   return Nothing();
 }
 
-void TRRLoadInfo::SetContainerFeaturePolicyInfo(
-    const FeaturePolicyInfo& aContainerFeaturePolicyInfo) {}
+void TRRLoadInfo::SetContainerPermissionsPolicyInfo(
+    const PermissionsPolicyInfo& aContainerPermissionsPolicyInfo) {}
 
 NS_IMETHODIMP
 TRRLoadInfo::GetIsSameDocumentNavigation(bool* aTextDirectiveUserActivation) {

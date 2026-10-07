@@ -218,10 +218,6 @@ UniqueFileHandle AndroidHardwareBuffer::MergeFences(
     return UniqueFileHandle();
   }
 
-  // Release fds here, since there are consumed by sync_merge().
-  (void)fence1.release();
-  (void)fence2.release();
-
   return UniqueFileHandle(fd);
 }
 

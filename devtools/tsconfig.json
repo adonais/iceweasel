@@ -1,8 +1,10 @@
 {
+  // TODO: Bug 2071203. Change this to extending `../tools/@types/tsconfig.json` and
+  // adjust lib/targets if appropriate, so that the available definitions match
+  // the rest of Gecko.
+  "extends": "../tools/@types/generated/tspaths.json",
   "compilerOptions": {
     "module": "commonjs",
-    // Set the baseUrl to the root of the project.
-    "baseUrl": "..",
     // Make the type checking as strict as possible.
     "strict": true,
     // TypeScript will check JS files only if they have a @ts-check comment in them.

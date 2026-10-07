@@ -1,7 +1,4 @@
 [DEFAULT]
-skip-if = [
-  "os == 'android'",
-]
 support-files = [
   "chrome_helpers.js",
   "empty.js",

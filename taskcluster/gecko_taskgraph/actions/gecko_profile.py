@@ -38,6 +38,11 @@ SYMBOLS_DEPENDENCY = {
     "extract": False,
     "task": "<build-android-aarch64-shippable/opt>",
 }
+BUILD_SYMBOLS_DEPENDENCY = {
+    "artifact": "public/build/target.crashreporter-symbols.zip",
+    "extract": False,
+    "task": "<build>",
+}
 
 DEPENDANCY_TO_ADD_FOR_TASK_REFERENCE = [
     SIMPLEPERF_DEPENDENCY,
@@ -308,6 +313,11 @@ def geckoprofile_action(parameters, graph_config, input, task_group_id, task_id)
                     PROFILER_NODE_TOOLS_DEPENDENCY,
                     samply_platform_dependency,
                 ])
+                if "build" in dependencies and not any(
+                    fetch["artifact"].endswith("target.crashreporter-symbols.zip")
+                    for fetch in task_reference_full_taskgraph
+                ):
+                    task_reference_full_taskgraph.append(BUILD_SYMBOLS_DEPENDENCY)
                 full_task_graph.tasks[label].task["payload"]["env"]["MOZ_FETCHES"][
                     "task-reference"
                 ] = json.dumps(task_reference_full_taskgraph)

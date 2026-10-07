@@ -419,7 +419,7 @@ class nsIGlobalObject : public nsISupports {
   nsTArray<RefPtr<mozilla::dom::ReportingObserver>> mReportingObservers;
   // https://w3c.github.io/reporting/#windoworworkerglobalscope-report-buffer
   nsTArray<RefPtr<mozilla::dom::Report>> mReportBuffer;
-  nsTHashMap<nsString, uint32_t> mReportPerTypeCount;
+  nsTHashMap<RefPtr<nsAtom>, uint32_t> mReportPerTypeCount;
 
   // https://streams.spec.whatwg.org/#count-queuing-strategy-size-function
   RefPtr<mozilla::dom::Function> mCountQueuingStrategySizeFunction;

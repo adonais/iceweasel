@@ -30,15 +30,16 @@
 #include "pki3hack.h"
 #endif /* PKINSS3HACK_H */
 
-#include "secitem.h"
-#include "certdb.h"
-#include "certt.h"
 #include "cert.h"
+#include "certdb.h"
 #include "certi.h"
+#include "certt.h"
+#include "nssrwlk.h"
 #include "pk11func.h"
 #include "pkistore.h"
+#include "secitem.h"
 #include "secmod.h"
-#include "nssrwlk.h"
+#include "secmodi.h"
 
 NSSTrustDomain *g_default_trust_domain = NULL;
 
@@ -223,33 +224,6 @@ STAN_Shutdown()
         }
     }
     return status;
-}
-
-/* this function should not be a hack; it will be needed in 4.0 (rename) */
-NSS_IMPLEMENT NSSItem *
-STAN_GetCertIdentifierFromDER(NSSArena *arenaOpt, NSSDER *der)
-{
-    NSSItem *rvKey;
-    SECItem secDER;
-    SECItem secKey = { 0 };
-    SECStatus secrv;
-    PLArenaPool *arena;
-
-    SECITEM_FROM_NSSITEM(&secDER, der);
-
-    /* nss3 call uses nss3 arena's */
-    arena = PORT_NewArena(256);
-    if (!arena) {
-        return NULL;
-    }
-    secrv = CERT_KeyFromDERCert(arena, &secDER, &secKey);
-    if (secrv != SECSuccess) {
-        PORT_FreeArena(arena, PR_FALSE);
-        return NULL;
-    }
-    rvKey = nssItem_Create(arenaOpt, NULL, secKey.len, (void *)secKey.data);
-    PORT_FreeArena(arena, PR_FALSE);
-    return rvKey;
 }
 
 NSS_IMPLEMENT PRStatus
@@ -1083,6 +1057,19 @@ stan_CreateNSSCertificateLocked(CERTCertificate *cc)
         nssArena_Destroy(arena);
         return NULL;
     }
+
+    SECItem *keyID = pk11_mkcertKeyID(cc);
+    if (!keyID) {
+        nssArena_Destroy(arena);
+        return NULL;
+    }
+    nssItem_Create(arena, &c->id, keyID->len, keyID->data);
+    SECITEM_FreeItem(keyID, PR_TRUE);
+    if (!c->id.data || !c->id.size) {
+        nssArena_Destroy(arena);
+        return NULL;
+    }
+
     NSSITEM_FROM_SECITEM(&c->encoding, &cc->derCert);
     c->type = NSSCertificateType_PKIX;
     pkiob = nssPKIObject_Create(arena, NULL, cc->dbhandle, NULL, nssPKIMonitor);

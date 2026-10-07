@@ -82,7 +82,8 @@ class ChannelReceiveTest : public Test {
         /* jitter_buffer_min_delay_ms= */ 0,
         /* enable_non_sender_rtt= */ false, audio_decoder_factory_,
         /* frame_decryptor_interface= */ nullptr, crypto_options,
-        /* frame_transformer= */ nullptr, &packet_router_);
+        /* frame_transformer= */ nullptr,
+        /* on_first_packet= */ nullptr, &packet_router_);
     channel->SetReceiveCodecs(
         {{kPayloadType, {kPayloadName, kSampleRateHz, 1}}});
     return channel;

@@ -49,8 +49,13 @@ INSERT INTO aitab_pages (
 // (walk the index backwards, no separate sort) and "a specific slug + version"
 // (direct seek). By the leftmost-prefix rule it also covers plain slug-only
 // lookups, so no separate single-column slug index is needed.
+//
+// UNIQUE on the pair, not on the slug column: a tab keeps every version under
+// one slug, so the column alone cannot be unique. Constraining the pair still
+// stops a second conversation from claiming a slug another one already uses,
+// which is what makes a slug safe to treat as a page identity.
 export const AITAB_PAGES_SLUG_VERSION_INDEX = `
-CREATE INDEX idx_aitab_pages_slug_version ON aitab_pages (slug, version);
+CREATE UNIQUE INDEX idx_aitab_pages_slug_version ON aitab_pages (slug, version);
 `;
 
 export const GET_NEXT_VERSION = `
@@ -96,4 +101,17 @@ SELECT ${AITAB_PAGE_COLUMNS}
 FROM aitab_pages
 WHERE conv_id = :conv_id
 ORDER BY version ASC;
+`;
+
+// Keyed on slug so it can use idx_aitab_pages_slug_version; conv_id has no
+// index and would scan the table. UNIQUE on (slug, version) is what makes this
+// safe: a slug cannot be claimed by a second conversation, so every row it
+// matches belongs to the one tab being deleted.
+//
+// The conversation lives in conversation-store.sqlite, a different database
+// file, so no foreign key cascades into it: callers must delete it through
+// ConversationStore as well.
+export const DELETE_AITAB_PAGES_BY_SLUG = `
+DELETE FROM aitab_pages
+WHERE slug = :slug;
 `;

@@ -61,7 +61,9 @@ Documentation output is generated under:
     obj-*/docs/html/
 
 When debugging, prefer building only the relevant component instead of
-rebuilding everything.
+rebuilding everything -- though `./mach doc <path>` still reads the whole tree,
+so grep the log for the path rather than reading it through. `--no-autodoc` and
+`--disable-warnings-check` cannot be combined; mach rejects the pair.
 
 ### 2. Identify the type of Sphinx problem
 
@@ -121,7 +123,10 @@ This file controls several critical aspects of the documentation build:
     is built.
 -   **`allowed_warnings`**: Regex patterns for known/acceptable Sphinx
     warnings. Warnings matching these patterns are logged as "KNOWN"
-    instead of causing build failures.
+    instead of causing build failures. Scope a new entry to the path it is
+    about: a class-wide entry silences that class tree-wide and for good, and
+    the build still exits 0 with every match counted under `Known Failures`.
+    One such line was hiding 216 broken links.
 -   **`redirects`**: URL redirects for backward compatibility when
     documentation moves. Format: `old/path: new/path`.
 -   **`js_source_paths`**: Directories where JSDoc generation is enabled
@@ -167,6 +172,56 @@ A `{doc}` role with no link text renders the target page's *title*, so a noun
 after it reads twice: ``in the {doc}`api` reference`` comes out as "in the
 SessionStore API reference reference". Give the role its own text where the
 sentence already names the thing.
+
+A `{doc}` or `{ref}` target is a doc path *without* the extension -- the
+opposite of the markdown form -- and a directory needs its `/index` spelled out.
+
+### Anchors
+
+`myst_heading_anchors = 5` anchors every heading, and the slug deletes every
+character outside `[a-z0-9_-]` rather than replacing it, so it is not guessable:
+`## Consistent profiles.ini` gives `#consistent-profilesini`, ``### `Optional<T>` ``
+gives `#optionalt`, and `#### 8-, 16-, and 32-bit Integer Types` gives
+`#8--16--and-32-bit-integer-types`. Read the anchor out of the built HTML instead
+of deriving it. Most of the broken anchors in the tree are someone writing the
+one they expected.
+
+-   **Where that slug is unreadable, define the anchor.** Put `(optional-t)=`
+    above the heading, with a blank line after it (rumdl MD022 wants one before
+    every heading; the target still attaches through it).
+-   **Two checks disagree about which anchors exist.** `{ref}` reaches an
+    explicit target from any page, but a cross-document `doc.md#target` is
+    validated against the target page's *heading* slugs alone and warns
+    `local id not found in doc` for a label defined right above the heading.
+    A `path#anchor` link needs the heading slug; use `{ref}` when the readable
+    name matters more.
+-   **A generated id is invisible to that check too.** sphinx-js writes
+    `id="BrowserTestUtils.withNewTab"`, so linking it works in a browser and
+    warns anyway. Use ``{js:meth}`BrowserTestUtils.withNewTab` ``.
+
+Pages converted from the MDN wiki (`docs/nspr/`, `devtools/docs/user/`,
+`security/nss/`) carry link shapes MyST cannot resolve: bare wiki page names,
+`/en-US/docs/` prefixes, percent-escaped names (`I%2FO_Types`), wiki anchors
+(`#Directory_I.2FO_Functions`). Each maps to an in-tree `.md` plus a heading
+slug, so match them in bulk by lowercasing both sides and dropping every
+non-alphanumeric character. Where the target page was never converted, name the
+thing rather than link to it, citing source with `{searchfox}`.
+
+### `eval-rst`
+
+An `eval-rst` block is a nested parse, so rST substitution definitions do not
+survive it: `.. |icon| image::` and the `|icon|` using it can sit in the same
+block and still fail with `Undefined substitution referenced`. The
+`substitution` extension is off, so frontmatter `{{ name }}` is no way out
+either. Write the block as a native MyST directive -- `{list-table}` and most
+others work as a MyST fence with markdown content, images included.
+
+### Generated pages
+
+`testing/perfdocs/generated/` is committed and rewritten wholesale: edit the
+owning component's `perfdocs/` source, then `./mach perfdocs --generate`, and
+commit both. A page built by a `docs/_addons/` extension has to be fixed in the
+extension.
 
 ## API references from source comments
 
@@ -220,29 +275,50 @@ they do not agree:
 
 `sphinxcontrib.mermaid` is enabled, so a fenced `mermaid` block becomes a
 diagram. Sphinx only writes the diagram source into the page and mermaid renders
-it in the browser from a CDN, which is what makes these worth knowing:
+it in the browser from a CDN. `tools/moztreedocs/docs/mermaid-integration.md`
+describes the directive and how a diagram renders.
+
+Besides mermaid's own diagram types, a block that starts with `zenuml` draws a
+ZenUML sequence diagram. It suits a call flow whose calls nest, such as a method
+that calls into other objects before it returns: the source is written like
+code, `A->B.method(arg) { B->C.other() return value }`, and a nested call is
+drawn inside the activation of the call that made it, where `sequenceDiagram`
+lists messages one after another and leaves the nesting to the reader. That page
+has a rendered example.
+
+Worth knowing:
 
 -   **A mermaid block always builds.** `./mach doc` succeeding says nothing about
     the diagram, since nothing has drawn it yet -- every failure below is
     invisible until the built page is open in a browser.
--   **The body column is the constraint, so lay the diagram out for it.** Mermaid
-    sizes the SVG to its intrinsic width and lets the page scale it down, and the
-    column is around 700 pixels: a diagram twice that renders its text at half
-    size. `flowchart LR` and `sequenceDiagram` reach that width with only a
-    handful of participants carrying Firefox-length names, so prefer
-    `flowchart TD` and fix width by changing the layout rather than the font.
+-   **A diagram renders at its intrinsic size.** One narrower than the column is
+    centered in it, caption included, so the `:align:` option is redundant. One
+    wider than the column scrolls inside its own box, where an edge fade shows
+    that it continues. Its labels keep the size every other diagram's have, so
+    pick the direction the content reads in rather than the one that fits:
+    `flowchart LR` and `sequenceDiagram` cost no legibility at a width the
+    column cannot hold. A reader still has to scroll for whatever sits past the
+    column.
 -   **A label holding a long unbroken word renders as an empty box in Firefox**
     (mermaid#5785), which a `wrappingWidth` config block in the diagram's
     frontmatter works around.
 -   **A label starting with `1. ` renders as `Unsupported markdown: list`**,
     because mermaid parses labels as markdown. A colon in place of the period
     avoids it.
--   **Do not distinguish two kinds of node by fill colour alone**: it fails for
-    colourblind readers and on poor displays. Vary the shape as well -- a stadium
-    `(["text"])` reads clearly against a plain `["text"]`, while a rounded
-    rectangle `("text")` is too close to it. `classDef` accepts `rx` and `ry` for
-    a radius in between, but only with a unit: `rx:14` is silently ignored,
-    `rx:14px` applies.
+-   **A diagram follows the page's color scheme.** A `classDef` or `style` that
+    hardcodes a `fill` keeps that color in both schemes, so it needs an explicit
+    `color:` as well, or the theme's label color lands on it and comes out grey on
+    a light fill in dark mode. That page has the color rules, including what the
+    unstyled default fill means for prose that points at a node by color.
+-   **A ZenUML diagram is inverted in the dark scheme**, because its plugin
+    ignores the theme and draws black on transparent. Avoid colors a
+    light-to-dark inversion would misrepresent.
+-   **Do not distinguish two kinds of node by fill color alone**: it fails for
+    readers with a color vision deficiency and on poor displays. Vary the shape as
+    well -- a stadium `(["text"])` reads clearly against a plain `["text"]`,
+    while a rounded rectangle `("text")` is too close to it. `classDef` accepts
+    `rx` and `ry` for a radius in between, but only with a unit: `rx:14` is
+    silently ignored, `rx:14px` applies.
 -   **Directive options have to be contiguous**, immediately under the opening
     fence. A blank line between two of them ends the option block, and the rest
     then render as diagram source.

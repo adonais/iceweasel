@@ -6,6 +6,7 @@ package org.mozilla.fenix.components.metrics
 
 import androidx.annotation.VisibleForTesting
 import java.util.UUID
+import mozilla.components.browser.engine.gecko.facts.GeckoEngineViewFacts
 import mozilla.components.browser.menu.facts.BrowserMenuFacts
 import mozilla.components.browser.thumbnails.facts.BrowserThumbnailsFacts
 import mozilla.components.browser.toolbar.facts.ToolbarFacts
@@ -49,6 +50,7 @@ import org.mozilla.fenix.GleanMetrics.Addons
 import org.mozilla.fenix.GleanMetrics.Addresses
 import org.mozilla.fenix.GleanMetrics.AndroidAutofill
 import org.mozilla.fenix.GleanMetrics.Awesomebar
+import org.mozilla.fenix.GleanMetrics.BrowserEngine
 import org.mozilla.fenix.GleanMetrics.BrowserSearch
 import org.mozilla.fenix.GleanMetrics.BrowserThumbnails
 import org.mozilla.fenix.GleanMetrics.ContextMenu
@@ -412,6 +414,7 @@ internal class ReleaseMetricController(
                         FxSuggest.reportingUrl.set(clickInfo.reportingUrl)
                         FxSuggest.iabCategory.set(clickInfo.iabCategory)
                         FxSuggest.contextId.set(UUID.fromString(clickInfo.contextId))
+                        FxSuggest.suggestionId.set(UUID.fromString(clickInfo.suggestionId))
                     }
                     is FxSuggestInteractionInfo.Wikipedia -> {
                         FxSuggest.advertiser.set("wikipedia")
@@ -509,6 +512,14 @@ internal class ReleaseMetricController(
             }
             Component.SERVICE_FIREFOX_ACCOUNTS to SyncFacts.Items.SYNC_FAILED -> {
                 Sync.failed.record(NoExtras())
+            }
+
+            Component.BROWSER_ENGINE_GECKO to GeckoEngineViewFacts.Items.CAPTURE_FULL_PAGE_ATTEMPTED -> {
+                BrowserEngine.fullPageCaptureAttempted.add()
+            }
+
+            Component.BROWSER_ENGINE_GECKO to GeckoEngineViewFacts.Items.CAPTURE_FULL_PAGE_RESULT -> {
+                value?.let { BrowserEngine.fullPageCaptureResult[it].add() } ?: Unit
             }
 
             Component.BROWSER_THUMBNAILS to BrowserThumbnailsFacts.Items.CAPTURE_ATTEMPTED -> {
@@ -614,6 +625,7 @@ internal class ReleaseMetricController(
                 FxSuggest.reportingUrl.set(impressionInfo.reportingUrl)
                 FxSuggest.iabCategory.set(impressionInfo.iabCategory)
                 FxSuggest.contextId.set(UUID.fromString(impressionInfo.contextId))
+                FxSuggest.suggestionId.set(UUID.fromString(impressionInfo.suggestionId))
             }
             is FxSuggestInteractionInfo.Wikipedia -> {
                 FxSuggest.advertiser.set("wikipedia")

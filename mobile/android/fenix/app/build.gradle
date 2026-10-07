@@ -460,6 +460,7 @@ dependencies {
     implementation project(':components:concept-tabstray')
     implementation project(':components:concept-toolbar')
     implementation project(':components:browser-domains')
+    implementation project(':components:browser-errorpages')
     implementation project(':components:browser-icons')
     implementation project(':components:browser-menu')
     implementation project(':components:browser-session-storage')
@@ -503,6 +504,8 @@ dependencies {
     implementation project(':components:feature-syncedtabs')
     implementation project(':components:feature-toolbar')
     implementation project(':components:feature-tab-collections')
+    implementation project(':components:feature-tabdata-coordinator')
+    implementation project(':components:feature-tabgroups-storage')
     implementation project(':components:feature-tabs')
     implementation project(':components:feature-top-sites')
     implementation project(':components:feature-webauthn')
@@ -550,7 +553,6 @@ dependencies {
     implementation project(':components:lib-ai-controls')
 
     implementation ComponentsDependencies.mozilla_appservices_syncmanager
-    implementation ComponentsDependencies.mozilla_appservices_merino
 
     implementation libs.accompanist.drawablepainter
     implementation libs.adjust
@@ -625,6 +627,7 @@ dependencies {
     testImplementation project(':components:support-test-fakes')
     testImplementation project(':components:support-test-libstate')
     testImplementation testFixtures(project(':components:support-utils'))
+    testImplementation testFixtures(project(':components:feature-tabgroups-storage'))
 
     testImplementation ComponentsDependencies.mozilla_appservices_full_megazord_libsForTests
 

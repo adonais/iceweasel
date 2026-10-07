@@ -105,11 +105,8 @@ addAccessibleTask(
     const svgRoot = findAccessibleChildByID(root, SVG_DOCUMENT_ID);
     testAccessibleTree(svgRoot, originalTree);
     info("Adding aria-hidden=true to svg");
-    // XXX Bug 1959547: We incorrectly get a reorder
-    // here. The tree should be unaffected by this attribute,
-    // but it seems like it isn't! Below we'll verify that
-    // the tree isn't removed, despite this reorder.
-    const unexpectedEvents = { expected: [[EVENT_REORDER, SVG_DOCUMENT_ID]] };
+    // adding aria-hidden to the root element should have no effect
+    const unexpectedEvents = { unexpected: [[EVENT_REORDER, SVG_DOCUMENT_ID]] };
     info("Adding aria-hidden");
     await contentSpawnMutation(
       browser,
@@ -120,26 +117,7 @@ addAccessibleTask(
       },
       [SVG_DOCUMENT_ID]
     );
-    // XXX Bug 1959547: We end up with an extra node in the
-    // tree after adding aria-hidden. It seems like SVG root
-    // element is splitting off / no longer behaves as the
-    // document...?
-    const newTree = {
-      DOCUMENT: [
-        {
-          DIAGRAM: [
-            {
-              TEXT_CONTAINER: [
-                {
-                  TEXT_LEAF: [],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    };
-    testAccessibleTree(svgRoot, newTree);
+    testAccessibleTree(svgRoot, originalTree);
   },
   { chrome: true, topLevel: true, iframe: false, remoteIframe: false }
 );

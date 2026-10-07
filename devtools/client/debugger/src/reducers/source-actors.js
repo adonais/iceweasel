@@ -20,6 +20,25 @@ function initialSourceActorsState() {
     // The value can be a promise to indicate the lines are being loaded.
     mutableBreakableLines: new Map(),
 
+    // List of all breakpoint positions for precise source instance.
+    //
+    // Map of source key (string) to dictionary object whose keys are line numbers
+    // and values of array of positions.
+    // A position is an object made with two attributes:
+    //  - 'location'
+    //  - 'generatedLocation'.
+    // Both refering to breakpoint positions in original and generated sources.
+    // In case of generated source, the two locations will identical.
+    //
+    // The Source key will typically be a unique source actor ID.
+    // But for HTML sources, which relates to many source actors, this will be a
+    // concatenation of all its source actor IDs.
+    // And for original source, it will be prefixed by the original source id
+    // and then follows the bundle's source actor ID.
+    //
+    // Map(Source key: string => Dictionary(int => array<object{ location, generatedLocation }))
+    mutableBreakpointPositions: new Map(),
+
     // Set(Source Actor ID: string)
     // List of all IDs of source actor which have a valid related source map / original source.
     // The SourceActor object may have a sourceMapURL attribute set,
@@ -57,13 +76,16 @@ export default function update(state = initialSourceActorsState(), action) {
     }
 
     case "REMOVE_SOURCES": {
-      if (!action.actors.length) {
+      if (!action.actors.length && !action.keys.length) {
         return state;
       }
       for (const { id } of action.actors) {
         state.mutableSourceActors.delete(id);
         state.mutableBreakableLines.delete(id);
         state.mutableSourceActorsWithSourceMap.delete(id);
+      }
+      for (const key of action.keys) {
+        state.mutableBreakpointPositions.delete(key);
       }
       return {
         ...state,
@@ -79,6 +101,18 @@ export default function update(state = initialSourceActorsState(), action) {
       return {
         ...state,
       };
+
+    case "ADD_BREAKPOINT_POSITIONS": {
+      return addBreakpointPositions(state, action.sourceKey, action.positions);
+    }
+
+    case "CLEAR_BREAKPOINT_POSITIONS": {
+      return clearBreakpointPositions(state, action.sourceKey);
+    }
+
+    case "CLEAR_BREAKPOINT_POSITIONS_ORIGINAL_LOCATION": {
+      return clearBreakpointPositionOriginalLocation(state, action.sourceKey);
+    }
 
     case "CLEAR_SOURCE_ACTOR_MAP_URL":
       if (
@@ -108,4 +142,58 @@ export default function update(state = initialSourceActorsState(), action) {
   }
 
   return state;
+}
+
+function addBreakpointPositions(state, sourceKey, newPositions) {
+  // Merge existing and new reported positions if some where already stored
+  let positions = state.mutableBreakpointPositions.get(sourceKey);
+  if (positions) {
+    positions = { ...positions, ...newPositions };
+  } else {
+    positions = newPositions;
+  }
+
+  state.mutableBreakpointPositions.set(sourceKey, positions);
+
+  return {
+    ...state,
+  };
+}
+
+function clearBreakpointPositions(state, sourceKey) {
+  if (!state.mutableBreakpointPositions.has(sourceKey)) {
+    return state;
+  }
+
+  state.mutableBreakpointPositions.delete(sourceKey);
+
+  return {
+    ...state,
+  };
+}
+
+/**
+ * Clear the original location in all column breakpoint location for a given source.
+ * This will fallback to the generated/bundle location.
+ *
+ * This is typically used when disabling pretty printing for a source.
+ * The minimized source column breakpoint positions (via `location` attribute)
+ * will be mapped to the prettyfied/original source.
+ */
+function clearBreakpointPositionOriginalLocation(state, sourceKey) {
+  const positions = state.mutableBreakpointPositions.get(sourceKey);
+  if (!positions) {
+    return state;
+  }
+
+  for (const line in positions) {
+    const linePositions = positions[line];
+    for (const columnPositions of linePositions) {
+      columnPositions.location = columnPositions.generatedLocation;
+    }
+  }
+
+  return {
+    ...state,
+  };
 }

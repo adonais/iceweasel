@@ -3,8 +3,16 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
-    BUG_COMPONENT = ("Firefox", "Launcher Process")
+    BUG_COMPONENT = ("Toolkit", "Push Service")
 
 RUST_PROGRAMS += [
     "notification-helper",
 ]
+
+EXTRA_JS_MODULES += [
+    "PushNotificationHelper.sys.mjs",
+    "PushNotificationHelperRegistry.sys.mjs",
+    "WindowsPushNotificationHelper.sys.mjs",
+]
+
+XPCSHELL_TESTS_MANIFESTS += ["tests/xpcshell/xpcshell.toml"]

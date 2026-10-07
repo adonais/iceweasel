@@ -29,6 +29,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
  */
 
 /**
+ * @typedef {object} ThemePreviewColors
+ * @property {string} text - Color of the tab and urlbar text placeholders.
+ * @property {string} icons - Color of the toolbar and app menu icons.
+ * @property {string} activeTabStroke - Color of the active tab outline.
+ */
+
+/**
  * @typedef {object} ThemeListEntry
  * @property {string} id - The addon ID of the theme.
  * @property {boolean} [isBuiltIn] - Whether the theme ships built-in with Firefox.
@@ -37,6 +44,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * @property {ThemePickerColors} themePickerColors
  *   The light and dark color or gradient variants representing the theme in the
  *   Firefox Themes Picker UI.
+ * @property {{light: ThemePreviewColors, dark: ThemePreviewColors}} [themePreviewColors]
+ *   The colors used, along with themePickerColors, to render the theme preview
+ *   image out of the default theme Nova preview svg through link-parameters.
+ *   Only expected for the AMO-hosted themes.
  */
 
 // TODO(Bug 2053215): consider rolling the metadata related to built-in themes that is
@@ -73,6 +84,10 @@ const FIREFOX_THEMES_LIST = [
       },
       dark: { type: "color", value: "#270F00" },
     },
+    themePreviewColors: {
+      light: { text: "#270F00", icons: "#5F3100", activeTabStroke: "#F3A81E" },
+      dark: { text: "#F2F0F8", icons: "#F9F5E6", activeTabStroke: "#854800" },
+    },
   },
   {
     id: "nova-spark@mozilla.org",
@@ -86,6 +101,10 @@ const FIREFOX_THEMES_LIST = [
         value: "linear-gradient(135deg, #701C07 0%, #461209 60%, #250E0B 100%)",
       },
     },
+    themePreviewColors: {
+      light: { text: "#250E0B", icons: "#701C07", activeTabStroke: "#FF9565" },
+      dark: { text: "#F8F0EC", icons: "#F8F0EC", activeTabStroke: "#9C2C05" },
+    },
   },
   {
     id: "nova-flame@mozilla.org",
@@ -98,6 +117,10 @@ const FIREFOX_THEMES_LIST = [
         type: "gradient",
         value: "linear-gradient(135deg, #69172D 0%, #42121F 60%, #211014 100%)",
       },
+    },
+    themePreviewColors: {
+      light: { text: "#211014", icons: "#69172D", activeTabStroke: "#FF8998" },
+      dark: { text: "#FCF2F3", icons: "#FCF2F3", activeTabStroke: "#961E3D" },
     },
   },
   {
@@ -113,6 +136,10 @@ const FIREFOX_THEMES_LIST = [
         value: "linear-gradient(135deg, #5F1854 0%, #3C1334 60%, #1E111B 100%)",
       },
     },
+    themePreviewColors: {
+      light: { text: "#1E111B", icons: "#5F1854", activeTabStroke: "#F585D3" },
+      dark: { text: "#F7EFF3", icons: "#F7EFF3", activeTabStroke: "#882078" },
+    },
   },
   {
     id: "nova-lavender@mozilla.org",
@@ -126,6 +153,10 @@ const FIREFOX_THEMES_LIST = [
         value: "linear-gradient(135deg, #4F216B 0%, #311842 60%, #1A1220 100%)",
       },
     },
+    themePreviewColors: {
+      light: { text: "#1A1220", icons: "#4F216B", activeTabStroke: "#D490FF" },
+      dark: { text: "#FAEBFF", icons: "#FAEBFF", activeTabStroke: "#702E98" },
+    },
   },
   {
     id: "nova-dusk@mozilla.org",
@@ -138,6 +169,10 @@ const FIREFOX_THEMES_LIST = [
         type: "gradient",
         value: "linear-gradient(135deg, #3E2976 0%, #271C48 60%, #161423 100%)",
       },
+    },
+    themePreviewColors: {
+      light: { text: "#161423", icons: "#3E2976", activeTabStroke: "#B89CFF" },
+      dark: { text: "#F5ECFF", icons: "#F5ECFF", activeTabStroke: "#5939A8" },
     },
   },
   {
@@ -153,6 +188,10 @@ const FIREFOX_THEMES_LIST = [
         value: "linear-gradient(135deg, #23327B 0%, #17214C 60%, #111524 100%)",
       },
     },
+    themePreviewColors: {
+      light: { text: "#111524", icons: "#23327B", activeTabStroke: "#7BB2FF" },
+      dark: { text: "#ECF3F8", icons: "#ECF3F8", activeTabStroke: "#3246B0" },
+    },
   },
   {
     id: "nova-pine@mozilla.org",
@@ -167,6 +206,10 @@ const FIREFOX_THEMES_LIST = [
         value: "linear-gradient(135deg, #004933 0%, #003020 60%, #001E12 100%)",
       },
     },
+    themePreviewColors: {
+      light: { text: "#001E12", icons: "#004933", activeTabStroke: "#4ACCA6" },
+      dark: { text: "#ECF4F1", icons: "#ECF4F1", activeTabStroke: "#06674B" },
+    },
   },
   {
     id: "nova-tide@mozilla.org",
@@ -179,6 +222,10 @@ const FIREFOX_THEMES_LIST = [
         type: "gradient",
         value: "linear-gradient(135deg, #034554 0%, #002D38 60%, #011C23 100%)",
       },
+    },
+    themePreviewColors: {
+      light: { text: "#011C23", icons: "#034554", activeTabStroke: "#4CC4E1" },
+      dark: { text: "#EBF4F5", icons: "#EBF4F5", activeTabStroke: "#066077" },
     },
   },
   {
@@ -194,6 +241,10 @@ const FIREFOX_THEMES_LIST = [
         value: "linear-gradient(90deg, #3F3E42 0%, #252428 60%, #171519 100%)",
       },
     },
+    themePreviewColors: {
+      light: { text: "#121114", icons: "#252428", activeTabStroke: "#B7B6BA" },
+      dark: { text: "#FCFBFF", icons: "#FCFBFF", activeTabStroke: "#67666A" },
+    },
   },
   {
     id: "nova-smoke@mozilla.org",
@@ -207,12 +258,33 @@ const FIREFOX_THEMES_LIST = [
         value: "linear-gradient(135deg, #3B3532 0%, #2F2926 60%, #201B18 100%)",
       },
     },
+    themePreviewColors: {
+      light: { text: "#181310", icons: "#2F2926", activeTabStroke: "#BDB6B1" },
+      dark: { text: "#FFF9F6", icons: "#FFF9F6", activeTabStroke: "#59524F" },
+    },
   },
 ];
 
 const FIREFOX_THEMES_MAP = new Map(
   FIREFOX_THEMES_LIST.map(theme => [theme.id, theme])
 );
+
+// Surface colors shared by the previews of all the AMO-hosted Nova themes.
+const NOVA_THEMES_PREVIEW_SURFACES = {
+  "--active-tab-background": "light-dark(#FFFFFF, #1D1B1F)",
+  "--toolbar-background": "light-dark(#FFFFFF, #1D1B1F)",
+  "--urlbar-background": "light-dark(#FFFFFF, #1D1B1F)",
+  "--urlbar-border": "light-dark(#00000024, #3F3E42)",
+};
+
+/**
+ * @param {ThemeColorVariant} variant
+ * @returns {string} The variant as a CSS <image>, so that it can be used in
+ *   a light-dark() together with a gradient variant.
+ */
+function themeColorVariantAsImage({ type, value }) {
+  return type == "gradient" ? value : `linear-gradient(${value}, ${value})`;
+}
 
 /**
  * Manages the set of Firefox built-in and AMO-hosted themes exposed in the
@@ -266,15 +338,31 @@ class ThemesList {
 
   /**
    * @param {string} themeId
-   * @returns {string|null} The URL to the bundled theme preview svg file if any
-   *  *   (returns null for themes that aren't managed by this module).
+   * @returns {string|null} The CSS link-parameters value to apply to the
+   *   default theme Nova preview svg to turn it into a preview for the given
+   *   theme, or null for built-in themes and themes that aren't managed by
+   *   this module.
    */
-  getThemePreviewURL(themeId) {
-    if (this.isBuiltIn(themeId) || !this.hasThemeId(themeId)) {
+  getThemePreviewLinkParameters(themeId) {
+    const theme = FIREFOX_THEMES_MAP.get(themeId);
+    if (!theme?.themePreviewColors) {
       return null;
     }
-
-    return `resource://extra-themes-previews/${themeId}-preview.svg`;
+    const { themePickerColors, themePreviewColors } = theme;
+    const lightDark = key =>
+      `light-dark(${themePreviewColors.light[key]}, ${themePreviewColors.dark[key]})`;
+    const params = {
+      "--tabbar-background": `light-dark(${themeColorVariantAsImage(
+        themePickerColors.light
+      )}, ${themeColorVariantAsImage(themePickerColors.dark)})`,
+      "--text-color": lightDark("text"),
+      "--icon-color": lightDark("icons"),
+      "--active-tab-stroke": lightDark("activeTabStroke"),
+      ...NOVA_THEMES_PREVIEW_SURFACES,
+    };
+    return Object.entries(params)
+      .map(([name, value]) => `param(${name}, ${value})`)
+      .join(", ");
   }
 
   /**

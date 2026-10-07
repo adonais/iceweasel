@@ -75,13 +75,11 @@ namespace webrtc {
 
 namespace {
 using ::testing::_;
-using ::testing::DoAll;
 using ::testing::Eq;
 using ::testing::IsTrue;
 using ::testing::Ne;
 using ::testing::Return;
 using ::testing::ReturnPointee;
-using ::testing::SetArgPointee;
 
 const SocketAddress kLocalAddr1("11.11.11.11", 0);
 const SocketAddress kLocalAddr2("22.22.22.22", 0);
@@ -2150,7 +2148,10 @@ TEST_F(TurnPortWithMockDnsResolverTest, TestHostnameResolved) {
         .WillRepeatedly(ReturnPointee(resolver_result));
     EXPECT_CALL(*resolver_result, GetError).WillRepeatedly(Return(0));
     EXPECT_CALL(*resolver_result, GetResolvedAddress(AF_INET, _))
-        .WillOnce(DoAll(SetArgPointee<1>(kTurnUdpIntAddr), Return(true)));
+        .WillOnce([](int /*family*/, SocketAddress* addr) {
+          *addr = kTurnUdpIntAddr;
+          return true;
+        });
   });
   TestTurnAllocateSucceeds(kSimulatedRtt * 2);
 }
@@ -2170,7 +2171,10 @@ TEST_F(TurnPortWithMockDnsResolverTest, TestHostnameResolvedIPv6Network) {
         .WillRepeatedly(ReturnPointee(resolver_result));
     EXPECT_CALL(*resolver_result, GetError).WillRepeatedly(Return(0));
     EXPECT_CALL(*resolver_result, GetResolvedAddress(AF_INET6, _))
-        .WillOnce(DoAll(SetArgPointee<1>(kTurnUdpIPv6IntAddr), Return(true)));
+        .WillOnce([](int /*family*/, SocketAddress* addr) {
+          *addr = kTurnUdpIPv6IntAddr;
+          return true;
+        });
   });
   TestTurnAllocateSucceeds(kSimulatedRtt * 2);
 }
@@ -2212,8 +2216,10 @@ TEST_P(TurnPortIPAddressTypeMetricsTest, TestIPAddressTypeMetrics) {
             .WillRepeatedly(ReturnPointee(resolver_result));
         EXPECT_CALL(*resolver_result, GetError).WillRepeatedly(Return(0));
         EXPECT_CALL(*resolver_result, GetResolvedAddress(AF_INET, _))
-            .WillOnce(DoAll(SetArgPointee<1>(SocketAddress("127.0.0.1", 5000)),
-                            Return(true)));
+            .WillOnce([](int /*family*/, SocketAddress* addr) {
+              *addr = SocketAddress("127.0.0.1", 5000);
+              return true;
+            });
       });
 
   ProtocolAddress server_address({GetParam().address, 5000}, PROTO_UDP);

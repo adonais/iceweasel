@@ -269,12 +269,14 @@ if (!iter.Seek(childNode)) {
 ```
 
 Then, you can iterate the remaining children:
+
 ```cpp
 for (nsIContent* sibling = iter.GetNextChild(); sibling;
      sibling = iter.GetNextChild()) {
   // Do something with sibling.
 }
 ```
+
 ```cpp
 for (nsIContent* sibling = iter.GetPreviousChild(); sibling;
      sibling = iter.GetPreviousChild()) {

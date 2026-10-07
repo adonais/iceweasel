@@ -10,6 +10,7 @@
 #include "mozilla/Base64.h"
 #include "mozilla/JSONWriter.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsIClassInfoImpl.h"
 #include "nsIObjectInputStream.h"
 #include "nsReadableUtils.h"

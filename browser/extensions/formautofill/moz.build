@@ -12,11 +12,16 @@ BROWSER_CHROME_MANIFESTS += [
     "test/browser/focus-leak/browser.toml",
     "test/browser/heuristics/browser.toml",
     "test/browser/heuristics/third_party/browser.toml",
+    "test/browser/performance/perftest.toml",
     "test/browser/rust/browser.toml",
 ]
 
+# xpcshell_rust.toml lists tests xpcshell.toml also lists. Only the manifest
+# processed second may declare dupe-manifest, and this list must stay sorted, so
+# the name has to sort after "xpcshell.toml".
 XPCSHELL_TESTS_MANIFESTS += [
     "test/unit/xpcshell.toml",
+    "test/unit/xpcshell_rust.toml",
 ]
 
 MOCHITEST_MANIFESTS += [
@@ -30,3 +35,7 @@ SPHINX_TREES["docs"] = "docs"
 
 with Files("**"):
     BUG_COMPONENT = ("Toolkit", "Form Autofill")
+
+LICENSED_UNDER += [
+    "chromium",
+]

@@ -4,6 +4,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <vector>
 #include "nss.h"
 #include "p12.h"
 
@@ -365,6 +366,52 @@ TEST_F(PK12ImportTest, FailsToImportButShouldNotLeak) {
   // This is not a valid PKCS12 file, so a failing return value is expected.
   // However, the implementation shouldn't leak memory as a result.
   ASSERT_EQ(SECFailure, rv);
+}
+
+// Bug 2012680 - DER_GetInteger error handling in sec_pkcs12_integrity_key.
+// Replace the MacData iteration count with a 9-byte integer that overflows
+// long.  Before the fix this would silently produce LONG_MAX iterations,
+// effectively hanging; after the fix it must fail immediately.
+TEST_F(PK12ImportTest, MalformedMacIterationOverflow) {
+  // cert_p12 layout (verified by construction):
+  //   offset 0:    30 82 0a 1f   PFX SEQUENCE (len 2591)
+  //   offset 2544: 30 31         MacData SEQUENCE (len 49)
+  //   offset 2591: 02 02 08 00   MacData iteration INTEGER (2048)
+  //   total: 2595 bytes
+  ASSERT_EQ(sizeof(cert_p12), 2595u);
+  ASSERT_EQ(cert_p12[2591], 0x02);  // INTEGER tag
+  ASSERT_EQ(cert_p12[2592], 0x02);  // length
+  ASSERT_EQ(cert_p12[2544], 0x30);  // MacData SEQUENCE tag
+  ASSERT_EQ(cert_p12[2545], 0x31);  // MacData length (49)
+
+  // Copy everything up to the iteration INTEGER, then append overflow value.
+  std::vector<uint8_t> p12(cert_p12, cert_p12 + 2591);
+  // clang-format off
+  const uint8_t overflow_iter[] = {
+    0x02, 0x09,                                              // INTEGER, 9 bytes
+    0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,   // 2^64, overflows long
+  };
+  // clang-format on
+  p12.insert(p12.end(), overflow_iter, overflow_iter + sizeof(overflow_iter));
+
+  // Adjust MacData SEQUENCE length: 49 + 7 = 56.
+  p12[2545] = 0x38;
+  // Adjust PFX outer SEQUENCE length: 2591 + 7 = 2598 (0x0a26).
+  p12[2] = 0x0a;
+  p12[3] = 0x26;
+
+  SECItem password = {siBuffer, nullptr, 0};
+  ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
+  ScopedSEC_PKCS12DecoderContext dcx(
+      SEC_PKCS12DecoderStart(&password, slot.get(), nullptr, nullptr, nullptr,
+                             nullptr, nullptr, nullptr));
+  ASSERT_TRUE(dcx);
+  SECStatus rv = SEC_PKCS12DecoderUpdate(dcx.get(), p12.data(), p12.size());
+  if (rv == SECSuccess) {
+    rv = SEC_PKCS12DecoderVerify(dcx.get());
+  }
+  // Must fail gracefully, not hang or crash.
+  EXPECT_EQ(SECFailure, rv);
 }
 
 // Regression test for OOB read in PK11_TraverseCertsForNicknameInSlot when

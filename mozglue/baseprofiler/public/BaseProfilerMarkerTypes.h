@@ -25,114 +25,90 @@
 
 namespace mozilla::baseprofiler::markers {
 
-struct MediaSampleMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("MediaSample");
-  }
-  static void StreamJSONMarkerData(SpliceableJSONWriter& aWriter,
-                                   int64_t aSampleStartTimeUs,
-                                   int64_t aSampleEndTimeUs,
-                                   int64_t aQueueLength) {
-    aWriter.IntProperty("sampleStartTimeUs", aSampleStartTimeUs);
-    aWriter.IntProperty("sampleEndTimeUs", aSampleEndTimeUs);
-    aWriter.IntProperty("queueLength", aQueueLength);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormat("sampleStartTimeUs", "Sample start time",
-                             MS::Format::Microseconds);
-    schema.AddKeyLabelFormat("sampleEndTimeUs", "Sample end time",
-                             MS::Format::Microseconds);
-    schema.AddKeyLabelFormat("queueLength", "Queue length",
-                             MS::Format::Integer);
-    return schema;
-  }
+struct MediaSampleMarker : public BaseMarkerType<MediaSampleMarker> {
+  static constexpr const char* Name = "MediaSample";
+  // Callers pass a distinct name to each marker, keep it in ETW events.
+  static constexpr bool ETWStoreName = true;
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"sampleStartTimeUs", MS::InputType::Int64, "Sample start time",
+       MS::Format::Microseconds},
+      {"sampleEndTimeUs", MS::InputType::Int64, "Sample end time",
+       MS::Format::Microseconds},
+      {"queueLength", MS::InputType::Int64, "Queue length",
+       MS::Format::Integer},
+  };
 };
 
-struct VideoFallingBehindMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("VideoFallingBehind");
-  }
-  static void StreamJSONMarkerData(SpliceableJSONWriter& aWriter,
-                                   int64_t aVideoFrameStartTimeUs,
-                                   int64_t aMediaCurrentTimeUs) {
-    aWriter.IntProperty("videoFrameStartTimeUs", aVideoFrameStartTimeUs);
-    aWriter.IntProperty("mediaCurrentTimeUs", aMediaCurrentTimeUs);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormat("videoFrameStartTimeUs", "Video frame start time",
-                             MS::Format::Microseconds);
-    schema.AddKeyLabelFormat("mediaCurrentTimeUs", "Media current time",
-                             MS::Format::Microseconds);
-    return schema;
-  }
+struct VideoFallingBehindMarker
+    : public BaseMarkerType<VideoFallingBehindMarker> {
+  static constexpr const char* Name = "VideoFallingBehind";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"videoFrameStartTimeUs", MS::InputType::Int64, "Video frame start time",
+       MS::Format::Microseconds},
+      {"mediaCurrentTimeUs", MS::InputType::Int64, "Media current time",
+       MS::Format::Microseconds},
+  };
 };
 
-struct ContentBuildMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("CONTENT_FULL_PAINT_TIME");
-  }
-  static void StreamJSONMarkerData(SpliceableJSONWriter& aWriter) {}
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    return schema;
-  }
+struct ContentBuildMarker : public BaseMarkerType<ContentBuildMarker> {
+  static constexpr const char* Name = "CONTENT_FULL_PAINT_TIME";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
 };
 
-struct MediaEngineMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("MediaEngine");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   uint64_t aMediaEngineId) {
-    aWriter.IntProperty("id", aMediaEngineId);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormat("id", "Id", MS::Format::Integer);
-    return schema;
-  }
+struct MediaEngineMarker : public BaseMarkerType<MediaEngineMarker> {
+  static constexpr const char* Name = "MediaEngine";
+  // Callers pass a distinct name to each marker, keep it in ETW events.
+  static constexpr bool ETWStoreName = true;
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"id", MS::InputType::Uint64, "Id", MS::Format::String},
+  };
 };
 
-struct MediaEngineTextMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("MediaEngineText");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   uint64_t aMediaEngineId,
-                                   const ProfilerString8View& aText) {
-    aWriter.IntProperty("id", aMediaEngineId);
-    aWriter.StringProperty("text", aText);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormat("id", "Id", MS::Format::Integer);
-    schema.AddKeyLabelFormat("text", "Details", MS::Format::String);
-    return schema;
-  }
+struct MediaEngineTextMarker : public BaseMarkerType<MediaEngineTextMarker> {
+  static constexpr const char* Name = "MediaEngineText";
+  // Callers pass a distinct name to each marker, keep it in ETW events.
+  static constexpr bool ETWStoreName = true;
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"id", MS::InputType::Uint64, "Id", MS::Format::String},
+      {"text", MS::InputType::CString, "Details"},
+  };
 };
 
-struct VideoSinkRenderMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("VideoSinkRender");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   int64_t aClockTimeUs) {
-    aWriter.IntProperty("clockTimeUs", aClockTimeUs);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormat("clockTimeUs", "Clock time",
-                             MS::Format::Microseconds);
-    return schema;
-  }
+struct VideoSinkRenderMarker : public BaseMarkerType<VideoSinkRenderMarker> {
+  static constexpr const char* Name = "VideoSinkRender";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"clockTimeUs", MS::InputType::Int64, "Clock time",
+       MS::Format::Microseconds},
+  };
 };
 
 }  // namespace mozilla::baseprofiler::markers

@@ -1344,7 +1344,31 @@ class nsIFrame : public nsQueryFrame {
     return aChild->GetPosition();
   }
 
+  /**
+   * Return this frame's position relative to its parent. If this frame is the
+   * scrolled frame of a scroll container, return the position as if that scroll
+   * container were at its initial scroll position [1].
+   *
+   * Note that if this frame is sticky positioned, the sticky offset is
+   * preserved. It is part of the frame's used position, which is what
+   * offsetTop/offsetLeft report. Use GetPositionIgnoringScrollingAndSticky() to
+   * ignore it as well.
+   *
+   * [1] https://drafts.csswg.org/css-overflow-3/#initial-scroll-position
+   */
   nsPoint GetPositionIgnoringScrolling() const;
+
+  /**
+   * Just like GetPositionIgnoringScrolling(). In addition, if this frame is
+   * sticky positioned, return the position as if its scroll container were at
+   * its initial scroll position. That is, the returned position doesn't change
+   * as its scroll container scrolls.
+   *
+   * Anchor positioning needs this to resolve anchor() against a
+   * scroll-invariant anchor position, and to compensate by how far the anchor
+   * has actually moved.
+   */
+  nsPoint GetPositionIgnoringScrollingAndSticky() const;
 
 #define NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(prop, type, dtor)              \
   static const mozilla::FramePropertyDescriptor<type>* prop() {            \
@@ -3386,10 +3410,25 @@ class nsIFrame : public nsQueryFrame {
   nsPoint GetOffsetToRootFrame() const;
 
   /**
-   * Just like GetOffsetTo, but treats all scrollframes as scrolled to
-   * their origin.
+   * Just like GetOffsetTo(), but treats all scroll containers as being at their
+   * initial scroll position. See GetPositionIgnoringScrolling().
    */
   nsPoint GetOffsetToIgnoringScrolling(const nsIFrame* aOther) const;
+
+  /**
+   * Just like GetOffsetToIgnoringScrolling(), but also treating a sticky
+   * element's offset as if its scroll container were at its initial scroll
+   * position. That is, the result does not change regardless of the scroll
+   * positions between |this| and aOther. See
+   * GetPositionIgnoringScrollingAndSticky().
+   */
+  nsPoint GetOffsetToIgnoringScrollingAndSticky(const nsIFrame* aOther) const;
+
+  /**
+   * Return how far |this| has shifted relative to aOther due to scrolling. The
+   * shift applied to a sticky positioned frame counts as scrolling too.
+   */
+  nsPoint GetScrollOffsetTo(const nsIFrame* aOther) const;
 
   /**
    * Get the offset between the coordinate systems of |this| and aOther
@@ -5878,13 +5917,15 @@ inline do_QueryFrameHelper<nsIFrame> do_QueryFrame(AutoWeakFrame& s) {
 /**
  * @see AutoWeakFrame
  */
-class MOZ_HEAP_CLASS WeakFrame {
+class MOZ_HEAP_CLASS MOZ_NON_MEMMOVABLE WeakFrame {
  public:
   WeakFrame() : mFrame(nullptr) {}
 
   WeakFrame(const WeakFrame& aOther) : mFrame(nullptr) {
     Init(aOther.GetFrame());
   }
+
+  WeakFrame(WeakFrame&& aOther) : mFrame(nullptr) { *this = std::move(aOther); }
 
   MOZ_IMPLICIT WeakFrame(const AutoWeakFrame& aOther) : mFrame(nullptr) {
     Init(aOther.GetFrame());
@@ -5897,6 +5938,13 @@ class MOZ_HEAP_CLASS WeakFrame {
   }
 
   WeakFrame& operator=(WeakFrame& aOther) {
+    Init(aOther.GetFrame());
+    return *this;
+  }
+
+  WeakFrame& operator=(WeakFrame&& aOther);
+
+  WeakFrame& operator=(const AutoWeakFrame& aOther) {
     Init(aOther.GetFrame());
     return *this;
   }
@@ -5921,6 +5969,9 @@ class MOZ_HEAP_CLASS WeakFrame {
 
   nsIFrame* mFrame;
 };
+
+// The PresShell tracks WeakFrames by address, so they can't be memmoved.
+MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(WeakFrame)
 
 // Use nsIFrame's fast-path to avoid QueryFrame:
 inline do_QueryFrameHelper<nsIFrame> do_QueryFrame(WeakFrame& s) {

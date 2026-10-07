@@ -16,12 +16,15 @@ import org.mozilla.fenix.browser.ReaderModeStatus
  * @property readerModeStatus Reader mode status of the current page.
  * @property pageTranslationStatus Translation status of the current page.
  * @property customTabColors Custom colors configuration when browsing in custom tab.
+ * @property isShowingTabReloadCover Whether a cached-thumbnail cover is currently being shown over the engine view
+ *   while the tab is reloading. Used to swap the URL bar into a "Cached" state.
  */
 data class BrowserScreenState(
     val cancelPrivateDownloadsAccepted: Boolean = false,
     val readerModeStatus: ReaderModeStatus = ReaderModeStatus.UNKNOWN,
     val pageTranslationStatus: PageTranslationStatus = PageTranslationStatus.NOT_POSSIBLE,
     val customTabColors: CustomTabColors? = null,
+    val isShowingTabReloadCover: Boolean = false,
 ) : State
 
 /**

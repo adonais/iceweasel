@@ -842,6 +842,9 @@ const PanelUI = {
       if (node.hidden) {
         continue;
       }
+      if (node.id === "menu_referralsPage") {
+        continue;
+      }
       remaining.add(node);
       if (node.id) {
         byId.set(node.id, node);

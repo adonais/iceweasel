@@ -83,6 +83,20 @@ Services.ppmm.addMessageListener(
   }
 );
 
+Services.ppmm.addMessageListener(
+  "AutoComplete:MaybeLeaveSecondaryAction",
+  message => {
+    if (compareContext(message)) {
+      let actor = currentActor;
+      if (actor && actor.openedPopup) {
+        return actor.openedPopup.maybeLeaveSecondaryAction();
+      }
+    }
+
+    return false;
+  }
+);
+
 // AutoCompleteResultView is an abstraction around a list of results.
 // It implements enough of nsIAutoCompleteController and
 // nsIAutoCompleteInput to make the richlistbox popup work. Since only
@@ -167,6 +181,20 @@ var AutoCompleteResultView = {
 };
 
 export class AutoCompleteParent extends JSWindowActorParent {
+  #reportedTelemetryInputs = new Set();
+
+  /**
+   * The entry whose provider was last asked for a preview, so that the
+   * provider can be told to drop it once the preview moves elsewhere.
+   *
+   * @type {{
+   *   actor: JSWindowActorParent,
+   *   fillMessageName: string,
+   *   fillMessageData: object
+   * } | null}
+   */
+  #previewedEntry = null;
+
   didDestroy() {
     if (this.openedPopup) {
       this.openedPopup.closePopup();
@@ -237,6 +265,7 @@ export class AutoCompleteParent extends JSWindowActorParent {
     isDarkBackground,
     results,
     selectedIndex,
+    inputElementIdentifier,
   }) {
     if (!results.length || this.openedPopup) {
       // We shouldn't ever be showing an empty popup, and if we
@@ -297,7 +326,7 @@ export class AutoCompleteParent extends JSWindowActorParent {
     );
     this.openedPopup.invalidate();
     this.openedPopup.selectedIndex = selectedIndex;
-    this._maybeRecordTelemetryEvents(results);
+    this._maybeRecordTelemetryEvents(results, inputElementIdentifier);
 
     // This is a temporary solution. We should replace it with
     // proper meta information about the popup once such field
@@ -314,10 +343,21 @@ export class AutoCompleteParent extends JSWindowActorParent {
   /**
    * @param {object[]} results - Non-empty array of autocomplete results.
    */
-  _maybeRecordTelemetryEvents(results) {
+  _maybeRecordTelemetryEvents(results, inputElementIdentifier = null) {
     let actor =
       this.browsingContext.currentWindowGlobal.getActor("LoginManager");
     actor.maybeRecordPasswordGenerationShownTelemetryEvent(results);
+
+    if (!inputElementIdentifier) {
+      return;
+    }
+    const inputKey = `${inputElementIdentifier.browsingContextId}|${inputElementIdentifier.id}`;
+    // The event is recorded once per input element: reopening the popup on the
+    // same field tells us nothing new and would skew the duration data.
+    if (this.#reportedTelemetryInputs.has(inputKey)) {
+      return;
+    }
+    this.#reportedTelemetryInputs.add(inputKey);
 
     // Assume the result with the start time (loginsFooter) is last.
     let lastResult = results[results.length - 1];
@@ -332,11 +372,6 @@ export class AutoCompleteParent extends JSWindowActorParent {
     let rawExtraData = JSON.parse(lastResult.comment).telemetryEventData;
     if (!rawExtraData.searchStartTimeMS) {
       throw new Error("Invalid autocomplete search start time");
-    }
-
-    if (rawExtraData.stringLength > 1) {
-      // To reduce event volume, only record for lengths 0 and 1.
-      return;
     }
 
     let duration =
@@ -478,6 +513,7 @@ export class AutoCompleteParent extends JSWindowActorParent {
             dir,
             isDarkBackground,
             selectedIndex,
+            inputElementIdentifier,
           });
           this.notifyListeners();
 
@@ -632,6 +668,7 @@ export class AutoCompleteParent extends JSWindowActorParent {
     const prefixToActor = [
       { prefix: "PasswordManager", actor: "LoginManager" },
       { prefix: "FormAutofill", actor: "FormAutofill" },
+      { prefix: "FormHistory", actor: "FormHistory" },
       { prefix: "SmartFormFill", actor: "SmartFormFill" },
     ];
 
@@ -688,21 +725,12 @@ export class AutoCompleteParent extends JSWindowActorParent {
    * Clear the autocomplete preview
    */
   clearAutoCompletePreview() {
-    const selectedIndex = this.openedPopup?.selectedIndex;
-    const result = AutoCompleteResultView.results[selectedIndex];
-    if (!result) {
-      return;
-    }
-
-    const { fillMessageName, fillMessageData } = JSON.parse(
-      result.comment || "{}"
+    const entry = this.#previewedEntry;
+    this.#previewedEntry = null;
+    entry?.actor?.onAutoCompleteEntryClearPreview?.(
+      entry.fillMessageName,
+      entry.fillMessageData
     );
-    if (!fillMessageName) {
-      return;
-    }
-
-    const actor = this.#getActorByMessagePrefix(fillMessageName);
-    actor?.onAutoCompleteEntryClearPreview?.(fillMessageName, fillMessageData);
   }
 
   /**
@@ -718,12 +746,23 @@ export class AutoCompleteParent extends JSWindowActorParent {
     const { fillMessageName, fillMessageData } = JSON.parse(
       result.comment || "{}"
     );
-    if (!fillMessageName) {
+    const actor = fillMessageName
+      ? this.#getActorByMessagePrefix(fillMessageName)
+      : null;
+
+    // A provider only drops its preview when another of its own entries is
+    // previewed, so an entry belonging to a different provider (such as the
+    // Smart Form Fill row) has to drop the previous preview here.
+    if (this.#previewedEntry?.actor != actor) {
+      this.clearAutoCompletePreview();
+    }
+
+    if (!actor) {
       return;
     }
 
-    const actor = this.#getActorByMessagePrefix(fillMessageName);
-    actor?.onAutoCompleteEntryHovered?.(fillMessageName, fillMessageData);
+    this.#previewedEntry = { actor, fillMessageName, fillMessageData };
+    actor.onAutoCompleteEntryHovered?.(fillMessageName, fillMessageData);
   }
 
   /**

@@ -88,6 +88,7 @@ class VideoStreamBufferController {
   virtual ~VideoStreamBufferController() = default;
 
   void Stop();
+  bool stopped() const;
   void SetProtectionMode(VCMVideoProtection protection_mode);
   void Clear();
   std::optional<int64_t> InsertFrame(std::unique_ptr<EncodedFrame> frame);

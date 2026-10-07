@@ -45,6 +45,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 
 #include "csi_platform.h"
+#include "mozilla/Assertions.h"
+#include "prio.h"
 
 typedef struct nr_resolver_ nr_resolver;
 typedef struct nr_resolver_vtbl_ nr_resolver_vtbl;

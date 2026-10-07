@@ -5935,67 +5935,90 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
     } break;
 
     case WM_CLEAR: {
-      WidgetContentCommandEvent command(true, eContentCommandDelete, this);
-      DispatchWindowEvent(command);
-      result = true;
+      if (const RefPtr<TextEventDispatcher> dispatcher =
+              GetTextEventDispatcher()) {
+        (void)dispatcher->DispatchContentCommandEvent(eContentCommandDelete);
+        result = true;
+      }
     } break;
 
     case WM_CUT: {
-      WidgetContentCommandEvent command(true, eContentCommandCut, this);
-      DispatchWindowEvent(command);
-      result = true;
+      if (const RefPtr<TextEventDispatcher> dispatcher =
+              GetTextEventDispatcher()) {
+        (void)dispatcher->DispatchContentCommandEvent(eContentCommandCut);
+        result = true;
+      }
     } break;
 
     case WM_COPY: {
-      WidgetContentCommandEvent command(true, eContentCommandCopy, this);
-      DispatchWindowEvent(command);
-      result = true;
+      if (const RefPtr<TextEventDispatcher> dispatcher =
+              GetTextEventDispatcher()) {
+        (void)dispatcher->DispatchContentCommandEvent(eContentCommandCopy);
+        result = true;
+      }
     } break;
 
     case WM_PASTE: {
-      WidgetContentCommandEvent command(true, eContentCommandPaste, this);
-      DispatchWindowEvent(command);
-      result = true;
+      if (const RefPtr<TextEventDispatcher> dispatcher =
+              GetTextEventDispatcher()) {
+        (void)dispatcher->DispatchContentCommandEvent(eContentCommandPaste);
+        result = true;
+      }
     } break;
 
     case EM_UNDO: {
-      WidgetContentCommandEvent command(true, eContentCommandUndo, this);
-      DispatchWindowEvent(command);
-      *aRetValue = (LRESULT)(command.mSucceeded && command.mIsEnabled);
-      result = true;
+      if (const RefPtr<TextEventDispatcher> dispatcher =
+              GetTextEventDispatcher()) {
+        const Result<bool, nsresult> ret =
+            dispatcher->DispatchContentCommandEvent(eContentCommandUndo);
+        *aRetValue = (LRESULT)(ret.isOk() && ret.inspect());
+        result = true;
+      }
     } break;
 
     case EM_REDO: {
-      WidgetContentCommandEvent command(true, eContentCommandRedo, this);
-      DispatchWindowEvent(command);
-      *aRetValue = (LRESULT)(command.mSucceeded && command.mIsEnabled);
-      result = true;
+      if (const RefPtr<TextEventDispatcher> dispatcher =
+              GetTextEventDispatcher()) {
+        const Result<bool, nsresult> ret =
+            dispatcher->DispatchContentCommandEvent(eContentCommandRedo);
+        *aRetValue = (LRESULT)(ret.isOk() && ret.inspect());
+        result = true;
+      }
     } break;
 
     case EM_CANPASTE: {
       // Support EM_CANPASTE message only when wParam isn't specified or
       // is plain text format.
       if (wParam == 0 || wParam == CF_TEXT || wParam == CF_UNICODETEXT) {
-        WidgetContentCommandEvent command(true, eContentCommandPaste, this,
-                                          true);
-        DispatchWindowEvent(command);
-        *aRetValue = (LRESULT)(command.mSucceeded && command.mIsEnabled);
-        result = true;
+        if (const RefPtr<TextEventDispatcher> dispatcher =
+                GetTextEventDispatcher()) {
+          const Result<bool, nsresult> ret =
+              dispatcher->DispatchContentCommandEvent(eContentCommandPaste,
+                                                      OnlyEnabledCheck::Yes);
+          *aRetValue = (LRESULT)(ret.isOk() && ret.inspect());
+          result = true;
+        }
       }
     } break;
 
     case EM_CANUNDO: {
-      WidgetContentCommandEvent command(true, eContentCommandUndo, this, true);
-      DispatchWindowEvent(command);
-      *aRetValue = (LRESULT)(command.mSucceeded && command.mIsEnabled);
-      result = true;
+      if (const RefPtr<TextEventDispatcher> dispatcher =
+              GetTextEventDispatcher()) {
+        const auto ret = dispatcher->DispatchContentCommandEvent(
+            eContentCommandUndo, OnlyEnabledCheck::Yes);
+        *aRetValue = (LRESULT)(ret.isOk() && ret.inspect());
+        result = true;
+      }
     } break;
 
     case EM_CANREDO: {
-      WidgetContentCommandEvent command(true, eContentCommandRedo, this, true);
-      DispatchWindowEvent(command);
-      *aRetValue = (LRESULT)(command.mSucceeded && command.mIsEnabled);
-      result = true;
+      if (const RefPtr<TextEventDispatcher> dispatcher =
+              GetTextEventDispatcher()) {
+        const auto ret = dispatcher->DispatchContentCommandEvent(
+            eContentCommandRedo, OnlyEnabledCheck::Yes);
+        *aRetValue = (LRESULT)(ret.isOk() && ret.inspect());
+        result = true;
+      }
     } break;
 
     case MOZ_WM_SKEWFIX: {

@@ -430,10 +430,10 @@ addAccessibleTask(
 addAccessibleTask(``, async function testValueDoc(browser) {
   // A test snippet is a data: URI. The accessibility engine won't return these.
   let url = new URL("https://example.net/document-builder.sjs");
-  url.searchParams.append("html", `<body id=${DEFAULT_CONTENT_DOC_BODY_ID}>`);
+  url.searchParams.append("html", `<html id=${DEFAULT_CONTENT_DOC_ID}><body>`);
   let loaded = waitForEvent(
     EVENT_DOCUMENT_LOAD_COMPLETE,
-    DEFAULT_CONTENT_DOC_BODY_ID
+    DEFAULT_CONTENT_DOC_ID
   );
   BrowserTestUtils.startLoadingURIString(browser, url.href);
   await loaded;

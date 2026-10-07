@@ -33,7 +33,7 @@ function urlChecker(url) {
 async function runTests(browser) {
   let onLoadEvents = waitForEvents([
     [EVENT_REORDER, getAccessible(browser)],
-    [EVENT_DOCUMENT_LOAD_COMPLETE, "body2"],
+    [EVENT_DOCUMENT_LOAD_COMPLETE, "html"],
     [EVENT_STATE_CHANGE, busyChecker(false)],
     [EVENT_DOCUMENT_LOAD_COMPLETE, inIframeChecker("iframe1")],
     [EVENT_STATE_CHANGE, inIframeChecker("iframe1")],
@@ -42,7 +42,7 @@ async function runTests(browser) {
   BrowserTestUtils.startLoadingURIString(
     browser,
     `data:text/html;charset=utf-8,
-    <html><body id="body2">
+    <html id="html"><body>
       <iframe id="iframe1" src="http://example.com"></iframe>
     </body></html>`
   );

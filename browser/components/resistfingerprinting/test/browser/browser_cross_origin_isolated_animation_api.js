@@ -15,32 +15,7 @@ add_task(async function runRTPTestAnimation() {
   });
 
   let runTests = async function (data) {
-    function waitForCondition(aCond, aCallback, aErrorMsg) {
-      var tries = 0;
-      var interval = content.setInterval(() => {
-        if (tries >= 30) {
-          ok(false, aErrorMsg);
-          moveOn();
-          return;
-        }
-        var conditionPassed;
-        try {
-          conditionPassed = aCond();
-        } catch (e) {
-          ok(false, `${e}\n${e.stack}`);
-          conditionPassed = false;
-        }
-        if (conditionPassed) {
-          moveOn();
-        }
-        tries++;
-      }, 100);
-      var moveOn = () => {
-        content.clearInterval(interval);
-        aCallback();
-      };
-    }
-
+    /* globals ContentTaskUtils */
     let expectedPrecision = data.precision;
     // eslint beleives that isrounded is available in this scope, but if you
     // remove the assignment, you will see it is not
@@ -51,70 +26,56 @@ add_task(async function runRTPTestAnimation() {
     const animation = testDiv.animate({ opacity: [0, 1] }, 100000);
     animation.play();
 
-    let done;
-    let promise = new Promise(resolve => {
-      done = resolve;
-    });
-
-    waitForCondition(
+    await ContentTaskUtils.waitForCondition(
       () => animation.currentTime > 100,
-      () => {
-        // We have disabled Time Precision Reduction for CSS Animations, so we
-        // expect those tests to fail.
-        // If we are testing that preference, we accept either rounded or not
-        // rounded values as A-OK.
-        var maybeAcceptEverything = function (value) {
-          if (
-            data.options.reduceTimerPrecision &&
-            !data.options.resistFingerprinting
-          ) {
-            return true;
-          }
-
-          return value;
-        };
-
-        ok(
-          maybeAcceptEverything(
-            isRounded(animation.startTime, expectedPrecision)
-          ),
-          `Animation.startTime with precision ${expectedPrecision} is not ` +
-            `rounded: ${animation.startTime}`
-        );
-        ok(
-          maybeAcceptEverything(
-            isRounded(animation.currentTime, expectedPrecision)
-          ),
-          `Animation.currentTime with precision ${expectedPrecision} is ` +
-            `not rounded: ${animation.currentTime}`
-        );
-        ok(
-          maybeAcceptEverything(
-            isRounded(animation.timeline.currentTime, expectedPrecision)
-          ),
-          `Animation.timeline.currentTime with precision ` +
-            `${expectedPrecision} is not rounded: ` +
-            `${animation.timeline.currentTime}`
-        );
-        if (content.document.timeline) {
-          ok(
-            maybeAcceptEverything(
-              isRounded(
-                content.document.timeline.currentTime,
-                expectedPrecision
-              )
-            ),
-            `Document.timeline.currentTime with precision ` +
-              `${expectedPrecision} is not rounded: ` +
-              `${content.document.timeline.currentTime}`
-          );
-        }
-        done();
-      },
       "animation failed to start"
     );
 
-    await promise;
+    // We have disabled Time Precision Reduction for CSS Animations, so we
+    // expect those tests to fail.
+    // If we are testing that preference, we accept either rounded or not
+    // rounded values as A-OK.
+    var maybeAcceptEverything = function (value) {
+      if (
+        data.options.reduceTimerPrecision &&
+        !data.options.resistFingerprinting
+      ) {
+        return true;
+      }
+
+      return value;
+    };
+
+    ok(
+      maybeAcceptEverything(isRounded(animation.startTime, expectedPrecision)),
+      `Animation.startTime with precision ${expectedPrecision} is not ` +
+        `rounded: ${animation.startTime}`
+    );
+    ok(
+      maybeAcceptEverything(
+        isRounded(animation.currentTime, expectedPrecision)
+      ),
+      `Animation.currentTime with precision ${expectedPrecision} is ` +
+        `not rounded: ${animation.currentTime}`
+    );
+    ok(
+      maybeAcceptEverything(
+        isRounded(animation.timeline.currentTime, expectedPrecision)
+      ),
+      `Animation.timeline.currentTime with precision ` +
+        `${expectedPrecision} is not rounded: ` +
+        `${animation.timeline.currentTime}`
+    );
+    if (content.document.timeline) {
+      ok(
+        maybeAcceptEverything(
+          isRounded(content.document.timeline.currentTime, expectedPrecision)
+        ),
+        `Document.timeline.currentTime with precision ` +
+          `${expectedPrecision} is not rounded: ` +
+          `${content.document.timeline.currentTime}`
+      );
+    }
   };
 
   await setupAndRunCrossOriginIsolatedTest(

@@ -31,6 +31,7 @@ import mozilla.components.concept.sync.AccountObserver
 import mozilla.components.concept.sync.ConstellationState
 import mozilla.components.concept.sync.DeviceConstellationObserver
 import mozilla.components.concept.sync.SyncEngine
+import mozilla.components.feature.automotive.isAndroidAutomotiveAvailable
 import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.components.service.fxa.manager.FxaAccountManager
@@ -66,6 +67,10 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
     private lateinit var accountSettingsStore: AccountSettingsFragmentStore
     private lateinit var accountSettingsInteractor: AccountSettingsInteractor
     private val args by navArgs<AccountSettingsFragmentArgs>()
+
+    // Password and credit card syncing is disabled on Android Automotive until we implement the UX Google
+    // requires for handling sensitive information there. See bug 2060936.
+    private val areCredentialsSyncable by lazy { !requireContext().isAndroidAutomotiveAvailable() }
 
     // Navigate away from this fragment when we encounter auth problems or logout events.
     private val accountStateObserver =
@@ -284,18 +289,20 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
             }
 
         // 'Passwords' and 'Credit card' listeners are special, since we also display a pin protection warning.
-        listOf(
-                SyncEngine.Passwords,
-                SyncEngine.CreditCards,
-            )
-            .forEach {
-                requirePreference<CheckBoxPreference>(it.prefId()).apply {
-                    setOnPreferenceChangeListener { _, newValue ->
-                        updateSyncEngineStateWithPinWarning(it, newValue as Boolean)
-                        true
+        if (areCredentialsSyncable) {
+            listOf(
+                    SyncEngine.Passwords,
+                    SyncEngine.CreditCards,
+                )
+                .forEach {
+                    requirePreference<CheckBoxPreference>(it.prefId()).apply {
+                        setOnPreferenceChangeListener { _, newValue ->
+                            updateSyncEngineStateWithPinWarning(it, newValue as Boolean)
+                            true
+                        }
                     }
                 }
-            }
+        }
     }
 
     /**
@@ -375,6 +382,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
             isChecked = syncEnginesStatus.getOrElse(SyncEngine.Bookmarks) { true }
         }
         requirePreference<CheckBoxPreference>(R.string.pref_key_sync_credit_cards).apply {
+            isVisible = areCredentialsSyncable
             isEnabled = syncEnginesStatus.containsKey(SyncEngine.CreditCards)
             isChecked = syncEnginesStatus.getOrElse(SyncEngine.CreditCards) { true }
         }
@@ -383,6 +391,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
             isChecked = syncEnginesStatus.getOrElse(SyncEngine.History) { true }
         }
         requirePreference<CheckBoxPreference>(R.string.pref_key_sync_logins).apply {
+            isVisible = areCredentialsSyncable
             isEnabled = syncEnginesStatus.containsKey(SyncEngine.Passwords)
             isChecked = syncEnginesStatus.getOrElse(SyncEngine.Passwords) { true }
         }

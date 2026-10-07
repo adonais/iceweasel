@@ -111,9 +111,7 @@ class DocManager : public nsIWebProgressListener,
   bool IsProcessingRefreshDriverNotification() const;
 #endif
 
-#ifdef MOZ_ENABLE_SKIA_PDF
   static void NotifyOfPrintDocument(dom::Document* aDoc);
-#endif
 
  protected:
   DocManager();

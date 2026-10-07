@@ -98,3 +98,7 @@ GeneratedFile(
 
 if CONFIG["FUZZING_JS_FUZZILLI"]:
     include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+LICENSED_UNDER += [
+    "v8",
+]

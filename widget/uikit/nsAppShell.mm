@@ -323,8 +323,7 @@ static void ApplicationWillTerminate(bool aCallExit) {
   if (nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service()) {
     // Ensure quit notifications have fired to start the shutdown process, and
     // notify listeners.
-    bool userAllowedQuit;
-    appStartup->Quit(nsIAppStartup::eForceQuit, 0, &userAllowedQuit);
+    appStartup->Quit(nsIAppStartup::eForceQuit, 0);
 
     appStartup->DestroyHiddenWindow();
   }

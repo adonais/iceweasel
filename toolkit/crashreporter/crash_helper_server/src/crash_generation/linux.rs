@@ -7,9 +7,10 @@ use super::CrashGenerator;
 use anyhow::Result;
 use crash_helper_common::{
     messages::{self},
-    GeckoChildId,
+    ApplicationInfo, GeckoChildId,
 };
 use minidump_writer::minidump_writer::DirectAuxvDumpInfo;
+use mozannotation_server::CAnnotation;
 use once_cell::sync::Lazy;
 use std::{collections::HashMap, sync::Mutex};
 
@@ -45,4 +46,12 @@ pub(crate) extern "C" fn get_auxv_info(
     } else {
         false
     }
+}
+
+/// Create the annotations that are specific to this platform, there are none
+/// at the moment.
+pub(crate) fn create_platform_specific_annotations(
+    _app_info: &ApplicationInfo,
+) -> Result<Vec<CAnnotation>> {
+    Ok(Vec::new())
 }

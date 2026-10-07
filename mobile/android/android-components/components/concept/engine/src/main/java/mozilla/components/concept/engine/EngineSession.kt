@@ -554,7 +554,7 @@ abstract class EngineSession(private val delegate: Observable<Observer> = Observ
                     cookiePolicy = ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS,
                     strictSocialTrackingProtection = false,
                     cookiePurging = true,
-                    bounceTrackingProtectionMode = BounceTrackingProtectionMode.ENABLED_STANDBY,
+                    bounceTrackingProtectionMode = BounceTrackingProtectionMode.ENABLED_DRY_RUN,
                     allowListBaselineTrackingProtection = true,
                     allowListConvenienceTrackingProtection = true,
                     fingerprintingProtection = false,
@@ -586,7 +586,7 @@ abstract class EngineSession(private val delegate: Observable<Observer> = Observ
                 strictSocialTrackingProtection: Boolean? = null,
                 cookiePurging: Boolean = false,
                 bounceTrackingProtectionMode: BounceTrackingProtectionMode =
-                    BounceTrackingProtectionMode.ENABLED_STANDBY,
+                    BounceTrackingProtectionMode.ENABLED_DRY_RUN,
                 allowListBaselineTrackingProtection: Boolean = true,
                 allowListConvenienceTrackingProtection: Boolean = false,
                 fingerprintingProtection: Boolean? = null,

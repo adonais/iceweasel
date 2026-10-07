@@ -16,7 +16,8 @@ already_AddRefed<PathBuilder> PathBuilderCairo::Create(FillRule aFillRule) {
   return MakeAndAddRef<PathBuilderCairo>(aFillRule);
 }
 
-PathBuilderCairo::PathBuilderCairo(FillRule aFillRule) : mFillRule(aFillRule) {}
+PathBuilderCairo::PathBuilderCairo(FillRule aFillRule)
+    : PathBuilder(aFillRule) {}
 
 void PathBuilderCairo::MoveTo(const Point& aPoint) {
   cairo_path_data_t data;
@@ -109,36 +110,43 @@ already_AddRefed<Path> PathBuilderCairo::Finish() {
                                   mBeginPoint);
 }
 
-bool PathBuilderCairo::Reset(FillRule aFillRule) {
+void PathBuilderCairo::Reset(FillRule aFillRule) {
   mPathData.clear();
-  mFillRule = aFillRule;
+  SetFillRule(aFillRule);
   mCurrentPoint = Point();
   mBeginPoint = Point();
-  return true;
+}
+
+void PathBuilderCairo::Transform(const Matrix& aTransform) {
+  for (size_t i = 0; i < mPathData.size(); ++i) {
+    for (int pointCount = mPathData[i].header.length - 1; pointCount > 0;
+         --pointCount) {
+      cairo_path_data_t& data = mPathData[++i];
+      Point newPoint =
+          aTransform.TransformPoint(Point(data.point.x, data.point.y));
+      data.point.x = newPoint.x;
+      data.point.y = newPoint.y;
+    }
+  }
+  mCurrentPoint = aTransform.TransformPoint(mCurrentPoint);
+  mBeginPoint = aTransform.TransformPoint(mBeginPoint);
 }
 
 PathCairo::PathCairo(FillRule aFillRule,
                      std::vector<cairo_path_data_t>& aPathData,
                      const Point& aCurrentPoint, const Point& aBeginPoint)
-    : mFillRule(aFillRule),
-      mContainingContext(nullptr),
-      mCurrentPoint(aCurrentPoint),
-      mBeginPoint(aBeginPoint) {
+    : Path(aFillRule, aCurrentPoint, aBeginPoint), mContainingContext(nullptr) {
   mPathData.swap(aPathData);
 }
 
-PathCairo::PathCairo(cairo_t* aContext)
-    : mFillRule(FillRule::FILL_WINDING), mContainingContext(nullptr) {
-  cairo_path_t* path = cairo_copy_path(aContext);
-
+PathCairo::PathCairo(cairo_path_t* aPath)
+    : Path(FillRule::FILL_WINDING), mContainingContext(nullptr) {
   // XXX - mCurrentPoint is not properly set here, the same is true for the
   // D2D Path code, we never require current point when hitting this codepath
   // but this should be fixed.
-  for (int i = 0; i < path->num_data; i++) {
-    mPathData.push_back(path->data[i]);
+  for (int i = 0; i < aPath->num_data; i++) {
+    mPathData.push_back(aPath->data[i]);
   }
-
-  cairo_path_destroy(path);
 }
 
 PathCairo::~PathCairo() {
@@ -148,24 +156,16 @@ PathCairo::~PathCairo() {
 }
 
 already_AddRefed<PathBuilder> PathCairo::CopyToBuilder(
-    FillRule aFillRule) const {
-  RefPtr builder = MakeRefPtr<PathBuilderCairo>(aFillRule);
-
+    FillRule aFillRule, already_AddRefed<PathBuilder> aBuilder) const {
+  RefPtr builder(aBuilder.downcast<PathBuilderCairo>());
+  if (builder) {
+    builder->SetFillRule(aFillRule);
+  } else {
+    builder = MakeRefPtr<PathBuilderCairo>(aFillRule);
+  }
   builder->mPathData = mPathData;
   builder->mCurrentPoint = mCurrentPoint;
   builder->mBeginPoint = mBeginPoint;
-
-  return builder.forget();
-}
-
-already_AddRefed<PathBuilder> PathCairo::TransformedCopyToBuilder(
-    const Matrix& aTransform, FillRule aFillRule) const {
-  RefPtr builder = MakeRefPtr<PathBuilderCairo>(aFillRule);
-
-  AppendPathToBuilder(builder, &aTransform);
-  builder->mCurrentPoint = aTransform.TransformPoint(mCurrentPoint);
-  builder->mBeginPoint = aTransform.TransformPoint(mBeginPoint);
-
   return builder.forget();
 }
 
@@ -292,28 +292,9 @@ void PathCairo::SetPathOnContext(cairo_t* aContext) const {
   }
 }
 
-void PathCairo::AppendPathToBuilder(PathBuilderCairo* aBuilder,
-                                    const Matrix* aTransform) const {
-  if (aTransform) {
-    size_t i = 0;
-    while (i < mPathData.size()) {
-      uint32_t pointCount = mPathData[i].header.length - 1;
-      aBuilder->mPathData.push_back(mPathData[i]);
-      i++;
-      for (uint32_t c = 0; c < pointCount; c++) {
-        cairo_path_data_t data;
-        Point newPoint = aTransform->TransformPoint(
-            Point(mPathData[i].point.x, mPathData[i].point.y));
-        data.point.x = newPoint.x;
-        data.point.y = newPoint.y;
-        aBuilder->mPathData.push_back(data);
-        i++;
-      }
-    }
-  } else {
-    for (size_t i = 0; i < mPathData.size(); i++) {
-      aBuilder->mPathData.push_back(mPathData[i]);
-    }
+void PathBuilderCairo::AppendPath(cairo_path_t* aPath) {
+  for (int i = 0; i < aPath->num_data; i++) {
+    mPathData.push_back(aPath->data[i]);
   }
 }
 

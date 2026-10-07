@@ -14,7 +14,7 @@ prefs = [
 
 ["browser_trust_panel.js"]
 https_first_disabled = true
-support-files = ["!/browser/base/content/test/protectionsUI/trackingPage.html"]
+support-files = ["!/browser/base/content/test/browser-protectionsUI/trackingPage.html"]
 
 ["browser_trust_panel_cert_exception.js"]
 
@@ -22,14 +22,14 @@ support-files = ["!/browser/base/content/test/protectionsUI/trackingPage.html"]
 
 ["browser_trust_panel_icon.js"]
 https_first_disabled = true
-support-files = ["!/browser/base/content/test/protectionsUI/trackingPage.html"]
+support-files = ["!/browser/base/content/test/browser-protectionsUI/trackingPage.html"]
 
 ["browser_trust_panel_pages.js"]
 https_first_disabled = true
 
 ["browser_trust_panel_privacy_metrics_alignment.js"]
 https_first_disabled = true
-support-files = ["!/browser/base/content/test/protectionsUI/trackingPage.html"]
+support-files = ["!/browser/base/content/test/browser-protectionsUI/trackingPage.html"]
 
 ["browser_trust_panel_security_view.js"]
 https_first_disabled = true

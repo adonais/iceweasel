@@ -205,7 +205,7 @@ class CssComputedView {
     this.#abortController = new AbortController();
     const opts = { signal: this.#abortController.signal };
 
-    this.shortcuts = new KeyShortcuts({ window: this.styleWindow });
+    this.shortcuts = new KeyShortcuts(this.styleWindow);
     this.shortcuts.on(
       "CmdOrCtrl+F",
       event => this.#onShortcut("CmdOrCtrl+F", event),
@@ -1200,10 +1200,7 @@ class PropertyView {
 
     // Make it keyboard navigable
     this.element.setAttribute("tabindex", "0");
-    this.shortcuts = new KeyShortcuts({
-      window: this.#tree.styleWindow,
-      target: this.element,
-    });
+    this.shortcuts = new KeyShortcuts(this.element);
     this.shortcuts.on("F1", event => {
       this.mdnLinkClick(event);
       // Prevent opening the options panel
@@ -1425,10 +1422,7 @@ class PropertyView {
           textContent: selector.source,
         });
         link.addEventListener("click", selector.openStyleEditor);
-        const shortcuts = new KeyShortcuts({
-          window: this.#tree.styleWindow,
-          target: link,
-        });
+        const shortcuts = new KeyShortcuts(link);
         shortcuts.on("Return", () => selector.openStyleEditor());
       }
 

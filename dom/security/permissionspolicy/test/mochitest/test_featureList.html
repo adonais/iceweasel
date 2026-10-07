@@ -1,0 +1,60 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Test Permissions Policy - list</title>
+  <script type="text/javascript" src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<iframe src="empty.html" id="ifr"></iframe>
+<script type="text/javascript">
+
+let supportedFeatures = [
+  "aria-notify",
+  "autoplay",
+  "camera",
+  "digital-credentials-create",
+  "digital-credentials-get",
+  "encrypted-media",
+  "fullscreen",
+  "gamepad",
+  "geolocation",
+  "loopback-network",
+  "local-network",
+  "microphone",
+  "midi",
+  "on-device-speech-recognition",
+  "payment",
+  "picture-in-picture",
+  "publickey-credentials-create",
+  "publickey-credentials-get",
+  "storage-access",
+  "display-capture",
+  "document-domain",
+  "speaker-selection",
+  "vr",
+  "web-share",
+  "screen-wake-lock",
+  "serial",
+];
+
+function checkFeatures(features) {
+  features.forEach(feature => {
+    ok(supportedFeatures.includes(feature), "Feature: " + feature);
+  });
+}
+
+ok("featurePolicy" in document, "We have document.featurePolicy");
+checkFeatures(document.featurePolicy.features());
+ok("permissionsPolicy" in document, "We have document.permissionsPolicy");
+checkFeatures(document.permissionsPolicy.features());
+
+let ifr = document.getElementById("ifr");
+ok("featurePolicy" in ifr, "We have HTMLIFrameElement.featurePolicy");
+checkFeatures(ifr.featurePolicy.features());
+ok("permissionsPolicy" in ifr, "We have HTMLIFrameElement.permissionsPolicy");
+checkFeatures(ifr.permissionsPolicy.features());
+
+</script>
+</body>
+</html>

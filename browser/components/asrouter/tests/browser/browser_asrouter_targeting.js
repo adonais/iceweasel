@@ -23,12 +23,15 @@ ChromeUtils.defineESModuleGetters(this, {
   OnboardingMessageProvider:
     "resource:///modules/asrouter/OnboardingMessageProvider.sys.mjs",
   PanelTestProvider: "resource:///modules/asrouter/PanelTestProvider.sys.mjs",
+  PermissionTestUtils: "resource://testing-common/PermissionTestUtils.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
   QueryCache: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
+  ReinstallCheck: "moz-src:///browser/components/ReinstallCheck.sys.mjs",
+  ResetProfile: "resource://gre/modules/ResetProfile.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   DEFAULT_FORM_HISTORY_PARAM:
     "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
@@ -361,6 +364,83 @@ add_task(async function check_canCreateSelectableProfiles() {
   await SpecialPowers.popPrefEnv();
 });
 
+add_task(async function check_canResetProfile() {
+  const sandbox = sinon.createSandbox();
+  const resetSupported = sandbox.stub(ResetProfile, "resetSupported");
+
+  resetSupported.returns(true);
+  is(
+    await ASRouterTargeting.Environment.canResetProfile,
+    true,
+    "should be true when the profile supports being reset"
+  );
+
+  const message = { id: "foo", targeting: "canResetProfile" };
+  is(
+    await ASRouterTargeting.findMatchingMessage({ messages: [message] }),
+    message,
+    "should select the right item by canResetProfile"
+  );
+
+  resetSupported.returns(false);
+  is(
+    await ASRouterTargeting.Environment.canResetProfile,
+    false,
+    "should be false when the profile doesn't support being reset"
+  );
+
+  sandbox.restore();
+});
+
+add_task(async function check_profileLastUse() {
+  is(
+    await ASRouterTargeting.Environment.profileLastUse,
+    Math.max(
+      Services.appinfo.replacedLockTime,
+      Services.prefs.userPrefsFileLastModifiedAtStartup
+    ),
+    "should be the most recent lock file and prefs.js timestamps"
+  );
+
+  const message = {
+    id: "foo",
+    targeting: "profileLastUse <= currentDate|date",
+  };
+  is(
+    await ASRouterTargeting.findMatchingMessage({ messages: [message] }),
+    message,
+    "should select correct item by profileLastUse"
+  );
+});
+
+add_task(async function check_isFirefoxReinstalled() {
+  const sandbox = sinon.createSandbox();
+  const wasReinstalled = sandbox.stub(ReinstallCheck, "wasReinstalled");
+
+  wasReinstalled.get(() => true);
+  is(
+    await ASRouterTargeting.Environment.isFirefoxReinstalled,
+    true,
+    "should be true when a reinstall was detected"
+  );
+
+  const message = { id: "foo", targeting: "isFirefoxReinstalled" };
+  is(
+    await ASRouterTargeting.findMatchingMessage({ messages: [message] }),
+    message,
+    "should select correct item by isFirefoxReinstalled"
+  );
+
+  wasReinstalled.get(() => false);
+  is(
+    await ASRouterTargeting.Environment.isFirefoxReinstalled,
+    false,
+    "should be false when no reinstall was detected"
+  );
+
+  sandbox.restore();
+});
+
 add_task(async function check_hasSelectableProfiles() {
   is(
     await ASRouterTargeting.Environment.hasSelectableProfiles,
@@ -513,6 +593,45 @@ add_task(async function check_totalBookmarksCount() {
 
   // Cleanup
   await PlacesUtils.bookmarks.remove(bookmark.guid);
+});
+
+add_task(async function check_allowedNotificationOrigins() {
+  const message = { id: "foo", targeting: "allowedNotificationOrigins > 0" };
+
+  ok(
+    !(await ASRouterTargeting.findMatchingMessage({ messages: [message] })),
+    "Should not match when no origin is allowed"
+  );
+
+  PermissionTestUtils.add(
+    "https://example.com",
+    "desktop-notification",
+    Services.perms.DENY_ACTION
+  );
+  ok(
+    !(await ASRouterTargeting.findMatchingMessage({ messages: [message] })),
+    "Should not count a blocked origin"
+  );
+
+  PermissionTestUtils.add(
+    "https://example.org",
+    "desktop-notification",
+    Services.perms.ALLOW_ACTION
+  );
+  is(
+    await ASRouterTargeting.findMatchingMessage({ messages: [message] }),
+    message,
+    "Should match once an origin is allowed"
+  );
+  is(
+    await ASRouterTargeting.Environment.allowedNotificationOrigins,
+    1,
+    "Should count the allowed origin but not the blocked one"
+  );
+
+  // Cleanup
+  PermissionTestUtils.remove("https://example.com", "desktop-notification");
+  PermissionTestUtils.remove("https://example.org", "desktop-notification");
 });
 
 add_task(async function check_needsUpdate() {
@@ -690,6 +809,38 @@ add_task(async function checkisDefaultBrowser() {
     message,
     "should select correct item by isDefaultBrowser"
   );
+});
+
+add_task(async function checkHasAttemptedSetDefault() {
+  is(
+    await ASRouterTargeting.Environment.hasAttemptedSetDefault,
+    false,
+    "hasAttemptedSetDefault should be false before the attempt"
+  );
+  const shellStub = sinon
+    .stub(ShellService, "shellService")
+    .value({ setDefaultBrowser: () => {} });
+  const guidanceStub = sinon
+    .stub(ShellService, "_maybeShowSetDefaultGuidanceNotification")
+    .resolves();
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.shell.setDefaultBrowserUserChoice", false]],
+  });
+
+  try {
+    await ShellService.setDefaultBrowser(false);
+
+    is(
+      await ASRouterTargeting.Environment.hasAttemptedSetDefault,
+      true,
+      "hasAttemptedSetDefault should be true once after the attempt"
+    );
+  } finally {
+    ShellService._attemptedSetDefaultThisSession = false;
+    guidanceStub.restore();
+    shellStub.restore();
+    await SpecialPowers.popPrefEnv();
+  }
 });
 
 add_task(async function checkisDefaultHandler_pdf() {

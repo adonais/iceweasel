@@ -1,0 +1,49 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; }
+  #frame {
+    position: absolute;
+    left: 0;
+    top: 0;
+    /* BT.601 limited-range Y=81 Cb=90 Cr=240 decoded to sRGB. */
+    background: rgb(254, 0, 0);
+  }
+  #quadrant {
+    position: absolute;
+    /* BT.601 limited-range Y=41 Cb=240 Cr=110 decoded to sRGB. */
+    background: rgb(0, 0, 255);
+  }
+
+  /* Base 640x480 frame; the bottom-right quadrant is the fake camera's
+     test-pattern marker before any rotation is applied. Dimensions swap
+     for 90/270 along with the frame. */
+  .rot0 #frame, .rot180 #frame { width: 640px; height: 480px; }
+  .rot90 #frame, .rot270 #frame { width: 480px; height: 640px; }
+  .rot0 #quadrant, .rot180 #quadrant { width: 320px; height: 240px; }
+  .rot90 #quadrant, .rot270 #quadrant { width: 240px; height: 320px; }
+
+  /* Where the quadrant lands after each rotation, starting from its
+     unrotated bottom-right position. */
+  .rot0 #quadrant { left: 320px; top: 240px; }
+  .rot90 #quadrant { left: 0; top: 320px; }
+  .rot180 #quadrant { left: 0; top: 0; }
+  .rot270 #quadrant { left: 240px; top: 0; }
+</style>
+</head>
+<body>
+<!--
+  Independent, trivially-correct rendering of the fake test-pattern frame
+  (640x480 red background, bottom-right quadrant blue) as it should appear
+  after the CVO rotation named by the angle query param.
+-->
+<div id="frame"></div>
+<div id="quadrant"></div>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  document.documentElement.classList.add(`rot${params.get("angle")}`);
+</script>
+</body>
+</html>

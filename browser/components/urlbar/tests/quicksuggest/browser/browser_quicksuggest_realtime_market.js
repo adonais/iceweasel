@@ -136,7 +136,7 @@ add_task(async function ui_single() {
   let target = TEST_MERINO_SINGLE[0].custom_details.polygon.values[0];
   assertItemUI(items[0], {
     changeDescription: "down",
-    image: target.image_url,
+    image: UrlbarTestUtils.makeMozRemoteImageUrl(target.image_url),
     isImageAnArrow: false,
     name: target.name,
     todaysChangePerc: target.todays_change_perc,
@@ -336,7 +336,7 @@ function assertItemUI(item, expected) {
   );
 
   let image = item.querySelector(".urlbarView-realtime-image");
-  Assert.equal(image.getAttribute("src"), expected.image, "Image is correct");
+  UrlbarTestUtils.checkImageUrl(image.getAttribute("src"), expected.image);
 
   let name = item.querySelector(".urlbarView-market-name");
   Assert.equal(name.textContent, expected.name, "Name is correct");

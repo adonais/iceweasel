@@ -29,7 +29,6 @@ using dom::UniFFIPointer;
 using dom::UniFFIScaffoldingCallCode;
 using dom::UniFFIScaffoldingCallResult;
 
-
 {% include "cpp/FfiDefinitions.cpp" %}
 {% include "cpp/PointerTypes.cpp" %}
 {% include "cpp/CallbackInterfaceFfiValueTypes.cpp" %}

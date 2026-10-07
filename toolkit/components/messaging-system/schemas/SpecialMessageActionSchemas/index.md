@@ -211,6 +211,12 @@ Opens `about:protections`
 
 Opens the protection panel behind on the lock icon of the awesomebar
 
+### `OPEN_SMARTWINDOW_MONITOR_CREATE`
+
+Opens the Smart Window Monitor toolbar panel straight to the create form.
+
+* args: (none)
+
 ### `DISABLE_STP_DOORHANGERS`
 
 Disables all Social Tracking Protection messages
@@ -545,6 +551,14 @@ Any message that uses this action should have `canCreateSelectableProfiles` as p
 
 - args: (none)
 
+### `RESET_PROFILE`
+
+Opens the refresh confirmation dialog, which resets the current profile and restarts the browser
+
+Any message that uses this action should have `canResetProfile` as part of the targeting, to ensure we don't show a message where the action will not work.
+
+- args: (none)
+
 ### `SUBMIT_ONBOARDING_OPT_OUT_PING`
 
 Submits a Glean `onboarding-opt-out` ping.  Should only be used during preonboarding (but this is not enforced).
@@ -684,6 +698,26 @@ Configures Firefox to launch on Windows login.
 ### `REMOVE_LAUNCH_ON_LOGIN`
 
 Removes Firefox from Windows login items.
+
+- args: (none)
+
+### `ENABLE_CLOSED_BROWSER_NOTIFICATIONS`
+
+Turns on web notifications delivered while Firefox is closed, by setting the user-owned pref `app.backgroundNotifications.helper.enabled`.
+
+The helper that delivers them also needs `app.backgroundNotifications.helper.available`, which Nimbus owns, so this action has no effect unless the feature is available to the client.
+
+Windows only; a no-op on other platforms.
+
+- args: (none)
+
+### `DISABLE_CLOSED_BROWSER_NOTIFICATIONS`
+
+Turns off web notifications delivered while Firefox is closed, and stops the helper that delivers them.
+
+This writes only the user-owned pref, never the Nimbus-owned one, so a user opting out is not unenrolled from an experiment that made the feature available.
+
+Windows only; a no-op on other platforms.
 
 - args: (none)
 

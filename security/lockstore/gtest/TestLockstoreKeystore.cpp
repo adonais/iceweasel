@@ -19,6 +19,7 @@ using mozilla::security::lockstore::keystore_decrypt;
 using mozilla::security::lockstore::keystore_delete_dek;
 using mozilla::security::lockstore::keystore_encrypt;
 using mozilla::security::lockstore::keystore_get_dek;
+using mozilla::security::lockstore::keystore_get_dek_automatic;
 using mozilla::security::lockstore::keystore_import_dek;
 using mozilla::security::lockstore::keystore_is_dek_extractable;
 using mozilla::security::lockstore::keystore_is_kek_unlocked;
@@ -978,4 +979,87 @@ TEST_F(LockstoreKeystoreTest, CreateKekRejectsNonBase64urlIdentifier) {
   rv =
       keystore_create_kek(mKeystore, &kekType, &badIdentifier, &empty, 0, &out);
   ASSERT_EQ(rv, NS_ERROR_FAILURE);
+}
+
+TEST_F(LockstoreKeystoreTest, GetDekAutomaticExtractable) {
+  nsresult rv = keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+  MintLocalKek();
+
+  const nsCString dekName("auto-extract");
+  rv = keystore_create_dek(mKeystore, &dekName, &mLocalKekRef, true, 32);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  nsTArray<uint8_t> autoDek;
+  rv = keystore_get_dek_automatic(mKeystore, &dekName, &autoDek);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  nsTArray<uint8_t> explicitDek;
+  rv = keystore_get_dek(mKeystore, &dekName, &mLocalKekRef, &explicitDek);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  ASSERT_EQ(autoDek.Length(), explicitDek.Length());
+  EXPECT_EQ(
+      memcmp(autoDek.Elements(), explicitDek.Elements(), autoDek.Length()), 0);
+}
+
+TEST_F(LockstoreKeystoreTest, GetDekAutomaticNotExtractable) {
+  nsresult rv = keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+  MintLocalKek();
+
+  const nsCString dekName("auto-noextract");
+  rv = keystore_create_dek(mKeystore, &dekName, &mLocalKekRef, false, 32);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  nsTArray<uint8_t> dek;
+  rv = keystore_get_dek_automatic(mKeystore, &dekName, &dek);
+  ASSERT_EQ(rv, NS_ERROR_NOT_AVAILABLE);
+}
+
+TEST_F(LockstoreKeystoreTest, GetDekAutomaticMissingDek) {
+  nsresult rv = keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+  MintLocalKek();
+
+  const nsCString dekName("nosuch");
+  nsTArray<uint8_t> dek;
+  rv = keystore_get_dek_automatic(mKeystore, &dekName, &dek);
+  ASSERT_EQ(rv, NS_ERROR_NOT_AVAILABLE);
+}
+
+TEST_F(LockstoreKeystoreTest, GetDekAutomaticAllLocked) {
+  nsresult rv = keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  nsCString pwKekRef;
+  MintPassword("hunter2"_ns, pwKekRef);
+
+  // Unlock to create the DEK, then lock again.
+  const nsCString pw("hunter2"_ns);
+  rv = keystore_unlock_kek(mKeystore, &pwKekRef, &pw,
+                           /* timeoutMs */ 60000);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  const nsCString dekName("pw-locked");
+  rv = keystore_create_dek(mKeystore, &dekName, &pwKekRef, true, 32);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  rv = keystore_lock_kek(mKeystore, &pwKekRef);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  nsTArray<uint8_t> dek;
+  rv = keystore_get_dek_automatic(mKeystore, &dekName, &dek);
+  ASSERT_EQ(rv, NS_ERROR_NOT_AVAILABLE);
+}
+
+TEST_F(LockstoreKeystoreTest, GetDekAutomaticEmptyDekName) {
+  nsresult rv = keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+  MintLocalKek();
+
+  nsAutoCString empty;
+  nsTArray<uint8_t> dek;
+  rv = keystore_get_dek_automatic(mKeystore, &empty, &dek);
+  ASSERT_EQ(rv, NS_ERROR_INVALID_ARG);
 }

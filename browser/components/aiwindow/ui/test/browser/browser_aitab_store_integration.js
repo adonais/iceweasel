@@ -14,7 +14,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/AITabStore.sys.mjs",
 });
 
-describe("about:aitab store integration", () => {
+describe("about:smartpage store integration", () => {
   let tab;
 
   beforeEach(async () => {
@@ -35,7 +35,7 @@ describe("about:aitab store integration", () => {
   it("shows the unavailable state for an unknown slug", async () => {
     tab = await BrowserTestUtils.openNewForegroundTab(
       gBrowser,
-      `about:aitab?page=${UNKNOWN_SLUG}`
+      `about:smartpage?page=${UNKNOWN_SLUG}`
     );
 
     await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
@@ -84,7 +84,7 @@ describe("about:aitab store integration", () => {
     it("loads the stored page through the actor pair", async () => {
       tab = await BrowserTestUtils.openNewForegroundTab(
         gBrowser,
-        `about:aitab?page=${STORED_SLUG}`
+        `about:smartpage?page=${STORED_SLUG}`
       );
 
       await SpecialPowers.spawn(

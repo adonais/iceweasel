@@ -100,6 +100,8 @@ class PermissionManager final : public nsIPermissionManager,
     explicit PermissionKey(const nsACString& aOrigin)
         : mOrigin(aOrigin), mHashCode(HashString(aOrigin)) {}
 
+    PermissionKey() = delete;
+
     bool operator==(const PermissionKey& aKey) const {
       return mOrigin.Equals(aKey.mOrigin);
     }
@@ -112,9 +114,6 @@ class PermissionManager final : public nsIPermissionManager,
     const PLDHashNumber mHashCode;
 
    private:
-    // Default ctor shouldn't be used.
-    PermissionKey() = delete;
-
     // Dtor shouldn't be used outside of the class.
     ~PermissionKey() = default;
   };

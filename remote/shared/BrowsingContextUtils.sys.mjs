@@ -287,6 +287,7 @@ export async function waitForCurrentWindowGlobal(browsingContext) {
     },
     {
       timeout: 100,
+      throws: null,
     }
   );
 

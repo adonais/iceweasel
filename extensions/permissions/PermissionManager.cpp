@@ -2152,6 +2152,12 @@ nsresult PermissionManager::AddInternal(
 
       entry->GetPermissions().RemoveElementAt(index);
 
+      // If there are no more permissions stored for that entry, clear it.
+      if (entry->GetPermissions().IsEmpty()) {
+        mPermissionTable.RemoveEntry(entry);
+      }
+      entry = nullptr;
+
       if (aDBOperation == eWriteToDB) {
         // We care only about the id here so we pass dummy values for all other
         // parameters.
@@ -2164,11 +2170,6 @@ nsresult PermissionManager::AddInternal(
             aPrincipal, mTypeArray[typeIndex], oldPermissionEntry.mPermission,
             oldPermissionEntry.mExpireType, oldPermissionEntry.mExpireTime,
             oldPermissionEntry.mModificationTime, u"deleted"_ns);
-      }
-
-      // If there are no more permissions stored for that entry, clear it.
-      if (entry->GetPermissions().IsEmpty()) {
-        mPermissionTable.RemoveEntry(entry);
       }
 
       // If the entry we are removing is not a default, restore the potential
@@ -4656,6 +4657,7 @@ void PermissionManager::RemoveBrowserPermissionInternal(
   }
   BrowserPermissionMap* map = bcMapEntry->get();
 
+  nsCOMPtr<nsIPermission> permission;
   for (bool siteScoped : {false, true}) {
     nsCString compositeKey = BrowserCompositeKey(aPrincipal, aType, siteScoped);
     if (compositeKey.IsEmpty()) {
@@ -4668,18 +4670,18 @@ void PermissionManager::RemoveBrowserPermissionInternal(
       }
       entry.Remove();
 
-      nsCOMPtr<nsIPermission> permission =
-          Permission::Create(aPrincipal, aType, UNKNOWN_ACTION,
-                             EXPIRE_SESSION_TAB, 0, 0, aBrowserId);
-      if (permission) {
-        NotifyBrowserObservers(permission, u"deleted"_ns);
-      }
+      permission = Permission::Create(aPrincipal, aType, UNKNOWN_ACTION,
+                                      EXPIRE_SESSION_TAB, 0, 0, aBrowserId);
       break;
     }
   }
 
   if (map->IsEmpty()) {
     bcMapEntry.Remove();
+  }
+
+  if (permission) {
+    NotifyBrowserObservers(permission, u"deleted"_ns);
   }
 }
 
@@ -4775,14 +4777,14 @@ nsCOMPtr<nsITimer> PermissionManager::ScheduleBrowserPermissionExpiry(
               return;
             }
             permEntry.Remove();
+            if (innerMap->IsEmpty()) {
+              mapEntry.Remove();
+            }
             nsCOMPtr<nsIPermission> permission =
                 Permission::Create(principalCopy, typeCopy, aPermission,
                                    EXPIRE_SESSION_TAB, 0, 0, aBrowserId);
             if (permission) {
               self->NotifyBrowserObservers(permission, u"deleted"_ns);
-            }
-            if (innerMap->IsEmpty()) {
-              mapEntry.Remove();
             }
           }),
       delayMS, nsITimer::TYPE_ONE_SHOT,

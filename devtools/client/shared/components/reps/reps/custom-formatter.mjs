@@ -24,6 +24,8 @@ const ALLOWED_TAGS = new Set([
   "td",
 ]);
 
+const EXPAND_BUTTON_LABEL = "Expand";
+
 class CustomFormatter extends Component {
   static get propTypes() {
     return {
@@ -164,6 +166,7 @@ function renderJsonMl(jsonMl, props, index = 0) {
     childElements.push(
       createElement("button", {
         "aria-expanded": props.open,
+        "aria-label": EXPAND_BUTTON_LABEL,
         className: `collapse-button jsonml-header-collapse-button${
           props.open ? " expanded" : ""
         }`,

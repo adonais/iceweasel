@@ -20,7 +20,7 @@ describe("MultiSelect component", () => {
           string_id: "mr2022-onboarding-default-image-alt",
         },
         background:
-          "url('chrome://activity-stream/content/data/content/assets/mr-settodefault.svg') var(--mr-secondary-position) no-repeat var(--mr-screen-background-color)",
+          "url('chrome://activity-stream/content/data/content/assets/br-set-default-fox-heart.svg') var(--mr-secondary-position) no-repeat var(--mr-screen-background-color)",
         progress_bar: true,
         logo: {},
         title: "Test Title",

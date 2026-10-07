@@ -15,9 +15,11 @@ import android.view.ViewConfiguration.getLongPressTimeout
 import androidx.test.espresso.intent.rule.IntentsTestRule
 import androidx.test.rule.ActivityTestRule
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
+import mozilla.components.lib.crash.store.CrashReportOption
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.components.initializeGlean
+import org.mozilla.fenix.crashes.crashReportOption
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.FeatureSettingsHelper.Companion.settings
@@ -48,7 +50,9 @@ class HomeActivityTestRule(
         initialTouchMode: Boolean = false,
         launchActivity: Boolean = true,
         skipOnboarding: Boolean = true,
+        isHomepageAsNewTabEnabled: Boolean = false,
         isPocketEnabled: Boolean = settings.showPocketRecommendationsFeature,
+        isBookmarksHomeFeatureEnabled: Boolean = settings.showBookmarksHomeFeature,
         isRecentTabsFeatureEnabled: Boolean = settings.showRecentTabsFeature,
         isRecentlyVisitedFeatureEnabled: Boolean = settings.historyMetadataUIFeature,
         isWallpaperOnboardingEnabled: Boolean = settings.showWallpaperOnboarding,
@@ -73,8 +77,11 @@ class HomeActivityTestRule(
         showVoiceSearchInDisplayToolbar: Boolean = false,
         isHomepageTrendingRecentSearchEnabled: Boolean = false,
         showAddressBarInFocusMode: Boolean = false,
+        crashReportOption: CrashReportOption = settings.crashReportOption(),
     ) : this(initialTouchMode, launchActivity, skipOnboarding) {
+        this.isHomepageAsNewTabEnabled = isHomepageAsNewTabEnabled
         this.isPocketEnabled = isPocketEnabled
+        this.isBookmarksHomeFeatureEnabled = isBookmarksHomeFeatureEnabled
         this.isRecentTabsFeatureEnabled = isRecentTabsFeatureEnabled
         this.isRecentlyVisitedFeatureEnabled = isRecentlyVisitedFeatureEnabled
         this.isWallpaperOnboardingEnabled = isWallpaperOnboardingEnabled
@@ -98,6 +105,7 @@ class HomeActivityTestRule(
         this.showVoiceSearchInDisplayToolbar = showVoiceSearchInDisplayToolbar
         this.isHomepageTrendingRecentSearchEnabled = isHomepageTrendingRecentSearchEnabled
         this.showAddressBarInFocusMode = showAddressBarInFocusMode
+        this.crashReportOption = crashReportOption
     }
 
     /** Update settings after the activity was created. */
@@ -149,6 +157,7 @@ class HomeActivityTestRule(
                 initialTouchMode = initialTouchMode,
                 launchActivity = launchActivity,
                 skipOnboarding = skipOnboarding,
+                isHomepageAsNewTabEnabled = false,
                 isWallpaperOnboardingEnabled = false,
                 isOpenInAppBannerEnabled = false,
                 isMicrosurveyEnabled = false,
@@ -189,7 +198,9 @@ internal constructor(
         initialTouchMode: Boolean = false,
         launchActivity: Boolean = true,
         skipOnboarding: Boolean = true,
+        isHomepageAsNewTabEnabled: Boolean = false,
         isPocketEnabled: Boolean = settings.showPocketRecommendationsFeature,
+        isBookmarksHomeFeatureEnabled: Boolean = settings.showBookmarksHomeFeature,
         isRecentTabsFeatureEnabled: Boolean = settings.showRecentTabsFeature,
         isRecentlyVisitedFeatureEnabled: Boolean = settings.historyMetadataUIFeature,
         isWallpaperOnboardingEnabled: Boolean = settings.showWallpaperOnboarding,
@@ -216,8 +227,11 @@ internal constructor(
         showVoiceSearchInDisplayToolbar: Boolean = false,
         isHomepageTrendingRecentSearchEnabled: Boolean = false,
         showAddressBarInFocusMode: Boolean = false,
+        crashReportOption: CrashReportOption = settings.crashReportOption(),
     ) : this(initialTouchMode, launchActivity, skipOnboarding) {
+        this.isHomepageAsNewTabEnabled = isHomepageAsNewTabEnabled
         this.isPocketEnabled = isPocketEnabled
+        this.isBookmarksHomeFeatureEnabled = isBookmarksHomeFeatureEnabled
         this.isRecentTabsFeatureEnabled = isRecentTabsFeatureEnabled
         this.isRecentlyVisitedFeatureEnabled = isRecentlyVisitedFeatureEnabled
         this.isWallpaperOnboardingEnabled = isWallpaperOnboardingEnabled
@@ -243,6 +257,7 @@ internal constructor(
         this.showVoiceSearchInDisplayToolbar = showVoiceSearchInDisplayToolbar
         this.isHomepageTrendingRecentSearchEnabled = isHomepageTrendingRecentSearchEnabled
         this.showAddressBarInFocusMode = showAddressBarInFocusMode
+        this.crashReportOption = crashReportOption
     }
 
     private val longTapUserPreference = getLongPressTimeout()
@@ -297,7 +312,9 @@ internal constructor(
      * initial settings and override any changes made in the meantime.
      */
     fun updateCachedSettings() {
+        isHomepageAsNewTabEnabled = settings.enableHomepageAsNewTab
         isPocketEnabled = settings.showPocketRecommendationsFeature
+        isBookmarksHomeFeatureEnabled = settings.showBookmarksHomeFeature
         isRecentTabsFeatureEnabled = settings.showRecentTabsFeature
         isRecentlyVisitedFeatureEnabled = settings.historyMetadataUIFeature
         isWallpaperOnboardingEnabled = settings.showWallpaperOnboarding
@@ -317,6 +334,7 @@ internal constructor(
         isHomepageTrendingRecentSearchEnabled = settings.enableHomepageTrendingRecentSearch
         isTabStripEnabled = settings.isTabStripEnabled
         showAddressBarInFocusMode = settings.showAddressBarInFocusMode
+        crashReportOption = settings.crashReportOption()
     }
 
     companion object {
@@ -337,6 +355,9 @@ internal constructor(
                 initialTouchMode = initialTouchMode,
                 launchActivity = launchActivity,
                 skipOnboarding = skipOnboarding,
+                isBookmarksHomeFeatureEnabled = true,
+                isRecentlyVisitedFeatureEnabled = true,
+                isHomepageAsNewTabEnabled = false,
                 isWallpaperOnboardingEnabled = false,
                 isOpenInAppBannerEnabled = false,
                 isMicrosurveyEnabled = false,

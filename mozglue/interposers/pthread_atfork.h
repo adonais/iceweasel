@@ -6,6 +6,8 @@
 
 #if defined(MOZ_ENABLE_FORKSERVER)
 
+#  include "mozilla/Types.h"
+
 #  if defined(__GLIBC__) && !defined(__UCLIBC__)
 // We really are using glibc, not uClibc pretending to be glibc.
 #    define LIBC_GLIBC 1

@@ -18,6 +18,7 @@ def get_layers():
     return (
         PingServer,
         Profile,
+        MLServices,
         ProxyRunner,
         AndroidDevice,
         MacosDevice,
@@ -69,6 +70,7 @@ def pick_system(env, flavor, mach_cmd):
                 PingServer,  # needs to come before Profile
                 BinarySetup,  # needs to come before macos
                 MacosDevice,
+                MLServices,
                 Profile,
                 ProxyRunner,
                 AndroidDevice,
@@ -76,6 +78,8 @@ def pick_system(env, flavor, mach_cmd):
             ],
         )
     if flavor == "eval-mochitest":
+        env.set_arg("ml_services", True)
+
         return Layers(
             env,
             mach_cmd,

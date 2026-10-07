@@ -13,7 +13,6 @@ export var MockRegistrar = Object.freeze({
 
   /**
    * Register a mock to override target interfaces.
-   * The target interface may be accessed through _genuine property of the mock.
    * If you register multiple mocks to the same contract ID, you have to call
    * unregister in reverse order. Otherwise the previous factory will not be
    * restored.
@@ -27,48 +26,14 @@ export var MockRegistrar = Object.freeze({
    * @return           The CID of the mock.
    */
   register(contractID, mock, args) {
-    return this.registerEx(
-      contractID,
-      { shouldCreateInstance: true },
-      mock,
-      args
-    );
-  },
-
-  /**
-   * Register a mock to override target interfaces.
-   * If shouldCreateInstance is true then the target interface may be accessed
-   * through _genuine property of the mock.
-   * If you register multiple mocks to the same contract ID, you have to call
-   * unregister in reverse order. Otherwise the previous factory will not be
-   * restored.
-   *
-   * @param contractID The contract ID of the interface which is overridden by
-                       the mock.
-   *                   e.g. "@mozilla.org/file/directory_service;1"
-   * @param options    Options object with any of the following optional
-   *                   parameters:
-   *                   * shouldCreateInstance: Adds the _genuine property to
-   *                     the mock.
-   * @param mock       An object which implements interfaces for the contract ID.
-   * @param args       An array which is passed in the constructor of mock.
-   *
-   * @return           The CID of the mock.
-   */
-  registerEx(contractID, options, mock, args) {
-    let originalCID;
-    let originalFactory;
-    try {
-      originalCID = this._originalCIDs.get(contractID);
-      if (!originalCID) {
+    let originalCID = this._originalCIDs.get(contractID);
+    if (!originalCID) {
+      try {
         originalCID = this.registrar.contractIDToCID(contractID);
         this._originalCIDs.set(contractID, originalCID);
+      } catch (e) {
+        // There's no original factory. Ignore and just register the new one.
       }
-
-      originalFactory = Cm.getClassObject(originalCID, Ci.nsIFactory);
-    } catch (e) {
-      // There's no original factory. Ignore and just register the new
-      // one.
     }
 
     let cid = Services.uuid.generateUUID();
@@ -83,18 +48,6 @@ export var MockRegistrar = Object.freeze({
           wrappedMock = mock();
         } else {
           wrappedMock = mock;
-        }
-
-        if (originalFactory && options.shouldCreateInstance) {
-          try {
-            let genuine = originalFactory.createInstance(iid);
-            wrappedMock._genuine = genuine;
-          } catch (ex) {
-            console.error(
-              "MockRegistrar: Creating original instance failed",
-              ex
-            );
-          }
         }
 
         return wrappedMock.QueryInterface(iid);

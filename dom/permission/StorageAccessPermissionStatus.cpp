@@ -7,9 +7,9 @@
 #include "PermissionStatusSink.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/dom/BrowsingContext.h"
-#include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/PermissionStatus.h"
 #include "mozilla/dom/PermissionStatusBinding.h"
+#include "mozilla/dom/PermissionsPolicyUtils.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
@@ -104,8 +104,8 @@ class StorageAccessPermissionStatusSink final : public PermissionStatusSink {
       }
 
       // Perform a Permission Policy Request
-      if (!FeaturePolicyUtils::IsFeatureAllowed(window->GetExtantDoc(),
-                                                u"storage-access"_ns)) {
+      if (!PermissionsPolicyUtils::IsFeatureAllowed(window->GetExtantDoc(),
+                                                    u"storage-access"_ns)) {
         return PermissionStatePromise::CreateAndResolve(
             nsIPermissionManager::PROMPT_ACTION, __func__);
       }

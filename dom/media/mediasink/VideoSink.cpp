@@ -506,6 +506,24 @@ void VideoSink::RenderVideoFrames(Span<const RefPtr<VideoData>> aFrames,
   }
 }
 
+struct VideoSinkDroppedFrameMarker
+    : public BaseMarkerType<VideoSinkDroppedFrameMarker> {
+  static constexpr const char* Name = "VideoSinkDroppedFrame";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"sampleStartTimeUs", MS::InputType::Int64, "Sample start time",
+       MS::Format::Microseconds},
+      {"sampleEndTimeUs", MS::InputType::Int64, "Sample end time",
+       MS::Format::Microseconds},
+      {"clockTimeUs", MS::InputType::Int64, "Audio clock time",
+       MS::Format::Microseconds},
+  };
+};
+
 void VideoSink::UpdateRenderedVideoFrames() {
   AUTO_PROFILER_LABEL("VideoSink::UpdateRenderedVideoFrames", MEDIA_PLAYBACK);
   AssertOwnerThread();
@@ -536,30 +554,6 @@ void VideoSink::UpdateRenderedVideoFrames() {
       VSINK_LOG_V("discarding video frame mTime={} clock_time={}",
                   frame->mTime.ToMicroseconds(), clockTime.ToMicroseconds());
 
-      struct VideoSinkDroppedFrameMarker {
-        static constexpr Span<const char> MarkerTypeName() {
-          return MakeStringSpan("VideoSinkDroppedFrame");
-        }
-        static void StreamJSONMarkerData(
-            baseprofiler::SpliceableJSONWriter& aWriter,
-            int64_t aSampleStartTimeUs, int64_t aSampleEndTimeUs,
-            int64_t aClockTimeUs) {
-          aWriter.IntProperty("sampleStartTimeUs", aSampleStartTimeUs);
-          aWriter.IntProperty("sampleEndTimeUs", aSampleEndTimeUs);
-          aWriter.IntProperty("clockTimeUs", aClockTimeUs);
-        }
-        static MarkerSchema MarkerTypeDisplay() {
-          using MS = MarkerSchema;
-          MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-          schema.AddKeyLabelFormat("sampleStartTimeUs", "Sample start time",
-                                   MS::Format::Microseconds);
-          schema.AddKeyLabelFormat("sampleEndTimeUs", "Sample end time",
-                                   MS::Format::Microseconds);
-          schema.AddKeyLabelFormat("clockTimeUs", "Audio clock time",
-                                   MS::Format::Microseconds);
-          return schema;
-        }
-      };
       profiler_add_marker(
           "VideoSinkDroppedFrame", geckoprofiler::category::MEDIA_PLAYBACK, {},
           VideoSinkDroppedFrameMarker{}, frame->mTime.ToMicroseconds(),

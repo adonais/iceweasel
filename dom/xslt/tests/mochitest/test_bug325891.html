@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Terminated XSLT transforms should unblock document loads</title>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<div id="log"></div>
+<script>
+window.resultDocument = null;
+
+for (const outputMethod of ["html", "xml"]) {
+  promise_test(async t => {
+    const frame = document.createElement("iframe");
+    const xml = `<?xml version="1.0"?>
+      <?xml-stylesheet type="text/xml" href="#sheet"?>
+      <doc>
+        <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0" id="sheet">
+          <xsl:output method="${outputMethod}"/>
+          <xsl:template match="/">
+            <html xmlns="http://www.w3.org/1999/xhtml"><body>
+              <xsl:element name="script" namespace="http://www.w3.org/1999/xhtml">
+                parent.resultDocument = document;
+              </xsl:element>
+              <xsl:message terminate="yes">stop</xsl:message>
+            </body></html>
+          </xsl:template>
+        </xsl:stylesheet>
+      </doc>`;
+    const url = URL.createObjectURL(new Blob([xml], { type: "application/xml" }));
+    t.add_cleanup(() => {
+      frame.remove();
+      URL.revokeObjectURL(url);
+      window.resultDocument = null;
+    });
+
+    const loaded = new Promise(resolve => {
+      frame.addEventListener("load", resolve, { once: true });
+    });
+    frame.src = url;
+    document.body.appendChild(frame);
+    await loaded;
+
+    assert_not_equals(window.resultDocument, null, "The partial result document was retained");
+    assert_not_equals(frame.contentDocument, window.resultDocument, "The error document replaced the partial result");
+    assert_not_equals(window.resultDocument.readyState, "loading", "The partial result document finished parsing");
+    assert_equals(frame.contentDocument.documentElement.localName, "parsererror", "The transform failed");
+    assert_equals(frame.contentDocument.readyState, "complete", "The error document finished loading");
+  }, `A terminated ${outputMethod} transform should load its error document while the partial result is retained`);
+}
+</script>

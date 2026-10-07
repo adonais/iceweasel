@@ -21,9 +21,10 @@ cd $GECKO_PATH
 export MOZ_OBJDIR=obj-zucchini
 BUILD_OUTPUT_DIR=$MOZ_OBJDIR/dist/bin
 
-cat > .mozconfig <<'EOF'
+cat > .mozconfig <<EOF
 ac_add_options --enable-project=tools/zucchini
 ac_add_options --enable-zucchini
+ac_add_options --with-sysroot=$MOZ_FETCHES_DIR/sysroot-x86_64-linux-gnu
 EOF
 
 TOOLCHAINS="clang"

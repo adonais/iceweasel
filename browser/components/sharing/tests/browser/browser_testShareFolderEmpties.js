@@ -33,7 +33,7 @@ function findToolbarChild(guid) {
 }
 
 function getShareFolderItem(popup) {
-  return popup.querySelector('menuitem[data-l10n-id="places-share-folder2"]');
+  return popup.querySelector('menuitem[data-l10n-id="places-share-folder3"]');
 }
 
 async function openFolderPopup(folderNode) {

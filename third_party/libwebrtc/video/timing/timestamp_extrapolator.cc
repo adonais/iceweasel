@@ -31,7 +31,6 @@ constexpr int kMinimumSamplesToLogEstimatedClockDrift =
     3000;  // 100 seconds at 30 fps.
 constexpr double kLambda = 1;
 constexpr int kStartUpFilterDelayInPackets = 2;
-constexpr double kP00 = 1.0;
 constexpr double kP11 = 1e10;
 constexpr double kStartResidualVariance = 3000 * 3000;
 
@@ -97,6 +96,10 @@ TimestampExtrapolator::Config TimestampExtrapolator::Config::ParseAndValidate(
                         << config.acc_max_error;
     config.acc_max_error = defaults.acc_max_error;
   }
+  if (config.p00 <= 0) {
+    RTC_LOG(LS_WARNING) << "Skipping invalid p00=" << config.p00;
+    config.p00 = defaults.p00;
+  }
 
   return config;
 }
@@ -132,7 +135,7 @@ void TimestampExtrapolator::Reset(Timestamp start) {
   prev_unwrapped_timestamp_ = std::nullopt;
   w_[0] = 90.0;
   w_[1] = 0;
-  p_[0][0] = kP00;
+  p_[0][0] = config_.p00;
   p_[1][1] = kP11;
   p_[0][1] = p_[1][0] = 0;
   unwrapper_ = RtpTimestampUnwrapper();
@@ -298,7 +301,7 @@ std::optional<Timestamp> TimestampExtrapolator::ExtrapolateLocalTime(
 
 void TimestampExtrapolator::SoftReset() {
   if (config_.reset_full_cov_on_alarm) {
-    p_[0][0] = kP00;
+    p_[0][0] = config_.p00;
     p_[0][1] = p_[1][0] = 0;
   }
   p_[1][1] = kP11;

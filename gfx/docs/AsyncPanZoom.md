@@ -378,11 +378,11 @@ e.g. steps 6 and 8 involve IPC, not just "stack unwinding").
 1. 1. If the input events landed outside a dispatch-to-content region,
    any available events in the input block are processed. These may
    trigger behaviours like scrolling or tap gestures.
-    1. If the input events landed inside a dispatch-to-content region,
-       the events are left in the queue and a timeout is initiated. If
-       the timeout expires before step 9 is completed, the APZ assumes
-       the input block was not cancelled and the tentative target is
-       correct, and processes them as part of step 10.
+   1. If the input events landed inside a dispatch-to-content region,
+      the events are left in the queue and a timeout is initiated. If
+      the timeout expires before step 9 is completed, the APZ assumes
+      the input block was not cancelled and the tentative target is
+      correct, and processes them as part of step 10.
 4. The call stack unwinds back to APZCTreeManager::ReceiveInputEvent,
    which does an in-place modification of the input event so that any
    async transforms are removed.
@@ -407,12 +407,12 @@ e.g. steps 6 and 8 involve IPC, not just "stack unwinding").
    depending on the input type.
 1. 1. If the events were processed as part of step 4(i), the
    notifications from step 8 are ignored and step 10 is skipped.
-    1. If events were queued as part of step 4(ii), and steps 5-8
-       complete before the timeout, the arrival of both notifications
-       from step 8 will mark the input block ready for processing.
-    2. If events were queued as part of step 4(ii), but steps 5-8 take
-       longer than the timeout, the notifications from step 8 will be
-       ignored and step 10 will already have happened.
+   1. If events were queued as part of step 4(ii), and steps 5-8
+      complete before the timeout, the arrival of both notifications
+      from step 8 will mark the input block ready for processing.
+   2. If events were queued as part of step 4(ii), but steps 5-8 take
+      longer than the timeout, the notifications from step 8 will be
+      ignored and step 10 will already have happened.
 8. If events were queued as part of step 4(ii) they are now either
    processed (if the input block was not cancelled and Gecko detected a
    scrollframe under the input event, or if the timeout expired) or

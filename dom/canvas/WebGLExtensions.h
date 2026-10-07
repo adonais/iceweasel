@@ -187,6 +187,12 @@ class WebGLExtensionProvokingVertex : public WebGLExtensionBase {
       : WebGLExtensionBase(webgl) {}
 };
 
+class WebGLExtensionPolygonOffsetClamp : public WebGLExtensionBase {
+ public:
+  explicit WebGLExtensionPolygonOffsetClamp(WebGLContext* webgl);
+  static bool IsSupported(const WebGLContext* webgl);
+};
+
 class WebGLExtensionSRGB : public WebGLExtensionBase {
  public:
   explicit WebGLExtensionSRGB(WebGLContext*);

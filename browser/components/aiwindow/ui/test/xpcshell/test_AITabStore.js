@@ -49,7 +49,11 @@ add_task(async function test_schema_version() {
     AITabStore.CURRENT_SCHEMA_VERSION,
     "Schema version matches the store's current version"
   );
-  Assert.equal(version, 1, "Initial schema version is 1");
+  Assert.equal(
+    version,
+    2,
+    "Schema version is 2 after the unique-index migration"
+  );
 });
 
 add_task(async function test_aitab_pages_columns() {
@@ -69,6 +73,42 @@ add_task(async function test_aitab_pages_columns() {
   Assert.ok(columns.conv_id.notNull, "conv_id is NOT NULL");
   Assert.ok(columns.slug.notNull, "slug is NOT NULL");
   Assert.ok(columns.title.notNull, "title is NOT NULL");
+});
+
+add_task(async function test_slug_version_index_is_unique() {
+  const indexes = await AITabStore.connection.execute(
+    "PRAGMA index_list(aitab_pages)"
+  );
+  const slugIndex = indexes.find(
+    row => row.getResultByName("name") == "idx_aitab_pages_slug_version"
+  );
+
+  Assert.ok(slugIndex, "The (slug, version) index exists");
+  Assert.equal(
+    slugIndex.getResultByName("unique"),
+    1,
+    "It is UNIQUE, so two conversations cannot claim the same slug"
+  );
+});
+
+add_task(async function test_a_slug_cannot_be_reused_by_another_tab() {
+  await AITabStore.create({
+    convId: "conv-slug-owner",
+    slug: "contested-slug",
+    title: "First claim",
+  });
+
+  // Both would be version 1, so the pair collides. Without the UNIQUE index
+  // this silently succeeded and left the slug pointing at two conversations.
+  await Assert.rejects(
+    AITabStore.create({
+      convId: "conv-slug-squatter",
+      slug: "contested-slug",
+      title: "Second claim",
+    }),
+    /UNIQUE|constraint/i,
+    "A second conversation cannot take a slug that is already in use"
+  );
 });
 
 add_task(async function test_create_inserts_first_version() {
@@ -234,4 +274,56 @@ add_task(async function test_get_by_slug_returns_latest() {
 
   const missing = await AITabStore.getBySlug("no-such-slug");
   Assert.equal(missing, null, "An unknown slug returns null");
+});
+
+add_task(async function test_delete_by_slug_removes_every_version() {
+  await AITabStore.create({
+    convId: "conv-delete",
+    slug: "delete-slug",
+    title: "V1",
+  });
+  await AITabStore.edit({
+    convId: "conv-delete",
+    slug: "delete-slug",
+    title: "V2",
+  });
+
+  await AITabStore.deleteBySlug("delete-slug");
+
+  Assert.deepEqual(
+    await AITabStore.getAITabPagesByConvId("conv-delete"),
+    [],
+    "Every version of the tab is gone"
+  );
+  Assert.equal(
+    await AITabStore.getBySlug("delete-slug"),
+    null,
+    "The slug no longer resolves, so the page cannot be resurrected"
+  );
+});
+
+add_task(async function test_delete_by_slug_is_scoped_to_one_tab() {
+  await AITabStore.create({
+    convId: "conv-target",
+    slug: "target-slug",
+    title: "Delete me",
+  });
+  await AITabStore.create({
+    convId: "conv-bystander",
+    slug: "bystander-slug",
+    title: "Keep me",
+  });
+
+  await AITabStore.deleteBySlug("target-slug");
+
+  Assert.equal(
+    await AITabStore.getBySlug("target-slug"),
+    null,
+    "The targeted tab is gone"
+  );
+  Assert.equal(
+    (await AITabStore.getBySlug("bystander-slug"))?.title,
+    "Keep me",
+    "A tab belonging to another conversation is left alone"
+  );
 });

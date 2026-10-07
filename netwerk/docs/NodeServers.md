@@ -658,6 +658,15 @@ await server.start(); // or await server.start(0);
 let port = server.port();
 ```
 
+Borrowing one of the HTTP/3 server's ports is no better: those are UDP ports, so
+nothing reserves them for TCP. A test that wants UDP on its port left unanswered
+rather than served can hold that side itself:
+
+```javascript
+await server.startWithNoResponseUdpPort();
+let port = server.port(); // TCP served, UDP never answers
+```
+
 ### Scope Issues in Handlers
 
 Remember that handlers run in the Node.js context, not the test context:

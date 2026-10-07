@@ -1,3 +1,4 @@
+# git-checkout: full
 %include build/sparse-profiles/mach
 
 [include]

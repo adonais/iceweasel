@@ -62,9 +62,9 @@ class SandboxInfo {
   uint32_t AsInteger() const { return mFlags; }
 
  private:
+  SandboxInfo();  // NOLINT(modernize-use-equals-delete)
   enum Flags mFlags;
   static const MOZ_EXPORT SandboxInfo sSingleton;
-  SandboxInfo();
 };
 
 }  // namespace mozilla

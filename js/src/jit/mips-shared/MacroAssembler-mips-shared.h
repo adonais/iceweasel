@@ -231,10 +231,14 @@ class MacroAssemblerMIPSShared : public Assembler {
 
   void outOfLineWasmTruncateToInt32Check(
       FloatRegister input, Register output, MIRType fromType, TruncFlags flags,
-      Label* rejoin, const wasm::TrapSiteDesc& trapSiteDesc);
+      Label* rejoin, const wasm::TrapSiteDesc& trapSiteDesc,
+      wasm::StackMap* stackMapForTraps,
+      wasm::StackMapRegistry* stackMapRegistry);
   void outOfLineWasmTruncateToInt64Check(
       FloatRegister input, Register64 output, MIRType fromType,
-      TruncFlags flags, Label* rejoin, const wasm::TrapSiteDesc& trapSiteDesc);
+      TruncFlags flags, Label* rejoin, const wasm::TrapSiteDesc& trapSiteDesc,
+      wasm::StackMap* stackMapForTraps,
+      wasm::StackMapRegistry* stackMapRegistry);
 
  protected:
   void wasmLoadImpl(const wasm::MemoryAccessDesc& access, Register memoryBase,

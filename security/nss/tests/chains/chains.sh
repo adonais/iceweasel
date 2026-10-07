@@ -89,7 +89,7 @@ kill_httpserv()
   echo "httpserv with PID ${PID} killed at `date`"
 
   rm ${HTTPPID}
-  html_detect_core "kill_httpserv core detection step"
+  html_detect_core_force "kill_httpserv core detection step"
 }
 
 ########################### start_httpserv #############################

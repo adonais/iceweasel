@@ -154,7 +154,7 @@ const char* XRE_GeckoProcessTypeToString(GeckoProcessType aProcessType) {
                            webidl_typename, allcaps_name)                     \
   case GeckoProcessType::GeckoProcessType_##enum_name:                        \
     return string_name;
-#include "mozilla/GeckoProcessTypes.h"
+#include "mozilla/GeckoProcessTypes.inc"
 #undef GECKO_PROCESS_TYPE
     default:
       return "invalid";

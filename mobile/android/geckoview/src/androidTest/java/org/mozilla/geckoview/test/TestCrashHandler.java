@@ -3,6 +3,9 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
@@ -118,25 +121,18 @@ public class TestCrashHandler extends Service {
         final String expectedProcessType,
         final String expectedRemoteType) {
       setEvalResult(null);
-      mReceiver.post(
-          new Runnable() {
-            @Override
-            public void run() {
-              final Bundle bundle = new Bundle();
-              bundle.putString(
-                  GeckoRuntime.EXTRA_CRASH_PROCESS_VISIBILITY, expectedProcessVisibility);
-              bundle.putString(GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE, expectedProcessType);
-              bundle.putString(GeckoRuntime.EXTRA_CRASH_REMOTE_TYPE, expectedRemoteType);
-              final Message msg = Message.obtain(null, MSG_EVAL_NEXT_CRASH_DUMP, bundle);
-              msg.replyTo = mMessenger;
+      final Bundle bundle = new Bundle();
+      bundle.putString(GeckoRuntime.EXTRA_CRASH_PROCESS_VISIBILITY, expectedProcessVisibility);
+      bundle.putString(GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE, expectedProcessType);
+      bundle.putString(GeckoRuntime.EXTRA_CRASH_REMOTE_TYPE, expectedRemoteType);
+      final Message msg = Message.obtain(null, MSG_EVAL_NEXT_CRASH_DUMP, bundle);
+      msg.replyTo = mMessenger;
 
-              try {
-                mService.send(msg);
-              } catch (final RemoteException e) {
-                throw new RuntimeException(e.getMessage());
-              }
-            }
-          });
+      try {
+        mService.send(msg);
+      } catch (final RemoteException e) {
+        throw new RuntimeException(e.getMessage());
+      }
     }
 
     public boolean connect(final long timeoutMillis) {
@@ -324,6 +320,16 @@ public class TestCrashHandler extends Service {
 
   @Override
   public synchronized int onStartCommand(final Intent intent, final int flags, final int startId) {
+    final NotificationManager manager = getSystemService(NotificationManager.class);
+    manager.createNotificationChannel(
+        new NotificationChannel(LOGTAG, LOGTAG, NotificationManager.IMPORTANCE_LOW));
+    startForeground(
+        1,
+        new Notification.Builder(this, LOGTAG)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(LOGTAG)
+            .build());
+
     if (mMsgHandler != null) {
       mMsgHandler.reportResult(evalCrashInfo(intent));
       // We must manually call stopSelf() here to ensure the Service gets killed once the client

@@ -42,29 +42,31 @@ dictionary WebTransportSendOptions {
 dictionary WebTransportSendStreamOptions : WebTransportSendOptions {
 };
 
-/* https://w3c.github.io/webtransport/#web-transport-stats */
+/* https://w3c.github.io/webtransport/#web-transport-connection-stats */
 
-dictionary WebTransportStats {
-  DOMHighResTimeStamp timestamp;
+dictionary WebTransportConnectionStats {
   unsigned long long bytesSent;
+  unsigned long long bytesSentOverhead;
+  unsigned long long bytesAcknowledged;
   unsigned long long packetsSent;
+  unsigned long long bytesLost;
   unsigned long long packetsLost;
-  unsigned long numOutgoingStreamsCreated;
-  unsigned long numIncomingStreamsCreated;
   unsigned long long bytesReceived;
   unsigned long long packetsReceived;
   DOMHighResTimeStamp smoothedRtt;
   DOMHighResTimeStamp rttVariation;
   DOMHighResTimeStamp minRtt;
-  WebTransportDatagramStats datagrams;
+  required WebTransportDatagramStats datagrams;
+  unsigned long long? estimatedSendRate = null;
+  boolean atSendCapacity = false;
 };
 
-/* https://w3c.github.io/webtransport/#web-transport-stats%E2%91%A0 */
+/* https://w3c.github.io/webtransport/#web-transport-datagram-stats */
 
 dictionary WebTransportDatagramStats {
-  DOMHighResTimeStamp timestamp;
-  unsigned long long expiredOutgoing;
   unsigned long long droppedIncoming;
+  unsigned long long expiredIncoming;
+  unsigned long long expiredOutgoing;
   unsigned long long lostOutgoing;
 };
 
@@ -76,7 +78,7 @@ interface WebTransport {
   constructor(USVString url, optional WebTransportOptions options = {});
 
   [NewObject]
-  Promise<WebTransportStats> getStats();
+  Promise<WebTransportConnectionStats> getStats();
   [NewObject]
   Promise<Uint8Array> exportKeyingMaterial(BufferSource label,
                                             optional BufferSource context);
@@ -105,6 +107,8 @@ interface WebTransport {
 
   [NewObject, Throws]
   WebTransportSendGroup createSendGroup();
+
+  static readonly attribute boolean supportsReliableOnly;
 };
 
 enum WebTransportReliabilityMode {

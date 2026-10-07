@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Use counter test for Sanitizer calls that change nothing</title>
+<style>
+  /* Sentinel use counter to signal that telemetry for this document has been captured */
+  div {
+    marker-mid: initial;
+  }
+</style>
+<div id="host"></div>
+<script>
+  const sanitizer = new Sanitizer();
+
+  // Asking for something the default configuration already does must not count
+  // as configuring that part of the configuration.
+  sanitizer.setComments(false);
+  sanitizer.setDataAttributes(false);
+  sanitizer.setJavascriptURLs(false);
+  sanitizer.removeElement("script");
+
+  // Reading the configuration must not count as configuring it either, even
+  // though it materializes the lazy default config.
+  sanitizer.get();
+
+  document.getElementById("host").setHTML("<p>noop</p>", { sanitizer });
+</script>

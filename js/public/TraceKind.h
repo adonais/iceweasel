@@ -262,7 +262,7 @@ void ApplyGCThingTyped(void* thing, JS::TraceKind traceKind, F&& f) {
   // This function doesn't do anything but is supplied for symmetry with other
   // MapGCThingTyped/ApplyGCThingTyped implementations that have to wrap the
   // functor to return a dummy value that is ignored.
-  MapGCThingTyped(thing, traceKind, std::move(f));
+  MapGCThingTyped(thing, traceKind, std::forward<F>(f));
 }
 
 }  // namespace JS

@@ -114,7 +114,7 @@ struct AspectRatio {
    *                                          use content box dimensions always.
    *
    * The return value is the content-box size on the ratio-dependent axis.
-   * Plese see the definition of the ratio-dependent axis and the
+   * Please see the definition of the ratio-dependent axis and the
    * ratio-determining axis in the spec:
    * https://drafts.csswg.org/css-sizing-4/#aspect-ratio
    */

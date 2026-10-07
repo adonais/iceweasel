@@ -51,6 +51,12 @@ build_gcc() {
   if [ -d $MOZ_FETCHES_DIR/sysroot ]; then
     EXTRA_CONFIGURE_FLAGS="--with-build-sysroot=$MOZ_FETCHES_DIR/sysroot"
     export CFLAGS_FOR_BUILD="--sysroot=$MOZ_FETCHES_DIR/sysroot"
+    # g++-mapper-server links against the build sysroot's libc, but the libcody
+    # it pulls in is compiled against the image's headers, which on glibc >= 2.38
+    # redirect strtoul to __isoc23_strtoul. Nothing uses the module mapper server.
+    if [ -d $root_dir/gcc-source/c++tools ]; then
+      EXTRA_CONFIGURE_FLAGS="$EXTRA_CONFIGURE_FLAGS --disable-c++-tools"
+    fi
   fi
   ../gcc-source/configure --prefix=${prefix-/tools/gcc} --build=x86_64-unknown-linux-gnu --target="${target}" --enable-languages=c,c++  --disable-nls --disable-gnu-unique-object --enable-__cxa_atexit --with-arch-32=pentiumpro --with-sysroot=/ $EXTRA_CONFIGURE_FLAGS
   make $make_flags

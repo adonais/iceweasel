@@ -4,6 +4,8 @@
 
 import { SUPPORTED_INPUT_TYPES } from "chrome://browser/content/aiwindow/modules/SmartFormFillConstants.mjs";
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
 const lazy = {};
 
 ChromeUtils.defineLazyGetter(lazy, "console", function () {
@@ -18,6 +20,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SmartFormFillUtils:
     "moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillUtils.sys.mjs",
 });
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "MIN_FORM_FIELDS",
+  "browser.smartwindow.smartformfill.minFormFields",
+  4
+);
 
 const INPUTS_SELECTOR = "input, textarea";
 
@@ -53,7 +62,13 @@ const MUTATION_OBSERVER_OPTIONS = {
 /**
  * @typedef {{
  *   id: string,
- *   fields: Array<{ id: string, edited: boolean, isEmpty: boolean }>,
+ *   fields: Array<{
+ *     id: string,
+ *     edited: boolean,
+ *     isEmpty: boolean,
+ *     filledLength: number,
+ *     finalLength: number,
+ *   }>,
  * }} FieldOutcomes The state the page saw for the fields one fill wrote to
  */
 
@@ -93,6 +108,7 @@ const MUTATION_OBSERVER_OPTIONS = {
  * @property {Array<FieldData>} fields Serializable fields belonging to the
  * focused form.
  * @property {Set<string>} emptyFieldIds IDs of fields that can be filled.
+ * @property {string} focusedFieldId ID of the field that has focus.
  */
 
 /**
@@ -220,10 +236,10 @@ export class SmartFormFillDocument {
 
   /**
    * The fields the latest fill wrote to, and whether the user has typed in them
-   * since. No filled value is kept: an input event is what tells a field the
-   * user edited from one they left alone.
+   * since. No filled value is kept, only its length: an input event is what
+   * tells a field the user edited from one they left alone.
    *
-   * @type {Map<string, { formId: string, edited: boolean }> | null}
+   * @type {Map<string, { formId: string, edited: boolean, length: number }> | null}
    */
   #filledFields;
 
@@ -382,7 +398,9 @@ export class SmartFormFillDocument {
   }
 
   /**
-   * Gets the focused form and its empty field IDs.
+   * Gets the focused form and its empty field IDs. Null when the focused
+   * field belongs to no tracked form, or to one that no longer has enough
+   * fields the user can edit for Smart Form Fill to handle it.
    *
    * @returns {FocusedForm | null}
    */
@@ -394,7 +412,11 @@ export class SmartFormFillDocument {
 
     const rootElement = lazy.FormLikeFactory.findRootForField(field);
     const group = this.#formRoots.get(rootElement);
-    if (!group?.formId || !group.fields.includes(field)) {
+    if (
+      !group?.formId ||
+      !group.fields.includes(field) ||
+      !this.#hasEnoughEditableFields(group)
+    ) {
       return null;
     }
 
@@ -417,6 +439,7 @@ export class SmartFormFillDocument {
       id: formData.id,
       fields: formData.fields,
       emptyFieldIds,
+      focusedFieldId: this.#getFieldId(field),
     };
   }
 
@@ -504,7 +527,11 @@ export class SmartFormFillDocument {
 
                 // Tracked after setUserInput, so the input event it dispatches is not
                 // mistaken for the user typing.
-                this.#filledFields.set(fieldId, { formId: id, edited: false });
+                this.#filledFields.set(fieldId, {
+                  formId: id,
+                  edited: false,
+                  length: value.length,
+                });
               }
             }
           }
@@ -654,7 +681,7 @@ export class SmartFormFillDocument {
 
     const statesByFormId = new Map();
 
-    for (const [fieldId, { formId, edited }] of this.#filledFields) {
+    for (const [fieldId, { formId, edited, length }] of this.#filledFields) {
       const field = this.#fieldsById.get(fieldId);
       if (!field || !matches(field)) {
         continue;
@@ -667,6 +694,8 @@ export class SmartFormFillDocument {
         id: fieldId,
         edited,
         isEmpty: field.value.trim() === "",
+        filledLength: length,
+        finalLength: field.value.length,
       });
 
       this.#filledFields.delete(fieldId);
@@ -700,6 +729,30 @@ export class SmartFormFillDocument {
   }
 
   /**
+   * Whether Smart Form Fill should offer to fill a field. Three things have to
+   * hold: the field is of a supported type, it is still empty, and it belongs
+   * to a form group Smart Form Fill handles.
+   *
+   * @param {HTMLElement} field
+   *
+   * @returns {boolean}
+   */
+  shouldOfferFill(field) {
+    if (!this.#isSupportedField(field) || !this.#isFillableField(field)) {
+      return false;
+    }
+
+    let group;
+    try {
+      group = this.#formRoots.get(lazy.FormLikeFactory.findRootForField(field));
+    } catch {
+      return false;
+    }
+
+    return !!group?.formId && this.#hasEnoughEditableFields(group);
+  }
+
+  /**
    * Serializes a form field for model requests.
    *
    * @param {SffFormField} formField
@@ -723,6 +776,7 @@ export class SmartFormFillDocument {
       textAfter: this.#utils.findNearbyText(field, false),
       ...(details?.fieldName && {
         localGuess: details.fieldName,
+        localSource: details.reason,
       }),
       ...(details?.confidence && {
         localConfidence: details.confidence,
@@ -842,6 +896,13 @@ export class SmartFormFillDocument {
    * @private
    */
   #isSupportedField(element) {
+    // A combobox input with no name is the widget's filter box rather than the
+    // value it submits, so filling it leaves the selection untouched. Sites
+    // that style a real <select> instead of rebuilding one are already out.
+    if (element?.closest?.('[role="combobox"]') && !element.name) {
+      return false;
+    }
+
     return (
       HTMLTextAreaElement.isInstance(element) ||
       (HTMLInputElement.isInstance(element) &&
@@ -867,6 +928,23 @@ export class SmartFormFillDocument {
   }
 
   /**
+   * Checks whether the user can currently edit a field.
+   *
+   * @param {SmartFormFillField} field
+   *
+   * @returns {boolean}
+   *
+   * @private
+   */
+  #isEditableField(field) {
+    return (
+      lazy.FormAutofillUtils.isFieldVisible(field) &&
+      !field.disabled &&
+      !field.readOnly
+    );
+  }
+
+  /**
    * Checks whether a field can currently be filled.
    *
    * @param {SmartFormFillField} field
@@ -876,12 +954,7 @@ export class SmartFormFillDocument {
    * @private
    */
   #isFillableField(field) {
-    return (
-      field.value === "" &&
-      lazy.FormAutofillUtils.isFieldVisible(field) &&
-      !field.disabled &&
-      !field.readOnly
-    );
+    return field.value === "" && this.#isEditableField(field);
   }
 
   /**
@@ -895,7 +968,11 @@ export class SmartFormFillDocument {
       this.#onMutation(mutations);
     });
 
-    this.#observeRoot(this.#doc.documentElement);
+    // Observed on the document rather than its element: a framework that
+    // hydrates the whole document can replace documentElement, which would
+    // strand the observer on a detached tree and stop Smart Form Fill from
+    // ever seeing the replacement fields.
+    this.#observeRoot(this.#doc);
   }
 
   /**
@@ -1004,8 +1081,56 @@ export class SmartFormFillDocument {
   }
 
   /**
-   * Reclassifies affected form groups, removes empty groups, and registers
-   * newly discovered groups.
+   * Check if a form group has the minimum number of fields of a type Smart
+   * Form Fill supports. Field types do not change, so this answer only goes
+   * stale when fields are added or removed, which is observed.
+   *
+   * @param {FormGroup} group
+   *
+   * @returns {boolean}
+   *
+   * @private
+   */
+  #hasEnoughSupportedFields(group) {
+    const supportedFieldCount = group.fields.reduce((count, field) => {
+      if (this.#isSupportedField(field)) {
+        count += 1;
+      }
+
+      return count;
+    }, 0);
+
+    return supportedFieldCount >= lazy.MIN_FORM_FIELDS;
+  }
+
+  /**
+   * Check if a form group still has the minimum number of fields the user can
+   * edit right now. Answered on demand rather than cached, because the CSS
+   * that hides a field changes without a mutation to observe.
+   *
+   * @param {FormGroup} group
+   *
+   * @returns {boolean}
+   *
+   * @private
+   */
+  #hasEnoughEditableFields(group) {
+    const editableFieldCount = group.fields.reduce((count, field) => {
+      if (this.#isSupportedField(field) && this.#isEditableField(field)) {
+        count += 1;
+      }
+
+      return count;
+    }, 0);
+
+    return editableFieldCount >= lazy.MIN_FORM_FIELDS;
+  }
+
+  /**
+   * Reclassifies affected form groups and registers the ones that meet the
+   * minimum field count. Groups that no longer meet it are unregistered, so
+   * nothing else in Smart Form Fill can reach them, but stay tracked until
+   * they are left without fields.
    *
    * @param {Map<HTMLElement, FormGroup>} affectedGroups
    *
@@ -1013,9 +1138,15 @@ export class SmartFormFillDocument {
    */
   #updateFormGroups(affectedGroups) {
     for (const affectedGroup of affectedGroups.values()) {
-      if (!affectedGroup.fields.length) {
-        this.#forms.delete(affectedGroup.formId);
-        this.#formRoots.delete(affectedGroup.formLike.rootElement);
+      if (!this.#hasEnoughSupportedFields(affectedGroup)) {
+        if (affectedGroup.formId) {
+          this.#forms.delete(affectedGroup.formId);
+          affectedGroup.formId = undefined;
+        }
+
+        if (!affectedGroup.fields.length) {
+          this.#formRoots.delete(affectedGroup.formLike.rootElement);
+        }
         continue;
       }
 

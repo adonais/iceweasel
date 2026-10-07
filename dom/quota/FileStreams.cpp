@@ -98,7 +98,29 @@ NS_IMETHODIMP FileQuotaStreamWithWrite<FileStreamBase>::Write(
   }
 
   QM_SCOPED_CONTEXT("FileStreamWriteFailure"_ns);
-  QM_TRY(MOZ_TO_RESULT(FileStreamBase::Write(aBuf, aCount, _retval)));
+
+  const auto resyncQuotaUsage = [this](const auto&) {
+    if (FileQuotaStreamWithWrite::mQuotaObject) {
+      // If the write failed, but MaybeUpdateSize above didn't fail, it means we
+      // updated the quota usage to a value we don't actually use, so let's
+      // force it back to the actual file size.
+      int64_t currentSize;
+      const nsresult getSizeRv = FileStreamBase::GetSize(&currentSize);
+      if (NS_SUCCEEDED(getSizeRv)) {
+        const bool res =
+            FileQuotaStreamWithWrite::mQuotaObject->MaybeUpdateSize(
+                currentSize,
+                /* aTruncate */ true);
+        QM_WARNONLY_TRY(OkIf(res));
+        MOZ_ASSERT(res);
+      } else {
+        QM_WARNONLY_TRY(MOZ_TO_RESULT(getSizeRv));
+      }
+    }
+  };
+
+  QM_TRY(MOZ_TO_RESULT(FileStreamBase::Write(aBuf, aCount, _retval)),
+         QM_PROPAGATE, resyncQuotaUsage);
 
   return NS_OK;
 }

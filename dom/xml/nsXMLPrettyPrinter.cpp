@@ -135,6 +135,7 @@ nsresult nsXMLPrettyPrinter::PrettyPrint(Document* aDocument,
   // Observe the document so we know when to switch to "normal" view
   aDocument->AddObserver(this);
   mDocument = aDocument;
+  mElement = do_GetWeakReference(rootElement);
 
   NS_ADDREF_THIS();
 
@@ -161,14 +162,14 @@ void nsXMLPrettyPrinter::MaybeUnhook(nsIContent* aContent) {
 
 void nsXMLPrettyPrinter::Unhook() {
   mDocument->RemoveObserver(this);
-  nsCOMPtr<Element> element = mDocument->GetDocumentElement();
+  nsCOMPtr<Element> element = do_QueryReferent(mElement);
 
   if (element) {
-    // Remove the shadow root
     element->UnattachShadow();
   }
 
   mDocument = nullptr;
+  mElement = nullptr;
 
   NS_RELEASE_THIS();
 }
@@ -199,6 +200,7 @@ void nsXMLPrettyPrinter::NodeWillBeDestroyed(nsINode* aNode) {
   MOZ_DIAGNOSTIC_ASSERT(mDocument == aNode);
   mDocument->RemoveMutationObserver(this);
   mDocument = nullptr;
+  mElement = nullptr;
   NS_RELEASE_THIS();
 }
 

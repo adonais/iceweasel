@@ -2,7 +2,7 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 const TEST_ROOT =
-  "http://mochi.test:8888/browser/browser/base/content/test/favicons/";
+  "http://mochi.test:8888/browser/browser/base/content/test/browser-favicons/";
 
 const PAGE_WITH_FAVICON = TEST_ROOT + "file_with_favicon.html";
 const FAVICON_ICO = TEST_ROOT + "file_generic_favicon.ico";

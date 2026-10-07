@@ -5,12 +5,15 @@
 use std::cmp;
 use std::collections::{hash_map, HashMap};
 use std::ffi;
+use std::mem;
 use std::path;
 use std::sync::{Arc, Condvar, Mutex, Weak};
+use std::thread;
 use std::time::{Duration, Instant};
 
 use bits::{
-    BackgroundCopyManager, BitsJob, BitsJobPriority, BitsProxyUsage, BG_S_PARTIAL_COMPLETE, E_FAIL,
+    is_bits_error, BackgroundCopyManager, BitsJob, BitsJobPriority, BitsJobState, BitsProxyUsage,
+    BG_S_PARTIAL_COMPLETE, E_FAIL,
 };
 use guid_win::Guid;
 
@@ -18,10 +21,12 @@ use bits_protocol::*;
 
 use super::Error;
 
+const BCM_CONNECT_TIMEOUT: Duration = Duration::from_secs(30);
+
 // This is a macro in order to use the NotFound and GetJob variants from whatever enum is in scope.
 macro_rules! get_job {
     ($bcm:ident, $guid:expr, $name:expr) => {{
-        $bcm = BackgroundCopyManager::connect().map_err(|e| {
+        $bcm = BackgroundCopyManager::connect_with_timeout(BCM_CONNECT_TIMEOUT).map_err(|e| {
             ConnectBcm(HResultMessage {
                 hr: e.code(),
                 message: e.to_string(),
@@ -43,6 +48,14 @@ fn format_error(bcm: &BackgroundCopyManager, error: comedy::HResult) -> HResultM
         } else {
             format!("{}", error)
         },
+    }
+}
+
+// The error that broke a kept connection is the one to report, the retry's is a consequence of it.
+fn with_retry_failure(first: HResultMessage, retry: HResultMessage) -> HResultMessage {
+    HResultMessage {
+        hr: first.hr,
+        message: format!("{} (retry failed: {})", first.message, retry.message),
     }
 }
 
@@ -106,12 +119,13 @@ impl InProcessClient {
         // If the job is dropped before `AddFile` succeeds, I think it automatically gets
         // deleted from the queue. There is only one fallible call after that (`Resume`).
 
-        let bcm = BackgroundCopyManager::connect().map_err(|e| {
-            ConnectBcm(HResultMessage {
-                hr: e.code(),
-                message: e.to_string(),
-            })
-        })?;
+        let bcm =
+            BackgroundCopyManager::connect_with_timeout(BCM_CONNECT_TIMEOUT).map_err(|e| {
+                ConnectBcm(HResultMessage {
+                    hr: e.code(),
+                    message: e.to_string(),
+                })
+            })?;
         let mut job = bcm
             .create_job(&self.job_name)
             .map_err(|e| Create(format_error(&bcm, e)))?;
@@ -305,6 +319,42 @@ pub struct InProcessMonitor {
     guid: Guid,
     last_status_time: Option<Instant>,
     last_url: Option<ffi::OsString>,
+    connection: Option<MonitorConnection>,
+}
+
+/// The BITS connection a monitor keeps between polls.
+///
+/// The proxy belongs to the multithreaded apartment, so it may travel with the monitor between
+/// threads, but it is only used through `&mut InProcessMonitor` on the thread that connected (see
+/// `is_current_thread`). Releasing a proxy from another apartment is not allowed, so a drop on a
+/// foreign thread leaks it instead. That happens if a monitor is torn down between two polls
+/// because the request was dropped mid-transfer at shutdown, and costs one proxy.
+struct MonitorConnection {
+    bcm: mem::ManuallyDrop<BackgroundCopyManager>,
+    thread: thread::ThreadId,
+}
+
+unsafe impl Send for MonitorConnection {}
+
+impl MonitorConnection {
+    fn new(bcm: BackgroundCopyManager) -> MonitorConnection {
+        MonitorConnection {
+            bcm: mem::ManuallyDrop::new(bcm),
+            thread: thread::current().id(),
+        }
+    }
+
+    fn is_current_thread(&self) -> bool {
+        self.thread == thread::current().id()
+    }
+}
+
+impl Drop for MonitorConnection {
+    fn drop(&mut self) {
+        if self.is_current_thread() {
+            unsafe { mem::ManuallyDrop::drop(&mut self.bcm) }
+        }
+    }
 }
 
 // The `Condvar` is notified when `InProcessMonitorVars` changes.
@@ -375,6 +425,7 @@ impl InProcessMonitor {
             vars,
             last_status_time: None,
             last_url: None,
+            connection: None,
         };
 
         Ok((monitor, control))
@@ -388,6 +439,12 @@ impl InProcessMonitor {
 
         let started = Instant::now();
         let timeout_end = started + timeout;
+
+        // Taken before waiting so that the early returns below release it on this thread.
+        let mut cached = self
+            .connection
+            .take()
+            .filter(MonitorConnection::is_current_thread);
 
         {
             let mut s = self.vars.1.lock().unwrap();
@@ -451,53 +508,95 @@ impl InProcessMonitor {
         // No error yet, start getting status now.
         self.last_status_time = Some(Instant::now());
 
-        let bcm = match BackgroundCopyManager::connect() {
-            Ok(bcm) => bcm,
-            Err(e) => {
-                // On any error, disconnect.
-                self.vars.1.lock().unwrap().shutdown = true;
+        let mut first_error: Option<HResultMessage> = None;
+        loop {
+            let reused = cached.is_some();
+            let connection = match cached.take() {
+                Some(connection) => connection,
+                None => match BackgroundCopyManager::connect_with_timeout(BCM_CONNECT_TIMEOUT) {
+                    Ok(bcm) => MonitorConnection::new(bcm),
+                    Err(e) => {
+                        // On any error, disconnect.
+                        self.vars.1.lock().unwrap().shutdown = true;
 
-                // Errors below can use the BCM to do `format_error()`, but this one just gets the
-                // basic `comedy::HResult` treatment.
-                return Ok(Err(HResultMessage {
-                    hr: e.code(),
-                    message: format!("{}", e),
-                }));
-            }
-        };
-
-        Ok((|| {
-            let mut job = bcm.get_job_by_guid(&self.guid)?;
-
-            let status = job.get_status()?;
-            let url = job.get_first_file()?.get_remote_name()?;
-
-            Ok(JobStatus {
-                state: status.state,
-                progress: status.progress,
-                error_count: status.error_count,
-                error: status.error.map(|e| JobError {
-                    context: e.context,
-                    context_str: e.context_str,
-                    error: HResultMessage {
-                        hr: e.error,
-                        message: e.error_str,
-                    },
-                }),
-                times: status.times,
-                url: if self.last_url.is_some() && *self.last_url.as_ref().unwrap() == url {
-                    None
-                } else {
-                    self.last_url = Some(url);
-                    self.last_url.clone()
+                        // Errors below can use the BCM to do `format_error()`, but this one just
+                        // gets the basic `comedy::HResult` treatment.
+                        let Some(first) = first_error else {
+                            return Err(Error::ConnectBcm(e));
+                        };
+                        return Ok(Err(with_retry_failure(
+                            first,
+                            HResultMessage {
+                                hr: e.code(),
+                                message: format!("{}", e),
+                            },
+                        )));
+                    }
                 },
-            })
-        })()
-        .map_err(|e| {
-            // On any error, disconnect.
-            self.vars.1.lock().unwrap().shutdown = true;
-            format_error(&bcm, e)
-        }))
+            };
+
+            match self.query_status(&connection.bcm) {
+                Ok(status) => {
+                    // Keep the connection for the next poll unless the job is finished, so that
+                    // the proxy is released here rather than wherever the monitor is eventually
+                    // dropped.
+                    match status.state {
+                        BitsJobState::Error
+                        | BitsJobState::Transferred
+                        | BitsJobState::Acknowledged
+                        | BitsJobState::Cancelled => {}
+                        _ => self.connection = Some(connection),
+                    }
+                    return Ok(Ok(status));
+                }
+                Err(e) => {
+                    let error = format_error(&connection.bcm, e);
+
+                    // A kept connection may be stale, for example after the BITS service was
+                    // restarted, so retry once on a fresh one before giving up. An error from
+                    // BITS itself is an answer that a fresh connection would only repeat.
+                    if reused && !is_bits_error(error.hr) {
+                        first_error = Some(error);
+                        continue;
+                    }
+
+                    // On any error, disconnect.
+                    self.vars.1.lock().unwrap().shutdown = true;
+                    return Ok(Err(match first_error {
+                        Some(first) => with_retry_failure(first, error),
+                        None => error,
+                    }));
+                }
+            }
+        }
+    }
+
+    fn query_status(&mut self, bcm: &BackgroundCopyManager) -> Result<JobStatus, comedy::HResult> {
+        let mut job = bcm.get_job_by_guid(&self.guid)?;
+
+        let status = job.get_status()?;
+        let url = job.get_first_file()?.get_remote_name()?;
+
+        Ok(JobStatus {
+            state: status.state,
+            progress: status.progress,
+            error_count: status.error_count,
+            error: status.error.map(|e| JobError {
+                context: e.context,
+                context_str: e.context_str,
+                error: HResultMessage {
+                    hr: e.error,
+                    message: e.error_str,
+                },
+            }),
+            times: status.times,
+            url: if self.last_url.is_some() && *self.last_url.as_ref().unwrap() == url {
+                None
+            } else {
+                self.last_url = Some(url);
+                self.last_url.clone()
+            },
+        })
     }
 }
 

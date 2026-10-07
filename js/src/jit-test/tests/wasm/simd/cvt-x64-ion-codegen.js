@@ -18,7 +18,7 @@ pand %xmm15, %xmm0`],
 xorps %xmm15, %xmm15
 maxps %xmm15, %xmm0`],
      ['f32x4.convert_i32x4_u', `
-pxor %xmm15, %xmm15
+xorps %xmm15, %xmm15
 pblendw \\$0x55, %xmm0, %xmm15
 psubd %xmm15, %xmm0
 cvtdq2ps %xmm15, %xmm15`]],

@@ -6,7 +6,7 @@ import time
 
 import requests
 
-from qm_try_analysis.logging import info
+from qm_try_analysis.logging import error, info
 
 TELEMETRY_BASE_URL = "https://sql.telemetry.mozilla.org/api/"
 
@@ -25,27 +25,30 @@ def query(key, query, p_params):
     poll = True
     status = 0
     qresultid = 0
+    job_error = None
     while poll:
         print(".", end="", flush=True)
         resp = requests.get(url=poll_url, headers=headers)
-        status = resp.json()["job"]["status"]
+        job = resp.json()["job"]
+        status = job["status"]
         if status > 2:
-            # print(resp.json())
             poll = False
-            qresultid = resp.json()["job"]["query_result_id"]
+            qresultid = job["query_result_id"]
+            job_error = job.get("error")
         else:
             time.sleep(0.2)
     print(".")
     info(f"Finished with status {status}")
 
     if status == 3:
-        results_url = TELEMETRY_BASE_URL + f"queries/78691/results/{qresultid}.json"
+        results_url = TELEMETRY_BASE_URL + f"queries/{query}/results/{qresultid}.json"
 
         info(f"Querying result from {results_url}")
         resp = requests.get(url=results_url, headers=headers)
         return resp.json()
 
-    return {"query_result": {"data": {"rows": {}}}}
+    error(f"Query {query} failed: {job_error}")
+    return {"query_result": {"data": {"rows": []}}}
 
 
 def getLastEventTimeAbs(rows):

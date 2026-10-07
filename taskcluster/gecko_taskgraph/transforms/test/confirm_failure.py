@@ -30,9 +30,6 @@ def test_confirm_failure_tasks(config, tasks):
             task["suite"].startswith(s)
             for s in ("mochitest", "reftest", "xpcshell", "web-platform")
         ):
-            env = config.params.get("try_task_config", {}) or {}
-            env = env.get("templates", {}).get("env", {})
-
             cftask = deepcopy(task)
 
             # when scheduled other settings will be made

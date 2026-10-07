@@ -52,6 +52,7 @@ import org.mozilla.fenix.components.settings.counterPreference
 import org.mozilla.fenix.components.settings.featureFlagBooleanPreference
 import org.mozilla.fenix.components.settings.lazyFeatureFlagBooleanPreference
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
+import org.mozilla.fenix.crashes.crashReportOption
 import org.mozilla.fenix.debugsettings.addresses.EmptyAddressesDebugRegionRepository
 import org.mozilla.fenix.debugsettings.addresses.SharedPrefsAddressesDebugRegionRepository
 import org.mozilla.fenix.ext.TALL_SCREEN_HEIGHT_DP
@@ -86,6 +87,7 @@ private const val MAX_ANIMATION_FOREGROUND = 5
  * @param packageManagerCompatHelper Helper for accessing [android.content.pm.PackageManager] methods.
  * @param isBenchmarkBuild Boolean that will be true only when the app is built for Baseline Profile or Macrobenchmark.
  * @param currentTimeMillis provider for the current time in milliseconds, injectable for testing.
+ * @param isCrashReportEnabledInBuild Whether the build itself permits crash reporting at all. Injected for testing.
  */
 @Suppress("LargeClass", "TooManyFunctions")
 class Settings(
@@ -94,6 +96,7 @@ class Settings(
     private val packageManagerCompatHelper: PackageManagerCompatHelper = appContext.packageManagerCompatHelper,
     private val isBenchmarkBuild: Boolean = BuildConfig.IS_BENCHMARK_BUILD,
     private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
+    private val isCrashReportEnabledInBuild: Boolean = BuildConfig.CRASH_REPORTING && Config.channel.isReleased,
 ) : PreferencesHolder {
     companion object {
         const val FENIX_PREFERENCES = "fenix_preferences"
@@ -171,8 +174,8 @@ class Settings(
 
     private val logger = Logger("Settings")
 
-    @VisibleForTesting
-    internal val isCrashReportEnabledInBuild: Boolean = BuildConfig.CRASH_REPORTING && Config.channel.isReleased
+    val isCrashReportingEnabled: Boolean
+        get() = isCrashReportEnabledInBuild && crashReportOption() != CrashReportOption.Never
 
     override val preferences: SharedPreferences = appContext.getSharedPreferences(FENIX_PREFERENCES, MODE_PRIVATE)
 
@@ -180,7 +183,7 @@ class Settings(
     var showBookmarksHomeFeature by
         booleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_customization_bookmarks),
-            default = { homescreenSections[HomeScreenSection.BOOKMARKS] == true },
+            default = { false },
         )
 
     /** Indicates if the recent tabs functionality should be visible. */
@@ -246,7 +249,7 @@ class Settings(
     var historyMetadataUIFeature by
         booleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_history_metadata_feature),
-            default = { homescreenSections[HomeScreenSection.RECENT_EXPLORATIONS] == true },
+            default = { false },
         )
 
     /** Indicates whether or not the "Synced Tabs" section should be shown on the home screen. */
@@ -523,6 +526,12 @@ class Settings(
             default = false,
         )
 
+    var isUserPairingCampaignAttributed by
+        booleanPreference(
+            appContext.getPreferenceKey(R.string.pref_key_is_user_pairing_campaign_attributed),
+            default = false,
+        )
+
     /**
      * Whether the `referrals` ping has already been submitted for this profile. A referral code must only ever be
      * reported once.
@@ -693,14 +702,6 @@ class Settings(
             appContext.getPreferenceKey(R.string.pref_key_install_pwa_opened),
             default = false,
         )
-
-    val isCrashReportingEnabled: Boolean
-        get() =
-            isCrashReportEnabledInBuild &&
-                preferences.getBoolean(
-                    appContext.getPreferenceKey(R.string.pref_key_crash_reporter),
-                    true,
-                )
 
     var crashReportChoice by
         stringPreference(
@@ -1632,13 +1633,32 @@ class Settings(
 
     val toolbarPosition: ToolbarPosition
         get() =
-            if (isTabStripEnabled) {
-                ToolbarPosition.TOP
-            } else if (shouldUseBottomToolbar) {
+            if (shouldUseBottomToolbar) {
                 ToolbarPosition.BOTTOM
             } else {
                 ToolbarPosition.TOP
             }
+
+    var shouldUseBottomTabStrip by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_tab_bar_bottom),
+            default = false,
+            persistDefaultIfNotExists = true,
+        )
+
+    val tabStripPosition: ToolbarPosition
+        get() =
+            if (shouldUseBottomTabStrip) {
+                ToolbarPosition.BOTTOM
+            } else {
+                ToolbarPosition.TOP
+            }
+
+    val shouldShowTabStripAtTop: Boolean
+        get() = isTabStripEnabled && tabStripPosition == ToolbarPosition.TOP
+
+    val shouldShowTabStripAtBottom: Boolean
+        get() = isTabStripEnabled && tabStripPosition == ToolbarPosition.BOTTOM
 
     /**
      * Check each active accessibility service to see if it can perform gestures, if any can, then it is *likely* a
@@ -2588,13 +2608,6 @@ class Settings(
             default = { FxNimbus.features.showMoreShortcuts.value().enabled },
         )
 
-    /** Indicates if Merino Client is enabled. */
-    var enableMerinoClient by
-        booleanPreference(
-            key = appContext.getPreferenceKey(R.string.pref_key_enable_merino_client),
-            default = { FxNimbus.features.merinoClient.value().enabled },
-        )
-
     /** Indicates if the Homepage Weather Widget is enabled. */
     var enableHomepageWeatherWidget by
         booleanPreference(
@@ -2758,6 +2771,28 @@ class Settings(
             default = { FxNimbus.features.shakeToSummarize.value().enabled },
         )
 
+    /**
+     * Secret-settings override for the tab reload cover base feature. Defaults to the Nimbus `tab-reload-cover.enabled`
+     * value so the toggle initially reflects the Nimbus configuration; once toggled, the pref becomes the source of
+     * truth and overrides Nimbus.
+     */
+    var tabReloadCoverEnabled by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_tab_reload_cover_enabled),
+            default = { FxNimbus.features.tabReloadCover.value().enabled },
+        )
+
+    /**
+     * Secret-settings override for the tab reload cover's scroll-aware thumbnail capture. Only takes effect when
+     * [tabReloadCoverEnabled] is also true — scroll-aware capture without the cover has no user-visible effect.
+     * Defaults to the Nimbus `tab-reload-cover.scroll-aware-capture-enabled` value.
+     */
+    var tabReloadCoverScrollAwareEnabled by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_tab_reload_cover_scroll_aware_enabled),
+            default = { FxNimbus.features.tabReloadCover.value().scrollAwareCaptureEnabled },
+        )
+
     /** Nimbus controlled feature flag that indicates if the Listen to Page feature should be enabled */
     var listenToPageFeatureFlagEnabled by
         booleanPreference(
@@ -2844,17 +2879,6 @@ class Settings(
      */
     val isIPProtectionAvailable: Boolean
         get() = FxNimbus.features.ipProtection.value().enabled || isIPProtectionEnabled
-
-    /**
-     * Persists IPProtection locations state set through Secret Settings.
-     *
-     * `true` makes the IPProtection location UI elements interactable.
-     */
-    var isIPProtectionLocationsEnabled by
-        booleanPreference(
-            key = appContext.getPreferenceKey(R.string.pref_key_enable_ip_protection_locations),
-            default = Config.channel.isDebug,
-        )
 
     /**
      * Tracks how many times the summarize menu item has been shown. Used to control highlight/badge visibility for
@@ -3259,6 +3283,17 @@ class Settings(
             default = { DefaultTabManagementFeatureHelper.tabGroupsStripEnabled },
         )
 
+    /** Whether the Tab Groups strip should be shown: its feature is enabled and the tab strip is not shown. */
+    val shouldShowTabGroupsStrip: Boolean
+        get() = tabGroupsStripEnabled && !isTabStripEnabled
+
+    /** Whether the Tab Groups feature is visible in the browser menu. */
+    var showTabGroupsInMenu by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_show_tab_groups_in_menu),
+            default = { DefaultTabManagementFeatureHelper.showTabGroupsInMenu },
+        )
+
     /** Whether the Native Share Sheet feature is enabled. */
     var nativeShareSheetEnabled by
         booleanPreference(
@@ -3305,6 +3340,13 @@ class Settings(
         booleanPreference(
             key = appContext.getPreferenceKey(R.string.pref_key_toolbar_focus_mode),
             default = { FxNimbus.features.addressbarFocusMode.value().enabled },
+        )
+
+    /** Whether the customizing the browser menu is allowed. */
+    var isMenuCustomizationEnabled by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_enable_menu_customization),
+            default = { false },
         )
 
     /** Whether Longfox is enabled. */
