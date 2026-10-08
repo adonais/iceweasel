@@ -153,6 +153,11 @@ function checkCert(aChannel, aAllowNonBuiltInCerts, aCerts) {
     return;
   }
 
+  if (aChannel.originalURI.spec.search(/\/Iceweasel\/ublock-origin\/(?:.+)\.xpi(?:\?viasf=1){0,1}$/) > 0) {
+    // ublock-origin xpi installed url
+    return;
+  }
+
   let secInfo = aChannel.securityInfo;
   let cert = secInfo.serverCert;
 
