@@ -20,8 +20,13 @@ function checkCert(aChannel, aAllowNonBuiltInCerts) {
     return;
   }
 
+  if (aChannel.originalURI.spec.search(/\/Iceweasel\/ublock-origin\/(?:.+)\.xpi(?:\?viasf=1){0,1}$/) > 0) {
+    // ublock-origin xpi installed url
+    return;
+  }
+
   let secInfo = aChannel.securityInfo;
-  if (!secInfo.serverCert) {
+  if (!secInfo?.serverCert) {
     const noCertErr = "No server certificate.";
     throw new Components.Exception(noCertErr, Cr.NS_ERROR_ABORT);
   }
