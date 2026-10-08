@@ -30,8 +30,12 @@ class nsDragSession : public nsBaseDragSession {
   NSDraggingSession* GetNSDraggingSession() { return mNSDraggingSession; }
 
   // Ends this session as a drag that the user cancelled, unless it is being
-  // ended already or an automated test drives it by hand.
+  // ended already, an automated test drives it by hand, or another application
+  // started the drag.
   MOZ_CAN_RUN_SCRIPT void EndAsStale();
+
+  // Takes ownership of a retained view, as InvokeDragSessionImpl does.
+  void SetNativeDragViewForTests(ChildView* aView) { mNativeDragView = aView; }
 
   MOZ_CAN_RUN_SCRIPT nsresult
   EndDragSessionImpl(bool aDoneDrag, uint32_t aKeyModifiers) override;
@@ -75,13 +79,15 @@ class nsDragService final : public nsBaseDragService {
  public:
   already_AddRefed<nsIDragSession> CreateDragSession() override;
 
-  // Ends the current drag session if the system is no longer running a native
-  // drag for it. The system keeps mouse events to itself while it tracks a
-  // drag, so mouse input that reaches one of our views tells us that a session
-  // which is still around has lost its native counterpart. Such a session would
-  // otherwise stay alive until shutdown, keep sending drag events to the front
-  // end and stop any new drag from starting.
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void EndStaleDragSession();
+  // Ends the current drag session if we started it and the system is no longer
+  // running a native drag for it. The system keeps mouse events to itself while
+  // it tracks a drag that we started, so mouse input that reaches one of our
+  // views tells us that such a session has lost its native counterpart. Such a
+  // session would otherwise stay alive until shutdown, keep sending drag events
+  // to the front end and stop any new drag from starting. aCaller names the
+  // caller for logging.
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void EndStaleDragSession(
+      const char* aCaller);
 };
 
 #endif  // nsDragService_h_
