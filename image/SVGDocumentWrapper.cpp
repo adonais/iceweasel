@@ -5,6 +5,7 @@
 
 #include "SVGDocumentWrapper.h"
 
+#include "mozilla/AutoRestore.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/SMILAnimationController.h"
 #include "mozilla/SVGObserverUtils.h"
@@ -178,6 +179,10 @@ void SVGDocumentWrapper::SetCurrentTime(float aTime) {
 }
 
 void SVGDocumentWrapper::TickRefreshDriver() {
+  // The tick flushes our document, so nested draws of it must be refused.
+  AutoRestore<bool> isDrawing(mIsDrawing);
+  mIsDrawing = true;
+
   if (RefPtr<PresShell> presShell = mViewer->GetPresShell()) {
     if (RefPtr<nsPresContext> presContext = presShell->GetPresContext()) {
       if (RefPtr<nsRefreshDriver> driver = presContext->RefreshDriver()) {

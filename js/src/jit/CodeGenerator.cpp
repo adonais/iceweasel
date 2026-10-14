@@ -5441,6 +5441,14 @@ void CodeGenerator::emitCallNative(LCallIns* call, JSNative native) {
   masm.move32(Imm32(call->mir()->numActualArgs()), argUintNReg);
   masm.moveStackPtrTo(argVpReg);
 
+  // Initialize |NativeExitFrameLayout::savedCallee_|.
+  if constexpr (std::is_same_v<LCallIns, LCallClassHook>) {
+    masm.Push(ToRegister(call->getCallee()));
+  } else {
+    masm.Push(ImmGCPtr(call->mir()->getSingleTarget()->rawNativeJSFunction()));
+  }
+
+  // Initialize |NativeExitFrameLayout::argc_|.
   masm.Push(argUintNReg);
 
   // Construct native exit frame.
@@ -5570,6 +5578,11 @@ void CodeGenerator::visitCallDOMNative(LCallDOMNative* call) {
   MOZ_ASSERT(target->hasJitInfo());
   MOZ_ASSERT(call->mir()->isCallDOMNative());
 
+  // CanAttachDOMCall only optimizes DOM calls for same-realm targets. This
+  // means that IonDOMMethod native exit frames don't need a copy of the callee.
+  // See NativeExitFrameLayout::savedCallee_.
+  MOZ_RELEASE_ASSERT(!call->mir()->maybeCrossRealm());
+
   int unusedStack = UnusedStackBytesForCall(call->mir()->paddedNumStackArgs());
 
   // Registers used for callWithABI() argument-passing.
@@ -5628,12 +5641,6 @@ void CodeGenerator::visitCallDOMNative(LCallDOMNative* call) {
   masm.Push(argObj);
   masm.moveStackPtrTo(argObj);
 
-  if (call->mir()->maybeCrossRealm()) {
-    // We use argJSContext as scratch register here.
-    masm.movePtr(ImmGCPtr(target->rawNativeJSFunction()), argJSContext);
-    masm.switchToObjectRealm(argJSContext, argJSContext);
-  }
-
   // Construct native exit frame.
   uint32_t safepointOffset = masm.buildFakeExitFrame(argJSContext);
   masm.loadJSContext(argJSContext);
@@ -5671,14 +5678,6 @@ void CodeGenerator::visitCallDOMNative(LCallDOMNative* call) {
     masm.loadValue(Address(masm.getStackPointer(),
                            IonDOMMethodExitFrameLayout::offsetOfResult()),
                    JSReturnOperand);
-  }
-
-  // Switch back to the current realm if needed. Note: if the DOM method threw
-  // an exception, the exception handler will do this.
-  if (call->mir()->maybeCrossRealm()) {
-    static_assert(!JSReturnOperand.aliases(ReturnReg),
-                  "Clobbering ReturnReg should not affect the return value");
-    masm.switchToRealm(gen->realm->realmPtr(), ReturnReg);
   }
 
   // Until C++ code is instrumented against Spectre, prevent speculative

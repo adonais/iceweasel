@@ -1332,7 +1332,6 @@ nsresult nsStandardURL::ReadSegment(nsIBinaryInputStream* stream,
 nsresult nsStandardURL::WriteSegment(nsIBinaryOutputStream* stream,
                                      const URLSegment& seg) {
   nsresult rv;
-
   rv = stream->Write32(seg.mPos);
   if (NS_FAILED(rv)) {
     return rv;
@@ -3635,6 +3634,15 @@ nsresult nsStandardURL::ReadPrivate(nsIObjectInputStream* stream) {
 
   NS_ENSURE_TRUE(CheckSegmentInvariants(), NS_ERROR_MALFORMED_URI);
 
+  if (StaticPrefs::network_ipc_reparse_deserialized_uri() &&
+      XRE_IsParentProcess()) {
+    nsAutoCString spec(mSpec);
+    rv = SetSpecInternal(spec);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+  }
+
   rv = CheckIfHostIsAscii();
   if (NS_FAILED(rv)) {
     return rv;
@@ -3944,6 +3952,13 @@ bool nsStandardURL::Deserialize(const URIParams& aParams) {
 
   if (!IsValid()) {
     return false;
+  }
+
+  if (StaticPrefs::network_ipc_reparse_deserialized_uri() &&
+      XRE_IsParentProcess()) {
+    if (NS_FAILED(SetSpecInternal(params.spec()))) {
+      return false;
+    }
   }
 
   clearOnExit.release();

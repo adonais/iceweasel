@@ -90,6 +90,13 @@ RefPtr<layers::ImageContainer> OffscreenCanvasDisplayHelper::GetImageContainer()
 bool OffscreenCanvasDisplayHelper::MayUpdateContext(WorkerPrivate* aWorker,
                                                     ErrorResult& aRv) {
   MutexAutoLock lock(mMutex);
+  // Allow context update on main thread to be more fault tolerant, whereas
+  // update on a worker needs to more strict in case of transfer.
+  if ((mCreatedOnMainThread && aWorker) || mCreatedOnWorker) {
+    aRv.ThrowInvalidStateError(
+        "Cannot update created context to different thread");
+    return false;
+  }
   if (!mOffscreenCanvas) {
     return true;
   }
@@ -119,6 +126,14 @@ void OffscreenCanvasDisplayHelper::UpdateContext(
   mContextChildId = aChildId;
   mImageContainer = std::move(imageContainer);
 
+  if (mOffscreenCanvas) {
+    if (mWorkerRef) {
+      mCreatedOnWorker = true;
+    } else {
+      mCreatedOnMainThread = true;
+    }
+  }
+
   if (aChildId) {
     mContextManagerId = Some(gfx::CanvasManagerChild::Get()->Id());
   } else {
@@ -126,6 +141,16 @@ void OffscreenCanvasDisplayHelper::UpdateContext(
   }
 
   MaybeQueueInvalidateElement();
+}
+
+already_AddRefed<OffscreenCanvas>
+OffscreenCanvasDisplayHelper::GetCanvasForWorker(WorkerPrivate* aWorker) {
+  MutexAutoLock lock(mMutex);
+  // A runnable queued to a worker somehow got assigned to another thread.
+  if (NS_WARN_IF(!mWorkerRef) || NS_WARN_IF(mWorkerRef->Private() != aWorker)) {
+    return nullptr;
+  }
+  return do_AddRef(mOffscreenCanvas);
 }
 
 void OffscreenCanvasDisplayHelper::FlushForDisplay() {
@@ -155,17 +180,14 @@ void OffscreenCanvasDisplayHelper::FlushForDisplay() {
                         OffscreenCanvasDisplayHelper* aDisplayHelper)
         : WorkerRunnable(aWorkerPrivate), mDisplayHelper(aDisplayHelper) {}
 
-    bool WorkerRun(JSContext*, WorkerPrivate*) override {
+    bool WorkerRun(JSContext*, WorkerPrivate* aWorkerPrivate) override {
       // The OffscreenCanvas can only be freed on the worker thread, so we
       // cannot be racing with an OffscreenCanvas::DestroyCanvas call and its
       // destructor. We just need to make sure we don't call into
       // OffscreenCanvas while holding the lock since it calls back into the
       // OffscreenCanvasDisplayHelper.
-      RefPtr<OffscreenCanvas> canvas;
-      {
-        MutexAutoLock lock(mDisplayHelper->mMutex);
-        canvas = mDisplayHelper->mOffscreenCanvas;
-      }
+      RefPtr<OffscreenCanvas> canvas =
+          mDisplayHelper->GetCanvasForWorker(aWorkerPrivate);
 
       if (canvas) {
         canvas->CommitFrameToCompositor();

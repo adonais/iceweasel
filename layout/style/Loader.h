@@ -60,8 +60,9 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
         mCORSMode(aKey->mCORSMode),
         mParsingMode(aKey->mParsingMode),
         mCompatMode(aKey->mCompatMode),
-        mSRIMetadata(aKey->mSRIMetadata),
-        mIsLinkRelPreload(aKey->mIsLinkRelPreload) {
+        mIsLinkRelPreload(aKey->mIsLinkRelPreload),
+        mLoadedAsImage(aKey->mLoadedAsImage),
+        mSRIMetadata(aKey->mSRIMetadata) {
     MOZ_COUNT_CTOR(SheetLoadDataHashKey);
   }
 
@@ -70,9 +71,9 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
                        nsIPrincipal* aPartitionPrincipal,
                        NotNull<const Encoding*> aEncodingGuess,
                        CORSMode aCORSMode, css::SheetParsingMode aParsingMode,
-                       nsCompatibility aCompatMode,
-                       const dom::SRIMetadata& aSRIMetadata,
-                       css::StylePreloadKind aPreloadKind)
+                       nsCompatibility aCompatMode, bool aLoadedAsImage,
+                       css::StylePreloadKind aPreloadKind,
+                       const dom::SRIMetadata& aSRIMetadata)
       : mURI(aURI),
         mPrincipal(aPrincipal),
         mLoaderPrincipal(aLoaderPrincipal),
@@ -81,8 +82,9 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
         mCORSMode(aCORSMode),
         mParsingMode(aParsingMode),
         mCompatMode(aCompatMode),
-        mSRIMetadata(aSRIMetadata),
-        mIsLinkRelPreload(IsLinkRelPreload(aPreloadKind)) {
+        mIsLinkRelPreload(IsLinkRelPreload(aPreloadKind)),
+        mLoadedAsImage(aLoadedAsImage),
+        mSRIMetadata(aSRIMetadata) {
     MOZ_ASSERT(aURI);
     MOZ_ASSERT(aPrincipal);
     MOZ_ASSERT(aLoaderPrincipal);
@@ -94,12 +96,13 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
         mPrincipal(std::move(toMove.mPrincipal)),
         mLoaderPrincipal(std::move(toMove.mLoaderPrincipal)),
         mPartitionPrincipal(std::move(toMove.mPartitionPrincipal)),
-        mEncodingGuess(std::move(toMove.mEncodingGuess)),
-        mCORSMode(std::move(toMove.mCORSMode)),
-        mParsingMode(std::move(toMove.mParsingMode)),
-        mCompatMode(std::move(toMove.mCompatMode)),
-        mSRIMetadata(std::move(toMove.mSRIMetadata)),
-        mIsLinkRelPreload(std::move(toMove.mIsLinkRelPreload)) {
+        mEncodingGuess(toMove.mEncodingGuess),
+        mCORSMode(toMove.mCORSMode),
+        mParsingMode(toMove.mParsingMode),
+        mCompatMode(toMove.mCompatMode),
+        mIsLinkRelPreload(toMove.mIsLinkRelPreload),
+        mLoadedAsImage(toMove.mLoadedAsImage),
+        mSRIMetadata(std::move(toMove.mSRIMetadata)) {
     MOZ_COUNT_CTOR(SheetLoadDataHashKey);
   }
 
@@ -148,8 +151,9 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
   const CORSMode mCORSMode;
   const css::SheetParsingMode mParsingMode;
   const nsCompatibility mCompatMode;
-  dom::SRIMetadata mSRIMetadata;
   const bool mIsLinkRelPreload;
+  const bool mLoadedAsImage;
+  dom::SRIMetadata mSRIMetadata;
 };
 
 namespace css {

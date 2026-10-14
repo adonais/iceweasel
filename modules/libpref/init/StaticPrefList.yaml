@@ -12087,6 +12087,13 @@
   value: 1048576
   mirror: always
 
+# Whether nsStandardURL::Deserialize should reparse the URL
+# it got from the content process
+- name: network.ipc.reparse_deserialized_uri
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+
 # DNS Trusted Recursive Resolver
 # 0 - default off, 1 - reserved/off, 2 - TRR first, 3 - TRR only,
 # 4 - reserved/off, 5 off by choice

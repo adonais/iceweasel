@@ -507,7 +507,8 @@ void SVGTextPathObserver::OnRenderingChange() {
   if (text) {
     text->AddStateBits(NS_STATE_SVG_POSITIONING_DIRTY);
 
-    if (text->HasAnyStateBits(NS_STATE_SVG_TEXT_IN_REFLOW)) {
+    if (text->HasAnyStateBits(NS_STATE_SVG_TEXT_IN_REFLOW |
+                              NS_STATE_SVG_TEXT_CORRESPONDENCE_DIRTY)) {
       return;
     }
 
@@ -548,7 +549,7 @@ void SVGMarkerObserver::OnRenderingChange() {
   // Because mRect for SVG frames includes the bounds of any markers
   // (see the comment for nsIFrame::GetRect), the referencing frame must be
   // reflowed for any marker changes.
-  if (!frame->HasAnyStateBits(NS_FRAME_IN_REFLOW)) {
+  if (!SVGUtils::OuterSVGIsCallingReflowSVG(frame)) {
     // XXXjwatt: We need to unify SVG into standard reflow so we can just use
     // nsChangeHint_NeedReflow | nsChangeHint_NeedDirtyReflow here.
     // XXXSDL KILL THIS!!!

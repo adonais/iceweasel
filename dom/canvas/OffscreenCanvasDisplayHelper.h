@@ -77,6 +77,7 @@ class OffscreenCanvasDisplayHelper final {
  private:
   ~OffscreenCanvasDisplayHelper();
   void MaybeQueueInvalidateElement() MOZ_REQUIRES(mMutex);
+  already_AddRefed<OffscreenCanvas> GetCanvasForWorker(WorkerPrivate* aWorker);
   void InvalidateElement();
 
   bool TransformSurface(const gfx::DataSourceSurface::ScopedMap& aSrcMap,
@@ -102,6 +103,8 @@ class OffscreenCanvasDisplayHelper final {
   bool mPendingInvalidate MOZ_GUARDED_BY(mMutex) = false;
   bool mIsWriteOnly MOZ_GUARDED_BY(mMutex) = false;
   RefPtr<nsIPrincipal> mExpandedReader MOZ_GUARDED_BY(mMutex);
+  bool mCreatedOnMainThread MOZ_GUARDED_BY(mMutex) = false;
+  bool mCreatedOnWorker MOZ_GUARDED_BY(mMutex) = false;
 };
 
 }  // namespace mozilla::dom

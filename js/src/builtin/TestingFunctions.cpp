@@ -2879,6 +2879,13 @@ static bool CaptureFirstSubsumedFrame(JSContext* cx, unsigned argc,
   return true;
 }
 
+static bool CallAfterSettingRval(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  args.rval().setUndefined();
+  return JS::Call(cx, UndefinedHandleValue, args.get(0),
+                  JS::HandleValueArray::empty(), args.rval());
+}
+
 static bool CallFunctionFromNativeFrame(JSContext* cx, unsigned argc,
                                         Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -8678,6 +8685,11 @@ static const JSFunctionSpecWithHelp TestingFunctions[] = {
 "  Capture a stack back to the first frame whose principals are subsumed by the\n"
 "  object's compartment's principals. If 'shouldIgnoreSelfHosted' is given,\n"
 "  control whether self-hosted frames are considered when checking principals."),
+
+    JS_FN_HELP("callAfterSettingRval", CallAfterSettingRval, 1, 0,
+"callAfterSettingRval(callback)",
+"  Set the return value to undefined, then call callback with no arguments\n"
+"  and return its result."),
 
     JS_FN_HELP("callFunctionFromNativeFrame", CallFunctionFromNativeFrame, 1, 0,
 "callFunctionFromNativeFrame(function)",
