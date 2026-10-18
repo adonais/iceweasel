@@ -13,7 +13,7 @@
     Text for the message of an auth dialog displayed by a web page.
     %1$s will be replaced by the hostname or a description of the protected area/site, %2$s will be replaced with the URL of the current page (displaying the dialog).
   -->
-  <string name="mozac_browser_engine_system_auth_message">%2$s កំពុងស្នើសុំឈ្មោះអ្នកប្រើប្រាស់ និងពាក្យសម្ងាត់របស់អ្នក។ គេហទំព័រនេះនិយាយថា៖ “%1$s”</string>
+  <string name="mozac_browser_engine_system_auth_message">%2$s កំពុងស្នើសុំអត្ថនាម និងពាក្យសម្ងាត់របស់អ្នក។ វេបសាយនេះនិយាយថា៖ “%1$s”</string>
   <!-- Text for the message of an auth dialog displayed by a web page. %1$s will be replaced with the URL of the current page (displaying the dialog). -->
-  <string name="mozac_browser_engine_system_auth_no_realm_message">%1$s កំពុងស្នើសុំឈ្មោះអ្នកប្រើប្រាស់ និងពាក្យសម្ងាត់របស់អ្នក។</string>
+  <string name="mozac_browser_engine_system_auth_no_realm_message">%1$s កំពុងស្នើសុំអត្ថនាម និងពាក្យសម្ងាត់របស់អ្នក។</string>
 </resources>

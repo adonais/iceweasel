@@ -69,6 +69,12 @@
   <string name="mozac_feature_prompts_before_unload_stay">នៅបន្ត</string>
   <!-- Leave button of the dialog shown when a user is leaving a website and there is still data not saved yet, this indicates that the user wants to leave in the website. -->
   <string name="mozac_feature_prompts_before_unload_leave">ចាកចេញ</string>
+  <!-- Message shown when a site wants to create a passkey for a related domain. %1$s is the requesting site, %2$s is the related domain the passkey is for. -->
+  <string name="webauthn_related_origin_create_message">%1$s ចង់បង្កើតសោរសម្ងាត់សម្រាប់ %2$s។</string>
+  <!-- Message shown when a site wants to use a passkey from a related domain. %1$s is the requesting site, %2$s is the related domain the passkey is for. -->
+  <string name="webauthn_related_origin_use_message">%1$s ចង់ប្រើសោសម្ងាត់សម្រាប់ %2$s។</string>
+  <!-- Continue button label for WebAuthn related origin prompt. -->
+  <string name="webauthn_continue">បន្ត</string>
   <!-- Title of the month chooser dialog. -->
   <string name="mozac_feature_prompts_set_month">ជ្រើសរើសមួយខែ</string>
   <!-- January (short description), used on the month chooser dialog. -->
@@ -166,6 +172,10 @@
   <string name="mozac_feature_prompts_collapse_address_content_description_2">ពង្រួមអាសយដ្ឋានដែលបានរក្សាទុក</string>
   <!-- Text for the manage addresses button. -->
   <string name="mozac_feature_prompts_manage_address">គ្រប់គ្រងអាសយដ្ឋាន</string>
+  <!-- Text for the title of a save address dialog. -->
+  <string name="mozac_feature_prompts_save_address_prompt_title">រក្សាទុកអាសយដ្ឋានដែរឬទេ?</string>
+  <!-- Text for the title of an update address dialog, shown when the address adds information to an already saved address. -->
+  <string name="mozac_feature_prompts_update_address_prompt_title">អាប់ដេតអាសយដ្ឋានដែរឬទេ?</string>
   <!--
     Federated Credential Management prompts
 

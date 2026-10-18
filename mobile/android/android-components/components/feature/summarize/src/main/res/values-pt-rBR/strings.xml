@@ -28,13 +28,13 @@
   <!-- Title for the download consent screen -->
   <string name="mozac_summarize_download_consent_title">Configurar resumos privativos</string>
   <!-- Message for the consent to download when using an on-device model. %s will be replaced by app name. -->
-  <string name="mozac_summarize_download_nano_consent_message">Um download único permite que o %s crie resumos de páginas que ficam sob seu controle.</string>
+  <string name="mozac_summarize_download_nano_consent_message">Um download único permite que o %s crie resumo de páginas que ficam sob seu controle.</string>
   <!-- Button text for the consent to download an on-device model approving download consent -->
   <string name="mozac_summarize_download_consent_button_positive">Baixar para resumir</string>
   <!-- Button text for the consent to download an on-device model denying download consent -->
   <string name="mozac_summarize_download_consent_button_negative">Cancelar</string>
   <!-- Title for the download in progress screen -->
-  <string name="mozac_summarize_download_progress_title">Configuração de resumos</string>
+  <string name="mozac_summarize_download_progress_title">Configuração de resumo</string>
   <!-- Message to describe that a download is in progress using an on-device, private model -->
   <string name="mozac_summarize_download_progress_message">Download único para resumos privativos.</string>
   <!-- Caption to describe the progress of the download. %1$.2f is bytes downloaded, %2$.2f is total bytes required for download to complete. -->
@@ -64,11 +64,11 @@
   <!-- Content description for the settings icon button in the summarized view -->
   <string name="mozac_summarize_settings_button_content_description">Configurações de resumo de página</string>
   <!-- Title for the settings screen shown in the summarization bottom sheet -->
-  <string name="mozac_summarize_settings_title">Resumos de páginas</string>
+  <string name="mozac_summarize_settings_title">Resumo de páginas</string>
   <!-- Label for the summarize pages toggle in settings -->
   <string name="mozac_summarize_settings_summarize_pages">Resumir páginas</string>
   <!-- Description for the summarize pages toggle -->
-  <string name="mozac_summarize_settings_summarize_pages_cloud">Crie resumos de páginas com inteligência artificial. As páginas e os resumos permanecem privativos e nunca são armazenados.</string>
+  <string name="mozac_summarize_settings_summarize_pages_cloud">Crie resumo de páginas com inteligência artificial. As páginas e os resumos permanecem privativos e nunca são armazenados.</string>
   <!-- Link text to learn more about page summaries in settings -->
   <string name="mozac_summarize_settings_learn_more">Saiba mais</string>
   <!-- Section header for gesture settings -->
@@ -102,7 +102,7 @@
   <!-- Accessibility state of the thumbs up or thumbs down button the user picked, announced when the rating is submitted and whenever that button is focused afterwards. Buttons the user did not pick have no state. -->
   <string name="mozac_feature_summarize_feedback_state_submitted">Avaliação enviada</string>
   <!-- Title for the page summary AI controllable feature -->
-  <string name="mozac_ai_controls_page_summary_title">Resumos de páginas</string>
+  <string name="mozac_ai_controls_page_summary_title">Resumo de páginas</string>
   <!-- Description for the page summary AI controllable feature -->
   <string name="mozac_ai_controls_page_summary_description">Páginas e resumos nunca são armazenados.</string>
   <!-- Button text for the Error dismiss button on Shake to Summarize -->

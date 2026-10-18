@@ -18,7 +18,7 @@
     username is saved (e.g. we only have a password). This text will be shown in place where otherwise
     the username would be displayed.
   -->
-  <string name="mozac_feature_autofill_popup_no_username">(គ្មានឈ្មោះអ្នកប្រើប្រាស់)</string>
+  <string name="mozac_feature_autofill_popup_no_username">(គ្មានអត្ថនាម)</string>
   <!--
     Autofill: Text shown in popup in third-party app to autofill the password for an account.
     %1$s will be replaced with the login/username of the account.

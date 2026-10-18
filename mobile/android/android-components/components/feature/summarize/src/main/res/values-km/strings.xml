@@ -7,10 +7,34 @@
 -->
 
 <resources>
+  <!-- Link text to learn more about downloading Gemini Nano -->
+  <string name="mozac_summarize_learn_more_link">ស្វែងយល់​បន្ថែម</string>
+  <!-- Title for the off-device shake summarization consent screen. Localization note: Asking if the user wants to use the shake gesture to summarize the page they are viewing. -->
+  <string name="mozac_summarize_shake_consent_off_device_title">សង្ខេបដោយអង្រួនដែរឬទេ?</string>
+  <!-- Button text for the off-device shake summarization consent screen approving shake consent. Localization note: "Continue" turns on the shake to summarize feature. -->
+  <string name="mozac_summarize_shake_consent_off_device_button_positive">បន្ត</string>
+  <!-- Button text for the off-device shake summarization consent screen denying shake consent. Localization note: "Not now" dismisses the request to turn on the shake to summarize feature. -->
+  <string name="mozac_summarize_shake_consent_off_device_negative_button">មិន​មែន​ឥឡូវ</string>
+  <!-- Title for the on-device shake summarization and download consent screen -->
+  <string name="mozac_summarize_shake_consent_on_device_title">សង្ខេបទំព័រនេះ</string>
+  <!-- Message for the on-device shake summarization and download consent screen. %s will be replaced by app name. -->
+  <string name="mozac_summarize_shake_consent_on_device_message">បន្ទាប់ពីដោនឡូដយ៉ាងរហ័ស %s នឹងសង្ខេបទំព័រនេះនៅពេលអ្នកអង្រួនឧបករណ៍របស់អ្នក។</string>
+  <!-- Button text for the on-device shake summarization and download consent screen approving shake and download consent -->
+  <string name="mozac_summarize_shake_consent_on_device_button_positive">ដោនឡូដ ដើម្បីសង្ខេប</string>
+  <!-- Button text for the on-device shake summarization and download consent screen denying shake and download consent -->
+  <string name="mozac_summarize_shake_consent_on_device_negative_button">មិន​មែន​ឥឡូវ</string>
+  <!-- Button text for the consent to download an on-device model approving download consent -->
+  <string name="mozac_summarize_download_consent_button_positive">ដោនឡូដ ដើម្បីសង្ខេប</string>
   <!-- Button text for the consent to download an on-device model denying download consent -->
   <string name="mozac_summarize_download_consent_button_negative">បោះបង់</string>
   <!-- Button text shown while a download is in progress to cancel the download -->
   <string name="mozac_summarize_download_progress_button_negative">បោះបង់</string>
   <!-- Button for the download error screen to cancel -->
   <string name="mozac_summarize_download_error_negative_button">បោះបង់</string>
+  <!-- Loading text displayed while a page summary is being generated -->
+  <string name="mozac_feature_summarize_loading_title">កំពុងសង្ខេប…</string>
+  <!-- Section header for gesture settings -->
+  <string name="mozac_summarize_settings_gestures">កាយវិការ</string>
+  <!-- Label for the shake to summarize toggle in settings -->
+  <string name="mozac_summarize_settings_shake_to_summarize">អង្រួន ដើម្បីសង្ខេប</string>
 </resources>

@@ -84,7 +84,7 @@
   <!-- The document title and heading of the error page shown when a website cannot be loaded because the browser is in offline mode. -->
   <string name="mozac_browser_errorpages_offline_title">Modo sin conexión</string>
   <!-- The error message shown when a website cannot be loaded because the browser is in offline mode. -->
-  <string name="mozac_browser_errorpages_offline_message"><![CDATA[<p>El navegador está operando en modo sin conexión y no puede conectarse con el elemento solicitado.</p>\n<ul>\n<li>¿Estás conectado el equipo a una red activa?</li>\n<li>Presiona \"Volver a intentarlo\" para pasar al modo con conexión y recargar la página.</li>\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_offline_message"><![CDATA[<p>El navegador está operando en modo sin conexión y no puede conectarse con el elemento solicitado.</p>\n<ul>\n<li>¿Está conectado el equipo a una red activa?</li>\n<li>Presiona “Volver a intentarlo” para pasar al modo con conexión y recargar la página.</li>\n</ul>]]></string>
   <!-- The document title and heading of the error page shown when the browser prevents loading a website on a restricted port. -->
   <string name="mozac_browser_errorpages_port_blocked_title">Puerto restringido por razones de seguridad</string>
   <!-- The error message shown when the browser prevents loading a website on a restricted port. -->
