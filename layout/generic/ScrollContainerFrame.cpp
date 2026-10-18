@@ -4820,8 +4820,8 @@ nsSize ScrollContainerFrame::GetVisualViewportSize() const {
 
 nsPoint ScrollContainerFrame::GetVisualViewportOffset() const {
   if (mIsRoot) {
-    auto* presShell = PresShell();
-    if (auto pendingUpdate = presShell->GetPendingVisualScrollUpdate()) {
+    auto* ps = PresShell();
+    if (auto pendingUpdate = ps->GetPendingVisualScrollUpdate()) {
       // The pending visual scroll update on the PresShell contains a raw,
       // unclamped offset (basically, whatever was passed to ScrollToVisual()).
       // It will be clamped on the APZ side, but if we use it as the
@@ -4831,7 +4831,9 @@ nsPoint ScrollContainerFrame::GetVisualViewportOffset() const {
       return GetScrollRangeForUserInputEvents().ClampPoint(
           pendingUpdate->mVisualScrollOffset);
     }
-    return presShell->GetVisualViewportOffset();
+    if (ps->IsVisualViewportOffsetSet()) {
+      return ps->GetVisualViewportOffset();
+    }
   }
   return GetScrollPosition();
 }
