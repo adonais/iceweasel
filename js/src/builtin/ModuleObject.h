@@ -441,9 +441,29 @@ class AsyncEvaluationOrder {
 //
 // TODO:
 // Bug 1968874 : Implement [[LoadedModules]] in Realm Records and Script Records
-using LoadedModuleMap =
-    GCHashMap<HeapPtr<JSObject*>, HeapPtr<ModuleObject*>,
-              StableCellHasher<HeapPtr<JSObject*>>, SystemAllocPolicy>;
+struct ModuleRequestHasher {
+  using Key = HeapPtr<JSObject*>;
+  using Lookup = JSObject*;
+
+  static HashNumber hash(const Lookup& l) {
+    auto& request = l->as<ModuleRequestObject>();
+    MOZ_ASSERT(request.moduleType() != JS::ModuleType::Unknown);
+    return mozilla::AddToHash(request.specifier()->hash(),
+                              static_cast<uint32_t>(request.moduleType()),
+                              static_cast<uint32_t>(request.phase()));
+  }
+
+  // https://tc39.es/ecma262/#sec-ModuleRequestsEqual
+  static bool match(const Key& k, const Lookup& l) {
+    auto& a = k->as<ModuleRequestObject>();
+    auto& b = l->as<ModuleRequestObject>();
+    return a.specifier() == b.specifier() && a.moduleType() == b.moduleType() &&
+           a.phase() == b.phase();
+  }
+};
+
+using LoadedModuleMap = GCHashMap<HeapPtr<JSObject*>, HeapPtr<ModuleObject*>,
+                                  ModuleRequestHasher, SystemAllocPolicy>;
 
 // Currently, the ModuleObject class is used to represent both the Source Text
 // Module Record and the Synthetic Module Record. Ideally, this is something
