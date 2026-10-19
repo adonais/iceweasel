@@ -171,6 +171,8 @@ JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
   cx->check(referrer, moduleRequest, payload, result);
 
   MOZ_ASSERT(moduleRequest->is<ModuleRequestObject>());
+  MOZ_ASSERT(moduleRequest->as<ModuleRequestObject>().moduleType() !=
+             JS::ModuleType::Unknown);
   MOZ_ASSERT(result);
   Rooted<ModuleObject*> module(cx, &result->as<ModuleObject>());
 

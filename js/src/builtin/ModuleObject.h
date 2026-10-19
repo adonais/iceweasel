@@ -447,7 +447,6 @@ struct ModuleRequestHasher {
 
   static HashNumber hash(const Lookup& l) {
     auto& request = l->as<ModuleRequestObject>();
-    MOZ_ASSERT(request.moduleType() != JS::ModuleType::Unknown);
     return mozilla::AddToHash(request.specifier()->hash(),
                               static_cast<uint32_t>(request.moduleType()),
                               static_cast<uint32_t>(request.phase()));
