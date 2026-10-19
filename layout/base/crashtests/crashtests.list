@@ -572,3 +572,5 @@ load 1797995.html
 pref(layout.accessiblecaret.enabled,true) load 1818036.html
 pref(layout.accessiblecaret.enabled,true) load 1819239.html
 load 1821469.html
+HTTP load repeated-counter-marker.html
+load repeated-generated-content.html

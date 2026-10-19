@@ -1007,7 +1007,21 @@ nsresult EventListenerManager::SetEventHandler(nsAtom* aName,
                                                aPermitUntrustedEvents);
 
   if (!aDeferCompilation) {
-    return CompileEventHandlerInternal(listener, &aBody, aElement);
+    if (nsContentUtils::IsSafeToRunScript()) {
+      return CompileEventHandlerInternal(listener, &aBody, aElement);
+    }
+    // Scripts are blocked (e.g. inside CloneAndAdopt or AfterSetAttr).
+    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+        "EventListenerManager::DeferredCompileEventHandler",
+        [self = RefPtr{this}, typeAtom = RefPtr{aName}, body = nsString(aBody),
+         element = RefPtr{aElement}]() {
+          EventMessage eventMessage = self->GetEventMessage(typeAtom);
+          Listener* listener = self->FindEventHandler(eventMessage, typeAtom);
+          if (listener && listener->mHandlerIsString) {
+            self->CompileEventHandlerInternal(listener, &body,
+                                              element);
+          }
+        }));
   }
 
   return NS_OK;

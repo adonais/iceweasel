@@ -215,10 +215,10 @@ class ExternalRunnableWrapper final : public WorkerRunnable {
     nsresult rv = WorkerRunnable::Cancel();
     NS_ENSURE_SUCCESS(rv, rv);
 
-    nsCOMPtr<nsIDiscardableRunnable> doomed =
-        do_QueryInterface(mWrappedRunnable);
-    MOZ_ASSERT(doomed);  // We checked this earlier!
-    doomed->OnDiscard();
+    if (nsCOMPtr<nsIDiscardableRunnable> doomed =
+            do_QueryInterface(mWrappedRunnable)) {
+      doomed->OnDiscard();
+    }
     mWrappedRunnable = nullptr;
     return NS_OK;
   }
@@ -1713,13 +1713,6 @@ already_AddRefed<WorkerRunnable> WorkerPrivate::MaybeWrapAsWorkerRunnable(
       WorkerRunnable::FromRunnable(runnable);
   if (workerRunnable) {
     return workerRunnable.forget();
-  }
-
-  nsCOMPtr<nsIDiscardableRunnable> maybe = do_QueryInterface(runnable);
-  if (!maybe) {
-    MOZ_CRASH(
-        "All runnables destined for a worker thread must be "
-        "nsIDiscardableRunnable!");
   }
 
   workerRunnable = new ExternalRunnableWrapper(this, runnable);

@@ -73,9 +73,9 @@ ImageListener::~ImageListener() = default;
 
 NS_IMETHODIMP
 ImageListener::OnStartRequest(nsIRequest* request) {
-  NS_ENSURE_TRUE(mDocument, NS_ERROR_FAILURE);
+  RefPtr<ImageDocument> imgDoc = static_cast<ImageDocument*>(mDocument.get());
+  NS_ENSURE_TRUE(imgDoc, NS_ERROR_FAILURE);
 
-  ImageDocument* imgDoc = static_cast<ImageDocument*>(mDocument.get());
   nsCOMPtr<nsIChannel> channel = do_QueryInterface(request);
   if (!channel) {
     return NS_ERROR_FAILURE;
@@ -416,7 +416,7 @@ void ImageDocument::OnHasTransparency() {
 }
 
 void ImageDocument::SetModeClass(eModeClasses mode) {
-  nsDOMTokenList* classList = mImageContent->ClassList();
+  RefPtr<nsDOMTokenList> classList = mImageContent->ClassList();
 
   if (mode == eShrinkToFit) {
     classList->Add(u"shrinkToFit"_ns, IgnoreErrors());
@@ -744,7 +744,7 @@ float ImageDocument::GetZoomLevel() {
 }
 
 void ImageDocument::CheckFullZoom() {
-  nsDOMTokenList* classList =
+  RefPtr<nsDOMTokenList> classList =
       mImageContent ? mImageContent->ClassList() : nullptr;
 
   if (!classList) {

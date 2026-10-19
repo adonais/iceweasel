@@ -12732,6 +12732,13 @@
   value: 10
   mirror: always
 
+# Validate that the principal used to bind child-written alt-data could have
+# been loaded by the content process that wrote it.
+- name: network.cache.alt_data.validate_binding_principal
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+
 # This is used for a temporary workaround for a web-compat issue. If pref is
 # true CORS preflight requests are allowed to send client certificates.
 - name: network.cors_preflight.allow_client_cert

@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/SVGSwitchElement.h"
 
+#include "mozAutoDocUpdate.h"
 #include "nsLayoutUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SVGUtils.h"
@@ -73,6 +74,7 @@ NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGSwitchElement)
 void SVGSwitchElement::InsertChildBefore(nsIContent* aKid,
                                          nsIContent* aBeforeThis, bool aNotify,
                                          ErrorResult& aRv) {
+  mozAutoDocUpdate updateBatch(GetComposedDoc(), aNotify);
   SVGSwitchElementBase::InsertChildBefore(aKid, aBeforeThis, aNotify, aRv);
   if (aRv.Failed()) {
     return;
@@ -82,6 +84,7 @@ void SVGSwitchElement::InsertChildBefore(nsIContent* aKid,
 }
 
 void SVGSwitchElement::RemoveChildNode(nsIContent* aKid, bool aNotify) {
+  mozAutoDocUpdate updateBatch(GetComposedDoc(), aNotify);
   SVGSwitchElementBase::RemoveChildNode(aKid, aNotify);
   MaybeInvalidate();
 }

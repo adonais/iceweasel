@@ -2315,6 +2315,13 @@ class nsIFrame : public nsQueryFrame {
    */
   bool IsPrimaryFrame() const { return mIsPrimaryFrame; }
 
+  /**
+   * Return true if this frame is in a fixed-pos subtree that is replicated
+   * across pages (see nsCSSFrameConstructor::ReplicateFixedFrames), either as
+   * the original or as one of the copies.
+   */
+  bool IsInReplicatedFixedPosTree() const;
+
   void SetIsPrimaryFrame(bool aIsPrimary) {
     mIsPrimaryFrame = aIsPrimary;
     if (aIsPrimary) {

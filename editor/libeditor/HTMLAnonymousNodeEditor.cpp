@@ -146,8 +146,12 @@ ManualNACPtr HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
     return nullptr;
   }
 
-  if (NS_WARN_IF(!GetDocument())) {
-    return nullptr;
+  {
+    Document* const doc = GetDocument();
+    if (NS_WARN_IF(!doc) ||
+        NS_WARN_IF(aParentContent.GetComposedDoc() != doc)) {
+      return nullptr;
+    }
   }
 
   RefPtr<PresShell> presShell = GetPresShell();
@@ -529,6 +533,9 @@ nsresult HTMLEditor::GetPositionAndDimensions(Element& aElement, int32_t& aX,
     if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
+    if (NS_WARN_IF(aElement.OwnerDoc() != GetDocument())) {
+      return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+    }
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                          "CSSEditUtils::GetComputedProperty(nsGkAtoms::"
                          "position) failed, but ignored");
@@ -542,6 +549,12 @@ nsresult HTMLEditor::GetPositionAndDimensions(Element& aElement, int32_t& aX,
     // Get the all the computed css styles attached to the element node
     RefPtr<nsComputedDOMStyle> computedDOMStyle =
         CSSEditUtils::GetComputedStyle(&aElement);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    if (NS_WARN_IF(aElement.OwnerDoc() != GetDocument())) {
+      return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+    }
     if (NS_WARN_IF(!computedDOMStyle)) {
       return NS_ERROR_FAILURE;
     }
@@ -560,7 +573,7 @@ nsresult HTMLEditor::GetPositionAndDimensions(Element& aElement, int32_t& aX,
     mResizedObjectIsAbsolutelyPositioned = false;
     RefPtr<nsGenericHTMLElement> htmlElement =
         nsGenericHTMLElement::FromNode(aElement);
-    if (!htmlElement) {
+    if (NS_WARN_IF(!htmlElement)) {
       return NS_ERROR_NULL_POINTER;
     }
     DebugOnly<nsresult> rvIgnored = GetElementOrigin(aElement, aX, aY);

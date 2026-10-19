@@ -1123,6 +1123,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
           mSuppressWhiteSpaceOptimizations(aSuppressWhiteSpaceOptimizations),
           mIsText(false),
           mIsGeneratedContent(false),
+          mIsSharedGeneratedContent(false),
           mIsAllInline(false),
           mIsBlock(false),
           mIsPopup(false),
@@ -1138,7 +1139,9 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     void Delete(nsCSSFrameConstructor* aFCtor) {
       mChildItems.Destroy(aFCtor);
       if (mIsGeneratedContent) {
-        mContent->UnbindFromTree();
+        if (!mIsSharedGeneratedContent) {
+          mContent->UnbindFromTree();
+        }
         NS_RELEASE(mContent);
       }
       this->~FrameConstructionItem();
@@ -1183,6 +1186,10 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     // Whether this is a generated content container.
     // If it is, mContent is a strong pointer.
     bool mIsGeneratedContent : 1;
+    // Whether this is a generated content container shared with the primary
+    // frame (see nsFrameConstructorState::mCreatingExtraFrames), and thus must
+    // not be unbound by us.
+    bool mIsSharedGeneratedContent : 1;
     // Whether construction from this item will create only frames that are
     // IsInlineOutside() in the principal child list.  This is not precise, but
     // conservative: if true the frames will really be inline, whereas if false

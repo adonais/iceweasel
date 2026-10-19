@@ -22,6 +22,7 @@
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerLabels.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
@@ -1188,6 +1189,11 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
     mCacheEntry = do_QueryInterface(cacheEntry);
     args.cacheEntryAvailable() = static_cast<bool>(mCacheEntry);
 
+    // Capture the load's principal origin now, while the channel is alive, to
+    // bind any alt-data written later (after the channel may have been
+    // cleared).
+    UpdateAltDataBindingOrigin(chan);
+
     httpChannelImpl->GetCacheKey(&args.cacheKey());
     httpChannelImpl->GetAlternativeDataType(args.altDataType());
   }
@@ -1895,6 +1901,52 @@ HttpChannelParent::CompleteRedirect(nsresult status) {
   return NS_OK;
 }
 
+void HttpChannelParent::UpdateAltDataBindingOrigin(HttpBaseChannel* aChannel) {
+  mAltDataBindingOrigin.Truncate();
+
+  nsIPrincipal* principal = aChannel->GetAltDataBindingPrincipal();
+  if (!principal) {
+    return;
+  }
+
+  if (StaticPrefs::network_cache_alt_data_validate_binding_principal()) {
+    // Once IPC is closed the managers may already be gone, and no content
+    // process is left to write alt-data anyway.
+    ContentParent* cp = nullptr;
+    if (!mIPCClosed && Manager() && Manager()->Manager()) {
+      cp = static_cast<ContentParent*>(Manager()->Manager());
+    }
+    if (!cp || !cp->ValidatePrincipal(
+                   principal,
+                   {ContentParent::ValidatePrincipalOptions::AllowSystem})) {
+      LOG(
+          ("HttpChannelParent::UpdateAltDataBindingOrigin [this=%p] principal "
+           "not valid for the content process",
+           this));
+      return;
+    }
+  }
+
+  principal->GetOrigin(mAltDataBindingOrigin);
+}
+
+// Records, atomically with the alt-data write, the origin of the principal
+// that produced the alt-data.
+static void RecordAltDataPrincipal(nsICacheEntry* aCacheEntry,
+                                   const nsACString& aOrigin) {
+  if (!aCacheEntry) {
+    return;
+  }
+  if (aOrigin.IsEmpty()) {
+    // Fail closed: without a known principal, clear any binding so that reads
+    // reject this alt-data.
+    aCacheEntry->SetMetaDataElement("alt-data-principal", nullptr);
+  } else {
+    aCacheEntry->SetMetaDataElement("alt-data-principal",
+                                    PromiseFlatCString(aOrigin).get());
+  }
+}
+
 nsresult HttpChannelParent::OpenAlternativeOutputStream(
     const nsACString& type, int64_t predictedSize,
     nsIAsyncOutputStream** _retval) {
@@ -1907,6 +1959,7 @@ nsresult HttpChannelParent::OpenAlternativeOutputStream(
       mCacheEntry->OpenAlternativeOutputStream(type, predictedSize, _retval);
   if (NS_SUCCEEDED(rv)) {
     mCacheEntry->SetMetaDataElement("alt-data-from-child", "1");
+    RecordAltDataPrincipal(mCacheEntry, mAltDataBindingOrigin);
   }
   return rv;
 }

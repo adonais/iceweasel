@@ -106,28 +106,28 @@ gfxSVGGlyphsDocument* gfxSVGGlyphs::FindOrCreateGlyphsDocument(
     return nullptr;
   }
 
-  return mGlyphDocs.WithEntryHandle(
-      entry->mDocOffset, [&](auto&& glyphDocsEntry) -> gfxSVGGlyphsDocument* {
-        if (!glyphDocsEntry) {
-          unsigned int length;
-          const uint8_t* data =
-              (const uint8_t*)hb_blob_get_data(mSVGData, &length);
-          if (entry->mDocOffset > 0 && uint64_t(mHeader->mDocIndexOffset) +
-                                               entry->mDocOffset +
-                                               entry->mDocLength <=
-                                           length) {
-            return glyphDocsEntry
-                .Insert(MakeUnique<gfxSVGGlyphsDocument>(
-                    data + mHeader->mDocIndexOffset + entry->mDocOffset,
-                    entry->mDocLength, this))
-                .get();
-          }
+  // Do not hold an EntryHandle on mGlyphDocs while constructing the
+  // gfxSVGGlyphsDocument: its SetupPresentation() flushes layout and may
+  // re-enter font code, which could mutate our hashtables and invalidate the
+  // handle.
+  if (auto existing = mGlyphDocs.Lookup(entry->mDocOffset)) {
+    return existing.Data().get();
+  }
 
-          return nullptr;
-        }
+  unsigned int length;
+  const uint8_t* data = (const uint8_t*)hb_blob_get_data(mSVGData, &length);
+  if (entry->mDocOffset > 0 && uint64_t(mHeader->mDocIndexOffset) +
+                                       entry->mDocOffset + entry->mDocLength <=
+                                   length) {
+    auto doc = MakeUnique<gfxSVGGlyphsDocument>(
+        data + mHeader->mDocIndexOffset + entry->mDocOffset, entry->mDocLength,
+        this);
+    // Similarly to the Lookup() call above, if we've already created a separate
+    // document, keep it rather than overriding it.
+    return mGlyphDocs.LookupOrInsert(entry->mDocOffset, std::move(doc)).get();
+  }
 
-        return glyphDocsEntry->get();
-      });
+  return nullptr;
 }
 
 nsresult gfxSVGGlyphsDocument::SetupPresentation() {
@@ -233,13 +233,19 @@ bool gfxSVGGlyphs::GetGlyphExtents(uint32_t aGlyphId,
 }
 
 Element* gfxSVGGlyphs::GetGlyphElement(uint32_t aGlyphId) {
-  return mGlyphIdMap.LookupOrInsertWith(aGlyphId, [&] {
-    Element* elem = nullptr;
-    if (gfxSVGGlyphsDocument* set = FindOrCreateGlyphsDocument(aGlyphId)) {
-      elem = set->GetGlyphElement(aGlyphId);
-    }
-    return elem;
-  });
+  // Do not hold an EntryHandle on mGlyphIdMap across
+  // FindOrCreateGlyphsDocument: creating the glyphs document flushes layout
+  // and may recursively enter this method, mutating mGlyphIdMap and
+  // invalidating the handle.
+  if (auto existing = mGlyphIdMap.Lookup(aGlyphId)) {
+    return existing.Data();
+  }
+  Element* elem = nullptr;
+  if (gfxSVGGlyphsDocument* set = FindOrCreateGlyphsDocument(aGlyphId)) {
+    elem = set->GetGlyphElement(aGlyphId);
+  }
+  mGlyphIdMap.InsertOrUpdate(aGlyphId, elem);
+  return elem;
 }
 
 bool gfxSVGGlyphs::HasSVGGlyph(uint32_t aGlyphId) {

@@ -34,7 +34,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(ElementInternals)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTarget, mSubmissionValue, mState,
-                                    mValidity, mValidationAnchor);
+                                    mValidity, mValidationAnchor, mForm);
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(ElementInternals)
@@ -48,7 +48,6 @@ NS_INTERFACE_MAP_END
 ElementInternals::ElementInternals(HTMLElement* aTarget)
     : nsIFormControl(FormControlType::FormAssociatedCustomElement),
       mTarget(aTarget),
-      mForm(nullptr),
       mFieldSet(nullptr) {}
 
 nsISupports* ElementInternals::GetParentObject() { return ToSupports(mTarget); }
