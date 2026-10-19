@@ -40,6 +40,21 @@ add_task(async function() {
     result: Cr.NS_ERROR_FILE_NOT_FOUND,
   });
 
+  // A failed import must not leave its already-queued siblings stuck.
+  testFailure("resource://test/es6module_valid_then_missing_import.js", {
+    type: "Error",
+    message: "Failed to load resource://test/es6module_not_found3.js",
+    fileName: "test_import_es6_modules.js",
+    stack: "testFailure",
+    lineNumber: "*",
+    columnNumber: "*",
+    result: Cr.NS_ERROR_FILE_NOT_FOUND,
+  });
+  let target = ChromeUtils.importESModule(
+    "resource://test/es6module_valid_import_target.js"
+  );
+  Assert.equal(target.loadCount, 1);
+
   // Test parse error.
   testFailure("resource://test/es6module_parse_error.js", {
     type: "SyntaxError",

@@ -12,6 +12,12 @@ import {
   ProxyUsage,
 } from "moz-src:///toolkit/components/ipprotection/GuardianTypes.sys.mjs";
 
+/**
+ * Type Imports
+ *
+ * @typedef {import("../GuardianTypes.sys.mjs").TokenHandle} TokenHandle
+ */
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -51,7 +57,7 @@ class IPPEnterpriseAuthProviderSingleton extends IPPAuthProvider {
 
   /**
    * @param {AbortSignal} [abortSignal]
-   * @returns {{token: string} & Disposable}
+   * @returns {Promise<TokenHandle>}
    */
   // eslint-disable-next-line require-await
   async getToken(abortSignal = null) {
@@ -65,10 +71,13 @@ class IPPEnterpriseAuthProviderSingleton extends IPPAuthProvider {
         "IPPEnterpriseAuthProvider: Services.felt is not available"
       );
     }
-    return {
-      token: felt.getAccessTokenIfValid(),
-      [Symbol.dispose]: () => {},
-    };
+    const token = felt.getAccessTokenIfValid();
+    if (!token) {
+      throw new Error(
+        "IPPEnterpriseAuthProvider: Services.felt has no valid access token"
+      );
+    }
+    return { token };
   }
 
   /**
@@ -113,7 +122,7 @@ class IPPEnterpriseAuthProviderSingleton extends IPPAuthProvider {
    * @returns {Promise<{pass?: ProxyPass, status?: number, usage: null, error?: import("../IPPAuthProvider.sys.mjs").AuthError}>}
    */
   async fetchProxyPass(abortSignal = null) {
-    using tokenHandle = await this.getToken(abortSignal);
+    const tokenHandle = await this.getToken(abortSignal);
     let response;
     try {
       response = await fetch(this.#tokenURL, {
@@ -130,10 +139,10 @@ class IPPEnterpriseAuthProviderSingleton extends IPPAuthProvider {
       lazy.logConsole.error("Proxy pass fetch failed:", error);
       return { error: AUTH_ERRORS.NETWORK_ERROR, usage: null };
     }
-    if (!response) {
-      return { error: AUTH_ERRORS.LOGIN_NEEDED, usage: null };
-    }
     const status = response.status;
+    if (status === 401) {
+      await tokenHandle.onTokenRejected?.();
+    }
     const statusError = IPPEnterpriseAuthProviderSingleton.toError(status);
     if (statusError) {
       return { status, error: statusError, usage: null };

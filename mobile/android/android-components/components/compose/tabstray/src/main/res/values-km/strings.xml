@@ -8,7 +8,7 @@
 
 <resources>
   <!-- Message announced to the user when tab tray is selected with 1 tab -->
-  <string name="mozac_tab_counter_open_tab_tray_single">ផ្ទាំងបើកចំនួន 1។ ចុចដើម្បីប្តូរផ្ទាំង។</string>
+  <string name="mozac_tab_counter_open_tab_tray_single">ផ្ទាំងបើកចំនួន 1។ ចុចដើម្បីប្ដូរផ្ទាំង។</string>
   <!-- Message announced to the user when tab tray is selected with multiple tabs. %1$s is getting replaced with the number of open tabs. -->
   <string name="mozac_tab_counter_open_tab_tray_plural">មានផ្ទាំងបើក %1$s ។ ចុចដើម្បីប្តូរផ្ទាំង។</string>
 </resources>

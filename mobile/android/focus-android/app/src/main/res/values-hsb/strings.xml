@@ -487,13 +487,13 @@
   <!-- Label that indicates a permission is by the Android OS -->
   <string name="phone_feature_blocked_by_android">Přez Android zablokowane</string>
   <!-- Preference for allow autoplay audio and video -->
-  <string name="preference_allow_audio_video_autoplay">Awdio a widejo dowolić</string>
+  <string name="preference_allow_audio_video_autoplay">Awdijo a widejo dowolić</string>
   <!-- Preference for block autoplay audio only -->
-  <string name="preference_block_autoplay_audio_only">Jenož awdio blokować</string>
+  <string name="preference_block_autoplay_audio_only">Jenož awdijo blokować</string>
   <!-- Preference summary for block autoplay audio only -->
   <string name="preference_block_autoplay_audio_only_summary">Doporučene</string>
   <!-- Preference for block autoplay audio and video -->
-  <string name="preference_block_autoplay_audio_video">Awdio a widejo blokować</string>
+  <string name="preference_block_autoplay_audio_video">Awdijo a widejo blokować</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
   <string name="preference_remote_debugging">Zdalene pytanje zmylkow přez USB/WLAN</string>
   <!-- Text Button for show biometric prompt -->

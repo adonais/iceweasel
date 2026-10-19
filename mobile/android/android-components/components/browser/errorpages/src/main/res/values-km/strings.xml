@@ -8,19 +8,31 @@
 
 <resources>
   <!-- The button that appears at the bottom of an error page. -->
-  <string name="mozac_browser_errorpages_page_refresh">ព្យាយាមម្តងទៀត</string>
+  <string name="mozac_browser_errorpages_page_refresh">សូមព្យាយាមម្ដងទៀត</string>
+  <!-- The button on an error page that checks whether an archived copy of the unreachable page exists. -->
+  <string name="mozac_browser_errorpages_archive_check_button">ពិនិត្យមើលកំណែបណ្ណសារ</string>
+  <!-- The label shown on the archive button while the archived copy is being looked up. -->
+  <string name="mozac_browser_errorpages_archive_checking">កំពុងពិនិត្យមើលបណ្ណសារ</string>
+  <!-- The message shown when no archived copy of the unreachable page could be found. -->
+  <string name="mozac_browser_errorpages_archive_not_found">គ្មានកំណែបណ្ណសារដែលរកឃើញទេ។</string>
+  <!-- A link, shown after no archived copy was found, that searches the web for the page instead. -->
+  <string name="mozac_browser_errorpages_archive_search_web">ស្វែងរកវេប។</string>
+  <!-- The message shown when the archive service could not be reached to look up an archived copy. -->
+  <string name="mozac_browser_errorpages_archive_unreachable">មិនអាចភ្ជាប់ទៅសេវាកម្មបណ្ណសារបានទេ។</string>
+  <!-- A link, shown after the archive service could not be reached, that retries the lookup. -->
+  <string name="mozac_browser_errorpages_archive_retry">សូមព្យាយាមឡើងវិញ។</string>
   <!-- The document title and heading of an error page shown when a website cannot be loaded for an unknown reason. -->
   <string name="mozac_browser_errorpages_generic_title">មិនអាចបំពេញសំណើបានទេ</string>
   <!-- The error message shown when a website cannot be loaded for an unknown reason. -->
   <string name="mozac_browser_errorpages_generic_message"><![CDATA[<p>ព័ត៌មានបន្ថែមអំពីបញ្ហា ឬកំហុសនេះមិនមាននៅពេលនេះទេ។</p>]]></string>
   <!-- The document title and heading of the error page shown when a website sends back unusual and incorrect credentials for an SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_ssl_title">ការ​តភ្ជាប់​សុវត្ថិភាព​បានបរាជ័យ</string>
+  <string name="mozac_browser_errorpages_security_ssl_title">តំណសន្តិសុខបានបរាជ័យ</string>
   <!-- The error message shown when a website sends back unusual and incorrect credentials for an SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_ssl_message"><![CDATA[<ul>\u00a0<li>មិន​អាច​បង្ហាញ​ទំព័រ​ដែល​អ្នក​កំពុង​ព្យាយាម​មើល​ដោយ​សារ​មិន​អាច​ផ្ទៀងផ្ទាត់​ទិន្នន័យ​ដែល​បាន​ទទួល។</li>\u00a0<li>សូម​​ទាក់ទង​ម្ចាស់​តំបន់​បណ្ដាញ ដើម្បី​ប្រាប់​អំពី​បញ្ហា​នេះ។</li>\u00a0</ul>]]></string>
+  <string name="mozac_browser_errorpages_security_ssl_message"><![CDATA[<ul>\n<li>ទំព័រដែលអ្នកកំពុងព្យាយាមមើលមិនអាចបង្ហាញបានទេ ព្រោះមិនបានបញ្ជាក់ពីយថាភូតភាពនៃទិន្នន័យដែលបានទទួលឡើយ។</li>\n<li>សូមទាក់ទងម្ចាស់វេបសាយ ដើម្បីផ្ដល់ដំណឹងដល់ពួកគេអំពីបញ្ហានេះ។</li>\n</ul>]]></string>
   <!-- The document title and heading of the error page shown when a website sends has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_title">ការ​តភ្ជាប់​សុវត្ថិភាព​បរាជ័យ</string>
+  <string name="mozac_browser_errorpages_security_bad_cert_title">តំណសន្ដិសុខបានបរាជ័យ</string>
   <!-- The error message shown when a website sends has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[<ul>\n<li>នេះ​អាច​ជា​បញ្ហា​ជាមួយ​ការ​កំណត់​រចនា​សម្ព័ន្ធ​របស់​ម៉ាស៊ីន​បម្រើ ឬ​អាច​មាន​នរណា​ម្នាក់​កំពុង​ព្យាយាម​ក្លែង​បន្លំ​ម៉ាស៊ីន​បម្រើ\u00a0។</li>\n<li>បើ​អ្នក​បាន​តភ្ជាប់​ទៅ​ម៉ាស៊ីន​បម្រើ​នេះ​ដោយ​ជោគជ័យ​ក្នុង​អតីតកាល កំហុស​អាច​ជា​បណ្ដោះ​អាសន្ន ហើយ​អ្នក​អាច​ព្យាយាម​ម្ដង​ទៀត\u00a0។</li>\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[<ul>\n<li>នេះអាចជាបញ្ហាមួយដែលទាក់ទងនឹងការកំណត់រចនាសម្ព័ន្ធសេវូបករណ៍ ឬអាចជានរណាម្នាក់កំពុងព្យាយាមក្លែងបន្លំធ្វើជាសេវូបករណ៍។</li>\n<li>បើ​អ្នក​បាន​តភ្ជាប់​ទៅ​សេវូបករណ៍​នេះ​ដោយ​ជោគជ័យកន្លងមក អ៊ីចឹងកំហុសនេះអាចជាបណ្ដោះអាសន្ន ហើយអាចព្យាយាមម្ដងទៀត។</li>\n</ul>]]></string>
   <!-- The text shown inside the advanced button used to expand the advanced options. It's only shown when a website has an invalid SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_advanced">កម្រិតខ្ពស់…</string>
   <!-- The advanced certificate information shown when a website sends has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
@@ -30,7 +42,7 @@
   <!-- The text shown inside the advanced options button used to bypass the invalid SSL certificate. It's only shown if the user has expanded the advanced options. -->
   <string name="mozac_browser_errorpages_security_bad_cert_accept_temporary">ព្រម​ទទួល​ហានិភ័យ​នេះ រួច​បន្ត</string>
   <!-- The document title and heading of the error page shown when a website uses HSTS. -->
-  <string name="mozac_browser_errorpages_security_bad_hsts_cert_title">វេបសាយ​នេះ​តម្រូវ​ឱ្យ​មាន​ការតភ្ជាប់​ដែលមានសុវត្ថិភាព។</string>
+  <string name="mozac_browser_errorpages_security_bad_hsts_cert_title">វេបសាយ​នេះ​តម្រូវ​ឱ្យ​មាន​តំណសន្តិសុខ​។</string>
   <!-- The error message shown when a website uses HSTS. -->
   <string name="mozac_browser_errorpages_security_bad_hsts_cert_message"><![CDATA[<ul>\n<li>ទំព័រដែលអ្នកកំពុងព្យាយាមមើលមិនអាចបង្ហាញបានទេ ពីព្រោះគេហទំព័រនេះតម្រូវឱ្យមានការតភ្ជាប់ដែលមានសុវត្ថិភាព។</li>\n<li>បញ្ហានេះទំនងជាកើតឡើងជាមួយគេហទំព័រ ហើយអ្នកមិនអាចធ្វើអ្វីដើម្បីដោះស្រាយវាបានទេ។</li>\n<li>អ្នកអាចជូនដំណឹងដល់អ្នកគ្រប់គ្រងគេហទំព័រអំពីបញ្ហានេះ។</li>\n</ul>]]></string>
   <!-- The text shown inside the advanced button used to expand the advanced options. It's only shown when a website uses HSTS. -->
@@ -83,7 +95,7 @@
   <string name="mozac_browser_errorpages_content_crashed_title">មាតិកាបានគាំង</string>
   <string name="mozac_browser_errorpages_content_crashed_message"><![CDATA[<p>ទំព័រដែលអ្នកកំពុងព្យាយាមមើលមិនអាចបង្ហាញបានទេ ពីព្រោះកំហុសក្នុងការបញ្ជូនទិន្នន័យត្រូវបានរកឃើញ។</p>\n<ul>\n<li>សូមទាក់ទងម្ចាស់គេហទំព័រដើម្បីជូនដំណឹងដល់ពួកគេអំពីបញ្ហានេះ។</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
-  <string name="mozac_browser_errorpages_invalid_content_encoding_title">កំហុសក្នុងការអ៊ិនកូដមាតិកា</string>
+  <string name="mozac_browser_errorpages_invalid_content_encoding_title">កំហុសក្នុងកូដការមាតិកា</string>
   <string name="mozac_browser_errorpages_invalid_content_encoding_message"><![CDATA[<p>ទំព័រដែលអ្នកកំពុងព្យាយាមមើលមិនអាចបង្ហាញបានទេ ព្រោះវាប្រើទម្រង់បង្ហាប់មិនត្រឹមត្រូវ ឬមិនគាំទ្រ។</p>\n<ul>\n<li>សូមទាក់ទងម្ចាស់គេហទំព័រដើម្បីជូនដំណឹងដល់ពួកគេអំពីបញ្ហានេះ។</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_unknown_host_title">រកមិនឃើញអាសយដ្ឋាន</string>
@@ -94,7 +106,7 @@
   <!-- The main body text of this error page. It will be shown beneath the title -->
   <string name="mozac_browser_errorpages_no_internet_message_2">សាកល្បងភ្ជាប់នៅលើឧបករណ៍ផ្សេង។ ពិនិត្យមើលម៉ូដឹម ឬរ៉ោតទ័ររបស់អ្នក។ ផ្តាច់ ហើយភ្ជាប់ទៅ Wi-Fi ឡើងវិញ។</string>
   <!-- The document title and heading of an error page. -->
-  <string name="mozac_browser_errorpages_no_internet_error_code">លេខកូដកំហុស៖ NS_ERROR_OFFLINE</string>
+  <string name="mozac_browser_errorpages_no_internet_error_code">កូដកំហុស៖ NS_ERROR_OFFLINE</string>
   <!-- Text that will show up on the button at the bottom of the error page -->
   <string name="mozac_browser_errorpages_no_internet_refresh_button">ផ្ទុក​ឡើងវិញ</string>
   <!-- The document title and heading of an error page. -->
@@ -105,17 +117,17 @@
   <!-- This string contains markup. The URL should not be localized. -->
   <string name="mozac_browser_errorpages_malformed_uri_message_alternative"><![CDATA[<ul>\n<li>អាសយដ្ឋានគេហទំព័រជាធម្មតាត្រូវបានសរសេរដូចជា <strong>http://www.example.com/</strong></li>\n<li>ត្រូវប្រាកដថាអ្នកកំពុងប្រើសញ្ញា (ឧ. <strong>/</strong>)។</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
-  <string name="mozac_browser_errorpages_unknown_protocol_title">ពិធីការមិនស្គាល់</string>
+  <string name="mozac_browser_errorpages_unknown_protocol_title">វិធីការមិនស្គាល់</string>
   <string name="mozac_browser_errorpages_unknown_protocol_message"><![CDATA[<p>អាសយដ្ឋាននេះបញ្ជាក់ពីពិធីការ (ឧ. <q>wxyz://</q>) ដែលកម្មវិធីរុករកមិនទទួលស្គាល់ ដូច្នេះកម្មវិធីរុករកមិនអាចភ្ជាប់ទៅគេហទំព័របានត្រឹមត្រូវទេ។</p>\n<ul>\n<li>តើអ្នកកំពុងព្យាយាមចូលប្រើពហុមេឌា ឬសេវាកម្មមិនមែនអត្ថបទផ្សេងទៀតមែនទេ? សូមពិនិត្យមើលគេហទំព័រសម្រាប់តម្រូវការបន្ថែម។</li>\n<li>ពិធីការមួយចំនួនអាចតម្រូវឱ្យមានកម្មវិធីភាគីទីបី ឬកម្មវិធីជំនួយមុនពេលកម្មវិធីរុករកអាចស្គាល់ពួកវា។</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_file_not_found_title">រក​មិន​ឃើញ​ឯកសារ​</string>
   <string name="mozac_browser_errorpages_file_not_found_message"><![CDATA[<ul>\n<li>តើ​ធាតុ​នេះ​អាច​ត្រូវ​បាន​ប្តូរ​ឈ្មោះ លុប​ចេញ ឬ​ផ្លាស់​ទីតាំង​បាន​ទេ?</li>\n<li>តើ​មាន​កំហុស​អក្ខរាវិរុទ្ធ ការ​សរសេរ​អក្សរ​ធំ ឬ​កំហុស​វាយអក្សរ​ផ្សេង​ទៀត​នៅ​ក្នុង​អាសយដ្ឋាន​ដែរ​ឬទេ?</li>\n<li>តើ​អ្នក​មាន​សិទ្ធិ​ចូល​ប្រើប្រាស់​គ្រប់គ្រាន់​ចំពោះ​ធាតុ​ដែល​បាន​ស្នើ​សុំ​ដែរ​ឬទេ?</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
-  <string name="mozac_browser_errorpages_file_access_denied_title">ការចូលប្រើឯកសារត្រូវបានបដិសេធ</string>
+  <string name="mozac_browser_errorpages_file_access_denied_title">អាក់សេសទៅកាន់ឯកសារត្រូវបានបដិសេធ</string>
   <string name="mozac_browser_errorpages_file_access_denied_message"><![CDATA[<ul>\n<li>វាអាចត្រូវបានដកចេញ ផ្លាស់ទី ឬការអនុញ្ញាតឯកសារអាចរារាំងការចូលប្រើ។</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
-  <string name="mozac_browser_errorpages_proxy_connection_refused_title">ម៉ាស៊ីនបម្រើប្រូកស៊ីត្រូវបានបដិសេធការតភ្ជាប់</string>
-  <string name="mozac_browser_errorpages_proxy_connection_refused_message"><![CDATA[<p>កម្មវិធីរុករកត្រូវបានកំណត់រចនាសម្ព័ន្ធដើម្បីប្រើម៉ាស៊ីនមេប្រូកស៊ី ប៉ុន្តែប្រូកស៊ីបានបដិសេធការតភ្ជាប់។</p>\n<ul>\n<li>តើការកំណត់រចនាសម្ព័ន្ធប្រូកស៊ីរបស់កម្មវិធីរុករកត្រឹមត្រូវទេ? សូមពិនិត្យមើលការកំណត់ ហើយព្យាយាមម្តងទៀត។</li>\n<li>តើសេវាកម្មប្រូកស៊ីអនុញ្ញាតឱ្យមានការតភ្ជាប់ពីបណ្តាញនេះទេ?</li>\n<li>នៅតែមានបញ្ហា? សូមពិគ្រោះជាមួយអ្នកគ្រប់គ្រងបណ្តាញ ឬអ្នកផ្តល់សេវាអ៊ីនធឺណិតរបស់អ្នកសម្រាប់ជំនួយ។</li>\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_proxy_connection_refused_title">សេវូបករណ៍ប្រូកស៊ីបានបដិសេធការតភ្ជាប់</string>
+  <string name="mozac_browser_errorpages_proxy_connection_refused_message"><![CDATA[<p>ការីច្បោលត្រូវបានកំណត់រចនាសម្ព័ន្ធ ដើម្បីប្រើសេវូបករណ៍ប្រូកស៊ី ប៉ុន្តែប្រូកស៊ីបានបដិសេធនូវការតភ្ជាប់។</p>\n<ul>\n<li>តើការកំណត់រចនាសម្ព័ន្ធប្រូកស៊ីរបស់ការីច្បោលត្រឹមត្រូវដែរទេ? សូមពិនិត្យមើលការកំណត់ ហើយព្យាយាមម្តងទៀត។</li>\n<li>តើសេវាប្រូកស៊ីអនុញ្ញាតឱ្យមានការតភ្ជាប់ពីបណ្តាញនេះឬទេ?</li>\n<li>នៅតែមានបញ្ហាទៀតឬ? សូមពិគ្រោះជាមួយអ្នកគ្រប់គ្រងបណ្តាញ ឬអ្នកផ្តល់សេវាអ៊ីនធឺណិតរបស់អ្នកសម្រាប់ជំនួយ។</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_unknown_proxy_host_title">រក​មិន​ឃើញ​សេវូបករណ៍ប្រូកស៊ី</string>
   <string name="mozac_browser_errorpages_unknown_proxy_host_message"><![CDATA[<p>កម្មវិធីរុករកត្រូវបានកំណត់រចនាសម្ព័ន្ធដើម្បីប្រើម៉ាស៊ីនមេប្រូកស៊ី ប៉ុន្តែរកមិនឃើញប្រូកស៊ីទេ។</p>\n<ul>\n<li>តើការកំណត់រចនាសម្ព័ន្ធប្រូកស៊ីរបស់កម្មវិធីរុករកត្រឹមត្រូវទេ? សូមពិនិត្យមើលការកំណត់ ហើយព្យាយាមម្តងទៀត។</li>\n<li>តើឧបករណ៍ត្រូវបានភ្ជាប់ទៅបណ្តាញសកម្មទេ?</li>\n<li>នៅតែមានបញ្ហា? សូមពិគ្រោះជាមួយអ្នកគ្រប់គ្រងបណ្តាញ ឬអ្នកផ្តល់សេវាអ៊ីនធឺណិតរបស់អ្នកសម្រាប់ជំនួយ។</li>\n</ul>]]></string>
@@ -140,9 +152,11 @@
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>ទំព័របណ្ដាញនេះនៅ %1$s ត្រូវបានរារាំង ពីព្រោះកម្មវិធីបន្ថែមមួយរបស់អ្នកបានព្យាយាមបើកវា។ គេហទំព័រនេះ អាចត្រូវបានប្រើដើម្បីលួចព័ត៌មានរបស់អ្នក — ដូចជាពាក្យសម្ងាត់ ឬលេខកាតឥណទាន។</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
-  <string name="mozac_browser_errorpages_httpsonly_title">គេហទំព័រសុវត្ថិភាពមិនអាចប្រើប្រាស់បានទេ</string>
+  <string name="mozac_browser_errorpages_httpsonly_title">វេបសាយសន្តិសុខមិនអាចប្រើបានទេ</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->
   <string name="mozac_browser_errorpages_httpsonly_message"><![CDATA[លោកអ្នកបានបើករបៀប HTTPS-Only ដើម្បីបង្កើនសុវត្ថិភាព ហើយកំណែ HTTPS នៃ <em>%1$s</em> មិនមានសម្រាប់ប្រើប្រាស់ទេ។]]></string>
   <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on. Clicking the button allows the user to nevertheless load the website using HTTP. -->
   <string name="mozac_browser_errorpages_httpsonly_button">បន្តទៅគេហទំព័រ HTTP</string>
+  <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on.  Clicking the button allows the user to go back. -->
+  <string name="mozac_browser_errorpages_httpsonly_back">ថយក្រោយ (បានណែនាំ)</string>
 </resources>

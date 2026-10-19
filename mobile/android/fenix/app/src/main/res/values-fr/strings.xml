@@ -313,6 +313,8 @@
   <string name="browser_menu_default_banner_title">Définir %1$s comme navigateur par défaut</string>
   <!-- Label text within the set as default banner -->
   <string name="browser_menu_default_banner_subtitle_2">Rapide, confidentiel et conçu pour vous.</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
+  <string name="browser_menu_default_banner_dismiss_promotion">Fermer l’offre</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
   <string name="browser_menu_recommended_extensions_content_description">Plus d’infos</string>
   <!--
@@ -707,6 +709,14 @@
   <string name="search_widget_text_long">Rechercher sur le Web</string>
   <!-- Content description (not visible, for screen readers etc.): Voice search -->
   <string name="search_widget_voice">Recherche vocale</string>
+  <!-- Content description (not visible, for screen readers etc.): Button in the search widget that starts a search in a private tab -->
+  <string name="search_widget_private_search">Recherche privée</string>
+  <!-- Widget description in the widget picker screen for the search bar widget that includes buttons for private search and for voice search -->
+  <string name="search_bar_widget_description">Barre de recherche avec recherche vocale et privée</string>
+  <!-- Widget description in the widget picker screen for the search bar widget that includes buttons for image search, private search and voice search -->
+  <string name="search_bar_with_lens_widget_description">Barre de recherche avec recherche image, privée et vocale</string>
+  <!-- Widget description in the widget picker screen for the compact search bar widget -->
+  <string name="compact_search_bar_widget_description">Barre de recherche compacte</string>
   <!--
     Preferences
 
@@ -1694,6 +1704,11 @@
   <string name="close_tab_and_delete_group_confirmation_dialog_cancel">Annuler</string>
   <!-- Content description for the three dot button next to a tab group" -->
   <string name="tab_group_three_dot_button_content_description">Options supplémentaires</string>
+  <!--
+    Content description for the Expand button on the contracted menu for a tab group:
+    when tapped, tabs are displayed in an expanded grid or list view, taking up the full screen.
+  -->
+  <string name="tab_groups_strip_expand_group_content_description">Développer pour afficher les onglets en plein écran</string>
   <!-- Text shown on the edit button for a tab group on the three dot menu -->
   <string name="tab_group_three_dot_menu_edit">Modifier</string>
   <!-- Text shown on the ungroup button for a tab group on the three dot menu -->
@@ -3414,7 +3429,7 @@
   <!-- This is the hint text that is shown inline on the hostname field of the create new login page. 'https://www.example.com' intentionally hardcoded here -->
   <string name="add_login_hostname_hint_text">https://www.example.com</string>
   <!-- This is an error message shown below the hostname field of the add login page when a hostname does not contain http or https. -->
-  <string name="add_login_hostname_invalid_text_3">L’adresse web doit contenir «\u00a0https://\u00a0» ou «\u00a0http://\u00a0».</string>
+  <string name="add_login_hostname_invalid_text_3">L’adresse web doit contenir «\u00a0https://\u00a0» ou «\u00a0http://\u00a0»</string>
   <!-- This is an error message shown below the hostname field of the add login page when a hostname is invalid. -->
   <string name="add_login_hostname_invalid_text_2">Un nom d’hôte valide est requis</string>
   <!--
@@ -4567,7 +4582,7 @@
   <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "off" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
   <string name="firefox_labs_feature_disable_dialog_message">Pour désactiver cette fonctionnalité, redémarrez %s.</string>
   <!-- Helper text shown beneath a Firefox Labs item when it is blocked from being turned on. -->
-  <string name="firefox_labs_feature_conflict">Cette fonctionnalité n’est pas disponible à l‘essai.</string>
+  <string name="firefox_labs_feature_conflict">Cette fonctionnalité n’est pas disponible à l’essai.</string>
   <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
   <string name="firefox_labs_no_labs_available_description">Aucune fonctionnalité expérimentale à essayer pour l’instant</string>
   <!-- Title of the Firefox Labs Sandboxing experiment. -->

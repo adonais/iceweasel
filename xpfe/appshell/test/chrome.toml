@@ -1,4 +1,5 @@
 [DEFAULT]
+prefs = ["browser.load-xul-position.enabled=true"]
 
 ["test_bug2070008_independent_window_position.xhtml"]
 skip-if = ["os == 'linux' && display == 'wayland'"] # Wayland compositors place toplevels themselves.

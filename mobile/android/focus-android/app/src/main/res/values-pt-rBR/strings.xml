@@ -16,6 +16,8 @@
   <string name="feedback_erase2">O histórico de navegação foi limpo</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">O histórico de navegação da aba foi apagado.</string>
+  <!-- Content description for the button that opens the menu. -->
+  <string name="content_description_menu">Menu</string>
   <!-- Menu item: Share the currently visible page -->
   <string name="menu_share">Compartilhar…</string>
   <!--
@@ -298,7 +300,7 @@
   <string name="search_add_manually_string">Termo de pesquisa a ser usado</string>
   <string name="search_add_manually_save">Salvar</string>
   <!-- Example of search engine url. %s represents the search query and should be kept as-is. -->
-  <string name="search_add_manually_example">Exemplo: example.com/search/?q= %s</string>
+  <string name="search_add_manually_example">Exemplo: example.com/search/?q=%s</string>
   <string name="search_add_confirmation">Adicionado novo mecanismo de pesquisa.</string>
   <string name="search_add_error_empty_name">Digite o nome do mecanismo de pesquisa</string>
   <string name="search_add_error_duplicate_name">Um mecanismo de pesquisa instalado já está usando esse nome.</string>

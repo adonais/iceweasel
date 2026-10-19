@@ -16,6 +16,8 @@ support-files = [
   "es6import.js",
   "es6module_throws.js",
   "es6module_missing_import.js",
+  "es6module_valid_import_target.js",
+  "es6module_valid_then_missing_import.js",
   "es6module_parse_error.js",
   "es6module_parse_error_in_import.js",
   "es6module_cycle_a.js",

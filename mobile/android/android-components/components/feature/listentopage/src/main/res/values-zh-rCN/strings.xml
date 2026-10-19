@@ -37,6 +37,12 @@
   <string name="mozac_feature_listentopage_notification_playback_speed_1_75">播放速度加快四分之三</string>
   <!-- Content description of the playback control notification, when the playback is set to 2 times (double) the normal reading speed. -->
   <string name="mozac_feature_listentopage_notification_playback_speed_2">播放速度设置为两倍</string>
+  <!-- Error text shown on the Listen to Page media player when the text-to-speech engine fails to convert the article into spoken audio -->
+  <string name="mozac_feature_listentopage_error_audio_not_available">无法生成音频</string>
+  <!-- Error text shown on the Listen to Page media player when the player encounters an error partway through playing the audio. -->
+  <string name="mozac_feature_listentopage_error_could_not_finish_playing_audio">音频未能完成播放，请重试。</string>
+  <!-- Error text shown on the Listen to Page media player when no voice options are available to play the audio. -->
+  <string name="mozac_feature_listentopage_error_voice_options_not_available">语音选项不可用</string>
   <!-- Listen to Page media player: content description for the button that closes the player. -->
   <string name="mozac_feature_listentopage_close">关闭</string>
   <!-- Listen to Page media player: content description for the button that opens the list of available voices. -->
@@ -57,4 +63,8 @@
     Structure and phrasing vary by target language: using an infinitive/dictionary form of the verb is recommended.
   -->
   <string name="mozac_feature_listentopage_change_speed">更改播放速度</string>
+  <!-- Playback speed menu item, such as "1.5×". %1$s is the multiplier already formatted with the decimal separator of the locale. -->
+  <string name="mozac_feature_listentopage_playback_speed_option">%1$s×</string>
+  <!-- Playback speed menu item for the normal reading speed, which is also the default speed. "1×" means one times the normal speed. -->
+  <string name="mozac_feature_listentopage_playback_speed_option_default">1×（默认）</string>
 </resources>

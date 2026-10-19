@@ -8,7 +8,29 @@
 
 <resources>
   <!-- The button that appears at the bottom of an error page. -->
-  <string name="mozac_browser_errorpages_page_refresh">আবার চেষ্টা করুন</string>
+  <string name="mozac_browser_errorpages_page_refresh">পুনরায় চেষ্টা করুন</string>
+  <!-- The button on an error page that checks whether an archived copy of the unreachable page exists. -->
+  <string name="mozac_browser_errorpages_archive_check_button">আর্কাইভ সংস্করণ দেখুন</string>
+  <!--
+    The text shown underneath the archive button, explaining what the button does. The %1$s will be replaced by
+    the app name and %2$s will be replaced by the name of the archive service as a link
+  -->
+  <string name="mozac_browser_errorpages_archive_description">%1$s ইন্টারনেট আর্কাইভের %2$s থেকে এই পৃষ্ঠাটির একটি পূর্ববর্তী সংস্করণ খুঁজে দেখতে পারে।</string>
+  <!--
+    The name of the Internet Archive service, shown as a link at the end of
+    mozac_browser_errorpages_archive_description.
+  -->
+  <string name="mozac_browser_errorpages_archive_wayback_machine">ওয়েব্যাক মেশিন</string>
+  <!-- The label shown on the archive button while the archived copy is being looked up. -->
+  <string name="mozac_browser_errorpages_archive_checking">আর্কাইভ চেক করা হচ্ছে</string>
+  <!-- The message shown when no archived copy of the unreachable page could be found. -->
+  <string name="mozac_browser_errorpages_archive_not_found">কোনো আর্কাইভ সংস্করণ খুঁজে পাওয়া যায়নি।</string>
+  <!-- A link, shown after no archived copy was found, that searches the web for the page instead. -->
+  <string name="mozac_browser_errorpages_archive_search_web">ওয়েবে অনুসন্ধান করুন।</string>
+  <!-- The message shown when the archive service could not be reached to look up an archived copy. -->
+  <string name="mozac_browser_errorpages_archive_unreachable">আর্কাইভ পরিষেবাতে পৌঁছানো যায়নি।</string>
+  <!-- A link, shown after the archive service could not be reached, that retries the lookup. -->
+  <string name="mozac_browser_errorpages_archive_retry">পুনরায় চেষ্টা করুন।</string>
   <!-- The document title and heading of an error page shown when a website cannot be loaded for an unknown reason. -->
   <string name="mozac_browser_errorpages_generic_title">অনুরোধ পূরণ করা সম্ভব নয়</string>
   <!-- The error message shown when a website cannot be loaded for an unknown reason. -->
@@ -29,6 +51,16 @@
   <string name="mozac_browser_errorpages_security_bad_cert_back">ফিরে যান (প্রস্তাবিত)</string>
   <!-- The text shown inside the advanced options button used to bypass the invalid SSL certificate. It's only shown if the user has expanded the advanced options. -->
   <string name="mozac_browser_errorpages_security_bad_cert_accept_temporary">ঝুঁকি নিন এবং চালিয়ে যান</string>
+  <!-- The document title and heading of the error page shown when a website uses HSTS. -->
+  <string name="mozac_browser_errorpages_security_bad_hsts_cert_title">এই ওয়েবসাইটটির জন্য একটি সুরক্ষিত সংযোগ প্রয়োজন।</string>
+  <!-- The error message shown when a website uses HSTS. -->
+  <string name="mozac_browser_errorpages_security_bad_hsts_cert_message"><![CDATA[<ul>\n<li>আপনি যে পৃষ্ঠাটি দেখার চেষ্টা করছেন তা দেখানো যাচ্ছে না, কারণ এই ওয়েবসাইটটির জন্য একটি সুরক্ষিত সংযোগ প্রয়োজন।</li>\n<li>সমস্যাটি সম্ভবত ওয়েবসাইটটির, এবং এটি সমাধান করার জন্য আপনার কিছুই করার নেই।</li>\n<li>আপনি ওয়েবসাইটটির অ্যাডমিনকে সমস্যাটি সম্পর্কে জানাতে পারেন।</li>\n</ul>]]></string>
+  <!-- The text shown inside the advanced button used to expand the advanced options. It's only shown when a website uses HSTS. -->
+  <string name="mozac_browser_errorpages_security_bad_hsts_cert_advanced">অ্যাডভান্সড...</string>
+  <!-- The advanced certificate information shown when a website uses HSTS. The %1$s will be replaced by the website URL and %2$s will be replaced by the app name. It's only shown when a website uses HSTS. -->
+  <string name="mozac_browser_errorpages_security_bad_hsts_cert_techInfo2"><![CDATA[<label> <b>%1$s</b>-এর HTTP কঠোর পরিবহন নিরাপত্তা (HSTS) নামে একটি নিরাপত্তা নীতি রয়েছে, যার মানে হলো <b>%2$s</b> শুধুমাত্র এটির সাথে নিরাপদে সংযুক্ত হতে পারে৷ আপনি এই সাইট দেখার জন্য এটিকে কোনো ব্যতিক্রমে যোগ করতে পারবেন না। </label>]]></string>
+  <!-- The text shown inside the advanced options button used to go back. It's only shown if the user has expanded the advanced options. -->
+  <string name="mozac_browser_errorpages_security_bad_hsts_cert_back">পিছনে ফিরে যাও</string>
   <!-- The document title and heading of the error page shown when the user's network connection is interrupted while connecting to a website. -->
   <string name="mozac_browser_errorpages_net_interrupt_title">সংযোগ বিঘ্নিত হয়েছে</string>
   <!-- The document title and heading of the error page shown when a website takes too long to load. -->
@@ -59,6 +91,8 @@
   <string name="mozac_browser_errorpages_invalid_content_encoding_title">কন্টেন্টের এনকোডিং-এ ত্রুটি</string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_unknown_host_title">ঠিকানা পাওয়া যায়নি</string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_no_internet_title_2">মনে হচ্ছে আপনার ইন্টারনেট সংযোগে কোনো সমস্যা আছে</string>
   <!-- Text that will show up on the button at the bottom of the error page -->
   <string name="mozac_browser_errorpages_no_internet_refresh_button">পুনরায় লোড করুন</string>
   <!-- The document title and heading of an error page. -->

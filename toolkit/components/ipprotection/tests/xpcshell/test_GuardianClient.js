@@ -23,12 +23,14 @@ function makeGuardianServer(
     enroll: (_request, _response) => {},
     token: (_request, _response) => {},
     status: (_request, _response) => {},
+    activate: (_request, _response) => {},
   }
 ) {
   const callbacks = {
     enroll: (_request, _response) => {},
     token: (_request, _response) => {},
     status: (_request, _response) => {},
+    activate: (_request, _response) => {},
     ...arg,
   };
   const server = new HttpServer();
@@ -36,6 +38,7 @@ function makeGuardianServer(
   server.registerPathHandler("/api/v1/fpn/token", callbacks.token);
   server.registerPathHandler("/api/v1/fpn/status", callbacks.status);
   server.registerPathHandler("/api/v1/fpn/auth", callbacks.enroll);
+  server.registerPathHandler("/api/v1/fpn/activate", callbacks.activate);
   server.start(-1);
 
   return {
@@ -64,9 +67,24 @@ function makeStallHandler() {
   };
 }
 
-const TEST_TOKEN_HANDLE = {
-  token: "test-token",
-  [Symbol.dispose]: () => {},
+/**
+ * @param {() => void|Promise<void>} [onTokenRejected] - Omitted for providers
+ * whose tokens are owned outside of Gecko, see the TokenHandle typedef.
+ */
+function makeTokenHandle(onTokenRejected) {
+  return { token: "test-token", onTokenRejected };
+}
+
+/** Every GuardianClient method that authenticates with a TokenHandle. */
+const AUTHENTICATED_METHODS = [
+  { name: "fetchProxyPass", path: "token" },
+  { name: "fetchUserInfo", path: "status" },
+  { name: "fetchProxyUsage", path: "token" },
+  { name: "activate", path: "activate" },
+];
+
+const respondWith = status => (request, r) => {
+  r.setStatusLine(request.httpVersion, status, "");
 };
 
 function setupGuardianClient(serverWrapper) {
@@ -190,7 +208,7 @@ add_task(async function test_fetchUserInfo() {
         const client = new GuardianClient();
 
         const { status, entitlement, error } =
-          await client.fetchUserInfo(TEST_TOKEN_HANDLE);
+          await client.fetchUserInfo(makeTokenHandle());
 
         if (expects.status !== undefined) {
           Assert.equal(status, expects.status, `${name}: status should match`);
@@ -334,7 +352,7 @@ add_task(async function test_fetchProxyPass() {
         const client = new GuardianClient();
 
         const { status, pass, error, usage } =
-          await client.fetchProxyPass(TEST_TOKEN_HANDLE);
+          await client.fetchProxyPass(makeTokenHandle());
 
         if (expects.status !== undefined) {
           Assert.equal(status, expects.status, `${name}: status should match`);
@@ -618,7 +636,7 @@ add_task(async function test_fetchProxyPass_quotaExceeded() {
         const client = new GuardianClient();
 
         const { status, pass, error, usage, retryAfter } =
-          await client.fetchProxyPass(TEST_TOKEN_HANDLE);
+          await client.fetchProxyPass(makeTokenHandle());
 
         Assert.equal(status, expects.status, `${name}: status should match`);
         Assert.equal(error, expects.error, `${name}: error should match`);
@@ -723,7 +741,7 @@ add_task(async function test_fetchProxyUsage() {
         using _setup = setupGuardianClient(serverWrapper);
         const client = new GuardianClient();
 
-        const usage = await client.fetchProxyUsage(TEST_TOKEN_HANDLE);
+        const usage = await client.fetchProxyUsage(makeTokenHandle());
 
         if (expects.usage === null) {
           Assert.equal(usage, null, `${name}: usage should be null`);
@@ -747,6 +765,87 @@ add_task(async function test_fetchProxyUsage() {
       };
     })
     .forEach(test => add_task(test));
+});
+
+// A 401 means Guardian refused the token itself, so the handle must be
+// invalidated, and the call must not resolve until it is - invalidation can be
+// asynchronous and a caller may want to retry with a fresh token.
+add_task(async function test_onTokenRejected_401() {
+  AUTHENTICATED_METHODS.map(({ name, path }) => async () => {
+    using serverWrapper = makeGuardianServer({ [path]: respondWith(401) });
+    // eslint-disable-next-line no-unused-vars
+    using _setup = setupGuardianClient(serverWrapper);
+    const client = new GuardianClient();
+
+    const invoked = Promise.withResolvers();
+    const invalidation = Promise.withResolvers();
+    const onTokenRejected = sinon.spy(() => {
+      invoked.resolve();
+      return invalidation.promise;
+    });
+
+    let settled = false;
+    const call = client[name](makeTokenHandle(onTokenRejected)).then(result => {
+      settled = true;
+      return result;
+    });
+
+    await invoked.promise;
+    // Let anything the client queued behind the callback run.
+    await new Promise(resolve => do_timeout(0, resolve));
+
+    Assert.equal(
+      onTokenRejected.callCount,
+      1,
+      `${name}: a 401 response should invalidate the token once`
+    );
+    Assert.ok(
+      !settled,
+      `${name}: a 401 response should not resolve before invalidation finishes`
+    );
+
+    invalidation.resolve();
+    await call;
+    Assert.ok(settled, `${name}: should resolve once invalidation finished`);
+  }).forEach(test => add_task(test));
+});
+
+// Any other status leaves the handle alone.
+add_task(async function test_onTokenRejected_other_statuses() {
+  AUTHENTICATED_METHODS.flatMap(({ name, path }) =>
+    [200, 403, 429, 500].map(status => async () => {
+      using serverWrapper = makeGuardianServer({
+        [path]: respondWith(status),
+      });
+      // eslint-disable-next-line no-unused-vars
+      using _setup = setupGuardianClient(serverWrapper);
+      const client = new GuardianClient();
+
+      const onTokenRejected = sinon.spy(() => new Promise(() => {}));
+
+      await client[name](makeTokenHandle(onTokenRejected));
+
+      Assert.equal(
+        onTokenRejected.callCount,
+        0,
+        `${name}: a ${status} response should not invalidate the token`
+      );
+    })
+  ).forEach(test => add_task(test));
+});
+
+// Providers whose tokens are owned outside of Gecko omit the callback entirely.
+add_task(async function test_handle_without_onTokenRejected() {
+  AUTHENTICATED_METHODS.map(({ name, path }) => async () => {
+    using serverWrapper = makeGuardianServer({ [path]: respondWith(401) });
+    // eslint-disable-next-line no-unused-vars
+    using _setup = setupGuardianClient(serverWrapper);
+    const client = new GuardianClient();
+
+    await client[name]({ token: "test-token" });
+
+    Assert.ok(true, `${name}: a 401 should not throw without the callback`);
+  }).forEach(test => add_task(test));
 });
 
 add_task(async function test_parseGuardianSuccessURL() {
@@ -1011,7 +1110,7 @@ add_task(async function test_fetchProxyPass_abort() {
   using _setup = setupGuardianClient(serverWrapper);
   const client = new GuardianClient();
   const controller = new AbortController();
-  const promise = client.fetchProxyPass(TEST_TOKEN_HANDLE, controller.signal);
+  const promise = client.fetchProxyPass(makeTokenHandle(), controller.signal);
 
   do_timeout(10, () => controller.abort());
 
@@ -1030,7 +1129,7 @@ add_task(async function test_fetchUserInfo_abort() {
   using _setup = setupGuardianClient(serverWrapper);
   const client = new GuardianClient();
   const controller = new AbortController();
-  const promise = client.fetchUserInfo(TEST_TOKEN_HANDLE, controller.signal);
+  const promise = client.fetchUserInfo(makeTokenHandle(), controller.signal);
 
   do_timeout(10, () => controller.abort());
 
@@ -1049,7 +1148,7 @@ add_task(async function test_fetchProxyUsage_abort() {
   using _setup = setupGuardianClient(serverWrapper);
   const client = new GuardianClient();
   const controller = new AbortController();
-  const promise = client.fetchProxyUsage(TEST_TOKEN_HANDLE, controller.signal);
+  const promise = client.fetchProxyUsage(makeTokenHandle(), controller.signal);
 
   do_timeout(10, () => controller.abort());
 
@@ -1077,7 +1176,7 @@ add_task(async function test_abort_before_fetch() {
   controller.abort();
 
   await Assert.rejects(
-    client.fetchProxyPass(TEST_TOKEN_HANDLE, controller.signal),
+    client.fetchProxyPass(makeTokenHandle(), controller.signal),
     err => err.name === "AbortError",
     "Should reject immediately with pre-aborted signal"
   );
@@ -1121,7 +1220,7 @@ add_task(async function test_fetchProxyPass_networkError() {
   );
 
   const client = new GuardianClient();
-  const { error, usage } = await client.fetchProxyPass(TEST_TOKEN_HANDLE);
+  const { error, usage } = await client.fetchProxyPass(makeTokenHandle());
 
   Assert.equal(
     error,

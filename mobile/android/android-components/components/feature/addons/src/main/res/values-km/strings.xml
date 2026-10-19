@@ -364,7 +364,7 @@
   <!-- Text shown when installing an add-on has failed. -->
   <string name="mozac_feature_addons_cant_install_extension">មិនអាចដំឡើងកម្មវិធីបន្ថែមបានទេ</string>
   <!-- Text shown when attempting to install an extension and a network error happened. -->
-  <string name="mozac_feature_addons_extension_failed_to_install_network_error">មិនអាចទាញយកផ្នែកបន្ថែមនេះបានទេដោយសារតែការភ្ជាប់បរាជ័យ។</string>
+  <string name="mozac_feature_addons_extension_failed_to_install_network_error">ផ្នែកបន្ថែមនេះមិនអាចដោនឡូដបានដោយសារតែមានបញ្ហាការតភ្ជាប់។</string>
   <!-- Text shown when attempting to install an extension and the downloaded file is corrupted. -->
   <string name="mozac_feature_addons_extension_failed_to_install_corrupt_error">កម្មវិធីបន្ថែមនេះមិនអាចដំឡើងបានទេ ពីព្រោះវាហាក់ដូចជាខូច។</string>
   <!-- Text shown when attempting to install an add-on and an error occurred because the extension was not signed. -->

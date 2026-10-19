@@ -313,6 +313,8 @@
   <string name="browser_menu_default_banner_title">Gerðu %1$s sjálfgefið</string>
   <!-- Label text within the set as default banner -->
   <string name="browser_menu_default_banner_subtitle_2">Hraður, persónulegur og hannaður fyrir þig.</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
+  <string name="browser_menu_default_banner_dismiss_promotion">Hunsa kynningu</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
   <string name="browser_menu_recommended_extensions_content_description">Nánari upplýsingar</string>
   <!--
@@ -1365,6 +1367,8 @@
   <string name="library_desktop_bookmarks_unfiled">Önnur bókamerki</string>
   <!-- Option in Library to open History page -->
   <string name="library_history">Ferill</string>
+  <!-- Content description (not visible, for screen readers etc.) for the check mark that replaces a site's icon in History and Recently closed tabs when the item is selected -->
+  <string name="library_item_selected_content_description">Valið</string>
   <!-- Settings Page Title -->
   <string name="settings_title">Stillingar</string>
   <!-- Content description (not visible, for screen readers etc.): "Close button for library settings" -->
@@ -1692,6 +1696,11 @@
   <string name="close_tab_and_delete_group_confirmation_dialog_cancel">Hætta við</string>
   <!-- Content description for the three dot button next to a tab group" -->
   <string name="tab_group_three_dot_button_content_description">Fleiri valkostir</string>
+  <!--
+    Content description for the Expand button on the contracted menu for a tab group:
+    when tapped, tabs are displayed in an expanded grid or list view, taking up the full screen.
+  -->
+  <string name="tab_groups_strip_expand_group_content_description">Stækka til að birta flipa í fullri skjástærð</string>
   <!-- Text shown on the edit button for a tab group on the three dot menu -->
   <string name="tab_group_three_dot_menu_edit">Breyta</string>
   <!-- Text shown on the ungroup button for a tab group on the three dot menu -->
@@ -3465,7 +3474,7 @@
   <!-- Label for the "Add website" button in the "Add to homepage" bottom sheet. -->
   <string name="homepage_shortcuts_add_website">Bæta við vefsvæði</string>
   <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
-  <string name="homepage_shortcuts_add_website_title">Sláðu inn slóð á vef</string>
+  <string name="homepage_shortcuts_add_website_title">Settu inn slóð á vef</string>
   <!-- Title for the "Popular sites" section in the "Add to homepage" bottom sheet. -->
   <string name="homepage_shortcuts_popular_sites">Vinsæl vefsvæði</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
@@ -3497,7 +3506,7 @@
   <!-- Button caption to confirm the edit of the top site. -->
   <string name="top_sites_edit_dialog_save">Vista</string>
   <!-- Error message when the user entered an invalid URL -->
-  <string name="top_sites_edit_dialog_url_error">Sláðu inn gilda vefslóð</string>
+  <string name="top_sites_edit_dialog_url_error">Settu inn gilda vefslóð</string>
   <!-- Label for the URL edit field in the edit top site dialog. -->
   <string name="top_sites_edit_dialog_url_title">Vefslóð</string>
   <!--
