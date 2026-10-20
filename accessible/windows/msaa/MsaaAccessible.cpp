@@ -392,6 +392,10 @@ already_AddRefed<IAccessible> MsaaAccessible::GetIAccessibleFor(
         return nullptr;
       }
       for (DocAccessibleParent* remoteDoc : *remoteDocs) {
+        if (remoteDoc->IsPrintDoc()) {
+          // Print documents aren't exposed to platform accessibility APIs.
+          continue;
+        }
         LocalAccessible* outerDoc = remoteDoc->OuterDocOfRemoteBrowser();
         if (!outerDoc ||
             !IsInclusiveDescendantOf(localDoc, outerDoc->Document())) {
