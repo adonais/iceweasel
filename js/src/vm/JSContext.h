@@ -758,6 +758,11 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   js::SavedFrame* getPendingExceptionStack();
 
+  /**
+   * Return the pending exception (without wrapping).
+   */
+  const JS::Value& getPendingExceptionUnwrapped();
+
   bool isThrowingDebuggeeWouldRun();
   bool isClosingGenerator();
 
@@ -770,6 +775,17 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
     status = JS::ExceptionStatus::None;
     unwrappedException().setUndefined();
     unwrappedExceptionStack() = nullptr;
+  }
+
+  JS::ExceptionStatus exceptionStatus() const { return status; }
+
+  // Set the pending exception state to values saved earlier.
+  void restorePendingExceptionState(JS::ExceptionStatus newStatus,
+                                    const JS::Value& exception,
+                                    js::SavedFrame* stack) {
+    status = newStatus;
+    unwrappedException() = exception;
+    unwrappedExceptionStack() = stack;
   }
 
   bool isThrowingOutOfMemory() const {

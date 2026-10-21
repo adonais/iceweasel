@@ -297,6 +297,8 @@
 #include "nsTLiteralString.h"
 #include "nsTObserverArray.h"
 #include "nsTStringRepr.h"
+#include "nsThread.h"
+#include "nsThreadManager.h"
 #include "nsThreadUtils.h"
 #include "nsWeakReference.h"
 #include "nsWindowMemoryReporter.h"
@@ -3759,8 +3761,13 @@ already_AddRefed<BrowsingContext> nsGlobalWindowInner::GetChildWindow(
 }
 
 void nsGlobalWindowInner::RefreshRealmPrincipal() {
-  JS::SetRealmPrincipals(js::GetNonCCWObjectRealm(GetWrapperPreserveColor()),
-                         nsJSPrincipals::get(mDoc->NodePrincipal()));
+  JS::Realm* realm = js::GetNonCCWObjectRealm(GetWrapperPreserveColor());
+  nsJSPrincipals* existing = nsJSPrincipals::get(JS::GetRealmPrincipals(realm));
+  nsJSPrincipals* jsPrincipals = nsJSPrincipals::get(mDoc->NodePrincipal());
+  if (existing != jsPrincipals) {
+    HoldOldPrincipal(existing);
+  }
+  JS::SetRealmPrincipals(realm, jsPrincipals);
 }
 
 already_AddRefed<nsIWidget> nsGlobalWindowInner::GetMainWidget() {
@@ -7806,6 +7813,25 @@ JS::loader::ModuleLoaderBase* nsGlobalWindowInner::GetModuleLoader(
   }
 
   return loader->GetModuleLoader();
+}
+
+void nsGlobalWindowInner::HoldOldPrincipal(nsIPrincipal* aPrincipal) {
+  mOldPrincipals.AppendElement(aPrincipal);
+  Dispatch(TaskCategory::Other, NewRunnableMethod(
+      "nsGlobalWindowInner::ClearOldPrincipalsIfNotNestedEventLoop", this,
+      &nsGlobalWindowInner::ClearOldPrincipalsIfNotNestedEventLoop));
+}
+
+void nsGlobalWindowInner::ClearOldPrincipalsIfNotNestedEventLoop() {
+  MOZ_ASSERT(NS_IsMainThread());
+  nsThread* mainThread = nsThreadManager::get().GetCurrentThread();
+  if (mainThread && mainThread->RecursionDepth() > 1) {
+    // Not OK to clear old principals from a nested event loop. In order
+    // to avoid spamming the nested event loop with runnables, just give
+    // up and leave the old principals around.
+    return;
+  }
+  mOldPrincipals.Clear();
 }
 
 nsIURI* nsPIDOMWindowInner::GetDocumentURI() const {

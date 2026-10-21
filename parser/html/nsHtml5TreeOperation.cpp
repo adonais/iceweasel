@@ -470,7 +470,7 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
   bool willExecuteScript = false;
   bool isCustomElement = false;
   RefPtr<nsAtom> isAtom;
-  dom::CustomElementDefinition* definition = nullptr;
+  RefPtr<dom::CustomElementDefinition> definition;
 
   if (aAttributes) {
     nsHtml5String is = aAttributes->getValue(nsHtml5AttributeName::ATTR_IS);

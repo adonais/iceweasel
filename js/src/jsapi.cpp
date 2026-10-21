@@ -3797,11 +3797,9 @@ void JS::AutoSaveExceptionState::drop() {
 }
 
 void JS::AutoSaveExceptionState::restore() {
-  context->status = status;
-  context->unwrappedException() = exceptionValue;
-  if (exceptionStack) {
-    context->unwrappedExceptionStack() = &exceptionStack->as<SavedFrame>();
-  }
+  SavedFrame* stack =
+      exceptionStack ? &exceptionStack->as<SavedFrame>() : nullptr;
+  context->restorePendingExceptionState(status, exceptionValue, stack);
   drop();
 }
 

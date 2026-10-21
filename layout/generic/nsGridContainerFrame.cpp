@@ -8444,7 +8444,7 @@ nscoord nsGridContainerFrame::ReflowChildren(GridReflowInput& aState,
   nscoord bSize = aContentArea.BSize(wm);
   MOZ_ASSERT(aState.mReflowInput);
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
-  if (HidesContentForLayout()) {
+  if (HidesContentForLayout() && !GetNextContinuation()) {
     return bSize;
   }
 
@@ -8549,7 +8549,10 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
                                   ReflowOutput& aDesiredSize,
                                   const ReflowInput& aReflowInput,
                                   nsReflowStatus& aStatus) {
-  if (IsHiddenByContentVisibilityOfInFlowParentForLayout()) {
+  NormalizeChildLists();
+
+  if (IsHiddenByContentVisibilityOfInFlowParentForLayout() &&
+      !GetNextContinuation()) {
     return;
   }
 
@@ -8561,8 +8564,6 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
   if (IsFrameTreeTooDeep(aReflowInput, aDesiredSize, aStatus)) {
     return;
   }
-
-  NormalizeChildLists();
 
 #ifdef DEBUG
   mDidPushItemsBitMayLie = false;

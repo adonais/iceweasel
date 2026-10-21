@@ -1205,6 +1205,11 @@ SavedFrame* JSContext::getPendingExceptionStack() {
   return unwrappedExceptionStack();
 }
 
+const JS::Value& JSContext::getPendingExceptionUnwrapped() {
+  MOZ_ASSERT(isExceptionPending());
+  return unwrappedException();
+}
+
 bool JSContext::isClosingGenerator() {
   return isExceptionPending() &&
          unwrappedException().isMagic(JS_GENERATOR_CLOSING);

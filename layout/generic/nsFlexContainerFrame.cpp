@@ -4389,7 +4389,10 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
                                   ReflowOutput& aReflowOutput,
                                   const ReflowInput& aReflowInput,
                                   nsReflowStatus& aStatus) {
-  if (IsHiddenByContentVisibilityOfInFlowParentForLayout()) {
+  NormalizeChildLists();
+
+  if (IsHiddenByContentVisibilityOfInFlowParentForLayout() &&
+      !GetNextContinuation()) {
     return;
   }
 
@@ -4408,8 +4411,6 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   if (IsFrameTreeTooDeep(aReflowInput, aReflowOutput, aStatus)) {
     return;
   }
-
-  NormalizeChildLists();
 
 #ifdef DEBUG
   mDidPushItemsBitMayLie = false;
@@ -5226,7 +5227,7 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
     const LogicalSize& aAvailableSizeForItems,
     const LogicalMargin& aBorderPadding, const FlexboxAxisTracker& aAxisTracker,
     FlexLayoutResult& aFlr, PerFragmentFlexData& aFragmentData) {
-  if (HidesContentForLayout()) {
+  if (HidesContentForLayout() && !GetNextContinuation()) {
     return {0, false};
   }
 

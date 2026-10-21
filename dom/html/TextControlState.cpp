@@ -1015,6 +1015,10 @@ TextInputListener::HandleEvent(Event* aEvent) {
 }
 
 nsresult TextInputListener::OnEditActionHandled(TextEditor& aTextEditor) {
+  // UpdateTextInputCommands may run script
+  const RefPtr<TextControlElement> kungFuDeathGrip(mTxtCtrlElement);
+  (void)kungFuDeathGrip;
+
   if (mFrame) {
     // XXX Do we still need this or can we just remove the mFrame and
     // frame.IsAlive() conditions below?
