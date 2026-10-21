@@ -26,6 +26,7 @@ import mozilla.components.concept.sync.DeviceType
 import mozilla.components.concept.sync.FxAEntryPoint
 import mozilla.components.concept.sync.StatePersistenceCallback
 import mozilla.components.concept.sync.SyncConfig
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.SCOPE_SYNC
 import mozilla.components.service.fxa.manager.SyncEnginesStorage
