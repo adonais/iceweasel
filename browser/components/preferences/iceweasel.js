@@ -83,6 +83,7 @@ const gIceweaselPane = {
     setUboSyncListeners("iceweasel-libportable-ubo-checkbox");
     setChromeSyncListeners("iceweasel-libportable-chrome-checkbox");
     setMousegesturesSyncListeners("iceweasel-libportable-mousegestures-checkbox");
+    setMultilineSyncListeners("iceweasel-libportable-multiline-checkbox");
     setUcaddonsSyncListeners("iceweasel-libportable-ucaddons-checkbox");
     setDownloadSyncListeners("iceweasel-libportable-download-checkbox");
 
@@ -190,15 +191,23 @@ function setUboSyncListeners(checkboxid) {
 
 function upChromeChild(fn) {
   const mbox = "iceweasel-libportable-mousegestures-checkbox";
+  const tbox = "iceweasel-libportable-multiline-checkbox";
   const ubox = "iceweasel-libportable-ucaddons-checkbox";
   const dbox = "iceweasel-libportable-download-checkbox";
   const mousegestures = document.getElementById(mbox);
+  const multiline = document.getElementById(tbox);
   const ucaddons = document.getElementById(ubox);
   const download = document.getElementById(dbox);
   if (mousegestures) {
     mousegestures.disabled = fn;
     if (!fn) {
       setMousegesturesSyncListeners(mousegestures, true);
+    }
+  }
+  if (multiline) {
+    multiline.disabled = fn;
+    if (!fn) {
+      setMultilineSyncListeners(multiline, true);
     }
   }
   if (ucaddons) {
@@ -272,6 +281,25 @@ function setMousegesturesSyncListeners(checkboxid, docheck = false) {
     }
     if (!docheck) {
       setEventListener(checkboxid, "click", e => {setTimeout(onMousegestureSyncListeners, 1000);});
+    }
+  }
+}
+
+function setMultilineSyncListeners(checkboxid, docheck = false) {
+  let mbox = null;
+  if (!docheck) {
+    mbox = document.getElementById(checkboxid);  
+  } else {
+    mbox = checkboxid;
+  }
+  if (mbox) {
+    if (existScript("MultiRowTabLiteforFx.uc.js")) {
+      mbox.checked = true;
+    } else {
+      mbox.checked = false;
+    }
+    if (!docheck) {
+      setEventListener(checkboxid, "click", e => {setTimeout(onMultilineSyncListeners, 1000);});
     }
   }
 }
@@ -512,6 +540,10 @@ function onGhproxySyncListeners() {
 
 function onMousegestureSyncListeners() {
   upChromeDownload("iceweasel-libportable-mousegestures-checkbox", "-mousegestures-uncheck", "-mousegestures-install");
+}
+
+function onMultilineSyncListeners() {
+  upChromeDownload("iceweasel-libportable-multiline-checkbox", "-multiline-uncheck", "-multiline-install");
 }
 
 function onUcaddonsSyncListeners() {
