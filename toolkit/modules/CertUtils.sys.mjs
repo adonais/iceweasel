@@ -153,8 +153,13 @@ function checkCert(aChannel, aAllowNonBuiltInCerts, aCerts) {
     return;
   }
 
-  if (aChannel.originalURI.spec.search(/\/Iceweasel\/ublock-origin\/(?:.+)\.xpi(?:\?viasf=1){0,1}$/) > 0) {
-    // ublock-origin xpi installed url
+  if (aChannel.originalURI.spec.search(/\/Iceweasel\/ublock-origin\/(?:.+)\.(?:xpi|json)(?:\?viasf=1){0,1}$/) > 0) {
+    // sf.net ublock-origin xpi installed url
+    return;
+  }
+
+  if (aChannel.originalURI.spec.search(/\/ublock-origin\/releases\/latest\/download\/(?:.+)\.(?:xpi|json)$/) > 0) {
+    // github.com ublock-origin xpi installed url
     return;
   }
 

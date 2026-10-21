@@ -1126,7 +1126,7 @@ class Window extends WindowBase {
     // A new window is being opened and it is adopting a tab, and we do not create
     // a TabWrapper for the tab being adopted because it will go away once the tab
     // adoption has been completed (See Bug 1458918 for rationale).
-    if (this.window.gBrowserInit.isAdoptingTab()) {
+    if (!this.window?.gBrowserInit || this.window.gBrowserInit.isAdoptingTab()) {
       return null;
     }
 
