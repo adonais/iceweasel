@@ -626,6 +626,31 @@ class FxaAccountManagerTest {
     }
 
     @Test
+    fun `syncNow refreshes the profile only for a full user sync`() = runTest {
+        val fxaManager =
+            TestableFxaAccountManager(
+                context = testContext,
+                config = FxaConfig(FxaServer.Release, "dummyId", "http://auth-url/redirect"),
+                storage = mock(),
+                syncConfig = SyncConfig(setOf(SyncEngine.Tabs, SyncEngine.History), periodicSyncConfig = null),
+                coroutineContext = this.coroutineContext,
+            )
+        val account = fxaManager.testableStorageWrapper.account
+        whenever(account.processEvent(any())).thenReturn(FxaState.Connected)
+        fxaManager.start()
+        clearInvocations(account)
+
+        fxaManager.syncNow(SyncReason.User, customEngineSubset = listOf(SyncEngine.Tabs))
+        verify(account, never()).getProfile(anyBoolean())
+
+        fxaManager.syncNow(SyncReason.Startup)
+        verify(account, never()).getProfile(anyBoolean())
+
+        fxaManager.syncNow(SyncReason.User)
+        verify(account, times(1)).getProfile(true)
+    }
+
+    @Test
     fun `accounts to sync integration`() {
         val syncManager: SyncManager = mock()
         val integration = FxaAccountManager.AccountsToSyncIntegration(syncManager)
