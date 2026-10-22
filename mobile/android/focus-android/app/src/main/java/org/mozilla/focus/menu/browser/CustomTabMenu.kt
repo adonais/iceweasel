@@ -128,24 +128,28 @@ private fun CustomTabMenuStatus.navigationItems(): List<MenuItem> =
             icon = iconsR.drawable.mozac_ic_back_24,
             item = ToolbarMenu.CustomTabItem.Back,
             state = if (canGoBack) MenuItemState.DEFAULT else MenuItemState.DISABLED,
+            showText = false,
         ),
         menuItem(
             title = R.string.content_description_forward,
             icon = iconsR.drawable.mozac_ic_forward_24,
             item = ToolbarMenu.CustomTabItem.Forward,
             state = if (canGoForward) MenuItemState.DEFAULT else MenuItemState.DISABLED,
+            showText = false,
         ),
         if (isLoading) {
             menuItem(
                 title = R.string.content_description_stop,
                 icon = iconsR.drawable.mozac_ic_cross_24,
                 item = ToolbarMenu.CustomTabItem.Stop,
+                showText = false,
             )
         } else {
             menuItem(
                 title = R.string.content_description_reload,
                 icon = iconsR.drawable.mozac_ic_arrow_clockwise_24,
                 item = ToolbarMenu.CustomTabItem.Reload,
+                showText = false,
             )
         },
     )
@@ -223,10 +227,11 @@ private fun menuItem(
     item: ToolbarMenu.CustomTabItem,
     state: MenuItemState = MenuItemState.DEFAULT,
     badge: MenuItemBadge? = null,
+    showText: Boolean = true,
 ): MenuItem =
     StandardMenuItem(
-        title = Text.Resource(title),
-        contentDescription = Text.Resource(title),
+        title = if (showText) Text.Resource(title) else Text.String(""),
+        contentDescription = if (showText) null else Text.Resource(title),
         icon = MenuItemIconRes(iconRes = icon),
         onClickEvent = MenuItemTapped(item),
         badge = badge,
